@@ -1,0 +1,390 @@
+{
+  "page": "docs/extend/auth-channel-security-model.md",
+  "blob": "470c3025b2480cb363c398d927d0984e19e07fb7",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "createAuthChannel is the supported way to add a second audience's login.",
+      "new-fact": "f:nz890r"
+    },
+    {
+      "lines": [
+        4,
+        6
+      ],
+      "paraphrase": "Pointer to the add-a-second-audience walkthrough.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        8,
+        8
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        10,
+        12
+      ],
+      "paraphrase": "The built-in owner/editor magic-link model is the default; the channel serves a different audience.",
+      "new-fact": "f:nz890r"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "The channel is not a menu of interchangeable auth strategies.",
+      "fact": "f:nz890r"
+    },
+    {
+      "lines": [
+        13,
+        15
+      ],
+      "paraphrase": "The site supplies delivery, lookup, identifier shape, and challenge; the factory owns the security disciplines.",
+      "new-fact": "f:cf1avu"
+    },
+    {
+      "lines": [
+        17,
+        20
+      ],
+      "paraphrase": "normalize must be idempotent, canonical per identity, and injective across people.",
+      "fact": "f:ez788q"
+    },
+    {
+      "lines": [
+        19,
+        20
+      ],
+      "paraphrase": "A lossy normalize maps two people onto one identity's budget.",
+      "fact": "f:pa2hqh"
+    },
+    {
+      "lines": [
+        20,
+        21
+      ],
+      "paraphrase": "lookup's subject must be stable and canonical per person.",
+      "fact": "f:ez788q"
+    },
+    {
+      "lines": [
+        21,
+        23
+      ],
+      "paraphrase": "challenge must really verify a human; the factory cannot tell a real check from always true.",
+      "fact": "f:ez788q"
+    },
+    {
+      "lines": [
+        22,
+        23
+      ],
+      "paraphrase": "The challenge is the whole economic bound on guessing a code.",
+      "fact": "f:pa2hqh"
+    },
+    {
+      "lines": [
+        23,
+        24
+      ],
+      "paraphrase": "Getting an obligated input wrong voids the factory's other guarantees.",
+      "fact": "f:pa2hqh"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        30
+      ],
+      "paraphrase": "No identity-keyed control may deny, delay, or destroy; it escalates or only logs.",
+      "fact": "f:pjjo64"
+    },
+    {
+      "lines": [
+        32,
+        40
+      ],
+      "paraphrase": "The rule came from three failed design rounds and has no exception.",
+      "new-fact": "f:2w1yrc"
+    },
+    {
+      "lines": [
+        42,
+        42
+      ],
+      "paraphrase": "Lead-in to the three consequences.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        44,
+        46
+      ],
+      "paraphrase": "Escalation carries the wire result challenge-required rather than a hard failure.",
+      "fact": "f:7idpoq"
+    },
+    {
+      "lines": [
+        45,
+        46
+      ],
+      "paraphrase": "An escalated action charges no attempt, consumes no code, and fails nothing.",
+      "new-fact": "f:j254i8"
+    },
+    {
+      "lines": [
+        47,
+        48
+      ],
+      "paraphrase": "A failed challenge on an escalated action returns challenge-required again.",
+      "fact": "f:7idpoq"
+    },
+    {
+      "lines": [
+        49,
+        50
+      ],
+      "paraphrase": "Eviction keys on the requester's own bucket, so a caller crowds out only its own rows.",
+      "fact": "f:k6u4g2"
+    },
+    {
+      "lines": [
+        51,
+        53
+      ],
+      "paraphrase": "The anti-abuse spend ceiling only logs at error and never denies a member.",
+      "fact": "f:e0imm6"
+    },
+    {
+      "lines": [
+        55,
+        55
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        57,
+        60
+      ],
+      "paraphrase": "Every action asserts matching Origin and https before other logic, throwing a plain 403.",
+      "fact": "f:wu8x70"
+    },
+    {
+      "lines": [
+        61,
+        62
+      ],
+      "paraphrase": "The check mirrors the admin guard's origin rule, applied to routes the guard never covers.",
+      "new-fact": "f:8u4iiv"
+    },
+    {
+      "lines": [
+        64,
+        64
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        66,
+        68
+      ],
+      "paraphrase": "Identity is a salted hash with s: or c: prefixes over the subject or contact.",
+      "fact": "f:fslodf"
+    },
+    {
+      "lines": [
+        68,
+        71
+      ],
+      "paraphrase": "The prefixes prevent collisions and the per-deployment salt prevents reversal.",
+      "new-fact": "f:dipwmx"
+    },
+    {
+      "lines": [
+        71,
+        73
+      ],
+      "paraphrase": "Logs correlate on the first 16 hex characters of the hash, never the contact.",
+      "fact": "f:fslodf"
+    },
+    {
+      "lines": [
+        73,
+        75
+      ],
+      "paraphrase": "Pointer to the log events reference.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        77,
+        77
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        79,
+        84
+      ],
+      "paraphrase": "Codes are drawn by rejection sampling over a Web Crypto random range, avoiding modulo bias.",
+      "fact": "f:plcf5v"
+    },
+    {
+      "lines": [
+        86,
+        87
+      ],
+      "paraphrase": "Vale directive and comment marking a document identifier.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        88,
+        90
+      ],
+      "paraphrase": "NIST SP 800-63B's guidance assumes secrets are drawn by a proper random generator.",
+      "new-fact": "f:s047l1"
+    },
+    {
+      "lines": [
+        91,
+        91
+      ],
+      "paraphrase": "Vale directive restoring the units rule.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        93,
+        93
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        95,
+        96
+      ],
+      "paraphrase": "A confirmed code mints a channel session resolved by the same hashed lookup as admin sessions.",
+      "fact": "f:1rstld"
+    },
+    {
+      "lines": [
+        96,
+        96
+      ],
+      "paraphrase": "Logging out destroys that one session row.",
+      "new-fact": "f:gubeex"
+    },
+    {
+      "lines": [
+        96,
+        100
+      ],
+      "paraphrase": "revokeSessions ends every session for an identity, a deliberate destructive capability for site code.",
+      "fact": "f:1rstld"
+    },
+    {
+      "lines": [
+        102,
+        102
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        104,
+        107
+      ],
+      "paraphrase": "A console-printing dev transport makes a roster oracle, since delivery runs only for known subjects.",
+      "fact": "f:wuwk2q"
+    },
+    {
+      "lines": [
+        108,
+        109
+      ],
+      "paraphrase": "A capture transport carries the same risk and must never point at real contacts.",
+      "new-fact": "f:d2j9cj"
+    },
+    {
+      "lines": [
+        111,
+        112
+      ],
+      "paraphrase": "Such a transport lands plaintext one-time codes in Workers Logs when run deployed with observability.",
+      "fact": "f:wuwk2q"
+    },
+    {
+      "lines": [
+        112,
+        114
+      ],
+      "paraphrase": "Keep dev and capture transports strictly local, gated like cairn's dev backend.",
+      "new-fact": "f:rv9gdc"
+    },
+    {
+      "lines": [
+        116,
+        116
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        118,
+        120
+      ],
+      "paraphrase": "A site still owns normalize, lookup, and challenge correctness and a real delivery mechanism.",
+      "fact": "f:ez788q"
+    },
+    {
+      "lines": [
+        120,
+        121
+      ],
+      "paraphrase": "A stale roster lookup is a data problem the factory cannot detect.",
+      "fact": "f:pa2hqh"
+    },
+    {
+      "lines": [
+        121,
+        123
+      ],
+      "paraphrase": "Pointers to the auth crypto reference and the second-audience page.",
+      "cut": "navigation"
+    }
+  ]
+}

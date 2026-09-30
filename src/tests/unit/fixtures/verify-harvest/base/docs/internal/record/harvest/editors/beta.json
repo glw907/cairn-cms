@@ -1,0 +1,8 @@
+{
+  "page": "docs/editors/beta.md",
+  "blob": "0c802fc06d148a46b523b68e258a512ccd56169b",
+  "claims": [
+    { "lines": [1, 1], "paraphrase": "Page heading.", "cut": "navigation" },
+    { "lines": [3, 3], "paraphrase": "Beta makes one claim.", "fact": "f:be0001" }
+  ]
+}

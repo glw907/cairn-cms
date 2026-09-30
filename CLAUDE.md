@@ -103,34 +103,36 @@ reference page matches. The `cairn-pass` ritual carries the step; `check:referen
 undocumented export and `check:package` checks the entry points.
 
 The public docs are four audience tracks under `docs/`, one reader each:
-[`admin/`](docs/admin/README.md) (running the default site, no code),
-[`editors/`](docs/editors/README.md) (writing in `/admin`, no terminal),
-[`extend/`](docs/extend/README.md) (building on the seams), and
+`admin/` (running the default site, no code), `editors/` (writing in `/admin`, no terminal),
+`extend/` (building on the seams), and
 [`reference/`](docs/reference/README.md) (one page per export subpath, gated), plus
-[`why-cairn.md`](docs/why-cairn.md) for an evaluator. A page serves one track or it is two pages.
+`why-cairn.md` for an evaluator. A page serves one track or it is two pages. The admin, editors,
+and extend arms and the front door hold no page until their stages rebuild them; `extend/` keeps
+only the per-version records and `choose-an-ai-posture.md`.
 [`docs/internal/docs-friction-log.md`](docs/internal/docs-friction-log.md) collects the design
 friction that writing a doc surfaces, triaged into [`ROADMAP.md`](ROADMAP.md) and
 [`docs/STATUS.md`](docs/STATUS.md). This repo keeps no separate backlog file. A hole the facts
 container surfaces (see below) is filed here too, same as any other friction.
 
 **The reference arm is maintained every pass and gated by `check:reference`.** The three
-narrative arms (admin, editors, extend) and `why-cairn.md` are frozen against rewrites until
-each arm's own stage merges (extend's lifts at the 2b merge), except the per-version extend
-records below: no pass rewrites an arm's prose ahead of its stage merge. A deficiency a pass
+narrative arms (admin, editors, extend) and `why-cairn.md` are empty until each arm's own stage
+rebuilds them (extend's at 2a and 2b), except the per-version extend records below. The harvest
+deleted every old page after its facts landed in the container, so no pass has an old page to
+rewrite, and no pass drafts an arm's prose ahead of its stage. A deficiency a pass
 discovers on a page (a missing step, a wrong warning, a stale command) is fixed on the page in
 the same pass, gated by that page's own gates, per the facts container's fix rule
 (`docs/internal/facts/README.md`, "How this container grows"), except a site edit to an arm whose
 stage is in flight, which is filed, never fixed, and feeds that stage's page inputs instead.
 Every pass that changes a public behavior files a bullet in
 [`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`. Each arm's own
-stage rebuilds it from the container before its freeze lifts. The order is harvest, then delete,
-then draft: every old narrative page's facts land in the container, the old arms and front door
-are deleted, and only then does drafting start, so a writer never sees an old page (the
+stage rebuilds it from the container. The order was harvest, then delete, then draft: every old
+narrative page's facts landed in the container, the old arms and front door were deleted, and
+only then does drafting start, so a writer never sees an old page (the
 2026-09-29 amendment in `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`);
 the site round that follows tests and fixes the rebuilt arms. The site pass's own agents edit
 cairn-cms on a `site-docs/<site>-<pass>` branch off `main`, merged by PR under the docs gate
 before the site pass closes. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md`
-are per-version records outside the freeze, maintained every pass like the reference arm.
+are per-version records kept through the deletion, maintained every pass like the reference arm.
 
 **Maintaining it:** a staging area, never a backlog, measured by what leaves it. Triage is
 complete-or-move: fixed and deleted, promoted to the `ROADMAP.md` tier where it bites, or deleted
@@ -264,9 +266,8 @@ operationally meaningful event through one internal chokepoint, `src/lib/log/` (
 Map the symptom to its event: a sign-in failure points at a send-failure or guard rejection
 (check `reason`); a save that does nothing points at a commit failure (`conflict` is a stale-edit
 collision, `error` is the GitHub failure). On Cloudflare, Workers Logs is the query surface
-(`observability.enabled = true` in `wrangler.jsonc`; filter by `event` or `editor`). Operator
-how-to: [`docs/admin/troubleshooting.md`](docs/admin/troubleshooting.md). Records carry an
-editor's email, never a token or session id, so a log is safe to read and paste.
+(`observability.enabled = true` in `wrangler.jsonc`; filter by `event` or `editor`). Records carry
+an editor's email, never a token or session id, so a log is safe to read and paste.
 
 A pass adding a diagnosable code path gives it an event in the vocabulary, not a bare `console`
 call, and updates the reference table in the same pass. `createLogger` is public from the `/log`

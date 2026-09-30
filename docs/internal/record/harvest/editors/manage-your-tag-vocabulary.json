@@ -1,0 +1,198 @@
+{
+  "page": "docs/editors/manage-your-tag-vocabulary.md",
+  "blob": "042b127587a92d1f18ed64e2adf913360fbdf07d",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Tags are a shared site-wide list managed on a screen named Tags.",
+      "fact": "f:ufh1q2"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "The screen manages the list only; tagging an entry happens in its Details panel.",
+      "fact": "f:ufh1q2"
+    },
+    {
+      "lines": [
+        8,
+        8
+      ],
+      "paraphrase": "Pointer to the Details panel description.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        10,
+        12
+      ],
+      "paraphrase": "Any signed-in editor can change the list by default; narrowing it takes developer configuration.",
+      "fact": "f:nm02c1"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "An account can lack the Tags sidebar entry.",
+      "fact": "f:46pakl"
+    },
+    {
+      "lines": [
+        15,
+        15
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        17,
+        19
+      ],
+      "paraphrase": "Typing under Add a tag and selecting Add tag appends the tag.",
+      "new-fact": "f:k6kjef"
+    },
+    {
+      "lines": [
+        17,
+        18
+      ],
+      "paraphrase": "A short stored form appears under the field while a name is typed.",
+      "fact": "f:k6kjef"
+    },
+    {
+      "lines": [
+        18,
+        19
+      ],
+      "paraphrase": "The stored form is what entries reference and it never changes on rename.",
+      "fact": "f:iy77we"
+    },
+    {
+      "lines": [
+        21,
+        24
+      ],
+      "paraphrase": "A name needs a letter or number and cannot duplicate an existing tag; two exact messages explain a refusal.",
+      "fact": "f:zqzsmk"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        30
+      ],
+      "paraphrase": "Renaming changes only the label; tagged entries keep the association.",
+      "fact": "f:iy77we"
+    },
+    {
+      "lines": [
+        32,
+        32
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        34,
+        34
+      ],
+      "paraphrase": "The trash control works only on a tag nothing uses.",
+      "fact": "f:e6ts03"
+    },
+    {
+      "lines": [
+        34,
+        34
+      ],
+      "paraphrase": "Removal takes effect immediately.",
+      "new-fact": "f:jcqq2t"
+    },
+    {
+      "lines": [
+        35,
+        35
+      ],
+      "paraphrase": "An in-use tag shows the count of entries using it instead of a remove control.",
+      "fact": "f:k6kjef"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "An in-use tag cannot be removed until it is taken off every post.",
+      "fact": "f:e6ts03"
+    },
+    {
+      "lines": [
+        38,
+        38
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        40,
+        43
+      ],
+      "paraphrase": "A tag in use on posts but absent from the shared list gets its own unlisted section with an add control that leaves posts unchanged.",
+      "fact": "f:24sc8a"
+    },
+    {
+      "lines": [
+        45,
+        45
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        47,
+        49
+      ],
+      "paraphrase": "Nothing persists until Save changes, which applies every add, rename, and removal together.",
+      "fact": "f:q20sj3"
+    },
+    {
+      "lines": [
+        51,
+        51
+      ],
+      "paraphrase": "Horizontal rule.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        53,
+        53
+      ],
+      "paraphrase": "A freshness stamp naming a review date.",
+      "cut": "marketing"
+    }
+  ]
+}

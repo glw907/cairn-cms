@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createRenderer } from '../../lib/render/pipeline.js';
+import { armOf, loadDeletionList, readArmStates } from '../../../scripts/checks/arm-state.mjs';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 /**
  * Locks `renderDocument`'s heading ids to GitHub's own slug algorithm.
@@ -8,7 +14,9 @@ import { createRenderer } from '../../lib/render/pipeline.js';
  * a tautology today. The point of the test is to keep it one: every case below is a real
  * heading pulled from the published `docs/reference/`, `docs/admin/`, and `docs/extend/` corpus,
  * and its expected id is a literal, not a value computed by importing `github-slugger` at test
- * time. If the pipeline's slugging ever drifts (a `rehype-slug` upgrade, a config change), this
+ * time. The last test holds each case to its source page. A source the harvest deleted keeps its
+ * heading as a literal stress case while its arm waits for its rebuild, and must name a live page
+ * again once the arm is rebuilt. If the pipeline's slugging ever drifts (a `rehype-slug` upgrade, a config change), this
  * test goes red without needing to know why GitHub's algorithm changed; the in-corpus anchors the
  * published docs carry (`#section-heading` links between pages) ride on this contract holding.
  *
@@ -90,8 +98,10 @@ describe('the GitHub-slug contract', () => {
     });
   }
 
+  const duplicateSource = 'docs/admin/own-your-domain.md';
+
   it('suffixes the admin track\'s real repeated "You know it worked when" heading the way GitHub does', async () => {
-    // docs/admin/own-your-domain.md closes each of its three sections with this exact heading.
+    // duplicateSource closes each of its three sections with this exact heading.
     // GitHub slugs the first occurrence plain and suffixes every repeat with -1, -2, and so on,
     // which is what the page's own section links depend on.
     const { renderDocument } = createRenderer();
@@ -106,5 +116,16 @@ describe('the GitHub-slug contract', () => {
       'connect-to-workers-builds',
       'you-know-it-worked-when-2',
     ]);
+  });
+
+  it('pulls every case from its source page, or from a deleted page whose arm is not yet rebuilt', () => {
+    const deleted = new Set(loadDeletionList(ROOT).deleted);
+    const states = readArmStates(ROOT);
+    const sources = [...cases.map(({ markdown, source }) => ({ markdown, source })), { markdown: '### You know it worked when', source: duplicateSource }];
+    for (const { markdown, source } of sources) {
+      if (deleted.has(source) && states[armOf(source) ?? ''] !== 'rebuilt') continue;
+      const lines = readFileSync(join(ROOT, source), 'utf8').split('\n');
+      expect(lines, `${source} no longer carries "${markdown}"; repoint the case at a live page`).toContain(markdown);
+    }
   });
 });

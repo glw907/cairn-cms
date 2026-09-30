@@ -1,0 +1,8 @@
+{
+  "page": "docs/README.md",
+  "blob": "7c7253c592d3d4a374d06c7963fe34dc5509945c",
+  "claims": [
+    { "lines": [1, 1], "paraphrase": "Page heading.", "cut": "navigation" },
+    { "lines": [3, 3], "paraphrase": "A pointer to the admin arm.", "cut": "navigation" }
+  ]
+}

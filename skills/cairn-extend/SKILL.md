@@ -19,18 +19,18 @@ Restyling the public site (a theme token, `prose.css`, a directive's rules, a pu
 
 ## The router
 
-Each row names a pattern, the atom that builds it, the seam it lives behind, and the shipped
-recipe that documents it end to end. The `docs/internal/facts/extend.md`,
+Each row names a pattern, the atom that builds it, the seam it lives behind, and the reference
+page that documents it. The `docs/internal/facts/extend.md`,
 `docs/internal/engine-rulings.md`, and `docs/internal/admin-design-system.md` paths this skill
 and its references cite live in the cairn-cms source repository
 (https://github.com/glw907/cairn-cms), not in the installed package; look them up there. So does
 `examples/showcase`, whose routes back each recipe below and open with an `Archetype:`/`Atoms:`/
 `Recipe:` header naming the pattern and the engine calls it proves.
 
-| Building | Atom | Seam | Recipe |
+| Building | Atom | Seam | Reference |
 |---|---|---|---|
-| A custom admin screen over your own data | `createSectionAction` + `requireAccess` | `@glw907/cairn-cms/sveltekit`'s admin-scoped `locals.cairnEditor` | `node_modules/@glw907/cairn-cms/docs/extend/add-a-custom-admin-screen.md` |
-| A second audience's own login channel | `createAuthChannel` (the exemplar's own `memberChannel`) | `/auth-channel`'s factory, on its own D1 binding, never `AUTH_DB` | `node_modules/@glw907/cairn-cms/docs/extend/add-a-second-audience.md` |
+| A custom admin screen over your own data | `createSectionAction` + `requireAccess` | `@glw907/cairn-cms/sveltekit`'s admin-scoped `locals.cairnEditor` | `node_modules/@glw907/cairn-cms/docs/reference/sveltekit.md` |
+| A second audience's own login channel | `createAuthChannel` (the exemplar's own `memberChannel`) | `/auth-channel`'s factory, on its own D1 binding, never `AUTH_DB` | `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md` |
 
 **A custom admin screen over your own data.** `createSectionAction<Env, Db>({ resolveDb })`
 builds a reusable per-section action wrapper that resolves the site's own `App.Platform['env']`

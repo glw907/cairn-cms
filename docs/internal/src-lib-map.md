@@ -222,6 +222,6 @@ documents it, or `check:reference` fails the build.
 
 - `CONTRIBUTING.md`'s Repository map for the rest of the tree (`src/tests/`, `scripts/`,
   `examples/`, `docs/`, and the rest).
-- `docs/extend/architecture.md` for the export-subpath view a consuming site reads, as opposed to
+- `docs/reference/README.md` for the export-subpath view a consuming site reads, as opposed to
   this page's contributor view of the same tree.
 - `docs/internal/code-idioms.md` for the standing idiom rules this map does not restate.

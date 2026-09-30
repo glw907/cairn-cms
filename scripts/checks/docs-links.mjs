@@ -10,9 +10,14 @@
 // External links (http, mailto, and the like) are not fetched, and a
 // `cairn:` content link is skipped because it is an author's in-post token, not a doc target. Links
 // inside fenced or inline code are ignored, since those are examples, not navigation.
+//
+// The harvest deletes the old narrative pages named on the committed deletion list (arm-state.mjs).
+// A dated record keeps the links it was written with, so its links into deletion-list paths are
+// accepted for good (DATED_RECORD_PREFIXES); the same link anywhere else is repaired or fails.
 import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
-import { resolve, dirname, join, relative } from 'node:path';
+import { resolve, dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ARM_DIRS, armOf, loadDeletionList, readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const ROOT_DOCS = ['README.md', 'SECURITY.md', 'ROADMAP.md', 'CHANGELOG.md', 'CONTRIBUTING.md'];
@@ -148,8 +153,11 @@ const LEGACY_HOST = 'CHANGELOG.md';
 // A translation table that quietly maps to nothing is how a gate stops gating, so this one is
 // checked rather than trusted: legacyMapProblems() holds three invariants on every run. A value
 // must name a file that exists, so a later rename of a replacement page fails here instead of
-// passing. A key must NOT name a file that exists, so a resurrected page goes back to being
-// checked normally rather than being shadowed by a stale entry. And every key must still be cited
+// passing. The one exception is a value on the harvest deletion list while its arm is not yet
+// rebuilt (arm-state.mjs): the page is gone and its successor does not exist yet, so the entry
+// stands until the arm's rebuild, which then must repoint it. A key must NOT name a file that
+// exists, so a resurrected page goes back to being checked normally rather than being shadowed by
+// a stale entry. And every key must still be cited
 // by a LEGACY_HOST link, so an entry nothing reaches gets removed rather than carried forever.
 //
 // Only the path half is translated. The anchor half is deliberately left unchecked for a mapped
@@ -230,8 +238,12 @@ export function legacyMapProblems(root = ROOT, map = LEGACY_PATH_MAP) {
       .filter(({ dest }) => !isExternal(dest))
       .map(({ dest }) => normalizeLinkPath(dest))
   );
+  const deleted = new Set(loadDeletionList(root).deleted);
+  const states = readArmStates(root);
   for (const [legacyPath, replacement] of Object.entries(map)) {
-    if (!existsSync(join(root, replacement))) {
+    // A replacement the harvest deleted stands until its arm is rebuilt; the rebuild repoints it.
+    const awaitingRebuild = deleted.has(replacement) && states[armOf(replacement) ?? ''] !== 'rebuilt';
+    if (!awaitingRebuild && !existsSync(join(root, replacement))) {
       problems.push(
         `LEGACY_PATH_MAP sends ${legacyPath} to ${replacement}, which no longer exists; repoint the entry at the page that carries that job now`
       );
@@ -283,12 +295,37 @@ export function unreleasedParityMismatch(changelogText, migrationNotesText) {
     : `${UNRELEASED_PARTNER} carries an "## Unreleased" heading but CHANGELOG.md does not; rename it to the version it shipped in, or reopen the CHANGELOG window`;
 }
 
+// Files whose links are dated evidence: the release record and the internal record, history, and
+// feedback trees. Each is read as it was written, so a link from one of them into a page the
+// harvest deleted, or to a deleted arm's directory, is accepted permanently rather than chased to a
+// later page.
+const DATED_RECORD_PREFIXES = ['docs/internal/record/', 'docs/internal/history/', 'docs/internal/feedback/'];
+
+/**
+ * Whether a repo-relative link target is a page the harvest deleted, or the directory of an arm
+ * it emptied (a dated record may link the arm as a whole).
+ * @param {string} target
+ * @param {Set<string>} deleted the deletion list's `deleted` pages
+ */
+function isDeletedTarget(target, deleted) {
+  return deleted.has(target) || Object.values(ARM_DIRS).includes(target);
+}
+
+/**
+ * Whether a repo-relative file is a dated record whose links into deletion-list pages stand.
+ * @param {string} file
+ */
+function isDatedRecord(file) {
+  return file === LEGACY_HOST || DATED_RECORD_PREFIXES.some((prefix) => file.startsWith(prefix));
+}
+
 /**
  * Check every relative link in the scoped files. Returns the broken ones with file, line, dest, and a
  * reason. A target file that does not exist or a `#anchor` with no matching heading is broken.
  * @param {string} root
  */
 export function findBrokenLinks(root = ROOT) {
+  const deleted = new Set(loadDeletionList(root).deleted);
   /** @type {{file: string, line: number, dest: string, reason: string}[]} */
   const broken = [];
   /** @type {Map<string, Set<string>>} */
@@ -325,6 +362,7 @@ export function findBrokenLinks(root = ROOT) {
       if (legacyTarget(file, dest) !== null) continue;
 
       const targetAbs = resolve(dirname(abs), path);
+      if (isDatedRecord(file) && isDeletedTarget(relative(root, targetAbs).split(sep).join('/'), deleted)) continue;
       if (!existsSync(targetAbs)) {
         broken.push({ file, line, dest, reason: `target not found: ${path}` });
         continue;

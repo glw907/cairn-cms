@@ -159,4 +159,3 @@ machine.
 ## See also
 
 - [The `cairn doctor` command](./cli-cairn-doctor.md) for the setup preflight, a separate concern from guidance.
-- [Is it working?](../admin/is-it-working.md) for the manual walkthrough the doctor's checks follow.

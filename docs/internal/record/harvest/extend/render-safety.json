@@ -1,0 +1,382 @@
+{
+  "page": "docs/extend/render-safety.md",
+  "blob": "e17b0f1625f1ab93f4fedda88f8edd42778479a0",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "createRenderer sanitizes by default with a floor.",
+      "fact": "f:z3a58a"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "One switch turns the sanitize floor off.",
+      "fact": "f:r7sbt1"
+    },
+    {
+      "lines": [
+        5,
+        5
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        7,
+        9
+      ],
+      "paraphrase": "Editors author through a web form, unlike a trusted-content static-site generator.",
+      "fact": "f:0ij7do"
+    },
+    {
+      "lines": [
+        9,
+        11
+      ],
+      "paraphrase": "The realistic threat is a compromised editor account or pasted script, not an anonymous attacker.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        10,
+        12
+      ],
+      "paraphrase": "Editors are a small owner-curated allowlist.",
+      "fact": "f:u1bjul"
+    },
+    {
+      "lines": [
+        10,
+        12
+      ],
+      "paraphrase": "Editors commit through the site GitHub App.",
+      "fact": "f:kkp5bi"
+    },
+    {
+      "lines": [
+        12,
+        14
+      ],
+      "paraphrase": "Without a floor any editor could run script in every visitor browser.",
+      "new-fact": "f:wgovy6"
+    },
+    {
+      "lines": [
+        16,
+        16
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        18,
+        18
+      ],
+      "paraphrase": "Stage order inside createRenderer is fixed and mixes remark and rehype steps.",
+      "fact": "f:zzbzo8"
+    },
+    {
+      "lines": [
+        20,
+        41
+      ],
+      "paraphrase": "Diagram of the nine ordered stages and the two the switch turns off.",
+      "fact": "f:zzbzo8"
+    },
+    {
+      "lines": [
+        43,
+        47
+      ],
+      "paraphrase": "The switch disables only the floor and the sink guard; stages between them keep running.",
+      "fact": "f:zzbzo8"
+    },
+    {
+      "lines": [
+        49,
+        49
+      ],
+      "paraphrase": "Pointer to the rendering configuration page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        49,
+        50
+      ],
+      "paraphrase": "sanitizeSchema extends the allowlist the floor uses.",
+      "fact": "f:2fwybn"
+    },
+    {
+      "lines": [
+        50,
+        51
+      ],
+      "paraphrase": "remarkPlugins and rehypePlugins compose at the last stage of the diagram.",
+      "new-fact": "f:phx4lo"
+    },
+    {
+      "lines": [
+        53,
+        53
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        55,
+        58
+      ],
+      "paraphrase": "Every renderer runs a rehype-sanitize floor from the GitHub-lineage default schema unless a site opts out.",
+      "fact": "f:z3a58a"
+    },
+    {
+      "lines": [
+        58,
+        58
+      ],
+      "paraphrase": "A site does not wire the floor up.",
+      "fact": "f:z3a58a"
+    },
+    {
+      "lines": [
+        58,
+        59
+      ],
+      "paraphrase": "The floor exists because the reference delivery path once had none.",
+      "new-fact": "f:r0cv6e"
+    },
+    {
+      "lines": [
+        61,
+        61
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        63,
+        66
+      ],
+      "paraphrase": "sanitizeSchema receives the default schema and returns the schema to use, additively.",
+      "fact": "f:2fwybn"
+    },
+    {
+      "lines": [
+        67,
+        68
+      ],
+      "paraphrase": "There is no supported way to remove a strip entry or re-admit script through this option.",
+      "fact": "f:2fwybn"
+    },
+    {
+      "lines": [
+        70,
+        72
+      ],
+      "paraphrase": "unsafeDisableSanitize is a code-level switch removing both the floor and the guard, not an editor setting.",
+      "fact": "f:r7sbt1"
+    },
+    {
+      "lines": [
+        72,
+        75
+      ],
+      "paraphrase": "Do not reach for the switch because a sanitize finding is inconvenient.",
+      "fact": "f:wgovy6"
+    },
+    {
+      "lines": [
+        77,
+        77
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        79,
+        80
+      ],
+      "paraphrase": "On top of the default schema the built one adds a short specific list.",
+      "fact": "f:q9yndd"
+    },
+    {
+      "lines": [
+        82,
+        85
+      ],
+      "paraphrase": "The directive markers survive the floor as inert data attributes for the dispatch step.",
+      "fact": "f:q9yndd"
+    },
+    {
+      "lines": [
+        86,
+        87
+      ],
+      "paraphrase": "Five extra tags (nav, details, summary, figure, figcaption) are allowlisted.",
+      "fact": "f:q9yndd"
+    },
+    {
+      "lines": [
+        88,
+        90
+      ],
+      "paraphrase": "className is admitted on any element after dropping the default anchor exception.",
+      "fact": "f:q9yndd"
+    },
+    {
+      "lines": [
+        91,
+        92
+      ],
+      "paraphrase": "srcSet and sizes are admitted on img.",
+      "fact": "f:q9yndd"
+    },
+    {
+      "lines": [
+        93,
+        97
+      ],
+      "paraphrase": "The inert cairn: scheme is admitted on href while javascript: and data: stay stripped.",
+      "fact": "f:q9yndd"
+    },
+    {
+      "lines": [
+        99,
+        99
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        101,
+        103
+      ],
+      "paraphrase": "The floor runs ahead of build() so trusted output and inline SVG icons are never sanitized.",
+      "new-fact": "f:xothz1"
+    },
+    {
+      "lines": [
+        103,
+        105
+      ],
+      "paraphrase": "A build() function is site code that can route a raw attribute into a sink built after the floor.",
+      "fact": "f:21by9u"
+    },
+    {
+      "lines": [
+        105,
+        110
+      ],
+      "paraphrase": "rehypeSinkGuard runs after anchor hardening and strips on* and style and scheme-checks URL properties.",
+      "fact": "f:gi3keo"
+    },
+    {
+      "lines": [
+        110,
+        111
+      ],
+      "paraphrase": "The sink guard runs under the same switch as the floor.",
+      "fact": "f:r7sbt1"
+    },
+    {
+      "lines": [
+        111,
+        113
+      ],
+      "paraphrase": "The guard leaves a build-emitted script, style, or iframe srcdoc element in place.",
+      "fact": "f:gi3keo"
+    },
+    {
+      "lines": [
+        112,
+        113
+      ],
+      "paraphrase": "A component author reaching for those elements is running their own code.",
+      "fact": "f:21by9u"
+    },
+    {
+      "lines": [
+        115,
+        115
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        117,
+        121
+      ],
+      "paraphrase": "Raw HTML is parsed by rehype-raw and cleaned to the allowlist, never delivered verbatim or dropped.",
+      "fact": "f:296ar7"
+    },
+    {
+      "lines": [
+        123,
+        123
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        125,
+        127
+      ],
+      "paraphrase": "Every target blank anchor gets its rel forced after highlighting and ahead of the sink guard.",
+      "fact": "f:3yzqup"
+    },
+    {
+      "lines": [
+        127,
+        128
+      ],
+      "paraphrase": "Anchors that components build get the same hardening as anchors authors type.",
+      "new-fact": "f:xothz1"
+    },
+    {
+      "lines": [
+        128,
+        130
+      ],
+      "paraphrase": "Syntax highlighting emits class-only output and needs no special placement.",
+      "new-fact": "f:dwc2bu"
+    },
+    {
+      "lines": [
+        132,
+        132
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        134,
+        138
+      ],
+      "paraphrase": "A registered component can bypass these guarantees by rendering trusted markup outside the sanitized tree.",
+      "fact": "f:21by9u"
+    }
+  ]
+}

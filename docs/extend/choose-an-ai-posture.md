@@ -4,8 +4,7 @@ Decide whether your site declines AI training crawlers, invites them, or states 
 carry that choice through to the file its robots route serves.
 
 This page assumes the prerendered robots route at `src/routes/robots.txt/+server.ts` that the
-scaffold writes, which
-[Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt) describes.
+scaffold writes.
 
 ## Choose a posture
 
@@ -128,5 +127,5 @@ To find why the served posture differs from the declared one, follow these steps
    when enabled, prepends its own content, including its `Content-Signal` line, to the
    origin's file in one combined response.
 
-[Make the stated AI posture effective](../admin/is-it-working.md#make-the-stated-ai-posture-effective)
-covers the condition for whoever runs the zone.
+The [`ai.posture-effective` check](../reference/cli-cairn-doctor.md#the-checks) covers the
+condition for whoever runs the zone.

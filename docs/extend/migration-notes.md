@@ -9,6 +9,16 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
+## Unreleased
+
+- **Re-run `npx cairn-guidance install` if your site uses the `cairn-extend` skill.** This release
+  drops cairn's narrative guides and its two front-door pages until each set is rebuilt, so the
+  shipped skill now points its recipe table at the [reference pages](../reference/README.md)
+  instead. A reinstall replaces your copy of the skill, which still links to the removed pages.
+  This page, [Upgrade cairn](./upgrade-cairn.md), and `choose-an-ai-posture.md` stay in place.
+
+See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+
 ## 0.98.0
 
 - **Import admin components from `@glw907/cairn-cms/admin`.** The `@glw907/cairn-cms/components`
@@ -16,7 +26,7 @@ this page carries; read `CHANGELOG.md` directly for anything older.
   `from '@glw907/cairn-cms/components'` to `from '@glw907/cairn-cms/admin'`.
 - **Import `PreviewBanner` from `@glw907/cairn-cms/public`.** The banner renders on a site's public
   preview route, so it moved to the new `./public` subpath and no longer sits on `./admin`. Change
-  the import on your preview route (see [Share a draft preview](share-a-draft-preview.md)).
+  the import on your preview route (see [the `PreviewBanner` reference](../reference/public.md#previewbanner)).
 - **Move custom admin components into `src/lib/admin`, or keep them and set `static.scope`.** The
   audit's default roots no longer include `src/lib/components`. To move them, put your custom admin
   components under `src/lib/admin` and add `@source "./lib/admin";` to your admin stylesheet

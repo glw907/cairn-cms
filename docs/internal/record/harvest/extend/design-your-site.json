@@ -1,0 +1,350 @@
+{
+  "page": "docs/extend/design-your-site.md",
+  "blob": "f2b6af04f96f76af04a2625af26c06928e111142",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "A scaffolded site already has a design: Waymark wired into a chassis of plumbing.",
+      "fact": "f:rxj43c"
+    },
+    {
+      "lines": [
+        5,
+        7
+      ],
+      "paraphrase": "A hand-built site has neither; it brings its own theme and delivery wiring.",
+      "fact": "f:rxj43c"
+    },
+    {
+      "lines": [
+        9,
+        9
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        11,
+        13
+      ],
+      "paraphrase": "The chassis holds plumbing including the feed and sitemap builders, runtime composition, and the token system.",
+      "new-fact": "f:krq13h"
+    },
+    {
+      "lines": [
+        13,
+        14
+      ],
+      "paraphrase": "Also in the chassis: prose foundations and composition primitives.",
+      "fact": "f:s4prb0"
+    },
+    {
+      "lines": [
+        14,
+        16
+      ],
+      "paraphrase": "Everything outside the chassis is Waymark's own adapter config, chrome, values, and compositions.",
+      "fact": "f:s4prb0"
+    },
+    {
+      "lines": [
+        16,
+        17
+      ],
+      "paraphrase": "A theme file reaches the chassis only through its seams: the alias in code or a relative CSS import.",
+      "fact": "f:lwrqfd"
+    },
+    {
+      "lines": [
+        17,
+        20
+      ],
+      "paraphrase": "Cairn's repo enforces the boundary on the showcase with a gate; a scaffolded site holds it as convention.",
+      "fact": "f:lwrqfd"
+    },
+    {
+      "lines": [
+        22,
+        22
+      ],
+      "paraphrase": "A re-skin never touches the chassis.",
+      "fact": "f:iel6v5"
+    },
+    {
+      "lines": [
+        22,
+        27
+      ],
+      "paraphrase": "The token file declares design-scale keys with defaults; the engine's public stylesheet supplies the roles.",
+      "fact": "f:iel6v5"
+    },
+    {
+      "lines": [
+        27,
+        29
+      ],
+      "paraphrase": "A theme imports the token file, then redeclares keys later; named daisyUI themes stay outside the chassis.",
+      "fact": "f:iel6v5"
+    },
+    {
+      "lines": [
+        31,
+        31
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        33,
+        36
+      ],
+      "paraphrase": "One file, the theme stylesheet, owns the look; the recipe is about fourteen values, light and dark.",
+      "fact": "f:kt0epf"
+    },
+    {
+      "lines": [
+        36,
+        38
+      ],
+      "paraphrase": "The prose stylesheet needs no edits because it reads the same role tokens.",
+      "fact": "f:kt0epf"
+    },
+    {
+      "lines": [
+        38,
+        42
+      ],
+      "paraphrase": "A status rebrand costs one fill per status; the engine derives each ink at half strength.",
+      "fact": "f:ylmc9c"
+    },
+    {
+      "lines": [
+        44,
+        48
+      ],
+      "paraphrase": "Two CI gates keep the recipe honest on the showcase; neither ships in a scaffold, while the three public rules do.",
+      "fact": "f:xv2ien"
+    },
+    {
+      "lines": [
+        48,
+        50
+      ],
+      "paraphrase": "The site's check script runs the audit, where the three rules report as advisories.",
+      "fact": "f:mrv24k"
+    },
+    {
+      "lines": [
+        50,
+        51
+      ],
+      "paraphrase": "Run the check script after a theme edit and compare by eye with the styleguide.",
+      "fact": "f:mrv24k"
+    },
+    {
+      "lines": [
+        53,
+        53
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        55,
+        58
+      ],
+      "paraphrase": "The styleguide route renders each registered directive, the type scale, and recipes against the live theme file.",
+      "fact": "f:bdnzcy"
+    },
+    {
+      "lines": [
+        58,
+        61
+      ],
+      "paraphrase": "Several theme relationships, such as the CTA ink and card border with shadow, are not evident from one hex value.",
+      "new-fact": "f:kq6ud3"
+    },
+    {
+      "lines": [
+        63,
+        66
+      ],
+      "paraphrase": "Layout changes need real entries and media; a clone has the markdown and manifest but not the pictures kept in R2.",
+      "fact": "f:pgy0mr"
+    },
+    {
+      "lines": [
+        66,
+        68
+      ],
+      "paraphrase": "Seed the local R2 simulator once per clone with the seeding command pointed at the deployed site.",
+      "fact": "f:7pv6se"
+    },
+    {
+      "lines": [
+        70,
+        72
+      ],
+      "paraphrase": "Snippet running the seeding command against a deployed address.",
+      "fact": "f:7pv6se"
+    },
+    {
+      "lines": [
+        74,
+        75
+      ],
+      "paraphrase": "Re-run only when the deployed library gains objects; the command is idempotent.",
+      "fact": "f:7pv6se"
+    },
+    {
+      "lines": [
+        75,
+        77
+      ],
+      "paraphrase": "With nothing deployed there is nothing to seed; local admin uploads go straight to the local bucket.",
+      "new-fact": "f:l9mf1w"
+    },
+    {
+      "lines": [
+        79,
+        80
+      ],
+      "paraphrase": "After seeding, the dev script renders every page with real content and images.",
+      "new-fact": "f:l41gju"
+    },
+    {
+      "lines": [
+        82,
+        83
+      ],
+      "paraphrase": "Hot reload applies a stylesheet or component edit without a manual reload.",
+      "new-fact": "f:mvkyea"
+    },
+    {
+      "lines": [
+        84,
+        98
+      ],
+      "paraphrase": "Advice on watching the dev terminal, testing structural changes, deferring the full gate, and checking viewports.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        100,
+        102
+      ],
+      "paraphrase": "When settled, run the full checks, commit, push, deploy, and check the live site once.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        104,
+        104
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        106,
+        108
+      ],
+      "paraphrase": "The registry, chrome, compositions, and token-styled primitives are copy-in files a site owns with no version lock.",
+      "new-fact": "f:l2mbcj"
+    },
+    {
+      "lines": [
+        108,
+        110
+      ],
+      "paraphrase": "Extend the registry or add a composition as the showcase does for its home and article views.",
+      "new-fact": "f:l2mbcj"
+    },
+    {
+      "lines": [
+        110,
+        113
+      ],
+      "paraphrase": "Composition primitives expose their own per-primitive custom properties for instance overrides.",
+      "fact": "f:ctognq"
+    },
+    {
+      "lines": [
+        115,
+        115
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        117,
+        118
+      ],
+      "paraphrase": "The chassis is generous and each file lists its dependents, keeping removals bounded.",
+      "new-fact": "f:kt11l7"
+    },
+    {
+      "lines": [
+        118,
+        121
+      ],
+      "paraphrase": "The feed file has two dependents and can go with its routes; the content file serves six routes.",
+      "fact": "f:kj37zz"
+    },
+    {
+      "lines": [
+        121,
+        124
+      ],
+      "paraphrase": "Consult the dependents table in the chassis README before removing a piece; a light theme may rebuild or drop any of it.",
+      "fact": "f:kj37zz"
+    },
+    {
+      "lines": [
+        126,
+        126
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        128,
+        129
+      ],
+      "paraphrase": "The styleguide renders every directive with no dangling token.",
+      "fact": "f:bdnzcy"
+    },
+    {
+      "lines": [
+        128,
+        129
+      ],
+      "paraphrase": "An AA contrast check on your edit passes in both light and dark.",
+      "new-fact": "f:mzmvt8"
+    },
+    {
+      "lines": [
+        129,
+        130
+      ],
+      "paraphrase": "The reading surface matches the rest of the page in contrast and rhythm with no separate CSS.",
+      "fact": "f:kt0epf"
+    }
+  ]
+}

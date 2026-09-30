@@ -3,8 +3,8 @@
 cairn is the embedded, git-backed CMS this repository publishes to npm as
 [`@glw907/cairn-cms`](https://www.npmjs.com/package/@glw907/cairn-cms). This guide orients you
 in the repository and describes what a change needs before it can land. For what cairn is and
-why it works the way it does, start with the [docs](./docs/README.md) and
-[Why cairn](./docs/why-cairn.md).
+why it works the way it does, start with
+[what cairn is and is not](./docs/internal/what-cairn-is-and-is-not.md).
 
 ## Set up and run the suite
 
@@ -144,13 +144,13 @@ list here, so when the map and the tree disagree, trust the tree and fix the map
 - `examples/showcase/`: a complete consumer site and the library's proving ground. The e2e
   and visual suites run against it.
 - `examples/cairn-theme/`: the optional identity layer for
-  [Waymark](./docs/extend/design-your-site.md), the starter template, and the skin
+  [Waymark](./examples/showcase/README.md), the starter template, and the skin
   [cairn.pub](https://cairn.pub) runs. The ported example themes (AstroPaper, Foxi, the
   gallery) live in their own repository,
   [glw907/cairn-themes](https://github.com/glw907/cairn-themes).
 - `docs/`: the four published tracks (`admin/`, `editors/`, `extend/`, `reference/`) ship in
-  the npm package, along with `docs/README.md` and `docs/why-cairn.md`. See "Choosing a docs
-  track" above for what belongs where. `internal/` is maintainer-facing, `superpowers/` holds
+  the npm package once each holds pages; the front door joins them when it is rebuilt. See
+  "Choosing a docs track" above for what belongs where. `internal/` is maintainer-facing, `superpowers/` holds
   the dated specs and plans as history, and `STATUS.md` is the rolling project status.
 - `packages/cairn-cms-dev/`: the companion package `@glw907/cairn-cms-dev`, a
   local-development fake backend. Install it as a `devDependency` only, never in production.

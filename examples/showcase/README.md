@@ -1,6 +1,6 @@
 # cairn showcase
 
-This is Waymark, cairn's starter template: a complete, working cairn site built in the DaisyUI and Tailwind idiom. The engine's own e2e and design suites run against this directory in CI, and it's the companion to [`docs/extend/build-a-site-by-hand.md`](../../docs/extend/build-a-site-by-hand.md): every file that page builds by hand already exists here and runs.
+This is Waymark, cairn's starter template: a complete, working cairn site built in the DaisyUI and Tailwind idiom. The engine's own e2e and design suites run against this directory in CI.
 
 The showcase depends on cairn through the relative `file:../..` path, so it always builds against the engine version in this checkout, not a published release.
 
@@ -16,12 +16,11 @@ The admin runs against cairn's development backend, so it needs no GitHub App, d
 
 ## What to do with it
 
-Read it as the worked example every guide in `docs/` refers back to. Once you have your own site, restyle or replace it however you like. For the rest of the docs, start at [`docs/README.md`](../../docs/README.md).
+Read it as the worked example. Once you have your own site, restyle or replace it however you like. For the contracts it uses, start at [`docs/reference/README.md`](../../docs/reference/README.md).
 
 ## Fixture convention
 
-This directory doubles as the source `create-cairn-site` scaffolds from, per
-[`docs/extend/what-the-scaffold-wrote.md`](../../docs/extend/what-the-scaffold-wrote.md). A few
+This directory doubles as the source `create-cairn-site` scaffolds from. A few
 files exist only to drive the engine's own tests and never belong in the tree the CLI produces.
 `.cairn-template.json`'s `exclude` list keeps them out of that tree. `src/routes/probe-craft` is
 the admin design lab, and `src/routes/(site)/+layout.server.ts` is a fixture load returning

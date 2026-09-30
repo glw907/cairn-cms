@@ -113,7 +113,7 @@ describe('reproduction fixtures', () => {
     }
   });
 
-  it('resolves the organize-your-admin-nav.md worked example, with an unreferenced trailing group', () => {
+  it('resolves the navLayout worked example, with an unreferenced trailing group', () => {
     const referenced = new Set(
       fixtureNavLayout.items.flatMap((node) => ('children' in node ? node.children : [node])).map((child) =>
         'screen' in child ? child.screen : null,

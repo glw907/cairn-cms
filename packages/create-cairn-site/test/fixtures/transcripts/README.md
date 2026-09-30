@@ -204,8 +204,8 @@ site to Cloudflare" block), so it no longer matches current tool behavior. Re-ca
 live GitHub App and repository creation, a harness outside this repo, so these fixtures stay as
 recorded rather than being hand-edited to carry new prose no run actually produced.
 `check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against
-the current scaffold's behavior, so it stays green either way; `docs/admin/create-your-site.md`
-never quotes this specific line, so no docs page is affected.
+the current scaffold's behavior, so it stays green either way; the admin arm's create-your-site page
+(removed pending its rebuild) never quoted this specific line, so no docs page was affected.
 
 ## Staleness note (2026-09-28, AI posture)
 
@@ -215,10 +215,10 @@ site's stance toward AI training crawlers (decline, invite, or no preference, th
 Re-capturing needs a live GitHub App and repository creation, a harness outside this repo, so this
 fixture stays as recorded rather than being hand-edited to add a prompt no run actually produced.
 `check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against the
-current scaffold's behavior, so it stays green either way; `docs/admin/create-your-site.md` never
-quotes that stretch of the transcript (only the cost preamble, the GitHub App confirmation, and
-the closing summary), so its own prose is fixed to name the new question without touching any
-quoted block.
+current scaffold's behavior, so it stays green either way; the admin arm's create-your-site page
+(removed pending its rebuild) never quoted that stretch of the transcript (only the cost preamble,
+the GitHub App confirmation, and the closing summary), so its own prose was fixed to name the new
+question without touching any quoted block.
 
 ## Identifiers
 

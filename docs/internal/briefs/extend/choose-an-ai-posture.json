@@ -6,7 +6,7 @@
       "id": "f:m2v7qd"
     },
     {
-      "text": "This page assumes the prerendered robots route at `src/routes/robots.txt/+server.ts` that the scaffold writes, which [Wire the delivery surface](./wire-the-delivery-surface.md#feed-sitemap-and-robotstxt) describes.",
+      "text": "This page assumes the prerendered robots route at `src/routes/robots.txt/+server.ts` that the scaffold writes.",
       "id": "f:gnlib7"
     },
     {
@@ -174,7 +174,7 @@
       "id": "f:tno8hh"
     },
     {
-      "text": "[Make the stated AI posture effective](../admin/is-it-working.md#make-the-stated-ai-posture-effective) covers the condition for whoever runs the zone.",
+      "text": "The [`ai.posture-effective` check](../reference/cli-cairn-doctor.md#the-checks) covers the condition for whoever runs the zone.",
       "id": "f:65atya"
     }
   ]

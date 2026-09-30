@@ -1,0 +1,1102 @@
+{
+  "page": "docs/admin/is-it-working.md",
+  "blob": "6fc481f17837b6e04bd436e914eba73725b63519",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title, pinned as the page slug.",
+      "new-fact": "f:oeo0oy"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page tagline.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        9
+      ],
+      "paraphrase": "Three routing bullets to the diagnostic pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        11,
+        11
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        13,
+        17
+      ],
+      "paraphrase": "Run cairn doctor from the site directory.",
+      "fact": "f:rrwp1r"
+    },
+    {
+      "lines": [
+        19,
+        20
+      ],
+      "paraphrase": "Install cairn with go install or from the release page.",
+      "fact": "f:1dhk1a"
+    },
+    {
+      "lines": [
+        22,
+        23
+      ],
+      "paraphrase": "Pointer to the doctor command reference.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        25,
+        26
+      ],
+      "paraphrase": "The report is a real run against the example site right after building it.",
+      "new-fact": "f:t74sun"
+    },
+    {
+      "lines": [
+        26,
+        28
+      ],
+      "paraphrase": "cairn doctor reads local configuration and needs no credential.",
+      "fact": "f:e1s8kh"
+    },
+    {
+      "lines": [
+        27,
+        28
+      ],
+      "paraphrase": "It makes at most one network request, a GET of the site robots.txt.",
+      "fact": "f:8fhjud"
+    },
+    {
+      "lines": [
+        30,
+        46
+      ],
+      "paraphrase": "Transcript block: the recorded doctor report for the example site.",
+      "new-fact": "f:t74sun"
+    },
+    {
+      "lines": [
+        48,
+        51
+      ],
+      "paraphrase": "Meanings of INFO, UNCHECKED, and SKIP.",
+      "new-fact": "f:dfq003"
+    },
+    {
+      "lines": [
+        53,
+        57
+      ],
+      "paraphrase": "The doctor refuses to follow a symlink that leaves the directory; a normal install reads PASS or FAIL.",
+      "fact": "f:dg0xqg"
+    },
+    {
+      "lines": [
+        59,
+        63
+      ],
+      "paraphrase": "The doctor never runs the sending-domain or HTTPS checks; cairn health reaches each once the site is adopted.",
+      "new-fact": "f:67pwmj"
+    },
+    {
+      "lines": [
+        63,
+        65
+      ],
+      "paraphrase": "The doctor never runs the GitHub App or auth-store checks; no command checks either, so use the manual proof.",
+      "new-fact": "f:bw5uk0"
+    },
+    {
+      "lines": [
+        67,
+        68
+      ],
+      "paraphrase": "Claim: report titles look like the short labels on the checklist.",
+      "new-fact": "f:6je8r6"
+    },
+    {
+      "lines": [
+        68,
+        69
+      ],
+      "paraphrase": "The report never prints a condition id.",
+      "new-fact": "f:t74sun"
+    },
+    {
+      "lines": [
+        69,
+        71
+      ],
+      "paraphrase": "Each check names one engine condition id, the name diagnostics and reference share.",
+      "fact": "f:kjp61u"
+    },
+    {
+      "lines": [
+        71,
+        72
+      ],
+      "paraphrase": "Defines blocker and warning as severities of a condition.",
+      "fact": "f:kjp61u"
+    },
+    {
+      "lines": [
+        74,
+        77
+      ],
+      "paraphrase": "The report has exactly one skip, guard role wiring, because no custom roles are declared.",
+      "new-fact": "f:t74sun"
+    },
+    {
+      "lines": [
+        79,
+        82
+      ],
+      "paraphrase": "The App private key lives only in the Worker secret store and is not kept elsewhere.",
+      "fact": "f:72yc97"
+    },
+    {
+      "lines": [
+        82,
+        84
+      ],
+      "paraphrase": "A failing publish is a developer job: rotate the key.",
+      "fact": "f:3jpoi3"
+    },
+    {
+      "lines": [
+        86,
+        88
+      ],
+      "paraphrase": "A scaffolded site ships wired for the bindings, observability, origin, and admin-mount conditions.",
+      "new-fact": "f:l3cxgc"
+    },
+    {
+      "lines": [
+        88,
+        90
+      ],
+      "paraphrase": "The dependency-floor check can fail later as packages drift.",
+      "fact": "f:jwwwov"
+    },
+    {
+      "lines": [
+        90,
+        92
+      ],
+      "paraphrase": "Claim: the site-config check skips on an unmodified site.",
+      "new-fact": "f:zqwpa1"
+    },
+    {
+      "lines": [
+        94,
+        94
+      ],
+      "paraphrase": "Lead-in to the jump list.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        96,
+        134
+      ],
+      "paraphrase": "The jump list files conditions under short report titles.",
+      "new-fact": "f:6je8r6"
+    },
+    {
+      "lines": [
+        96,
+        97
+      ],
+      "paraphrase": "Jump entry: HTTPS condition maps to its section.",
+      "new-fact": "f:5ygjzj"
+    },
+    {
+      "lines": [
+        96,
+        97
+      ],
+      "paraphrase": "HTTPS is checked by cairn health, not the doctor.",
+      "new-fact": "f:67pwmj"
+    },
+    {
+      "lines": [
+        98,
+        101
+      ],
+      "paraphrase": "Jump entry: sending-domain conditions map to their section.",
+      "new-fact": "f:5m24h2"
+    },
+    {
+      "lines": [
+        98,
+        101
+      ],
+      "paraphrase": "The sender condition is checked by cairn health, not the doctor.",
+      "new-fact": "f:67pwmj"
+    },
+    {
+      "lines": [
+        98,
+        101
+      ],
+      "paraphrase": "Send-failed has no check and is diagnosed from the log record.",
+      "fact": "f:ug1ekb"
+    },
+    {
+      "lines": [
+        102,
+        103
+      ],
+      "paraphrase": "Jump entry: bindings condition maps to its section.",
+      "new-fact": "f:qw0yy7"
+    },
+    {
+      "lines": [
+        104,
+        105
+      ],
+      "paraphrase": "Jump entry: media bucket condition maps to its section.",
+      "new-fact": "f:l5xoik"
+    },
+    {
+      "lines": [
+        106,
+        107
+      ],
+      "paraphrase": "Jump entry: tidy key condition maps to its section.",
+      "new-fact": "f:wnjk35"
+    },
+    {
+      "lines": [
+        106,
+        107
+      ],
+      "paraphrase": "No command checks the tidy key.",
+      "fact": "f:z2vl1z"
+    },
+    {
+      "lines": [
+        108,
+        109
+      ],
+      "paraphrase": "Jump entry: observability condition maps to its section.",
+      "new-fact": "f:hqwcv1"
+    },
+    {
+      "lines": [
+        110,
+        111
+      ],
+      "paraphrase": "Jump entry: CSRF handoff condition maps to its section.",
+      "new-fact": "f:b66soa"
+    },
+    {
+      "lines": [
+        112,
+        113
+      ],
+      "paraphrase": "Jump entry: no-referrer condition maps to its section.",
+      "new-fact": "f:5v8cda"
+    },
+    {
+      "lines": [
+        114,
+        115
+      ],
+      "paraphrase": "Jump entry: public origin condition maps to its section.",
+      "new-fact": "f:kuabx4"
+    },
+    {
+      "lines": [
+        116,
+        117
+      ],
+      "paraphrase": "Jump entry: site config condition maps to its section.",
+      "new-fact": "f:14yvmr"
+    },
+    {
+      "lines": [
+        118,
+        119
+      ],
+      "paraphrase": "Jump entry: dependency floors condition maps to its section.",
+      "new-fact": "f:4nsmr2"
+    },
+    {
+      "lines": [
+        120,
+        121
+      ],
+      "paraphrase": "Jump entry: AI posture condition maps to its section.",
+      "new-fact": "f:sypkjf"
+    },
+    {
+      "lines": [
+        122,
+        125
+      ],
+      "paraphrase": "Jump entry: auth store, role, and email conditions map to one section.",
+      "new-fact": "f:y6bqvu"
+    },
+    {
+      "lines": [
+        122,
+        125
+      ],
+      "paraphrase": "No command checks those auth conditions.",
+      "new-fact": "f:bw5uk0"
+    },
+    {
+      "lines": [
+        126,
+        127
+      ],
+      "paraphrase": "Jump entry: role wiring condition maps to the auth store section.",
+      "new-fact": "f:y6bqvu"
+    },
+    {
+      "lines": [
+        128,
+        129
+      ],
+      "paraphrase": "Jump entry: GitHub App condition maps to its section.",
+      "new-fact": "f:ow0vx5"
+    },
+    {
+      "lines": [
+        128,
+        129
+      ],
+      "paraphrase": "No command checks the GitHub App.",
+      "new-fact": "f:bw5uk0"
+    },
+    {
+      "lines": [
+        130,
+        131
+      ],
+      "paraphrase": "Jump entry: admin mount condition maps to its section.",
+      "new-fact": "f:h5irat"
+    },
+    {
+      "lines": [
+        132,
+        134
+      ],
+      "paraphrase": "Jump entry: login probe condition maps to its section.",
+      "new-fact": "f:4s8m8v"
+    },
+    {
+      "lines": [
+        132,
+        134
+      ],
+      "paraphrase": "No command checks the login probe.",
+      "new-fact": "f:bw5uk0"
+    },
+    {
+      "lines": [
+        136,
+        137
+      ],
+      "paraphrase": "Lead-in to two conditions the doctor never reports.",
+      "fact": "f:bw5uk0"
+    },
+    {
+      "lines": [
+        139,
+        139
+      ],
+      "paraphrase": "Jump entry: CSRF token condition maps to its section.",
+      "new-fact": "f:yc3ivl"
+    },
+    {
+      "lines": [
+        140,
+        140
+      ],
+      "paraphrase": "Jump entry: origin condition maps to its section.",
+      "new-fact": "f:3mggl1"
+    },
+    {
+      "lines": [
+        142,
+        142
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:5ygjzj"
+    },
+    {
+      "lines": [
+        144,
+        148
+      ],
+      "paraphrase": "HTTPS: doctor never runs it, health confirms it, and http admin hits an opaque 403.",
+      "new-fact": "f:ow237a"
+    },
+    {
+      "lines": [
+        150,
+        152
+      ],
+      "paraphrase": "Fix: turn on Always Use HTTPS and keep HSTS on.",
+      "new-fact": "f:ow237a"
+    },
+    {
+      "lines": [
+        154,
+        154
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:yc3ivl"
+    },
+    {
+      "lines": [
+        156,
+        160
+      ],
+      "paraphrase": "The guard refuses a request with a missing or mismatched CSRF token, usually a stale tab or blocked cookies.",
+      "new-fact": "f:ot3zkq"
+    },
+    {
+      "lines": [
+        162,
+        163
+      ],
+      "paraphrase": "Fix: open the sign-in page fresh, allow cookies, request a new link.",
+      "new-fact": "f:ot3zkq"
+    },
+    {
+      "lines": [
+        165,
+        165
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:3mggl1"
+    },
+    {
+      "lines": [
+        167,
+        170
+      ],
+      "paraphrase": "The guard refused a non-admin form whose Origin header did not match the site.",
+      "new-fact": "f:biealg"
+    },
+    {
+      "lines": [
+        172,
+        174
+      ],
+      "paraphrase": "Fix: post from the site itself and check whether a proxy rewrites Origin.",
+      "new-fact": "f:biealg"
+    },
+    {
+      "lines": [
+        176,
+        176
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:4roiy5"
+    },
+    {
+      "lines": [
+        178,
+        182
+      ],
+      "paraphrase": "Identity gate refused or threw, so no session started; logged with reason identity.",
+      "new-fact": "f:sbv5xj"
+    },
+    {
+      "lines": [
+        184,
+        185
+      ],
+      "paraphrase": "Fix: sign in through the gate again; otherwise check the gate and the guard log detail.",
+      "new-fact": "f:sbv5xj"
+    },
+    {
+      "lines": [
+        187,
+        187
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:yozubw"
+    },
+    {
+      "lines": [
+        189,
+        191
+      ],
+      "paraphrase": "The gate confirmed you but your email is not on the roster; logged as auth.identity.unknown.",
+      "fact": "f:l4y6yq"
+    },
+    {
+      "lines": [
+        193,
+        193
+      ],
+      "paraphrase": "Fix: an owner adds the confirmed email through Manage editors.",
+      "new-fact": "f:zcqvjr"
+    },
+    {
+      "lines": [
+        195,
+        195
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:5m24h2"
+    },
+    {
+      "lines": [
+        197,
+        202
+      ],
+      "paraphrase": "No enabled sending subdomain means no sign-in email; doctor never runs it, health confirms it.",
+      "new-fact": "f:7yrcyy"
+    },
+    {
+      "lines": [
+        204,
+        206
+      ],
+      "paraphrase": "Fix: enable sending for the domain with wrangler and redeploy; the domain must match the sender.",
+      "new-fact": "f:7yrcyy"
+    },
+    {
+      "lines": [
+        206,
+        207
+      ],
+      "paraphrase": "Those commands use the Cloudflare sign-in the setup tool created on this machine.",
+      "new-fact": "f:mb5p09"
+    },
+    {
+      "lines": [
+        209,
+        211
+      ],
+      "paraphrase": "Send failed for another reason: delivery error, binding misconfiguration, or custom sender failure.",
+      "new-fact": "f:ug1ekb"
+    },
+    {
+      "lines": [
+        213,
+        216
+      ],
+      "paraphrase": "Find the send_failed record and read its code and error fields.",
+      "new-fact": "f:ug1ekb"
+    },
+    {
+      "lines": [
+        218,
+        218
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:qw0yy7"
+    },
+    {
+      "lines": [
+        220,
+        222
+      ],
+      "paraphrase": "The wrangler config lacks the EMAIL send_email binding or the AUTH_DB D1 binding.",
+      "new-fact": "f:kpczhs"
+    },
+    {
+      "lines": [
+        224,
+        227
+      ],
+      "paraphrase": "Fix: declare both bindings in the wrangler config and redeploy.",
+      "new-fact": "f:kpczhs"
+    },
+    {
+      "lines": [
+        229,
+        229
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:l5xoik"
+    },
+    {
+      "lines": [
+        231,
+        234
+      ],
+      "paraphrase": "Adapter declares a media bucket with no matching r2 binding; runs only when a bucket is configured.",
+      "new-fact": "f:6e22v1"
+    },
+    {
+      "lines": [
+        236,
+        238
+      ],
+      "paraphrase": "Fix: declare an r2 binding matching the adapter bucketBinding and redeploy.",
+      "new-fact": "f:6e22v1"
+    },
+    {
+      "lines": [
+        240,
+        240
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:hqwcv1"
+    },
+    {
+      "lines": [
+        242,
+        244
+      ],
+      "paraphrase": "observability.enabled is not true, so structured logs go nowhere.",
+      "new-fact": "f:txgoyy"
+    },
+    {
+      "lines": [
+        246,
+        246
+      ],
+      "paraphrase": "Fix: set observability.enabled to true and redeploy.",
+      "new-fact": "f:txgoyy"
+    },
+    {
+      "lines": [
+        248,
+        248
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:b66soa"
+    },
+    {
+      "lines": [
+        250,
+        252
+      ],
+      "paraphrase": "The check reads the framework config for checkOrigin false and the hooks for cairn guard.",
+      "new-fact": "f:4dolfa"
+    },
+    {
+      "lines": [
+        254,
+        259
+      ],
+      "paraphrase": "Claim: a hand-built site with no svelte.config.js makes the check skip.",
+      "new-fact": "f:c0iqug"
+    },
+    {
+      "lines": [
+        256,
+        257
+      ],
+      "paraphrase": "A scaffolded site always has svelte.config.js with checkOrigin false.",
+      "fact": "f:7rehzh"
+    },
+    {
+      "lines": [
+        257,
+        259
+      ],
+      "paraphrase": "Ask a developer and the build-by-hand pointer.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        261,
+        264
+      ],
+      "paraphrase": "Fix: code change in two files, the framework config and the hooks file.",
+      "new-fact": "f:4dolfa"
+    },
+    {
+      "lines": [
+        266,
+        266
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:5v8cda"
+    },
+    {
+      "lines": [
+        268,
+        276
+      ],
+      "paraphrase": "A blanket no-referrer strips Origin so a same-origin form is rejected; admin already scopes it.",
+      "new-fact": "f:np34jo"
+    },
+    {
+      "lines": [
+        278,
+        282
+      ],
+      "paraphrase": "A PASS covers only the two files the check can read.",
+      "new-fact": "f:np34jo"
+    },
+    {
+      "lines": [
+        284,
+        286
+      ],
+      "paraphrase": "A skip means neither file was found.",
+      "new-fact": "f:np34jo"
+    },
+    {
+      "lines": [
+        288,
+        296
+      ],
+      "paraphrase": "Fix: serve strict-origin-when-cross-origin or same-origin; scope no-referrer to token routes.",
+      "new-fact": "f:np34jo"
+    },
+    {
+      "lines": [
+        298,
+        298
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:kuabx4"
+    },
+    {
+      "lines": [
+        300,
+        302
+      ],
+      "paraphrase": "PUBLIC_ORIGIN is unset, unparseable, or plain http on a non-local host.",
+      "new-fact": "f:by1dv5"
+    },
+    {
+      "lines": [
+        304,
+        306
+      ],
+      "paraphrase": "Fix: set the canonical https origin in wrangler vars; dev.vars carries a local http override.",
+      "new-fact": "f:by1dv5"
+    },
+    {
+      "lines": [
+        308,
+        308
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:14yvmr"
+    },
+    {
+      "lines": [
+        310,
+        311
+      ],
+      "paraphrase": "site.config.yaml fails to parse or validate, so concepts cannot resolve.",
+      "new-fact": "f:sig8q0"
+    },
+    {
+      "lines": [
+        313,
+        314
+      ],
+      "paraphrase": "Fix: the error names the failing field; correct site.config.yaml.",
+      "new-fact": "f:sig8q0"
+    },
+    {
+      "lines": [
+        316,
+        316
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:4nsmr2"
+    },
+    {
+      "lines": [
+        318,
+        321
+      ],
+      "paraphrase": "The lockfile resolves svelte or kit below the floor; an older compiler can miscompile silently.",
+      "new-fact": "f:rrkwlr"
+    },
+    {
+      "lines": [
+        323,
+        325
+      ],
+      "paraphrase": "Fix: raise the package range to the floor and reinstall.",
+      "new-fact": "f:rrkwlr"
+    },
+    {
+      "lines": [
+        327,
+        327
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:wnjk35"
+    },
+    {
+      "lines": [
+        329,
+        330
+      ],
+      "paraphrase": "No command checks this until a later CLI release; run a tidy suggestion instead.",
+      "fact": "f:z2vl1z"
+    },
+    {
+      "lines": [
+        330,
+        333
+      ],
+      "paraphrase": "Tidy is enabled but no valid ANTHROPIC_API_KEY is reachable; only tidy is affected.",
+      "new-fact": "f:xzzsah"
+    },
+    {
+      "lines": [
+        335,
+        336
+      ],
+      "paraphrase": "Fix: set ANTHROPIC_API_KEY as a Worker secret or in dev.vars.",
+      "new-fact": "f:xzzsah"
+    },
+    {
+      "lines": [
+        338,
+        338
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:sypkjf"
+    },
+    {
+      "lines": [
+        340,
+        342
+      ],
+      "paraphrase": "The site declares a stance but the served robots.txt does not carry it.",
+      "new-fact": "f:2d4crp"
+    },
+    {
+      "lines": [
+        344,
+        350
+      ],
+      "paraphrase": "Something ahead of the origin, often a managed robots.txt, rewrites it; otherwise a developer fixes it.",
+      "new-fact": "f:2d4crp"
+    },
+    {
+      "lines": [
+        352,
+        352
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:y6bqvu"
+    },
+    {
+      "lines": [
+        354,
+        357
+      ],
+      "paraphrase": "No command checks four auth conditions; role wiring is still covered by the doctor.",
+      "new-fact": "f:bw5uk0"
+    },
+    {
+      "lines": [
+        359,
+        363
+      ],
+      "paraphrase": "AUTH_DB is missing, lacks tables, or has no owner row, so no link can be minted.",
+      "new-fact": "f:tkufq6"
+    },
+    {
+      "lines": [
+        360,
+        363
+      ],
+      "paraphrase": "Claim: a scaffolded site skips this check instead of failing.",
+      "new-fact": "f:8x6xqz"
+    },
+    {
+      "lines": [
+        365,
+        369
+      ],
+      "paraphrase": "Fix: apply the auth schema, seed the owner row, confirm the AUTH_DB binding.",
+      "new-fact": "f:tkufq6"
+    },
+    {
+      "lines": [
+        366,
+        367
+      ],
+      "paraphrase": "Migration 0000 creates the tables and 0004 adds the sign-in binding column.",
+      "fact": "f:attun4"
+    },
+    {
+      "lines": [
+        371,
+        374
+      ],
+      "paraphrase": "AUTH_DB lacks migration 0004 so every sign-in fails; the site reports it on first attempt.",
+      "fact": "f:nzlyrk"
+    },
+    {
+      "lines": [
+        376,
+        377
+      ],
+      "paraphrase": "Fix: copy migration 0004 into the site migrations and apply it.",
+      "new-fact": "f:cic443"
+    },
+    {
+      "lines": [
+        379,
+        382
+      ],
+      "paraphrase": "A row has an undeclared role: the person can sign in but is refused everywhere.",
+      "new-fact": "f:vdcqgx"
+    },
+    {
+      "lines": [
+        384,
+        385
+      ],
+      "paraphrase": "Fix: restore the role or set the person to a declared role.",
+      "new-fact": "f:vdcqgx"
+    },
+    {
+      "lines": [
+        387,
+        389
+      ],
+      "paraphrase": "Custom roles declared but the guard was not told, so it falls back to owner and editor.",
+      "new-fact": "f:hwffph"
+    },
+    {
+      "lines": [
+        391,
+        391
+      ],
+      "paraphrase": "Pointer to restricting admin access.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        393,
+        395
+      ],
+      "paraphrase": "A stored email with capitals or spaces breaks the trimmed-lowercase assumption.",
+      "new-fact": "f:o1a3i3"
+    },
+    {
+      "lines": [
+        397,
+        398
+      ],
+      "paraphrase": "Fix: correct the row; editors added through the admin are always normalized.",
+      "new-fact": "f:o1a3i3"
+    },
+    {
+      "lines": [
+        400,
+        400
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:ow0vx5"
+    },
+    {
+      "lines": [
+        402,
+        402
+      ],
+      "paraphrase": "No command checks the GitHub App.",
+      "new-fact": "f:bw5uk0"
+    },
+    {
+      "lines": [
+        402,
+        404
+      ],
+      "paraphrase": "Claim: confirm a commit authored by the bot lands on main.",
+      "new-fact": "f:jk30dz"
+    },
+    {
+      "lines": [
+        404,
+        406
+      ],
+      "paraphrase": "Key parse, App authentication, token minting, or a repository read fails, so saves cannot commit.",
+      "new-fact": "f:lg0umh"
+    },
+    {
+      "lines": [
+        408,
+        414
+      ],
+      "paraphrase": "Confirm the App is installed; otherwise the App id, installation id, or key in Worker secrets.",
+      "new-fact": "f:lg0umh"
+    },
+    {
+      "lines": [
+        414,
+        414
+      ],
+      "paraphrase": "Pointer to rotating the App key.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        416,
+        416
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:h5irat"
+    },
+    {
+      "lines": [
+        418,
+        421
+      ],
+      "paraphrase": "A best-effort text check of the shared layout and catch-all route; a false trip is possible.",
+      "new-fact": "f:8t0z57"
+    },
+    {
+      "lines": [
+        423,
+        424
+      ],
+      "paraphrase": "Fix: confirm the admin mount matches the canonical mount.",
+      "new-fact": "f:8t0z57"
+    },
+    {
+      "lines": [
+        426,
+        426
+      ],
+      "paraphrase": "Section heading.",
+      "new-fact": "f:4s8m8v"
+    },
+    {
+      "lines": [
+        428,
+        433
+      ],
+      "paraphrase": "No tool checks the login probe; do the manual workers.dev and preview alias GET instead.",
+      "fact": "f:iaqcq6"
+    },
+    {
+      "lines": [
+        435,
+        437
+      ],
+      "paraphrase": "Fix: gate the workers.dev address or set workers_dev and preview_urls to false.",
+      "new-fact": "f:fcww0e"
+    }
+  ]
+}

@@ -1,0 +1,182 @@
+{
+  "page": "docs/admin/invite-editors.md",
+  "blob": "16f99eec08f241910adf6dca434aba80511b346b",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page tagline.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        5
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        7,
+        8
+      ],
+      "paraphrase": "Adding editors needs sign-in email: a connected domain with Email Sending.",
+      "fact": "f:rlur7t"
+    },
+    {
+      "lines": [
+        8,
+        9
+      ],
+      "paraphrase": "Without email sign-in only the owner can sign in.",
+      "new-fact": "f:k4di6b"
+    },
+    {
+      "lines": [
+        11,
+        11
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        13,
+        14
+      ],
+      "paraphrase": "Every signed-in person is an owner or editor; a developer can add roles.",
+      "fact": "f:1gw32w"
+    },
+    {
+      "lines": [
+        14,
+        15
+      ],
+      "paraphrase": "A site with custom roles shows extra role choices on the screen.",
+      "fact": "f:54vcy2"
+    },
+    {
+      "lines": [
+        15,
+        17
+      ],
+      "paraphrase": "An owner does everything an editor can plus manages the roster; editors cannot change access.",
+      "fact": "f:pwb0wr"
+    },
+    {
+      "lines": [
+        16,
+        17
+      ],
+      "paraphrase": "Editors can write and publish; only owners manage access.",
+      "new-fact": "f:xg3ey6"
+    },
+    {
+      "lines": [
+        17,
+        19
+      ],
+      "paraphrase": "The page will not remove or demote the last owner.",
+      "fact": "f:hja54x"
+    },
+    {
+      "lines": [
+        21,
+        21
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        23,
+        24
+      ],
+      "paraphrase": "At the bottom of the editors screen, fill in name, email, role, and select Add editor.",
+      "new-fact": "f:udg87q"
+    },
+    {
+      "lines": [
+        24,
+        25
+      ],
+      "paraphrase": "No email is sent from that action and there is no separate invitation step.",
+      "fact": "f:nj0nfm"
+    },
+    {
+      "lines": [
+        25,
+        27
+      ],
+      "paraphrase": "The added person signs in later at the admin with their email and receives a link.",
+      "fact": "f:ogq0pm"
+    },
+    {
+      "lines": [
+        29,
+        29
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        31,
+        33
+      ],
+      "paraphrase": "The page lists everyone who can sign in, with Remove in each row and a role button.",
+      "new-fact": "f:udg87q"
+    },
+    {
+      "lines": [
+        33,
+        35
+      ],
+      "paraphrase": "Default roles show Make owner or Make editor; custom roles show a dropdown and Change.",
+      "fact": "f:54vcy2"
+    },
+    {
+      "lines": [
+        35,
+        37
+      ],
+      "paraphrase": "Your own row controls are disabled; the last-owner rule is the real lockout guard.",
+      "fact": "f:rzjq7y"
+    },
+    {
+      "lines": [
+        39,
+        39
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        41,
+        43
+      ],
+      "paraphrase": "The added person can go to the admin, enter their email, and receive a sign-in link.",
+      "fact": "f:ogq0pm"
+    },
+    {
+      "lines": [
+        43,
+        45
+      ],
+      "paraphrase": "Mail can take a while to warm up right after email sign-in is first turned on.",
+      "new-fact": "f:u5k82m"
+    }
+  ]
+}

@@ -11,10 +11,8 @@ This subpath carries the second-audience login discipline the factory owns: code
 canonicalization, identity derivation and salting, the atomic budget and lockout mechanics,
 session issuance and revocation, and the D1 schema underneath all of it. The email magic-link
 stays the zero-config default and the documented primary path for cairn editors. A general-purpose
-auth primitive with no bearing on this discipline stays out. See [the security
-model](../extend/auth-channel-security-model.md) for the threat catalogue and the rule this
-design is built from: no control keyed on the victim's identity may deny, delay, or destroy
-anything.
+auth primitive with no bearing on this discipline stays out. The design is built from one rule: no
+control keyed on the victim's identity may deny, delay, or destroy anything.
 
 ```ts
 import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
@@ -142,9 +140,7 @@ code for a polluted environment, so SvelteKit renders your error page instead of
 form. The flag is read from both `platform.env` and `process.env`. "Deployed" reads the configured
 `PUBLIC_ORIGIN` first and falls back to the request's own hostname only when no `PUBLIC_ORIGIN` is
 set. Local development with the flag set is untouched, which is what lets a dev transport use the
-flag as its own enable contract. See [the security
-model](../extend/security-model.md#what-the-dev-backend-flags-two-refusals-leave-open) for
-the full rule and what it doesn't cover.
+flag as its own enable contract.
 
 ## Config obligations
 
@@ -154,8 +150,7 @@ must be idempotent, canonical per identity, and injective across distinct people
 budget. `lookup`'s returned subject must be stable and canonical per person. `challenge` is the
 most load-bearing of the three: the factory awaits its return value and treats a truthy result as a
 passed check, with no way to distinguish a real Turnstile `siteverify` call from `async () => true`,
-and the whole economic bound on guessing a code (see [the security
-model](../extend/auth-channel-security-model.md)) is `challenge`'s consequence.
+and the whole economic bound on guessing a code is `challenge`'s consequence.
 
 ## Defaults and clamps
 
@@ -178,7 +173,7 @@ const channel = createAuthChannel<Env>({
 | `code.length` | Digits per code | 8 | 8 to 10 |
 | `code.ttlMs` | Code lifetime, in ms | 600000 (10 minutes) | at most 900000 (15 minutes) |
 | `code.attemptCap` | Wrong-guess cap per code row | 5 | at most 10 |
-| `throttle.cooldownMs` | Resend cooldown per nonce, in ms; UX only (see [Residual risks](../extend/auth-channel-security-model.md)) | 60000 (60 seconds) | at least 30000 (30 seconds) |
+| `throttle.cooldownMs` | Resend cooldown per nonce, in ms; UX only | 60000 (60 seconds) | at least 30000 (30 seconds) |
 | `throttle.requesterCap` | Requester sends per hour, keyed on the address-and-identity bucket | 20 | 5 to 100 |
 | `throttle.identityCeiling` | Identity send ceiling per hour; logs [`auth.channel.ceiling_exceeded`](./log-events.md) only, never denies | 30 | at least 10 |
 | `throttle.escalationThreshold` | Identity failure-escalation threshold per hour, past which `confirm` answers `challenge-required` | 20 | at least 10 |
@@ -208,8 +203,7 @@ The factory's own D1 schema ships as a migration file in the package, at
 `migrations-channel/0000_channel.sql`: the `cairn_channel_meta`, `cairn_channel_code`,
 `cairn_channel_session`, and `cairn_channel_budget` tables, their indexes, and one `INSERT` that
 seeds `schema_version`. Point your channel binding's `migrations_dir` at a copy of that directory,
-never at the `migrations` directory your site's `AUTH_DB` uses; see [Add a second
-audience](../extend/add-a-second-audience.md) for the wiring. A shared `migrations_dir` applies
+never at the `migrations` directory your site's `AUTH_DB` uses. A shared `migrations_dir` applies
 cairn's auth migrations to the channel database and the channel's schema to the auth store.
 
 Every statement is idempotent (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, and

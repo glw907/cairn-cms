@@ -97,6 +97,6 @@ needs to work around.
 SvelteKit deprecated `csrf.checkOrigin` in 2.61, in favor of `csrf.trustedOrigins`, but has not
 removed it ([sveltejs/kit#15992](https://github.com/sveltejs/kit/issues/15992)). Read
 "deprecated" as exactly that, not "unsupported": cairn's admin CSRF ownership still depends on
-disabling `checkOrigin` (see [Disable checkOrigin](../extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff)),
+disabling `checkOrigin`,
 and the current SvelteKit range in this matrix still ships it. This table does not track the
 removal; the linked issue is where it will be announced.

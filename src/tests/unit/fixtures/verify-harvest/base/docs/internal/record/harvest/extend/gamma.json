@@ -1,0 +1,10 @@
+{
+  "page": "docs/extend/gamma.md",
+  "blob": "9f34f7820b316ee12cad313b0272e5ebbc4016ba",
+  "claims": [
+    { "lines": [1, 1], "paraphrase": "Page heading.", "cut": "navigation" },
+    { "lines": [3, 3], "paraphrase": "A value judgment about building.", "cut": "marketing" },
+    { "lines": [5, 5], "paraphrase": "A platform detail nobody acts on.", "cut": "external-trivia" },
+    { "lines": [7, 7], "paraphrase": "A stance the owner brief does not carry.", "cut": "stance-without-owner-basis" }
+  ]
+}

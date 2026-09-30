@@ -1,0 +1,214 @@
+{
+  "page": "docs/extend/announce-on-publish.md",
+  "blob": "0113a61921891cc27d9f8dc97477a2245f1225bd",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "The seam detects entries a deploy carried across their first publish, for the site to fan out.",
+      "fact": "f:ix641z"
+    },
+    {
+      "lines": [
+        7,
+        9
+      ],
+      "paraphrase": "The engine sends nothing over the network; it only ships the diffing logic.",
+      "fact": "f:xlj297"
+    },
+    {
+      "lines": [
+        11,
+        11
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        13,
+        14
+      ],
+      "paraphrase": "buildNewlyPublished diffs two manifests down to first-publish transitions.",
+      "fact": "f:ix641z"
+    },
+    {
+      "lines": [
+        16,
+        32
+      ],
+      "paraphrase": "Snippet: parse both manifests from the delivery data subpath and loop over the newly published entries.",
+      "new-fact": "f:tdbki1"
+    },
+    {
+      "lines": [
+        34,
+        36
+      ],
+      "paraphrase": "An entry is newly published when live, stamped in after, and unstamped or absent in before.",
+      "fact": "f:ix641z"
+    },
+    {
+      "lines": [
+        36,
+        38
+      ],
+      "paraphrase": "A carried stamp or a live entry never stamped does not match.",
+      "fact": "f:ix641z"
+    },
+    {
+      "lines": [
+        38,
+        40
+      ],
+      "paraphrase": "The draft check runs first and excludes a draft whether or not its stamp changed.",
+      "fact": "f:pm1osl"
+    },
+    {
+      "lines": [
+        40,
+        41
+      ],
+      "paraphrase": "A removal is silent here because an entry deleted from after never comes back.",
+      "new-fact": "f:u1mies"
+    },
+    {
+      "lines": [
+        43,
+        45
+      ],
+      "paraphrase": "The helper is pure: no I/O and no clock read, so results are deterministic.",
+      "fact": "f:pc3iy5"
+    },
+    {
+      "lines": [
+        47,
+        47
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        49,
+        49
+      ],
+      "paraphrase": "The engine keeps no state across deploys.",
+      "fact": "f:xlj297"
+    },
+    {
+      "lines": [
+        49,
+        51
+      ],
+      "paraphrase": "A null before means no prior manifest and returns every stamped live entry, a full fan-out.",
+      "fact": "f:6cas58"
+    },
+    {
+      "lines": [
+        51,
+        51
+      ],
+      "paraphrase": "A full fan-out suits a first backfill run, not an ordinary deploy.",
+      "new-fact": "f:4wnm6o"
+    },
+    {
+      "lines": [
+        51,
+        53
+      ],
+      "paraphrase": "The site persists the prior manifest between deploys and passes it as before.",
+      "fact": "f:xlj297"
+    },
+    {
+      "lines": [
+        55,
+        55
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        57,
+        59
+      ],
+      "paraphrase": "A rename changes the concept and id identity key, so it reads as a new publish.",
+      "fact": "f:df3hqw"
+    },
+    {
+      "lines": [
+        59,
+        62
+      ],
+      "paraphrase": "The helper cannot tell a renamed entry from a new one; a site must filter renames itself.",
+      "fact": "f:df3hqw"
+    },
+    {
+      "lines": [
+        64,
+        64
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        66,
+        70
+      ],
+      "paraphrase": "Deleting a published entry and recreating one under the same id re-announces it as a first publish.",
+      "fact": "f:w3m0ac"
+    },
+    {
+      "lines": [
+        70,
+        72
+      ],
+      "paraphrase": "A row keeps its stamp only while it exists and stays published.",
+      "fact": "f:w3m0ac"
+    },
+    {
+      "lines": [
+        74,
+        74
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        76,
+        77
+      ],
+      "paraphrase": "A fresh publish appears once and not again on a later unchanged deploy.",
+      "fact": "f:ix641z"
+    },
+    {
+      "lines": [
+        77,
+        78
+      ],
+      "paraphrase": "A rename shows up too unless the site filters it.",
+      "fact": "f:df3hqw"
+    },
+    {
+      "lines": [
+        78,
+        78
+      ],
+      "paraphrase": "A deletion never shows up.",
+      "new-fact": "f:u1mies"
+    }
+  ]
+}

@@ -1,0 +1,310 @@
+{
+  "page": "docs/extend/wire-the-delivery-surface.md",
+  "blob": "d25ca4a882d49a284d123c97a0e016fcc58caf77",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "The public routes include the entry catch-all built by createPublicRoutes.",
+      "fact": "f:pkt8i6"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "The public routes include a raw-markdown twin of the entry route.",
+      "fact": "f:03lbjg"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "The public routes include the feed, the sitemap, and robots.txt.",
+      "new-fact": "f:pvk6h5"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "Precondition pointer to the adapter page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        9,
+        11
+      ],
+      "paraphrase": "Where the catch-all route is first wired and what this page adds.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        13,
+        13
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        15,
+        16
+      ],
+      "paraphrase": "Every delivery route reads through one typed index built from raw markdown globs.",
+      "fact": "f:yef4lo"
+    },
+    {
+      "lines": [
+        17,
+        32
+      ],
+      "paraphrase": "Snippet building the site indexes and exporting the site resolver, the posts index, and the origin.",
+      "new-fact": "f:hv8qs9"
+    },
+    {
+      "lines": [
+        34,
+        35
+      ],
+      "paraphrase": "Vite needs a literal glob per concept, so the concept list cannot be looped.",
+      "fact": "f:yef4lo"
+    },
+    {
+      "lines": [
+        37,
+        43
+      ],
+      "paraphrase": "Every route reads one shared ORIGIN kept as a literal, with per-environment config instead of env branching.",
+      "fact": "f:niuzzg"
+    },
+    {
+      "lines": [
+        45,
+        45
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        47,
+        66
+      ],
+      "paraphrase": "Snippet wiring the entry catch-all route through createPublicRoutes.",
+      "fact": "f:pkt8i6"
+    },
+    {
+      "lines": [
+        68,
+        69
+      ],
+      "paraphrase": "entryLoad resolves one entry by path and throws 404 on a miss; entries enumerates routable entries.",
+      "fact": "f:pkt8i6"
+    },
+    {
+      "lines": [
+        69,
+        70
+      ],
+      "paraphrase": "Pointer to the reference page for EntryData and CairnHead.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        72,
+        76
+      ],
+      "paraphrase": "markdownEntries and markdownLoad build a .md twin of each routable, non-noindex entry.",
+      "fact": "f:03lbjg"
+    },
+    {
+      "lines": [
+        78,
+        83
+      ],
+      "paraphrase": "Snippet defining the md param matcher.",
+      "fact": "f:03lbjg"
+    },
+    {
+      "lines": [
+        85,
+        107
+      ],
+      "paraphrase": "Snippet serving the markdown twin route through markdownResponse.",
+      "fact": "f:03lbjg"
+    },
+    {
+      "lines": [
+        109,
+        113
+      ],
+      "paraphrase": "The md param matcher claims only .md segments and SvelteKit prefers the more specific route.",
+      "fact": "f:03lbjg"
+    },
+    {
+      "lines": [
+        113,
+        115
+      ],
+      "paraphrase": "SvelteKit routing docs do not cover this pairing.",
+      "cut": "external-trivia"
+    },
+    {
+      "lines": [
+        117,
+        117
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        119,
+        120
+      ],
+      "paraphrase": "markdownResponse sets text/markdown with charset deliberately; whether it survives depends on the server.",
+      "fact": "f:gwpffe"
+    },
+    {
+      "lines": [
+        122,
+        127
+      ],
+      "paraphrase": "The Cloudflare adapter does not write a prerendered route Response headers into the _headers file.",
+      "fact": "f:gwpffe"
+    },
+    {
+      "lines": [
+        128,
+        134
+      ],
+      "paraphrase": "wrangler dev returns the same content type whatever the route sets, so Cloudflare derives it from the extension.",
+      "fact": "f:gwpffe"
+    },
+    {
+      "lines": [
+        134,
+        136
+      ],
+      "paraphrase": "vite preview serves text/markdown with no charset.",
+      "fact": "f:gwpffe"
+    },
+    {
+      "lines": [
+        138,
+        140
+      ],
+      "paraphrase": "The charset ships correctly on Cloudflare only by coincidence; vite preview is no reliable stand-in.",
+      "fact": "f:gwpffe"
+    },
+    {
+      "lines": [
+        140,
+        143
+      ],
+      "paraphrase": "The finding was measured under wrangler dev only, not on a live zone, and for no other extension.",
+      "fact": "f:gwpffe"
+    },
+    {
+      "lines": [
+        143,
+        145
+      ],
+      "paraphrase": "Verify another extension the same way before relying on the coincidence.",
+      "fact": "f:gwpffe"
+    },
+    {
+      "lines": [
+        147,
+        147
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        149,
+        149
+      ],
+      "paraphrase": "Each feed, sitemap, and robots surface has a pure builder and a Response responder.",
+      "new-fact": "f:pvk6h5"
+    },
+    {
+      "lines": [
+        151,
+        177
+      ],
+      "paraphrase": "Snippet serving the RSS feed with rssResponse and FeedItem.",
+      "new-fact": "f:pvk6h5"
+    },
+    {
+      "lines": [
+        159,
+        161
+      ],
+      "paraphrase": "The feed resolves cairn: links through createLinkResolver.",
+      "new-fact": "f:d7v5cg"
+    },
+    {
+      "lines": [
+        179,
+        193
+      ],
+      "paraphrase": "Snippet serving the sitemap with sitemapResponse and SitemapUrl.",
+      "new-fact": "f:pvk6h5"
+    },
+    {
+      "lines": [
+        195,
+        204
+      ],
+      "paraphrase": "Snippet serving robots.txt with a sitemap URL and disallow of /admin.",
+      "fact": "f:0elmiu"
+    },
+    {
+      "lines": [
+        206,
+        207
+      ],
+      "paraphrase": "Always disallow /admin because nothing else blocks a crawler from the sign-in page.",
+      "fact": "f:0elmiu"
+    },
+    {
+      "lines": [
+        207,
+        209
+      ],
+      "paraphrase": "robotsResponse takes a posture option for an AI-crawler stance.",
+      "fact": "f:xafwcw"
+    },
+    {
+      "lines": [
+        211,
+        212
+      ],
+      "paraphrase": "The reference documents every builder, including the JSON Feed builder beside RSS.",
+      "new-fact": "f:pvk6h5"
+    },
+    {
+      "lines": [
+        214,
+        215
+      ],
+      "paraphrase": "A build prerenders the sitemap, feed, and robots routes and preview serves them.",
+      "new-fact": "f:8k9xwm"
+    }
+  ]
+}

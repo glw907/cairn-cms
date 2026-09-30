@@ -1,6 +1,6 @@
 // Archetype: the custom admin screen over the site's own table.
 // Atoms: requireAccess, createSectionAction, createLogger.
-// Recipe: docs/extend/add-a-custom-admin-screen.md (the docs rewrite writes it).
+// Recipe: docs/reference/sveltekit.md (createSectionAction, requireAccess).
 //
 // A developer's own custom admin screen, proving the extension seam. It is a concrete route
 // under /admin (so it wins over the catch-all), inherits the guard-populated locals.cairnEditor, renders

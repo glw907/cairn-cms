@@ -1,0 +1,550 @@
+{
+  "page": "docs/extend/enable-tidy.md",
+  "blob": "51e4c85a366db5e5feaf4cf683f74e66ffec52fb",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Tidy is an optional copy-edit pass an editor runs over their own draft.",
+      "fact": "f:glluwk"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "The style conventions Tidy enforces are configurable.",
+      "fact": "f:3yte99"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "Tidy is opt-in, off by default, and never runs on its own; an editor triggers it from inside a draft.",
+      "fact": "f:glluwk"
+    },
+    {
+      "lines": [
+        7,
+        8
+      ],
+      "paraphrase": "An editor reviews each proposed change as a diff and accepts or rejects hunks before anything is saved.",
+      "fact": "f:noqkmx"
+    },
+    {
+      "lines": [
+        10,
+        10
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "The Anthropic SDK is an optional peer dependency that npm does not install automatically.",
+      "fact": "f:vcthwj"
+    },
+    {
+      "lines": [
+        13,
+        13
+      ],
+      "paraphrase": "A site that never turns Tidy on builds cleanly without the SDK.",
+      "fact": "f:ymsfzv"
+    },
+    {
+      "lines": [
+        15,
+        17
+      ],
+      "paraphrase": "Install command for the SDK.",
+      "fact": "f:vcthwj"
+    },
+    {
+      "lines": [
+        19,
+        20
+      ],
+      "paraphrase": "Set tidy.enabled in site.config.yaml and bind ANTHROPIC_API_KEY as a Worker secret.",
+      "fact": "f:avtt69"
+    },
+    {
+      "lines": [
+        22,
+        26
+      ],
+      "paraphrase": "YAML snippet enabling tidy.",
+      "fact": "f:avtt69"
+    },
+    {
+      "lines": [
+        28,
+        30
+      ],
+      "paraphrase": "Wrangler command that stores the API key secret.",
+      "fact": "f:avtt69"
+    },
+    {
+      "lines": [
+        32,
+        34
+      ],
+      "paraphrase": "ANTHROPIC_API_KEY is the one optional platform binding.",
+      "fact": "f:59aion"
+    },
+    {
+      "lines": [
+        34,
+        34
+      ],
+      "paraphrase": "No command checks the API key.",
+      "fact": "f:z2vl1z"
+    },
+    {
+      "lines": [
+        34,
+        36
+      ],
+      "paraphrase": "The settings screen probes the key and tells a missing key from a rejected one.",
+      "fact": "f:rcoz6t"
+    },
+    {
+      "lines": [
+        36,
+        39
+      ],
+      "paraphrase": "A rejected key fails a tidy run with a reason, logs tidy.failed auth, and closes the feature.",
+      "fact": "f:mg0n21"
+    },
+    {
+      "lines": [
+        41,
+        41
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        43,
+        47
+      ],
+      "paraphrase": "YAML snippet setting tidy.model to the Haiku model.",
+      "fact": "f:0j54bd"
+    },
+    {
+      "lines": [
+        49,
+        49
+      ],
+      "paraphrase": "The default model is claude-sonnet-5.",
+      "fact": "f:fmv6m8"
+    },
+    {
+      "lines": [
+        49,
+        50
+      ],
+      "paraphrase": "Sonnet 5 is called the judgment floor for a light copy-edit.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        49,
+        50
+      ],
+      "paraphrase": "Tidy runs at the low effort tier by default.",
+      "fact": "f:ssdn1f"
+    },
+    {
+      "lines": [
+        50,
+        51
+      ],
+      "paraphrase": "Haiku is a documented cheaper and faster model choice.",
+      "fact": "f:4c92fh"
+    },
+    {
+      "lines": [
+        51,
+        54
+      ],
+      "paraphrase": "The model is a developer-tier setting shown read-only to editors; changing it means editing tidy.model.",
+      "fact": "f:0j54bd"
+    },
+    {
+      "lines": [
+        56,
+        60
+      ],
+      "paraphrase": "tidy.conventions adds style rules beyond the always-on objective fixes.",
+      "fact": "f:3yte99"
+    },
+    {
+      "lines": [
+        62,
+        70
+      ],
+      "paraphrase": "YAML snippet declaring four conventions.",
+      "fact": "f:sdz8sm"
+    },
+    {
+      "lines": [
+        72,
+        73
+      ],
+      "paraphrase": "Only fixes defaults on; enabled alone runs the objective fixes only.",
+      "fact": "f:3yte99"
+    },
+    {
+      "lines": [
+        75,
+        76
+      ],
+      "paraphrase": "Table header row.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        77,
+        77
+      ],
+      "paraphrase": "The fixes toggle is claimed to switch off the objective fixes.",
+      "new-fact": "f:x4lexa"
+    },
+    {
+      "lines": [
+        77,
+        77
+      ],
+      "paraphrase": "fixes is a boolean defaulting to true.",
+      "fact": "f:sdz8sm"
+    },
+    {
+      "lines": [
+        78,
+        78
+      ],
+      "paraphrase": "oxfordComma takes always, complex-only, or never.",
+      "fact": "f:sdz8sm"
+    },
+    {
+      "lines": [
+        78,
+        78
+      ],
+      "paraphrase": "complex-only follows the AP complex-series rule.",
+      "fact": "f:625qj8"
+    },
+    {
+      "lines": [
+        79,
+        79
+      ],
+      "paraphrase": "numberStyle takes under-ten, under-hundred, or always-numerals.",
+      "fact": "f:sdz8sm"
+    },
+    {
+      "lines": [
+        79,
+        79
+      ],
+      "paraphrase": "Ages, dates, measurements, and percentages stay numerals at any threshold.",
+      "fact": "f:625qj8"
+    },
+    {
+      "lines": [
+        80,
+        80
+      ],
+      "paraphrase": "measurements takes abbreviate or spell-out.",
+      "fact": "f:sdz8sm"
+    },
+    {
+      "lines": [
+        80,
+        80
+      ],
+      "paraphrase": "measurements changes the notation only, never the unit system or the number.",
+      "fact": "f:625qj8"
+    },
+    {
+      "lines": [
+        81,
+        82
+      ],
+      "paraphrase": "percent and emDash values and what each changes.",
+      "new-fact": "f:tna81y"
+    },
+    {
+      "lines": [
+        83,
+        83
+      ],
+      "paraphrase": "enDashRanges is a boolean defaulting to false.",
+      "fact": "f:sdz8sm"
+    },
+    {
+      "lines": [
+        83,
+        84
+      ],
+      "paraphrase": "enDashRanges converts number-range hyphens; ellipsis picks the ellipsis form.",
+      "new-fact": "f:tna81y"
+    },
+    {
+      "lines": [
+        85,
+        85
+      ],
+      "paraphrase": "timeFormat takes three literal formats.",
+      "new-fact": "f:tna81y"
+    },
+    {
+      "lines": [
+        86,
+        86
+      ],
+      "paraphrase": "smartQuotes is a boolean defaulting to false.",
+      "fact": "f:sdz8sm"
+    },
+    {
+      "lines": [
+        86,
+        86
+      ],
+      "paraphrase": "smartQuotes applies the full apostrophe rule set.",
+      "fact": "f:625qj8"
+    },
+    {
+      "lines": [
+        87,
+        87
+      ],
+      "paraphrase": "brandCaps is a boolean defaulting to false.",
+      "fact": "f:sdz8sm"
+    },
+    {
+      "lines": [
+        87,
+        87
+      ],
+      "paraphrase": "brandCaps corrects only names on a curated list.",
+      "fact": "f:625qj8"
+    },
+    {
+      "lines": [
+        89,
+        89
+      ],
+      "paraphrase": "The settings screen edits the conventions once tidy is on.",
+      "fact": "f:rcoz6t"
+    },
+    {
+      "lines": [
+        89,
+        90
+      ],
+      "paraphrase": "A settings-screen save writes the conventions block into the same committed site config.",
+      "fact": "f:0j54bd"
+    },
+    {
+      "lines": [
+        92,
+        92
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        94,
+        95
+      ],
+      "paraphrase": "An editor adds a word to the personal dictionary from inside the tidy review.",
+      "new-fact": "f:66alqp"
+    },
+    {
+      "lines": [
+        95,
+        97
+      ],
+      "paraphrase": "The personal dictionary is a separate committed file, not a config choice.",
+      "fact": "f:xijdh6"
+    },
+    {
+      "lines": [
+        99,
+        99
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        101,
+        105
+      ],
+      "paraphrase": "Cairn checks the model output against the original and discards a failing result.",
+      "fact": "f:q412re"
+    },
+    {
+      "lines": [
+        105,
+        106
+      ],
+      "paraphrase": "A failing result never reaches the review screen and the text stays unchanged.",
+      "fact": "f:s6av65"
+    },
+    {
+      "lines": [
+        106,
+        108
+      ],
+      "paraphrase": "The structural check backstops a bad rewrite and prompt injection, not the model second-guessing itself.",
+      "fact": "f:s6av65"
+    },
+    {
+      "lines": [
+        108,
+        109
+      ],
+      "paraphrase": "Conventions and the prompt govern voice; the structural check cannot.",
+      "fact": "f:s6av65"
+    },
+    {
+      "lines": [
+        111,
+        111
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        113,
+        115
+      ],
+      "paraphrase": "A draft over about 24,000 characters is refused before the model is called.",
+      "fact": "f:f5548q"
+    },
+    {
+      "lines": [
+        114,
+        115
+      ],
+      "paraphrase": "The refusal tells the editor to select a shorter passage.",
+      "fact": "f:rdenuk"
+    },
+    {
+      "lines": [
+        115,
+        117
+      ],
+      "paraphrase": "Key health results are cached for a ten-minute window.",
+      "fact": "f:6zqexn"
+    },
+    {
+      "lines": [
+        117,
+        119
+      ],
+      "paraphrase": "Local development is claimed to inject a stubbed Anthropic client automatically.",
+      "fact": "f:38qxp3"
+    },
+    {
+      "lines": [
+        117,
+        119
+      ],
+      "paraphrase": "Under the scaffold dev backend a canned client stands in for the Anthropic SDK.",
+      "new-fact": "f:mbw7mk"
+    },
+    {
+      "lines": [
+        121,
+        121
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        123,
+        124
+      ],
+      "paraphrase": "Tidy does not replace spellcheck, which is configured separately.",
+      "fact": "f:jay6aq"
+    },
+    {
+      "lines": [
+        124,
+        125
+      ],
+      "paraphrase": "Pointer to the editor guide.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        127,
+        127
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        129,
+        130
+      ],
+      "paraphrase": "The settings screen shows the editor tier of controls when tidy is set up.",
+      "fact": "f:rcoz6t"
+    },
+    {
+      "lines": [
+        130,
+        131
+      ],
+      "paraphrase": "Tidy on a draft yields a diff for review.",
+      "fact": "f:noqkmx"
+    },
+    {
+      "lines": [
+        131,
+        132
+      ],
+      "paraphrase": "A refusal names its reason, such as tidy off, key missing, or body too long.",
+      "fact": "f:rdenuk"
+    },
+    {
+      "lines": [
+        131,
+        132
+      ],
+      "paraphrase": "A rejected key returns a refusal naming the key problem.",
+      "fact": "f:mg0n21"
+    },
+    {
+      "lines": [
+        132,
+        132
+      ],
+      "paraphrase": "Bare failures that state no reason merit a closer look.",
+      "cut": "stance-without-owner-basis"
+    }
+  ]
+}

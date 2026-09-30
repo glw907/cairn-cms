@@ -13,9 +13,7 @@ imports a compiled .cairn/admin.css in its shell layout; the snippets below use 
 This wiring assumes the site disables SvelteKit's own origin check for form posts, `csrf: {
 checkOrigin: false }`, since cairn's guard owns CSRF for the admin through a double-submit token.
 A current `sv create` scaffold carries no `svelte.config.js` at all: the adapter and the CSRF
-setting both go inside `vite.config.ts`'s `sveltekit({ ... })` call instead. See
-[Build a site by hand](../extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff)
-for the worked edit.
+setting both go inside `vite.config.ts`'s `sveltekit({ ... })` call instead.
 
 ## The route files plus the composer
 
@@ -78,8 +76,7 @@ export const load = admin.shellLoad;
 ```
 
 A site adds its own admin screen by dropping a concrete route under `/admin/` (for example
-`/admin/signups`), which wins over the catch-all and renders inside this same shell. See
-[Add a custom admin screen](../extend/add-a-custom-admin-screen.md) for the worked route.
+`/admin/signups`), which wins over the catch-all and renders inside this same shell.
 
 The composer builds the runtime once, and every server route that needs it (the admin mount,
 `/healthz`) imports it rather than re-running `composeRuntime` per route:

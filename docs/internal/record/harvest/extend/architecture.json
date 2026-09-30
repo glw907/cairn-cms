@@ -1,0 +1,462 @@
+{
+  "page": "docs/extend/architecture.md",
+  "blob": "c00f636daebb8409d26a79ad15ed7ade71624c43",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Statement of what the page covers: the engine, the adapter, the seams.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        7
+      ],
+      "paraphrase": "Diagram: a site's parts reaching six engine export groups and three data stores.",
+      "fact": "f:a7qx4m"
+    },
+    {
+      "lines": [
+        8,
+        8
+      ],
+      "paraphrase": "Site adapter, admin mount, and delivery routes each reach into the engine's export groups.",
+      "new-fact": "f:3rb362"
+    },
+    {
+      "lines": [
+        8,
+        8
+      ],
+      "paraphrase": "The SvelteKit layer touches the git repository for reads and writes.",
+      "new-fact": "f:40pxcq"
+    },
+    {
+      "lines": [
+        8,
+        8
+      ],
+      "paraphrase": "Auth and platform reads and writes D1.",
+      "new-fact": "f:4b3rhm"
+    },
+    {
+      "lines": [
+        8,
+        8
+      ],
+      "paraphrase": "Delivery reads and writes R2.",
+      "new-fact": "f:4dqyi5"
+    },
+    {
+      "lines": [
+        10,
+        14
+      ],
+      "paraphrase": "Site subgraph naming the adapter config, admin mount, and delivery routes.",
+      "new-fact": "f:3rb362"
+    },
+    {
+      "lines": [
+        16,
+        23
+      ],
+      "paraphrase": "Engine subgraph naming six groups and their subpaths.",
+      "fact": "f:a7qx4m"
+    },
+    {
+      "lines": [
+        25,
+        27
+      ],
+      "paraphrase": "Three stores: git, D1, R2.",
+      "fact": "f:pgy0mr"
+    },
+    {
+      "lines": [
+        29,
+        30
+      ],
+      "paraphrase": "Adapter config feeds the core group; the admin mount calls the SvelteKit layer.",
+      "new-fact": "f:3rb362"
+    },
+    {
+      "lines": [
+        31,
+        31
+      ],
+      "paraphrase": "Delivery routes call the SvelteKit layer.",
+      "new-fact": "f:3x332v"
+    },
+    {
+      "lines": [
+        32,
+        32
+      ],
+      "paraphrase": "The core group feeds the SvelteKit layer.",
+      "new-fact": "f:3rb362"
+    },
+    {
+      "lines": [
+        33,
+        36
+      ],
+      "paraphrase": "The SvelteKit layer feeds the admin UI, rendering, delivery, and auth groups.",
+      "new-fact": "f:40pxcq"
+    },
+    {
+      "lines": [
+        37,
+        37
+      ],
+      "paraphrase": "The SvelteKit layer reaches the git repository.",
+      "new-fact": "f:40pxcq"
+    },
+    {
+      "lines": [
+        38,
+        38
+      ],
+      "paraphrase": "Auth and platform reads and writes D1.",
+      "new-fact": "f:4b3rhm"
+    },
+    {
+      "lines": [
+        39,
+        40
+      ],
+      "paraphrase": "Delivery reads and writes R2; diagram fence closes.",
+      "new-fact": "f:4dqyi5"
+    },
+    {
+      "lines": [
+        42,
+        43
+      ],
+      "paraphrase": "The boxes group the export subpaths by function; the reference index documents each subpath.",
+      "new-fact": "f:533flu"
+    },
+    {
+      "lines": [
+        45,
+        45
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        47,
+        49
+      ],
+      "paraphrase": "A site declares one adapter, typically at src/theme/cairn.config.ts, listing concepts, repo, sender, render, and optional seams.",
+      "new-fact": "f:5vjwlc"
+    },
+    {
+      "lines": [
+        49,
+        51
+      ],
+      "paraphrase": "The engine hard-codes no concept, directory, or field; every factory, screen, and helper reads the one adapter.",
+      "fact": "f:4esdoz"
+    },
+    {
+      "lines": [
+        51,
+        52
+      ],
+      "paraphrase": "Left at scaffold defaults the adapter yields an owner and editor CMS.",
+      "fact": "f:nz890r"
+    },
+    {
+      "lines": [
+        52,
+        53
+      ],
+      "paraphrase": "Adding concepts, roles, or screens edits the adapter rather than forking the engine.",
+      "new-fact": "f:6a32oy"
+    },
+    {
+      "lines": [
+        55,
+        55
+      ],
+      "paraphrase": "The root barrel and the SvelteKit layer are the core and kit split the diagram draws.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        56,
+        58
+      ],
+      "paraphrase": "The root barrel has no SvelteKit import and the SvelteKit subpath has no Svelte component; components sit on admin and public.",
+      "fact": "f:0duu5p"
+    },
+    {
+      "lines": [
+        58,
+        60
+      ],
+      "paraphrase": "The split keeps the content model usable from a build script and the route layer free of Svelte's client runtime.",
+      "new-fact": "f:5uhx5o"
+    },
+    {
+      "lines": [
+        62,
+        65
+      ],
+      "paraphrase": "Each seam is a typed contract the engine consumes; sites supply them rather than reach into internals.",
+      "fact": "f:i87sd3"
+    },
+    {
+      "lines": [
+        67,
+        68
+      ],
+      "paraphrase": "The content map holds one ConceptConfig per concept, each with a fieldset.",
+      "fact": "f:i87sd3"
+    },
+    {
+      "lines": [
+        69,
+        72
+      ],
+      "paraphrase": "One render function, built with createRenderer and a registry, serves the live preview and every public page.",
+      "fact": "f:3l7f56"
+    },
+    {
+      "lines": [
+        73,
+        75
+      ],
+      "paraphrase": "The access map and role vocabulary gate route authorization and nav visibility from one declaration.",
+      "fact": "f:vqh4a9"
+    },
+    {
+      "lines": [
+        76,
+        77
+      ],
+      "paraphrase": "navLayout is one ordered tree arranging the whole sidebar, mixing engine and custom screens.",
+      "fact": "f:nvpcmk"
+    },
+    {
+      "lines": [
+        78,
+        81
+      ],
+      "paraphrase": "The Backend is the read-and-commit interface; createGithubApp is the only shipped provider.",
+      "fact": "f:i87sd3"
+    },
+    {
+      "lines": [
+        82,
+        84
+      ],
+      "paraphrase": "AssetConfig resolves into the R2 binding and upload limits that routes and the media library read.",
+      "new-fact": "f:69rw88"
+    },
+    {
+      "lines": [
+        86,
+        86
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        88,
+        88
+      ],
+      "paraphrase": "A save never touches the default branch directly.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        90,
+        92
+      ],
+      "paraphrase": "Sequence diagram title and the framing of a save and publish path.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        93,
+        93
+      ],
+      "paraphrase": "A save commits with the editor as author and cairn-cms[bot] as committer.",
+      "new-fact": "f:5fwrpf"
+    },
+    {
+      "lines": [
+        93,
+        93
+      ],
+      "paraphrase": "Saves land on a per-entry branch; publishing copies it to the default branch, which triggers the deploy.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        94,
+        101
+      ],
+      "paraphrase": "Diagram participants and the editor saving an entry.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        102,
+        102
+      ],
+      "paraphrase": "The commit carries editor as author and cairn-cms[bot] as committer.",
+      "new-fact": "f:5fwrpf"
+    },
+    {
+      "lines": [
+        103,
+        108
+      ],
+      "paraphrase": "The holding branch receives the commit; publish copies it to the default branch, which triggers deploy.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        110,
+        110
+      ],
+      "paraphrase": "The holding branch is per entry and named cairn/<concept>/<id>.",
+      "fact": "f:cjonmm"
+    },
+    {
+      "lines": [
+        112,
+        113
+      ],
+      "paraphrase": "Multiple saves accumulate on the holding branch, and the admin lists pending entries from it.",
+      "new-fact": "f:5kerxw"
+    },
+    {
+      "lines": [
+        113,
+        115
+      ],
+      "paraphrase": "Author is the editor and committer cairn-cms[bot], so history credits the editor and every commit traces to the App.",
+      "new-fact": "f:5fwrpf"
+    },
+    {
+      "lines": [
+        115,
+        117
+      ],
+      "paraphrase": "Pointers to the security model and content model pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        119,
+        119
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        121,
+        123
+      ],
+      "paraphrase": "One entry's full body, for a public page render or an edit load, is read directly through the Backend.",
+      "new-fact": "f:5kijg0"
+    },
+    {
+      "lines": [
+        123,
+        124
+      ],
+      "paraphrase": "Corpus-wide needs such as an index, tag list, sitemap, or link check read the committed manifest.",
+      "new-fact": "f:5m3725"
+    },
+    {
+      "lines": [
+        124,
+        125
+      ],
+      "paraphrase": "The manifest is a JSON summary of each entry's identity, routing, and outgoing links.",
+      "fact": "f:t5ebsr"
+    },
+    {
+      "lines": [
+        125,
+        126
+      ],
+      "paraphrase": "The manifest is rebuilt at build time.",
+      "fact": "f:e69d0l"
+    },
+    {
+      "lines": [
+        125,
+        126
+      ],
+      "paraphrase": "The manifest row is updated in the save commit.",
+      "fact": "f:7bladx"
+    },
+    {
+      "lines": [
+        126,
+        127
+      ],
+      "paraphrase": "The manifest exists so the admin and delivery layer never crawl the repository through the GitHub API.",
+      "fact": "f:z5boz6"
+    },
+    {
+      "lines": [
+        128,
+        129
+      ],
+      "paraphrase": "The engine owns D1 for auth and R2 for media bytes directly; the data tiers page places the manifest.",
+      "fact": "f:pgy0mr"
+    },
+    {
+      "lines": [
+        131,
+        131
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        133,
+        135
+      ],
+      "paraphrase": "Directive dispatch, commit tree operations, and the guard's CSRF and session resolution are engine-internal.",
+      "fact": "f:n3cvf9"
+    },
+    {
+      "lines": [
+        135,
+        137
+      ],
+      "paraphrase": "Internals sit behind stability-tiered public surfaces, so upgrades may change them while contracts hold.",
+      "fact": "f:gknz29"
+    },
+    {
+      "lines": [
+        138,
+        141
+      ],
+      "paraphrase": "An undocumented import signals site-owned work; a site's own domain reaches the engine only via seams.",
+      "fact": "f:bhyvqg"
+    }
+  ]
+}

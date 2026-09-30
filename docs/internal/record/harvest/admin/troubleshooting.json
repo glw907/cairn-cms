@@ -1,0 +1,454 @@
+{
+  "page": "docs/admin/troubleshooting.md",
+  "blob": "1b2ea82164fb3c6c12e34dd1bc7eb3f406309d36",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page tagline.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        9
+      ],
+      "paraphrase": "Three routing bullets to the diagnostic pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        11,
+        11
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        13,
+        15
+      ],
+      "paraphrase": "Confirm logging is on by running cairn doctor and checking the observability condition.",
+      "fact": "f:kjp61u"
+    },
+    {
+      "lines": [
+        15,
+        17
+      ],
+      "paraphrase": "Once on, the site writes one structured record per event with name, level, timestamp, and fields.",
+      "fact": "f:rkj7tn"
+    },
+    {
+      "lines": [
+        19,
+        21
+      ],
+      "paraphrase": "Read logs through Workers Logs in the dashboard or wrangler tail.",
+      "new-fact": "f:gzs6b8"
+    },
+    {
+      "lines": [
+        21,
+        22
+      ],
+      "paraphrase": "The full event list is in the reference.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        22,
+        24
+      ],
+      "paraphrase": "Records carry the editor email, never a token or session id.",
+      "fact": "f:pwzfrj"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        28
+      ],
+      "paraphrase": "Symptom: the sign-in link never sends or never arrives.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        30,
+        33
+      ],
+      "paraphrase": "The sending-domain check runs through cairn health once the site is adopted.",
+      "new-fact": "f:67pwmj"
+    },
+    {
+      "lines": [
+        33,
+        34
+      ],
+      "paraphrase": "The auth store has no command yet; check the database by hand.",
+      "new-fact": "f:bw5uk0"
+    },
+    {
+      "lines": [
+        34,
+        36
+      ],
+      "paraphrase": "Confirm the person email is on the roster; sign-in looks the email up in the allowlist.",
+      "fact": "f:ogq0pm"
+    },
+    {
+      "lines": [
+        38,
+        39
+      ],
+      "paraphrase": "The ordinary check-your-inbox message is the same whether or not the address is on the roster.",
+      "new-fact": "f:vympj2"
+    },
+    {
+      "lines": [
+        39,
+        41
+      ],
+      "paraphrase": "Message: you requested a link recently, check your inbox or wait a minute.",
+      "fact": "f:uhxwem"
+    },
+    {
+      "lines": [
+        39,
+        41
+      ],
+      "paraphrase": "Message: trouble sending sign-in links right now.",
+      "fact": "f:25zrne"
+    },
+    {
+      "lines": [
+        41,
+        43
+      ],
+      "paraphrase": "Those two messages appear only for roster addresses.",
+      "new-fact": "f:vympj2"
+    },
+    {
+      "lines": [
+        45,
+        47
+      ],
+      "paraphrase": "A link works only in the requesting browser; another browser shows no pending sign-in.",
+      "fact": "f:71luk5"
+    },
+    {
+      "lines": [
+        47,
+        48
+      ],
+      "paraphrase": "Mail apps with built-in viewers are the usual cause.",
+      "new-fact": "f:ivpv77"
+    },
+    {
+      "lines": [
+        50,
+        55
+      ],
+      "paraphrase": "A developer can seed a recovery magic_token row with a null nonce_hash for a locked-out sole owner.",
+      "fact": "f:o2i3cu"
+    },
+    {
+      "lines": [
+        57,
+        58
+      ],
+      "paraphrase": "Log events: requested, minted, send_failed, refused.",
+      "new-fact": "f:4tmw56"
+    },
+    {
+      "lines": [
+        60,
+        60
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        62,
+        63
+      ],
+      "paraphrase": "Symptom: a form is refused immediately.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        65,
+        67
+      ],
+      "paraphrase": "The guard rejects requests before the screen behind them.",
+      "fact": "f:7qqhda"
+    },
+    {
+      "lines": [
+        67,
+        68
+      ],
+      "paraphrase": "cairn health checks HTTPS once the site is adopted.",
+      "new-fact": "f:67pwmj"
+    },
+    {
+      "lines": [
+        69,
+        69
+      ],
+      "paraphrase": "CSRF token rejections are not reported by the doctor.",
+      "fact": "f:9cztdn"
+    },
+    {
+      "lines": [
+        70,
+        72
+      ],
+      "paraphrase": "Origin rejections are not reported by the doctor; both appear as guard.refused records.",
+      "fact": "f:ex1604"
+    },
+    {
+      "lines": [
+        74,
+        77
+      ],
+      "paraphrase": "A missing database binding makes every admin page, sign-in included, show the same branded error.",
+      "new-fact": "f:ck1any"
+    },
+    {
+      "lines": [
+        79,
+        80
+      ],
+      "paraphrase": "guard.refused reason values are https, csrf, origin, and bindings.",
+      "fact": "f:05q9zk"
+    },
+    {
+      "lines": [
+        82,
+        82
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        84,
+        84
+      ],
+      "paraphrase": "Symptom: a save or publish is refused.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        86,
+        89
+      ],
+      "paraphrase": "A conflict means the entry changed on GitHub since opening; review and save again.",
+      "fact": "f:y4nzgp"
+    },
+    {
+      "lines": [
+        88,
+        89
+      ],
+      "paraphrase": "Non-conflict failures usually implicate the GitHub App.",
+      "new-fact": "f:lg0umh"
+    },
+    {
+      "lines": [
+        90,
+        91
+      ],
+      "paraphrase": "Debug pointer for saves failing after a successful publish.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        93,
+        94
+      ],
+      "paraphrase": "Publish site appears only when something is pending to publish.",
+      "fact": "f:hi9nim"
+    },
+    {
+      "lines": [
+        94,
+        95
+      ],
+      "paraphrase": "Inside an entry the Publish site button stands down.",
+      "new-fact": "f:iqlr1w"
+    },
+    {
+      "lines": [
+        95,
+        97
+      ],
+      "paraphrase": "If GitHub cannot be read, the button is hidden rather than showing a guessed count.",
+      "fact": "f:hi9nim"
+    },
+    {
+      "lines": [
+        98,
+        98
+      ],
+      "paraphrase": "Apply the same GitHub App check to a missing button.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        100,
+        102
+      ],
+      "paraphrase": "commit.failed on a save carries reason conflict or an error field naming GitHub answer.",
+      "fact": "f:bijnzl"
+    },
+    {
+      "lines": [
+        100,
+        102
+      ],
+      "paraphrase": "publish.failed on a publish has the same shape.",
+      "new-fact": "f:lmh555"
+    },
+    {
+      "lines": [
+        102,
+        104
+      ],
+      "paraphrase": "A github.unreachable record marks the worrying missing-button case.",
+      "fact": "f:hi9nim"
+    },
+    {
+      "lines": [
+        106,
+        106
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        108,
+        109
+      ],
+      "paraphrase": "Symptom: a person signs in but every screen refuses them.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        111,
+        114
+      ],
+      "paraphrase": "An undeclared role resolves to no access, so every screen refuses the person.",
+      "fact": "f:4bazhe"
+    },
+    {
+      "lines": [
+        116,
+        116
+      ],
+      "paraphrase": "The refusal logs an auth.role.unknown record.",
+      "fact": "f:4bazhe"
+    },
+    {
+      "lines": [
+        118,
+        118
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        120,
+        120
+      ],
+      "paraphrase": "Symptom: an image will not upload.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        122,
+        124
+      ],
+      "paraphrase": "The reason field names the upload failure: too_large, unsupported_type, session_expired.",
+      "fact": "f:1wimos"
+    },
+    {
+      "lines": [
+        124,
+        127
+      ],
+      "paraphrase": "The other reasons are operational refusals that need a developer.",
+      "new-fact": "f:zhpap6"
+    },
+    {
+      "lines": [
+        129,
+        129
+      ],
+      "paraphrase": "Failed uploads log a media.upload_failed record.",
+      "fact": "f:1wimos"
+    },
+    {
+      "lines": [
+        131,
+        131
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        133,
+        134
+      ],
+      "paraphrase": "The admin shows a calm failure message instead of a raw crash.",
+      "new-fact": "f:7ele62"
+    },
+    {
+      "lines": [
+        136,
+        138
+      ],
+      "paraphrase": "Claim: the strip means a custom screen or action threw.",
+      "new-fact": "f:nbeuiv"
+    },
+    {
+      "lines": [
+        140,
+        140
+      ],
+      "paraphrase": "Log event admin.action.failed with the message in its error field.",
+      "new-fact": "f:7ele62"
+    },
+    {
+      "lines": [
+        141,
+        141
+      ],
+      "paraphrase": "Claim: the author of the custom screen should receive the record.",
+      "new-fact": "f:nbeuiv"
+    }
+  ]
+}

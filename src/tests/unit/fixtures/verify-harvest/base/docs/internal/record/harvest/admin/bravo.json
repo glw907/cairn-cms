@@ -1,0 +1,10 @@
+{
+  "page": "docs/admin/bravo.md",
+  "blob": "1033b6918e50ce9294a50a603152c1361906466c",
+  "claims": [
+    { "lines": [1, 1], "paraphrase": "Page heading.", "cut": "navigation" },
+    { "lines": [3, 3], "paraphrase": "A platform fact about GitHub.", "fact": "f:bb0001" },
+    { "lines": [5, 5], "paraphrase": "A vendor figure.", "fact": "f:bb0002" },
+    { "lines": [7, 7], "paraphrase": "A claim the code contradicts, recorded as rejected.", "new-fact": "f:bb0003" }
+  ]
+}

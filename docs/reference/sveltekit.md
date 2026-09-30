@@ -577,8 +577,7 @@ seam's fail-open promise at its own call site, not merely by the sink's own disc
 holds it against both failure shapes: a sink that throws synchronously, and a sink that returns a
 rejecting promise. The rejecting case is reachable in practice, not theoretical: the seam's
 `(record) => void` type admits an async function through void-return bivariance, the same pressure
-that writes a sink following the `waitUntil` advice in [add a custom admin
-screen](../extend/add-a-custom-admin-screen.md#wire-the-auditsink). `ctx.audit` catches the
+that writes a sink following the `waitUntil` advice. `ctx.audit` catches the
 synchronous throw directly and attaches a fire-and-forget rejection handler to a promise-returning
 result, so the handler's own result still returns exactly as if the sink had succeeded either way,
 and the failure logs `audit.sink.call_failed` (see [log events](./log-events.md)) rather
@@ -707,7 +706,7 @@ optional parameter would make the shortest call the one that silently drops the 
 isolate tears down before it settles, so omitting it (typically when no `event.platform.ctx` is
 reachable) has to be a decision the caller makes on purpose, with the drop risk understood.
 
-The sink is fail-open, the same convention as [a hand-rolled one](../extend/add-a-custom-admin-screen.md#wire-the-auditsink):
+The sink is fail-open, the same convention as a hand-rolled one:
 it returns synchronously, before the insert settles, so a persist failure never fails the audited
 action, and a rejected insert logs `audit.sink.write_failed` (see [log events](./log-events.md))
 carrying the whole truncated record plus the error, since the audited action already completed and
@@ -763,8 +762,7 @@ actions. `createSectionAction` composes [`createAdminAction`](#createadminaction
 the single form read, the audit contract) with the same access-map check
 [`requireAccess`](#requireaccess) runs, an optional rate limit, and the section's own database
 binding, so a section's own actions need no hand-rolled precondition. This is the sanctioned
-shape for a custom section regardless of what any given site's own routes show. See [Add a
-custom admin screen](../extend/add-a-custom-admin-screen.md#gate-it).
+shape for a custom section regardless of what any given site's own routes show.
 
 The config is site-fixed, called once per section: `config.resolveDb` reads the section's own
 binding off the platform env, and `config.rateLimit`, when set, names the binding and the
@@ -949,8 +947,7 @@ to the browser that asked for it. `loginLoad` sets it on the GET, so a browser h
 posts anything, and `requestAction` reuses that value rather than rotating it. On the throttled
 branch, where the send cooldown suppresses a second email, `requestAction` also rebinds the live
 token to the requesting browser when the two disagree, which is what keeps repeated requests from
-locking an editor out of their own link. See [the security
-model](../extend/security-model.md#sign-in-binds-to-the-browser-that-asked) for the full behavior.
+locking an editor out of their own link.
 
 `requestAction` awaits the send, so its `RequestOutcome` reflects the outcome. The awaited-send
 behavior dates to `0.38.0`, under the type's earlier name `RequestResult` and a `status`
@@ -966,8 +963,7 @@ a manual `wrangler d1 execute` insert. On a request whose normalized email match
 `editor` table is still empty, `requestAction` inserts the owner atomically (a single
 `INSERT ... WHERE NOT EXISTS` statement) before the normal magic-link flow proceeds, and logs
 `editor.bootstrapped`. Once any row exists the config grants nothing, and a non-matching email on
-an empty table behaves exactly as an unknown email. The hand-run `wrangler d1 execute` insert (the
-[configure auth and D1 guide](../extend/add-cairn-to-a-sveltekit-app.md)) still works and stays documented
+an empty table behaves exactly as an unknown email. The hand-run `wrangler d1 execute` insert still works and stays documented
 as the fallback for a site that prefers it.
 
 ```ts
@@ -1185,8 +1181,7 @@ still-live entry). All three close the same id-reuse collision, where a stale li
 resolve to a different entry's draft; publishing deliberately leaves the rows in place, since
 [`loadPreview`](#loadpreview) needs them to answer a stale link with "this preview has ended" rather
 than a bare 404. See [Public preview](#public-preview) below for the site-mounted page these actions
-feed, and [Share a draft preview](../extend/share-a-draft-preview.md) for the adopter's full
-walkthrough.
+feed.
 
 `settingsLoad` and `settingsSaveAction` back the tidy settings screen. `settingsLoad` actively probes a
 present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /
@@ -1332,9 +1327,7 @@ non-editor"): the edit screen's share affordance, the preceding
 [`previewMintAction`](#createcontentroutes) section, mints an opaque token for the entry's pending
 draft, and a site-mounted, never-prerendered
 page renders it through the site's own public composition, so the preview is a real page in the
-site's own app rather than an approximated shell. See [Share a draft
-preview](../extend/share-a-draft-preview.md) for the full adopter walkthrough, including the
-`preview_tokens` migration, the mount, and the lifecycle.
+site's own app rather than an approximated shell.
 
 **Disambiguation: two unrelated `preview` seams share a word.** [`CairnRuntime.preview`](#types)
 (`PreviewConfig`) is the site's stylesheets and container classes for the *admin editor's own*
@@ -1591,10 +1584,7 @@ answer for a site that wants to add just one link beside the built-in screens: d
 with that one entry, and every engine screen the declaration omits lands in the trailing fallback
 group automatically, with no need to enumerate the rest of the sidebar. Every engine door and every
 site entry's href is additionally gated by the site's declared [access
-map](./core.md#access-map), when one is declared: see [Restrict admin access by
-role](../extend/restrict-admin-access.md) for the map, and [Organize your admin
-nav](../extend/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
-icon overrides, and the omission-fallback and `hidden` semantics in practice.
+map](./core.md#access-map), when one is declared.
 
 ### `NavLayoutEntry`
 
@@ -1678,10 +1668,7 @@ An engine screen the tree never references still renders, in a trailing group af
 shell's foot slot), in engine order; `hidden: true` on an engine reference removes the door on
 purpose (the route itself stays live, since nav placement is never authorization). Every engine
 door and every site entry's href is additionally gated by the site's declared [access
-map](./core.md#access-map), when one is declared: see [Restrict admin access by
-role](../extend/restrict-admin-access.md) for the map, and [Organize your admin
-nav](../extend/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
-icon overrides, and the omission-fallback and `hidden` semantics in practice.
+map](./core.md#access-map), when one is declared.
 
 ### `EngineScreenId`
 
@@ -1916,8 +1903,7 @@ badge on the matching visible nav entry, capped at `99+`; a collapsed section's 
 sum of its visible children's counts, computed from the same live items as the leaf badges, and
 disappears once the section opens (the item badges remain); the count lives in the entry link's
 accessible name, never on the badge span itself, which is `aria-hidden`. That is the rendering
-contract in full. See [Organize your admin nav](../extend/organize-your-admin-nav.md) for the
-layout these counts attach to.
+contract in full.
 
 ---
 

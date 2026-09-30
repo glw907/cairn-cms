@@ -1,7 +1,7 @@
 <!--
 @component
 The showcase's member login page: a request form (contact to code) and a confirm form (code to
-session), the documented exemplar rendered (docs/extend/add-a-second-audience.md). Both forms
+session), the documented exemplar rendered. Both forms
 embed `insecureTestChallenge`'s static token; see `members/channel.ts`'s header comment for why
 this fixture cannot reach challenges.cloudflare.com, and wire a real Turnstile widget in the same
 slot on a real site instead. The confirm form carries no `contact` field on purpose: `confirm`

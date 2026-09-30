@@ -9,6 +9,13 @@
 // directory of its own, reachable only from the front door. FRONT_DOOR_PAGES covers it, so a front
 // door that stops linking the evaluator's page fails the same way an unindexed arm page does.
 //
+// The admin, editors, and extend arms and the front door are checked only in the rebuilt state
+// (arm-state.mjs): an absent arm has no page to index, and extend's kept-only state holds just its
+// per-version records, which stand without an index until the arm is rebuilt. Once an arm holds any
+// page outside the kept set, its index must exist and link every page in it, kept pages included.
+// The state comes from the committed deletion list, never from whether a directory or an index
+// exists, so an arm cannot pass this gate by losing its index.
+//
 // `docs/internal` is a fifth arm, contributor-zone rather than published, and walks non-recursively:
 // only its own top-level `.md` files are checked against `docs/internal/README.md`. It carries dated
 // record files under `docs/internal/record/` and other subdirectories (`design/`, `feedback/`,
@@ -19,22 +26,25 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { resolve, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { linksIn, isExternal } from './docs-links.mjs';
+import { readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 // Each arm's directory and the index file that must link every page in it. `recursive` defaults to
 // true; an arm sets it false to check only its own top-level `.md` files, skipping every
-// subdirectory (`docs/internal`'s `record/`, `design/`, `feedback/`, `history/`, `probes/`).
+// subdirectory (`docs/internal`'s `record/`, `design/`, `feedback/`, `history/`, `probes/`). An
+// entry naming `state` is checked only while that arm-state arm is rebuilt; the rest always are.
 const ARMS = [
   { dir: 'docs/reference', index: 'docs/reference/README.md' },
-  { dir: 'docs/admin', index: 'docs/admin/README.md' },
-  { dir: 'docs/editors', index: 'docs/editors/README.md' },
-  { dir: 'docs/extend', index: 'docs/extend/README.md' },
+  { dir: 'docs/admin', index: 'docs/admin/README.md', state: 'admin' },
+  { dir: 'docs/editors', index: 'docs/editors/README.md', state: 'editors' },
+  { dir: 'docs/extend', index: 'docs/extend/README.md', state: 'extend' },
   { dir: 'docs/internal', index: 'docs/internal/README.md', recursive: false },
 ];
 
 // Published pages that belong to no arm directory, each with the index that must link it. A bare
-// file cannot be found by walking an arm, so it is named here or it is checked by nothing.
+// file cannot be found by walking an arm, so it is named here or it is checked by nothing. Checked
+// only while the front door is rebuilt.
 const FRONT_DOOR_PAGES = [
   { page: 'docs/why-cairn.md', index: 'docs/README.md' },
 ];
@@ -49,8 +59,12 @@ const ALLOWLIST = /** @type {Set<string>} */ (new Set());
 const SKIP_DIRS = new Set(['__snapshots__', 'snapshots']);
 
 // Recursively collect `.md` files under a directory, as absolute paths, skipping SKIP_DIRS.
-/** @param {string} dir */
+/**
+ * @param {string} dir
+ * @returns {string[]}
+ */
 function walkMarkdown(dir) {
+  /** @type {string[]} */
   const out = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (SKIP_DIRS.has(entry.name)) continue;
@@ -91,9 +105,11 @@ function linkTargetsOf(indexAbs) {
  * index file that should link it.
  */
 export function findUnindexedPages(root = ROOT) {
+  const states = readArmStates(root);
   /** @type {{ arm: string, page: string, index: string }[]} */
   const missing = [];
-  for (const { dir, index, recursive = true } of ARMS) {
+  for (const { dir, index, recursive = true, state } of ARMS) {
+    if (state && states[state] !== 'rebuilt') continue;
     const dirAbs = join(root, dir);
     const indexAbs = join(root, index);
     if (!existsSync(dirAbs) || !statSync(dirAbs).isDirectory()) {
@@ -111,7 +127,7 @@ export function findUnindexedPages(root = ROOT) {
       if (!targets.has(pageAbs)) missing.push({ arm: dir, page, index });
     }
   }
-  for (const { page, index } of FRONT_DOOR_PAGES) {
+  for (const { page, index } of states['front-door'] === 'rebuilt' ? FRONT_DOOR_PAGES : []) {
     const pageAbs = join(root, page);
     const indexAbs = join(root, index);
     if (!existsSync(pageAbs)) {
@@ -130,7 +146,10 @@ export function findUnindexedPages(root = ROOT) {
 function main() {
   const missing = findUnindexedPages();
   if (missing.length === 0) {
-    console.log('check-arm-indexes: OK (every arm page is linked from its arm index)');
+    // Named on the OK line so an arm this run skipped is visible rather than silently green.
+    const skipped = Object.entries(readArmStates(ROOT)).filter(([, state]) => state !== 'rebuilt');
+    const note = skipped.length ? `; not rebuilt, so not checked: ${skipped.map(([arm, state]) => `${arm} (${state})`).join(', ')}` : '';
+    console.log(`check-arm-indexes: OK (every arm page is linked from its arm index${note})`);
     return;
   }
   console.error(`check-arm-indexes: ${missing.length} page(s) missing from their arm index\n`);

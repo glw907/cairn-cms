@@ -42,9 +42,17 @@ import { join, relative } from 'node:path';
 import { repoRoot } from '../repo-root.mjs';
 import { walk } from '../walk-files.mjs';
 import { CONFIG, runIfMain } from './reference-coverage.mjs';
+import { readArmStates } from './arm-state.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-const DOC_DIRS = ['docs/reference', 'docs/extend', 'docs/admin', 'docs/editors'];
+// An entry naming an arm-state arm (arm-state.mjs) is skipped while that arm is absent; the
+// reference arm has none, so it is always walked and a missing reference directory throws.
+const DOC_DIRS = [
+  { dir: 'docs/reference' },
+  { dir: 'docs/extend', arm: 'extend' },
+  { dir: 'docs/admin', arm: 'admin' },
+  { dir: 'docs/editors', arm: 'editors' },
+];
 const PACKAGE_NAME = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).name;
 
 const SKIP_RE = /^<!--\s*snippet-check-skip:\s*(.+?)\s*-->$/;
@@ -284,10 +292,16 @@ function isBarePropsShape(stmt) {
   return (ts.isObjectBindingPattern(decl.name) || ts.isArrayBindingPattern(decl.name)) && decl.initializer === undefined;
 }
 
-/** Every doc file under the four checked directories, repo-relative, sorted. */
-export function docFiles() {
-  return DOC_DIRS.flatMap((dir) => walk(join(ROOT, dir), (name) => name.endsWith('.md')))
-    .map((p) => relative(ROOT, p))
+/**
+ * Every doc file under the checked directories that stand, repo-relative, sorted. Throws when the
+ * deletion list the arm states come from cannot be read.
+ * @param {string} [root]
+ */
+export function docFiles(root = ROOT) {
+  const states = readArmStates(root);
+  return DOC_DIRS.filter(({ arm }) => !arm || states[arm] !== 'absent')
+    .flatMap(({ dir }) => walk(join(root, dir), (name) => name.endsWith('.md')))
+    .map((p) => relative(root, p))
     .sort();
 }
 

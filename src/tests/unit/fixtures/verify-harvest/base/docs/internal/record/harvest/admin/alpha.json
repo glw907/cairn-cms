@@ -1,0 +1,10 @@
+{
+  "page": "docs/admin/alpha.md",
+  "blob": "eeb656e49cfaa6270186525699f2a3c5650faba1",
+  "claims": [
+    { "lines": [5, 5], "paraphrase": "Page heading.", "cut": "navigation" },
+    { "lines": [7, 8], "paraphrase": "Alpha states one checkable thing.", "fact": "f:aa0001" },
+    { "lines": [10, 12], "paraphrase": "A teaching snippet that mirrors no real file.", "cut": "illustrative" },
+    { "lines": [14, 14], "paraphrase": "A list item makes a claim.", "new-fact": "f:aa0002" }
+  ]
+}

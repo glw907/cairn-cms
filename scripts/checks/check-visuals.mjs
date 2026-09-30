@@ -18,17 +18,25 @@
 // documents the same constraint), so only `main()` (the CLI entry point, run after `npm run
 // package`) imports the built `dist/reproductions/manifest.js`. A caller that already has both in
 // hand (a test, importing straight from source under vitest) can call the scan functions directly.
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
+import { readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 // The four published arms plus the front-door index. `docs/internal` is a contributor zone with
 // its own filing rules, not a published arm, so it stays out of this gate the same way it stays
-// out of the reader-facing register.
-const SCAN_DIRS = ['docs/admin', 'docs/editors', 'docs/extend', 'docs/reference'];
+// out of the reader-facing register. An entry naming an arm-state arm (arm-state.mjs) is skipped
+// while that arm is absent; the reference arm has none, so it is always scanned and a missing
+// reference directory throws.
+const SCAN_DIRS = [
+  { dir: 'docs/admin', arm: 'admin' },
+  { dir: 'docs/editors', arm: 'editors' },
+  { dir: 'docs/extend', arm: 'extend' },
+  { dir: 'docs/reference' },
+];
 const INDEX_FILES = ['docs/README.md'];
 
 // Directory names skipped while walking an arm, since they hold generated or fixture output
@@ -319,8 +327,13 @@ function walkMarkdown(dir) {
  * @param {typeof import('../../src/lib/reproductions/manifest.js').validateReproFence} [validateFence]
  */
 export function scanTree(root = ROOT, manifest = [], validateFence) {
-  const files = SCAN_DIRS.flatMap((dir) => walkMarkdown(join(root, dir)));
-  for (const indexFile of INDEX_FILES) files.push(join(root, indexFile));
+  const states = readArmStates(root);
+  const files = SCAN_DIRS.filter(({ arm }) => !arm || states[arm] !== 'absent').flatMap(({ dir }) =>
+    walkMarkdown(join(root, dir)),
+  );
+  if (states['front-door'] === 'rebuilt') {
+    for (const indexFile of INDEX_FILES) if (existsSync(join(root, indexFile))) files.push(join(root, indexFile));
+  }
 
   const violations = [];
   let diagrams = 0;

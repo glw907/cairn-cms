@@ -120,7 +120,7 @@ declaration on a missing or wrong-typed one, and both normalize the declared fie
 affordances until you declare `singular: 'post'`. Declare `singular` on every concept.
 
 The concept key `fragments` reserves reusable content: declare it to include one entry's body
-inside another with [the `::include` directive](../editors/write-in-the-editor.md#fragments). It
+inside another with the `::include` directive. It
 must use `routing: 'embedded'`, and `normalizeConcepts` throws otherwise. The include directive
 resolves against a non-routable concept, and an embedded entry publishing its own live page would
 make the same content reachable two ways.
@@ -294,8 +294,7 @@ Transformations on the zone.
 Content references a stored asset by a logical handle, `media:<slug>.<hash>` (or the bare
 `media:<hash>`), the same shape as the `cairn:` link scheme. The hash is the content identity and the
 slug is cosmetic, so a rename never breaks a reference. At render, the handle rewrites to a delivery
-URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that path. See the
-[media storage explanation](../extend/data-tiers.md) for the full model. This grew from a
+URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that path. This grew from a
 reserved seam, so it is additive: a site that declares no `media` is unchanged, and the author-facing
 upload surface lands in a later phase on this substrate.
 
@@ -480,9 +479,7 @@ leaf or a flat `object`, never another `array` and never an `object` of objects.
 an `object` and an `seo` image inside any container are not supported yet, and a deeper nesting, a
 nested reference, or a nested `seo` image throws at the `defineFieldset()` call. No field key may contain a
 dot, top-level or nested, because the editor addresses a nested value by a dotted path. There is
-no escape hatch for a deeper shape today: flatten the fields instead of nesting them. See
-[the concept model](../extend/content-model.md) for the fuller picture of how fields, frontmatter,
-and the manifest fit together.
+no escape hatch for a deeper shape today: flatten the fields instead of nesting them.
 
 Every constructor also accepts an optional `help`: one author-facing sentence the editor renders under
 the field in the Details panel, associated with the input through `aria-describedby`. It is not a
@@ -993,7 +990,6 @@ A role vocabulary says who has which name; the access map says what each name ma
 enforcement and visibility point reads: the guard's [`requireAccess`](./sveltekit.md#requireaccess)
 helper, the engine's own route gates, and the nav resolver. Capability is always the floor, and
 the map only narrows it, never widens it, so a site that declares no map sees no behavior change.
-See [Restrict admin access by role](../extend/restrict-admin-access.md) for the worked guide.
 
 #### `defineAccess`
 

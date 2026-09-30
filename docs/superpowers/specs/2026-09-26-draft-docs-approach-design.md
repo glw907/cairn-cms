@@ -116,6 +116,10 @@ draft carried the old page's framing. The program changes order:
 **Release.** cairn.pub stays pinned to `0.97.0`'s docs until the rebuilt arms ship; a release cut in
 between (theme pass C's `0.98.0`) publishes with the reference arm only, and its changelog says so.
 
+**Design.** The harvest pass's design, and the answers to the four questions this amendment left
+open (harvest proof, the per-version records, arm order, outline format), are in
+`docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md`.
+
 **Superseded:** the quarantine row's "the page-inputs agent reads the old page's claims only", the
 "per-page harvest in page inputs" row, and the per-arm freeze with its discovered-deficiency fixes
 on frozen pages (nothing remains to freeze once the old pages are deleted).

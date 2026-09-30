@@ -11,9 +11,10 @@ import {
   legacyTarget,
   legacyMapProblems,
 } from '../../../scripts/checks/docs-links.mjs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 
 describe('headingAnchors', () => {
   it('slugs a heading GitHub-style and strips backticks and punctuation', () => {
@@ -80,7 +81,8 @@ describe('scope over skills/ and claude/', () => {
   function fixtureRoot() {
     const dir = mkdtempSync(join(tmpdir(), 'docs-links-scope-'));
     tmpDirs.push(dir);
-    mkdirSync(join(dir, 'docs'), { recursive: true });
+    mkdirSync(join(dir, dirname(DELETION_LIST_PATH)), { recursive: true });
+    writeFileSync(join(dir, DELETION_LIST_PATH), JSON.stringify({ deleted: [], kept: [] }));
     return dir;
   }
 
@@ -226,5 +228,98 @@ describe('the legacy CHANGELOG path map', () => {
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('never-cited-anywhere.md');
     expect(problems[0]).toContain('no CHANGELOG.md link names');
+  });
+});
+
+// The harvest deletes the old narrative pages while dated records keep linking to them. A dated
+// record is immutable, so its links into deletion-list paths are accepted permanently; the same
+// link anywhere else stays broken. A LEGACY_PATH_MAP value on the deletion list is accepted only
+// until its arm is rebuilt (arm-state.mjs), when the entry has to be repointed at a live page.
+describe('deletion-list links', () => {
+  const tmpDirs: string[] = [];
+  afterEach(() => {
+    for (const dir of tmpDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+  const LIST = { deleted: ['docs/admin/is-it-working.md', 'docs/extend/enable-tidy.md', 'docs/why-cairn.md'], kept: KEPT };
+
+  function fixtureRoot(files: Record<string, string>, { list = true } = {}) {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-links-harvest-'));
+    tmpDirs.push(dir);
+    const all: Record<string, string> = { 'CHANGELOG.md': '# Changelog\n', ...files };
+    if (list) all[DELETION_LIST_PATH] = JSON.stringify(LIST);
+    for (const [path, content] of Object.entries(all)) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), content);
+    }
+    return dir;
+  }
+
+  it('accepts a dated record\'s link into a deleted page, anchor and all, from each dated tree', () => {
+    const root = fixtureRoot({
+      'CHANGELOG.md': '# Changelog\n\nsee [check](docs/admin/is-it-working.md#force-https-at-the-edge)\n',
+      'docs/internal/record/2026-09-01-x.md': 'see [tidy](../../extend/enable-tidy.md)\n',
+      'docs/internal/history/old.md': 'see [why](../../why-cairn.md)\n',
+      'docs/internal/feedback/note.md': 'see [check](../../admin/is-it-working.md)\n',
+      'docs/internal/record/2026-09-02-y.md': 'see [the editors arm](../../editors/)\n',
+    });
+    expect(findBrokenLinks(root)).toEqual([]);
+  });
+
+  it('fails a non-dated file\'s link to a deleted arm\'s directory', () => {
+    const root = fixtureRoot({ 'docs/reference/core.md': 'see [the editors arm](../editors/)\n' });
+    expect(findBrokenLinks(root)).toHaveLength(1);
+  });
+
+  it('fails the same link written anywhere that is not a dated record', () => {
+    const root = fixtureRoot({ 'docs/reference/core.md': 'see [tidy](../extend/enable-tidy.md)\n' });
+    expect(findBrokenLinks(root)).toEqual([
+      { file: 'docs/reference/core.md', line: 1, dest: '../extend/enable-tidy.md', reason: 'target not found: ../extend/enable-tidy.md' },
+    ]);
+  });
+
+  it('fails a dated record\'s dead link to a path the deletion list does not name', () => {
+    const root = fixtureRoot({ 'docs/internal/record/x.md': 'see [gone](../../extend/never-existed.md)\n' });
+    expect(findBrokenLinks(root)).toHaveLength(1);
+  });
+
+  it('fails a dated record\'s link to a kept page that is gone, since only deleted pages are excused', () => {
+    const root = fixtureRoot({ 'docs/internal/record/x.md': 'see [notes](../../extend/migration-notes.md)\n' });
+    expect(findBrokenLinks(root)).toHaveLength(1);
+  });
+
+  it('fails closed without the deletion list', () => {
+    const root = fixtureRoot({}, { list: false });
+    expect(() => findBrokenLinks(root)).toThrow(/deletion-list\.json does not exist/);
+  });
+
+  describe('a LEGACY_PATH_MAP value on the deletion list', () => {
+    const changelog = '# Changelog\n\nsee [tidy](docs/guides/enable-tidy.md)\n';
+    const map = { 'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md' };
+
+    it('is accepted while its arm holds only the kept set', () => {
+      const root = fixtureRoot({ 'CHANGELOG.md': changelog, ...Object.fromEntries(KEPT.map((p) => [p, '# Kept\n'])) });
+      expect(legacyMapProblems(root, map)).toEqual([]);
+    });
+
+    it('is accepted while its arm is absent', () => {
+      const root = fixtureRoot({ 'CHANGELOG.md': changelog });
+      expect(legacyMapProblems(root, map)).toEqual([]);
+    });
+
+    it('fails once its arm is rebuilt without the page, so the entry gets repointed', () => {
+      const root = fixtureRoot({ 'CHANGELOG.md': changelog, 'docs/extend/a-new-page.md': '# New\n' });
+      const problems = legacyMapProblems(root, map);
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toContain('docs/extend/enable-tidy.md');
+      expect(problems[0]).toContain('no longer exists');
+    });
+
+    it('still fails a missing value the deletion list does not name, in any arm state', () => {
+      const root = fixtureRoot({ 'CHANGELOG.md': changelog });
+      const problems = legacyMapProblems(root, { 'docs/guides/enable-tidy.md': 'docs/extend/no-such-page.md' });
+      expect(problems).toEqual([expect.stringContaining('docs/extend/no-such-page.md')]);
+    });
   });
 });

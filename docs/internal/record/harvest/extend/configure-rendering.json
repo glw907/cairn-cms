@@ -1,0 +1,334 @@
+{
+  "page": "docs/extend/configure-rendering.md",
+  "blob": "310b86c8011f7fac0057bb075fa8976d73c5fcfa",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "Contract line: build the one render function and register a first component.",
+      "fact": "f:3l7f56"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "Precondition pointer to the adapter page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        9,
+        9
+      ],
+      "paraphrase": "Every adapter declares exactly one rendering.render function of type SiteRender.",
+      "fact": "f:3l7f56"
+    },
+    {
+      "lines": [
+        9,
+        10
+      ],
+      "paraphrase": "SiteRender turns an entry's markdown body into HTML.",
+      "new-fact": "f:ps54gh"
+    },
+    {
+      "lines": [
+        10,
+        12
+      ],
+      "paraphrase": "The preview calls it on a debounced update and public routes call it at build or per request.",
+      "new-fact": "f:my6ci3"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "There is no second render path to keep in sync.",
+      "fact": "f:3l7f56"
+    },
+    {
+      "lines": [
+        15,
+        15
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        17,
+        25
+      ],
+      "paraphrase": "createRenderer builds the pipeline from a registry and returns renderMarkdown; an empty registry is valid.",
+      "fact": "f:dmn2uu"
+    },
+    {
+      "lines": [
+        27,
+        36
+      ],
+      "paraphrase": "The adapter's render function forwards body and the resolvers to renderMarkdown.",
+      "new-fact": "f:ps54gh"
+    },
+    {
+      "lines": [
+        38,
+        39
+      ],
+      "paraphrase": "An empty registry still renders markdown, GFM tables, cairn: links, and media: references.",
+      "fact": "f:dmn2uu"
+    },
+    {
+      "lines": [
+        39,
+        40
+      ],
+      "paraphrase": "A site needing no further directive is done at this point.",
+      "fact": "f:dmn2uu"
+    },
+    {
+      "lines": [
+        42,
+        42
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        44,
+        45
+      ],
+      "paraphrase": "A component is one directive declared with defineComponent and built from hast.",
+      "new-fact": "f:htxey1"
+    },
+    {
+      "lines": [
+        47,
+        72
+      ],
+      "paraphrase": "Snippet: a callout component with a select attribute and title and body slots.",
+      "fact": "f:htxey1"
+    },
+    {
+      "lines": [
+        74,
+        75
+      ],
+      "paraphrase": "build returns a hast Element synchronously, once per occurrence, and cannot await.",
+      "fact": "f:s6n9zw"
+    },
+    {
+      "lines": [
+        75,
+        77
+      ],
+      "paraphrase": "Data a component needs is fetched outside the pipeline and passed through attributes.",
+      "fact": "f:s6n9zw"
+    },
+    {
+      "lines": [
+        79,
+        84
+      ],
+      "paraphrase": "Name a component's inner classes apart from DaisyUI component names or DaisyUI restyles them.",
+      "fact": "f:34wt4f"
+    },
+    {
+      "lines": [
+        86,
+        89
+      ],
+      "paraphrase": "attributes accepts exactly ten field types; the rest throw at declaration.",
+      "fact": "f:cxhx8w"
+    },
+    {
+      "lines": [
+        89,
+        90
+      ],
+      "paraphrase": "The fieldset machinery a concept uses validates attributes too.",
+      "new-fact": "f:zh8wdb"
+    },
+    {
+      "lines": [
+        90,
+        92
+      ],
+      "paraphrase": "slots name the directive's content regions; title and body are conventional and handled specially.",
+      "new-fact": "f:0aatf6"
+    },
+    {
+      "lines": [
+        94,
+        96
+      ],
+      "paraphrase": "There is no hast helper beyond hastscript's h; ctx.attr reads a declared string attribute.",
+      "new-fact": "f:2dsv35"
+    },
+    {
+      "lines": [
+        96,
+        97
+      ],
+      "paraphrase": "Pointer to the render reference's emitted classes.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        99,
+        105
+      ],
+      "paraphrase": "Snippet: registering the callout on the registry passed to createRenderer.",
+      "fact": "f:dmn2uu"
+    },
+    {
+      "lines": [
+        107,
+        114
+      ],
+      "paraphrase": "An author writes a container directive with a bracketed title and attributes.",
+      "fact": "f:fqdknx"
+    },
+    {
+      "lines": [
+        116,
+        117
+      ],
+      "paraphrase": "Preview and public page render identically because both call the same renderMarkdown.",
+      "fact": "f:3l7f56"
+    },
+    {
+      "lines": [
+        117,
+        119
+      ],
+      "paraphrase": "Leaf and text directive forms restore to literal prose, so an accidental colon survives.",
+      "fact": "f:fqdknx"
+    },
+    {
+      "lines": [
+        121,
+        121
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        123,
+        131
+      ],
+      "paraphrase": "Snippet: a component declared with hydrate true.",
+      "fact": "f:nm3bbo"
+    },
+    {
+      "lines": [
+        133,
+        140
+      ],
+      "paraphrase": "Snippet: the live component registered under islands beside render.",
+      "fact": "f:thjrvl"
+    },
+    {
+      "lines": [
+        142,
+        143
+      ],
+      "paraphrase": "Pointer to the add-an-island page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        143,
+        144
+      ],
+      "paraphrase": "Every prop crossing from server markup to a live component is untrusted.",
+      "fact": "f:jz4qka"
+    },
+    {
+      "lines": [
+        146,
+        146
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        148,
+        149
+      ],
+      "paraphrase": "renderDocument also collects every heading in document order.",
+      "fact": "f:dmn2uu"
+    },
+    {
+      "lines": [
+        151,
+        156
+      ],
+      "paraphrase": "Snippet: destructuring html and headings from renderDocument, each heading with id, text, and depth.",
+      "fact": "f:dmn2uu"
+    },
+    {
+      "lines": [
+        158,
+        160
+      ],
+      "paraphrase": "A route needing headings calls renderDocument directly; the adapter's render can stay on renderMarkdown.",
+      "new-fact": "f:ps54gh"
+    },
+    {
+      "lines": [
+        162,
+        162
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        164,
+        167
+      ],
+      "paraphrase": "RendererConfig exposes sanitizeSchema, tableScroll, and remark and rehype plugins after cairn's steps.",
+      "fact": "f:wvcw71"
+    },
+    {
+      "lines": [
+        167,
+        169
+      ],
+      "paraphrase": "The unsafeDisableSanitize switch turns off two stages together, the sanitize floor and the sink guard.",
+      "fact": "f:zzbzo8"
+    },
+    {
+      "lines": [
+        169,
+        171
+      ],
+      "paraphrase": "Pointer to the core reference for createRenderer options.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        173,
+        174
+      ],
+      "paraphrase": "A directive using the component's name renders identically in the preview and the public page.",
+      "fact": "f:3l7f56"
+    }
+  ]
+}

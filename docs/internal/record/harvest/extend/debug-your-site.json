@@ -1,0 +1,206 @@
+{
+  "page": "docs/extend/debug-your-site.md",
+  "blob": "726b8e330b4b047a05ab4e50d0fcd1256a6a89ab",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "The page covers symptoms fixed only by changing site code, with a log event naming the cause.",
+      "fact": "f:gy2h7p"
+    },
+    {
+      "lines": [
+        7,
+        13
+      ],
+      "paraphrase": "Three diagnostic surfaces divide by what they key on and share one log vocabulary.",
+      "fact": "f:99x86q"
+    },
+    {
+      "lines": [
+        15,
+        18
+      ],
+      "paraphrase": "Every event fires from engine code inside a site's extension points and reports a contract violation, not an engine bug.",
+      "fact": "f:gy2h7p"
+    },
+    {
+      "lines": [
+        20,
+        21
+      ],
+      "paraphrase": "Table header row.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        22,
+        22
+      ],
+      "paraphrase": "content.field_unmarked: a tags-named multiselect with no taxonomy true field leaves the tag index empty.",
+      "fact": "f:lbeeak"
+    },
+    {
+      "lines": [
+        23,
+        23
+      ],
+      "paraphrase": "content.field_behavior_failed: a throwing behavior.validate is treated as valid, so the bad value lands.",
+      "fact": "f:qdfs37"
+    },
+    {
+      "lines": [
+        24,
+        24
+      ],
+      "paraphrase": "media.resolver_absent: a route factory built with media but no resolveMedia leaves media tokens literal.",
+      "fact": "f:twqb0s"
+    },
+    {
+      "lines": [
+        25,
+        25
+      ],
+      "paraphrase": "admin.action.unaudited: dev throws and production logs when a createAdminAction route skips ctx.audit.",
+      "fact": "f:07efts"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "audit.sink.call_failed: the site's own sink threw or rejected, losing only the record.",
+      "fact": "f:r3l7eq"
+    },
+    {
+      "lines": [
+        27,
+        27
+      ],
+      "paraphrase": "rate_limit_absent and rate_limit_failed both degrade to open on purpose.",
+      "fact": "f:i1dayf"
+    },
+    {
+      "lines": [
+        28,
+        28
+      ],
+      "paraphrase": "admin.action.misconfigured: resolveDb returned nothing or the access map was never attached.",
+      "fact": "f:nup3og"
+    },
+    {
+      "lines": [
+        29,
+        29
+      ],
+      "paraphrase": "config.invalid: loads degrade to empty and saves answer 500 while the log carries the parser message.",
+      "fact": "f:8fyoha"
+    },
+    {
+      "lines": [
+        31,
+        34
+      ],
+      "paraphrase": "A symptom with no matching event is not code-fixable in advance; check troubleshooting or file it.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        36,
+        36
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        38,
+        42
+      ],
+      "paraphrase": "A baseline reading the live clock drifts daily with no source change and looks like flakiness.",
+      "fact": "f:ogz5eu"
+    },
+    {
+      "lines": [
+        44,
+        45
+      ],
+      "paraphrase": "The fix is a fixed-today seam read only from platform.env, never Date.now directly.",
+      "fact": "f:ogz5eu"
+    },
+    {
+      "lines": [
+        47,
+        52
+      ],
+      "paraphrase": "Snippet: a today helper reading CAIRN_FIXED_TODAY from an env argument.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        54,
+        62
+      ],
+      "paraphrase": "Snippet: a page load passing platform env into the today helper.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        64,
+        71
+      ],
+      "paraphrase": "An unparseable value yields Invalid Date silently; write an explicit instant, not a date-only string.",
+      "fact": "f:yomgrm"
+    },
+    {
+      "lines": [
+        70,
+        71
+      ],
+      "paraphrase": "Format dates derived from today in a timezone-stable way.",
+      "new-fact": "f:2r6juw"
+    },
+    {
+      "lines": [
+        73,
+        75
+      ],
+      "paraphrase": "Every route passes platform env into the seam explicitly.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        77,
+        81
+      ],
+      "paraphrase": "Set the variable only in CI or local vars, never production, and read every date through the seam.",
+      "new-fact": "f:f7tkkw"
+    },
+    {
+      "lines": [
+        83,
+        90
+      ],
+      "paraphrase": "event.platform is undefined under plain vite dev and preview, so the variable is never read there.",
+      "fact": "f:swjwxb"
+    },
+    {
+      "lines": [
+        90,
+        98
+      ],
+      "paraphrase": "Snippet: the today helper with a process.env fallback.",
+      "new-fact": "f:iw346n"
+    }
+  ]
+}

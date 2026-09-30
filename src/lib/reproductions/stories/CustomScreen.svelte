@@ -1,8 +1,8 @@
 <!--
 @component
 `toolkit/custom-screen`'s mounted subject: a faithful transcription of the worked example under
-"Compose the screen" in `docs/extend/add-a-custom-admin-screen.md`, the page whose own render this
-story exists to prove. No component in the package renders one of a site's own content concepts,
+"Compose the screen" in the extend track's custom-admin-screen guide (removed pending its rebuild),
+the page whose own render this story exists to prove. No component in the package renders one of a site's own content concepts,
 so this file lives inside the reproductions module rather than `src/lib/admin`, and composes
 only the toolkit primitives the doc snippet names: `PageHeader`, `AdminTable`, `StatusChip`. The
 card div around `AdminTable` is written at the call site with the design system's floating-card

@@ -4,49 +4,26 @@ Harvested 2026-09-15 from docs/why-cairn.md, README.md, docs/README.md, and CLAU
 Agent-facing; never shipped; not register-graded. Every fact carries a source.
 
 ## docs/why-cairn.md
-- `f:wvediq` cairn is two things at once: an editor-first, git-backed CMS, and a SvelteKit toolkit a
-  developer extends for their own organization. Key phrase: "lean, opinionated CMS". Source:
-  docs/internal/what-cairn-is-and-is-not.md, "cairn is a lean, opinionated CMS that makes a
-  non-technical author productive editing raw markdown on a SvelteKit + Cloudflare site".
-  [candidate: excluded, the owner brief calls cairn a CMS plus "a starting framework and an admin
-  skeleton" (lines 11-14); the "two things at once" framing and a toolkit "for their own
-  organization" come from the why-cairn page, not the brief]
+- `f:wvediq` cairn is a lean, opinionated CMS that makes a non-technical author productive editing raw markdown on a SvelteKit + Cloudflare site, and it is also a starting framework and an admin skeleton, a developer's base for appending their own functionality. Key phrase: "lean, opinionated CMS". Source: `docs/internal/what-cairn-is-and-is-not.md:11-14`. [verified]
 - `f:0ij7do` With the zero-config default, an editor signs in from an emailed link, no GitHub account, no
   password. Source: `src/lib/auth-channel/`, `src/lib/env.ts` (AUTH_DB binding backs the magic-link
   session store); CLAUDE.md, "magic-link". [verified]
-- `f:8289h7` Behind Cloudflare Access, an editor can instead sign in with the organization's Google or Microsoft account. Source: `src/lib/sveltekit/guard.ts:64-68`, "Replace magic-link session resolution with the site's own identity gate (Cloudflare Access or any other reverse proxy that authenticates the request before it reaches this Worker)"; docs/extend/sign-in-through-your-organization.md, the Google Workspace/Microsoft Entra ID recipe built on that seam. [verified: the Cloudflare Access identity seam traces to guard.ts; which identity providers (Google, Microsoft) an Access application offers is Cloudflare's own configuration, external to this repo]
+- `f:8289h7` Behind Cloudflare Access, or any reverse proxy that authenticates the request before it reaches the Worker, an editor signs in through the site's own identity gate instead of magic-link: a site sets the guard's `identity` resolver, which replaces session-cookie resolution. Source: `src/lib/sveltekit/guard.ts:64-68`, "Replace magic-link session resolution with the site's own identity gate (Cloudflare Access". [verified]
 - `f:dl1trb` The live preview renders through the exact function the public site uses. Source:
   `examples/showcase/src/chassis/public-routes.ts:14`, `render: cairn.rendering.render`;
   `examples/showcase/src/routes/admin/[...path]/+page.svelte:26`, `render={cairn.rendering.render}`,
   the identical binding threaded to both routes. [verified]
 - `f:qehbx3` A save holds on a per-entry branch; a deliberate publish copies it to the main branch with the
   editor as commit author. Source: `src/lib/github/types.ts:20`, "A commit author: the signed-in
-  editor (spec §7.4). The committer is left to the App."; `src/lib/github/repo.ts:262`,
-  "committer is omitted, so GitHub attributes the commit to the App." [verified]
+  editor (spec §7.4).", `src/lib/github/repo.ts:260-263` (no committer is set). [verified]
 - `f:kldwss` `create-cairn-site` creates the GitHub App, the repository, the Cloudflare bindings, and deploys,
   in one run. Source: `packages/create-cairn-site/` (chapter2.mjs GitHub App and Cloudflare
   provisioning flow, referenced in docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md).
   [verified]
-- `f:9xthnq` The admin is also a UI toolkit: a developer's own screen, member roster, event
-  calendar, or reservation form mounts inside the same admin, sharing cairn's components and
-  sign-in. Key phrase: "admin skeleton". Source: docs/internal/what-cairn-is-and-is-not.md, "An
-  admin skeleton a developer extends... A developer builds those extras on cairn's seams".
-  [candidate: excluded, the owner brief says only that the admin skeleton is one a developer extends
-  (line 42) and that a consumer's admin is cairn's admin toolkit (lines 49-50); the member roster,
-  event calendar, reservation form, and shared sign-in go past it, and line 68 puts a site's domain
-  in the developer's own routes, data, and auth]
-- `f:i74t7g` Every production cairn site the author runs is hosted on Cloudflare. Source: docs/why-cairn.md:40
-  (owner brief, first-person claim; not independently verifiable from code). [candidate: excluded, an operational claim about the author's own live deployed infrastructure, outside anything this repo's code can confirm]
-- `f:hk24xs` cairn has no abstraction layer that lets a developer swap Cloudflare for another host later; no
-  second `BackendProvider` implementation ships with cairn today besides GitHub. Source:
-  `grep -rn "BackendProvider" src/lib` (single GitHub implementation; extend seam documented at
-  docs/extend/sign-in-through-your-organization.md#a-backend-other-than-github). [verified]
-- `f:h0xykj` cairn is pre-1.0; seams still move, and an Extension-tier seam moved across two
-  separate minor releases inside the tier meant to stay frozen. Key phrase: "Extension-tier breaks".
-  Source: docs/internal/what-cairn-is-and-is-not.md, "two Extension-tier breaks have shipped inside
-  0.x minors (0.86.0, 0.94.0)". [candidate: excluded, the owner brief records two Extension-tier
-  breaks inside 0.x minors, 0.86.0 and 0.94.0 (lines 77-79); it does not say one seam moved twice or
-  call the tier frozen]
+- `f:9xthnq` The admin is also a toolkit: a developer's own route under `/admin` renders as a child of `CairnAdminShell` like the engine's own screens, can adopt the packaged admin-toolkit components, and sits behind the same `/admin` sign-in guard, since every `/admin` path except the login page and the auth endpoints is gated. Source: `examples/showcase/src/routes/admin/+layout.svelte:3-5`, "every /admin/** route renders inside CairnAdminShell"; `examples/showcase/src/routes/admin/signups/+page.svelte:1-4`, "a developer's own route rendered in CairnAdminShell"; `src/lib/sveltekit/guard.ts:24`, "everything else under /admin is gated". [verified]
+- `f:i74t7g` A cairn site is built to run on Cloudflare Workers: the engine's environment contract is Cloudflare Worker bindings (the `AUTH_DB` D1 database, the Email Sending binding), so a production site built on cairn is hosted on Cloudflare. Source: `src/lib/env.ts:5,17-33`, the `CairnEnv` interface and its `D1Database` import from `@cloudflare/workers-types`. [verified: the code fixes Cloudflare as the runtime platform; where a given site is deployed is the operator's fact and is not separately confirmed]
+- `f:hk24xs` cairn has no host abstraction layer: the engine's environment contract is typed to Cloudflare bindings, so swapping Cloudflare for another host is not a seam. The one swappable seam is the content store: a developer can implement `BackendProvider` against a store other than GitHub, and `createGithubApp` is the only implementation cairn ships. Source: `src/lib/env.ts:5,19`, `AUTH_DB?: D1Database`; `src/lib/github/backend.ts:78,88,162` (`BackendProvider`, `createGithubApp` the sole factory). [verified]
+- `f:h0xykj` cairn is pre-1.0 (package version `0.97.0`) and its Extension API tier has broken across minors: the nav fields on `AdminShellData` and `navFilter`'s types changed at `0.86.0`, the version `navLayout` shipped, and `navLayout`'s own types were renamed at `0.94.0` (`AdminNavEntry` became `NavLayoutEntry`). Until 1.0 a break is disclosed, through the changelog's `Consumers must:` line and the migration notes, the per-version record, and never prevented. Key phrase: "two Extension-tier breaks have shipped inside 0.x minors". Source: `docs/internal/what-cairn-is-and-is-not.md:77-79`; `docs/extend/migration-notes.md:559-569,516-521`; `docs/reference/core.md:1130-1131`, `NavLayout` and `NavLayoutEntry` marked Extension API; `package.json:3`. [verified]
 - `f:zzc2m5` The zero-config identity model has exactly two roles: owner and editor. Key phrase:
   "only ever knows owner/editor". Source: `docs/internal/what-cairn-is-and-is-not.md:34,69`, "A
   small default identity, owner/editor, on magic-link" and "it only ever knows owner/editor."
@@ -60,6 +37,18 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:oyiv3h` Every publish is a git commit, so content lives in a repository the organization needs a GitHub
   account to reach, even though editors never see it directly. Source:
   `src/lib/github/repo.ts:262`, commit-per-publish mechanics. [verified]
+- `f:mpy6za` cairn treats GitHub as a hard dependency with no layer abstracting it, the same as SvelteKit and Cloudflare. Source: `src/lib/github/backend.ts:78,162`, `BackendProvider` and `createGithubApp`. [rejected: GitHub sits behind the `BackendProvider` seam, so a developer can implement another content store; only the Cloudflare host and SvelteKit have no such layer, and `createGithubApp` is the only implementation shipped]
+- `f:djoxr9` cairn commits fully to SvelteKit and Cloudflare: the stack is a hard dependency with no framework- or host-agnostic layer, content is markdown in git, and publishing goes through a GitHub App. Key phrase: "A hard dependency on the stack is the point." Source: `docs/internal/what-cairn-is-and-is-not.md:11-12,18-20,22`. [verified]
+- `f:7iwb7f` The zero-config posture is tuned for a small editorial team, one to a handful of editors who share context and not a large or anonymous contributor pool; it is a floor, not a ceiling, since the auth and authorization seams let a developer scale past it. Key phrase: "Tuned for a small editorial team, by default." Source: `docs/internal/what-cairn-is-and-is-not.md:36-41`. [verified]
+- `f:u77pea` Under the zero-config default cairn itself is the identity system for its editors: its own D1 store (`AUTH_DB`) holds the editor allowlist, the sessions, and the single-use sign-in tokens, and a site's own identity gate replaces session resolution only when the site configures one. Source: `src/lib/env.ts:18`, "The self-owned magic-link auth store: the allowlist, sessions, and single-use tokens."; `src/lib/sveltekit/guard.ts:66`, "Omitted, the guard resolves the session cookie exactly as today." [verified]
+- `f:gw1oas` Cloudflare Access offers Google and Microsoft among its identity providers, so an editor behind Access can sign in with the organization's Google or Microsoft account. Source: https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/. [external: Cloudflare Access]
+- `f:dpbswc` In the default admin a signed-in editor writes and publishes entries, manages the media library, and edits the tag vocabulary with no code; declaring a content type (`defineConcept`), adding a custom admin screen (a route under `src/routes/admin`), and changing what a role can do (`defineAccess`, `defineRoles`) are site code. Source: `src/lib/sveltekit/content-routes-entry-write.ts:426`; `src/lib/sveltekit/content-routes-media-library.ts:66`, `requireEditor(event)` on the media load; `src/lib/sveltekit/cairn-admin.ts:260`, the `authedViews` list including `vocabulary`; `src/lib/content/concepts.ts:49`; `src/lib/auth/access.ts:70`; `src/lib/auth/roles.ts:58`; `examples/showcase/src/routes/admin/signups/+page.svelte:1-4`. [verified]
+- `f:5jbaej` None of cairn's git plumbing, the per-entry branch, the commit, or the deploy, reaches the editor, who never sees any of it. Source: `src/lib/admin/CairnMediaLibrary.svelte:1087-1097,1206-1210`, `src/lib/admin/media-library-helpers.ts:41-43` (`branchNameOf`). [rejected: the media library's usage panel and its delete dialog list an image's unpublished uses under In an unpublished edit, with the raw per-entry branch name, `cairn/<concept>/<id>`, beneath each entry title; an editor still needs no GitHub account and never works in the repository directly]
+- `f:0on5qx` A git-backed CMS of the Decap kind has each editor log in with their own GitHub account, needs every editor to have push access to the content repository, and runs that login through an OAuth app and an authentication server the site must host or rent, since GitHub requires a server for authentication. Source: https://decapcms.org/docs/github-backend/. [external: Decap CMS]
+- `f:8p1cjx` Cloudflare hosts a small cairn site on a free tier that stays free at the site's real traffic. Source: `packages/create-cairn-site/src/cloudflare/catalogue.mjs:529-538`. [rejected: the setup command requires the Workers Paid plan from a site's first deploy, and its declined-plan message says a cairn site needs that plan from its first deploy, so no cairn site runs on the free Workers plan]
+- `f:tf4vfb` SvelteKit server-renders each page by default before hydrating it in the browser, a page can opt out with `ssr = false`, and it generates `./$types` for route files so load functions and handlers are typed without hand-written annotations. Source: https://svelte.dev/docs/kit/page-options, https://svelte.dev/docs/kit/types. [external: SvelteKit]
+- `f:hcydfe` An entry's history, attribution, and rollback come from git: the history screen reads the default branch's commit log for the entry's file and names each commit's author as the publisher, and Revert opens a new draft from one of those listed commits. Source: `src/lib/sveltekit/content-routes-entry-read.ts:511-538` (`listCommits`, `commitEditorName`), `src/lib/sveltekit/content-routes-entry-revert.ts:82-104`, `src/lib/github/types.ts:20`. [verified]
+- `f:u6cp78` The setup command narrates as it goes: the scaffold, the GitHub chapter, and each Cloudflare chapter run every side effect as an action whose one-line title prints as it runs, and `--dry-run` prints each action's title and exact effect without running any. Source: `packages/create-cairn-site/src/runner.mjs:7-12` (`title`, `detail`), `packages/create-cairn-site/src/runner.mjs:45-63` (`runActions`), `packages/create-cairn-site/src/args.mjs:10` (`dry-run`). [verified]
 
 ## README.md
 - `f:4zpvor` cairn is an embedded, magic-link, GitHub-committing CMS for SvelteKit sites on Cloudflare.
@@ -91,12 +80,11 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   scripts/checks/reference-coverage.mjs"`. [verified]
 - `f:vrt55t` `check:package` checks the package entry points (publint, attw, package-file and skill-budget
   checks). Source: `package.json:37`. [verified]
+- `f:yvfzr2` The setup command is invoked as `npx create-cairn-site`: the package is named `create-cairn-site` and exposes a bin of the same name. Source: `packages/create-cairn-site/package.json:2,8`. [verified]
+- `f:am80o6` `docs/internal/` holds cairn's maintainer-facing planning and design records, none of them part of the adopter docs, and the npm package's `files` list ships the doc arms, `docs/README.md`, and `docs/why-cairn.md`, never `docs/internal/`. Source: `docs/internal/README.md:1-4`, `package.json:194-207`. [verified]
 
 ## CLAUDE.md
-- `f:psrfdx` Committer identity on publish is `cairn-cms[bot]` (the GitHub App's own bot identity); author is
-  the editor. Source: `src/lib/github/types.ts:20` and `repo.ts:262` confirm the mechanism
-  (committer omitted, GitHub attributes to the App); the literal string `cairn-cms[bot]` is
-  CLAUDE.md's own naming of that App identity, not found verbatim in `src/lib`. [verified]
+- `f:psrfdx` A publish commit is authored by the editor and sets no committer, so the committer GitHub records is the author, the editor; CLAUDE.md's naming of a `cairn-cms[bot]` committer identity does not describe the commit, and the scaffold names a site's App `cairn-<site slug>` by default, which is the App's name and not a commit field. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`, https://docs.github.com/en/rest/git/commits#create-a-commit, `packages/create-cairn-site/src/github/chapter.mjs:161`. [verified]
 - `f:9093mg` The GitHub App id is `3847496`; a single installation, id `135372268`, covers both ecxc-ski and
   907-life. Source: CLAUDE.md, "Credentials" section. [verified: values live in
   `~/.dotfiles/secrets/values.age` and `~/.local/secrets`, outside this repo, not independently
@@ -139,9 +127,8 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   event names cannot. Source: `src/lib/log/events.ts:1-16` (module comment: "renaming one is a
   breaking change... See docs/reference/log-events.md, kept in step with this union.");
   `src/lib/log/` contains `emit.ts`, `events.ts`, `index.ts`. [verified]
-- `f:w379wu` Every publish is a commit with the editor as author and the GitHub App as committer, per spec
-  §7.4. Source: `src/lib/github/types.ts:20`, "A commit author: the signed-in editor (spec §7.4).
-  The committer is left to the App." [verified]
+- `f:w379wu` Every publish is a commit with the editor as author and, since no committer is set, the editor
+  as committer too. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`, https://docs.github.com/en/rest/git/commits#create-a-commit. [verified]
 - `f:ab9kzr` The current published version is `0.97.0`. Source: `package.json:3`. [verified]
 - `f:0xsi67` `check:surface` runs a public-surface snapshot gate (`check-surface.mjs`) plus a leak check
   (`check-surface-leaks.mjs`). Source: `package.json:41`. [verified]

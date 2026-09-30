@@ -1,0 +1,318 @@
+{
+  "page": "docs/extend/share-a-draft-preview.md",
+  "blob": "3c102b6f1ee32589304436958622319237530f61",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "An editor mints an opaque link letting a non-editor read a pending draft through the site's own public composition.",
+      "fact": "f:gvim4v"
+    },
+    {
+      "lines": [
+        7,
+        8
+      ],
+      "paraphrase": "Opt-in per site: needs the migration applied and a preview route mounted.",
+      "fact": "f:6gmzt1"
+    },
+    {
+      "lines": [
+        10,
+        10
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        12,
+        16
+      ],
+      "paraphrase": "Snippet copying the preview migration from the package and applying it locally and remotely.",
+      "fact": "f:xxtooz"
+    },
+    {
+      "lines": [
+        18,
+        19
+      ],
+      "paraphrase": "The migration adds one preview_tokens table to AUTH_DB holding a hashed token, the entry, the editor, and an expiry, with indexes.",
+      "fact": "f:049lo2"
+    },
+    {
+      "lines": [
+        19,
+        22
+      ],
+      "paraphrase": "Until the migration runs, mint and revoke answer with an actionable failure naming it rather than a raw database error.",
+      "fact": "f:rr00qr"
+    },
+    {
+      "lines": [
+        24,
+        24
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        26,
+        28
+      ],
+      "paraphrase": "loadPreview renders through the same composition as entry pages and needs the runtime and the public routes config.",
+      "new-fact": "f:6c3amx"
+    },
+    {
+      "lines": [
+        29,
+        30
+      ],
+      "paraphrase": "Build both routes from one shared config object rather than typing the values twice.",
+      "new-fact": "f:6c3amx"
+    },
+    {
+      "lines": [
+        31,
+        32
+      ],
+      "paraphrase": "Mount the preview route in the entry pages' route group so it inherits their layout and styles.",
+      "fact": "f:gvim4v"
+    },
+    {
+      "lines": [
+        34,
+        54
+      ],
+      "paraphrase": "Snippet of the preview route module calling loadPreview with a routes config and prerender false.",
+      "new-fact": "f:6c3amx"
+    },
+    {
+      "lines": [
+        56,
+        68
+      ],
+      "paraphrase": "Snippet of the preview page rendering PreviewBanner from the public subpath above an article view.",
+      "new-fact": "f:6hmgmv"
+    },
+    {
+      "lines": [
+        70,
+        72
+      ],
+      "paraphrase": "A preview route outside that group renders unstyled, the flaw that sank an earlier design.",
+      "new-fact": "f:6rao75"
+    },
+    {
+      "lines": [
+        74,
+        74
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        76,
+        77
+      ],
+      "paraphrase": "PreviewBanner reads daisyUI role tokens and follows light and dark schemes on a daisyUI site.",
+      "fact": "f:xssf06"
+    },
+    {
+      "lines": [
+        77,
+        78
+      ],
+      "paraphrase": "A site without daisyUI sets the five properties itself because no literal fallback exists.",
+      "new-fact": "f:6vg3gb"
+    },
+    {
+      "lines": [
+        78,
+        81
+      ],
+      "paraphrase": "Draft and ended states use distinct role tokens; only the ended state links, with the info ink and a focus ring.",
+      "fact": "f:xssf06"
+    },
+    {
+      "lines": [
+        83,
+        86
+      ],
+      "paraphrase": "Five named custom properties override the banner, each replacing the default in both states, pointing at the site's own tokens.",
+      "new-fact": "f:74ls5e"
+    },
+    {
+      "lines": [
+        88,
+        94
+      ],
+      "paraphrase": "Snippet setting three preview properties on the root to daisyUI tokens and a zero radius.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        96,
+        98
+      ],
+      "paraphrase": "A property declared on the root or an ancestor always wins because the banner reads through var and declares none itself.",
+      "fact": "f:xssf06"
+    },
+    {
+      "lines": [
+        100,
+        100
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        102,
+        104
+      ],
+      "paraphrase": "The link's token is the only credential; the loader ignores cookies and both editor and access locals.",
+      "fact": "f:afkvsb"
+    },
+    {
+      "lines": [
+        104,
+        106
+      ],
+      "paraphrase": "Every response, refusals included, sets no-store, noindex, and locked-down referrer and frame headers.",
+      "fact": "f:zke3iw"
+    },
+    {
+      "lines": [
+        108,
+        111
+      ],
+      "paraphrase": "A pending branch renders the draft; once it is gone and a live file exists the page renders the ended state linking the permalink.",
+      "fact": "f:l4waby"
+    },
+    {
+      "lines": [
+        111,
+        112
+      ],
+      "paraphrase": "The ended copy never claims the draft went live, since a discarded edit reaches the same state.",
+      "fact": "f:l4waby"
+    },
+    {
+      "lines": [
+        112,
+        115
+      ],
+      "paraphrase": "Every other failure answers an identical uninformative 404 with no signal distinguishing expired from never existed.",
+      "fact": "f:l4waby"
+    },
+    {
+      "lines": [
+        117,
+        117
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        119,
+        121
+      ],
+      "paraphrase": "These two actions back the edit screen's share panel; a site writes its own only with hand-mounted routes.",
+      "new-fact": "f:7e0i53"
+    },
+    {
+      "lines": [
+        121,
+        122
+      ],
+      "paraphrase": "A mint refuses with a 400 failure when the entry has no pending draft.",
+      "fact": "f:pimnjy"
+    },
+    {
+      "lines": [
+        122,
+        124
+      ],
+      "paraphrase": "Revoke removes all links for an entry in one call, safely repeatable, with a count of zero when none.",
+      "fact": "f:pimnjy"
+    },
+    {
+      "lines": [
+        126,
+        129
+      ],
+      "paraphrase": "Rename, delete, and discarding a never-published entry clear preview rows; publishing leaves them so a stale link reads as ended.",
+      "fact": "f:a7yrhq"
+    },
+    {
+      "lines": [
+        131,
+        131
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        133,
+        138
+      ],
+      "paraphrase": "Layout load data flows to the anonymous preview route, so privileged layout data can leak; sites must guard it.",
+      "fact": "f:cnz554"
+    },
+    {
+      "lines": [
+        140,
+        143
+      ],
+      "paraphrase": "Either branch layout data on the route id or place the preview route in a separate route group.",
+      "fact": "f:cnz554"
+    },
+    {
+      "lines": [
+        145,
+        145
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        147,
+        148
+      ],
+      "paraphrase": "A minted URL displays the styled draft for a visitor without a session.",
+      "new-fact": "f:76m2vf"
+    },
+    {
+      "lines": [
+        148,
+        149
+      ],
+      "paraphrase": "Publishing turns the same link into the ended page rather than a 404.",
+      "fact": "f:l4waby"
+    },
+    {
+      "lines": [
+        149,
+        150
+      ],
+      "paraphrase": "Revoking kills any outstanding link for the entry immediately.",
+      "fact": "f:pimnjy"
+    }
+  ]
+}

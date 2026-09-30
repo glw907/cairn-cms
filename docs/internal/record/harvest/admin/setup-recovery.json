@@ -1,0 +1,430 @@
+{
+  "page": "docs/admin/setup-recovery.md",
+  "blob": "ebf5361e8f0337e3bd9ba4f7b56de5646f191f42",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page tagline.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        9
+      ],
+      "paraphrase": "Three routing bullets to the diagnostic pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        11,
+        11
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        13,
+        15
+      ],
+      "paraphrase": "Progress is saved after each step to a local file outside the site folder; re-run to resume.",
+      "fact": "f:qoqd31"
+    },
+    {
+      "lines": [
+        17,
+        19
+      ],
+      "paraphrase": "Command: re-run create-cairn-site with --dir.",
+      "fact": "f:qoqd31"
+    },
+    {
+      "lines": [
+        21,
+        23
+      ],
+      "paraphrase": "Nothing repeats: an existing App, pushed repository, or connected domain is not redone.",
+      "fact": "f:qoqd31"
+    },
+    {
+      "lines": [
+        23,
+        24
+      ],
+      "paraphrase": "The tables list each pause point with its command.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        26,
+        26
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        30
+      ],
+      "paraphrase": "A long step may print a local web address and ask you to leave it running.",
+      "new-fact": "f:jjetg8"
+    },
+    {
+      "lines": [
+        28,
+        31
+      ],
+      "paraphrase": "The local address is served only for that run to your machine and carries no secret.",
+      "fact": "f:cocsow"
+    },
+    {
+      "lines": [
+        31,
+        32
+      ],
+      "paraphrase": "The page shows live progress during a wait.",
+      "new-fact": "f:jjetg8"
+    },
+    {
+      "lines": [
+        33,
+        34
+      ],
+      "paraphrase": "It is safe to open, ignore, or close; the page ends when the step ends.",
+      "new-fact": "f:jjetg8"
+    },
+    {
+      "lines": [
+        36,
+        36
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        38,
+        39
+      ],
+      "paraphrase": "Table header for GitHub recovery.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        40,
+        40
+      ],
+      "paraphrase": "After scaffolding and before the App, re-running starts the GitHub steps fresh.",
+      "new-fact": "f:s68ulb"
+    },
+    {
+      "lines": [
+        41,
+        41
+      ],
+      "paraphrase": "App created but install unfinished: re-run resumes at install; App and credentials are safe.",
+      "new-fact": "f:s68ulb"
+    },
+    {
+      "lines": [
+        42,
+        42
+      ],
+      "paraphrase": "Waiting on an organization owner: re-run once they approve.",
+      "fact": "f:kj72z6"
+    },
+    {
+      "lines": [
+        43,
+        43
+      ],
+      "paraphrase": "App installed but the push was interrupted: re-run resumes safely with nothing lost.",
+      "new-fact": "f:s68ulb"
+    },
+    {
+      "lines": [
+        44,
+        44
+      ],
+      "paraphrase": "Installation does not cover the repository: add it under Only select repositories and re-run.",
+      "new-fact": "f:a912kt"
+    },
+    {
+      "lines": [
+        46,
+        46
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        48,
+        49
+      ],
+      "paraphrase": "Table header for Cloudflare recovery.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        50,
+        50
+      ],
+      "paraphrase": "Repository pushed but deploy unfinished or declined: re-run continues or names the fix.",
+      "new-fact": "f:igxdyf"
+    },
+    {
+      "lines": [
+        51,
+        51
+      ],
+      "paraphrase": "Site deployed but sign-in unfinished: re-run repeats the key move and sign-in link safely.",
+      "new-fact": "f:igxdyf"
+    },
+    {
+      "lines": [
+        53,
+        55
+      ],
+      "paraphrase": "Pointers back to create your site and getting back in.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        57,
+        57
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        59,
+        60
+      ],
+      "paraphrase": "Table header for domain recovery.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        61,
+        61
+      ],
+      "paraphrase": "Declined domain: the site keeps working and re-running asks again.",
+      "new-fact": "f:mtv6bm"
+    },
+    {
+      "lines": [
+        62,
+        62
+      ],
+      "paraphrase": "Zone exists but nothing further: re-run rechecks the token and reopens the token page if needed.",
+      "new-fact": "f:mtv6bm"
+    },
+    {
+      "lines": [
+        63,
+        63
+      ],
+      "paraphrase": "Waiting for the nameserver switch is normal and takes minutes to 48 hours.",
+      "new-fact": "f:h2ajav"
+    },
+    {
+      "lines": [
+        64,
+        64
+      ],
+      "paraphrase": "Delegated to another Cloudflare account: whoever controls it must release the domain.",
+      "new-fact": "f:daql4u"
+    },
+    {
+      "lines": [
+        65,
+        65
+      ],
+      "paraphrase": "Delegated but not answering: the record or certificate is still propagating.",
+      "new-fact": "f:8115gb"
+    },
+    {
+      "lines": [
+        66,
+        66
+      ],
+      "paraphrase": "Account not on Workers Paid: email onboarding stops until it is turned on.",
+      "new-fact": "f:linx1p"
+    },
+    {
+      "lines": [
+        67,
+        67
+      ],
+      "paraphrase": "A decline of email sign-in is a saved answer that is re-offered on re-run.",
+      "new-fact": "f:bu0hiz"
+    },
+    {
+      "lines": [
+        67,
+        67
+      ],
+      "paraphrase": "The decline is described as declining a Workers Paid prompt.",
+      "new-fact": "f:16cm59"
+    },
+    {
+      "lines": [
+        67,
+        67
+      ],
+      "paraphrase": "Onboarding still propagating needs a few more minutes.",
+      "new-fact": "f:r2y1v6"
+    },
+    {
+      "lines": [
+        69,
+        71
+      ],
+      "paraphrase": "Pointer to the fuller domain and mail explanation.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        73,
+        73
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        75,
+        76
+      ],
+      "paraphrase": "Table header for Workers Builds recovery.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        77,
+        77
+      ],
+      "paraphrase": "Declined Workers Builds: nothing is wrong; re-run with --connect to connect.",
+      "new-fact": "f:e0g8qd"
+    },
+    {
+      "lines": [
+        78,
+        78
+      ],
+      "paraphrase": "Cloudflare GitHub App unauthorized: authorize in the dashboard then re-run with --connect.",
+      "new-fact": "f:e0g8qd"
+    },
+    {
+      "lines": [
+        79,
+        79
+      ],
+      "paraphrase": "Repository not in the App watched list: add it at GitHub installations then re-run.",
+      "new-fact": "f:e0g8qd"
+    },
+    {
+      "lines": [
+        80,
+        80
+      ],
+      "paraphrase": "Config commit sign-in or first build unfinished: re-run with --connect resumes.",
+      "new-fact": "f:e0g8qd"
+    },
+    {
+      "lines": [
+        81,
+        81
+      ],
+      "paraphrase": "A failed build prints the log tail and a dashboard link; fix it then re-run with --connect.",
+      "new-fact": "f:e0g8qd"
+    },
+    {
+      "lines": [
+        83,
+        83
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        85,
+        85
+      ],
+      "paraphrase": "For an expired link or a new day, run the sign-in command.",
+      "fact": "f:bfgxvr"
+    },
+    {
+      "lines": [
+        87,
+        89
+      ],
+      "paraphrase": "Command with --dir and --sign-in.",
+      "fact": "f:bfgxvr"
+    },
+    {
+      "lines": [
+        91,
+        92
+      ],
+      "paraphrase": "The link is written to the database and opened with no email, with or without a domain or Builds.",
+      "new-fact": "f:o8uoci"
+    },
+    {
+      "lines": [
+        92,
+        93
+      ],
+      "paraphrase": "The link works ten minutes and the session it opens lasts 30 days.",
+      "fact": "f:zc8vy2"
+    },
+    {
+      "lines": [
+        93,
+        95
+      ],
+      "paraphrase": "Add --owner-email to sign in as a changed address.",
+      "fact": "f:byhg8k"
+    },
+    {
+      "lines": [
+        97,
+        97
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        99,
+        99
+      ],
+      "paraphrase": "--start-over sets progress aside and starts fresh in the same directory.",
+      "fact": "f:jxjqjx"
+    },
+    {
+      "lines": [
+        100,
+        103
+      ],
+      "paraphrase": "It refuses when real connected resources exist and names what to remove first.",
+      "fact": "f:jxjqjx"
+    }
+  ]
+}

@@ -1,0 +1,334 @@
+{
+  "page": "docs/extend/animate-a-custom-screen.md",
+  "blob": "c7d90e7e8f7a37c3b44883960b57c2ee7e25dd5d",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        5
+      ],
+      "paraphrase": "A custom screen's motion follows the shipped admin's vocabulary and is audited like the engine's own screens.",
+      "new-fact": "f:326755"
+    },
+    {
+      "lines": [
+        7,
+        8
+      ],
+      "paraphrase": "Precondition pointer to the custom admin screen page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        10,
+        13
+      ],
+      "paraphrase": "The design system Motion section is canonical; the page points to the audit reference and the design system.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        15,
+        15
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        17,
+        18
+      ],
+      "paraphrase": "Eight motion custom properties are declared on both admin theme roots.",
+      "new-fact": "f:017qss"
+    },
+    {
+      "lines": [
+        20,
+        22
+      ],
+      "paraphrase": "The five duration values and the three easing token names.",
+      "new-fact": "f:017qss"
+    },
+    {
+      "lines": [
+        24,
+        27
+      ],
+      "paraphrase": "An unmarked transition utility resolves to the base duration and standard curve through the root defaults.",
+      "new-fact": "f:018sgk"
+    },
+    {
+      "lines": [
+        29,
+        29
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        31,
+        31
+      ],
+      "paraphrase": "Four motion rules run over admin screens, three error tier and one advisory.",
+      "new-fact": "f:06bmkq"
+    },
+    {
+      "lines": [
+        33,
+        36
+      ],
+      "paraphrase": "motion-property fails names outside the allowlist or in the layout list; the fix message tells you what to do.",
+      "new-fact": "f:09g8ev"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "The motion-property fix message says to drop the property or use the frame-offset allowance.",
+      "new-fact": "f:09vl09"
+    },
+    {
+      "lines": [
+        37,
+        39
+      ],
+      "paraphrase": "motion-vocabulary fails literal durations and curves; the message names the nearest token.",
+      "new-fact": "f:0aa9tp"
+    },
+    {
+      "lines": [
+        40,
+        42
+      ],
+      "paraphrase": "motion-hover-gate fails an unguarded hand-authored hover rule with motion; the message asks for the guard.",
+      "new-fact": "f:0mbj5n"
+    },
+    {
+      "lines": [
+        43,
+        45
+      ],
+      "paraphrase": "motion-reduced-delay is advisory and rendered, flagging computed nonzero delays under reduced motion.",
+      "new-fact": "f:0w432q"
+    },
+    {
+      "lines": [
+        47,
+        48
+      ],
+      "paraphrase": "The three static rules are admin-only and resolve over the admin scope, so public pages never trip them.",
+      "new-fact": "f:1x8r1x"
+    },
+    {
+      "lines": [
+        50,
+        50
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        52,
+        53
+      ],
+      "paraphrase": "A second audit surface resolves markup class tokens through the compiled sheet, unlike the authored-CSS surface.",
+      "new-fact": "f:24f8gn"
+    },
+    {
+      "lines": [
+        55,
+        61
+      ],
+      "paraphrase": "Vendor DaisyUI classes and six Tailwind transition utilities are exempt; an arbitrary transition form is checked.",
+      "new-fact": "f:2c19kf"
+    },
+    {
+      "lines": [
+        62,
+        64
+      ],
+      "paraphrase": "Only a literal static attribute value earns the frame-offset allowance; a computed value does not.",
+      "new-fact": "f:2gdaks"
+    },
+    {
+      "lines": [
+        65,
+        68
+      ],
+      "paraphrase": "The allowance is one element per screen, a screen being one component file, counted in document order.",
+      "new-fact": "f:2khr2m"
+    },
+    {
+      "lines": [
+        70,
+        74
+      ],
+      "paraphrase": "A frame offset is a persistent-frame mode change like zen; claim the allowance instead of suppressing.",
+      "new-fact": "f:2gmjvn"
+    },
+    {
+      "lines": [
+        76,
+        77
+      ],
+      "paraphrase": "The carrying element may transition margin-left and nothing else.",
+      "new-fact": "f:2gmjvn"
+    },
+    {
+      "lines": [
+        79,
+        83
+      ],
+      "paraphrase": "Snippet putting the attribute and a Tailwind arbitrary transition class on one div.",
+      "new-fact": "f:2mhd9l"
+    },
+    {
+      "lines": [
+        85,
+        88
+      ],
+      "paraphrase": "The exception is keyed on attribute plus property; a second property or second carrier is a finding.",
+      "new-fact": "f:2gmjvn"
+    },
+    {
+      "lines": [
+        90,
+        90
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        92,
+        93
+      ],
+      "paraphrase": "A hover and focus pair in one selector list needs splitting for the hover gate.",
+      "new-fact": "f:0mbj5n"
+    },
+    {
+      "lines": [
+        95,
+        99
+      ],
+      "paraphrase": "Snippet of a combined hover and focus selector list with an invented accent token and no transition.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        101,
+        103
+      ],
+      "paraphrase": "Wrapping the whole list carries focus-visible into the guard and removes focus motion on touch.",
+      "new-fact": "f:0mbj5n"
+    },
+    {
+      "lines": [
+        105,
+        114
+      ],
+      "paraphrase": "Snippet of the split form with an invented class and accent token.",
+      "cut": "illustrative"
+    },
+    {
+      "lines": [
+        116,
+        117
+      ],
+      "paraphrase": "A test fixture catches a focus-visible alternative mistakenly kept within the hover guard.",
+      "new-fact": "f:0mbj5n"
+    },
+    {
+      "lines": [
+        119,
+        121
+      ],
+      "paraphrase": "Section heading and the note that neither configuration is required by default.",
+      "new-fact": "f:22odbz"
+    },
+    {
+      "lines": [
+        123,
+        124
+      ],
+      "paraphrase": "static.cssFiles already reaches token-colors; naming a theme file feeds the CSS-family motion rules.",
+      "new-fact": "f:22odbz"
+    },
+    {
+      "lines": [
+        125,
+        128
+      ],
+      "paraphrase": "static.adminScope defaults to three roots; name the roots if admin screens live elsewhere.",
+      "fact": "f:t767qb"
+    },
+    {
+      "lines": [
+        130,
+        130
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        132,
+        134
+      ],
+      "paraphrase": "Paint transitions may re-enable motion under reduced-motion via an important restatement; the shipped admin does not use this.",
+      "new-fact": "f:2p5otw"
+    },
+    {
+      "lines": [
+        134,
+        137
+      ],
+      "paraphrase": "Each restatement costs one allowlist entry in the site's own custom-surface budget file.",
+      "new-fact": "f:2v0doe"
+    },
+    {
+      "lines": [
+        137,
+        138
+      ],
+      "paraphrase": "Layout and transform motion cannot opt back in; the floor applies.",
+      "new-fact": "f:2p5otw"
+    },
+    {
+      "lines": [
+        140,
+        140
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        142,
+        143
+      ],
+      "paraphrase": "A clean audit run has no findings from the three named motion rules.",
+      "new-fact": "f:1md5oj"
+    },
+    {
+      "lines": [
+        143,
+        144
+      ],
+      "paraphrase": "The rendered delay rule shows no new findings when reduced motion is emulated.",
+      "new-fact": "f:0w432q"
+    }
+  ]
+}

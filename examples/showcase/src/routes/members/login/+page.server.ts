@@ -1,9 +1,9 @@
 // Archetype: the public form with a domain action.
 // Atoms: memberChannel (createAuthChannel), createLogger.
-// Recipe: docs/extend/add-a-second-audience.md (the docs rewrite writes it).
+// Recipe: docs/reference/auth-channel.md (createAuthChannel).
 //
 // The showcase's member login route, the separate request/confirm/logout routes
-// (docs/extend/add-a-second-audience.md) folded onto one page as two named form actions,
+// of the documented pattern, folded onto one page as two named form actions,
 // since this fixture needs no route beyond it. Both actions pass the raw SvelteKit `RequestEvent`
 // straight to `memberChannel.actions.*`: it satisfies the actions' own `CairnEvent` constraint
 // structurally, and the factory owns every cookie, origin, and challenge check itself. The

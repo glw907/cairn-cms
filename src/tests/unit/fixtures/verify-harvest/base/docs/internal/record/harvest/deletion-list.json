@@ -1,0 +1,11 @@
+{
+  "deleted": [
+    "docs/admin/alpha.md",
+    "docs/admin/bravo.md",
+    "docs/editors/beta.md",
+    "docs/extend/gamma.md",
+    "docs/why-cairn.md",
+    "docs/README.md"
+  ],
+  "kept": ["docs/extend/kept-record.md"]
+}

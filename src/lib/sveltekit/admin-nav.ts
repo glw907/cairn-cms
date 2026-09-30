@@ -294,8 +294,8 @@ const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const
  *
  * Non-throwing once the shape checks above pass: logs `config.access_unmapped` when a declared
  *  concept or fixed screen carries no rule at all, since that target stays reachable to every
- *  editor-capability session by `canReach`'s own permissive default (see "An access map is not a
- *  whitelist," docs/extend/security-model.md). This never blocks composition; it exists only to
+ *  editor-capability session by `canReach`'s own permissive default (an access map is not a
+ *  whitelist). This never blocks composition; it exists only to
  *  surface a map a site believed was exhaustive but is not.
  */
 export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: string[] }): void {

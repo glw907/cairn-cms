@@ -1,0 +1,198 @@
+{
+  "page": "docs/README.md",
+  "blob": "6191961d1d60c2ec8e2d58f94444e2ea6ecaa216",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "The product is a CMS embedded in a SvelteKit site, using magic-link sign-in, running on Cloudflare.",
+      "fact": "f:4zpvor"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "cairn publishes through a GitHub App.",
+      "fact": "f:zmih7p"
+    },
+    {
+      "lines": [
+        6,
+        8
+      ],
+      "paraphrase": "The setup command is run as npx create-cairn-site.",
+      "new-fact": "f:yvfzr2"
+    },
+    {
+      "lines": [
+        10,
+        10
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "Pointer to the page on why cairn fits.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        14,
+        15
+      ],
+      "paraphrase": "Pointer to the editors welcome page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        16,
+        17
+      ],
+      "paraphrase": "Pointer to the admin track, which takes a no-code reader to a live site.",
+      "fact": "f:y6n5ma"
+    },
+    {
+      "lines": [
+        17,
+        17
+      ],
+      "paraphrase": "Most sites finish with the admin track alone.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        18,
+        19
+      ],
+      "paraphrase": "Pointer to the extend track after running the admin setup.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        19,
+        22
+      ],
+      "paraphrase": "Pointers to building a site by hand and adding cairn to an existing SvelteKit app.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        23,
+        24
+      ],
+      "paraphrase": "The reference is organized as a page per package export path, with CLI commands included.",
+      "fact": "f:k439hm"
+    },
+    {
+      "lines": [
+        25,
+        26
+      ],
+      "paraphrase": "Pointer to the contributor guide.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        28,
+        28
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        30,
+        31
+      ],
+      "paraphrase": "cairn combines an editor-oriented git-backed CMS with a SvelteKit toolkit developers build on.",
+      "fact": "f:wvediq"
+    },
+    {
+      "lines": [
+        31,
+        33
+      ],
+      "paraphrase": "The content is stored as markdown files inside the repository the organization itself owns.",
+      "fact": "f:jzgztr"
+    },
+    {
+      "lines": [
+        32,
+        33
+      ],
+      "paraphrase": "Each publish lands in git as a commit credited to the person who wrote it.",
+      "fact": "f:w379wu"
+    },
+    {
+      "lines": [
+        33,
+        33
+      ],
+      "paraphrase": "Git alone supplies the record of changes, the credit, and the ability to undo.",
+      "fact": "f:hcydfe"
+    },
+    {
+      "lines": [
+        33,
+        33
+      ],
+      "paraphrase": "The writer never sees the git machinery.",
+      "fact": "f:5jbaej"
+    },
+    {
+      "lines": [
+        33,
+        35
+      ],
+      "paraphrase": "A developer's custom screen mounts within the admin, reusing its components and login; the admin doubles as a toolkit.",
+      "fact": "f:9xthnq"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "Later-built screens feel like part of one product instead of an app bolted alongside.",
+      "cut": "marketing"
+    },
+    {
+      "lines": [
+        38,
+        38
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        40,
+        41
+      ],
+      "paraphrase": "Links to the project files at the repository root.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        41,
+        42
+      ],
+      "paraphrase": "Contributor-facing planning and design records are kept in the internal directory.",
+      "new-fact": "f:am80o6"
+    }
+  ]
+}

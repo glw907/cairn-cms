@@ -156,8 +156,8 @@ export const cairn = defineAdapter({
   // /media delivery route.
   media,
   // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the
-  // site's robots.txt route (docs/extend/wire-the-delivery-surface.md) passes it to
-  // robotsResponse, and CairnAdapter.aiPosture (docs/reference/core.md) documents both values.
+  // site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture
+  // (docs/reference/core.md) documents both values.
   // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate
   // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.
   rendering: {

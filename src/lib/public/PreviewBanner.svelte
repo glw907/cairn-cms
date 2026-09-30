@@ -39,8 +39,7 @@ fight required.
 The five custom properties, `--cairn-preview-bg`, `--cairn-preview-fg`, `--cairn-preview-border`,
 `--cairn-preview-link`, and `--cairn-preview-radius`, are the intended site-override seam, not an
 implementation detail. A site that sets a color property applies it to both states, since each
-property replaces the default for the whole banner. A worked `data-theme` example lives in
-docs/extend/share-a-draft-preview.md ("Override the banner's palette").
+property replaces the default for the whole banner.
 -->
 <script lang="ts">
   import type { PreviewData } from '../sveltekit/preview.js';

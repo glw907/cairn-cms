@@ -4,8 +4,7 @@ Move your site onto a newer `@glw907/cairn-cms` version, and confirm nothing bro
 
 ## Precondition
 
-Read [the stability statement](./README.md#operate-across-versions) first if you haven't: a `0.x`
-minor can break a documented seam, so an upgrade is never a blind bump.
+A `0.x` minor can break a documented seam, so an upgrade is never a blind bump.
 
 ## Steps
 
@@ -15,9 +14,8 @@ minor can break a documented seam, so an upgrade is never a blind bump.
    npm install @glw907/cairn-cms@latest
    ```
 
-   or edit the version range by hand and run `npm install`. [What to run, and
-   when](../admin/what-to-run-and-when.md) and [Supported
-   toolchain](../reference/supported-toolchain.md) name the Node, SvelteKit, and Svelte targets
+   or edit the version range by hand and run `npm install`. [Supported
+   toolchain](../reference/supported-toolchain.md) names the Node, SvelteKit, and Svelte targets
    this install checks against.
 
 2. **Read every `Consumers must:` line your range crossed**, not just the version you landed on.
@@ -94,5 +92,4 @@ passed or skipped, and the admin loads and saves an entry without a new error.
 
 A doctor failure names its own condition and remedy. A type error after the bump usually traces
 directly to a `Consumers must:` line you haven't applied yet; re-read the changelog section for the
-version the error's import or field name last appeared in. See [Debug your site](./debug-your-site.md)
-for a runtime symptom that only shows up after deploy.
+version the error's import or field name last appeared in.

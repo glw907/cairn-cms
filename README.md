@@ -8,15 +8,8 @@ npx create-cairn-site
 
 ## Where to start
 
-- **Deciding whether cairn fits?** [Why cairn](./docs/why-cairn.md) covers the reasoning, the
-  stack, and the honest trade-offs.
-- **Writing for a site built on cairn?** [Welcome, editors](./docs/editors/welcome.md) starts with
-  signing in.
-- **Setting up a site and won't be writing code?** [The admin track](./docs/admin/README.md)
-  takes you from nothing to a live, running site with zero code. Most sites finish here.
-- **A Svelte developer extending a site?** Set the site up with the admin track first, then come
-  back to [the extend track](./docs/extend/README.md) for custom content, admin screens, and
-  everything else past the default.
+- **Looking up a contract?** [The reference](./docs/reference/README.md) has one page per export
+  subpath.
 - **Working on cairn itself?** [CONTRIBUTING](./CONTRIBUTING.md) maps the repository and how a
   change lands. [The `src/lib` map](./docs/internal/src-lib-map.md) goes deeper into the library
   tree itself.
@@ -50,8 +43,7 @@ and never see any of the branch or commit mechanics underneath.
 
 cairn commits fully to SvelteKit, Cloudflare, and GitHub, with no layer trying to hide any of the
 three, and the admin itself is built in DaisyUI and Tailwind, the idiom a developer's own screens
-extend it in. [Why cairn](./docs/why-cairn.md) has the full reasoning and the trade-offs a fixed
-stack makes.
+extend it in.
 
 ## Getting started
 
@@ -59,9 +51,9 @@ stack makes.
 already wired in, built to be restyled or replaced rather than started from a blank page. A second,
 documentation-focused template, Topo, is planned but not shipped yet.
 
-Already have a SvelteKit app and want to add cairn to it instead?
-[Add cairn to a SvelteKit app](./docs/extend/add-cairn-to-a-sveltekit-app.md) starts from
-`npm install @glw907/cairn-cms`.
+Already have a SvelteKit app and want to add cairn to it instead? Start from
+`npm install @glw907/cairn-cms`, and read [the reference](./docs/reference/README.md) for each
+export subpath.
 
 ## Where cairn stands
 
@@ -69,6 +61,6 @@ cairn is pre-1.0 and runs in production on two sites today, [ecxc.ski](https://e
 [907.life](https://907.life). Content stays yours regardless of what happens to cairn: it's
 markdown in your own repository, and leaving is a matter of cloning it.
 
-The [docs](./docs/README.md) are where every track above lives in full. History is in the
+The [docs](./docs/reference/README.md) hold the reference for every export. History is in the
 [CHANGELOG](./CHANGELOG.md), security reporting goes through the [policy](./SECURITY.md), and the
 license is [MIT](./LICENSE).

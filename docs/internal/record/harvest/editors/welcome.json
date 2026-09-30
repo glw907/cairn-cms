@@ -1,0 +1,222 @@
+{
+  "page": "docs/editors/welcome.md",
+  "blob": "f69352b470d3e3ca27b9b692a3888ddca86376b0",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "The editor manages the content types the site declares, such as posts and pages.",
+      "fact": "f:rpbh0p"
+    },
+    {
+      "lines": [
+        4,
+        5
+      ],
+      "paraphrase": "Sign-in is by email and a one-time link, with no password or separate account.",
+      "fact": "f:7oxmh4"
+    },
+    {
+      "lines": [
+        7,
+        7
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        9,
+        10
+      ],
+      "paraphrase": "Editors sign in at the site address followed by /admin.",
+      "new-fact": "f:alpsah"
+    },
+    {
+      "lines": [
+        10,
+        11
+      ],
+      "paraphrase": "The form takes the owner-added email address and a Send sign-in link button.",
+      "fact": "f:alpsah"
+    },
+    {
+      "lines": [
+        10,
+        11
+      ],
+      "paraphrase": "Only an address the site owner added receives a link.",
+      "new-fact": "f:ygjlmh"
+    },
+    {
+      "lines": [
+        12,
+        12
+      ],
+      "paraphrase": "A message arrives carrying a one-time link.",
+      "fact": "f:7oxmh4"
+    },
+    {
+      "lines": [
+        12,
+        13
+      ],
+      "paraphrase": "The link expires after 10 minutes and a new one must be requested.",
+      "fact": "f:uwotfq"
+    },
+    {
+      "lines": [
+        14,
+        14
+      ],
+      "paraphrase": "The link opens a confirm page with a Confirm sign-in button.",
+      "new-fact": "f:guztxr"
+    },
+    {
+      "lines": [
+        15,
+        15
+      ],
+      "paraphrase": "An extra confirm click stops a mere email open from signing anyone in.",
+      "fact": "f:gqiqhc"
+    },
+    {
+      "lines": [
+        17,
+        17
+      ],
+      "paraphrase": "A confirmed sign-in lands in the editor at /admin.",
+      "fact": "f:guztxr"
+    },
+    {
+      "lines": [
+        17,
+        18
+      ],
+      "paraphrase": "A bookmarked /admin works without a new email because the session lasts about a month.",
+      "fact": "f:ikurih"
+    },
+    {
+      "lines": [
+        20,
+        22
+      ],
+      "paraphrase": "The same check-your-email answer appears whether or not the address is registered, to avoid leaking registered addresses.",
+      "fact": "f:w1vad9"
+    },
+    {
+      "lines": [
+        22,
+        24
+      ],
+      "paraphrase": "An address the owner did not add receives no email.",
+      "fact": "f:ygjlmh"
+    },
+    {
+      "lines": [
+        23,
+        23
+      ],
+      "paraphrase": "Advice to check the spam folder first.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        26,
+        28
+      ],
+      "paraphrase": "A second quick request sends no new link; the page says to check the inbox or wait a minute.",
+      "fact": "f:rbm80t"
+    },
+    {
+      "lines": [
+        30,
+        31
+      ],
+      "paraphrase": "Pointer to the error help page.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        33,
+        33
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        35,
+        35
+      ],
+      "paraphrase": "A session lasts about a month.",
+      "fact": "f:ikurih"
+    },
+    {
+      "lines": [
+        36,
+        36
+      ],
+      "paraphrase": "Advice to sign out on a shared computer.",
+      "new-fact": "f:j1eqxk"
+    },
+    {
+      "lines": [
+        37,
+        37
+      ],
+      "paraphrase": "The sign-out control sits with the editor's name in the sidebar.",
+      "fact": "f:qrv8tw"
+    },
+    {
+      "lines": [
+        39,
+        39
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        41,
+        42
+      ],
+      "paraphrase": "An account with nothing assigned sees a bare welcome notice and has nothing to write.",
+      "fact": "f:pgv0o5"
+    },
+    {
+      "lines": [
+        42,
+        43
+      ],
+      "paraphrase": "Advice to tell the site administrator so they can assign content.",
+      "new-fact": "f:puvoky"
+    },
+    {
+      "lines": [
+        45,
+        45
+      ],
+      "paraphrase": "Horizontal rule.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        47,
+        47
+      ],
+      "paraphrase": "A freshness stamp naming a review date.",
+      "cut": "marketing"
+    }
+  ]
+}

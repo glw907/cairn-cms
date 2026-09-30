@@ -1,0 +1,326 @@
+{
+  "page": "docs/admin/before-you-start.md",
+  "blob": "69ba0de74c2074e05afa04bcf0f7ac2fee41bc5c",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        3
+      ],
+      "paraphrase": "Page tagline.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        5,
+        5
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        7,
+        28
+      ],
+      "paraphrase": "Diagram: the tool creates or connects five assets, one of them a Cloudflare account with a Worker, two databases, one bucket.",
+      "fact": "f:vfpai6"
+    },
+    {
+      "lines": [
+        30,
+        30
+      ],
+      "paraphrase": "Caption: the tool holds none of the assets afterward.",
+      "fact": "f:58xph1"
+    },
+    {
+      "lines": [
+        32,
+        33
+      ],
+      "paraphrase": "The tool builds and connects five things.",
+      "fact": "f:vfpai6"
+    },
+    {
+      "lines": [
+        35,
+        36
+      ],
+      "paraphrase": "A private repository holds the site code and everything written, as markdown.",
+      "fact": "f:jzgztr"
+    },
+    {
+      "lines": [
+        37,
+        38
+      ],
+      "paraphrase": "A GitHub App publishes for writers so none needs a GitHub account.",
+      "fact": "f:5f4kmk"
+    },
+    {
+      "lines": [
+        39,
+        40
+      ],
+      "paraphrase": "Your Cloudflare account runs one Worker, two databases, one image bucket.",
+      "fact": "f:gcuj1j"
+    },
+    {
+      "lines": [
+        41,
+        41
+      ],
+      "paraphrase": "Optional domain, present only when connected.",
+      "fact": "f:vfpai6"
+    },
+    {
+      "lines": [
+        42,
+        42
+      ],
+      "paraphrase": "A sign-in database you control.",
+      "fact": "f:vfpai6"
+    },
+    {
+      "lines": [
+        44,
+        44
+      ],
+      "paraphrase": "The assets belong to the operator, not to cairn.",
+      "fact": "f:58xph1"
+    },
+    {
+      "lines": [
+        44,
+        46
+      ],
+      "paraphrase": "Repository holds all content as plain markdown; cloning it is enough to leave.",
+      "fact": "f:jzgztr"
+    },
+    {
+      "lines": [
+        48,
+        48
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        50,
+        50
+      ],
+      "paraphrase": "Framing that three things stand between you and setup, two of them money.",
+      "fact": "f:ewm3zx"
+    },
+    {
+      "lines": [
+        52,
+        57
+      ],
+      "paraphrase": "Workers Paid costs five dollars a month per account from first deploy; a second site adds nothing.",
+      "fact": "f:4gii31"
+    },
+    {
+      "lines": [
+        58,
+        62
+      ],
+      "paraphrase": "A domain costs about ten to fifteen dollars a year from a registrar; Cloudflare sells at cost and shows the price.",
+      "new-fact": "f:ewm3zx"
+    },
+    {
+      "lines": [
+        63,
+        64
+      ],
+      "paraphrase": "You create an API token yourself; the first run does not ask for one.",
+      "fact": "f:9jf20a"
+    },
+    {
+      "lines": [
+        64,
+        66
+      ],
+      "paraphrase": "The domain step opens Cloudflare create-token page with permissions preselected and asks you to paste the token.",
+      "new-fact": "f:kwor89"
+    },
+    {
+      "lines": [
+        67,
+        68
+      ],
+      "paraphrase": "Connecting to Workers Builds asks for a second, wider token.",
+      "fact": "f:pctgii"
+    },
+    {
+      "lines": [
+        68,
+        70
+      ],
+      "paraphrase": "Cloudflare can show a permission row as an empty control instead of an error.",
+      "new-fact": "f:rnju5o"
+    },
+    {
+      "lines": [
+        70,
+        71
+      ],
+      "paraphrase": "A token missing a permission is accepted and fails later at the step needing it.",
+      "fact": "f:9jf20a"
+    },
+    {
+      "lines": [
+        71,
+        72
+      ],
+      "paraphrase": "Confirm every requested row is filled in before creating the token.",
+      "new-fact": "f:rnju5o"
+    },
+    {
+      "lines": [
+        74,
+        75
+      ],
+      "paraphrase": "Total about six dollars a month: five for Workers Paid plus roughly one for domain renewal.",
+      "new-fact": "f:ewm3zx"
+    },
+    {
+      "lines": [
+        75,
+        77
+      ],
+      "paraphrase": "Whether the custom-domain certificate is included in the plan is unconfirmed.",
+      "fact": "f:idstv2"
+    },
+    {
+      "lines": [
+        78,
+        79
+      ],
+      "paraphrase": "The tool prints these figures before asking anything.",
+      "new-fact": "f:ewm3zx"
+    },
+    {
+      "lines": [
+        81,
+        81
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        83,
+        86
+      ],
+      "paraphrase": "A second editor needs a connected domain and Email Sending; a workers.dev-only site has no sender.",
+      "fact": "f:rlur7t"
+    },
+    {
+      "lines": [
+        86,
+        87
+      ],
+      "paraphrase": "Without both, the site works the same and only the owner can sign in.",
+      "new-fact": "f:k4di6b"
+    },
+    {
+      "lines": [
+        87,
+        89
+      ],
+      "paraphrase": "Pointers to the domain and invite pages.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        91,
+        91
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        93,
+        94
+      ],
+      "paraphrase": "Setup needs no code, but a few tasks need a developer.",
+      "new-fact": "f:y6n5ma"
+    },
+    {
+      "lines": [
+        96,
+        97
+      ],
+      "paraphrase": "Rotating the GitHub App key is a terminal and wrangler task for a developer.",
+      "fact": "f:3jpoi3"
+    },
+    {
+      "lines": [
+        98,
+        99
+      ],
+      "paraphrase": "Engine updates are a developer task; pointer to the upgrade page.",
+      "new-fact": "f:jtl15v"
+    },
+    {
+      "lines": [
+        100,
+        102
+      ],
+      "paraphrase": "Building beyond what cairn ships belongs to the extend track.",
+      "fact": "f:bhyvqg"
+    },
+    {
+      "lines": [
+        104,
+        106
+      ],
+      "paraphrase": "Describes which conditions the readiness page routes to a developer.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        108,
+        109
+      ],
+      "paraphrase": "Everything else in the track you do alone.",
+      "fact": "f:y6n5ma"
+    },
+    {
+      "lines": [
+        111,
+        111
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        113,
+        116
+      ],
+      "paraphrase": "A successor needs GitHub collaborator access, Cloudflare account access, and an editor row.",
+      "fact": "f:58xph1"
+    },
+    {
+      "lines": [
+        118,
+        119
+      ],
+      "paraphrase": "Entries are plain markdown files in git with no database only cairn reads; leaving means cloning.",
+      "fact": "f:jzgztr"
+    }
+  ]
+}

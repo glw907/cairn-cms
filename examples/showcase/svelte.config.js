@@ -49,8 +49,7 @@ export default {
     },
     // cairn's guard owns CSRF for the admin with its own double-submit token, tolerant of the
     // missing Origin header a JS-free form POST sometimes sends. SvelteKit's own checkOrigin
-    // runs ahead of any handle and would reject that POST first, so hand the authority over
-    // (see docs/extend/build-a-site-by-hand.md, "Wire the dev backend and the CSRF handoff").
+    // runs ahead of any handle and would reject that POST first, so hand the authority over.
     // WATCH: kit#15992 deprecates checkOrigin in favour of csrf.trustedOrigins; revisit this
     // handoff when that lands.
     csrf: { checkOrigin: false },

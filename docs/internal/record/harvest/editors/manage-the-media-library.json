@@ -1,0 +1,278 @@
+{
+  "page": "docs/editors/manage-the-media-library.md",
+  "blob": "88fbb10a63ec1245a62c735188edf796c0e14b33",
+  "claims": [
+    {
+      "lines": [
+        1,
+        1
+      ],
+      "paraphrase": "Page title.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        3,
+        4
+      ],
+      "paraphrase": "The Library screen, named Library in the sidebar, lists the site images without a draft open.",
+      "fact": "f:gponkz"
+    },
+    {
+      "lines": [
+        6,
+        7
+      ],
+      "paraphrase": "An account can lack the Library sidebar entry.",
+      "new-fact": "f:46pakl"
+    },
+    {
+      "lines": [
+        9,
+        9
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        11,
+        14
+      ],
+      "paraphrase": "The library shows counts, used total, and storage, a name and alt search, and a grid or list view toggle.",
+      "fact": "f:gponkz"
+    },
+    {
+      "lines": [
+        16,
+        19
+      ],
+      "paraphrase": "Three filters: All, Needs alt, and No references found.",
+      "fact": "f:hl6u0z"
+    },
+    {
+      "lines": [
+        20,
+        22
+      ],
+      "paraphrase": "No references found is not proof an image is unused.",
+      "fact": "f:hl6u0z"
+    },
+    {
+      "lines": [
+        24,
+        24
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        26,
+        27
+      ],
+      "paraphrase": "The detail panel shows a large preview, name, address, and where-used entries linking to their editors.",
+      "new-fact": "f:a4nxbu"
+    },
+    {
+      "lines": [
+        28,
+        30
+      ],
+      "paraphrase": "The Default alt text field seeds new placements and leaves existing placements untouched.",
+      "fact": "f:0zl0ha"
+    },
+    {
+      "lines": [
+        32,
+        32
+      ],
+      "paraphrase": "Save on the detail panel commits the edits.",
+      "fact": "f:a4nxbu"
+    },
+    {
+      "lines": [
+        34,
+        34
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        36,
+        37
+      ],
+      "paraphrase": "JPEG, PNG, WebP, and GIF are accepted directly and HEIC is converted automatically.",
+      "fact": "f:z70wsm"
+    },
+    {
+      "lines": [
+        37,
+        37
+      ],
+      "paraphrase": "Many phones save photos as HEIC.",
+      "new-fact": "f:rqvq5w"
+    },
+    {
+      "lines": [
+        39,
+        39
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        41,
+        44
+      ],
+      "paraphrase": "Replace image uploads a new file and reviews the published entries that will repoint plus open edits that keep the old file.",
+      "new-fact": "f:sa0e10"
+    },
+    {
+      "lines": [
+        45,
+        47
+      ],
+      "paraphrase": "Replacing needs the address typed every time and names how many entries change.",
+      "fact": "f:mz51pp"
+    },
+    {
+      "lines": [
+        49,
+        49
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        51,
+        55
+      ],
+      "paraphrase": "Push alt to placements fills placements lacking alt from the default, only overwrites custom alt on request, and previews the changes.",
+      "new-fact": "f:w7eq9q"
+    },
+    {
+      "lines": [
+        53,
+        54
+      ],
+      "paraphrase": "Push alt fills gaps only and leaves per-placement alt unless overwrite is chosen.",
+      "fact": "f:a17le1"
+    },
+    {
+      "lines": [
+        57,
+        57
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        59,
+        64
+      ],
+      "paraphrase": "An unused image gets a plain confirmation; a used one lists what breaks and needs its address typed; git keeps every version.",
+      "fact": "f:zgijeo"
+    },
+    {
+      "lines": [
+        66,
+        66
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        68,
+        70
+      ],
+      "paraphrase": "A selection checkbox sits at the top-left of a grid tile or in the first list column.",
+      "new-fact": "f:hvzyth"
+    },
+    {
+      "lines": [
+        70,
+        73
+      ],
+      "paraphrase": "Grid view supports Space, Shift+Arrow, and Ctrl or Cmd+A for selection.",
+      "fact": "f:0wwopk"
+    },
+    {
+      "lines": [
+        73,
+        74
+      ],
+      "paraphrase": "Selecting opens a bar with the count, Select all, and Delete.",
+      "fact": "f:hvzyth"
+    },
+    {
+      "lines": [
+        74,
+        75
+      ],
+      "paraphrase": "A bulk delete shows first which selected images are still in use.",
+      "fact": "f:hvzyth"
+    },
+    {
+      "lines": [
+        75,
+        77
+      ],
+      "paraphrase": "A bulk delete skips and names anything still in use rather than deleting it.",
+      "fact": "f:0wwopk"
+    },
+    {
+      "lines": [
+        79,
+        79
+      ],
+      "paraphrase": "Section heading.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        81,
+        84
+      ],
+      "paraphrase": "Find orphaned files scans for stored files absent from the library; deleting needs the count typed and cannot be undone.",
+      "fact": "f:lm6yf5"
+    },
+    {
+      "lines": [
+        85,
+        86
+      ],
+      "paraphrase": "Advice that the orphan scan is housekeeping and to ask the owner if unsure.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        87,
+        87
+      ],
+      "paraphrase": "Continuation of the advice to ask the owner first.",
+      "cut": "stance-without-owner-basis"
+    },
+    {
+      "lines": [
+        89,
+        89
+      ],
+      "paraphrase": "Horizontal rule.",
+      "cut": "navigation"
+    },
+    {
+      "lines": [
+        91,
+        91
+      ],
+      "paraphrase": "A freshness stamp naming a review date.",
+      "cut": "marketing"
+    }
+  ]
+}

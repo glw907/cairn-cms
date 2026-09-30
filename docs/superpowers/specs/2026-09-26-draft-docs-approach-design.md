@@ -168,8 +168,9 @@ records (`migration-notes.md`, `upgrade-cairn.md`), which stay maintained in pla
 is `why-cairn.md` plus five indexes (`docs/README.md` and the four arm READMEs). The root
 `README.md` is out of scope. Reference is 29 pages, checked in place outside the chain; its README
 stays in place and is stage 5's. Outlines may merge pages; the counts here do not assume it. The two added extend pages cost about
-1.3M at the lean rate; the Planned column below is not restated, since every share resets from the
-pilot's measured cost.
+1.3M at the lean rate; the Stage 2 row below (its derivation and its Planned figure) is not restated,
+so "24 x 0.65M" is a pre-sweep figure, not an oversight; every share resets from the pilot's
+measured cost.
 
 | Stage | Scope | Derivation | Planned |
 | --- | --- | --- | --- |
@@ -189,7 +190,7 @@ plan at about 36M.
 The planned total must sit at or below 80 percent of the ceiling, about 24M under R8's 30M, so the
 global 80 percent stop fires only on an overrun. **The full scope does not fit 30M, even lean.**
 Within 24M, stages 0, 1, and 5, the stage 2 to 4 overheads, and the pilot take about 21M, which
-leaves about 3M: roughly four more arm pages at the lean rate, so about 10 of the 45 arm pages.
+leaves about 3M: roughly four more arm pages at the lean rate, so about 10 of the 47 arm pages.
 The pilot checkpoint (under "Checkpoints and stops") settles the gap with one combined question to
 Geoff. Every share resets from the pilot's measured cost and again at each checkpoint.
 

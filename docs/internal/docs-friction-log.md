@@ -49,6 +49,19 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`maintainer`.** `tool/internal/health` carries package debt the harvest's close Go read
+  graded "sound with nits" (2026-09-30), all predating the harvest: `Options.Validate` and
+  `ActorProviderConsole` are exported with no outside caller; the three fix tables are walked by
+  hand in three places and the anchor and actor tests skip `fixesByReason` (one `allFixes`
+  iterator would cover all three); `check_creds.go:143-144` prints a raw Reason code where
+  `ReasonPhrase` exists; the repo-not-recorded outcome is written three times and `hasRepo` and
+  `DefaultBranch` live in `check_deploy.go` though three checks share them; the zone-read block
+  repeats in `check_delegation.go`; about thirty zero-argument message functions could be consts;
+  `diagnoseUnreachable`'s `budget` and `probeServing`'s `domain` are test-only seams; and comment
+  density runs 0.49 against `go/build`'s 0.37 (dated incident narratives, per-function
+  "catalogue section 3.4" citations, rebuttals of designs nobody wrote). Found by the harvest's
+  close `go-architecture-reader`, 2026-09-30.
+
 - **`developer`.** `docs/reference/cli-cairn-media-seed.md` (lines 4, 9, 24, 82) says `vite dev`
   serves seeded media. The scaffold's `npm run dev` sets `CAIRN_DEV_BACKEND=1`
   (`templates/waymark/scripts/dev.mjs:26-30`), which swaps `MEDIA_BUCKET` for an in-memory fake

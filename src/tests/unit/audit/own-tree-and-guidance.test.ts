@@ -14,8 +14,8 @@
 // One stated exemption: stock-default-hazards's guarded-retirement arm (identified by its own
 // message, which names "cairn-btn-guarded") is not counted. At the time this test was written it
 // fires four times in EditPage.svelte, because the engine keeps cairn-btn-guarded on those four
-// controls by design (stock-default-hazards.ts's own comment on that arm). That arm's own
-// promotion to error is still open, and it must retire those four sites first.
+// controls by design (stock-default-hazards.ts's own comment on that arm). That arm is
+// error tier now, so a later release retires those four sites and then the class itself.
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';

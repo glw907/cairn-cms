@@ -6,9 +6,9 @@
 // toward the stock pattern unless a gate catches it. Most of the eight hazards depend on which
 // OTHER attributes or classes an element carries, not on one class token in isolation, so this
 // rule groups `classTokens` by their owning element (`elementStart`) and reads each element's own
-// `attributes` off its `SourceNode`. The retirement arm and the three retired-patch arms are
+// `attributes` off its `SourceNode`. The three retired-patch arms are
 // advisory (`Finding.tier`, read per finding rather than inherited from this rule's own `error`
-// tier); every other arm here is error tier.
+// tier); the guarded-retirement arm and every other arm here is error tier.
 import { utilityBase } from './utility.js';
 import type { ClassToken, ParsedComponent, SourceNode } from '../../markup.js';
 import type { Finding, StaticRule } from '../../types.js';
@@ -41,16 +41,10 @@ const CARD_BORDER_MESSAGE =
   'var(--cairn-card-border), the theme-adaptive hairline (docs/internal/admin-design-system.md, ' +
   '"Component recipes", "Floating card")';
 
-// The promotion version stated in every finding this arm raises: the minor release that moves this
-// class's own retirement out of advisory tier. Kept as its own constant rather than folded into
-// the message string, since a version bump touches exactly one line.
-const GUARDED_RETIREMENT_PROMOTION_VERSION = '0.98.0';
-
 const GUARDED_RETIREMENT_MESSAGE =
   'class "cairn-btn-guarded" is retired; wrap the control in Tooltip for the reason text instead ' +
-  'of a native title attribute (docs/reference/admin-toolkit.md, Tooltip). Reported at advisory ' +
-  `tier until ${GUARDED_RETIREMENT_PROMOTION_VERSION} promotes the finding to error; the class ` +
-  'itself stays compiled until a later release removes it';
+  'of a native title attribute (docs/reference/admin-toolkit.md, Tooltip). The class itself ' +
+  'stays compiled until a later release removes it';
 
 // The promotion version stated in every finding the three retired-patch arms below raise: the
 // minor release that moves each finding out of advisory tier.
@@ -133,7 +127,7 @@ function tokenNamed(
 
 /**
  * A finding at a class token's or an attribute's own source range. Defaults to `error`, this
- * rule's own overall tier; the guarded-retirement arm below passes `advisory` explicitly, since
+ * rule's own overall tier; the retired-patch arms below pass `advisory` explicitly, since
  * `Finding.tier` is read per finding, not inherited from the rule's own declared tier.
  */
 function findingAt(
@@ -193,14 +187,13 @@ export const stockDefaultHazards: StaticRule = {
           const disabled = attributes.find((attr) => attr.name === 'disabled');
           if (disabled?.hardcodedTrue) findings.push(findingAt(file, disabled, DISABLED_MESSAGE));
 
-          // The class itself is retired, reported at advisory tier for one minor: the sweep it
-          // named replaces the native title attribute with Tooltip everywhere, and
-          // cairn-btn-guarded's own rule (restoring pointer-events, supplying the ghost fill)
-          // still has a real four-site consumer inside cairn's own tree, so the class stays
-          // compiled until a later release removes it, whatever tier the finding reaches.
+          // The class itself is retired: the sweep it named replaces the native title attribute
+          // with Tooltip everywhere, and cairn-btn-guarded's own rule (restoring pointer-events,
+          // supplying the ghost fill) still has a real consumer inside cairn's own tree, so the
+          // class stays compiled until a later release removes it.
           const token = tokenNamed(file, elementStart, 'cairn-btn-guarded');
           if (token) {
-            findings.push(findingAt(file, token, GUARDED_RETIREMENT_MESSAGE, 'advisory'));
+            findings.push(findingAt(file, token, GUARDED_RETIREMENT_MESSAGE));
           }
         }
 

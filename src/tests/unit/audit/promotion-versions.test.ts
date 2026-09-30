@@ -1,7 +1,7 @@
 // The promotion-version tripwire. Every rule that reports a consumer-facing finding at advisory
 // tier for a fixed window names its own promotion release through a `*PROMOTION_VERSION`
-// constant, the way `log-event-grammar.ts` and
-// `stock-default-hazards.ts`'s guarded-retirement arm already do. This test reads those constants
+// constant, the way `radius-scale.ts` and `stock-default-hazards.ts`'s retired-patch arms do.
+// This test reads those constants
 // as source text, never through a git ref (CI checks out at depth 1), so it holds regardless of
 // how the working tree got here.
 import { describe, it, expect } from 'vitest';

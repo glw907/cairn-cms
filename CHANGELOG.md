@@ -249,6 +249,21 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   a `public.exclude` path covers. A public `.svelte` file with a preprocessed `<style lang=...>` block
   raises a named advisory finding and the run continues.
 
+- `cairn-audit` promotes three findings from advisory to error tier, as their advisory window promised:
+  `log-event-grammar`, `log-secret-field`, and the `cairn-btn-guarded` retirement arm of
+  `stock-default-hazards`. A finding from any of the three now fails `check:cairn` and exits the
+  command nonzero, where it used to report and exit 0. The static rules are now seventeen at error
+  tier and four at advisory (`radius-scale`, `public-literals`, `theme-conformance`,
+  `theme-contrast`); the total stays 38. A finding's message no longer names a promotion version.
+  `radius-scale` and the three retired-patch arms of `stock-default-hazards` still report at
+  advisory tier until `0.99.0`.
+
+  Consumers must: fix every `log-event-grammar`, `log-secret-field`, and `cairn-btn-guarded`
+  finding before upgrading, or suppress it with a `cairn-audit-disable-next-line` directive that
+  names the rule and gives a reason, since each now fails `check:cairn`. Run `npx cairn-audit`
+  before the upgrade to see them; the two log rules also flag `console.info` and another library's
+  logger, so a false positive there is the case a suppression covers.
+
 ### Fixed
 
 - The admin's overlay drawer (below the `lg` breakpoint) now moves focus into the drawer when it

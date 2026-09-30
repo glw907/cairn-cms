@@ -331,6 +331,21 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   17 rendered (7 error-tier, 10 advisory-tier). Count by the registry arrays or by tier grep, not by a literal-string grep, which
   undercounts the rendered total by one (`motion-reduced-delay.ts` declares `id: RULE_ID`). Source:
   `src/lib/audit/rules/static/index.ts#staticRules` (the 21-entry array),
+  `src/lib/audit/rules/rendered/index.ts#renderedRules` (the 17-entry array).
+  [rejected: the tier split moved when `0.98.0` promoted `log-event-grammar` and `log-secret-field`; the count stays 38, now 17 static error tier and 4 advisory, see `f:yn6lst`]
+- `f:yn6lst` Exactly 38 rules are registered: 21 static (17 error tier, 4 advisory: `radius-scale`,
+  `public-literals`, `theme-conformance`, `theme-contrast`) plus 17 rendered (7 error-tier,
+  10 advisory-tier). `log-event-grammar`, `log-secret-field`, and the `cairn-btn-guarded`
+  retirement arm of `stock-default-hazards` were promoted to error tier for the `0.98.0` window:
+  each finding is `tier: 'error'`, no message names a promotion version, and the three
+  `0.98.0` `*PROMOTION_VERSION` constants are deleted. The three retired-patch arms of
+  `stock-default-hazards` stay advisory until `0.99.0`, as does `radius-scale`. Count by the
+  registry arrays or by tier grep, not by a literal-string grep, which undercounts the rendered
+  total by one (`motion-reduced-delay.ts` declares `id: RULE_ID`). Source:
+  `src/lib/audit/rules/static/log-event-grammar.ts#logEventGrammar`,
+  `src/lib/audit/rules/static/log-secret-field.ts#logSecretField`,
+  `src/lib/audit/rules/static/stock-default-hazards.ts#stockDefaultHazards`,
+  `src/lib/audit/rules/static/index.ts#staticRules` (the 21-entry array),
   `src/lib/audit/rules/rendered/index.ts#renderedRules` (the 17-entry array). [verified]
 - `f:o4ctu5` `public-literals` resolves over the public scope (`publicScope: true` on the rule), as
   `theme-conformance` and `theme-contrast` also do: `.svelte` and `.css` files under `public.scope` (default
@@ -495,10 +510,11 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `RADIUS_SCALE_PROMOTION_VERSION` and `RETIRED_PATCH_PROMOTION_VERSION` by name while the package
   version is below `0.99.0`, and fails when any constant's version is at or below the package
   version, naming the file, the constant, the version, and the choice owed: promote the finding to
-  error and delete the constant, or re-date it with a disclosed changelog line. It is green while
-  `package.json` is below `0.98.0` and turns red on the `0.98.0` version commit unless the three
-  `0.98.0` constants (`log-event-grammar`, `log-secret-field`, the guarded-retirement arm) are
-  decided. Source: `src/tests/unit/audit/promotion-versions.test.ts:27-83`. [verified]
+  error and delete the constant, or re-date it with a disclosed changelog line. The three `0.98.0`
+  constants (`log-event-grammar`, `log-secret-field`, the guarded-retirement arm) are decided and
+  deleted, so it stays green through the `0.98.0` version commit and turns red at `0.99.0` unless
+  `radius-scale` and the three retired-patch arms are promoted first. Source:
+  `src/tests/unit/audit/promotion-versions.test.ts:27-83`. [verified]
 - `f:2kja0n` `cairn-audit norms <role>` prints one `recipe:` line, and one indented line for the look it
   produces, under a role's header when a row of `ROLE_RECIPES` names that role; a role no recipe
   covers prints exactly as before. The recipe rows live outside the norms manifest, so the manifest

@@ -138,12 +138,12 @@ describe('the static rule registry', () => {
     expect(staticRules()).not.toBe(staticRules());
   });
 
-  // New consumer-facing findings enter at advisory tier for one minor, and never scoped to the
-  // admin frame: a log call is not confined to an admin surface.
-  it('registers log-event-grammar and log-secret-field at advisory tier, not adminOnly', () => {
+  // Both log rules are promoted to error tier, and never scoped to the admin frame: a log call
+  // is not confined to an admin surface.
+  it('registers log-event-grammar and log-secret-field at error tier, not adminOnly', () => {
     const byId = new Map(staticRules().map((rule) => [rule.id, rule]));
     for (const id of ['log-event-grammar', 'log-secret-field']) {
-      expect(byId.get(id)?.tier).toBe('advisory');
+      expect(byId.get(id)?.tier).toBe('error');
       expect(byId.get(id)?.adminOnly).toBeUndefined();
     }
   });

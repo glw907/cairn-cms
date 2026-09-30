@@ -18,17 +18,18 @@ component usually measure" as data instead of inference from a screenshot.
 
 `cairn-audit` (static: `npx cairn-audit`; rendered: `npx cairn-audit --rendered`, against a
 running dev server, both themes) runs thirty-eight rules across two modes: twenty-one static,
-fifteen error tier and six advisory, and seventeen rendered, seven error and ten advisory. Full
+seventeen error tier and four advisory, and seventeen rendered, seven error and ten advisory. Full
 descriptions live at `node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`, a path from
 your site's root (the installed package's copy).
 
 **Static, error tier:** `no-uncompiled-class`, `type-scale`, `gap-scale`,
 `stock-default-hazards`, `token-colors`, `grammar-boundary`, `focus-parity`, `motion-band`,
 `motion-property`, `motion-vocabulary`, `motion-hover-gate`, `reduced-motion`,
-`stripe-trim-parity`, `unlayered-font-clobber`, `list-role`.
+`stripe-trim-parity`, `unlayered-font-clobber`, `list-role`, `log-event-grammar`,
+`log-secret-field`.
 
-**Static, advisory tier**, each promoted to error tier at its own named version: `radius-scale`
-(`0.99.0`), `log-event-grammar` (`0.98.0`), `log-secret-field` (`0.98.0`). `public-literals` reads
+**Static, advisory tier**, promoted to error tier at its own named version: `radius-scale`
+(`0.99.0`). `public-literals` reads
 the site's public files instead of the admin surfaces and stays advisory for a consumer, so it has
 no promotion version. `theme-conformance` and `theme-contrast` also read the site's public files,
 need daisyUI installed beside the site (`theme-conformance` needs Tailwind too), and stay advisory

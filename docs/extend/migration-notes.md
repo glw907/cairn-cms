@@ -49,6 +49,14 @@ The release step sets the version number at the cut and renames this section to 
   and the `0.99.0` release that promotes it to error tier. Clear them before then: write
   `rounded-selector`, `rounded-field`, or `rounded-box` for a corner, and `btn btn-neutral` or
   `btn btn-soft btn-primary` for a retired button patch.
+- **Fix `log-event-grammar`, `log-secret-field`, and `cairn-btn-guarded` findings before you
+  upgrade.** All three moved from advisory to error tier, so each now fails `check:cairn` where it
+  used to report and exit 0. Run `npx cairn-audit` first. Rename a log event that does not read as
+  `area[.subject].verb_phrase`, drop a secret-named field from a log call (or log a count or a
+  boolean instead), and wrap a `cairn-btn-guarded` control in `Tooltip`. A false positive from a
+  `console.info` or another library's logger takes a `cairn-audit-disable-next-line` directive that
+  names the rule and gives a reason. `radius-scale` and the three retired-button-patch arms stay
+  advisory until `0.99.0`.
 - **Re-check any custom admin screen.** Nothing is required, but the admin now takes its look
   from daisyUI's theme layer. A plain daisyUI class on your own screen renders cairn's corner
   ladder and hairline edges, a plain `btn` is a hairline button, and a checked or pressed `btn`

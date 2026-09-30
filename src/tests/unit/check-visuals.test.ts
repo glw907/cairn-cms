@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { scanDocument } from '../../../scripts/checks/check-visuals.mjs';
+import { describe, it, expect, afterEach } from 'vitest';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { scanDocument, scanTree } from '../../../scripts/checks/check-visuals.mjs';
+import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 import { validateReproFence } from '../../lib/reproductions/validate.js';
 import type { ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 
@@ -252,5 +256,56 @@ describe('scanDocument: a page with no visuals at all', () => {
     expect(violations).toEqual([]);
     expect(diagramCount).toBe(0);
     expect(imageCount).toBe(0);
+  });
+});
+
+// The scan follows each arm's state (arm-state.mjs): an absent arm and an absent front door are
+// skipped by name, a kept-only or rebuilt arm is scanned, and the reference arm is always scanned,
+// so a missing reference directory throws rather than shrinking the scan.
+describe('scanTree, by arm state', () => {
+  const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+  const BAD_IMAGE = '![](shot.png)\n';
+  const roots: string[] = [];
+  afterEach(() => {
+    for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+  });
+
+  function tree(files: Record<string, string>, { list = true } = {}): string {
+    const root = mkdtempSync(join(tmpdir(), 'cairn-visuals-'));
+    roots.push(root);
+    const all: Record<string, string> = { 'docs/reference/core.md': '# Core\n', ...files };
+    if (list) all[DELETION_LIST_PATH] = JSON.stringify({ deleted: ['docs/README.md'], kept: KEPT });
+    for (const [path, content] of Object.entries(all)) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(join(root, path), content);
+    }
+    return root;
+  }
+
+  it('scans the reference arm alone with every narrative arm and the front door absent', () => {
+    expect(scanTree(tree({}))).toMatchObject({ filesScanned: 1, violations: [] });
+  });
+
+  it('scans a kept-only extend arm', () => {
+    const files = Object.fromEntries(KEPT.map((p) => [p, '# Kept\n']));
+    files['docs/extend/migration-notes.md'] = BAD_IMAGE;
+    const result = scanTree(tree(files));
+    expect(result.filesScanned).toBe(4);
+    expect(result.violations.map((v: { file: string }) => v.file)).toEqual(['docs/extend/migration-notes.md']);
+  });
+
+  it('scans a rebuilt admin arm and a rebuilt front door', () => {
+    const result = scanTree(tree({ 'docs/admin/a-page.md': BAD_IMAGE, 'docs/README.md': BAD_IMAGE }));
+    expect(result.violations.map((v: { file: string }) => v.file).sort()).toEqual(['docs/README.md', 'docs/admin/a-page.md']);
+  });
+
+  it('throws when the reference arm is missing', () => {
+    const root = tree({});
+    rmSync(join(root, 'docs/reference'), { recursive: true });
+    expect(() => scanTree(root)).toThrow();
+  });
+
+  it('fails closed without the deletion list', () => {
+    expect(() => scanTree(tree({}, { list: false }))).toThrow(/deletion-list\.json does not exist/);
   });
 });

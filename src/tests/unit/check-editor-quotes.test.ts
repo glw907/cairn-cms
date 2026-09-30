@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { describe, it, expect, afterEach } from 'vitest';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readdirSync, statSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 import {
   extractDocQuotes,
   buildPattern,
@@ -9,11 +10,16 @@ import {
   candidatesForFile,
   findStrandedQuotes,
   hasQuotesToCheck,
+  editorQuotesReport,
 } from '../../../scripts/checks/check-editor-quotes.mjs';
+import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const DOC_PATH = join(ROOT, 'docs/editors/when-something-goes-wrong.md');
 const LIB_DIR = join(ROOT, 'src/lib');
+
+// A page carrying one real shipped message, standing in for the editors page so these tests hold
+// whatever state the editors arm is in.
+const SAMPLE_PAGE = ['# When something goes wrong', '', '**"Pick a date for this entry."** This entry needs a date.', ''].join('\n');
 
 function walkExts(dir: string, exts: string[]): string[] {
   const out: string[] = [];
@@ -146,32 +152,92 @@ describe('candidatesForFile', () => {
   });
 });
 
-describe('findStrandedQuotes against the real repo', () => {
-  it('grounds every bolded quote on the editors page against a shipped src/lib string', () => {
-    const markdown = readFileSync(DOC_PATH, 'utf8');
+describe('findStrandedQuotes against the real src/lib', () => {
+  it('grounds a real shipped message quoted on a page', () => {
     const candidates = walkExts(LIB_DIR, ['.svelte', '.ts']).flatMap(candidatesForFile);
-    expect(findStrandedQuotes(markdown, candidates)).toEqual([]);
+    expect(findStrandedQuotes(SAMPLE_PAGE, candidates)).toEqual([]);
   });
 
   it('fails a quote a copy edit strands, proving the gate actually catches drift', () => {
-    const markdown = readFileSync(DOC_PATH, 'utf8').replace(
-      'Pick a date for this entry',
-      'Choose a date for this entry',
-    );
+    const markdown = SAMPLE_PAGE.replace('Pick a date for this entry', 'Choose a date for this entry');
     const candidates = walkExts(LIB_DIR, ['.svelte', '.ts']).flatMap(candidatesForFile);
     expect(findStrandedQuotes(markdown, candidates)).toEqual(['choose a date for this entry.']);
   });
 });
 
 describe('hasQuotesToCheck (the zero-quote floor)', () => {
-  it('is true for the real editors page', () => {
-    const markdown = readFileSync(DOC_PATH, 'utf8');
-    expect(hasQuotesToCheck(markdown)).toBe(true);
+  it('is true for a page carrying a bolded quote', () => {
+    expect(hasQuotesToCheck(SAMPLE_PAGE)).toBe(true);
   });
 
   it('is false for a page stripped of every bolded quote, so the gate cannot pass vacuously', () => {
-    const markdown = readFileSync(DOC_PATH, 'utf8').replace(/\*\*"[^"]+"\*\*/g, 'a message');
+    const markdown = SAMPLE_PAGE.replace(/\*\*"[^"]+"\*\*/g, 'a message');
     expect(extractDocQuotes(markdown)).toEqual([]);
     expect(hasQuotesToCheck(markdown)).toBe(false);
+  });
+});
+
+// The gate runs only while the editors arm is rebuilt (arm-state.mjs). Once the arm holds any page,
+// the pinned page must exist and carry a grounded quote, so a stage that renames or drops it fails
+// here instead of disarming the gate.
+describe('editorQuotesReport, by editors-arm state', () => {
+  const PAGE = 'docs/editors/when-something-goes-wrong.md';
+  const roots: string[] = [];
+  afterEach(() => {
+    for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+  });
+
+  function tree(files: Record<string, string>, { list = true } = {}): string {
+    const root = mkdtempSync(join(tmpdir(), 'cairn-editor-quotes-'));
+    roots.push(root);
+    const all: Record<string, string> = {
+      'src/lib/messages.ts': "export const DATE_MISSING = 'Pick a date for this entry.';\n",
+      ...files,
+    };
+    if (list) all[DELETION_LIST_PATH] = JSON.stringify({ deleted: [PAGE], kept: [] });
+    for (const [path, content] of Object.entries(all)) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(join(root, path), content);
+    }
+    return root;
+  }
+
+  it('skips, naming the state, while the editors arm is absent', () => {
+    const report = editorQuotesReport(tree({}));
+    expect(report.ok).toBe(true);
+    expect(report.lines.join('\n')).toMatch(/editors arm is absent/);
+  });
+
+  it('fails a rebuilt editors arm that no longer carries the pinned page', () => {
+    const report = editorQuotesReport(tree({ 'docs/editors/welcome.md': '# Welcome\n' }));
+    expect(report.ok).toBe(false);
+    expect(report.lines.join('\n')).toContain(`${PAGE} does not exist`);
+  });
+
+  it('fails a rebuilt page with no bolded quote', () => {
+    const report = editorQuotesReport(tree({ [PAGE]: '# When something goes wrong\n' }));
+    expect(report.ok).toBe(false);
+    expect(report.lines.join('\n')).toMatch(/0 bolded quotes/);
+  });
+
+  it('fails a rebuilt page whose quote no shipped string grounds', () => {
+    const report = editorQuotesReport(tree({ [PAGE]: SAMPLE_PAGE.replace('Pick', 'Choose') }));
+    expect(report.ok).toBe(false);
+    expect(report.lines.join('\n')).toContain('choose a date for this entry.');
+  });
+
+  it('passes a rebuilt page whose quote a shipped string grounds', () => {
+    expect(editorQuotesReport(tree({ [PAGE]: SAMPLE_PAGE }))).toEqual({
+      ok: true,
+      lines: ['check-editor-quotes: OK (1 quotes grounded)'],
+    });
+  });
+
+  it('fails closed without the deletion list', () => {
+    expect(() => editorQuotesReport(tree({ [PAGE]: SAMPLE_PAGE }, { list: false }))).toThrow(/deletion-list\.json does not exist/);
+  });
+
+  it('passes on the real tree', () => {
+    expect(editorQuotesReport(ROOT).ok).toBe(true);
   });
 });

@@ -1,0 +1,383 @@
+{
+  "_note": "Agent-facing. One entry per repaired link, narrowed gate assertion, and allowlist entry the harvest made. Each entry names the file, a grep-able context string, the old target, what was done, and the stage (2a, 2b, 3, 4, 5) whose rebuild restores or re-arms it; null means the change is permanent. Each stage outline consumes the entries keyed to it. The gate narrowings read arm state from scripts/checks/arm-state.mjs; an arm counts as rebuilt as soon as it holds any page outside the kept set, so extend's entries re-arm at the 2a pilot, not at 2b.",
+  "entries": [
+    {
+      "file": "scripts/checks/check-arm-indexes.mjs",
+      "context": "index: 'docs/admin/README.md', state: 'admin'",
+      "oldTarget": "docs/admin/README.md",
+      "done": "The admin arm's index coverage check runs only while the arm is rebuilt; absent, it is skipped by name.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/check-arm-indexes.mjs",
+      "context": "index: 'docs/editors/README.md', state: 'editors'",
+      "oldTarget": "docs/editors/README.md",
+      "done": "The editors arm's index coverage check runs only while the arm is rebuilt; absent, it is skipped by name.",
+      "stage": "4"
+    },
+    {
+      "file": "scripts/checks/check-arm-indexes.mjs",
+      "context": "index: 'docs/extend/README.md', state: 'extend'",
+      "oldTarget": "docs/extend/README.md",
+      "done": "The extend arm's index coverage check runs only while the arm is rebuilt; absent or kept-only, it is skipped by name.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-arm-indexes.mjs",
+      "context": "{ page: 'docs/why-cairn.md', index: 'docs/README.md' }",
+      "oldTarget": "docs/README.md",
+      "done": "The front-door link check (docs/README.md must link docs/why-cairn.md) runs only while the front door is rebuilt.",
+      "stage": "5"
+    },
+    {
+      "file": "scripts/checks/check-package-files.mjs",
+      "context": "admin: 'docs/admin/README.md'",
+      "oldTarget": "docs/admin/README.md",
+      "done": "requiredDocsPaths asks for the admin index in the tarball only while the arm is rebuilt.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/check-package-files.mjs",
+      "context": "editors: 'docs/editors/README.md'",
+      "oldTarget": "docs/editors/README.md",
+      "done": "requiredDocsPaths asks for the editors index in the tarball only while the arm is rebuilt.",
+      "stage": "4"
+    },
+    {
+      "file": "scripts/checks/check-package-files.mjs",
+      "context": "extend: 'docs/extend/README.md'",
+      "oldTarget": "docs/extend/README.md",
+      "done": "requiredDocsPaths asks for the extend index in the tarball only while the arm is rebuilt.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-package-files.mjs",
+      "context": "states['front-door'] === 'rebuilt'",
+      "oldTarget": "docs/README.md, docs/why-cairn.md",
+      "done": "requiredDocsPaths asks for both front-door files only while the front door is rebuilt; every kept page on disk is required in every state.",
+      "stage": "5"
+    },
+    {
+      "file": "scripts/checks/check-symbols.mjs",
+      "context": "{ path: 'docs/admin', arm: 'admin' }",
+      "oldTarget": "docs/admin/",
+      "done": "The symbol sweep skips the admin arm by name while it is absent; the reference arm and README.md must exist.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/check-symbols.mjs",
+      "context": "{ path: 'docs/editors', arm: 'editors' }",
+      "oldTarget": "docs/editors/",
+      "done": "The symbol sweep skips the editors arm by name while it is absent; the reference arm and README.md must exist.",
+      "stage": "4"
+    },
+    {
+      "file": "scripts/checks/check-symbols.mjs",
+      "context": "{ path: 'docs/why-cairn.md', arm: 'front-door' }",
+      "oldTarget": "docs/README.md, docs/why-cairn.md",
+      "done": "The symbol sweep skips both front-door files while the front door is absent.",
+      "stage": "5"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "'file-path:docs/extend/security-model.md'",
+      "oldTarget": "docs/extend/security-model.md",
+      "done": "Allowlisted: migration-notes.md's 0.97.0 record cites the page by path in a code span (the security-model.md#recovering-whitelist-semantics recipe); the record is immutable, so the path stays and is excused. The extend rebuild decides whether a rebuilt page carries the recipe.",
+      "stage": "2a"
+    },
+    {
+      "file": "src/tests/unit/github-slug-contract.test.ts",
+      "context": "## Milestone 1: a bare SvelteKit site, deployed",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md",
+      "done": "The heading stays a literal slug case; the source-page check skips it while the page's arm is not rebuilt, and fails once the arm is rebuilt without the page, so the case gets repointed at a live page.",
+      "stage": "2a"
+    },
+    {
+      "file": "src/tests/unit/github-slug-contract.test.ts",
+      "context": "# Is it working?",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "The heading stays a literal slug case; the source-page check skips it while the page's arm is not rebuilt, and fails once the arm is rebuilt without the page, so the case gets repointed at a live page.",
+      "stage": "3"
+    },
+    {
+      "file": "src/tests/unit/github-slug-contract.test.ts",
+      "context": "### You know it worked when",
+      "oldTarget": "docs/admin/own-your-domain.md",
+      "done": "The heading stays a literal slug case; the source-page check skips it while the page's arm is not rebuilt, and fails once the arm is rebuilt without the page, so the case gets repointed at a live page.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/check-readiness.mjs",
+      "context": "readinessProblemsForArm",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "List mode while the admin arm is not rebuilt: every live docsAnchor must be on scripts/checks/shipped-anchors.json. Once the arm holds any page, the checklist must exist and every live and shipped anchor must resolve on it.",
+      "stage": "3"
+    },
+    {
+      "file": "tool/internal/health/fixes_test.go",
+      "context": "anchorProblems",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "TestFixLineAnchorsResolveInDocs takes the same list mode: every fix-table Anchor must be on shipped-anchors.json while the admin arm is not rebuilt; once it is, the checklist must exist and carry every fix and shipped anchor.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/check-editor-quotes.mjs",
+      "context": "editorQuotesReport",
+      "oldTarget": "docs/editors/when-something-goes-wrong.md",
+      "done": "Skipped by name while the editors arm is not rebuilt. Once the arm holds any page, the pinned page must exist and ground its bolded quotes, or the gate must be repointed at the page that now quotes the editor messages.",
+      "stage": "4"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "DATED_RECORD_PREFIXES",
+      "oldTarget": "every deletion-list page and deleted arm directory",
+      "done": "Links from CHANGELOG.md, docs/internal/record/**, docs/internal/history/**, and docs/internal/feedback/** into a deletion-list page or a deleted arm directory are accepted permanently, anchor included. No stage re-arms this.",
+      "stage": null
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/explanation/auth-channel-security-model.md': 'docs/extend/auth-channel-security-model.md'",
+      "oldTarget": "docs/extend/auth-channel-security-model.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/explanation/editor-copyedit.md': 'docs/extend/enable-tidy.md'",
+      "oldTarget": "docs/extend/enable-tidy.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/explanation/enforced-design.md': 'docs/extend/add-a-custom-admin-screen.md'",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/explanation/media-storage.md': 'docs/extend/data-tiers.md'",
+      "oldTarget": "docs/extend/data-tiers.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/explanation/security-model.md': 'docs/extend/security-model.md'",
+      "oldTarget": "docs/extend/security-model.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/add-a-custom-admin-screen.md': 'docs/extend/add-a-custom-admin-screen.md'",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/add-a-login-channel.md': 'docs/extend/add-a-second-audience.md'",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/add-an-image.md': 'docs/editors/add-an-image.md'",
+      "oldTarget": "docs/editors/add-an-image.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the editors arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "4"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/add-an-island.md': 'docs/extend/add-an-island.md'",
+      "oldTarget": "docs/extend/add-an-island.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/add-authors.md': 'docs/extend/declare-your-own-concept.md'",
+      "oldTarget": "docs/extend/declare-your-own-concept.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/announce-on-publish.md': 'docs/extend/announce-on-publish.md'",
+      "oldTarget": "docs/extend/announce-on-publish.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/cloudflare-readiness.md': 'docs/admin/is-it-working.md'",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the admin arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/configure-auth-and-d1.md': 'docs/extend/add-cairn-to-a-sveltekit-app.md'",
+      "oldTarget": "docs/extend/add-cairn-to-a-sveltekit-app.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/define-an-adapter-and-schema.md': 'docs/extend/define-an-adapter-and-schema.md'",
+      "oldTarget": "docs/extend/define-an-adapter-and-schema.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md'",
+      "oldTarget": "docs/extend/enable-tidy.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/iterate-your-design-locally.md': 'docs/extend/design-your-site.md'",
+      "oldTarget": "docs/extend/design-your-site.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/link-content-with-references.md': 'docs/extend/link-content-with-references.md'",
+      "oldTarget": "docs/extend/link-content-with-references.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/manage-the-media-library.md': 'docs/editors/manage-the-media-library.md'",
+      "oldTarget": "docs/editors/manage-the-media-library.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the editors arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "4"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/organize-your-admin-nav.md': 'docs/extend/organize-your-admin-nav.md'",
+      "oldTarget": "docs/extend/organize-your-admin-nav.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/publish-and-discard.md': 'docs/editors/publish-and-history.md'",
+      "oldTarget": "docs/editors/publish-and-history.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the editors arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "4"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/read-cairn-logs.md': 'docs/admin/troubleshooting.md'",
+      "oldTarget": "docs/admin/troubleshooting.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the admin arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/restrict-admin-access.md': 'docs/extend/restrict-admin-access.md'",
+      "oldTarget": "docs/extend/restrict-admin-access.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/reuse-content-across-entries.md': 'docs/extend/reuse-content-across-entries.md'",
+      "oldTarget": "docs/extend/reuse-content-across-entries.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/share-a-draft-preview.md': 'docs/extend/share-a-draft-preview.md'",
+      "oldTarget": "docs/extend/share-a-draft-preview.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/wire-the-delivery-surface.md': 'docs/extend/wire-the-delivery-surface.md'",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/write-in-the-editor.md': 'docs/editors/write-in-the-editor.md'",
+      "oldTarget": "docs/editors/write-in-the-editor.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the editors arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "4"
+    },
+    {
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/reference/authoring-syntax.md': 'docs/editors/write-in-the-editor.md'",
+      "oldTarget": "docs/editors/write-in-the-editor.md",
+      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the editors arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
+      "stage": "4"
+    },
+    {
+      "file": "scripts/checks/transcript-blocks.mjs",
+      "context": "'docs/admin/create-your-site.md': 3",
+      "oldTarget": "docs/admin/create-your-site.md",
+      "done": "The per-page transcript floor holds only while the admin arm is rebuilt; once it is, the page must exist and carry its floor, or the floor must move to the page that now quotes the recorded run.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/transcript-blocks.mjs",
+      "context": "'docs/admin/is-it-working.md': 1",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "The per-page transcript floor holds only while the admin arm is rebuilt; once it is, the page must exist and carry its floor, or the floor must move to the page that now quotes the recorded run.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/transcript-blocks.mjs",
+      "context": "QUOTING_ARM = 'admin'",
+      "oldTarget": "packages/create-cairn-site/test/fixtures/transcripts/*.txt",
+      "done": "The every-fixture-is-quoted rule holds only while the admin arm is rebuilt; marked blocks elsewhere are still checked in full.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/check-visuals.mjs",
+      "context": "{ dir: 'docs/admin', arm: 'admin' }",
+      "oldTarget": "docs/admin/",
+      "done": "The visuals scan skips the admin arm by name while it is absent.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/check-visuals.mjs",
+      "context": "{ dir: 'docs/editors', arm: 'editors' }",
+      "oldTarget": "docs/editors/",
+      "done": "The visuals scan skips the editors arm by name while it is absent.",
+      "stage": "4"
+    },
+    {
+      "file": "scripts/checks/check-visuals.mjs",
+      "context": "INDEX_FILES = ['docs/README.md']",
+      "oldTarget": "docs/README.md",
+      "done": "The visuals scan reads the front-door index only while the front door is rebuilt.",
+      "stage": "5"
+    },
+    {
+      "file": "scripts/checks/check-snippets.mjs",
+      "context": "{ dir: 'docs/admin', arm: 'admin' }",
+      "oldTarget": "docs/admin/",
+      "done": "The snippet typecheck skips the admin arm by name while it is absent.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/check-snippets.mjs",
+      "context": "{ dir: 'docs/editors', arm: 'editors' }",
+      "oldTarget": "docs/editors/",
+      "done": "The snippet typecheck skips the editors arm by name while it is absent.",
+      "stage": "4"
+    }
+  ]
+}

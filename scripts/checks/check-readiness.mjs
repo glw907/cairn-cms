@@ -11,10 +11,18 @@
 // change as its live docsAnchor entry passes that comparison cleanly while every already-shipped
 // binary keeps linking to the fragment it was built with, and a fragment link can never be
 // redirected. The shipped list is append-only for exactly that reason.
+//
+// The checklist lives in the admin arm, which is deleted and later rebuilt (arm-state.mjs). While
+// the arm holds no page, the gate runs in list mode: every live docsAnchor must be on the shipped
+// list, which already carries every anchor the registry names, so a new condition cannot mint a
+// fragment no checklist and no released binary agree on. Once the arm holds any page it is
+// rebuilt, and the gate returns to the checklist: the page must exist, and every live and shipped
+// anchor must resolve on it, so a renamed or split checklist fails instead of disarming the gate.
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { headingAnchors } from './docs-links.mjs';
+import { armState } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const DOC = 'docs/admin/is-it-working.md';
@@ -179,6 +187,68 @@ export function readinessProblems(conditions, markdownText, shipped, doc = DOC) 
   return problems;
 }
 
+/**
+ * List mode's comparison: every live docsAnchor must carry an `#anchor` part, name the checklist
+ * file, and appear on the shipped list. A condition with no docsAnchor fails unless allowlisted,
+ * as in {@link checkReadiness}.
+ * @param {{ id: string, docsAnchor?: string }[]} conditions
+ * @param {string[]} anchors the shipped list's entries
+ * @param {Set<string>} allowlist
+ * @param {string} doc
+ */
+export function checkLiveAnchorsListed(conditions, anchors, allowlist = ALLOWLIST, doc = DOC) {
+  const listed = new Set(anchors);
+  const expectedFile = doc.slice(doc.lastIndexOf('/') + 1);
+  const problems = [];
+  for (const c of conditions) {
+    if (!c.docsAnchor) {
+      if (!allowlist.has(c.id)) {
+        problems.push(`${c.id}: no docsAnchor; add a checklist section or an allowlist entry with a reason`);
+      }
+      continue;
+    }
+    const hash = c.docsAnchor.indexOf('#');
+    const file = hash === -1 ? c.docsAnchor : c.docsAnchor.slice(0, hash);
+    if (hash === -1 || hash === c.docsAnchor.length - 1) {
+      problems.push(`${c.id}: docsAnchor "${c.docsAnchor}" carries no #anchor part`);
+      continue;
+    }
+    if (file !== expectedFile) {
+      problems.push(`${c.id}: docsAnchor names "${file}", but the checklist is ${expectedFile}`);
+      continue;
+    }
+    if (!listed.has(c.docsAnchor)) {
+      problems.push(
+        `${c.id}: docsAnchor "${c.docsAnchor}" is not in ${SHIPPED_ANCHORS_PATH}, and the admin arm holds no checklist to anchor it on; a new anchor waits for the admin arm's rebuild`
+      );
+    }
+  }
+  return problems;
+}
+
+/**
+ * The full problem list for the admin arm's state: list mode ({@link checkLiveAnchorsListed} plus
+ * the shipped list's own load defects) while the arm is not rebuilt, and {@link readinessProblems}
+ * against the checklist once it is. A rebuilt arm with no checklist page is itself the problem.
+ * @param {{ id: string, docsAnchor?: string }[]} conditions
+ * @param {string} adminState the admin arm's state from arm-state.mjs
+ * @param {string | null} docText the checklist's text, or null when the page does not exist
+ * @param {ShippedAnchorListResult} shipped
+ * @returns {string[]}
+ */
+export function readinessProblemsForArm(conditions, adminState, docText, shipped) {
+  if (adminState !== 'rebuilt') {
+    if (shipped.defects.length > 0) return [...shipped.defects];
+    return checkLiveAnchorsListed(conditions, shipped.anchors);
+  }
+  if (docText === null) {
+    return [
+      `${DOC} does not exist, but the admin arm holds pages; the checklist must come back with every anchor in ${SHIPPED_ANCHORS_PATH}, or this gate must be repointed at the page that carries them`,
+    ];
+  }
+  return readinessProblems(conditions, docText, shipped);
+}
+
 async function main() {
   const distPath = resolve(ROOT, CONDITIONS_JS);
   if (!existsSync(distPath)) {
@@ -188,9 +258,11 @@ async function main() {
   }
   const { allConditions } = await import(pathToFileURL(distPath).href);
   const conditions = allConditions();
-  const docText = readFileSync(resolve(ROOT, DOC), 'utf8');
+  const adminState = armState(ROOT, 'admin');
+  const docAbs = resolve(ROOT, DOC);
+  const docText = existsSync(docAbs) ? readFileSync(docAbs, 'utf8') : null;
   const shipped = loadShippedAnchors(resolve(ROOT, SHIPPED_ANCHORS_PATH), ROOT);
-  const problems = readinessProblems(conditions, docText, shipped);
+  const problems = readinessProblemsForArm(conditions, adminState, docText, shipped);
 
   if (problems.length > 0) {
     console.error(`check-readiness: ${problems.length} problem(s)`);
@@ -198,7 +270,13 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  console.log(`check-readiness: OK (${conditions.length} conditions, ${shipped.anchors.length} shipped anchors anchored in ${DOC})`);
+  if (adminState === 'rebuilt') {
+    console.log(`check-readiness: OK (${conditions.length} conditions, ${shipped.anchors.length} shipped anchors anchored in ${DOC})`);
+  } else {
+    console.log(
+      `check-readiness: OK in list mode (the admin arm is ${adminState}; ${conditions.length} conditions' docsAnchors all on the ${shipped.anchors.length}-entry ${SHIPPED_ANCHORS_PATH})`
+    );
+  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

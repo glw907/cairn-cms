@@ -15,6 +15,7 @@ import {
   parseMarkedBlocks,
   scanTree,
 } from '../../../scripts/checks/transcript-blocks.mjs';
+import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 
 const FIXTURES_DIR = 'packages/create-cairn-site/test/fixtures/transcripts';
 
@@ -199,10 +200,11 @@ describe('scanTree: failure modes', () => {
     made.length = 0;
   });
 
-  function buildTree(files: Record<string, string>): string {
+  function buildTree(files: Record<string, string>, { list = true } = {}): string {
     const root = mkdtempSync(join(tmpdir(), 'cairn-transcript-test-'));
     made.push(root);
-    for (const [rel, content] of Object.entries(files)) {
+    const all = list ? { [DELETION_LIST_PATH]: JSON.stringify({ deleted: [], kept: [] }), ...files } : files;
+    for (const [rel, content] of Object.entries(all)) {
       const abs = join(root, rel);
       mkdirSync(dirname(abs), { recursive: true });
       writeFileSync(abs, content);
@@ -369,6 +371,7 @@ describe('scanTree: failure modes', () => {
     const root = buildTree({
       [`${FIXTURES_DIR}/README.md`]: '## Deliberately unconsumed\n',
       [`${FIXTURES_DIR}/orphaned.txt`]: 'nobody quotes me\n',
+      'docs/admin/other.md': 'An admin page, so the arm that quotes the fixtures is rebuilt.\n',
     });
     const { violations } = scanTree(root);
     expect(kindsOf(violations)).toContain('fixture-uncited');
@@ -425,5 +428,37 @@ describe('scanTree: failure modes', () => {
     const { violations, blocksChecked } = scanTree(root);
     expect(violations).toEqual([]);
     expect(blocksChecked).toBe(4);
+  });
+
+  // The recorded run is quoted by the admin arm alone. While that arm holds no page (arm-state.mjs),
+  // its per-page floors and the every-fixture-quoted rule have no page to hold, so both wait for
+  // the arm's rebuild; a marked block anywhere else is still checked in full.
+  describe('by the admin arm\'s state', () => {
+    const fixtures = {
+      [`${FIXTURES_DIR}/README.md`]: '## Deliberately unconsumed\n',
+      [`${FIXTURES_DIR}/one.txt`]: 'hi\n',
+    };
+
+    it('holds no floor and no uncited fixture against an absent admin arm', () => {
+      const { violations } = scanTree(buildTree(fixtures));
+      expect(violations).toEqual([]);
+    });
+
+    it('restores both once the admin arm regains a page', () => {
+      const root = buildTree({ ...fixtures, 'docs/admin/a-new-page.md': 'No transcript blocks.\n' });
+      expect(kindsOf(scanTree(root).violations).sort()).toEqual(['fixture-uncited', 'page-below-floor', 'page-below-floor']);
+    });
+
+    it('still checks a marked block outside the admin arm', () => {
+      const root = buildTree({
+        ...fixtures,
+        'docs/reference/cli.md': [`<!-- transcript: ${FIXTURES_DIR}/one.txt -->`, '```', 'not in the fixture', '```'].join('\n'),
+      });
+      expect(kindsOf(scanTree(root).violations)).toEqual(['content-mismatch']);
+    });
+
+    it('fails closed without the deletion list', () => {
+      expect(() => scanTree(buildTree(fixtures, { list: false }))).toThrow(/deletion-list\.json does not exist/);
+    });
   });
 });

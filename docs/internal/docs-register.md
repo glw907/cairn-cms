@@ -213,8 +213,7 @@ git-backed editor in front. WordPress was hard to manage and hard to design in, 
 and theme customization that resisted integration with anything else, and casual editors found
 its block editor confusing." It is concrete, unhurried, and true, and its first person carries the
 author's evidence about why cairn exists, which is why a task, concept, or reference page never
-borrows that first person. The post-sweep `docs/README.md` is the third exemplar, in the
-front-door register.
+borrows that first person.
 
 ### Exemplars
 
@@ -223,8 +222,7 @@ A drafter reads each exemplar whole and imitates its anatomy and rhythm, never i
 - [`docs/extend/choose-an-ai-posture.md`](../extend/choose-an-ai-posture.md) is the primary
   exemplar, for both the task-guide anatomy (choose, set, pass, verify, resolve) and the voice
   (Geoff, 2026-09-28).
-- The why-cairn opener and the post-sweep `docs/README.md`, both in "Voice," are the exemplars for
-  the voice on the front door only.
+- The why-cairn opener in "Voice" is the exemplar for the voice on the front door only.
 - [`exemplars/google-task-create-project.md`](./exemplars/google-task-create-project.md), a Google
   task page, is an exemplar for anatomy.
 - [`exemplars/google-concept-auth-overview.md`](./exemplars/google-concept-auth-overview.md), a
@@ -511,10 +509,9 @@ code span (`` `Powered by Cairn` ``), which Vale skips, and that is the sanction
 a bare-quoted "Powered by Cairn". The rule's `\bCairn\b` also matches the prose word "Cairn"
 inside a slash path like "Cairn/x"; that is fine, because every real path in published prose
 already sits in a code span, so the rule never sees it as prose to begin with.
-Existing pages on a narrative arm still frozen (`docs/admin/`, `docs/editors/`,
-`docs/extend/`) are swept at that arm's stage merge, never before; a pass touching a
-still-frozen page for an unrelated reason does not take on a naming sweep of the whole page. A new page, or a page
-already open for an unrelated edit, writes to this table now. `tool/docs/` sits outside
+The narrative arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) are empty until their stages
+rebuild them, so no old page awaits a naming sweep; each stage writes to this table from its first
+page. A new page, or a page already open for an unrelated edit, writes to this table now. `tool/docs/` sits outside
 `.vale.ini`'s scope for the same reason: its pages move under `docs/` in draft docs pass A, and
 the Names rule reaches them once they do.
 
@@ -523,7 +520,7 @@ Two further rules carry the admin-or-public split's own retired compounds, kept 
 capital wordmark) and their message is about the Go tool and the capital "Cairn", not about a
 component surface. `Cairn.ComponentNames` (error) catches "engine public component", "public
 engine component", "chassis component", and "site component", since each names no page on a
-frozen narrative arm; the reference pages it reaches say "custom public component" instead.
+narrative arm; the reference pages it reaches say "custom public component" instead.
 `Cairn.ComponentNamesRetired` (warning) flags "engine component" and "custom component" for a
 second look, since each can be right in a sense a writer must check. Both are `ignorecase: true`,
 so a sentence-initial capital still raises the same finding.

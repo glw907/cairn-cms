@@ -120,10 +120,11 @@ never vouches for its own citations.
 ## How this container grows
 
 The three narrative doc arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) and `docs/why-cairn.md`
-are frozen against rewrites, open to fixes, until each arm's own stage merges (extend's lifts at
-the 2b merge). A pass that changes a public behavior files the container bullet and updates the
-reference page; no pass rewrites an arm's narrative wholesale ahead of its own stage merge, since
-that stage's draft rebuilds it from this container.
+are empty until each arm's own stage rebuilds them (extend's at 2a and 2b): the harvest deleted
+every old page once its facts landed here, and `docs/extend/` keeps only the per-version records
+below and `choose-an-ai-posture.md`. A pass that changes a public behavior files the container
+bullet and updates the reference page; no pass drafts an arm's narrative ahead of its own stage,
+since that stage's draft rebuilds it from this container.
 
 A site edit to an arm whose stage is in flight is filed, never fixed, and feeds that stage's page
 inputs instead. Otherwise, a deficiency a site pass DISCOVERS on a page (a missing step, a missing
@@ -142,7 +143,7 @@ both reviews, scoped to those sentences, except a pure term or link substitution
 branch off cairn-cms `main`, merged by PR under the docs gate before the site pass closes.
 
 **`docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are per-version records,
-outside the freeze**, maintained every pass like the reference arm.
+kept through the deletion**, maintained every pass like the reference arm.
 
 The friction log holds only what a site pass could not fix on the spot (a capability gap, not a
 page deficiency): something it needed that wasn't recorded, or was recorded wrong, filed into

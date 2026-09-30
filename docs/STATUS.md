@@ -22,8 +22,9 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md` (approved, S1 to S9), amending the
   parent draft docs spec. Ceiling 25M, flag 20M. Task 1 (the page chain's outline read and the
   kept-page fix) is done and accepted; tasks 2 onward wait for Geoff's R10 approval of the extend
-  outline at https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds (25 pages; he keeps or cuts the two
-  the code sweep added). Resume prompt below.
+  outline at https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds (25 pages with titles he approved
+  2026-09-30 and slugs that match them; he keeps or cuts the two the code sweep added,
+  `configure-media` and `run-cairn-audit-on-your-site`). Resume prompt below.
 - The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
   `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and filed its 12 code defects in the
   friction log (`bd8ab1fe`, on `main`, not pushed).

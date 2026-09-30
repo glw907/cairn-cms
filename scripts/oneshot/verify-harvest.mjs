@@ -24,9 +24,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 import { extractBullets, extractFactId, checkTag, factsFiles, buildBasenameIndex, SKIPPED_SECTIONS } from '../checks/check-facts.mjs';
-
-/** The four harvest arms, in report order. */
-export const ARMS = ['admin', 'editors', 'extend', 'front-door'];
+import { ARM_DIRS, ARM_NAMES as ARMS, armOf, armPages } from '../checks/arm-state.mjs';
 
 /** The fixed cut-reason list; anything else on a `cut` disposition fails. */
 export const CUT_REASONS = ['navigation', 'marketing', 'stance-without-owner-basis', 'illustrative', 'external-trivia'];
@@ -40,8 +38,6 @@ const MAX_PARAPHRASE_WORDS = 25;
 const RECORD_DIR = 'docs/internal/record/harvest';
 const LIST_FILE = `${RECORD_DIR}/deletion-list.json`;
 const FACTS_DIR = 'docs/internal/facts';
-const ARM_DOC_DIRS = { admin: 'docs/admin', editors: 'docs/editors', extend: 'docs/extend' };
-const FRONT_DOOR_PAGES = ['docs/why-cairn.md', 'docs/README.md'];
 
 /**
  * The git blob SHA of some bytes, identical to `git hash-object` on a file with that content.
@@ -53,19 +49,6 @@ export function gitBlobSha(content) {
 }
 
 /**
- * The arm a repo-relative page path belongs to, or null when it is in none.
- * @param {string} page
- * @returns {string | null}
- */
-function armOf(page) {
-  if (FRONT_DOOR_PAGES.includes(page)) return 'front-door';
-  for (const [arm, dir] of Object.entries(ARM_DOC_DIRS)) {
-    if (page.startsWith(`${dir}/`) && page.endsWith('.md')) return arm;
-  }
-  return null;
-}
-
-/**
  * The ledger path, relative to the record directory, that a page's ledger must live at:
  * `<arm>/<path inside the arm, extension swapped for .json>`.
  * @param {string} page
@@ -74,7 +57,7 @@ function armOf(page) {
 function ledgerPathFor(page) {
   const arm = armOf(page);
   if (!arm) return null;
-  const inside = arm === 'front-door' ? page.slice('docs/'.length) : page.slice(ARM_DOC_DIRS[/** @type {'admin'} */ (arm)].length + 1);
+  const inside = arm === 'front-door' ? page.slice('docs/'.length) : page.slice(ARM_DIRS[/** @type {keyof typeof ARM_DIRS} */ (arm)].length + 1);
   return `${arm}/${inside.replace(/\.md$/, '.json')}`;
 }
 
@@ -105,9 +88,7 @@ function walkRelative(base, dir, keep) {
  * @returns {string[]}
  */
 function treePages(root) {
-  const pages = Object.values(ARM_DOC_DIRS).flatMap((dir) => walkRelative(root, join(root, dir), (n) => n.endsWith('.md')));
-  for (const page of FRONT_DOOR_PAGES) if (existsSync(join(root, page))) pages.push(page);
-  return pages.sort();
+  return ARMS.flatMap((arm) => armPages(root, arm)).sort();
 }
 
 /**

@@ -54,7 +54,7 @@ A hand-tuned ink, `--color-muted`, or `--cairn-<status>-ink` goes in this block 
 The chassis `tokens.css` defaults every design-scale key inside `@theme`, so a theme may omit any of them and still generate every named utility. The defaulted keys are:
 
 - the three faces `--font-display`, `--font-body`, and `--font-mono`
-- `--font-weight-heading` and `--cairn-heading-case`
+- `--font-weight-heading`
 - `--text-step--1` through `--text-step-5`
 - the eight spacing steps `--spacing-3xs`, `-2xs`, `-xs`, `-s`, `-m`, `-l`, `-xl`, and `-2xl`
 - `--leading-body`, `--leading-snug`, and `--leading-tight`
@@ -62,6 +62,8 @@ The chassis `tokens.css` defaults every design-scale key inside `@theme`, so a t
 - `--container-measure` and `--container-measure-wide`
 
 A theme sets a defaulted key only to change its value. Redeclare it in the theme's own `@theme` block, after the `tokens.css` import.
+
+`--cairn-heading-case` is defaulted too, but as a plain role in a lowest layer rather than in `@theme`, since `text-transform` has no Tailwind namespace. The chassis sets it to `none`. A theme overrides it in each daisyUI block, or in its own `:root`, and leaves it out to keep headings as authored.
 
 A theme must set these, since neither the engine nor the chassis defaults them:
 

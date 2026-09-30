@@ -124,8 +124,12 @@ applies, and the page falls back to the system scheme.
 ### What a theme directory holds
 
 On the chassis, `src/theme/` is the theme and `src/chassis/` is the plumbing under it. The routes and
-the chassis import every file below by the `$theme` alias, so a theme built from scratch supplies all of
-them. `references/theme-starter.md` holds a complete daisyUI theme block to start `theme.css` from.
+the chassis import these files by the `$theme` alias, so a theme built from scratch supplies each of
+them: `theme.css`, `site.css`, `cairn.config.ts`, `site-config.ts`, `islands/registry.ts`, and the four
+components `SiteHeader.svelte`, `SiteFooter.svelte`, `ArticleView.svelte`, and `EntryRow.svelte`.
+`vite.config.ts` also reads `src/theme/cairn.config.ts` by path. The other files listed are Waymark's
+supporting files, reached by relative imports from those, and a theme needs one only when its own files
+import it. `references/theme-starter.md` holds a complete daisyUI theme block to start `theme.css` from.
 
 - **`theme.css`.** The two daisyUI blocks, the `@theme` scale, and an `@import` of
   `../chassis/tokens.css`. CSS reaches the chassis by relative import, since aliases don't resolve in CSS.

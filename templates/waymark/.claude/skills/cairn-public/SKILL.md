@@ -50,7 +50,7 @@ Change the token for the job, never a literal beside it.
 | Type, space, rhythm, measure | `--text-step-*`, `--spacing-*`, `--leading-*`, `--tracking-*`, `--container-measure` | `@theme` |
 | Corners | `--radius-selector`, `--radius-field`, `--radius-box` | each daisyUI block |
 | Floating-card elevation | `--cairn-shadow` | the scheme's `:root` block |
-| CTA panel | `--cairn-cta-bg`, `--cairn-cta-content`, `--cairn-cta-border`, `--cairn-cta-btn-bg`, `--cairn-cta-btn-content` | each daisyUI block, site-owned |
+| CTA panel | `--cairn-cta-bg`, `--cairn-cta-content`, `--cairn-cta-border`, `--cairn-cta-btn-bg`, `--cairn-cta-btn-content` | each daisyUI block (or a `:root` block with its dark counterpart), site-owned |
 | Header nav tracking | `--cairn-caption-tracking` | the `:root` block, site-owned |
 | Code block | `--cairn-code-bg`, `--cairn-code-ink`, `--cairn-code-keyword` | the block |
 | Focus ring | `--cairn-focus-ring-outline`, `--cairn-focus-ring-offset` | the block |
@@ -77,7 +77,8 @@ Three rows carry a rule.
 
 A per-scheme value goes in that scheme's daisyUI block, so it follows the scheme the page carries. A
 hand-tuned value, an ink override or the CTA set, goes in both blocks, since a value set in one block
-never reaches the other scheme. A
+never reaches the other scheme. The CTA set may instead sit in a `:root` block with its dark
+counterpart, as Waymark does; the daisyUI blocks are the simpler choice for a new theme. A
 value that carries a comma, such as `--cairn-shadow`, does not survive daisyUI's option parser, so it
 goes in that scheme's `:root` block. An unlayered `:root` role beats the sheet's layered default, and a
 stale copy of the old chassis `tokens.css` therefore cancels ink derivation without an error.

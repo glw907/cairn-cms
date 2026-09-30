@@ -91,3 +91,44 @@ test('with reduced motion preferred, the page renders and a known transition is 
   await expect(tab).toBeVisible();
   await expect(tab).toHaveCSS('transition-duration', '0s');
 });
+
+test('a heading case lever transforms a kit heading label but not its code identifier', async ({
+  page,
+}) => {
+  await page.goto('/styleguide');
+  const heading = page.locator('h3.sg-h3', { has: page.locator('code') }).first();
+  await expect(heading).toBeVisible();
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--cairn-heading-case', 'uppercase');
+  });
+  await expect(heading).toHaveCSS('text-transform', 'uppercase');
+  await expect(heading.locator('code')).toHaveCSS('text-transform', 'none');
+});
+
+test('the faces block names the font tokens and renders each in its token', async ({ page }) => {
+  await page.goto('/styleguide');
+  const faces = page.locator('.sg-faces');
+  await expect(faces).toBeVisible();
+  const text = (await faces.innerText()).toLowerCase();
+  for (const family of ['figtree', 'source sans', 'source code']) {
+    expect(text).not.toContain(family);
+  }
+  for (const token of ['--font-display', '--font-body', '--font-mono']) {
+    await expect(faces.getByText(token, { exact: true })).toHaveCount(1);
+  }
+  const samples = await faces
+    .locator('.sg-face-sample')
+    .evaluateAll((els) => els.map((el) => getComputedStyle(el).fontFamily));
+  const roots = await page.evaluate(() => {
+    const probe = document.createElement('p');
+    document.body.appendChild(probe);
+    const read = (token: string): string => {
+      probe.style.fontFamily = `var(${token})`;
+      return getComputedStyle(probe).fontFamily;
+    };
+    const out = ['--font-display', '--font-body', '--font-mono'].map(read);
+    probe.remove();
+    return out;
+  });
+  expect(samples).toEqual(roots);
+});

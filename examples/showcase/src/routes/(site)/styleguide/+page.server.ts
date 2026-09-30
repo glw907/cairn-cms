@@ -67,7 +67,7 @@ A table handles its own alignment, the header rule, and the zebra striping:
 | ---------- | ---------------- | ------------------------------- |
 | Heading    | \`## Text\`        | The shape of the post           |
 | Bold       | \`**word**\`       | A term that should stand out     |
-| Code block | \`\\\`\\\`\\\`lang\`     | Showing code, with highlighting |
+| Code block | \`\` \`\`\`lang \`\`  | Showing code, with highlighting |
 
 A figure holds a picture and its caption together, placed in the text column:
 

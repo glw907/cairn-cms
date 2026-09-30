@@ -71,24 +71,24 @@ or extend it; nothing here is a literal a re-skin would miss.
     { token: '--text-step--1', label: 'step--1', use: 'caption, meta' },
   ];
 
-  /** One labeled face: the font token, the family role name, and what it sets. */
+  /** One labeled face: the font token (also its label), what it sets, and a sample in that face. */
   type Face = { token: string; label: string; use: string; sample: string };
   const faces: Face[] = [
     {
       token: '--font-display',
-      label: 'display (Figtree)',
+      label: '--font-display',
       use: 'headings, pull-quotes',
       sample: 'Stacked one stone at a time',
     },
     {
       token: '--font-body',
-      label: 'body (Source Sans 3)',
+      label: '--font-body',
       use: 'body, UI, captions',
       sample: 'The quick brown fox jumps over the lazy dog',
     },
     {
       token: '--font-mono',
-      label: 'mono (Source Code Pro)',
+      label: '--font-mono',
       use: 'code',
       sample: 'const cairn = renderMarkdown(md);',
     },
@@ -288,7 +288,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     </p>
 
     <h3 class="sg-h3">Buttons</h3>
-    <div class="flex flex-wrap items-center gap-s">
+    <div class="sg-buttons flex flex-wrap items-center gap-s">
       <button class="btn btn-primary">Primary</button>
       <button class="btn btn-outline">Outline</button>
       <button class="btn btn-ghost">Ghost</button>
@@ -505,12 +505,21 @@ or extend it; nothing here is a literal a re-skin would miss.
     font-size: var(--text-step-1);
     color: var(--color-base-content);
   }
+  /* A code identifier in a heading is case-sensitive (a directive name), so a theme's heading case
+     never reaches it. */
+  .sg-h2 code,
+  .sg-h3 code {
+    text-transform: none;
+  }
   .sg-note {
     margin: 0 0 var(--spacing-s);
     max-width: var(--container-measure);
     font-size: var(--text-step-0);
     line-height: var(--leading-snug);
     color: var(--color-muted);
+  }
+  .sg-buttons + .sg-note {
+    margin-top: var(--spacing-s);
   }
   .sg-note code {
     font-family: var(--font-mono);

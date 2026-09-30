@@ -107,6 +107,8 @@ A theme writes each per-scheme value in that scheme's daisyUI block, so the valu
 
 A hand-tuned per-scheme value, such as an ink override or the CTA set, goes in both daisyUI blocks. A value set in one block never reaches the other scheme, so the scheme without it falls back to the engine's derived default, or to nothing for a site-owned key.
 
+The per-scheme CTA set can sit in either of two places. The simpler choice for a new theme is each daisyUI block. The other is a `:root` block with its dark counterpart, the form Waymark uses. Its light CTA values are unlayered, and a layered dark value in a daisyUI block would lose to them, so the dark values live in unlayered rules too. Both placements are valid.
+
 An unlayered `:root` role in a site's own sheet beats the sheet's layered default. A copy of the earlier chassis `tokens.css` therefore cancels ink derivation without any visible error, which is why the audit's `theme-conformance` rule raises a finding when a chassis file redeclares a default this sheet sets.
 
 ## Ink derivation

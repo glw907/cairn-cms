@@ -85,10 +85,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:am80o6` `docs/internal/` holds cairn's maintainer-facing planning and design records, none of them part of the adopter docs, and the npm package's `files` list ships the doc arms, `docs/README.md`, and `docs/why-cairn.md`, never `docs/internal/`. Source: `docs/internal/README.md:1-4`, `package.json:194-207`. [verified]
 
 ## CLAUDE.md
-- `f:psrfdx` Committer identity on publish is `cairn-cms[bot]` (the GitHub App's own bot identity); author is
-  the editor. Source: `src/lib/github/types.ts:20` and `repo.ts:262` confirm the mechanism
-  (committer omitted, GitHub attributes to the App); the literal string `cairn-cms[bot]` is
-  CLAUDE.md's own naming of that App identity, not found verbatim in `src/lib`. [verified]
+- `f:psrfdx` A publish commit is authored by the editor and sets no committer, so GitHub attributes it to the site's own GitHub App under that App's registered name, `cairn-<site slug>` for a scaffolded site; CLAUDE.md names that identity `cairn-cms[bot]`, which is not the name a site's App carries. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`, `packages/create-cairn-site/src/github/chapter.mjs:161`. [verified]
 - `f:9093mg` The GitHub App id is `3847496`; a single installation, id `135372268`, covers both ecxc-ski and
   907-life. Source: CLAUDE.md, "Credentials" section. [verified: values live in
   `~/.dotfiles/secrets/values.age` and `~/.local/secrets`, outside this repo, not independently

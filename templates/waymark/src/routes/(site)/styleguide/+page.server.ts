@@ -96,13 +96,24 @@ export const load: PageServerLoad = async () => {
 
   // One sample per registry entry, from the entry's `preview` serialized as directive markdown. An
   // entry with no `preview` has nothing to render and is listed by name instead.
-  const components: ComponentSample[] = [];
+  //
+  // WATCH: each sample renders in its own `render` call, so rehype-slug ids are not de-duplicated
+  // across samples; two samples that carry the same heading text would emit the same id.
+  const defs = cairn.rendering.components?.defs ?? [];
   const withoutPreview: string[] = [];
-  for (const def of cairn.rendering.components?.defs ?? []) {
+  const pending: { name: string; label: string; markdown: string }[] = [];
+  for (const def of defs) {
     const markdown = previewMarkdown(def);
     if (markdown === undefined) withoutPreview.push(def.name);
-    else components.push({ name: def.name, label: def.label, html: await render(markdown) });
+    else pending.push({ name: def.name, label: def.label, markdown });
   }
+  const components: ComponentSample[] = await Promise.all(
+    pending.map(async ({ name, label, markdown }) => ({
+      name,
+      label,
+      html: await render(markdown),
+    })),
+  );
 
   return { proseHtml: await render(SAMPLE), components, withoutPreview };
 };

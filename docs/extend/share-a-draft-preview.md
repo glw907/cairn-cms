@@ -73,10 +73,12 @@ to this route.
 
 ## Override the banner's palette
 
-`PreviewBanner` reads your site's theme tokens, so it follows your light and dark schemes with no
-setup. The draft state paints `--color-base-200` under a `--color-warning` border. The ended
-state paints `--color-base-100` under a `--color-info` border. Text uses `--color-base-content`,
-and links use `--cairn-warning-ink` or `--cairn-info-ink`.
+`PreviewBanner` reads daisyUI 5 role tokens, so it follows your light and dark schemes when your
+site uses daisyUI. A site without daisyUI sets the five custom properties below itself, since no
+literal fallback stands in for a missing token. The draft state paints `--color-base-200` under a
+`--color-warning` border. The ended state paints `--color-base-100` under a `--color-info` border.
+Text uses `--color-base-content`. The draft state has no link. The ended state's link uses
+`--cairn-info-ink` and shows a focus ring.
 
 To change the banner, declare its five custom properties in your site's own style sheet:
 `--cairn-preview-bg`, `--cairn-preview-fg`, `--cairn-preview-border`, `--cairn-preview-link`, and

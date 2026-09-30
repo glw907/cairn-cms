@@ -887,6 +887,20 @@ the named human gates only):**
 
 ## Next
 
+- **The theme toggle's first-paint icon and label mismatch on a dark-first theme (theme identity
+  pass C, 2026-09-29).** `SiteHeader` resolves the scheme only on the client, so a dark-first
+  theme on a light OS paints the light icon and label until hydration corrects them. Fix: select
+  the icon and label by CSS from the root's `data-theme` and `color-scheme`, so the first paint
+  is right with no script. Trigger: the next pass that touches `SiteHeader.svelte` or
+  `theme-toggle.ts`, or the first dark-first theme a site ships.
+
+- **The header carries two focus-ring languages, and its two-row layout needs scroll-padding at
+  narrow widths (theme identity pass C, 2026-09-29).** The nav links use a scoped rule and the
+  brand link takes the UA ring. Fix: unify both on `cairn-focus-ring`, which moves the pinned
+  header render, so the change re-baselines the header captures deliberately. The two-row header
+  also covers the top of an anchored target at narrow widths, so `scroll-padding-top` follows the
+  header's height there. Trigger: the next pass that touches the site header.
+
 - **`@glw907/cairn-cms-dev`'s `devBackendHandle` breaks a D1-backed admin screen (theme identity
   pass B probe, 2026-09-29).** It overwrites the platform proxy's `APP_DB` with a fake D1 that
   answers only the signups SQL. `DevBackendConfig` has no binding hook, and no shipped page says

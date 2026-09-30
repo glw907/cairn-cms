@@ -261,10 +261,16 @@ or extend it; nothing here is a literal a re-skin would miss.
       added to the registry appears here with no edit to this page.
     </p>
     {#each data.components as sample (sample.name)}
-      <h3 class="sg-h3">{sample.label} <code>{sample.name}</code></h3>
-      <div class="prose">
-        {@html sample.html}
-      </div>
+      <!-- A sample is its own section, labeled by the h3, so the heading level a sample's own
+           markdown uses never breaks the page outline. -->
+      <section aria-labelledby="sg-directive-{sample.name}">
+        <h3 id="sg-directive-{sample.name}" class="sg-h3">
+          {sample.label} <code>{sample.name}</code>
+        </h3>
+        <div class="prose">
+          {@html sample.html}
+        </div>
+      </section>
     {/each}
     {#if data.withoutPreview.length > 0}
       <p class="sg-note">
@@ -507,7 +513,6 @@ or extend it; nothing here is a literal a re-skin would miss.
   }
   /* A code identifier in a heading is case-sensitive (a directive name), so a theme's heading case
      never reaches it. */
-  .sg-h2 code,
   .sg-h3 code {
     text-transform: none;
   }

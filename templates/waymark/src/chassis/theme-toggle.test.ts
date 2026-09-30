@@ -37,6 +37,8 @@ describe('resolveTheme', () => {
     { attr: 'night', colorScheme: 'light', prefersDark: false, expected: 'night' },
     { attr: null, colorScheme: 'dark', prefersDark: false, expected: 'night' },
     { attr: null, colorScheme: 'light', prefersDark: true, expected: 'day' },
+    { attr: null, colorScheme: 'only dark', prefersDark: false, expected: 'night' },
+    { attr: null, colorScheme: 'only light', prefersDark: true, expected: 'day' },
     { attr: null, colorScheme: 'normal', prefersDark: true, expected: 'night' },
     { attr: null, colorScheme: 'normal', prefersDark: false, expected: 'day' },
     { attr: null, colorScheme: 'light dark', prefersDark: true, expected: 'night' },

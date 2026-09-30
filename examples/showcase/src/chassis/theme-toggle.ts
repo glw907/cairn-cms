@@ -20,7 +20,8 @@ export interface ThemeToggleConfig<T extends string> {
  * `data-theme` if an explicit choice (the visitor's toggle, or the head script reading the
  * persistence cookie) already set one. With no explicit choice, the scheme the root actually
  * renders in, read from its computed `color-scheme`, so a dark-first theme resolves dark on a light
- * OS with no edit to the page shell. A computed value other than exactly `light` or `dark`
+ * OS with no edit to the page shell. The value is split into words and `only` dropped, so `only dark`
+ * counts as `dark`. A computed value that leaves anything but a single `light` or `dark`
  * (`normal` from a block that omits the key, or `light dark`) says nothing definite, so the system
  * scheme decides.
  */
@@ -30,9 +31,12 @@ export function resolveTheme<T extends string>(config: ThemeToggleConfig<T>): T 
   // Equality narrowing against a generic parameter does not narrow `attr`'s type to `T`; the
   // check above already proves it, so the cast just states what the runtime check guarantees.
   if (attr === config.light || attr === config.dark) return attr as T;
-  const scheme = getComputedStyle(root).getPropertyValue('color-scheme').trim();
-  if (scheme === 'dark') return config.dark;
-  if (scheme === 'light') return config.light;
+  const words = getComputedStyle(root)
+    .getPropertyValue('color-scheme')
+    .split(/\s+/)
+    .filter((word) => word !== '' && word !== 'only');
+  if (words.length === 1 && words[0] === 'dark') return config.dark;
+  if (words.length === 1 && words[0] === 'light') return config.light;
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? config.dark : config.light;
 }
 

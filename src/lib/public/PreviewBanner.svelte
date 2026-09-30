@@ -19,12 +19,15 @@ there is nothing for a live region to announce, and `role="status"`'s implicit
 notice discoverable through landmark navigation, the honest fit for a static, supplementary piece
 of page status.
 
-Ships with a small scoped default that reads the site's theme tokens: daisyUI's role colors
+Ships with a small scoped default that reads the site's theme tokens: daisyUI 5's role colors
 (`--color-base-100`, `--color-base-200`, `--color-base-content`, `--color-warning`,
-`--color-info`) and the `--cairn-warning-ink` and `--cairn-info-ink` roles `cairn-public.css`
-defines. The draft state paints the `base-200` surface under a `warning` border and the ended state
-paints `base-100` under an `info` border, so the two stay distinct in every scheme the site's theme
-supports, with no `prefers-color-scheme` block of its own. It uses no DaisyUI component class and no
+`--color-info`) and the `--cairn-info-ink` role `cairn-public.css` defines. The defaults are
+daisyUI role tokens, so a site without daisyUI sets the five `--cairn-preview-*` properties itself;
+no literal fallback stands in for a missing token. The draft state paints the `base-200` surface
+under a `warning` border and the ended state paints `base-100` under an `info` border, so the two
+stay distinct in every scheme the site's theme supports, with no `prefers-color-scheme` block of
+its own. The draft state renders no link. The ended state's link reads `--cairn-info-ink` and shows
+a focus ring in the `cairn-focus-ring` language. It uses no DaisyUI component class and no
 Tailwind class (a consuming site may have neither) and no bundled font choice to fight. Every
 visual value reads a CSS custom property with a token fallback
 (`var(--cairn-preview-bg, var(--color-base-200))` and friends); it never declares one on the scoped
@@ -80,11 +83,10 @@ docs/extend/share-a-draft-preview.md ("Override the banner's palette").
 </aside>
 
 <style>
-  /* Every color is a token read: a daisyUI role, or a `cairn-public.css` role that carries a
-     daisyUI-variable fallback so the notice paints legibly on a site that has not yet imported
-     that sheet. Each `--cairn-preview-*` property is read here, never declared on this scoped
-     element: Svelte's scoping class would raise a declared property's own specificity past a plain
-     `:root` rule, making a site's override silently lose. */
+  /* Every color is a token read: a daisyUI 5 role, or a `cairn-public.css` role with a daisyUI
+     role as its own fallback. Each `--cairn-preview-*` property is read here, never declared on
+     this scoped element: Svelte's scoping class would raise a declared property's own specificity
+     past a plain `:root` rule, making a site's override silently lose. */
 
   .cairn-preview-banner {
     box-sizing: border-box;
@@ -108,10 +110,15 @@ docs/extend/share-a-draft-preview.md ("Override the banner's palette").
 
   /* Underlined, not colour alone (WCAG 1.4.1): Tailwind Preflight strips the UA underline on a
      consuming site, which would otherwise leave the link distinguished only by its
-     `--cairn-preview-link` colour against the surrounding text. */
+     `--cairn-preview-link` colour against the surrounding text. Only the ended state renders a
+     link, so its colour rule follows. */
   .cairn-preview-banner a {
-    color: var(--cairn-preview-link, var(--cairn-warning-ink, var(--color-base-content)));
     text-decoration: underline;
+  }
+
+  .cairn-preview-banner a:focus-visible {
+    outline: var(--cairn-focus-ring-outline, 2px solid currentColor);
+    outline-offset: var(--cairn-focus-ring-offset, 2px);
   }
 
   .cairn-preview-banner[data-state='published'] a {

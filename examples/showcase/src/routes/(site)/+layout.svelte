@@ -69,6 +69,8 @@ no-op under its own failure condition; see the comments above `onNavigate` and
 </svelte:head>
 
 <div class="cairn-site-shell site-shell bg-base-100 font-body text-base-content">
+  <!-- The skip link relies on `focus:absolute` sorting after `focus:not-sr-only` in the generated
+       CSS, so the focused link is positioned, not left as `sr-only`'s static box. -->
   <a
     href="#main"
     class="skip-link sr-only z-50 rounded-field bg-primary font-semibold text-primary-content no-underline focus:not-sr-only focus:absolute focus:top-s focus:left-s focus:px-xs focus:py-2xs"

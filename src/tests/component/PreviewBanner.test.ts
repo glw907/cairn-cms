@@ -86,6 +86,22 @@ describe('PreviewBanner', () => {
     }
   });
 
+  it('gives the ended-page link a solid focus outline, not the UA auto ring', async () => {
+    const preview: PreviewData['preview'] = {
+      state: 'published',
+      expiresAt: '2026-08-20T12:00:00.000Z',
+      published: { permalink: '/blog/my-post' },
+    };
+    const screen = await render(PreviewBanner, { preview });
+    const link = screen.getByRole('link', { name: /view the published page/i }).element() as HTMLElement;
+    link.focus();
+    const style = getComputedStyle(link);
+    expect(link.matches(':focus-visible')).toBe(true);
+    expect(style.outlineStyle).toBe('solid');
+    expect(style.outlineWidth).toBe('2px');
+    expect(style.outlineOffset).toBe('2px');
+  });
+
   it('renders the expiry as a <time> element with a fixed UTC string, independent of the host timezone', async () => {
     const preview: PreviewData['preview'] = {
       state: 'draft',

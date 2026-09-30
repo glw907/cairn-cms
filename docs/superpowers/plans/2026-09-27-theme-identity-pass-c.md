@@ -2086,6 +2086,23 @@ Spend: about 0.43M in subagents plus the conductor.
   `references/` pages (2,871 tokens), with every docs and skill gate green. **Lesson:** a docs fix
   round that edits a shipped skill must keep `check:package` in its reduced gate.
 
+### S3, the owner sitting (2026-09-29)
+
+- Sitting page: https://claude.ai/artifact/SLyB19JvyxDUXrqWFCWynG (the fixture theme at 1440 and 390
+  in both schemes, probe 3's component under both themes, the Waymark styleguide baselines, the
+  decided list). Geoff called the glance page and the sitting content great and returned no
+  corrections, so task 14 took no S3 run. He approved the held eslint-plugin-jsdoc 65 major ("take
+  the plugin") and the merge ("do the merge"). The `0.98.0` cut proceeds under decision 24's standing
+  release-path ruling.
+- Close pre-merge: the jsdoc bump and the two harvest chores (`a72d52ce`), the simplifier
+  (`0c8258d0`) plus the snippet's missed Node pin (`399c8670`), the full gate green at `caddd95f`,
+  then three reviews. The Opus audit read found four silent-green defects, fixed test-first in
+  `e46bb062`. The Svelte and accessibility folds landed in `e605816a`. The conductor's role-layer
+  redeclaration of muted and card-border broke a theme's `@theme` override and was reversed, with a
+  guard test (`40a73308`). The close docs are `65d16d41` (dotfiles `b4593f2`). The `0.98.0` audit
+  promotions (`log-event-grammar`, `log-secret-field`, the `cairn-btn-guarded` retirement arm) are
+  `facc5fcf`, so the version commit keeps `promotion-versions.test.ts` green.
+
 ## Post-mortem (2026-09-29)
 
 **What was built.** Tasks 0 to 14 and the close, in five segments plus the settle runs. The

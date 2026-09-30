@@ -329,6 +329,7 @@ the diff-reviewer checks the errata against the 2a plan fold's "Owed errata"
 - **The parent spec's exemplar erratum:** its "Exemplars" section says the drafter takes voice
   only from the register's brief and primary exemplar, and structure and detail per step from the
   page's two exemplars (task 3's voice-source outcome), with a status-line note.
+- **The register's exemplar line** (task 3's implementer, 2026-09-30): `docs/internal/docs-register.md:220`'s "imitates its anatomy and rhythm" follows the same voice ruling as the parent's Exemplars erratum.
 - **The prior-art record's erratum** (fold record, "Owed errata"): its lines 38 to 41 stop reading
   the sweep's corrected facts as resolved-but-stale drift; they were wrong when filed. Its
   missing-sources item is already closed by the addendum (FV-6).
@@ -536,5 +537,6 @@ Run `cairn-pass`'s close:
 | R10 approval (https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds) and outline fold (keep or cut: `configure-media`, `run-cairn-audit-on-your-site`) | outline at `8cc4d328`, no fold (saved version identical) | approved by Geoff 2026-09-30, both sweep pages kept | conductor |
 | 2 | `14297445`, `ba57f8e8` (one fix round: header root list) | accept | implementer ~0.45M, reviews ~0.1M (attribution only) |
 | 2 counts | 30 roots (27 exports), 264 generated, 156 pending at creation, 152 after the fix round; pilot pending/fact rows: security-model 0/3, add-cairn-to-a-sveltekit-app 14/12, add-a-custom-admin-screen 5/2, replace-magic-links-with-cloudflare-access 1/2, architecture 0/10, theme-your-public-site 6/0 | | |
+| 3 | dotfiles `b4cff06`, `7e2a304` (two hardening items from the review: the fact read blocks on any row still pending the page's slug; the multi-row retag order) | accept | implementer ~0.2M, review ~0.07M (attribution only) |
 
 ## Post-mortem

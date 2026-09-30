@@ -395,6 +395,7 @@ if a fact retag touches a mapped fact.
 - Fact `f:dzmj90` (the slug-contract case) is updated to the case's new source, and `f:e5hqn3`
   (a scaffold comment naming a section the harvest dropped) is checked against the template and
   fixed or retagged `[docs-drift]`, under the map rule if it is mapped.
+- Fact `f:shv6wv`'s `Source:` cites `content-routes-settings.ts:297,417`; they are now `:289,336,409` (S1 boundary, 2026-09-30).
 - The `MarkdownEditor.svelte` fact cites the ROADMAP flags as shifted resolve to the current
   lines (ROADMAP Next, "before stage 2a drafts from these"), and that entry leaves ROADMAP.
 
@@ -539,5 +540,7 @@ Run `cairn-pass`'s close:
 | 2 counts | 30 roots (27 exports), 264 generated, 156 pending at creation, 152 after the fix round; pilot pending/fact rows: security-model 0/3, add-cairn-to-a-sveltekit-app 14/12, add-a-custom-admin-screen 5/2, replace-magic-links-with-cloudflare-access 1/2, architecture 0/10, theme-your-public-site 6/0 | | |
 | 3 | dotfiles `b4cff06`, `7e2a304` (two hardening items from the review: the fact read blocks on any row still pending the page's slug; the multi-row retag order) | accept | implementer ~0.2M, review ~0.07M (attribution only) |
 | 4 | cairn `74a3b0dc`, `cd3a1869`; dotfiles `9fc2689`, `865b7dc` (one fix round: the 47-page total, the unrestated stage 2 row, `grep -e` under ugrep) | accept | implementer ~0.1M, review ~0.06M (attribution only) |
+| 4b | audit record and fixes cairn `6a6bb54b`; dotfiles `2936c23` (7 gaps landed, 8 refused; gap 4's post-merge pending target and gap 5's voice line are conductor rulings) | accept | audit ~0.12M, implementer ~0.07M, review ~0.05M (attribution only) |
+| S1 boundary | merge `3e19de2a`; friction DAD-1, EXB-4, EXB-5, and the unlinted `scripts/` (`39bd5faf`); README slug skip and the verified drift routine (`12b97d1e`) | done | ~0.1M |
 
 ## Post-mortem

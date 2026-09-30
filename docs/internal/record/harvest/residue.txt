@@ -11,13 +11,13 @@ Counts by class (lines):
   S     117  shipped-contract constants and the tests that mirror them (spec: check_referrer.go, conditions.json, shipped-a
   F      52  the facts files' page-path section headings (spec).
   E      28  non-link mentions in docs/internal/engine-rulings.md (spec; its Markdown link at line 593 was repaired to a pl
-  A     170  a hit naming an arm directory or a kept-set page, not a deleted page (spec).
-  G      24  a register, brief, or freeze-statement line naming a page a stage will rebuild, left in place and entered in r
-  N      85  a narrowed gate assertion or allowlist entry recorded in relink.json (spec: "Every repaired link, narrowed ass
+  A     182  a hit naming an arm directory or a kept-set page, not a deleted page (spec).
+  G      25  a register, brief, or freeze-statement line naming a page a stage will rebuild, left in place and entered in r
+  N      88  a narrowed gate assertion or allowlist entry recorded in relink.json (spec: "Every repaired link, narrowed ass
   T      98  unit-test fixtures that pin a recorded narrowing: in-memory trees and deletion lists that use the gate's own a
   V      10  the harvest verifier, its unit test, and their fixtures, plus the provenance and shipped-anchors gate fixtures
-  D      15  a discovery false positive: the basename matches an unrelated file (a content sample path, docs/internal/archi
-  F2     53  harvest notes and candidate text inside the facts files that name a harvested page in prose (audit notes, cut 
+  D      12  a discovery false positive: the basename matches an unrelated file (a content sample path, docs/internal/archi
+  F2     40  harvest notes and candidate text inside the facts files that name a harvested page in prose (audit notes, cut 
   X      82  UNCLASSIFIED BY THE SPEC. Non-link mentions of a deleted page in ROADMAP.md backlog entries, docs/internal/doc
   total 3296
 
@@ -39,7 +39,7 @@ Class definitions:
 === class H (2308 lines)
 H CHANGELOG.md  (64 lines)
 H docs/HISTORY.md  (15 lines)
-H docs/extend/migration-notes.md  (2 lines)
+H docs/extend/migration-notes.md  (1 lines)
 H docs/internal/feedback/2026-08-05-cairn-pub-migration.md  (1 lines)
 H docs/internal/history/STATUS-archive-2026-05-to-2026-07.md  (17 lines)
 H docs/internal/history/STATUS-archive-2026-07-02-to-2026-07-16.md  (1 lines)
@@ -254,7 +254,7 @@ H docs/internal/record/harvest/extend/what-the-scaffold-wrote.json  (1 lines)
 H docs/internal/record/harvest/extend/wire-the-delivery-surface.json  (1 lines)
 H docs/internal/record/harvest/front-door/README.json  (1 lines)
 H docs/internal/record/harvest/front-door/why-cairn.json  (1 lines)
-H docs/internal/record/harvest/relink.json  (283 lines)
+H docs/internal/record/harvest/relink.json  (284 lines)
 H docs/internal/record/repro-story-audit.md  (4 lines)
 
 === class U (254 lines)
@@ -565,7 +565,7 @@ E docs/internal/engine-rulings.md:5836: `docs/extend/restrict-admin-access.md`; 
 E docs/internal/engine-rulings.md:5927: `docs/extend/sign-in-through-your-organization.md`'s recipe block and login-methods section as
 E docs/internal/engine-rulings.md:6009: `docs/extend/migration-notes.md` carries the replacement composition as a `svelte` fence with
 
-=== class A (170 lines)
+=== class A (182 lines)
 A .vale.ini:31: ; docs/editors/** ends up on Microsoft alone, never Google plus Microsoft. Verified by measurement,
 A .vale.ini:33: [docs/editors/**]
 A CLAUDE.md:134: before the site pass closes. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md`
@@ -595,6 +595,18 @@ A docs/internal/docs-register.md:512: The narrative arms (`docs/admin/`, `docs/e
 A docs/internal/docs-register.md:641: ### The editor track (`docs/editors/`)
 A docs/internal/docs-register.md:666: ### The admin track (`docs/admin/`)
 A docs/internal/docs-register.md:690: ### The extend track (`docs/extend/`)
+A docs/internal/facts/README.md:4: source and a status tag. It is never shipped in the published docs arms (`docs/admin/`,
+A docs/internal/facts/README.md:124: every old page once its facts landed here, and `docs/extend/` keeps only the per-version records
+A docs/internal/facts/README.md:145: **`docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are per-version records,
+A docs/internal/facts/admin.md:3: Harvested 2026-09-15 from docs/admin/*. Agent-facing; never shipped; not register-graded. Every
+A docs/internal/facts/admin.md:29: - `f:jtl15v` Upgrading the cairn engine is code work in the site's repository: bump the `@glw907/cairn-cms` range in the site's `package.json`, make i
+A docs/internal/facts/admin.md:283: Harvested 2026-09-15 from docs/admin/*. Tightened 2026-09-15 (every `[candidate: ...]` tag
+A docs/internal/facts/editors.md:3: Harvested 2026-09-15 from docs/editors/*. Agent-facing; never shipped; not register-graded. Every fact carries a source. Format: one bullet per fact, 
+A docs/internal/facts/editors.md:172: Harvested 2026-09-15 from docs/editors/*. Tightened 2026-09-15 (every `[candidate: ...]` tag
+A docs/internal/facts/extend.md:3: Harvested 2026-09-15 from docs/extend/*, tightened the same day. Agent-facing; never shipped; not register-graded. Every fact carries a source. Format
+A docs/internal/facts/extend.md:502: - `f:6a339y` Four production sites depend on cairn, each on its own version range at plan-authoring time: `ecxc-ski` (`^0.95.0`), `907-life` (`^0.84.4
+A docs/internal/facts/extend.md:827: Harvested 2026-09-15 from docs/extend/*, split into two slices (pages 1-16, pages 17-32) that
+A docs/internal/facts/front-door.md:26: - `f:h0xykj` cairn is pre-1.0 (package version `0.97.0`) and its Extension API tier has broken across minors: the nav fields on `AdminShellData` and `
 A docs/internal/what-cairn-is-and-is-not.md:102: how-tos under `docs/admin/`, while `tool/docs/` keeps only ADRs and design inputs, since a
 A examples/showcase/src/routes/robots.txt/+server.ts:10: // `aiPosture` unset (docs/extend/choose-an-ai-posture.md) has no such property on its type. The
 A migrations/0000_auth.sql:29: -- is a hand-applied migration a consumer runs themselves (docs/extend/upgrade-cairn.md), not
@@ -737,7 +749,7 @@ A tool/internal/health/fixes_test.go:365: {name: "rebuilt: a nested page", list:
 A tool/internal/health/fixes_test.go:366: {name: "a non-Markdown file is no page", list: list, pages: []string{"docs/admin/diagram.png"}},
 A tool/internal/health/fixes_test.go:367: {name: "missing deletion list", pages: []string{"docs/admin/new.md"}, wantErr: true},
 
-=== class G (24 lines)
+=== class G (25 lines)
 G CLAUDE.md:109: `why-cairn.md` for an evaluator. A page serves one track or it is two pages. The admin, editors,
 G CLAUDE.md:118: narrative arms (admin, editors, extend) and `why-cairn.md` are empty until each arm's own stage
 G docs/internal/briefs/README.md:30: **The brief naming rule.** An arm's own `README.md` (`docs/admin/README.md`,
@@ -761,9 +773,10 @@ G docs/internal/docs-register.md:786: `docs/editors/welcome.md` without hunting,
 G docs/internal/docs-register.md:805: trade-offs, stays in `docs/why-cairn.md`.
 G docs/internal/docs-register.md:826: - The front door carries the cairn docs voice at its fullest, `docs/why-cairn.md` above all.
 G docs/internal/docs-register.md:853: - **A document identifier, fixed by suppression.** `auth-channel-security-model.md` cites "NIST
+G docs/internal/facts/README.md:122: The three narrative doc arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) and `docs/why-cairn.md`
 G docs/internal/what-cairn-is-and-is-not.md:3: > The public-facing content of this charter was absorbed by the why-cairn page (removed pending its rebuild) in
 
-=== class N (85 lines)
+=== class N (88 lines)
 N .github/workflows/tool.yml:22: - 'docs/admin/is-it-working.md'
 N .github/workflows/tool.yml:38: - 'docs/admin/is-it-working.md'
 N package.json:210: "docs/README.md",
@@ -794,7 +807,10 @@ N scripts/checks/check-symbols-allowlist.mjs:130: 'file-path:src/lib/today.ts', 
 N scripts/checks/check-symbols-allowlist.mjs:131: 'file-path:src/lib/members/channel.ts', // docs/extend/add-a-second-audience.md's illustrative auth-channel module
 N scripts/checks/check-symbols-allowlist.mjs:132: 'file-path:src/lib/content.ts', // docs/extend/build-a-site-by-hand.md and wire-the-delivery-surface.md's illustrative content-index module, by conven
 N scripts/checks/check-symbols-allowlist.mjs:133: 'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
+N scripts/checks/check-symbols-allowlist.mjs:134: 'file-path:src/content/posts/2026-08-14-hello.md', // docs/extend/build-a-site-by-hand.md's illustrative sample entry
 N scripts/checks/check-symbols-allowlist.mjs:135: 'file-path:old-site/content/posts/my-post.md', // docs/extend/migrate-existing-content.md's illustrative pre-migration source path
+N scripts/checks/check-symbols-allowlist.mjs:136: 'file-path:src/content/posts/2024-01-15-my-post.md', // docs/extend/migrate-existing-content.md's illustrative migrated output path
+N scripts/checks/check-symbols-allowlist.mjs:137: 'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
 N scripts/checks/check-symbols-allowlist.mjs:153: 'file-path:svelte-kit/cloudflare/_worker.js', // docs/extend/build-a-site-by-hand.md's wrangler.jsonc `main` field, mangled by the leading-dot trim
 N scripts/checks/check-symbols-allowlist.mjs:154: 'file-path:src/lib/access-identity.ts', // docs/extend/sign-in-through-your-organization.md's illustrative Access-verifier module, by convention
 N scripts/checks/check-symbols-allowlist.mjs:155: 'file-path:admin/__data.json', // docs/extend/sign-in-through-your-organization.md, SvelteKit's own data-only fetch path, never a file on disk
@@ -962,13 +978,10 @@ V src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/delet
 V src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/front-door/README.json:2: "page": "docs/README.md",
 V src/tests/unit/fixtures/verify-harvest/base/docs/internal/record/harvest/front-door/why-cairn.json:2: "page": "docs/why-cairn.md",
 
-=== class D (15 lines)
+=== class D (12 lines)
 D CLAUDE.md:152: separate docs deploy, no dev-docs channel (record: cairn-pub `docs/architecture.md`, "Docs
 D docs/internal/README.md:138: - `architecture.md`: the original architecture writeup.
 D docs/internal/pre-beta-harvest.md:485: documented in `docs/guides/wire-the-delivery-surface.md`) already reads a `{value, label}`
-D scripts/checks/check-symbols-allowlist.mjs:134: 'file-path:src/content/posts/2026-08-14-hello.md', // docs/extend/build-a-site-by-hand.md's illustrative sample entry
-D scripts/checks/check-symbols-allowlist.mjs:136: 'file-path:src/content/posts/2024-01-15-my-post.md', // docs/extend/migrate-existing-content.md's illustrative migrated output path
-D scripts/checks/check-symbols-allowlist.mjs:137: 'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
 D src/tests/integration/content-routes-fragments-delete.test.ts:110: expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
 D src/tests/integration/content-routes-fragments-edit.test.ts:140: delete gh.branches.get('main')!['src/content/fragments/welcome.md'];
 D src/tests/integration/content-routes-fragments-edit.test.ts:167: if (String(input).includes('src/content/fragments/welcome.md')) {
@@ -979,14 +992,8 @@ D src/tests/unit/public-routes-markdown.test.ts:60: expect(paths).toEqual(['2026
 D src/tests/unit/public-routes-markdown.test.ts:66: const data = await routes.markdownLoad({ url: new URL('https://x.test/2026/05/14/welcome.md') });
 D src/tests/unit/public-routes-markdown.test.ts:92: const welcome = await routes.markdownLoad({ url: new URL('https://x.test/2026/05/14/welcome.md') });
 
-=== class F2 (53 lines)
-F2 docs/internal/facts/README.md:4: source and a status tag. It is never shipped in the published docs arms (`docs/admin/`,
+=== class F2 (40 lines)
 F2 docs/internal/facts/README.md:5: `docs/editors/`, `docs/extend/`, `docs/reference/`, `docs/why-cairn.md`), and it is not
-F2 docs/internal/facts/README.md:122: The three narrative doc arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) and `docs/why-cairn.md`
-F2 docs/internal/facts/README.md:124: every old page once its facts landed here, and `docs/extend/` keeps only the per-version records
-F2 docs/internal/facts/README.md:145: **`docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are per-version records,
-F2 docs/internal/facts/admin.md:3: Harvested 2026-09-15 from docs/admin/*. Agent-facing; never shipped; not register-graded. Every
-F2 docs/internal/facts/admin.md:29: - `f:jtl15v` Upgrading the cairn engine is code work in the site's repository: bump the `@glw907/cairn-cms` range in the site's `package.json`, make i
 F2 docs/internal/facts/admin.md:233: - Pages whose facts are entirely covered by another page: none outright duplicated end-to-end; `what-to-run-and-when.md`'s dependency-floor and GitHub
 F2 docs/internal/facts/admin.md:235: - "Nothing here is rented from cairn" (before-you-start.md): framing/positioning, not a checkable fact.
 F2 docs/internal/facts/admin.md:237: - "A domain this new has no sending history yet... this trust builds on its own" (own-your-domain.md): a general email-deliverability observation, not
@@ -995,14 +1002,9 @@ F2 docs/internal/facts/admin.md:239: - The whole "What it costs" framing device 
 F2 docs/internal/facts/admin.md:252: package (the condition-id list its retired bin printed under is-it-working.md, and its two
 F2 docs/internal/facts/admin.md:253: restatements under troubleshooting.md and what-to-run-and-when.md) deleted, since the `cairn
 F2 docs/internal/facts/admin.md:264: what-to-run-and-when.md). Total facts after repair: 86.
-F2 docs/internal/facts/admin.md:283: Harvested 2026-09-15 from docs/admin/*. Tightened 2026-09-15 (every `[candidate: ...]` tag
-F2 docs/internal/facts/editors.md:3: Harvested 2026-09-15 from docs/editors/*. Agent-facing; never shipped; not register-graded. Every fact carries a source. Format: one bullet per fact, 
 F2 docs/internal/facts/editors.md:168: - Two docs-drift items worth flagging even though the underlying facts check out: (1) write-in-the-editor.md documents only the Format/Structure toolb
-F2 docs/internal/facts/editors.md:172: Harvested 2026-09-15 from docs/editors/*. Tightened 2026-09-15 (every `[candidate: ...]` tag
-F2 docs/internal/facts/extend.md:3: Harvested 2026-09-15 from docs/extend/*, tightened the same day. Agent-facing; never shipped; not register-graded. Every fact carries a source. Format
 F2 docs/internal/facts/extend.md:236: - `f:n0laoh` The `cairnManifest` Vite plugin has two distinct failure modes, confirmed by reading the plugin directly. (1) It fails the build if the c
 F2 docs/internal/facts/extend.md:371: - `f:7az6m2` If a site also builds the manifest with the `cairnManifest` Vite plugin, a concept missing from that plugin's own `content` option fails 
-F2 docs/internal/facts/extend.md:502: - `f:6a339y` Four production sites depend on cairn, each on its own version range at plan-authoring time: `ecxc-ski` (`^0.95.0`), `907-life` (`^0.84.4
 F2 docs/internal/facts/extend.md:795: Pages whose facts are entirely covered by another page: none in this slice; every page in the first 16 contributes at least one fact not stated elsewh
 F2 docs/internal/facts/extend.md:799: - `architecture.md`'s framing that the three-way core/adapter/SvelteKit split is "deliberate" is a design rationale, not a fact an implementer acts on
 F2 docs/internal/facts/extend.md:800: - `auth-channel-security-model.md`'s narrative about three earlier design rounds each failing by violating the identity-keyed-denial rule is historica
@@ -1017,11 +1019,9 @@ F2 docs/internal/facts/extend.md:816: package deleted (the `github.app` save-cha
 F2 docs/internal/facts/extend.md:817: `config.csrf-disable-missing` both-files bullet in build-a-site-by-hand.md, the
 F2 docs/internal/facts/extend.md:818: `config.tidy-key-missing` `ANTHROPIC_API_KEY`-probing bullet in enable-tidy.md, the
 F2 docs/internal/facts/extend.md:819: rotation-order runbook and its two `github.app` bullets in rotate-the-github-app-key.md, and the
-F2 docs/internal/facts/extend.md:827: Harvested 2026-09-15 from docs/extend/*, split into two slices (pages 1-16, pages 17-32) that
 F2 docs/internal/facts/extend.md:830: The one remaining candidate (migrate-existing-content.md's inline-validation workflow claim) is
 F2 docs/internal/facts/extend.md:832: (enable-tidy.md's dev-backend Anthropic-client-stub claim) is carried in its own page section, not
 F2 docs/internal/facts/front-door.md:3: Harvested 2026-09-15 from docs/why-cairn.md, README.md, docs/README.md, and CLAUDE.md.
-F2 docs/internal/facts/front-door.md:26: - `f:h0xykj` cairn is pre-1.0 (package version `0.97.0`) and its Extension API tier has broken across minors: the nav fields on `AdminShellData` and `
 F2 docs/internal/facts/front-door.md:84: - `f:am80o6` `docs/internal/` holds cairn's maintainer-facing planning and design records, none of them part of the adopter docs, and the npm package'
 F2 docs/internal/facts/front-door.md:169: - "None of these choices is reversible piece by piece" (docs/why-cairn.md:49) is a design stance,
 F2 docs/internal/facts/front-door.md:172: (docs/why-cairn.md:63) restates the owner-brief "Tuned for a small editorial team, by default"

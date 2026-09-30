@@ -703,9 +703,9 @@
     },
     {
       "file": "docs/extend/migration-notes.md",
-      "context": "blob/v0.97.0/docs/extend/share-a-draft-preview.md",
+      "context": "[the `PreviewBanner` reference](../reference/public.md#previewbanner)",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
-      "done": "Historical entry keeps its text; the link is a GitHub permalink at v0.97.0, the newest tag that contains the page. Permanent: a rebuilt page does not change what the 0.98 entry pointed at.",
+      "done": "Retargeted to the reference page that documents PreviewBanner's /public import. The bullet sits in the unreleased window, so a permalink to the old page would teach the retired /components import. Permanent.",
       "stage": null
     },
     {
@@ -1413,6 +1413,13 @@
       "context": "`why-cairn.md` for an evaluator",
       "oldTarget": "docs/why-cairn.md",
       "done": "The docs-section line still names the front-door evaluator page in a code span, now with the statement that the front door holds no page until its stage rebuilds it.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/facts/README.md",
+      "context": "The three narrative doc arms (`docs/admin/`, `docs/editors/`",
+      "oldTarget": "docs/admin/; docs/editors/; docs/extend/; docs/why-cairn.md",
+      "done": "First line of the empty-until-rebuilt statement that replaced the per-arm freeze; it names the front-door evaluator page in a code span.",
       "stage": "5"
     }
   ]

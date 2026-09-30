@@ -149,8 +149,8 @@ list here, so when the map and the tree disagree, trust the tree and fix the map
   gallery) live in their own repository,
   [glw907/cairn-themes](https://github.com/glw907/cairn-themes).
 - `docs/`: the four published tracks (`admin/`, `editors/`, `extend/`, `reference/`) ship in
-  the npm package once each holds pages; the front door joins them when it is rebuilt. See "Choosing a docs
-  track" above for what belongs where. `internal/` is maintainer-facing, `superpowers/` holds
+  the npm package once each holds pages; the front door joins them when it is rebuilt. See
+  "Choosing a docs track" above for what belongs where. `internal/` is maintainer-facing, `superpowers/` holds
   the dated specs and plans as history, and `STATUS.md` is the rolling project status.
 - `packages/cairn-cms-dev/`: the companion package `@glw907/cairn-cms-dev`, a
   local-development fake backend. Install it as a `devDependency` only, never in production.

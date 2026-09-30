@@ -11,8 +11,8 @@ This subpath carries the second-audience login discipline the factory owns: code
 canonicalization, identity derivation and salting, the atomic budget and lockout mechanics,
 session issuance and revocation, and the D1 schema underneath all of it. The email magic-link
 stays the zero-config default and the documented primary path for cairn editors. A general-purpose
-auth primitive with no bearing on this discipline stays out. The design is built from one rule: no control keyed on the victim's identity
-may deny, delay, or destroy anything.
+auth primitive with no bearing on this discipline stays out. The design is built from one rule: no
+control keyed on the victim's identity may deny, delay, or destroy anything.
 
 ```ts
 import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';

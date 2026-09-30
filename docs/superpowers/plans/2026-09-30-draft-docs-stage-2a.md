@@ -339,7 +339,8 @@ if a fact retag touches a mapped fact.
 - `docs/extend/README.md` is an interim index: a one-sentence statement that the arm is being
   rebuilt, one heading per outline group whose text is the group's `title` exactly (the
   `cairn-docs-outline link` helper locates a group by that heading and fails naming a missing
-  one), and links to the three kept pages under Operate. Stage 5 rebuilds its prose; it takes no
+  one), and links to the kept pages: `choose-an-ai-posture.md` under Public site (it sets the
+  robots posture), `upgrade-cairn.md` and `migration-notes.md` under Operate. Stage 5 rebuilds its prose; it takes no
   brief now.
 - Every `LEGACY_PATH_MAP` value under `docs/extend/` that names a page not on disk points at the
   interim index, the `setup` rearms included, whatever their `action` text says; `relink.json`

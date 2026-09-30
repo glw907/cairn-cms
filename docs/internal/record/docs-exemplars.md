@@ -249,6 +249,13 @@ Base path: `~/.local/share/cairn/exemplars/extenders/`. Where the rendered HTML 
   - **Moves that make it work:** each heading is one verb step; shows the scaffold CLI prompts verbatim with answers; ends with "where you'll see it" (the running URL), so the reader can verify success.
   - **Do not copy:** Docker volume steps; the newsletter footer.
 
+### Tutorial
+
+- **Astro: Create your first Astro page** — https://docs.astro.build/en/tutorial/2-pages/1/ — `astro-tutorial-2-pages-1/` — evidence: the register's tutorial-milestone anatomy names Astro's tutorial devices; otherwise reputation only. Added 2026-09-30 (extend outline review, OE2) as the only tutorial capture.
+  - **Structure:** one sentence tying the unit to the last one, a "Get ready to" list of the unit's objectives, then verb-headed sections with numbered steps, a "Try it yourself" block with a collapsed "Show me the steps." answer, a publish section that ships the change, and a closing checklist of "I can" statements.
+  - **Moves that make it work:** the objectives are stated before any step, so the reader knows what finished looks like; nearly every step ends in something the reader checks in the browser (the page loads at `/about`, the links move between pages); the checklist before advancing restates the objectives as abilities; the collapsed answer lets a reader try first without getting stuck; each unit ends deployed, so the site is live after every unit.
+  - **Do not copy:** the beginner register (VS Code tips, "Auto Save", what a commit is); the Netlify and VS Code specifics; the `Box`, `PreCheck`, and `Checklist` MDX components, which cairn's markdown renders as plain headings and lists. `page.md` is the MDX docs source; `page.html` is the rendered page.
+
 ### Reference entry
 
 - **Stripe API: Create a PaymentIntent** — https://docs.stripe.com/api/payment_intents/create — `stripe-create-paymentintent/` — evidence: industry benchmark for API reference (https://www.moesif.com/blog/best-practices/api-product-management/the-stripe-developer-experience-and-docs-teardown/).

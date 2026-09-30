@@ -2167,3 +2167,25 @@ test, the named-root rule, the `/tmp` quota, and the unpromised promotion). It i
 - A layer that redeclares a value Tailwind resolves elsewhere changes who wins; test the override
   from the theme's side, not only the default.
 - Harness runs need `TMPDIR` on disk here; `/tmp` is a small shared tmpfs.
+
+### The 0.98.0 cut (2026-09-30)
+
+- Released `v0.98.0` (release commit `0655e879`, dev-package alignment `a84a6853`; npm `latest` for
+  both packages). The first `test` run failed on `check:dev-package` (the dev package stayed at
+  `0.97.0`); the `cairn-release` skill now bumps it and runs the check at the cut (dotfiles
+  `b7374d0`). Pre-cut: #100 (`viewport-overflow` timing, 23 and 34 errors before, 0 in five runs
+  after) and #101 (patch top-up; daisyUI 5.7.47's theme values identical).
+- **Five-site public-scope counts at 0.98.0** (run in scratch copies with daisyui 5.7.47 and
+  tailwindcss 4.3.3, since four sites had no `node_modules`; `@fontsource` imports unread):
+  | site | public-literals / theme-conformance / theme-contrast | files | promoted-rule errors |
+  | --- | --- | --- | --- |
+  | ecxc-ski | 27 / 1 / 1 | 110 | 4 `log-event-grammar` |
+  | 907-life | 10 / 1 / 0 | 70 | 1 `log-event-grammar` |
+  | aksailingclub-org | 41 / 8 / 2 | 507 | 34 `log-event-grammar` |
+  | xcathletes-org | 4 / 1 / 0 | 355 | 7 `log-event-grammar` |
+  | cairn-pub | 1 / 1 / 0 | 100 | 0 |
+  No site carries a `log-secret-field` or `cairn-btn-guarded` error. Each of the four sites with
+  `log-event-grammar` errors fails `check:cairn` on upgrading until it renames those events (the
+  `Consumers must:` line); each site's upgrade pass takes that. The Toward-1.0 promotion of the two
+  theme rules stays gated on all five reporting zero. Raw outputs:
+  `/var/home/glw907/.cache/cairn-tmp/scratch/{pub,full}-<site>.txt` (machine-local).

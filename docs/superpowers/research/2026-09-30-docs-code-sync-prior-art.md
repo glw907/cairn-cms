@@ -336,3 +336,13 @@ change), release. "Under agents": whether the method's assumptions **hold**, **s
   true for agents.
 - **Judge precision.** Sweep findings are candidates until the independent judge confirms them
   against source.
+
+## Addendum (2026-09-30): two sources the sync spec cites outside the methods table
+
+Added at the spec's second fold (fold verification FV-6), so guard condition 1 finds both here.
+Both pages were fetched on 2026-09-30 and the quotes checked verbatim.
+
+| Method | Source | What it supports in the spec |
+|---|---|---|
+| **Explain it as if shipped**: the Rust RFC template requires a "Guide-level explanation": "Explain the proposal as if it was already included in the language and you were teaching it to another Rust programmer." | https://github.com/rust-lang/rfcs/blob/master/0000-template.md | S7, docs as a design review: what is hard to teach names a design flaw. |
+| **Committed ratchet**: Betterer's results file (default `.betterer.results`) "should be commited along with your code", and "If it gets worse, your test will fail and Betterer will throw an error." | https://phenomnomnominal.github.io/betterer/docs/results-file, https://phenomnomnominal.github.io/betterer/docs/introduction | Mechanism 1's committed pending-count constant, which fails the gate when the pending count grows. |

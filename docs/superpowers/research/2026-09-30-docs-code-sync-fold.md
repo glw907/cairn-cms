@@ -104,3 +104,41 @@ is ruling 2.
   the definitions MF-3 and CC-2 asked for, the parent errata list, and the two rulings).
 - **Budget:** mechanisms 1.5M to about 1.2M; projection 16.5M / 18.7M corrected to 16.9M / 19.0M.
   Ceiling unchanged pending ruling 2 (proposed 21M, flag 16.8M).
+
+## Second fold
+
+**Input:** `docs/superpowers/research/2026-09-30-docs-code-sync-fold-verification.md` (FV-1 to
+FV-11) and Geoff's rulings of 2026-09-30, recorded in the spec as S8 (release sweep) and S9
+(ceiling 24M, flag 19.2M). **Base:** `16aa249e`. **Scope:** majors folded in full; minors folded
+only where the fix is a wording or number correction; the rest owed. The spec's "Rulings for
+Geoff" section is removed; its two questions are now S8 and S9 in the owner-rulings table, and
+S6 is marked superseded by S9.
+
+| Id | Disposition | Where, or why |
+| --- | --- | --- |
+| FV-1 | Folded | Budget rewritten as one table from measured spend: 5.20M subagents, 0.13M verification, 1.5M conductor (estimated), 1.2M mechanisms, 7.75M (9.9M at pass A's rate) pilot and task 5, 3.0M other shares. Projected 18.78M planned, 20.93M at pass A's rate, against S9's 24M and 19.2M flag (planned is 78 percent of the ceiling). |
+| FV-2 | Folded | Sweep cost now "about 3.3M (measured)"; the parent-erratum bullet reads 3.3M and "up to about 7M more" for stages 3 to 5; the unsourced 4.9M and 4.4M figures are gone. |
+| FV-3 | Folded | Filing: after an arm merges, a gap files as a fact naming its page and the page fix follows in the next pass; the cut never waits (S8). Mechanism 2 states S8's cadence, cap, unswept-module report, and trigger-1 fast path. CC-8(a)'s retire rule restored: two consecutive capability releases with zero verified gaps move the sweep to on-demand, run when a site round finds a gap in a surface changed since the last sweep. |
+| FV-4 | Folded | The ratchet moves into the gate: a committed pending-count constant, failing when the count exceeds it, lowered in the same diff as a disposal (Betterer's committed results file). The gate's unmapped-path message names the two ways out, including an `exclude` whose reason the diff-reviewer accepts. "In the plan's Global constraints" dropped from Acceptance. |
+| FV-5 | Folded | The gate fails a `pending` row whose slug names no page in a committed outline; Acceptance names the fixture. |
+| FV-6 | Folded | Prior-art record gains an addendum with both sources, fetched and quoted verbatim 2026-09-30 (Rust RFC template; Betterer results-file and introduction pages). Guard condition 1 now names the addendum; mechanism 1 cites both Betterer pages. No Acceptance line is needed, since the addendum has landed. |
+| FV-7 | Folded (wording) | "No new agent runs"; the two schemas that gain `frictionFiled` are named, the shared read schema is stated, the runner copies the field only from page inputs, the drafter, and the fact read, and the concurrent-write guard is named. |
+| FV-8 | Folded (wording) | The release sweep's failure now cites the sweep's own ids: the 25 `SCF` scaffold findings and the 15 `CLN` post-harvest changelog findings. The old examples were not sweep finds: the themed 404 fact `f:ofex2m` predates the sweep (commit `0747fc7e`), and the migrations trap was SCF-18, already covered by `f:jtl15v`. |
+| FV-9 | Folded (wording) | Brief counts rewritten per the sweep record: 148 verified gap claims (131 filed after dedupe) and 12 defects; 4 facts corrected; 2 pages added. |
+| FV-10 | Owed | Not a wording fix. With FV-4's constant, a retag to `[candidate]` must rewrite the row to `pending <slug>` and raise the constant by one in the same edit, or the gate reddens every in-flight page. The 2a plan's gate task settles the rule and its fixture. |
+| FV-11 | Owed | Not a wording fix. The 2a plan records map rows per pilot page at creation, and the pilot checkpoint reports the disposal cost apart from the page rate. |
+
+**Counts:** 11 findings. Folded 9 (5 majors, 4 minors), owed 2 (FV-10, FV-11). New mechanism
+added: 1, the committed pending-count constant (source: Betterer's results file; measured
+defect: FV-4, the reviewer-only rule reached 2a's reviewers and no later engine pass).
+
+**Lines:** 278 before, 292 after (+5 percent).
+
+**Unresolved:**
+
+- The conductor's 1.5M is an estimate; the plan's counting rule replaces it with `/cost`. The
+  plan review and this second fold are not in the Budget table.
+- The caller's expected totals were about 18.7M and 20.8M; the table sums to 18.78M and 20.93M
+  because it includes the 0.13M verification line. Both sit on the same side of the flag.
+- The first fold's Measures claimed DI8's pending rule measured and closed; it was reviewer-only
+  and is closed now by FV-4's constant.

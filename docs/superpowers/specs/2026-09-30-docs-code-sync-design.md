@@ -1,7 +1,7 @@
 # Docs-code sync, built as the arms are drafted: design
 
-**Date:** 2026-09-30. **Status:** draft for Geoff's review, folded after a four-lens review
-(`docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`). **Parent:**
+**Date:** 2026-09-30. **Status:** approved by Geoff, 2026-09-30 (rulings S1 to S9), folded after a four-lens review and again
+after its fold verification (`docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`). **Parent:**
 `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md` (the stages, the page chain, the
 pilot checkpoint). This spec amends the parent: it adds a code-first gap sweep to each rebuilt
 stage's planning phase and two docs-code sync mechanisms that ride steps already running. Where
@@ -15,8 +15,8 @@ the prior-art record (`docs/superpowers/research/2026-09-30-docs-code-sync-prior
 The harvest proved every old page's claims against the code, so the fact container holds what the
 August-era docs said. It holds nothing they omitted. A code-first sweep of the extend reader's
 surface produced 140 raw findings (167 verifier records after splits, none refuted), which
-yielded 148 verified gap claims: 131 new facts, 4 corrected facts, 2 new outline pages, and 12
-code defects. Of the 74 surface findings, 27 were major, clustered in the adapter and editor
+yielded 148 verified gap claims (131 filed as new facts after dedupe) and 12 code defects; 4
+existing facts were corrected, and 2 outline pages were added. Of the 74 surface findings, 27 were major, clustered in the adapter and editor
 config, delivery and SEO, component authoring, and the scaffold's build and deploy traps (2a
 plan, "Code-first gap sweep").
 
@@ -33,7 +33,8 @@ The gap sweep also becomes a standing step in each rebuilt stage's planning phas
 chain treats drafting as a design review through its existing friction route. A fact-staleness
 lockfile was drafted and fails the lean guard: the four facts it named were wrong when filed, not
 made wrong later. It is deferred with a trigger, with three other mechanisms. The pilot of six
-still runs as the parent spec describes. Two questions remain for Geoff (below).
+still runs as the parent spec describes. Geoff ruled the release sweep's cadence and the
+ceiling (S8, S9).
 
 ## Owner rulings (Geoff, 2026-09-30)
 
@@ -44,15 +45,18 @@ still runs as the parent spec describes. Two questions remain for Geoff (below).
 | S3 | Prior art must include agent-first setups: where agents make a method cheap, and where they make a human-era safeguard matter more. |
 | S4 | Stage 2a's pilot of six holds. |
 | S5 | The gap sweep may add outline pages; Geoff keeps or cuts each on the R10 page. |
-| S6 | Stage 2a's ceiling is 18M, flagged at 14.4M. |
+| S6 | Stage 2a's ceiling is 18M, flagged at 14.4M. Superseded by S9. |
 | S7 | Use the docs as a design review of cairn itself: what is hard to document often reflects bad design, so drafting surfaces improvement opportunities. |
+| S8 | The release sweep runs only on capability releases (the release rule's trigger 2), capped at 1M per cut, and never blocks a cut on its yield. |
+| S9 | Stage 2a's ceiling is 24M, flagged at 19.2M, on the measured spend under "Budget." (A first approval of 21M rested on wrong arithmetic; Geoff re-ruled on the measured numbers.) |
 
 ## The lean guard (S2)
 
 Every mechanism in this spec meets all three conditions, and a later fold or plan review that adds
 one must meet them too:
 
-1. **A named prior-art source** that runs it (the prior-art record's methods table).
+1. **A named prior-art source** that runs it (the prior-art record's methods table or its
+   addendum).
 2. **A failure today's sweep found** that it would have caught, named by finding id or fact id.
 3. **It rides a step that already runs** (the fact read, page inputs, the docs gate, or the
    release skill), or states why no existing step can carry it.
@@ -77,9 +81,8 @@ Before an arm's outline goes to Geoff, the stage runs the sweep this stage ran:
 
 Each finder and verifier reads one surface or one module per context (context rot, Chroma). The
 arm's reader sets the surfaces: admin's sweep covers the setup command, doctor, and Cloudflare
-steps; editors' covers the `/admin` UI's behavior. This stage's sweep cost about 4.4M against its
-3M share, a conductor estimate the plan's counting rule re-sources; stage plans budget from the
-sourced figure, scaled to the arm's surface.
+steps; editors' covers the `/admin` UI's behavior. This stage's sweep cost about 3.3M (measured) against its
+3M share; stage plans budget from that figure, scaled to the arm's surface.
 
 ## Mechanism 1: option coverage
 
@@ -111,10 +114,16 @@ never prose.
   dispose it. Matching is exact equality of the declaring-type path key; nothing else counts.
 - **The gate** walks the types and compares them to the map. It fails a generated path with no
   row, a row whose path is no longer generated, a row naming a fact id that does not exist or is
-  not `[verified]`, and an `exclude` with no reason. The pending rows are a shrink-only baseline,
-  the way Betterer commits its results file and fails a result that gets worse: a diff that adds
-  a `pending` row after the map's creating commit is a `fix` for the diff-reviewer, which already
-  reads every task's diff, so a new option can never be parked as pending.
+  not `[verified]`, an `exclude` with no reason, and a `pending` row whose slug is not a page in
+  a committed outline, so every row for an arm is a fact or an exclusion once its outline is
+  deleted at the arm's merge.
+- **Pending only shrinks.** The gate holds the pending count at the map's creation as a
+  committed constant and fails when the map's pending count exceeds it, the way Betterer commits
+  its results file and fails a run that gets worse (its results-file and introduction pages,
+  in the prior-art record's addendum). A disposal lowers the constant in the same
+  diff, where it shows. So a new option can never be parked as pending, in 2a or in any later
+  engine pass. When the gate fails on an unmapped path, its message names the two ways out: file
+  the fact, or add an `exclude` row whose reason the diff-reviewer accepts.
 - **Page inputs** receives its page's rows: the pending rows naming its slug and the rows whose
   fact id is in its outline entry's `factIds`. It disposes each pending row in its claim
   inventory (carried, filed, or cut with a reason) and rewrites the row to the fact id or the
@@ -129,9 +138,12 @@ never prose.
 
 **Prior art:** Kubernetes' release docs deadline and Rust's docs-before-stabilization gate, with
 OpenAI's recurring doc-gardening agent and READU as the mechanized forms. **Failure it catches:**
-what option coverage cannot see, such as scaffold traps (the themed 404, Workers Builds not
-running migrations) and behavior outside option-bearing types. **Rides:** the `cairn-release`
-skill, before the version is set. Its cadence and cap are ruling 1 below.
+the classes option coverage cannot see, such as the sweep's scaffold findings (25 raw, `SCF-1` to `SCF-25`)
+and the changelog gaps that landed after the harvest (15 raw, `CLN-1` to `CLN-15`), which sit
+outside option-bearing types. **Rides:** the `cairn-release` skill, before the version is set.
+Its cadence and cap are S8: capability releases only, 1M per cut, never blocking the cut. It
+stops at the cap and reports the unswept modules. An urgent cut (trigger 1) keeps its fast path
+and rolls its window into the next sweep.
 
 - **Window.** From the last engine tag whose sweep `docs/HISTORY.md` records, matched as
   `v[0-9]*` with prerelease tags excluded (the repo's `tool/v*` tags interleave), so a cut that
@@ -141,15 +153,16 @@ skill, before the version is set. Its cadence and cap are ruling 1 below.
   files for `v0.97.0..v0.98.0`.
 - **Filing.** Before an arm merges, a verified gap is placed on its outline page as the planning
   sweep does. After an arm merges, the gap is filed as a fact naming the rebuilt page it affects,
-  and the page is fixed under "Edits after the chain" before the version is set, since a
-  public-API change is not done until its page matches. A gap with no page home becomes a
-  friction entry, not a new page.
+  and the page fix follows in the next pass under "Edits after the chain"; the cut never waits on
+  it (S8). A gap with no page home becomes a friction entry, not a new page.
 - **What it does not do.** It finds new gaps; it does not re-verify existing facts whose cited
   files changed (257 facts in the last window). A verifier that meets an existing fact the
   changed code contradicts reports it; that report is the deferred staleness mechanism's trigger.
 - **Yield.** Each run records in `docs/HISTORY.md` the verified gaps found beside the modules
   swept, so window size does not confound the measure. A steady yield says option coverage
-  misses a class, which names the next mechanism to consider.
+  misses a class, which names the next mechanism to consider. Two consecutive capability
+  releases with zero verified gaps move the sweep to on-demand, run when a site round finds a doc
+  gap in a surface changed since the last sweep.
 
 ## Docs as a design review (S7)
 
@@ -171,8 +184,11 @@ and the log's own charter, "the design friction that writing a doc surfaces."
   widens from "a genuine design gap" to the smells above: a hedge, a caveat, an exception, a
   workaround, a surprising default, or two seams naming or behaving the same thing differently.
   Each entry names the fact ids or `file:line` involved. The register editor does not report;
-  its job is prose. No new agent or field runs, and the runner copies each agent's
-  `frictionFiled` into the page record.
+  its job is prose. No new agent runs. Page inputs' schema and the read schema gain the
+  drafter's `frictionFiled`; the read schema is shared with the register editor and the figure
+  verifier, so the runner copies the field only from page inputs, the drafter, and the fact read.
+  With three pages in flight, up to three agents per page write the log directly, and the Edit
+  tool's stale-read check is the guard against a lost write.
 - **The page documents the code as it is.** A friction entry never blocks or pauses a page. The
   fact records the code's behavior, including a defect's consequence, and the page states it.
 - **The stage close triages them**, in the close's fold agent, never the conductor. It reconciles
@@ -204,7 +220,7 @@ The parent is not edited here; these are owed errata, applied as the harvest fol
 - The stage flow's step 1 opens with the planning-phase sweep, which is the carrier for stages 3
   to 5.
 - The Budget's "about 1M for planning" per stage does not hold if a sweep costs near the measured
-  4.4M: across stages 3 to 5 that is up to about 10M more against R8's 30M, which the pilot
+  3.3M: across stages 3 to 5 that is up to about 7M more against R8's 30M, which the pilot
   checkpoint's combined question on the initiative ceiling carries.
 - Stage 2's extend page count grows by the two sweep pages, if Geoff keeps them (S5).
 
@@ -228,29 +244,26 @@ The parent is not edited here; these are owed errata, applied as the harvest fol
 
 ## Budget
 
-Stage 2a had spent about 4.9M by this spec (the outline, the sweep, the prior art, the errata,
-and task 1), a conductor estimate the counting rule must source; the sweep alone was estimated at
-about 4.4M, so the figure is likely low. The two mechanisms and the friction route add about 1.2M
-(one `engine-logic` task with Opus review for the walker, map, and gate; the chain edits; the
-skill step). The pilot and task 5 run about 7.75M at planned rates and 9.9M at pass A's rate. The
-other remaining shares (tasks 2, 4, 6, and 7 and the conductor) are 3.0M. The pass projects at
-about 16.9M planned and 19.0M at pass A's rate, before this spec's review and fold. Both exceed
-S6's 14.4M flag, and the parent requires a planned total at or below 80 percent of the ceiling so
-the flag fires only on an overrun. Ruling 2 settles it.
+Spend through the fold verification is measured for subagents; the conductor session is not, and
+its figure is an estimate the plan's counting rule replaces with `/cost`. The subagent line
+includes the sweep's measured 3.31M. The mechanisms add about 1.2M (one `engine-logic` task with Opus review for the
+walker, map, and gate; the chain edits; the skill step). The other remaining shares (tasks 2, 4,
+6, and 7 and the conductor from here) are 3.0M.
 
-## Rulings for Geoff
+| Line | Planned | At pass A's rate |
+| --- | --- | --- |
+| Subagents through the first fold (measured) | 5.20M | 5.20M |
+| Fold verification (measured) | 0.13M | 0.13M |
+| Conductor through handoff (estimated) | 1.50M | 1.50M |
+| Mechanisms and friction route | 1.20M | 1.20M |
+| Pilot and task 5 | 7.75M | 9.90M |
+| Tasks 2, 4, 6, 7 and the conductor from here | 3.00M | 3.00M |
+| **Projected total** | **18.78M** | **20.93M** |
 
-1. **Should the release sweep run only on capability releases (trigger 2), capped at 1M per cut,
-   never blocking the cut on its yield?** Recommended: yes. Yes builds the skill step for trigger
-   (2) cuts only, stopping at the cap and reporting the unswept modules; an urgent trigger (1) cut
-   keeps its fast path and rolls its window into the next sweep. No defers mechanism 2 with the
-   trigger "the first site round that finds a doc gap in a surface changed since the harvest,"
-   and only planning-phase sweeps run.
-2. **Should stage 2a's ceiling rise to 21M, flagged at 16.8M, at this spec's approval?**
-   Recommended: yes, since the parent's rule puts a 16.9M plan under a ceiling of about 21M and
-   the approval sitting is already happening. Yes sets the plan header now, and the flag fires
-   only on an overrun. No keeps S6's 18M: the flag is expected to trip after the pilot, and the
-   pilot checkpoint's combined question carries the overage, with task 5's pages the lever.
+S9's 24M ceiling flags at 19.2M. The planned total sits under the flag, as the parent's 80
+percent rule requires, so the flag fires only on an overrun; a pass that runs at pass A's page
+rate trips it, and the pilot checkpoint's combined question carries that overage with task 5's
+pages the lever. The plan review and this second fold are not yet priced.
 
 ## Acceptance
 
@@ -258,11 +271,12 @@ the flag fires only on an overrun. Ruling 2 settles it.
   `CairnAdapter.editor` with no row, naming the path and its export; it fails a row for a removed
   path, a row naming a missing fact id, and an `exclude` with no reason; it passes on the
   committed map. The planted member sits inside a nested named type, so a walk that stops
-  early fails the fixture. The plan records the generated and pending counts, and the
-  diff-reviewer's rule on added `pending` rows is in the plan's Global constraints.
+  early fails the fixture. It also fails a pending count above the committed constant and a
+  `pending` row whose slug names no page in a committed outline. The plan records the generated
+  and pending counts at creation.
 - Page inputs receives its page's rows and rewrites each pending row it disposes.
-- `cairn-release` carries the windowed sweep step, the tag glob, and the yield record, as ruling 1
-  decides.
+- `cairn-release` carries the windowed sweep step, the tag glob, the yield record, the 1M cap,
+  and the retire rule, for capability releases only (S8).
 - The parent's owed errata land, the stage flow among them naming the planning-phase sweep.
 - Page inputs, the drafter, and the fact read carry `frictionFiled`, and the runner copies it to
   the page record. The pilot checkpoint reports entries per pilot page, and zero across all six

@@ -48,6 +48,9 @@ its docs debt: [handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md). 
 > invoke `cairn-pass`, read the plan's S3, task 15, and ledger, build the sitting page per
 > decision 24, hold the sitting, then run task 15. The CHANGELOG must not copy the spec's
 > "promote at the first minor cut" promise (no decision makes it).
+> Task 15 also takes two friction-log chores filed on `main` (`ab50aae1`): the scaffold CI's
+> `node-version: 22` below `engines.node >=24`, and the stale comment at the showcase's
+> `admin/signups/+page.svelte:154-156`.
 
 ### Next action (draft docs harvest, held for #97 after the R3 audit)
 

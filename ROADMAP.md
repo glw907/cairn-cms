@@ -2637,6 +2637,12 @@ the named human gates only):**
 
 ## Later
 
+- **`viewport-overflow`'s settle check waits the full 500 ms on a page with a scroll-driven
+  animation (0.98.0 cut).** A page carrying `animation-timeline: scroll()` keeps an animation
+  running and finite, so the settle check never sees the page go quiet and every finding on such a
+  page carries the "may be transient" suffix. Fix: exclude animations whose timeline is not a
+  `DocumentTimeline` from the settle check. Trigger: a consumer reports the noise.
+
 - **`rounded-t-full` and the other side forms of `full` pass `radius-scale` silently on a `badge`
   (theme identity pass B, 2026-09-29).** The rule flags `rounded-full` on an element that carries
   `badge`, but only the whole-corner form; a side form of `full` falls through. No plan decision

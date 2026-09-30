@@ -1,8 +1,8 @@
-## Unreleased
+## 0.98.0
 
 <!-- release-size: minor -->
 
-This window ships as a minor, `0.98.0` planned, because it restyles every consumer's admin; a
+This window ships as a minor because it restyles every consumer's admin; a
 caret patch must not carry a visible retheme. A hotfix before that cut branches from `v0.97.0`.
 
 ### Added

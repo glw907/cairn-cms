@@ -9,9 +9,7 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
-## Unreleased
-
-The release step sets the version number at the cut and renames this section to match it.
+## 0.98.0
 
 - **Import admin components from `@glw907/cairn-cms/admin`.** The `@glw907/cairn-cms/components`
   subpath is removed, and the admin barrel is now `./admin`. Change every

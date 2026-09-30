@@ -81,7 +81,7 @@ function waitForStableLayout(timeoutMs: number): Promise<boolean> {
         .getAnimations()
         .some(
           (animation) =>
-            (animation.playState === 'running' || animation.playState === 'pending') &&
+            (animation.pending || animation.playState === 'running') &&
             animation.effect?.getComputedTiming().iterations !== Infinity
         );
       if (current === previous && !animating) return resolve(true);

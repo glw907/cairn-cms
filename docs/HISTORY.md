@@ -7,6 +7,96 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Draft docs harvest, then delete, 2026-09-29 to 30
+
+Branch `draft-docs-harvest`, its PR merging under Geoff's R4 once the close gate and reviews are
+green. Plan, ledger, and post-mortem: `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md`.
+Spec: `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md`, the parent spec's
+"Amendment: harvest, then delete". Unreleased; `0.98.0` published before the merge and is
+cairn.pub's pin ceiling for the old narrative arms.
+
+**What landed:**
+
+- **The claim ledger and its verifier.** `scripts/oneshot/verify-harvest.mjs` checks one JSON
+  ledger per page under `docs/internal/record/harvest/<arm>/`: every non-blank line covered by a
+  claim span, every claim disposed as a fact, a new fact, or a cut with a listed reason, every
+  cited id resolved and never a `[candidate]`, the page blob current, and no container `Source:`
+  naming a deletion-list page. `deletion-list.json` is the one list the verifier and the gates read.
+- **The audit.** 49 pages, 2,425 claims, verifier green with no flag on `416d3cd2` before the
+  deletion. Per arm, in pages, claims, facts reused, and facts filed: admin 9, 450, 135, 218;
+  editors 8, 337, 175, 59; extend 30, 1542, 765, 457; front door 2, 96, 46, 14. Tasks 3 to 6 ran
+  as three parallel chains while R3 held six extend pages back for theme passes B and C; task 6b
+  audited those six against the merged code and resolved 103 recheck lines.
+- **The narrowed gates.** `scripts/checks/arm-state.mjs` reports each arm as absent, kept-only,
+  or rebuilt from `deletion-list.json`, and every gate that read an arm keys on it
+  (`check:arm-indexes`, `check:package-files`, `check:readiness` with `fixes_test.go`,
+  `docs-links`, `check:transcripts`, `check:visuals`, `check:snippets`, and the rest). Each
+  narrowing and allowlist entry is in `docs/internal/record/harvest/relink.json` with the stage
+  that re-arms it.
+- **The deletion.** 49 pages gone, every inbound reference repaired or classified in
+  `docs/internal/record/harvest/residue.txt`, the `cairn-extend` skill's recipe table pointed at
+  the reference pages, and the `AI_POSTURE_COMMENT_BLOCK` lockstep edit made. `CLAUDE.md`, the
+  facts README, and `docs-register.md` now say the arms are empty until their stages rebuild them.
+  The packed docs are `docs/reference/**` plus the three kept pages. The changelog's
+  `## Unreleased` entry and `migration-notes.md`'s matching window carry one `Consumers must:`
+  line: re-run `npx cairn-guidance install`.
+
+**What the gates and reviews caught:**
+
+- **Near-miss and false facts in the audit.** The 6b review found three near-miss bullets
+  (`/islands` listed as admin UI, a `createAuthGuard` arity claim, a config list) and three false
+  bullets filed inside the harvest (f:26kuvx, f:5f4kmk, f:psrfdx). Earlier audit reviews found
+  checkable claims cut as stance; the cut sweeps re-disposed 73 of 86, 46 of 65, and 38 of 72
+  judgment cuts to facts.
+- **The commit-attribution saga.** The first fix to the committer facts said GitHub attributes
+  the commit to the App. That was false: GitHub's create-a-commit endpoint defaults the committer
+  to the author, the editor, which ROADMAP's live-run entry already recorded. Ten bullets were
+  corrected and f:9yi7fu rescoped.
+- **A wrong conductor ruling.** Task 9's review escalated the migration-notes link the conductor
+  had ruled a `v0.98.0` permalink: it sat in `## Unreleased`, not in history, so it was retargeted
+  to `reference/public.md#previewbanner`. The same review found three residue lines misclassed D.
+- **A gap the spec missed.** Task 8 was accepted with no fix, and it also narrowed
+  `check:snippets`, which the spec's list left out. Task 9's residue carried 83 lines in no spec
+  class (class X: ROADMAP, friction-log, and capture-state mentions), triaged at the close.
+- **Merge-time drift.** The `main` merge for 6b rewrote 84 `Source:` paths for the
+  `src/lib/components` to `src/lib/admin` move, and a separate line-drift check found the
+  `MarkdownEditor.svelte` cites shifted.
+- **Workstation traps.** A lone `reference-coverage.test.ts` failure under the heavy gate passed
+  on rerun. The main checkout held a local-only commit (`f8ba597d`, Geoff's media-purge ruling)
+  that a reset would have lost; it was cherry-picked here as `ca0ebff0`. A task 9 implementer's
+  process sweep, meant to kill its own duplicate gate, ended its own shell.
+- **The spec-plan-review fold's refusals.** One finding was refused (CO-OC-1, tag the verifier's
+  test for removal), plus DR-6's `--ref` mode, DR-9's move of `## Harvest record`, and DR-4's
+  per-golden `relink.json` rows. None turned out to be a real defect: the pre-merge `git diff`
+  replaced `--ref` and came back empty, no bullet leaked page text through a harvest record, and
+  the residue class list carried the goldens.
+
+**What a later pass would be wrong to rediscover:**
+
+- **The committer defaults to the author.** cairn's commit call omits `committer`, so GitHub
+  records the editor in both fields, never `cairn-cms[bot]`. `src/lib/github/repo.ts:261`,
+  `src/lib/github/types.ts:20`, and `CLAUDE.md`'s "committer = `cairn-cms[bot]`" still say
+  otherwise; that is an engine ruling owed in `ROADMAP.md`, not a fact to re-derive.
+- **Extend re-arms at the first 2a page.** An arm counts as rebuilt once it holds any page
+  outside the kept set, so the first stage 2a page turns every extend narrowing back on at once.
+  The 2a plan owes an interim `docs/extend/README.md`, live targets for the extend
+  `LEGACY_PATH_MAP` entries, and the `build-a-site-by-hand.md` slug case repoint.
+- **`verify-harvest.mjs` fails by design once the pages are gone.** It is a one-shot for this
+  pass. Its fixture-only unit test survives, but a run over the real tree fails now that the
+  ledgers' pages are gone. Do not "fix" it.
+- **Historical versus Unreleased migration-notes links.** A link into a deleted page inside a
+  released version's entry becomes a permalink at that version's tag. One inside `## Unreleased`
+  is live guidance and needs a live target.
+- **A fresh worktree needs `npm run package` and `svelte-kit sync`** before
+  `test:node-projects`; without them the node projects fail.
+- **Never hard-reset a shared checkout** without checking its local-only commits against
+  upstream first (`git log origin/main..main`).
+
+**Score:** about 7.0M of the 14M ceiling (R5; 12M under R1), before the fold and its review.
+Planning misses: 0; the spec's two gaps (`check:snippets`, the class X residue) were resolved
+without Geoff. Execution sittings: 2, R3 (audit away from the theme lineage) and the evening go
+with R4 and R5; the overnight run asked no checkpoint question.
+
 ## Theme identity pass C: one public theme, 2026-09-29
 
 Branch `theme-identity-c` (draft PR #97), built on pass B's closed head, then `main` at `dc9bb99b`

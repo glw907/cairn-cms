@@ -398,5 +398,49 @@ Run `cairn-pass`'s close:
 | 6b | done (merge of `main` `0482998f`, audit `0747fc7e`, fix `3315b79f`) | about 1.1M (merge 74k, impl 822k, reviews 190k plus the re-review) | Merged `main` at `4d417ab6`: 12 facts hunks, 84 `Source:` paths rewritten for the `src/lib/admin` move. 374 claims on the six pages, 103 recheck lines resolved, f:pgv0o5 rejected. One fix round: three near-miss bullets, plus in-harvest false bullets f:26kuvx, f:5f4kmk, and f:psrfdx caught by review |
 | 7 | done on `3315b79f` (`main` merged: `4d417ab6`) | in 6b | Full verifier green: admin 9 pages 450 claims, editors 8 and 337, extend 30 and 1541, front door 2 and 96 |
 | 8 | done (`8bea2de6` on `draft-docs-harvest-g`, merged `ee073bce`) | about 0.44M (impl 321k, review 123k) | Accepted with no fix. Also narrowed `check:snippets`. Extend entries keyed to 2a: the 2a plan must budget an interim `docs/extend/README.md`, live targets for extend `LEGACY_PATH_MAP` entries, and the `build-a-site-by-hand.md` slug case. **Task 9 ruling (conductor):** a Markdown link into a deletion-list page inside a historical `migration-notes.md` entry becomes a GitHub permalink at tag `v0.98.0`, keeping the history and giving it a live target; `engine-rulings.md:593` is repaired per the spec |
-| 9 | pending | | |
-| 10 | pending | | |
+| 9 | done (`9183f946`, `ca0cc98e`, `6aca2964`, `5f2a7d75`, `814f201e`, fix `fe3fee34`) | about 0.44M (impl 351k, review 92k) | 49 pages deleted; residue in `docs/internal/record/harvest/residue.txt`, 83 lines class X (unclassified by the spec, triaged at task 10). One fix round: the review escalated the conductor's permalink ruling, since the migration-notes link sat in `## Unreleased`, not history, so it was retargeted to `reference/public.md#previewbanner`; three residue lines misclassed D were corrected. Full verifier green on `416d3cd2` before deletion: 49 pages, 2,425 claims |
+| 10 | done (simplifier `4bbee2bc`, Go fixes `f736e07b`, merge of `main` `909eed6c` at `d3b858c8`, changelog `6c7c944f`, cherry-pick `ca0ebff0`, then the fold) | about 0.36M before the fold (simplifier 117k, Go read 131k, Go fixes 41k, merge 67k), plus the fold and its review | Pre-merge check (`git diff 4d417ab6..origin/main` over the 49 paths) empty. `docs` register chain waived: the pass drafts no published prose, and its link repairs are agent-facing fixes. The fold wrote the migration-notes window, the pin ceiling here and in cairn-pub, STATUS, HISTORY, ROADMAP, and the friction-log triage |
+
+## Post-mortem
+
+**Outcome.** The pass met its acceptance. The verifier passed over all 49 pages on `416d3cd2`
+(admin 9 pages, 450 claims, 135 facts reused, 218 filed; editors 8, 337, 175, 59; extend 30,
+1542, 765, 457; front door 2, 96, 46, 14). The pages are deleted, every reference is repaired or
+classified, the gates key on arm state, and the tarball's docs are `docs/reference/**` plus the
+kept set. `main` was merged at `4d417ab6` for task 7 and at `d3b858c8` for the close, after
+`0.98.0` published; the pre-merge check over the 49 paths was empty.
+
+**Tokens.** About 7.0M against the 14M ceiling (R5; 12M under R1), before this fold and its
+review, which the conductor adds from their usage blocks. Before the overnight session: about
+4.2M (tasks 1 to 7a and the conductor). The overnight session: about 2.47M of subagents (6b
+about 1.23M across its merge, implementer, and three reviews; task 8 0.44M; task 9 0.44M; the
+close's simplifier, Go read, Go fixes, and merge 0.36M) plus the conductor at about 0.35M. The
+plan derived 7.8 to 9.5M. The audit ran at the top of its range (about 5.1M across tasks 2 to 6,
+7a's sweep, and 6b, against 3.4 to 5.1M), because three cut sweeps re-disposed judgment cuts
+after review. Task 9 came in at a third of its 1.3M share: the link-shaped greps made the relink
+mechanical. Neither the 9.6M flag nor the 80% stop was near.
+
+**Attended time.** Planning misses: 0. Two spec gaps surfaced in execution and were resolved
+without Geoff: `check:snippets` was missing from the narrowing list (task 8 narrowed it), and 83
+residue lines fell in no allowed class (class X, triaged at the close). Execution sittings: 2.
+R3 (audit away from the theme lineage) was Geoff's mid-pass ruling while the pass held for #97;
+the evening sitting gave the go, R4 (pre-authorized merge), and R5 (14M, no 80% stop) in a
+handful of short messages. The overnight run asked no checkpoint question.
+
+**What worked.** Line-span coverage made a skipped claim impossible to hide, and the fixture-only
+verifier test survives the deletion. Running the gate narrowing beside the audit on disjoint
+files kept the deletion a single mechanical task. Reviews sampling judgment cuts caught the
+largest defect class (checkable claims cut as stance), and the sweeps fixed it at the source.
+
+**What to change.**
+- A fact about external behavior (here, who GitHub records as committer) needs its source read,
+  not inferred: the first fix round wrote the opposite of what ROADMAP's live-run entry recorded.
+- The conductor's link ruling assumed a migration-notes link was historical; check which window
+  a link sits in before ruling on it.
+- A spec's allowed-residue list should include a catch-all class that routes to the close's
+  triage, so an unlisted mention is expected rather than a surprise.
+- Before resetting a shared checkout, compare its local-only commits against upstream: `main`
+  held Geoff's media-purge ruling (`f8ba597d`) that a reset would have lost.
+
+**Refused review findings.** None of the fold's refusals (CO-OC-1; DR-6's `--ref` mode; DR-9's
+move of `## Harvest record`; DR-4's per-golden `relink.json` rows) turned out to be a real defect.

@@ -7,7 +7,7 @@
 // `browser` stub declares `worker` ahead of it, so a Cloudflare Workers build resolves the real
 // module.
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve, dirname, posix as posixPath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FRONT_DOOR_PAGES, loadDeletionList, readArmStates } from './arm-state.mjs';
@@ -77,8 +77,9 @@ const REFERENCE_INDEX_PATH = 'docs/reference/README.md';
  * The docs paths the tarball must carry, given the tree's arm states (arm-state.mjs): the reference
  * index always; an arm's index only once the arm is rebuilt, since an absent arm has no page to
  * index and extend's kept-only state holds just its per-version records; both front-door files once
- * the front door is rebuilt; and every kept page on disk, whatever its arm's state, so a `files`
- * edit cannot drop the per-version records while their arm waits for its rebuild.
+ * the front door is rebuilt; and every page on the deletion list's `kept` list, whatever its arm's
+ * state and whether or not it is on disk, so neither a `files` edit nor deleting a kept page outright
+ * can drop the per-version records.
  * @param {string} root the repo root
  * @returns {string[]}
  */
@@ -90,7 +91,7 @@ export function requiredDocsPaths(root) {
     if (states[arm] === 'rebuilt') required.push(index);
   }
   if (states['front-door'] === 'rebuilt') required.push(...FRONT_DOOR_PAGES);
-  required.push(...list.kept.filter((page) => existsSync(resolve(root, page))));
+  required.push(...list.kept);
   return required;
 }
 

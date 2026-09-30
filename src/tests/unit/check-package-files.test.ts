@@ -157,8 +157,9 @@ describe('checkDocsPacked', () => {
 });
 
 // The docs the tarball must carry follow each arm's state (arm-state.mjs): an arm index is required
-// only once its arm is rebuilt, the front door only once it is rebuilt, and every kept page on disk
-// always, so the per-version records keep shipping while their arm waits for its rebuild.
+// only once its arm is rebuilt, the front door only once it is rebuilt, and every kept page always,
+// on disk or not, so the per-version records keep shipping while their arm waits for its rebuild
+// and a kept page deleted outright fails the gate.
 describe('requiredDocsPaths, in each arm state', () => {
   const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
   const roots: string[] = [];
@@ -185,9 +186,17 @@ describe('requiredDocsPaths, in each arm state', () => {
   /** Every docs page in `paths` plus the reference index: what `npm pack` would carry. */
   const packed = (...paths: string[]) => ['dist/index.js', 'docs/reference/README.md', ...paths];
 
-  it('asks for the reference index alone when every narrative arm and the front door are absent', () => {
-    expect(requiredDocsPaths(tree())).toEqual(['docs/reference/README.md']);
-    expect(checkDocsPacked(packed(), requiredDocsPaths(tree()))).toEqual({ ok: true, count: 1 });
+  it('asks for the reference index and every kept page when every narrative arm and the front door are absent', () => {
+    expect(requiredDocsPaths(tree())).toEqual(['docs/reference/README.md', ...KEPT]);
+    expect(checkDocsPacked(packed(...KEPT), requiredDocsPaths(tree()))).toEqual({ ok: true, count: 4 });
+  });
+
+  it('fails a kept page deleted from the tree outright, since the kept list names it', () => {
+    const root = tree(...KEPT.slice(1));
+    const result = checkDocsPacked(packed(...KEPT.slice(1)), requiredDocsPaths(root));
+    expect(result).toMatchObject({ ok: false });
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('docs/extend/migration-notes.md');
   });
 
   it('passes the kept set alone with no extend index, and asks for every kept page', () => {
@@ -226,7 +235,7 @@ describe('requiredDocsPaths, in each arm state', () => {
   });
 
   it('asks for both front-door files once the front door holds either', () => {
-    expect(requiredDocsPaths(tree('docs/README.md'))).toEqual(['docs/reference/README.md', 'docs/README.md', 'docs/why-cairn.md']);
+    expect(requiredDocsPaths(tree('docs/README.md'))).toEqual(['docs/reference/README.md', 'docs/README.md', 'docs/why-cairn.md', ...KEPT]);
   });
 
   it('fails closed without the deletion list', () => {

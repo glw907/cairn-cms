@@ -1,6 +1,6 @@
 // cairn-cms: the option-coverage gate. A committed map (docs/internal/option-map.json) gives every
-// public option path one row: a citable fact id, `exclude <reason>`, or `pending <slug>` naming the
-// outline page that should dispose it. The walker below regenerates the paths from the built `dist`
+// public option path one row: a citable fact id, `exclude <reason>`, or `pending <slug>` naming an
+// outline page or a published page that should dispose it. The walker below regenerates the paths from the built `dist`
 // declarations through the TypeScript compiler API; the gate compares the two and fails on drift, so
 // an option added inside a public type can never ship without a fact or a reviewed exclusion.
 //
@@ -46,6 +46,7 @@ import { loadFactIndex } from './check-provenance.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const MAP_PATH = join(ROOT, 'docs/internal/option-map.json');
+const DOCS_DIR = join(ROOT, 'docs');
 const OUTLINES_DIR = join(ROOT, 'docs/internal/outlines');
 const FACTS_DIR = join(ROOT, 'docs/internal/facts');
 const DECL_ROOT = join(ROOT, 'dist');
@@ -339,11 +340,12 @@ export function parseMapRow(value) {
  *   generated: GeneratedPath[],
  *   map: { pendingCount: number, rows: Record<string, string> },
  *   slugs: Set<string>,
+ *   pages?: Set<string>,
  *   facts: Map<string, { tag: string | null }>,
  * }} input
  * @returns {string[]}
  */
-export function checkOptionMap({ generated, map, slugs, facts }) {
+export function checkOptionMap({ generated, map, slugs, pages = new Set(), facts }) {
   /** @type {string[]} */
   const failures = [];
   const generatedKeys = new Set(generated.map((entry) => entry.key));
@@ -378,8 +380,11 @@ export function checkOptionMap({ generated, map, slugs, facts }) {
       if (row.reason === '') failures.push(`${key}: an "exclude" row needs a reason.`);
     } else {
       pending += 1;
-      if (!slugs.has(row.slug)) {
-        failures.push(`${key}: the pending slug "${row.slug}" names no page in a committed outline.`);
+      if (!slugs.has(row.slug) && !pages.has(row.slug)) {
+        failures.push(
+          `${key}: the pending slug "${row.slug}" names neither a page in a committed outline nor a published page ` +
+            `(docs/<arm>/${row.slug}.md). After an arm's outline is deleted, name the published page that owes the row.`,
+        );
       }
     }
   }
@@ -407,6 +412,23 @@ function outlineSlugs(dir) {
   return slugs;
 }
 
+/**
+ * Every published page slug: a markdown file directly under a docs arm directory.
+ * @param {string} dir
+ * @returns {Set<string>}
+ */
+function publishedPageSlugs(dir) {
+  /** @type {Set<string>} */
+  const slugs = new Set();
+  for (const arm of readdirSync(dir, { withFileTypes: true })) {
+    if (!arm.isDirectory() || arm.name === 'internal' || arm.name === 'superpowers') continue;
+    for (const name of readdirSync(join(dir, arm.name)).filter((file) => file.endsWith('.md'))) {
+      slugs.add(name.slice(0, -'.md'.length));
+    }
+  }
+  return slugs;
+}
+
 function main() {
   const { paths, failures: walkFailures } = generateOptionPaths({
     subpaths: surfaceSubpaths().map((entry) => ({ subpath: entry.subpath, dts: resolve(ROOT, entry.dts) })),
@@ -416,7 +438,7 @@ function main() {
   const { facts } = loadFactIndex(FACTS_DIR);
   const failures = [
     ...walkFailures,
-    ...checkOptionMap({ generated: paths, map, slugs: outlineSlugs(OUTLINES_DIR), facts }),
+    ...checkOptionMap({ generated: paths, map, slugs: outlineSlugs(OUTLINES_DIR), pages: publishedPageSlugs(DOCS_DIR), facts }),
   ];
   if (failures.length === 0) {
     console.log(`check:options: OK (${paths.length} option paths)`);

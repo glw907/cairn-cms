@@ -385,7 +385,9 @@ reader as surely as a pitch does.
 
 ### Exemplars
 
-A drafter reads each exemplar whole and imitates its anatomy and rhythm, never its wording.
+A drafter reads each exemplar whole and takes its anatomy and detail per step, never its wording.
+Voice comes only from this brief and its primary exemplar, when the list below names one (Geoff,
+2026-09-30).
 
 - [`exemplars/microsoft-procedure-blobs-portal.md`](./exemplars/microsoft-procedure-blobs-portal.md),
   a Microsoft Learn procedure page, is the exemplar for the anatomy of a UI-only procedure.

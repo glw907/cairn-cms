@@ -366,6 +366,21 @@ describe('checkOptionMap', () => {
     expect(failures[0]).toContain('invented-page');
   });
 
+  it('passes a pending row whose slug names a published page with no outline', () => {
+    const rows = { ...base.map.rows, 'NavMenuConfig.menu': 'pending upgrade-cairn' };
+    const pages = new Set(['upgrade-cairn']);
+    expect(checkOptionMap({ ...base, pages, map: { pendingCount: 1, rows } })).toEqual([]);
+  });
+
+  it('fails a pending row whose slug names neither an outline page nor a published page, naming both targets', () => {
+    const rows = { ...base.map.rows, 'NavMenuConfig.menu': 'pending invented-page' };
+    const pages = new Set(['upgrade-cairn']);
+    const failures = checkOptionMap({ ...base, pages, map: { pendingCount: 1, rows } });
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toMatch(/outline/);
+    expect(failures[0]).toMatch(/published page/);
+  });
+
   it('fails a malformed row', () => {
     const rows = { ...base.map.rows, 'NavMenuConfig.menu': 'whatever' };
     const failures = checkOptionMap({ ...base, map: { pendingCount: 0, rows } });

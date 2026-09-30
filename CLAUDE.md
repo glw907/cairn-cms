@@ -100,7 +100,8 @@ durable orientation only.
 
 Every pass updates the docs for what it changed, and a public-API change is not done until its
 reference page matches. The `cairn-pass` ritual carries the step; `check:reference` fails on an
-undocumented export and `check:package` checks the entry points.
+undocumented export, `check:options` is its option counterpart (every member of a public option
+type needs a row in the committed option map), and `check:package` checks the entry points.
 
 The public docs are four audience tracks under `docs/`, one reader each:
 `admin/` (running the default site, no code), `editors/` (writing in `/admin`, no terminal),

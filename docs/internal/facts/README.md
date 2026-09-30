@@ -136,8 +136,9 @@ sourced bullet, a fenced command, a table); Vale's error tier still runs, but no
 no prose reviewer, no Google-style polish. On a page whose arm has already merged its stage (a
 rebuilt page with a brief), the fix instead follows the spec's "Edits after the chain" rule:
 update the brief's `sentences` in the same change, file a new or changed claim's fact
-`[candidate]` with the Edit tool (retagged only by the fact read), and give the changed sentences
-both reviews, scoped to those sentences, except a pure term or link substitution.
+`[candidate]` with the Edit tool (retagged only by the fact read; a mapped fact's retag follows the map
+rule, with the page's own slug as the `pending <slug>` target, since its outline is gone), and give the
+changed sentences both reviews, scoped to those sentences, except a pure term or link substitution.
 
 **Cross-repo path.** The site pass's own agents edit cairn-cms on a `site-docs/<site>-<pass>`
 branch off cairn-cms `main`, merged by PR under the docs gate before the site pass closes.

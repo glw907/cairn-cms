@@ -1,38 +1,39 @@
 # Docs-code sync, built as the arms are drafted: design
 
-**Date:** 2026-09-30. **Status:** draft for Geoff's review. **Parent:**
+**Date:** 2026-09-30. **Status:** draft for Geoff's review, folded after a four-lens review
+(`docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`). **Parent:**
 `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md` (the stages, the page chain, the
 pilot checkpoint). This spec amends the parent: it adds a code-first gap sweep to each rebuilt
-stage's planning phase and three docs-code sync mechanisms that ride steps the page chain already
-runs. Where it and the parent disagree, this spec governs for stage 2a onward.
+stage's planning phase and two docs-code sync mechanisms that ride steps already running. Where
+it and the parent disagree, this spec governs for stage 2a onward; the disagreements are listed
+under "Amends the parent."
 **Inputs:** the gap sweep record (`docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and
 the prior-art record (`docs/superpowers/research/2026-09-30-docs-code-sync-prior-art.md`).
 
 ## Brief
 
 The harvest proved every old page's claims against the code, so the fact container holds what the
-August-era docs said. It holds nothing they omitted, and a fact whose code changed underneath it
-stays green as long as its `Source:` line still resolves. A code-first sweep of the extend
-reader's surface found 140 gaps that independent verifiers confirmed (none refuted), which became
-131 new facts, 4 corrected facts, 2 new outline pages, and 12 code defects. Most of the majors
-were options inside types, defaults, and error paths that no changelog entry announced.
+August-era docs said. It holds nothing they omitted. A code-first sweep of the extend reader's
+surface produced 140 raw findings (167 verifier records after splits, none refuted), which
+yielded 148 verified gap claims: 131 new facts, 4 corrected facts, 2 new outline pages, and 12
+code defects. Of the 74 surface findings, 27 were major, clustered in the adapter and editor
+config, delivery and SEO, component authoring, and the scaffold's build and deploy traps (2a
+plan, "Code-first gap sweep").
 
-Three mechanisms keep the container in step from here on, each built into the page chain while
+Two mechanisms keep the container in step from here on, each built into the page chain while
 the arms are drafted rather than retrofitted after:
 
-1. **Option coverage.** A generated list of every public option path feeds each page's inputs,
-   and a gate fails an option with no fact or reference entry.
-2. **Fact staleness.** The page chain's independent fact read stamps a normalized hash of each
-   cited declaration into a lockfile; a code change that alters a stamped declaration fails
-   `check:facts` until a fact read re-verifies it.
-3. **Release sweep.** Each release cut runs the code-first sweep over the git range since the
-   last tag, with an independent verifier before anything is filed.
+1. **Option coverage.** A committed map gives every public option path a fact, an exclusion with
+   a reason, or a frozen pending entry; a gate fails any path with no entry, and page inputs
+   receives its page's entries.
+2. **Release sweep.** A capability release runs the code-first sweep over the window since the
+   last swept tag, with an independent verifier before anything is filed.
 
 The gap sweep also becomes a standing step in each rebuilt stage's planning phase, and the page
-chain treats drafting as a design review: every chain agent reports what the page had to hedge or
-work around, and the stage close routes each report to an engine fix or the roadmap. Three further
-mechanisms the prior art recommends are deferred, each with a trigger. The pilot of six still runs
-as the parent spec describes.
+chain treats drafting as a design review through its existing friction route. A fact-staleness
+lockfile was drafted and fails the lean guard: the four facts it named were wrong when filed, not
+made wrong later. It is deferred with a trigger, with three other mechanisms. The pilot of six
+still runs as the parent spec describes. Two questions remain for Geoff (below).
 
 ## Owner rulings (Geoff, 2026-09-30)
 
@@ -53,11 +54,12 @@ one must meet them too:
 
 1. **A named prior-art source** that runs it (the prior-art record's methods table).
 2. **A failure today's sweep found** that it would have caught, named by finding id or fact id.
-3. **It rides a step that already runs** (the fact read, page inputs, `check:close`, or the
+3. **It rides a step that already runs** (the fact read, page inputs, the docs gate, or the
    release skill), or states why no existing step can carry it.
 
 A mechanism that fails a condition is deferred with a trigger, not built. The plan review runs
-this guard as an explicit lens, and any finding that proposes new machinery is held to it.
+this guard as an explicit lens and records one verdict per mechanism, each with its three
+citations; any finding that proposes new machinery is held to it.
 
 ## The gap sweep in each stage's planning phase
 
@@ -76,151 +78,198 @@ Before an arm's outline goes to Geoff, the stage runs the sweep this stage ran:
 Each finder and verifier reads one surface or one module per context (context rot, Chroma). The
 arm's reader sets the surfaces: admin's sweep covers the setup command, doctor, and Cloudflare
 steps; editors' covers the `/admin` UI's behavior. This stage's sweep cost about 4.4M against its
-3M share, the first measurement; stage plans budget from it.
+3M share, a conductor estimate the plan's counting rule re-sources; stage plans budget from the
+sourced figure, scaled to the arm's surface.
 
 ## Mechanism 1: option coverage
 
 **Prior art:** typescript-eslint's `docs.test.mts` fails any rule option in the schema with no
-documented heading and keeps a named allowlist; TypeDoc's `requiredToBeDocumented` is the
-generation-side form. **Failure it catches:** the sweep's largest class, options inside public
+documented heading and keeps a named allowlist; Terraform's generate-then-diff check is the
+inventory form. **Failure it catches:** the sweep's largest class, options added inside public
 types with no fact (`editor.publishActions`, `editor.preview`, `editor.nav`, fieldset `refine`
 and `behavior`, `summaryFields`, `ComponentDef`, the `media` config). **Rides:** page inputs
-(the list is its input) and `check:close` (the gate).
+(the map is its input) and the docs gate (`docs-gate.mjs`, the one list the chain and CI read).
 
-- A generator walks the option-bearing types reachable from the public export surface (the same
-  enumeration `check:surface` and `docs/internal/api-surface.md` already do) down to member paths,
-  and writes them to a committed list.
-- The page-inputs step receives the paths its page covers and maps each to a fact, files a new
-  fact, or records an exclusion with a reason. A generated list is the input, so the agent never
-  enumerates options from memory.
-- The gate fails any path that no citable fact names and no reference entry documents. It starts
-  from a committed baseline of today's uncovered paths, which may only shrink; adding a path to
-  the baseline needs a reason on the entry.
-- Defaults stay facts. TSDoc `@defaultValue` on every optional member is the conventional home,
-  but mandating it moves doc text into source comments; it is deferred (below).
+A text match against facts or reference pages would not have caught that class: before the sweep
+(`86fd134c^`), every option named above already appeared in `docs/reference/*.md`, and leaf-name
+matching covers 178 of `CairnAdapter`'s 180 paths. The gate therefore checks a committed record,
+never prose.
 
-## Mechanism 2: fact staleness
+- **The walker is new.** `check:surface` renders each export as one flat string and expands no
+  member paths. The generator reuses the export enumeration over `dist` declarations that
+  `check:surface` and the docs gate's `check:reference` already share (`surfaceSubpaths`,
+  `moduleExports`) and adds a member walk, so it joins `docs-gate.mjs` on the same footing. An
+  unfiltered walk measured 7,497 paths from 2,269 member declarations; a crude filter left 1,379.
+- **Option-bearing** means a member of a named type a developer passes in, reached from
+  `defineAdapter`, the `define*` helpers, and the route-factory config types. A path is keyed by
+  its declaring type (`AssetConfig.maxUploadBytes`), so a type reached from several roots is
+  listed once. The walk stops at a named type already listed (`ArrayField.item: FieldDescriptor`),
+  and excludes `*Data` and runtime outputs, descriptors, registries, and engine component props.
+  The plan records the generated count and the pending count at creation.
+- **The map** is one committed file beside the fact container, one sorted row per path: a
+  citable fact id, `exclude` with a reason, or `pending` with the outline page slug that should
+  dispose it. Matching is exact equality of the declaring-type path key; nothing else counts.
+- **The gate** walks the types and compares them to the map. It fails a generated path with no
+  row, a row whose path is no longer generated, a row naming a fact id that does not exist or is
+  not `[verified]`, and an `exclude` with no reason. The pending rows are a shrink-only baseline,
+  the way Betterer commits its results file and fails a result that gets worse: a diff that adds
+  a `pending` row after the map's creating commit is a `fix` for the diff-reviewer, which already
+  reads every task's diff, so a new option can never be parked as pending.
+- **Page inputs** receives its page's rows: the pending rows naming its slug and the rows whose
+  fact id is in its outline entry's `factIds`. It disposes each pending row in its claim
+  inventory (carried, filed, or cut with a reason) and rewrites the row to the fact id or the
+  exclusion, the same way it already files facts. The fact read's existing rule blocks an
+  inventory item the page dropped without a `cut`.
+- **After an arm merges**, its outline is deleted but the map stays: an engine pass that adds an
+  option fails the gate until it files the fact `CLAUDE.md` already requires.
+- **Defaults stay facts.** TSDoc `@defaultValue` on every optional member is the conventional
+  home, but mandating it moves doc text into source comments; it is deferred (below).
 
-**Prior art:** Swimm's snippet coupling (per-PR auto-sync on a normalized form, since a raw hash
-proved too noisy) and API Extractor's golden report, which `check:surface` already is at the
-signature level. **Failure it catches:** the four facts the sweep corrected (`f:kkp5bi`,
-`f:hdrzxd`, `f:7wiuwr`, `f:i4fj93`), each wrong while its `Source:` still resolved. Name
-resolution alone catches only deleted references (Tan et al., EMSE 2023). **Rides:** the page
-chain's fact read (the stamp) and `check:facts` (the gate).
-
-- A lockfile beside the container maps each stamped fact id to its source, a hash, and the commit
-  it was verified at. For a `path#Symbol` source the hash covers the declaration's normalized
-  syntax tree (comments and whitespace stripped), found through the compiler-API lookup
-  `check:facts` already has; for a `path:line` or range source it covers the cited lines'
-  normalized text, and accepts more noise.
-- Only the fact read stamps. It already opens every cited declaration to verify the claim, so the
-  stamp costs one command and means "an independent reader verified this claim against this code."
-  The drafter, page inputs, and implementers never stamp, and there is no bootstrap script, which
-  would record a verification that never happened.
-- `check:facts` fails a stamped fact whose current hash differs from its stamp, naming the fact
-  ids. An engine pass that changes a stamped declaration re-verifies those facts in the same pass
-  (a fact-read dispatch over the named ids), so drift is caught in the change that causes it.
-- A lockfile diff is listed in the diff-reviewer's read. An agent re-running a stamp to turn a
-  gate green without reading the claim is the failure the prior art names; the reviewer checks
-  each re-stamp against a fact-read record.
-- Unstamped facts are not failed. Coverage grows as rebuilt pages cite facts; the release sweep
-  covers the rest.
-
-## Mechanism 3: release sweep
+## Mechanism 2: release sweep
 
 **Prior art:** Kubernetes' release docs deadline and Rust's docs-before-stabilization gate, with
 OpenAI's recurring doc-gardening agent and READU as the mechanized forms. **Failure it catches:**
-everything mechanisms 1 and 2 cannot see, such as scaffold traps (the themed 404, Workers Builds
-not running migrations) and behavior outside option-bearing types. **Rides:** the `cairn-release`
-skill, before the version is set.
+what option coverage cannot see, such as scaffold traps (the themed 404, Workers Builds not
+running migrations) and behavior outside option-bearing types. **Rides:** the `cairn-release`
+skill, before the version is set. Its cadence and cap are ruling 1 below.
 
-- The sweep runs the planning-phase shape above, windowed to the git range since the last
-  published tag and fanned out one changed declaration or scaffold file per context, with an
-  independent verifier before filing.
-- Its yield per release (verified gaps found) is recorded in `docs/HISTORY.md`. A falling yield
-  is the measure that mechanisms 1 and 2 work; a steady one says they miss a class, which names
-  the next mechanism to consider.
+- **Window.** From the last engine tag whose sweep `docs/HISTORY.md` records, matched as
+  `v[0-9]*` with prerelease tags excluded (the repo's `tool/v*` tags interleave), so a cut that
+  ran no sweep rolls its range into the next one. The finders work from the `api-surface.md` diff,
+  the scaffold's emitted-template diff, and the changelog's `Consumers must:` and behavior lines,
+  one module per context as the planning sweep does. A per-file window would have meant about 192
+  files for `v0.97.0..v0.98.0`.
+- **Filing.** Before an arm merges, a verified gap is placed on its outline page as the planning
+  sweep does. After an arm merges, the gap is filed as a fact naming the rebuilt page it affects,
+  and the page is fixed under "Edits after the chain" before the version is set, since a
+  public-API change is not done until its page matches. A gap with no page home becomes a
+  friction entry, not a new page.
+- **What it does not do.** It finds new gaps; it does not re-verify existing facts whose cited
+  files changed (257 facts in the last window). A verifier that meets an existing fact the
+  changed code contradicts reports it; that report is the deferred staleness mechanism's trigger.
+- **Yield.** Each run records in `docs/HISTORY.md` the verified gaps found beside the modules
+  swept, so window size does not confound the measure. A steady yield says option coverage
+  misses a class, which names the next mechanism to consider.
 
-## Docs as a design review
+## Docs as a design review (S7)
 
 Writing a page after the code is built is the cheapest design review cairn gets. What is hard to
 explain usually reflects a design flaw: a seam that needs a caveat, an exception list, or a
-workaround step before it can be used safely. The sweep already surfaced several, found as
-defects but rooted in design: settings saves that read a config path the scaffold does not use
+workaround step before it can be used safely. The sweep already surfaced several, found as gaps
+or defects but rooted in design: settings saves that read a config path the scaffold does not use
 (DAD-1), concept ids that silently collide with admin routes (DAD-2), SEO fields that are ignored
 unless declared in the schema (EXB-4), and an image field honored only under the key `image`
-(EXB-5). **Prior art:** the Rust RFC template's required "How do we teach this?" section, Amazon's
-working-backwards practice of writing the customer docs before the build, and Stripe's review of
-API changes through their docs. **Rides:** the page chain's existing records and
-`docs/internal/docs-friction-log.md`, whose charter is already "the design friction that writing a
-doc surfaces."
+(EXB-5). **Prior art:** the Rust RFC template's required "Guide-level explanation", which asks
+the author to explain a proposal "as if it was already included in the language and you were
+teaching it" (https://github.com/rust-lang/rfcs/blob/master/0000-template.md), and Rust's
+docs-before-stabilization gate. **Rides:** the drafter's existing friction route (it writes a
+design gap straight into `docs/internal/docs-friction-log.md` and names it in `frictionFiled`),
+and the log's own charter, "the design friction that writing a doc surfaces."
 
-- **Every chain agent reports design friction.** Page inputs, the drafter, the register editor,
-  and the fact read each return a `designFriction` list in their existing report: anything the
-  page had to hedge, caveat, or work around, and any place two seams name or behave the same
-  thing differently. Each entry names the fact ids or code involved and the smell (a caveat, an
-  exception, a workaround, a surprising default, an inconsistency). No new agent runs.
-- **The page documents the code as it is.** A friction entry never blocks or pauses a page, and
-  the drafter never documents intended behavior the code does not honor. A defect that makes a
-  page's instruction wrong is the one exception, handled as above.
-- **The conductor files every entry** in the friction log at the next checkpoint, verified against
-  the code first, per the existing out-of-scope rule.
-- **The stage close triages them** complete-or-move, as the log's rules already require: fixed in
-  the engine, promoted to the `ROADMAP.md` tier where it bites (tagged as simplifying a named
-  page), or deleted with a reason. The stage's HISTORY entry counts them, so the design yield of
-  each arm is visible next to its page cost.
+- **Two more agents use the same route.** Page inputs and the fact read, the two agents that meet
+  the code, get the drafter's instruction and a `frictionFiled` field. The drafter's instruction
+  widens from "a genuine design gap" to the smells above: a hedge, a caveat, an exception, a
+  workaround, a surprising default, or two seams naming or behaving the same thing differently.
+  Each entry names the fact ids or `file:line` involved. The register editor does not report;
+  its job is prose. No new agent or field runs, and the runner copies each agent's
+  `frictionFiled` into the page record.
+- **The page documents the code as it is.** A friction entry never blocks or pauses a page. The
+  fact records the code's behavior, including a defect's consequence, and the page states it.
+- **The stage close triages them**, in the close's fold agent, never the conductor. It reconciles
+  every `frictionFiled` entry against the log, then triages complete-or-move under the log's
+  verify-first rules: routed to an engine pass through the `ROADMAP.md` tier where it bites
+  (tagged as simplifying a named page), or deleted with a reason. Before promoting an engine
+  change it reads `docs/internal/engine-rulings.md` and runs the charter's premise test (EXB-5
+  sits against the ruling `audit-adapter-imagefield`). The stage's HISTORY entry counts the
+  entries and their outcomes, so each arm's design yield is visible next to its page cost.
 - **An engine fix lands in an engine pass, never inside a docs stage.** When one lands, it fixes
-  the facts and the page it simplifies in the same pass, under the page chain's "Edits after the
-  chain" rule.
+  the facts and the page it simplifies in the same pass, under "Edits after the chain."
 
 ## Deferred, with triggers
 
 | Mechanism | Prior art | Why deferred | Trigger |
 | --- | --- | --- | --- |
+| Fact-staleness lockfile: the fact read stamps a normalized hash of each cited declaration, and `check:facts` fails a changed one | Swimm's snippet coupling, API Extractor | Fails guard condition 2. The four facts it named (`f:kkp5bi`, `f:hdrzxd`, `f:7wiuwr`, `f:i4fj93`) were wrong when filed, and their cited code has not changed since, so a stamp would have certified them. The sweep found no fact made wrong after verification. | A later code change makes a verified fact wrong (a fact read, release-sweep verifier, or site round finds a `[verified]` fact whose cited code changed after its verification). The review records' findings are the design's starting inputs. |
 | Resolve every backticked identifier in pages and facts (extends `check:symbols`) | rustdoc intra-doc links, Sphinx nitpicky | No sweep finding is a fabricated or deleted name on a page; the wrong names found were real symbols misattributed (`f:7wiuwr`) | A fact read or owner read catches a fabricated or renamed identifier on a drafted page |
-| Changelog entries cite the fact ids a surface change touches | Go's `api/next` and `doc/next` check | Its trigger is mechanism 2's stale event, which does not exist yet | Mechanism 2 has run through one release |
-| Optional `Test:` pointer on behavior facts | doctest, Go examples | Mechanism 2 covers drift for the pilot; a test pointer is stronger but costs a test per fact | A stamped behavior fact goes wrong without its declaration changing (behavior moved elsewhere) |
-| TSDoc `@defaultValue` on optional public options | API Extractor, TypeDoc | Moves doc text into source comments; defaults are carried as facts today | Mechanism 1's gate shows defaults as its most common exclusion |
+| Changelog entries cite the fact ids a surface change touches | Go's `api/next` and `doc/next` check | Its trigger is a stale-fact event, which has not occurred | The staleness lockfile is built and has run through one release |
+| Optional `Test:` pointer on behavior facts | doctest, Go examples | No sweep finding is a behavior fact gone wrong with its declaration unchanged; a test pointer costs a test per fact | A verified behavior fact goes wrong without its cited declaration changing (behavior moved elsewhere) |
+| TSDoc `@defaultValue` on optional public options | API Extractor, TypeDoc | Moves doc text into source comments; defaults are carried as facts today | The option map shows defaults as its most common exclusion |
+
+## Amends the parent
+
+The parent is not edited here; these are owed errata, applied as the harvest fold's were:
+
+- The Brief's "No new check is built" gains one gate (option coverage), and "The budget goes to
+  pages" gains the non-page shares below.
+- The stage flow's step 1 opens with the planning-phase sweep, which is the carrier for stages 3
+  to 5.
+- The Budget's "about 1M for planning" per stage does not hold if a sweep costs near the measured
+  4.4M: across stages 3 to 5 that is up to about 10M more against R8's 30M, which the pilot
+  checkpoint's combined question on the initiative ceiling carries.
+- Stage 2's extend page count grows by the two sweep pages, if Geoff keeps them (S5).
 
 ## What stage 2a inherits
 
-- **Order.** The mechanisms land before the pilot, so the pilot's fact reads stamp and its page
-  inputs receive option paths, and the pilot checkpoint measures their cost with the rest.
-- **Tasks added to the 2a plan:** the `designFriction` field in the chain's report schemas; the option-path generator and coverage gate with its baseline
-  (`engine-logic`); the lockfile, the stamp command, and the staleness check in `check:facts`
-  (`engine-logic`); the page chain changes (the fact read stamps, page inputs takes the paths),
-  riding task 1's outline read; and the `cairn-release` step (a skill edit).
+- **Order.** The mechanisms land before the pilot, so the pilot's page inputs receive map rows,
+  and the pilot checkpoint measures their cost with the rest.
+- **Tasks added to the 2a plan:** the walker, the map with its initial slug assignment (one
+  Sonnet dispatch over the declaring types and the outline), and the gate in `docs-gate.mjs`
+  (`engine-logic`); the chain changes (page inputs takes map rows and rewrites them; page inputs
+  and the fact read carry `frictionFiled`; the runner copies it); the `cairn-release` step (a
+  skill edit); and filing DAD-1, EXB-4, and EXB-5 as friction entries, since they were filed as
+  facts and the triage stream never saw them.
 - **New pages** from the sweep (`configure-media`, `gate-your-site-with-cairn-audit`) are 2b
   pages; the pilot and 2a's page list do not change.
-- **Defects** go to the friction log (filed 2026-09-30). A defect that makes a page's
-  instruction wrong carries a one-line note on its fact, so the drafter documents the intended
-  behavior only where the code honors it.
-- **Task 1's lock** in `cairn-docs-outline` is simplified at the close's `code-simplifier` pass to
-  a plain exclusive-create lock with a stale break; its extra race handling was built past need,
-  an instance of S2 recorded in the post-mortem.
+- **Defects** go to the friction log (filed 2026-09-30).
+- **Task 1's lock** in `cairn-docs-outline` handles more races than it needs, an S2 instance
+  recorded in the post-mortem. The tool lives in `~/.dotfiles`, outside the close's
+  `code-simplifier` scope, so any simplification is a separate dotfiles change with a
+  `diff-reviewer` read, not part of this pass.
 
 ## Budget
 
 Stage 2a had spent about 4.9M by this spec (the outline, the sweep, the prior art, the errata,
-and task 1). The three mechanisms add about 1.5M (two `engine-logic` tasks with Opus review, the
-chain edits, and the skill step). The pilot and the rest of 2a stay as planned: about 7.75M at
-planned rates and 9.9M at pass A's rate. With setup, relink, the consistency read, and the close,
-the pass projects at about 16.5M planned and 18.7M at pass A's rate, against S6's 18M. The pilot
-checkpoint re-derives it from measured cost, as the parent spec requires; if the projection then
-exceeds 18M, that checkpoint's combined question carries it.
+and task 1), a conductor estimate the counting rule must source; the sweep alone was estimated at
+about 4.4M, so the figure is likely low. The two mechanisms and the friction route add about 1.2M
+(one `engine-logic` task with Opus review for the walker, map, and gate; the chain edits; the
+skill step). The pilot and task 5 run about 7.75M at planned rates and 9.9M at pass A's rate. The
+other remaining shares (tasks 2, 4, 6, and 7 and the conductor) are 3.0M. The pass projects at
+about 16.9M planned and 19.0M at pass A's rate, before this spec's review and fold. Both exceed
+S6's 14.4M flag, and the parent requires a planned total at or below 80 percent of the ceiling so
+the flag fires only on an overrun. Ruling 2 settles it.
+
+## Rulings for Geoff
+
+1. **Should the release sweep run only on capability releases (trigger 2), capped at 1M per cut,
+   never blocking the cut on its yield?** Recommended: yes. Yes builds the skill step for trigger
+   (2) cuts only, stopping at the cap and reporting the unswept modules; an urgent trigger (1) cut
+   keeps its fast path and rolls its window into the next sweep. No defers mechanism 2 with the
+   trigger "the first site round that finds a doc gap in a surface changed since the harvest,"
+   and only planning-phase sweeps run.
+2. **Should stage 2a's ceiling rise to 21M, flagged at 16.8M, at this spec's approval?**
+   Recommended: yes, since the parent's rule puts a 16.9M plan under a ceiling of about 21M and
+   the approval sitting is already happening. Yes sets the plan header now, and the flag fires
+   only on an overrun. No keeps S6's 18M: the flag is expected to trip after the pilot, and the
+   pilot checkpoint's combined question carries the overage, with task 5's pages the lever.
 
 ## Acceptance
 
-- The option-path list is generated and committed; page inputs receives each page's paths; the
-  gate fails a planted uncovered path and passes with the baseline; the baseline cannot grow
-  without a reason.
-- The lockfile and stamp command exist; the fact read stamps each fact it verifies; `check:facts`
-  fails a planted edit to a stamped declaration and passes a whitespace-only edit.
-- `cairn-release` carries the windowed sweep step and the yield record.
-- Every rebuilt stage's plan template names the planning-phase sweep.
-- Each chain agent's report schema carries `designFriction`; the stage close's HISTORY entry
-  counts the entries filed and how each was triaged.
-- The lean guard's three conditions appear in the 2a plan's Global constraints.
+- The walker, the map, and the gate exist; the gate fails a planted new member on
+  `CairnAdapter.editor` with no row, naming the path and its export; it fails a row for a removed
+  path, a row naming a missing fact id, and an `exclude` with no reason; it passes on the
+  committed map. The planted member sits inside a nested named type, so a walk that stops
+  early fails the fixture. The plan records the generated and pending counts, and the
+  diff-reviewer's rule on added `pending` rows is in the plan's Global constraints.
+- Page inputs receives its page's rows and rewrites each pending row it disposes.
+- `cairn-release` carries the windowed sweep step, the tag glob, and the yield record, as ruling 1
+  decides.
+- The parent's owed errata land, the stage flow among them naming the planning-phase sweep.
+- Page inputs, the drafter, and the fact read carry `frictionFiled`, and the runner copies it to
+  the page record. The pilot checkpoint reports entries per pilot page, and zero across all six
+  is read there as a prompt failure. The stage close's HISTORY entry counts the entries and how
+  each was triaged.
+- The 2a plan's pilot task depends on the mechanism tasks; the R10 page marks both added pages
+  keep-or-cut; the plan review records one guard verdict per mechanism with its three citations.
 
 ## Out of scope
 

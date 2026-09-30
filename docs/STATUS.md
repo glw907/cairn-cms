@@ -16,20 +16,26 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- The draft docs harvest is closed (plan, ledger, and post-mortem in
-  `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md`); its PR merges under R4 once the
-  close gate and reviews are green. The admin, editors, and front-door arms are then empty, and
-  `extend/` holds only the three kept pages. **Next: the stage 2a plan** (resume prompt below).
+- **Draft docs stage 2a is planned and waiting on Geoff's outline approval.** Branch and worktree
+  `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
+  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md`; spec:
+  `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md` (approved, S1 to S9), amending the
+  parent draft docs spec. Ceiling 25M, flag 20M. Task 1 (the page chain's outline read and the
+  kept-page fix) is done and accepted; tasks 2 onward wait for Geoff's R10 approval of the extend
+  outline at https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds (25 pages; he keeps or cuts the two
+  the code sweep added). Resume prompt below.
+- The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
+  `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and filed its 12 code defects in the
+  friction log (`bd8ab1fe`, on `main`, not pushed).
 - Theme identity is done; cairn-pub's pin bump takes its migration and link checks first.
 
 ## Open decisions and watches
 
-- **Geoff's call:** apply the "Owed errata" in
-  `docs/superpowers/research/2026-09-29-draft-docs-harvest-fold.md` (six parent-spec fixes, and
-  `cairn-pass` and `site-pass` still say to fix a frozen arm page), or rule each.
+- **Geoff's call:** approve (and edit) the extend outline on the R10 page above.
+- Watch: `cairn-docs-outline`'s lock (dotfiles) was built past need; simplify it in a separate
+  dotfiles change with a `diff-reviewer` read (the spec records it as an instance of S2).
 - Watch: the kept per-version records' paths are hardcoded in `cairn-pass`, `CLAUDE.md`, and
   `docs/internal/facts/README.md`; a pass that moves either record updates all three.
-  Improve-as-we-go (Geoff, 2026-09-29) waits for the first drafts.
 - `checkOrigin` to `csrf.trustedOrigins` is a small `auth-data` pass, run when Geoff can make the
   magic-link click. Node 26 is the beta floor only if Active LTS by then; TypeScript 7 waits on
   `tsgo.yml`. `radius-scale` and the retired-patch arms promote at `0.99.0`.
@@ -39,22 +45,20 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Resume prompt
 
-### Next action (draft docs stage 2a plan)
+### Next action (draft docs stage 2a, execute)
 
-> **Goal.** A reviewed stage 2a plan: the extend outline, its pilot, and the rest of 2a. Trigger:
-> the harvest PR merged to `main`.
+> **Goal.** Execute stage 2a: the option-coverage and friction mechanisms, the re-arm, the
+> six-page pilot and its checkpoint, the rest of 2a, and the close.
 >
-> **Scope.** Draw `docs/internal/outlines/extend.json` from the readers' jobs,
-> `docs/internal/facts/extend.md`, and `relink.json`'s `2a` entries. Drafting is out.
+> **Scope.** The plan's tasks 2 to 10 on `draft-docs-2a`. Task 1 is done. Stage 2b's pages are out.
 >
-> **Settled (do not re-brainstorm):** the parent spec
-> (`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`) and the harvest spec's
-> "Outline format". Extend re-arms at the first 2a page (`arm-state.mjs`), so the plan budgets an
-> interim `docs/extend/README.md`, live targets for the extend `LEGACY_PATH_MAP` entries, the
-> `build-a-site-by-hand.md` slug case repoint, the `docs-page-chain.js` outline read, and the
-> `requiredDocsPaths` kept-page fix (ROADMAP Next, "at latest stage 2a").
+> **Settled (do not re-brainstorm):** the spec (`docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`,
+> S1 to S9), the plan and its review record, the outline (after Geoff's R10 fold), the 25M ceiling.
 >
-> **Still open, brainstorm these:** the arm's page set and order, and the pilot's six pages.
+> **Entry condition.** Geoff has approved the outline on its R10 page. Before task 2, the conductor
+> reads back his saved version (Artifact `read` on the URL above), folds its diff into
+> `docs/internal/outlines/extend.json`, and commits; the plan cites that commit.
 >
-> **Approach.** Invoke `cairn-pass` to start, then `superpowers:brainstorming`, `writing-plans`,
-> and `spec-plan-review`. Launch directory `~/Projects/cairn-cms`; `claude --model claude-opus-5-5`.
+> **Approach.** Invoke `cairn-pass` to start; the plan's Execution mode governs (Agent-tool chains,
+> then `docs-page-chain` for the pilot). Launch directory `~/Projects/cairn-cms`;
+> `claude --model claude-opus-5-5` at medium effort.

@@ -15,8 +15,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   the identical binding threaded to both routes. [verified]
 - `f:qehbx3` A save holds on a per-entry branch; a deliberate publish copies it to the main branch with the
   editor as commit author. Source: `src/lib/github/types.ts:20`, "A commit author: the signed-in
-  editor (spec §7.4). The committer is left to the App."; `src/lib/github/repo.ts:262`,
-  "committer is omitted, so GitHub attributes the commit to the App." [verified]
+  editor (spec §7.4).", `src/lib/github/repo.ts:260-263` (no committer is set). [verified]
 - `f:kldwss` `create-cairn-site` creates the GitHub App, the repository, the Cloudflare bindings, and deploys,
   in one run. Source: `packages/create-cairn-site/` (chapter2.mjs GitHub App and Cloudflare
   provisioning flow, referenced in docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md).
@@ -85,7 +84,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:am80o6` `docs/internal/` holds cairn's maintainer-facing planning and design records, none of them part of the adopter docs, and the npm package's `files` list ships the doc arms, `docs/README.md`, and `docs/why-cairn.md`, never `docs/internal/`. Source: `docs/internal/README.md:1-4`, `package.json:194-207`. [verified]
 
 ## CLAUDE.md
-- `f:psrfdx` A publish commit is authored by the editor and sets no committer, so GitHub attributes it to the site's own GitHub App under that App's registered name, `cairn-<site slug>` for a scaffolded site; CLAUDE.md names that identity `cairn-cms[bot]`, which is not the name a site's App carries. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`, `packages/create-cairn-site/src/github/chapter.mjs:161`. [verified]
+- `f:psrfdx` A publish commit is authored by the editor and sets no committer, so the committer GitHub records is the author, the editor; CLAUDE.md's naming of a `cairn-cms[bot]` committer identity does not describe the commit, and the scaffold names a site's App `cairn-<site slug>` by default, which is the App's name and not a commit field. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`, https://docs.github.com/en/rest/git/commits#create-a-commit, `packages/create-cairn-site/src/github/chapter.mjs:161`. [verified]
 - `f:9093mg` The GitHub App id is `3847496`; a single installation, id `135372268`, covers both ecxc-ski and
   907-life. Source: CLAUDE.md, "Credentials" section. [verified: values live in
   `~/.dotfiles/secrets/values.age` and `~/.local/secrets`, outside this repo, not independently
@@ -128,9 +127,8 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   event names cannot. Source: `src/lib/log/events.ts:1-16` (module comment: "renaming one is a
   breaking change... See docs/reference/log-events.md, kept in step with this union.");
   `src/lib/log/` contains `emit.ts`, `events.ts`, `index.ts`. [verified]
-- `f:w379wu` Every publish is a commit with the editor as author and the GitHub App as committer, per spec
-  §7.4. Source: `src/lib/github/types.ts:20`, "A commit author: the signed-in editor (spec §7.4).
-  The committer is left to the App." [verified]
+- `f:w379wu` Every publish is a commit with the editor as author and, since no committer is set, the editor
+  as committer too. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`, https://docs.github.com/en/rest/git/commits#create-a-commit. [verified]
 - `f:ab9kzr` The current published version is `0.97.0`. Source: `package.json:3`. [verified]
 - `f:0xsi67` `check:surface` runs a public-surface snapshot gate (`check-surface.mjs`) plus a leak check
   (`check-surface-leaks.mjs`). Source: `package.json:41`. [verified]

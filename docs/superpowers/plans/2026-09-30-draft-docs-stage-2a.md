@@ -548,5 +548,7 @@ Run `cairn-pass`'s close:
 | 4 | cairn `74a3b0dc`, `cd3a1869`; dotfiles `9fc2689`, `865b7dc` (one fix round: the 47-page total, the unrestated stage 2 row, `grep -e` under ugrep) | accept | implementer ~0.1M, review ~0.06M (attribution only) |
 | 4b | audit record and fixes cairn `6a6bb54b`; dotfiles `2936c23` (7 gaps landed, 8 refused; gap 4's post-merge pending target and gap 5's voice line are conductor rulings) | accept | audit ~0.12M, implementer ~0.07M, review ~0.05M (attribution only) |
 | S1 boundary | merge `3e19de2a`; friction DAD-1, EXB-4, EXB-5, and the unlinted `scripts/` (`39bd5faf`); README slug skip and the verified drift routine (`12b97d1e`) | done | ~0.1M |
+| 5 | `f6cee04f`, `98f0c17e`, `1311ebc3` (one fix round: 11 interim relink entries repointed by 2b pages retagged `2b`; relink stages now 2a 74, 2b 43) | accept | implementer ~0.12M, review ~0.07M (attribution only) |
+| 6 pre-pilot commit | the ledger commit that adds this row (map selection counts are computed at it) | | |
 
 ## Post-mortem

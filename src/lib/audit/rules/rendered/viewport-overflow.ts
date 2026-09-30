@@ -61,7 +61,8 @@ interface OverflowOrigin {
 /**
  * Resolves once the document's `scrollWidth` and `clientWidth` read the same on two consecutive
  * animation frames and no finite transition or animation is still running, or reports that they
- * did not before the timeout. The animation check closes the false read at the start of a
+ * did not before the timeout. A timer backstops the frame loop, so a page whose animation frames
+ * never fire (a hidden tab) still resolves within the bound. The animation check closes the false read at the start of a
  * transition: an eased transition holds its first value for more than one frame, so two equal
  * reads there mean it has not begun moving, not that it has finished. Infinite animations (a
  * spinner) are ignored, since they never end and a stable width beside one is still stable.
@@ -73,6 +74,11 @@ function waitForStableLayout(timeoutMs: number): Promise<boolean> {
   const deadline = performance.now() + timeoutMs;
   return new Promise((resolve) => {
     let previous: string | undefined;
+    const backstop = setTimeout(() => resolve(false), timeoutMs);
+    const finish = (settled: boolean): void => {
+      clearTimeout(backstop);
+      resolve(settled);
+    };
     function step(): void {
       const current = read();
       // Reading the widths above forces the style recalculation that starts any transition the
@@ -84,8 +90,8 @@ function waitForStableLayout(timeoutMs: number): Promise<boolean> {
             (animation.pending || animation.playState === 'running') &&
             animation.effect?.getComputedTiming().iterations !== Infinity
         );
-      if (current === previous && !animating) return resolve(true);
-      if (performance.now() >= deadline) return resolve(false);
+      if (current === previous && !animating) return finish(true);
+      if (performance.now() >= deadline) return finish(false);
       previous = current;
       requestAnimationFrame(step);
     }

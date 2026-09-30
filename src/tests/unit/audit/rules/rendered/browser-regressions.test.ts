@@ -569,7 +569,8 @@ describe('viewport-overflow against a real browser', () => {
   });
 
   // The admin shell settles its layout from matchMedia listeners, which run after the resize
-  // rather than inside it. The block below stays wide until the listener's next frame.
+  // rather than inside it. The block below steps down 150px per frame once the listener fires, so a
+  // read taken before the steps run sees it far wider than the viewport.
   it('waits for a layout that a matchMedia listener changes after the resize', async () => {
     const findings = await findingsFor(
       viewportOverflow,
@@ -581,7 +582,13 @@ describe('viewport-overflow against a real browser', () => {
        <script>
          const el = document.querySelector('.drawer');
          matchMedia('(max-width: 400px)').addEventListener('change', () => {
-           requestAnimationFrame(() => { el.style.width = '100px'; });
+           let width = 900;
+           const step = () => {
+             width = Math.max(100, width - 150);
+             el.style.width = width + 'px';
+             if (width > 100) requestAnimationFrame(step);
+           };
+           requestAnimationFrame(step);
          });
        </script></body>`
     );
@@ -595,7 +602,7 @@ describe('viewport-overflow against a real browser', () => {
       viewportOverflow,
       `<style>
          body { margin: 0; }
-         @keyframes sweep { from { width: 900px; } to { width: 1000px; } }
+         @keyframes sweep { from { width: 900px; } to { width: 1400px; } }
          .sweeping { height: 20px; background: #333; animation: sweep 1s linear infinite alternate; }
        </style>
        <body><div class="sweeping"></div></body>`

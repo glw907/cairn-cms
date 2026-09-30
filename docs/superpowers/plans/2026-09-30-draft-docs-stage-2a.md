@@ -538,5 +538,6 @@ Run `cairn-pass`'s close:
 | 2 | `14297445`, `ba57f8e8` (one fix round: header root list) | accept | implementer ~0.45M, reviews ~0.1M (attribution only) |
 | 2 counts | 30 roots (27 exports), 264 generated, 156 pending at creation, 152 after the fix round; pilot pending/fact rows: security-model 0/3, add-cairn-to-a-sveltekit-app 14/12, add-a-custom-admin-screen 5/2, replace-magic-links-with-cloudflare-access 1/2, architecture 0/10, theme-your-public-site 6/0 | | |
 | 3 | dotfiles `b4cff06`, `7e2a304` (two hardening items from the review: the fact read blocks on any row still pending the page's slug; the multi-row retag order) | accept | implementer ~0.2M, review ~0.07M (attribution only) |
+| 4 | cairn `74a3b0dc`, `cd3a1869`; dotfiles `9fc2689`, `865b7dc` (one fix round: the 47-page total, the unrestated stage 2 row, `grep -e` under ugrep) | accept | implementer ~0.1M, review ~0.06M (attribution only) |
 
 ## Post-mortem

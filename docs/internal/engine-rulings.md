@@ -590,7 +590,7 @@ open edits, not part of the shape itself.
   environment variable instead would make it vary per environment, and a visual-regression suite
   that renders a page and diffs it against a committed baseline needs the identical origin on
   every run, in CI and locally alike. Env-sourcing that value collides with deterministic visual
-  baselines. [Wire the delivery surface](../extend/wire-the-delivery-surface.md) carries the note.
+  baselines. Wire the delivery surface (`docs/extend/wire-the-delivery-surface.md`) carries the note.
 - **Reopens on:** a consumer shipping wrong-origin production metadata despite the note, or a
   fixed-env seam landing that reconciles env-sourcing with pinned baselines.
 - **Record:** [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivor 15

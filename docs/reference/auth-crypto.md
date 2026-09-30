@@ -112,8 +112,7 @@ then the site's configured `PUBLIC_ORIGIN` rather than a header, since a site al
 that value and a configured origin can't be spoofed by an intermediate hop the way a
 forwarded-proto header can. It never downgrades an `https` request, whatever that value says. Both
 cookies route through this one derivation (`csrfSecure`, internal to `/sveltekit`), so they can no
-longer resolve different `secure` values on the same request; see [The session
-cookie](../extend/security-model.md#the-session-cookie). A site building its own second-audience
+longer resolve different `secure` values on the same request. A site building its own second-audience
 cookie without an equivalent configured origin reaches for the preceding header-based derivation
 instead.
 

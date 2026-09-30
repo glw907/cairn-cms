@@ -18,7 +18,7 @@ The release step sets the version number at the cut and renames this section to 
   `from '@glw907/cairn-cms/components'` to `from '@glw907/cairn-cms/admin'`.
 - **Import `PreviewBanner` from `@glw907/cairn-cms/public`.** The banner renders on a site's public
   preview route, so it moved to the new `./public` subpath and no longer sits on `./admin`. Change
-  the import on your preview route (see [Share a draft preview](share-a-draft-preview.md)).
+  the import on your preview route (see [Share a draft preview](https://github.com/glw907/cairn-cms/blob/v0.97.0/docs/extend/share-a-draft-preview.md)).
 - **Move custom admin components into `src/lib/admin`, or keep them and set `static.scope`.** The
   audit's default roots no longer include `src/lib/components`. To move them, put your custom admin
   components under `src/lib/admin` and add `@source "./lib/admin";` to your admin stylesheet

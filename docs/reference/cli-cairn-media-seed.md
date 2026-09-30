@@ -4,8 +4,7 @@
 deployed cairn site, so `vite dev` serves real media on every page with no deploy. It reads the
 committed media manifest (`src/content/.cairn/media.json`, the engine's own convention),
 downloads each object from the deployed site, and writes it into local R2 state under the same
-content-addressed key the media route reads. Once seeded, [Design your
-site](../extend/design-your-site.md#local-iteration) covers the loop this enables. An author edits
+content-addressed key the media route reads. Once seeded, an author edits
 a source file, and `vite dev` serves the real image on reload.
 
 The package ships the command in its `bin` field, so an install puts it on the project's path.
@@ -78,9 +77,6 @@ entries`.
 
 ## See also
 
-- [Design your site](../extend/design-your-site.md#local-iteration) for
-  the loop this tool unblocks: seed once, then edit against `vite dev` with no deploy per
-  change.
 - [The `cairn doctor` command](./cli-cairn-doctor.md), which reads the same wrangler config for
   its own R2-binding check.
 - [Media (`/media`)](./media.md) for the manifest shape and the content-addressed naming scheme

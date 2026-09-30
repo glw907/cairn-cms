@@ -378,6 +378,1042 @@
       "oldTarget": "docs/editors/",
       "done": "The snippet typecheck skips the editors arm by name while it is absent.",
       "stage": "4"
+    },
+    {
+      "file": "docs/reference/admin-routes.md",
+      "context": "setting both go inside `vite.config.ts`'s `sveltekit({ ... })` call instead.",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/admin-routes.md",
+      "context": "renders inside this same shell.",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/auth-channel.md",
+      "context": "The design is built from one rule: no control keyed on the victim's identity",
+      "oldTarget": "docs/extend/auth-channel-security-model.md",
+      "done": "Link and its pointer sentence removed, the rule sentence kept; restore a link to the threat catalogue.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/auth-channel.md",
+      "context": "flag as its own enable contract.",
+      "oldTarget": "docs/extend/security-model.md#what-the-dev-backend-flags-two-refusals-leave-open",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/auth-channel.md",
+      "context": "the whole economic bound on guessing a code is `challenge`'s consequence.",
+      "oldTarget": "docs/extend/auth-channel-security-model.md",
+      "done": "Parenthetical link removed; restore a link to the threat catalogue.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/auth-channel.md",
+      "context": "Resend cooldown per nonce, in ms; UX only |",
+      "oldTarget": "docs/extend/auth-channel-security-model.md",
+      "done": "Parenthetical link removed; restore a link to the residual-risks section.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/auth-channel.md",
+      "context": "never at the `migrations` directory your site's `AUTH_DB` uses. A shared",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/auth-crypto.md",
+      "context": "different `secure` values on the same request. A site building",
+      "oldTarget": "docs/extend/security-model.md#the-session-cookie",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/cli-cairn-media-seed.md",
+      "context": "Once seeded, an author edits",
+      "oldTarget": "docs/extend/design-your-site.md#local-iteration",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/cli-cairn-media-seed.md",
+      "context": "- [The `cairn doctor` command](./cli-cairn-doctor.md), which reads the same wrangler config for",
+      "oldTarget": "docs/extend/design-your-site.md#local-iteration",
+      "done": "See-also bullet removed; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/core.md",
+      "context": "inside another with the `::include` directive. It",
+      "oldTarget": "docs/editors/write-in-the-editor.md#fragments",
+      "done": "Link dropped, the directive named plainly; restore a link to the rebuilt editors page that teaches fragments.",
+      "stage": "4"
+    },
+    {
+      "file": "docs/reference/core.md",
+      "context": "over that path. This grew from a",
+      "oldTarget": "docs/extend/data-tiers.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/core.md",
+      "context": "flatten the fields instead of nesting them.",
+      "oldTarget": "docs/extend/content-model.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/core.md",
+      "context": "never widens it, so a site that declares no map sees no behavior change.",
+      "oldTarget": "docs/extend/restrict-admin-access.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/guidance.md",
+      "context": "- [The `cairn doctor` command](./cli-cairn-doctor.md) for the setup preflight",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "See-also bullet removed; restore it when the admin checklist returns.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/reference/islands.md",
+      "context": "- [`rendering.islands` on the core reference](./core.md#renderingislands-adapter-member)",
+      "oldTarget": "docs/extend/add-an-island.md",
+      "done": "See-also bullet removed; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/log-events.md",
+      "context": "magic-link's contents.\n",
+      "oldTarget": "docs/extend/security-model.md; docs/admin/troubleshooting.md",
+      "done": "Two pointers removed: the redaction-stance link (extend, restored at 2a) and the log-query link (admin troubleshooting, restored at 3).",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/log-events.md",
+      "context": "session by design. This only surfaces a map a site believed",
+      "oldTarget": "docs/extend/security-model.md#an-access-map-is-not-a-whitelist",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/public.md",
+      "context": "for the `loadPreview` seam it pairs with.",
+      "oldTarget": "docs/extend/share-a-draft-preview.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/public.md",
+      "context": "replaces the token default in both states.",
+      "oldTarget": "docs/extend/share-a-draft-preview.md#override-the-banners-palette",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/render.md",
+      "context": "its own.\n",
+      "oldTarget": "docs/extend/configure-rendering.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/supported-toolchain.md",
+      "context": "disabling `checkOrigin`,\nand the current",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/sveltekit.md",
+      "context": "that writes a sink following the `waitUntil` advice. `ctx.audit` catches",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md#wire-the-auditsink",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/sveltekit.md",
+      "context": "the same convention as a hand-rolled one:",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md#wire-the-auditsink",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/sveltekit.md",
+      "context": "what any given site's own routes show.\n",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md#gate-it",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/sveltekit.md",
+      "context": "out of their own link.\n",
+      "oldTarget": "docs/extend/security-model.md#sign-in-binds-to-the-browser-that-asked",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/sveltekit.md",
+      "context": "insert still works and stays documented\nas the fallback",
+      "oldTarget": "docs/extend/add-cairn-to-a-sveltekit-app.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/sveltekit.md",
+      "context": "below for the site-mounted page these actions\nfeed.",
+      "oldTarget": "docs/extend/share-a-draft-preview.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/sveltekit.md",
+      "context": "rather than an approximated shell.\n",
+      "oldTarget": "docs/extend/share-a-draft-preview.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/sveltekit.md",
+      "context": "map](./core.md#access-map), when one is declared.\n",
+      "oldTarget": "docs/extend/restrict-admin-access.md; docs/extend/organize-your-admin-nav.md",
+      "done": "Two pointers removed from a sentence that ends at the access-map link; the reference page keeps the rule, and the pointers return with the rebuilt pages. Two occurrences (the NavLayout and the layout-types sections).",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/reference/sveltekit.md",
+      "context": "contract in full.\n",
+      "oldTarget": "docs/extend/organize-your-admin-nav.md",
+      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
+      "stage": "2a"
+    },
+    {
+      "file": "README.md",
+      "context": "- **Looking up a contract?** [The reference](./docs/reference/README.md)",
+      "oldTarget": "docs/why-cairn.md; docs/editors/welcome.md; docs/admin/README.md; docs/extend/README.md",
+      "done": "Four audience-track bullets replaced by one reference bullet; the front-door rebuild restores the reader routing (why-cairn, editors, admin, extend).",
+      "stage": "5"
+    },
+    {
+      "file": "README.md",
+      "context": "extend it in.\n",
+      "oldTarget": "docs/why-cairn.md",
+      "done": "Pointer sentence removed; the front-door rebuild restores the link.",
+      "stage": "5"
+    },
+    {
+      "file": "README.md",
+      "context": "Start from\n`npm install @glw907/cairn-cms`, and read [the reference]",
+      "oldTarget": "docs/extend/add-cairn-to-a-sveltekit-app.md",
+      "done": "Guide link replaced by the reference index; restore the guide link when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "README.md",
+      "context": "The [docs](./docs/reference/README.md) hold the reference for every export.",
+      "oldTarget": "docs/README.md",
+      "done": "Front-door link retargeted to the reference index; the front-door rebuild restores the link to the docs home.",
+      "stage": "5"
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "context": "start with\n[what cairn is and is not](./docs/internal/what-cairn-is-and-is-not.md).",
+      "oldTarget": "docs/README.md; docs/why-cairn.md",
+      "done": "Two front-door links replaced by the internal scope charter, which the same file already links; the front-door rebuild may restore them.",
+      "stage": "5"
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "context": "[Waymark](./examples/showcase/README.md), the starter template",
+      "oldTarget": "docs/extend/design-your-site.md",
+      "done": "Retargeted to the showcase README, which describes Waymark; permanent.",
+      "stage": null
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "context": "the front door joins them when it is rebuilt.",
+      "oldTarget": "docs/README.md; docs/why-cairn.md",
+      "done": "Two deleted front-door paths replaced by a plain statement; the front-door rebuild names its files again.",
+      "stage": "5"
+    },
+    {
+      "file": "SECURITY.md",
+      "context": "HTML or a `javascript:` URL unless a site explicitly opts out.",
+      "oldTarget": "docs/extend/security-model.md; docs/extend/data-tiers.md",
+      "done": "Pointer sentence removed; the extend rebuild restores links to the security model and the data tiers.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/extend/choose-an-ai-posture.md",
+      "context": "that the\nscaffold writes.\n",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
+      "done": "Link and its relative clause removed from the kept page and its brief in lockstep; restore the pointer when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/internal/briefs/extend/choose-an-ai-posture.json",
+      "context": "that the scaffold writes.\"",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
+      "done": "Brief sentence matches the kept page edit.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/extend/choose-an-ai-posture.md",
+      "context": "The [`ai.posture-effective` check](../reference/cli-cairn-doctor.md#the-checks) covers the",
+      "oldTarget": "docs/admin/is-it-working.md#make-the-stated-ai-posture-effective",
+      "done": "Retargeted to the doctor reference, in the kept page and its brief in lockstep; the admin rebuild may restore a link to the checklist section.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/internal/briefs/extend/choose-an-ai-posture.json",
+      "context": "The [`ai.posture-effective` check](../reference/cli-cairn-doctor.md#the-checks) covers the condition",
+      "oldTarget": "docs/admin/is-it-working.md#make-the-stated-ai-posture-effective",
+      "done": "Brief sentence matches the kept page edit.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/extend/upgrade-cairn.md",
+      "context": "A `0.x` minor can break a documented seam, so an upgrade is never a blind bump.",
+      "oldTarget": "docs/extend/README.md#operate-across-versions",
+      "done": "The pointer to the stability statement dropped; restore it when the extend index returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/extend/upgrade-cairn.md",
+      "context": "toolchain](../reference/supported-toolchain.md) names the Node, SvelteKit, and Svelte targets",
+      "oldTarget": "docs/admin/what-to-run-and-when.md",
+      "done": "One of two links removed; restore the admin link when the page returns.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/extend/upgrade-cairn.md",
+      "context": "version the error's import or field name last appeared in.",
+      "oldTarget": "docs/extend/debug-your-site.md",
+      "done": "Pointer sentence removed; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/extend/migration-notes.md",
+      "context": "blob/v0.97.0/docs/extend/share-a-draft-preview.md",
+      "oldTarget": "docs/extend/share-a-draft-preview.md",
+      "done": "Historical entry keeps its text; the link is a GitHub permalink at v0.97.0, the newest tag that contains the page. Permanent: a rebuilt page does not change what the 0.98 entry pointed at.",
+      "stage": null
+    },
+    {
+      "file": "docs/internal/what-cairn-is-and-is-not.md",
+      "context": "absorbed by the why-cairn page (removed pending its rebuild)",
+      "oldTarget": "docs/why-cairn.md",
+      "done": "Link dropped, the page named in words; the front-door rebuild restores the link.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/admin-smoke-test.md",
+      "context": "stable https `Origin`.",
+      "oldTarget": "docs/admin/is-it-working.md#force-https-at-the-edge",
+      "done": "Pointer sentence removed; the admin rebuild restores the link to its force-HTTPS section.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/internal/engine-rulings.md",
+      "context": "Wire the delivery surface (`docs/extend/wire-the-delivery-surface.md`) carries the note.",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "done": "Markdown link turned into a plain path mention, kept as dated evidence per the ruling ledger rule; permanent.",
+      "stage": null
+    },
+    {
+      "file": "examples/showcase/src/theme/cairn.config.ts",
+      "context": "// site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "packages/create-cairn-site/src/substitute.mjs",
+      "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "packages/create-cairn-site/src/substitute.test.mjs",
+      "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "packages/create-cairn-site/src/scaffold.test.mjs",
+      "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "packages/create-cairn-site/src/substitute.mjs",
+      "context": "'  // route passes it to robotsResponse, and CairnAdapter.aiPosture',",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "done": "The emitted decline/invite comment block drops the pointer too (aiPostureBlock).",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/cairn-theme/cairn.css",
+      "context": "regardless of order.\n   ====",
+      "oldTarget": "docs/extend/design-your-site.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/cairn-theme/README.md",
+      "context": "regardless of position.",
+      "oldTarget": "docs/extend/design-your-site.md",
+      "done": "Pointer sentence removed; restore the link when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/e2e/members.spec.ts",
+      "context": "(src/members/channel.ts, the worked exemplar). Each",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/src/app.d.ts",
+      "context": "The showcase members fixture's own binding;",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/src/members/capture-transport.ts",
+      "context": "channel end to end: instead of sending",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/src/members/channel.ts",
+      "context": "a second audience. Two named divergences from the documented shape",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/src/routes/members/+page.server.ts",
+      "context": "which reads the signed-in subject, into this",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/src/routes/admin/signups/+page.server.ts",
+      "context": "// Recipe: docs/reference/sveltekit.md (createSectionAction, requireAccess).",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "done": "Recipe header retargeted to the reference page that documents the atoms; restore the recipe path when the guide returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/src/routes/members/login/+page.server.ts",
+      "context": "// Recipe: docs/reference/auth-channel.md (createAuthChannel).",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Recipe header retargeted to the reference page that documents the atom; restore the recipe path when the guide returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/src/routes/members/login/+page.server.ts",
+      "context": "of the documented pattern, folded onto one page",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/src/routes/members/login/+page.svelte",
+      "context": "the documented exemplar rendered. Both forms",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/src/routes/test/last-otp/+server.ts",
+      "context": "// the second-audience pattern states that as a rule",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/wrangler.jsonc",
+      "context": "The showcase members fixture's own D1 binding.",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/svelte.config.js",
+      "context": "hand the authority over.\n    // WATCH:",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md",
+      "done": "Comment pointer dropped; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/README.md",
+      "context": "run against this directory in CI.",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md",
+      "done": "Companion clause removed; restore the link when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "examples/showcase/README.md",
+      "context": "For the contracts it uses, start at [`docs/reference/README.md`]",
+      "oldTarget": "docs/README.md",
+      "done": "Front-door link retargeted to the reference index; the front-door rebuild restores the docs-home link.",
+      "stage": "5"
+    },
+    {
+      "file": "examples/showcase/README.md",
+      "context": "scaffolds from. A few",
+      "oldTarget": "docs/extend/what-the-scaffold-wrote.md",
+      "done": "Pointer clause removed; restore the link when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "skills/cairn-extend/SKILL.md",
+      "context": "and the reference\npage that documents it.",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
+      "done": "The router names reference pages instead of the shipped recipe pages; the extend rebuild may restore per-pattern recipes. Sites re-run `npx cairn-guidance install` (the changelog carries the Consumers must line).",
+      "stage": "2a"
+    },
+    {
+      "file": "skills/cairn-extend/SKILL.md",
+      "context": "docs/reference/auth-channel.md` |",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
+      "done": "Both table rows now point at the reference pages that document their atoms (same edit as above).",
+      "stage": "2a"
+    },
+    {
+      "file": "src/lib/dev-flag.ts",
+      "context": "The residual is honest: a deployment that sets",
+      "oldTarget": "docs/extend/security-model.md",
+      "done": "Comment pointer dropped or reworded; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "src/lib/public/PreviewBanner.svelte",
+      "context": "property replaces the default for the whole banner.\n-->",
+      "oldTarget": "docs/extend/share-a-draft-preview.md#override-the-banners-palette",
+      "done": "Comment pointer dropped or reworded; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "src/lib/reproductions/fixtures.ts",
+      "context": "The `navLayout` seam's own worked example, resolved to",
+      "oldTarget": "docs/extend/organize-your-admin-nav.md",
+      "done": "Comment pointer dropped or reworded; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "src/tests/unit/reproductions-fixtures.test.ts",
+      "context": "it('resolves the navLayout worked example, with",
+      "oldTarget": "docs/extend/organize-your-admin-nav.md",
+      "done": "Test title named the deleted page by basename; it names the seam now.",
+      "stage": "2a"
+    },
+    {
+      "file": "src/lib/reproductions/stories/CustomScreen.svelte",
+      "context": "custom-admin-screen guide (removed pending its rebuild)",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "done": "Path replaced by the guide named in words; restore the path when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "src/lib/reproductions/stories/editor.ts",
+      "context": "the editors track's write-in-the-editor page (removed pending its rebuild).",
+      "oldTarget": "docs/editors/write-in-the-editor.md",
+      "done": "Path replaced by the page named in words; restore the path when the page returns.",
+      "stage": "4"
+    },
+    {
+      "file": "src/lib/reproductions/stories/site.ts",
+      "context": "worked snippet in the extend track's custom-admin-screen guide",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "done": "Path replaced by the guide named in words; restore the path when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "src/lib/sveltekit/admin-action.ts",
+      "context": "(`waitUntil` advice for a custom section is",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "done": "Comment pointer dropped or reworded; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "src/lib/sveltekit/admin-nav.ts",
+      "context": "(an access map is not a\n *  whitelist). This never blocks",
+      "oldTarget": "docs/extend/security-model.md#an-access-map-is-not-a-whitelist",
+      "done": "Comment pointer dropped or reworded; restore it when the page returns.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/internal/admin-design-system.md",
+      "context": "A public docs page that touches motion cites it by heading rather",
+      "oldTarget": "docs/extend/animate-a-custom-screen.md",
+      "done": "The page-specific claim made general: the deleted page named here no longer exists, and the rebuilt extend arm carries the citation rule.",
+      "stage": "2a"
+    },
+    {
+      "file": "CLAUDE.md",
+      "context": "`admin/` (running the default site, no code), `editors/`",
+      "oldTarget": "docs/admin/README.md; docs/editors/README.md; docs/extend/README.md; docs/why-cairn.md",
+      "done": "The four track links became plain names, since the pages are deleted; each arm stage restores its link, and the front door (stage 5) restores why-cairn.md. Admin index at 3, editors at 4, extend at 2a.",
+      "stage": "5"
+    },
+    {
+      "file": "CLAUDE.md",
+      "context": "are empty until each arm's own stage",
+      "oldTarget": "docs/admin/; docs/editors/; docs/extend/; docs/why-cairn.md",
+      "done": "The per-arm freeze language replaced by an empty-until-rebuilt statement (the arms were deleted).",
+      "stage": null
+    },
+    {
+      "file": "CLAUDE.md",
+      "context": "stage rebuilds it from the container. The order was harvest, then delete,",
+      "oldTarget": "docs/admin/; docs/editors/; docs/extend/; docs/why-cairn.md",
+      "done": "Freeze-lift clause dropped and the harvest tense corrected, same change as above.",
+      "stage": null
+    },
+    {
+      "file": "CLAUDE.md",
+      "context": "are per-version records kept through the deletion",
+      "oldTarget": "docs/extend/migration-notes.md; docs/extend/upgrade-cairn.md",
+      "done": "Kept-set wording; the pages themselves stay.",
+      "stage": null
+    },
+    {
+      "file": "CLAUDE.md",
+      "context": "Records carry an\neditor's email, never a token",
+      "oldTarget": "docs/admin/troubleshooting.md",
+      "done": "Operator how-to pointer removed; docs/reference/log-events.md, linked earlier in the section, holds the event table. The admin rebuild restores the troubleshooting pointer.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/internal/facts/README.md",
+      "context": "are empty until each arm's own stage rebuilds them",
+      "oldTarget": "docs/admin/; docs/editors/; docs/extend/; docs/why-cairn.md",
+      "done": "The per-arm freeze paragraph replaced by an empty-until-rebuilt statement (the arms were deleted).",
+      "stage": null
+    },
+    {
+      "file": "docs/internal/facts/README.md",
+      "context": "kept through the deletion**, maintained every pass",
+      "oldTarget": "docs/extend/migration-notes.md; docs/extend/upgrade-cairn.md",
+      "done": "Kept-set wording; the pages themselves stay.",
+      "stage": null
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "are empty until their stages\nrebuild them, so no old page awaits a naming sweep",
+      "oldTarget": "docs/admin/; docs/editors/; docs/extend/",
+      "done": "The per-arm freeze line replaced by an empty-until-rebuilt statement.",
+      "stage": null
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "since each names no page on a\nnarrative arm; the reference",
+      "oldTarget": "docs/admin/; docs/editors/; docs/extend/",
+      "done": "The last \"frozen\" qualifier dropped from the freeze language.",
+      "stage": null
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "borrows that first person.\n\n### Exemplars",
+      "oldTarget": "docs/README.md",
+      "done": "R2: the old docs/README.md leaves the front-door exemplar list, since capturing it would put its old text before the stage 5 drafter; stage 5 may name a new exemplar.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "- The why-cairn opener in \"Voice\" is the exemplar for the voice on the front door only.",
+      "oldTarget": "docs/README.md",
+      "done": "R2: the old docs/README.md leaves the front-door exemplar list; stage 5 may name a new exemplar.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/docs-maintenance.md",
+      "context": "each live `docsAnchor` must be on `scripts/checks/shipped-anchors.json`",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "Gate description updated to the narrowed states (list mode while the admin arm is not rebuilt).",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/check-provenance.mjs",
+      "context": "{ \"page\": \"docs/extend/choose-an-ai-posture.md\",",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "Comment example moved to a page that exists (the kept, briefed AI-posture page); the example only needs a real-shaped path.",
+      "stage": null
+    },
+    {
+      "file": "scripts/checks/check-symbols.mjs",
+      "context": "(the admin checklist page is built entirely out of condition ids)",
+      "oldTarget": "admin/is-it-working.md",
+      "done": "Comment names the page in words instead of a path.",
+      "stage": null
+    },
+    {
+      "file": "tool/internal/health/fixes.go",
+      "context": "exist before the checklist page grows the heading it points at.",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "Comment keeps the checklist path (the shipped-anchor target, rebuilt at stage 3); the stale \"frozen page\" wording is gone.",
+      "stage": "3"
+    },
+    {
+      "file": "tool/internal/health/fixes.go",
+      "context": "before it was removed pending its rebuild.",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "Comment states the past fact without a path to a deleted page.",
+      "stage": "3"
+    },
+    {
+      "file": "packages/create-cairn-site/test/fixtures/transcripts/README.md",
+      "context": "(removed pending its rebuild) never quoted this specific line",
+      "oldTarget": "docs/admin/create-your-site.md",
+      "done": "Path replaced by the page named in words.",
+      "stage": "3"
+    },
+    {
+      "file": "packages/create-cairn-site/test/fixtures/transcripts/README.md",
+      "context": "the admin arm's create-your-site page\n(removed pending its rebuild) never quoted that stretch",
+      "oldTarget": "docs/admin/create-your-site.md",
+      "done": "Path replaced by the page named in words.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/internal/src-lib-map.md",
+      "context": "- `docs/reference/README.md` for the export-subpath view a consuming site reads",
+      "oldTarget": "docs/extend/architecture.md",
+      "done": "Retargeted to the reference index, which lists every export subpath; the extend rebuild may restore the architecture page.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "| The front door: `docs/README.md`, `docs/why-cairn.m",
+      "oldTarget": "docs/README.md; docs/why-cairn.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "e first person: the why-cairn",
+      "oldTarget": "why-cairn",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "- The why-cairn opener in \"Voice\" i",
+      "oldTarget": "why-cairn",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "ery surface (`admin/setup-recovery.md`,",
+      "oldTarget": "setup-recovery.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "`admin/troubleshooting.md`, or `extend/debug-",
+      "oldTarget": "troubleshooting.md; debug-your-site.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "ion entry** (`admin/is-it-working.md`): a condition id m",
+      "oldTarget": "is-it-working.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "mptom row** (`admin/troubleshooting.md`, `extend/debug-you",
+      "oldTarget": "troubleshooting.md; debug-your-site.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "## The front door (`docs/README.md`, `docs/why-cairn.m",
+      "oldTarget": "docs/README.md; docs/why-cairn.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "ther cairn fits\" → `docs/why-cairn.md`), then editor, adm",
+      "oldTarget": "docs/why-cairn.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "`docs/editors/welcome.md` without hunting, a",
+      "oldTarget": "docs/editors/welcome.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "4"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "ade-offs, stays in `docs/why-cairn.md`.",
+      "oldTarget": "docs/why-cairn.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "ce at its fullest, `docs/why-cairn.md` above all.",
+      "oldTarget": "docs/why-cairn.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/docs-register.md",
+      "context": "by suppression.** `auth-channel-security-model.md` cites \"NIST",
+      "oldTarget": "auth-channel-security-model.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/internal/briefs/README.md",
+      "context": "s own `README.md` (`docs/admin/README.md`,",
+      "oldTarget": "docs/admin/README.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/internal/briefs/README.md",
+      "context": "`docs/editors/README.md`, `docs/extend/READ",
+      "oldTarget": "docs/editors/README.md; docs/extend/README.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/internal/briefs/README.md",
+      "context": "ocs/internal/briefs/admin/README.json`, and so on),",
+      "oldTarget": "admin/README",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/internal/briefs/README.md",
+      "context": "in that arm. Only `docs/why-cairn.md` and `docs/README.m",
+      "oldTarget": "docs/why-cairn.md; docs/README.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "5"
+    },
+    {
+      "file": "docs/internal/briefs/README.md",
+      "context": "`docs/README.md`) never covers `doc",
+      "oldTarget": "docs/README.md; docs/admin/README.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
+      "stage": "2a"
+    },
+    {
+      "file": "docs/internal/briefs/README.md",
+      "context": "md`. The brief for `docs/admin/is-it-working.md` is",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "3"
+    },
+    {
+      "file": "docs/internal/briefs/README.md",
+      "context": "\"page\": \"docs/admin/is-it-working.md\",",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
+      "stage": "3"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "env-var:CLUB_DB",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "env-var:CAIRN_FIXED_TODAY",
+      "oldTarget": "docs/extend/debug-your-site.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "variable), cited in docs/extend/sign-in-through-your-organization.md's",
+      "oldTarget": "docs/extend/sign-in-through-your-organization.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "log-event:tidy.conventions",
+      "oldTarget": "docs/extend/enable-tidy.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "log-event:tidy.model",
+      "oldTarget": "docs/extend/enable-tidy.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "0.97.0 entry cites docs/extend/security-model.md's exhaustive-map re",
+      "oldTarget": "docs/extend/security-model.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/theme/theme.css",
+      "oldTarget": "docs/extend/design-your-site.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/lib/club/section.ts",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/routes/admin/club/events/ApproveDialog.svelte",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/lib/today.ts",
+      "oldTarget": "docs/extend/debug-your-site.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/lib/members/channel.ts",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/lib/content.ts",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md; wire-the-delivery-surface.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/theme/islands/Converter.svelte",
+      "oldTarget": "docs/extend/add-an-island.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/content/posts/2026-08-14-hello.md",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:old-site/content/posts/my-post.md",
+      "oldTarget": "docs/extend/migrate-existing-content.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/content/posts/2024-01-15-my-post.md",
+      "oldTarget": "docs/extend/migrate-existing-content.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/content/fragments/trail-safety.md",
+      "oldTarget": "docs/extend/reuse-content-across-entries.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:svelte-kit/cloudflare/_worker.js",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/lib/access-identity.ts",
+      "oldTarget": "docs/extend/sign-in-through-your-organization.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:admin/__data.json",
+      "oldTarget": "docs/extend/sign-in-through-your-organization.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "2a"
+    },
+    {
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "t a registered one. docs/admin/setup-recovery.md cites the literal p",
+      "oldTarget": "docs/admin/setup-recovery.md",
+      "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
+      "stage": "3"
+    },
+    {
+      "file": ".github/workflows/tool.yml",
+      "context": "- 'docs/admin/is-it-working.md'",
+      "oldTarget": "docs/admin/is-it-working.md",
+      "done": "Path filter kept: the tool workflow runs again on an edit to the admin checklist once the admin arm rebuilds it (two filters, push and pull_request).",
+      "stage": "3"
+    },
+    {
+      "file": "package.json",
+      "context": "\"docs/README.md\",",
+      "oldTarget": "docs/README.md; docs/why-cairn.md",
+      "done": "The published-files entries for the front-door pages, and for the admin, editors, and extend directories, stay: npm skips an absent path, and check:package-files requires each entry once its arm is rebuilt.",
+      "stage": "5"
+    },
+    {
+      "file": "scripts/checks/arm-state.mjs",
+      "context": "FRONT_DOOR_PAGES = ['docs/README.md', 'docs/why-cairn.md']",
+      "oldTarget": "docs/README.md; docs/why-cairn.md",
+      "done": "The front door counts as rebuilt as soon as either file exists; the shared arm-state function reads it for every narrowed gate.",
+      "stage": "5"
+    },
+    {
+      "file": "CLAUDE.md",
+      "context": "`why-cairn.md` for an evaluator",
+      "oldTarget": "docs/why-cairn.md",
+      "done": "The docs-section line still names the front-door evaluator page in a code span, now with the statement that the front door holds no page until its stage rebuilds it.",
+      "stage": "5"
     }
   ]
 }

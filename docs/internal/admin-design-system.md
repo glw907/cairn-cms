@@ -1536,7 +1536,7 @@ investigate.
 
 ## Motion
 
-**This section is canonical.** `docs/extend/animate-a-custom-screen.md` cites it by heading rather
+**This section is canonical.** A public docs page that touches motion cites it by heading rather
 than restating its rules; where the two would say the same thing twice, this section is the source.
 
 ### Tokens

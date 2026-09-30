@@ -46,3 +46,10 @@ The `cairn-public` gate holds the list complete: a directive, an island, a compo
 - [Links](prose-links.md)
 - [Lists](prose-lists.md)
 - [Tables and figures](prose-tables-and-figures.md)
+
+## Guides
+
+- [What a theme directory holds](theme-directory.md)
+- [Checking a theme](checking-a-theme.md)
+- [Styling a public component](public-component.md)
+- [Theme starter](theme-starter.md)

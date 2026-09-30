@@ -127,29 +127,9 @@ On the chassis, `src/theme/` is the theme and `src/chassis/` is the plumbing und
 the chassis import these files by the `$theme` alias, so a theme built from scratch supplies each of
 them: `theme.css`, `site.css`, `cairn.config.ts`, `site-config.ts`, `islands/registry.ts`, and the four
 components `SiteHeader.svelte`, `SiteFooter.svelte`, `ArticleView.svelte`, and `EntryRow.svelte`.
-`vite.config.ts` also reads `src/theme/cairn.config.ts` by path. The other files listed are Waymark's
-supporting files, reached by relative imports from those, and a theme needs one only when its own files
-import it. `references/theme-starter.md` holds a complete daisyUI theme block to start `theme.css` from.
-
-- **`theme.css`.** The two daisyUI blocks, the `@theme` scale, and an `@import` of
-  `../chassis/tokens.css`. CSS reaches the chassis by relative import, since aliases don't resolve in CSS.
-  The layouts, the error page, and the editor preview link it.
-- **`site.css`.** The `.site-main` reading column and the `cairn-place-*` figure geometry. The layouts
-  link it beside `theme.css`.
-- **`cairn.config.ts`.** The adapter: concepts, fields, backend, and `rendering`. The chassis reads it.
-- **`site-config.ts` and `site.config.yaml`.** The parsed site config: the site name and the `primary`
-  and `footer` menus. The root layout server load and the chassis read them.
-- **`markdown-components.ts` and `icons.ts`.** The registered directives, and the glyph set they draw.
-- **`islands/`.** `registry.ts` maps a directive name to its Svelte component, `Banner.svelte` is the
-  showcase's one island, and `banner-expiry.ts` is the date check the directive and the island share.
-- **`theme-names.ts`.** The toggle's config: both theme names and the cookie.
-- **`components/`.** `SiteHeader.svelte` and `SiteFooter.svelte`, the chrome, which read `page.data`
-  (the site name and the resolved nav) and never import site config. `ArticleView.svelte` renders an
-  entry, for the public and preview routes. `EntryRow.svelte` is one row of the home and archive
-  listings. `admin-link.ts` exports `isAdminHref`, which marks `/admin` links `rel="external"`.
-
-A `.ts` or `.svelte` file in the theme imports a chassis helper, such as the theme toggle, through the
-`$chassis` alias.
+`vite.config.ts` also reads `src/theme/cairn.config.ts` by path. `references/theme-directory.md` lists
+what each file holds and which other files Waymark adds, and `references/theme-starter.md` holds a
+complete daisyUI theme block to start `theme.css` from.
 
 ### Replacing `prose.css`
 
@@ -183,16 +163,8 @@ Two paths exist, and both read contract tokens instead of literals.
   engine-emitted class and carries no design choice. A built-in component carries no literal and no
   daisyUI component class.
 
-To prove a built-in component under two themes, add a throwaway route under
-`examples/showcase/src/routes/(site)/` that imports it, run `npm run package`, then run
-`node scripts/lab/theme-fixture.mjs --arm template --probe <route> <selector>`. It reports the
-element's computed color and radius under Waymark and under the fixture theme. Delete the route.
-
-Map each job to its token: surface `base-200` or `base-100`, hairline `card-border`, corner
-`rounded-box` (which reads `--radius-box`), ink `base-content`, border width `--border`. Tailwind
-utilities over those tokens are the preferred styling. A scoped `<style>` block that reads contract
-tokens is the alternative. Em-based spacing such as `p-[1em]` is sanctioned, and `public-literals`
-does not flag it.
+`references/public-component.md` holds the token mapping for a component's styling and the route that
+proves a built-in component under two themes.
 
 ## Checking the work
 
@@ -206,20 +178,8 @@ Run it from the site's root. It needs no built admin stylesheet. The three rules
 tier on a consumer site, and a finding never changes the exit code. Plain `npx cairn-audit` runs them
 beside the admin rules.
 
-`public.scope` in `cairn-audit.config.json` decides what is read: `src/theme`, `src/chassis`,
-`src/routes`, `src/lib/public`, and `src/lib/components` by default, minus `src/routes/admin`. The audit
-reads those roots and no others. A theme drafted in another directory is outside them, so copy it into
-the site's `src/theme/` before the run. To confirm a file is covered, put a color literal in it, run the
-audit, and look for a `public-literals` finding that names the file. Remove the literal.
-
-To build-check a theme directory without touching a site, run this from the cairn-cms repository:
-
-```bash
-node scripts/lab/theme-fixture.mjs --build-only --theme-dir <dir>
-```
-
-It overlays `<dir>` onto `src/theme` in a temporary copy of the showcase, so the directory needs only
-the files it replaces, then builds and smoke-loads the pages.
+`references/checking-a-theme.md` covers what the audit reads (`public.scope`), how to confirm a file is
+covered, and how to build-check a theme directory from the cairn-cms repository.
 
 When `theme-contrast` reports a derived status ink below AA, its message names the block, the pair,
 and the ratios. Hand-tune `--cairn-<status>-ink` in that block and in the other scheme's block, and

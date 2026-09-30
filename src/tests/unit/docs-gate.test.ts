@@ -32,6 +32,7 @@ describe('buildSteps', () => {
     'check:target-stack',
     'check:reference',
     'check:reference:signatures',
+    'check:options',
   ];
 
   it('runs exactly the docs-gate list from the spec, in order', () => {

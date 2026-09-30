@@ -7,8 +7,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - `f:qmz20x` The 13 retired `register*` props on `MarkdownEditor` (11 per-capability callbacks plus the two
   object grants `registerTidy`/`registerImagePlaceholders`) all collapsed into one
   `registerEditor` callback delivering an `EditorApi` object once on mount and `null` once on
-  destroy. Source: `src/lib/admin/MarkdownEditor.svelte:29,85-91` (`EditorApi` type,
-  `registerEditor` prop doc), `:946-949` (mount: `registerEditor?.({...})`), `:980` (destroy:
+  destroy. Source: `src/lib/admin/MarkdownEditor.svelte:29,87-93` (`EditorApi` type,
+  `registerEditor` prop doc), `:956-972` (mount: `registerEditor?.({...})`), `:987` (destroy:
   `registerEditor?.(null)`); a grep of the file for `registerFocusEditor`, `registerImagePlaceholders`,
   `registerGetSelection`, `registerGetSelectionRange`, `registerTidy`, `registerUndo`, and
   `registerFormat` finds none of them. [verified]
@@ -21,7 +21,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   step, so a fold or an upload placeholder elsewhere in the document is left alone; the pre-mount
   textarea fallback calls `padInsertedBlock` and sets the whole value. Source:
   `src/lib/admin/insert-padding.ts#paddedInsertSpan`, `src/lib/admin/insert-padding.ts#padInsertedBlock`,
-  `src/lib/admin/MarkdownEditor.svelte:1145-1158` (`insertAtCursor` on both paths). [verified]
+  `src/lib/admin/MarkdownEditor.svelte:1145-1159` (`insertAtCursor` on both paths). [verified]
 - `f:9xm710` The admin barrel is the `./admin` subpath and its built files sit under `dist/admin/`, with the compiled
   sheet at `dist/admin/cairn-admin.css`; the `./components` export and the `dist/components/` path
   no longer exist, and `package.json` carries no `./components` key. The source folder is

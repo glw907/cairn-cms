@@ -1026,10 +1026,6 @@ the named human gates only):**
   second one landed in this pass's own first draft. Both were caught by a reviewer reading the
   cited line, not by the gate. The docs rebuild reads these pointers as its raw material, so the
   cost lands there. Trigger: a third stale pointer, or the docs rebuild's first harvest pass.
-  **Both have fired (2026-09-30):** the harvest's merge-time move of `src/lib/components` to
-  `src/lib/admin` rewrote 84 `Source:` paths, and a separate line-drift check, not `check:facts`,
-  found the `MarkdownEditor.svelte` cites shifted. Take the fix before stage 2a drafts from these
-  pointers.
   Partly answered (docs reset pass 1, 2026-09-23): a pointer into a `.ts` or `.js` file under
   `src/` may now cite `path#Symbol`, which `check:facts` resolves to the declaration's current
   lines with the TypeScript compiler API, and ten of the fourteen off-line `src/` pointers moved

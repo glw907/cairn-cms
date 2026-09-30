@@ -246,6 +246,20 @@ describe('generateOptionPaths', () => {
     expect(result.failures[0]).toContain('subpath .');
   });
 
+  it('reports every unresolvable member in a root, not only the first', () => {
+    const result = generateOptionPaths(
+      fixture({
+        'index.d.ts': `
+          export interface Cfg { a: Missing[]; f: { g: Missing }; }
+          export declare function defineCfg(cfg: Cfg): Cfg;
+        `,
+      }),
+    );
+    expect(result.failures).toHaveLength(2);
+    expect(result.failures.some((failure) => failure.startsWith('Cfg.a:'))).toBe(true);
+    expect(result.failures.some((failure) => failure.startsWith('Cfg.f.g:'))).toBe(true);
+  });
+
   it('names the export and subpath first reached in subpath order', () => {
     const result = generateOptionPaths(
       fixture({

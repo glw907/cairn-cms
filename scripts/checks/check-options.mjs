@@ -4,11 +4,25 @@
 // declarations through the TypeScript compiler API; the gate compares the two and fails on drift, so
 // an option added inside a public type can never ship without a fact or a reviewed exclusion.
 //
-// The roots the walk starts from, by name: every exported function named `define*` or `create*`
-// (`defineAdapter`, `defineConcept`, `defineFieldset`, `defineComponent`, `defineRegistry`,
-// `defineRoles`, `defineAccess`, and the route factories `createAuthRoutes`, `createContentRoutes`,
-// `createCairnAdmin`, and the rest), plus the extras in ROOT_EXTRAS (the Vite plugin's options). The walk reads each root's parameter types only, never its return type,
-// since a return is a runtime output the developer receives, not an option the developer passes.
+// The roots the walk starts from, by name: every exported function named `define*` or `create*`, plus
+// the extras in ROOT_EXTRAS. A new export matching the pattern joins the walk automatically. The
+// roots in the current `dist`, by subpath (30 pairs, 27 distinct exports):
+//   .               createGithubApp, createRenderer, defineAccess, defineAdapter, defineComponent,
+//                   defineConcept, defineFieldset, defineRegistry, defineRoles
+//   /auth-channel   createAuthChannel
+//   /delivery       createFragmentResolver, createLinkResolver, createPublicRoutes, createSiteIndexes
+//   /delivery/data  createFragmentResolver, createLinkResolver, createSiteIndexes
+//   /log            createLogger
+//   /media          createMediaResolver
+//   /sveltekit      createAdminAction, createAuthGuard, createAuthRoutes, createCairnAdmin,
+//                   createContentRoutes, createD1AuditSink, createEditorRoutes, createMediaRoute,
+//                   createNavRoutes, createSectionAction
+//   /vite           cairnManifest (an extra, since the Vite plugin's name is outside the pattern)
+// `mintPreview` is left out: its config type, `PreviewTokenConfig`, is already reached through
+// `createContentRoutes`, and its other parameters (the composed runtime and the request event) are
+// runtime objects a developer never writes. The walk reads each root's parameter types only, never
+// its return type, since a return is a runtime output the developer receives, not an option the
+// developer passes.
 //
 // A member path is keyed by its nearest named declaring type (`AssetConfig.maxUploadBytes`), and an
 // inline literal's members by the path from it (`CairnAdapter.editor.nav`), both derived from where
@@ -179,13 +193,15 @@ function walkRoot(ctx, rootType, rootPath) {
 
   /** @param {ts.Type} type @param {string} path */
   function walk(type, path) {
-    if (visited.has(type)) return;
-    visited.add(type);
     const flags = type.flags;
+    // The checker shares one error type across every unresolved name, so test it before the visited
+    // set or only the first unresolvable member in a root would be reported.
     if (flags & ts.TypeFlags.Any && /** @type {{ intrinsicName?: string }} */ (type).intrinsicName === 'error') {
       fail(path, 'the member type cannot be resolved');
       return;
     }
+    if (visited.has(type)) return;
+    visited.add(type);
     if (flags & LEAF_FLAGS) return;
     if (type.isUnionOrIntersection()) {
       for (const part of type.types) walk(part, path);

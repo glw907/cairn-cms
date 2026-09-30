@@ -14,7 +14,7 @@
       "pages": [
         "architecture",
         "add-cairn-to-a-sveltekit-app",
-        "what-the-scaffold-wrote"
+        "scaffolded-site-files"
       ]
     },
     {
@@ -34,10 +34,10 @@
       "id": "public-site",
       "title": "Public site",
       "pages": [
-        "design-your-site",
-        "wire-the-delivery-surface",
+        "theme-your-public-site",
+        "build-the-public-routes",
         "share-a-draft-preview",
-        "announce-on-publish",
+        "act-on-newly-published-entries",
         "add-an-island"
       ]
     },
@@ -46,8 +46,8 @@
       "title": "Extend the admin",
       "pages": [
         "add-a-custom-admin-screen",
-        "organize-your-admin-nav",
-        "enable-tidy"
+        "arrange-the-admin-sidebar",
+        "turn-on-tidy"
       ]
     },
     {
@@ -56,8 +56,8 @@
       "pages": [
         "security-model",
         "restrict-admin-access",
-        "sign-in-through-your-organization",
-        "add-a-second-audience",
+        "replace-magic-links-with-cloudflare-access",
+        "add-a-second-sign-in-group",
         "rotate-the-github-app-key"
       ]
     },
@@ -66,7 +66,7 @@
       "title": "Operate",
       "pages": [
         "debug-your-site",
-        "gate-your-site-with-cairn-audit"
+        "run-cairn-audit-on-your-site"
       ]
     }
   ],
@@ -114,12 +114,12 @@
     {
       "term": "chassis",
       "definition": "The genre-free plumbing under src/chassis/ that every scaffolded site shares regardless of look, reached by a theme only through the $chassis seam.",
-      "definedOn": "design-your-site"
+      "definedOn": "theme-your-public-site"
     },
     {
       "term": "token tier",
       "definition": "One of the three layers of Waymark's theme.css tokens, named by how far a re-skin reaches (the daisyUI theme blocks, the owned on-surface floor, and the design scale).",
-      "definedOn": "design-your-site"
+      "definedOn": "theme-your-public-site"
     },
     {
       "term": "concept",
@@ -164,7 +164,7 @@
     {
       "term": "delivery surface",
       "definition": "The public routes and responses a site wires from /delivery and /sveltekit: entry pages, markdown twins, archive, feeds, sitemap, and robots.txt.",
-      "definedOn": "wire-the-delivery-surface"
+      "definedOn": "build-the-public-routes"
     },
     {
       "term": "island",
@@ -184,12 +184,12 @@
     {
       "term": "navLayout",
       "definition": "The adapter editor group's ordered tree of engine references, site entries, and sections that arranges the admin sidebar; presentation only, never authorization.",
-      "definedOn": "organize-your-admin-nav"
+      "definedOn": "arrange-the-admin-sidebar"
     },
     {
       "term": "tidy",
       "definition": "The opt-in AI copy-edit an editor triggers on a draft, run through the Anthropic API with the site's model and conventions and checked structurally before review.",
-      "definedOn": "enable-tidy"
+      "definedOn": "turn-on-tidy"
     },
     {
       "term": "access map",
@@ -209,12 +209,12 @@
     {
       "term": "identity resolver",
       "definition": "The IdentityResolver a site passes as createAuthGuard's identity option, whose resolve(event) returns a verified email per request and replaces the whole magic-link path.",
-      "definedOn": "sign-in-through-your-organization"
+      "definedOn": "replace-magic-links-with-cloudflare-access"
     },
     {
       "term": "auth channel",
       "definition": "A second-audience sign-in built with createAuthChannel: numeric-code request, confirm, and logout actions over the site's own roster and D1 binding, separate from AUTH_DB and locals.cairnEditor.",
-      "definedOn": "add-a-second-audience"
+      "definedOn": "add-a-second-sign-in-group"
     },
     {
       "term": "preview link",
@@ -229,7 +229,7 @@
     {
       "term": "rendered pass",
       "definition": "The cairn-audit --rendered run that loads live admin pages in a real browser under a signed-in session and checks what they render, beside the static pass over source files and the compiled sheet.",
-      "definedOn": "gate-your-site-with-cairn-audit"
+      "definedOn": "run-cairn-audit-on-your-site"
     }
   ],
   "crossLinks": [
@@ -240,7 +240,7 @@
     },
     {
       "from": "architecture",
-      "to": "what-the-scaffold-wrote",
+      "to": "scaffolded-site-files",
       "why": "A scaffolded reader maps the architecture onto their own files."
     },
     {
@@ -275,7 +275,7 @@
     },
     {
       "from": "add-cairn-to-a-sveltekit-app",
-      "to": "wire-the-delivery-surface",
+      "to": "build-the-public-routes",
       "why": "The routes beyond the entry catch-all."
     },
     {
@@ -289,17 +289,17 @@
       "why": "Failure paths for the dev backend and bindings."
     },
     {
-      "from": "what-the-scaffold-wrote",
-      "to": "design-your-site",
+      "from": "scaffolded-site-files",
+      "to": "theme-your-public-site",
       "why": "The theme files it lists."
     },
     {
-      "from": "what-the-scaffold-wrote",
+      "from": "scaffolded-site-files",
       "to": "add-a-custom-admin-screen",
       "why": "The signups example as a pattern."
     },
     {
-      "from": "what-the-scaffold-wrote",
+      "from": "scaffolded-site-files",
       "to": "add-cairn-to-a-sveltekit-app",
       "why": "The same tree built by hand."
     },
@@ -330,7 +330,7 @@
     },
     {
       "from": "define-an-adapter-and-schema",
-      "to": "organize-your-admin-nav",
+      "to": "arrange-the-admin-sidebar",
       "why": "The editor group's navLayout."
     },
     {
@@ -355,7 +355,7 @@
     },
     {
       "from": "configure-rendering",
-      "to": "design-your-site",
+      "to": "theme-your-public-site",
       "why": "Styling render output."
     },
     {
@@ -369,23 +369,23 @@
       "why": "Replacing old shortcodes with components."
     },
     {
-      "from": "design-your-site",
-      "to": "what-the-scaffold-wrote",
+      "from": "theme-your-public-site",
+      "to": "scaffolded-site-files",
       "why": "The file map behind the theme."
     },
     {
-      "from": "wire-the-delivery-surface",
+      "from": "build-the-public-routes",
       "to": "docs/extend/choose-an-ai-posture.md",
       "why": "The robots posture option."
     },
     {
-      "from": "wire-the-delivery-surface",
+      "from": "build-the-public-routes",
       "to": "share-a-draft-preview",
       "why": "The preview route shares the entry composition."
     },
     {
-      "from": "wire-the-delivery-surface",
-      "to": "announce-on-publish",
+      "from": "build-the-public-routes",
+      "to": "act-on-newly-published-entries",
       "why": "Acting on newly published entries."
     },
     {
@@ -400,7 +400,7 @@
     },
     {
       "from": "add-a-custom-admin-screen",
-      "to": "organize-your-admin-nav",
+      "to": "arrange-the-admin-sidebar",
       "why": "Adding the screen to the sidebar."
     },
     {
@@ -409,7 +409,7 @@
       "why": "admin.action.unaudited and audit sink failures."
     },
     {
-      "from": "organize-your-admin-nav",
+      "from": "arrange-the-admin-sidebar",
       "to": "restrict-admin-access",
       "why": "Hidden is not denied."
     },
@@ -420,17 +420,17 @@
     },
     {
       "from": "restrict-admin-access",
-      "to": "add-a-second-audience",
+      "to": "add-a-second-sign-in-group",
       "why": "A none-capability role."
     },
     {
       "from": "security-model",
-      "to": "sign-in-through-your-organization",
+      "to": "replace-magic-links-with-cloudflare-access",
       "why": "Setting up the identity gate whose risks it describes."
     },
     {
       "from": "security-model",
-      "to": "add-a-second-audience",
+      "to": "add-a-second-sign-in-group",
       "why": "Building the channel whose threat catalogue it carries."
     },
     {
@@ -439,12 +439,12 @@
       "why": "Operating the key it describes."
     },
     {
-      "from": "sign-in-through-your-organization",
+      "from": "replace-magic-links-with-cloudflare-access",
       "to": "security-model",
       "why": "Identity mode's residual risks."
     },
     {
-      "from": "add-a-second-audience",
+      "from": "add-a-second-sign-in-group",
       "to": "security-model",
       "why": "The channel's threat catalogue and obligations."
     },
@@ -470,7 +470,7 @@
     },
     {
       "from": "docs/extend/choose-an-ai-posture.md",
-      "to": "wire-the-delivery-surface",
+      "to": "build-the-public-routes",
       "why": "Restores the robots route pointer the harvest removed (relink 93)."
     },
     {
@@ -479,13 +479,13 @@
       "why": "The R2 tier configured."
     },
     {
-      "from": "what-the-scaffold-wrote",
+      "from": "scaffolded-site-files",
       "to": "configure-media",
       "why": "The MEDIA_BUCKET binding and media route it wired."
     },
     {
-      "from": "what-the-scaffold-wrote",
-      "to": "gate-your-site-with-cairn-audit",
+      "from": "scaffolded-site-files",
+      "to": "run-cairn-audit-on-your-site",
       "why": "cairn-audit.config.json and the check:cairn scripts."
     },
     {
@@ -500,7 +500,7 @@
     },
     {
       "from": "configure-media",
-      "to": "design-your-site",
+      "to": "theme-your-public-site",
       "why": "Seeding local media for theme work."
     },
     {
@@ -509,43 +509,43 @@
       "why": "The media route and upload action signatures."
     },
     {
-      "from": "design-your-site",
-      "to": "gate-your-site-with-cairn-audit",
+      "from": "theme-your-public-site",
+      "to": "run-cairn-audit-on-your-site",
       "why": "Running the public-scope rules as a gate."
     },
     {
       "from": "add-a-custom-admin-screen",
-      "to": "gate-your-site-with-cairn-audit",
+      "to": "run-cairn-audit-on-your-site",
       "why": "Adding a custom screen to the rendered pass."
     },
     {
-      "from": "gate-your-site-with-cairn-audit",
+      "from": "run-cairn-audit-on-your-site",
       "to": "docs/reference/cairn-audit.md",
       "why": "Every rule, flag, config key, and exit code."
     },
     {
-      "from": "gate-your-site-with-cairn-audit",
+      "from": "run-cairn-audit-on-your-site",
       "to": "add-a-custom-admin-screen",
       "why": "The screen-level audit while building."
     },
     {
-      "from": "announce-on-publish",
+      "from": "act-on-newly-published-entries",
       "to": "add-a-custom-admin-screen",
       "why": "A publish action can link to a screen of your own."
     },
     {
-      "from": "organize-your-admin-nav",
-      "to": "enable-tidy",
+      "from": "arrange-the-admin-sidebar",
+      "to": "turn-on-tidy",
       "why": "The tidy settings and vocabulary share the editor.nav config path."
     },
     {
-      "from": "enable-tidy",
-      "to": "organize-your-admin-nav",
+      "from": "turn-on-tidy",
+      "to": "arrange-the-admin-sidebar",
       "why": "Declaring editor.nav, which also names the site-config file tidy writes."
     },
     {
       "from": "migrate-existing-content",
-      "to": "wire-the-delivery-surface",
+      "to": "build-the-public-routes",
       "why": "The build validation that checks migrated frontmatter."
     }
   ],
@@ -579,6 +579,51 @@
       "from": "docs/extend/render-safety.md",
       "to": "docs/extend/security-model.md",
       "reason": "Absorbed as the render safety section."
+    },
+    {
+      "from": "docs/extend/what-the-scaffold-wrote.md",
+      "to": "docs/extend/scaffolded-site-files.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/design-your-site.md",
+      "to": "docs/extend/theme-your-public-site.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/wire-the-delivery-surface.md",
+      "to": "docs/extend/build-the-public-routes.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/announce-on-publish.md",
+      "to": "docs/extend/act-on-newly-published-entries.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/organize-your-admin-nav.md",
+      "to": "docs/extend/arrange-the-admin-sidebar.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/enable-tidy.md",
+      "to": "docs/extend/turn-on-tidy.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/sign-in-through-your-organization.md",
+      "to": "docs/extend/replace-magic-links-with-cloudflare-access.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/add-a-second-audience.md",
+      "to": "docs/extend/add-a-second-sign-in-group.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/gate-your-site-with-cairn-audit.md",
+      "to": "docs/extend/run-cairn-audit-on-your-site.md",
+      "reason": "Renamed to match its title"
     }
   ],
   "rearms": [
@@ -632,7 +677,7 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/editor-copyedit.md': 'docs/extend/enable-tidy.md'",
       "oldTarget": "docs/extend/enable-tidy.md",
-      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/enable-tidy.md once the arm is rebuilt.",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/turn-on-tidy.md once the arm is rebuilt.",
       "restoredBy": "setup",
       "batch": "pilot"
     },
@@ -677,7 +722,7 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/add-a-login-channel.md': 'docs/extend/add-a-second-audience.md'",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/add-a-second-audience.md once the arm is rebuilt.",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/add-a-second-sign-in-group.md once the arm is rebuilt.",
       "restoredBy": "setup",
       "batch": "pilot"
     },
@@ -704,7 +749,7 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/announce-on-publish.md': 'docs/extend/announce-on-publish.md'",
       "oldTarget": "docs/extend/announce-on-publish.md",
-      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/announce-on-publish.md once the arm is rebuilt.",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/act-on-newly-published-entries.md once the arm is rebuilt.",
       "restoredBy": "setup",
       "batch": "pilot"
     },
@@ -731,7 +776,7 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md'",
       "oldTarget": "docs/extend/enable-tidy.md",
-      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/enable-tidy.md once the arm is rebuilt.",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/turn-on-tidy.md once the arm is rebuilt.",
       "restoredBy": "setup",
       "batch": "pilot"
     },
@@ -740,7 +785,7 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/iterate-your-design-locally.md': 'docs/extend/design-your-site.md'",
       "oldTarget": "docs/extend/design-your-site.md",
-      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/design-your-site.md once the arm is rebuilt.",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/theme-your-public-site.md once the arm is rebuilt.",
       "restoredBy": "setup",
       "batch": "pilot"
     },
@@ -758,7 +803,7 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/organize-your-admin-nav.md': 'docs/extend/organize-your-admin-nav.md'",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
-      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/organize-your-admin-nav.md once the arm is rebuilt.",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/arrange-the-admin-sidebar.md once the arm is rebuilt.",
       "restoredBy": "setup",
       "batch": "pilot"
     },
@@ -794,7 +839,7 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/wire-the-delivery-surface.md': 'docs/extend/wire-the-delivery-surface.md'",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
-      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/wire-the-delivery-surface.md once the arm is rebuilt.",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/build-the-public-routes.md once the arm is rebuilt.",
       "restoredBy": "setup",
       "batch": "pilot"
     },
@@ -857,8 +902,8 @@
       "file": "docs/reference/auth-channel.md",
       "context": "never at the `migrations` directory your site's `AUTH_DB` uses. A shared",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -875,8 +920,8 @@
       "file": "docs/reference/cli-cairn-media-seed.md",
       "context": "Once seeded, an author edits",
       "oldTarget": "docs/extend/design-your-site.md#local-iteration",
-      "action": "Restore the pointer at docs/extend/design-your-site.md, at the heading that now carries the old #local-iteration content.",
-      "restoredBy": "design-your-site",
+      "action": "Restore the pointer at docs/extend/theme-your-public-site.md, at the heading that now carries the old #local-iteration content.",
+      "restoredBy": "theme-your-public-site",
       "batch": "pilot"
     },
     {
@@ -884,8 +929,8 @@
       "file": "docs/reference/cli-cairn-media-seed.md",
       "context": "- [The `cairn doctor` command](./cli-cairn-doctor.md), which reads the same wrangler config for",
       "oldTarget": "docs/extend/design-your-site.md#local-iteration",
-      "action": "Restore the pointer at docs/extend/design-your-site.md, at the heading that now carries the old #local-iteration content.",
-      "restoredBy": "design-your-site",
+      "action": "Restore the pointer at docs/extend/theme-your-public-site.md, at the heading that now carries the old #local-iteration content.",
+      "restoredBy": "theme-your-public-site",
       "batch": "pilot"
     },
     {
@@ -1046,8 +1091,8 @@
       "file": "docs/reference/sveltekit.md",
       "context": "map](./core.md#access-map), when one is declared.",
       "oldTarget": "docs/extend/restrict-admin-access.md; docs/extend/organize-your-admin-nav.md",
-      "action": "Restore both pointers (restrict-admin-access and organize-your-admin-nav) once the later page, organize-your-admin-nav, lands.",
-      "restoredBy": "organize-your-admin-nav",
+      "action": "Restore both pointers (restrict-admin-access and arrange-the-admin-sidebar) once the later page, arrange-the-admin-sidebar, lands.",
+      "restoredBy": "arrange-the-admin-sidebar",
       "batch": "2b"
     },
     {
@@ -1055,8 +1100,8 @@
       "file": "docs/reference/sveltekit.md",
       "context": "contract in full.",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
-      "action": "Restore the pointer at docs/extend/organize-your-admin-nav.md.",
-      "restoredBy": "organize-your-admin-nav",
+      "action": "Restore the pointer at docs/extend/arrange-the-admin-sidebar.md.",
+      "restoredBy": "arrange-the-admin-sidebar",
       "batch": "2b"
     },
     {
@@ -1082,8 +1127,8 @@
       "file": "docs/extend/choose-an-ai-posture.md",
       "context": "that the scaffold writes.",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
-      "action": "Restore the pointer at docs/extend/wire-the-delivery-surface.md, at the heading that now carries the old #feed-sitemap-and-robotstxt content.",
-      "restoredBy": "wire-the-delivery-surface",
+      "action": "Restore the pointer at docs/extend/build-the-public-routes.md, at the heading that now carries the old #feed-sitemap-and-robotstxt content.",
+      "restoredBy": "build-the-public-routes",
       "batch": "2b"
     },
     {
@@ -1092,7 +1137,7 @@
       "context": "that the scaffold writes.\"",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
       "action": "Restore the brief sentence in lockstep with the kept page's restored pointer (relink 93).",
-      "restoredBy": "wire-the-delivery-surface",
+      "restoredBy": "build-the-public-routes",
       "batch": "2b"
     },
     {
@@ -1119,7 +1164,7 @@
       "context": "// site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "action": "AI_POSTURE_COMMENT_BLOCK lockstep: restore the pointer in the showcase config, substitute.mjs, both tests, and the emitted template together (relinks 104 to 108).",
-      "restoredBy": "wire-the-delivery-surface",
+      "restoredBy": "build-the-public-routes",
       "batch": "2b"
     },
     {
@@ -1128,7 +1173,7 @@
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "action": "Part of the relink 104 lockstep.",
-      "restoredBy": "wire-the-delivery-surface",
+      "restoredBy": "build-the-public-routes",
       "batch": "2b"
     },
     {
@@ -1137,7 +1182,7 @@
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "action": "Part of the relink 104 lockstep.",
-      "restoredBy": "wire-the-delivery-surface",
+      "restoredBy": "build-the-public-routes",
       "batch": "2b"
     },
     {
@@ -1146,7 +1191,7 @@
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "action": "Part of the relink 104 lockstep.",
-      "restoredBy": "wire-the-delivery-surface",
+      "restoredBy": "build-the-public-routes",
       "batch": "2b"
     },
     {
@@ -1155,7 +1200,7 @@
       "context": "'  // route passes it to robotsResponse, and CairnAdapter.aiPosture',",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "action": "Part of the relink 104 lockstep (aiPostureBlock).",
-      "restoredBy": "wire-the-delivery-surface",
+      "restoredBy": "build-the-public-routes",
       "batch": "2b"
     },
     {
@@ -1163,8 +1208,8 @@
       "file": "examples/cairn-theme/cairn.css",
       "context": "regardless of order.    ====",
       "oldTarget": "docs/extend/design-your-site.md",
-      "action": "Restore the pointer at docs/extend/design-your-site.md.",
-      "restoredBy": "design-your-site",
+      "action": "Restore the pointer at docs/extend/theme-your-public-site.md.",
+      "restoredBy": "theme-your-public-site",
       "batch": "pilot"
     },
     {
@@ -1172,8 +1217,8 @@
       "file": "examples/cairn-theme/README.md",
       "context": "regardless of position.",
       "oldTarget": "docs/extend/design-your-site.md",
-      "action": "Restore the pointer at docs/extend/design-your-site.md.",
-      "restoredBy": "design-your-site",
+      "action": "Restore the pointer at docs/extend/theme-your-public-site.md.",
+      "restoredBy": "theme-your-public-site",
       "batch": "pilot"
     },
     {
@@ -1181,8 +1226,8 @@
       "file": "examples/showcase/e2e/members.spec.ts",
       "context": "(src/members/channel.ts, the worked exemplar). Each",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1190,8 +1235,8 @@
       "file": "examples/showcase/src/app.d.ts",
       "context": "The showcase members fixture's own binding;",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1199,8 +1244,8 @@
       "file": "examples/showcase/src/members/capture-transport.ts",
       "context": "channel end to end: instead of sending",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1208,8 +1253,8 @@
       "file": "examples/showcase/src/members/channel.ts",
       "context": "a second audience. Two named divergences from the documented shape",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1217,8 +1262,8 @@
       "file": "examples/showcase/src/routes/members/+page.server.ts",
       "context": "which reads the signed-in subject, into this",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1235,8 +1280,8 @@
       "file": "examples/showcase/src/routes/members/login/+page.server.ts",
       "context": "// Recipe: docs/reference/auth-channel.md (createAuthChannel).",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1244,8 +1289,8 @@
       "file": "examples/showcase/src/routes/members/login/+page.server.ts",
       "context": "of the documented pattern, folded onto one page",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1253,8 +1298,8 @@
       "file": "examples/showcase/src/routes/members/login/+page.svelte",
       "context": "the documented exemplar rendered. Both forms",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1262,8 +1307,8 @@
       "file": "examples/showcase/src/routes/test/last-otp/+server.ts",
       "context": "// the second-audience pattern states that as a rule",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1271,8 +1316,8 @@
       "file": "examples/showcase/wrangler.jsonc",
       "context": "The showcase members fixture's own D1 binding.",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Restore the pointer at docs/extend/add-a-second-audience.md.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1298,8 +1343,8 @@
       "file": "examples/showcase/README.md",
       "context": "scaffolds from. A few",
       "oldTarget": "docs/extend/what-the-scaffold-wrote.md",
-      "action": "Restore the pointer at docs/extend/what-the-scaffold-wrote.md.",
-      "restoredBy": "what-the-scaffold-wrote",
+      "action": "Restore the pointer at docs/extend/scaffolded-site-files.md.",
+      "restoredBy": "scaffolded-site-files",
       "batch": "2a"
     },
     {
@@ -1307,7 +1352,7 @@
       "file": "skills/cairn-extend/SKILL.md",
       "context": "and the reference page that documents it.",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
-      "action": "Decide at arm close whether skills/cairn-extend restores per-pattern recipe rows for add-a-custom-admin-screen and add-a-second-audience; ship the Consumers must line if it changes.",
+      "action": "Decide at arm close whether skills/cairn-extend restores per-pattern recipe rows for add-a-custom-admin-screen and add-a-second-sign-in-group; ship the Consumers must line if it changes.",
       "restoredBy": "close",
       "batch": "2b"
     },
@@ -1343,8 +1388,8 @@
       "file": "src/lib/reproductions/fixtures.ts",
       "context": "The `navLayout` seam's own worked example, resolved to",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
-      "action": "Restore the pointer at docs/extend/organize-your-admin-nav.md.",
-      "restoredBy": "organize-your-admin-nav",
+      "action": "Restore the pointer at docs/extend/arrange-the-admin-sidebar.md.",
+      "restoredBy": "arrange-the-admin-sidebar",
       "batch": "2b"
     },
     {
@@ -1352,8 +1397,8 @@
       "file": "src/tests/unit/reproductions-fixtures.test.ts",
       "context": "it('resolves the navLayout worked example, with",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
-      "action": "Restore the pointer at docs/extend/organize-your-admin-nav.md.",
-      "restoredBy": "organize-your-admin-nav",
+      "action": "Restore the pointer at docs/extend/arrange-the-admin-sidebar.md.",
+      "restoredBy": "arrange-the-admin-sidebar",
       "batch": "2b"
     },
     {
@@ -1478,8 +1523,8 @@
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "variable), cited in docs/extend/sign-in-through-your-organization.md's",
       "oldTarget": "docs/extend/sign-in-through-your-organization.md",
-      "action": "Keep the allowlist entry while sign-in-through-your-organization cites it; prune it if the rebuilt page does not.",
-      "restoredBy": "sign-in-through-your-organization",
+      "action": "Keep the allowlist entry while replace-magic-links-with-cloudflare-access cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "replace-magic-links-with-cloudflare-access",
       "batch": "pilot"
     },
     {
@@ -1487,8 +1532,8 @@
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "log-event:tidy.conventions",
       "oldTarget": "docs/extend/enable-tidy.md",
-      "action": "Keep the allowlist entry while enable-tidy cites it; prune it if the rebuilt page does not.",
-      "restoredBy": "enable-tidy",
+      "action": "Keep the allowlist entry while turn-on-tidy cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "turn-on-tidy",
       "batch": "2b"
     },
     {
@@ -1496,8 +1541,8 @@
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "log-event:tidy.model",
       "oldTarget": "docs/extend/enable-tidy.md",
-      "action": "Keep the allowlist entry while enable-tidy cites it; prune it if the rebuilt page does not.",
-      "restoredBy": "enable-tidy",
+      "action": "Keep the allowlist entry while turn-on-tidy cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "turn-on-tidy",
       "batch": "2b"
     },
     {
@@ -1514,8 +1559,8 @@
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/theme/theme.css",
       "oldTarget": "docs/extend/design-your-site.md",
-      "action": "Keep the allowlist entry while design-your-site cites it; prune it if the rebuilt page does not.",
-      "restoredBy": "design-your-site",
+      "action": "Keep the allowlist entry while theme-your-public-site cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "theme-your-public-site",
       "batch": "pilot"
     },
     {
@@ -1550,8 +1595,8 @@
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/lib/members/channel.ts",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "action": "Keep the allowlist entry while add-a-second-audience cites it; prune it if the rebuilt page does not.",
-      "restoredBy": "add-a-second-audience",
+      "action": "Keep the allowlist entry while add-a-second-sign-in-group cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
     },
     {
@@ -1559,7 +1604,7 @@
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/lib/content.ts",
       "oldTarget": "docs/extend/build-a-site-by-hand.md; wire-the-delivery-surface.md",
-      "action": "Allowlist entry names build-a-site-by-hand and wire-the-delivery-surface; keep while either rebuilt page cites the path, prune otherwise.",
+      "action": "Allowlist entry names the deleted build-a-site-by-hand and wire-the-delivery-surface pages; keep while either rebuilt page (add-cairn-to-a-sveltekit-app, build-the-public-routes) cites the path, prune otherwise.",
       "restoredBy": "add-cairn-to-a-sveltekit-app",
       "batch": "pilot"
     },
@@ -1622,8 +1667,8 @@
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/lib/access-identity.ts",
       "oldTarget": "docs/extend/sign-in-through-your-organization.md",
-      "action": "Keep the allowlist entry while sign-in-through-your-organization cites it; prune it if the rebuilt page does not.",
-      "restoredBy": "sign-in-through-your-organization",
+      "action": "Keep the allowlist entry while replace-magic-links-with-cloudflare-access cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "replace-magic-links-with-cloudflare-access",
       "batch": "pilot"
     },
     {
@@ -1631,14 +1676,15 @@
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:admin/__data.json",
       "oldTarget": "docs/extend/sign-in-through-your-organization.md",
-      "action": "Keep the allowlist entry while sign-in-through-your-organization cites it; prune it if the rebuilt page does not.",
-      "restoredBy": "sign-in-through-your-organization",
+      "action": "Keep the allowlist entry while replace-magic-links-with-cloudflare-access cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "replace-magic-links-with-cloudflare-access",
       "batch": "pilot"
     }
   ],
   "pages": [
     {
       "slug": "architecture",
+      "title": "Architecture",
       "path": "docs/extend/architecture.md",
       "group": "start",
       "order": 1,
@@ -1752,6 +1798,7 @@
     },
     {
       "slug": "add-cairn-to-a-sveltekit-app",
+      "title": "Add cairn to a SvelteKit app",
       "path": "docs/extend/add-cairn-to-a-sveltekit-app.md",
       "group": "start",
       "order": 2,
@@ -1861,10 +1908,10 @@
         "Verify each milestone: the workers.dev address, the dev /admin sign-in, cairn doctor's config.bindings check, and the branded 500 a build with no AUTH_DB and no dev backend returns."
       ],
       "outOfScope": [
-        "The scaffolded tree file by file (what-the-scaffold-wrote).",
+        "The scaffolded tree file by file (scaffolded-site-files).",
         "Every adapter option (define-an-adapter-and-schema).",
         "The security reasoning behind the GitHub App's repository-wide write and the CSRF design (security-model).",
-        "Delivery routes beyond the entry catch-all (wire-the-delivery-surface).",
+        "Delivery routes beyond the entry catch-all (build-the-public-routes).",
         "Rotating the key later (rotate-the-github-app-key)."
       ],
       "pinned": [],
@@ -1881,8 +1928,9 @@
       ]
     },
     {
-      "slug": "what-the-scaffold-wrote",
-      "path": "docs/extend/what-the-scaffold-wrote.md",
+      "slug": "scaffolded-site-files",
+      "title": "Scaffolded site files",
+      "path": "docs/extend/scaffolded-site-files.md",
       "group": "start",
       "order": 3,
       "batch": "2a",
@@ -1966,7 +2014,7 @@
         "migrations/ versus migrations-app/ and why the app schema sits in its own directory.",
         "src/routes/: the admin catch-all and layout pair, the signups example screen, the (site) group with the public catch-all and markdown twin, archive, preview, media route, feeds, robots, and /healthz outside the guard.",
         "src/theme/ and src/content/: cairn.config.ts with its navLayout, the registry and chrome, the content directories, and the committed manifests under src/content/.cairn/.",
-        "Stylesheets: admin.css importing admin-sources.css, and the public theme.css and site.css layering over cairn-public.css (depth on design-your-site).",
+        "Stylesheets: admin.css importing admin-sources.css, and the public theme.css and site.css layering over cairn-public.css (depth on theme-your-public-site).",
         "package.json's pre-scripts that compile .cairn/admin.css for any build, plus the cairn:manifest, format, and test:unit scripts.",
         "The themed 404: the root +error.svelte and not_found_handling set to none, and why both are needed.",
         "Crawl rules: handleUnseenRoutes' one exemption for the archive, and rel=\"external\" on every /admin link through isAdminHref.",
@@ -1976,11 +2024,11 @@
       ],
       "outOfScope": [
         "Building the same tree by hand (add-cairn-to-a-sveltekit-app).",
-        "Changing the theme and chassis (design-your-site).",
+        "Changing the theme and chassis (theme-your-public-site).",
         "The signups screen as a pattern (add-a-custom-admin-screen).",
-        "Each delivery route's wiring (wire-the-delivery-surface).",
+        "Each delivery route's wiring (build-the-public-routes).",
         "Media configuration behind the MEDIA_BUCKET binding (configure-media).",
-        "cairn-audit.config.json in depth (gate-your-site-with-cairn-audit)."
+        "cairn-audit.config.json in depth (run-cairn-audit-on-your-site)."
       ],
       "pinned": [],
       "rearms": [
@@ -1989,6 +2037,7 @@
     },
     {
       "slug": "content-model",
+      "title": "Content model",
       "path": "docs/extend/content-model.md",
       "group": "model-content",
       "order": 4,
@@ -2073,6 +2122,7 @@
     },
     {
       "slug": "define-an-adapter-and-schema",
+      "title": "Define an adapter and schema",
       "path": "docs/extend/define-an-adapter-and-schema.md",
       "group": "model-content",
       "order": 5,
@@ -2149,13 +2199,14 @@
         "Reference fields (link-content-with-references).",
         "The render group (configure-rendering).",
         "Roles and the access map (restrict-admin-access).",
-        "navLayout (organize-your-admin-nav)."
+        "navLayout (arrange-the-admin-sidebar)."
       ],
       "pinned": [],
       "rearms": []
     },
     {
       "slug": "link-content-with-references",
+      "title": "Link content with references",
       "path": "docs/extend/link-content-with-references.md",
       "group": "model-content",
       "order": 6,
@@ -2225,6 +2276,7 @@
     },
     {
       "slug": "reuse-content-across-entries",
+      "title": "Reuse content across entries",
       "path": "docs/extend/reuse-content-across-entries.md",
       "group": "model-content",
       "order": 7,
@@ -2290,6 +2342,7 @@
     },
     {
       "slug": "configure-rendering",
+      "title": "Configure rendering",
       "path": "docs/extend/configure-rendering.md",
       "group": "model-content",
       "order": 8,
@@ -2360,7 +2413,7 @@
       "outOfScope": [
         "What the sanitize floor and sink guard protect and the opt-out's cost (security-model).",
         "Hydrating a component on the client (add-an-island).",
-        "Styling the rendered output (design-your-site).",
+        "Styling the rendered output (theme-your-public-site).",
         "Fragments (reuse-content-across-entries).",
         "Missing media assets and the media resolver (configure-media)."
       ],
@@ -2371,6 +2424,7 @@
     },
     {
       "slug": "configure-media",
+      "title": "Configure media",
       "path": "docs/extend/configure-media.md",
       "group": "model-content",
       "order": 9,
@@ -2418,7 +2472,7 @@
         "Verify: an upload through the Library, the rendered image URL, and the media route's headers."
       ],
       "outOfScope": [
-        "Seeding local media for theme work (design-your-site).",
+        "Seeding local media for theme work (theme-your-public-site).",
         "Editor-facing use of the Library (editors arm).",
         "Restricting media through the access map (restrict-admin-access).",
         "The R2 tier's place among the data tiers (architecture)."
@@ -2428,6 +2482,7 @@
     },
     {
       "slug": "migrate-existing-content",
+      "title": "Migrate existing content",
       "path": "docs/extend/migrate-existing-content.md",
       "group": "model-content",
       "order": 10,
@@ -2492,8 +2547,9 @@
       ]
     },
     {
-      "slug": "design-your-site",
-      "path": "docs/extend/design-your-site.md",
+      "slug": "theme-your-public-site",
+      "title": "Theme your public site",
+      "path": "docs/extend/theme-your-public-site.md",
       "group": "public-site",
       "order": 11,
       "batch": "pilot",
@@ -2564,12 +2620,12 @@
         "Verify: check:public-tokens and the public-scope audit rules, theme-contrast at WCAG AA."
       ],
       "outOfScope": [
-        "The file map of the scaffold (what-the-scaffold-wrote).",
+        "The file map of the scaffold (scaffolded-site-files).",
         "Building components (configure-rendering).",
         "The admin's look (add-a-custom-admin-screen).",
-        "Delivery routes (wire-the-delivery-surface).",
+        "Delivery routes (build-the-public-routes).",
         "Media storage and the media route (configure-media).",
-        "Configuring cairn-audit for the whole site (gate-your-site-with-cairn-audit)."
+        "Configuring cairn-audit for the whole site (run-cairn-audit-on-your-site)."
       ],
       "pinned": [],
       "rearms": [
@@ -2581,8 +2637,9 @@
       ]
     },
     {
-      "slug": "wire-the-delivery-surface",
-      "path": "docs/extend/wire-the-delivery-surface.md",
+      "slug": "build-the-public-routes",
+      "title": "Build the public routes",
+      "path": "docs/extend/build-the-public-routes.md",
       "group": "public-site",
       "order": 12,
       "batch": "2b",
@@ -2665,7 +2722,7 @@
       "outOfScope": [
         "Choosing the AI posture (choose-an-ai-posture, kept).",
         "The draft preview route (share-a-draft-preview).",
-        "Announcing new entries (announce-on-publish)."
+        "Announcing new entries (act-on-newly-published-entries)."
       ],
       "pinned": [],
       "rearms": [
@@ -2680,6 +2737,7 @@
     },
     {
       "slug": "share-a-draft-preview",
+      "title": "Share a draft preview",
       "path": "docs/extend/share-a-draft-preview.md",
       "group": "public-site",
       "order": 13,
@@ -2740,7 +2798,7 @@
         "Verify, and the preview.refused reasons with their 404 versus 503."
       ],
       "outOfScope": [
-        "The public entry route itself (wire-the-delivery-surface).",
+        "The public entry route itself (build-the-public-routes).",
         "Session and cookie security (security-model)."
       ],
       "pinned": [],
@@ -2753,8 +2811,9 @@
       ]
     },
     {
-      "slug": "announce-on-publish",
-      "path": "docs/extend/announce-on-publish.md",
+      "slug": "act-on-newly-published-entries",
+      "title": "Act on newly published entries",
+      "path": "docs/extend/act-on-newly-published-entries.md",
       "group": "public-site",
       "order": 14,
       "batch": "2b",
@@ -2805,13 +2864,14 @@
         "The in-admin alternative: editor.publishActions next-step links shown after a publish, their {concept} and {id} placeholders, the concept filter, and validation at server start."
       ],
       "outOfScope": [
-        "The feed routes (wire-the-delivery-surface)."
+        "The feed routes (build-the-public-routes)."
       ],
       "pinned": [],
       "rearms": []
     },
     {
       "slug": "add-an-island",
+      "title": "Add an island",
       "path": "docs/extend/add-an-island.md",
       "group": "public-site",
       "order": 15,
@@ -2882,6 +2942,7 @@
     },
     {
       "slug": "add-a-custom-admin-screen",
+      "title": "Add a custom admin screen",
       "path": "docs/extend/add-a-custom-admin-screen.md",
       "group": "extend-the-admin",
       "order": 16,
@@ -3012,9 +3073,9 @@
       ],
       "outOfScope": [
         "Declaring the access map itself (restrict-admin-access).",
-        "Adding the screen to the nav (organize-your-admin-nav).",
+        "Adding the screen to the nav (arrange-the-admin-sidebar).",
         "Why an access map is not a whitelist (security-model).",
-        "Configuring the audit for the whole site: rendered pages, cookies, suppressions, allowlists (gate-your-site-with-cairn-audit).",
+        "Configuring the audit for the whole site: rendered pages, cookies, suppressions, allowlists (run-cairn-audit-on-your-site).",
         "The media upload protocol (configure-media)."
       ],
       "pinned": [],
@@ -3034,8 +3095,9 @@
       ]
     },
     {
-      "slug": "organize-your-admin-nav",
-      "path": "docs/extend/organize-your-admin-nav.md",
+      "slug": "arrange-the-admin-sidebar",
+      "title": "Arrange the admin sidebar",
+      "path": "docs/extend/arrange-the-admin-sidebar.md",
       "group": "extend-the-admin",
       "order": 17,
       "batch": "2b",
@@ -3105,8 +3167,9 @@
       ]
     },
     {
-      "slug": "enable-tidy",
-      "path": "docs/extend/enable-tidy.md",
+      "slug": "turn-on-tidy",
+      "title": "Turn on tidy",
+      "path": "docs/extend/turn-on-tidy.md",
       "group": "extend-the-admin",
       "order": 18,
       "batch": "2b",
@@ -3186,6 +3249,7 @@
     },
     {
       "slug": "security-model",
+      "title": "Security model",
       "path": "docs/extend/security-model.md",
       "group": "auth-and-access",
       "order": 19,
@@ -3325,8 +3389,8 @@
       ],
       "outOfScope": [
         "Configuring the access map (restrict-admin-access).",
-        "Setting up Access (sign-in-through-your-organization).",
-        "Building a channel (add-a-second-audience).",
+        "Setting up Access (replace-magic-links-with-cloudflare-access).",
+        "Building a channel (add-a-second-sign-in-group).",
         "Renderer options (configure-rendering).",
         "Rotating the key (rotate-the-github-app-key)."
       ],
@@ -3349,6 +3413,7 @@
     },
     {
       "slug": "restrict-admin-access",
+      "title": "Restrict admin access",
       "path": "docs/extend/restrict-admin-access.md",
       "group": "auth-and-access",
       "order": 20,
@@ -3396,7 +3461,7 @@
       ],
       "covers": [
         "Capability as the floor and the map as a narrowing layer.",
-        "Roles: the declared vocabulary and capability values (link add-a-second-audience for a none-capability audience).",
+        "Roles: the declared vocabulary and capability values (link add-a-second-sign-in-group for a none-capability audience).",
         "defineAccess: keys (screen ids or /admin paths) and values; validation against roles.",
         "Pass the same map to the adapter and to createAuthGuard.",
         "Enforce on your routes: requireAccess checks the route id; a load never gates its own action; ownerOnly adds to the rule.",
@@ -3409,7 +3474,7 @@
       "outOfScope": [
         "Why the map narrows and never whitelists (security-model).",
         "Section actions in full (add-a-custom-admin-screen).",
-        "Hiding nav entries (organize-your-admin-nav)."
+        "Hiding nav entries (arrange-the-admin-sidebar)."
       ],
       "pinned": [],
       "rearms": [
@@ -3417,8 +3482,9 @@
       ]
     },
     {
-      "slug": "sign-in-through-your-organization",
-      "path": "docs/extend/sign-in-through-your-organization.md",
+      "slug": "replace-magic-links-with-cloudflare-access",
+      "title": "Replace magic links with Cloudflare Access",
+      "path": "docs/extend/replace-magic-links-with-cloudflare-access.md",
       "group": "auth-and-access",
       "order": 21,
       "batch": "pilot",
@@ -3495,8 +3561,9 @@
       ]
     },
     {
-      "slug": "add-a-second-audience",
-      "path": "docs/extend/add-a-second-audience.md",
+      "slug": "add-a-second-sign-in-group",
+      "title": "Add a second sign-in group",
+      "path": "docs/extend/add-a-second-sign-in-group.md",
       "group": "auth-and-access",
       "order": 22,
       "batch": "2a",
@@ -3576,6 +3643,7 @@
     },
     {
       "slug": "rotate-the-github-app-key",
+      "title": "Rotate the GitHub App key",
       "path": "docs/extend/rotate-the-github-app-key.md",
       "group": "auth-and-access",
       "order": 23,
@@ -3634,6 +3702,7 @@
     },
     {
       "slug": "debug-your-site",
+      "title": "Debug your site",
       "path": "docs/extend/debug-your-site.md",
       "group": "operate",
       "order": 24,
@@ -3701,7 +3770,7 @@
       "outOfScope": [
         "Operator-facing symptoms (admin/troubleshooting).",
         "The full event table (reference/log-events).",
-        "Configuring cairn-audit (gate-your-site-with-cairn-audit)."
+        "Configuring cairn-audit (run-cairn-audit-on-your-site)."
       ],
       "pinned": [],
       "rearms": [
@@ -3711,8 +3780,9 @@
       ]
     },
     {
-      "slug": "gate-your-site-with-cairn-audit",
-      "path": "docs/extend/gate-your-site-with-cairn-audit.md",
+      "slug": "run-cairn-audit-on-your-site",
+      "title": "Run cairn-audit on your site",
+      "path": "docs/extend/run-cairn-audit-on-your-site.md",
       "group": "operate",
       "order": 25,
       "batch": "2b",
@@ -3760,7 +3830,7 @@
       ],
       "outOfScope": [
         "Auditing one custom admin screen while you build it (add-a-custom-admin-screen).",
-        "The public-scope theme rules in depth (design-your-site).",
+        "The public-scope theme rules in depth (theme-your-public-site).",
         "Every rule, flag, and config key (docs/reference/cairn-audit.md)."
       ],
       "pinned": [],

@@ -20,7 +20,7 @@ approval of the outline and this plan on the R10 page
 https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds (the parent's flow step 1), recorded in the ledger
 row. **Outline:** `docs/internal/outlines/extend.json` (committed, 25 pages). It carries the whole
 arm, 2b's pages included, and is deleted at the 2b merge. The R10 page marks the sweep's two added
-pages, `configure-media` and `gate-your-site-with-cairn-audit` (both batch `2b`), keep-or-cut (S5).
+pages, `configure-media` and `run-cairn-audit-on-your-site` (both batch `2b`), keep-or-cut (S5).
 A cut page's `factIds` and `covers` move to the page Geoff names, in the outline fold commit, before
 task 2 assigns map slugs; the ledger records that commit, and task 2 cites it. Where an outline
 rearm's `action` text and this plan disagree on a target, this plan governs.
@@ -54,14 +54,20 @@ five old pages merged into survivors that keep their slugs (the outline's `absor
 
 | Batch | Pages |
 | --- | --- |
-| Pilot (task 6) | `security-model`, `add-cairn-to-a-sveltekit-app`, `add-a-custom-admin-screen`, `sign-in-through-your-organization`, `architecture`, `design-your-site` |
-| Rest of 2a (task 8) | `what-the-scaffold-wrote`, `restrict-admin-access`, `add-a-second-audience`, `rotate-the-github-app-key`, `debug-your-site` |
+| Pilot (task 6) | `security-model`, `add-cairn-to-a-sveltekit-app`, `add-a-custom-admin-screen`, `replace-magic-links-with-cloudflare-access`, `architecture`, `theme-your-public-site` |
+| Rest of 2a (task 8) | `scaffolded-site-files`, `restrict-admin-access`, `add-a-second-sign-in-group`, `rotate-the-github-app-key`, `debug-your-site` |
 | 2b (next pass) | the other 14, the two sweep pages included if kept |
 
 The pilot takes the hardest pages on purpose, three of the outline's four figures among them
-(`architecture`, `add-a-custom-admin-screen`, `sign-in-through-your-organization`). The owner
-read at the checkpoint is `security-model`, `add-cairn-to-a-sveltekit-app`, and
-`sign-in-through-your-organization`.
+(`architecture`, `add-a-custom-admin-screen`, `replace-magic-links-with-cloudflare-access`). The
+owner read at the checkpoint is `security-model`, `add-cairn-to-a-sveltekit-app`, and
+`replace-magic-links-with-cloudflare-access`.
+
+**Slugs follow titles (owner ruling, 2026-09-30).** A page's slug is its outline `title` in
+lowercase kebab case, at `docs/extend/<slug>.md`, and titles follow the register's title rules.
+Geoff approved the 25 titles as proposed (2026-09-30).
+The R10 outline fold renames the slug of any title Geoff changes, together with its redirect row
+and every reference to it in the outline, the container's sweep headings, and this plan.
 
 **Known code defects on 2a pages.** The sweep filed 12 code defects as friction, never as facts,
 so page inputs never sees them. Each pair below rides the runner's existing `extraChecks` on that
@@ -70,9 +76,9 @@ behavior, it states the limitation as a filed `[verified]` fact."
 
 | Defect (friction log, `bd8ab1fe`) | Pages |
 | --- | --- |
-| The feed ships `::include` as literal text and emits root-relative media URLs (`templates/waymark/src/chassis/feed.ts:13-20`) | `what-the-scaffold-wrote`, `design-your-site` |
-| Comments name `GET /admin/healthz`, which no engine view serves | `what-the-scaffold-wrote`, `rotate-the-github-app-key` |
-| `cairn-media-seed` ignores `assets.publicBase` | `design-your-site` |
+| The feed ships `::include` as literal text and emits root-relative media URLs (`templates/waymark/src/chassis/feed.ts:13-20`) | `scaffolded-site-files`, `theme-your-public-site` |
+| Comments name `GET /admin/healthz`, which no engine view serves | `scaffolded-site-files`, `rotate-the-github-app-key` |
+| `cairn-media-seed` ignores `assets.publicBase` | `theme-your-public-site` |
 
 ## Execution mode
 
@@ -247,8 +253,8 @@ ledger.
 dry-run cases added to the existing `tests/docs-page-chain-outline.test.mjs` harness.
 
 **Files:** `~/.dotfiles/claude/.claude/workflows/docs-page-chain.js` and its outline test
-(committed in `~/.dotfiles`). The `cairn-docs-outline` helper and the drafter definition stay
-untouched.
+(committed in `~/.dotfiles`), and the `cairn-docs-outline` helper for the title field only. The
+drafter definition stays untouched.
 
 **Outcomes:**
 - **Map rows reach page inputs.** The runner gives page inputs the map path, the page's slug, its
@@ -268,6 +274,9 @@ untouched.
   instruction and a `frictionFiled` field; the drafter's already reaches the record through
   `rounds[].draft`, page inputs' through `record.pageInputs`, and the fact read's gets a copy
   step. The register editor and the figure verifier do not report. No new agent.
+- **Title.** The runner passes the outline entry's `title` to the drafter as the page's H1. The
+  title joins the entry checksum in both copies, the runner's and the helper's `canonicalEntry`,
+  kept identical, and the helper's reduced entry carries it.
 - **Figures.** A figure page's drafter prompt names the `cairn-figure` skill file
   (`~/.claude/skills/cairn-figure/SKILL.md`) as a file to read and follow.
 - **Cost.** The runner returns `spent`, the `budget.spent()` delta across the run. Its unit is
@@ -276,7 +285,8 @@ untouched.
 - The header comment documents the rows, the friction route, and `spent`.
 
 **Acceptance:** a dry run on one pilot page with stubbed agents shows the map path, the slug, and
-the selection rule in the page-inputs prompt; the retag order in the page-inputs and fact-read
+the selection rule in the page-inputs prompt; the entry's `title` as the H1 in the drafter prompt
+and in both checksums; the retag order in the page-inputs and fact-read
 prompts; the `cairn-figure` path in a figure page's drafter prompt; the stubbed `rowsReceived`
 and `rowsDisposed` in the record; stubbed `frictionFiled` values from page inputs, the drafter,
 and the fact read in the record, and none from the register editor; and `spent` present in the
@@ -355,7 +365,7 @@ if a fact retag touches a mapped fact.
 and 5.
 
 **Pages:** the six pilot pages, from the outline, `bothReviewers: true`, with the defect
-`extraChecks` for `design-your-site`.
+`extraChecks` for `theme-your-public-site`.
 
 **Outcomes:** each page's brief at `docs/internal/briefs/extend/<slug>.json`; new facts filed by
 page inputs; each page's pending map rows disposed; each record carrying its cross-regression
@@ -403,7 +413,7 @@ dispatch before the answer.
 
 **Pass class:** `docs`. **Gate:** the chain's per-page gate.
 
-**Pages:** `what-the-scaffold-wrote`, `restrict-admin-access`, `add-a-second-audience`,
+**Pages:** `scaffolded-site-files`, `restrict-admin-access`, `add-a-second-sign-in-group`,
 `rotate-the-github-app-key`, `debug-your-site`, on the chain task 7 chose, with the defect
 `extraChecks` and Geoff's fold notes applied to the drafter's inputs.
 
@@ -476,6 +486,6 @@ Run `cairn-pass`'s close:
 | Planning: ROADMAP initiative | `13fa8195` | done | in the measured planning lines |
 | Planning: sync spec, review, folds | `21898c5f` to `9ac777b2` | approved (S1 to S9) | in the measured planning lines |
 | 1 | cairn `8755099e`; dotfiles `8497a08`, `de040f4` | accept | in the measured planning lines |
-| R10 approval (https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds) and outline fold (keep or cut: `configure-media`, `gate-your-site-with-cairn-audit`) | | | |
+| R10 approval (https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds) and outline fold (keep or cut: `configure-media`, `run-cairn-audit-on-your-site`) | | | |
 
 ## Post-mortem

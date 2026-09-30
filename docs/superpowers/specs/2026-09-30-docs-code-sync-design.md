@@ -1,7 +1,7 @@
 # Docs-code sync, built as the arms are drafted: design
 
 **Date:** 2026-09-30. **Status:** approved by Geoff, 2026-09-30 (rulings S1 to S9), folded after a four-lens review and again
-after its fold verification (`docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`). **Parent:**
+after its fold verification (`docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`); page names updated 2026-09-30 to match their titles (owner ruling); meaning unchanged. **Parent:**
 `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md` (the stages, the page chain, the
 pilot checkpoint). This spec amends the parent: it adds a code-first gap sweep to each rebuilt
 stage's planning phase and two docs-code sync mechanisms that ride steps already running. Where
@@ -234,7 +234,7 @@ The parent is not edited here; these are owed errata, applied as the harvest fol
   and the fact read carry `frictionFiled`; the runner copies it); the `cairn-release` step (a
   skill edit); and filing DAD-1, EXB-4, and EXB-5 as friction entries, since they were filed as
   facts and the triage stream never saw them.
-- **New pages** from the sweep (`configure-media`, `gate-your-site-with-cairn-audit`) are 2b
+- **New pages** from the sweep (`configure-media`, `run-cairn-audit-on-your-site`) are 2b
   pages; the pilot and 2a's page list do not change.
 - **Defects** go to the friction log (filed 2026-09-30).
 - **Task 1's lock** in `cairn-docs-outline` handles more races than it needs, an S2 instance

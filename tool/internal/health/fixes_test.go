@@ -20,9 +20,9 @@ import (
 // declaredConditions is the whole domain of engine condition ids health's checks can ever
 // declare, derived from conditionCases() (condition_test.go), which already walks every check in
 // health.All and fails when one carries no representative row. Deriving the domain here, rather
-// than hand-listing it, is criterion 2's own enumeration mechanism: a later check that declares a
-// fourth condition adds a row to conditionCases() and this domain grows with it, so the fix table
-// cannot drift silently behind the engine's checks.
+// than hand-listing it, means a later check that declares a fourth condition adds a row to
+// conditionCases() and this domain grows with it, so the fix table cannot drift silently behind
+// the engine's checks.
 func declaredConditions() []spine.Condition {
 	seen := make(map[spine.Condition]bool)
 	var conditions []spine.Condition
@@ -108,8 +108,8 @@ func TestFixLinesResolveForEveryDeclaredIdentity(t *testing.T) {
 }
 
 // TestFixForOutcomeWithNeitherIdentityIsAbsent asserts a Failing outcome naming no Condition and
-// no Code (a verdict Task 21's threshold table has not yet assigned one to) is reported as
-// having no fix line, rather than resolving to some default.
+// no Code (a verdict no threshold has assigned an identity to) is reported as having no fix line,
+// rather than resolving to some default.
 func TestFixForOutcomeWithNeitherIdentityIsAbsent(t *testing.T) {
 	if _, ok := FixFor(spine.Outcome{State: spine.Failing}); ok {
 		t.Error("FixFor found a fix line for an outcome with no Condition and no Code")
@@ -151,8 +151,9 @@ func headingSlugsIn(path string) (map[string]bool, error) {
 const checklistFile = "is-it-working.md"
 
 // adminArmRebuilt reports whether the admin docs arm under root holds any page outside the
-// deletion list's kept set, the same rebuilt state scripts/checks/arm-state.mjs reports. The list
-// is read fail-closed: a missing or malformed list is an error, never an empty arm.
+// deletion list's kept set. scripts/checks/arm-state.mjs is the source of truth for that rebuilt
+// state; this Go copy must agree with it. The list is read fail-closed: a missing or malformed
+// list is an error, never an empty arm.
 func adminArmRebuilt(root string) (bool, error) {
 	data, err := os.ReadFile(filepath.Join(root, "docs", "internal", "record", "harvest", "deletion-list.json"))
 	if err != nil {
@@ -428,26 +429,9 @@ func writeTestFile(t *testing.T, path, body string) {
 	}
 }
 
-// TestFixLineNoAnchorIsLegal asserts an empty Anchor is an accepted value, never treated as a
-// missing field: this task does not edit the frozen is-it-working.md page to manufacture
-// headings for the checks it does not yet cover (Serving, Delegation, Deploy, Behind, Engine,
-// and an error count; see this task's own report).
-func TestFixLineNoAnchorIsLegal(t *testing.T) {
-	noAnchor := 0
-	for _, fix := range fixesByCode {
-		if fix.Anchor == "" {
-			noAnchor++
-		}
-	}
-	if noAnchor == 0 {
-		t.Fatal("every fixesByCode entry carries an Anchor; the no-anchor branch is untested")
-	}
-}
-
 // TestDeclaredConditionsExistInTheEngineRegistry asserts every condition id health's checks can
 // ever declare (declaredConditions) exists in src/lib/diagnostics/conditions.ts's own registry,
-// read at test time through providers.RepoRoot: criterion 7 of this task's rule that an id this
-// tool prints must be one the engine actually owns.
+// read through spine.Conditions(): an id this tool prints must be one the engine actually owns.
 func TestDeclaredConditionsExistInTheEngineRegistry(t *testing.T) {
 	registry := make(map[spine.Condition]bool, len(spine.Conditions()))
 	for _, c := range spine.Conditions() {

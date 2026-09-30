@@ -20,8 +20,7 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md`); its PR merges under R4 once the
   close gate and reviews are green. The admin, editors, and front-door arms are then empty, and
   `extend/` holds only the three kept pages. **Next: the stage 2a plan** (resume prompt below).
-- Theme identity is done. cairn-pub's pin bump takes the B and C migration first, then checks its
-  links to the renamed `docs/reference/admin.md` and the new `public-css.md`.
+- Theme identity is done; cairn-pub's pin bump takes its migration and link checks first.
 
 ## Open decisions and watches
 
@@ -29,8 +28,8 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   `docs/superpowers/research/2026-09-29-draft-docs-harvest-fold.md` (six parent-spec fixes, and
   `cairn-pass` and `site-pass` still say to fix a frozen arm page), or rule each.
 - Watch: the kept per-version records' paths are hardcoded in `cairn-pass`, `CLAUDE.md`, and
-  `docs/internal/facts/README.md`; a pass that moves either record updates all three. Docs
-  improve-as-we-go (Geoff, 2026-09-29) opens with a brainstorm once the first drafts are complete.
+  `docs/internal/facts/README.md`; a pass that moves either record updates all three.
+  Improve-as-we-go (Geoff, 2026-09-29) waits for the first drafts.
 - `checkOrigin` to `csrf.trustedOrigins` is a small `auth-data` pass, run when Geoff can make the
   magic-link click. Node 26 is the beta floor only if Active LTS by then; TypeScript 7 waits on
   `tsgo.yml`. `radius-scale` and the retired-patch arms promote at `0.99.0`.
@@ -42,7 +41,8 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ### Next action (draft docs stage 2a plan)
 
-> **Goal.** A reviewed stage 2a plan: the extend arm's JSON outline, its pilot, and the rest of 2a.
+> **Goal.** A reviewed stage 2a plan: the extend outline, its pilot, and the rest of 2a. Trigger:
+> the harvest PR merged to `main`.
 >
 > **Scope.** Draw `docs/internal/outlines/extend.json` from the readers' jobs,
 > `docs/internal/facts/extend.md`, and `relink.json`'s `2a` entries. Drafting is out.
@@ -51,10 +51,10 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 > (`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`) and the harvest spec's
 > "Outline format". Extend re-arms at the first 2a page (`arm-state.mjs`), so the plan budgets an
 > interim `docs/extend/README.md`, live targets for the extend `LEGACY_PATH_MAP` entries, the
-> `build-a-site-by-hand.md` slug case repoint, and the `docs-page-chain.js` outline read.
+> `build-a-site-by-hand.md` slug case repoint, the `docs-page-chain.js` outline read, and the
+> `requiredDocsPaths` kept-page fix (ROADMAP Next, "at latest stage 2a").
 >
 > **Still open, brainstorm these:** the arm's page set and order, and the pilot's six pages.
 >
-> **Approach.** Fresh session: `superpowers:brainstorming`, `superpowers:writing-plans`, then
-> `spec-plan-review`. Invoke `cairn-pass` to start. Launch directory: `~/Projects/cairn-cms`.
-> Model: `claude --model claude-opus-5-5`.
+> **Approach.** Invoke `cairn-pass` to start, then `superpowers:brainstorming`, `writing-plans`,
+> and `spec-plan-review`. Launch directory `~/Projects/cairn-cms`; `claude --model claude-opus-5-5`.

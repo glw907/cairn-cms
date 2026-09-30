@@ -1196,13 +1196,14 @@ the named human gates only):**
   (`docs/internal/record/2026-09-15-facts-container-review/`, charter report finding 9).
   Trigger: twenty hand-filed facts.
 
-- **Trace or retire the 3 `[candidate: excluded ...]` bullets left in `docs/internal/facts/`
+- **Trace or retire the 4 `[candidate: excluded ...]` bullets left in `docs/internal/facts/`
   (docs reset pass 1 triage, 2026-09-24; narrowed at the harvest's close, 2026-09-30).** An
   excluded bullet is not citable by a page brief, so its claim cannot reach a rebuilt page until
   someone traces it to code or deletes it. The harvest's audit resolved every excluded bullet in
-  the deleted pages' sections (`f:my9dgx`, the old example, is now `[rejected]`). Three remain,
+  the deleted pages' sections (`f:my9dgx`, the old example, is now `[rejected]`). Four remain,
   in sections the harvest did not audit: `f:4sxnxp` under the root `README.md` in
-  `front-door.md`, and two in `reference.md`. Record:
+  `front-door.md`, `f:zgdkq7` under the kept `migration-notes.md` in `extend.md`, and two in
+  `reference.md`. Record:
   `docs/internal/record/2026-09-23-candidate-dispositions.md`. Trigger: a drafting pass that
   needs one of these claims.
 

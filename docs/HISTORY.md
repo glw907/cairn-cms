@@ -65,9 +65,9 @@ cairn.pub's pin ceiling for the old narrative arms.
   on rerun. The main checkout held a local-only commit (`f8ba597d`, Geoff's media-purge ruling)
   that a reset would have lost; it was cherry-picked here as `ca0ebff0`. A task 9 implementer's
   process sweep, meant to kill its own duplicate gate, ended its own shell.
-- **The spec-plan-review fold's refusals.** One finding was refused (CO-OC-1, tag the verifier's
-  test for removal), plus DR-6's `--ref` mode, DR-9's move of `## Harvest record`, and DR-4's
-  per-golden `relink.json` rows. None turned out to be a real defect: the pre-merge `git diff`
+- **The spec-plan-review fold's refusals.** Four findings were refused: CO-OC-1 (tag the
+  verifier's test for removal), DR-6's `--ref` mode, DR-9's move of `## Harvest record`, and
+  DR-4's per-golden `relink.json` rows. None turned out to be a real defect: the pre-merge `git diff`
   replaced `--ref` and came back empty, no bullet leaked page text through a harvest record, and
   the residue class list carried the goldens.
 

@@ -1,7 +1,7 @@
 # Docs-code sync, built as the arms are drafted: design
 
 **Date:** 2026-09-30. **Status:** approved by Geoff, 2026-09-30 (rulings S1 to S9), folded after a four-lens review and again
-after its fold verification (`docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`); page names updated 2026-09-30 to match their titles (owner ruling); meaning unchanged. **Parent:**
+after its fold verification (`docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`); page names updated 2026-09-30 to match their titles (owner ruling); meaning unchanged. The Acceptance clause "and zero across all six is read there as a prompt failure" was struck 2026-09-30 per the 2a plan fold (PR-12): a zero count is no failure signal, and the checkpoint reports entries per pilot page while the close triages them. **Parent:**
 `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md` (the stages, the page chain, the
 pilot checkpoint). This spec amends the parent: it adds a code-first gap sweep to each rebuilt
 stage's planning phase and two docs-code sync mechanisms that ride steps already running. Where
@@ -279,8 +279,7 @@ pages the lever. The plan review and this second fold are not yet priced.
   and the retire rule, for capability releases only (S8).
 - The parent's owed errata land, the stage flow among them naming the planning-phase sweep.
 - Page inputs, the drafter, and the fact read carry `frictionFiled`, and the runner copies it to
-  the page record. The pilot checkpoint reports entries per pilot page, and zero across all six
-  is read there as a prompt failure. The stage close's HISTORY entry counts the entries and how
+  the page record. The pilot checkpoint reports entries per pilot page. The stage close's HISTORY entry counts the entries and how
   each was triaged.
 - The 2a plan's pilot task depends on the mechanism tasks; the R10 page marks both added pages
   keep-or-cut; the plan review records one guard verdict per mechanism with its three citations.

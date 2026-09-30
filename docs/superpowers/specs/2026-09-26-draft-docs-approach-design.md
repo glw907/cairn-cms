@@ -3,7 +3,7 @@
 **Date:** 2026-09-26. **Status:** amended 2026-09-29 (harvest, then delete; see the amendment section). Revision 2 folded four review lenses
 (`docs/superpowers/research/2026-09-26-draft-docs-approach-fold.md`); owner rulings R8 and R9
 (2026-09-26) settle its two open rulings; a second fold took the fold verification; a third took the
-prose review and owner ruling R10. The 2026-09-30 errata application (owner ruling, Geoff) amends six passages in place per `docs/superpowers/research/2026-09-29-draft-docs-harvest-fold.md` ("Owed errata"). **Replaces:** the reader-validation line of
+prose review and owner ruling R10. The 2026-09-30 errata application (owner ruling, Geoff) amends six passages in place per `docs/superpowers/research/2026-09-29-draft-docs-harvest-fold.md` ("Owed errata"). A second 2026-09-30 errata application (owner ruling, Geoff) amends six more passages in place per the docs-code sync spec's "Amends the parent" (`2026-09-30-docs-code-sync-design.md`) and the 2a plan fold's "Owed errata" (`docs/superpowers/research/2026-09-30-draft-docs-2a-plan-fold.md`): the Brief's "No new check is built" and "The budget goes to pages", the Budget's per-stage planning line and the extend page count, the stage flow's step 1, and, per the voice ruling of 2026-09-30, the Exemplars section. **Replaces:** the reader-validation line of
 `2026-09-23-docs-reset-design.md` (stopped 2026-09-25). **Input:**
 `docs/internal/record/2026-09-26-docs-approach-handoff.md`.
 
@@ -14,7 +14,10 @@ draft, a technical review, an editorial review, and one revision, run by agents 
 owner and subject-matter expert. Arms go easiest first (reference, extend, admin, editors, front
 door), and every stage merge leaves `main` releasable. Stages 0 and 1 share one pass, extend runs as
 two (2a and 2b), and each later arm takes one. Geoff reviews outlines and sample pages on an
-editable claude.ai Artifact page (R10). The budget goes to pages. No new check is built: four
+editable claude.ai Artifact page (R10). The budget goes to pages, less the non-page shares the docs-code sync spec adds (the
+planning-phase sweep, measured at 3.3M for extend; the sync mechanisms and friction route, about
+1.2M; the release sweep, 1M per capability cut). No new check is built beyond one: the option-coverage
+gate (`check:options`), which fails an engine option with no fact, exclusion, or pending row. Four
 existing checks each gain a small extension (a per-command flag list for `check:symbols`, a coverage
 rule for `check:provenance`, a shipped-anchor list for `check:readiness`, a zero-quote floor for
 `check:editor-quotes`), and one script runs the docs gate. The real-use test is the site round after
@@ -154,14 +157,19 @@ escalation outside these prices. Short index pages (the READMEs) are estimated a
 whole. Every front-door page is drafted one section per dispatch (R9), so `why-cairn.md` and each
 index are priced at about twice their whole-page share. Each stage adds about 1M for planning,
 the outline, the consistency read, the owner fold (its R10 review pages included), and the close; stage 2 adds 2M, since 2a and 2b
-each carry a consistency read and a close.
+each carry a consistency read and a close. That 1M excludes the planning-phase sweep, which measured
+3.3M on extend: across stages 3 to 5 it adds up to about 7M against R8's 30M, scaled to each arm's
+surface, and the pilot checkpoint's combined question on the initiative ceiling carries it.
 
-**Pages.** Admin 8, editors 7, and extend 30, each excluding the arm index (the harvest deleted the
+**Pages.** Admin 8, editors 7, and extend 32 (30 plus the two pages the planning sweep added,
+`configure-media` and `run-cairn-audit-on-your-site`, which Geoff kept on 2026-09-30), each excluding the arm index (the harvest deleted the
 arm READMEs, and each rebuilding stage recreates its own) and excluding extend's two per-version
 records (`migration-notes.md`, `upgrade-cairn.md`), which stay maintained in place. The front door
 is `why-cairn.md` plus five indexes (`docs/README.md` and the four arm READMEs). The root
 `README.md` is out of scope. Reference is 29 pages, checked in place outside the chain; its README
-stays in place and is stage 5's. Outlines may merge pages; the counts here do not assume it.
+stays in place and is stage 5's. Outlines may merge pages; the counts here do not assume it. The two added extend pages cost about
+1.3M at the lean rate; the Planned column below is not restated, since every share resets from the
+pilot's measured cost.
 
 | Stage | Scope | Derivation | Planned |
 | --- | --- | --- | --- |
@@ -310,7 +318,10 @@ turns up a structural problem.
 
 ## Each rebuilt stage's flow
 
-1. **Outline**, at `docs/internal/outlines/<arm>.json`, reviewed as rendered cards with edits
+1. **Sweep, then outline.** The stage opens with the planning-phase sweep (docs-code sync spec, "The
+   gap sweep in each stage's planning phase"): finders, independent verifiers, and one filer, sized
+   to the arm's surface, file verified gaps as facts and place each on an outline page. The
+   **outline** is at `docs/internal/outlines/<arm>.json`, reviewed as rendered cards with edits
    folded back to the JSON; the stage's plan cites it by path and commit. A page list drawn fresh
    from the jobs the arm serves, one line per page with its page type, the two exemplars assigned
    to that page type (named on each page's line), and whether it keeps or gains a figure. It
@@ -403,9 +414,10 @@ The 68-capture corpus stays (`docs/internal/record/docs-exemplars.md`), unreview
 slices map to arms: admin to Operators, editors to Editors, extend to Extenders plus Designers
 (and Core's architecture overview), the front door to Evaluators. The page type vocabulary is the
 manifest's section headings. Each outline assigns two exemplars per page type from different
-sources, since one example invites copying its structure, phrasing, and content. The drafter prompt
-names what to take (structure, register, detail per step) and what to leave (content, terms,
-product names). Known "no capture fits" cases, to fill only when an outline needs one: editors
+sources, since one example invites copying its structure, phrasing, and content. The drafter takes
+voice only from the register's drafting brief and its primary exemplar
+(`docs/extend/choose-an-ai-posture.md`), and takes structure and detail per step from the page's
+two exemplars. It leaves their voice, wording, content, terms, and product names. Known "no capture fits" cases, to fill only when an outline needs one: editors
 concept (both captures from one source), the evaluator support-and-versioning page (one capture),
 and extend troubleshooting (none). A weak exemplar is swapped at a checkpoint, never mid-arm.
 

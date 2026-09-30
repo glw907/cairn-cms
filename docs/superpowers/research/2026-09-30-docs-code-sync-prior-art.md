@@ -37,8 +37,11 @@ through a verbatim mirror.
   https://arxiv.org/abs/2212.01479). ReCite (2026) found 869 stale function references in
   Linux kernel comments; maintainers accepted 50 of 75 patches
   (https://arxiv.org/abs/2608.03734). Neither method sees a reference that still resolves while
-  the behavior behind it changed. That is exactly the class cairn's sweep found: a fact whose
-  `Source:` line still resolved while its claim had gone stale.
+  the behavior behind it changed. That is the class cairn's sweep found: a fact whose
+  `Source:` line still resolved while its claim was wrong. The sweep's corrected facts were wrong
+  when filed, and their cited code has not changed since (the spec's "Deferred, with triggers"
+  row for the staleness lockfile), so they are a verification miss, never drift that resolved and
+  went stale.
 - **Docs without owners and a review mechanism die.** At Google, around 90% of wiki documents
   had no views or updates in the previous few months. Moving docs into source (g3doc), with
   owners and freshness dates, improved them. Google says same-change code+doc updates are "a

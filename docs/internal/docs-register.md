@@ -217,7 +217,8 @@ borrows that first person.
 
 ### Exemplars
 
-A drafter reads each exemplar whole and imitates its anatomy and rhythm, never its wording.
+A drafter reads each exemplar whole and takes its anatomy and detail per step, never its wording.
+Voice comes only from this brief and the primary exemplar below (Geoff, 2026-09-30).
 
 - [`docs/extend/choose-an-ai-posture.md`](../extend/choose-an-ai-posture.md) is the primary
   exemplar, for both the task-guide anatomy (choose, set, pass, verify, resolve) and the voice

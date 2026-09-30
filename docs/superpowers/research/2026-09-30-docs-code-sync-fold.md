@@ -126,7 +126,7 @@ S6 is marked superseded by S9.
 | FV-8 | Folded (wording) | The release sweep's failure now cites the sweep's own ids: the 25 `SCF` scaffold findings and the 15 `CLN` post-harvest changelog findings. The old examples were not sweep finds: the themed 404 fact `f:ofex2m` predates the sweep (commit `0747fc7e`), and the migrations trap was SCF-18, already covered by `f:jtl15v`. |
 | FV-9 | Folded (wording) | Brief counts rewritten per the sweep record: 148 verified gap claims (131 filed after dedupe) and 12 defects; 4 facts corrected; 2 pages added. |
 | FV-10 | Owed | Not a wording fix. With FV-4's constant, a retag to `[candidate]` must rewrite the row to `pending <slug>` and raise the constant by one in the same edit, or the gate reddens every in-flight page. The 2a plan's gate task settles the rule and its fixture. |
-| FV-11 | Owed | Not a wording fix. The 2a plan records map rows per pilot page at creation, and the pilot checkpoint reports the disposal cost apart from the page rate. |
+| FV-11 | Owed | Not a wording fix. The 2a plan records map rows per pilot page at creation, and the pilot checkpoint reports the disposal cost apart from the page rate. Amended 2026-09-30 (2a plan fold, PC-1 and PR-5): the disposal cost is no longer read apart from the page rate; the checkpoint reports rows received and disposed beside each page's total. |
 
 **Counts:** 11 findings. Folded 9 (5 majors, 4 minors), owed 2 (FV-10, FV-11). New mechanism
 added: 1, the committed pending-count constant (source: Betterer's results file; measured

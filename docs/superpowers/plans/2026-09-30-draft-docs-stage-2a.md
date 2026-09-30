@@ -468,6 +468,11 @@ Run `cairn-pass`'s close:
   `.mjs` and `.ts` in this repo; the full gate (`npm test`, `npm run check:close`, `make -C tool
   check`).
 - The 11 rebuilt paths appended to `docs/internal/briefs-rebuilt.json`.
+- **`CONTRIBUTING.md` gains a section on how the docs stay true (Geoff, 2026-09-30):** the facts
+  container, the option map and `check:options`, `check:facts`, and what a change must file to pass
+  the docs gate, written from the shipped mechanisms to the contributor audience's standard; the
+  page chain is named only as maintainer tooling. The evaluator's claim waits for stage 5 (ROADMAP,
+  "Tell outside developers how the docs stay true").
 - `CHANGELOG.md` under `## Unreleased`: the 11 pages and the interim index added, the five
   absorbed paths and their successors, and, if `skills/` changed in this pass, a `Consumers
   must:` line to re-run `npx cairn-guidance install`, which the diff-reviewer checks.

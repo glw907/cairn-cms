@@ -311,6 +311,16 @@ The original decision framing, for the record:
   the prior-art sweep (`docs/superpowers/research/2026-09-30-docs-code-sync-prior-art.md`)
   first. Trigger: the stage 2a re-plan.
 
+- **Tell outside developers how the docs stay true (Geoff, 2026-09-30).** Split by reader. A
+  contributor needs the mechanics: the facts container, the option map, `check:options`,
+  `check:facts`, and what a change must file to pass the docs gate; that lands as a
+  `CONTRIBUTING.md` section at stage 2a's close (plan task 10), naming the page chain only as
+  maintainer tooling, since it lives in the workstation dotfiles and a contributor cannot run it.
+  An evaluator or site developer needs only the promise: every public option is documented or
+  excluded with a reason, CI fails otherwise, and the docs match the installed engine version.
+  That claim belongs in `docs/why-cairn.md`, written from the shipped mechanism, never an extend
+  page, since no extend job needs it. Trigger: stage 5's outline of the front door.
+
 - **Theme identity pass A's carried items (pass A close, 2026-09-28; settled by the S3
   correction round, 2026-09-28, except the two below).** Trigger for what remains: the first pass
   after this one that edits `cairn-admin.css` or the named component (retargeted past the

@@ -62,6 +62,14 @@ nor the chassis `tokens.css` defaults. Today that is the five `--cairn-cta-*` ke
 `--cairn-caption-tracking`, and `public-css.md` holds the list. A key read behind a `var()` fallback
 is an optional override.
 
+The chassis `tokens.css` defaults every design-scale key, so a theme may omit any of them: the three
+`--font-*` faces, `--font-weight-heading`, `--cairn-heading-case`, `--text-step--1` through
+`--text-step-5`, the eight `--spacing-*` steps (`3xs` through `2xl`), `--leading-body`, `-snug`, and
+`-tight`, `--tracking-tight` and `--tracking-eyebrow`, and `--container-measure` and
+`-measure-wide`. The chassis has no `--text-step--2`, which Waymark's `SiteHeader.svelte` reads for the
+tracked nav, so a header that uses `text-step--2` defines it in `@theme`. A theme must always set the
+daisyUI blocks, since the chassis declares none, and the site-owned keys above.
+
 Three rows carry a rule.
 
 - **Rules.** `--color-base-300` is the color of a rule or a border. Never use it as the ground under
@@ -78,8 +86,10 @@ Three rows carry a rule.
 A per-scheme value goes in that scheme's daisyUI block, so it follows the scheme the page carries. A
 hand-tuned value, an ink override or the CTA set, goes in both blocks, since a value set in one block
 never reaches the other scheme. The CTA set may instead sit in a `:root` block with its dark
-counterpart, as Waymark does; the daisyUI blocks are the simpler choice for a new theme. A
-value that carries a comma, such as `--cairn-shadow`, does not survive daisyUI's option parser, so it
+counterpart, as Waymark does. That form needs the dark values in both dark `:root` blocks, the
+`@media (prefers-color-scheme: dark)` block guarded by `:root:not([data-theme])` and the explicit
+`:root[data-theme="<dark name>"]` block, since either can be the one that applies. The daisyUI blocks
+are the simpler choice for a new theme. A value that carries a comma, such as `--cairn-shadow`, does not survive daisyUI's option parser, so it
 goes in that scheme's `:root` block. An unlayered `:root` role beats the sheet's layered default, and a
 stale copy of the old chassis `tokens.css` therefore cancels ink derivation without an error.
 `theme-conformance` raises a finding for that copy.
@@ -89,8 +99,8 @@ stale copy of the old chassis `tokens.css` therefore cancels ink derivation with
 - **Fast.** Extend a built-in daisyUI theme by naming a block after it (`name: "nord"`) and setting only
   what differs. daisyUI completes the block by merging, and the audit accepts it. Or start from
   daisyUI's theme generator and paste its output as the two `@plugin "daisyui/theme"` blocks.
-- **Full control.** Write both blocks with every key daisyUI's theme object carries, then set the
-  `@theme` scale and the roles above. Nothing merges, so a missing key is a runtime hole.
+- **Full control.** Write both blocks with every key daisyUI's theme object carries (the complete
+  list is in `references/theme-starter.md`), then set the `@theme` scale and the roles above. Nothing merges, so a missing key is a runtime hole.
 
 ### Escapes from a literal
 
@@ -109,17 +119,35 @@ The theme names live in three places. `src/theme/theme-names.ts` feeds the toggl
 in `src/app.html` reads the cookie and both names, and each `@plugin "daisyui/theme"` block carries a
 `name:`. `theme-names.test.ts` fails when one of them drifts.
 
+`src/app.html` sits outside the theme directory, so a rename confined to `src/theme/` leaves it stale.
+Its inline `<script>` holds one regex, `/(?:^|; )cairn-site-theme=(cairn-dark|cairn)(?:;|$)/`. Edit the
+cookie name before the `=` to match `cookieName` in `theme-names.ts`, and the two names in the group to
+match `light` and `dark`. A stale regex fails silently: a returning visitor's saved choice never
+applies, and the page falls back to the system scheme.
+
 ### What a theme directory holds
 
-On the chassis, `src/theme/` is the theme and `src/chassis/` is the plumbing under it. The theme
-directory holds:
+On the chassis, `src/theme/` is the theme and `src/chassis/` is the plumbing under it. The routes and
+the chassis import every file below by the `$theme` alias, so a theme built from scratch supplies all of
+them. `references/theme-starter.md` holds a complete daisyUI theme block to start `theme.css` from.
 
 - **`theme.css`.** The two daisyUI blocks, the `@theme` scale, and an `@import` of
   `../chassis/tokens.css`. CSS reaches the chassis by relative import, since aliases don't resolve in CSS.
-- **Chrome components.** `SiteHeader.svelte` and `SiteFooter.svelte`, which read `page.data` (the site
-  name and the resolved nav) and never import site config.
-- **`theme-names.ts`.** The toggle's config.
-- **Its adapter files.** `cairn.config.ts`, `markdown-components.ts`, and `icons.ts`.
+  The layouts, the error page, and the editor preview link it.
+- **`site.css`.** The `.site-main` reading column and the `cairn-place-*` figure geometry. The layouts
+  link it beside `theme.css`.
+- **`cairn.config.ts`.** The adapter: concepts, fields, backend, and `rendering`. The chassis reads it.
+- **`site-config.ts` and `site.config.yaml`.** The parsed site config: the site name and the `primary`
+  and `footer` menus. The root layout server load and the chassis read them.
+- **`markdown-components.ts` and `icons.ts`.** The registered directives, and the glyph set they draw.
+- **`islands/`.** `registry.ts` maps a directive name to its Svelte component, `Banner.svelte` is the
+  showcase's one island, and `banner-expiry.ts` is the date check the directive and the island share.
+- **`theme-names.ts`.** The toggle's config: both theme names and the cookie.
+- **`components/`.** `SiteHeader.svelte` and `SiteFooter.svelte`, the chrome, which read `page.data`
+  (the site name and the resolved nav) and never import site config. `ArticleView.svelte` renders an
+  entry, for the public and the preview routes. `EntryRow.svelte` is one row of the home and archive
+  listings. `admin-link.ts` exports `isAdminHref`, which the header and footer use to mark `/admin`
+  links `rel="external"` so a build-time crawl skips them.
 
 A `.ts` or `.svelte` file in the theme imports a chassis helper, such as the theme toggle, through the
 `$chassis` alias.
@@ -175,13 +203,24 @@ Run the public-scope audit before you finish a theme:
 npx cairn-audit --rule public-literals --rule theme-conformance --rule theme-contrast
 ```
 
-It needs no built admin stylesheet. The three rules report at advisory tier on a consumer site, and
-a finding never changes the exit code. Plain `npx cairn-audit` runs them beside the admin rules.
+Run it from the site's root. It needs no built admin stylesheet. The three rules report at advisory
+tier on a consumer site, and a finding never changes the exit code. Plain `npx cairn-audit` runs them
+beside the admin rules.
 
 `public.scope` in `cairn-audit.config.json` decides what is read: `src/theme`, `src/chassis`,
-`src/routes`, `src/lib/public`, and `src/lib/components` by default, minus `src/routes/admin`. To
-confirm a file is covered, put a color literal in it, run the audit, and look for a
-`public-literals` finding that names the file. Remove the literal.
+`src/routes`, `src/lib/public`, and `src/lib/components` by default, minus `src/routes/admin`. The audit
+reads those roots and no others. A theme drafted in another directory is outside them, so copy it into
+the site's `src/theme/` before the run. To confirm a file is covered, put a color literal in it, run the
+audit, and look for a `public-literals` finding that names the file. Remove the literal.
+
+To build-check a theme directory without touching a site, run this from the cairn-cms repository:
+
+```bash
+node scripts/lab/theme-fixture.mjs --build-only --theme-dir <dir>
+```
+
+It overlays `<dir>` onto `src/theme` in a temporary copy of the showcase, so the directory needs only
+the files it replaces. It builds and smoke-loads the pages, and asserts no fixture values.
 
 When `theme-contrast` reports a derived status ink below AA, its message names the block, the pair,
 and the ratios. Hand-tune `--cairn-<status>-ink` in that block and in the other scheme's block, and

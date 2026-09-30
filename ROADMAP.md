@@ -299,6 +299,18 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Docs-code sync (Geoff, 2026-09-30).** Keep the engine and its docs in sync by catching two
+  failures: drift (a fact whose code changed while its `Source:` still resolves) and omission
+  (behavior no fact covers). The 2026-09-30 extend gap sweep found about 140 verified gaps and
+  five wrong facts (`docs/superpowers/research/2026-09-30-extend-gap-sweep.md`). Candidates:
+  changelog entries cite the fact ids they create or change, gated; a per-fact source hash
+  stamped at the page chain's fact read, stale until re-verified; a configuration-surface
+  coverage gate built from the TypeScript types; and a windowed gap sweep before each release
+  cut in `cairn-release`. Geoff's direction: build as much as possible inside the docs stages
+  while agents author (the fact read and page inputs), not as a later retrofit, and design from
+  the prior-art sweep (`docs/superpowers/research/2026-09-30-docs-code-sync-prior-art.md`)
+  first. Trigger: the stage 2a re-plan.
+
 - **Theme identity pass A's carried items (pass A close, 2026-09-28; settled by the S3
   correction round, 2026-09-28, except the two below).** Trigger for what remains: the first pass
   after this one that edits `cairn-admin.css` or the named component (retargeted past the

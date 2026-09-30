@@ -48,3 +48,23 @@ The keys fall into four groups.
 - **Geometry.** `--radius-selector`, `--radius-field`, and `--radius-box` set the three corners. `--size-selector` and `--size-field` scale the small controls. `--border` is the border width, and `--depth` and `--noise` are `0` or `1` and switch daisyUI's shading and grain.
 
 A hand-tuned ink, `--color-muted`, or `--cairn-<status>-ink` goes in this block too, and in the other scheme's block. The "Placement of a per-scheme value" section of `node_modules/@glw907/cairn-cms/docs/reference/public-css.md` covers the keys that cannot go here.
+
+## The design scale
+
+The chassis `tokens.css` defaults every design-scale key inside `@theme`, so a theme may omit any of them and still generate every named utility. The defaulted keys are:
+
+- the three faces `--font-display`, `--font-body`, and `--font-mono`
+- `--font-weight-heading` and `--cairn-heading-case`
+- `--text-step--1` through `--text-step-5`
+- the eight spacing steps `--spacing-3xs`, `-2xs`, `-xs`, `-s`, `-m`, `-l`, `-xl`, and `-2xl`
+- `--leading-body`, `--leading-snug`, and `--leading-tight`
+- `--tracking-tight` and `--tracking-eyebrow`
+- `--container-measure` and `--container-measure-wide`
+
+A theme sets a defaulted key only to change its value. Redeclare it in the theme's own `@theme` block, after the `tokens.css` import.
+
+A theme must set these, since neither the engine nor the chassis defaults them:
+
+- Both daisyUI blocks, since the chassis declares none.
+- The five `--cairn-cta-*` keys and `--cairn-caption-tracking`.
+- `--text-step--2` when the header reads `text-step--2`, as Waymark's `SiteHeader.svelte` does for the tracked nav. The chassis scale starts at `--text-step--1`.

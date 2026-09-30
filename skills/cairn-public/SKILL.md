@@ -62,13 +62,9 @@ nor the chassis `tokens.css` defaults. Today that is the five `--cairn-cta-*` ke
 `--cairn-caption-tracking`, and `public-css.md` holds the list. A key read behind a `var()` fallback
 is an optional override.
 
-The chassis `tokens.css` defaults every design-scale key, so a theme may omit any of them: the three
-`--font-*` faces, `--font-weight-heading`, `--cairn-heading-case`, `--text-step--1` through
-`--text-step-5`, the eight `--spacing-*` steps (`3xs` through `2xl`), `--leading-body`, `-snug`, and
-`-tight`, `--tracking-tight` and `--tracking-eyebrow`, and `--container-measure` and
-`-measure-wide`. The chassis has no `--text-step--2`, which Waymark's `SiteHeader.svelte` reads for the
-tracked nav, so a header that uses `text-step--2` defines it in `@theme`. A theme must always set the
-daisyUI blocks, since the chassis declares none, and the site-owned keys above.
+The chassis `tokens.css` defaults every design-scale key, so a theme may omit them, except
+`--text-step--2`. A theme must set the daisyUI blocks and the site-owned keys above.
+`references/theme-starter.md` lists both sets.
 
 Three rows carry a rule.
 
@@ -145,9 +141,8 @@ them. `references/theme-starter.md` holds a complete daisyUI theme block to star
 - **`theme-names.ts`.** The toggle's config: both theme names and the cookie.
 - **`components/`.** `SiteHeader.svelte` and `SiteFooter.svelte`, the chrome, which read `page.data`
   (the site name and the resolved nav) and never import site config. `ArticleView.svelte` renders an
-  entry, for the public and the preview routes. `EntryRow.svelte` is one row of the home and archive
-  listings. `admin-link.ts` exports `isAdminHref`, which the header and footer use to mark `/admin`
-  links `rel="external"` so a build-time crawl skips them.
+  entry, for the public and preview routes. `EntryRow.svelte` is one row of the home and archive
+  listings. `admin-link.ts` exports `isAdminHref`, which marks `/admin` links `rel="external"`.
 
 A `.ts` or `.svelte` file in the theme imports a chassis helper, such as the theme toggle, through the
 `$chassis` alias.
@@ -220,7 +215,7 @@ node scripts/lab/theme-fixture.mjs --build-only --theme-dir <dir>
 ```
 
 It overlays `<dir>` onto `src/theme` in a temporary copy of the showcase, so the directory needs only
-the files it replaces. It builds and smoke-loads the pages, and asserts no fixture values.
+the files it replaces, then builds and smoke-loads the pages.
 
 When `theme-contrast` reports a derived status ink below AA, its message names the block, the pair,
 and the ratios. Hand-tune `--cairn-<status>-ink` in that block and in the other scheme's block, and

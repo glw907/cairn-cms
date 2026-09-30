@@ -502,5 +502,7 @@ Run `cairn-pass`'s close:
 | Planning: sync spec, review, folds | `21898c5f` to `9ac777b2` | approved (S1 to S9) | in the measured planning lines |
 | 1 | cairn `8755099e`; dotfiles `8497a08`, `de040f4` | accept | in the measured planning lines |
 | R10 approval (https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds) and outline fold (keep or cut: `configure-media`, `run-cairn-audit-on-your-site`) | outline at `8cc4d328`, no fold (saved version identical) | approved by Geoff 2026-09-30, both sweep pages kept | conductor |
+| 2 | `14297445`, `ba57f8e8` (one fix round: header root list) | accept | implementer ~0.45M, reviews ~0.1M (attribution only) |
+| 2 counts | 30 roots (27 exports), 264 generated, 156 pending at creation, 152 after the fix round; pilot pending/fact rows: security-model 0/3, add-cairn-to-a-sveltekit-app 14/12, add-a-custom-admin-screen 5/2, replace-magic-links-with-cloudflare-access 1/2, architecture 0/10, theme-your-public-site 6/0 | | |
 
 ## Post-mortem

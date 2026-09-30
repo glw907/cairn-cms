@@ -495,6 +495,6 @@ Run `cairn-pass`'s close:
 | Planning: ROADMAP initiative | `13fa8195` | done | in the measured planning lines |
 | Planning: sync spec, review, folds | `21898c5f` to `9ac777b2` | approved (S1 to S9) | in the measured planning lines |
 | 1 | cairn `8755099e`; dotfiles `8497a08`, `de040f4` | accept | in the measured planning lines |
-| R10 approval (https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds) and outline fold (keep or cut: `configure-media`, `run-cairn-audit-on-your-site`) | | | |
+| R10 approval (https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds) and outline fold (keep or cut: `configure-media`, `run-cairn-audit-on-your-site`) | outline at `8cc4d328`, no fold (saved version identical) | approved by Geoff 2026-09-30, both sweep pages kept | conductor |
 
 ## Post-mortem

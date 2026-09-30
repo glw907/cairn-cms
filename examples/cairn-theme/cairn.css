@@ -14,8 +14,7 @@
      @import './cairn.css';
 
    No markup change is needed. Import order matters for the base-ladder tokens below (see their own
-   comment); every other rule here wins over Waymark's neutral default regardless of order. See
-   docs/extend/design-your-site.md for the full walkthrough.
+   comment); every other rule here wins over Waymark's neutral default regardless of order.
    ============================================================================ */
 
 /* The display face. Fraunces pulls the `opsz` axis so headings render at a display optical size;

@@ -344,7 +344,7 @@ export function extractFilePaths(segments) {
  * not retried: 40 of the 74 real events carry exactly two segments, so that floor silently turned
  * the class off for most of the vocabulary, including every `commit.*`, `entry.*`, and `media.*`
  * event a diagnostics page cites. Resolving against the union keeps full recall over all three
- * vocabularies (`admin/is-it-working.md` is built entirely out of condition ids) and turns two
+ * vocabularies (the admin checklist page is built entirely out of condition ids) and turns two
  * further classes of hallucination into caught errors, since an invented condition id or check id
  * now fails here too. Requiring a real first-segment area still cuts the remaining collision
  * class, an unrelated dotted property path sharing an area name with one of the vocabularies

@@ -1,5 +1,5 @@
 // The showcase's gated members page. Folds the documented `+layout.server.ts` guard,
-// which reads the signed-in subject (docs/extend/add-a-second-audience.md, Path B), into this
+// which reads the signed-in subject, into this
 // single page's load, since the fixture has exactly one member-facing view.
 // Sign-out lives here too, as the page's own named action.
 import { redirect } from '@sveltejs/kit';

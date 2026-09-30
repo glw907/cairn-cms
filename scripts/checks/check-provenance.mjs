@@ -2,7 +2,7 @@
 // docs/internal/briefs/<track>/<page>.json, lists every sentence the page carries, each with the
 // fact id it rests on or the literal "no-claim":
 //
-//   { "page": "docs/admin/is-it-working.md",
+//   { "page": "docs/extend/choose-an-ai-posture.md",
 //     "sentences": [{ "text": "...", "id": "f:7k3q9x" }, { "text": "...", "id": "no-claim" }] }
 //
 // Run it over every brief with `node scripts/checks/check-provenance.mjs`, or over just the

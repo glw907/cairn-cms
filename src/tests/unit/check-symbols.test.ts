@@ -534,10 +534,10 @@ describe('cairnLineFindings', () => {
       ['cairn doctor', new Set(['--help'])],
     ]);
     const segments = codeVoiceSegments(['prose', '```bash', 'cairn doctor --not-a-real-flag', '```'].join('\n'));
-    const findings = cairnLineFindings('docs/admin/troubleshooting.md', segments, commandMap);
+    const findings = cairnLineFindings('docs/reference/cli-cairn-doctor.md', segments, commandMap);
     expect(findings).toEqual([
       {
-        file: 'docs/admin/troubleshooting.md',
+        file: 'docs/reference/cli-cairn-doctor.md',
         line: 3,
         class: 'cairn-flag',
         token: '--not-a-real-flag (not accepted by `cairn doctor`)',
@@ -548,7 +548,7 @@ describe('cairnLineFindings', () => {
   it('returns nothing for a passing cairn line', () => {
     const commandMap = new Map([['cairn', new Set(['--version'])]]);
     const segments = codeVoiceSegments(['```bash', 'cairn --version', '```'].join('\n'));
-    expect(cairnLineFindings('docs/README.md', segments, commandMap)).toEqual([]);
+    expect(cairnLineFindings('docs/reference/README.md', segments, commandMap)).toEqual([]);
   });
 });
 

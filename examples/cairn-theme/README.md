@@ -9,6 +9,4 @@ directly after your `theme.css` import. Keep the two imports as separate, leadin
 your entry stylesheet; do not append `@import './cairn.css';` inside your own copy of `theme.css`
 after its `@plugin`/`@theme` blocks. CSS requires an `@import` rule to precede every other rule in
 a stylesheet, so a trailing import there is invalid and only happens to compile because Vite
-inlines `@import` regardless of position. See
-[`docs/extend/design-your-site.md`](../../docs/extend/design-your-site.md) for the re-skin
-recipe this layer builds on.
+inlines `@import` regardless of position.

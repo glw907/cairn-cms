@@ -102,7 +102,7 @@ export function readPublicOrigin(
  * local host (or is absent, or does not parse) leaves the request's own hostname to decide, the
  * behavior a site with no `PUBLIC_ORIGIN` at all keeps.
  *
- * The residual is honest and documented (docs/extend/security-model.md): a deployment that sets
+ * The residual is honest: a deployment that sets
  * no `PUBLIC_ORIGIN` still rests on the Host-derived fallback.
  */
 export function isDeployedHost(event: { url: URL; platform?: { env?: unknown } | undefined }): boolean {

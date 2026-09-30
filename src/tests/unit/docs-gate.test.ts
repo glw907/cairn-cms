@@ -7,9 +7,9 @@ describe('parseArgs', () => {
   });
 
   it('parses --page and --brief together', () => {
-    expect(parseArgs(['--page', 'docs/extend/README.md', '--brief', 'docs/internal/briefs/extend/README.json'])).toEqual({
-      page: 'docs/extend/README.md',
-      brief: 'docs/internal/briefs/extend/README.json',
+    expect(parseArgs(['--page', 'docs/extend/choose-an-ai-posture.md', '--brief', 'docs/internal/briefs/extend/choose-an-ai-posture.json'])).toEqual({
+      page: 'docs/extend/choose-an-ai-posture.md',
+      brief: 'docs/internal/briefs/extend/choose-an-ai-posture.json',
     });
   });
 });
@@ -51,9 +51,9 @@ describe('buildSteps', () => {
   });
 
   it('scopes Vale to only the given --page path', () => {
-    const steps = buildSteps({ page: 'docs/extend/README.md', brief: null });
+    const steps = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md', brief: null });
     const vale = steps.find((step) => step.label === 'check:vale');
-    expect(vale?.args).toEqual(['--minAlertLevel=error', 'docs/extend/README.md']);
+    expect(vale?.args).toEqual(['--minAlertLevel=error', 'docs/extend/choose-an-ai-posture.md']);
   });
 
   it('runs the Cairn rules\' vale test cases over both test files under the fixture config in tree mode', () => {
@@ -69,7 +69,7 @@ describe('buildSteps', () => {
   });
 
   it('leaves the rule test cases out of a page-scoped run', () => {
-    const steps = buildSteps({ page: 'docs/extend/README.md', brief: null });
+    const steps = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md', brief: null });
     expect(steps.map((step) => step.label)).not.toContain('check:vale-rules');
   });
 
@@ -80,16 +80,16 @@ describe('buildSteps', () => {
   });
 
   it('scopes check:provenance to only the given --brief path', () => {
-    const steps = buildSteps({ page: null, brief: 'docs/internal/briefs/extend/README.json' });
+    const steps = buildSteps({ page: null, brief: 'docs/internal/briefs/extend/choose-an-ai-posture.json' });
     const provenance = steps.find((step) => step.label === 'check:provenance');
     expect(provenance?.args).toEqual([
       'scripts/checks/check-provenance.mjs',
-      'docs/internal/briefs/extend/README.json',
+      'docs/internal/briefs/extend/choose-an-ai-posture.json',
     ]);
   });
 
   it('leaves every other component unscoped by --page or --brief', () => {
-    const scoped = buildSteps({ page: 'docs/extend/README.md', brief: 'docs/internal/briefs/extend/README.json' });
+    const scoped = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md', brief: 'docs/internal/briefs/extend/choose-an-ai-posture.json' });
     const unscoped = buildSteps({ page: null, brief: null });
     for (const label of LABELS) {
       if (label === 'check:vale' || label === 'check:vale-rules' || label === 'check:provenance') continue;

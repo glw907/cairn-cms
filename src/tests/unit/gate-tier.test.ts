@@ -15,7 +15,7 @@ const SCRIPT = resolve(process.cwd(), 'scripts/checks/gate-tier.mjs');
 
 describe('classifyPath', () => {
   it('classifies a docs page, a bare markdown file, and CHANGELOG.md as docs', () => {
-    expect(classifyPath('docs/admin/troubleshooting.md')).toBe('docs');
+    expect(classifyPath('docs/reference/core.md')).toBe('docs');
     expect(classifyPath('ROADMAP.md')).toBe('docs');
     expect(classifyPath('CHANGELOG.md')).toBe('docs');
   });
@@ -73,9 +73,9 @@ describe('classifyPath', () => {
 
 describe('resolveTier', () => {
   it('resolves a docs-only diff to docs', () => {
-    expect(resolveTier(['docs/why-cairn.md', 'CHANGELOG.md'])).toEqual({
+    expect(resolveTier(['docs/reference/render.md', 'CHANGELOG.md'])).toEqual({
       tier: 'docs',
-      decidingPaths: ['docs/why-cairn.md', 'CHANGELOG.md'],
+      decidingPaths: ['docs/reference/render.md', 'CHANGELOG.md'],
     });
   });
 
@@ -109,7 +109,7 @@ describe('resolveTier', () => {
 
   it('resolves a mixed diff to the highest tier present, naming only the deciding paths', () => {
     const result = resolveTier([
-      'docs/admin/README.md',
+      'docs/reference/README.md',
       'src/lib/log/index.ts',
       'src/lib/admin/EditPage.svelte',
     ]);
@@ -148,7 +148,7 @@ describe('decideGate', () => {
   });
 
   it('floors a docs diff at admin-visual when paint is yes', () => {
-    const decision = decideGate(['docs/admin/README.md'], { paint: 'yes' });
+    const decision = decideGate(['docs/reference/README.md'], { paint: 'yes' });
     expect(decision.tier).toBe('admin-visual');
     expect(decision.reason).toBe('paint floor');
     expect(decision.gate).toBe(TIER_GATES['admin-visual']);
@@ -161,7 +161,7 @@ describe('decideGate', () => {
   });
 
   it('overrides the computed tier with --pin and reports reason "pin"', () => {
-    const decision = decideGate(['docs/admin/README.md'], { pin: 'full' });
+    const decision = decideGate(['docs/reference/README.md'], { pin: 'full' });
     expect(decision).toEqual({ tier: 'full', reason: 'pin', decidingPaths: [], gate: TIER_GATES.full });
   });
 
@@ -172,15 +172,15 @@ describe('decideGate', () => {
   });
 
   it('throws on an unknown --pin tier', () => {
-    expect(() => decideGate(['docs/admin/README.md'], { pin: 'nope' })).toThrow(/unknown --pin tier/);
+    expect(() => decideGate(['docs/reference/README.md'], { pin: 'nope' })).toThrow(/unknown --pin tier/);
   });
 
   it('throws on a prototype-chain pin like "toString", never returning it as a gate', () => {
-    expect(() => decideGate(['docs/admin/README.md'], { pin: 'toString' })).toThrow(/unknown --pin tier/);
+    expect(() => decideGate(['docs/reference/README.md'], { pin: 'toString' })).toThrow(/unknown --pin tier/);
   });
 
   it('throws on a prototype-chain pin like "constructor"', () => {
-    expect(() => decideGate(['docs/admin/README.md'], { pin: 'constructor' })).toThrow(/unknown --pin tier/);
+    expect(() => decideGate(['docs/reference/README.md'], { pin: 'constructor' })).toThrow(/unknown --pin tier/);
   });
 
   it('does not resolve to the tool tier when both npmPaths and toolPaths are empty', () => {
@@ -229,7 +229,7 @@ describe('decideGate', () => {
   });
 
   it('accepts --pin tool and prints its gate string', () => {
-    const decision = decideGate(['docs/admin/README.md'], { pin: 'tool' });
+    const decision = decideGate(['docs/reference/README.md'], { pin: 'tool' });
     expect(decision).toEqual({ tier: 'tool', reason: 'pin', decidingPaths: [], gate: 'make -C tool check' });
   });
 });

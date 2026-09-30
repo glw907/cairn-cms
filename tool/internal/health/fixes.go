@@ -34,7 +34,7 @@ type Fix struct {
 	Text string
 	// Anchor is the heading anchor in docs/admin/is-it-working.md this fix's own doc section
 	// lives at, or "" when the page carries no matching heading yet. "" is legal: a fix line can
-	// exist before the frozen page grows the heading it points at.
+	// exist before the checklist page grows the heading it points at.
 	Anchor string
 	// Actor is whose job carrying this fix out is.
 	Actor Actor
@@ -80,9 +80,9 @@ var fixesByCondition = map[spine.Condition]Fix{
 }
 
 // fixesByCode is the fix table's tool-owned half, one line per spine.Code health's checks can
-// declare. None of these carry an Anchor: docs/admin/is-it-working.md has no heading for any of
-// them today (Serving, Delegation, Deploy, Behind, Engine, and an error count, verified
-// 2026-09-20). A line marked "not in the catalogue" is written directly under
+// declare. None of these carry an Anchor: the admin checklist had no heading for any of
+// them (Serving, Delegation, Deploy, Behind, Engine, and an error count, verified 2026-09-20)
+// before it was removed pending its rebuild. A line marked "not in the catalogue" is written directly under
 // tool/docs/design/copy-standard.md section 4.6 rather than copied from an existing row.
 var fixesByCode = map[spine.Code]Fix{
 	// Copied from the catalogue.

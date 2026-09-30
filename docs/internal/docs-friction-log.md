@@ -49,31 +49,16 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-- **`maintainer`.** `tool/internal/health` carries package debt the harvest's close Go read
-  graded "sound with nits" (2026-09-30), all predating the harvest: `Options.Validate` and
-  `ActorProviderConsole` are exported with no outside caller; the three fix tables are walked by
-  hand in three places and the anchor and actor tests skip `fixesByReason` (one `allFixes`
-  iterator would cover all three); `check_creds.go:143-144` prints a raw Reason code where
-  `ReasonPhrase` exists; the repo-not-recorded outcome is written three times and `hasRepo` and
-  `DefaultBranch` live in `check_deploy.go` though three checks share them; the zone-read block
-  repeats in `check_delegation.go`; about thirty zero-argument message functions could be consts;
-  `diagnoseUnreachable`'s `budget` and `probeServing`'s `domain` are test-only seams; and comment
-  density runs 0.49 against `go/build`'s 0.37 (dated incident narratives, per-function
-  "catalogue section 3.4" citations, rebuttals of designs nobody wrote). Found by the harvest's
-  close `go-architecture-reader`, 2026-09-30.
-
-- **`developer`.** `docs/reference/cli-cairn-media-seed.md` (lines 4, 9, 24, 82) says `vite dev`
-  serves seeded media. The scaffold's `npm run dev` sets `CAIRN_DEV_BACKEND=1`
-  (`templates/waymark/scripts/dev.mjs:26-30`), which swaps `MEDIA_BUCKET` for an in-memory fake
-  (`packages/cairn-cms-dev/src/handle.ts:100-146`), so seeded objects show only under bare
-  `vite dev` or `wrangler dev`. Doc bug or engine bug is undecided; verified by code read only.
-  Found by the harvest's task 6b audit and review, 2026-09-30.
-- **`maintainer`.** `src/lib/islands/index.ts:5-6` says an admin screen component belongs on
-  `/components`, a subpath pass C removed; it now belongs on `/admin`. Found by the harvest's task
-  6b review, 2026-09-30.
-- **`maintainer`.** `requiredDocsPaths` in `scripts/checks/check-package-files.mjs:93` requires
-  only kept pages that exist on disk, so deleting `upgrade-cairn.md` or `choose-an-ai-posture.md`
-  outright passes `check:package-files`. Found by the harvest's task 8 review, 2026-09-30.
+The draft docs harvest's close (2026-09-30) triaged the whole log and found four open entries,
+all filed by the harvest itself, each verified against the tree first. The stale `/components`
+subpath in `src/lib/islands/index.ts`'s header comment was fixed on the spot (it now names
+`/admin`) and deleted. `cli-cairn-media-seed.md`'s `vite dev` claim against the scaffold's dev
+backend and `requiredDocsPaths`'s on-disk filter over the kept pages were promoted whole to
+`ROADMAP.md`'s Next tier, and the `tool/internal/health` package debt to Later, each with its
+trigger. No open entry named a deleted page's prose. The harvest's class X residue, the
+non-link mentions of deleted pages in `ROADMAP.md` and this log, was triaged in the same step:
+this log's mentions are all dated triage history and stay, and `ROADMAP.md`'s were retired or
+reworded there. See Clearings.
 
 Theme identity pass B's close (2026-09-29) triaged the whole log and found one open entry, the
 `contributor` finding that the showcase's `wrangler.jsonc:61` hardcodes `PUBLIC_ORIGIN` to
@@ -251,6 +236,7 @@ history holds every pruned entry in full.
 | 2026-09-29 | theme identity pass B's close | one open entry, the showcase's hardcoded `PUBLIC_ORIGIN` on port 4173 (found again by pass B's task 1), verified and promoted whole to `ROADMAP.md`'s Next tier; the pass's own findings filed straight to Now, Next, and Later, and the probe emitter trap to `durable-gotchas.md` |
 | 2026-09-29 | the style-guide sync's close | two open entries, both its own: Tidy's pinned default model promoted whole to `ROADMAP.md`'s Next tier; the entry on the stale `Microsoft.Quotes` suppression comment in `docs/editors/when-something-goes-wrong.md` deleted as overtaken, since the harvest-then-delete program deletes the page. The whole-log sweep found no other open finding |
 | 2026-09-29 | theme identity pass C's close | one open entry, the media library's orphan purge open to every editor, verified against the tree, then ruled on by Geoff and promoted to `ROADMAP.md` Later (an owner-restrictable purge); the pass's own findings routed to `ROADMAP.md` (the four edge cases to Next, the rule promotion to Toward 1.0, the docs standing order to Next) |
+| 2026-09-30 | the draft docs harvest's close | four open entries, all its own: the `src/lib/islands/index.ts` `/components` comment fixed and deleted; `cli-cairn-media-seed.md`'s `vite dev` claim and `requiredDocsPaths`'s kept-page existence filter promoted whole to `ROADMAP.md`'s Next tier; the `tool/internal/health` package debt promoted whole to Later. The whole-log sweep found no other open finding |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

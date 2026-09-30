@@ -32,9 +32,9 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Open decisions and watches
 
-- **Geoff's call:** re-scope the monthly drift routine (`trig_015UPQostYVisXuExTHTH2vu`, next run
-  2026-10-01 17:02 UTC) to the reference arm and the kept extend pages; until then it reports
-  "SCOPE BROKEN" because `docs/admin` and `docs/editors` are empty.
+- The monthly drift routine (`trig_015UPQostYVisXuExTHTH2vu`) samples only `docs/reference` and
+  existing extend pages until the admin and editors arms are rebuilt (re-scoped 2026-09-30, Geoff's
+  go); widen it back to all four tracks at stage 4's merge.
 - Watch: `cairn-docs-outline`'s lock (dotfiles) was built past need; simplify it in a separate
   dotfiles change with a `diff-reviewer` read (the spec records it as an instance of S2).
 - Watch: the kept per-version records' paths are hardcoded in `cairn-pass`, `CLAUDE.md`, and

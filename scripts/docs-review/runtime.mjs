@@ -222,3 +222,35 @@ export function renderMarkdown(markdown) {
   }
   return out.join('\n');
 }
+
+/**
+ * Picks the renderer the page uses for its previews. When the page's two CDN libraries loaded
+ * (marked and DOMPurify, both as globals on `scope`), previews are full CommonMark plus GFM,
+ * sanitized; raw HTML comments in the markdown parse to comment nodes, which DOMPurify drops, so
+ * they stay invisible and inert. When either is missing (an offline copy, a blocked host), the
+ * built-in renderMarkdown keeps the page working. Links are made to open in a new tab, since a
+ * click that navigated the sandboxed page would replace the review in place.
+ * @param {any} scope The global object, or an object standing in for it.
+ * @returns {(markdown: string) => string}
+ */
+export function selectMarkdownRenderer(scope) {
+  const marked = scope && scope.marked;
+  const purify = scope && scope.DOMPurify;
+  if (
+    !marked ||
+    typeof marked.parse !== 'function' ||
+    !purify ||
+    typeof purify.sanitize !== 'function'
+  ) {
+    return renderMarkdown;
+  }
+  if (typeof purify.addHook === 'function') {
+    purify.addHook('afterSanitizeAttributes', (/** @type {any} */ node) => {
+      if (node.tagName === 'A' && node.hasAttribute('href')) {
+        node.setAttribute('target', '_blank');
+        node.setAttribute('rel', 'noopener noreferrer');
+      }
+    });
+  }
+  return (markdown) => purify.sanitize(marked.parse(markdown, { gfm: true, async: false }));
+}

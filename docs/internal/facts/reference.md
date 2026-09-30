@@ -345,9 +345,14 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `lch()`, `oklab()`, `oklch()`, `color()`, named colors) or an absolute font size (`px`, `pt`,
   `rem`, the `font` shorthand included) in a declaration, a `style=` value, a `style:` directive,
   or a Tailwind arbitrary value (`text-[#abc]`, `text-[14px]`); `em`, `%`, `var()` and `calc()`
-  over tokens pass, and the root element's `font-size` is exempt. A color word inside a quoted
-  string (`content: "red"`, a quoted font-family name) is not read, a skip only the public scope
-  opts into (`token-colors` still reads it). Detection is the shared core
+  over tokens pass, and the root element's `font-size` is exempt. Nothing inside a quoted string
+  or a `url()` argument is read (`content: "Issue #123"`, a quoted font-family name,
+  `fill: url(#fade)`), a skip only the public scope opts into (`token-colors` still reads both,
+  through `findColorLiteral` without `skipStrings`). A public `.svelte` file whose
+  `<style lang="...">` block the Svelte parser rejects (Sass, Less) is parsed with that block
+  blanked (`parseComponent`'s `tolerateStyleLang`, set only by `loadPublicScope`), and the rule
+  raises one advisory "unparsed style block, not audited" finding at the opening tag, so the run
+  and the error-tier admin rules continue; an admin-scope file still throws. Detection is the shared core
   `src/lib/audit/literals.ts`, which `token-colors` also reads while keeping its own narrower
   verdict set. The repo's own tree runs it from the showcase through
   `scripts/checks/public-scope.config.json`, which names the engine's `../../src/lib/public`,
@@ -355,19 +360,23 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   tree lacks throws. The two repo wrappers (`check-invisible-craft.mjs`,
   `check-admin-css-classes.mjs`) hand `runStatic` every rule except the public-scope ones.
   Source: `src/lib/audit/rules/static/public-literals.ts#publicLiterals`,
-  `src/lib/audit/run.ts#loadPublicScope`, `src/lib/audit/config.ts#isPublicFile`. [verified]
+  `src/lib/audit/run.ts#loadPublicScope`, `src/lib/audit/config.ts#isPublicFile`,
+  `src/lib/audit/literals.ts#findColorLiteral`, `src/lib/audit/markup.ts#parseComponent`. [verified]
 - `f:tbq6gh` `theme-conformance` is a static advisory rule over the public scope (`publicScope: true`,
   `importChain: true`), built by `createThemeConformance(peers)` so a test injects the peer access.
   `runStatic` reads the `@import` chain of `public.stylesheets` once, through
   `src/lib/audit/import-chain.ts#loadImportChain`, only when a selected rule sets `importChain`, and
   hands it to those rules alone. The loader lists top-level `@import` statements through
   `sheet.ts#parseStatements` (a block-less at-rule that `parseSheet` drops at its `;`), follows
-  relative paths from the importing file and package specifiers under the `style` export
-  condition, then the `style` field, then the file path when the package has no `exports` field
+  relative paths from the importing file (an extensionless relative target such as `./tokens`
+  reads `tokens.css` when that file exists and the bare path does not, as Tailwind resolves it)
+  and package specifiers under the `style` export condition, then the `style` field, then the file path when the package has no `exports` field
   (never Node resolution, which sends `tailwindcss` to `dist/lib.js`). `tailwindcss` and remote URLs
   are not traversed; an import that cannot be resolved or read lands in `AuditReport.unreadImports`,
   which the report prints under "Unread imports", and never raises a finding; a target that is not
-  `.css` is a finding and is never parsed. The key list is the union of keys in `daisyui/theme/object`
+  `.css` is a finding and is never parsed. An entry the config names under `public.stylesheets`
+  that the tree lacks throws naming the key (`run.ts#loadChain`, gated on
+  `publicStylesheetsFromConfig`); the default entry a tree lacks is recorded as unread. The key list is the union of keys in `daisyui/theme/object`
   and the built-in names are its theme names, loaded lazily from the audited root by
   `src/lib/audit/peers.ts` (a missing `daisyui` or `tailwindcss` throws a message naming the peer and
   `npm install --save-dev <peer>`; an empty list, or one without `--color-base-100` or `--radius-box`,
@@ -379,43 +388,71 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `cairn-public.css` declares that the file sets on `:root`, `html`, `[data-theme]`, or in `@theme`
   (a class-scoped rule such as prose.css's `--flow-space` is not one). `parseSheet` now keeps the
   own declarations of a `@theme` or `@plugin` block that nests another block, since Tailwind's own
-  theme file nests `@keyframes` in `@theme default`. Source:
+  theme file nests `@keyframes` in `@theme default`, and records each rule's enclosing style-rule
+  selectors in `SheetRule.parents`, so a nested rule resolves against them. Source:
   `src/lib/audit/rules/static/theme-conformance.ts#createThemeConformance`,
-  `src/lib/audit/import-chain.ts#loadImportChain`, `src/lib/audit/peers.ts#loadDaisyThemeKeys`,
+  `src/lib/audit/import-chain.ts#loadImportChain`, `src/lib/audit/run.ts#loadChain`, `src/lib/audit/peers.ts#loadDaisyThemeKeys`,
   `src/lib/audit/sheet.ts#parseStatements`. [verified]
 - `f:lqtwdt` `theme-contrast` is a static advisory rule over the public scope (`publicScope: true`,
   `importChain: true`), built by `createThemeContrast(peers)`. It measures, per daisyUI theme block
   in the chain, body text (`--color-base-content`) on `--color-base-100` and `--color-base-200`,
   `--color-primary` on `--color-base-100`, each role's `-content` on its fill, `--color-muted` on
-  `--color-base-100` and `--color-base-200`, and each `--cairn-<status>-ink` on `--color-base-100`,
+  `--color-base-100` and `--color-base-200`, each `--cairn-<status>-ink` on `--color-base-100`,
   `--color-base-200`, and its callout tint (the highest-percentage
   `color-mix(in oklab, var(--color-<status>) N%, var(--color-base-100))` any chain declaration
-  holds), at 4.5:1 in both sRGB and display-p3 after clamping in OKLCH. The showcase's tints give 24
-  pairs per scheme. A scheme is one named block: measured with `data-theme="<name>"`, the default
-  block also with no `data-theme` on a light OS, and the `prefersdark` block (or the default block
-  when none is) also with no `data-theme` on a dark OS. `src/lib/audit/schemes.ts#readThemeCascade`
-  compiles each block the way daisyUI's plugin does (layer `base`; `[data-theme]` everywhere,
-  `:where(:root)` for the default, `:root:not([data-theme])` under the dark media query for
-  `prefersdark`), completes a built-in-named block from `daisyui/theme/object`'s values, reads
-  `@theme` as `:root` in layer `theme`, and ranks every root-matching custom property by
-  importance, layer, specificity, and order; a media condition other than `prefers-color-scheme`
-  never applies. The resolver (`src/lib/audit/contrast.ts#resolveColor`) follows `var()` chains to
-  a literal culori parses and evaluates only `color-mix(in oklab|oklch, A p%, B)` with exactly one
-  percentage, through culori's `interpolateWithPremultipliedAlpha`; every other form resolves to a
-  reason, and the rule reports it as "unmeasured", never a pass. One finding per failing
-  foreground per block, one per unmeasured reason per block, and one when the chain holds no
-  block; each points at the block. It needs `daisyui` beside the site (`loadDaisyThemeKeys`, named
-  error when missing). culori is a runtime dependency, and `daisyui` and `tailwindcss` are optional
-  peers. Source: `src/lib/audit/rules/static/theme-contrast.ts#createThemeContrast`,
+  holds), and each `--cairn-code-*` role (ink, keyword, string, function, number, comment, punct)
+  on `--cairn-code-bg`, at 4.5:1; and the focus-ring color `--color-primary` on `--color-base-100`
+  and `--color-base-200` at 3:1 as a non-text pair (the ground label reads "as a focus ring"). Both
+  gamuts, sRGB and display-p3, after clamping in OKLCH. The showcase's tints give 33 pairs per
+  scheme (24 before the seven code roles and two focus-ring grounds). A status `color-mix()` over
+  `--color-base-100` in another form (swapped operands, `in srgb`), or any status mix painted as a
+  `background`, keeps that status's tint pair and marks it unmeasured, so the pair count never
+  shrinks. A scheme is one named block (an unnamed block takes daisyUI's own default name,
+  `custom-theme`): measured with `data-theme="<name>"`, the default block also with no
+  `data-theme` on a light OS, and the `prefersdark` block (or the default block when none is) also
+  with no `data-theme` on a dark OS. `src/lib/audit/schemes.ts#readThemeCascade` compiles each
+  block the way daisyUI's plugin does (layer `base`; `[data-theme]` everywhere, `:where(<root>)`
+  for the default, `<root>:not([data-theme])` under the dark media query for `prefersdark`, where
+  `<root>` is the block's `root` option, `:root` by default); a `root` that is not the root element
+  in every state (`.dark`) makes every state the block reaches unmeasured instead of dropping it.
+  It completes a built-in-named block from `daisyui/theme/object`'s values, reads `@theme` as
+  `:root` in layer `theme`, resolves a nested rule against `SheetRule.parents` (`&` as `:is()`
+  over the parent, a group nested in a style rule applying to its selector), and ranks every
+  root-matching custom property by importance, layer, specificity, and order. A media query
+  applies when its only features are `prefers-color-scheme` tests beside an optional `screen` or
+  `all` type; `print` and a `@supports not (...)` never apply; a positive `@supports` applies. A
+  root declaration under any other condition, or on a selector whose subject compound names the
+  root with a test the model does not read (`:root.dark`), is recorded by `unmodeledIn`, and every
+  pair whose `var()` closure reads it is unmeasured, never passed. The resolver
+  (`src/lib/audit/contrast.ts#resolveColor`) follows `var()` chains to a literal culori parses and
+  evaluates only `color-mix(in oklab|oklch, A p%, B)` with exactly one percentage, through
+  culori's `interpolateWithPremultipliedAlpha`; every other form resolves to a reason, and the rule
+  reports it as "unmeasured", never a pass. One finding per failing foreground and floor per
+  block, one per unmeasured reason per block, and one when the chain holds no block; each points
+  at the block. It needs `daisyui` beside the site (`loadDaisyThemeKeys`, named error when
+  missing). culori is a runtime dependency, and `daisyui` and `tailwindcss` are optional peers.
+  Source: `src/lib/audit/rules/static/theme-contrast.ts#createThemeContrast`,
+  `src/lib/audit/rules/static/theme-contrast.ts#contrastPairs`,
+  `src/lib/audit/rules/static/theme-contrast.ts#calloutTints`,
   `src/lib/audit/schemes.ts#readThemeCascade`, `src/lib/audit/contrast.ts#resolveColor`,
   `package.json#peerDependenciesMeta`. [verified]
+- `f:eri2g3` `resolveConfig` normalizes every configured path (posix `normalize`, then no trailing
+  `/` and no leading `./`), so `./src`, `src/`, and `src//x` compare equal to `src` and `src/x`,
+  no file lands in both scopes through a spelling, and a reported path carries no `./` or `//`; a
+  path above the root keeps its `../`. When a configured `public.scope` names a default admin
+  root, that root leaves the admin defaults unless a public exclusion covers it, so
+  `public.scope: ["src/theme", "src/routes/admin", "src/routes/blog"]` keeps `src/routes/admin`
+  under `token-colors`. A configured public root that is, or lies under, a `public.exclude` path
+  throws naming both, unless an admin root (default or configured) reads it. Source:
+  `src/lib/audit/config.ts#resolveConfig`, `src/lib/audit/config.ts#normalizePath`,
+  `src/tests/unit/audit/public-scope.test.ts` (the "a config that names paths loosely" describe). [verified]
 - `f:0nfxs2` `runStatic` reads the built admin stylesheet (`sheetPaths`) only when a selected rule is not a public-scope rule: a selection made only of `publicScope` rules (`public-literals`, `theme-conformance`, `theme-contrast`) runs with no built sheet and hands those rules an empty compiled sheet, which none of them reads (they parse their own files). The same condition skips the "static scan matched no files" error, since those rules never read the static scope. Any other selection, the full registry included, still throws "the built admin stylesheet is missing" when a named sheet source is absent. Before this, a public-only `--rule` run exited 2 on a tree with no built package. Source: `src/lib/audit/run.ts#runStatic`, `src/tests/unit/audit/public-scope.test.ts` (the "built admin stylesheet" describe). [verified]
 - `f:eqsngu` `DEFAULT_STATIC_SCOPE` and `DEFAULT_ADMIN_SCOPE` are both `src/routes/admin`, `src/lib/admin`,
   `src/lib/admin-toolkit`; `src/lib/components` is no longer a default root. They stay two constants
   and two config keys (`static.scope`, `static.adminScope`) so a site can narrow one without the
   other. `DEFAULT_ADMIN_SCOPE` gained `src/lib/admin`, so the three `adminOnly` motion rules
   (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) now read it. Restore form: a
-  configured `static.scope` replaces the defaults (`asPathList` returns a configured list as is),
+  configured `static.scope` replaces the defaults (`asPathList` returns a configured list, normalized, never merged),
   and a configured root the tree lacks fails the run (`readScope` throws when `fromConfig` and the
   path is missing), so a site keeping custom components in `src/lib/components` lists the default
   roots it has plus `src/lib/components`; naming `src/lib/components` alone drops
@@ -429,7 +466,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/components` from `stripe-trim-parity` and `unlayered-font-clobber`, which stay
   admin-only by owner ruling (Geoff, 2026-09-27). Source:
   `src/lib/audit/config.ts#DEFAULT_STATIC_SCOPE`, `src/lib/audit/config.ts#DEFAULT_ADMIN_SCOPE`,
-  `src/lib/audit/config.ts:264-265` (`asPathList` calls), `src/lib/audit/run.ts:57`
+  `src/lib/audit/config.ts:288-289` (`asPathList` calls), `src/lib/audit/run.ts:57`
   (`readScope`'s missing-root throw), `src/lib/audit/config.ts#isPublicFile`. [verified]
 - `f:h4ztuy` `radius-scale` is a static rule at advisory tier that reads class tokens (through `utilityBase()`,
   so `md:rounded-lg` is caught) and raises one finding per offending token: a bare `rounded`, the

@@ -123,9 +123,29 @@ function loadPublicScope(config: AuditConfig): PublicScope {
     );
   }
   return {
-    files: claimed.filter((file) => file.file.endsWith('.svelte')).map((file) => parseComponent(file.file, file.source)),
+    // A public file's preprocessed style block is named by the public rules, never fatal: the
+    // public scope is advisory, and it must not stop the error-tier admin audit beside it.
+    files: claimed
+      .filter((file) => file.file.endsWith('.svelte'))
+      .map((file) => parseComponent(file.file, file.source, { tolerateStyleLang: true })),
     cssFiles: claimed.filter((file) => file.file.endsWith('.css')),
   };
+}
+
+/**
+ * The site's import chain from `public.stylesheets`. A configured entry the tree does not have
+ * throws, the same rule a configured scope root follows; the default entry a tree lacks is
+ * recorded as unread, since a site with no public theme is the normal case.
+ */
+function loadChain(config: AuditConfig) {
+  if (config.publicStylesheetsFromConfig) {
+    for (const entry of config.publicStylesheets) {
+      if (!existsSync(resolve(config.root, entry))) {
+        throw new Error(`${entry}: the configured public stylesheet does not exist (${CONFIG_FILE}, public.stylesheets)`);
+      }
+    }
+  }
+  return loadImportChain(config.root, config.publicStylesheets);
 }
 
 function byPosition(a: Finding, b: Finding): number {
@@ -198,7 +218,7 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   // over an admin-only tree never fails on a scope none of its rules reads.
   const publicScope = rules.some((rule) => rule.publicScope) ? loadPublicScope(config) : null;
   // The import chain is read for the same reason: only a rule that reads it pays for the walk.
-  const chain = rules.some((rule) => rule.importChain) ? loadImportChain(config.root, config.publicStylesheets) : undefined;
+  const chain = rules.some((rule) => rule.importChain) ? loadChain(config) : undefined;
   const raised = rules.flatMap((rule) => {
     if (rule.publicScope && publicScope) {
       return rule.check({ files: publicScope.files, sheet, config, cssFiles: publicScope.cssFiles, sources, chain: rule.importChain ? chain : undefined });

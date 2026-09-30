@@ -257,8 +257,10 @@ describe('theme-contrast: failing fixtures, each raising exactly its finding', (
 
 describe('theme-contrast: the scheme model', () => {
   it('names the block a failing ink sits in, never a hard-coded scheme name', () => {
+    // The warning ink is also the code ramp's number color, so it fails on the code ground too.
     const findings = run({ theme: acme({}, { set: { '--cairn-warning-ink': 'oklch(55% 0.1 76)' } }) });
-    expect(findings).toHaveLength(1);
+    expect(findings).toHaveLength(2);
+    expect(findings[1].message).toContain('--cairn-code-number on --cairn-code-bg');
     expect(findings[0].message).toContain('"acme-night"');
     expect(findings[0].message).not.toContain('"cairn');
     expect(findings[0].file).toBe('src/theme/theme.css');
@@ -278,8 +280,10 @@ describe('theme-contrast: the scheme model', () => {
   it('applies a prefers-color-scheme rule to the dark block\'s system state', () => {
     const rule = '@media (prefers-color-scheme: dark) {\n  :root:not([data-theme]) {\n    --cairn-warning-ink: oklch(45% 0.1 76);\n  }\n}\n';
     expect(run({ theme: acme() })).toEqual([]);
+    // The warning ink is also the code ramp's number color, so it fails on the code ground too.
     const findings = run({ theme: `${acme()}${rule}` });
-    expect(findings).toHaveLength(1);
+    expect(findings).toHaveLength(2);
+    expect(findings[1].message).toContain('--cairn-code-number on --cairn-code-bg');
     expect(findings[0].message).toContain('--cairn-warning-ink');
     expect(findings[0].message).toContain('"acme-night"');
     expect(findings[0].message).toContain('no data-theme');
@@ -299,6 +303,158 @@ describe('theme-contrast: the scheme model', () => {
   });
 });
 
+/** One default block over the light palette on a pure white page, the only block in the chain. */
+function solo(extra = '', set: Record<string, string> = {}): Tree {
+  return { theme: `${IMPORTS}${block('acme', LIGHT, { isDefault: true, set: { '--color-base-100': '#ffffff', ...set } })}${extra}` };
+}
+
+/** The finding text for body text at #eeeeee on a pure white page. */
+const PALE_ON_WHITE = '--color-base-content on --color-base-100 is 1.16:1';
+
+describe('theme-contrast: daisyUI blocks the scheme model once dropped', () => {
+  it('passes the single-block baseline the fixtures below build on', () => {
+    expect(run(solo())).toEqual([]);
+  });
+
+  it("measures an unnamed block under daisyUI's own default name", () => {
+    const unnamed = block('x', LIGHT, { isDefault: true, set: { '--color-base-100': '#ffffff', '--color-base-content': '#eeeeee' } }).replace(
+      '  name: "x";\n',
+      ''
+    );
+    const findings = run({ theme: `${IMPORTS}${unnamed}${block('acme-night', DARK, { prefersDark: true })}` });
+    const own = findings.filter((finding) => finding.message.includes('"custom-theme"'));
+    expect(own.some((finding) => finding.message.includes(PALE_ON_WHITE))).toBe(true);
+  });
+
+  it('measures a block whose root is html, the way it measures one on :root', () => {
+    const html = block('acme-alt', LIGHT, { set: { '--color-base-100': '#ffffff', '--color-base-content': '#eeeeee' } }).replace(
+      '  default: false;',
+      '  root: "html";\n  default: false;'
+    );
+    const findings = run({ theme: `${solo().theme}${html}` });
+    expect(findings.some((finding) => finding.message.includes('"acme-alt"') && finding.message.includes(PALE_ON_WHITE))).toBe(true);
+  });
+
+  it('reports a block whose root the model cannot read as unmeasured, never dropped', () => {
+    const classed = block('acme-alt', LIGHT, { set: { '--color-base-content': '#eeeeee' } }).replace(
+      '  default: false;',
+      '  root: ".dark";\n  default: false;'
+    );
+    const measured = measure({ theme: `${solo().theme}${classed}` });
+    expect(measured.schemes.map((scheme) => scheme.name)).toEqual(['acme', 'acme-alt']);
+    const findings = run({ theme: `${solo().theme}${classed}` });
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('"acme-alt"');
+    expect(findings[0].message).toContain('unmeasured');
+    expect(findings[0].message).toContain('.dark');
+  });
+});
+
+describe('theme-contrast: root overrides outside the plain form', () => {
+  it.each([
+    ['a prefers-color-scheme media query nested inside :root', ':root {\n  @media (prefers-color-scheme: dark) {\n    --color-base-content: #eeeeee;\n  }\n}\n'],
+    ['a screen media query that also tests prefers-color-scheme', '@media screen and (prefers-color-scheme: dark) {\n  :root {\n    --color-base-content: #eeeeee;\n  }\n}\n'],
+    ['an all media query that also tests prefers-color-scheme', '@media all and (prefers-color-scheme: dark) {\n  :root {\n    --color-base-content: #eeeeee;\n  }\n}\n'],
+    ['a data-theme test nested inside :root', ':root {\n  &[data-theme="acme"] {\n    --color-base-content: #eeeeee;\n  }\n}\n'],
+  ])('applies %s', (_label, css) => {
+    expect(run(solo(css)).some((finding) => finding.message.includes(PALE_ON_WHITE))).toBe(true);
+  });
+
+  it('confines a nested dark query to the dark state', () => {
+    const findings = run(solo(':root {\n  @media (prefers-color-scheme: dark) {\n    --color-base-content: #eeeeee;\n  }\n}\n'));
+    const pale = findings.find((finding) => finding.message.includes(PALE_ON_WHITE));
+    expect(pale?.message).toContain(`${PALE_ON_WHITE} in sRGB and 1.16:1 in display-p3 (with no data-theme on a dark OS)`);
+  });
+
+  it.each([
+    ['a width query', '@media (min-width: 40rem) {\n  :root {\n    --color-base-content: #eeeeee;\n  }\n}\n', 'min-width'],
+    ['a width query nested inside :root', ':root {\n  @media (min-width: 40rem) {\n    --color-base-content: #eeeeee;\n  }\n}\n', 'min-width'],
+    ['a class on the root', ':root.dark {\n  --color-base-content: #eeeeee;\n}\n', ':root.dark'],
+    ['a container query', '@container (min-width: 40rem) {\n  :root {\n    --color-base-content: #eeeeee;\n  }\n}\n', '@container'],
+  ])('reports a pair read under %s as unmeasured, never passed', (_label, css, named) => {
+    const findings = run(solo(css));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('unmeasured');
+    expect(findings[0].message).toContain(named);
+    expect(findings[0].message).toContain('--color-base-content on --color-base-100');
+  });
+
+  it('reports a pair whose value reads an unmodeled property through a var() chain as unmeasured', () => {
+    const findings = run(solo('@media (min-width: 40rem) {\n  :root {\n    --color-info: #eeeeee;\n  }\n}\n'));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('unmeasured');
+    expect(findings[0].message).toContain('--cairn-info-ink on --color-base-100');
+    expect(findings[0].message).toContain('--color-info-content on --color-info');
+  });
+
+  it('raises nothing for an unmodeled override of a property no pair reads', () => {
+    expect(run(solo('@media (min-width: 40rem) {\n  :root {\n    --flow-space: 2rem;\n  }\n}\n'))).toEqual([]);
+  });
+
+  it('never applies a negated @supports block', () => {
+    expect(run(solo('@supports not (color: oklch(0 0 0)) {\n  :root {\n    --color-base-content: #eeeeee;\n  }\n}\n'))).toEqual([]);
+  });
+
+  it('still applies a positive @supports block', () => {
+    const findings = run(solo('@supports (color: oklch(0 0 0)) {\n  :root {\n    --color-base-content: #eeeeee;\n  }\n}\n'));
+    expect(findings.some((finding) => finding.message.includes(PALE_ON_WHITE))).toBe(true);
+  });
+
+  it('never applies a print query', () => {
+    expect(run(solo('@media print {\n  :root {\n    --color-base-content: #eeeeee;\n  }\n}\n'))).toEqual([]);
+  });
+
+  it('leaves a descendant of the root alone', () => {
+    expect(run(solo(':root .card {\n  --color-base-content: #eeeeee;\n}\n'))).toEqual([]);
+  });
+});
+
+describe('theme-contrast: callout tints outside the read form', () => {
+  const tinted = (background: string): Tree => ({
+    theme: acme().replace(IMPORTS, `${IMPORTS}@import "./callouts.css";\n`),
+    files: { 'src/theme/callouts.css': `.callout-warning { background: ${background}; }\n` },
+  });
+  const readable = measure(tinted('color-mix(in oklab, var(--color-warning) 9%, var(--color-base-100))'));
+
+  it.each([
+    ['swapped operands', 'color-mix(in oklab, var(--color-base-100), var(--color-warning) 9%)'],
+    ['an srgb mix', 'color-mix(in srgb, var(--color-warning) 9%, var(--color-base-100))'],
+  ])('keeps the tint pair, unmeasured, for %s', (_label, background) => {
+    const measured = measure(tinted(background));
+    for (const [index, scheme] of measured.schemes.entries()) {
+      expect(scheme.expected).toBe(readable.schemes[index].expected);
+      expect(scheme.measured).toBe(readable.schemes[index].measured - 1);
+    }
+    const findings = run(tinted(background));
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings.every((finding) => finding.message.includes('unmeasured'))).toBe(true);
+    expect(findings[0].message).toContain('--cairn-warning-ink on the warning callout tint');
+  });
+});
+
+describe('theme-contrast: code roles and the focus ring', () => {
+  it('measures each code role on the code ground', () => {
+    const findings = run({ theme: acme({ set: { '--cairn-code-keyword': 'oklch(85% 0.05 248)' } }) });
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('--cairn-code-keyword on --cairn-code-bg');
+    expect(findings[0].message).toContain('4.5:1');
+  });
+
+  it('measures the focus ring on base-100 and base-200 at 3:1', () => {
+    const findings = run({ theme: acme({ set: { '--color-primary': 'oklch(88% 0.05 248)', '--color-primary-content': 'oklch(20% 0.05 248)' } }) });
+    const ring = findings.find((finding) => finding.message.includes('below 3:1'));
+    expect(ring?.message).toContain('--color-primary on --color-base-100 as a focus ring');
+    expect(ring?.message).toContain('--color-primary on --color-base-200 as a focus ring');
+  });
+
+  it('adds nine pairs to each scheme: seven code roles and two focus-ring grounds', () => {
+    for (const scheme of measure({ theme: acme() }).schemes) {
+      expect(scheme.expected).toBe(30);
+      expect(scheme.measured).toBe(30);
+    }
+  });
+});
+
 describe('theme-contrast: the showcase', () => {
   it('passes Waymark in every scheme, measuring the full pair list in each', () => {
     const tree = showcaseTree();
@@ -307,9 +463,10 @@ describe('theme-contrast: the showcase', () => {
     expect(measured.schemes.map((scheme) => scheme.name)).toEqual(['cairn', 'cairn-dark']);
     for (const scheme of measured.schemes) {
       // Two base-content grounds, primary on base-100, eight role/-content pairs, muted on two
-      // grounds, four inks on two grounds, and the three statuses prose.css tints.
-      expect(scheme.expected).toBe(24);
-      expect(scheme.measured).toBe(24);
+      // grounds, four inks on two grounds, the three statuses prose.css tints, seven code roles on
+      // the code ground, and the focus ring on two grounds.
+      expect(scheme.expected).toBe(33);
+      expect(scheme.measured).toBe(33);
     }
   });
 
@@ -318,14 +475,14 @@ describe('theme-contrast: the showcase', () => {
     expect(stripped).not.toContain('--cairn-success-ink:');
     const tree = showcaseTree(stripped);
     expect(run(tree)).toEqual([]);
-    for (const scheme of measure(tree).schemes) expect(scheme.measured).toBe(24);
+    for (const scheme of measure(tree).schemes) expect(scheme.measured).toBe(33);
   });
 
   it('passes the cairn-theme overlay layered after the theme', () => {
     const tree = showcaseTree();
     const overlay = { ...tree, files: { ...tree.files, 'cairn.css': read('examples/cairn-theme/cairn.css') }, entries: ['src/theme/theme.css', 'cairn.css'] };
     expect(run(overlay)).toEqual([]);
-    for (const scheme of measure(overlay).schemes) expect(scheme.measured).toBe(24);
+    for (const scheme of measure(overlay).schemes) expect(scheme.measured).toBe(33);
   });
 
   it('reads the overlay\'s important base ladder, so a failing overlay value is caught', () => {

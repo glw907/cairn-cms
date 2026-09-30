@@ -193,6 +193,59 @@ describe('the public scope in a run', () => {
     }
   });
 
+  describe('a config that names paths loosely', () => {
+    let loose: string;
+
+    beforeAll(() => {
+      loose = mkdtempSync(join(tmpdir(), 'cairn-audit-public-loose-'));
+      put(loose, 'dist/admin/cairn-admin.css', '.x { border: 1px solid black }');
+      for (const path of [
+        'src/routes/admin/+page.svelte',
+        'src/routes/blog/+page.svelte',
+        'src/lib/components/AdminCard.svelte',
+        'src/lib/admin/X.svelte',
+      ]) {
+        put(loose, path, '<div class="x">a</div>\n<style>.x { color: #ff0000; }</style>\n');
+      }
+      put(loose, 'src/theme/theme.css', ':root { --site-tint: #abc; }\n');
+    });
+
+    afterAll(() => {
+      rmSync(loose, { recursive: true, force: true });
+    });
+
+    /** The run's findings as `rule file` lines, under a config written for this test. */
+    function findingsUnder(raw: unknown): string[] {
+      const configPath = join(loose, 'loose.json');
+      writeFileSync(configPath, JSON.stringify(raw));
+      const report = runStatic(loadConfig(loose, configPath), scopeSplitRules());
+      return report.findings.map((finding) => `${finding.ruleId} ${finding.file}`);
+    }
+
+    it('keeps the admin routes under token-colors when public.scope names them', () => {
+      const lines = findingsUnder({ public: { scope: ['src/theme', 'src/routes/admin', 'src/routes/blog'] } });
+      expect(lines).toContain('token-colors src/routes/admin/+page.svelte');
+      expect(lines).not.toContain('public-literals src/routes/admin/+page.svelte');
+    });
+
+    it.each([
+      ['public.scope ./src', { public: { scope: ['./src'] } }],
+      ['public.scope src/', { public: { scope: ['src/'] } }],
+      ['static.scope ./src/lib/components', { static: { scope: ['src/routes/admin', './src/lib/components'] } }],
+      ['static.scope src/lib/components/', { static: { scope: ['src/routes/admin', 'src/lib/components/'] } }],
+    ])('never hands one file to both scopes, and reports clean paths, with %s', (_label, raw) => {
+      const lines = findingsUnder(raw);
+      const byFile = new Map<string, string[]>();
+      for (const line of lines) {
+        const [rule, file] = line.split(' ');
+        expect(file).not.toMatch(/^\.\/|\/\//);
+        byFile.set(file, [...(byFile.get(file) ?? []), rule]);
+      }
+      for (const [file, rules] of byFile) expect({ file, rules: [...new Set(rules)] }).toEqual({ file, rules: [rules[0]] });
+      expect(byFile.get('src/routes/admin/+page.svelte')).toEqual(['token-colors']);
+    });
+  });
+
   /** A public rule that asks for the import chain and records what it received. */
   function chainProbe(seen: StaticRuleContext[]): StaticRule {
     return { ...publicProbe(seen), id: 'probe-chain', importChain: true };
@@ -219,6 +272,37 @@ describe('the public scope in a run', () => {
       ]);
       expect(formatReport(report)).toContain('@fontsource-variable/fraunces/opsz.css (the package is not installed)');
       expect(exitCodeFor(report)).toBe(0);
+    } finally {
+      rmSync(site, { recursive: true, force: true });
+    }
+  });
+
+  it('fails naming public.stylesheets when a configured entry stylesheet does not exist', () => {
+    const configPath = join(siteRoot, 'missing-stylesheet.json');
+    writeFileSync(configPath, JSON.stringify({ public: { stylesheets: ['src/theme/nope.css'] } }));
+    expect(() => runStatic(loadConfig(siteRoot, configPath), [chainProbe([])])).toThrow(
+      /src\/theme\/nope\.css.*public\.stylesheets/
+    );
+  });
+
+  it('raises a named finding for a style block in another language, and keeps auditing the rest', () => {
+    const site = mkdtempSync(join(tmpdir(), 'cairn-audit-public-scss-'));
+    try {
+      put(site, 'dist/admin/cairn-admin.css', '.card { border: 1px solid black }');
+      put(site, 'src/routes/admin/+page.svelte', '<div class="card"></div>\n<style>\n.a { color: #abc; }\n</style>\n');
+      put(
+        site,
+        'src/routes/+page.svelte',
+        '<p class="bg-[#abc]">x</p>\n<style lang="scss">\n$c: #fff;\n.a { .b { color: $c; } // note\n}\n</style>\n'
+      );
+      const report = runStatic(loadConfig(site), scopeSplitRules());
+      const lines = report.findings.map((finding) => `${finding.ruleId} ${finding.file} ${finding.message}`);
+      expect(lines.some((line) => line.startsWith('token-colors src/routes/admin/+page.svelte'))).toBe(true);
+      expect(lines.some((line) => line.startsWith('public-literals src/routes/+page.svelte') && line.includes('bg-[#abc]'))).toBe(true);
+      const unparsed = report.findings.filter((finding) => finding.message.includes('unparsed style block, not audited'));
+      expect(unparsed).toHaveLength(1);
+      expect(unparsed[0]).toMatchObject({ ruleId: 'public-literals', tier: 'advisory', file: 'src/routes/+page.svelte', line: 2 });
+      expect(unparsed[0].message).toContain('lang="scss"');
     } finally {
       rmSync(site, { recursive: true, force: true });
     }

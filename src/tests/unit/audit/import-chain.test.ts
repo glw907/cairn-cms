@@ -185,6 +185,14 @@ describe('package specifiers', () => {
     expect(loadImportChain(ROOT, ['a.css'], fs).unread.map((entry) => entry.specifier)).toEqual(['./nope.css']);
   });
 
+  it('resolves an extensionless relative import to its .css file, as Tailwind does', () => {
+    const fs = memory({ '/site/a.css': '@import "./tokens";\n', '/site/tokens.css': ':root { --t: 1 }' });
+    const chain = loadImportChain(ROOT, ['a.css'], fs);
+    expect(chain.files.map((file) => file.file)).toEqual(['tokens.css', 'a.css']);
+    expect(chain.imports[0]).toMatchObject({ specifier: './tokens', status: 'read', resolved: 'tokens.css' });
+    expect(chain.unread).toEqual([]);
+  });
+
   it('names a non-CSS target and never parses it', () => {
     const chain = site(
       {

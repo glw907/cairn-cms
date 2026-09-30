@@ -248,6 +248,10 @@ export function loadImportChain(root: string, entries: string[], fs: ChainFs = n
       let resolved: string;
       if (target.startsWith('.') || target.startsWith('/')) {
         resolved = resolve(dirname(abs), target);
+        // Tailwind resolves an extensionless relative import to its `.css` file.
+        if (!/\.[^/]*$/.test(target) && fs.readText(resolved) === undefined && fs.readText(`${resolved}.css`) !== undefined) {
+          resolved = `${resolved}.css`;
+        }
       } else {
         if (splitSpecifier(target).name === TAILWIND) {
           record.status = 'skipped';

@@ -216,6 +216,15 @@ describe('parseSheet comment handling', () => {
     expect(pairs(css)).toEqual(expected);
   });
 
+  it.each([
+    ['border', '.a { border:1px solid/**/red }', '1px solid red'],
+    ['font', '.a { font:14px/**/serif }', '14px serif'],
+    ['margin', '.a { margin:1px/**/2px }', '1px 2px'],
+    ['color function', '.a { --x: oklch(55%/**/0.2/**/250) }', 'oklch(55% 0.2 250)'],
+  ])('keeps the token boundary a comment stood for in a %s value', (_label, css, value) => {
+    expect(pairs(css)[0][1]).toBe(value);
+  });
+
   it('keeps offsets pointing at the same source positions', () => {
     const css = '/* lead */ .a { /* x */ color: red }\n/* mid */\n.b {\n  /* y */ margin: 0;\n}';
     const [a, b] = parseSheet(css).rules;

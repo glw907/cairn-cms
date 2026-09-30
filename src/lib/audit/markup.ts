@@ -134,6 +134,12 @@ export interface ParsedComponent {
    * CSS in the component's source rather than at an offset local to the extracted text.
    */
   styleBlock?: { source: string; start: number };
+  /**
+   * A `<style lang="...">` block the parser could not read (Sass, Less), with the language it
+   * names and the offsets of its opening tag. Set only when `parseComponent` was asked to
+   * tolerate one; its content was blanked so the rest of the component parses, and no rule read it.
+   */
+  unparsedStyle?: { lang: string; start: number; end: number };
 }
 
 // The svelte AST is walked structurally rather than through the published `AST` union. Two reasons:
@@ -741,11 +747,40 @@ interface RawScript {
   content?: RawNode;
 }
 
+const LANG_STYLE = /<style\b[^>]*?\blang\s*=\s*["']?([\w-]+)["']?[^>]*>/i;
+
+/**
+ * The component with its `<style lang="...">` block's content blanked, offsets kept, or null
+ * when it has no such block. A preprocessed block (Sass nesting, `//` comments) is not CSS the
+ * compiler's parser reads, and a preprocessor is not something the audit runs.
+ */
+function blankLangStyle(source: string): { source: string; lang: string; start: number; end: number } | null {
+  const tag = LANG_STYLE.exec(source);
+  if (!tag || tag[1].toLowerCase() === 'css') return null;
+  const bodyStart = tag.index + tag[0].length;
+  const close = source.slice(bodyStart).search(/<\/style\s*>/i);
+  if (close === -1) return null;
+  const blank = source.slice(bodyStart, bodyStart + close).replace(/[^\n]/g, ' ');
+  return {
+    source: source.slice(0, bodyStart) + blank + source.slice(bodyStart + close),
+    lang: tag[1],
+    start: tag.index,
+    end: bodyStart,
+  };
+}
+
 /**
  * Parse one component into the substrate the static rules run on. A component that does not parse
- * throws naming the file, since a syntax error is a real defect rather than a file to skip.
+ * throws naming the file, since a syntax error is a real defect rather than a file to skip. With
+ * `tolerateStyleLang`, a component whose only unreadable part is a `<style lang="...">` block
+ * parses with that block blanked and `unparsedStyle` set, so a caller can name the block instead
+ * of failing the whole run.
  */
-export function parseComponent(file: string, source: string): ParsedComponent {
+export function parseComponent(
+  file: string,
+  source: string,
+  { tolerateStyleLang = false }: { tolerateStyleLang?: boolean } = {}
+): ParsedComponent {
   let root: { fragment?: RawNode; css?: RawStyle; instance?: RawScript; module?: RawScript };
   try {
     // The published AST union describes the same shape this module reads structurally; the cast
@@ -757,7 +792,15 @@ export function parseComponent(file: string, source: string): ParsedComponent {
       module?: RawScript;
     };
   } catch (err) {
-    throw new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`);
+    const failure = new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`);
+    const blanked = tolerateStyleLang ? blankLangStyle(source) : null;
+    if (!blanked) throw failure;
+    try {
+      const parsed = parseComponent(file, blanked.source);
+      return { ...parsed, source, unparsedStyle: { lang: blanked.lang, start: blanked.start, end: blanked.end } };
+    } catch {
+      throw failure;
+    }
   }
   const starts = lineStarts(source);
   const nodes: SourceNode[] = [];

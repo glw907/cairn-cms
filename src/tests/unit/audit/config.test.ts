@@ -291,6 +291,42 @@ describe('the public scope', () => {
     expect(isPublicFile(config, 'src/theme/theme.css')).toBe(true);
   });
 
+  it('keeps a default admin root in the admin scope when public.scope names it and an exclusion covers it', () => {
+    const config = resolve_({ public: { scope: ['src/theme', 'src/routes/admin', 'src/routes/blog'] } });
+    expect(config.staticScope).toContain('src/routes/admin');
+    expect(config.adminScope).toContain('src/routes/admin');
+    expect(isPublicFile(config, 'src/routes/admin/+page.svelte')).toBe(false);
+    expect(isPublicFile(config, 'src/routes/blog/+page.svelte')).toBe(true);
+  });
+
+  it.each([
+    ['is', ['src/theme', 'src/site/private']],
+    ['lies under', ['src/theme', 'src/site/private/drafts']],
+  ])('throws when a configured public root %s an exclusion no admin root reads', (_relation, scope) => {
+    expect(() => resolve_({ public: { scope, exclude: ['src/site/private'] } })).toThrow(
+      /src\/site\/private.*public\.exclude/
+    );
+  });
+
+  it('normalizes every configured path: no leading ./, no trailing /, no doubled /', () => {
+    const config = resolve_({
+      static: { scope: ['./src/routes/admin/', 'src//lib/components'], adminScope: ['./src/lib/admin'], cssFiles: ['./src/theme/site.css'] },
+      public: { scope: ['./src/theme/', 'src//routes'], exclude: ['src/routes/private/'], themeRoots: ['./src/theme'], stylesheets: ['./src/theme/theme.css'] },
+    });
+    expect(config.staticScope).toEqual(['src/routes/admin', 'src/lib/components']);
+    expect(config.adminScope).toEqual(['src/lib/admin']);
+    expect(config.staticCssFiles).toEqual(['src/theme/site.css']);
+    expect(config.publicScope).toEqual(['src/theme', 'src/routes']);
+    expect(config.publicExclude).toEqual(['src/routes/admin', 'src/routes/private']);
+    expect(config.themeRoots).toEqual(['src/theme']);
+    expect(config.publicStylesheets).toEqual(['src/theme/theme.css']);
+  });
+
+  it('keeps a path above the root as written once normalized', () => {
+    const config = resolve_({ public: { scope: ['../../src/lib/public/', 'src/theme'] } });
+    expect(config.publicScope).toEqual(['../../src/lib/public', 'src/theme']);
+  });
+
   it('honors public.exclude for a file under a public root', () => {
     const config = resolve_({ public: { scope: ['src/site'], exclude: ['src/site/private'] } });
     expect(isPublicFile(config, 'src/site/private/Secret.svelte')).toBe(false);

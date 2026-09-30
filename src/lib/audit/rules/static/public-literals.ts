@@ -15,8 +15,10 @@
 // - `em`, `%`, a keyword, and a `var()` or math function over tokens for a size;
 // - `transparent`, `currentColor`, and the CSS-wide keywords for a color.
 // Tailwind's own utilities (`text-sm`, `bg-red-500`) carry no bracket and are tokens a designer
-// may choose, so they are never read.
+// may choose, so they are never read. A `<style lang="...">` block the parser cannot read (Sass,
+// Less) raises its own advisory finding, since its literals go unchecked.
 import { isUnderRoots } from '../../config.js';
+import { lineAt } from '../../markup.js';
 import { arbitraryValueHazard, declarationHazard } from '../../literals.js';
 import { cssRulePosition, cssScopeRules } from './css-scope.js';
 import type { LiteralHazard } from '../../literals.js';
@@ -65,6 +67,18 @@ export const publicLiterals: StaticRule = {
     }
 
     for (const file of ctx.files) {
+      if (file.unparsedStyle) {
+        const { lang, start, end } = file.unparsedStyle;
+        findings.push({
+          ruleId: RULE_ID,
+          tier: 'advisory',
+          file: file.file,
+          line: lineAt(file.source, start),
+          start,
+          end,
+          message: `<style lang="${lang}"> is an unparsed style block, not audited: the audit reads CSS, not a preprocessor's input, so no literal in it is checked. Write the block in CSS, or check its output in the rendered audit`,
+        });
+      }
       const themeRoot = inThemeRoot(file.file);
       for (const style of file.styleValues) {
         if (themeRoot && style.property?.startsWith('--')) continue;

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   arbitraryValueHazard,
+  declarationHazard,
   findAbsoluteFontSize,
   findColorLiteral,
   isPureAchromatic,
@@ -68,6 +69,27 @@ describe('findColorLiteral: skipStrings', () => {
   it('still reads a bare color word and a non-word form beside a quoted string', () => {
     expect(findColorLiteral('"red" white', { skipStrings: true })?.text).toBe('white');
     expect(findColorLiteral('"red" #abc', { skipStrings: true })?.form).toBe('hex');
+  });
+});
+
+describe('declarationHazard: quoted strings and url() arguments', () => {
+  it.each([
+    ['content', '"Issue #123"'],
+    ['content', "'rgb(1 2 3) is a color'"],
+    ['fill', 'url(#fade)'],
+    ['background', 'url("#ab12cd") no-repeat'],
+    ['mask', 'url(sprite.svg#c0ffee)'],
+  ])('reads no color literal in %s: %s', (property, value) => {
+    expect(declarationHazard(property, value)).toBeNull();
+  });
+
+  it('still reads a hex beside a url()', () => {
+    expect(declarationHazard('background', 'url(#fade) #abc')?.text).toBe('#abc');
+  });
+
+  it("leaves findColorLiteral's default verdict on the same values unchanged", () => {
+    expect(findColorLiteral('"Issue #123"')?.form).toBe('hex');
+    expect(findColorLiteral('url(#fade)')?.form).toBe('hex');
   });
 });
 

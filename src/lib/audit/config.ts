@@ -1,7 +1,7 @@
 // cairn-audit's configuration: one optional consumer-side file, and the argv the bin parses.
 // Everything defaults, so a site that has written no config still gets a meaningful run.
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { posix, resolve } from 'node:path';
 
 /** The config file a consumer writes, read from the audited root. */
 export const CONFIG_FILE = 'cairn-audit.config.json';
@@ -182,6 +182,11 @@ export interface AuditConfig {
   themeRoots: string[];
   /** The entry stylesheets of the site's real import chain. */
   publicStylesheets: string[];
+  /**
+   * Whether the config file named `public.stylesheets` itself: a configured entry the tree does
+   * not have throws, while the default entry a given tree does not have is recorded as unread.
+   */
+  publicStylesheetsFromConfig: boolean;
 }
 
 function fail(message: string): never {
@@ -194,12 +199,24 @@ function asRecord(value: unknown, field: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+/**
+ * A configured path in the one form the scopes compare: posix-normalized, with no leading `./`,
+ * no trailing `/`, and no doubled `/`. `./src` and `src/` would otherwise miss every prefix test
+ * against `src`, so one file could land in two scopes, and a reported path would carry the
+ * spelling.
+ */
+function normalizePath(path: string): string {
+  const normal = posix.normalize(path);
+  const trimmed = normal.length > 1 ? normal.replace(/\/+$/, '') : normal;
+  return trimmed.startsWith('./') ? trimmed.slice(2) : trimmed;
+}
+
 function asPathList(value: unknown, field: string, fallback: string[]): string[] {
   if (value === undefined) return fallback;
   if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
     fail(`${field} must be a list of paths`);
   }
-  return value as string[];
+  return (value as string[]).map(normalizePath);
 }
 
 /**
@@ -209,9 +226,9 @@ function asPathList(value: unknown, field: string, fallback: string[]): string[]
  */
 function asPathOrPathList(value: unknown, field: string, fallback: () => string[]): string[] {
   if (value === undefined) return fallback();
-  if (typeof value === 'string') return [value];
+  if (typeof value === 'string') return [normalizePath(value)];
   if (Array.isArray(value) && value.every((entry) => typeof entry === 'string')) {
-    return value as string[];
+    return (value as string[]).map(normalizePath);
   }
   fail(`${field} must be a path or a list of paths`);
 }
@@ -253,20 +270,39 @@ export function resolveConfig(
   const publicSection = asRecord(file.public, 'public');
   const configuredPublicScope = publicSection.scope !== undefined;
   const publicRoots = asPathList(publicSection.scope, 'public.scope', DEFAULT_PUBLIC_SCOPE);
+  const publicExclude = [
+    ...DEFAULT_PUBLIC_EXCLUDE,
+    ...asPathList(publicSection.exclude, 'public.exclude', []).filter((path) => !DEFAULT_PUBLIC_EXCLUDE.includes(path)),
+  ];
   const staticScopeFromConfig = staticSection.scope !== undefined;
   const adminScopeFromConfig = staticSection.adminScope !== undefined;
   // A root named for one scope leaves the other scope's defaults, so a file a site deliberately
   // routed answers to one grammar. A public root a site names drops out of the admin defaults;
-  // an admin root a site names drops out of the public defaults. A configured list is never
-  // narrowed: it is the site's own statement.
+  // an admin root a site names drops out of the public defaults. A default admin root a public
+  // exclusion covers stays: the public scope never reads it, so dropping it would leave its files
+  // in neither scope. A configured list is never narrowed: it is the site's own statement.
   const adminDefaults = (defaults: string[]) =>
-    configuredPublicScope ? defaults.filter((root) => !publicRoots.includes(root)) : defaults;
+    configuredPublicScope
+      ? defaults.filter((root) => !publicRoots.includes(root) || isUnderRoots(root, publicExclude))
+      : defaults;
   const staticScope = asPathList(staticSection.scope, 'static.scope', adminDefaults(DEFAULT_STATIC_SCOPE));
   const adminScope = asPathList(staticSection.adminScope, 'static.adminScope', adminDefaults(DEFAULT_ADMIN_SCOPE));
   const namedAdminRoots = [
     ...(staticScopeFromConfig ? staticScope : []),
     ...(adminScopeFromConfig ? adminScope : []),
   ];
+  if (configuredPublicScope) {
+    // A configured public root an exclusion swallows whole reads nothing, and unless an admin root
+    // reads it, its files answer to no rule at all: the silent narrowing a config error prevents.
+    for (const root of publicRoots) {
+      const exclusion = publicExclude.find((path) => isUnderRoots(root, [path]));
+      if (exclusion !== undefined && !isUnderRoots(root, [...staticScope, ...adminScope])) {
+        fail(
+          `public.scope names ${root}, which lies under the public exclusion ${exclusion} (public.exclude), so no rule would read it. Remove it from public.scope or from public.exclude`
+        );
+      }
+    }
+  }
   return {
     root,
     staticScope,
@@ -281,14 +317,10 @@ export function resolveConfig(
       ? publicRoots
       : publicRoots.filter((root) => !namedAdminRoots.includes(root)),
     publicScopeFromConfig: configuredPublicScope,
-    publicExclude: [
-      ...DEFAULT_PUBLIC_EXCLUDE,
-      ...asPathList(publicSection.exclude, 'public.exclude', []).filter(
-        (path) => !DEFAULT_PUBLIC_EXCLUDE.includes(path)
-      ),
-    ],
+    publicExclude,
     themeRoots: asPathList(publicSection.themeRoots, 'public.themeRoots', DEFAULT_THEME_ROOTS),
     publicStylesheets: asPathList(publicSection.stylesheets, 'public.stylesheets', DEFAULT_PUBLIC_STYLESHEETS),
+    publicStylesheetsFromConfig: publicSection.stylesheets !== undefined,
     sheetPaths: asPathOrPathList(file.sheet, 'sheet', () => [
       DEFAULT_SHEET_CANDIDATES.find((candidate) => sheetExists(candidate)) ?? DEFAULT_SHEET_CANDIDATES[0],
     ]),

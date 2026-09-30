@@ -16,12 +16,18 @@
 //
 // The cascade reads a declaration's layer (`@layer theme`, `base`, `components`, `utilities`, then
 // any other layer, then unlayered), its `!important`, the specificity of the selector alternative
-// that matches the root, and its order. `@theme` compiles to `:root` in `@layer theme`. A selector
-// matches the root only when every part of it is `:root`, `html`, `:host`, `*`, a `data-theme`
-// attribute test, or a `:where()`, `:is()`, or `:not()` over those; anything else describes some
-// other element. A media condition other than `prefers-color-scheme` never applies, and `@supports`
-// always does. An `@import` carrying `layer()` is read as unlayered, since the loader does not
-// record the modifier.
+// that matches the root, and its order. `@theme` compiles to `:root` in `@layer theme`. A nested
+// rule resolves against the rules it sits in, `&` read as `:is()` over the parent the way CSS
+// nesting reads it, and a group nested directly in a style rule applies to that rule's selector.
+// A selector matches the root only when every part of it is `:root`, `html`, `:host`, `*`, a
+// `data-theme` attribute test, or a `:where()`, `:is()`, or `:not()` over those.
+//
+// A media query applies when its only features are `prefers-color-scheme` tests, with or without
+// the `screen` or `all` type; a `print` query never applies. A positive `@supports` applies, and a
+// negated one never does. A root declaration outside that model (a width query, a container query,
+// a class or other test on the root element, a daisyUI block whose `root` is not the root element)
+// is never dropped silently: it is recorded as unmodeled, and a pair reading it is unmeasured. An
+// `@import` carrying `layer()` is read as unlayered, since the loader does not record the modifier.
 import { splitSelectorList } from './sheet.js';
 import type { ChainFile } from './import-chain.js';
 import type { SheetRule } from './sheet.js';
@@ -65,6 +71,15 @@ interface Candidate {
   applies(state: RootState): boolean;
 }
 
+/** A root custom property set in a context the model does not read. */
+interface Unmodeled {
+  property: string;
+  /** Why the model cannot place the declaration, a phrase completing "the property is". */
+  reason: string;
+  /** Whether the declaration may apply in a state, from the parts of its context the model reads. */
+  applies(state: RootState): boolean;
+}
+
 /** A selector alternative that can match the root, and its specificity. */
 interface RootMatcher {
   applies(state: RootState): boolean;
@@ -72,6 +87,15 @@ interface RootMatcher {
 }
 
 const DAISY_THEME_BLOCK = /^@plugin\s+(["'])daisyui\/theme\1$/;
+/** The name daisyUI's theme plugin gives a block that names none. */
+const DAISY_DEFAULT_NAME = 'custom-theme';
+/** Every root state the model measures in, for testing that a selector matches the root in all of them. */
+const ALL_STATES: RootState[] = [
+  { theme: null, dark: false },
+  { theme: null, dark: true },
+  { theme: 'x', dark: false },
+  { theme: 'x', dark: true },
+];
 /** The daisyUI plugin options, which are not custom properties of the theme. */
 const BLOCK_OPTIONS = new Set(['name', 'default', 'prefersdark', 'color-scheme', 'root']);
 /** Tailwind's own layer order; any other layer sorts after these, in order of first appearance. */
@@ -170,9 +194,46 @@ export function rootMatcher(selector: string): RootMatcher | null {
   return { applies: (state) => tests.every((test) => test(state)), specificity };
 }
 
-/** Whether a rule's enclosing conditions hold in a state, and the layer it sits in. */
-function context(conditions: string[], layerOf: (name: string) => number): { applies(state: RootState): boolean; layer: number } | null {
+/** A rule's enclosing conditions as the model reads them. */
+interface Context {
+  layer: number;
+  /** Whether the conditions the model reads hold in a state. */
+  applies(state: RootState): boolean;
+  /** The first condition the model does not read, when there is one. */
+  unmodeled?: string;
+}
+
+const COLOR_SCHEME_FEATURE = /^\(\s*prefers-color-scheme\s*:\s*(dark|light)\s*\)$/i;
+
+/**
+ * One media query's tests. A `prefers-color-scheme` feature is read, `screen` and `all` always
+ * match, and `print` never does; any other feature, a `not`, or a query list is unmodeled.
+ */
+function mediaTests(query: string): { tests: ((state: RootState) => boolean)[]; unmodeled: boolean } {
+  const tests: ((state: RootState) => boolean)[] = [];
+  let unmodeled = splitSelectorList(query).length > 1;
+  const parts = query.trim().split(/\s+and\s+/i);
+  const type = /^(?:only\s+)?(screen|all|print)$/i.exec(parts[0].trim());
+  if (type) {
+    parts.shift();
+    if (type[1].toLowerCase() === 'print') tests.push(() => false);
+  }
+  for (const part of parts) {
+    const scheme = COLOR_SCHEME_FEATURE.exec(part.trim());
+    if (!scheme) {
+      unmodeled = true;
+      continue;
+    }
+    const wantDark = scheme[1].toLowerCase() === 'dark';
+    tests.push((state) => state.dark === wantDark);
+  }
+  return { tests, unmodeled };
+}
+
+/** Whether a rule's enclosing conditions hold in a state, the layer it sits in, and any condition the model does not read. */
+function context(conditions: string[], layerOf: (name: string) => number): Context {
   let layer = UNLAYERED;
+  let unmodeled: string | undefined;
   const tests: ((state: RootState) => boolean)[] = [];
   for (const raw of conditions) {
     const condition = raw.trim();
@@ -181,18 +242,70 @@ function context(conditions: string[], layerOf: (name: string) => number): { app
       if (layer === UNLAYERED) layer = layerOf(layered[1].split('.')[0]);
       continue;
     }
-    if (/^@supports\b/i.test(condition)) continue;
-    const media = /^@media\s+(.+)$/i.exec(condition);
-    if (media) {
-      const scheme = /^\(\s*prefers-color-scheme\s*:\s*(dark|light)\s*\)$/i.exec(media[1].trim());
-      if (!scheme) return null;
-      const wantDark = scheme[1].toLowerCase() === 'dark';
-      tests.push((state) => state.dark === wantDark);
+    const supports = /^@supports\s+(.+)$/i.exec(condition);
+    if (supports) {
+      // A negated test is a fallback for a browser without the feature, which the model is not.
+      if (/^not\b/i.test(supports[1].trim())) tests.push(() => false);
+      else if (/\bnot\b/i.test(supports[1])) unmodeled ??= condition;
       continue;
     }
-    return null;
+    const media = /^@media\s+(.+)$/i.exec(condition);
+    if (media) {
+      const read = mediaTests(media[1]);
+      tests.push(...read.tests);
+      if (read.unmodeled) unmodeled ??= condition;
+      continue;
+    }
+    unmodeled ??= condition;
   }
-  return { applies: (state) => tests.every((test) => test(state)), layer };
+  return { applies: (state) => tests.every((test) => test(state)), layer, unmodeled };
+}
+
+/**
+ * A nested rule's selector alternatives, resolved against the rules it sits in. `&` reads as
+ * `:is()` over one parent alternative, and a nested selector without `&` is a descendant of it.
+ */
+function resolveNesting(chain: string[]): string[] {
+  let resolved = splitSelectorList(chain[0]);
+  for (const level of chain.slice(1)) {
+    const next: string[] = [];
+    for (const alternative of splitSelectorList(level)) {
+      for (const outer of resolved) {
+        next.push(alternative.includes('&') ? alternative.replaceAll('&', `:is(${outer})`) : `:is(${outer}) ${alternative}`);
+      }
+    }
+    resolved = next;
+  }
+  return resolved;
+}
+
+/** The last compound of a selector: the element it describes, after its last combinator. */
+function subjectCompound(selector: string): string {
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < selector.length; i++) {
+    const ch = selector[i];
+    if (ch === '(' || ch === '[') depth++;
+    else if (ch === ')' || ch === ']') depth = Math.max(0, depth - 1);
+    else if (depth === 0 && /[\s>+~]/.test(ch)) start = i + 1;
+  }
+  return selector.slice(start);
+}
+
+/**
+ * Whether a selector the model cannot read still describes the root element: its subject compound
+ * names `:root`, `:host`, or `html` outside a `:not()`, and no pseudo-element. `:root.dark` does;
+ * `:root .card` and `.card:not(:root)` describe another element.
+ */
+function anchoredOnRoot(selector: string): boolean {
+  const subject = subjectCompound(selector.trim()).replace(/:not\([^)]*\)/gi, '');
+  if (subject.includes('::')) return false;
+  return /:(?:root|host)(?![\w-])/i.test(subject) || /^html(?![\w-])/i.test(subject);
+}
+
+/** The reason a declaration under a condition the model does not read is unmodeled. */
+function unmodeledCondition(condition: string): string {
+  return `set under "${condition}", which the scheme model does not read`;
 }
 
 /** The layer rank of a layer name: Tailwind's four first, then any other in order of appearance. */
@@ -213,6 +326,11 @@ export interface ThemeCascade {
   schemes: Scheme[];
   /** What each custom property holds on the root in a state. */
   valuesIn(state: RootState): Map<string, string>;
+  /**
+   * Each custom property the chain may also set on the root in a state through a condition or
+   * selector outside the model, with the reason, so a pair reading it is reported as unmeasured.
+   */
+  unmodeledIn(state: RootState): Map<string, string>;
 }
 
 /**
@@ -222,6 +340,7 @@ export interface ThemeCascade {
  */
 export function readThemeCascade(files: ChainFile[], builtInThemes: Record<string, Record<string, string>>): ThemeCascade {
   const candidates: Candidate[] = [];
+  const unmodeled: Unmodeled[] = [];
   const blocks: ThemeBlock[] = [];
   const layerOf = layerRanker();
   let order = 0;
@@ -241,9 +360,8 @@ export function readThemeCascade(files: ChainFile[], builtInThemes: Record<strin
       const selector = rule.selector;
       if (DAISY_THEME_BLOCK.test(selector)) {
         const option = (name: string) => rule.declarations.find((d) => d.property === name)?.value;
-        const name = unquote(option('name'));
-        const rootOption = unquote(option('root'));
-        if (name === '' || (rootOption !== '' && rootOption !== ':root')) continue;
+        const name = unquote(option('name')) || DAISY_DEFAULT_NAME;
+        const root = unquote(option('root')) || ':root';
         const builtIn = Object.hasOwn(builtInThemes, name);
         const block: ThemeBlock = {
           name,
@@ -261,10 +379,23 @@ export function readThemeCascade(files: ChainFile[], builtInThemes: Record<strin
         for (const decl of rule.declarations) {
           if (decl.property.startsWith('--') && !BLOCK_OPTIONS.has(decl.property)) values.set(decl.property, decl.value);
         }
+        const reach = (s: RootState) =>
+          s.theme === name || (block.isDefault && s.theme === null) || (block.prefersDark && s.theme === null && s.dark);
+        const rootElement = rootMatcher(root);
+        if (!rootElement || !ALL_STATES.every((state) => rootElement.applies(state))) {
+          // daisyUI emits the block on `root`, which names some other element or a root state the
+          // model does not read, so every state the block reaches is unmeasured rather than dropped.
+          for (const property of values.keys()) {
+            unmodeled.push({ property, reason: `set on root "${root}" by the daisyUI block "${name}", which the scheme model does not read`, applies: reach });
+          }
+          continue;
+        }
         const base = layerOf('base');
-        // daisyUI emits the dark-preference copy first, then the block's own selector list.
+        // daisyUI emits the dark-preference copy first, on `<root>:not([data-theme])`, then the
+        // block's own selector list.
         if (block.prefersDark) {
-          for (const [property, value] of values) push(property, value, base, [0, 2, 0], (s) => s.theme === null && s.dark);
+          const specificity = add(rootElement.specificity, [0, 1, 0]);
+          for (const [property, value] of values) push(property, value, base, specificity, (s) => s.theme === null && s.dark);
         }
         if (block.isDefault) {
           for (const [property, value] of values) push(property, value, base, [0, 0, 0], () => true);
@@ -274,23 +405,33 @@ export function readThemeCascade(files: ChainFile[], builtInThemes: Record<strin
       }
       if (/^@theme\b/i.test(selector)) {
         if (/^@theme\s+(?:[\w-]+\s+)*reference\b/i.test(selector)) continue;
-        const where = context(rule.conditions, layerOf);
-        if (!where) continue;
+        const theme = context(rule.conditions, layerOf);
         for (const decl of rule.declarations) {
-          if (decl.property.startsWith('--')) push(decl.property, decl.value, layerOf('theme'), [0, 1, 0], where.applies);
+          if (!decl.property.startsWith('--')) continue;
+          if (theme.unmodeled) unmodeled.push({ property: decl.property, reason: unmodeledCondition(theme.unmodeled), applies: theme.applies });
+          else push(decl.property, decl.value, layerOf('theme'), [0, 1, 0], theme.applies);
         }
         continue;
       }
-      if (selector.startsWith('@')) continue;
       const custom = rule.declarations.filter((d) => d.property.startsWith('--'));
       if (custom.length === 0) continue;
-      const where = context(rule.conditions, layerOf);
-      if (!where) continue;
-      for (const alternative of splitSelectorList(selector)) {
+      // A group nested directly in a style rule declares for that rule's selector, under its own
+      // condition; any other at-rule holding declarations is not a root rule.
+      const group = selector.startsWith('@');
+      if (group && rule.parents.length === 0) continue;
+      const ctx = context(group ? [...rule.conditions, selector] : rule.conditions, layerOf);
+      for (const alternative of resolveNesting(group ? rule.parents : [...rule.parents, selector])) {
         const matcher = rootMatcher(alternative);
-        if (!matcher) continue;
+        if (!matcher) {
+          if (!anchoredOnRoot(alternative)) continue;
+          const reason = `set on the selector "${alternative}", which the scheme model does not read`;
+          for (const decl of custom) unmodeled.push({ property: decl.property, reason, applies: ctx.applies });
+          continue;
+        }
+        const applies = (s: RootState) => ctx.applies(s) && matcher.applies(s);
         for (const decl of custom) {
-          push(decl.property, decl.value, where.layer, matcher.specificity, (s) => where.applies(s) && matcher.applies(s));
+          if (ctx.unmodeled) unmodeled.push({ property: decl.property, reason: unmodeledCondition(ctx.unmodeled), applies });
+          else push(decl.property, decl.value, ctx.layer, matcher.specificity, applies);
         }
       }
     }
@@ -306,7 +447,15 @@ export function readThemeCascade(files: ChainFile[], builtInThemes: Record<strin
     return new Map([...winners].map(([property, candidate]) => [property, candidate.value]));
   };
 
-  return { blocks, schemes: schemesOf(blocks), valuesIn };
+  const unmodeledIn = (state: RootState) => {
+    const found = new Map<string, string>();
+    for (const entry of unmodeled) {
+      if (!found.has(entry.property) && entry.applies(state)) found.set(entry.property, entry.reason);
+    }
+    return found;
+  };
+
+  return { blocks, schemes: schemesOf(blocks), valuesIn, unmodeledIn };
 }
 
 /** Whether `a` beats `b` in the cascade: importance, then layer, then specificity, then order. */

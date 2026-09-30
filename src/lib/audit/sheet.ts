@@ -10,7 +10,8 @@
 // The parser is hand-rolled because a CSS parser would be a new runtime dependency for every
 // consumer. It handles what a compiled Tailwind/DaisyUI sheet contains: comments, strings, nested
 // at-rules, and escaped selectors. The shipped sheet is flattened before it is scoped, so a nested
-// STYLE rule does not appear; a group whose prelude is a selector contributes no condition.
+// STYLE rule does not appear; a group whose prelude is a selector contributes no condition, and is
+// recorded instead as a parent of the rules it holds.
 
 /** One declaration a class token resolves to, with the context it was declared in. */
 export interface SheetDeclaration {
@@ -26,6 +27,13 @@ export interface SheetDeclaration {
 export interface SheetRule {
   selector: string;
   conditions: string[];
+  /**
+   * The selectors of the style rules this rule nests inside, outermost first, as written with any
+   * `&` unresolved. Empty for a top-level rule. A conditional group nested directly in a style
+   * rule (`:root { @media (...) { --x: 1 } }`) is recorded with its own prelude as `selector` and
+   * the style rule it sits in here.
+   */
+  parents: string[];
   declarations: { property: string; value: string }[];
   /** The class names the selector targets, unescaped, excluding anything it only negates. */
   classNames: string[];
@@ -83,10 +91,14 @@ function skipString(css: string, index: number): number {
 }
 
 /**
- * A text with its comments replaced by `replacement`, so a selector commented out never reads as
- * a rule. A prelude keeps a space where the comment stood; a declaration drops it outright.
+ * A text with its comments removed, so a selector commented out never reads as a rule. `space`
+ * leaves a space where each comment stood, which a prelude takes. `drop` removes each comment
+ * outright, which a property name takes, so a comment inside a name never splits it. `separate`
+ * leaves one space only where a comment sat between two non-space characters, which a value takes:
+ * `1px`, a comment, and `2px` written with no space keep two tokens, and a comment with spaces
+ * around it gains no extra space.
  */
-function stripComments(text: string, replacement = ' '): string {
+function stripComments(text: string, mode: 'space' | 'drop' | 'separate' = 'space'): string {
   let out = '';
   let i = 0;
   while (i < text.length) {
@@ -97,7 +109,8 @@ function stripComments(text: string, replacement = ' '): string {
     }
     if (text[i] === '/' && text[i + 1] === '*') {
       i = skipComment(text, i);
-      out += replacement;
+      if (mode === 'space') out += ' ';
+      else if (mode === 'separate' && /\S$/.test(out) && /^\S/.test(text.slice(i)) && !text.startsWith('/*', i)) out += ' ';
       continue;
     }
     if (text[i] === '"' || text[i] === "'") {
@@ -148,7 +161,7 @@ function scanBlock(css: string, open: number): { end: number; nested: boolean } 
   return { end: css.length, nested };
 }
 
-/** The index of the first colon outside parentheses and strings, or -1. */
+/** The index of the first colon outside parentheses, strings, and comments, or -1. */
 function propertyBoundary(text: string): number {
   let depth = 0;
   let i = 0;
@@ -156,6 +169,10 @@ function propertyBoundary(text: string): number {
     const ch = text[i];
     if (ch === '\\') {
       i += 2;
+      continue;
+    }
+    if (ch === '/' && text[i + 1] === '*') {
+      i = skipComment(text, i);
       continue;
     }
     if (ch === '"' || ch === "'") {
@@ -177,13 +194,13 @@ function parseDeclarations(text: string): { property: string; value: string }[] 
   let start = 0;
   let i = 0;
   const flush = (end: number) => {
-    // A comment is dropped before the property boundary is read, so one never fuses into the name
-    // or the value, and a colon inside it never reads as the boundary.
-    const decl = stripComments(text.slice(start, end), '').trim();
-    const colon = decl.length > 0 ? propertyBoundary(decl) : -1;
-    if (colon > 0) {
-      out.push({ property: decl.slice(0, colon).trim(), value: decl.slice(colon + 1).trim() });
-    }
+    // The boundary skips comments, so a colon inside one never reads as it. The name drops its
+    // comments outright, and the value keeps a token boundary where a comment separated two tokens.
+    const decl = text.slice(start, end);
+    const colon = propertyBoundary(decl);
+    if (colon === -1) return;
+    const property = stripComments(decl.slice(0, colon), 'drop').trim();
+    if (property.length > 0) out.push({ property, value: stripComments(decl.slice(colon + 1), 'separate').trim() });
   };
   while (i < text.length) {
     const ch = text[i];
@@ -444,7 +461,7 @@ const THEME_AT_RULE = /^@(theme|plugin)\b/;
  * (offset 0 in that substring), and every rule's `start`/`end` needs to read against the ONE
  * source `parseSheet`'s caller handed it, not against whichever nesting level produced it.
  */
-function collectRules(css: string, conditions: string[], out: SheetRule[], baseOffset: number): void {
+function collectRules(css: string, conditions: string[], parents: string[], out: SheetRule[], baseOffset: number): void {
   let preludeStart = 0;
   let i = 0;
   while (i < css.length) {
@@ -473,6 +490,7 @@ function collectRules(css: string, conditions: string[], out: SheetRule[], baseO
       const inner = css.slice(i + 1, end);
       if (nested) {
         const inherited = prelude.startsWith('@') ? [...conditions, prelude] : conditions;
+        const nestedIn = prelude.startsWith('@') ? parents : [...parents, prelude];
         if (!prelude.startsWith('@') || THEME_AT_RULE.test(prelude)) {
           // A nested style rule's own declarations, before its children. The children recurse with
           // their selectors as written, `&` unresolved: a rule comparing selector text compares
@@ -484,6 +502,7 @@ function collectRules(css: string, conditions: string[], out: SheetRule[], baseO
             out.push({
               selector: prelude,
               conditions,
+              parents,
               declarations,
               classNames: selectorClassNames(prelude),
               negatedClassNames: negatedClassNames(prelude),
@@ -492,11 +511,12 @@ function collectRules(css: string, conditions: string[], out: SheetRule[], baseO
             });
           }
         }
-        collectRules(inner, inherited, out, baseOffset + i + 1);
+        collectRules(inner, inherited, nestedIn, out, baseOffset + i + 1);
       } else {
         out.push({
           selector: prelude,
           conditions,
+          parents,
           declarations: parseDeclarations(inner),
           classNames: prelude.startsWith('@') ? [] : selectorClassNames(prelude),
           negatedClassNames: prelude.startsWith('@') ? [] : negatedClassNames(prelude),
@@ -661,7 +681,7 @@ export function parseStatements(css: string): SheetStatement[] {
 /** Index a compiled stylesheet for exact class-token lookup. */
 export function parseSheet(css: string): CompiledSheet {
   const rules: SheetRule[] = [];
-  collectRules(css, [], rules, 0);
+  collectRules(css, [], [], rules, 0);
   const index = new Map<string, SheetRule[]>();
   const negatedIndex = new Set<string>();
   for (const rule of rules) {

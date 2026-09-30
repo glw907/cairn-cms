@@ -62,6 +62,7 @@ const HEX_COLOR = /#[0-9a-fA-F]{3,8}\b/;
 const RGB_FUNCTION = /\brgba?\(/i;
 const COLOR_WORD = /[a-zA-Z][a-zA-Z0-9-]*/g;
 const QUOTED_STRING = /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g;
+const URL_CALL = /\burl\([^)]*\)/gi;
 
 // The remaining function forms, in the order a value's first hit is reported. A word boundary
 // keeps `lab(` from reading inside `oklab(`, and the required parenthesis keeps `color(` from
@@ -76,28 +77,34 @@ const FUNCTION_FORMS: readonly { form: ColorForm; pattern: RegExp }[] = [
   { form: 'color', pattern: /\bcolor\(/i },
 ];
 
+/** A value with its quoted strings and `url()` arguments blanked, so neither is read as a color. */
+function withoutQuotedText(value: string): string {
+  return value.replace(QUOTED_STRING, ' ').replace(URL_CALL, ' ');
+}
+
 /**
  * The first color literal a value carries, or null. Hex, then `rgb()`, then a named color, then
  * the other function forms, so a value carrying several reports the one `token-colors` always
- * reported first. With `skipStrings`, a color word inside a quoted string (`content: "red"`, a
- * quoted family name) is not read: the public scope opts in, while `token-colors` keeps its verdict.
+ * reported first. With `skipStrings`, nothing inside a quoted string or a `url()` argument is read
+ * (`content: "Issue #123"`, a quoted family name, `fill: url(#fade)`): the public scope opts in,
+ * while `token-colors` keeps its verdict.
  */
 export function findColorLiteral(
   value: string,
   { skipStrings = false }: { skipStrings?: boolean } = {},
 ): ColorLiteral | null {
-  const hex = HEX_COLOR.exec(value);
+  const text = skipStrings ? withoutQuotedText(value) : value;
+  const hex = HEX_COLOR.exec(text);
   if (hex) return { form: 'hex', text: hex[0], description: 'a raw hex color literal' };
-  const rgb = RGB_FUNCTION.exec(value);
+  const rgb = RGB_FUNCTION.exec(text);
   if (rgb) return { form: 'rgb', text: rgb[0], description: 'a raw rgb()/rgba() color literal' };
-  const words = skipStrings ? value.replace(QUOTED_STRING, ' ') : value;
-  for (const match of words.matchAll(COLOR_WORD)) {
+  for (const match of text.matchAll(COLOR_WORD)) {
     if (NAMED_COLORS.has(match[0].toLowerCase())) {
       return { form: 'named', text: match[0], description: `the raw named color "${match[0]}"` };
     }
   }
   for (const { form, pattern } of FUNCTION_FORMS) {
-    const found = pattern.exec(value);
+    const found = pattern.exec(text);
     if (found) return { form, text: found[0], description: `a raw ${form}() color literal` };
   }
   return null;

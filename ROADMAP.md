@@ -2651,6 +2651,18 @@ the named human gates only):**
   `radius-scale` run over a consumer site that shows one, or the `0.99.0` promotion, whichever
   comes first.
 
+- **Let an owner restrict the media purge alone (Geoff, 2026-09-29).** The media library's orphan
+  scan and bulk purge sit behind the same `media` engine access as the rest of the library
+  (`requireEngineAccess(runtime.access, editor, 'media')` in
+  `src/lib/sveltekit/content-routes-media-library.ts:67`). Geoff's ruling: editors keep the purge
+  by default, which suits the small, informal organizations most cairn sites serve, but an owner
+  should be able to restrict that one operation. Today the only lever is restricting all of
+  `media`, which also takes uploading and editing images away from editors. The leanest form is
+  probably one narrower key in the access map that covers only the purge and defaults to the
+  same roles as `media`. It is an authorization change, so the pass that builds it runs as
+  `auth-data`, with the security review and a live sign-in smoke. Trigger: a site asks to restrict
+  the purge, or the pre-1.0 authorization review. Found by the draft docs harvest's editors sweep.
+
 - **Move pinned unlayered rules 1 to 9 into the `cairn-idiom` sublayer (theme identity pass A,
   2026-09-28).** Pass A moved rules 10 to 14 into `utilities.cairn-idiom` and retired their pins.
   Rules 1 to 9 stay pinned and unlayered in `src/lib/admin/cairn-admin.css`; rule 2, the

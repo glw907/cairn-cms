@@ -277,6 +277,11 @@ drafter definition stays untouched.
 - **Title.** The runner passes the outline entry's `title` to the drafter as the page's H1. The
   title joins the entry checksum in both copies, the runner's and the helper's `canonicalEntry`,
   kept identical, and the helper's reduced entry carries it.
+- **Voice source (Geoff, 2026-09-30).** The drafter prompt says voice comes only from the register's
+  drafting brief and its primary exemplar (`docs/extend/choose-an-ai-posture.md`); the page's two
+  exemplars supply structure and detail per step, never voice or wording. The dry run shows the
+  line in the rendered drafter prompt. This narrows the parent spec's "Exemplars" wording (take
+  "structure, register, and detail per step"), an owed erratum task 4 lands.
 - **Figures.** A figure page's drafter prompt names the `cairn-figure` skill file
   (`~/.claude/skills/cairn-figure/SKILL.md`) as a file to read and follow.
 - **Cost.** The runner returns `spent`, the `budget.spent()` delta across the run. Its unit is
@@ -315,6 +320,9 @@ the diff-reviewer checks the errata against the 2a plan fold's "Owed errata"
   the planning-phase sweep, the carrier that makes stages 3 to 5 plan it; the Budget's per-stage
   "about 1M for planning" names the measured 3.3M sweep and the up to about 7M more across stages
   3 to 5; stage 2's extend page count grows by the two sweep pages Geoff keeps.
+- **The parent spec's exemplar erratum:** its "Exemplars" section says the drafter takes voice
+  only from the register's brief and primary exemplar, and structure and detail per step from the
+  page's two exemplars (task 3's voice-source outcome), with a status-line note.
 - **The prior-art record's erratum** (fold record, "Owed errata"): its lines 38 to 41 stop reading
   the sweep's corrected facts as resolved-but-stale drift; they were wrong when filed. Its
   missing-sources item is already closed by the addendum (FV-6).

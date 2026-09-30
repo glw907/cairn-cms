@@ -10,7 +10,8 @@
         block) overrides it, and the `[data-theme]` selector recomputes a role inside a nested
         theme region.
      2. Two utility-bearing colors in `@theme`, so `text-muted` and `border-card-border` exist.
-        The role layer redeclares both, so a nested `data-theme` region recomputes them.
+        They resolve at `:root` and do not recompute under a nested theme; a nested region sets
+        them itself if it wants them recomputed.
      3. `@layer components` rules whose styling carries no design choice: the highlighter's
         `pre.shiki` and `.cairn-tok-*` binding, the structural `.table-scroll` pair, and the
         `cairn-focus-ring` class a site's markup applies.
@@ -42,12 +43,6 @@
     --cairn-warning-ink: color-mix(in oklab, var(--color-warning) 50%, var(--color-base-content));
     --cairn-error-ink: color-mix(in oklab, var(--color-error) 50%, var(--color-base-content));
     --cairn-info-ink: color-mix(in oklab, var(--color-info) 50%, var(--color-base-content));
-
-    /* The two colors below also sit in `@theme` so their utilities generate. Redeclared here on
-       `[data-theme]`, they recompute inside a nested theme region, which keeps the code roles
-       that read `--color-muted` correct there. */
-    --color-muted: color-mix(in oklab, var(--color-base-content) 80%, var(--color-base-100));
-    --color-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
 
     /* Elevation: a hairline plus a soft shadow carry a floating card. The shadow mixes black, so
        it stays a shadow on a dark scheme instead of glowing pale. */

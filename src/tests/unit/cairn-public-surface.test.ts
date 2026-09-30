@@ -105,8 +105,6 @@ describe('the public stylesheet surface', () => {
           "--cairn-shadow",
           "--cairn-success-ink",
           "--cairn-warning-ink",
-          "--color-card-border",
-          "--color-muted",
           "--flow-space",
         ],
         "rules": [
@@ -198,6 +196,16 @@ describe('the public stylesheet surface', () => {
     );
   });
 
+  // The role layer sits after Tailwind's `@theme` output at equal specificity, so a declaration of
+  // either color there would silently beat a theme's own `@theme` override of it.
+  it.each(['--color-muted', '--color-card-border'])(
+    'declares %s in @theme only, never in the role layer',
+    (key) => {
+      expect(customProperties('@theme')).toContain(key);
+      expect(ROLES).not.toContain(key);
+    },
+  );
+
   it('gives every key a reader in the engine or the template source', () => {
     const sources = readerSources();
     const readerless = [...ROLES, ...THEME_COLORS].filter((key) => !hasReader(key, sources));
@@ -247,23 +255,14 @@ describe('the reference page for the public stylesheet', () => {
     expect(existsSync(REFERENCE_PAGE)).toBe(true);
   });
 
-  // The two theme colors are redeclared in the role layer so a nested region recomputes them; the
-  // Theme colors table documents them, so the Roles table lists only the roles that are not theme
-  // colors.
   it.each([
-    ['Roles', ROLES.filter((key) => !THEME_COLORS.includes(key)), ':root, [data-theme]'],
+    ['Roles', ROLES, ':root, [data-theme]'],
     ['Theme colors', THEME_COLORS, '@theme'],
   ])('lists every key of the %s table with its default', (heading, keys, selector) => {
     const rows = keyRows(section(page, heading));
     expect([...rows.keys()].sort()).toEqual([...keys].sort());
     for (const [key, value] of rows) {
       expect(value, key).toBe(declaredValue(selector, key)?.replace(/\s+/g, ' ').trim());
-    }
-  });
-
-  it('redeclares each theme color in the role layer with the value @theme gives it', () => {
-    for (const key of THEME_COLORS) {
-      expect(declaredValue(':root, [data-theme]', key), key).toBe(declaredValue('@theme', key));
     }
   });
 

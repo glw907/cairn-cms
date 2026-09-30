@@ -94,7 +94,7 @@ The chassis `prose.css` keeps the design of `.table-scroll` (flow space, scroll-
 
 Tailwind declares `theme` as its lowest layer, so a value written anywhere else overrides a role. A value in an unlayered `:root` rule wins, and so does a value in a daisyUI theme block. The `[data-theme]` selector makes a role recompute inside a region that carries its own `data-theme`. A derived ink inside a nested region mixes that region's fill with that region's body ink.
 
-The two `@theme` colors recompute there too. The sheet declares each in the role layer as well as in `@theme`, so a nested region mixes its own body ink and paper, and the code roles that read `--color-muted` stay correct inside it.
+The two `@theme` colors do not recompute there. Tailwind resolves them at `:root`, and a nested region inherits the result. A theme that nests a region sets `--color-muted` and `--color-card-border` in the nested block.
 
 The import order decides ties between the sheet and a theme. The sheet comes before the theme's own blocks, so a later `@theme` declaration in the theme wins over the sheet's two colors.
 

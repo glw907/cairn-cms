@@ -100,6 +100,11 @@ the three-to-four-task segment); S4 is tasks 7, 9, and 10. Every boundary is a g
   3. After #97 merges to `main`: merge `main` in, then task 6b, then task 7's remainder (the full
      verifier, no flag), then tasks 8, 9, and 10. Task 8 waits too, since pass C edits
      `scripts/checks/` heavily (`gate-tier.mjs`, `reference-coverage.mjs`, and a dozen more).
+- **R4 (Geoff, 2026-09-29, evening): the merge is pre-authorized.** Task 10's "merge on Geoff's
+  go" is given in advance for the unattended overnight run: merge the harvest PR once the full
+  close gate and every close review are green. A red gate, an escalated review finding, a
+  non-empty pre-merge check, or any other stop condition in this plan still halts the merge for
+  Geoff.
 
 ## Global constraints
 

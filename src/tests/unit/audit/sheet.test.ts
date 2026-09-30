@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { conditionalConditions, parseSheet } from '../../../lib/audit/sheet.js';
+import { conditionalConditions, parseSheet, parseStatements } from '../../../lib/audit/sheet.js';
 
 describe('parseSheet', () => {
   it('resolves a class token to its declarations', () => {
@@ -179,6 +180,81 @@ describe('parseSheet', () => {
   });
 });
 
+describe('parseSheet comment handling', () => {
+  const pairs = (css: string) =>
+    parseSheet(css).rules.flatMap((rule) => rule.declarations.map((d) => [d.property, d.value]));
+
+  // A comment in any position around a declaration is dropped from the property and the value,
+  // and every other character of both survives.
+  it.each([
+    ['before a declaration', '.a { /* note */ color: red }', [['color', 'red']]],
+    ['between two declarations', '.a { color: red; /* note */ margin: 0 }', [['color', 'red'], ['margin', '0']]],
+    ['before the first of two on one line', '.a { /* one */ color: red; /* two */ margin: 0 }', [['color', 'red'], ['margin', '0']]],
+    ['inside a value', '.a { margin: 1px /* top */ 2px }', [['margin', '1px  2px']]],
+    ['at the start of a value', '.a { color: /* note */ red }', [['color', 'red']]],
+    ['inside a property name', '.a { col/* x */or: red }', [['color', 'red']]],
+    ['holding a colon and a semicolon', '.a { /* a: b; c */ color: red }', [['color', 'red']]],
+    ['after the last declaration', '.a { color: red /* trailing */ }', [['color', 'red']]],
+    ['with no trailing semicolon before a close', '.a { color: red; /* end */ }', [['color', 'red']]],
+    [
+      'inside a @plugin block',
+      '@plugin "daisyui/theme" { name: "cairn"; /* the brand */ --color-primary: #123456; /* on it */ --color-primary-content: #fff }',
+      [['name', '"cairn"'], ['--color-primary', '#123456'], ['--color-primary-content', '#fff']],
+    ],
+    [
+      'inside a @theme block',
+      '@theme { /* faces */ --font-display: "X"; --text-step-0: 1rem /* body */; }',
+      [['--font-display', '"X"'], ['--text-step-0', '1rem']],
+    ],
+    [
+      'inside a nested rule parent',
+      '.a { /* own */ color: red; .b { /* child */ margin: 0 } }',
+      [['color', 'red'], ['margin', '0']],
+    ],
+    ['leaving a comment marker inside a string alone', '.a { content: "/* not a comment */" }', [['content', '"/* not a comment */"']]],
+  ])('drops a comment %s', (_label, css, expected) => {
+    expect(pairs(css)).toEqual(expected);
+  });
+
+  it.each([
+    ['border', '.a { border:1px solid/**/red }', '1px solid red'],
+    ['font', '.a { font:14px/**/serif }', '14px serif'],
+    ['margin', '.a { margin:1px/**/2px }', '1px 2px'],
+    ['color function', '.a { --x: oklch(55%/**/0.2/**/250) }', 'oklch(55% 0.2 250)'],
+  ])('keeps the token boundary a comment stood for in a %s value', (_label, css, value) => {
+    expect(pairs(css)[0][1]).toBe(value);
+  });
+
+  it('keeps offsets pointing at the same source positions', () => {
+    const css = '/* lead */ .a { /* x */ color: red }\n/* mid */\n.b {\n  /* y */ margin: 0;\n}';
+    const [a, b] = parseSheet(css).rules;
+    expect(css.slice(a.start, a.end)).toBe('.a');
+    expect(css.slice(b.start, b.end)).toBe('.b');
+  });
+
+  it('never fuses a comment into a property of the showcase theme and token sheets', () => {
+    const root = new URL('../../../../examples/showcase/src/', import.meta.url);
+    for (const file of ['theme/theme.css', 'chassis/tokens.css']) {
+      const css = readFileSync(new URL(file, root), 'utf8');
+      const sheet = parseSheet(css);
+      for (const rule of sheet.rules) {
+        for (const decl of rule.declarations) {
+          expect(decl.property, `${file}: ${rule.selector}`).not.toContain('/*');
+          expect(decl.value, `${file}: ${rule.selector}`).not.toContain('/*');
+        }
+      }
+      // Each daisyUI key of a theme block reads back by its exact name.
+      for (const rule of sheet.rules.filter((r) => r.selector.startsWith('@plugin "daisyui/theme"'))) {
+        const block = css.slice(css.indexOf('{', rule.end) + 1, css.indexOf('}', rule.end));
+        const stripped = block.replace(/\/\*[\s\S]*?\*\//g, '');
+        const keys = [...stripped.matchAll(/(?:^|;|\n)\s*([a-z0-9-]+)\s*:/g)].map((m) => m[1]);
+        expect(keys.length, `${file}: ${rule.selector}`).toBeGreaterThan(10);
+        expect(rule.declarations.map((d) => d.property)).toEqual(keys);
+      }
+    }
+  });
+});
+
 describe('conditionalConditions', () => {
   // @layer is a cascade-scoping at-rule, not a condition: its block always applies, so a caller
   // building an "only under X" message must never see it.
@@ -200,5 +276,50 @@ describe('conditionalConditions', () => {
     expect(conditionalConditions(['@layer components', '@media (min-width: 40rem)'])).toEqual([
       '@media (min-width: 40rem)',
     ]);
+  });
+});
+
+describe('parseSheet on a theme block that nests another block', () => {
+  it('keeps the @theme declarations beside a nested @keyframes', () => {
+    const css = '@theme default {\n  --color-red-500: red;\n  --animate-spin: spin 1s linear infinite;\n  @keyframes spin { to { transform: rotate(360deg) } }\n}';
+    const theme = parseSheet(css).rules.find((rule) => rule.selector === '@theme default');
+    expect(theme?.declarations.map((d) => d.property)).toEqual(['--color-red-500', '--animate-spin']);
+  });
+});
+
+describe('parseStatements', () => {
+  it('lists a block-less @import that parseSheet drops at its semicolon', () => {
+    const css = '@import "tailwindcss";\n@import "./prose.css" layer(base);\n.a { color: red }';
+    expect(parseSheet(css).rules.map((rule) => rule.selector)).toEqual(['.a']);
+    expect(parseStatements(css).map((s) => [s.name, s.prelude])).toEqual([
+      ['import', '"tailwindcss"'],
+      ['import', '"./prose.css" layer(base)'],
+    ]);
+  });
+
+  it('reports offsets that slice back to the statement', () => {
+    const css = '/* lead */ @import "a.css";\n@source not "./.claude";\n';
+    const [first, second] = parseStatements(css);
+    expect(css.slice(first.start, first.end)).toBe('@import "a.css";');
+    expect(css.slice(second.start, second.end)).toBe('@source not "./.claude";');
+  });
+
+  it('skips block at-rules and everything nested inside a block', () => {
+    const css = '@theme { --a: 1; }\n@layer base { @import "inner.css"; }\n.x { @apply p-1; }\n@import "kept.css";';
+    expect(parseStatements(css).map((s) => s.prelude)).toEqual(['"kept.css"']);
+  });
+
+  it('never reads a commented or quoted @import', () => {
+    const css = '/* @import "gone.css"; */\n.a { content: "@import x;" }\n@import "real.css";';
+    expect(parseStatements(css).map((s) => s.prelude)).toEqual(['"real.css"']);
+  });
+
+  it('keeps a semicolon inside url() and a string with the statement', () => {
+    const css = '@import url("a;b.css") screen;\n@import "c;d.css";';
+    expect(parseStatements(css).map((s) => s.prelude)).toEqual(['url("a;b.css") screen', '"c;d.css"']);
+  });
+
+  it('reads the last statement with no terminating semicolon', () => {
+    expect(parseStatements('@import "a.css"').map((s) => s.prelude)).toEqual(['"a.css"']);
   });
 });

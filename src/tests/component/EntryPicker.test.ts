@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import EntryPicker from '../../lib/components/EntryPicker.svelte';
+import EntryPicker from '../../lib/admin/EntryPicker.svelte';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 
 const targets: LinkTarget[] = [

@@ -9,7 +9,7 @@ undocumented compiler behavior, not a contract; this harness pins it against a r
 remount, the shape EditPage actually uses, rather than asserting it indirectly.
 -->
 <script lang="ts">
-  import MarkdownEditor, { type EditorApi } from '../../lib/components/MarkdownEditor.svelte';
+  import MarkdownEditor, { type EditorApi } from '../../lib/admin/MarkdownEditor.svelte';
 
   interface Props {
     /** The `{#key}` block's own key; changing it destroys and recreates the MarkdownEditor mount. */

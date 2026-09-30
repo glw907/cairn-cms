@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import FragmentPicker from '../../lib/components/FragmentPicker.svelte';
+import FragmentPicker from '../../lib/admin/FragmentPicker.svelte';
 import type { FragmentTarget } from '../../lib/sveltekit/content-routes-entry-read.js';
 
 const targets: FragmentTarget[] = [

@@ -34,7 +34,7 @@ now, so a class used only here compiles.
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import CairnLogo from '../components/CairnLogo.svelte';
+  import CairnLogo from '../admin/CairnLogo.svelte';
 
   interface Props {
     /** A custom icon replacing the default cairn mark, for a site's own custom section. */

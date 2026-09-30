@@ -32,8 +32,8 @@ the mechanism.
 | `render.ts` | The component-grammar wiring (a theme's icon set into the engine's glyph-rendering helpers) and the prose-typography remark plugin seam. |
 | `archive.ts` | The archive shape: year-grouped, paginated segments over the posts index, shared by the home page (page one) and the `/archive/[page]` route so the slicing rule never drifts between them. |
 | `date.ts` | The site's one date vocabulary: every date-bearing surface formats through the single `formatDate` helper. |
-| `theme-toggle.ts` | The light/dark toggle mechanism: resolve the active theme, apply a choice, persist it to a cookie. |
-| `tokens.css` | The token SYSTEM: Tailwind and the DaisyUI plugin activation, the design-scale keys with generic defaults, and the semantic (code-highlight, ink, elevation, CTA) bindings. |
+| `theme-toggle.ts` | The light/dark toggle mechanism: resolve the active theme (from `data-theme`, else the root's computed `color-scheme`, else the system scheme), apply a choice, persist it to a cookie. |
+| `tokens.css` | The token SYSTEM: Tailwind and the DaisyUI plugin activation, the engine's `cairn-public.css` import (the roles, the code-highlight binding, and the focus-ring class), the design-scale keys with generic defaults, and the two heading levers (`--font-weight-heading`, `--cairn-heading-case`) with the `heading-case` utility. |
 | `prose.css` | The reading-surface foundation: every prose element bound to tokens, with the signature flourish gestures behind `[data-flourish]`. |
 | `composition.css` | The composition primitives: card, band, section, hero, sidebar-layout, site-shell. |
 
@@ -47,16 +47,25 @@ image of `$chassis` for everything that is not genre-free.
 ## Class namespaces
 
 Four class prefixes appear across this site, and each names who owns it, not enforced by a
-gate but stated here so a new class reaches for the right one. `cairn-*` is the chassis's: a
-class the engine or a chassis file defines and a theme only ever colors through tokens, never
-restyles the structure of (`cairn-place-center`/`-wide`/`-full`, `cairn-tok-*`, `cairn-router-scrolling`,
-`cairn-focus-ring`). `site-*` is the theme's own chrome and page classes and custom properties
-(`site-main`, `site-shell`, `site-header`, `--site-figure-max-height`). `sg-*` is the styleguide
-route's own demo classes, scoped to `/styleguide` and never read anywhere else. A directive class
-with no prefix at all (`.callout`, `.alert`, `.card`) is engine-fixed under `.prose`: the markdown
-render pipeline emits it directly from a directive, so it is neither the chassis's nor a theme's
-to rename; a theme-registered custom directive component (`.banner`, this theme's own) is free to
-pick its own bare name the same way, since it never collides with the fixed set.
+gate but stated here so a new class reaches for the right one. `cairn-*` is shared between the
+engine and the chassis: the engine writes or styles `cairn-place-*`, `cairn-tok-*`, `cairn-glyph`,
+`cairn-grid`, and `cairn-focus-ring`. The chassis composition primitives are `cairn-card`,
+`cairn-band`, `cairn-section`, `cairn-hero`, and `cairn-sidebar-layout`, with the site shell's
+`cairn-site-shell` and `cairn-site-main` beside them; `cairn-hero-title` and `cairn-hero-lead`
+belong to `cairn-hero`. The chassis render code stamps `cairn-head` and `cairn-icon` (with its
+`cairn-icon-secondary` modifier), both listed in the engine's "Emitted classes" registry;
+`cairn-head-title` is a sub-element of `cairn-head`, and `cairn-alert-body` is the alert wrapper,
+both chassis-owned and outside that registry. `cairn-router-scrolling` is the one theme class in
+this prefix (`src/theme/site.css` and the `(site)` layout). A theme colors a `cairn-*` class
+through tokens and never restyles its structure. `site-*` is the theme's own chrome and page
+classes and custom properties (`site-main`, `site-shell`, `site-header`, `--site-figure-max-height`).
+`sg-*` is the styleguide route's own demo classes, scoped to `/styleguide` and never read anywhere
+else. A directive class with no prefix at all (`.callout`, `.alert`, `.banner`) comes from the
+theme's own `markdown-components.ts`, which stamps it in each component's `build()`; a theme may
+rename it, and it never collides with anything the engine fixes. `.card` is not a directive, and the
+chassis primitive is `.cairn-card`. The names the engine itself fixes are `figure` with
+`cairn-place-*`, `.table-scroll`, `pre.shiki` with `.cairn-tok-*`, and `include`; the registry is the
+"Emitted classes" section of the engine's `render` reference page.
 
 ## Every override seam
 
@@ -66,32 +75,46 @@ them declares any content model or component of their own. A theme with a differ
 concepts or fields changes only `cairn.config.ts`; a different set of registered components
 changes `markdown-components.ts` (and `icons.ts` for a different glyph set).
 
-**The token system (`tokens.css`).** Every design-scale key (`--font-*`, `--text-step-*`,
-`--spacing-*`, `--leading-*`, `--tracking-*`, `--container-measure*`, `--color-muted`,
-`--color-card-border`) is declared inside `@theme` with a generic default. A theme `@import`s
-`tokens.css` first, then redeclares the same keys in its own later `@theme` block with its real
-numbers; cascade order does the override (`theme.css` is the worked example). The semantic
-bindings (`--cairn-code-*`, `--cairn-*-ink`, `--cairn-shadow`, `--cairn-cta-*`) read a DaisyUI role
-directly as their generic default (for example `--cairn-success-ink: var(--color-success)`), so
-they resolve to something reasonable under any theme's own colors with zero tuning; a theme that
-wants a hand-tuned on-surface ink (a fill is usually too light for small text) redeclares these in
-its own `:root` and dark-mode blocks. The named DaisyUI themes themselves
-(`@plugin "daisyui/theme"`, every role color and geometry value) are never declared here: that is
-100% a theme's own choice, light and dark. The `.cairn-tok-*` syntax-highlight class contract and
-the `pre.shiki` binding are pure structure and never need a theme's edit at all; only the token
-values they read do.
+**The token system (`tokens.css`).** `tokens.css` imports `@glw907/cairn-cms/cairn-public.css`
+right after Tailwind. The engine owns the roles that file carries: the status inks
+(`--cairn-*-ink`), the shadow (`--cairn-shadow`), the focus ring, the code-highlight ramp
+(`--cairn-code-*`), `--flow-space`, `--color-muted`, and `--color-card-border`. Each one is a
+generic default that resolves under any theme's colors with no tuning. A theme overrides one by
+declaring it in its own `:root` or daisyUI block, since a later or unlayered declaration beats the
+engine's `@layer theme` default. An override of a status ink is hand-tuning, and a theme that
+retunes a fill without overriding its ink gets the derived ink for free, since the engine mixes each
+ink from its fill.
 
-A Tailwind v4 trap this file's own key names sit inside: `--spacing-xs`, `--spacing-xl`, and
-`--spacing-2xl` share a suffix with three of Tailwind's built-in `max-w-*` scale keys, and Tailwind
-resolves `max-w-<key>` against a theme's `--spacing-<key>` variable when one exists, silently
-shadowing its own built-in container width with the spacing value instead (`max-w-2xl` compiles to
-`max-width: var(--spacing-2xl)`, 4rem, not Tailwind's 42rem default) with no warning; declaring a
-matching `--container-<key>` override does not win the utility back (verified directly against
-`@tailwindcss/node`'s compiler, Tailwind 4.3.2). The Foxi port hit this while composing a marketing
-page and worked around it by using `max-w-measure`/`max-w-measure-wide` (this file's own reading-
-measure tokens) or a plain arbitrary value; a theme built on this chassis should do the same and
-never reach for `max-w-xs`, `max-w-xl`, or `max-w-2xl` specifically, since those three key names
-are already spoken for.
+`tokens.css` itself declares the design-scale keys (`--font-*`, `--text-step-*`, `--spacing-*`,
+`--leading-*`, `--tracking-*`, `--container-measure*`, `--font-weight-heading`) inside `@theme`
+with a generic default. A theme `@import`s `tokens.css` first, then redeclares the same keys in its
+own later `@theme` block with its real numbers; cascade order does the override (`theme.css` is the
+worked example). The CTA panel keys (`--cairn-cta-*`) and `--cairn-caption-tracking` stay
+site-owned: the chassis holds no default for them, and a theme that uses them defines them. The
+named DaisyUI themes themselves (`@plugin "daisyui/theme"`, every role color and geometry value)
+are never declared here: that is 100% a theme's own choice, light and dark. The `.cairn-tok-*`
+syntax-highlight class contract and the `pre.shiki` binding are pure structure and never need a
+theme's edit at all; only the token values they read do.
+
+**Custom-property namespaces.** A custom property takes its name from the role it plays. daisyUI's
+own names go to daisyUI's keys (`--color-primary`, `--radius-box`). A key that generates a Tailwind
+utility takes that utility's namespace (`--font-*`, `--text-step-*`, `--spacing-*`,
+`--container-*`, `--color-muted`), so `text-muted` and `max-w-measure` exist. Every other role takes
+`--cairn-*` (`--cairn-code-*`, `--cairn-*-ink`, `--cairn-shadow`, `--cairn-heading-case`).
+`--flow-space` is grandfathered under no prefix. A theme's own properties take `--site-*`. The
+"Class namespaces" section above covers classes only.
+
+A Tailwind v4 trap this file's own key names sit inside: `--spacing-3xs`, `--spacing-2xs`,
+`--spacing-xs`, `--spacing-xl`, and `--spacing-2xl` share a suffix with five of Tailwind's built-in
+`--container-*` scale keys, and Tailwind resolves `max-w-<key>` against a theme's `--spacing-<key>`
+variable when one exists, silently shadowing its own built-in container width with the spacing value
+instead (`max-w-2xl` compiles to `max-width: var(--spacing-2xl)`, 4rem, not Tailwind's 42rem default)
+with no warning; declaring a matching `--container-<key>` override does not win the utility back
+(verified directly against `@tailwindcss/node`'s compiler). The Foxi port hit this while composing a
+marketing page and worked around it by using `max-w-measure`/`max-w-measure-wide` (this file's own
+reading-measure tokens) or a plain arbitrary value; a theme built on this chassis should do the same
+and never reach for `max-w-3xs`, `max-w-2xs`, `max-w-xs`, `max-w-xl`, or `max-w-2xl`, since those five
+key names are already spoken for.
 
 **Cascade layers: an unlayered site rule always beats a layered Tailwind utility.** Tailwind v4's
 own utilities live inside `@layer utilities`, and CSS cascade layers make an unlayered rule win
@@ -137,7 +160,23 @@ both the public render and the editor's live preview inherit it.
 nothing about which two DaisyUI theme names or which cookie name a theme uses; every call site
 passes its own `ThemeToggleConfig` (`SiteHeader.svelte` is the worked example). A theme with
 differently named themes, or a second theme entirely, reuses this module unchanged by supplying
-its own config.
+its own config. With no `data-theme` on `<html>`, `resolveTheme` reads the root's computed
+`color-scheme`, so a dark-first theme needs no edit to `app.html`; a computed value other than
+exactly `light` or `dark` (`normal`, or `light dark`) leaves the system scheme to decide. This
+theme's config lives in `src/theme/theme-names.ts`, which `SiteHeader.svelte` imports. Two places
+cannot import it and change by hand with it: the inline script in `app.html` (the cookie name and
+the regex, which keeps naming both themes so a stale cookie left by a rename falls back to the
+system scheme) and the `name:` values of the two `@plugin "daisyui/theme"` blocks in `theme.css`.
+`theme-names.test.ts` fails when either drifts.
+
+**The heading levers (`tokens.css`).** `--font-weight-heading` (default `600`, in `@theme`,
+generating the `font-heading` utility) and `--cairn-heading-case` (default `none`, a plain role in
+`@layer theme`, applied by the `heading-case` utility) are the two keys every heading reads.
+`prose.css`'s `h1`/`h2`/`h3` rules and the chrome's titles use them in place of a literal weight, so
+a theme sets them once, in its own `@theme` block and `:root`, to move every heading. Chrome markup
+applies `font-heading heading-case`; a scoped `<style>` rule reads the two keys directly with
+`var()`. An eyebrow keeps its own `uppercase tracking-eyebrow` and weight, and a bold run, a
+label, or a control keeps a literal weight, since none of them is a heading.
 
 **The archive page size (`archive.ts`).** `ARCHIVE_PAGE_SIZE` is a site's own knob, not a chassis
 constant tuned for this site: `paginateArchive` reads it as a default, and both the home
@@ -214,7 +253,7 @@ a build it silently breaks) fails this file's own promise.
 | `cairn.server.ts` | `admin/+layout.server.ts`, `admin/[...path]/+page.server.ts`, `media/[...path]/+server.ts`, `healthz/+server.ts`. | Only removable by dropping the `/admin` mount and `/media` serving entirely, that is, a site with no editor-facing CMS surface at all. Most themes keep it. |
 | `dev-gate.ts` | `hooks.server.ts`, `cairn.server.ts`, the three `test/*` diagnostic probe routes. | Delete the file, the three `test/*` probe routes (dev-only, never shipped), the one branch in `hooks.server.ts` and the one in `cairn.server.ts` that read the flag, and the `__CAIRN_DEV_BUILD__` define in `vite.config.ts` with its `app.d.ts` declaration; the gate defaults closed everywhere else, so nothing else changes behavior. |
 | `render.ts` | `markdown-components.ts` (the `makeIconRenderer` and `headRow` imports) and `cairn.config.ts` (the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon and `headRow` imports (inlining `headRow`'s icon-plus-heading shape at its one call site), and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or its own remark plugin instead), needs nothing else. |
-| `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example). | Delete the file, `SiteHeader.svelte`'s one import line, its `themeConfig` constant, `theme` state, and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block. A theme with no light/dark switch, or its own switch built from scratch, needs nothing else. |
+| `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example), through `src/theme/theme-names.ts`'s `ThemeToggleConfig`. | Delete the file, `SiteHeader.svelte`'s imports of it and of `theme-names.ts`, its `theme` state and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block; delete `theme-names.ts` and `theme-names.test.ts` with them. A theme with no light/dark switch, or its own switch built from scratch, needs nothing else. |
 | `archive.ts` | `(site)/+page.server.ts`, `(site)/archive/[page]/+page.server.ts`. | Not a bare deletion while the paginated archive exists: a theme wanting a different archive shape (a flat list, an infinite scroll, no pagination) replaces both server routes' imports with its own slicing in the same change, and may delete the `/archive/[page]` route directory with it. |
 | `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's own vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |
 | `tokens.css` | `theme.css`'s one `@import`; internally imports `prose.css` and `composition.css`. | The foundation the Tailwind and DaisyUI activation depend on; not a bare deletion. A theme drops only the two inner `@import`s it does not want (see the next two rows), never the whole file. |

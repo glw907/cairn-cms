@@ -3,8 +3,8 @@ import { render } from 'vitest-browser-svelte';
 import { userEvent, page } from 'vitest/browser';
 import type { BeforeNavigate } from '@sveltejs/kit';
 import { stringify as devalueStringify } from 'devalue';
-import * as ingest from '../../lib/components/client-ingest.js';
-import * as tidyValidateModule from '../../lib/components/tidy-validate.js';
+import * as ingest from '../../lib/admin/client-ingest.js';
+import * as tidyValidateModule from '../../lib/admin/tidy-validate.js';
 import * as componentGrammar from '../../lib/render/component-grammar.js';
 import type { RoundTripSafety } from '../../lib/render/component-grammar.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
@@ -12,18 +12,18 @@ import type { MediaEntry } from '../../lib/media/manifest.js';
 // The optimistic upload loop touches createImageBitmap (ingestFile) and a real fetch (sendUpload);
 // mock those two so the in-session-upload-renders-in-preview test reaches the success swap
 // deterministically, while the pure request builder and failure mappers stay real.
-vi.mock('../../lib/components/client-ingest.js', async () => {
-  const actual = await vi.importActual<typeof import('../../lib/components/client-ingest.js')>(
-    '../../lib/components/client-ingest.js',
+vi.mock('../../lib/admin/client-ingest.js', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/admin/client-ingest.js')>(
+    '../../lib/admin/client-ingest.js',
   );
   return { ...actual, ingestFile: vi.fn(), sendUpload: vi.fn() };
 });
 // validateTidy stays real for every existing test; wrapping it in a vi.fn lets one test push a
 // single-call throwing override (a parse-time throw in the success path) without touching every
 // other tidy test's real validation behavior.
-vi.mock('../../lib/components/tidy-validate.js', async () => {
-  const actual = await vi.importActual<typeof import('../../lib/components/tidy-validate.js')>(
-    '../../lib/components/tidy-validate.js',
+vi.mock('../../lib/admin/tidy-validate.js', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/admin/tidy-validate.js')>(
+    '../../lib/admin/tidy-validate.js',
   );
   return { ...actual, validateTidy: vi.fn(actual.validateTidy) };
 });
@@ -43,7 +43,7 @@ vi.mock('../../lib/render/component-grammar.js', async () => {
 // `vi.hoisted` is required here (not a bare top-level `let`): the browser mocker reconstructs a
 // `vi.mock` factory in isolation and cannot close over an ordinary file-scope binding.
 const spellcheckGate = vi.hoisted(() => ({ promise: Promise.resolve() as Promise<void> }));
-vi.mock('../../lib/components/spellcheck.js', async (importOriginal) => {
+vi.mock('../../lib/admin/spellcheck.js', async (importOriginal) => {
   await spellcheckGate.promise;
   return importOriginal();
 });
@@ -57,7 +57,7 @@ import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineComponent, defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
-import { editorShortcuts } from '../../lib/components/editor-shortcuts.js';
+import { editorShortcuts } from '../../lib/admin/editor-shortcuts.js';
 // The same module instance EditPage receives for $app/navigation via the project alias.
 import { beforeNavigateCallbacks } from './_app-navigation.js';
 // The same module instance EditPage receives for $app/state via the project alias.
@@ -68,7 +68,7 @@ import { __setBuilding } from '../_app-environment.js';
 // The compiled sheet's text (daisyUI's real .badge/.btn sizing), injected only for the desk band
 // phone-width tests below so their bounding-box measurements reflect production control
 // footprints, never the UA-default widths an unstyled render leaves.
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 
 function postProps(over = {}) {
   return {

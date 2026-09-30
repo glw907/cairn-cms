@@ -98,7 +98,7 @@ describe('buildPattern and isGrounded', () => {
 
 describe('candidatesForFile', () => {
   it('reads both the <script> string literals and the markup text nodes of a .svelte file', () => {
-    const file = join(LIB_DIR, 'components/LoginPage.svelte');
+    const file = join(LIB_DIR, 'admin/LoginPage.svelte');
     const candidates = candidatesForFile(file);
     expect(candidates.some((c) => c.includes('having trouble sending sign-in links'))).toBe(true);
   });
@@ -116,7 +116,7 @@ describe('candidatesForFile', () => {
     // captures only the module block and silently drops every literal in the main script,
     // including this one, which lives nowhere in the rendered markup ("Needs alt" is the markup's
     // own, differently worded, string).
-    const file = join(LIB_DIR, 'components/MediaPicker.svelte');
+    const file = join(LIB_DIR, 'admin/MediaPicker.svelte');
     const candidates = candidatesForFile(file);
     expect(candidates.some((c) => c.includes('needs alt text'))).toBe(true);
   });

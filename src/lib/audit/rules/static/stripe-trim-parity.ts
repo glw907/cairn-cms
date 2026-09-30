@@ -10,10 +10,12 @@
 // trim, and `ExpandableRow.svelte`'s own zebra handling is a sticky-cell mechanism, a different
 // interaction. The grounding is a consumer site's measured evidence, the same
 // DaisyUI-plus-UA-default shape the `container-inset-asymmetry` keep already stands as precedent
-// for. `DEFAULT_STATIC_SCOPE` reaches `src/lib/components`, a consumer's own generic component
-// directory, and the interaction is plain CSS with no admin-specific vocabulary, so this rule
-// applies to a consumer's public-side row components exactly the same way it would on the
-// admin's own.
+// for. `DEFAULT_STATIC_SCOPE`'s three roots (`src/routes/admin`, `src/lib/admin`,
+// `src/lib/admin-toolkit`) are all admin surfaces, so this rule reads only a site's admin rows;
+// the interaction is plain CSS with no admin-specific vocabulary, but it no longer reaches a site's
+// own public-side components, since none of the default roots are public ones. That narrowing is
+// disclosed and permanent (Geoff, admin/public one-scope-per-file ruling): a root a site's public
+// scope claims leaves the admin scope, so this rule never reads a site's public components again.
 import { selectorClassNames, splitSelectorList } from '../../sheet.js';
 import { cssRulePosition, cssScopeRules, normalizeSelector, selectorsFor } from './css-scope.js';
 import type { CssScopeRule } from './css-scope.js';

@@ -252,3 +252,60 @@ describe('parseComponent errors', () => {
     expect(() => parseComponent('Broken.svelte', '{#if x}')).toThrow(/Broken\.svelte/);
   });
 });
+
+describe('parseComponent style values', () => {
+  /** The static style text a source yields, each with the slice of source its offsets name. */
+  function styleValues(source: string) {
+    return parseComponent('Fixture.svelte', source).styleValues.map((v) => ({
+      kind: v.kind,
+      property: v.property,
+      value: v.value,
+      slice: source.slice(v.start, v.end),
+      line: v.line,
+    }));
+  }
+
+  it('reads each declaration of a static style attribute, positioned at its value', () => {
+    expect(styleValues('<div style="color: #abc; margin: 0"></div>')).toEqual([
+      { kind: 'attribute', property: 'color', value: '#abc', slice: '#abc', line: 1 },
+      { kind: 'attribute', property: 'margin', value: '0', slice: '0', line: 1 },
+    ]);
+  });
+
+  // The mixed form: only the static text is readable, and its offsets must land on the source
+  // text itself, not on where an interpolation would have put them.
+  it('reads the static parts of a mixed style value and skips the interpolation', () => {
+    const source = '<div style="color: #abc; width: {w}px"></div>';
+    const values = styleValues(source);
+    expect(values.find((v) => v.property === 'color')).toMatchObject({ value: '#abc', slice: '#abc' });
+    expect(values.some((v) => v.value.includes('{w}'))).toBe(false);
+    expect(values.find((v) => v.property === 'width')).toBeUndefined();
+  });
+
+  it('gives a fragment after an interpolation no property, since its property is not in the source', () => {
+    const values = styleValues('<div style="font-size: {n}px; color: red"></div>');
+    expect(values.map((v) => [v.property, v.value])).toEqual([
+      [undefined, 'px'],
+      ['color', 'red'],
+    ]);
+  });
+
+  it('reads a style: directive with a literal value and its property name', () => {
+    const source = '<div style:color="#def" style:font-size="14px"></div>';
+    expect(styleValues(source)).toEqual([
+      { kind: 'directive', property: 'color', value: '#def', slice: '#def', line: 1 },
+      { kind: 'directive', property: 'font-size', value: '14px', slice: '14px', line: 1 },
+    ]);
+  });
+
+  it('reads nothing from a directive whose value is an expression or a shorthand', () => {
+    expect(styleValues('<div style:color={c} style:margin></div>')).toEqual([]);
+  });
+
+  it('reports the line a multi-line style attribute value sits on', () => {
+    const source = '<div\n  style="margin: 0;\n    color: #abc"\n></div>';
+    const color = styleValues(source).find((v) => v.property === 'color');
+    expect(color?.line).toBe(3);
+    expect(color?.slice).toBe('#abc');
+  });
+});

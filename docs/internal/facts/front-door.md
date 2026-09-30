@@ -44,7 +44,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:u77pea` Under the zero-config default cairn itself is the identity system for its editors: its own D1 store (`AUTH_DB`) holds the editor allowlist, the sessions, and the single-use sign-in tokens, and a site's own identity gate replaces session resolution only when the site configures one. Source: `src/lib/env.ts:18`, "The self-owned magic-link auth store: the allowlist, sessions, and single-use tokens."; `src/lib/sveltekit/guard.ts:66`, "Omitted, the guard resolves the session cookie exactly as today." [verified]
 - `f:gw1oas` Cloudflare Access offers Google and Microsoft among its identity providers, so an editor behind Access can sign in with the organization's Google or Microsoft account. Source: https://developers.cloudflare.com/cloudflare-one/identity/idp-integration/. [external: Cloudflare Access]
 - `f:dpbswc` In the default admin a signed-in editor writes and publishes entries, manages the media library, and edits the tag vocabulary with no code; declaring a content type (`defineConcept`), adding a custom admin screen (a route under `src/routes/admin`), and changing what a role can do (`defineAccess`, `defineRoles`) are site code. Source: `src/lib/sveltekit/content-routes-entry-write.ts:426`; `src/lib/sveltekit/content-routes-media-library.ts:66`, `requireEditor(event)` on the media load; `src/lib/sveltekit/cairn-admin.ts:260`, the `authedViews` list including `vocabulary`; `src/lib/content/concepts.ts:49`; `src/lib/auth/access.ts:70`; `src/lib/auth/roles.ts:58`; `examples/showcase/src/routes/admin/signups/+page.svelte:1-4`. [verified]
-- `f:5jbaej` None of cairn's git plumbing, the per-entry branch, the commit, or the deploy, reaches the editor, who never sees any of it. Source: `src/lib/components/CairnMediaLibrary.svelte:1087-1097,1206-1210`, `src/lib/components/media-library-helpers.ts:41-43` (`branchNameOf`). [rejected: the media library's usage panel and its delete dialog list an image's unpublished uses under In an unpublished edit, with the raw per-entry branch name, `cairn/<concept>/<id>`, beneath each entry title; an editor still needs no GitHub account and never works in the repository directly]
+- `f:5jbaej` None of cairn's git plumbing, the per-entry branch, the commit, or the deploy, reaches the editor, who never sees any of it. Source: `src/lib/admin/CairnMediaLibrary.svelte:1087-1097,1206-1210`, `src/lib/admin/media-library-helpers.ts:41-43` (`branchNameOf`). [rejected: the media library's usage panel and its delete dialog list an image's unpublished uses under In an unpublished edit, with the raw per-entry branch name, `cairn/<concept>/<id>`, beneath each entry title; an editor still needs no GitHub account and never works in the repository directly]
 - `f:0on5qx` A git-backed CMS of the Decap kind has each editor log in with their own GitHub account, needs every editor to have push access to the content repository, and runs that login through an OAuth app and an authentication server the site must host or rent, since GitHub requires a server for authentication. Source: https://decapcms.org/docs/github-backend/. [external: Decap CMS]
 - `f:8p1cjx` Cloudflare hosts a small cairn site on a free tier that stays free at the site's real traffic. Source: `packages/create-cairn-site/src/cloudflare/catalogue.mjs:529-538`. [rejected: the setup command requires the Workers Paid plan from a site's first deploy, and its declined-plan message says a cairn site needs that plan from its first deploy, so no cairn site runs on the free Workers plan]
 - `f:tf4vfb` SvelteKit server-renders each page by default before hydrating it in the browser, a page can opt out with `ssr = false`, and it generates `./$types` for route files so load functions and handlers are typed without hand-written annotations. Source: https://svelte.dev/docs/kit/page-options, https://svelte.dev/docs/kit/types. [external: SvelteKit]
@@ -77,7 +77,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:zmih7p` cairn publishes through a GitHub App. Source: `src/lib/github/repo.ts:262` (App-attributed
   commits); CLAUDE.md credentials, GITHUB_APP_ID `3847496`. [verified]
 - `f:k439hm` The reference docs are one page per package subpath plus the CLI commands, gated by
-  `check:reference`. Source: `package.json:38`, `"check:reference": "npm run package && node
+  `check:reference`. Source: `package.json:39`, `"check:reference": "npm run package && node
   scripts/checks/reference-coverage.mjs"`. [verified]
 - `f:vrt55t` `check:package` checks the package entry points (publint, attw, package-file and skill-budget
   checks). Source: `package.json:37`. [verified]
@@ -108,7 +108,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:2rzcvv` `npm run link:consumer -- <site-dir>` builds, packs, installs, and content-hashes every installed
   file against the pack, because `npm pack` reuses the tarball filename across versions and a plain
   `npm install` can silently serve a stale cached build; `--restore` un-pins the site back to
-  `^<version>` from the registry. Source: `package.json:84`, `"link:consumer": "node
+  `^<version>` from the registry. Source: `package.json:85`, `"link:consumer": "node
   scripts/lab/link-consumer.mjs"`; CLAUDE.md, "Pointing a consumer at unreleased engine work".
   [verified]
 - `f:h6ca98` In a feature worktree, `examples/showcase/node_modules` symlinks back to the main checkout, so
@@ -136,8 +136,8 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   The committer is left to the App." [verified]
 - `f:ab9kzr` The current published version is `0.97.0`. Source: `package.json:3`. [verified]
 - `f:0xsi67` `check:surface` runs a public-surface snapshot gate (`check-surface.mjs`) plus a leak check
-  (`check-surface-leaks.mjs`). Source: `package.json:40`. [verified]
-- `f:usjir5` `check:version` is a standalone gate script. Source: `package.json:53`. [verified]
+  (`check-surface-leaks.mjs`). Source: `package.json:41`. [verified]
+- `f:usjir5` `check:version` is a standalone gate script. Source: `package.json:54`. [verified]
 
 ## docs/internal/what-cairn-is-and-is-not.md (owner brief, source for stance claims)
 - `f:bhyvqg` The governing boundary: cairn owns markdown content management and the editor/admin
@@ -160,20 +160,14 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   public-surface snapshot gate plus gated Extension-API/Scaffold-API stability tiers; until 1.0 the
   gate detects and discloses a break rather than preventing one. Key phrase: "every break is disclosed". Source: same file, "The contract
   is stable, and every break is disclosed," cross-referenced with `check:surface`
-  (`package.json:40`). [verified]
+  (`package.json:41`). [verified]
 - `f:k27p36` The Go `cairn` tool is a separate operator cockpit over every cairn site a machine
   knows; it replicates admin operations as a second front over the same contracts and never adds to
   the engine's public surface or models a domain actor. Key phrase: "operator's cockpit". Source:
   `docs/internal/what-cairn-is-and-is-not.md:83-90`, "The `cairn` tool is the operator's cockpit,
   not engine surface", "a second front over the same contracts", and "never adds to the engine's
   public surface or models a domain actor". [verified]
-- `f:xh2mwb` `cairn-audit` ships whole as a consumer product: all 34 registered rules (17 static, 17
-  rendered) audit the `/admin` surface, which is itself cairn's own admin toolkit, so
-  design-conformance auditing is the product being shipped, not engine-internal apparatus. Key
-  phrase: "ships whole, as consumer product". Source:
-  `docs/internal/what-cairn-is-and-is-not.md:45-52`, "`cairn-audit` ships whole, as consumer
-  product," citing `docs/reference/cairn-audit.md`, and `src/lib/audit/rules/static/index.ts#staticRules`,
-  `src/lib/audit/rules/rendered/index.ts#renderedRules`. [verified]
+- `f:xh2mwb` `cairn-audit` ships whole as a consumer product: 35 of the 38 registered rules (18 static, 17 rendered) audit the `/admin` surface, which is itself cairn's own admin toolkit, so design-conformance auditing is the product being shipped, not engine-internal apparatus. The other three, `public-literals`, `theme-conformance`, and `theme-contrast`, audit a site's public files under the public scope and run at advisory tier on a consumer. Key phrase: "ships whole, as consumer product". Source: `docs/internal/what-cairn-is-and-is-not.md:45-55`, "`cairn-audit` ships whole, as consumer product," citing `docs/reference/cairn-audit.md`, and `src/lib/audit/rules/static/index.ts#staticRules`, `src/lib/audit/rules/rendered/index.ts#renderedRules`. [verified]
 
 ## Harvest record
 Decisions/opinions found, not harvested as facts:

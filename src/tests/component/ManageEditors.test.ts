@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import ManageEditors from '../../lib/components/ManageEditors.svelte';
+import ManageEditors from '../../lib/admin/ManageEditors.svelte';
 import type { Capability } from '../../lib/auth/roles.js';
 
 const DEFAULT_VOCABULARY: { role: string; capability: Capability }[] = [

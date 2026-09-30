@@ -45,6 +45,19 @@ test('axe finds no WCAG A/AA violations on a rendered article', async ({ page })
   expect(results.violations).toEqual([]);
 });
 
+test('the styleguide renders an alert sample from the registry preview', async ({ page }) => {
+  await page.goto('/styleguide');
+  const alert = page.locator('section.alert.alert-caution');
+  await expect(alert).toHaveCount(1);
+  await expect(alert.getByRole('heading', { name: 'Check the trailhead first' })).toBeVisible();
+  // The alert declares a preview now, so the page does not list it among the preview-less entries.
+  await expect(
+    page
+      .locator('.sg-note', { hasText: 'No preview declared' })
+      .getByText('alert', { exact: true }),
+  ).toHaveCount(0);
+});
+
 test('the skip link is the first Tab stop and targets the main content', async ({ page }) => {
   await page.goto('/styleguide');
   // The skip link sits off-screen until focused, the AstroPaper-signature affordance. The very first
@@ -53,6 +66,13 @@ test('the skip link is the first Tab stop and targets the main content', async (
   const skip = page.locator(':focus');
   await expect(skip).toHaveText('Skip to content');
   await expect(skip).toHaveAttribute('href', '#main');
+  // Focused, it is fully visible: not the 1px clipped box the hidden idiom leaves, and it keeps its
+  // padding, so the focus variant of the hiding utility does not zero it.
+  const box = await skip.boundingBox();
+  expect(box!.width).toBeGreaterThan(40);
+  expect(box!.height).toBeGreaterThan(16);
+  await expect(skip).toHaveCSS('padding-left', /^[1-9]/);
+  await expect(skip).toHaveCSS('position', 'absolute');
   // The href targets the <main id="main"> landmark the (site) layout renders, so the link is real.
   await expect(page.locator('main#main')).toBeVisible();
 });
@@ -70,4 +90,45 @@ test('with reduced motion preferred, the page renders and a known transition is 
   const tab = page.getByRole('tab', { name: 'Write' });
   await expect(tab).toBeVisible();
   await expect(tab).toHaveCSS('transition-duration', '0s');
+});
+
+test('a heading case lever transforms a kit heading label but not its code identifier', async ({
+  page,
+}) => {
+  await page.goto('/styleguide');
+  const heading = page.locator('h3.sg-h3', { has: page.locator('code') }).first();
+  await expect(heading).toBeVisible();
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--cairn-heading-case', 'uppercase');
+  });
+  await expect(heading).toHaveCSS('text-transform', 'uppercase');
+  await expect(heading.locator('code')).toHaveCSS('text-transform', 'none');
+});
+
+test('the faces block names the font tokens and renders each in its token', async ({ page }) => {
+  await page.goto('/styleguide');
+  const faces = page.locator('.sg-faces');
+  await expect(faces).toBeVisible();
+  const text = (await faces.innerText()).toLowerCase();
+  for (const family of ['figtree', 'source sans', 'source code']) {
+    expect(text).not.toContain(family);
+  }
+  for (const token of ['--font-display', '--font-body', '--font-mono']) {
+    await expect(faces.getByText(token, { exact: true })).toHaveCount(1);
+  }
+  const samples = await faces
+    .locator('.sg-face-sample')
+    .evaluateAll((els) => els.map((el) => getComputedStyle(el).fontFamily));
+  const roots = await page.evaluate(() => {
+    const probe = document.createElement('p');
+    document.body.appendChild(probe);
+    const read = (token: string): string => {
+      probe.style.fontFamily = `var(${token})`;
+      return getComputedStyle(probe).fontFamily;
+    };
+    const out = ['--font-display', '--font-body', '--font-mono'].map(read);
+    probe.remove();
+    return out;
+  });
+  expect(samples).toEqual(roots);
 });

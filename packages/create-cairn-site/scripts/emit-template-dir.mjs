@@ -12,7 +12,7 @@
 // treats the subdirectory as the root of the repository it creates and requires the application be
 // fully isolated within it; a workspace member has no lockfile of its own, since npm hoists to the
 // root, so `packages/` would break that isolation.
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -119,6 +119,67 @@ export async function diffTrees(fresh, committed) {
   return differences.sort();
 }
 
+/** The citations a shipped template must not carry: a site has no `docs/internal/` and no verdict ledger. */
+const CITATION_PATTERNS = [
+  { pattern: /docs\/internal\//, message: 'cites docs/internal/' },
+  { pattern: /Verdict\s+\d/, message: 'cites a Verdict number' },
+];
+
+/**
+ * Every file the citation scan reads: the files under `src/` and the files directly in the root.
+ * The baked guidance under `.claude/` is outside the scan, since those shipped skills name the
+ * cairn-cms repository's own `docs/internal/` paths on purpose.
+ * @param {string} root the template tree
+ * @returns {Promise<string[]>} paths relative to root
+ */
+async function scannedFiles(root) {
+  const files = [];
+  for (const entry of await readdir(root, { withFileTypes: true })) {
+    if (entry.isFile()) files.push(entry.name);
+  }
+  const src = path.join(root, 'src');
+  const hasSrc = await readdir(src).then(() => true, () => false);
+  if (hasSrc) {
+    for (const file of walk(src, () => true)) files.push(path.relative(root, file));
+  }
+  return files;
+}
+
+/** Every string value inside a parsed JSON document, at any depth. */
+function jsonStrings(value) {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap(jsonStrings);
+  if (value && typeof value === 'object') return Object.values(value).flatMap(jsonStrings);
+  return [];
+}
+
+/**
+ * Find what an emitted template must not ship: a `docs/internal/` path or a `Verdict` number in a
+ * file under `src/` or in the root, and a parent-relative path in `cairn-audit.config.json`, which
+ * would resolve outside a scaffolded site's own tree.
+ * @param {string} root the template tree
+ * @returns {Promise<string[]>} one line per violation, empty when the tree is clean
+ */
+export async function findTemplateViolations(root) {
+  const violations = [];
+  for (const relativePath of await scannedFiles(root)) {
+    const content = await readFile(path.join(root, relativePath), 'utf8');
+    for (const { pattern, message } of CITATION_PATTERNS) {
+      if (pattern.test(content)) violations.push(`${relativePath}: ${message}`);
+    }
+  }
+  const auditConfig = path.join(root, 'cairn-audit.config.json');
+  const configText = await readFile(auditConfig, 'utf8').catch(() => undefined);
+  if (configText !== undefined) {
+    for (const value of jsonStrings(JSON.parse(configText))) {
+      if (value === '..' || value.startsWith('../') || value.startsWith('..\\')) {
+        violations.push(`cairn-audit.config.json: holds the parent-relative path ${value}`);
+      }
+    }
+  }
+  return violations.sort();
+}
+
 // CLI: node scripts/emit-template-dir.mjs [--engine-spec <spec>] [--dev-spec <spec>] [--check]
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { values } = parseArgs({
@@ -151,6 +212,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         console.log('Run `npm run emit:template` and commit the result.');
         // Setting the code rather than exiting outright lets the scratch cleanup below run; a
         // process.exit here would skip the finally and leave the temp tree behind.
+        process.exitCode = 1;
+      }
+      const violations = await findTemplateViolations(scratch);
+      if (violations.length > 0) {
+        console.log(`emit-template-dir: ${TEMPLATE_DIR} ships what a site does not have`);
+        for (const line of violations) console.log(`  ${line}`);
         process.exitCode = 1;
       }
     } else {

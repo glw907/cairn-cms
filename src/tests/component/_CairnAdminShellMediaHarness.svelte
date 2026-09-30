@@ -7,8 +7,8 @@ injected value, never that the real shell INJECTS one).
 -->
 <script lang="ts">
   import type { ComponentProps } from 'svelte';
-  import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
-  import MediaPicker, { type MediaLibraryEntry } from '../../lib/components/MediaPicker.svelte';
+  import CairnAdminShell from '../../lib/admin/CairnAdminShell.svelte';
+  import MediaPicker, { type MediaLibraryEntry } from '../../lib/admin/MediaPicker.svelte';
 
   let {
     data,

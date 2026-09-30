@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
-import HelpHome from '../../lib/components/HelpHome.svelte';
-import { markdownReference } from '../../lib/components/markdown-reference.js';
+import HelpHome from '../../lib/admin/HelpHome.svelte';
+import { markdownReference } from '../../lib/admin/markdown-reference.js';
 import type { HelpData } from '../../lib/sveltekit/content-routes.js';
 
 // The full nine everyday reference rows the load forwards; the component curates by group.

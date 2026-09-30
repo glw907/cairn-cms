@@ -118,7 +118,7 @@ which invariant broke, not that the gate is wrong:
   `fix(auth): reject expired tokens`.
 - A consumer-visible change gets a `CHANGELOG.md` entry under `## Unreleased`, with a
   `Consumers must:` line when upgrading requires action. Releases are cut separately.
-- Work on the `/admin` interface (the admin components in `src/lib/components/` or
+- Work on the `/admin` interface (the admin components in `src/lib/admin/` or
   `cairn-admin.css`) follows the design system at
   [`docs/internal/admin-design-system.md`](./docs/internal/admin-design-system.md); read it
   first.

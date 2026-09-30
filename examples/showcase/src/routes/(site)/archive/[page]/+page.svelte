@@ -77,7 +77,8 @@
     padding-top: var(--spacing-m);
     border-top: var(--border) solid var(--color-base-300);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-2);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
@@ -105,7 +106,7 @@
     font-weight: 600;
     color: var(--color-primary);
     text-decoration: none;
-    border-radius: 2px;
+    border-radius: var(--cairn-focus-ring-radius);
   }
   .pagination__link:hover {
     text-decoration: underline;

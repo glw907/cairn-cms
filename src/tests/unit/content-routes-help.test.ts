@@ -6,7 +6,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { markdownReference } from '../../lib/components/markdown-reference.js';
+import { markdownReference } from '../../lib/admin/markdown-reference.js';
 import { formatManifest, type Manifest } from '../../lib/content/manifest.js';
 import { runtime as baseRuntime, postsConcept, REPO, contentEvent } from './_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';

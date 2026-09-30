@@ -312,7 +312,7 @@ export const actions = admin.actions;
 ```svelte
 <!-- src/routes/admin/[...path]/+page.svelte -->
 <script lang="ts">
-  import { CairnAdmin } from '@glw907/cairn-cms/components';
+  import { CairnAdmin } from '@glw907/cairn-cms/admin';
   import type { AdminData } from '@glw907/cairn-cms/sveltekit';
   import { cairn } from '$theme/cairn.config.js';
   import type { ActionData } from './$types';
@@ -333,7 +333,7 @@ export const load = admin.shellLoad;
 ```svelte
 <!-- src/routes/admin/+layout.svelte -->
 <script lang="ts">
-  import { CairnAdminShell } from '@glw907/cairn-cms/components';
+  import { CairnAdminShell } from '@glw907/cairn-cms/admin';
   import type { AdminShellData } from '@glw907/cairn-cms/sveltekit';
   import type { Snippet } from 'svelte';
 

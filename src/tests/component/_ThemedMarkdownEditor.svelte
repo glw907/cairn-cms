@@ -6,7 +6,7 @@ wrapper is the element `MarkdownEditor` resolves its dark flag from, so flipping
 here is exactly what a mounting context's theme change does in the running admin.
 -->
 <script lang="ts">
-  import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
+  import MarkdownEditor from '../../lib/admin/MarkdownEditor.svelte';
 
   interface Props {
     /** The admin theme the wrapper carries, flipped by the test through a prop update. */

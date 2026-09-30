@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dualGamutRatio } from '../../../scripts/checks/check-public-tokens.mjs';
+import { dualGamutRatio } from '../../lib/audit/contrast.js';
 
 // The Warm Stone surfaces and ink, read from cairn-admin.css (the test's fixed truth; if these values
 // change in the sheet, update this deliberately).
@@ -33,7 +33,7 @@ function guaranteedFloor(theme: 'light' | 'dark', role: 'muted' | 'subtle'): num
 // deliberate update of both the sheet and this test's fixed truth in one change.
 it('matches the oklch literals the source sheet defines', () => {
   const sheet = readFileSync(
-    resolve(fileURLToPath(new URL('.', import.meta.url)), '../../lib/components/cairn-admin.css'),
+    resolve(fileURLToPath(new URL('.', import.meta.url)), '../../lib/admin/cairn-admin.css'),
     'utf8',
   );
   for (const theme of ['light', 'dark'] as const) {

@@ -15,10 +15,6 @@ import { CAIRN_LOG_EVENTS } from '../../../log/events-list.js';
 import { lineAt } from '../../markup.js';
 import type { Finding, SourceFile, StaticRule } from '../../types.js';
 
-// The promotion version stated in every finding this rule raises: the minor release that moves
-// consumer-facing findings out of advisory tier.
-const PROMOTION_VERSION = '0.98.0';
-
 const CALL = /[A-Za-z_$][\w$]*\.(?:info|warn|error)\(/g;
 
 // The header's past-tense-or-adjective closing segments this rule recognizes as grammar
@@ -39,7 +35,7 @@ const RESERVED = new Set(CAIRN_LOG_EVENTS.map((event) => event.toLowerCase()));
 const CAVEAT =
   'This is a name heuristic over <ident>.info/.warn/.error(<string>) calls: it also flags ' +
   'console.info and another library\'s logger, and it misses a computed event name, a template ' +
-  'literal, and a re-exported logger. Findings here stay advisory until';
+  'literal, and a re-exported logger.';
 
 /** Whether every dot-separated segment is a valid snake_case identifier. */
 function isSnakeCaseSegment(segment: string): boolean {
@@ -85,16 +81,16 @@ function findingsFor(file: SourceFile): Finding[] {
     if (RESERVED.has(lowered)) {
       message =
         `"${arg.value}" already names a member of cairn's own CairnLogEvent union; choose a ` +
-        `different event name so two call sites never report under one name. ${CAVEAT} ${PROMOTION_VERSION}`;
+        `different event name so two call sites never report under one name. ${CAVEAT}`;
     } else if (!isGrammarConforming(arg.value)) {
       message =
         `"${arg.value}" does not read as area[.subject].verb_phrase (two or more snake_case ` +
-        `segments, the last a past-tense verb or a state adjective). ${CAVEAT} ${PROMOTION_VERSION}`;
+        `segments, the last a past-tense verb or a state adjective). ${CAVEAT}`;
     }
     if (message) {
       findings.push({
         ruleId: 'log-event-grammar',
-        tier: 'advisory',
+        tier: 'error',
         file: file.file,
         line: lineAt(file.source, arg.start),
         start: arg.start,
@@ -108,7 +104,7 @@ function findingsFor(file: SourceFile): Finding[] {
 
 export const logEventGrammar: StaticRule = {
   id: 'log-event-grammar',
-  tier: 'advisory',
+  tier: 'error',
   check(ctx) {
     return (ctx.sources ?? []).flatMap(findingsFor);
   },

@@ -5,7 +5,7 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import { enhance } from '$app/forms';
-  import { CsrfField } from '@glw907/cairn-cms/components';
+  import { CsrfField } from '@glw907/cairn-cms/admin';
   import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
   import type { PageData, ActionData } from './$types';
   import type { SubmitFunction } from '@sveltejs/kit';
@@ -151,9 +151,10 @@
 </dialog>
 
 <style>
-  /* A site's own admin route rides cairn's shipped, precompiled cairn-admin.css: a Tailwind
-     utility written only here (never scanned into that sheet) never resolves, so the field width
-     the stacked labels need is a plain scoped rule instead of a Tailwind class.
+  /* The site admin sheet scans this route (`@source "./routes/admin"` in src/admin.css), so a
+     Tailwind utility would resolve here; the field width the stacked labels need is a scoped rule
+     because the flex, min and max sizing below reads better as one named block than as a
+     utility stack.
 
      The label, not the input, carries the sizing: as a flex item with a definite flex-basis it
      grows to 20rem when the row has room and shrinks below that (down to 3rem) when it does not,

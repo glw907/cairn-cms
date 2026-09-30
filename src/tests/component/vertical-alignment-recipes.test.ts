@@ -18,9 +18,9 @@ import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 // The compiled sheet: these are geometry assertions, so they need daisyUI's real button sizing and
 // Tailwind's real utilities, which only the built artifact carries.
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
-import CairnTidySettings from '../../lib/components/CairnTidySettings.svelte';
-import EditorToolbar from '../../lib/components/EditorToolbar.svelte';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
+import CairnTidySettings from '../../lib/admin/CairnTidySettings.svelte';
+import EditorToolbar from '../../lib/admin/EditorToolbar.svelte';
 import FieldRowHarness from './_FieldRowHarness.svelte';
 import { defaultTidyConventions } from '../../lib/nav/site-config.js';
 import type { SettingsData } from '../../lib/sveltekit/content-routes.js';

@@ -409,7 +409,7 @@ export function componentPropsNames(dtsPath) {
   return null;
 }
 
-// The doc window for one component's own `### `Name`` section on the components reference page:
+// The doc window for one component's own `### `Name`` section on its barrel's reference page:
 // from its heading to the next h2 or h3 heading, deliberately never stopping at an h4, so a
 // component's own sub-section under an h4 (MarkdownEditor's "wiring props (Unstable API)" table)
 // stays inside its owning component's window rather than falling out of scope. Null when the page
@@ -541,6 +541,13 @@ export const SUBPATH_EXCLUSIONS = [
       'rather than its own reference page (see ROADMAP.md).',
   },
   {
+    subpath: '/cairn-public.css',
+    reason:
+      'a CSS asset with no .d.ts to enumerate, and checkOne needs one; its reference page, ' +
+      'docs/reference/public-css.md, is held to the file by the page-sync assertions in ' +
+      'src/tests/unit/cairn-public-surface.test.ts.',
+  },
+  {
     subpath: '/package.json',
     reason:
       "the npm self-reference convention for resolving the package's own metadata, not a " +
@@ -558,7 +565,8 @@ export const SUBPATH_EXCLUSIONS = [
 export const SUBPATH_SETTINGS = {
   '.': { dts: 'dist/index.d.ts', page: 'docs/reference/core.md' },
   '/sveltekit': { dts: 'dist/sveltekit/index.d.ts', page: 'docs/reference/sveltekit.md' },
-  '/components': { dts: 'dist/components/index.d.ts', page: 'docs/reference/components.md' },
+  '/admin': { dts: 'dist/admin/index.d.ts', page: 'docs/reference/admin.md' },
+  '/public': { dts: 'dist/public/index.d.ts', page: 'docs/reference/public.md' },
   '/reproductions': { dts: 'dist/reproductions/index.d.ts', page: 'docs/reference/reproductions.md' },
   '/reproductions/manifest': {
     dts: 'dist/reproductions/manifest.d.ts',
@@ -841,40 +849,46 @@ function main() {
       console.log(`OK ${r.subpath} (${r.page})`);
     }
   }
-  // The props-vs-reference clause runs once over every exported component, only when the run
-  // covers /components (an `--only` run for another subpath has nothing to check).
-  const componentsEntry = entries.find((e) => e.subpath === '/components');
-  if (componentsEntry) {
-    assertDocumentedUnstableReasoned(DOCUMENTED_UNSTABLE_PROPS);
-    const indexPath = resolve(ROOT, componentsEntry.dts);
-    if (!existsSync(indexPath)) throw new Error(`missing ${componentsEntry.dts}; run "npm run package" first`);
-    const pageText = readFileSync(resolve(ROOT, componentsEntry.page), 'utf8');
+  // The props-vs-reference clause runs once per Svelte-component barrel, over every exported
+  // component, only when the run covers that barrel's subpath (an `--only` run for another
+  // subpath has nothing to check). `/admin` and `/public` are both component barrels; a plain
+  // type export rides `/admin` too (EditorApi and friends), which the per-entry loop below skips
+  // the same way for each.
+  assertDocumentedUnstableReasoned(DOCUMENTED_UNSTABLE_PROPS);
+  for (const subpath of ['/admin', '/public']) {
+    const barrelEntry = entries.find((e) => e.subpath === subpath);
+    if (!barrelEntry) continue;
+    const indexPath = resolve(ROOT, barrelEntry.dts);
+    if (!existsSync(indexPath)) throw new Error(`missing ${barrelEntry.dts}; run "npm run package" first`);
+    const pageText = readFileSync(resolve(ROOT, barrelEntry.page), 'utf8');
+    const dtsDir = dirname(barrelEntry.dts);
+    const srcDir = dtsDir.replace(/^dist\//, 'src/lib/');
     for (const name of enumerateExports(indexPath)) {
-      const dtsPath = resolve(ROOT, `dist/components/${name}.svelte.d.ts`);
-      // /components exports a component per name (each with a `.svelte.d.ts`), plus a handful of
-      // plain type exports riding the same barrel (EditorApi, say): no matching `.svelte.d.ts`
-      // exists for those, by design, never a build failure. Discriminate on the *source*, not the
-      // dist output: a name with no `src/lib/components/<name>.svelte` is a type export and is
-      // skipped here; a name that IS a real component but is missing its dist declaration (a stale
-      // or partial build) falls through to checkComponentProps's own missing-file throw.
-      if (!existsSync(resolve(ROOT, `src/lib/components/${name}.svelte`))) continue;
+      const dtsPath = resolve(ROOT, `${dtsDir}/${name}.svelte.d.ts`);
+      // The barrel exports a component per name (each with a `.svelte.d.ts`), plus, on `/admin`, a
+      // handful of plain type exports riding the same barrel (EditorApi, say): no matching
+      // `.svelte.d.ts` exists for those, by design, never a build failure. Discriminate on the
+      // *source*, not the dist output: a name with no `<srcDir>/<name>.svelte` is a type export and
+      // is skipped here; a name that IS a real component but is missing its dist declaration (a
+      // stale or partial build) falls through to checkComponentProps's own missing-file throw.
+      if (!existsSync(resolve(ROOT, `${srcDir}/${name}.svelte`))) continue;
       const r = checkComponentProps(name, dtsPath, pageText);
       if (!r) continue;
       if (r.noSection) {
-        console.error(`/components props (${componentsEntry.page}): ${r.component} has no own section on the page`);
+        console.error(`${subpath} props (${barrelEntry.page}): ${r.component} has no own section on the page`);
         failed = true;
       } else if (r.missing.length) {
         console.error(
-          `/components props (${componentsEntry.page}): ${r.component} ${r.missing.length} undocumented prop(s): ${r.missing.join(', ')}`,
+          `${subpath} props (${barrelEntry.page}): ${r.component} ${r.missing.length} undocumented prop(s): ${r.missing.join(', ')}`,
         );
         failed = true;
       } else if (r.promoted.length) {
         console.error(
-          `/components props (${componentsEntry.page}): ${r.component} documented-unstable prop(s) crept into the stable snippet: ${r.promoted.join(', ')}`,
+          `${subpath} props (${barrelEntry.page}): ${r.component} documented-unstable prop(s) crept into the stable snippet: ${r.promoted.join(', ')}`,
         );
         failed = true;
       } else {
-        console.log(`OK /components props (${r.component})`);
+        console.log(`OK ${subpath} props (${r.component})`);
       }
     }
   }

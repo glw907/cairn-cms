@@ -119,7 +119,7 @@ function shapeTypeOf(checker, sym) {
 // tell a component from a bare `export type`; the `Value` flag is what actually distinguishes them
 // (present on every runtime-importable export, absent on a type-only one), and this is the same
 // isType-and-not-`Value` test `shapeTypeOf` above already applies to choose which type carries an
-// export's own shape. F-1's `/components` clause uses this to derive its root set mechanically off
+// export's own shape. F-1's `/admin` clause uses this to derive its root set mechanically off
 // the real barrel, rather than asserting the split in prose.
 /**
  * @param {import('typescript').Symbol} sym
@@ -255,7 +255,7 @@ export function deriveTypeCheckerLeaks(model, universe) {
     if (!existsSync(dtsPath)) continue;
     const { checker, symbols } = moduleExports(dtsPath);
     if (symbols.length === 0) continue;
-    // `/components` mixes runtime Svelte component exports (MarkdownEditor, EditPage, ...) with a
+    // `/admin` mixes runtime Svelte component exports (MarkdownEditor, EditPage, ...) with a
     // handful of plain type exports riding the same barrel (TidyApi, ImagePlaceholderApi,
     // FormatKind, EditorApi). The split is read mechanically off the dist declarations via
     // `isPlainTypeExport`, not asserted in prose: only the plain-type exports feed the walk below,
@@ -270,14 +270,14 @@ export function deriveTypeCheckerLeaks(model, universe) {
     // from each subpath's own EXPORTED symbols' declared types, and a component's declared type
     // (`Component<Props, Events, Slots>`) never surfaces `Props`' own member types through that
     // walk the way an interface's members do, because the generic's type ARGUMENTS are Props
-    // itself, not a property of it; the renderer model never attempts `/components` at all, since
+    // itself, not a property of it; the renderer model never attempts `/admin` at all, since
     // it compares literal-union shapes across `buildSurfaceModel()`'s per-export renderings, and a
     // component's rendered shape is the opaque `Component<Props, ...>` string, not an expanded
     // object. Structurally modeling component props (walking each component's own Props type
     // argument) would need a third model this rider does not build; Task 7's props gate is the
     // answer for that surface instead (see the ledger row's stated-limits paragraph).
     const resolved = symbols.map((sym) => resolveAlias(checker, sym));
-    const rootSymbols = entry.subpath === '/components' ? resolved.filter(isPlainTypeExport) : resolved;
+    const rootSymbols = entry.subpath === '/admin' ? resolved.filter(isPlainTypeExport) : resolved;
     if (rootSymbols.length === 0) continue;
     const rootTypes = rootSymbols.map((sym) => shapeTypeOf(checker, sym));
     const reachable = collectReachableNames(checker, rootTypes, distDir);

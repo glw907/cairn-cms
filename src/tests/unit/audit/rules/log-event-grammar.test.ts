@@ -29,7 +29,7 @@ describe('log-event-grammar', () => {
     const findings = check(fixture('collision.ts'));
     expect(findings).toHaveLength(1);
     expect(findings[0].ruleId).toBe('log-event-grammar');
-    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('"auth.link.requested"');
     expect(findings[0].message).toContain('already names a member');
   });
@@ -55,11 +55,13 @@ describe('log-event-grammar', () => {
     expect(findings[0].message).toContain('console.info');
   });
 
-  // The promotion version is stated verbatim, as a string, in every finding this rule raises.
-  it('ends every message with the promotion version', () => {
+  // The promoted finding no longer carries an advisory window in its own message.
+  it('raises every finding at error tier, with no advisory promise in the message', () => {
     const findings = [...check(fixture('collision.ts')), ...check(fixture('bad-shape.ts'))];
+    expect(findings.length).toBeGreaterThan(0);
     for (const finding of findings) {
-      expect(finding.message.endsWith('0.98.0')).toBe(true);
+      expect(finding.tier).toBe('error');
+      expect(finding.message).not.toContain('advisory');
     }
   });
 

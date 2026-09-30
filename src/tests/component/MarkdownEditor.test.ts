@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import MarkdownEditor, { type EditorApi } from '../../lib/components/MarkdownEditor.svelte';
+import MarkdownEditor, { type EditorApi } from '../../lib/admin/MarkdownEditor.svelte';
 import MarkdownEditorRekeyHarness from './_MarkdownEditorRekeyHarness.svelte';
-import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
+import { cairnLinkCompletionSource } from '../../lib/admin/link-completion.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
 
@@ -15,7 +15,7 @@ import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js'
 // the browser mocker reconstructs a `vi.mock` factory in isolation and cannot close over an
 // ordinary file-scope binding.
 const spellcheckGate = vi.hoisted(() => ({ promise: Promise.resolve() as Promise<void> }));
-vi.mock('../../lib/components/spellcheck.js', async (importOriginal) => {
+vi.mock('../../lib/admin/spellcheck.js', async (importOriginal) => {
   await spellcheckGate.promise;
   return importOriginal();
 });
@@ -143,6 +143,49 @@ describe('MarkdownEditor', () => {
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain('INSERTED');
+  });
+
+  it('keeps a folded block folded when api.insert lands elsewhere in the document', async () => {
+    let api: EditorApi | undefined;
+    const screen = await render(MarkdownEditor, {
+      value: FOLD_DOC,
+      name: 'body',
+      foldOnMount: true,
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
+      },
+    });
+    // The mount folds the panel: its body is hidden and the chip stands in for it.
+    await expect.poll(() => foldPill(screen.container), COLD_START).toBeTruthy();
+    expect(lineWith(screen.container, 'body one')).toBeFalsy();
+    await expect.poll(() => typeof api?.insert).toBe('function');
+    // The default caret sits at the document start, on the intro line, away from the fold.
+    api!.insert('INSERTED');
+    await expect.poll(() => hiddenValue(screen.container)).toBe(`INSERTED\n\n${FOLD_DOC}`);
+    expect(foldPill(screen.container)).toBeTruthy();
+    expect(lineWith(screen.container, 'body one')).toBeFalsy();
+  });
+
+  it('makes an insert its own undo step, apart from typing that follows it', async () => {
+    let api: EditorApi | undefined;
+    const screen = await render(MarkdownEditor, {
+      value: 'start',
+      name: 'body',
+      registerEditor: (a: EditorApi | null) => {
+        if (a) api = a;
+      },
+    });
+    await expect.poll(() => typeof api?.insert).toBe('function');
+    await focusEditorEnd(screen.container);
+    api!.insert('BLOCK');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('start\n\nBLOCK');
+    await userEvent.keyboard('!');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('start\n\nBLOCK!');
+    // One undo removes only the typed character; the insert is a separate history entry.
+    await userEvent.keyboard('{Control>}z{/Control}');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('start\n\nBLOCK');
+    await userEvent.keyboard('{Control>}z{/Control}');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('start');
   });
 
   it("inserts an inline link through registerEditor's api.insertLink", async () => {

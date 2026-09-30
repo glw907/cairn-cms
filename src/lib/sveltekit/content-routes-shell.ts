@@ -5,8 +5,8 @@
 // around it.
 import { redirect, error } from '@sveltejs/kit';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
-import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
-import { DEFAULT_MEDIA_BASE } from '../components/media-base-context.js';
+import { markdownReference, type MarkdownReferenceRow } from '../admin/markdown-reference.js';
+import { DEFAULT_MEDIA_BASE } from '../admin/media-base-context.js';
 import { PENDING_PREFIX } from '../content/pending.js';
 import { emptyManifest } from '../content/manifest.js';
 import { log } from '../log/index.js';

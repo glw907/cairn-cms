@@ -6,7 +6,7 @@ import PageHeader from '../../lib/admin-toolkit/PageHeader.svelte';
 // The mobile action width test below measures against the compiled sheet: the bare component
 // render carries no stylesheet at all, so an unstyled stretched action would silently pass a
 // DOM-structure-only test without proving the self-start fix.
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 
 /** A snippet with no render-time params, e.g. a fixed action button. */
 function staticSnippet(html: string) {

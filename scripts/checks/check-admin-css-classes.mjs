@@ -20,6 +20,9 @@
 // config exists for. A consumer wiring this same rule into their own build gets the list for free
 // through the shared config contract.
 //
+// The run hands `runStatic` every rule except the public-scope ones, so the public scope and its
+// empty-scope error stay out of an engine-tree run that names no public roots.
+//
 // Wired as `npm run check:admin-css-classes`.
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,8 +34,9 @@ const RULE_IDS = ['no-uncompiled-class'];
 
 async function main() {
   try {
-    const { exitCodeFor, formatReport, loadConfig, runStatic } = await import('../../dist/audit/index.js');
-    const report = scopeReport(runStatic(loadConfig(ROOT)), RULE_IDS);
+    const { exitCodeFor, formatReport, loadConfig, runStatic, staticRules } = await import('../../dist/audit/index.js');
+    const rules = staticRules().filter((rule) => !rule.publicScope);
+    const report = scopeReport(runStatic(loadConfig(ROOT), rules), RULE_IDS);
     console.log(formatReport(report));
     process.exitCode = exitCodeFor(report);
   } catch (err) {

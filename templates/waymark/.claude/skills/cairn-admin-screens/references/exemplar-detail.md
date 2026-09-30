@@ -112,10 +112,15 @@ drift risk a role name isn't.
         </div>
         <div class="flex items-center gap-2">
           <span class="badge {visibility.cls}">{visibility.label}</span>
-          {#if member.archived}<span class="badge badge-ghost badge-sm font-medium opacity-60">Archived</span>{/if}
+          {#if member.archived}<StatusChip label="Archived" />{/if}
           <a class="btn btn-ghost btn-xs" href="...">Signatures</a>
           <button type="button" class="btn btn-ghost btn-xs" onclick={...}>Edit</button>
           ...
+        </div>
+      </li>
+    {/each}
+  </ul>
+</div>
 ```
 
 Every card in this screen (Roster, Memberships, Money timeline, Assets) repeats this same
@@ -127,12 +132,12 @@ than once:
 - **The section heading's own light verb stays `btn-ghost btn-xs`**, one size down from the
   header's own `btn-sm` verbs, since a section-scoped action ("Add member") is a lower-stakes
   ask than a record-scoped one ("Edit household").
-- **`badge-ghost badge-sm font-medium opacity-60` for "Archived"/"Refunded"** is exactly the
-  ghost recipe cairn's own audit now retires (`stock-default-hazards`'s
-  `BADGE_GHOST_MESSAGE`). A cairn-native build reaches for `<StatusChip register="quiet" .../>`
-  instead: "Archived" and "Refunded" are precisely the settled, put-away states the `quiet`
-  register exists for, and it carries the ratified recipe rather than a hand-tuned opacity
-  demotion.
+- **The fence above already writes the cairn-native call, `<StatusChip label="Archived" />`.**
+  The source screen's own markup for "Archived"/"Refunded" instead read
+  `badge-ghost badge-sm font-medium opacity-60`, the ghost recipe cairn's own audit now
+  retires (`stock-default-hazards`'s `BADGE_GHOST_MESSAGE`). "Archived" and "Refunded" are
+  the settled, put-away states `StatusChip`'s default `quiet` register exists for, and
+  it carries the ratified recipe rather than a hand-tuned opacity demotion.
 - **Row-level verbs are uniformly `btn-ghost btn-xs`**, whether the row's own action is
   benign (Edit, Move) or destructive (Archive, carrying `text-error` on the label, still no
   fill). A row can hold several verbs at once without ever competing for the surface's one

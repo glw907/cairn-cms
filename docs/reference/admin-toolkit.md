@@ -9,7 +9,7 @@ subpaths stating the same charter is one subpath. The **screen-scaffold** primit
 `StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus the formatters compose a whole
 screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
 every contract here is general-purpose across sites. A component that renders one of cairn's own
-content concepts (a `ConceptList` row, an `EditPage` field) lives on `/components` instead, even
+content concepts (a `ConceptList` row, an `EditPage` field) lives on `/admin` instead, even
 though it also renders inside the admin theme.
 
 ```ts
@@ -875,7 +875,7 @@ let { entries, onselect }: {
 ```
 
 The read-only combobox over a site's committed media library: a search input, an optional media-type
-facet, and one option row per asset. It sits in this subpath rather than `/components` because it
+facet, and one option row per asset. It sits in this subpath rather than `/admin` because it
 selects an asset and hands it back, which is a screen primitive a site composes into its own admin
 screen, not a rendering of one of cairn's content concepts. Nothing about it writes: uploading,
 replacing, and committing an asset stay inside cairn's own media screens.

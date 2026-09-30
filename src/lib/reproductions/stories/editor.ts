@@ -14,13 +14,13 @@
 // A5b) once `publish/header-band` needed the same pieces; this module imports them back, along with
 // the `ConceptList` load `publish/refusal-banner` mounts against too.
 import { createRawSnippet, type Component } from 'svelte';
-import ConceptList from '../../components/ConceptList.svelte';
-import EditPage from '../../components/EditPage.svelte';
-import EditorToolbar from '../../components/EditorToolbar.svelte';
-import MarkdownEditor from '../../components/MarkdownEditor.svelte';
-import MediaFigureControl from '../../components/MediaFigureControl.svelte';
-import TidyReview from '../../components/TidyReview.svelte';
-import type { TidyApi } from '../../components/editor-tidy.js';
+import ConceptList from '../../admin/ConceptList.svelte';
+import EditPage from '../../admin/EditPage.svelte';
+import EditorToolbar from '../../admin/EditorToolbar.svelte';
+import MarkdownEditor from '../../admin/MarkdownEditor.svelte';
+import MediaFigureControl from '../../admin/MediaFigureControl.svelte';
+import TidyReview from '../../admin/TidyReview.svelte';
+import type { TidyApi } from '../../admin/editor-tidy.js';
 import { fixtureDeskPathname, fixtureTidyReview } from '../fixtures.js';
 import type { ReproStory } from '../index.js';
 import {

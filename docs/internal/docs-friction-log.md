@@ -49,6 +49,33 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+Theme identity pass B's close (2026-09-29) triaged the whole log and found one open entry, the
+`contributor` finding that the showcase's `wrangler.jsonc:61` hardcodes `PUBLIC_ORIGIN` to
+`http://localhost:4173`. It was verified against the tree (still present) and promoted whole to
+`ROADMAP.md`'s Next tier beside the `rendered.test.ts` half, which draft docs pass 0+1 had already
+promoted. The pass routed its own findings straight to `ROADMAP.md` in the same step: the
+`viewport-overflow` timing defect to Now, and the dev backend's `APP_DB` overwrite, the promotion
+at `0.99.0`, `transformSelection`'s whole-document dispatch, and the imperative internal-doc
+pointer in `cairn-extend` to Next, and the `rounded-t-full` gap to Later. The probe's emitter
+trap went to `docs/internal/durable-gotchas.md`. See Clearings.
+- **`admin`.** The media library's orphan scan and purge sit behind the same `media` engine access
+  as the rest of the library (`requireEngineAccess(runtime.access, editor, 'media')` in
+  `src/lib/sveltekit/content-routes-media-library.ts:67`), so every editor can purge by default. A
+  repo-wide destructive action open to every editor may deserve an owner default. The site can
+  already restrict `media` in its access map, so this is a question of which default fits the charter. Found by the
+  harvest's sweep of the editors arm, 2026-09-29.
+
+Theme identity pass C's close (2026-09-29) triaged the whole log and found one open entry, the
+`admin` finding above on the media library's orphan purge. It was verified against the tree
+(`requireEngineAccess(runtime.access, editor, 'media')` is still at
+`src/lib/sveltekit/content-routes-media-library.ts:67`) and stays here: it is a pending product
+decision for Geoff, on which default fits the charter, not a defect to fix. The two chores the pass
+fixed on the spot (the scaffold's Node 22 CI pin, now Node 24, and the signups page's stale
+Tailwind comment) are already gone from the log. The pass routed its own findings straight to `ROADMAP.md` in the same step:
+four `theme-contrast` and public-scope edge cases to Next, the
+promotion of the two theme rules to error tier to Toward 1.0, and the docs standing order to Next.
+See Clearings.
+
 The style-guide sync's close (2026-09-29) triaged the whole log and found two open entries, both
 its own, each verified against the tree first. Tidy's pinned default model
 (`DEFAULT_TIDY_MODEL = 'claude-sonnet-5'`, still at `src/lib/nav/site-config.ts:133`) was promoted
@@ -203,7 +230,9 @@ history holds every pruned entry in full.
 | 2026-09-24 | docs reset pass 1's close | no open finding in the log; the pass's own findings routed to `ROADMAP.md` (the docs reset to Now; the deferred chain and harness items, the Waymark theme comments, and the readers' real page defects to Next); the page-only `[candidate]` re-sourcing entry in Next reworded to the 25 bullets the triage excluded |
 | 2026-09-28 | theme identity pass A's close | no open finding in the log; the pass's own findings routed to `ROADMAP.md` (the carried items to Now, the pinned-rule shrink and the safelist retirement to Later); the Waymark citation entry in Next narrowed |
 | 2026-09-28 | draft docs pass 0+1's close | two open entries, both verified and promoted whole to `ROADMAP.md`'s Next tier: the `admin-toolkit.md` outline-chip contrast ratios needing re-measurement, and the page-chain claim inventory's missing disposition for a relocated claim; the close's own two carried findings (`check:symbols`'s attached-redirect and dropped-continuation gaps, `rendered.test.ts`'s hardcoded port 4173) filed straight to the same tier; the segment A boundary's third carried item, the duplicate-shipped-anchor gap, verified already fixed by the 2026-09-26 hardening commit and needed no filing |
+| 2026-09-29 | theme identity pass B's close | one open entry, the showcase's hardcoded `PUBLIC_ORIGIN` on port 4173 (found again by pass B's task 1), verified and promoted whole to `ROADMAP.md`'s Next tier; the pass's own findings filed straight to Now, Next, and Later, and the probe emitter trap to `durable-gotchas.md` |
 | 2026-09-29 | the style-guide sync's close | two open entries, both its own: Tidy's pinned default model promoted whole to `ROADMAP.md`'s Next tier; the entry on the stale `Microsoft.Quotes` suppression comment in `docs/editors/when-something-goes-wrong.md` deleted as overtaken, since the harvest-then-delete program deletes the page. The whole-log sweep found no other open finding |
+| 2026-09-29 | theme identity pass C's close | one open entry, the media library's orphan purge open to every editor, verified against the tree and kept as a pending product decision for Geoff; the pass's own findings routed to `ROADMAP.md` (the four edge cases to Next, the rule promotion to Toward 1.0, the docs standing order to Next) |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

@@ -56,6 +56,30 @@ export interface ElementAttribute {
   value?: string;
 }
 
+/**
+ * The static text of one inline style declaration: a piece of a `style=` attribute, or a piece of
+ * a Svelte `style:` directive's value. An interpolation is never part of it, so a rule reads only
+ * what the author wrote as a literal, and `start`/`end` land on that text in the source.
+ */
+export interface StyleValue {
+  /** `attribute` for a `style=` declaration, `directive` for a `style:` directive. */
+  kind: 'attribute' | 'directive';
+  /**
+   * The CSS property this text is the value of: a directive's own name, or the name written before
+   * the colon. Absent when the text follows an interpolation, where the property sits earlier in
+   * the attribute than the text this piece can see.
+   */
+  property?: string;
+  /** The static value text, trimmed. Never empty. */
+  value: string;
+  /** Character offset of the value's first character in the component source. */
+  start: number;
+  /** Character offset just past the value. */
+  end: number;
+  /** 1-based line of `start`. */
+  line: number;
+}
+
 /** One template node's identity and source range, the unit a suppression directive attaches to. */
 export interface SourceNode {
   /** The svelte AST node type, for example `RegularElement`, `Comment`, or `IfBlock`. */
@@ -96,6 +120,12 @@ export interface ParsedComponent {
    */
   styleClassNames: Set<string>;
   /**
+   * The static text of every inline style the template writes, in document order: each declaration
+   * of a `style=` attribute (the static parts of a mixed value included) and each `style:`
+   * directive whose value is a literal. A value that is one expression contributes nothing.
+   */
+  styleValues: StyleValue[];
+  /**
    * The component's own scoped `<style>` block: its raw CSS text and the offset its first
    * character sits at in `source`. Absent when the component carries no `<style>` block. The
    * CSS-family static rules (token-colors, grammar-boundary, focus-parity, motion-band,
@@ -104,6 +134,12 @@ export interface ParsedComponent {
    * CSS in the component's source rather than at an offset local to the extracted text.
    */
   styleBlock?: { source: string; start: number };
+  /**
+   * A `<style lang="...">` block the parser could not read (Sass, Less), with the language it
+   * names and the offsets of its opening tag. Set only when `parseComponent` was asked to
+   * tolerate one; its content was blanked so the rest of the component parses, and no rule read it.
+   */
+  unparsedStyle?: { lang: string; start: number; end: number };
 }
 
 // The svelte AST is walked structurally rather than through the published `AST` union. Two reasons:
@@ -548,11 +584,88 @@ function attributesOf(node: RawNode, starts: number[]): ElementAttribute[] {
   return out;
 }
 
+/**
+ * One piece of inline style text as a `StyleValue`, its surrounding whitespace trimmed and its
+ * offsets moved onto the trimmed text. `offset` is where `text` begins in the source. Undefined when
+ * the text is only whitespace.
+ */
+function styleValueAt(
+  kind: StyleValue['kind'],
+  property: string | undefined,
+  text: string,
+  offset: number,
+  starts: number[]
+): StyleValue | undefined {
+  const value = text.trim();
+  if (value === '') return undefined;
+  const start = offset + (text.length - text.trimStart().length);
+  return {
+    kind,
+    ...(property === undefined ? {} : { property }),
+    value,
+    start,
+    end: start + value.length,
+    line: lineOfIndex(starts, start),
+  };
+}
+
+/**
+ * The declarations one static text piece of a `style=` value writes. The text is split at each
+ * semicolon; a piece with no colon is the tail of a declaration an interpolation began, so it
+ * carries no property.
+ */
+function declarationsIn(text: string, base: number, starts: number[]): StyleValue[] {
+  const out: StyleValue[] = [];
+  const piece = /[^;]+/g;
+  let match: RegExpExecArray | null;
+  while ((match = piece.exec(text)) !== null) {
+    const colon = match[0].indexOf(':');
+    const property = colon === -1 ? '' : match[0].slice(0, colon).trim();
+    const value = styleValueAt(
+      'attribute',
+      property === '' ? undefined : property,
+      match[0].slice(colon + 1),
+      base + match.index + colon + 1,
+      starts
+    );
+    if (value) out.push(value);
+  }
+  return out;
+}
+
+/** The literal text parts of an attribute or directive value, skipping every interpolation. */
+function textParts(value: unknown): RawNode[] {
+  if (!Array.isArray(value)) return [];
+  return (value as RawNode[]).filter(
+    (part) => part.type === 'Text' && typeof part.start === 'number' && typeof part.raw === 'string'
+  );
+}
+
+/** The inline style text one node writes, from its `style=` attribute and its `style:` directives. */
+function styleValuesOf(node: RawNode, starts: number[]): StyleValue[] {
+  if (!Array.isArray(node.attributes)) return [];
+  const out: StyleValue[] = [];
+  for (const attr of node.attributes) {
+    if (attr.type === 'Attribute' && attr.name === 'style') {
+      for (const part of textParts(attr.value)) {
+        out.push(...declarationsIn(part.raw as string, part.start as number, starts));
+      }
+    } else if (attr.type === 'StyleDirective' && typeof attr.name === 'string') {
+      for (const part of textParts(attr.value)) {
+        const value = styleValueAt('directive', attr.name, part.raw as string, part.start as number, starts);
+        if (value) out.push(value);
+      }
+    }
+  }
+  return out;
+}
+
 /** What one walk of a component's template writes into, assembled once by `parseComponent`. */
 interface Collector {
   starts: number[];
   nodes: SourceNode[];
   tokens: ClassToken[];
+  styleValues: StyleValue[];
   resolution: Resolution;
   /** The `start:end:value` of each token already recorded, so one script string counts once. */
   seen: Set<string>;
@@ -580,6 +693,7 @@ function collect(node: RawNode, into: Collector, parentEnd: number | undefined):
       parentEnd,
     });
   }
+  into.styleValues.push(...styleValuesOf(node, starts));
   if (Array.isArray(node.attributes)) {
     const elementStart = typeof node.start === 'number' ? node.start : -1;
     for (const attr of node.attributes) {
@@ -633,11 +747,40 @@ interface RawScript {
   content?: RawNode;
 }
 
+const LANG_STYLE = /<style\b[^>]*?\blang\s*=\s*["']?([\w-]+)["']?[^>]*>/i;
+
+/**
+ * The component with its `<style lang="...">` block's content blanked, offsets kept, or null
+ * when it has no such block. A preprocessed block (Sass nesting, `//` comments) is not CSS the
+ * compiler's parser reads, and a preprocessor is not something the audit runs.
+ */
+function blankLangStyle(source: string): { source: string; lang: string; start: number; end: number } | null {
+  const tag = LANG_STYLE.exec(source);
+  if (!tag || tag[1].toLowerCase() === 'css') return null;
+  const bodyStart = tag.index + tag[0].length;
+  const close = source.slice(bodyStart).search(/<\/style\s*>/i);
+  if (close === -1) return null;
+  const blank = source.slice(bodyStart, bodyStart + close).replace(/[^\n]/g, ' ');
+  return {
+    source: source.slice(0, bodyStart) + blank + source.slice(bodyStart + close),
+    lang: tag[1],
+    start: tag.index,
+    end: bodyStart,
+  };
+}
+
 /**
  * Parse one component into the substrate the static rules run on. A component that does not parse
- * throws naming the file, since a syntax error is a real defect rather than a file to skip.
+ * throws naming the file, since a syntax error is a real defect rather than a file to skip. With
+ * `tolerateStyleLang`, a component whose only unreadable part is a `<style lang="...">` block
+ * parses with that block blanked and `unparsedStyle` set, so a caller can name the block instead
+ * of failing the whole run.
  */
-export function parseComponent(file: string, source: string): ParsedComponent {
+export function parseComponent(
+  file: string,
+  source: string,
+  { tolerateStyleLang = false }: { tolerateStyleLang?: boolean } = {}
+): ParsedComponent {
   let root: { fragment?: RawNode; css?: RawStyle; instance?: RawScript; module?: RawScript };
   try {
     // The published AST union describes the same shape this module reads structurally; the cast
@@ -649,11 +792,20 @@ export function parseComponent(file: string, source: string): ParsedComponent {
       module?: RawScript;
     };
   } catch (err) {
-    throw new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`);
+    const failure = new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`);
+    const blanked = tolerateStyleLang ? blankLangStyle(source) : null;
+    if (!blanked) throw failure;
+    try {
+      const parsed = parseComponent(file, blanked.source);
+      return { ...parsed, source, unparsedStyle: { lang: blanked.lang, start: blanked.start, end: blanked.end } };
+    } catch {
+      throw failure;
+    }
   }
   const starts = lineStarts(source);
   const nodes: SourceNode[] = [];
   const classTokens: ClassToken[] = [];
+  const styleValues: StyleValue[] = [];
   const scope = collectScope([root.module?.content, root.instance?.content]);
   if (root.fragment) {
     collect(
@@ -662,6 +814,7 @@ export function parseComponent(file: string, source: string): ParsedComponent {
         starts,
         nodes,
         tokens: classTokens,
+        styleValues,
         resolution: { scope, blocked: new Set() },
         seen: new Set(),
       },
@@ -675,5 +828,5 @@ export function parseComponent(file: string, source: string): ParsedComponent {
     typeof content?.start === 'number' && typeof content?.end === 'number'
       ? { source: source.slice(content.start, content.end), start: content.start }
       : undefined;
-  return { file, source, nodes, classTokens, styleClassNames, styleBlock };
+  return { file, source, nodes, classTokens, styleClassNames, styleValues, styleBlock };
 }

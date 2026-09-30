@@ -10,7 +10,8 @@
 // The parser is hand-rolled because a CSS parser would be a new runtime dependency for every
 // consumer. It handles what a compiled Tailwind/DaisyUI sheet contains: comments, strings, nested
 // at-rules, and escaped selectors. The shipped sheet is flattened before it is scoped, so a nested
-// STYLE rule does not appear; a group whose prelude is a selector contributes no condition.
+// STYLE rule does not appear; a group whose prelude is a selector contributes no condition, and is
+// recorded instead as a parent of the rules it holds.
 
 /** One declaration a class token resolves to, with the context it was declared in. */
 export interface SheetDeclaration {
@@ -26,6 +27,13 @@ export interface SheetDeclaration {
 export interface SheetRule {
   selector: string;
   conditions: string[];
+  /**
+   * The selectors of the style rules this rule nests inside, outermost first, as written with any
+   * `&` unresolved. Empty for a top-level rule. A conditional group nested directly in a style
+   * rule (`:root { @media (...) { --x: 1 } }`) is recorded with its own prelude as `selector` and
+   * the style rule it sits in here.
+   */
+  parents: string[];
   declarations: { property: string; value: string }[];
   /** The class names the selector targets, unescaped, excluding anything it only negates. */
   classNames: string[];
@@ -82,8 +90,15 @@ function skipString(css: string, index: number): number {
   return css.length;
 }
 
-/** A prelude with its comments removed, so a selector commented out never reads as a rule. */
-function stripComments(text: string): string {
+/**
+ * A text with its comments removed, so a selector commented out never reads as a rule. `space`
+ * leaves a space where each comment stood, which a prelude takes. `drop` removes each comment
+ * outright, which a property name takes, so a comment inside a name never splits it. `separate`
+ * leaves one space only where a comment sat between two non-space characters, which a value takes:
+ * `1px`, a comment, and `2px` written with no space keep two tokens, and a comment with spaces
+ * around it gains no extra space.
+ */
+function stripComments(text: string, mode: 'space' | 'drop' | 'separate' = 'space'): string {
   let out = '';
   let i = 0;
   while (i < text.length) {
@@ -94,7 +109,8 @@ function stripComments(text: string): string {
     }
     if (text[i] === '/' && text[i + 1] === '*') {
       i = skipComment(text, i);
-      out += ' ';
+      if (mode === 'space') out += ' ';
+      else if (mode === 'separate' && /\S$/.test(out) && /^\S/.test(text.slice(i)) && !text.startsWith('/*', i)) out += ' ';
       continue;
     }
     if (text[i] === '"' || text[i] === "'") {
@@ -145,7 +161,7 @@ function scanBlock(css: string, open: number): { end: number; nested: boolean } 
   return { end: css.length, nested };
 }
 
-/** The index of the first colon outside parentheses and strings, or -1. */
+/** The index of the first colon outside parentheses, strings, and comments, or -1. */
 function propertyBoundary(text: string): number {
   let depth = 0;
   let i = 0;
@@ -153,6 +169,10 @@ function propertyBoundary(text: string): number {
     const ch = text[i];
     if (ch === '\\') {
       i += 2;
+      continue;
+    }
+    if (ch === '/' && text[i + 1] === '*') {
+      i = skipComment(text, i);
       continue;
     }
     if (ch === '"' || ch === "'") {
@@ -174,11 +194,13 @@ function parseDeclarations(text: string): { property: string; value: string }[] 
   let start = 0;
   let i = 0;
   const flush = (end: number) => {
-    const decl = text.slice(start, end).trim();
-    const colon = decl.length > 0 ? propertyBoundary(decl) : -1;
-    if (colon > 0) {
-      out.push({ property: decl.slice(0, colon).trim(), value: decl.slice(colon + 1).trim() });
-    }
+    // The boundary skips comments, so a colon inside one never reads as it. The name drops its
+    // comments outright, and the value keeps a token boundary where a comment separated two tokens.
+    const decl = text.slice(start, end);
+    const colon = propertyBoundary(decl);
+    if (colon === -1) return;
+    const property = stripComments(decl.slice(0, colon), 'drop').trim();
+    if (property.length > 0) out.push({ property, value: stripComments(decl.slice(colon + 1), 'separate').trim() });
   };
   while (i < text.length) {
     const ch = text[i];
@@ -429,6 +451,9 @@ export function conditionalConditions(conditions: string[]): string[] {
   return conditions.filter((condition) => CONDITIONAL_GROUP_RULE.test(condition.trim()));
 }
 
+/** A block at-rule whose direct declarations are design values even when it also nests a block. */
+const THEME_AT_RULE = /^@(theme|plugin)\b/;
+
 /**
  * Walk a stylesheet's blocks, recursing through groups and collecting the style rules.
  * `baseOffset` is the position, in the top-level string `parseSheet` was called with, that this
@@ -436,7 +461,7 @@ export function conditionalConditions(conditions: string[]): string[] {
  * (offset 0 in that substring), and every rule's `start`/`end` needs to read against the ONE
  * source `parseSheet`'s caller handed it, not against whichever nesting level produced it.
  */
-function collectRules(css: string, conditions: string[], out: SheetRule[], baseOffset: number): void {
+function collectRules(css: string, conditions: string[], parents: string[], out: SheetRule[], baseOffset: number): void {
   let preludeStart = 0;
   let i = 0;
   while (i < css.length) {
@@ -465,15 +490,19 @@ function collectRules(css: string, conditions: string[], out: SheetRule[], baseO
       const inner = css.slice(i + 1, end);
       if (nested) {
         const inherited = prelude.startsWith('@') ? [...conditions, prelude] : conditions;
-        if (!prelude.startsWith('@')) {
+        const nestedIn = prelude.startsWith('@') ? parents : [...parents, prelude];
+        if (!prelude.startsWith('@') || THEME_AT_RULE.test(prelude)) {
           // A nested style rule's own declarations, before its children. The children recurse with
           // their selectors as written, `&` unresolved: a rule comparing selector text compares
-          // within one nesting level, which is the level an author writes the pairing at.
+          // within one nesting level, which is the level an author writes the pairing at. A
+          // `@theme` or `@plugin` block that nests a `@keyframes` (Tailwind's own theme file does)
+          // still declares its own custom properties, so it reads like a style rule here.
           const declarations = parseDeclarations(ownDeclarationText(inner));
           if (declarations.length > 0) {
             out.push({
               selector: prelude,
               conditions,
+              parents,
               declarations,
               classNames: selectorClassNames(prelude),
               negatedClassNames: negatedClassNames(prelude),
@@ -482,11 +511,12 @@ function collectRules(css: string, conditions: string[], out: SheetRule[], baseO
             });
           }
         }
-        collectRules(inner, inherited, out, baseOffset + i + 1);
+        collectRules(inner, inherited, nestedIn, out, baseOffset + i + 1);
       } else {
         out.push({
           selector: prelude,
           conditions,
+          parents,
           declarations: parseDeclarations(inner),
           classNames: prelude.startsWith('@') ? [] : selectorClassNames(prelude),
           negatedClassNames: prelude.startsWith('@') ? [] : negatedClassNames(prelude),
@@ -543,10 +573,115 @@ export function splitSelectorList(selector: string): string[] {
   return parts.map((part) => part.trim()).filter((part) => part.length > 0);
 }
 
+/** One top-level statement at-rule: a block-less `@import`, `@source`, `@charset`, and the like. */
+export interface SheetStatement {
+  /** The at-rule's name without the `@`, lowercased. */
+  name: string;
+  /** Everything between the name and the terminating semicolon, comments removed and trimmed. */
+  prelude: string;
+  /** Character offset of the `@`. */
+  start: number;
+  /** Character offset just past the terminating semicolon, or the end of the text when absent. */
+  end: number;
+}
+
+/**
+ * The top-level statement at-rules of a stylesheet, in source order. `parseSheet` reads rules that
+ * open a block, so a block-less `@import` is dropped at its semicolon and never reaches it; this
+ * is the sibling that lists them. A block at-rule (`@theme`, `@layer x { ... }`) and everything
+ * nested inside a block is skipped, so an `@import` inside a group is never reported, and a
+ * comment or a string holding `@import` is never read as one.
+ */
+export function parseStatements(css: string): SheetStatement[] {
+  const out: SheetStatement[] = [];
+  let atStart = true;
+  let i = 0;
+  while (i < css.length) {
+    const ch = css[i];
+    if (ch === '\\') {
+      i += 2;
+      atStart = false;
+      continue;
+    }
+    if (ch === '/' && css[i + 1] === '*') {
+      i = skipComment(css, i);
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      i = skipString(css, i);
+      atStart = false;
+      continue;
+    }
+    if (ch === ';' || ch === '}') {
+      i++;
+      atStart = true;
+      continue;
+    }
+    if (ch === '{') {
+      i = scanBlock(css, i).end + 1;
+      atStart = true;
+      continue;
+    }
+    if (/\s/.test(ch)) {
+      i++;
+      continue;
+    }
+    if (ch === '@' && atStart) {
+      const start = i;
+      const { name, next } = readIdent(css, i + 1);
+      let depth = 0;
+      let j = next;
+      let terminated = false;
+      while (j < css.length) {
+        const c = css[j];
+        if (c === '\\') {
+          j += 2;
+          continue;
+        }
+        if (c === '/' && css[j + 1] === '*') {
+          j = skipComment(css, j);
+          continue;
+        }
+        if (c === '"' || c === "'") {
+          j = skipString(css, j);
+          continue;
+        }
+        if (c === '(') depth++;
+        else if (c === ')') depth = Math.max(0, depth - 1);
+        else if (c === '{' && depth === 0) break;
+        else if (c === ';' && depth === 0) {
+          terminated = true;
+          break;
+        }
+        j++;
+      }
+      if (j < css.length && css[j] === '{') {
+        // A block at-rule: not a statement, and its body is skipped whole.
+        i = scanBlock(css, j).end + 1;
+        atStart = true;
+        continue;
+      }
+      const end = terminated ? j + 1 : css.length;
+      out.push({
+        name: name.toLowerCase(),
+        prelude: stripComments(css.slice(next, terminated ? j : css.length)).trim(),
+        start,
+        end,
+      });
+      i = end;
+      atStart = true;
+      continue;
+    }
+    atStart = false;
+    i++;
+  }
+  return out;
+}
+
 /** Index a compiled stylesheet for exact class-token lookup. */
 export function parseSheet(css: string): CompiledSheet {
   const rules: SheetRule[] = [];
-  collectRules(css, [], rules, 0);
+  collectRules(css, [], [], rules, 0);
   const index = new Map<string, SheetRule[]>();
   const negatedIndex = new Set<string>();
   for (const rule of rules) {

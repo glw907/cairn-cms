@@ -1,0 +1,13 @@
+# Vale gotcha: multiple `raw:` entries in an `existence` rule concatenate into one pattern
+# (`['\bfoo\b', '\bCairn\b']` becomes `\bfoo\b\bCairn\b` and matches nothing); a token list uses
+# `tokens:` instead, and `raw:` is reserved for a single pattern.
+extends: existence
+message: "Naming convention ('%s'): see 'Names' in docs/internal/docs-register.md. Say 'custom public component' for a site's own public component; a built-in public component lives on `@glw907/cairn-cms/public`, and the admin's own components stay 'admin components'."
+level: error
+scope: text
+ignorecase: true
+tokens:
+  - engine public component
+  - public engine component
+  - chassis component
+  - site component

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import EditPage from '../../lib/components/EditPage.svelte';
+import EditPage from '../../lib/admin/EditPage.svelte';
 import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import type { EditData } from '../../lib/sveltekit/content-routes.js';

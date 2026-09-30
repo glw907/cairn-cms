@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import FieldInput from '../../lib/components/FieldInput.svelte';
+import FieldInput from '../../lib/admin/FieldInput.svelte';
 import FieldInputHeroRefHarness from './_FieldInputHeroRefHarness.svelte';
 import type { NamedField } from '../../lib/content/types.js';
 

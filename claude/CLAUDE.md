@@ -20,7 +20,7 @@ link this file can follow.
 - `requireAccess`, `createSectionAction`, `locals.cairnEditor`: the auth guard and the per-route
   factories. See `node_modules/@glw907/cairn-cms/docs/reference/sveltekit.md`.
 - `CairnAdminShell`, `navLayout`: the shared admin frame and its declared navigation. See
-  `node_modules/@glw907/cairn-cms/docs/reference/components.md`.
+  `node_modules/@glw907/cairn-cms/docs/reference/admin.md`.
 - The field, screen-scaffold, and formatter primitives a custom `/admin/` screen composes. See
   `node_modules/@glw907/cairn-cms/docs/reference/admin-toolkit.md`.
 - `createAuthChannel`: a site's own second-audience login channel (request, confirm, logout) over

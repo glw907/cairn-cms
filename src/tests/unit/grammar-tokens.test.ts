@@ -18,7 +18,7 @@ let css: string;
 let source: string;
 beforeAll(async () => {
   css = await buildAdminCss();
-  source = readFileSync(new URL('../../lib/components/cairn-admin.css', import.meta.url), 'utf8');
+  source = readFileSync(new URL('../../lib/admin/cairn-admin.css', import.meta.url), 'utf8');
 }, 60_000);
 
 // CONTRACT: grammar tokens are the admin's structural type and spacing vocabulary (the

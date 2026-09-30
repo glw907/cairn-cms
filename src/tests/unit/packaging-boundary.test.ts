@@ -3,7 +3,7 @@
 // `CHANGELOG.md` (plus npm's own README/LICENSE/package.json) ship. Second, Node's own package
 // resolver must refuse a deep import of shipped source or of a `dist/` path the `exports` map
 // does not name, so a consumer cannot route around the public subpaths (`.`, `/sveltekit`,
-// `/components`, and so on). Both checks run against the built package, not the source tree, so
+// `/admin`, and so on). Both checks run against the built package, not the source tree, so
 // they need `dist/index.js`; they skip (via skipIf) when the package has not been built, the
 // same precedent as delivery-data-dist-spawn.test.ts.
 import { describe, it, expect } from 'vitest';

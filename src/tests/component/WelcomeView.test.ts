@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
-import WelcomeView from '../../lib/components/WelcomeView.svelte';
+import WelcomeView from '../../lib/admin/WelcomeView.svelte';
 import type { WelcomeData } from '../../lib/sveltekit/content-routes.js';
 
 function data(over: Partial<WelcomeData> = {}): WelcomeData {

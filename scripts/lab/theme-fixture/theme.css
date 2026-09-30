@@ -1,0 +1,131 @@
+/* The fixture theme: a second theme on the chassis, deliberately unlike Waymark, that proves the
+   public contract is theme-independent. It carries system-stack faces, a square corner ladder, a
+   dark-first palette, derived status inks on all but one status, the heading levers, one custom
+   token with its reader, and the tokens the styleguide and chrome read that the chassis leaves to
+   a theme. The palette's values were fixed before any ink measurement ran and are never adjusted
+   to make a pair pass: a pair that fails here is a finding about the derivation, not a reason to
+   retune the palette. The dark block is the default, so a visitor with no stored choice and a
+   light OS still sees it; the light block applies only when the page names it. */
+@import "../chassis/tokens.css";
+
+@plugin "daisyui/theme" {
+  name: "cairn";
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: oklch(99% 0.005 90);
+  --color-base-200: oklch(96% 0.008 90);
+  --color-base-300: oklch(91% 0.012 90);
+  --color-base-content: oklch(24% 0.02 260);
+  --color-primary: oklch(48% 0.11 195);
+  --color-primary-content: oklch(98% 0.01 195);
+  --color-secondary: oklch(50% 0.13 300);
+  --color-secondary-content: oklch(98% 0.01 300);
+  --color-accent: oklch(72% 0.14 75);
+  --color-accent-content: oklch(25% 0.05 75);
+  --color-neutral: oklch(30% 0.02 260);
+  --color-neutral-content: oklch(96% 0.006 260);
+  --color-info: oklch(52% 0.13 250);
+  --color-info-content: oklch(98% 0.01 250);
+  --color-success: oklch(52% 0.13 155);
+  --color-success-content: oklch(98% 0.01 155);
+  --color-warning: oklch(80% 0.14 85);
+  --color-warning-content: oklch(26% 0.05 85);
+  --color-error: oklch(55% 0.19 25);
+  --color-error-content: oklch(98% 0.01 25);
+
+  /* One status ink is hand-set; the other three derive from their fills. */
+  --cairn-error-ink: oklch(46% 0.17 25);
+
+  /* The CTA panel: the inverted house-ad in light. */
+  --cairn-cta-bg: var(--color-neutral);
+  --cairn-cta-content: var(--color-neutral-content);
+  --cairn-cta-border: transparent;
+  --cairn-cta-btn-bg: var(--color-base-100);
+  --cairn-cta-btn-content: var(--color-base-content);
+
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "cairn-dark";
+  default: true;
+  prefersdark: false;
+  color-scheme: dark;
+
+  --color-base-100: oklch(21% 0.02 260);
+  --color-base-200: oklch(17% 0.02 260);
+  --color-base-300: oklch(28% 0.02 260);
+  --color-base-content: oklch(93% 0.01 260);
+  --color-primary: oklch(75% 0.14 195);
+  --color-primary-content: oklch(20% 0.04 195);
+  --color-secondary: oklch(70% 0.1 300);
+  --color-secondary-content: oklch(20% 0.03 300);
+  --color-accent: oklch(78% 0.13 75);
+  --color-accent-content: oklch(22% 0.04 75);
+  --color-neutral: oklch(30% 0.02 260);
+  --color-neutral-content: oklch(92% 0.01 260);
+  --color-info: oklch(72% 0.12 250);
+  --color-info-content: oklch(20% 0.04 250);
+  --color-success: oklch(72% 0.15 155);
+  --color-success-content: oklch(20% 0.05 155);
+  --color-warning: oklch(80% 0.14 85);
+  --color-warning-content: oklch(24% 0.05 85);
+  --color-error: oklch(68% 0.19 25);
+  --color-error-content: oklch(20% 0.06 25);
+
+  --cairn-error-ink: oklch(78% 0.13 25);
+
+  /* The CTA panel: a recessed bordered panel with a solid primary button in dark. */
+  --cairn-cta-bg: var(--color-base-200);
+  --cairn-cta-content: var(--color-base-content);
+  --cairn-cta-border: var(--color-base-300);
+  --cairn-cta-btn-bg: var(--color-primary);
+  --cairn-cta-btn-content: var(--color-primary-content);
+
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* The faces are system stacks, so the fixture loads no font file. */
+@theme {
+  --font-display: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* The walkthrough's levers: a heavier heading weight and a tighter large space step. */
+  --font-weight-heading: 800;
+  --spacing-xl: clamp(2rem, 1.85rem + 0.6vw, 2.5rem);
+}
+
+:root {
+  /* Uppercase every heading that reads the case lever, and square the two corners the ladder does
+     not reach: the tag-filter pill and the focus-ring radius the entry links read. */
+  --cairn-heading-case: uppercase;
+  --tag-filter-radius: 0;
+  --cairn-focus-ring-radius: 0;
+
+  /* The nav caption tracking has no chassis default, so the fixture states its own. */
+  --cairn-caption-tracking: 0.14em;
+
+  /* The fixture's one custom token, read by the one rule below. */
+  --fixture-header-rule: 4px;
+}
+
+.site-header {
+  border-bottom-width: var(--fixture-header-rule);
+}

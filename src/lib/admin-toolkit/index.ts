@@ -43,7 +43,7 @@ export {
 export { default as PageHeader } from './PageHeader.svelte';
 export { default as EmptyState, type EmptyStateHeadingLevel } from './EmptyState.svelte';
 export { default as ExpandableRow } from './ExpandableRow.svelte';
-// The media picker files under `components/` because it composes cairn's own media vocabulary
+// The media picker files under `admin/` because it composes cairn's own media vocabulary
 // (`media/reference`, `media/naming`, the shell's media-base context), and it publishes from here
 // because this is the barrel a site building its own admin screen reads. `MediaLibraryEntry`
 // publishes beside it for the same reason `ItemLabel` publishes beside `Pagination`: it sits in the
@@ -53,6 +53,6 @@ export {
   default as MediaPicker,
   type MediaLibraryEntry,
   type MediaSelection,
-} from '../components/MediaPicker.svelte';
+} from '../admin/MediaPicker.svelte';
 export { default as FieldLabel } from './FieldLabel.svelte';
 export { default as Tooltip } from './Tooltip.svelte';

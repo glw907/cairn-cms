@@ -13,8 +13,8 @@ text so a test can assert on them without reaching into Svelte internals.
 -->
 <script lang="ts">
   import { getContext } from 'svelte';
-  import { MEDIA_BASE_CONTEXT_KEY } from '../../lib/components/media-base-context.js';
-  import { CSRF_CONTEXT_KEY } from '../../lib/components/csrf-context.js';
+  import { MEDIA_BASE_CONTEXT_KEY } from '../../lib/admin/media-base-context.js';
+  import { CSRF_CONTEXT_KEY } from '../../lib/admin/csrf-context.js';
 
   const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY);
   const csrf = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);

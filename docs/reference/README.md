@@ -36,7 +36,10 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
 - [Admin grammar tokens](./admin-grammar-tokens.md): the admin's structural type and spacing
   vocabulary, the role utilities that reach it from markup, and the palette/grammar boundary a
   site's own theming respects.
-- [Components (`/components`)](./components.md): the admin Svelte UI.
+- [The admin components (`/admin`)](./admin.md): the admin Svelte UI.
+- [The public components (`/public`)](./public.md): every built-in public component that renders
+  styled markup.
+- [The public stylesheet (`/cairn-public.css`)](./public-css.md): the engine's role defaults, the rules it ships for the classes the engine emits, and the layer and nesting behavior a public theme relies on.
 - [Reproductions (`/reproductions`)](./reproductions.md): the story registry backing a docs page's `repro` fence, and its node-safe manifest at `/reproductions/manifest`.
 - [The `site-facts.json` contract](./site-facts.md): the adapter-derived file a Go process reads, written by `cairn-manifest` and verified by the `cairnManifest` plugin.
 - [The admin toolkit (`/admin-toolkit`)](./admin-toolkit.md): the field, screen-scaffold, and formatter primitives a site's own custom `/admin/` screen composes.

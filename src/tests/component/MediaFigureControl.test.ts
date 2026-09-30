@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import MediaFigureControl from '../../lib/components/MediaFigureControl.svelte';
+import MediaFigureControl from '../../lib/admin/MediaFigureControl.svelte';
 
 describe('MediaFigureControl pre-fill', () => {
   it('pre-fills the caption and the active role segment from an existing figure', async () => {

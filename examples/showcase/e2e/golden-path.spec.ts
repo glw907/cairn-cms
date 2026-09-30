@@ -414,9 +414,18 @@ test('the component picker groups the catalog, opens the callout two-pane with i
   await page.goto('/admin/posts/2026-06-hello');
   await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
 
-  // Open the Insert-component picker from the editor toolbar.
+  // Replace the body with a known line, then return the caret to the document start: the caret
+  // sits before existing body text, with nothing above it.
   const editor = page.locator('.cm-content');
   await expect(editor).toBeVisible();
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+A');
+  await page.keyboard.type('The original body line.');
+  const hiddenBody = page.locator('input[name="body"]');
+  await expect(hiddenBody).toHaveValue('The original body line.', { timeout: 2000 });
+  await page.keyboard.press('ControlOrMeta+Home');
+
+  // Open the Insert-component picker from the editor toolbar.
   await page.getByRole('button', { name: 'Insert block' }).click();
   const dialog = page.locator('dialog[aria-labelledby="cairn-insert-dialog-title"]');
   await expect(dialog).toBeVisible();
@@ -446,11 +455,26 @@ test('the component picker groups the catalog, opens the callout two-pane with i
     timeout: 5000,
   });
 
-  // Insert. The serialized directive lands at the editor cursor (callout has a nested slot, so the
-  // grammar opens it with a four-colon fence).
+  // Insert. Ahead of the caret's existing body text, every line of the whole four-colon-fenced
+  // directive lands intact, then exactly one blank line, then the body's first line unchanged: the
+  // closing fence no longer fuses onto the line that follows it.
   await dialog.getByRole('button', { name: 'Insert', exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(editor).toContainText('::::callout[A worked example]');
+  await expect(hiddenBody).toHaveValue(
+    [
+      '::::callout[A worked example]{tone="note"}',
+      'This is what the callout looks like while you fill it in.',
+      '',
+      ':::points',
+      '- First takeaway',
+      '- Second takeaway',
+      ':::',
+      '::::',
+      '',
+      'The original body line.',
+    ].join('\n'),
+    { timeout: 2000 },
+  );
 });
 
 test('the component round-trips: place a callout, the caret enables Edit block, Update rewrites the same block in place', async ({

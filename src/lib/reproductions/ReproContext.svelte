@@ -51,14 +51,14 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
 <script lang="ts">
   import { onDestroy, setContext, untrack } from 'svelte';
   import { BROWSER } from 'esm-env';
-  import CairnAdminShell from '../components/CairnAdminShell.svelte';
-  import { MEDIA_BASE_CONTEXT_KEY } from '../components/media-base-context.js';
-  import { CSRF_CONTEXT_KEY } from '../components/csrf-context.js';
+  import CairnAdminShell from '../admin/CairnAdminShell.svelte';
+  import { MEDIA_BASE_CONTEXT_KEY } from '../admin/media-base-context.js';
+  import { CSRF_CONTEXT_KEY } from '../admin/csrf-context.js';
   import type { AdminShellData } from '../sveltekit/content-routes-shell.js';
   import { fixtureConcept, fixtureCsrf, fixtureEditor, fixtureNavLayout, fixtureSiteName } from './fixtures.js';
   import { manifest } from './manifest.js';
   import type { ReproStory } from './index.js';
-  import '../components/cairn-admin.css';
+  import '../admin/cairn-admin.css';
 
   // The media base every mounted story gets when its mounting page passes none: cairn-pub's own
   // asset route, `/repro-assets`. Module-internal rather than exported: a docs site deployed

@@ -57,7 +57,7 @@ export const load: PageServerLoad = (event) => loadPreview(runtime, routesConfig
 <!-- src/routes/(site)/preview/[token]/+page.svelte -->
 <script lang="ts">
   import type { PageData } from './$types';
-  import { PreviewBanner } from '@glw907/cairn-cms/components';
+  import { PreviewBanner } from '@glw907/cairn-cms/public';
   import ArticleView from '$lib/components/ArticleView.svelte';
 
   let { data }: { data: PageData } = $props();
@@ -73,43 +73,27 @@ to this route.
 
 ## Override the banner's palette
 
-`PreviewBanner` ships a light and a dark default, switched only by `prefers-color-scheme`, the
-visitor's OS-level preference. Your site may theme by its own toggle instead, a `data-theme`
-attribute or a class. A visitor can then land on your toggle's dark mode while their OS preference
-stays light, or the reverse, and the banner renders its built-in palette against your site's own
-chrome instead of matching it.
+`PreviewBanner` reads daisyUI 5 role tokens, so it follows your light and dark schemes when your
+site uses daisyUI. A site without daisyUI sets the five custom properties below itself, since no
+literal fallback stands in for a missing token. The draft state paints `--color-base-200` under a
+`--color-warning` border. The ended state paints `--color-base-100` under a `--color-info` border.
+Text uses `--color-base-content`. The draft state has no link. The ended state's link uses
+`--cairn-info-ink` and shows a focus ring.
 
-The fix is to declare the banner's four custom properties yourself, in your site's own style
-sheet, so the banner always follows your toggle rather than the OS signal:
+To change the banner, declare its five custom properties in your site's own style sheet:
+`--cairn-preview-bg`, `--cairn-preview-fg`, `--cairn-preview-border`, `--cairn-preview-link`, and
+`--cairn-preview-radius`. Each one you set replaces the default in both states. Point them at your
+own tokens and the banner keeps following your toggle:
 
 ```css
 :root {
-  --cairn-preview-bg: #fff6dd;
-  --cairn-preview-fg: #3a2f12;
-  --cairn-preview-border: #e6cf8a;
-  --cairn-preview-link: #7a4f00;
-}
-
-/* Follow the OS preference when the visitor has not chosen. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    --cairn-preview-bg: #3a2f12;
-    --cairn-preview-fg: #f5e7bc;
-    --cairn-preview-border: #6b5420;
-    --cairn-preview-link: #ffd066;
-  }
-}
-
-/* Follow the site's own toggle once one is set, regardless of the OS preference. */
-:root[data-theme='dark'] {
-  --cairn-preview-bg: #3a2f12;
-  --cairn-preview-fg: #f5e7bc;
-  --cairn-preview-border: #6b5420;
-  --cairn-preview-link: #ffd066;
+  --cairn-preview-bg: var(--color-base-300);
+  --cairn-preview-border: var(--color-accent);
+  --cairn-preview-radius: 0;
 }
 ```
 
-Declaring the four properties on `:root`, or any ancestor, always wins: the banner reads each one
+Declaring a property on `:root`, or any ancestor, always wins: the banner reads each one
 through a `var(--cairn-preview-bg, <fallback>)` and never declares one on its own scoped element,
 so there's no specificity fight to win.
 

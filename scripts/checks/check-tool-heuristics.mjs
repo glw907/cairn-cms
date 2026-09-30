@@ -36,7 +36,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
  */
 export const WATCHES = [
   {
-    file: 'src/lib/components/index.ts',
+    file: 'src/lib/admin/index.ts',
     heuristic: 'admin.mount-shape',
     description: "the CairnAdminShell component export, which the mount-shape heuristic matches by name",
     pattern: /export \{ default as CairnAdminShell \} from '\.\/CairnAdminShell\.svelte';/,

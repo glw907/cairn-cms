@@ -8,9 +8,9 @@
 // screen inside this module from the exported `@glw907/cairn-cms/admin-toolkit` primitives, per the
 // audit's own row.
 import type { Component } from 'svelte';
-import ManageEditors from '../../components/ManageEditors.svelte';
-import VocabularyAdmin from '../../components/VocabularyAdmin.svelte';
-import WelcomeView from '../../components/WelcomeView.svelte';
+import ManageEditors from '../../admin/ManageEditors.svelte';
+import VocabularyAdmin from '../../admin/VocabularyAdmin.svelte';
+import WelcomeView from '../../admin/WelcomeView.svelte';
 import type { Editor } from '../../auth/types.js';
 import type { EditorsData } from '../../sveltekit/editors-routes.js';
 import { fixtureEditor, fixtureSiteName, fixtureVocabulary } from '../fixtures.js';

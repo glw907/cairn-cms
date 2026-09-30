@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import { markdown } from '@codemirror/lang-markdown';
-import { matchCairnTrigger, linkCompletions, cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
+import { matchCairnTrigger, linkCompletions, cairnLinkCompletionSource } from '../../lib/admin/link-completion.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 
 function contextAt(doc: string, pos: number) {

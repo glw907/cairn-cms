@@ -4,13 +4,13 @@
 // coexist rather than one duplicating the other.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import MediaReplaceDialog from '../../lib/components/MediaReplaceDialog.svelte';
-import * as ingest from '../../lib/components/client-ingest.js';
+import MediaReplaceDialog from '../../lib/admin/MediaReplaceDialog.svelte';
+import * as ingest from '../../lib/admin/client-ingest.js';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
 
-vi.mock('../../lib/components/client-ingest.js', async () => {
-  const actual = await vi.importActual<typeof import('../../lib/components/client-ingest.js')>(
-    '../../lib/components/client-ingest.js',
+vi.mock('../../lib/admin/client-ingest.js', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/admin/client-ingest.js')>(
+    '../../lib/admin/client-ingest.js',
   );
   return { ...actual, ingestFile: vi.fn(), sendUpload: vi.fn() };
 });

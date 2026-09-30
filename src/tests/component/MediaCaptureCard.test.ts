@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import MediaCaptureCard from '../../lib/components/MediaCaptureCard.svelte';
+import MediaCaptureCard from '../../lib/admin/MediaCaptureCard.svelte';
 
 // A 1x1 transparent PNG, enough bytes for an object-URL preview.
 const PNG_BYTES = Uint8Array.from([

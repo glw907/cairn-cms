@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { markdownReference } from '../../lib/components/markdown-reference.js';
+import { markdownReference } from '../../lib/admin/markdown-reference.js';
 
 describe('markdownReference', () => {
   it('carries every cheat-sheet row with a syntax, a gloss, and a group', () => {

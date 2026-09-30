@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
-import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
+import CairnAdminShell from '../../lib/admin/CairnAdminShell.svelte';
 import { resolveNavLayout } from '../../lib/sveltekit/admin-nav.js';
 
 const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));

@@ -120,7 +120,7 @@ reflows its neighboring characters.
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { CheckIcon, SearchIcon } from '../components/admin-icons.js';
+  import { CheckIcon, SearchIcon } from '../admin/admin-icons.js';
   import ToolbarDisclosure from './ToolbarDisclosure.svelte';
 
   interface Props {

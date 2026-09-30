@@ -241,7 +241,7 @@ describe('applySuppressions', () => {
 
   it('covers the whole rule a CSS block-comment directive sits above', () => {
     const sheet = {
-      file: 'src/lib/components/cairn-admin.css',
+      file: 'src/lib/admin/cairn-admin.css',
       source: [
         `/* cairn-audit-disable-next-line token-colors -- ${REASON} */`,
         '.cairn-print {',
@@ -304,9 +304,9 @@ describe('runStatic with suppressions', () => {
 
   beforeAll(() => {
     root = mkdtempSync(join(tmpdir(), 'cairn-audit-suppress-'));
-    mkdirSync(join(root, 'dist/components'), { recursive: true });
+    mkdirSync(join(root, 'dist/admin'), { recursive: true });
     mkdirSync(join(root, 'src/routes/admin'), { recursive: true });
-    writeFileSync(join(root, 'dist/components/cairn-admin.css'), '.type-body { font-size: 1rem }');
+    writeFileSync(join(root, 'dist/admin/cairn-admin.css'), '.type-body { font-size: 1rem }');
     writeFileSync(
       join(root, 'src/routes/admin/+page.svelte'),
       [

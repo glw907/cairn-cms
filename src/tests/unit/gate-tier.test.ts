@@ -35,8 +35,8 @@ describe('classifyPath', () => {
   });
 
   it('classifies a src/lib component and the admin stylesheet as admin-visual', () => {
-    expect(classifyPath('src/lib/components/EditPage.svelte')).toBe('admin-visual');
-    expect(classifyPath('src/lib/components/cairn-admin.css')).toBe('admin-visual');
+    expect(classifyPath('src/lib/admin/EditPage.svelte')).toBe('admin-visual');
+    expect(classifyPath('src/lib/admin/cairn-admin.css')).toBe('admin-visual');
   });
 
   it('classifies a shared admin-toolkit component as admin-visual', () => {
@@ -55,6 +55,7 @@ describe('classifyPath', () => {
 
   it('classifies the render seam, theme/chassis CSS, a public route, and a snapshot as full', () => {
     expect(classifyPath('src/lib/render/markdown.ts')).toBe('full');
+    expect(classifyPath('src/lib/public/PreviewBanner.svelte')).toBe('full');
     expect(classifyPath('examples/showcase/src/chassis/tokens.css')).toBe('full');
     expect(classifyPath('examples/showcase/src/theme/site.css')).toBe('full');
     expect(classifyPath('examples/showcase/src/routes/(site)/archive/+page.svelte')).toBe('full');
@@ -92,9 +93,9 @@ describe('resolveTier', () => {
   });
 
   it('resolves an admin-component-only diff to admin-visual', () => {
-    expect(resolveTier(['src/lib/components/EditPage.svelte'])).toEqual({
+    expect(resolveTier(['src/lib/admin/EditPage.svelte'])).toEqual({
       tier: 'admin-visual',
-      decidingPaths: ['src/lib/components/EditPage.svelte'],
+      decidingPaths: ['src/lib/admin/EditPage.svelte'],
     });
   });
 
@@ -109,10 +110,10 @@ describe('resolveTier', () => {
     const result = resolveTier([
       'docs/admin/README.md',
       'src/lib/log/index.ts',
-      'src/lib/components/EditPage.svelte',
+      'src/lib/admin/EditPage.svelte',
     ]);
     expect(result.tier).toBe('admin-visual');
-    expect(result.decidingPaths).toEqual(['src/lib/components/EditPage.svelte']);
+    expect(result.decidingPaths).toEqual(['src/lib/admin/EditPage.svelte']);
   });
 
   it('treats an unclassified path as full in the overall resolution', () => {

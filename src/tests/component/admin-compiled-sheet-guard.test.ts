@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
-import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
+import CairnAdminShell from '../../lib/admin/CairnAdminShell.svelte';
 import { resolveNavLayout } from '../../lib/sveltekit/admin-nav.js';
 
 const child = createRawSnippet(() => ({
@@ -51,7 +51,7 @@ describe("CairnAdminShell's own sheet import in a component test", () => {
   it('never loads the source partial into the document', async () => {
     await render(CairnAdminShell, { data: data(), children: child });
     const sourceSheets = [...document.querySelectorAll('style[data-vite-dev-id]')].filter((el) =>
-      el.getAttribute('data-vite-dev-id')!.endsWith('/src/lib/components/cairn-admin.css'),
+      el.getAttribute('data-vite-dev-id')!.endsWith('/src/lib/admin/cairn-admin.css'),
     );
     expect(sourceSheets).toEqual([]);
   });

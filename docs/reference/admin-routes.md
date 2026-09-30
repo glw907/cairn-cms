@@ -38,7 +38,7 @@ export const actions = admin.actions;
 ```svelte
 <!-- src/routes/admin/[...path]/+page.svelte -->
 <script lang="ts">
-  import { CairnAdmin } from '@glw907/cairn-cms/components';
+  import { CairnAdmin } from '@glw907/cairn-cms/admin';
   import type { AdminData } from '@glw907/cairn-cms/sveltekit';
   import { cairn } from '$theme/cairn.config.js';
   import type { ActionData } from './$types';
@@ -67,7 +67,7 @@ export const load = admin.shellLoad;
 ```svelte
 <!-- src/routes/admin/+layout.svelte -->
 <script lang="ts">
-  import { CairnAdminShell } from '@glw907/cairn-cms/components';
+  import { CairnAdminShell } from '@glw907/cairn-cms/admin';
   import type { AdminShellData } from '@glw907/cairn-cms/sveltekit';
   import type { Snippet } from 'svelte';
 
@@ -305,7 +305,7 @@ view components' named-action contracts, and worked per-route examples live in
 `mediaLibraryLoad` and the entry-scoped `uploadAction`, but not the ten media-janitorial and
 edit actions the Media Library posts to (per-asset delete and update, the Library-direct upload,
 replace-in-place, alt propagation, and bulk delete/orphan scan/purge). A site that hand-mounts
-[`CairnMediaLibrary`](./components.md#cairnmedialibrary) per-route has no public factory that
+[`CairnMediaLibrary`](./admin.md#cairnmedialibrary) per-route has no public factory that
 supplies those actions; only `createCairnAdmin` mounts them at runtime. The declared
 [`CairnAdminRoutes`](./sveltekit.md#types) contract withdraws the same ten actions at the type
 level (see the note after [the actions vocabulary](#the-actions-vocabulary)), recovered with a

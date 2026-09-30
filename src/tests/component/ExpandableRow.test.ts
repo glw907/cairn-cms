@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 import ExpandableRow from '../../lib/admin-toolkit/ExpandableRow.svelte';
 
 /** vitest-browser-svelte exports a generic `RenderResult<C, W>`; deriving it from `render`'s own

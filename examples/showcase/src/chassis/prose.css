@@ -36,9 +36,8 @@
    Waymark identity re-enables all three by adding one `data-flourish` attribute
    to the `.prose` root, with no CSS edit.
 
-   TIER: the whole sheet is Tier 2 (owned design, the documented floor; the starter-template
-   custom-surface ledger, docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md). It is
-   the hand-authored reading surface, not @tailwindcss/typography, so it is not a fold target. It
+   TIER: the whole sheet is Tier 2 (owned design, the documented floor for a site's own look). It
+   is the hand-authored reading surface, not @tailwindcss/typography, so it is not a fold target. It
    reads the theme roles and the cairn tokens; a re-skin recolors it with no edit here. */
 @layer components {
   /* --------------------------------------------------------------------------
@@ -76,7 +75,8 @@
      because the lead binds to it; tight leading reads as a masthead. */
   .prose > h1 {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-5);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
@@ -99,7 +99,8 @@
      heading belongs to the text it introduces (the typography criterion). */
   .prose h2 {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-3);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
@@ -112,7 +113,8 @@
   }
   .prose h3 {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-2);
     line-height: var(--leading-snug);
     --flow-space: var(--spacing-l);
@@ -151,7 +153,7 @@
   .prose a:focus-visible {
     outline: var(--cairn-focus-ring-outline);
     outline-offset: var(--cairn-focus-ring-offset);
-    border-radius: 2px;
+    border-radius: var(--cairn-focus-ring-radius);
     box-shadow: 0 0 0 4px var(--color-base-100);
   }
 
@@ -299,6 +301,7 @@
     top: 0.62em;
     width: 0.4em;
     height: 0.4em;
+    /* A shape, not a step on the corner ladder: the diamond keeps its near-square corner. */
     border-radius: 1px;
     background: var(--color-primary);
     transform: rotate(45deg);
@@ -351,11 +354,12 @@
      in every current engine). The scroll container is a wrapper the engine's
      own render pipeline emits around every table by default (`RendererConfig.
      tableScroll`, src/lib/render/table-scroll.ts, not a site-side step):
-     `.table-scroll` carries `display: block; overflow-x: auto`, `role="region"`,
-     a `tabindex` and an `aria-label` naming the table, so a keyboard user can
-     tab to the region and scroll it. Cells stay `nowrap` so a narrow viewport
-     cannot satisfy the table's own `width: 100%` by wrapping words inside a
-     cell; the auto table-layout algorithm then grows the table past its
+     `.table-scroll` carries `role="region"`, a `tabindex` and an `aria-label`
+     naming the table, so a keyboard user can tab to the region and scroll it.
+     The engine's public stylesheet (`cairn-public.css`) supplies its structural
+     `display: block; overflow-x: auto` pair; this file keeps the design. Cells
+     stay `nowrap` so a narrow viewport cannot satisfy the table's own
+     `width: 100%` by wrapping words inside a cell; the auto table-layout algorithm then grows the table past its
      specified width to fit the unbroken content, and the wrapper's
      `overflow-x: auto` turns that into a horizontal scroll instead of a
      squeezed, word-broken column. A wide table (many columns, like the gear
@@ -364,8 +368,6 @@
      scroll-edge affordance as `.prose pre` (see its own comment) reads the
      scroll position with no JS. */
   .prose .table-scroll {
-    display: block;
-    overflow-x: auto;
     --flow-space: var(--spacing-m);
     background-image:
       linear-gradient(to right, transparent, var(--color-base-100) 85%),
@@ -636,6 +638,7 @@
     justify-content: center;
     width: 3.4rem;
     height: 3.4rem;
+    /* A shape, not a step on the corner ladder: the play button is a circle. */
     border-radius: 999px;
     background: var(--color-primary);
     color: var(--color-primary-content);

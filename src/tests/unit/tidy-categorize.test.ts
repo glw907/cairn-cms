@@ -5,8 +5,8 @@ import {
   buildBecause,
   categoryLabel,
   type TidyCategory,
-} from '../../lib/components/tidy-categorize.js';
-import { diffChanges } from '../../lib/components/tidy-diff.js';
+} from '../../lib/admin/tidy-categorize.js';
+import { diffChanges } from '../../lib/admin/tidy-diff.js';
 import { resolveTidyConventions, type TidyConventions } from '../../lib/nav/site-config.js';
 
 // Categorization runs over a real diff so the change spans match what the surface receives. Each case

@@ -476,6 +476,22 @@ cannot: which sense of "the package" or "the tool" is meant.
 | Retired as names | the library (the word stays for the media library and the content library); the Go tool; the binary, except for the install artifact itself; a bare "the tool" | |
 <!-- vale Google.Quotes = YES -->
 
+**Admin or public, built-in or custom.** cairn has two surfaces, the admin and the public site. A
+component is built-in (cairn ships it) or custom (a site writes it). The noun is "component" on
+both surfaces, the editor's and the stack's word, and the surface adjective tells them apart:
+"built-in public component", "custom admin component". "Site" means the developer's whole
+project, and "custom admin screen" stays the name for a whole admin route.
+
+| | Built-in (cairn ships it) | Custom (a site writes it) |
+|---|---|---|
+| **Admin component** | Lives in `src/lib/admin/`, exported at `@glw907/cairn-cms/admin`, beside `cairn-admin.css`. Rulebook: `docs/internal/admin-design-system.md`. Audit scope: the admin static scope. Guidance: the admin design system and `cairn-implementer`. | Lives under the site's `src/routes/admin` or `src/lib/admin/`, built on `@glw907/cairn-cms/admin-toolkit`. Rulebook: the ratified norms, DaisyUI-first. Audit scope: the admin static scope. Guidance: `cairn-admin-screens`, `cairn-extend`'s `daisyui-first.md`, and `cairn-extension-reviewer`. |
+| **Public component** | Lives in `src/lib/public/`, exported at `@glw907/cairn-cms/public`, styled by `cairn-public.css`. Rulebook: the public theme contract, with no literal and no daisyUI component class. Audit scope: the public scope, rooted at the engine's `src/lib/public/` by the showcase config. Guidance: `cairn-public`'s built-in recipe and the `cairn-implementer` line. | Lives under the site's `src/chassis`, `src/theme`, `src/routes`, or `src/lib/components`, as a `defineComponent` plus rules in `prose.css` or a component `<style>`. Rulebook: the public theme contract. Audit scope: the public scope's default roots. Guidance: `cairn-public`'s custom recipe. |
+
+**The barrel rule.** `@glw907/cairn-cms/admin` exports only admin components.
+`@glw907/cairn-cms/public` exports every built-in public component that renders styled markup;
+`CairnHead` stays at `./delivery/head`, since it renders no markup of its own, only document-head
+tags. `@glw907/cairn-cms/admin-toolkit` keeps its name.
+
 **The precedent this expresses by font instead of case.** Git's contributor guide draws the
 same line by sense, not by regex: "Use 'git' (all lowercase) when talking about commands ...
 and 'Git' when talking about the version control system" (`Documentation/CodingGuidelines`).
@@ -501,6 +517,16 @@ still-frozen page for an unrelated reason does not take on a naming sweep of the
 already open for an unrelated edit, writes to this table now. `tool/docs/` sits outside
 `.vale.ini`'s scope for the same reason: its pages move under `docs/` in draft docs pass A, and
 the Names rule reaches them once they do.
+
+Two further rules carry the admin-or-public split's own retired compounds, kept out of
+`Cairn.Names`/`Cairn.NamesRetired` since those two are case-sensitive by necessity (matching the
+capital wordmark) and their message is about the Go tool and the capital "Cairn", not about a
+component surface. `Cairn.ComponentNames` (error) catches "engine public component", "public
+engine component", "chassis component", and "site component", since each names no page on a
+frozen narrative arm; the reference pages it reaches say "custom public component" instead.
+`Cairn.ComponentNamesRetired` (warning) flags "engine component" and "custom component" for a
+second look, since each can be right in a sense a writer must check. Both are `ignorecase: true`,
+so a sentence-initial capital still raises the same finding.
 <!-- vale Google.Quotes = YES -->
 
 ## Visuals (every page that carries one)

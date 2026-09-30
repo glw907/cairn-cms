@@ -6,8 +6,8 @@ never a prop FieldInput mutates by reference. Proves the field-input hero-ref te
 same registration contract DetailsPanel itself uses, not a bare inline callback.
 -->
 <script lang="ts">
-  import FieldInput from '../../lib/components/FieldInput.svelte';
-  import type MediaHeroField from '../../lib/components/MediaHeroField.svelte';
+  import FieldInput from '../../lib/admin/FieldInput.svelte';
+  import type MediaHeroField from '../../lib/admin/MediaHeroField.svelte';
   import type { NamedField } from '../../lib/content/types.js';
 
   const field: NamedField = { type: 'image', name: 'cover', label: 'Cover' };

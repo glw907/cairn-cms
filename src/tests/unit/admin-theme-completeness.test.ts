@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import daisyuiThemes from 'daisyui/theme/object';
 
-const SOURCE = readFileSync(new URL('../../lib/components/cairn-admin.css', import.meta.url), 'utf8');
+const SOURCE = readFileSync(new URL('../../lib/admin/cairn-admin.css', import.meta.url), 'utf8');
 const THEME_NAMES = ['cairn-admin', 'cairn-admin-dark'];
 
 /** The keys every daisyUI theme defines, taken from the first theme in daisyUI's own object. */

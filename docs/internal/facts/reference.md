@@ -2,31 +2,72 @@
 
 Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signatures, which `check:reference`/`check:reference:signatures` already gate). Agent-facing; never shipped; not register-graded. Every fact carries a source.
 
+## docs/reference/admin.md
+
+- `f:qmz20x` The 13 retired `register*` props on `MarkdownEditor` (11 per-capability callbacks plus the two
+  object grants `registerTidy`/`registerImagePlaceholders`) all collapsed into one
+  `registerEditor` callback delivering an `EditorApi` object once on mount and `null` once on
+  destroy. Source: `src/lib/admin/MarkdownEditor.svelte:29,85-91` (`EditorApi` type,
+  `registerEditor` prop doc), `:946-949` (mount: `registerEditor?.({...})`), `:980` (destroy:
+  `registerEditor?.(null)`); a grep of the file for `registerFocusEditor`, `registerImagePlaceholders`,
+  `registerGetSelection`, `registerGetSelectionRange`, `registerTidy`, `registerUndo`, and
+  `registerFormat` finds none of them. [verified]
+- `f:dr2k4a` `EditorApi.insert` is block insertion: it pads the block by exactly one blank line on each side that
+  touches non-blank text, collapsing any blank lines already adjacent to the caret so they never
+  double up; nothing is added at a document's start or end, though a document that ended with a
+  newline keeps one. The indentation of a line that holds content (an indented code line, a nested
+  list item) is never stripped, even when the caret sits inside it. The mounted CodeMirror path
+  dispatches one change over only the whitespace the padding strips, isolated as its own history
+  step, so a fold or an upload placeholder elsewhere in the document is left alone; the pre-mount
+  textarea fallback calls `padInsertedBlock` and sets the whole value. Source:
+  `src/lib/admin/insert-padding.ts#paddedInsertSpan`, `src/lib/admin/insert-padding.ts#padInsertedBlock`,
+  `src/lib/admin/MarkdownEditor.svelte:1145-1158` (`insertAtCursor` on both paths). [verified]
+- `f:9xm710` The admin barrel is the `./admin` subpath and its built files sit under `dist/admin/`, with the compiled
+  sheet at `dist/admin/cairn-admin.css`; the `./components` export and the `dist/components/` path
+  no longer exist, and `package.json` carries no `./components` key. The source folder is
+  `src/lib/admin/`, and `docs/reference/admin.md` replaced `components.md`. A consumer changes
+  every `@glw907/cairn-cms/components` import to `/admin` and any config or script path from
+  `dist/components/` to `dist/admin/`. Source: `package.json:106-110` (the `./admin` export),
+  `src/lib/audit/config.ts#DEFAULT_SHEET_CANDIDATES` (the sheet path), `src/tests/unit/admin-barrel-prune.test.ts`
+  (the assertion that `./components` is gone). [verified]
+- `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
+  deliberate hardening so the token survives `use:enhance`'s native form reset after a successful
+  submit. Source: `src/lib/admin/CsrfField.svelte:7,24`. [verified]
+- `f:iu46pv` `CairnAdminShell`'s sidebar breakpoint logic uses `min-width: 1024px` (`lg`) and `min-width:
+  1280px` (`xl`) media queries; a desk (document-editor) route persists the sidebar at `xl`,
+  recedes to an overlay through the `lg`-`xl` band, and both route kinds use the overlay drawer
+  below `lg`. Source: `src/lib/admin/CairnAdminShell.svelte:241-242,638,649,669-693`.
+  [verified]
+- `f:9ntlzw` `EditPage`'s preview-device choice persists per browser under the localStorage key
+  `cairn-editor-preview-device`. Source: `src/lib/admin/EditPage.svelte:381,384-389`
+  (`deviceStorageKey = 'cairn-editor-preview-device'`; `localStorage.getItem`/`.setItem`).
+  [verified]
+
 ## docs/reference/admin-grammar-tokens.md
 
 - `f:lmcaon` The admin declares 18 `--cairn-type-*`/`--cairn-gap-*` grammar tokens plus 11 named role
   utilities (`type-*`, `gap-*`), outside the light/dark theme blocks, in `cairn-admin.css`.
-  Source: `src/lib/components/cairn-admin.css:56-76`. [verified]
+  Source: `src/lib/admin/cairn-admin.css:56-76`. [verified]
 - `f:rjcxh5` Exact token values match the page's table verbatim (title 1.5rem/2rem leading, heading
   1.125rem/1.75rem, subtitle 0.9375rem/1.1875rem, body 0.875rem/1.25rem, meta 0.8125rem/1.0625rem,
   label 0.6875rem/0.875rem, chip 0.625rem/0.8125rem; gap-label 0.25rem, gap-control 0.5rem,
-  gap-group 1rem, gap-section 1.5rem). Source: `src/lib/components/cairn-admin.css:56-76`.
+  gap-group 1rem, gap-section 1.5rem). Source: `src/lib/admin/cairn-admin.css:56-76`.
   [verified]
 - `f:cuio64` `--cairn-warning-ink` and `--color-positive-ink` are distinct per theme (light:
   `oklch(50% 0.13 70)` / `oklch(48% 0.12 150)`; dark: `oklch(80% 0.14 70)` / `oklch(78% 0.12 150)`),
   confirming the page's claim that the fill tone (`--color-warning`) measures far lower contrast
-  (~2.2:1) than the dedicated text inks. Source: `src/lib/components/cairn-admin.css:156,161,326,330`.
+  (~2.2:1) than the dedicated text inks. Source: `src/lib/admin/cairn-admin.css:156,161,326,330`.
   [verified]
 - `f:3ncib5` The three hand-composed chip classes (`cairn-chip-quiet`, `cairn-chip-warning`,
   `cairn-chip-outline`) each pin `font-weight: 400` unlayered, so they outrank a
   `font-semibold`/`font-medium` Tailwind utility on the same element. Source:
-  `src/lib/components/cairn-admin.css:920-997` (rules "PINNED unlayered rule 6/7/8 of 14").
+  `src/lib/admin/cairn-admin.css:920-997` (rules "PINNED unlayered rule 6/7/8 of 14").
   [verified]
 - `f:6isecz` Exactly five call sites carry a ratified `type-scale` exemption directive: the wordmark at three
   sites (ConfirmPage, CairnAdminShell, LoginPage) plus two in EditPage (document title, prose
   canvas), matching the page's "five ratified exceptions" claim even though its own table lists
   only three named rows (the wordmark row covers three sites). Source: `grep -rn
-  "cairn-audit-disable-next-line type-scale" src/lib/components/*.svelte` (5 hits: ConfirmPage.svelte,
+  "cairn-audit-disable-next-line type-scale" src/lib/admin/*.svelte` (5 hits: ConfirmPage.svelte,
   CairnAdminShell.svelte, LoginPage.svelte, EditPage.svelte x2). [verified]
 
 ## docs/reference/admin-routes.md
@@ -40,8 +81,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   case. Source: `src/lib/sveltekit/content-routes-shell.ts:301-315`. [verified]
 - `f:po1p8w` The dev-only chrome-boundary guard (an ancestor walk logging one `console.error` when a
   width-constraining ancestor sits between the admin root and `<body>`) is implemented in
-  `src/lib/components/chrome-guard.ts`, described in its own header as compiling out of
-  production. Source: `src/lib/components/chrome-guard.ts:1-54`. [verified]
+  `src/lib/admin/chrome-guard.ts`, described in its own header as compiling out of
+  production. Source: `src/lib/admin/chrome-guard.ts:1-54`. [verified]
 - `f:1mgfhj` The ten media-janitorial actions run at runtime on `createCairnAdmin`'s returned object but are
   absent from the type-level `CairnAdminRoutes` contract; recovering them for a typed caller needs
   a spread (`{ ...admin.actions }`) or a cast. `mediaUpload` is deliberately excluded from the
@@ -55,7 +96,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   Source: `src/lib/sveltekit/cairn-admin.ts:301-304,399-400`. [verified]
 - `f:hjhp4w` Logout and publish-all always post to the fixed absolute `/admin?/logout` and
   `/admin?/publishAll` paths, both of which parse to the `index` view, never to the editor's
-  current page URL. Source: `src/lib/components/CairnAdminShell.svelte:12,1160`;
+  current page URL. Source: `src/lib/admin/CairnAdminShell.svelte:12,1160`;
   `src/lib/sveltekit/cairn-admin.ts:260-262,279,340` (`authedViews`/`anyView`). [verified]
 - `f:p3vmug` The showcase's admin route files differ from `admin-routes.md`'s "reproduced from the
   showcase" snippets in two ways: they import the composer through the showcase-internal
@@ -98,8 +139,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `touch-targets` enforces). [verified]
 - `f:0tr2zx` `MediaPicker`'s thumbnail base falls back to `/media` (via `DEFAULT_MEDIA_BASE`) when mounted
   with no `MEDIA_BASE_CONTEXT_KEY` provider in context; `CairnAdminShell` is the provider that
-  supplies the site's real `assets.publicBase`. Source: `src/lib/components/media-base-context.ts:5`,
-  `src/lib/components/CairnAdminShell.svelte:76`, `src/lib/components/MediaPicker.svelte:65`.
+  supplies the site's real `assets.publicBase`. Source: `src/lib/admin/media-base-context.ts:5`,
+  `src/lib/admin/CairnAdminShell.svelte:76`, `src/lib/admin/MediaPicker.svelte:65`.
   [verified]
 - `f:lmgnn2` `AdminTable`'s `emptyColspan` defaults to `100`, relying on HTML's own `colspan` clamp to the
   real column count. Source: `src/lib/admin-toolkit/AdminTable.svelte:96`. [verified]
@@ -110,7 +151,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   as a `role="group"` named "Batch actions" carrying a visually hidden `role="status"` count, and
   `clear` returns focus to the header checkbox. Source:
   `src/lib/admin-toolkit/AdminTable.svelte`. [verified]
-- `f:hdebf7` `StatusChip`'s `outline` register draws its border as `color-mix(in oklab, currentColor 55%, transparent)`, a hairline its own doc comment records as clearing 3:1 in both admin themes; inside the engine's own admin the `StatusChip` component itself has one outline call site, EditPage's Hidden chip (component-rendered, not hand-composed). Three more surfaces hand-compose the same `cairn-chip-outline` class directly rather than through the component: ManageEditors, ReferenceField, and MediaCaptureCard. Together that is four outline call sites in the engine, not through the component alone; a consumer placing an `outline` chip inside its own muted-text ancestor should re-measure. Source: `src/lib/admin-toolkit/StatusChip.svelte:22-24,129`, `src/lib/components/EditPage.svelte:1456`, `src/lib/components/ManageEditors.svelte`, `src/lib/components/ReferenceField.svelte`, `src/lib/components/MediaCaptureCard.svelte` (grep `cairn-chip-outline`). [verified]
+- `f:hdebf7` `StatusChip`'s `outline` register draws its border as `color-mix(in oklab, currentColor 55%, transparent)`, a hairline its own doc comment records as clearing 3:1 in both admin themes; inside the engine's own admin the `StatusChip` component itself has one outline call site, EditPage's Hidden chip (component-rendered, not hand-composed). Three more surfaces hand-compose the same `cairn-chip-outline` class directly rather than through the component: ManageEditors, ReferenceField, and MediaCaptureCard. Together that is four outline call sites in the engine, not through the component alone; a consumer placing an `outline` chip inside its own muted-text ancestor should re-measure. Source: `src/lib/admin-toolkit/StatusChip.svelte:22-24,129`, `src/lib/admin/EditPage.svelte:1456`, `src/lib/admin/ManageEditors.svelte`, `src/lib/admin/ReferenceField.svelte`, `src/lib/admin/MediaCaptureCard.svelte` (grep `cairn-chip-outline`). [verified]
 - `f:ro7w36` `Tooltip` (added `0.97.0`) reads the triggering `PointerEvent`'s own `pointerType` to detect a
   coarse-pointer tap, never `matchMedia`, since a hybrid device can carry both a mouse and a
   touchscreen at once; an empty `text` prop opts the whole component out (no `aria-describedby`,
@@ -187,7 +228,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 - `f:exqnwj` The subpath enforces server-only isolation via export conditions: a named import from the
   browser stub fails at build time (no such export), while a bare side-effect import passes the
-  build and throws only at runtime when executed in a browser. Source: `package.json:157-168`
+  build and throws only at runtime when executed in a browser. Source: `package.json:158-169`
   (`./auth-crypto` and `./cloudflare` export conditions each declare `worker`/`browser`/`default`),
   `src/lib/auth-crypto/browser.ts:1-4`, `src/lib/cloudflare/browser.ts:1-4` (both files are a bare
   module-level `throw new Error(...)` with no named export). [verified]
@@ -266,11 +307,11 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   interactive-contrast, touch-targets, list-role, viewport-overflow) / 10 advisory
   (container-inset-asymmetry, form-font-parity, field-edge-alignment, border-contrast, norms-bands,
   screen-anatomy, relational-spacing, weight-budget, chip-ground-collision, motion-reduced-delay).
-  [verified]
+  [rejected: rule count grew after this fact was filed; the audit now registers 35 rules (18 static, 17 rendered), see `f:yn6lst`]
 - `f:3kvawo` Exit codes: 0 (clean), 1 (unsuppressed error-tier finding), 2 (run couldn't start/finish: bad
   flag, no server, no browser, redirect-trap refusal). Codes route through `process.exitCode`,
   never `process.exit`, so piped stdout flushes fully first. Source: `src/lib/audit/bin.ts:5-68`,
-  `src/lib/audit/report.ts:48` (`exitCodeFor`). [verified]
+  `src/lib/audit/report.ts:55` (`exitCodeFor`). [verified]
 - `f:djd62h` `touch-targets`'s enforced floor is `23.984375` CSS px (24px minus one Chromium LayoutUnit,
   1/64 CSS px, allowed for rect-snapping tolerance). Source:
   `src/lib/audit/rules/rendered/touch-targets.ts:81-110`. [verified]
@@ -284,6 +325,202 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   shipped manifest, so it reads no consumer tree and needs no config, no built stylesheet, and no
   browser"), `:28-36` (`norms` calls `loadNormsManifest()`), `:62` (other modes call
   `loadConfig(process.cwd(), ...)`). [verified]
+
+- `f:z1rbea` Exactly 38 rules are registered: 21 static (15 error tier, 6 advisory: `log-event-grammar`,
+  `log-secret-field`, `radius-scale`, `public-literals`, `theme-conformance`, `theme-contrast`) plus
+  17 rendered (7 error-tier, 10 advisory-tier). Count by the registry arrays or by tier grep, not by a literal-string grep, which
+  undercounts the rendered total by one (`motion-reduced-delay.ts` declares `id: RULE_ID`). Source:
+  `src/lib/audit/rules/static/index.ts#staticRules` (the 21-entry array),
+  `src/lib/audit/rules/rendered/index.ts#renderedRules` (the 17-entry array).
+  [rejected: the tier split moved when `0.98.0` promoted `log-event-grammar` and `log-secret-field`; the count stays 38, now 17 static error tier and 4 advisory, see `f:yn6lst`]
+- `f:yn6lst` Exactly 38 rules are registered: 21 static (17 error tier, 4 advisory: `radius-scale`,
+  `public-literals`, `theme-conformance`, `theme-contrast`) plus 17 rendered (7 error-tier,
+  10 advisory-tier). `log-event-grammar`, `log-secret-field`, and the `cairn-btn-guarded`
+  retirement arm of `stock-default-hazards` were promoted to error tier for the `0.98.0` window:
+  each finding is `tier: 'error'`, no message names a promotion version, and the three
+  `0.98.0` `*PROMOTION_VERSION` constants are deleted. The three retired-patch arms of
+  `stock-default-hazards` stay advisory until `0.99.0`, as does `radius-scale`. Count by the
+  registry arrays or by tier grep, not by a literal-string grep, which undercounts the rendered
+  total by one (`motion-reduced-delay.ts` declares `id: RULE_ID`). Source:
+  `src/lib/audit/rules/static/log-event-grammar.ts#logEventGrammar`,
+  `src/lib/audit/rules/static/log-secret-field.ts#logSecretField`,
+  `src/lib/audit/rules/static/stock-default-hazards.ts#stockDefaultHazards`,
+  `src/lib/audit/rules/static/index.ts#staticRules` (the 21-entry array),
+  `src/lib/audit/rules/rendered/index.ts#renderedRules` (the 17-entry array). [verified]
+- `f:o4ctu5` `public-literals` resolves over the public scope (`publicScope: true` on the rule), as
+  `theme-conformance` and `theme-contrast` also do: `.svelte` and `.css` files under `public.scope` (default
+  `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`, `src/lib/components`), minus
+  `public.exclude` (default `src/routes/admin`, a configured list merges) and minus every admin
+  root. It is advisory permanently for a consumer. The scope loads only when a selected rule sets
+  `publicScope`; when it loads and matches no file the run fails naming `public.scope`, and a
+  configured root the tree lacks throws while a missing default root is skipped. `public.themeRoots`
+  (default `src/theme`, `src/chassis/tokens.css`) are where a custom-property definition is legal;
+  `public.stylesheets` (default `src/theme/theme.css`) is the entry list `theme-conformance` and
+  `theme-contrast` follow (`f:tbq6gh`, `f:lqtwdt`). The rule flags a color literal (hex, `rgb()`, `hsl()`, `hwb()`, `lab()`,
+  `lch()`, `oklab()`, `oklch()`, `color()`, named colors) or an absolute font size (`px`, `pt`,
+  `rem`, the `font` shorthand included) in a declaration, a `style=` value, a `style:` directive,
+  or a Tailwind arbitrary value (`text-[#abc]`, `text-[14px]`); `em`, `%`, `var()` and `calc()`
+  over tokens pass, and the root element's `font-size` is exempt. Nothing inside a quoted string
+  or a `url()` argument is read (`content: "Issue #123"`, a quoted font-family name,
+  `fill: url(#fade)`), a skip only the public scope opts into (`token-colors` still reads both,
+  through `findColorLiteral` without `skipStrings`). A public `.svelte` file whose
+  `<style lang="...">` block the Svelte parser rejects (Sass, Less) is parsed with that block
+  blanked (`parseComponent`'s `tolerateStyleLang`, set only by `loadPublicScope`), and the rule
+  raises one advisory "unparsed style block, not audited" finding at the opening tag, so the run
+  and the error-tier admin rules continue; an admin-scope file still throws. Detection is the shared core
+  `src/lib/audit/literals.ts`, which `token-colors` also reads while keeping its own narrower
+  verdict set. The repo's own tree runs it from the showcase through
+  `scripts/checks/public-scope.config.json`, which names the engine's `../../src/lib/public`,
+  since the showcase's own config is emitted into every scaffolded site and a configured root the
+  tree lacks throws. The two repo wrappers (`check-invisible-craft.mjs`,
+  `check-admin-css-classes.mjs`) hand `runStatic` every rule except the public-scope ones.
+  Source: `src/lib/audit/rules/static/public-literals.ts#publicLiterals`,
+  `src/lib/audit/run.ts#loadPublicScope`, `src/lib/audit/config.ts#isPublicFile`,
+  `src/lib/audit/literals.ts#findColorLiteral`, `src/lib/audit/markup.ts#parseComponent`. [verified]
+- `f:tbq6gh` `theme-conformance` is a static advisory rule over the public scope (`publicScope: true`,
+  `importChain: true`), built by `createThemeConformance(peers)` so a test injects the peer access.
+  `runStatic` reads the `@import` chain of `public.stylesheets` once, through
+  `src/lib/audit/import-chain.ts#loadImportChain`, only when a selected rule sets `importChain`, and
+  hands it to those rules alone. The loader lists top-level `@import` statements through
+  `sheet.ts#parseStatements` (a block-less at-rule that `parseSheet` drops at its `;`), follows
+  relative paths from the importing file (an extensionless relative target such as `./tokens`
+  reads `tokens.css` when that file exists and the bare path does not, as Tailwind resolves it)
+  and package specifiers under the `style` export condition, then the `style` field, then the file path when the package has no `exports` field
+  (never Node resolution, which sends `tailwindcss` to `dist/lib.js`). `tailwindcss` and remote URLs
+  are not traversed; an import that cannot be resolved or read lands in `AuditReport.unreadImports`,
+  which the report prints under "Unread imports", and never raises a finding; a target that is not
+  `.css` is a finding and is never parsed. An entry the config names under `public.stylesheets`
+  that the tree lacks throws naming the key (`run.ts#loadChain`, gated on
+  `publicStylesheetsFromConfig`); the default entry a tree lacks is recorded as unread. The key list is the union of keys in `daisyui/theme/object`
+  and the built-in names are its theme names, loaded lazily from the audited root by
+  `src/lib/audit/peers.ts` (a missing `daisyui` or `tailwindcss` throws a message naming the peer and
+  `npm install --save-dev <peer>`; an empty list, or one without `--color-base-100` or `--radius-box`,
+  throws). A block named after a built-in theme is complete by merging; a hole in the default block
+  (or the only block) reads as a runtime hole, one in a secondary block as a value the default fills.
+  A `var(--x)` with no fallback resolves against declarations in the scope and the chain, the
+  variables of `tailwindcss/theme.css` and the `--tw-` prefix, and the daisyUI keys only when some
+  block is complete. The chassis-redeclare finding lists, per chassis file in the chain, the names
+  `cairn-public.css` declares that the file sets on `:root`, `html`, `[data-theme]`, or in `@theme`
+  (a class-scoped rule such as prose.css's `--flow-space` is not one). `parseSheet` now keeps the
+  own declarations of a `@theme` or `@plugin` block that nests another block, since Tailwind's own
+  theme file nests `@keyframes` in `@theme default`, and records each rule's enclosing style-rule
+  selectors in `SheetRule.parents`, so a nested rule resolves against them. Source:
+  `src/lib/audit/rules/static/theme-conformance.ts#createThemeConformance`,
+  `src/lib/audit/import-chain.ts#loadImportChain`, `src/lib/audit/run.ts#loadChain`, `src/lib/audit/peers.ts#loadDaisyThemeKeys`,
+  `src/lib/audit/sheet.ts#parseStatements`. [verified]
+- `f:lqtwdt` `theme-contrast` is a static advisory rule over the public scope (`publicScope: true`,
+  `importChain: true`), built by `createThemeContrast(peers)`. It measures, per daisyUI theme block
+  in the chain, body text (`--color-base-content`) on `--color-base-100` and `--color-base-200`,
+  `--color-primary` on `--color-base-100`, each role's `-content` on its fill, `--color-muted` on
+  `--color-base-100` and `--color-base-200`, each `--cairn-<status>-ink` on `--color-base-100`,
+  `--color-base-200`, and its callout tint (the highest-percentage
+  `color-mix(in oklab, var(--color-<status>) N%, var(--color-base-100))` any chain declaration
+  holds), and each `--cairn-code-*` role (ink, keyword, string, function, number, comment, punct)
+  on `--cairn-code-bg`, at 4.5:1; and the focus-ring color `--color-primary` on `--color-base-100`
+  and `--color-base-200` at 3:1 as a non-text pair (the ground label reads "as a focus ring"). Both
+  gamuts, sRGB and display-p3, after clamping in OKLCH. The showcase's tints give 33 pairs per
+  scheme (24 before the seven code roles and two focus-ring grounds). A status `color-mix()` over
+  `--color-base-100` in another form (swapped operands, `in srgb`), or any status mix painted as a
+  `background`, keeps that status's tint pair and marks it unmeasured, so the pair count never
+  shrinks. A scheme is one named block (an unnamed block takes daisyUI's own default name,
+  `custom-theme`): measured with `data-theme="<name>"`, the default block also with no
+  `data-theme` on a light OS, and the `prefersdark` block (or the default block when none is) also
+  with no `data-theme` on a dark OS. `src/lib/audit/schemes.ts#readThemeCascade` compiles each
+  block the way daisyUI's plugin does (layer `base`; `[data-theme]` everywhere, `:where(<root>)`
+  for the default, `<root>:not([data-theme])` under the dark media query for `prefersdark`, where
+  `<root>` is the block's `root` option, `:root` by default); a `root` that is not the root element
+  in every state (`.dark`) makes every state the block reaches unmeasured instead of dropping it.
+  It completes a built-in-named block from `daisyui/theme/object`'s values, reads `@theme` as
+  `:root` in layer `theme`, resolves a nested rule against `SheetRule.parents` (`&` as `:is()`
+  over the parent, a group nested in a style rule applying to its selector), and ranks every
+  root-matching custom property by importance, layer, specificity, and order. A media query
+  applies when its only features are `prefers-color-scheme` tests beside an optional `screen` or
+  `all` type; `print` and a `@supports not (...)` never apply; a positive `@supports` applies. A
+  root declaration under any other condition, or on a selector whose subject compound names the
+  root with a test the model does not read (`:root.dark`), is recorded by `unmodeledIn`, and every
+  pair whose `var()` closure reads it is unmeasured, never passed. The resolver
+  (`src/lib/audit/contrast.ts#resolveColor`) follows `var()` chains to a literal culori parses and
+  evaluates only `color-mix(in oklab|oklch, A p%, B)` with exactly one percentage, through
+  culori's `interpolateWithPremultipliedAlpha`; every other form resolves to a reason, and the rule
+  reports it as "unmeasured", never a pass. One finding per failing foreground and floor per
+  block, one per unmeasured reason per block, and one when the chain holds no block; each points
+  at the block. It needs `daisyui` beside the site (`loadDaisyThemeKeys`, named error when
+  missing). culori is a runtime dependency, and `daisyui` and `tailwindcss` are optional peers.
+  Source: `src/lib/audit/rules/static/theme-contrast.ts#createThemeContrast`,
+  `src/lib/audit/rules/static/theme-contrast.ts#contrastPairs`,
+  `src/lib/audit/rules/static/theme-contrast.ts#calloutTints`,
+  `src/lib/audit/schemes.ts#readThemeCascade`, `src/lib/audit/contrast.ts#resolveColor`,
+  `package.json#peerDependenciesMeta`. [verified]
+- `f:eri2g3` `resolveConfig` normalizes every configured path (posix `normalize`, then no trailing
+  `/` and no leading `./`), so `./src`, `src/`, and `src//x` compare equal to `src` and `src/x`,
+  no file lands in both scopes through a spelling, and a reported path carries no `./` or `//`; a
+  path above the root keeps its `../`. When a configured `public.scope` names a default admin
+  root, that root leaves the admin defaults unless a public exclusion covers it, so
+  `public.scope: ["src/theme", "src/routes/admin", "src/routes/blog"]` keeps `src/routes/admin`
+  under `token-colors`. A configured public root that is, or lies under, a `public.exclude` path
+  throws naming both, unless an admin root (default or configured) reads it. Source:
+  `src/lib/audit/config.ts#resolveConfig`, `src/lib/audit/config.ts#normalizePath`,
+  `src/tests/unit/audit/public-scope.test.ts` (the "a config that names paths loosely" describe). [verified]
+- `f:0nfxs2` `runStatic` reads the built admin stylesheet (`sheetPaths`) only when a selected rule is not a public-scope rule: a selection made only of `publicScope` rules (`public-literals`, `theme-conformance`, `theme-contrast`) runs with no built sheet and hands those rules an empty compiled sheet, which none of them reads (they parse their own files). The same condition skips the "static scan matched no files" error, since those rules never read the static scope. Any other selection, the full registry included, still throws "the built admin stylesheet is missing" when a named sheet source is absent. Before this, a public-only `--rule` run exited 2 on a tree with no built package. Source: `src/lib/audit/run.ts#runStatic`, `src/tests/unit/audit/public-scope.test.ts` (the "built admin stylesheet" describe). [verified]
+- `f:eqsngu` `DEFAULT_STATIC_SCOPE` and `DEFAULT_ADMIN_SCOPE` are both `src/routes/admin`, `src/lib/admin`,
+  `src/lib/admin-toolkit`; `src/lib/components` is no longer a default root. They stay two constants
+  and two config keys (`static.scope`, `static.adminScope`) so a site can narrow one without the
+  other. `DEFAULT_ADMIN_SCOPE` gained `src/lib/admin`, so the three `adminOnly` motion rules
+  (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) now read it. Restore form: a
+  configured `static.scope` replaces the defaults (`asPathList` returns a configured list, normalized, never merged),
+  and a configured root the tree lacks fails the run (`readScope` throws when `fromConfig` and the
+  path is missing), so a site keeping custom components in `src/lib/components` lists the default
+  roots it has plus `src/lib/components`; naming `src/lib/components` alone drops
+  `src/routes/admin` from every static rule. A root a site names under `static.scope` or
+  `static.adminScope` is an admin root: `resolveConfig` drops it from the public defaults, and
+  `isPublicFile` never claims a file under any admin root (default or configured) or a file named
+  in `static.cssFiles`, so no file answers to both grammars. The same holds the other way: an
+  admin default a site names under `public.scope` leaves the admin defaults unless the admin
+  lists are configured, and a wide `public.scope` (`src`) or a custom `public.exclude` never moves
+  an admin file to the advisory public rule. The narrowing also removes a site's own
+  `src/lib/components` from `stripe-trim-parity` and `unlayered-font-clobber`, which stay
+  admin-only by owner ruling (Geoff, 2026-09-27). Source:
+  `src/lib/audit/config.ts#DEFAULT_STATIC_SCOPE`, `src/lib/audit/config.ts#DEFAULT_ADMIN_SCOPE`,
+  `src/lib/audit/config.ts:288-289` (`asPathList` calls), `src/lib/audit/run.ts:57`
+  (`readScope`'s missing-root throw), `src/lib/audit/config.ts#isPublicFile`. [verified]
+- `f:h4ztuy` `radius-scale` is a static rule at advisory tier that reads class tokens (through `utilityBase()`,
+  so `md:rounded-lg` is caught) and raises one finding per offending token: a bare `rounded`, the
+  fixed sizes `xs` through `4xl`, an arbitrary radius in either of Tailwind v4's forms
+  (`rounded-[...]` and the `rounded-(--x)` shorthand), and each side or corner form of those. It
+  passes `rounded-selector`, `rounded-field`, `rounded-box` and their side forms, `rounded-full`,
+  `rounded-none`, and side zeros, except that `rounded-full` on an element carrying `badge` is
+  flagged. The message names the replacement role class (`badge` to `rounded-selector`; `btn`,
+  `input`, `select`, `textarea` to `rounded-field`; `card`, `modal-box`, `dropdown-content` to
+  `rounded-box`) and `0.99.0`. A `border-radius` literal in a `<style>` block is outside it.
+  Source: `src/lib/audit/rules/static/radius-scale.ts#radiusScale`,
+  `src/lib/audit/rules/static/radius-scale.ts#RADIUS_SCALE_PROMOTION_VERSION`. [verified]
+- `f:l882gl` `stock-default-hazards` has three retired-patch arms, each on an element carrying `btn` and each at
+  advisory tier: the ink opener (`bg-neutral` or `bg-[var(--cairn-ink-hover)]` with no
+  `btn-neutral`, names `btn btn-neutral`), the Publish tint (`bg-primary/10` with no `btn-soft`,
+  names `btn btn-soft btn-primary`), and `shadow-none` (names nothing to add; the theme's depth is
+  already zero). The arms compare `utilityBase()`, so a variant-prefixed patch is caught; an
+  element without `btn` never fires one; a recipe arm takes precedence, and `shadow-none` stays
+  silent where a recipe arm fired, so one retired recipe raises exactly one finding. The messages
+  name `0.99.0`. Source: `src/lib/audit/rules/static/stock-default-hazards.ts#RETIRED_PATCH_PROMOTION_VERSION`,
+  `src/lib/audit/rules/static/stock-default-hazards.ts#inkOpenerMessage`,
+  `src/lib/audit/rules/static/stock-default-hazards.ts#publishTintMessage`. [verified]
+- `f:37t8wk` `promotion-versions.test.ts` is the promotion tripwire. It reads every `*PROMOTION_VERSION = '<x>'`
+  constant under `src/lib/audit` as source text (never a git ref, since CI checks out at depth 1)
+  and `package.json`'s `version`; it asserts at least one constant exists, asserts
+  `RADIUS_SCALE_PROMOTION_VERSION` and `RETIRED_PATCH_PROMOTION_VERSION` by name while the package
+  version is below `0.99.0`, and fails when any constant's version is at or below the package
+  version, naming the file, the constant, the version, and the choice owed: promote the finding to
+  error and delete the constant, or re-date it with a disclosed changelog line. The three `0.98.0`
+  constants (`log-event-grammar`, `log-secret-field`, the guarded-retirement arm) are decided and
+  deleted, so it stays green through the `0.98.0` version commit and turns red at `0.99.0` unless
+  `radius-scale` and the three retired-patch arms are promoted first. Source:
+  `src/tests/unit/audit/promotion-versions.test.ts:27-83`. [verified]
+- `f:2kja0n` `cairn-audit norms <role>` prints one `recipe:` line, and one indented line for the look it
+  produces, under a role's header when a row of `ROLE_RECIPES` names that role; a role no recipe
+  covers prints exactly as before. The recipe rows live outside the norms manifest, so the manifest
+  and `norms:check` do not change, and `ROLE_RECIPES` adds no package export. Source:
+  `src/lib/audit/norms.ts#formatNormsQuery`, `src/lib/audit/norms.ts#ROLE_RECIPES`,
+  `docs/reference/cairn-audit.md:461-472`. [verified]
 
 ## docs/reference/cli-cairn-doctor.md
 
@@ -702,37 +939,9 @@ re-sourced to Go on this tree rather than to the page.
   [verified: for the current shape; the predecessor-name claim not independently checked against
   a deleted file]
 
-## docs/reference/components.md
-
-- `f:qmz20x` The 13 retired `register*` props on `MarkdownEditor` (11 per-capability callbacks plus the two
-  object grants `registerTidy`/`registerImagePlaceholders`) all collapsed into one
-  `registerEditor` callback delivering an `EditorApi` object once on mount and `null` once on
-  destroy. Source: `src/lib/components/MarkdownEditor.svelte:29,85-91` (`EditorApi` type,
-  `registerEditor` prop doc), `:946-949` (mount: `registerEditor?.({...})`), `:980` (destroy:
-  `registerEditor?.(null)`); a grep of the file for `registerFocusEditor`, `registerImagePlaceholders`,
-  `registerGetSelection`, `registerGetSelectionRange`, `registerTidy`, `registerUndo`, and
-  `registerFormat` finds none of them. [verified]
-- `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
-  deliberate hardening so the token survives `use:enhance`'s native form reset after a successful
-  submit. Source: `src/lib/components/CsrfField.svelte:7,24`. [verified]
-- `f:iu46pv` `CairnAdminShell`'s sidebar breakpoint logic uses `min-width: 1024px` (`lg`) and `min-width:
-  1280px` (`xl`) media queries; a desk (document-editor) route persists the sidebar at `xl`,
-  recedes to an overlay through the `lg`-`xl` band, and both route kinds use the overlay drawer
-  below `lg`. Source: `src/lib/components/CairnAdminShell.svelte:241-242,638,649,669-693`.
-  [verified]
-- `f:9ntlzw` `EditPage`'s preview-device choice persists per browser under the localStorage key
-  `cairn-editor-preview-device`. Source: `src/lib/components/EditPage.svelte:381,384-389`
-  (`deviceStorageKey = 'cairn-editor-preview-device'`; `localStorage.getItem`/`.setItem`).
-  [verified]
-- `f:6q5q05` `PreviewBanner` renders the expiry inside a `<time datetime>` formatted by default as a fixed
-  `YYYY-MM-DD HH:MM UTC` string (never the visitor's locale), specifically because the same
-  formatter must run identically during SSR and hydration to avoid a hydration mismatch when the
-  Worker's runtime zone differs from the browser's. Source:
-  `src/lib/components/PreviewBanner.svelte:42-46` (`defaultFormatExpiry`), `:52-58` (doc comment:
-  hydration-mismatch rationale), `:68` (`<time datetime={preview.expiresAt}>`). [verified]
-
 ## docs/reference/core.md
 
+- `f:hlk5jw` `previewMarkdown(def)` is a root export: it returns a component's `preview` sample as the directive markdown the renderer takes, or `undefined` when the component declares no `preview`. A site walks its registry through it to render one sample per component, which is how the scaffold's `/styleguide` builds its kit. Source: `src/lib/render/component-grammar.ts#previewMarkdown`, `src/lib/index.ts:99`, `docs/reference/core.md#previewmarkdown`. [verified]
 - `f:eooeqm` `defineFieldset`'s Standard Schema `~standard.validate` returns `result.issues`
   unchanged, not a single-segment remap; a nested `object`/`array` field failure carries a
   multi-segment path (leaf key or row index appended), the same `ValidationIssue[]` `validate()`
@@ -912,8 +1121,10 @@ re-sourced to Go on this tree rather than to the page.
 - `f:h2wtin` The package ships exactly 4 bins total (`cairn-manifest`, `cairn-media-seed`, `cairn-audit`,
   `cairn-guidance`) plus a separate `./vite` export (the Vite plugin, `dist/vite/index.js`,
   distinct from the `cairn-manifest` bin at `dist/vite/bin.js`); relative to `cairn-guidance`
-  itself, that is three other bins. Source: `package.json:187-192` (`bin` field),
-  `package.json:172-174` (`./vite` export). [verified]
+  itself, that is three other bins. Source: `package.json:188-193` (`bin` field),
+  `package.json:173-175` (`./vite` export). [verified]
+- `f:hiif6u` `cairn-guidance install` ships a fourth skill, `cairn-public`, for the public side of a site: a router `SKILL.md` within the 3,500-token packaged budget, and `references/` holding one catalogue page per public piece (each registry directive plus the built-in `figure` and `include`, each island, `CairnHead`, `PreviewBanner`, each `cairn-*` class the chassis `composition.css` defines, and six prose pages). `npm run check:public-skill` fails a source with no page, a snippet class absent from the showcase's compiled public sheet and the emitted-class registry, a named token that resolves nowhere, and a parser that matches nothing. Source: `skills/cairn-public/SKILL.md:1`, `scripts/checks/check-public-skill.mjs:1`. [verified]
+- `f:qzsspl` The chassis `tokens.css` excludes the project-root `.claude/` from Tailwind's automatic source detection with `@source not "../../.claude"`. Tailwind resolves that path against the stylesheet that carries it, so the earlier `./.claude` excluded only a directory beside `src/chassis/`, and a utility used only in an installed skill's files reached a scaffolded site's compiled CSS. `check:public-skill` compiles a standalone copy to prove the exclusion. Source: `examples/showcase/src/chassis/tokens.css:55`, `scripts/checks/check-public-skill.mjs:1`. [verified]
 
 ## docs/reference/islands.md
 
@@ -962,7 +1173,7 @@ re-sourced to Go on this tree rather than to the page.
   and Svelte's default `{expr}` binding rendering as text. [verified]
 - `f:7sc3pe` The edit page's preview frame is sandboxed (`sandbox=""`), so scripts never run there and the
   island runtime never mounts in the preview; verify a live island on the deployed page. Source:
-  `src/lib/components/EditPage.svelte:2128` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
+  `src/lib/admin/EditPage.svelte:2128` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
   the empty `sandbox` attribute blocks script execution by the HTML sandboxing spec (no
   `allow-scripts` token). [verified]
 
@@ -1144,6 +1355,31 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   SIZES_BY_ROLE[role]) || '100vw'`), and `:185-196` (`remarkResolveMedia`: `parseMediaToken`
   returns null and the visitor returns early for any non-`media:` src). [verified]
 
+## docs/reference/public-css.md
+
+- `f:q8atv6` `.cairn-focus-ring:focus-visible` is a rule in `@layer components`, so it takes no variants and sits below utilities: a utility that sets `outline-*` on the same element wins, and so does a daisyUI component class that sets an outline, since daisyUI's own rules sit in a later layer. A copied `prose.css` whose links read the ring's keys (`--cairn-focus-ring-outline`, `--cairn-focus-ring-offset`) draws a visible outline once the sheet declares them; those keys were undeclared for a site that did not copy the ring, and the outline computed to nothing. Source: `src/lib/public/cairn-public.css:99-106`, `examples/showcase/src/chassis/prose.css:154-155`. [verified]
+- `f:c4nnu9` The engine ships its public defaults as one CSS asset, `@glw907/cairn-cms/cairn-public.css`, built from `src/lib/public/cairn-public.css` and packed at `dist/public/cairn-public.css`. It holds four things: the roles in `@layer theme` on `:root, [data-theme]` (18 keys), two `@theme` colors (`--color-muted`, `--color-card-border`), `@layer components` rules with no design choice (`pre.shiki`, the six `.cairn-tok-*` classes, `.table-scroll`'s structural pair, `.cairn-focus-ring:focus-visible`), and one `@source` line over the public component directory. The subpath has no `.d.ts`, so `check:reference` excludes it (`SUBPATH_EXCLUSIONS`) and `src/tests/unit/cairn-public-surface.test.ts` holds `docs/reference/public-css.md` to the file: every key with its default, and no cairn key the file lacks. Source: `package.json:193` (`"./cairn-public.css": "./dist/public/cairn-public.css"`), `src/lib/public/cairn-public.css:21-111`, `scripts/checks/reference-coverage.mjs:536`. [verified]
+- `f:w6pqic` The public sheet's derived defaults differ from the values a copied pre-export `tokens.css` carried. Each status ink is `color-mix(in oklab, var(--color-<status>) 50%, var(--color-base-content))` where it was the fill itself. `--color-muted` is `color-mix(in oklab, var(--color-base-content) 80%, var(--color-base-100))`, an opaque mix, where it was a 60 percent mix of `--color-base-content` with `transparent`. `--cairn-shadow` keeps its geometry (a 6 percent and a 12 percent layer) but mixes `black`, where it mixed `--color-base-content`. The 50 and 80 come from a Chromium measurement over the 35 stock daisyUI themes, Waymark, and the fixture theme, recorded with each theme's result. A theme that needs a fixed value sets the key itself, and Waymark does. Source: `src/lib/public/cairn-public.css:38-52,61`, `docs/superpowers/research/2026-09-29-theme-pass-c-ink-derivation.md` (the Result table). [verified]
+- `f:7653l0` The two `@theme` colors do not recompute inside a nested `data-theme` region: Tailwind resolves them at `:root` and the region inherits the computed value. The roles do recompute, because the sheet declares them on `[data-theme]` as well as `:root`, so a derived ink inside a nested region mixes that region's own fill. A theme that nests a region sets `--color-muted` and `--color-card-border` in the nested block. A comma-bearing value such as `--cairn-shadow` does not survive daisyUI's option parser and goes in that scheme's `:root` block. `theme-contrast` measures the root element only, so it does not measure a nested region. Source: `src/lib/public/cairn-public.css:21-23,60-63` (`:root, [data-theme]` in `@layer theme`; `@theme` colors), `docs/reference/cairn-audit.md#what-theme-contrast-doesnt-cover` (the root-only bullet). [verified]
+
+## docs/reference/public.md
+
+- `f:6q5q05` `PreviewBanner` renders the expiry inside a `<time datetime>` formatted by default as a fixed
+  `YYYY-MM-DD HH:MM UTC` string (never the visitor's locale), specifically because the same
+  formatter must run identically during SSR and hydration to avoid a hydration mismatch when the
+  Worker's runtime zone differs from the browser's. Source:
+  `src/lib/public/PreviewBanner.svelte:45-49` (`defaultFormatExpiry`), `:55-61` (doc comment:
+  hydration-mismatch rationale), `:71` (`<time datetime={preview.expiresAt}>`). [verified]
+
+- `f:vvag2y` `@glw907/cairn-cms/public` (`./public`) is the barrel for built-in public components that render styled
+  markup, and it carries `PreviewBanner` only. The membership rule: such a component lives here and
+  never on `/admin`; a loader or a type belongs on `/sveltekit` or another data-only subpath; and
+  `CairnHead` stays at `./delivery/head` because it renders only document-head tags. The compiled
+  admin sheet's input scans `src/lib/admin` and `src/lib/admin-toolkit` but not `src/lib/public`, since the banner writes no utility class of its own.
+  Source: `package.json:111-115` (the `./public` export), `src/lib/public/index.ts:1-6` (the
+  membership rule and the one export), `scripts/build/admin-css.input.css:14,22` (the `@source` roots, `src/lib/admin` and `src/lib/admin-toolkit`).
+  [verified]
+
 ## docs/reference/README.md
 
 - `f:u1y47n` Three stability tiers exist: Extension API (frozen), Scaffold API (frozen, for copied
@@ -1189,7 +1425,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:uzducy` The admin sheet owns roughly sixty of its own `cairn-*` classes (`cairn-type-*`, `cairn-chip-*`),
   documented in the admin design system, a separate registry from the emitted-markup side this page
   documents. Source: `docs/internal/admin-design-system.md` (49 distinct `--cairn-*`/`.cairn-*`
-  names in the doc's own prose; a grep of `src/lib/components` and `src/lib/admin-toolkit` for
+  names in the doc's own prose; a grep of `src/lib/admin` and `src/lib/admin-toolkit` for
   `--cairn-*`/`.cairn-*` tokens including size-modifier variants returns 82), consistent with
   "roughly sixty" as an order-of-magnitude figure. [verified]
 - `f:4d9ssv` `cairn-icon-label` is an admin-toolkit label class, not emitted by any render helper. Source:
@@ -1200,6 +1436,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   any other engine export. Source: `src/lib/render/glyph.ts:16-22` (single `className:
   ['cairn-glyph']`), `examples/showcase/src/chassis/render.ts:20-23,28-33` (`makeIconRenderer`,
   `headRow` building `cairn-head`/`cairn-icon`). [verified]
+
+- `f:5vw8k1` The emitted-class registry on `render.md` names `pre.shiki`, the six `cairn-tok-*` token classes, `cairn-place-center`, `cairn-place-wide`, `cairn-place-full`, and `table-scroll`, each with who styles it. The sheet styles `pre.shiki`, `cairn-tok-*`, and `table-scroll`'s structural pair; a theme must style `cairn-place-*`. `cairn-focus-ring` is styled by the sheet and is not in the registry, because the engine never writes it into markup. `cairn-public-surface.test.ts` asserts every class the sheet's component-layer rules style is in the registry, apart from that one. Source: `src/lib/render/highlight.ts:1-25` (the `pre.shiki` wrapper and token classes), `src/lib/render/remark-figure.ts:20,83-86` (the three placement roles), `src/lib/render/table-scroll.ts:52-58` (the `table-scroll` wrapper). [verified]
 
 ## docs/reference/reproductions.md
 
@@ -1287,10 +1525,10 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:buh7cc` `engines.node` in the package's own `package.json` is `>=24`. Source: `package.json:7`.
   [verified]
 - `f:xg1per` `svelte` peerDependency is `^5.56.10`; `@sveltejs/kit` is `^2.70`; `@cloudflare/workers-types` is
-  `^5`. Source: `package.json:196-198`. [verified]
+  `^5`. Source: `package.json:197-199`. [verified]
 - `f:gjyk0p` The showcase's own devDependency pins `typescript` to `^6` and `@cloudflare/workers-types` to
-  `^5.20260821.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:44`,
-  `package.json:248`. [verified]
+  `^5.20260821.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:45`,
+  `package.json:258`. [verified]
 - `f:isd7vq` TypeScript floor for a consumer's own `tsc` is `5.0`, driven by `const` type parameters on
   `defineAdapter`/`defineConcept`/`defineFieldset`/`fields.*`; the package's own code and shipped
   `.d.ts` are TypeScript 7-clean, but the scaffolded template still installs `^6` because
@@ -1571,7 +1809,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:sd18xx` `NavLayoutSection.collapsed` (default `false`) is only the group's starting state for a visitor
   with no persisted `cairn-admin-nav-collapsed` cookie; the cookie, once any header is toggled,
   wins entirely in both directions, so a group added after a visitor's cookie already exists
-  renders open. Source: `src/lib/components/CairnAdminShell.svelte:192-218` (comment: "once any
+  renders open. Source: `src/lib/admin/CairnAdminShell.svelte:192-218` (comment: "once any
   header is touched, the cookie carries the full collapsed set and wins entirely"; `collapsed`
   state derivation; `writeAdminCookie('cairn-admin-nav-collapsed', ...)`). [verified]
 - `f:bc27j9` A `NavLayoutEntry.href` colliding with a built-in admin view throws at startup with the

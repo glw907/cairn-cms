@@ -56,7 +56,7 @@ describe('CodeMirror stays off the server', () => {
   });
 
   it('the editor component loads codemirror only through a dynamic import', () => {
-    const source = readFileSync('src/lib/components/MarkdownEditor.svelte', 'utf8');
+    const source = readFileSync('src/lib/admin/MarkdownEditor.svelte', 'utf8');
     expect(STATIC_EDITOR.test(source)).toBe(false);
   });
 
@@ -77,7 +77,7 @@ describe('CodeMirror stays off the server', () => {
     // follows those edges, so a value import of @codemirror/* or @lezer/* anywhere but the
     // dynamically-imported editor modules leaks CodeMirror onto the server.
     const offenders: string[] = [];
-    for (const file of tsFiles('src/lib/components')) {
+    for (const file of tsFiles('src/lib/admin')) {
       if (DYNAMIC_ONLY.includes(path.basename(file))) continue;
       if (STATIC_EDITOR_VALUE.test(readFileSync(file, 'utf8'))) offenders.push(file);
     }
@@ -98,7 +98,7 @@ describe('CodeMirror stays off the server', () => {
       for (const name of DYNAMIC_ONLY) {
         const stem = name.replace(/\.ts$/, '');
         const stemRe = new RegExp(
-          `from '(?:\\./|\\.\\./components/|\\$lib/components/)${stem}(?:\\.[jt]s)?'`,
+          `from '(?:\\./|\\.\\./admin/|\\$lib/admin/)${stem}(?:\\.[jt]s)?'`,
           'g',
         );
         for (const match of source.matchAll(stemRe)) {

@@ -122,7 +122,8 @@ Neither of these is required by default.
 
 - **`static.cssFiles`** already reaches `token-colors`. If you want the CSS-family motion rules
   to read your own theme file too, name it here.
-- **`static.adminScope`** defaults to `src/routes/admin` and `src/lib/admin-toolkit`. If your
+- **`static.adminScope`** defaults to `src/routes/admin`, `src/lib/admin`, and
+  `src/lib/admin-toolkit`. If your
   admin screens live somewhere else, name their roots here so the three static rules resolve over
   them.
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import IconPicker from '../../lib/components/IconPicker.svelte';
+import IconPicker from '../../lib/admin/IconPicker.svelte';
 
 const icons = { snowflake: 'M10 10h20', leaf: 'M5 5h30' };
 

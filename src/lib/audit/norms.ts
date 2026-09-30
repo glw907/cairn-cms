@@ -281,6 +281,110 @@ export const RATIFIED_NORMS: readonly RatifiedNorm[] = [
   },
 ];
 
+/** One recipe: the class string a screen writes, and the look it produces. */
+export interface RoleRecipe {
+  /** The class string to write, exactly as a screen would write it. */
+  write: string;
+  /** The look that class string produces, in one line. */
+  look: string;
+  /**
+   * The {@link NORM_ROLES} id this recipe stands in for, when it demonstrates one of the ratified
+   * roles. Unset for a recipe outside the ratified set: a plain button, the ink opener, the soft
+   * primary, and the selected segment are all real patterns with no norm role of their own.
+   */
+  role?: string;
+}
+
+/**
+ * The one-sentence model every shipped guidance copy quotes verbatim: a screen writes the plain
+ * class, and the theme layer, never the markup, carries the ratified look.
+ */
+export const RECIPE_MODEL =
+  'Write the plain daisyUI or cairn role class a screen needs; the theme layer, not the markup, carries the ratified look.';
+
+// Every Write string here is copied verbatim from docs/internal/admin-design-system.md or from the
+// /admin/theme-kit fixture route, never invented: norms.test.ts checks every token against
+// the committed admin sheet inventory or the fixture's own source, so a hand-typed row cannot drift
+// from what actually compiles. The table lives here, read at print time the way findRatified reads
+// RATIFIED_NORMS, rather than inside the norms manifest: it is guidance data, not a measurement, and
+// norms:check never regenerates it.
+/**
+ * Every recipe the shipped guidance and `cairn-audit norms <role>` teach: one row per ratified
+ * role, plus the four hand-authored button patterns and the three corner-ladder patterns the
+ * ratified roles do not otherwise demonstrate. This table is internal to the audit module and
+ * carries no package export of its own.
+ */
+export const ROLE_RECIPES: readonly RoleRecipe[] = [
+  {
+    role: 'page-title',
+    write: 'type-title font-[550] font-[family-name:var(--font-display)]',
+    look: 'the page heading, 24px at weight 550, no bold, in the display face.',
+  },
+  {
+    role: 'eyebrow',
+    write: 'type-label font-semibold uppercase tracking-[0.08em] text-muted',
+    look: 'an eyebrow: quiet, uppercase, tracked out.',
+  },
+  {
+    role: 'nav-item',
+    write: 'font-medium text-subtle',
+    look: 'a resting sidebar item; CairnAdminShell renders the nav itself, no screen writes one directly.',
+  },
+  {
+    role: 'button-primary',
+    write: 'btn btn-primary',
+    look: 'the one accent-filled commit action on a surface.',
+  },
+  {
+    role: 'button-ghost',
+    write: 'btn btn-ghost',
+    look: 'a quiet button for chrome actions, toolbar controls, and row affordances.',
+  },
+  {
+    role: 'input-text',
+    write: 'input',
+    look: 'a single-line text field.',
+  },
+  {
+    role: 'select',
+    write: 'select',
+    look: 'a native select control.',
+  },
+  {
+    role: 'card',
+    write: 'card-shell card-shadow',
+    look: 'a floating card surface: the box radius, a hairline edge, and elevation.',
+  },
+  {
+    write: 'btn',
+    look: 'the plain button: a hairline edge, no fill accent.',
+  },
+  {
+    write: 'btn btn-neutral',
+    look: 'the ink opener: a solid neutral fill, the first commit-adjacent step up from plain.',
+  },
+  {
+    write: 'btn btn-soft btn-primary',
+    look: 'the soft primary: a tinted act-on state, softer than the solid commit.',
+  },
+  {
+    write: 'join-item btn btn-active',
+    look: 'the selected segment in a join or segmented control: a neutral wash plus a state hairline.',
+  },
+  {
+    write: 'rounded-selector',
+    look: 'the corner for a chip, tag, count, or other small inline marker.',
+  },
+  {
+    write: 'rounded-field',
+    look: 'the corner for a control, button-like element, or small thumbnail.',
+  },
+  {
+    write: 'rounded-box',
+    look: 'the corner for a panel, card, tile, popover, sheet, or the brand tile.',
+  },
+];
+
 /** A design question still on the queue, and the norm a reader must not settle from the manifest. */
 export interface OpenDesignQuestion {
   role: string;
@@ -400,6 +504,7 @@ function bandValues(band: NormBand): (number | string)[] {
 export interface NormsTables {
   ratifiedNorms?: readonly RatifiedNorm[];
   openQuestions?: readonly OpenDesignQuestion[];
+  roleRecipes?: readonly RoleRecipe[];
 }
 
 function findRatified(
@@ -416,6 +521,10 @@ function findOpenQuestion(
   table: readonly OpenDesignQuestion[] = OPEN_DESIGN_QUESTIONS
 ): OpenDesignQuestion | undefined {
   return table.find((question) => question.role === role && question.property === property);
+}
+
+function findRecipe(role: string, table: readonly RoleRecipe[] = ROLE_RECIPES): RoleRecipe | undefined {
+  return table.find((recipe) => recipe.role === role);
 }
 
 /** The raw material one generator run hands the derivation. */
@@ -647,12 +756,15 @@ function formatBand(band: NormBand): string {
 /**
  * Render a query result for a terminal or an agent reading the CLI.
  *
- * `tables` overrides the production ratified/open-question tables; the bin never passes one.
+ * `tables` overrides the production ratified/open-question/recipe tables; the bin never passes one.
  */
 export function formatNormsQuery(matches: NormsQueryMatch[], tables: NormsTables = {}): string {
   const lines: string[] = [];
   for (const match of matches) {
-    lines.push(`${match.role.id}  (${match.role.family})  ${match.role.selector}`, `  ${match.role.description}`, '');
+    lines.push(`${match.role.id}  (${match.role.family})  ${match.role.selector}`, `  ${match.role.description}`);
+    const recipe = findRecipe(match.role.id, tables.roleRecipes);
+    if (recipe) lines.push(`  recipe: ${recipe.write}`, `    ${recipe.look}`);
+    lines.push('');
     for (const entry of match.entries) {
       const sites = `${entry.observations} site${entry.observations === 1 ? '' : 's'}`;
       const flags = entry.flags.length > 0 ? `  [${entry.flags.join(' ')}]` : '';

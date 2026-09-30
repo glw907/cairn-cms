@@ -34,6 +34,13 @@ export function formatReport(report: AuditReport): string {
   if (report.suppressed.length > 0) {
     lines.push('', 'Suppressed:', ...suppressedBlock(report.suppressed));
   }
+  if (report.unreadImports && report.unreadImports.length > 0) {
+    lines.push(
+      '',
+      'Unread imports (not findings):',
+      ...report.unreadImports.map((entry) => `  ${entry.file}: ${entry.specifier} (${entry.reason})`)
+    );
+  }
   const errors = report.findings.filter((finding) => finding.tier === 'error').length;
   const advisories = report.findings.length - errors;
   lines.push(

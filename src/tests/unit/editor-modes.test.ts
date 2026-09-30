@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { paragraphRange } from '../../lib/components/editor-modes.js';
+import { paragraphRange } from '../../lib/admin/editor-modes.js';
 
 describe('paragraphRange', () => {
   it('returns the contiguous non-blank block around the caret line', () => {

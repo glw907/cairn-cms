@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { frontmatterSpan } from '../../lib/components/markdown-directives.js';
+import { frontmatterSpan } from '../../lib/admin/markdown-directives.js';
 
 // The span bound under test: from = start of the opening `---` line (offset 0 when frontmatter
 // is at the very top), to = end of the closing `---` line (its last character, no trailing

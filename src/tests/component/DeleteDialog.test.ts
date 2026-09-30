@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import DeleteDialog from '../../lib/components/DeleteDialog.svelte';
+import DeleteDialog from '../../lib/admin/DeleteDialog.svelte';
 import type { InboundLink } from '../../lib/content/manifest.js';
 
 async function open(props: {

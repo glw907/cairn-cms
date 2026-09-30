@@ -80,7 +80,25 @@ the notes marked below.
 | typescript 6.0.3 | 7.0.2 | typescript-eslint (peer `<6.1.0`), svelte-check (peer `^5 \|\| ^6`) and Kit (peer `^5.3.3 \|\| ^6`) all admit TS 7. |
 | vitest, @vitest/browser, @vitest/browser-playwright 4.1.11 | 5.0.2 | `@cloudflare/vitest-pool-workers` (latest 0.22.0, peers vitest `^4.1.0`) releases vitest 5 support. Vitest 5 also clears mocks per test and fails unawaited async assertions. |
 | @types/node 24 line | 26.6.3 | The engine floor (`engines.node >=24`) moves to Node 26; until then the 24 line is correct. |
-| eslint-plugin-jsdoc 64.5.4 | 65.0.0 | New since the last sweep (released 2026-09-28). Breaking change is in `check-indentation`, which `eslint.config.js:43` (`flat/recommended-typescript-error`) leaves off, so the survey expects a clean take; held for Geoff's ruling because it is a major. |
+
+## Taken after the sweep: eslint-plugin-jsdoc 64.5.4 to 65.0.0 (2026-09-29, Geoff approved the major)
+
+Root manifest only (the showcase, templates, and packages do not carry it). Targeted install, so
+the lockfile delta is the package plus one transitive floor: `eslint-plugin-jsdoc` 64.5.4 to
+65.0.0, its `@typescript-eslint/utils` range `^8.70.0` to `^8.70.1` (already resolved at 8.71.0).
+Peers unchanged for this repo: eslint `^7 || ^8 || ^9 || ^10`, engines `^22.22.2 || >=24.15.0`.
+
+Survey of 64.5.4..65.0.0 (one release, 65.0.0, 2026-09-28):
+
+- **Breaking: `check-indentation`** now forbids a missing space between the asterisk prefix and the
+  content; the old behavior returns with `allowNoSpaceAfterAsterisk: true`. `eslint.config.js:43`
+  (`flat/recommended-typescript-error`) leaves `check-indentation` off, so it does not apply.
+  Refactor decision: none needed; the rule is not enabled and cairn's comments are not checked for it.
+- **New option: `check-line-alignment` `tags` accepts `-any`.** The rule is not enabled. Decision:
+  file nothing; taking it would add a lint rule cairn has not ruled on.
+- The rules cairn enables (`jsdoc/no-types`, `informative-docs`, `check-tag-names`,
+  `check-param-names`, `require-jsdoc` with `publicOnly`) have no entry in the range.
+- Result: `npm run check:comments` is clean, no comment edits needed.
 
 ## Audit
 

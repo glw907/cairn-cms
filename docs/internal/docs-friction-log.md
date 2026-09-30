@@ -58,6 +58,12 @@ promoted. The pass routed its own findings straight to `ROADMAP.md` in the same 
 at `0.99.0`, `transformSelection`'s whole-document dispatch, and the imperative internal-doc
 pointer in `cairn-extend` to Next, and the `rounded-t-full` gap to Later. The probe's emitter
 trap went to `docs/internal/durable-gotchas.md`. See Clearings.
+- **`admin`.** The media library's orphan scan and purge sit behind the same `media` engine access
+  as the rest of the library (`requireEngineAccess(runtime.access, editor, 'media')` in
+  `src/lib/sveltekit/content-routes-media-library.ts:67`), so every editor can purge by default. A
+  repo-wide destructive action open to every editor may deserve an owner default. The site can
+  already restrict `media` in its access map, so this is a question of which default fits the charter. Found by the
+  harvest's sweep of the editors arm, 2026-09-29.
 
 The style-guide sync's close (2026-09-29) triaged the whole log and found two open entries, both
 its own, each verified against the tree first. Tidy's pinned default model

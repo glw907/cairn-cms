@@ -2079,3 +2079,9 @@ Spend: about 0.43M in subagents plus the conductor.
   `TMPDIR` on disk (the harness header now says so).
 - **Spend:** about 9.5M in subagents plus the conductor, against the 29M ceiling. The 80% flag
   (23.2M) did not trip.
+- **Ledger-commit CI (`e3bc2f72`):** e2e green (the regenerated baselines cleared the expected-red
+  set), but `test` failed on `check:package`: `skills/cairn-public/SKILL.md` estimated 3,595 of 3,500
+  tokens. Task 14d's fix round ran the reduced gate, which skips `check:package`. `cbe04847` moved
+  the theme-directory list, the audit placement, and the component token mapping into three
+  `references/` pages (2,871 tokens), with every docs and skill gate green. **Lesson:** a docs fix
+  round that edits a shipped skill must keep `check:package` in its reduced gate.

@@ -16,15 +16,15 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Draft docs stage 2a is planned and waiting on Geoff's outline approval.** Branch and worktree
-  `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
-  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md`; spec:
-  `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md` (approved, S1 to S9), amending the
-  parent draft docs spec. Ceiling 25M, flag 20M. Task 1 (the page chain's outline read and the
-  kept-page fix) is done and accepted; tasks 2 onward wait for Geoff's R10 approval of the extend
-  outline at https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds (25 pages with titles he approved
-  2026-09-30 and slugs that match them; he keeps or cuts the two the code sweep added,
-  `configure-media` and `run-cairn-audit-on-your-site`). Resume prompt below.
+- **Draft docs stage 2a is executing; segment S1 is done (checkpoint 2026-09-30).** Branch and
+  worktree `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
+  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (its ledger is the task record);
+  spec: `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`. Ceiling 25M, flag 20M.
+  Geoff approved the extend outline as saved (both sweep pages kept). Done and accepted: tasks 1
+  to 4, task 4b (the workstation infra carries the docs-sync system; Geoff, 2026-09-30), and the
+  S1 boundary merge and friction filings. The option map holds 264 paths, 152 pending. Next:
+  the S2 pre-flight, then task 5 (re-arm extend), task 6 (the six-page pilot), and task 7, the
+  pilot checkpoint, which asks Geoff one combined question.
 - The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
   `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and filed its 12 code defects in the
   friction log (`bd8ab1fe`, on `main`, not pushed).
@@ -32,7 +32,9 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Open decisions and watches
 
-- **Geoff's call:** approve (and edit) the extend outline on the R10 page above.
+- **Geoff's call:** re-scope the monthly drift routine (`trig_015UPQostYVisXuExTHTH2vu`, next run
+  2026-10-01 17:02 UTC) to the reference arm and the kept extend pages; until then it reports
+  "SCOPE BROKEN" because `docs/admin` and `docs/editors` are empty.
 - Watch: `cairn-docs-outline`'s lock (dotfiles) was built past need; simplify it in a separate
   dotfiles change with a `diff-reviewer` read (the spec records it as an instance of S2).
 - Watch: the kept per-version records' paths are hardcoded in `cairn-pass`, `CLAUDE.md`, and

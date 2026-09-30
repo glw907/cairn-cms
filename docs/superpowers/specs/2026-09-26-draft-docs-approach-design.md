@@ -156,12 +156,12 @@ index are priced at about twice their whole-page share. Each stage adds about 1M
 the outline, the consistency read, the owner fold (its R10 review pages included), and the close; stage 2 adds 2M, since 2a and 2b
 each carry a consistency read and a close.
 
-**Pages.** Admin 8, editors 7, and extend 30, each excluding the arm index (the harvest deleted
-the arm READMEs, and each rebuilding stage recreates its own) and excluding extend's two per-version records (`migration-notes.md`, `upgrade-cairn.md`), which stay
-maintained in place. The front door is `why-cairn.md` plus five indexes (`docs/README.md` and the
-four arm READMEs). The root `README.md` is out of scope. Reference is 29 pages, checked in place
-outside the chain; its README stays in place and is stage 5's. Outlines may merge pages; the counts here do not
-assume it.
+**Pages.** Admin 8, editors 7, and extend 30, each excluding the arm index (the harvest deleted the
+arm READMEs, and each rebuilding stage recreates its own) and excluding extend's two per-version
+records (`migration-notes.md`, `upgrade-cairn.md`), which stay maintained in place. The front door
+is `why-cairn.md` plus five indexes (`docs/README.md` and the four arm READMEs). The root
+`README.md` is out of scope. Reference is 29 pages, checked in place outside the chain; its README
+stays in place and is stage 5's. Outlines may merge pages; the counts here do not assume it.
 
 | Stage | Scope | Derivation | Planned |
 | --- | --- | --- | --- |
@@ -201,11 +201,12 @@ later stage, waits on Geoff's answer to the pilot checkpoint question.
 **Every stage merge leaves `main` releasable.** Releases keep the triggers in `CLAUDE.md`
 (a consumer needs the change now, or a coherent capability lands), so a cut can fall between stage
 merges and ship some arms rebuilt and some not. A mixed register is a polish cost. Broken paths and
-anchors are correctness costs, and the merge gate and `relink.json` (below) remove those. cairn.pub's pin bump stays cairn.pub's own pass. Each stage merge adds a `## Unreleased`
-entry listing renamed and removed doc paths, with a `Consumers must:` line when a shipped skill,
-`claude/` file, or scaffold template pointed at one. The harvest's `## Unreleased` entry names the
-removal once, with its `Consumers must:` line; later stage entries list only the paths they restore
-or change.
+anchors are correctness costs, and the merge gate and `relink.json` (below) remove those.
+cairn.pub's pin bump stays cairn.pub's own pass. Each stage merge adds a `## Unreleased` entry
+listing renamed and removed doc paths, with a `Consumers must:` line when a shipped skill, `claude/`
+file, or scaffold template pointed at one. The harvest's `## Unreleased` entry names the removal
+once, with its `Consumers must:` line; later stage entries list only the paths they restore or
+change.
 
 ### Stage 0 acceptance
 
@@ -259,8 +260,8 @@ or change.
   `conditions.json` anchors (today `tool/v1.1.0`) plus `check_referrer.go`'s one.
   `check:readiness` checks the live anchors against `shipped-anchors.json` while the admin arm is
   empty, and re-arms against `docs/admin/is-it-working.md` when the arm holds any page, failing
-  when a listed anchor stops resolving as a heading there. A fragment never reaches a server, so no redirect can repair a
-  renamed heading.
+  when a listed anchor stops resolving as a heading there. A fragment never reaches a server, so no
+  redirect can repair a renamed heading.
 - `check:editor-quotes` fails when the page it pins carries zero quotes.
 - **Docs gate.** One `package.json` script runs every CI check that reads the doc arms' content
   (`check:package`, which checks that the arm paths ship in the tarball, keeps its own step):
@@ -346,8 +347,9 @@ turns up a structural problem.
    drafter prompt, or the runner.
 7. **Merge and checkpoint.** The arm branch passes the docs gate plus `make -C tool check`, merges,
    appends its rebuilt page paths to the brief-coverage list, and its freeze lifts (extend's at the
-   2b merge). The arm READMEs and `docs/README.md` are deleted; each rebuilding stage recreates
-   its index. The merge waits for Geoff's read and its fold. The read is a wait, never a gate on the arm's quality bar.
+   2b merge). The arm READMEs and `docs/README.md` are deleted; each rebuilding stage recreates its
+   index. The merge waits for Geoff's read and its fold. The read is a wait, never a gate on the
+   arm's quality bar.
 
 ## The page chain
 

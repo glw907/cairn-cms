@@ -49,6 +49,24 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`maintainer`.** `CLAUDE.md` names the publish committer `cairn-cms[bot]`, but the commit sets
+  no committer (`src/lib/github/repo.ts:260-263`), so GitHub attributes it to the site's own App,
+  which the scaffold registers as `cairn-<slug>` (`packages/create-cairn-site/src/github/chapter.mjs:161`).
+  The harvest corrected f:5f4kmk and f:psrfdx; `CLAUDE.md` still carries the old name. Found by the
+  draft docs harvest's task 6b audit and review, 2026-09-30.
+- **`developer`.** `docs/reference/cli-cairn-media-seed.md` (lines 4, 9, 24, 82) says `vite dev`
+  serves seeded media. The scaffold's `npm run dev` sets `CAIRN_DEV_BACKEND=1`
+  (`templates/waymark/scripts/dev.mjs:26-30`), which swaps `MEDIA_BUCKET` for an in-memory fake
+  (`packages/cairn-cms-dev/src/handle.ts:100-146`), so seeded objects show only under bare
+  `vite dev` or `wrangler dev`. Doc bug or engine bug is undecided; verified by code read only.
+  Found by the harvest's task 6b audit and review, 2026-09-30.
+- **`maintainer`.** `src/lib/islands/index.ts:5-6` says an admin screen component belongs on
+  `/components`, a subpath pass C removed; it now belongs on `/admin`. Found by the harvest's task
+  6b review, 2026-09-30.
+- **`maintainer`.** `requiredDocsPaths` in `scripts/checks/check-package-files.mjs:93` requires
+  only kept pages that exist on disk, so deleting `upgrade-cairn.md` or `choose-an-ai-posture.md`
+  outright passes `check:package-files`. Found by the harvest's task 8 review, 2026-09-30.
+
 Theme identity pass B's close (2026-09-29) triaged the whole log and found one open entry, the
 `contributor` finding that the showcase's `wrangler.jsonc:61` hardcodes `PUBLIC_ORIGIN` to
 `http://localhost:4173`. It was verified against the tree (still present) and promoted whole to

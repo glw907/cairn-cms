@@ -9,6 +9,16 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
+## Unreleased
+
+- **Re-run `npx cairn-guidance install` if your site uses the `cairn-extend` skill.** This release
+  drops cairn's narrative guides and its two front-door pages until each set is rebuilt, so the
+  shipped skill now points its recipe table at the [reference pages](../reference/README.md)
+  instead. A reinstall replaces your copy of the skill, which still links to the removed pages.
+  This page, [Upgrade cairn](./upgrade-cairn.md), and `choose-an-ai-posture.md` stay in place.
+
+See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+
 ## 0.98.0
 
 - **Import admin components from `@glw907/cairn-cms/admin`.** The `@glw907/cairn-cms/components`

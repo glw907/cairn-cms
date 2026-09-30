@@ -6,6 +6,7 @@ import {
   isExternal,
   filesInScope,
   findBrokenLinks,
+  checkLinks,
   hasUnreleasedHeading,
   unreleasedParityMismatch,
   legacyTarget,
@@ -321,5 +322,74 @@ describe('deletion-list links', () => {
       const problems = legacyMapProblems(root, { 'docs/guides/enable-tidy.md': 'docs/extend/no-such-page.md' });
       expect(problems).toEqual([expect.stringContaining('docs/extend/no-such-page.md')]);
     });
+  });
+});
+
+// During an arm's rebuild, pages link forward to outline pages a later stage has not drafted. A link
+// to a path a committed outline names passes as pending; a path in no outline still fails.
+describe('forward links to outline pages', () => {
+  const tmpDirs: string[] = [];
+  afterEach(() => {
+    for (const dir of tmpDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  function fixtureRoot(files: Record<string, string>) {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-links-outline-'));
+    tmpDirs.push(dir);
+    const all: Record<string, string> = {
+      'CHANGELOG.md': '# Changelog\n',
+      [DELETION_LIST_PATH]: JSON.stringify({ deleted: [], kept: [] }),
+      'docs/internal/outlines/extend.json': JSON.stringify({
+        arm: 'extend',
+        pages: [{ path: 'docs/extend/later-page.md' }, { path: 'docs/extend/another-page.md' }],
+      }),
+      ...files,
+    };
+    for (const [path, content] of Object.entries(all)) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), content);
+    }
+    return dir;
+  }
+
+  it('passes a link to an outline page not on disk and counts it pending', () => {
+    const root = fixtureRoot({ 'docs/extend/here.md': 'see [later](later-page.md) and [more](./another-page.md)\n' });
+    const { broken, pending } = checkLinks(root);
+    expect(broken).toEqual([]);
+    expect(pending).toHaveLength(2);
+    expect(pending[0]).toMatchObject({ file: 'docs/extend/here.md', line: 1, dest: 'later-page.md' });
+    expect(findBrokenLinks(root)).toEqual([]);
+  });
+
+  it('fails a link to a path in no outline', () => {
+    const root = fixtureRoot({ 'docs/extend/here.md': 'see [gone](never-planned.md)\n' });
+    const { broken, pending } = checkLinks(root);
+    expect(pending).toEqual([]);
+    expect(broken).toEqual([
+      { file: 'docs/extend/here.md', line: 1, dest: 'never-planned.md', reason: 'target not found: never-planned.md' },
+    ]);
+  });
+
+  it('does not check the anchor on a pending link', () => {
+    const root = fixtureRoot({ 'docs/extend/here.md': 'see [later](later-page.md#no-such-heading)\n' });
+    const { broken, pending } = checkLinks(root);
+    expect(broken).toEqual([]);
+    expect(pending).toHaveLength(1);
+  });
+
+  it('checks the anchor once the outline page exists on disk', () => {
+    const root = fixtureRoot({
+      'docs/extend/here.md': 'see [later](later-page.md#no-such-heading)\n',
+      'docs/extend/later-page.md': '# Later\n',
+    });
+    const { broken, pending } = checkLinks(root);
+    expect(pending).toEqual([]);
+    expect(broken).toHaveLength(1);
+  });
+
+  it('goes strict again once the outline is gone', () => {
+    const root = fixtureRoot({ 'docs/extend/here.md': 'see [later](later-page.md)\n' });
+    rmSync(join(root, 'docs/internal/outlines'), { recursive: true });
+    expect(checkLinks(root).broken).toHaveLength(1);
   });
 });

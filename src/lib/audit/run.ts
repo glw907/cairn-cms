@@ -179,13 +179,17 @@ export function selectRules<T extends { id: string }>(rules: T[], ids: string[] 
  * drive the pipeline with a rule of its own.
  */
 export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules()): AuditReport {
-  const sheet = parseSheet(loadSheetSources(config));
+  // A public-scope rule reads the site's own stylesheet chain, never the compiled admin sheet, so
+  // a selection made only of them runs with none built and none named, and the static scope those
+  // rules never read is not required to hold a file.
+  const readsStaticScope = rules.some((rule) => !rule.publicScope);
+  const sheet = parseSheet(readsStaticScope ? loadSheetSources(config) : '');
   const files = parseScope(config, config.staticScope, config.staticScopeFromConfig, 'static.scope');
   const adminFiles = parseScope(config, config.adminScope, config.adminScopeFromConfig, 'static.adminScope');
   const cssFiles = loadCssFiles(config);
   const adminCssFiles = cssFiles.filter((cssFile) => isUnderRoots(cssFile.file, config.adminScope));
   const sources = loadSources(config);
-  if (files.length === 0 && cssFiles.length === 0) {
+  if (readsStaticScope && files.length === 0 && cssFiles.length === 0) {
     throw new Error(
       `the static scan matched no files under ${config.staticScope.join(', ')}. Name the scan scope in ${CONFIG_FILE} (static.scope).`
     );

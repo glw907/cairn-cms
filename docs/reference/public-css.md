@@ -58,6 +58,23 @@ The sheet declares two colors in `@theme`, so the utilities `text-muted` and `bo
 | `--color-muted` | `color-mix(in oklab, var(--color-base-content) 80%, var(--color-base-100))` | Secondary text, and the code comment and punctuation roles. |
 | `--color-card-border` | `color-mix(in oklab, var(--color-base-content) 9%, transparent)` | The hairline border of a card. |
 
+## Site-owned tokens
+
+The engine defaults every role above. A theme built on the chassis also defines six keys that nothing defaults, because each carries a design choice.
+
+| Key | Set in | Read by |
+|---|---|---|
+| `--cairn-cta-bg` | Each daisyUI block | The ground of the styleguide's call-to-action panel. |
+| `--cairn-cta-content` | Each daisyUI block | The text on that panel. |
+| `--cairn-cta-border` | Each daisyUI block | The panel's border color. |
+| `--cairn-cta-btn-bg` | Each daisyUI block | The ground of the button on the panel. |
+| `--cairn-cta-btn-content` | Each daisyUI block | The text of that button. |
+| `--cairn-caption-tracking` | `:root` | The letter-spacing of the header navigation links. |
+
+A chassis-based theme defines every custom property that the chassis and its routes read and that neither the engine nor the chassis `tokens.css` defaults. The six above are the complete list for the chassis as shipped. `tokens.css` already gives the design scale (the faces, `--text-step-*`, `--spacing-*`, `--leading-*`, `--tracking-*`, the two measures, and the two heading levers) a generic default, so a theme redeclares those only to change them. A theme that omits one of the six leaves the `var()` unresolved: `theme-conformance` names it, and the panel or the navigation links render without it. A key the chassis reads behind a fallback, such as `--tag-filter-radius`, is an optional override and never a hole.
+
+A theme's own additions take the `--site-*` prefix.
+
 ## Rules
 
 The sheet ships rules in `@layer components` only where the styling carries no design choice.
@@ -88,6 +105,8 @@ A theme writes each per-scheme value in that scheme's daisyUI block, so the valu
 - A value that carries a comma, such as `--cairn-shadow`, does not survive daisyUI's option parser. Write it in that scheme's `:root` block instead.
 - The two `@theme` colors resolve at `:root`. A theme that nests a region sets them in the nested block, as [Layers and nesting](#layers-and-nesting) describes.
 
+A hand-tuned per-scheme value, such as an ink override or the CTA set, goes in both daisyUI blocks. A value set in one block never reaches the other scheme, so the scheme without it falls back to the engine's derived default, or to nothing for a site-owned key.
+
 An unlayered `:root` role in a site's own sheet beats the sheet's layered default. A copy of the earlier chassis `tokens.css` therefore cancels ink derivation without any visible error, which is why the audit's `theme-conformance` rule raises a finding when a chassis file redeclares a default this sheet sets.
 
 ## Ink derivation
@@ -96,7 +115,15 @@ Each status ink defaults to the status fill mixed toward the body ink. Mixing da
 
 `--color-muted` defaults to an opaque mix of the body ink over `base-100`, at 80 percent. An opaque mix has a contrast ratio that belongs to the theme. The earlier default was a translucent mix, which composites over whatever lies beneath it.
 
-The percentages come from a measurement in Chromium's computed colors across daisyUI's 35 stock themes, Waymark, and the fixture theme, on `base-100`, `base-200`, and each status's callout tint. The [derivation record](../superpowers/research/2026-09-29-theme-pass-c-ink-derivation.md) lists every theme's result at the chosen percentage and at its neighbors. Some stock themes fail AA with a derived ink, and the record names them. A theme that needs a tuned ink sets its own in its daisyUI block.
+The percentages come from a measurement in Chromium's computed colors across daisyUI's 35 stock themes, Waymark, and the fixture theme, on `base-100`, `base-200`, and each status's callout tint. The [derivation record](../superpowers/research/2026-09-29-theme-pass-c-ink-derivation.md) lists every theme's result at the chosen percentage and at its neighbors. Some stock themes fail AA with a derived ink, and the record names them. A theme that needs a tuned ink sets its own in its daisyUI block, and in both blocks when both schemes need it.
+
+Run the public-scope audit before you call a theme finished, since a derived ink can fail AA on a theme's own fills:
+
+```bash
+npx cairn-audit --rule public-literals --rule theme-conformance --rule theme-contrast
+```
+
+A `theme-contrast` finding names the block, the pair, and its ratios, for example `--cairn-warning-ink on --color-base-100 is 3.90 in sRGB and 3.88 in display-p3`. Set `--cairn-<status>-ink` in that block to a color of the fill's hue with a different lightness: lower it on a light scheme, raise it on a dark one. Waymark's inks are `oklch(52% 0.11 76)` on light and `oklch(82% 0.12 76)` on dark for warning. Lowering the fill's share in the derived mix, `color-mix(in oklab, var(--color-warning) 35%, var(--color-base-content))`, moves the ink toward the body ink the same way. The ink sits on `base-100`, `base-200`, and the status's callout tint, so re-run the audit until every pair the finding named reads 4.5 or more in both color spaces. Repeat the fix in the other block if its scheme reports the same pair.
 
 ### Changed defaults
 

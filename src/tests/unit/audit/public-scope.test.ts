@@ -241,6 +241,49 @@ describe('the public scope in a run', () => {
     }
   });
 
+  describe('the built admin stylesheet', () => {
+    /** A theme-only tree: a public file and no admin stylesheet anywhere. */
+    function sheetless(): string {
+      const root = mkdtempSync(join(tmpdir(), 'cairn-audit-public-nosheet-'));
+      put(root, 'src/routes/+page.svelte', '<p class="bg-[#abc]">x</p>\n');
+      put(root, 'src/theme/theme.css', ':root { --site-tint: red; }\n');
+      return root;
+    }
+
+    it('runs a public-only selection with no built stylesheet present', () => {
+      const root = sheetless();
+      try {
+        const report = runStatic(loadConfig(root), [publicLiterals, publicProbe([])]);
+        expect(report.ruleIds).toEqual(['public-literals', 'probe-public']);
+        expect(report.findings.map((finding) => finding.ruleId)).toEqual(['public-literals']);
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    });
+
+    it('still fails naming the built stylesheet when a selected rule reads the static scope', () => {
+      const root = sheetless();
+      try {
+        expect(() => runStatic(loadConfig(root), [publicProbe([]), staticProbe([])])).toThrow(
+          /the built admin stylesheet is missing/
+        );
+        expect(() => runStatic(loadConfig(root), adminRules())).toThrow(/the built admin stylesheet is missing/);
+        expect(() => runStatic(loadConfig(root), staticRules())).toThrow(/the built admin stylesheet is missing/);
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    });
+
+    it('hands a non-public rule the parsed sheet, so the full registry reads what it always read', () => {
+      const seen: StaticRuleContext[] = [];
+      runStatic(loadConfig(siteRoot), [staticProbe(seen)]);
+      expect(seen[0].sheet.has('card')).toBe(true);
+      const full = runStatic(loadConfig(siteRoot), staticRules().filter((rule) => rule.id !== 'theme-conformance' && rule.id !== 'theme-contrast'));
+      expect(full.ruleIds).toContain('token-colors');
+      expect(full.ruleIds).toContain('public-literals');
+    });
+  });
+
   it('honors a suppression directive in a public file once a public rule runs', () => {
     const quiet = mkdtempSync(join(tmpdir(), 'cairn-audit-public-suppress-'));
     try {

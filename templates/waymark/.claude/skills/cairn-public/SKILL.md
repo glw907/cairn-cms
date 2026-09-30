@@ -50,9 +50,17 @@ Change the token for the job, never a literal beside it.
 | Type, space, rhythm, measure | `--text-step-*`, `--spacing-*`, `--leading-*`, `--tracking-*`, `--container-measure` | `@theme` |
 | Corners | `--radius-selector`, `--radius-field`, `--radius-box` | each daisyUI block |
 | Floating-card elevation | `--cairn-shadow` | the scheme's `:root` block |
+| CTA panel | `--cairn-cta-bg`, `--cairn-cta-content`, `--cairn-cta-border`, `--cairn-cta-btn-bg`, `--cairn-cta-btn-content` | each daisyUI block, site-owned |
+| Header nav tracking | `--cairn-caption-tracking` | the `:root` block, site-owned |
 | Code block | `--cairn-code-bg`, `--cairn-code-ink`, `--cairn-code-keyword` | the block |
 | Focus ring | `--cairn-focus-ring-outline`, `--cairn-focus-ring-offset` | the block |
 | First-visit scheme | `default: true` on one daisyUI block | that block |
+
+A row marked site-owned has no engine or chassis default, so a chassis-based theme defines it. The
+rule is wider: define every custom property the chassis and its routes read that neither the engine
+nor the chassis `tokens.css` defaults. Today that is the five `--cairn-cta-*` keys and
+`--cairn-caption-tracking`, and `public-css.md` holds the list. A key read behind a `var()` fallback
+is an optional override.
 
 Three rows carry a rule.
 
@@ -68,6 +76,8 @@ Three rows carry a rule.
 ### Where a value goes
 
 A per-scheme value goes in that scheme's daisyUI block, so it follows the scheme the page carries. A
+hand-tuned value, an ink override or the CTA set, goes in both blocks, since a value set in one block
+never reaches the other scheme. A
 value that carries a comma, such as `--cairn-shadow`, does not survive daisyUI's option parser, so it
 goes in that scheme's `:root` block. An unlayered `:root` role beats the sheet's layered default, and a
 stale copy of the old chassis `tokens.css` therefore cancels ink derivation without an error.
@@ -97,6 +107,21 @@ escapes are sanctioned.
 The theme names live in three places. `src/theme/theme-names.ts` feeds the toggle, the inline script
 in `src/app.html` reads the cookie and both names, and each `@plugin "daisyui/theme"` block carries a
 `name:`. `theme-names.test.ts` fails when one of them drifts.
+
+### What a theme directory holds
+
+On the chassis, `src/theme/` is the theme and `src/chassis/` is the plumbing under it. The theme
+directory holds:
+
+- **`theme.css`.** The two daisyUI blocks, the `@theme` scale, and an `@import` of
+  `../chassis/tokens.css`. CSS reaches the chassis by relative import, since aliases don't resolve in CSS.
+- **Chrome components.** `SiteHeader.svelte` and `SiteFooter.svelte`, which read `page.data` (the site
+  name and the resolved nav) and never import site config.
+- **`theme-names.ts`.** The toggle's config.
+- **Its adapter files.** `cairn.config.ts`, `markdown-components.ts`, and `icons.ts`.
+
+A `.ts` or `.svelte` file in the theme imports a chassis helper, such as the theme toggle, through the
+`$chassis` alias.
 
 ### Replacing `prose.css`
 
@@ -130,9 +155,37 @@ Two paths exist, and both read contract tokens instead of literals.
   engine-emitted class and carries no design choice. A built-in component carries no literal and no
   daisyUI component class.
 
+To prove a built-in component under two themes, add a throwaway route under
+`examples/showcase/src/routes/(site)/` that imports it, run `npm run package`, then run
+`node scripts/lab/theme-fixture.mjs --arm template --probe <route> <selector>`. It reports the
+element's computed color and radius under Waymark and under the fixture theme. Delete the route.
+
+Map each job to its token: surface `base-200` or `base-100`, hairline `card-border`, corner
+`rounded-box` (which reads `--radius-box`), ink `base-content`, border width `--border`. Tailwind
+utilities over those tokens are the preferred styling. A scoped `<style>` block that reads contract
+tokens is the alternative. Em-based spacing such as `p-[1em]` is sanctioned, and `public-literals`
+does not flag it.
+
 ## Checking the work
 
-`npx cairn-audit` reports the public scope beside the admin scope. On a consumer site those three
-rules report at advisory tier: `public-literals`, `theme-conformance`, and `theme-contrast`. Read
-`node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md` for what each one covers and what it
-leaves to the rendered page.
+Run the public-scope audit before you finish a theme:
+
+```bash
+npx cairn-audit --rule public-literals --rule theme-conformance --rule theme-contrast
+```
+
+It needs no built admin stylesheet. The three rules report at advisory tier on a consumer site, and
+a finding never changes the exit code. Plain `npx cairn-audit` runs them beside the admin rules.
+
+`public.scope` in `cairn-audit.config.json` decides what is read: `src/theme`, `src/chassis`,
+`src/routes`, `src/lib/public`, and `src/lib/components` by default, minus `src/routes/admin`. To
+confirm a file is covered, put a color literal in it, run the audit, and look for a
+`public-literals` finding that names the file. Remove the literal.
+
+When `theme-contrast` reports a derived status ink below AA, its message names the block, the pair,
+and the ratios. Hand-tune `--cairn-<status>-ink` in that block and in the other scheme's block, and
+re-run. Keep the fill's hue, lower the lightness on a light scheme, raise it on a dark one, and
+repeat until every named pair reads 4.5 or more. `public-css.md` works an example.
+
+Read `node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md` for what each rule covers and
+what it leaves to the rendered page.

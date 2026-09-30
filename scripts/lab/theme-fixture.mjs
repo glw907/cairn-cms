@@ -28,7 +28,9 @@
 //                                  border-radius under Waymark and under the theme
 //
 // The preview server runs on THEME_FIXTURE_PORT (default 4393). Needs the network for the template
-// arm's registry dependencies.
+// arm's registry dependencies. The template arm installs a full site under `os.tmpdir()`, which
+// needs several hundred megabytes free: when `/tmp` is a small tmpfs, set `TMPDIR` to a directory
+// on disk (`TMPDIR=$HOME/.cache/cairn-tmp`) before the run.
 import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import {

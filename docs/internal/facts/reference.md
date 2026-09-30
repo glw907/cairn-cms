@@ -409,6 +409,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   peers. Source: `src/lib/audit/rules/static/theme-contrast.ts#createThemeContrast`,
   `src/lib/audit/schemes.ts#readThemeCascade`, `src/lib/audit/contrast.ts#resolveColor`,
   `package.json#peerDependenciesMeta`. [verified]
+- `f:0nfxs2` `runStatic` reads the built admin stylesheet (`sheetPaths`) only when a selected rule is not a public-scope rule: a selection made only of `publicScope` rules (`public-literals`, `theme-conformance`, `theme-contrast`) runs with no built sheet and hands those rules an empty compiled sheet, which none of them reads (they parse their own files). The same condition skips the "static scan matched no files" error, since those rules never read the static scope. Any other selection, the full registry included, still throws "the built admin stylesheet is missing" when a named sheet source is absent. Before this, a public-only `--rule` run exited 2 on a tree with no built package. Source: `src/lib/audit/run.ts#runStatic`, `src/tests/unit/audit/public-scope.test.ts` (the "built admin stylesheet" describe). [verified]
 - `f:eqsngu` `DEFAULT_STATIC_SCOPE` and `DEFAULT_ADMIN_SCOPE` are both `src/routes/admin`, `src/lib/admin`,
   `src/lib/admin-toolkit`; `src/lib/components` is no longer a default root. They stay two constants
   and two config keys (`static.scope`, `static.adminScope`) so a site can narrow one without the

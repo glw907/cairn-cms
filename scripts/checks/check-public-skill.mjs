@@ -213,7 +213,7 @@ export function snippetClasses(text) {
 
 /**
  * The custom-property names a page names inside a fenced block or an inline code span. A name that
- * ends in a hyphen is a prefix in prose, never a token.
+ * ends in a hyphen is a prefix in prose, never a token, and a flag on a command line is skipped.
  * @param {string} text
  * @returns {{ token: string, line: number }[]}
  */
@@ -225,6 +225,9 @@ export function namedTokens(text) {
     for (const match of chunk.matchAll(/(?<![A-Za-z0-9_-])--[a-z][a-z0-9-]*/g)) {
       if (match[0].endsWith('-')) continue;
       const at = base + (match.index ?? 0);
+      // A flag on a command line (`npx`, `node`, `npm`) belongs to that command, never to the token set.
+      const lineStart = chunk.lastIndexOf('\n', match.index ?? 0) + 1;
+      if (/^\s*(?:\$\s+)?(?:npx|node|npm)\s/.test(chunk.slice(lineStart))) continue;
       found.push({ token: match[0], line: lineAt(text, at), at });
     }
   };

@@ -210,6 +210,18 @@ describe('the token assertion', () => {
     const text = ['Use `--a-b` here.', '', '```css', 'x { color: var(--c-d); }', '```', 'The `--cairn-` prefix.'].join('\n');
     expect(namedTokens(text).map((t: { token: string }) => t.token)).toEqual(['--a-b', '--c-d']);
   });
+
+  it('skips a flag on a command line, in a fence or an inline span, and keeps a token beside it', () => {
+    const text = [
+      'Run `node scripts/lab/theme-fixture.mjs --arm template --probe <route>` for `--kept`.',
+      '',
+      '```bash',
+      'npx cairn-audit --rule public-literals --rule theme-contrast',
+      '$ npm run x -- --flag',
+      '```',
+    ].join('\n');
+    expect(namedTokens(text).map((t: { token: string }) => t.token)).toEqual(['--kept']);
+  });
 });
 
 describe('the empty-parse guard', () => {

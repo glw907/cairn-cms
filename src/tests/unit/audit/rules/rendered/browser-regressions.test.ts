@@ -549,6 +549,84 @@ describe('viewport-overflow against a real browser', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('320px viewport');
   });
+
+  // The rule used to measure in the same tick as setViewportSize, before the layout that answers a
+  // narrower viewport had finished moving. Here the wide block starts at the desktop width and
+  // transitions down under the narrow media query, so a same-tick read sees it at its old width
+  // and a settled read sees it at 100px. The transition delay holds the first width for several
+  // frames, so two equal width reads alone would call the layout settled before it moves.
+  it('waits for a layout that settles after the resize before measuring', async () => {
+    const findings = await findingsFor(
+      viewportOverflow,
+      `<style>
+         body { margin: 0; }
+         .settling { width: 1200px; height: 20px; background: #333; transition: width 150ms linear 80ms; }
+         @media (max-width: 400px) { .settling { width: 100px; } }
+       </style>
+       <body><div class="settling"></div></body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // The admin shell settles its layout from matchMedia listeners, which run after the resize
+  // rather than inside it. The block below stays wide until the listener's next frame.
+  it('waits for a layout that a matchMedia listener changes after the resize', async () => {
+    const findings = await findingsFor(
+      viewportOverflow,
+      `<style>
+         body { margin: 0; }
+         .drawer { width: 900px; height: 20px; background: #333; }
+       </style>
+       <body><div class="drawer"></div>
+       <script>
+         const el = document.querySelector('.drawer');
+         matchMedia('(max-width: 400px)').addEventListener('change', () => {
+           requestAnimationFrame(() => { el.style.width = '100px'; });
+         });
+       </script></body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // A layout that never stops moving cannot be waited out. The rule measures anyway and says the
+  // read is unsettled, so a flagged overflow is never silently a transient one.
+  it('measures anyway on a layout that never settles and says so in the finding', async () => {
+    const findings = await findingsFor(
+      viewportOverflow,
+      `<style>
+         body { margin: 0; }
+         @keyframes sweep { from { width: 900px; } to { width: 1000px; } }
+         .sweeping { height: 20px; background: #333; animation: sweep 1s linear infinite alternate; }
+       </style>
+       <body><div class="sweeping"></div></body>`
+    );
+    expect(findings.length).toBeGreaterThan(0);
+    for (const finding of findings) expect(finding.message).toContain('had not settled');
+  });
+
+  it('does not say the layout was unsettled when it settled', async () => {
+    const findings = await findingsFor(
+      viewportOverflow,
+      `<body style="margin:0"><div style="width:600px;height:20px;background:#333"></div></body>`
+    );
+    expect(findings.length).toBeGreaterThan(0);
+    for (const finding of findings) expect(finding.message).not.toContain('had not settled');
+  });
+
+  // An element whose content is wider than its own box but whose content still ends inside the
+  // viewport is not overflowing the page. The wide block keeps the document scrolling so the
+  // content scan runs at all.
+  it('does not report content whose right edge is inside the viewport', async () => {
+    const findings = await findingsFor(
+      viewportOverflow,
+      `<body style="margin:0">
+         <div class="wide" style="width:600px;height:20px;background:#333"></div>
+         <div class="clipped" style="width:100px"><span style="display:inline-block;width:150px">x</span></div>
+       </body>`
+    );
+    expect(new Set(selectors(findings))).toEqual(new Set(['div.wide']));
+    for (const finding of findings) expect(finding.message).not.toMatch(/overflows by -/);
+  });
 });
 
 describe('chip-ground-collision against a real browser', () => {

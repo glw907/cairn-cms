@@ -11,11 +11,11 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 @plugin "daisyui" { themes: false; exclude: calendar; }
-@source "../../src/lib/components/**/*.{svelte,ts,js}";
+@source "../../src/lib/admin/**/*.{svelte,ts,js}";
 /* The admin-toolkit subpath (AdminTable, ListToolbar, Pagination, StatusChip, PageHeader,
    EmptyState, ...) was never added to the scan root when it graduated out of src/lib/components,
    so any daisy or Tailwind class used only there (never also referenced somewhere under
-   src/lib/components) silently never compiled: `.join`'s own base rule on ListToolbar's segmented
+   src/lib/admin) silently never compiled: `.join`'s own base rule on ListToolbar's segmented
    filter, plus a run of plain utilities (py-16, opacity-30, mb-10, the size-variant `xs`) EmptyState/
    PageHeader/StatusChip use. check:admin-css-classes guards this scan root the same way it guards
    the safelist below. */
@@ -91,7 +91,7 @@
    placeholder below with the generated class list before this file reaches the Tailwind
    compile. */
 @source inline("__DAISYUI_CLASSES__");
-@import "../../src/lib/components/cairn-admin.css";
+@import "../../src/lib/admin/cairn-admin.css";
 
 /* The named secondary-text roles. Rule 2: a component writes `text-muted`/`text-subtle`, never an
    arbitrary `[var(--color-muted)]` token. The guaranteed-value branch (chosen in role-layer-contrast.test.ts):

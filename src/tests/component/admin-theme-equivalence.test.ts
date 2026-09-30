@@ -16,7 +16,7 @@
 // Vite exposes only `VITE_`-prefixed variables to a browser-mode test, hence the prefix.
 import { describe, expect, it } from 'vitest';
 import { commands } from 'vitest/browser';
-import adminSource from '../../lib/components/cairn-admin.css?raw';
+import adminSource from '../../lib/admin/cairn-admin.css?raw';
 import bareExpected from '../fixtures/admin-theme-computed.json' with { type: 'json' };
 import hostileExpected from '../fixtures/admin-theme-computed-hostile.json' with { type: 'json' };
 import { renderInTheme, type Theme } from './_idiom-probe.js';

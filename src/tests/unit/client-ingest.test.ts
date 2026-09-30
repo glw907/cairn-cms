@@ -10,7 +10,7 @@ import {
   buildUploadRequest,
   MAX_AREA,
   MAX_SHORT_SIDE,
-} from '../../lib/components/client-ingest.js';
+} from '../../lib/admin/client-ingest.js';
 
 // The leading bytes of each fixture mirror the sniff test's magics: the helper detects HEIC by the
 // ftyp box and brand, never the filename or a browser-supplied MIME string.

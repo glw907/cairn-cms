@@ -55,6 +55,22 @@ export {
   TRANSPARENT,
 } from './color.js';
 export type { GroundResolution, PaintLayer, Rgba } from './color.js';
+export { compositeOver, dualGamutRatio, resolveColor } from './contrast.js';
+export type { GamutRatios, PropertyLookup, Resolution, ResolvedColor } from './contrast.js';
+export { loadImportChain, nodeChainFs } from './import-chain.js';
+export type { ChainFile, ChainFs, ChainImport, ImportChain, ImportStatus, UnreadImport } from './import-chain.js';
+export { loadDaisyThemeKeys, loadTailwindVariables, nodePeers } from './peers.js';
+export type { DaisyThemeKeys, PeerAccess } from './peers.js';
+export { readThemeCascade } from './schemes.js';
+export type { RootState, Scheme, ThemeBlock, ThemeCascade } from './schemes.js';
+export {
+  calloutTints,
+  contrastPairs,
+  CONTRAST_FLOOR,
+  formatContrastTable,
+  measureThemeContrast,
+} from './rules/static/theme-contrast.js';
+export type { ContrastMeasurement, ContrastPair, ContrastRow, SchemeContrast } from './rules/static/theme-contrast.js';
 export type { AuditArgs, AuditConfig, RenderedAllowlistEntry } from './config.js';
 export type { ClassToken, ElementAttribute, ParsedComponent, SourceNode } from './markup.js';
 export type {

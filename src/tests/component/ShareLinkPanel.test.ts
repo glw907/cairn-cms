@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { stringify as devalueStringify } from 'devalue';
-import ShareLinkPanel from '../../lib/components/ShareLinkPanel.svelte';
+import ShareLinkPanel from '../../lib/admin/ShareLinkPanel.svelte';
 
 function mount() {
   return render(ShareLinkPanel, {

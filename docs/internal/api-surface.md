@@ -81,6 +81,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `parseMarkdown`: (source: string) => { frontmatter: Record<string, unknown>; body: string }
 - `parseSiteConfig`: (raw: string) => SiteConfig
 - `PreviewConfig`: { stylesheets: string[]; bodyClass?: string; containerClass?: string; byConcept?: Record<string, { bodyClass?: string; containerClass?: string }> }
+- `previewMarkdown`: (def: ComponentDef) => string | undefined
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `readMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
 - `readVocabulary`: (config: SiteConfig) => VocabularyEntry[]
@@ -114,6 +115,31 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `verifyManifest`: (built: Manifest, committedRaw: string) => void
 - `verifyReferences`: (manifest: Manifest) => void
 - `VocabularyEntry`: { value: string; label: string }
+
+## `/admin`
+
+- `CairnAdmin`: Component<Props, {}, "">
+- `CairnAdminShell`: Component<Props, {}, "">
+- `CairnHistory`: Component<Props, {}, "">
+- `CairnMediaLibrary`: Component<Props, {}, "">
+- `CairnTidySettings`: Component<Props, {}, "">
+- `ConceptList`: Component<Props, {}, "">
+- `ConfirmPage`: Component<Props, {}, "">
+- `CsrfField`: Component<Props, {}, "">
+- `DeleteDialog`: Component<Props, { open: () => void }, "">
+- `EditorApi`: { insert: (text: string) => void; insertLink: (href: string, title: string) => void; insertImage: (alt: string, ref: string) => void; replaceRange: (from: number, to: number, text: string) => void; getSelection: () => string; getSelectionRange: () => { from: number; to: number } | null; selectRange: (from: number, to: number) => void; format: (kind: FormatKind) => void; caretCoords: () => { left: number; right: number; top: number; bottom: number } | null; focus: () => void; undo: () => void; tidy: TidyApi; imagePlaceholders: ImagePlaceholderApi }
+- `EditPage`: Component<Props, {}, "">
+- `FormatKind`: "bold" | "italic" | "code" | "strike" | "h2" | "h3" | "quote" | "ul" | "ol" | "task" | "codeblock" | "hr" | "table" | "link"
+- `HelpHome`: Component<$$ComponentProps, {}, "">
+- `ImagePlaceholderApi`: { begin: (objectUrl: string) => number; progress: (id: number, fraction: number) => void; resolveTo: (id: number, alt: string, ref: string) => void; cancel: (id: number) => void }
+- `LoginPage`: Component<Props, {}, "">
+- `ManageEditors`: Component<Props, {}, "">
+- `MarkdownEditor`: Component<Props, {}, "value">
+- `NavTree`: Component<Props, {}, "">
+- `RenameDialog`: Component<Props, { open: () => void }, "">
+- `TidyApi`: { enter: (changes: Change[]) => void; acceptOne: (index: number) => void; rejectOne: (index: number) => void; acceptMany: (indexes: number[]) => void; rejectAll: () => void; exit: () => void }
+- `VocabularyAdmin`: Component<Props, {}, "">
+- `WelcomeView`: Component<$$ComponentProps, {}, "">
 
 ## `/admin-toolkit`
 
@@ -188,32 +214,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `resolveRateLimit`: (binding: RateLimitLike | undefined, keys: string | string[]) => Promise<RateLimitOutcome>
 - `verifyTurnstile`: (token: string, secret: string, opts?: VerifyTurnstileOptions) => Promise<boolean>
 - `VerifyTurnstileOptions`: { ip?: string; hostname?: string; action?: string }
-
-## `/components`
-
-- `CairnAdmin`: Component<Props, {}, "">
-- `CairnAdminShell`: Component<Props, {}, "">
-- `CairnHistory`: Component<Props, {}, "">
-- `CairnMediaLibrary`: Component<Props, {}, "">
-- `CairnTidySettings`: Component<Props, {}, "">
-- `ConceptList`: Component<Props, {}, "">
-- `ConfirmPage`: Component<Props, {}, "">
-- `CsrfField`: Component<Props, {}, "">
-- `DeleteDialog`: Component<Props, { open: () => void }, "">
-- `EditorApi`: { insert: (text: string) => void; insertLink: (href: string, title: string) => void; insertImage: (alt: string, ref: string) => void; replaceRange: (from: number, to: number, text: string) => void; getSelection: () => string; getSelectionRange: () => { from: number; to: number } | null; selectRange: (from: number, to: number) => void; format: (kind: FormatKind) => void; caretCoords: () => { left: number; right: number; top: number; bottom: number } | null; focus: () => void; undo: () => void; tidy: TidyApi; imagePlaceholders: ImagePlaceholderApi }
-- `EditPage`: Component<Props, {}, "">
-- `FormatKind`: "bold" | "italic" | "code" | "strike" | "h2" | "h3" | "quote" | "ul" | "ol" | "task" | "codeblock" | "hr" | "table" | "link"
-- `HelpHome`: Component<$$ComponentProps, {}, "">
-- `ImagePlaceholderApi`: { begin: (objectUrl: string) => number; progress: (id: number, fraction: number) => void; resolveTo: (id: number, alt: string, ref: string) => void; cancel: (id: number) => void }
-- `LoginPage`: Component<Props, {}, "">
-- `ManageEditors`: Component<Props, {}, "">
-- `MarkdownEditor`: Component<Props, {}, "value">
-- `NavTree`: Component<Props, {}, "">
-- `PreviewBanner`: Component<Props, {}, "">
-- `RenameDialog`: Component<Props, { open: () => void }, "">
-- `TidyApi`: { enter: (changes: Change[]) => void; acceptOne: (index: number) => void; rejectOne: (index: number) => void; acceptMany: (indexes: number[]) => void; rejectAll: () => void; exit: () => void }
-- `VocabularyAdmin`: Component<Props, {}, "">
-- `WelcomeView`: Component<$$ComponentProps, {}, "">
 
 ## `/delivery`
 
@@ -409,6 +409,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `parseMediaToken`: (href: string) => MediaRef | null
 - `readCommittedManifest`: (globResult: Record<string, unknown>) => MediaManifest
 - `ResolvedAssetConfig`: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; transformations: boolean }
+
+## `/public`
+
+- `PreviewBanner`: Component<Props, {}, "">
 
 ## `/render`
 

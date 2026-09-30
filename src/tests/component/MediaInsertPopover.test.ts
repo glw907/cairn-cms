@@ -1,22 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { tick } from 'svelte';
-import MediaInsertPopover from '../../lib/components/MediaInsertPopover.svelte';
-import type { ImagePlaceholderApi } from '../../lib/components/editor-placeholder.js';
+import MediaInsertPopover from '../../lib/admin/MediaInsertPopover.svelte';
+import type { ImagePlaceholderApi } from '../../lib/admin/editor-placeholder.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 // `UploadResult` retired from the public barrel (4b, Task 1); still exported at its declaring
 // module, which this test imports directly.
 import type { UploadResult } from '../../lib/sveltekit/content-routes-media-ingest.js';
-import * as ingest from '../../lib/components/client-ingest.js';
+import * as ingest from '../../lib/admin/client-ingest.js';
 import { stringify as devalueStringify } from 'devalue';
 
 // ESM module namespaces are not configurable in the browser pool, so the upload helpers cannot be
 // spied directly. Mock the module: ingestFile and sendUpload are controllable mocks per test, while
 // the pure helpers (buildUploadRequest, failureCard, ingestFailureKind) stay real so the loop maps a
 // failure to its real card. buildUploadRequest must stay real, since the loop reads url/init from it.
-vi.mock('../../lib/components/client-ingest.js', async () => {
-  const actual = await vi.importActual<typeof import('../../lib/components/client-ingest.js')>(
-    '../../lib/components/client-ingest.js',
+vi.mock('../../lib/admin/client-ingest.js', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/admin/client-ingest.js')>(
+    '../../lib/admin/client-ingest.js',
   );
   return {
     ...actual,

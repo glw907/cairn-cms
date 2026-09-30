@@ -3,7 +3,7 @@ import type { ComponentProps } from 'svelte';
 import type { AwaitedActions } from '@sveltejs/kit';
 import { createGithubApp } from '../../lib/index.js';
 import { render } from 'vitest-browser-svelte';
-import CairnAdmin from '../../lib/components/CairnAdmin.svelte';
+import CairnAdmin from '../../lib/admin/CairnAdmin.svelte';
 import { createCairnAdmin, type AdminData } from '../../lib/sveltekit/cairn-admin.js';
 import type { CairnRuntime, NamedField } from '../../lib/content/types.js';
 import type { AdminShellData } from '../../lib/sveltekit/content-routes.js';

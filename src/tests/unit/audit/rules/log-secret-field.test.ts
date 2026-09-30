@@ -25,7 +25,7 @@ describe('log-secret-field', () => {
     const findings = check(fixture('secret-basic.ts'));
     expect(findings).toHaveLength(1);
     expect(findings[0].ruleId).toBe('log-secret-field');
-    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].tier).toBe('error');
     expect(findings[0].message).toContain('"token"');
     // The message conditions the redaction claim on the call going through a cairn logger,
     // since the rule cannot tell a `createLogger` instance from `console` or another library's.
@@ -49,9 +49,12 @@ describe('log-secret-field', () => {
     expect(findings[1].message).toContain('"set-cookie"');
   });
 
-  it('ends every message with the promotion version', () => {
-    for (const finding of check(fixture('secret-basic.ts'))) {
-      expect(finding.message.endsWith('0.98.0')).toBe(true);
+  it('raises every finding at error tier, with no advisory promise in the message', () => {
+    const findings = check(fixture('secret-basic.ts'));
+    expect(findings.length).toBeGreaterThan(0);
+    for (const finding of findings) {
+      expect(finding.tier).toBe('error');
+      expect(finding.message).not.toContain('stay advisory');
     }
   });
 

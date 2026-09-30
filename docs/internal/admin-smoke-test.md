@@ -154,7 +154,7 @@ delete. Never point the purge at a real asset.
    The guard checks the token two ways (`validateCsrfHeader` then, only if that misses,
    `validateCsrfToken`): a `X-Cairn-CSRF` request header compared straight against the cookie, or
    (with no valid header) a cloned form body's `csrf` field. The Media Library component itself
-   always uses the header (`src/lib/components/CairnMediaLibrary.svelte`'s `applyBulkDelete`,
+   always uses the header (`src/lib/admin/CairnMediaLibrary.svelte`'s `applyBulkDelete`,
    `runOrphanScan`, and `applyOrphanPurge` each set `'X-Cairn-CSRF': csrf?.() ?? ''` and post a
    plain `FormData` with no `csrf` field), so the recipes below match that transport, not the
    field fallback.
@@ -188,7 +188,7 @@ delete. Never point the purge at a real asset.
 4. **Decode the `ActionResult` envelope.** A no-`Accept` POST answers with SvelteKit's serialized
    action JSON, `{"type":...,"status":...,"data":...}`, where `data` is itself a devalue-encoded
    string, not plain JSON (the browser client runs `$app/forms`'s `deserialize` on it; see
-   `src/lib/components/client-action.ts`'s `postFormAction`). Decode the same way from a shell
+   `src/lib/admin/client-action.ts`'s `postFormAction`). Decode the same way from a shell
    with the `devalue` package (a `package.json` devDependency here, and a transitive dependency
    of `@sveltejs/kit` in any site, so it resolves even unlisted):
    ```bash

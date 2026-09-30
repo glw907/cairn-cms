@@ -14,6 +14,106 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   the file exactly as the template ships it. The scaffolded `robots.txt` route already passes
   `cairn.aiPosture` to `robotsResponse`, so a scaffolded site needs no route edit to serve the
   chosen posture; see `docs/extend/choose-an-ai-posture.md` for the full wiring.
+- A new `@glw907/cairn-cms/public` subpath (`./public`) exports the engine's built-in public
+  components. It carries `PreviewBanner` today, moved out of the admin barrel because it renders on
+  a site's public preview route, not in the admin. A component that renders styled markup belongs
+  on `./public` and never on `./admin`; a loader or a type belongs on `/sveltekit` or another
+  data-only subpath. `docs/reference/public.md` documents it.
+- `cairn-audit` gains the `radius-scale` static rule, at **advisory** tier. It flags a bare
+  `rounded`, a fixed size (`rounded-lg`, `rounded-2xl`), an arbitrary radius (`rounded-[0.55rem]`
+  or the `rounded-(--x)` shorthand), and each side or corner form of those, and it names the role
+  class to write instead: `rounded-selector`, `rounded-field`, or `rounded-box`. It also flags
+  `rounded-full` on an element that carries `badge`. It passes the three role classes,
+  `rounded-full` elsewhere, and `rounded-none`. It reads class tokens only, so a `border-radius`
+  literal in a `<style>` block is outside it.
+- `stock-default-hazards` gains three arms, each on a `btn` element only and each at **advisory**
+  tier: the ink-opener patch (`bg-neutral` or `bg-[var(--cairn-ink-hover)]` with no
+  `btn-neutral`, which names `btn btn-neutral`), the Publish-tint patch (`bg-primary/10` with no
+  `btn-soft`, which names `btn btn-soft btn-primary`), and a `shadow-none` cancel (the theme's
+  depth is already zero). A recipe arm takes precedence over `shadow-none`, so one retired recipe
+  raises one finding. `radius-scale` and the three arms name `0.99.0` as the release that
+  promotes them to error tier; a unit test (`promotion-versions.test.ts`) fails once the package
+  version reaches any audit promotion constant that has not been decided, so the promise cannot
+  lapse unseen. The full audit now registers 35 rules (18 static, 17 rendered).
+- `cairn-audit norms <role>` prints a `recipe:` line under a role's header when a shipped recipe
+  covers it: the plain class string to write, and the look it produces. A role no recipe covers
+  prints as before.
+- The shipped agent guidance teaches what to write, not only what to avoid. `cairn-admin-screens`,
+  `cairn-extend`'s `daisyui-first.md`, and the `cairn-extension-reviewer` agent each carry the same
+  one-sentence model and a "Write this, get this" table of 15 class strings (page title, eyebrow,
+  buttons, inputs, card, the three corner-role classes, and more). Each also carries a placement
+  line: put a custom admin component under `src/routes/admin` or `src/lib/admin`. A new
+  `cairn-admin-screens/references/exemplar-kit.md` excerpts seven kit sections verbatim from the
+  `/admin/theme-kit` fixture. A test binds the table, the model sentence, and the excerpts to their
+  source, so a copy cannot drift alone.
+- **Theme identity, pass C: one public theme.** The engine now ships a public theme contract that
+  any theme can meet, and the Waymark render does not move. The pieces:
+  - A new export, `@glw907/cairn-cms/cairn-public.css` (`./cairn-public.css`, packed at
+    `dist/public/cairn-public.css`), holds the engine's public defaults. It carries 18 roles in
+    `@layer theme` on `:root` and `[data-theme]` (`--flow-space`, the nine `--cairn-code-*` keys,
+    the four `--cairn-*-ink` status inks, `--cairn-shadow`, and the three `--cairn-focus-ring-*`
+    keys), two `@theme` colors (`--color-muted` and `--color-card-border`), `@layer components`
+    rules that carry no design choice (`pre.shiki`, the six `.cairn-tok-*` classes,
+    `.table-scroll`'s structural pair, and `.cairn-focus-ring:focus-visible`), and one `@source`
+    line over the built-in public components. A site imports it once, after `tailwindcss` and
+    before `prose.css`; the scaffold's `tokens.css` already does. The chassis `tokens.css` no longer
+    declares those keys and rules. `docs/reference/public-css.md` documents every key with its
+    default.
+
+    Consumers must: move any key your copied `src/chassis/tokens.css` adds beyond the new
+    template's into your theme, then replace the copied roles, the two `@theme` colors, the
+    code-block binding, and the focus-ring utility with
+    `@import "@glw907/cairn-cms/cairn-public.css"`; compare your copy's ink, muted, and shadow
+    values first, since those defaults changed.
+
+    The defaults that changed are these. Each status ink derives from its fill, as
+    `color-mix(in oklab, var(--color-<status>) 50%, var(--color-base-content))`, where the old copy
+    used the fill itself, so retuning a fill retunes its ink and a theme that wants a fixed ink sets
+    it in its daisyUI block. `--color-muted` is an opaque 80 percent mix of `--color-base-content`
+    into `--color-base-100`, where the old default was a 60 percent mix toward `transparent`, so its
+    contrast belongs to the theme and not to whatever paints beneath it. `--cairn-shadow` keeps its
+    geometry and mixes `black` where it mixed `--color-base-content`, so it stays a shadow on a dark
+    scheme. The 50 and 80 come from a Chromium measurement over daisyUI's 35 stock themes, Waymark,
+    and a fixture theme; Waymark overrides all three, so its render is unchanged.
+- `previewMarkdown(def)` is a new root export. It returns a component's `preview` sample as the
+  directive markdown the renderer takes, or `undefined` when the component declares no `preview`.
+  A page that shows every registered component walks the registry through it; the scaffold's
+  `/styleguide` now does. `docs/reference/core.md` documents it.
+- `cairn-audit` gains a public scope and three rules that read it: `public-literals`,
+  `theme-conformance`, and `theme-contrast`. All three are advisory on a consumer: they print
+  findings and never change the exit code. The full audit now registers 38 rules (21 static, 17
+  rendered).
+  - `public-literals` flags a color literal or an absolute font size (`px`, `pt`, `rem`) in a
+    public file, whether in a declaration, a `style=` value, a `style:` directive, or a Tailwind
+    arbitrary value. A custom-property definition under a theme root is legal. Nothing inside a
+    quoted string or a `url()` argument is read.
+  - `theme-conformance` checks that each daisyUI theme block defines every key daisyUI needs
+    (a block named after a built-in theme is completed by daisyUI's own merge) and that every
+    `var()` the public stylesheets read resolves. It also names a chassis file that redeclares a
+    `cairn-public.css` role.
+  - `theme-contrast` measures the text pairs each daisyUI theme block paints, at 4.5:1 in sRGB and
+    display-p3: body text and muted text on both grounds, each role's `-content` on its fill, each
+    status ink on both grounds and on its callout tint, and the seven code roles on the code ground.
+    It also measures the focus ring on both grounds at 3:1. A pair the audit cannot model is
+    reported as unmeasured and never passed.
+  - The public scope is set by a new `public` section in `cairn-audit.config.json`:
+    `public.scope` (default `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`,
+    `src/lib/components`), `public.exclude` (default `src/routes/admin`; a configured list merges
+    with the default), `public.themeRoots` (default `src/theme` and `src/chassis/tokens.css`), and
+    `public.stylesheets` (default `src/theme/theme.css`). A configured `public.scope` replaces the
+    defaults, and a configured root your tree lacks fails the run, like `static.scope`.
+    `docs/reference/cairn-audit.md` documents the scope, the import chain, and what
+    `theme-contrast` does not cover.
+  - `daisyui` (`^5`) and `tailwindcss` (`^4`) are new optional peer dependencies, loaded only when a
+    selected rule needs them. `culori` (`^4.0.2`) is now a runtime dependency of the package. A
+    full audit run without a peer fails with a message that names the peer and
+    `npm install --save-dev <peer>`. An admin-only `--rule` selection needs neither peer.
+  - `check:cairn` in a scaffolded site now runs the three rules, so it prints advisory public
+    findings after an upgrade, and it fails with the named message when a peer is missing.
+- `cairn-guidance install` ships a fourth skill, `cairn-public`, for the public side of a site: the
+  job-to-token table, where a per-scheme value goes, and one catalogue page for each public piece
+  cairn ships (each directive, the island, `CairnHead`, `PreviewBanner`, the composition classes,
+  and the six prose pieces). It defers to the official daisyUI skill for component classes.
 
 ### Changed
 
@@ -75,6 +175,96 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   `btn-outline btn-primary` keeps its own edge. The file's citations of cairn-internal documents
   now state their rule inline. Consumers must: nothing. A site scaffolded earlier can copy the
   same rules from `templates/waymark/src/theme/theme.css`.
+
+- The engine's admin subpath is now `@glw907/cairn-cms/admin`. It replaces
+  `@glw907/cairn-cms/components`, which is removed: `package.json` no longer exports
+  `./components`, and the built files move from `dist/components/` to `dist/admin/` (the compiled
+  sheet is `dist/admin/cairn-admin.css`). The reference page `docs/reference/components.md` is now
+  `docs/reference/admin.md`, and `PreviewBanner` is exported from the new `./public` subpath
+  instead.
+
+  Consumers must: import admin components from `@glw907/cairn-cms/admin` instead of
+  `@glw907/cairn-cms/components`; import `PreviewBanner` from `@glw907/cairn-cms/public`; move any
+  custom admin components out of `src/lib/components` into `src/lib/admin` and add
+  `@source "./lib/admin";` to the site's admin stylesheet, or keep them there and set
+  `static.scope` in `cairn-audit.config.json` to the default roots the site has plus
+  `src/lib/components` (for example `["src/routes/admin", "src/lib/components"]`), since a
+  configured list replaces the defaults and a configured root that does not exist fails the run;
+  and change any path into `dist/components/` to `dist/admin/`, whether an audit config's `sheet`
+  (including a config passed with `--config`) or a site script names it.
+- `cairn-audit`'s default static scope is now `src/routes/admin`, `src/lib/admin`, and
+  `src/lib/admin-toolkit`, and `static.adminScope` (the roots the three admin-only motion rules
+  read) defaults to the same three. `src/lib/components` is no longer a default root, because it is
+  a site's own shared components and the engine's admin folder no longer bears that name. A root the
+  site does not have is skipped. The narrowing is disclosed and permanent: with `src/lib/components`
+  out of the defaults, every non-admin-only static rule stops reading a site's own
+  `src/lib/components`, and `stripe-trim-parity` and `unlayered-font-clobber` stay admin-only, so
+  they never read a site's public components again (Geoff's ruling, A1). A site restores the old
+  reach for its own components with `static.scope`, listing the default roots it has plus
+  `src/lib/components`. The motion rules now also read `src/lib/admin`, so a site that moves custom
+  components there brings them under `motion-property`, `motion-vocabulary`, and
+  `motion-hover-gate`.
+
+- Theme identity pass C changes to the public template and the built-in public component. What a
+  site sees on upgrade:
+  - `PreviewBanner` reads a token palette: daisyUI 5 role tokens with no color literal and no
+    `prefers-color-scheme` block. The draft state paints `--color-base-200` under a
+    `--color-warning` border; the ended state paints `--color-base-100` under a `--color-info`
+    border, with a `--cairn-info-ink` link and a focus ring. The five `--cairn-preview-*` override
+    properties behave as before. A site without daisyUI sets the five properties itself, because
+    no literal fallback stands in for a missing token.
+  - The editor preview's ground follows the site's `--color-base-100` once the site's stylesheet
+    loads, with `#fff` as the fallback for a styleless preview.
+  - `cairn-focus-ring` is now a rule in `@layer components`, so it takes no variants and sits below
+    utilities. A utility that sets `outline-*` on the same element wins, and so does a daisyUI
+    component class that sets an outline.
+  - A copied `prose.css` that read the focus-ring keys a site had not declared now draws visible
+    outlines, because the keys come from `cairn-public.css`.
+  - The template gains two heading levers. `--font-weight-heading` (in `@theme`) and
+    `--cairn-heading-case` (a role in `@layer theme`, default `none`, applied by a new
+    `heading-case` utility) govern every heading, and `prose.css` and the hero title read them.
+  - The template's skip link is the `sr-only`, `focus:not-sr-only` idiom over a focusable
+    `<main tabindex="-1">`. The toggle's `resolveTheme` reads the root's computed `color-scheme`
+    and drops `only`, so a dark-first theme, including `only dark`, resolves dark on a light OS. The
+    toggle's names and cookie live in one `theme-names.ts`, with a test that fails when `app.html`
+    or `theme.css` drifts from it. Chrome corners take the radius tokens, and `/styleguide` renders
+    one sample per registered component from the registry.
+  - The scaffold's `check.yml` pins CI to Node 24.
+
+  Consumers must: nothing. A site scaffolded earlier ports the skip link, the toggle's
+  `color-scheme` resolution, the radius-token corners, the heading levers, and the CI Node pin by
+  hand from `templates/waymark`; `docs/extend/migration-notes.md` lists each. A hand-built site
+  installs `daisyui` (`^5`) and `tailwindcss` (`^4`) if it lacks them, because `check:cairn` now
+  fails with a named message without them (a scaffolded site already has both).
+- The public scope's settle changes report what the audit cannot measure. A run that
+  selects only public rules no longer needs the built admin stylesheet. `theme-contrast` reports an
+  unmeasured finding, never a silent pass, for a theme form the audit does not model: a block with a
+  custom `root` option, a root declaration under an unmodeled condition or selector, and a status
+  tint in another form (its pair is kept, unmeasured). It reads an unnamed daisyUI block as
+  `custom-theme`, resolves nested root rules and `screen` or `all` color-scheme queries, and never
+  applies `@supports not` or `print`. Its pair list gains the seven code roles on `--cairn-code-bg`
+  and the focus ring on both grounds, 33 pairs per scheme on the showcase, up from 24. Configured
+  paths are normalized (`./src`, `src/`, and `src` compare equal), a default admin root that a
+  public exclusion covers stays in the admin scope, an extensionless relative `@import` reads its
+  `.css` file, and a comment between value tokens keeps their boundary. Two new config errors fail
+  the run: a configured `public.stylesheets` entry the tree lacks, and a configured public root that
+  a `public.exclude` path covers. A public `.svelte` file with a preprocessed `<style lang=...>` block
+  raises a named advisory finding and the run continues.
+
+- `cairn-audit` promotes three findings from advisory to error tier, as their advisory window promised:
+  `log-event-grammar`, `log-secret-field`, and the `cairn-btn-guarded` retirement arm of
+  `stock-default-hazards`. A finding from any of the three now fails `check:cairn` and exits the
+  command nonzero, where it used to report and exit 0. The static rules are now seventeen at error
+  tier and four at advisory (`radius-scale`, `public-literals`, `theme-conformance`,
+  `theme-contrast`); the total stays 38. A finding's message no longer names a promotion version.
+  `radius-scale` and the three retired-patch arms of `stock-default-hazards` still report at
+  advisory tier until `0.99.0`.
+
+  Consumers must: fix every `log-event-grammar`, `log-secret-field`, and `cairn-btn-guarded`
+  finding before upgrading, or suppress it with a `cairn-audit-disable-next-line` directive that
+  names the rule and gives a reason, since each now fails `check:cairn`. Run `npx cairn-audit`
+  before the upgrade to see them; the two log rules also flag `console.info` and another library's
+  logger, so a false positive there is the case a suppression covers.
 
 ### Fixed
 
@@ -138,6 +328,22 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   the connected domain. Operator-visible: a fresh `npx create-cairn-site` run and its README now
   state the true cost up front rather than at the email step. No consumer action for an existing
   site.
+- Inserting a block from the editor's Insert block button no longer fuses the block's closing
+  fence onto the text after the caret. The insert now separates the block from adjacent text by
+  one blank line on each side, keeps the indentation of an indented code line or a nested list item
+  at the caret, and changes only the whitespace around the caret. It no longer unfolds folded
+  blocks or moves an in-flight image upload's placeholder to the end of the document, and it is its
+  own undo step. `EditorApi.insert` is block insertion, and `docs/reference/admin.md` says so.
+
+### Dependencies
+
+- The pass C sweep takes every minor and patch (`docs/internal/record/2026-09-29-theme-pass-c-dependency-sweep.md`).
+  Shipped: `culori` is now a runtime dependency (`^4.0.2`), and `@lezer/common` (`^1.5.3`),
+  `@lezer/highlight` (`^1.2.5`), and `@lucide/svelte` (`^1.48.0`) move their floors. `daisyui` and
+  `tailwindcss` join as optional peers, above. The scaffold's `package.json` takes `daisyui`
+  `^5.7.46`, `vite` `^8.3.1`, and `wrangler` `^4.143.0`; the rest of the sweep is devDependencies.
+  `eslint-plugin-jsdoc` moves to `65.0.0` (a dev bump; it recompiles nothing that ships). Held:
+  devalue 6, TypeScript 7, Vitest 5, and `@types/node` 26. Consumers must: nothing.
 
 ## 0.97.0
 
@@ -3424,7 +3630,7 @@ caret patch must not carry a visible retheme. A hotfix before that cut branches 
   (`PreviewTokenConfig`). Four new log events (`preview.token.minted`, `preview.token.revoked`,
   `preview.cleanup_failed`, `preview.rejected`) never carry the token itself. See
   [SvelteKit](docs/reference/sveltekit.md#public-preview),
-  [Components](docs/reference/components.md#previewbanner),
+  [Public](docs/reference/public.md#previewbanner),
   [Delivery](docs/reference/delivery.md#composeentrydata), [Log
   events](docs/reference/log-events.md), and [Share a draft
   preview](docs/guides/share-a-draft-preview.md) for the full adopter walkthrough, including the
@@ -3974,7 +4180,7 @@ removal, nothing this list needs to carry.
   the two views `CairnAdmin` already rendered internally but a site on the advanced per-route
   mounting could not reach directly. The membership rule is now exact: every view `CairnAdmin` can
   render is individually mountable. See
-  [Components](docs/reference/components.md#vocabularyadmin). Consumers must: nothing; both
+  [Admin](docs/reference/admin.md#vocabularyadmin). Consumers must: nothing; both
   additions are additive.
 
 - `createSectionAction`'s `SectionActionOptions.target` now defaults to `event.route.id`, never

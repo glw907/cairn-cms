@@ -1,7 +1,7 @@
 // cairn-cms: the public `/sveltekit` barrel. Everything a SvelteKit site wires into its routes:
 // factories, wrappers, guards, and the data types they exchange. The guard plus the auth, editor,
 // content, and health route factories and functions. An admin Svelte component belongs on
-// `/components` instead, even though a site also wires it into a route: this barrel is server
+// `/admin` instead, even though a site also wires it into a route: this barrel is server
 // logic only, never a `.svelte` file.
 export {
   createAuthGuard,

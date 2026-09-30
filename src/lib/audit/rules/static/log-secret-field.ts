@@ -1,6 +1,6 @@
 // cairn-audit's log-secret-field rule: the same `<ident>.info(`, `.warn(`, `.error(` name
 // heuristic log-event-grammar reads, this time over each call's second, fields argument. It is a
-// name-awareness advisory and nothing more, and it cannot tell whether `<ident>` is a cairn
+// name-awareness heuristic and nothing more, and it cannot tell whether `<ident>` is a cairn
 // `createLogger` instance, `console`, or another library's logger: only when the call goes through
 // a cairn logger does a property whose key matches a member of `REDACTED_LOG_KEYS`
 // (`src/lib/log/create.js`) already have its VALUE replaced at runtime. On a bare `console` call
@@ -15,14 +15,10 @@
 // `create.ts`. `tokenCount` and `tokens` are not a match, since the comparison is against the whole
 // key. Only the fields object's own top-level keys are read: the runtime redacts three levels deep,
 // and matching that here would mean parsing nested object literals out of source text, which is out
-// of scope for a heuristic this advisory.
+// of scope for a heuristic this cheap.
 import { REDACTED_LOG_KEYS, normalizeKey } from '../../../log/create.js';
 import { lineAt } from '../../markup.js';
 import type { Finding, SourceFile, StaticRule } from '../../types.js';
-
-// The promotion version stated in every finding this rule raises: the minor release that moves
-// consumer-facing findings out of advisory tier.
-const PROMOTION_VERSION = '0.98.0';
 
 const CALL = /[A-Za-z_$][\w$]*\.(?:info|warn|error)\(/g;
 
@@ -167,7 +163,7 @@ function findingsFor(file: SourceFile): Finding[] {
       if (!REDACTED.has(normalizeKey(key.name))) continue;
       findings.push({
         ruleId: 'log-secret-field',
-        tier: 'advisory',
+        tier: 'error',
         file: file.file,
         line: lineAt(file.source, key.start),
         start: key.start,
@@ -179,8 +175,7 @@ function findingsFor(file: SourceFile): Finding[] {
           `so on a bare console call the value ships as written. Either way, this is a ` +
           `name-awareness notice, for the two things redaction cannot do even when it applies, ` +
           `namely scrub the same value out of the message string beside the field and turn a ` +
-          `secret-shaped field into the count or boolean it usually wants to be. Findings here ` +
-          `stay advisory until ${PROMOTION_VERSION}`,
+          `secret-shaped field into the count or boolean it usually wants to be.`,
       });
     }
   }
@@ -189,7 +184,7 @@ function findingsFor(file: SourceFile): Finding[] {
 
 export const logSecretField: StaticRule = {
   id: 'log-secret-field',
-  tier: 'advisory',
+  tier: 'error',
   check(ctx) {
     return (ctx.sources ?? []).flatMap(findingsFor);
   },

@@ -9,7 +9,7 @@ toggle would.
 -->
 <script lang="ts">
   import type { ComponentProps } from 'svelte';
-  import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
+  import CairnAdminShell from '../../lib/admin/CairnAdminShell.svelte';
   import DeskChild from './_DeskChild.svelte';
 
   let { data, zen = false }: { data: ComponentProps<typeof CairnAdminShell>['data']; zen?: boolean } = $props();

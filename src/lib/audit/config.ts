@@ -1,22 +1,18 @@
 // cairn-audit's configuration: one optional consumer-side file, and the argv the bin parses.
 // Everything defaults, so a site that has written no config still gets a meaningful run.
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { posix, resolve } from 'node:path';
 
 /** The config file a consumer writes, read from the audited root. */
 export const CONFIG_FILE = 'cairn-audit.config.json';
 
 // Every surface that renders inside the admin theme, plus the site's own admin routes. The two
-// library directories are the same roots the admin stylesheet build and the class-compilation gate
-// scan (the retired `admin-fields` subpath merged into admin-toolkit, so its own roster entry
-// folded into that one). A directory that renders admin markup
-// belongs here even when it looks covered. A path that does not exist in a given tree is skipped,
-// so a consumer inherits only what it actually has.
-export const DEFAULT_STATIC_SCOPE = [
-  'src/routes/admin',
-  'src/lib/admin-toolkit',
-  'src/lib/components',
-];
+// library directories (src/lib/admin, src/lib/admin-toolkit) are the same roots the admin
+// stylesheet build and the class-compilation gate scan (the retired `admin-fields` subpath merged
+// into admin-toolkit, so its own roster entry folded into that one). A directory that renders
+// admin markup belongs here even when it looks covered. A path that does not exist in a given
+// tree is skipped, so a consumer inherits only what it actually has.
+export const DEFAULT_STATIC_SCOPE = ['src/routes/admin', 'src/lib/admin', 'src/lib/admin-toolkit'];
 
 // Where the source-text-family static rules (log-event-grammar, log-secret-field) walk for
 // `.ts` and `.svelte` files, read as plain text rather than parsed markup. Wider than
@@ -24,19 +20,45 @@ export const DEFAULT_STATIC_SCOPE = [
 // default is the whole source tree a site actually keeps its own code in.
 export const DEFAULT_SOURCE_SCOPE = ['src'];
 
-// The roots an `adminOnly` static rule resolves over instead of `DEFAULT_STATIC_SCOPE`. Narrower
-// on purpose: `DEFAULT_STATIC_SCOPE`'s middle root is where a consuming site keeps its shared
-// public components, and an admin-only motion rule reading that root would gate a site's own
-// public design. A site whose admin screens sit outside these two roots names `static.adminScope`
+// The roots an `adminOnly` static rule resolves over instead of `DEFAULT_STATIC_SCOPE`. Now the
+// same three roots `DEFAULT_STATIC_SCOPE` names, since `src/lib/admin` renders only the admin's
+// own views, never a site's shared public components: an admin-only motion rule reading it gates
+// no public design. A site whose admin screens sit outside these roots names `static.adminScope`
 // itself, the same override `staticScope` already carries.
-export const DEFAULT_ADMIN_SCOPE = ['src/routes/admin', 'src/lib/admin-toolkit'];
+export const DEFAULT_ADMIN_SCOPE = ['src/routes/admin', 'src/lib/admin', 'src/lib/admin-toolkit'];
+
+// The public scope: the roots a public-scope rule (`public-literals`) reads `.svelte` and `.css`
+// files under, the design a site ships to its visitors. `src/lib/components` is where a consumer
+// keeps shared public components, and `src/lib/public` is the engine's own public tree. The
+// defaults and the admin roots above never overlap: `src/routes/admin` sits under the
+// `src/routes` root and is removed by `DEFAULT_PUBLIC_EXCLUDE`.
+export const DEFAULT_PUBLIC_SCOPE = [
+  'src/theme',
+  'src/chassis',
+  'src/routes',
+  'src/lib/public',
+  'src/lib/components',
+];
+
+// Paths removed from the public scope. A configured list merges with this default, never
+// replaces it, so a site that names its own exclusion still cannot pull its admin routes in.
+export const DEFAULT_PUBLIC_EXCLUDE = ['src/routes/admin'];
+
+// The theme roots: where a site's design values are legally defined. A custom-property definition
+// is a token definition under one of these, and a literal there is the point rather than a hazard.
+// Each entry is a directory or a single file, the same path-list shape `paletteFiles` takes.
+export const DEFAULT_THEME_ROOTS = ['src/theme', 'src/chassis/tokens.css'];
+
+// The entry stylesheets whose `@import` chain is the site's real chain, the starting point for a
+// rule that needs to know what the public stylesheet actually pulls in.
+export const DEFAULT_PUBLIC_STYLESHEETS = ['src/theme/theme.css'];
 
 // Where the built admin stylesheet is, first in the library's own tree and then in a consumer's
 // installed package. The first candidate is the fallback when neither exists, so the run fails
 // naming a path a developer can act on.
 export const DEFAULT_SHEET_CANDIDATES = [
-  'dist/components/cairn-admin.css',
-  'node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css',
+  'dist/admin/cairn-admin.css',
+  'node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css',
 ];
 
 // Declared palette declaration sites: the one CSS file per tree whose whole job is DEFINING the
@@ -48,7 +70,7 @@ export const DEFAULT_SHEET_CANDIDATES = [
 // selector, a transition) those rules legitimately police. `cairn-admin.css` is the engine's own
 // declaration site and so the one default; a site names its own theme file the same way
 // (`static.paletteFiles`) to keep its own palette declaration outside `token-colors` too.
-export const DEFAULT_PALETTE_CSS_FILES = ['src/lib/components/cairn-admin.css'];
+export const DEFAULT_PALETTE_CSS_FILES = ['src/lib/admin/cairn-admin.css'];
 
 // The core admin routes rendered mode visits absent a configured page list. Mirrors the norms
 // generator's own page set (scripts/lab/generate-norms-manifest.mjs): both are "the core admin routes"
@@ -142,6 +164,29 @@ export interface AuditConfig {
    */
   renderedPages: string[];
   renderedAllowlist: RenderedAllowlistEntry[];
+  /**
+   * The roots the public scope reads `.svelte` and `.css` files under, recursively. A default
+   * root the config's admin scope names is already removed, so this list is what the run reads.
+   * Never read on its own to decide whether a file is public: `isPublicFile` also applies
+   * `publicExclude` and every admin root.
+   */
+  publicScope: string[];
+  /**
+   * Whether the config file named `public.scope` itself: a configured root the tree does not have
+   * throws, while a default root a given tree does not have is skipped.
+   */
+  publicScopeFromConfig: boolean;
+  /** Paths the public scope never reads: `DEFAULT_PUBLIC_EXCLUDE` plus `public.exclude`. */
+  publicExclude: string[];
+  /** Paths (directories or files) where a design value may legally be defined. */
+  themeRoots: string[];
+  /** The entry stylesheets of the site's real import chain. */
+  publicStylesheets: string[];
+  /**
+   * Whether the config file named `public.stylesheets` itself: a configured entry the tree does
+   * not have throws, while the default entry a given tree does not have is recorded as unread.
+   */
+  publicStylesheetsFromConfig: boolean;
 }
 
 function fail(message: string): never {
@@ -154,12 +199,24 @@ function asRecord(value: unknown, field: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+/**
+ * A configured path in the one form the scopes compare: posix-normalized, with no leading `./`,
+ * no trailing `/`, and no doubled `/`. `./src` and `src/` would otherwise miss every prefix test
+ * against `src`, so one file could land in two scopes, and a reported path would carry the
+ * spelling.
+ */
+function normalizePath(path: string): string {
+  const normal = posix.normalize(path);
+  const trimmed = normal.length > 1 ? normal.replace(/\/+$/, '') : normal;
+  return trimmed.startsWith('./') ? trimmed.slice(2) : trimmed;
+}
+
 function asPathList(value: unknown, field: string, fallback: string[]): string[] {
   if (value === undefined) return fallback;
   if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
     fail(`${field} must be a list of paths`);
   }
-  return value as string[];
+  return (value as string[]).map(normalizePath);
 }
 
 /**
@@ -169,9 +226,9 @@ function asPathList(value: unknown, field: string, fallback: string[]): string[]
  */
 function asPathOrPathList(value: unknown, field: string, fallback: () => string[]): string[] {
   if (value === undefined) return fallback();
-  if (typeof value === 'string') return [value];
+  if (typeof value === 'string') return [normalizePath(value)];
   if (Array.isArray(value) && value.every((entry) => typeof entry === 'string')) {
-    return value as string[];
+    return (value as string[]).map(normalizePath);
   }
   fail(`${field} must be a path or a list of paths`);
 }
@@ -210,16 +267,60 @@ export function resolveConfig(
   const file = asRecord(raw, 'the config');
   const staticSection = asRecord(file.static, 'static');
   const renderedSection = asRecord(file.rendered, 'rendered');
+  const publicSection = asRecord(file.public, 'public');
+  const configuredPublicScope = publicSection.scope !== undefined;
+  const publicRoots = asPathList(publicSection.scope, 'public.scope', DEFAULT_PUBLIC_SCOPE);
+  const publicExclude = [
+    ...DEFAULT_PUBLIC_EXCLUDE,
+    ...asPathList(publicSection.exclude, 'public.exclude', []).filter((path) => !DEFAULT_PUBLIC_EXCLUDE.includes(path)),
+  ];
+  const staticScopeFromConfig = staticSection.scope !== undefined;
+  const adminScopeFromConfig = staticSection.adminScope !== undefined;
+  // A root named for one scope leaves the other scope's defaults, so a file a site deliberately
+  // routed answers to one grammar. A public root a site names drops out of the admin defaults;
+  // an admin root a site names drops out of the public defaults. A default admin root a public
+  // exclusion covers stays: the public scope never reads it, so dropping it would leave its files
+  // in neither scope. A configured list is never narrowed: it is the site's own statement.
+  const adminDefaults = (defaults: string[]) =>
+    configuredPublicScope
+      ? defaults.filter((root) => !publicRoots.includes(root) || isUnderRoots(root, publicExclude))
+      : defaults;
+  const staticScope = asPathList(staticSection.scope, 'static.scope', adminDefaults(DEFAULT_STATIC_SCOPE));
+  const adminScope = asPathList(staticSection.adminScope, 'static.adminScope', adminDefaults(DEFAULT_ADMIN_SCOPE));
+  const namedAdminRoots = [
+    ...(staticScopeFromConfig ? staticScope : []),
+    ...(adminScopeFromConfig ? adminScope : []),
+  ];
+  if (configuredPublicScope) {
+    // A configured public root an exclusion swallows whole reads nothing, and unless an admin root
+    // reads it, its files answer to no rule at all: the silent narrowing a config error prevents.
+    for (const root of publicRoots) {
+      const exclusion = publicExclude.find((path) => isUnderRoots(root, [path]));
+      if (exclusion !== undefined && !isUnderRoots(root, [...staticScope, ...adminScope])) {
+        fail(
+          `public.scope names ${root}, which lies under the public exclusion ${exclusion} (public.exclude), so no rule would read it. Remove it from public.scope or from public.exclude`
+        );
+      }
+    }
+  }
   return {
     root,
-    staticScope: asPathList(staticSection.scope, 'static.scope', DEFAULT_STATIC_SCOPE),
-    staticScopeFromConfig: staticSection.scope !== undefined,
+    staticScope,
+    staticScopeFromConfig,
     sourceScope: asPathList(staticSection.sourceScope, 'static.sourceScope', DEFAULT_SOURCE_SCOPE),
     sourceScopeFromConfig: staticSection.sourceScope !== undefined,
-    adminScope: asPathList(staticSection.adminScope, 'static.adminScope', DEFAULT_ADMIN_SCOPE),
-    adminScopeFromConfig: staticSection.adminScope !== undefined,
+    adminScope,
+    adminScopeFromConfig,
     staticCssFiles: asPathList(staticSection.cssFiles, 'static.cssFiles', []),
     paletteCssFiles: asPathList(staticSection.paletteFiles, 'static.paletteFiles', DEFAULT_PALETTE_CSS_FILES),
+    publicScope: configuredPublicScope
+      ? publicRoots
+      : publicRoots.filter((root) => !namedAdminRoots.includes(root)),
+    publicScopeFromConfig: configuredPublicScope,
+    publicExclude,
+    themeRoots: asPathList(publicSection.themeRoots, 'public.themeRoots', DEFAULT_THEME_ROOTS),
+    publicStylesheets: asPathList(publicSection.stylesheets, 'public.stylesheets', DEFAULT_PUBLIC_STYLESHEETS),
+    publicStylesheetsFromConfig: publicSection.stylesheets !== undefined,
     sheetPaths: asPathOrPathList(file.sheet, 'sheet', () => [
       DEFAULT_SHEET_CANDIDATES.find((candidate) => sheetExists(candidate)) ?? DEFAULT_SHEET_CANDIDATES[0],
     ]),
@@ -248,6 +349,27 @@ export function loadConfig(root: string, configPath?: string): AuditConfig {
     throw new Error(`${path}: no such config file`);
   }
   return resolveConfig(root, raw, (candidate) => existsSync(resolve(root, candidate)));
+}
+
+/** Whether a root-relative path lies inside one of the given root paths, each a directory or a file. */
+export function isUnderRoots(path: string, roots: readonly string[]): boolean {
+  return roots.some((root) => path === root || path.startsWith(`${root}/`));
+}
+
+/**
+ * Whether the public scope claims a file. It lies under a public root and under no exclusion, and
+ * under no root the admin scope reads (from `static.scope` or `static.adminScope`, default or
+ * configured) and is no standalone file `static.cssFiles` names, so no file answers to the admin
+ * grammar and the public one at once, and widening `public.scope` to `src` or replacing
+ * `public.exclude` can never move an admin file from an error-tier rule to an advisory one.
+ */
+export function isPublicFile(config: AuditConfig, path: string): boolean {
+  return (
+    isUnderRoots(path, config.publicScope) &&
+    !isUnderRoots(path, config.publicExclude) &&
+    !isUnderRoots(path, [...config.staticScope, ...config.adminScope]) &&
+    !config.staticCssFiles.includes(path)
+  );
 }
 
 /** The flags both invocations share. */

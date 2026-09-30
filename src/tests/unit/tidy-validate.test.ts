@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { validateTidy } from '../../lib/components/tidy-validate.js';
-import type { TidyValidation } from '../../lib/components/tidy-validate.js';
+import { validateTidy } from '../../lib/admin/tidy-validate.js';
+import type { TidyValidation } from '../../lib/admin/tidy-validate.js';
 
 // A 16-character lowercase hex content-hash prefix, the canonical media: hash shape.
 const HASH = '0123456789abcdef';

@@ -10,10 +10,10 @@
 // each other's load data, the same discipline ./support.js's editPageProps() follows for the three
 // EditPage rows.
 import type { Component } from 'svelte';
-import CairnMediaLibrary from '../../components/CairnMediaLibrary.svelte';
-import MediaCaptureCard from '../../components/MediaCaptureCard.svelte';
-import MediaHeroField from '../../components/MediaHeroField.svelte';
-import MediaInsertPopover from '../../components/MediaInsertPopover.svelte';
+import CairnMediaLibrary from '../../admin/CairnMediaLibrary.svelte';
+import MediaCaptureCard from '../../admin/MediaCaptureCard.svelte';
+import MediaHeroField from '../../admin/MediaHeroField.svelte';
+import MediaInsertPopover from '../../admin/MediaInsertPopover.svelte';
 import type { MediaLibrary, MediaLibraryEntry } from '../../media/library-entry.js';
 import { formatMediaToken } from '../../media/reference.js';
 import type { MediaLibraryData } from '../../sveltekit/content-routes-media-library.js';

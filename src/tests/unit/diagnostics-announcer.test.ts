@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { summarizeDiagnostics } from '../../lib/components/editor-diagnostics-announcer.js';
+import { summarizeDiagnostics } from '../../lib/admin/editor-diagnostics-announcer.js';
 
 describe('summarizeDiagnostics', () => {
   it('pluralizes and joins both kinds', () => {

@@ -1,35 +1,46 @@
 // cairn-cms: the re-skin fixture. It proves the headline B2 claim that editing only the documented N
 // role values re-skins the whole surface and AA still holds, the field's only complete and gated
-// re-skin recipe.
+// re-skin recipe. Three theme cases run through the same `theme-contrast` measurement the live gate
+// runs (`check:public-tokens`), read from the packaged audit in dist/audit, over the showcase's real
+// import chain with the rewritten theme.css read in place of the file on disk:
 //
-// It copies theme.css, rotates the `--color-primary` hue by a large amount in BOTH the light and the
-// dark theme block (holding lightness and chroma, the contrast-stable recolor rule), then runs the
-// SAME dual-gamut contrast check the live gate runs (imported from check-public-tokens.mjs) on the
-// rewritten theme and asserts every pair still clears AA. It also proves the prose reading surface has
-// no second colour source: prose.css carries no colour literal, and every colour-bearing property
-// reads a `--color-*`/`--cairn-*` token, so the prose re-skins from the same set at zero extra edits.
-// Finally it proves every token the prose surface and the code ramp REFERENCE is actually defined: a
-// reference that reads the right NAMESPACE but no real token (a `var(--color-info-ink)` where only
-// `--cairn-info-ink` exists) passes the single-source prefix match yet resolves to nothing, so the
-// resolution check is what turns a dangling reference into a red gate.
+//   1. The hue rotation. It rotates the `--color-primary` hue by a large amount in BOTH daisyUI theme
+//      blocks (holding lightness and chroma, the contrast-stable recolor rule) and asserts every
+//      pair in every scheme still clears AA.
+//   2. The stripped inks. It deletes Waymark's four hand-tuned status inks from both daisyUI blocks,
+//      so each ink falls back to the engine's derived default in cairn-public.css, and asserts every
+//      pair in both schemes still clears AA. It prints that case's per-pair table.
+//   3. The fixture theme. It reads the committed second theme (scripts/lab/theme-fixture/theme.css),
+//      a palette and token set deliberately unlike Waymark's, in place of theme.css, and asserts
+//      every pair in both schemes clears AA. A pair that fails is a finding about the derivation,
+//      never a reason to retune the fixture.
 //
-// Wired as `npm run test:reskin`. Exits non-zero if the rotated theme drops a pair, prose holds a
-// second colour source, or a referenced token has no definition.
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
-import { tmpdir } from 'node:os';
+// It also proves the prose reading surface has no second colour source: prose.css carries no colour
+// literal, and every colour-bearing property reads a `--color-*`/`--cairn-*` token, so the prose
+// re-skins from the same set at zero extra edits. That every referenced token is defined is
+// `theme-conformance`'s resolution check, which `check:public-tokens` runs over the showcase.
+//
+// Wired as `npm run test:reskin`, which packages the engine first. It reads the showcase's installed
+// engine and daisyUI, so the showcase's node_modules must be installed. Exits non-zero if either
+// theme case drops or leaves unmeasured a pair, or prose holds a second colour source.
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  checkThemeContrast,
-  reportContrast,
-  checkTokenResolution,
-  COLOR_LITERAL,
-} from '../checks/check-public-tokens.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/theme/theme.css');
+const FIXTURE_CSS = resolve(ROOT, 'scripts/lab/theme-fixture/theme.css');
 const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
-const CHASSIS_TOKENS_CSS = resolve(ROOT, 'examples/showcase/src/chassis/tokens.css');
+const SHOWCASE = resolve(ROOT, 'examples/showcase');
+
+// A literal colour in CSS's literal colour syntaxes, the prose single-source check's own test.
+// `oklch(` is matched with its trailing `c`, so the `color-mix(in oklab, <token>, ...)` colour-space
+// keyword, which carries no literal, never matches. The `#hex` form matches 3, 4, 6, or 8 hex
+// digits at a token boundary.
+const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|(?:rgba?|hsla?|oklch)\s*\(/;
+
+/** The four status inks Waymark hand-tunes in each daisyUI block. */
+const INK_OVERRIDE = /^[ \t]*--cairn-(?:success|warning|error|info)-ink:[^;]*;\n/gm;
 
 // The hue rotation the fixture applies to the brand accent. A large turn (well past a hue step) makes
 // the re-skin unmistakable while the contrast-stable recipe holds lightness and chroma fixed.
@@ -92,33 +103,91 @@ function checkProseSecondSource() {
   return violations;
 }
 
-function main() {
+/**
+ * Delete Waymark's four hand-tuned status inks from both daisyUI theme blocks, so each falls back to
+ * the engine's derived default.
+ * @param {string} css the contents of theme.css
+ * @returns {{ rewritten: string, edits: number }}
+ */
+function stripInks(css) {
+  let edits = 0;
+  const rewritten = css.replace(INK_OVERRIDE, () => {
+    edits += 1;
+    return '';
+  });
+  return { rewritten, edits };
+}
+
+/**
+ * Measure theme-contrast over the showcase's import chain with `themeCss` read in place of
+ * theme.css, through the packaged audit.
+ * @param {any} audit the packaged audit's barrel
+ * @param {string} themeCss
+ */
+function measure(audit, themeCss) {
+  const fs = {
+    /** @param {string} path */
+    readText: (path) => (path === THEME_CSS ? themeCss : audit.nodeChainFs.readText(path)),
+  };
+  const chain = audit.loadImportChain(SHOWCASE, ['src/theme/theme.css'], fs);
+  const { themes } = audit.loadDaisyThemeKeys(SHOWCASE, audit.nodePeers);
+  return audit.measureThemeContrast(chain.files, themes);
+}
+
+/**
+ * Report one theme case: a failing, unmeasured, or short scheme fails it.
+ * @param {string} label
+ * @param {any} measurement
+ * @param {boolean} printTable
+ * @param {(measurement: any) => string} formatContrastTable the packaged audit's table formatter
+ * @returns {boolean} whether the case passed
+ */
+function reportCase(label, measurement, printTable, formatContrastTable) {
+  if (printTable) {
+    console.log('');
+    console.log(formatContrastTable(measurement));
+  }
+  const counts = measurement.schemes.map((/** @type {any} */ scheme) => `"${scheme.name}" ${scheme.measured} of ${scheme.expected}`);
+  const short = measurement.schemes.some((/** @type {any} */ scheme) => scheme.measured !== scheme.expected);
+  console.log('');
+  if (measurement.findings.length > 0 || short || measurement.schemes.length < 2) {
+    console.error(`${label}: FAIL (${measurement.findings.length} finding(s); pairs measured per scheme: ${counts.join(', ')})`);
+    for (const finding of measurement.findings) console.error(`  ${finding.message}`);
+    return false;
+  }
+  console.log(`${label}: PASS (every pair clears AA in both sRGB and P3; pairs measured per scheme: ${counts.join(', ')})`);
+  return true;
+}
+
+async function main() {
   let failed = false;
-
-  // 1. Re-skin: copy theme.css to a temp file, rotate the brand accent in the copy, then run the
-  //    same contrast gate against the rewritten file read back from disk, so the fixture validates the
-  //    on-disk re-skinned theme, not just an in-memory string.
+  const audit = await import('../../dist/audit/index.js');
   const original = readFileSync(THEME_CSS, 'utf8');
-  const { rewritten, edits } = rotatePrimaryHue(original);
-  const dir = mkdtempSync(join(tmpdir(), 'cairn-reskin-'));
-  const fixturePath = join(dir, 'theme.reskin.css');
-  writeFileSync(fixturePath, rewritten, 'utf8');
 
-  console.log(`Re-skin fixture: rotated --color-primary hue by ${HUE_ROTATION} in ${edits} theme block(s).`);
-  if (edits < 2) {
-    console.error(`Re-skin fixture: FAIL (expected to rotate the accent in both the light and dark block, edited ${edits}).`);
+  // 1. The hue rotation.
+  const rotated = rotatePrimaryHue(original);
+  console.log(`Re-skin fixture: rotated --color-primary hue by ${HUE_ROTATION} in ${rotated.edits} theme block(s).`);
+  if (rotated.edits < 2) {
+    console.error(`Re-skin fixture: FAIL (expected to rotate the accent in both the light and dark block, edited ${rotated.edits}).`);
     failed = true;
   }
+  if (!reportCase('Re-skin contrast (hue rotation)', measure(audit, rotated.rewritten), false, audit.formatContrastTable)) failed = true;
 
-  const rows = checkThemeContrast(readFileSync(fixturePath, 'utf8'));
-  const contrastPassed = reportContrast(
-    rows,
-    (n) => `Re-skin contrast: PASS (the hue-rotated theme clears AA on all ${n} pairs in both gamuts)`,
-    (n) => `Re-skin contrast: FAIL (${n} pair(s) below AA after the hue rotation)`,
-  );
-  if (!contrastPassed) failed = true;
+  // 2. The stripped inks.
+  const stripped = stripInks(original);
+  console.log('');
+  console.log(`Re-skin fixture: stripped ${stripped.edits} hand-tuned status ink override(s) from the daisyUI blocks.`);
+  if (stripped.edits !== 8) {
+    console.error(`Re-skin fixture: FAIL (expected four ink overrides in each of the two blocks, stripped ${stripped.edits}).`);
+    failed = true;
+  }
+  if (!reportCase('Re-skin contrast (stripped inks)', measure(audit, stripped.rewritten), true, audit.formatContrastTable)) failed = true;
 
-  // 2. Prove the prose surface has no second colour source.
+  // 3. The fixture theme.
+  console.log('');
+  if (!reportCase('Re-skin contrast (fixture theme)', measure(audit, readFileSync(FIXTURE_CSS, 'utf8')), false, audit.formatContrastTable)) failed = true;
+
+  // 4. Prove the prose surface has no second colour source.
   const proseViolations = checkProseSecondSource();
   console.log('');
   if (proseViolations.length) {
@@ -127,24 +196,6 @@ function main() {
     failed = true;
   } else {
     console.log('Prose single-source: PASS (prose.css reads only --color-*/--cairn-* tokens; no second colour source)');
-  }
-
-  // 3. Prove every token the prose surface and the code ramp reference is defined. The single-source
-  //    check above only proves a colour reads SOME `--color-*`/`--cairn-*` token; a reference to a
-  //    token that no block defines reads the right namespace yet resolves to nothing. This runs against
-  //    the live on-disk theme and prose (the hue rotation changes only a value, never a token name).
-  const dangling = checkTokenResolution(
-    original,
-    readFileSync(PROSE_CSS, 'utf8'),
-    readFileSync(CHASSIS_TOKENS_CSS, 'utf8'),
-  );
-  console.log('');
-  if (dangling.length) {
-    console.error(`Token resolution: FAIL (${dangling.length} reference(s) resolve to no definition)`);
-    for (const d of dangling) console.error(`  ${d.source}: var(${d.token}) is referenced but never defined`);
-    failed = true;
-  } else {
-    console.log('Token resolution: PASS (every var(--token) in prose.css and the code ramp is defined)');
   }
 
   process.exit(failed ? 1 : 0);

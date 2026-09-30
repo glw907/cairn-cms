@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPreviewDoc, previewDevices } from '../../lib/components/preview-doc.js';
+import { buildPreviewDoc, previewDevices } from '../../lib/admin/preview-doc.js';
 import type { PreviewConfig } from '../../lib/content/types.js';
 
 const preview: PreviewConfig = {
@@ -19,7 +19,7 @@ describe('buildPreviewDoc', () => {
 
   it('places the pre-site reset before the stylesheet links so the site CSS wins', () => {
     const doc = buildPreviewDoc('<p>hi</p>', preview);
-    const reset = doc.indexOf('<style>body{margin:0;background:#fff}</style>');
+    const reset = doc.indexOf('<style>body{margin:0;background:var(--color-base-100,#fff)}</style>');
     const link = doc.indexOf('<link rel="stylesheet"');
     expect(reset).toBeGreaterThan(-1);
     expect(link).toBeGreaterThan(reset);

@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import MarkdownEditor, { type EditorApi } from '../../lib/components/MarkdownEditor.svelte';
-import TidyReview from '../../lib/components/TidyReview.svelte';
-import { diffChanges } from '../../lib/components/tidy-diff.js';
+import MarkdownEditor, { type EditorApi } from '../../lib/admin/MarkdownEditor.svelte';
+import TidyReview from '../../lib/admin/TidyReview.svelte';
+import { diffChanges } from '../../lib/admin/tidy-diff.js';
 import { resolveTidyConventions } from '../../lib/nav/site-config.js';
-import type { TidyApi } from '../../lib/components/editor-tidy.js';
+import type { TidyApi } from '../../lib/admin/editor-tidy.js';
 
 // The tidy review surface is real-browser: the apply seam writes through a live CodeMirror view, so the
 // test mounts MarkdownEditor to obtain the real TidyApi and the undo seam, then mounts TidyReview wired

@@ -5,7 +5,7 @@ components over the static fallbacks the render pipeline emits. cairn is Svelte-
 runtime mounts with Svelte's own `mount()` and `unmount()` directly, with no framework abstraction. A
 site imports it dynamically and only when it registers at least one island, so a static site never
 ships the runtime. This subpath carries the client-side mount/teardown mechanism itself; an admin
-screen component lives on [`/components`](./components.md), and the render pipeline's own hast
+screen component lives on [`/admin`](./admin.md), and the render pipeline's own hast
 builders on [`/render`](./render.md), even though both feed what this runtime eventually mounts.
 
 ```ts
@@ -14,7 +14,7 @@ import type { IslandRegistry } from '@glw907/cairn-cms/islands';
 ```
 
 Islands are opt-in. A directive component declares
-[`hydrate`](./components.md#hydrate-and-the-island-boundary), the site registers the matching live
+[`hydrate`](./admin.md#hydrate-and-the-island-boundary), the site registers the matching live
 component on [`rendering.islands`](./core.md#renderingislands-adapter-member), and a root layout calls
 `hydrateIslands` after every navigation. The TypeScript types in `src/lib/islands` are the source of
 truth, and the export-coverage gate checks every name here against them.
@@ -148,6 +148,6 @@ Verify a live island on the deployed page, not in the preview.
 
 ## See also
 
-- [`hydrate` on the components reference](./components.md#hydrate-and-the-island-boundary): the directive-side declaration.
+- [`hydrate` on the admin reference](./admin.md#hydrate-and-the-island-boundary): the directive-side declaration.
 - [`rendering.islands` on the core reference](./core.md#renderingislands-adapter-member): the adapter registration and the consistency check.
 - [Add an island](../extend/add-an-island.md): the end-to-end recipe.

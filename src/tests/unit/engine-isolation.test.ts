@@ -23,7 +23,7 @@ describe('engine isolation', () => {
   it('imports only allowlisted stylesheets, so it injects no surprise global CSS', () => {
     const allow = [
       './cairn-admin.css',
-      '../components/cairn-admin.css',
+      '../admin/cairn-admin.css',
       '@rodrigodagostino/svelte-sortable-list/styles.css',
     ];
     const cssImports = files
@@ -33,7 +33,7 @@ describe('engine isolation', () => {
   });
 
   it('keeps the admin theme scoped to its data-theme', () => {
-    const css = readFileSync(join(libDir, 'components/cairn-admin.css'), 'utf8');
+    const css = readFileSync(join(libDir, 'admin/cairn-admin.css'), 'utf8');
     // The CSS uses single-quoted attribute values; accept either quote style.
     expect(css).toMatch(/\[data-theme=['"]cairn-admin['"]\]/);
     // No bare global selectors that would reach a site's public pages.
@@ -59,7 +59,7 @@ describe('engine isolation', () => {
     // host page is a name nothing else claims.
     const importers = files
       .filter((f) => f.endsWith('.svelte'))
-      .filter((f) => /import\s+['"](?:\.\/|\.\.\/components\/)cairn-admin\.css['"]/.test(readFileSync(f, 'utf8')))
+      .filter((f) => /import\s+['"](?:\.\/|\.\.\/admin\/)cairn-admin\.css['"]/.test(readFileSync(f, 'utf8')))
       .map((f) => f.slice(f.lastIndexOf('/') + 1))
       .sort();
     expect(importers).toEqual(['CairnAdminShell.svelte', 'ConfirmPage.svelte', 'LoginPage.svelte', 'ReproContext.svelte']);
@@ -68,7 +68,7 @@ describe('engine isolation', () => {
   it('defines a dark Warm Stone palette under the dark theme root', () => {
     // The palette lives in the dark theme's daisyUI theme block, named for the dark root; the
     // plain root rule beside it carries cairn's own tokens and restates the color scheme.
-    const css = readFileSync(join(libDir, 'components/cairn-admin.css'), 'utf8');
+    const css = readFileSync(join(libDir, 'admin/cairn-admin.css'), 'utf8');
     const dark = css.slice(css.indexOf('name: "cairn-admin-dark";'), css.indexOf("[data-theme='cairn-admin-dark'] {"));
     expect(css).toContain("[data-theme='cairn-admin-dark'] {");
     expect(dark).toContain('color-scheme: dark');

@@ -3,8 +3,8 @@ import { EditorState } from '@codemirror/state';
 import { markdownLanguage } from '@codemirror/lang-markdown';
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import type { Tree } from '@lezer/common';
-import { objectiveErrors } from '../../lib/components/objective-errors.js';
-import { classifyProse, type Range } from '../../lib/components/spellcheck.js';
+import { objectiveErrors } from '../../lib/admin/objective-errors.js';
+import { classifyProse, type Range } from '../../lib/admin/spellcheck.js';
 
 // The unit drives the PURE objective checks: text plus prose spans in, findings (range + fix) out.
 // No CodeMirror lint source, no DOM. For the code-exclusion test it composes classifyProse the same

@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
-import ConceptList from '../../lib/components/ConceptList.svelte';
+import ConceptList from '../../lib/admin/ConceptList.svelte';
 // The compiled sheet's text (daisyUI's real .badge/.input/.btn sizing), injected only for the
 // narrow/wide extremes suite below so its bounding-box measurements reflect production control
 // footprints, never the UA-default widths an unstyled render leaves (the EditPage pattern).
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 
 function data(over = {}) {
   // The default sort is newest-first, so the last entry (Post 12) leads page 1; the draft sits there

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
-import CairnHistory from '../../lib/components/CairnHistory.svelte';
+import CairnHistory from '../../lib/admin/CairnHistory.svelte';
 import type { HistoryData, HistoryEntry, RevertOutcome } from '../../lib/sveltekit/types.js';
 
 /** A distinct, full 40-character sha for row `n`, so a test can tell rows apart by ref. */

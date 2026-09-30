@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
+import MarkdownEditor from '../../lib/admin/MarkdownEditor.svelte';
 import { makeFakeWorker, COLD_START, WARNING_INK, pinWarningInk } from './_fake-spell-worker.js';
 
 describe('suggestion popover', () => {

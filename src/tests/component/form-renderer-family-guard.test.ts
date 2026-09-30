@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
-import FieldInput from '../../lib/components/FieldInput.svelte';
-import ComponentForm from '../../lib/components/ComponentForm.svelte';
+import FieldInput from '../../lib/admin/FieldInput.svelte';
+import ComponentForm from '../../lib/admin/ComponentForm.svelte';
 import { defineComponent, type ComponentValues } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import type { NamedField } from '../../lib/content/types.js';

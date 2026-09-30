@@ -20,7 +20,7 @@ import {
 } from '../../lib/reproductions/fixtures.js';
 import { fixtureMediaFiles } from '../../lib/reproductions/manifest.js';
 import { publicPath } from '../../lib/media/naming.js';
-import { categorize, isObjective } from '../../lib/components/tidy-categorize.js';
+import { categorize, isObjective } from '../../lib/admin/tidy-categorize.js';
 
 const FIXTURES_SOURCE = resolve(process.cwd(), 'src/lib/reproductions/fixtures.ts');
 const FIXTURES_DIR = resolve(process.cwd(), 'src/lib/reproductions/fixtures');

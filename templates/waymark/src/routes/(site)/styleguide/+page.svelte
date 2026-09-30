@@ -1,13 +1,13 @@
 <!-- @component
 The /styleguide route: the single growing demo surface that shows every part of the public theme,
-so the template is a working component library, not a blog skeleton. It auto-themes through
-`prefers-color-scheme`, and the manual light/dark toggle in the header overrides that from then on,
-so a reader in dark mode sees the dark theme here too.
+so the template is a working component library, not a blog skeleton. The light/dark toggle in the
+header sets the scheme the page shows.
 
-Four sections: the color tokens (a swatch per DaisyUI role and on-surface ink), the type scale (each
+Five sections: the color tokens (a swatch per DaisyUI role and on-surface ink), the type scale (each
 named step at size, plus the three faces), the reading surface (the real prose output, rendered
-server-side through the adapter `render` and wrapped in `.prose`), and the core component set (the
-markdown directive components plus the own-it components a page composes from).
+server-side through the adapter `render` and wrapped in `.prose`), the directive components (one
+sample per registry entry, from its `preview`, with the entries that declare none listed by name),
+and the own-it components a page composes from.
 
 Token-backed throughout: every color reads a DaisyUI role utility or a `var(--color-*)`/`var(--cairn-*)`
 token, every type size reads a `--text-step-*` token, so the no-literals gate (`check:public-tokens`)
@@ -71,24 +71,24 @@ or extend it; nothing here is a literal a re-skin would miss.
     { token: '--text-step--1', label: 'step--1', use: 'caption, meta' },
   ];
 
-  /** One labeled face: the font token, the family role name, and what it sets. */
+  /** One labeled face: the font token (also its label), what it sets, and a sample in that face. */
   type Face = { token: string; label: string; use: string; sample: string };
   const faces: Face[] = [
     {
       token: '--font-display',
-      label: 'display (Figtree)',
+      label: '--font-display',
       use: 'headings, pull-quotes',
       sample: 'Stacked one stone at a time',
     },
     {
       token: '--font-body',
-      label: 'body (Source Sans 3)',
+      label: '--font-body',
       use: 'body, UI, captions',
       sample: 'The quick brown fox jumps over the lazy dog',
     },
     {
       token: '--font-mono',
-      label: 'mono (Source Code Pro)',
+      label: '--font-mono',
       use: 'code',
       sample: 'const cairn = renderMarkdown(md);',
     },
@@ -152,8 +152,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   <header class="cairn-hero sg-masthead">
     <h1 class="cairn-hero-title">Styleguide</h1>
     <p class="cairn-hero-lead">
-      Everything the public theme ships so far, on the tokens a site owner re-skins. The page
-      auto-themes with your system light or dark setting.
+      Everything the public theme ships so far, on the tokens a site owner re-skins. The header's
+      light and dark toggle sets the scheme this page shows.
     </p>
   </header>
 
@@ -250,19 +250,51 @@ or extend it; nothing here is a literal a re-skin would miss.
     </div>
   </section>
 
-  <!-- 4. Components: the core set. The directive components are shown in the reading surface above
-       (callout note/tip/warning, alert); here are the own-it components a page composes from. Every
-       one is a DaisyUI primitive styled on the tokens, an editable file a site owner adopts. -->
+  <!-- 3b. The directive components. One sample per registry entry, from its `preview`, rendered by
+       the load through the adapter `render`. An entry that declares no `preview` is named below the
+       samples instead, so a new component is never silently absent. -->
+  <section class="sg-section" aria-labelledby="sg-directives">
+    <h2 id="sg-directives" class="sg-h2">Directive components</h2>
+    <p class="sg-note">
+      One sample for each component this site registers, taken from the component's own
+      <code>preview</code> and run through the same <code>render</code> as the sample above. A component
+      added to the registry appears here with no edit to this page.
+    </p>
+    {#each data.components as sample (sample.name)}
+      <!-- A sample is its own section, labeled by the h3, so the heading level a sample's own
+           markdown uses never breaks the page outline. -->
+      <section aria-labelledby="sg-directive-{sample.name}">
+        <h3 id="sg-directive-{sample.name}" class="sg-h3">
+          {sample.label} <code>{sample.name}</code>
+        </h3>
+        <div class="prose">
+          {@html sample.html}
+        </div>
+      </section>
+    {/each}
+    {#if data.withoutPreview.length > 0}
+      <p class="sg-note">
+        No <code>preview</code> declared, so no sample:
+        {#each data.withoutPreview as name, i (name)}<code>{name}</code>{i <
+          data.withoutPreview.length - 1
+            ? ', '
+            : '.'}{/each}
+      </p>
+    {/if}
+  </section>
+
+  <!-- 4. Components: the own-it components a page composes from. Every one is a DaisyUI primitive
+       styled on the tokens, an editable file a site owner adopts. -->
   <section class="sg-section" aria-labelledby="sg-components">
     <h2 id="sg-components" class="sg-h2">Components</h2>
     <p class="sg-note">
       The own-it component set, built on DaisyUI primitives and the tokens. Adopt them as shipped or
       edit the source; nothing is locked in <code>node_modules</code>. The directive components
-      (callout and alert) render in the reading surface above.
+      render in the section above.
     </p>
 
     <h3 class="sg-h3">Buttons</h3>
-    <div class="flex flex-wrap items-center gap-s">
+    <div class="sg-buttons flex flex-wrap items-center gap-s">
       <button class="btn btn-primary">Primary</button>
       <button class="btn btn-outline">Outline</button>
       <button class="btn btn-ghost">Ghost</button>
@@ -464,7 +496,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-h2 {
     margin: 0 0 var(--spacing-xs);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-3);
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
@@ -473,9 +506,15 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-h3 {
     margin: var(--spacing-l) 0 var(--spacing-s);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-1);
     color: var(--color-base-content);
+  }
+  /* A code identifier in a heading is case-sensitive (a directive name), so a theme's heading case
+     never reaches it. */
+  .sg-h3 code {
+    text-transform: none;
   }
   .sg-note {
     margin: 0 0 var(--spacing-s);
@@ -483,6 +522,9 @@ or extend it; nothing here is a literal a re-skin would miss.
     font-size: var(--text-step-0);
     line-height: var(--leading-snug);
     color: var(--color-muted);
+  }
+  .sg-buttons + .sg-note {
+    margin-top: var(--spacing-s);
   }
   .sg-note code {
     font-family: var(--font-mono);
@@ -591,7 +633,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-card-title {
     margin: 0 0 var(--spacing-2xs);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-1);
     color: var(--color-base-content);
   }
@@ -704,7 +747,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-cta-title {
     margin: 0 0 var(--spacing-3xs);
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: var(--font-weight-heading);
+    text-transform: var(--cairn-heading-case);
     font-size: var(--text-step-2);
   }
   .sg-cta-sub {

@@ -11,7 +11,7 @@ import {
   createSpellcheckHandler,
   type SpellEngine,
   type OutboundMessage,
-} from '../../lib/components/spellcheck-worker.js';
+} from '../../lib/admin/spellcheck-worker.js';
 
 /** A fake engine: a fixed correct-word set, plus a fixed suggestion list for the suggest path. */
 function fakeEngine(correctWords: ReadonlyArray<string>, suggestions: ReadonlyArray<string> = []): SpellEngine {
@@ -185,7 +185,7 @@ describe('createSpellcheckHandler', () => {
 
 describe('dictionary-en-us.txt contraction coverage', () => {
   const dictionaryPath = fileURLToPath(
-    new URL('../../lib/components/spellcheck-assets/dictionary-en-us.txt', import.meta.url),
+    new URL('../../lib/admin/spellcheck-assets/dictionary-en-us.txt', import.meta.url),
   );
   const lines = readFileSync(dictionaryPath, 'utf-8').split('\n').filter((line) => line.length > 0);
 

@@ -3,12 +3,12 @@ import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import { tick } from 'svelte';
 import type { ComponentProps } from 'svelte';
-import MediaHeroField from '../../lib/components/MediaHeroField.svelte';
+import MediaHeroField from '../../lib/admin/MediaHeroField.svelte';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
 // The compiled sheet carries the utility layer (focus-visible ring/outline utilities) and the
 // admin's own :focus-visible rule the dropzone focus test below measures against; the plain
 // component render carries neither.
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 
 // A small projected library keyed by 16-hex hash, the shape EditData.mediaLibrary carries (the merged
 // committed-plus-uploaded projection the picker and the resting thumbnail both resolve against).

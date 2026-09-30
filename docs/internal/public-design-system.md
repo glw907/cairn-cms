@@ -50,9 +50,12 @@ the admin's type pairing, is out. Record: `record/2026-09-13-blueprint-design-sp
   (`check:public-tokens` and `test:reskin`) now fails the build on any `prose.css` or code-ramp
   `var(--token)` that no block defines, so this class of bug is a red gate.
 - **The status ink seam (recipe step 6).** A status fill is too light to read as small text, so each
-  status carries a separate, darker on-surface ink of the same hue. Re-skinning a status hue means
-  retuning BOTH the fill (in the `@plugin` block) AND the matching `--cairn-<status>-ink` (light AND
-  dark), or the directive text and the code colors desync from the fills.
+  status carries a fill (in the `@plugin` block) and a separate, darker on-surface ink of the same
+  hue. The ink follows the fill: `cairn-public.css` derives it as `color-mix(in oklab,
+  var(--color-<status>) 50%, var(--color-base-content))`, so retuning a fill retunes its ink in both
+  schemes. A theme hand-tunes an ink only by overriding `--cairn-<status>-ink` in its daisyUI block,
+  and only then does it retune the fill and the ink together, or the directive text and the code
+  colors desync from the fills.
 - **The CTA never reads `--color-neutral` directly.** `--color-neutral` inverts to a LIGHT value in dark
   mode, which turned the CTA into the brightest slab on the page (the GATE-1 bug). The CTA reads the
   `--cairn-cta-*` pair: light is the near-black house-ad with a paper button; dark is a recessed
@@ -89,12 +92,14 @@ The exhaustive oklch values are in `theme.css`; this is the structure.
   the `info/success/warning/error` fills plus `-content`; and the geometry (`--radius-selector:
   0.25rem`, `--radius-field: 0.375rem`, `--radius-box: 0.5rem`, the admin's own corner ladder by
   ruling 2, plus `--size-field/selector`, `--border`, `--depth: 0`, `--noise: 0`).
-- **The cairn-authored customs** (`:root`, with dark siblings under `@media (prefers-color-scheme:
-  dark)`): `--color-muted`; the `--cairn-{info,success,warning,error}-ink` set; `--color-card-border` and
-  `--cairn-shadow` (the theme-adaptive elevation); the `--cairn-cta-*` pair; the type scale
-  (`--text-step--1`..`-5`, the leadings, the tracking); the measure (`--container-measure: 44rem`, about
-  66ch, and `--container-measure-wide`); the fluid space scale (`--spacing-*`, `--flow-space`); and the
-  code ramp (`--cairn-code-*`, each reading a role).
+- **The cairn-authored customs.** The engine's `cairn-public.css` holds the roles: `--color-muted`, the
+  `--cairn-{info,success,warning,error}-ink` set, `--color-card-border`, `--cairn-shadow` (the
+  theme-adaptive elevation), the focus ring, `--flow-space`, and the code ramp (`--cairn-code-*`, each
+  reading a role). The theme's own `:root` (with dark siblings under `@media (prefers-color-scheme:
+  dark)`) holds the `--cairn-cta-*` pair and any override of an engine role; `tokens.css` holds the type
+  scale (`--text-step--1`..`-5`, the leadings, the tracking), the measure (`--container-measure: 44rem`,
+  about 66ch, and `--container-measure-wide`), the fluid space scale (`--spacing-*`), and
+  `--font-weight-heading`.
 - Light values sit on `:root`; the dark siblings sit under the same `prefers-color-scheme` query DaisyUI
   uses for `cairn-dark`, guarded by `:not([data-theme])`, so an explicit choice wins over the system
   scheme. The header's theme toggle (`SiteHeader.svelte`) sets `data-theme="cairn-dark"`/`"cairn"` on
@@ -197,7 +202,7 @@ standard `ul` marker and a display-face-number `ol` marker; GFM task lists styli
 checkbox (the engine adds its `aria-label` through `rehypeTaskListA11y`); bordered, zebra tables; the
 `hr` as a plain hairline; and figures on the `center`/`wide`/`full` contract. Every `.prose a` and future
 interactive control gets the `:focus-visible` ring (2px `primary`, 2px offset, both read from
-`chassis/tokens.css`'s `--cairn-focus-ring-outline`/`--cairn-focus-ring-offset`, the one source for the
+`cairn-public.css`'s `--cairn-focus-ring-outline`/`--cairn-focus-ring-offset`, the one source for the
 whole site) plus a `base-100` halo so the ring reads against the tinted callout grounds. The directive
 components (callout note/tip/warning,
 alert) are styled under `.prose` so they beat DaisyUI's bundled `.alert`/`.card`, each tone reading its
@@ -252,16 +257,20 @@ values, light and dark): rotate `--color-primary`'s hue (hold lightness and chro
 recolor), and edit the `base-100/200/300` ladder and `base-content`. Optionally swap the two `--font`
 tokens, retune the one type ratio, or the one space-scale step. A full status rebrand is more, because
 each status carries a fill (the `@plugin` block) and an on-surface ink (the `--cairn-*-ink` layer, step
-6). The prose reading surface is included at zero extra edits, because it reads the same roles. The CI
-gates prove it: `check:public-tokens` (no literals, dual-gamut AA, token resolution) and `test:reskin`
-(the hue-rotated theme clears AA, the prose is single-source, every token resolves).
+6), which follows the fill unless the theme overrides it. The prose reading surface is included at zero extra edits, because it reads the same roles. The CI
+gates prove it: `check:public-tokens` (the audit's public scope: `public-literals`, `theme-conformance`,
+`theme-contrast`) and `test:reskin` (the hue-rotated theme and the stripped-inks theme clear AA, the
+prose is single-source).
 
 ## Accessibility
 
-- The **dual-gamut contrast gate** (`scripts/checks/check-public-tokens.mjs`): every role/`-content` pair, the
-  on-surface inks, and `accent`/`accent-content` clear AA in both sRGB and P3 via culori. The
-  **token-resolution gate** fails on a dangling `var()`. The **re-skin fixture**
-  (`scripts/lab/reskin-fixture.mjs`) proves a hue rotation holds AA and the prose has no second color source.
+- The **dual-gamut contrast gate** is `cairn-audit`'s `theme-contrast` rule
+  (`src/lib/audit/rules/static/theme-contrast.ts`), run over the showcase by `check:public-tokens`
+  (`scripts/checks/check-public-scope.mjs`): every role/`-content` pair, `primary` on `base-100`, muted, and the
+  on-surface inks on `base-100`, `base-200`, and their callout tints clear AA in both sRGB and P3 in every
+  scheme. `theme-conformance` fails on a dangling `var()`. The **re-skin fixture**
+  (`scripts/lab/reskin-fixture.mjs`) proves a hue rotation and Waymark with its hand-tuned inks stripped
+  both hold AA, and that the prose has no second color source.
 - A consistent `:focus-visible` language (2px `primary`, 2px offset) across the chrome, the reading
   surface, and the styleguide, with the `base-100` halo on tinted grounds. `scroll-padding-top` for the
   sticky header. The skip link plus `<main tabindex="-1">`.
@@ -285,7 +294,7 @@ executes the wider application; until it runs, these are the standard new theme 
   marks an element that belongs to its neighbor, larger steps (16/32/40px) separate zones and set
   the page's one loose element apart. Uniform gaps at every boundary read as strict but say
   nothing; the scale's steps should do grouping work borders would otherwise do. (Admin reference:
-  the scale comment in `src/lib/components/cairn-admin.css`.)
+  the scale comment in `src/lib/admin/cairn-admin.css`.)
 - **Tracking keys to optical size and weight, never element role.** Small semibold text closes its
   counters and takes a small positive tracking step; mid-size medium labels a smaller one; body
   and meta stay normal. Measure the real rendered size before assigning a band (the admin's
@@ -371,5 +380,5 @@ measure it, rather than trusting the read.
   `examples/showcase/src/chassis/prose.css`. The chrome: `examples/showcase/src/theme/components/`.
 - The live demo: `/styleguide`. The criteria and the settled design: the design bar
   ([`2026-06-25-cairn-b2-design-bar.md`](../superpowers/specs/2026-06-25-cairn-b2-design-bar.md)).
-- The gates: `scripts/checks/check-public-tokens.mjs`, `scripts/lab/reskin-fixture.mjs`, and the `design.yml`
-  workflow. The engine highlighter: `src/lib/render/highlight.ts`.
+- The gates: `scripts/checks/check-public-scope.mjs` (the audit's public-scope rules),
+  `scripts/lab/reskin-fixture.mjs`, and the `design.yml` workflow. The engine highlighter: `src/lib/render/highlight.ts`.

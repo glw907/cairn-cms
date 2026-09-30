@@ -24,8 +24,8 @@ afterEach(() => {
 describe('the compiled admin sheet this probe injects', () => {
   it('is no older than the source it compiles', async () => {
     const [distMtime, srcMtime] = await Promise.all([
-      commands.mtimeMs('dist/components/cairn-admin.css'),
-      commands.mtimeMs('src/lib/components/cairn-admin.css'),
+      commands.mtimeMs('dist/admin/cairn-admin.css'),
+      commands.mtimeMs('src/lib/admin/cairn-admin.css'),
     ]);
     expect(distMtime).toBeGreaterThanOrEqual(srcMtime);
   });

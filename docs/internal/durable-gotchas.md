@@ -73,7 +73,7 @@ in one layer) and by a measured height, never by the suite alone.
 The admin side has the same root. daisyUI 5 compiles its component rules into sublayers of
 `@layer utilities`, so an admin override in `@layer components` also loses to a daisyUI
 component rule (the `.btn-primary` lift never rendered). Today's fix is a pinned unlayered rule
-(the pinned-rule comments in `src/lib/components/cairn-admin.css`); the theme identity spec
+(the pinned-rule comments in `src/lib/admin/cairn-admin.css`); the theme identity spec
 (`docs/superpowers/specs/2026-09-26-theme-identity-design.md`) introduces a named `cairn-idiom`
 sublayer pinned after daisyUI's (`@layer utilities.daisyui, utilities.cairn-idiom;`).
 
@@ -107,3 +107,13 @@ lock), a full `npm test` failed on exactly one unrelated file per run:
 `src/tests/unit/reference-coverage.test.ts` (the default 60-second timeout). Both reproduced green
 alone with `npx vitest run <file>`. Rerun a lone failing file by itself before calling it a
 regression.
+
+## A probe site from `emit:template` sees no shipped guidance
+
+`npm run emit:template` (`scripts/build/emit-template.mjs`) writes the template's source tree only. It omits
+`.claude/`, `CLAUDE.md`, and `cairn-audit.config.json`, which the pack-time bake adds. A probe
+that reads a site emitted this way sees none of the agent guidance a consumer receives, and its
+audit falls back to the packaged sheet, which reports two false `no-uncompiled-class` errors
+that the clean template does not. Pass B's first probe was invalid for this reason (2026-09-28).
+Build a probe site the way `.github/workflows/create-site.yml` does: bake, pack the CLI, run
+`create-cairn-site --yes`, then point the site's engine specs at the fresh tarballs.

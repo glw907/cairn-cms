@@ -1,0 +1,6 @@
+{
+  "public": {
+    "scope": ["src/theme", "src/chassis", "src/routes", "../../src/lib/public"],
+    "themeRoots": ["src/theme", "src/chassis/tokens.css", "../../src/lib/public/cairn-public.css"]
+  }
+}

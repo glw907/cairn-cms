@@ -6,7 +6,7 @@ import StackedFieldGrid from './_StackedFieldGrid.svelte';
 import StackedCompactRow from './_StackedCompactRow.svelte';
 // The stacked register's width hook lives only in the built sheet's dedicated unlayered rule, so
 // this suite injects the real compiled artifact under its own theme root.
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 
 describe('FieldLabel', () => {
   // No register prop, so this renders the 'stacked' default (design ratchet D2 item 6): the name

@@ -6,7 +6,7 @@ each instance's own fieldset, so a structural mutation in one list never moves f
 other. The harness forwards the same pass-through props each container caller threads down.
 -->
 <script lang="ts">
-  import RepeatableField from '../../lib/components/RepeatableField.svelte';
+  import RepeatableField from '../../lib/admin/RepeatableField.svelte';
   import type { NamedField } from '../../lib/content/types.js';
   import type { ArrayField } from '../../lib/content/fields.js';
 

@@ -5,7 +5,7 @@ payload from the sibling +layout.server.ts. The catch-all view page and any cust
 site adds render as the shell's children.
 -->
 <script lang="ts">
-  import { CairnAdminShell } from '@glw907/cairn-cms/components';
+  import { CairnAdminShell } from '@glw907/cairn-cms/admin';
   import type { AdminShellData } from '@glw907/cairn-cms/sveltekit';
   import type { Snippet } from 'svelte';
   import '../../../.cairn/admin.css';

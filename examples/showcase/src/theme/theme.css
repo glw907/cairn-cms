@@ -9,10 +9,10 @@
    ordinary re-skin edit (see the recipe below), not gated by that attribute.
 
    This file is the THEME half of the chassis boundary (src/chassis/README.md): it `@import`s the
-   chassis token SYSTEM (Tailwind, the DaisyUI plugin activation, prose.css, composition.css, and
-   every design-scale key with a generic default) and then redeclares every one of those keys with
-   Waymark's own concrete numbers and colors, plus the two named DaisyUI themes the chassis
-   deliberately never declares. Cascade order does the override: a property declared again later
+   chassis token SYSTEM (Tailwind, the engine's cairn-public.css role defaults, the DaisyUI plugin
+   activation, prose.css, composition.css, and every design-scale key with a generic default) and
+   then redeclares every one of those design-scale keys with Waymark's own concrete numbers and
+   colors, plus the two named DaisyUI themes the chassis deliberately never declares. Cascade order does the override: a property declared again later
    in the same build wins, so nothing below duplicates chassis machinery, only chassis VALUES, plus
    the one declared rule near the bottom of this file that gives an uncolored outline its hairline
    edge (see "Hairline outlines" below).
@@ -42,16 +42,15 @@
         and `border-card-border`), which the chrome markup uses instead of an
         arbitrary-value bracket. Editing one token here re-tunes both the `var()`
         consumers and the utility, so the whole surface tracks the change.
-     6. The status-ink seam. Retuning a status FILL above (the `--color-info`,
-        `--color-success`, `--color-warning` in the two `@plugin` blocks) is only
-        half of that status: the callout and alert titles and left rules, and the
-        code highlighter's string / function / number colours, read a SEPARATE
-        on-surface ink token, `--cairn-<status>-ink`, defined in the :root and the
-        dark `prefers-color-scheme` block below. A fill is too light to read as
-        small text, so the ink is a darker tone of the SAME hue. When you retune a
-        status hue, retune its matching `--cairn-<status>-ink` (light AND dark) to
-        the same hue, or the directive text and the code colours desync from the
-        fills.
+     6. The status-ink seam. The callout and alert titles and left rules, and the code highlighter's
+        string / function / number colours, read one on-surface ink token per status,
+        `--cairn-<status>-ink`. The ink follows the fill: the engine derives it from the status
+        fill (the `--color-info`, `--color-success`, `--color-warning`, `--color-error` in the two
+        `@plugin` blocks), so retuning a fill retunes its ink with it, in both schemes. Override
+        an ink only to hand-tune it: set `--cairn-<status>-ink` in the matching `@plugin` block,
+        as this file does for all four, and the muted ink `--color-muted` the same way. Waymark
+        hand-tunes all of them, so a status rebrand here retunes each ink with its fill, or
+        deletes the override and lets the ink follow.
      7. The corner ladder (`--radius-selector`, `--radius-field`, `--radius-box`, in the same two
         `@plugin` blocks) is family geometry, not brand: change all three freely to fit your own
         site's chosen roundness, from square to fully rounded.
@@ -60,27 +59,29 @@
    a new paper-and-ink, the change most owners make. That set is `--color-primary`
    and `-content`, the three `--color-base-*` steps, and `--color-base-content`,
    light and dark. A FULL status rebrand is more, because each status carries both
-   a fill (the `@plugin` block) and an on-surface ink (the `--cairn-*-ink` layer,
-   step 6). Every prose element, the code highlighter, the chrome, and the
-   components recolor from these tokens, because none of them hard-codes a colour;
-   they all read them. The CI contrast gate (`check:public-tokens`) proves the
-   re-skinned theme still clears AA in both sRGB and P3, and its token-resolution
-   check fails the build if a rule references a token no block defines.
+   a fill and an on-surface ink, both in the `@plugin` block (step 6), the ink
+   derived from its fill unless you hand-tune it, as Waymark does. Every prose
+   element, the code highlighter, the chrome, and the components recolor from
+   these tokens, because none of them hard-codes a colour; they all read them.
+   The CI contrast gate (`check:public-tokens`) proves the re-skinned theme still
+   clears AA in both sRGB and P3, and its token-resolution check fails the build
+   if a rule references a token no block defines.
 
    This file is linked by the (site) layout and by the editor preview config, so
    the reader and the author see the same surface. The token grammar matches the
-   admin's Warm Stone system (`src/lib/components/cairn-admin.css`); only the
+   admin's Warm Stone system (`src/lib/admin/cairn-admin.css`); only the
    palette differs.
 
    TIER MAP (this file's own token ownership, by how far a re-skin reaches):
      - Tier 1: the two `@plugin "daisyui/theme"` blocks (cairn, cairn-dark). This site's own
        DaisyUI theme, kept verbatim. Not the admin's Warm Stone.
      - Tier 2 (owned, the documented floor): the on-surface inks (--color-muted and the
-       --cairn-<status>-ink set), the elevation pair (--color-card-border, --cairn-shadow), the CTA
-       pair (--cairn-cta-*), and the code-highlight binding (pre.shiki plus the engine-owned
-       .cairn-tok-* class contract, both in chassis/tokens.css). --color-muted and
-       --color-card-border live in @theme (so the text-muted / border-card-border utilities
-       generate) but keep their Tier-2 role; their dark siblings override in the dark block.
+       --cairn-<status>-ink set, hand-tuned per scheme in the two daisyUI blocks), the elevation
+       pair (--color-card-border, --cairn-shadow), the CTA pair (--cairn-cta-*), and the
+       code-highlight binding (pre.shiki plus the engine-owned .cairn-tok-* class contract, both in
+       the engine's cairn-public.css). --color-card-border lives in @theme (so the
+       border-card-border utility generates) but keeps its Tier-2 role; its dark sibling
+       overrides in the dark block.
      - Tier 3: the design-scale token home (--text-step-*, --spacing-*, --font-*, the tracking/
        leading/measure values). Tailwind 4 `@theme` generates the named utilities; the chassis
        declares the same keys with generic defaults, and this block overrides every one with
@@ -134,6 +135,16 @@
   --color-error: oklch(58% 0.19 27);
   --color-error-content: oklch(99% 0.01 27);
 
+  /* On-surface inks (light), hand-tuned overrides of the engine's derived defaults. A fill tone
+     fails as small text, the admin's lesson, so the muted text and each status word read a darker
+     ink than the matching `-content` fill pair. Each status ink holds its fill's hue (the warning
+     ink at 76, aligned to the warning fill and its dark sibling). */
+  --color-muted: oklch(46% 0.013 72);
+  --cairn-success-ink: oklch(45% 0.1 150);
+  --cairn-warning-ink: oklch(52% 0.11 76);
+  --cairn-error-ink: oklch(50% 0.17 27);
+  --cairn-info-ink: oklch(48% 0.1 235);
+
   /* the shared corner ladder (also the admin's own), family geometry rather than brand; free to
      retune (recipe step 7). depth/noise off by default. */
   --radius-selector: 0.25rem;
@@ -175,6 +186,13 @@
   --color-warning-content: oklch(25% 0.05 78);
   --color-error: oklch(66% 0.17 27);
   --color-error-content: oklch(24% 0.05 27);
+
+  /* On-surface inks (dark) lift with the surface, keeping AA on the dark bases. */
+  --color-muted: oklch(70% 0.012 76);
+  --cairn-success-ink: oklch(78% 0.11 150);
+  --cairn-warning-ink: oklch(82% 0.12 76);
+  --cairn-error-ink: oklch(76% 0.14 27);
+  --cairn-info-ink: oklch(80% 0.1 235);
 
   --radius-selector: 0.25rem;
   --radius-field: 0.375rem;
@@ -248,12 +266,9 @@
   --container-measure: 44rem;
   --container-measure-wide: 58rem;
 
-  /* The muted on-surface ink and the card-border hairline, as color roles so Tailwind generates
-     `text-muted`/`border-muted` and `border-card-border`. These are the light values; the dark
-     siblings override them in the prefers-color-scheme block below. DaisyUI does not define these
-     roles, and the public @theme emits at :root only on the (site) layout, so the admin sheet's own
-     scoped `--color-muted` does not collide. */
-  --color-muted: oklch(46% 0.013 72);
+  /* The card-border hairline, a color role so Tailwind generates `border-card-border`. This is the
+     light value; the dark sibling overrides it in the prefers-color-scheme block below. The muted
+     ink is a color role too, and its per-scheme values live in the two daisyUI blocks above. */
   --color-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
 }
 
@@ -298,28 +313,21 @@
 }
 
 /* ----------------------------------------------------------------------------
-   The Waymark-owned token VALUES. chassis/tokens.css declares every key below as a generic,
-   role-derived default; this block overrides each with Waymark's hand-tuned color. Constant
-   values and the LIGHT on-surface inks sit on :root; the DARK siblings sit under the same
-   prefers-color-scheme query DaisyUI uses for `cairn-dark`, guarded by `:not([data-theme])` so an
-   explicit choice wins over the system scheme, exactly the guard DaisyUI's own compiled
-   `cairn-dark` block uses. The header's theme toggle (`SiteHeader.svelte`) sets
-   `data-theme="cairn-dark"` on `<html>` for an explicit dark choice, which the
-   `[data-theme='cairn-dark']` block below matches unconditionally, so the roles and these customs
-   switch in lockstep whether the scheme comes from the OS or from the toggle.
+   The Waymark-owned token VALUES that a daisyUI theme block cannot carry. The per-scheme inks and
+   the muted ink sit in the two `@plugin` blocks above, which emit both the system-scheme and the
+   explicit `data-theme` selectors from one declaration list. What stays here has a reason to stay:
+   a value with a comma in it (the shadow, the dark card border) does not survive the plugin's
+   option parser, and the CTA pair is declared unlayered so a value in a layered daisyUI block
+   would lose to it. The dark siblings sit under the same prefers-color-scheme query DaisyUI uses
+   for `cairn-dark`, guarded by `:not([data-theme])` so an explicit choice wins over the system
+   scheme, exactly the guard DaisyUI's own compiled `cairn-dark` block uses. The header's theme
+   toggle (`SiteHeader.svelte`) sets `data-theme="cairn-dark"` on `<html>` for an explicit dark
+   choice, which the `[data-theme='cairn-dark']` block below matches unconditionally, so these
+   customs switch in lockstep whether the scheme comes from the OS or from the toggle.
    ---------------------------------------------------------------------------- */
 :root {
-  /* On-surface inks (light). A fill tone fails as small text, the admin's lesson, so the muted
-     text and each status word read a darker ink than the matching `-content` fill pair. Each status
-     ink holds its fill's hue (the warning ink at 76, aligned to the warning fill and its dark
-     sibling), so the directive titles and the code colours track the fills under a re-skin; the
-     re-skin recipe at the top of this file (step 6) names this seam. */
-  --cairn-success-ink: oklch(45% 0.1 150);
-  --cairn-warning-ink: oklch(52% 0.11 76);
-  --cairn-error-ink: oklch(50% 0.17 27);
-  --cairn-info-ink: oklch(48% 0.1 235);
-
-  /* Elevation (light): a near-invisible hairline plus a soft shadow carry a floating card. */
+  /* Elevation (light): a near-invisible hairline plus a soft shadow carry a floating card. The
+     engine's default mixes black, so Waymark keeps its own body-ink mix. */
   --cairn-shadow:
     0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
     0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
@@ -337,30 +345,25 @@
      header nav's tracked eyebrow letter-spacing (SiteHeader's `.site-nav a` reads it directly, at
      every width, not just the mobile lockup); it is deliberately narrower than
      `--tracking-eyebrow` (0.12em), which is the wider, all-caps label device used above the home
-     listing and archive ("Latest", "Archive"). --cairn-focus-ring-radius now lives in
-     chassis/tokens.css, whose 2px default this theme happens to want unchanged; a theme that
-     wants a different focus-ring corner redeclares it here. --cairn-caption-tracking also has a
-     chassis default now (a plain :root there); this override is Waymark's own tuned value, not
-     a theme-only token a second theme would leave dangling. */
+     listing and archive ("Latest", "Archive"). --cairn-caption-tracking is a theme's own token:
+     neither the engine's cairn-public.css nor the chassis declares a default for it, so this
+     theme declares it. --cairn-focus-ring-radius has a 2px default in the engine's
+     cairn-public.css, which this theme happens to want unchanged; a theme that wants a different
+     focus-ring corner redeclares it here. */
   --cairn-caption-tracking: 0.09em;
 }
 
-/* The dark custom-token values, applied two ways: as the system-scheme default (media-guarded, and
-   only when no explicit `data-theme` overrides it) and as the explicit toggle choice (the plain
-   `[data-theme='cairn-dark']` selector, unconditional). The declaration body is intentionally
-   identical in both blocks; DaisyUI's own compiled `@plugin "daisyui/theme"` output duplicates a
-   theme's declarations the same way, across a media-guarded selector and a plain `[data-theme]`
-   one (see node_modules/daisyui/theme/index.js), because plain CSS has no mixin to share a
-   declaration block across two different selector contexts. Keep both blocks in sync by hand. */
+/* The dark values that cannot move into the `cairn-dark` daisyUI block (the two comma-bearing
+   values and the CTA pair, see above), applied two ways: as the system-scheme default
+   (media-guarded, and only when no explicit `data-theme` overrides it) and as the explicit toggle
+   choice (the plain `[data-theme='cairn-dark']` selector, unconditional). The declaration body is
+   intentionally identical in both blocks; DaisyUI's own compiled `@plugin "daisyui/theme"`
+   output duplicates a theme's declarations the same way, across a media-guarded selector and a
+   plain `[data-theme]` one (see node_modules/daisyui/theme/index.js), because plain CSS has no
+   mixin to share a declaration block across two different selector contexts. Keep both blocks in
+   sync by hand. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    /* On-surface inks (dark) lift with the surface, keeping AA on the dark bases. */
-    --color-muted: oklch(70% 0.012 76);
-    --cairn-success-ink: oklch(78% 0.11 150);
-    --cairn-warning-ink: oklch(82% 0.12 76);
-    --cairn-error-ink: oklch(76% 0.14 27);
-    --cairn-info-ink: oklch(80% 0.1 235);
-
     /* Elevation (dark): a defined border carries the card since a shadow barely shows. */
     --color-card-border: color-mix(in oklab, var(--color-base-content) 16%, transparent);
     --cairn-shadow:
@@ -378,11 +381,6 @@
 }
 
 :root[data-theme="cairn-dark"] {
-  --color-muted: oklch(70% 0.012 76);
-  --cairn-success-ink: oklch(78% 0.11 150);
-  --cairn-warning-ink: oklch(82% 0.12 76);
-  --cairn-error-ink: oklch(76% 0.14 27);
-  --cairn-info-ink: oklch(80% 0.1 235);
   --color-card-border: color-mix(in oklab, var(--color-base-content) 16%, transparent);
   --cairn-shadow:
     0 1px 2px color-mix(in oklab, black 40%, transparent),
@@ -395,7 +393,7 @@
 }
 
 /* ----------------------------------------------------------------------------
-   Verdict 7 (motion): a token-level cross-fade on an explicit scheme change, and a plain root
+   Motion: a token-level cross-fade on an explicit scheme change, and a plain root
    cross-fade on internal navigation. Neither runs always-on: the toggle transition is scoped
    behind a class `theme-toggle.ts` adds only for the duration of one flip (SiteHeader.svelte), and
    the navigation transition only fires inside the View Transitions API's own transient pseudo-

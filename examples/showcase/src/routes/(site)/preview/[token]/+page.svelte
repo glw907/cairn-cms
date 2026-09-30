@@ -3,7 +3,7 @@ The preview mount: the engine's `PreviewBanner` on top of the SAME article templ
 route renders, with `preview` set so it suppresses canonical, og:url, and the `.md` twin link. -->
 <script lang="ts">
   import type { PageData } from './$types';
-  import { PreviewBanner } from '@glw907/cairn-cms/components';
+  import { PreviewBanner } from '@glw907/cairn-cms/public';
   import ArticleView from '$theme/components/ArticleView.svelte';
 
   let { data }: { data: PageData } = $props();

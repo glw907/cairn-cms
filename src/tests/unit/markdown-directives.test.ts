@@ -13,7 +13,7 @@ import {
   includeFragmentTokens,
   markerPrefix,
   openerTitleAttr,
-} from '../../lib/components/markdown-directives.js';
+} from '../../lib/admin/markdown-directives.js';
 
 // The field-report regression document, verbatim: a labeled four-colon container holding two
 // attributed panels. Every fence line here must classify, and the depth model must pair them.

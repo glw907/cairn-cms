@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import MediaPicker, { type MediaLibraryEntry } from '../../lib/components/MediaPicker.svelte';
+import MediaPicker, { type MediaLibraryEntry } from '../../lib/admin/MediaPicker.svelte';
 
 // A small projected library, the manifest-entry array mediaLibraryLoad hands back on
 // MediaLibraryData.assets and the shape the picker's own prop takes.

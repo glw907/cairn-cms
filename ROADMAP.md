@@ -167,6 +167,14 @@ compatibility alias or a compromise that keeps a confusing name or seam. Once th
 are live, each break costs one migration per site again, so re-check this with Geoff when the first
 rebuilt site goes live.
 
+**Promote the two public theme rules to error tier (theme identity pass C, 2026-09-29; a roadmap
+intent, not a shipped promise).** `theme-conformance` and `theme-contrast` ship at advisory tier on a
+consumer, and the changelog makes no promise about their tier. Promote both to error at the first
+minor cut after all five sites (the four production sites and cairn.pub) report zero advisory
+findings from them, counted by the `cairn-release` step that runs the audit's public scope over each
+site at every cut. `public-literals` stays advisory. A site that reports findings is asked to clear
+them first; no calendar date is attached.
+
 When these hold, cut `1.0` deliberately, retire the `0.x` "minor = new subsystem / patch = everything else"
 scale heuristic, and switch the numbers to their compatibility meaning (patch = fix, minor = additive,
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
@@ -291,23 +299,13 @@ The original decision framing, for the record:
 
 ## Now
 
-- **Theme identity, passes A, B, and C (Geoff, 2026-09-26 and 2026-09-27).** cairn's own look moves
-  into the daisyUI theme layer, and the public site gets one theme contract that any theme can meet.
-  Pass A (the admin theme, spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md`) is
-  closed on `theme-identity-a` (PR #92), unmerged; Geoff's before-and-after sitting (its S3) is
-  still to run, and any correction it asks for lands on that branch and merges forward into B.
-  Pass B's plan (branch `theme-b-plan`) is reviewed and runs next, from A's closed head. Passes B and C share one spec,
-  `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`: B renames `./components` to
-  `./admin` and ships the admin agent path; C is the one public theme (`cairn-public.css`, derived
-  inks, heading levers, the three public audit rules, the `cairn-public` skill, and the designer
-  walkthrough's template fixes). B stays unmerged, C branches from it, and both merge at C's close
-  with one `0.98.0` cut carrying A, B, and C. Draft documentation (below) waits for C.
-
 - **Theme identity pass A's carried items (pass A close, 2026-09-28; settled by the S3
   correction round, 2026-09-28, except the two below).** Trigger for what remains: the first pass
-  after this one that edits `cairn-admin.css` or the named component, and in any case before the
-  `0.98.0` cut ships the retheme to every consumer.
-  - Coverage notes the `paint` class batched rather than blocked on: the destructive-edge contrast
+  after this one that edits `cairn-admin.css` or the named component (retargeted past the
+  `0.98.0` cut at pass C's close, because the items are cosmetic and the scoping fix moves the
+  pinned Waymark render).
+  - Coverage notes the `paint` class batched rather than blocked on (conductor ruling, pass C
+    close: cosmetic, so they ride past the `0.98.0` cut): the destructive-edge contrast
     test proves the ratio but not that `border-error` wins the cascade over the 55% field edge;
     the disabled-stock switch test covers the `:checked` form only; `::before` carries no
     `transition: none`; the bare `.alert` oracle does not prove `--alert-color` unset;
@@ -316,7 +314,7 @@ The original decision framing, for the record:
     fixture still reads `type-title font-bold` where the page heading is now 550.
   - The showcase's public `theme.css` carries an unscoped `.btn-outline` rule that reaches the
     admin's outline-button edges too, whichever order the sheets load in. Scope it to the public
-    site; pass C's public-theme work is the natural home.
+    site when a theme next touches the button recipe.
 
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25; spec
   `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still
@@ -333,7 +331,11 @@ The original decision framing, for the record:
   as the developer exemplar, and a Microsoft Learn capture for editors. Baselines at the start:
   711 verified facts plus 10 Tidy facts, facts sections for 77 of 80 old pages, and about 600
   intensifier "own" uses across the arms. A brainstorm opens the program (STATUS, "Next action");
-  theme pass C's `0.98.0` cut comes before any deletion.
+  the harvest resumes when theme passes B and C land on `main` together, with its inputs
+  in `docs/internal/record/2026-09-29-theme-pass-bc-harvest-handoff.md` (the B and C fact ids, pages,
+  renames, and behaviors) and the stage 2 and stage 5 outline input
+  `docs/internal/record/2026-09-29-theme-contract-docs-input.md`; the `0.98.0` cut still comes before any
+  deletion.
   The docs reset's reader-validation line (passes 1, 1b, and 2a, spec
   `docs/superpowers/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
   ruling: its reader instrument failed validation across three passes (`docs/HISTORY.md`, "Docs
@@ -344,7 +346,8 @@ The original decision framing, for the record:
     `docs/internal/record/docs-exemplars.md`), never reviewed as a set.
   - Fact ids with `check:provenance`, and page briefs under `docs/internal/briefs/`.
   - The designer's theme guide is a primary page (Geoff, 2026-09-27): it documents the one
-    public theme contract (Now, "Theme identity", pass C) and is drafted after that contract settles.
+    public theme contract that theme pass C shipped (`docs/reference/public-css.md`, the `cairn-public`
+    skill) and is drafted from it, with the page's outline in the input file named above.
   - One content input for the designer's theme guide (Geoff, 2026-09-24): a short general section
     on giving a DaisyUI-built site its own identity through a theme, so it does not read as stock
     DaisyUI. It links to DaisyUI's theme docs rather than restating them. Required topic in the stage 2
@@ -352,32 +355,21 @@ The original decision framing, for the record:
   - Job-doing readers as an optional advisory pass, about 35k tokens per page: they find real
     defects on their own path and miss what sits off it. They are not a measured gate.
 
-- **`viewport-overflow` reports 200 error-tier findings over the admin routes at 320 and 390 (rest
-  and menu-open) on the first rendered-audit run in CI (run 35016669005), predating the motion
-  pass.** The unscoped run (`cairn-audit --rendered`, no `--rule`) had never actually run in CI
-  before that dispatch; all 200 findings are this one rule, on `/admin/editors`, `/admin/media`,
-  `/admin/pages`, `/admin/posts`, and `/admin/vocabulary`, example `div.flex-none: renders 405px
-  wide against a 390px viewport`. Hypothesis: the off-canvas drawer's transformed layer is being
-  measured (405px against a 390px viewport), since the admin-visual suite is green at those same
-  widths, so the defect may be the rule's transform handling rather than the actual layout. Next
-  step: a hand run of `cairn-audit --rendered --rule viewport-overflow` against the showcase with
-  the drawer closed versus open, reading the flagged elements to confirm or rule out the drawer
-  hypothesis.
-
-- **Inserting a component fuses its closing fence onto the text after the caret (designer
-  walkthrough, 2026-09-27; friction log F12).** A live editor-facing defect.
-  `insertAtCursor` in `src/lib/components/MarkdownEditor.svelte:1133-1143` prepends `\n\n` when the
-  caret is past position 0 but appends nothing after the block. `serializeComponent`
-  (`src/lib/render/component-grammar.ts:44`) ends the block on its bare closing fence. Any text
-  after the caret therefore joins that fence, and the directive never closes. Repro: open a post
-  whose body has text, put the caret at the start of the body, choose Insert block, pick any
-  component, and press Insert. The editor shows `:::The original body.` on one line. The e2e at
-  `examples/showcase/e2e/golden-path.spec.ts:449-453` asserts only the opening line, so it cannot
-  see this. Leanest fix: pad the inserted block with a blank line on each side whenever the
-  caret's line has text before or after it, and assert the whole inserted block in the e2e. Owner:
-  the next engine pass, as its own small task. Pass B's rename moves the file to
-  `src/lib/admin/`. Evidence: `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`,
-  F12.
+- **Fix `viewport-overflow`'s measurement timing before the `0.98.0` cut (theme identity pass B,
+  2026-09-29).** The rendered rule measures in the same tick as `setViewportSize`, before the admin
+  shell's `matchMedia` listeners settle the layout. It reports transient overflow at 390 and 320
+  that varies by run (83 to 123 errors across the template's pages in one probe; 200 on the first
+  CI run, run 35016669005, on `/admin/editors`, `/admin/media`, `/admin/pages`, `/admin/posts`, and
+  `/admin/vocabulary`), and it lists content whose right edge is inside the viewport ("overflows
+  by -11px"). A settled measurement of the same page, loaded fresh at 390 and 320 in both themes,
+  showed `scrollWidth` equal to `clientWidth` and nothing past the viewport. The rule is error
+  tier, so a consumer running `--rendered` gets false errors. The fix is in
+  `src/lib/audit/rules/rendered/viewport-overflow.ts`: wait for a stable `scrollWidth` after each
+  resize, and filter content origins to `right > viewport`. This likely explains the
+  earlier 200 findings, whose off-canvas-drawer hypothesis stays open until the fix lands; after it,
+  compare a run with the drawer closed against one with it open as the proof step. It also
+  supersedes STATUS's "counts differently on identical runs" watch. Trigger: before the `0.98.0` cut, since it ships an error-tier rule that
+  reports false errors to every consumer.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
@@ -475,7 +467,7 @@ The original decision framing, for the record:
 - **`check:reference` cannot see a new public component prop.** `scripts/checks/reference-coverage.mjs`
   matches exported names, so a new public prop is invisible to it, and the live-reproduction seam pass
   proved it twice in one window: `CairnAdminShell` and `EditPage` each gained a public prop
-  (`themeOverride`, `spellcheckOverride`) while `docs/reference/components.md` kept printing the older,
+  (`themeOverride`, `spellcheckOverride`) while `docs/reference/admin.md` kept printing the older,
   shorter signature until a later manual pass caught both. (The sibling hole, a subpath nobody told the
   gate about, shipped a fix in the 2026-09-27 chores batch: the list now derives from `package.json`'s
   `exports`.) Converting the props gap into a failing check, not a watch note, is this repo's own
@@ -632,7 +624,7 @@ The original decision framing, for the record:
   D's Task 13 production gate (2026-08-14).** `DEFAULT_ALLOWED_TYPES`
   (`src/lib/media/config.ts:37`) includes `image/avif`, and the server-side sniffer and its
   content-route check (`content-routes-media.ts:520`) both honor it, but every editor upload runs
-  through `ingestFile` (`src/lib/components/client-ingest.ts`) first, which accepts only JPEG,
+  through `ingestFile` (`src/lib/admin/client-ingest.ts`) first, which accepts only JPEG,
   PNG, WebP, GIF, and HEIC-via-re-encode; an AVIF sniffs correctly and then falls through to
   `throw new IngestError('decode-unsupported')`. An editor who drops an AVIF gets a failure card
   with no explanation the allow-list would predict. AVIF is reachable only through developer-side
@@ -897,6 +889,85 @@ the named human gates only):**
 
 ## Next
 
+- **Docs improve-as-we-go standing order (Geoff, 2026-09-29).** Once the first-draft docs are
+  complete, every agent working on cairn fixes docs deficiencies, inaccuracies, and improvement
+  openings as it finds them, and republishes to cairn.pub. The standing order needs a design before
+  it runs: which pages an agent may edit in place, which gates it runs, how a fix reaches cairn.pub
+  between releases, and how the facts container and page briefs stay in step. Trigger: the first-draft docs complete (the draft
+  documentation entry's site round). Open with a brainstorm that designs it.
+
+- **`theme-contrast`'s unreadable-tint detection can over-trigger (theme identity pass C,
+  2026-09-29).** A status `color-mix()` painted as a `background` keeps that status's tint pair and
+  marks it unmeasured, so a status color-mix background that is not a callout tint reports a pair the
+  theme does not paint. Fix: tie the unmeasured tint to the selectors the chassis paints callouts
+  with, or read the mix's owning rule. Trigger: the first consumer finding that names an unmeasured
+  tint on a non-callout background.
+
+- **A bare class-based dark block is ignored, not reported (theme identity pass C, 2026-09-29).** A
+  `.dark { ... }` block (no `data-theme`, no daisyUI block) in a public stylesheet is not modeled by
+  `theme-contrast`, and the rule does not say so. Fix: report the block as unmeasured, the way a
+  `root` option that is not the root element already is. Trigger: the first site that themes dark
+  with a bare class block.
+
+- **A preprocessed `<style lang=scss>` block that parses as plain CSS is audited with no advisory
+  (theme identity pass C, 2026-09-29).** A public `.svelte` file whose preprocessed style block the
+  Svelte parser rejects raises the named "unparsed style block" advisory, but a block that happens to
+  parse as CSS is read as CSS with no note that it was preprocessed. Fix: raise the advisory for any
+  `lang` attribute other than `css`. Trigger: the first consumer that authors a public component in
+  Sass or Less.
+
+- **A `public.scope` that names `src/routes/admin` still loses it to the non-removable default
+  exclude (theme identity pass C, 2026-09-29).** The admin root stays in the admin scope by design,
+  but the config gives no message when a site lists it under `public.scope`. Fix: a named advisory,
+  or a config error like the covered-root one. Trigger: the first site that broadens `public.scope`
+  to `src`.
+
+- **The theme toggle's first-paint icon and label mismatch on a dark-first theme (theme identity
+  pass C, 2026-09-29).** `SiteHeader` resolves the scheme only on the client, so a dark-first
+  theme on a light OS paints the light icon and label until hydration corrects them. Fix: select
+  the icon and label by CSS from the root's `data-theme` and `color-scheme`, so the first paint
+  is right with no script. Trigger: the next pass that touches `SiteHeader.svelte` or
+  `theme-toggle.ts`, or the first dark-first theme a site ships.
+
+- **The header carries two focus-ring languages, and its two-row layout needs scroll-padding at
+  narrow widths (theme identity pass C, 2026-09-29).** The nav links use a scoped rule and the
+  brand link takes the UA ring. Fix: unify both on `cairn-focus-ring`, which moves the pinned
+  header render, so the change re-baselines the header captures deliberately. The two-row header
+  also covers the top of an anchored target at narrow widths, so `scroll-padding-top` follows the
+  header's height there. Trigger: the next pass that touches the site header.
+
+- **`@glw907/cairn-cms-dev`'s `devBackendHandle` breaks a D1-backed admin screen (theme identity
+  pass B probe, 2026-09-29).** It overwrites the platform proxy's `APP_DB` with a fake D1 that
+  answers only the signups SQL. `DevBackendConfig` has no binding hook, and no shipped page says
+  so, so a site's own D1-backed admin screen returns a 500 under the dev backend. Fix: a binding
+  option, or stop overwriting a binding the site already provides; add a line to
+  `docs/extend/add-a-custom-admin-screen.md` and to the `cairn-admin-screens` skill either way.
+  Trigger: the next pass that touches `packages/cairn-cms-dev`, and before any site is told to
+  build a D1-backed screen against the dev backend.
+
+- **Promote `radius-scale` and the three retired-patch arms to error tier at `0.99.0` (theme
+  identity pass B, 2026-09-29).** They ship at advisory tier in `0.98.0` and every finding names
+  `0.99.0`. `src/tests/unit/audit/promotion-versions.test.ts` enforces it: it reads every
+  `*PROMOTION_VERSION` constant under `src/lib/audit` and fails once the package version reaches
+  one, naming the choice owed (promote and delete the constant, or re-date with a disclosed
+  changelog line). The three older `0.98.0` promises (`log-event-grammar`,
+  `log-secret-field`, the guarded-retirement arm) landed in `facc5fcf`, so the `0.98.0` version
+  commit no longer turns it red; `radius-scale` and the retired-patch arms stay advisory until
+  `0.99.0`. Trigger: the `0.99.0` version commit.
+
+- **`MarkdownEditor`'s `transformSelection` still replaces the whole document (theme identity pass
+  B, 2026-09-29).** `insertLink` and `insertImage` dispatch `from: 0, to: doc.length`, the pattern
+  the block insert dropped for a changed-span dispatch. The same consequences apply: every folded
+  block unfolds and an in-flight upload placeholder moves to the end. Fix: dispatch only the span
+  the format transform changed. Trigger: the next pass that edits `MarkdownEditor.svelte`, or the
+  first report of a fold or a placeholder moving after a link or image insert.
+
+- **`skills/cairn-extend/SKILL.md:12` sends a consumer's agent to a file the tarball does not ship
+  (theme identity pass B, 2026-09-29).** It tells the agent to check
+  `docs/internal/engine-rulings.md` in the imperative; `docs/internal/` is not in the package. Lines
+  20 to 23 already mark the other internal paths as source-repo paths. Fix: reword line 12 the same
+  way. Trigger: the next guidance pass.
+
 - **Deferred from docs reset pass 1 (2026-09-24), each with no recorded failure behind it yet.**
   The baseline record (`docs/internal/record/2026-09-23-docs-reset-baseline.md`, "Build or
   defer") deferred these, and pass 1 built none of them. Trigger for the chain items: the new
@@ -913,14 +984,6 @@ the named human gates only):**
   - The title check's two blind spots (Task 10): a `cairn health`-only title, and a title with no
     command, match nothing any report prints; and a command written inline in prose is not run
     until the page puts it in a fence. Trigger: the reset's admin-arm drafting.
-
-- **The Waymark template's `site.css` and `prose.css` cite cairn-internal documents a scaffolded
-  site does not carry (docs reset pass 1 validation, 2026-09-24).** `templates/waymark/src/theme/site.css:18,34`
-  and `src/chassis/prose.css:40` point at `docs/internal/public-design-system.md` and
-  `docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`. A designer reader followed
-  one and found nothing. Point the comments at a published page or state the rule inline. Theme
-  identity pass A fixed the same cites in `theme.css`. Trigger: the next pass that edits either
-  file (pass C's template sweep is the likely one).
 
 - **Real defects the pass 1 readers found on current pages (2026-09-24).** The pass changed no
   published page, and the reset rebuilds these pages from the container, so each is evidence for
@@ -981,6 +1044,14 @@ the named human gates only):**
   the tests' own default-URL assertions failing. Trigger: the next concurrent-pass collision on
   this port, or the next pass that touches this file, either takes a free ephemeral port instead of
   the hardcoded default.
+
+- **The showcase hardcodes `PUBLIC_ORIGIN` to `http://localhost:4173`, so a port collision breaks
+  minted preview URLs (friction log, found again by theme identity pass B task 1, 2026-09-28).**
+  `examples/showcase/wrangler.jsonc:61` feeds `requireOrigin` independent of `E2E_PORT`, so with
+  another project bound to 4173 every minted preview URL 404s and `e2e/preview.spec.ts` fails 8
+  tests; CI, with no collision, passes. Fix: derive the origin from `E2E_PORT`, the way the
+  Playwright config already reads it. Trigger: the next concurrent-pass collision on this port, or
+  the pass that fixes the `rendered.test.ts` half above.
 
 - **`admin-toolkit.md`'s outline-chip contrast ratios need re-measuring (draft docs stage 1,
   2026-09-28).** The outline-chip contrast paragraph once cited two specific ratios (about 2.4:1
@@ -1105,12 +1176,12 @@ the named human gates only):**
   deliberate custom glyphs. (5) `EditPage.svelte:2429` and `:2491` write
   `hover:text-[var(--color-primary)]` and `text-[var(--color-accent)]` where the semantic
   utilities `hover:text-primary` and `text-accent` already cover the same token; a plain swap.
-  Trigger: the next pass that touches `src/lib/components/`.
+  Trigger: the next pass that touches `src/lib/admin/`.
 
 - **Two admin glyphs are drawn as bare text characters, not icons (pre-cut pass fix round,
   2026-09-21).** `DeleteDialog.svelte`'s dialog close button is a bare `✕` character
-  (`src/lib/components/DeleteDialog.svelte:75`), and the command palette's keyboard hint is a bare
-  `&#8984;` inside a `<kbd>` (`src/lib/components/CairnAdminShell.svelte:851`). Neither pins a
+  (`src/lib/admin/DeleteDialog.svelte:75`), and the command palette's keyboard hint is a bare
+  `&#8984;` inside a `<kbd>` (`src/lib/admin/CairnAdminShell.svelte:851`). Neither pins a
   font, so both resolve through whatever fallback font the rendering environment supplies, which
   made the visual baselines depend on the CI runner's font fallback for `U+2318` rather than on
   cairn's own markup. Draw both from the icon library (`@lucide/svelte`) or a pinned symbol font
@@ -1443,9 +1514,9 @@ the named human gates only):**
   makes rather than an external event.
 
 - **Follow-up from the 3c escalate ruling (extend-2, 2026-09-20): `cairn-audit.config.json`'s
-  `sheet` entry still names the engine's `dist/components/cairn-admin.css` layout.** The
+  `sheet` entry still names the engine's `dist/admin/cairn-admin.css` layout.** The
   engine-owned Tailwind sources file closed the `@source` line's own "no site names dist" gap, but
-  each site's audit config still points `sheet` at the precompiled path under `dist/components/`,
+  each site's audit config still points `sheet` at the precompiled path under `dist/admin/`,
   a different artifact the amendment did not grant scope to relocate. Resolve the audit's `sheet`
   entry by package subpath so no site config names the dist layout either.
 
@@ -2156,7 +2227,7 @@ the named human gates only):**
   one sentence on `IconSet` stating a path must be a filled shape on a `0 0 256 256` box
   (`src/lib/render/glyph.ts:7`, `docs/reference/core.md:1081`), shipped in the 2026-09-27 chores
   batch. Still open: redraw `flag` and `snowflake` as closed-shape paths in the showcase and the
-  template, short of the full stroke sweep across all 27 icons. Owner: theme identity pass C.
+  template, short of the full stroke sweep across all 27 icons. Trigger: when a theme next touches the icon set.
 
 - **Mechanical hardening: gate the `sideEffects` coverage of the server-only browser stubs (from the
   seams pass-two review, 2026-08-01).** `package.json`'s `sideEffects` now lists `dist/*/browser.js`, so
@@ -2582,9 +2653,17 @@ the named human gates only):**
 
 ## Later
 
+- **`rounded-t-full` and the other side forms of `full` pass `radius-scale` silently on a `badge`
+  (theme identity pass B, 2026-09-29).** The rule flags `rounded-full` on an element that carries
+  `badge`, but only the whole-corner form; a side form of `full` falls through. No plan decision
+  names it, so no behavior changed. Fix: extend the `FULL_TOKEN` arm in
+  `src/lib/audit/rules/static/radius-scale.ts` to the side forms. Trigger: the first real
+  `radius-scale` run over a consumer site that shows one, or the `0.99.0` promotion, whichever
+  comes first.
+
 - **Move pinned unlayered rules 1 to 9 into the `cairn-idiom` sublayer (theme identity pass A,
   2026-09-28).** Pass A moved rules 10 to 14 into `utilities.cairn-idiom` and retired their pins.
-  Rules 1 to 9 stay pinned and unlayered in `src/lib/components/cairn-admin.css`; rule 2, the
+  Rules 1 to 9 stay pinned and unlayered in `src/lib/admin/cairn-admin.css`; rule 2, the
   guarded-button rule, stands under the timing-scoped reading of decision 4
   (`docs/internal/engine-rulings.md`, `motion-conform-to-daisyui-conventions`). Moving the rest is
   a ratchet shrink: each move takes an entry out of `unlayeredAllowlist` in
@@ -2593,11 +2672,11 @@ the named human gates only):**
   those rules, or the pre-1.0 CSS audit.
 
 - **Retire `ADMIN_CSS_SAFELIST` (theme identity pass A, 2026-09-28).** The admin build now compiles
-  every daisyUI class except calendar, so the list in `src/lib/components/admin-css-safelist.ts`
+  every daisyUI class except calendar, so the list in `src/lib/admin/admin-css-safelist.ts`
   no longer decides which daisyUI classes ship; its own header says it stays only as a grouped,
   explained vocabulary. Retire it, or reduce it to the non-daisyUI names it still documents, and
   move the explanation to `docs/reference/admin-toolkit.md`. Trigger: pass B's rename of
-  `src/lib/components/` (the file moves anyway), or the next pass that edits it.
+  `src/lib/components/` to `src/lib/admin/` (the file moves anyway), or the next pass that edits it.
 
 - **Symbol-anchored `Source:` pointers for the Go `tool/` tree (docs reset pass 1, 2026-09-23).**
   `check:facts` resolves `path#Symbol` only for `.ts` and `.js` files under `src/`, through the
@@ -2858,7 +2937,7 @@ the named human gates only):**
   (docs friction log, triaged 2026-08-14; raised by the code-simplifier on the preview pass,
   2026-08-07)?** `PreviewBanner` mounts on public pages where neither `cairn-admin.css` nor
   Tailwind may exist, so it deliberately carries its own fallback palette
-  (`src/lib/components/PreviewBanner.svelte:62-75`), and `token-colors` still needs a
+  (`src/lib/public/PreviewBanner.svelte:62-75`), and `token-colors` still needs a
   `cairn-audit-disable-next-line` suppression per literal to accept that. `DEFAULT_PALETTE_CSS_FILES`
   (`audit/config.ts:38`) is the existing seam a site names its own theme file through; the open
   question is whether a component that declares (or consumes by fallback) its own `--cairn-*`

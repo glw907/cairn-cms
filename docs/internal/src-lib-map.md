@@ -1,6 +1,6 @@
 # The `src/lib` map
 
-`src/lib` is the shipped library: 23 directories plus six loose root files, about 60k lines.
+`src/lib` is the shipped library: 24 directories plus six loose root files, about 60k lines.
 `CONTRIBUTING.md`'s Repository map gives it one line ("the shipped library. Public entry points
 are package subpaths"), which is the right amount of detail for a repository map and not enough
 to orient a contributor or an agent who has never opened this tree. This page is that
@@ -20,15 +20,17 @@ being internal, reachable only through their `bin` entry, never an `exports` sub
 from a directory's name or its neighbors: two of the four `auth*` directories below are internal,
 two are public, and nothing about the alphabetical listing signals which.
 
-**Public (13 directories, each a package subpath):**
+**Public (14 directories, each a package subpath):**
 
 - `sveltekit` (`/sveltekit`): everything a SvelteKit site wires into its routes; factories,
   wrappers, guards, and the data types they exchange. Section 2 below traces the request through
   four of its files.
-- `components` (`/components`): the admin's Svelte UI, the shell, the per-view screens, and the
+- `admin` (`/admin`): the admin's Svelte UI, the shell, the per-view screens, and the
   composed dialogs and fields those screens mount.
+- `public` (`/public`): every built-in public component that renders styled markup; `PreviewBanner`
+  today.
 - `admin-toolkit` (`/admin-toolkit`): general-purpose primitives a site builds its own admin
-  screens from, distinct from `/components`, which is cairn's own screens.
+  screens from, distinct from `/admin`, which is cairn's own screens.
 - `islands` (`/islands`): the client runtime that mounts a site's live Svelte components over the
   static fallbacks the render pipeline emits.
 - `render` (`/render`): the component-authoring toolkit a site's `build(ctx)` calls. Section 5
@@ -163,7 +165,7 @@ Every type `content-routes.ts` used to declare inline now lives with the domain 
 is re-exported from `content-routes.ts`, so an existing importer sees the same names at the same
 path regardless of which sibling actually defines them.
 
-The same shared-prefix-instead-of-directory pattern recurs in `components/` (90 `.ts`/`.svelte`
+The same shared-prefix-instead-of-directory pattern recurs in `admin/` (89 `.ts`/`.svelte`
 files, plus one shared stylesheet and two asset subdirectories, `fonts/` and `spellcheck-assets/`:
 `editor-*.ts` CodeMirror extensions, `tidy-*.ts`, `media-*.ts`, the admin screens, and the field
 widgets, all in one directory) and in `src/tests/unit/` (also flat, by file count the largest
@@ -198,8 +200,8 @@ sites and the guard now enforces that none is missed:
 1. `content/fields.ts`: the interface and the `fields.*` builder namespace.
 2. `content/frontmatter.ts`: `decodeField` and `frontmatterFromForm`, the read and write coders.
 3. `content/fieldset.ts`: `validateField`, the validator arm.
-4. `components/FieldInput.svelte`: the field-widget `{#if field.type === …}` chain.
-5. `components/ComponentForm.svelte`: a second, narrower chain over the same union for a
+4. `admin/FieldInput.svelte`: the field-widget `{#if field.type === …}` chain.
+5. `admin/ComponentForm.svelte`: a second, narrower chain over the same union for a
    component's directive attributes.
 6. `render/registry.ts`: `ATTRIBUTE_TYPES`, the set of descriptor types that serialize to a single
    directive-attribute string; this one stays a fail-closed input-validation check (an unlisted
@@ -210,7 +212,7 @@ sites and the guard now enforces that none is missed:
 guard every one of the five dispatchers' `default:` arm calls, so the compiler enumerates every
 arm the moment a sixteenth one is added and `npm run check` fails at all five sites until it is
 handled. Four sites carry a deliberate note instead of a full arm (`content/references.ts`,
-`delivery/site-resolver.ts`, `components/ReferenceField.svelte`, and the `required || boolean`
+`delivery/site-resolver.ts`, `admin/ReferenceField.svelte`, and the `required || boolean`
 carve-outs) because they only ever need a partial slice of the union; each states why in place.
 
 Past the dispatch sites: `index.ts` re-exports the new arm's type, and `docs/reference/core.md`

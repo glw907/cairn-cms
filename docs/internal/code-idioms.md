@@ -34,7 +34,7 @@ elsewhere (`check:comments`) and not restated here.
   `strict` for gate consumers** (exemplar: `src/lib/content/reference-index.ts`). Which
   callers get which is a design decision recorded at the call site, not a default.
 - **E7. No bare `console.*` in `src/lib`.** Client editor/admin code surfaces failures as
-  typed UI states (exemplar: `src/lib/components/client-ingest.ts`, the
+  typed UI states (exemplar: `src/lib/admin/client-ingest.ts`, the
   `IngestFailureKind`/`failureCard` taxonomy) or degrades silently by documented contract;
   server code speaks through the `src/lib/log` chokepoint. Scripts and bins print freely.
 
@@ -102,7 +102,7 @@ elsewhere (`check:comments`) and not restated here.
   `branches` options and the workerd six-connection note. The strongest single reuse win in
   the codebase.
 - **A3.** Latest-wins arbitration uses the extracted testable shape (exemplar:
-  `arbitrateChecked`/`SeqArbiter`, `src/lib/components/spellcheck.ts:282`); the two inlined
+  `arbitrateChecked`/`SeqArbiter`, `src/lib/admin/spellcheck.ts:282`); the two inlined
   counter/flag variants converge.
 - **A4.** Discarded fetch bodies are drained (`await res.body?.cancel()`), per
   `github/branches.ts`.
@@ -147,7 +147,7 @@ elsewhere (`check:comments`) and not restated here.
   contract (exemplar: `DeleteDialog.svelte`) rather than hosts reaching through `bind:this`.
   Destructive confirms declare `role="alertdialog"` explicitly; non-destructive dialogs rely
   on native semantics plus `aria-labelledby` without redundant role/aria-modal.
-- **S3.** The repeated in-file idioms extract to one home each, `src/lib/components/`
+- **S3.** The repeated in-file idioms extract to one home each, `src/lib/admin/`
   internals (not the public barrel): the check-and-tint segmented-control class helper
   (7 copies), the typed-confirm gate (5 copies), the fetch + devalue-deserialize +
   stale-guard client action round-trip (7 copies across `CairnMediaLibrary` and `EditPage`,

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { buildSpellDiagnostic } from '../../lib/components/spellcheck.js';
+import { buildSpellDiagnostic } from '../../lib/admin/spellcheck.js';
 import type { EditorView } from '@codemirror/view';
 
 /** A dispatch-only stand-in for the CodeMirror view every action.apply receives; this suite

@@ -20,7 +20,15 @@ const NUMBER_WORDS: Record<string, number> = {
   two: 2,
   fifteen: 15,
   seventeen: 17,
+  eighteen: 18,
+  nineteen: 19,
+  twenty: 20,
+  'twenty-one': 21,
   'thirty-four': 34,
+  'thirty-five': 35,
+  'thirty-six': 36,
+  'thirty-seven': 37,
+  'thirty-eight': 38,
 };
 
 /** A rule count as the reference page writes it, digits or one of `NUMBER_WORDS`. */
@@ -33,15 +41,24 @@ function parseRuleCount(text: string): number {
   return known;
 }
 
+/**
+ * The registry without the public-scope rules: what a test runs over a fixture tree that holds
+ * only admin files, since a public rule over such a tree ends in the public empty-scope error by
+ * design.
+ */
+function adminRules(): StaticRule[] {
+  return staticRules().filter((rule) => !rule.publicScope);
+}
+
 let root: string;
 
 beforeAll(() => {
   root = mkdtempSync(join(tmpdir(), 'cairn-audit-'));
-  mkdirSync(join(root, 'dist/components'), { recursive: true });
+  mkdirSync(join(root, 'dist/admin'), { recursive: true });
   mkdirSync(join(root, 'src/lib/admin-toolkit'), { recursive: true });
   mkdirSync(join(root, 'src/routes/admin/posts'), { recursive: true });
   writeFileSync(
-    join(root, 'dist/components/cairn-admin.css'),
+    join(root, 'dist/admin/cairn-admin.css'),
     '.type-body { font-size: var(--cairn-type-body) }'
   );
   writeFileSync(
@@ -49,8 +66,8 @@ beforeAll(() => {
     '<span class="type-label">x</span>\n'
   );
   writeFileSync(join(root, 'src/routes/admin/posts/+page.svelte'), '<div class="card"></div>\n');
-  mkdirSync(join(root, 'src/lib/components'), { recursive: true });
-  writeFileSync(join(root, 'src/lib/components/PublicWidget.svelte'), '<div></div>\n');
+  mkdirSync(join(root, 'src/lib/admin'), { recursive: true });
+  writeFileSync(join(root, 'src/lib/admin/AdminWidget.svelte'), '<div></div>\n');
 });
 
 afterAll(() => {
@@ -82,10 +99,11 @@ function probeRule(seen: StaticRuleContext[]): StaticRule {
 describe('the static rule registry', () => {
   // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules,
   // Task 9b's five CSS-family rules, the harvest-detection pass's Tasks 3 and 4, the motion
-  // pass's motion-property, motion-hover-gate, and motion-vocabulary, and the extend pass's
-  // log-event-grammar and log-secret-field are the modules that have registered since, without
+  // pass's motion-property, motion-hover-gate, and motion-vocabulary, the extend pass's
+  // log-event-grammar and log-secret-field, radius-scale, and the public scope's public-literals,
+  // theme-conformance, and theme-contrast are the modules that have registered since, without
   // touching run.ts.
-  it('carries the seventeen static rules registered since Task 7', () => {
+  it('carries the twenty-one static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -94,6 +112,7 @@ describe('the static rule registry', () => {
         'no-uncompiled-class',
         'type-scale',
         'gap-scale',
+        'radius-scale',
         'stock-default-hazards',
         'token-colors',
         'grammar-boundary',
@@ -108,6 +127,9 @@ describe('the static rule registry', () => {
         'list-role',
         'log-event-grammar',
         'log-secret-field',
+        'public-literals',
+        'theme-conformance',
+        'theme-contrast',
       ].sort(),
     );
   });
@@ -116,12 +138,12 @@ describe('the static rule registry', () => {
     expect(staticRules()).not.toBe(staticRules());
   });
 
-  // New consumer-facing findings enter at advisory tier for one minor, and never scoped to the
-  // admin frame: a log call is not confined to an admin surface.
-  it('registers log-event-grammar and log-secret-field at advisory tier, not adminOnly', () => {
+  // Both log rules are promoted to error tier, and never scoped to the admin frame: a log call
+  // is not confined to an admin surface.
+  it('registers log-event-grammar and log-secret-field at error tier, not adminOnly', () => {
     const byId = new Map(staticRules().map((rule) => [rule.id, rule]));
     for (const id of ['log-event-grammar', 'log-secret-field']) {
-      expect(byId.get(id)?.tier).toBe('advisory');
+      expect(byId.get(id)?.tier).toBe('error');
       expect(byId.get(id)?.adminOnly).toBeUndefined();
     }
   });
@@ -132,7 +154,7 @@ describe('the static rule registry', () => {
   it('states the same total and static rule counts docs/reference/cairn-audit.md carries', () => {
     const doc = readFileSync(CAIRN_AUDIT_REFERENCE, 'utf8');
     const totalMatch = /All\s+([A-Za-z0-9-]+)\s+registered rules/.exec(doc);
-    const staticRunMatch = /^([A-Za-z]+) rules run:/m.exec(doc);
+    const staticRunMatch = /^([A-Za-z0-9-]+) rules run:/m.exec(doc);
     if (!totalMatch || !staticRunMatch) {
       throw new Error('could not find both rule-count sentences in docs/reference/cairn-audit.md');
     }
@@ -163,7 +185,7 @@ describe('runStatic', () => {
   it('parses every component under the scan scope and resolves the built sheet', () => {
     const seen: StaticRuleContext[] = [];
     const report = runStatic(loadConfig(root), [probeRule(seen)]);
-    // Task 3's own `src/lib/components` fixture (a `src/lib/components` root, no `adminOnly`
+    // Task 3's own `src/lib/admin` fixture (a `src/lib/admin` root, no `adminOnly`
     // declaration on this probe) joins the two roots already here, since the probe resolves
     // over `static.scope`, not `static.adminScope`. Task 2's `sources` walk (default scope
     // `src`) finds the same three `.svelte` fixtures again as plain text, which is why the total
@@ -172,7 +194,7 @@ describe('runStatic', () => {
     expect(seen).toHaveLength(1);
     expect(seen[0].files.map((f) => f.file).sort()).toEqual([
       'src/lib/admin-toolkit/FieldLabel.svelte',
-      'src/lib/components/PublicWidget.svelte',
+      'src/lib/admin/AdminWidget.svelte',
       'src/routes/admin/posts/+page.svelte',
     ]);
     expect(seen[0].sheet.has('type-body')).toBe(true);
@@ -194,14 +216,16 @@ describe('runStatic', () => {
     // sheet above, which only defines type-body. Neither fixture component carries a <style>
     // block, so the CSS-family rules Task 9b added have nothing to scan here; a clean tree is
     // proven by each rule's own fixtures, not by this generic wiring test.
-    const report = runStatic(loadConfig(root));
+    const report = runStatic(loadConfig(root), adminRules());
     // Membership is pinned once, in "the static rule registry" above; here just confirm the
-    // default (no rules override) run wires up the full seventeen-rule registry. The new
-    // `src/lib/components/PublicWidget.svelte` fixture carries no class and no CSS, so it trips
+    // registry minus its public-scope rule (this fixture tree holds admin files only) wires up as
+    // the eighteen admin rules. The new
+    // `src/lib/admin/AdminWidget.svelte` fixture carries no class and no CSS, so it trips
     // nothing beyond the two no-uncompiled-class findings the tree already carried; none of the
     // fixture components carries a log call, so log-event-grammar and log-secret-field raise
-    // nothing here either.
-    expect(report.ruleIds).toHaveLength(17);
+    // nothing here either, and none carries a rounded token, so radius-scale raises nothing here
+    // either.
+    expect(report.ruleIds).toHaveLength(18);
     expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
     expect(exitCodeFor(report)).toBe(1);
   });
@@ -218,8 +242,8 @@ describe('runStatic', () => {
   it('fails when the scan matched no file at all, rather than reporting a clean run', () => {
     const empty = mkdtempSync(join(tmpdir(), 'cairn-audit-empty-'));
     try {
-      mkdirSync(join(empty, 'dist/components'), { recursive: true });
-      writeFileSync(join(empty, 'dist/components/cairn-admin.css'), '.type-body { font-size: 1rem }');
+      mkdirSync(join(empty, 'dist/admin'), { recursive: true });
+      writeFileSync(join(empty, 'dist/admin/cairn-admin.css'), '.type-body { font-size: 1rem }');
       expect(() => runStatic(loadConfig(empty))).toThrow(/matched no files/);
     } finally {
       rmSync(empty, { recursive: true, force: true });
@@ -261,13 +285,13 @@ describe('runStatic', () => {
 
     beforeAll(() => {
       siteRoot = mkdtempSync(join(tmpdir(), 'cairn-audit-site-sheet-'));
-      mkdirSync(join(siteRoot, 'dist/components'), { recursive: true });
-      mkdirSync(join(siteRoot, 'src/lib/components'), { recursive: true });
+      mkdirSync(join(siteRoot, 'dist/admin'), { recursive: true });
+      mkdirSync(join(siteRoot, 'src/lib/admin'), { recursive: true });
       mkdirSync(join(siteRoot, 'src/theme'), { recursive: true });
-      writeFileSync(join(siteRoot, 'dist/components/cairn-admin.css'), '.card { border: 1px solid black }');
+      writeFileSync(join(siteRoot, 'dist/admin/cairn-admin.css'), '.card { border: 1px solid black }');
       writeFileSync(join(siteRoot, 'src/theme/site.css'), '.site-badge { color: red }');
       writeFileSync(
-        join(siteRoot, 'src/lib/components/Fixture.svelte'),
+        join(siteRoot, 'src/lib/admin/Fixture.svelte'),
         '<div class="card site-badge ghost"></div>\n'
       );
     });
@@ -280,7 +304,7 @@ describe('runStatic', () => {
       const configPath = join(siteRoot, 'with-site-sheet.json');
       writeFileSync(
         configPath,
-        JSON.stringify({ sheet: ['dist/components/cairn-admin.css', 'src/theme/site.css'] })
+        JSON.stringify({ sheet: ['dist/admin/cairn-admin.css', 'src/theme/site.css'] })
       );
       const report = runStatic(loadConfig(siteRoot, configPath), [noUncompiledClass]);
       expect(report.findings.map((f) => f.message)).toEqual([expect.stringContaining('"ghost" never compiles')]);
@@ -288,7 +312,7 @@ describe('runStatic', () => {
 
     it('flags the same class when its site sheet is not named', () => {
       const configPath = join(siteRoot, 'without-site-sheet.json');
-      writeFileSync(configPath, JSON.stringify({ sheet: ['dist/components/cairn-admin.css'] }));
+      writeFileSync(configPath, JSON.stringify({ sheet: ['dist/admin/cairn-admin.css'] }));
       const report = runStatic(loadConfig(siteRoot, configPath), [noUncompiledClass]);
       expect(report.findings.map((f) => f.message).sort()).toEqual([
         expect.stringContaining('"ghost" never compiles'),
@@ -300,9 +324,9 @@ describe('runStatic', () => {
       const configPath = join(siteRoot, 'missing-sheet-source.json');
       writeFileSync(
         configPath,
-        JSON.stringify({ sheet: ['dist/components/cairn-admin.css', 'src/theme/absent.css'] })
+        JSON.stringify({ sheet: ['dist/admin/cairn-admin.css', 'src/theme/absent.css'] })
       );
-      expect(() => runStatic(loadConfig(siteRoot, configPath))).toThrow(/absent\.css/);
+      expect(() => runStatic(loadConfig(siteRoot, configPath), adminRules())).toThrow(/absent\.css/);
     });
   });
 
@@ -315,11 +339,11 @@ describe('runStatic', () => {
 
     beforeAll(() => {
       scopedRoot = mkdtempSync(join(tmpdir(), 'cairn-audit-scoped-'));
-      mkdirSync(join(scopedRoot, 'dist/components'), { recursive: true });
-      mkdirSync(join(scopedRoot, 'src/lib/components'), { recursive: true });
-      writeFileSync(join(scopedRoot, 'dist/components/cairn-admin.css'), '.card { border: 1px solid black }');
+      mkdirSync(join(scopedRoot, 'dist/admin'), { recursive: true });
+      mkdirSync(join(scopedRoot, 'src/lib/admin'), { recursive: true });
+      writeFileSync(join(scopedRoot, 'dist/admin/cairn-admin.css'), '.card { border: 1px solid black }');
       writeFileSync(
-        join(scopedRoot, 'src/lib/components/Fixture.svelte'),
+        join(scopedRoot, 'src/lib/admin/Fixture.svelte'),
         '<!-- cairn-audit-disable-next-line type-scale -- reviewed separately -->\n<div class="text-[30px]"></div>\n'
       );
     });
@@ -345,11 +369,11 @@ describe('runStatic', () => {
 
     beforeAll(() => {
       mentionRoot = mkdtempSync(join(tmpdir(), 'cairn-audit-mentions-'));
-      mkdirSync(join(mentionRoot, 'dist/components'), { recursive: true });
-      mkdirSync(join(mentionRoot, 'src/lib/components'), { recursive: true });
+      mkdirSync(join(mentionRoot, 'dist/admin'), { recursive: true });
+      mkdirSync(join(mentionRoot, 'src/lib/admin'), { recursive: true });
       mkdirSync(join(mentionRoot, 'src/lib'), { recursive: true });
-      writeFileSync(join(mentionRoot, 'dist/components/cairn-admin.css'), '.card { border: 1px solid black }');
-      writeFileSync(join(mentionRoot, 'src/lib/components/Fixture.svelte'), '<div class="card"></div>\n');
+      writeFileSync(join(mentionRoot, 'dist/admin/cairn-admin.css'), '.card { border: 1px solid black }');
+      writeFileSync(join(mentionRoot, 'src/lib/admin/Fixture.svelte'), '<div class="card"></div>\n');
       writeFileSync(
         join(mentionRoot, 'src/lib/mentions.ts'),
         [
@@ -373,7 +397,7 @@ describe('runStatic', () => {
     });
 
     it('raises no suppression finding for either mention, while the real directive still silences its offender', () => {
-      const report = runStatic(loadConfig(mentionRoot));
+      const report = runStatic(loadConfig(mentionRoot), adminRules());
       expect(report.findings.filter((f) => f.ruleId === 'suppression')).toEqual([]);
       expect(report.suppressed.map((f) => f.ruleId)).toContain('log-event-grammar');
     });
@@ -421,54 +445,63 @@ function seenCssFilesRule(id: string, adminOnly: boolean): StaticRule {
 }
 
 describe('static.adminScope', () => {
-  it('resolves an adminOnly rule over the admin roots, and a plain rule over every static.scope root', () => {
-    const report = runStatic(loadConfig(root), [
+  it('resolves an adminOnly rule over a configured admin scope narrower than static.scope', () => {
+    // static.scope and static.adminScope now default to the same three roots, so the distinction
+    // this rule pair reads is exercised through an explicit override here, the shape a site
+    // reaches for when its own admin screens sit outside the shared default roots.
+    const configPath = join(root, 'admin-scope-narrow.json');
+    writeFileSync(
+      configPath,
+      JSON.stringify({ static: { adminScope: ['src/routes/admin', 'src/lib/admin-toolkit'] } })
+    );
+    const report = runStatic(loadConfig(root, configPath), [
       seenFilesRule('probe-admin', true),
       seenFilesRule('probe-default', false),
     ]);
     const adminSeen = report.findings.filter((f) => f.ruleId === 'probe-admin').map((f) => f.file);
     const defaultSeen = report.findings.filter((f) => f.ruleId === 'probe-default').map((f) => f.file);
-    // The consumer default: adminScope names src/routes/admin and src/lib/admin-toolkit, never
-    // the middle root a site keeps its own public components in.
-    expect(adminSeen).not.toContain('src/lib/components/PublicWidget.svelte');
+    expect(adminSeen).not.toContain('src/lib/admin/AdminWidget.svelte');
     expect(adminSeen).toContain('src/routes/admin/posts/+page.svelte');
-    expect(defaultSeen).toContain('src/lib/components/PublicWidget.svelte');
+    expect(defaultSeen).toContain('src/lib/admin/AdminWidget.svelte');
     expect(defaultSeen).toContain('src/routes/admin/posts/+page.svelte');
   });
 
   it('reaches a static.cssFiles entry outside the admin roots with a plain rule, and never with an adminOnly one', () => {
-    writeFileSync(join(root, 'src/lib/components/theme.css'), '.foo { color: red }\n');
-    const configPath = join(root, 'admin-scope-css.json');
-    writeFileSync(configPath, JSON.stringify({ static: { cssFiles: ['src/lib/components/theme.css'] } }));
+    // src/lib/admin is now one of the default admin roots, so this file names a root
+    // no default scope reaches at all: an admin-scope css file's own coverage is the prior test.
+    mkdirSync(join(root, 'src/theme'), { recursive: true });
+    writeFileSync(join(root, 'src/theme/site.css'), '.foo { color: red }\n');
+    const configPath = join(root, 'site-scope-css.json');
+    writeFileSync(configPath, JSON.stringify({ static: { cssFiles: ['src/theme/site.css'] } }));
     const report = runStatic(loadConfig(root, configPath), [
       seenCssFilesRule('probe-admin-css', true),
       seenCssFilesRule('probe-default-css', false),
     ]);
     expect(report.findings.filter((f) => f.ruleId === 'probe-admin-css')).toEqual([]);
     expect(report.findings.filter((f) => f.ruleId === 'probe-default-css').map((f) => f.file)).toEqual([
-      'src/lib/components/theme.css',
+      'src/theme/site.css',
     ]);
   });
 
-  it('behaves as the two-root default when a config is silent about static.adminScope', () => {
-    // No config file at root's default CONFIG_FILE path, so resolveConfig fills DEFAULT_ADMIN_SCOPE.
-    // The prior test already proves that default resolves to src/routes/admin and
-    // src/lib/admin-toolkit, never the middle staticScope root.
-    expect(loadConfig(root).adminScope).toEqual(['src/routes/admin', 'src/lib/admin-toolkit']);
+  it('behaves as the three-root default when a config is silent about static.adminScope', () => {
+    // No config file at root's default CONFIG_FILE path, so resolveConfig fills DEFAULT_ADMIN_SCOPE,
+    // which now agrees with DEFAULT_STATIC_SCOPE by default: a site narrows one away from the other
+    // only by naming static.adminScope itself, the prior test's configured case.
+    expect(loadConfig(root).adminScope).toEqual(['src/routes/admin', 'src/lib/admin', 'src/lib/admin-toolkit']);
     expect(loadConfig(root).adminScopeFromConfig).toBe(false);
   });
 
   it('skips a default admin root the tree does not carry, and still returns a report', () => {
     const bare = mkdtempSync(join(tmpdir(), 'cairn-audit-adminscope-'));
     try {
-      mkdirSync(join(bare, 'dist/components'), { recursive: true });
+      mkdirSync(join(bare, 'dist/admin'), { recursive: true });
       mkdirSync(join(bare, 'src/lib/admin-toolkit'), { recursive: true });
-      writeFileSync(join(bare, 'dist/components/cairn-admin.css'), '.type-body { font-size: 1rem }');
+      writeFileSync(join(bare, 'dist/admin/cairn-admin.css'), '.type-body { font-size: 1rem }');
       writeFileSync(join(bare, 'src/lib/admin-toolkit/Field.svelte'), '<div></div>\n');
       // No src/routes/admin: the default admin root this tree does not have. The `sources`
       // walk (default scope `src`) finds the same fixture again as plain text, so the total is
       // two rather than one.
-      const report = runStatic(loadConfig(bare));
+      const report = runStatic(loadConfig(bare), adminRules());
       expect(report.filesScanned).toBe(2);
     } finally {
       rmSync(bare, { recursive: true, force: true });
@@ -478,9 +511,9 @@ describe('static.adminScope', () => {
   it('fails naming a configured static.adminScope root the tree does not have', () => {
     const bare = mkdtempSync(join(tmpdir(), 'cairn-audit-adminscope-throws-'));
     try {
-      mkdirSync(join(bare, 'dist/components'), { recursive: true });
+      mkdirSync(join(bare, 'dist/admin'), { recursive: true });
       mkdirSync(join(bare, 'src/lib/admin-toolkit'), { recursive: true });
-      writeFileSync(join(bare, 'dist/components/cairn-admin.css'), '.type-body { font-size: 1rem }');
+      writeFileSync(join(bare, 'dist/admin/cairn-admin.css'), '.type-body { font-size: 1rem }');
       writeFileSync(join(bare, 'src/lib/admin-toolkit/Field.svelte'), '<div></div>\n');
       const configPath = join(bare, 'cairn-audit.config.json');
       writeFileSync(configPath, JSON.stringify({ static: { adminScope: ['src/admin-missing'] } }));
@@ -488,6 +521,53 @@ describe('static.adminScope', () => {
     } finally {
       rmSync(bare, { recursive: true, force: true });
     }
+  });
+});
+
+// The documented restore form (docs/reference/cairn-audit.md): a site whose own tree still keeps
+// a directory literally named `src/lib/components` (its own convention, unrelated to the engine's
+// own rename) sets `static.scope` to the default roots it has plus that directory, rather than
+// the bare `['src/lib/components']` a literal reading of "restore src/lib/components" might
+// suggest. `static.scope` replaces the defaults outright, so the bare form would silently drop
+// `src/routes/admin` from every static rule.
+describe('static.scope restore form (a site keeping its own src/lib/components)', () => {
+  let siteRoot: string;
+
+  beforeAll(() => {
+    siteRoot = mkdtempSync(join(tmpdir(), 'cairn-audit-restore-form-'));
+    mkdirSync(join(siteRoot, 'dist/admin'), { recursive: true });
+    mkdirSync(join(siteRoot, 'src/routes/admin'), { recursive: true });
+    mkdirSync(join(siteRoot, 'src/lib/components'), { recursive: true });
+    writeFileSync(join(siteRoot, 'dist/admin/cairn-admin.css'), '.type-body { font-size: 1rem }');
+    writeFileSync(join(siteRoot, 'src/routes/admin/+page.svelte'), '<div class="card"></div>\n');
+    writeFileSync(join(siteRoot, 'src/lib/components/Widget.svelte'), '<div class="card"></div>\n');
+  });
+
+  afterAll(() => {
+    rmSync(siteRoot, { recursive: true, force: true });
+  });
+
+  it('brings both roots under every non-adminOnly static rule with the documented restore form', () => {
+    const configPath = join(siteRoot, 'restore-both.json');
+    writeFileSync(
+      configPath,
+      JSON.stringify({ static: { scope: ['src/routes/admin', 'src/lib/components'] } })
+    );
+    const seen: StaticRuleContext[] = [];
+    runStatic(loadConfig(siteRoot, configPath), [probeRule(seen)]);
+    const files = seen.flatMap((ctx) => ctx.files.map((f) => f.file));
+    expect(files).toContain('src/routes/admin/+page.svelte');
+    expect(files).toContain('src/lib/components/Widget.svelte');
+  });
+
+  it('leaves src/routes/admin unread when static.scope names only src/lib/components', () => {
+    const configPath = join(siteRoot, 'restore-only-components.json');
+    writeFileSync(configPath, JSON.stringify({ static: { scope: ['src/lib/components'] } }));
+    const seen: StaticRuleContext[] = [];
+    runStatic(loadConfig(siteRoot, configPath), [probeRule(seen)]);
+    const files = seen.flatMap((ctx) => ctx.files.map((f) => f.file));
+    expect(files).not.toContain('src/routes/admin/+page.svelte');
+    expect(files).toContain('src/lib/components/Widget.svelte');
   });
 });
 
@@ -499,7 +579,7 @@ function reportOf(findings: Finding[], suppressed: Finding[] = []): AuditReport 
 const finding = (tier: 'error' | 'advisory'): Finding => ({
   ruleId: 'type-scale',
   tier,
-  file: 'src/lib/components/EditPage.svelte',
+  file: 'src/lib/admin/EditPage.svelte',
   line: 1842,
   start: 0,
   end: 1,
@@ -529,7 +609,7 @@ describe('exitCodeFor', () => {
 describe('formatReport', () => {
   it('renders each finding with file:line, rule id, and tier', () => {
     const text = formatReport(reportOf([finding('error'), finding('advisory')]));
-    expect(text).toContain('src/lib/components/EditPage.svelte:1842');
+    expect(text).toContain('src/lib/admin/EditPage.svelte:1842');
     expect(text).toContain('error');
     expect(text).toContain('advisory');
     expect(text).toContain('type-scale');

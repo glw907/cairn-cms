@@ -6540,3 +6540,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `src/lib/vite/internal.ts`): a stale file fails the build exactly as a stale manifest does; an
   absent file never fails a build, since no site's `build` script runs `cairn-manifest` yet.
 - **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 7, and the pre-task's "`site-facts.json`" section.
+
+## public-css-export: engine-shipped public stylesheet of role defaults and emitted-class rules  (accept, 2026-09-27, theme identity pass B spec)
+
+- **Verdict:** accept. The defaults are the value half of a contract the engine already owns (the classes it emits into public markup and the tokens those classes and the chassis read). All five sites' copied defaults froze and missed keys added since, a drift an export prevents and a copy cannot.
+- **Reopens on:** evidence that sites diverge from the engine defaults more often than they track them, or a key in the stylesheet that no engine or chassis file reads.
+- **Record:** [theme identity pass B spec](../superpowers/specs/2026-09-27-theme-identity-pass-b-design.md) and [its review fold](../superpowers/research/2026-09-27-theme-pass-b-fold.md), sixth fold, W3.

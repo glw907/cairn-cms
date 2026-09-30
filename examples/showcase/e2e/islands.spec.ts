@@ -1,40 +1,29 @@
 import { test, expect } from '@playwright/test';
 
-// The styleguide's two `:::banner` directives (see +page.server.ts): the first expires in 2999 (always
-// active for this test's purposes), the second expired in 2020 (always expired). Both dates are fixed,
-// so the active/expired split never depends on when the test runs.
-const ACTIVE_MESSAGE = 'Trail conditions updates move to the new radio channel next month.';
-const EXPIRED_MESSAGE = 'Early registration for the spring clinic has closed.';
+// The styleguide's one `:::banner` sample comes from the banner component's own `preview` (see
+// +page.server.ts), which expires in 2999, so the banner is always active and never depends on when
+// the test runs. The expired-banner behavior is covered by banner-component.test.ts.
+const ACTIVE_MESSAGE = 'The trailhead lot reopens in the spring.';
 
 test.describe('content islands', () => {
-  test('renders the active banner and hides the expired one, without JavaScript', async ({
-    browser,
-  }) => {
-    // A no-JS context: the island boundary must still carry real content (the build() fallback), and
-    // the expired banner's fallback must already be hidden at this point, since build() checks expiry
-    // on the server before the client ever runs.
+  test('renders the active banner without JavaScript', async ({ browser }) => {
+    // A no-JS context: the island boundary must still carry real content (the build() fallback).
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     await page.goto('/styleguide');
     await expect(page.locator('.banner')).toHaveCount(1);
     await expect(page.locator('.banner')).toContainText(ACTIVE_MESSAGE);
-    await expect(page.getByText(EXPIRED_MESSAGE)).toHaveCount(0);
     // The live component never mounts without JS.
     await expect(page.getByTestId('banner-live')).toHaveCount(0);
     await context.close();
   });
 
-  test('mounts the live island for the active banner and keeps the expired one hidden', async ({
-    page,
-  }) => {
+  test('mounts the live island for the active banner', async ({ page }) => {
     await page.goto('/styleguide');
     const live = page.getByTestId('banner-live');
     await expect(live).toHaveCount(1);
     await expect(live).toContainText(ACTIVE_MESSAGE);
-    // The expired banner's boundary still mounts a live instance (the runtime hydrates every
-    // `data-cairn-island="banner"` node), but Banner.svelte's own expiry check renders it empty.
-    await expect(page.getByText(EXPIRED_MESSAGE)).toHaveCount(0);
-    await expect(page.locator('[data-cairn-island="banner"]')).toHaveCount(2);
+    await expect(page.locator('[data-cairn-island="banner"]')).toHaveCount(1);
   });
 
   test('re-mounts after a client-side navigation', async ({ page }) => {

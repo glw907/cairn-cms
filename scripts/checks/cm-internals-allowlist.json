@@ -6,9 +6,9 @@
   "cairnPrefix": ".cm-cairn-",
   "chromeFloor": [".cm-tooltip"],
   "enumeratedFiles": [
-    "src/lib/components/spellcheck.ts",
-    "src/lib/components/MarkdownEditor.svelte",
-    "src/lib/components/EditPage.svelte",
-    "src/lib/components/editor-suggestion-popover.ts"
+    "src/lib/admin/spellcheck.ts",
+    "src/lib/admin/MarkdownEditor.svelte",
+    "src/lib/admin/EditPage.svelte",
+    "src/lib/admin/editor-suggestion-popover.ts"
   ]
 }

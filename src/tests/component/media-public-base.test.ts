@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import MediaPicker from '../../lib/components/MediaPicker.svelte';
-import CairnMediaLibrary from '../../lib/components/CairnMediaLibrary.svelte';
-import MediaHeroField from '../../lib/components/MediaHeroField.svelte';
-import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
-import { MEDIA_BASE_CONTEXT_KEY } from '../../lib/components/media-base-context.js';
+import MediaPicker from '../../lib/admin/MediaPicker.svelte';
+import CairnMediaLibrary from '../../lib/admin/CairnMediaLibrary.svelte';
+import MediaHeroField from '../../lib/admin/MediaHeroField.svelte';
+import MarkdownEditor from '../../lib/admin/MarkdownEditor.svelte';
+import { MEDIA_BASE_CONTEXT_KEY } from '../../lib/admin/media-base-context.js';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
 import type { AdminShellData, MediaLibraryData } from '../../lib/sveltekit/content-routes.js';
 import CairnAdminShellMediaHarness from './_CairnAdminShellMediaHarness.svelte';

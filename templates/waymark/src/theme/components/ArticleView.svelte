@@ -169,6 +169,6 @@ identically) depends on everything else staying byte-for-byte the same. -->
   .meta a:focus-visible {
     outline: var(--cairn-focus-ring-outline);
     outline-offset: var(--cairn-focus-ring-offset);
-    border-radius: 2px;
+    border-radius: var(--cairn-focus-ring-radius);
   }
 </style>

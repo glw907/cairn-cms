@@ -16,7 +16,7 @@ const COMPANION_GREEN = [
   "[data-theme='cairn-admin-dark'] { --default-transition-duration: var(--cairn-dur-base); --default-transition-timing-function: var(--cairn-ease-standard); }",
 ].join(' ');
 
-// The built sheet the audit reads (dist/components/cairn-admin.css) emits the two admin theme
+// The built sheet the audit reads (dist/admin/cairn-admin.css) emits the two admin theme
 // roots with double-quoted attribute selectors, not the single-quoted form above; this shape
 // proves the companion assertion's green path against what the build actually ships.
 const COMPANION_GREEN_BUILD_QUOTES = [
@@ -37,7 +37,7 @@ const COMPANION_GREEN_COMMA_JOINED = [
 ].join(' ');
 
 function cssFile(source: string): CssSource {
-  return { file: 'src/lib/components/cairn-admin.css', source };
+  return { file: 'src/lib/admin/cairn-admin.css', source };
 }
 
 function component(markup: string, style?: string): ParsedComponent {

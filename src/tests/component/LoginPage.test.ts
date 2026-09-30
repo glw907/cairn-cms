@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import LoginPage from '../../lib/components/LoginPage.svelte';
+import LoginPage from '../../lib/admin/LoginPage.svelte';
 import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-error-codes.js';
 
 describe('LoginPage', () => {

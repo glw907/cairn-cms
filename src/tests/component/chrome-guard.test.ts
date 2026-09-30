@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { detectChromeWrap } from '../../lib/components/chrome-guard.js';
+import { detectChromeWrap } from '../../lib/admin/chrome-guard.js';
 
 // The data-admin-root attribute is a fixture convenience for locating the test root, not a marker the
 // guard looks for. Production binds the real root through bind:this on the bare data-theme wrapper.

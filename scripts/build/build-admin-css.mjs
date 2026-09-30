@@ -1,7 +1,7 @@
 // Compiles the cairn admin stylesheet: Tailwind utilities plus DaisyUI component classes (built-in
 // themes off, no global Preflight) plus the Warm Stone theme variables, then scopes every rule under
 // the admin data-theme so nothing leaks onto the host's pages. The admin components import the
-// result at dist/components/cairn-admin.css, so the admin styles itself on any host with no host CSS.
+// result at dist/admin/cairn-admin.css, so the admin styles itself on any host with no host CSS.
 import postcss from 'postcss';
 import tailwind from '@tailwindcss/postcss';
 import prefixSelector from 'postcss-prefix-selector';
@@ -12,8 +12,8 @@ import { listDaisyuiClasses } from './daisyui-classes.mjs';
 
 const repoRoot = new URL('../../', import.meta.url);
 const inputPath = fileURLToPath(new URL('scripts/build/admin-css.input.css', repoRoot));
-const outDir = fileURLToPath(new URL('dist/components', repoRoot));
-const outPath = fileURLToPath(new URL('dist/components/cairn-admin.css', repoRoot));
+const outDir = fileURLToPath(new URL('dist/admin', repoRoot));
+const outPath = fileURLToPath(new URL('dist/admin/cairn-admin.css', repoRoot));
 
 // Both admin theme roots, kept low-specificity with :where so the host can always override and the
 // scoped utilities never outrank a host rule on equal class names.
@@ -79,7 +79,7 @@ export async function buildAdminCss({ extraSources = [] } = {}) {
   ]).process(flattened, { from: undefined });
   // The self-hosted fonts are declared here, after compile, so the woff2 url is not rebased by the
   // @import inlining (which resolves it against the source tree instead of the shipped sheet). The
-  // url is relative to this output, dist/components/cairn-admin.css, beside the dist/components/fonts/
+  // url is relative to this output, dist/admin/cairn-admin.css, beside the dist/admin/fonts/
   // files svelte-package copies. IBM Plex Sans is the body and UI face (the same superfamily as
   // the editor's iA Writer Mono, which descends from Plex Mono, so the chrome and the manuscript
   // share one skeleton), Bricolage Grotesque the display accent, and iA Writer Mono the editor

@@ -2,7 +2,7 @@
 
 The admin (`cairn-admin.css`) and the admin toolkit (`@glw907/cairn-cms/admin-toolkit`) both
 assemble their markup from a curated blessed set of daisyUI 5 classes, compiled once by
-`scripts/build/build-admin-css.mjs` from `src/lib/components/admin-css-safelist.ts` plus whatever class
+`scripts/build/build-admin-css.mjs` from `src/lib/admin/admin-css-safelist.ts` plus whatever class
 the `.svelte` sources themselves reference. A daisy release can rename a class, drop one, or
 change what a class renders, and the admin has no other signal that happened: a class the build
 no longer compiles simply stops styling anything, silently, with no error. This ritual is the
@@ -13,15 +13,15 @@ PR for (`.github/dependabot.yml`), not only a major.
 
 1. **Read the daisy changelog** for the version Dependabot is proposing. Note any renamed,
    removed, or behavior-changed class, and any new component that looks useful (see below).
-2. **Rebuild the admin sheet:** `npm run package`. This recompiles `dist/components/cairn-admin.css`
+2. **Rebuild the admin sheet:** `npm run package`. This recompiles `dist/admin/cairn-admin.css`
    against the new daisy version.
 3. **Verify every blessed-set class still compiles.** The grep surface is two places:
-   `src/lib/components/admin-css-safelist.ts` (the classes deliberately compiled ahead of any
+   `src/lib/admin/admin-css-safelist.ts` (the classes deliberately compiled ahead of any
    component referencing them) and each component's own **Exact class inventory** on [the
    admin-toolkit reference page](../reference/admin-toolkit.md) (`StatusChip`, `Pagination`,
    `AdminTable`, `ListToolbar`; `PageHeader` and `EmptyState` carry none). Between the two, every
    class the admin or the toolkit depends on is named somewhere greppable; confirm each one still
-   appears in the rebuilt `dist/components/cairn-admin.css`. A class that vanished is the blast
+   appears in the rebuilt `dist/admin/cairn-admin.css`. A class that vanished is the blast
    radius: trace it to the safelist entry or the component that assembles it before accepting the
    bump.
 4. **Run the visual suite** in `examples/showcase`: `CI=1 npx playwright test admin-visual

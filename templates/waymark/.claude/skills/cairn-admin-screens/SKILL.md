@@ -17,18 +17,23 @@ component usually measure" as data instead of inference from a screenshot.
 ## Tier map
 
 `cairn-audit` (static: `npx cairn-audit`; rendered: `npx cairn-audit --rendered`, against a
-running dev server, both themes) runs thirty-four rules across two modes: seventeen static,
-fifteen error tier and two advisory, and seventeen rendered, seven error and ten advisory. Full
+running dev server, both themes) runs thirty-eight rules across two modes: twenty-one static,
+seventeen error tier and four advisory, and seventeen rendered, seven error and ten advisory. Full
 descriptions live at `node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`, a path from
 your site's root (the installed package's copy).
 
 **Static, error tier:** `no-uncompiled-class`, `type-scale`, `gap-scale`,
 `stock-default-hazards`, `token-colors`, `grammar-boundary`, `focus-parity`, `motion-band`,
 `motion-property`, `motion-vocabulary`, `motion-hover-gate`, `reduced-motion`,
-`stripe-trim-parity`, `unlayered-font-clobber`, `list-role`.
-
-**Static, advisory tier** (promoted to error tier in `0.98.0`): `log-event-grammar`,
+`stripe-trim-parity`, `unlayered-font-clobber`, `list-role`, `log-event-grammar`,
 `log-secret-field`.
+
+**Static, advisory tier**, promoted to error tier at its own named version: `radius-scale`
+(`0.99.0`). `public-literals` reads
+the site's public files instead of the admin surfaces and stays advisory for a consumer, so it has
+no promotion version. `theme-conformance` and `theme-contrast` also read the site's public files,
+need daisyUI installed beside the site (`theme-conformance` needs Tailwind too), and stay advisory
+with no promotion version.
 
 **Rendered, error tier:** `one-filled-action`, `focus-renders`, `interactive-contrast`,
 `touch-targets`, `viewport-overflow`, `panel-width`, `list-role`.
@@ -64,6 +69,32 @@ ratified against a written decision or observed-only. Query by role id (`button-
 `status-chip`, `card`, `table-cell`, `page-title`, and the rest; the full role table is at
 `node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md`, again a path from your site's
 root) before inventing a height or a padding value from scratch.
+
+## Write this, get this
+
+Write the plain daisyUI or cairn role class a screen needs; the theme layer, not the markup, carries the ratified look.
+
+| Write | Get |
+|---|---|
+| `type-title font-[550] font-[family-name:var(--font-display)]` | the page heading, 24px at weight 550, no bold, in the display face. |
+| `type-label font-semibold uppercase tracking-[0.08em] text-muted` | an eyebrow: quiet, uppercase, tracked out. |
+| `font-medium text-subtle` | a resting sidebar item; CairnAdminShell renders the nav itself, no screen writes one directly. |
+| `btn btn-primary` | the one accent-filled commit action on a surface. |
+| `btn btn-ghost` | a quiet button for chrome actions, toolbar controls, and row affordances. |
+| `input` | a single-line text field. |
+| `select` | a native select control. |
+| `card-shell card-shadow` | a floating card surface: the box radius, a hairline edge, and elevation. |
+| `btn` | the plain button: a hairline edge, no fill accent. |
+| `btn btn-neutral` | the ink opener: a solid neutral fill, the first commit-adjacent step up from plain. |
+| `btn btn-soft btn-primary` | the soft primary: a tinted act-on state, softer than the solid commit. |
+| `join-item btn btn-active` | the selected segment in a join or segmented control: a neutral wash plus a state hairline. |
+| `rounded-selector` | the corner for a chip, tag, count, or other small inline marker. |
+| `rounded-field` | the corner for a control, button-like element, or small thumbnail. |
+| `rounded-box` | the corner for a panel, card, tile, popover, sheet, or the brand tile. |
+
+The kit as written markup, from buttons through a card, is in `references/exemplar-kit.md`.
+
+Put a custom admin component under `src/routes/admin` or `src/lib/admin`. Those are the two roots the site's admin sheet compiles (`@source` in `src/admin.css`), and both sit inside `cairn-audit`'s default static scope. A component anywhere else, such as `src/lib/components`, is outside the default audit scope, and a utility only it uses is missing from the compiled admin sheet, so it renders unstyled.
 
 ## Register rules
 
@@ -112,5 +143,5 @@ suppressing a finding is a disguised failure, not a pass.
 ## References
 
 `references/` carries the material that does not need to load every time: the annotated
-exemplars, the form-anatomy contract, the extension grammar, the craft chapter, and the grader
-prompt. See `references/README.md` for what is there and when to reach for it.
+exemplars, the plain-class kit, the form-anatomy contract, the extension grammar, the craft
+chapter, and the grader prompt. See `references/README.md` for what is there and when to reach for it.

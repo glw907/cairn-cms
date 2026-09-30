@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import ComponentForm from '../../lib/components/ComponentForm.svelte';
+import ComponentForm from '../../lib/admin/ComponentForm.svelte';
 import { defineComponent, type ComponentDef } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 

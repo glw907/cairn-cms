@@ -88,6 +88,15 @@ export const alert = defineComponent({
   group: 'Notices',
   icon: 'alert',
   defaultIconByRole: { caution: 'leaf' },
+  // A caution sample: it exercises the role-defaulted icon and the warning tone, the alert's
+  // distinctive state. The editor palette and the styleguide both render it.
+  preview: {
+    attributes: { role: 'caution' },
+    slots: {
+      title: 'Check the trailhead first',
+      body: 'This is what the alert looks like while you fill it in.',
+    },
+  },
   build: (ctx) => {
     const name = ctx.attr('icon');
     const role = ctx.attr('role');

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import NavTree from '../../lib/components/NavTree.svelte';
+import NavTree from '../../lib/admin/NavTree.svelte';
 
 function data(over = {}) {
   return {

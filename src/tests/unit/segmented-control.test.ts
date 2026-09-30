@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { segmentTintClass } from '../../lib/components/segmented-control.js';
+import { segmentTintClass } from '../../lib/admin/segmented-control.js';
 
 // The active-segment ring is the WCAG 1.4.11 non-text contrast cue (a 1px inset hairline), and the
 // design system's measured figures put a 20% base-content mix under the 3:1 floor and a 55% mix

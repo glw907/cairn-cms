@@ -13,7 +13,7 @@ jobs:
         with:
           # The scaffold ships neither .nvmrc nor an engines field, so this pins the version
           # directly rather than reading it from the tree it checks out.
-          node-version: 22
+          node-version: 24
       # The scaffold ships no lockfile (the bake deletes it), so this installs from
       # package.json rather than npm ci.
       - run: npm install

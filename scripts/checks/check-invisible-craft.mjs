@@ -29,6 +29,10 @@
 // engine's CSS-family substrate). Every named root must exist, so a rename fails the gate rather
 // than quietly narrowing it.
 //
+// The run hands `runStatic` every rule except the public-scope ones: this gate's scan roots are its
+// own, so the public scope (and its empty-scope error) has no place in it, and leaving only those
+// rules out keeps every suppression resolving against the same rule set as before.
+//
 // Wired as `npm run check:invisible-craft`.
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -47,7 +51,8 @@ const RULE_IDS = [
 ];
 /** The directories this gate audits, every one of which must exist in the tree. */
 export const SCAN_SCOPE = [
-  'src/lib/components',
+  'src/lib/admin',
+  'src/lib/public',
   'src/lib/admin-toolkit',
   'examples/showcase/src/chassis',
   'examples/showcase/src/routes',
@@ -56,16 +61,18 @@ export const SCAN_SCOPE = [
 /**
  * The admin-only roots `motion-property`, `motion-vocabulary`, and `motion-hover-gate` resolve
  * over instead of `SCAN_SCOPE`: the engine's own admin frame plus the one showcase route that is
- * shaped like a consumer's own admin screen. `DEFAULT_ADMIN_SCOPE` (config.ts) names two roots,
+ * shaped like a consumer's own admin screen. `DEFAULT_ADMIN_SCOPE` (config.ts) names three roots,
  * `src/routes/admin` first; that root does not exist in this tree (the library carries no
  * `src/routes` at all), which is why this gate names its own list rather than taking
- * `DEFAULT_ADMIN_SCOPE`.
+ * `DEFAULT_ADMIN_SCOPE`. `src/lib/public` stays out of this list even though `SCAN_SCOPE` carries
+ * it: it renders public markup, so an admin-only motion rule reading it would gate a site's own
+ * public design rather than its admin frame.
  * `examples/showcase/src/chassis`, `examples/showcase/src/theme`, and the showcase's public
  * routes stay out on purpose: they carry no admin markup, and an admin-only rule reading them
  * would gate a site's own public design rather than its admin frame.
  */
 export const ADMIN_SCOPE = [
-  'src/lib/components',
+  'src/lib/admin',
   'src/lib/admin-toolkit',
   'examples/showcase/src/routes/admin',
 ];
@@ -78,13 +85,12 @@ export const ADMIN_SCOPE = [
  * under `ADMIN_SCOPE`, so the three motion rules read it too; `theme.css` does not, so they do
  * not, while `gap-scale`, `token-colors`, and `motion-band` keep reading both.
  */
-export const CSS_FILES = ['examples/showcase/src/theme/theme.css', 'src/lib/components/cairn-admin.css'];
+export const CSS_FILES = ['examples/showcase/src/theme/theme.css', 'src/lib/admin/cairn-admin.css'];
 
 async function main() {
   try {
-    const { DEFAULT_PALETTE_CSS_FILES, exitCodeFor, formatReport, resolveConfig, runStatic } = await import(
-      '../../dist/audit/index.js'
-    );
+    const { DEFAULT_PALETTE_CSS_FILES, exitCodeFor, formatReport, resolveConfig, runStatic, staticRules } =
+      await import('../../dist/audit/index.js');
     const config = resolveConfig(
       ROOT,
       {
@@ -97,7 +103,7 @@ async function main() {
       },
       (candidate) => existsSync(resolve(ROOT, candidate))
     );
-    const report = scopeReport(runStatic(config), RULE_IDS);
+    const report = scopeReport(runStatic(config, staticRules().filter((rule) => !rule.publicScope)), RULE_IDS);
     console.log(formatReport(report));
     process.exitCode = exitCodeFor(report);
   } catch (err) {

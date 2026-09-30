@@ -7,6 +7,7 @@ import remarkParse from 'remark-parse';
 import remarkDirective from 'remark-directive';
 import remarkStringify from 'remark-stringify';
 import type { Root, RootContent } from 'mdast';
+import { previewValues } from './registry.js';
 import type { ComponentDef, ComponentValues, SlotDef } from './registry.js';
 
 const COLON = ':';
@@ -68,6 +69,16 @@ export function serializeComponent(def: ComponentDef, values: ComponentValues): 
 
   lines.push(fence);
   return lines.join('\n');
+}
+
+/**
+ * A component's `preview` sample as directive markdown, the string the renderer takes, or
+ * `undefined` when the component declares no `preview`. A site walks its registry through this to
+ * render one sample per component.
+ */
+export function previewMarkdown(def: ComponentDef): string | undefined {
+  if (!def.preview) return undefined;
+  return serializeComponent(def, previewValues(def));
 }
 
 // A minimal structural view of a mdast containerDirective node (mdast-util-directive shape).

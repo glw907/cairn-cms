@@ -29,13 +29,10 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
 <script lang="ts">
   import { page } from '$app/state';
   import { browser } from '$app/environment';
-  import {
-    resolveTheme,
-    toggleThemeWithTransition,
-    type ThemeToggleConfig,
-  } from '$chassis/theme-toggle.js';
+  import { resolveTheme, toggleThemeWithTransition } from '$chassis/theme-toggle.js';
   import type { NavNode } from '@glw907/cairn-cms';
   import { isAdminHref } from './admin-link.js';
+  import { themeConfig, type Theme } from '../theme-names.js';
 
   // The root layout server load resolves menus.primary into NavNode[] and hands it down through
   // page.data (both mounts of this component, the (site) layout and the root +error.svelte, sit
@@ -63,20 +60,10 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
     return path === href || path.startsWith(`${href}/`);
   }
 
-  /** The two explicit theme choices; `theme.css` defines both as named DaisyUI themes. */
-  type Theme = 'cairn' | 'cairn-dark';
-
-  /** This theme's own names and cookie, fed to the chassis toggle mechanism below. */
-  const themeConfig: ThemeToggleConfig<Theme> = {
-    light: 'cairn',
-    dark: 'cairn-dark',
-    cookieName: 'cairn-site-theme',
-  };
-
   // The icon is correct on first paint even before any explicit choice exists (resolveTheme reads
-  // `<html>`'s live data-theme, set by the head script, or falls back to the system scheme). Never
+  // `<html>`'s live data-theme, set by the head script, or the scheme the root renders in). Never
   // called during SSR (`browser` guards every call site), so `document`/`window` are always safe.
-  let theme = $state<Theme>(browser ? resolveTheme(themeConfig) : 'cairn');
+  let theme = $state<Theme>(browser ? resolveTheme(themeConfig) : themeConfig.light);
 
   /**
    * Flips the explicit theme via the chassis mechanism, which also persists the choice and gates
@@ -98,7 +85,8 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
     >
       <!-- Nowrap keeps the name on one line at any width; the header's own flex-wrap (above) is what
            makes the row give way, dropping the nav below rather than squeezing the wordmark's letters. -->
-      <span class="whitespace-nowrap font-display text-step-1 font-semibold tracking-tight"
+      <span
+        class="whitespace-nowrap font-display font-heading heading-case text-step-1 tracking-tight"
         >{siteName}</span
       >
     </a>
@@ -132,10 +120,10 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
       <button
         type="button"
         onclick={toggleTheme}
-        aria-label={theme === 'cairn-dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        aria-label={theme === themeConfig.dark ? 'Switch to light mode' : 'Switch to dark mode'}
         class="theme-toggle cairn-focus-ring order-1 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-field text-muted hover:text-base-content md:order-none"
       >
-        {#if theme === 'cairn-dark'}
+        {#if theme === themeConfig.dark}
           <!-- Sun: shown while dark is active, click to switch to light. -->
           <svg
             class="h-5 w-5"

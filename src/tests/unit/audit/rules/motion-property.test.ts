@@ -30,7 +30,7 @@ const FRAME_OFFSET_RULE_TWO_PROPERTIES =
   '{ transition: margin-left 240ms ease, top 240ms ease; }';
 
 function cssFile(source: string): CssSource {
-  return { file: 'src/lib/components/cairn-admin.css', source };
+  return { file: 'src/lib/admin/cairn-admin.css', source };
 }
 
 function check(files: ParsedComponent[], cssFiles: CssSource[] = []): Finding[] {
@@ -310,7 +310,7 @@ describe('motion-property: the frame-offset exception', () => {
     });
     expect(findings).toHaveLength(1);
     expect(findings[0].message).toContain('margin-left');
-    expect(findings[0].file).toBe('src/lib/components/cairn-admin.css');
+    expect(findings[0].file).toBe('src/lib/admin/cairn-admin.css');
   });
 });
 

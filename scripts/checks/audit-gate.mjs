@@ -8,7 +8,9 @@
  * Restrict a full audit report to one gate's own rule ids. A directive naming a rule this gate does
  * not own must never read as dead just because this gate did not ask for that rule, so the
  * restriction happens here, after `runStatic` has already resolved every suppression against the
- * full rule set, never by handing `runStatic` a narrowed rule list itself.
+ * gate's rule set, never by handing `runStatic` a list narrowed to the gate's own rules. The set a
+ * wrapper does hand `runStatic` leaves out only the public-scope rules, which read a scope no
+ * wrapper names.
  * @param {AuditReport} report
  * @param {string[]} ruleIds the rule ids this gate owns
  * @returns {AuditReport}

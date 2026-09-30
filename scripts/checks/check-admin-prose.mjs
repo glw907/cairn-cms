@@ -1,7 +1,9 @@
 // cairn-cms: the admin-copy prose gate. It scans the user-facing strings in the admin components
-// (`src/lib/components/*.svelte`) for AI-writing tells and fails on a hit. The component copy ships
-// compiled inside the published package, so a consuming site's `prose-guard` hook never sees it (it
-// would only ever scan that site's own source). The copy can only be guarded here, in this repo.
+// (`src/lib/admin/*.svelte`) plus the built-in public components (`src/lib/public/*.svelte`, whose
+// banner ships user-facing copy too) for AI-writing tells and fails on a hit. The component copy
+// ships compiled inside the published package, so a consuming site's `prose-guard` hook never sees
+// it (it would only ever scan that site's own source). The copy can only be guarded here, in this
+// repo.
 //
 // This is a self-contained port of the BLOCKING layer of the workstation `prose-guard` tool
 // (~/.local/bin/prose-guard), using its "general" (marketing-facing) tier, which is the right tier
@@ -21,7 +23,13 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const COMPONENTS_DIR = join(ROOT, 'src', 'lib', 'components');
+const ADMIN_DIR = join(ROOT, 'src', 'lib', 'admin');
+const PUBLIC_DIR = join(ROOT, 'src', 'lib', 'public');
+// Every barrel this gate scans, relative-path tag first so a reported finding names which one.
+const SCAN_DIRS = [
+  { tag: 'admin', dir: ADMIN_DIR },
+  { tag: 'public', dir: PUBLIC_DIR },
+];
 
 // --- The general-tier blocking lists, ported verbatim from prose-guard. ---
 
@@ -218,37 +226,41 @@ export function extractTsCopy(src) {
 
 // --- Driver. ---
 
-// The admin component files, sorted, as plain names under COMPONENTS_DIR.
-/** @returns {string[]} */
-function componentFiles() {
-  return readdirSync(COMPONENTS_DIR)
+// The Svelte component files under one scanned barrel, sorted, each carrying its tag and full path.
+/**
+ * @param {{ tag: string, dir: string }} scope
+ * @returns {{ label: string, path: string }[]}
+ */
+function componentFiles({ tag, dir }) {
+  return readdirSync(dir)
     .filter((f) => f.endsWith('.svelte'))
-    .sort();
+    .sort()
+    .map((f) => ({ label: `${tag}/${f}`, path: join(dir, f) }));
 }
 
 // Read one scanned file's extracted copy, choosing the extractor by extension.
 /**
- * @param {string} file
+ * @param {{ label: string, path: string }} entry
  * @returns {string[]}
  */
-function copyForFile(file) {
-  const src = readFileSync(join(COMPONENTS_DIR, file), 'utf8');
-  return file.endsWith('.ts') ? extractTsCopy(src) : extractCopy(src);
+function copyForFile(entry) {
+  const src = readFileSync(entry.path, 'utf8');
+  return entry.path.endsWith('.ts') ? extractTsCopy(src) : extractCopy(src);
 }
 
 // Print every extracted string, grouped by file. Backs the `--list` flag.
-/** @param {string[]} files */
+/** @param {{ label: string, path: string }[]} files */
 function listCopy(files) {
   for (const file of files) {
     const copy = copyForFile(file);
     if (copy.length === 0) continue;
-    console.log(`\n${file}`);
+    console.log(`\n${file.label}`);
     for (const s of copy) console.log(`  ${s}`);
   }
 }
 
 // Scan every file, report each tell on stderr, and exit 1 on any hit (0 when clean).
-/** @param {string[]} files */
+/** @param {{ label: string, path: string }[]} files */
 function scanCopy(files) {
   let hits = 0;
   for (const file of files) {
@@ -256,7 +268,7 @@ function scanCopy(files) {
     for (const s of copy) {
       for (const issue of scan(s)) {
         hits += 1;
-        console.error(`${file}: [${issue.kind}]`);
+        console.error(`${file.label}: [${issue.kind}]`);
         console.error(`  "${s}"`);
         console.error(`  ${issue.hint}`);
       }
@@ -272,10 +284,14 @@ function scanCopy(files) {
 }
 
 function main() {
-  // The Svelte components plus the named `.ts` copy modules, the latter checked for existence so a
-  // rename surfaces here rather than silently dropping its coverage.
-  const tsModules = TS_COPY_MODULES.filter((f) => existsSync(join(COMPONENTS_DIR, f)));
-  const files = [...componentFiles(), ...tsModules];
+  // The Svelte components under every scanned barrel, plus the named `.ts` copy modules (admin-only
+  // today), the latter checked for existence so a rename surfaces here rather than silently
+  // dropping its coverage.
+  const tsModules = TS_COPY_MODULES.filter((f) => existsSync(join(ADMIN_DIR, f))).map((f) => ({
+    label: `admin/${f}`,
+    path: join(ADMIN_DIR, f),
+  }));
+  const files = [...SCAN_DIRS.flatMap(componentFiles), ...tsModules];
   if (process.argv.includes('--list')) listCopy(files);
   else scanCopy(files);
 }

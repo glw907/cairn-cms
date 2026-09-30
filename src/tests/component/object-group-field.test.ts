@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import ObjectGroupField from '../../lib/components/ObjectGroupField.svelte';
+import ObjectGroupField from '../../lib/admin/ObjectGroupField.svelte';
 import type { NamedField } from '../../lib/content/types.js';
 import type { ObjectField } from '../../lib/content/fields.js';
 

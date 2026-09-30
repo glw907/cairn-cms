@@ -609,26 +609,26 @@ describe('checkComponentProps (composed)', () => {
   });
 });
 
-describe('the props gate is clean on the real /components surface (Task 7)', () => {
+describe('the props gate is clean on the real /admin surface (Task 7)', () => {
   // The corpus is the real exported component set, read the same way main() does: every default
-  // export of dist/components/index.d.ts, diffed against its own section on components.md.
-  const componentsEntry = CONFIG.find((e: { subpath: string }) => e.subpath === '/components')!;
-  const indexPath = resolve(ROOT, componentsEntry.dts);
-  const pageText = readFileSync(resolve(ROOT, componentsEntry.page), 'utf8');
+  // export of dist/admin/index.d.ts, diffed against its own section on admin.md.
+  const adminEntry = CONFIG.find((e: { subpath: string }) => e.subpath === '/admin')!;
+  const indexPath = resolve(ROOT, adminEntry.dts);
+  const pageText = readFileSync(resolve(ROOT, adminEntry.page), 'utf8');
 
   it(
     'finds no missing or promoted props on any real exported component',
     () => {
       const names = enumerateExports(indexPath);
       expect(names.length).toBeGreaterThan(10); // a corpus sanity floor, never a hard-coded list
-      // /components also carries a plain type export or two (EditorApi) with no matching
+      // /admin also carries a plain type export or two (EditorApi) with no matching
       // `.svelte.d.ts`, by design; checkComponentProps now throws on a genuinely missing
       // declaration (round B), so this corpus is pre-filtered to real component exports the same
       // way main() is: by the *source* file, not the dist output, so a missing dist declaration
       // for a genuine component would still reach the throw rather than being silently dropped.
       const offenders = names
-        .filter((name) => existsSync(resolve(ROOT, `src/lib/components/${name}.svelte`)))
-        .map((name) => checkComponentProps(name, resolve(ROOT, `dist/components/${name}.svelte.d.ts`), pageText))
+        .filter((name) => existsSync(resolve(ROOT, `src/lib/admin/${name}.svelte`)))
+        .map((name) => checkComponentProps(name, resolve(ROOT, `dist/admin/${name}.svelte.d.ts`), pageText))
         .filter((r): r is NonNullable<typeof r> => r !== null)
         .filter((r) => r.noSection || r.missing.length > 0 || r.promoted.length > 0);
       expect(offenders).toEqual([]);
@@ -639,7 +639,7 @@ describe('the props gate is clean on the real /components surface (Task 7)', () 
   );
 
   it('keeps MarkdownEditor\'s registerEditor free of any bare register* callback', () => {
-    const names = componentPropsNames(resolve(ROOT, 'dist/components/MarkdownEditor.svelte.d.ts'))!;
+    const names = componentPropsNames(resolve(ROOT, 'dist/admin/MarkdownEditor.svelte.d.ts'))!;
     const bareRegisterCallbacks = names.filter((n) => n.startsWith('register') && n !== 'registerEditor');
     expect(bareRegisterCallbacks).toEqual([]);
     expect(names).toContain('registerEditor');
@@ -648,5 +648,24 @@ describe('the props gate is clean on the real /components surface (Task 7)', () 
   it('keeps spellcheckTest out of MarkdownEditor\'s stable snippet', () => {
     const section = componentSectionWindow('MarkdownEditor', pageText)!;
     expect(promotedUnstableProps('MarkdownEditor', section)).toEqual([]);
+  });
+});
+
+describe('the props gate is clean on the real /public surface', () => {
+  // The corpus is the real exported component set on the split-off public barrel: every default
+  // export of dist/public/index.d.ts, diffed against its own section on public.md.
+  const publicEntry = CONFIG.find((e: { subpath: string }) => e.subpath === '/public')!;
+  const indexPath = resolve(ROOT, publicEntry.dts);
+  const pageText = readFileSync(resolve(ROOT, publicEntry.page), 'utf8');
+
+  it('finds no missing or promoted props on any real exported component', () => {
+    const names = enumerateExports(indexPath);
+    expect(names.length).toBeGreaterThan(0);
+    const offenders = names
+      .filter((name) => existsSync(resolve(ROOT, `src/lib/public/${name}.svelte`)))
+      .map((name) => checkComponentProps(name, resolve(ROOT, `dist/public/${name}.svelte.d.ts`), pageText))
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+      .filter((r) => r.noSection || r.missing.length > 0 || r.promoted.length > 0);
+    expect(offenders).toEqual([]);
   });
 });

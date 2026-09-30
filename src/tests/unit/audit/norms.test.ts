@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import {
   buildManifest,
@@ -10,6 +11,8 @@ import {
   MIN_OBSERVATION_SITES,
   NORM_ROLES,
   OPEN_DESIGN_QUESTIONS,
+  RATIFIED_NORMS,
+  ROLE_RECIPES,
 } from '../../../lib/audit/norms.js';
 import type {
   NormEntry,
@@ -507,6 +510,66 @@ describe('the query', () => {
     });
     expect(printed).toContain('OPEN:');
     expect(printed).toContain(FIXTURE_OPEN_QUESTION.question);
+  });
+});
+
+describe('ROLE_RECIPES', () => {
+  const ratifiedRoles = [...new Set(RATIFIED_NORMS.map((norm) => norm.role))];
+  const normRoleIds = new Set(NORM_ROLES.map((role) => role.id));
+
+  it('names exactly one row for every ratified role', () => {
+    for (const role of ratifiedRoles) {
+      const rows = ROLE_RECIPES.filter((recipe) => recipe.role === role);
+      expect(rows, `expected exactly one recipe row for ${role}, found ${rows.length}`).toHaveLength(1);
+    }
+  });
+
+  it("names a NORM_ROLES id wherever a row sets one", () => {
+    for (const recipe of ROLE_RECIPES) {
+      if (recipe.role === undefined) continue;
+      expect(normRoleIds.has(recipe.role), `${recipe.role} is not a NORM_ROLES id`).toBe(true);
+    }
+  });
+
+  // The typo check: a hand-typed class in a Write string can drift from what the sheet actually
+  // compiles or the fixture actually renders. Every token has to be attested by one of the two
+  // sources a recipe row is allowed to come from, so a misspelled class fails here rather than
+  // shipping silently into the guidance the table feeds.
+  it('attests every Write token against the admin sheet inventory or the theme-kit fixture source', () => {
+    const inventory = new Set(
+      readFileSync(new URL('../fixtures/admin-sheet-inventory.txt', import.meta.url), 'utf8')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+    );
+    const fixtureSource = readFileSync(
+      new URL('../../../../examples/showcase/src/routes/admin/theme-kit/+page.svelte', import.meta.url),
+      'utf8'
+    );
+    for (const recipe of ROLE_RECIPES) {
+      for (const token of recipe.write.split(/\s+/)) {
+        const attested = inventory.has(token) || fixtureSource.includes(token);
+        expect(
+          attested,
+          `"${token}" in the Write string "${recipe.write}" is not in the admin sheet inventory or the theme-kit fixture`
+        ).toBe(true);
+      }
+    }
+  });
+});
+
+describe('the norms print carries a recipe line', () => {
+  const manifest = loadNormsManifest();
+
+  it('prints a recipe line under a role a row names', () => {
+    const printed = formatNormsQuery(queryNorms(manifest, 'button-primary'));
+    expect(printed).toContain('recipe: btn btn-primary');
+    expect(printed).toContain('the one accent-filled commit action');
+  });
+
+  it('prints no recipe line for a role no row names', () => {
+    const printed = formatNormsQuery(queryNorms(manifest, 'icon'));
+    expect(printed).not.toContain('recipe:');
   });
 });
 

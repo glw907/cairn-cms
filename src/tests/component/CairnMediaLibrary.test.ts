@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { tick } from 'svelte';
 import { stringify as devalueStringify } from 'devalue';
-import CairnMediaLibrary from '../../lib/components/CairnMediaLibrary.svelte';
+import CairnMediaLibrary from '../../lib/admin/CairnMediaLibrary.svelte';
 // The compiled sheet's real DaisyUI sizing, injected only for the tile-title-width suite below,
 // the same reason ConceptList's narrow/wide extremes suite does (an unstyled render leaves
 // UA-default widths, which never reproduces a real truncation defect).
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 import { mediaLibraryEntry } from '../../lib/media/library-entry.js';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
 import type { MediaLibraryData } from '../../lib/sveltekit/content-routes.js';
@@ -23,16 +23,16 @@ import type {
   MediaAltPropagateFailure,
 } from '../../lib/sveltekit/content-routes-media-metadata.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
-import * as ingest from '../../lib/components/client-ingest.js';
+import * as ingest from '../../lib/admin/client-ingest.js';
 import { gotoCalls, gotoOptsCalls } from './_app-navigation.js';
 
 // The Replace upload step reuses the 2b ingest helpers. ESM namespaces are not configurable in the
 // browser pool, so the helpers cannot be spied directly: mock the module so ingestFile and sendUpload
 // are controllable per test while the pure helpers (buildUploadRequest, the failure taxonomy) stay
 // real, exactly as the MediaInsertPopover suite does.
-vi.mock('../../lib/components/client-ingest.js', async () => {
-  const actual = await vi.importActual<typeof import('../../lib/components/client-ingest.js')>(
-    '../../lib/components/client-ingest.js',
+vi.mock('../../lib/admin/client-ingest.js', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/admin/client-ingest.js')>(
+    '../../lib/admin/client-ingest.js',
   );
   return { ...actual, ingestFile: vi.fn(), sendUpload: vi.fn() };
 });

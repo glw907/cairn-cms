@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
-import ComponentInsertDialog, { insertableDefs } from '../../lib/components/ComponentInsertDialog.svelte';
+import ComponentInsertDialog, { insertableDefs } from '../../lib/admin/ComponentInsertDialog.svelte';
 import { defineComponent, defineRegistry, type ComponentDef, type ComponentValues } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import { serializeComponent } from '../../lib/render/component-grammar.js';

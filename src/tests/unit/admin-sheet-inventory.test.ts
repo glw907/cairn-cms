@@ -5,7 +5,7 @@ import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { parseSheet } from '../../lib/audit/sheet.js';
 
 // CONTRACT (issue #12): the shipped sheet's class inventory is a de facto public API. A consumer's
-// admin markup rides dist/components/cairn-admin.css, not cairn's own tree, so a class Tailwind
+// admin markup rides dist/admin/cairn-admin.css, not cairn's own tree, so a class Tailwind
 // tree-shakes out of the compiled sheet silently breaks any consumer markup still riding it, with no
 // build error anywhere. This gate snapshots the FULL class inventory the compiled sheet ships and
 // diffs it against the committed fixture below; either direction of drift is a failure. A class may

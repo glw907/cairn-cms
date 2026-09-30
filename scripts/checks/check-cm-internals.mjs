@@ -54,9 +54,9 @@ function main() {
   const allow = JSON.parse(readFileSync(resolve(ROOT, 'scripts/checks/cm-internals-allowlist.json'), 'utf8'));
   const enumerated = new Set(allow.enumeratedFiles);
   const failures = [];
-  // Staleness guard: any file under src/lib/components that mentions `.cm-` MUST be enumerated. HAS_CM is
+  // Staleness guard: any file under src/lib/admin that mentions `.cm-` MUST be enumerated. HAS_CM is
   // stateless, so this cannot skip a file the way a reused global .test() would.
-  for (const file of walk(resolve(ROOT, 'src/lib/components'), (n) => n.endsWith('.ts') || n.endsWith('.svelte'))) {
+  for (const file of walk(resolve(ROOT, 'src/lib/admin'), (n) => n.endsWith('.ts') || n.endsWith('.svelte'))) {
     const rel = relative(ROOT, file).split('\\').join('/');
     if (HAS_CM.test(readFileSync(file, 'utf8')) && !enumerated.has(rel)) {
       failures.push(`un-enumerated file contains .cm-: ${rel}`);

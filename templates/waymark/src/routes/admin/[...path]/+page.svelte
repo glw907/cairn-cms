@@ -5,7 +5,7 @@ every /admin view. The adapter's render, registry, and icons thread through for 
 preview pane, insert palette, and guided form fields.
 -->
 <script lang="ts">
-  import { CairnAdmin } from '@glw907/cairn-cms/components';
+  import { CairnAdmin } from '@glw907/cairn-cms/admin';
   import type { AdminData } from '@glw907/cairn-cms/sveltekit';
   import { cairn } from '$theme/cairn.config.js';
   import type { ActionData } from './$types';

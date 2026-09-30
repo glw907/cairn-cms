@@ -14,6 +14,9 @@ component the ledger does not explain is a finding to raise, not a pattern to co
 `references/daisyui-first.md` carries the current answer for every place cairn's own admin
 already diverges from stock DaisyUI, and why.
 
+Restyling the public site (a theme token, `prose.css`, a directive's rules, a public component) is
+`cairn-public`, not a row below.
+
 ## The router
 
 Each row names a pattern, the atom that builds it, the seam it lives behind, and the shipped

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   uploadOutcome,
   type UploadOutcome,
-} from '../../lib/components/media-upload-outcome.js';
+} from '../../lib/admin/media-upload-outcome.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 // `UploadResult` retired from the public barrel (4b, Task 1); still exported at its declaring
 // module, which this test imports directly.

@@ -70,7 +70,7 @@ The suggestion popover pass (spec `docs/superpowers/specs/2026-06-30-cairn-cm-in
 realized the writing-surface/chrome rule for the spellcheck and objective-error popover:
 
 - **The recipe DOM replaces the built-in tooltip.** `cairnSuggestionPopover`
-  (`src/lib/components/editor-suggestion-popover.ts`) is a pure `StateField` that maps the caret onto the
+  (`src/lib/admin/editor-suggestion-popover.ts`) is a pure `StateField` that maps the caret onto the
   diagnostic under it via the public `forEachDiagnostic`, and provides the resulting `Tooltip` through the
   public `showTooltip` facet. The `create` callback builds `.cairn-cm-suggest` DOM directly: a
   `role="group"` container, a `.cairn-cm-suggest__msg` message line, and a `.cairn-cm-suggest__actions`
@@ -86,7 +86,7 @@ realized the writing-surface/chrome rule for the spellcheck and objective-error 
 - **The coupling floor is enforced, not just documented.** `npm run check:cm-internals`
   (`scripts/checks/check-cm-internals.mjs`, wired into CI) reads an allowlist of writing-surface content classes
   plus the single `.cm-tooltip` chrome floor, and fails on any other `.cm-*` chrome class or a dynamically
-  composed one. Any file under `src/lib/components` that mentions `.cm-` must be enumerated in the
+  composed one. Any file under `src/lib/admin` that mentions `.cm-` must be enumerated in the
   allowlist, so a new chrome touch cannot slip in silently.
 - **One recipe serves two diagnostic kinds.** The popover renders `Diagnostic.message` and
   `Diagnostic.actions` generically, so it is not spellcheck-specific: the same DOM and theme back the
@@ -102,7 +102,7 @@ realized the writing-surface/chrome rule for the spellcheck and objective-error 
   departs from `MediaInsertPopover`'s modal shape).
 - **The underline token was tuned, not re-architected.** `--cairn-warning-ink` stays the locked color; the
   shipped tune is a 1px `text-decoration-thickness` and a `0.22em` `text-underline-offset`, both applied in
-  `lockedUnderlineTheme` (`src/lib/components/spellcheck.ts`).
+  `lockedUnderlineTheme` (`src/lib/admin/spellcheck.ts`).
 
 The popover deliberately does not copy `MediaInsertPopover`'s `role="dialog" aria-modal="true"` focus trap.
 A modal fits an image-insert flow the editor deliberately opens and must dismiss; the suggestion popover is

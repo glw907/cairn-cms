@@ -1,0 +1,1235 @@
+<!--
+@component
+The `MarkdownEditor` seam (spec §6, seam 5): a thin wrapper over CodeMirror 6 exposing a bindable
+value and, through the one `registerEditor` grant, the whole buffer-scoped `EditorApi`. CodeMirror is
+client-only, so it mounts after the component does through a dynamic import; until then a plain
+textarea carries the value so the form still submits, and the hidden field mirrors the value
+throughout. The host owns the toolbar and the card chrome, driving selection transforms through
+`EditorApi.format`; the design-accurate preview lives in EditPage through the adapter's render.
+Swapping the editor stays a one-file change.
+-->
+<script module lang="ts">
+  import type { FigureAtImage, FormatKind } from './markdown-format.js';
+  import type { MediaLibrary } from '../media/library-entry.js';
+  import type { ComponentRegistry } from '../render/registry.js';
+
+  /** The directive container at the caret: the opener's name, the block's markdown, and the
+   *  document character offsets of its inclusive line range. */
+  interface ComponentAtCaret {
+    name: string | null;
+    markdown: string;
+    from: number;
+    to: number;
+  }
+
+  /** The buffer-scoped editing surface `registerEditor` hands the host on mount, once per mounted
+   *  editor: every capability the host can drive against the buffer, insertion, selection, the
+   *  view, history, and the tidy/image-placeholder subsystems, as one uniform grant, since the
+   *  host is always EditPage, which always needs the whole surface. */
+  export interface EditorApi {
+    // Insertion: writes directly into the document.
+    /** Inserts block text at the cursor, separated from adjacent text by a blank line where text
+     *  touches it; the palette calls it. It is for blocks only: mid-paragraph it splits the
+     *  paragraph at the caret rather than inserting inline. */
+    insert: (text: string) => void;
+    /** Inserts an inline link at the current selection; the link picker calls it. */
+    insertLink: (href: string, title: string) => void;
+    /** Inserts an inline image at the caret; the media picker and the capture card call it with the
+     *  chosen alt and the full `media:slug.hash` reference. */
+    insertImage: (alt: string, ref: string) => void;
+    /** Overwrites a document span with new text and drops the caret after it; the dialog's Update
+     *  calls it to write an edited block back over its original range. */
+    replaceRange: (from: number, to: number, text: string) => void;
+
+    // Selection: reads or transforms the current selection.
+    /** Returns the selected text; the web link dialog reads it for its Text field's default. */
+    getSelection: () => string;
+    /** Returns the selection's document offsets, or null when the selection is empty (a bare
+     *  caret); the tidy host reads it so a selection tidy maps onto the exact selected span. */
+    getSelectionRange: () => { from: number; to: number } | null;
+    /** Selects a document span, focuses the editor, and scrolls the range into view; the needs-alt
+     *  notice's jump control calls it to land the author on an image that lacks alt text. */
+    selectRange: (from: number, to: number) => void;
+    /** Transforms the current selection by a named format kind (`bold`, `italic`, `h2`, ...); the
+     *  host's toolbar calls it. */
+    format: (kind: FormatKind) => void;
+
+    // View: viewport geometry and focus.
+    /** Returns the caret's viewport coordinates, for the insert popover to anchor to the cursor.
+     *  Null before mount or when the caret has no measurable position. */
+    caretCoords: () => { left: number; right: number; top: number; bottom: number } | null;
+    /** Returns focus to the editor surface; the insert popover calls it on close or Escape. */
+    focus: () => void;
+
+    // History.
+    /** Undoes the last editor transaction; the "Undo tidy" chip calls it to take a whole applied
+     *  tidy back in one move (the apply lands as one history entry). */
+    undo: () => void;
+
+    // Subsystems: composed capability objects rather than plain callbacks.
+    /** The tidy apply api (spec 2.5): the review surface drives the in-buffer decorations and the
+     *  accept/reject state machine through it. The author's original stays in the buffer until an
+     *  accept writes; a reject or reject-all leaves it byte-identical. */
+    tidy: import('./editor-tidy.js').TidyApi;
+    /** The optimistic-placeholder api: the insert popover drives the upload loop through it (begin
+     *  lands a placeholder at the caret, progress moves its bar, resolveTo swaps it for the
+     *  committed image text, cancel removes it leaving the source untouched). */
+    imagePlaceholders: import('./editor-placeholder.js').ImagePlaceholderApi;
+  }
+
+  /** The frozen Extension-API surface: a site mounting `MarkdownEditor` directly can depend on
+   *  these across minors. */
+  export interface StableEditorProps {
+    /** The markdown source; bindable so the parent reads edits back. */
+    value: string;
+    /** The hidden field name the value is mirrored to for form submit. */
+    name: string;
+    /** Receives the buffer-scoped `EditorApi` once, on mount; the host drives every editor
+     *  capability (insert, selection, format, undo, tidy, image placeholders, ...) through it.
+     *  Delivers `null` once, from the real `onDestroy` teardown, revoking the grant: a host
+     *  holding one `editor` reference should null it out only when the revoked value is the one
+     *  it currently holds (a reference compare), since an out-of-order destroy from a superseded
+     *  `{#key}` instance must never clobber a newer, already-live grant. */
+    registerEditor?: (api: EditorApi | null) => void;
+    /** Generic CodeMirror completion sources wired into the editor; the link autocomplete is one. The
+     *  type is referenced inline so no static `@codemirror/*` import sits in this client-only file. */
+    completionSources?: import('@codemirror/autocomplete').CompletionSource[];
+    /** Focus mode: dim every line outside the caret's paragraph. Off by default. */
+    focusMode?: boolean;
+    /** Typewriter scroll: hold the cursor line at vertical center while typing. Off by default. */
+    typewriter?: boolean;
+    /** The surface posture. Prose is the writing instrument (72ch measure, larger type, looser
+     *  leading); markup is the working surface (fills the card, denser). Prose by default. */
+    surface?: 'prose' | 'markup';
+    /** Spellcheck and the objective-error layer: the markdown-aware lint underlines. On by default;
+     *  when off the lint compartment reconfigures to empty (the underlines vanish, the Worker stays
+     *  idle). The footer toggle drives this. */
+    spellcheck?: boolean;
+    /** The dialect-resolved dictionary filename, e.g. "dictionary-en-us.txt", from EditData. The
+     *  source resolves it to a real asset URL and hands it to the spellcheck Worker's init. Defaults to
+     *  US English. */
+    spellcheckDictionary?: string;
+    /** The committed personal-dictionary words (spec 1.6), from EditData.siteDictionary. The lint
+     *  source seeds the spellcheck Worker's personal layer with these at init, so a word another editor
+     *  committed answers correct from the first lint. Empty by default (dialect-only). */
+    siteDictionary?: ReadonlyArray<string>;
+  }
+
+  /** `EditPage`'s own wiring, exposed on the component because `EditPage` composes `MarkdownEditor`
+   *  rather than wrapping it, with no stability promise across minors: a site that reaches past
+   *  `EditPage` for one of these should expect it to move or change shape. */
+  export interface UnstableEditorProps {
+    /** Called with the first image File of a paste or drop onto the surface; the host opens the
+     *  capture card with the bytes. A paste or drop carrying no image falls through untouched. */
+    onImageIngest?: (file: File) => void;
+    /** The picker's human layer per stored asset, keyed by the 16-hex content hash (EditData's
+     *  `mediaLibrary`). The source decoration reads it to render a `media:` token as a thumbnail chip;
+     *  reactive, so a just-uploaded image decorates once it joins the library. Empty by default. */
+    mediaLibrary?: MediaLibrary;
+    /** The published fragment titles the include: source decoration resolves a
+     *  `::include{fragment="id"}` chip's label against, keyed by fragment id (EditData's
+     *  `fragmentTargets`, projected to id -\> title). A resolved include line always chips; an id
+     *  absent from this map falls back to naming the chip from the raw id. Empty by default. */
+    fragmentTitles?: import('./editor-include.js').FragmentTitles;
+    /** Reports the directive container at the caret (or null when outside any container) whenever
+     *  the reported value changes; the host resolves it against the registry to offer Edit-block. */
+    onComponentAtCaret?: (info: ComponentAtCaret | null) => void;
+    /** Reports the media image at the caret (or null when the caret is not on one) whenever the
+     *  reported value changes; the host opens the figure control over it to wrap, edit, or unwrap a
+     *  `:::figure`. The figure transforms write source through `EditorApi.replaceRange`. */
+    onMediaImageAtCaret?: (info: FigureAtImage | null) => void;
+    /** The caller-owned pending personal-dictionary additions. When an author chooses "Add to
+     *  dictionary" the lint source adds the lowercased word here (the underline clears at once); the
+     *  host (EditPage) commits this set through the dictionaryAdd action at save time and reconciles
+     *  it against the merged response. A fresh set by default. */
+    pendingAdditions?: Set<string>;
+    /** Test-only seam for the spellcheck Worker. The real wasm and dictionary assets are resolved with
+     *  `import.meta.url` and do not load under the vitest browser dev server, so the component test
+     *  injects a deterministic fake Worker factory and asks the lint source to skip the `ready` wait.
+     *  When this is absent the production path is untouched: the real `new Worker(...)` and the real
+     *  asset resolution. Never set this outside a test; pinned documented-unstable (see
+     *  `docs/reference/admin.md`), never promoted into `StableEditorProps`. */
+    spellcheckTest?: {
+      createWorker?: () => import('./spellcheck.js').SpellWorker;
+      assumeReady?: boolean;
+    };
+    /** Tidy mode: while a tidy review is open the surface is read-only the way Preview disables the
+     *  toolbar, so the author cannot edit underneath a pending review. The host sets this when it opens
+     *  the review and clears it on apply or cancel. Off by default. */
+    tidyMode?: boolean;
+    /** Reports the settled spelling and style diagnostic counts on the same debounced cadence as the
+     *  diagnostics-summary announcer, so a visible footer count can track it without a second,
+     *  independently timed read of the diagnostic set. */
+    onDiagnosticsCounts?: (counts: import('./editor-diagnostics-announcer.js').DiagnosticCounts) => void;
+    /** Whether every component block folds the moment the editor mounts, so an entry opens with its
+     *  blocks collapsed and its prose readable at a glance (Geoff's pre-beta ruling). Off by default,
+     *  since most render callers, and every fold-invariant test, want blocks open on mount; EditPage
+     *  turns this on for the real entry-editing surface. The safety invariant governs a fold this
+     *  creates exactly as it governs a manual one: a touch or an edit reaching it springs it open. */
+    foldOnMount?: boolean;
+    /** The site's component registry. The fold pill and the gutter fold control resolve a folded
+     *  block's directive name through it, so a block reads its human `label` (falling back to the
+     *  raw directive name for an engine-native directive like `include`, or one the registry does
+     *  not carry); the pill's tooltip also carries the matched component's `use` line, when it has
+     *  one. Absent, both fall back to the raw directive name with no tooltip, today's behavior. */
+    registry?: ComponentRegistry;
+  }
+</script>
+
+<script lang="ts">
+  import { onMount, onDestroy, getContext } from 'svelte';
+  import { applyMarkdownFormat, figureAtImage, insertImage as insertImageFormat, insertInlineLink, type FormatResult } from './markdown-format.js';
+  import { fenceScan, caretContainerRange, directiveOpenerName } from './markdown-directives.js';
+  import { padInsertedBlock, paddedInsertSpan } from './insert-padding.js';
+  import { firstImageFile, guardDropTarget } from './client-ingest.js';
+  import { htmlToMarkdown } from './paste-html-to-markdown.js';
+  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
+
+  interface Props extends StableEditorProps, UnstableEditorProps {}
+
+  let {
+    value = $bindable(),
+    name,
+    registerEditor,
+    onImageIngest,
+    mediaLibrary = {},
+    fragmentTitles = {},
+    onComponentAtCaret,
+    onMediaImageAtCaret,
+    completionSources = [],
+    focusMode = false,
+    typewriter = false,
+    surface = 'prose',
+    spellcheck = true,
+    spellcheckDictionary = 'dictionary-en-us.txt',
+    siteDictionary = [],
+    pendingAdditions = new Set<string>(),
+    spellcheckTest,
+    tidyMode = false,
+    onDiagnosticsCounts,
+    foldOnMount = false,
+    registry,
+  }: Props = $props();
+
+  // The delivery base the media chips compose their thumbnails under. editor-media.ts is a
+  // CodeMirror extension and cannot read Svelte context itself, so the base is read here at init and
+  // handed to it. `CairnAdminShell` provides the site's resolved base to every authed descendant
+  // through this key; a bare mount outside it (the reproductions module, a test) resolves to the
+  // /media default.
+  const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
+
+  let host = $state<HTMLDivElement | null>(null);
+  let mounted = $state(false);
+  // The CodeMirror view, untyped at the runtime boundary because @codemirror/* loads only in the
+  // browser. The type-only `import(...)` annotation is erased; the value import is dynamic in onMount,
+  // so the server bundle never pulls CodeMirror (guarded by the editor-boundary test).
+  let view: import('@codemirror/view').EditorView | null = null;
+  // The writing-mode extensions live in their own compartments so the toolbar toggles swap them
+  // in and out of the mounted editor without rebuilding it. Assigned in onMount with the rest of
+  // the dynamic editor modules.
+  let modes: typeof import('./editor-modes.js') | null = null;
+  let focusCompartment: import('@codemirror/state').Compartment | null = null;
+  let typewriterCompartment: import('@codemirror/state').Compartment | null = null;
+  let surfaceCompartment: import('@codemirror/state').Compartment | null = null;
+  // The media: source decoration lives in its own compartment, reconfigured when the mediaLibrary
+  // prop changes so a just-uploaded image decorates the moment it joins the library. The media
+  // module loads with the other dynamic editor modules in onMount.
+  let mediaCompartment: import('@codemirror/state').Compartment | null = null;
+  let mediaMod: typeof import('./editor-media.js') | null = null;
+  // The include: source decoration lives in its own compartment, reconfigured when the
+  // fragmentTitles prop changes, mirroring the media compartment above. The include module loads
+  // with the other dynamic editor modules in onMount.
+  let includeCompartment: import('@codemirror/state').Compartment | null = null;
+  let includeMod: typeof import('./editor-include.js') | null = null;
+  // The spellcheck lint source (and the objective-error layer it bundles) live in their own
+  // compartment, reconfigured to empty when the footer toggle turns spellcheck off. Both surfaces ride
+  // the one extension cairnSpellcheck returns, so one compartment gates both. The extension is built
+  // asynchronously (it lazy-imports CodeMirror and the lint modules), so it is held here once resolved
+  // and the on/off effect reconfigures against it.
+  let spellcheckCompartment: import('@codemirror/state').Compartment | null = null;
+  let spellcheckExt: import('@codemirror/state').Extension | null = null;
+  // The tidy decoration field lives in its own compartment (entering and leaving tidy is a reconfigure,
+  // not a rebuild) beside the media and fold decorations. A second compartment carries the read-only +
+  // edit-disable extension while a review is open, so the author cannot edit underneath a pending
+  // review (the same posture Preview takes on the toolbar). Both load with the other editor modules.
+  let tidyMod: typeof import('./editor-tidy.js') | null = null;
+  let tidyCompartment: import('@codemirror/state').Compartment | null = null;
+  let tidyReadonlyCompartment: import('@codemirror/state').Compartment | null = null;
+  let tidyReadonlyExt: import('@codemirror/state').Extension | null = null;
+  // The posture themes, swapped through the surface compartment. Each owns its type step and
+  // leading (the base theme deliberately sets neither on the content node, so the postures never
+  // contest it on adoption order). Built in onMount beside the base theme.
+  let proseTheme: import('@codemirror/state').Extension | null = null;
+  let markupTheme: import('@codemirror/state').Extension | null = null;
+  // The posture theme the surface compartment carries, at initial configure and at every later
+  // reconfigure. The `?? []` is a checker artifact rather than a reachable state: onMount assigns
+  // both holders before anything here runs, but it assigns them through a call the checker cannot
+  // follow, so the null branch has to be spelled out.
+  function surfaceTheme(posture: 'prose' | 'markup'): import('@codemirror/state').Extension {
+    return (posture === 'prose' ? proseTheme : markupTheme) ?? [];
+  }
+  // The base theme lives in its own compartment because CodeMirror's dark flag is baked into a
+  // theme extension at construction, and the admin theme can flip under a mounted editor (the
+  // topbar toggle, or a host driving CairnAdminShell's themeOverride). A flip rebuilds all three
+  // themes at the new polarity and reconfigures this compartment and the surface one together, so
+  // the base chrome the admin sheet does not reach (the autocomplete tooltip, the panels) follows
+  // the theme instead of holding its first-mount polarity. The observer below is what notices.
+  let themeCompartment: import('@codemirror/state').Compartment | null = null;
+  // The history annotation an insert carries so it is its own undo step. Assigned in onMount with
+  // the rest of the dynamic editor modules; the mounted insert path only runs after that.
+  let isolateHistory: typeof import('@codemirror/commands').isolateHistory | null = null;
+  let themeObserver: MutationObserver | null = null;
+
+  onMount(async () => {
+    const viewMod = await import('@codemirror/view');
+    const stateMod = await import('@codemirror/state');
+    const markdownMod = await import('@codemirror/lang-markdown');
+    const commandsMod = await import('@codemirror/commands');
+    isolateHistory = commandsMod.isolateHistory;
+    const languageMod = await import('@codemirror/language');
+    const lintMod = await import('@codemirror/lint');
+    const autocompleteMod = await import('@codemirror/autocomplete');
+    const highlightMod = await import('./editor-highlight.js');
+    const modesMod = await import('./editor-modes.js');
+    const foldingMod = await import('./editor-folding.js');
+    const placeholderMod = await import('./editor-placeholder.js');
+    const announcerMod = await import('./editor-diagnostics-announcer.js');
+    mediaMod = await import('./editor-media.js');
+    includeMod = await import('./editor-include.js');
+    tidyMod = await import('./editor-tidy.js');
+    const spellcheckMod = await import('./spellcheck.js');
+
+    if (!host) return;
+
+    const { EditorView, keymap } = viewMod;
+    // Mirror the admin theme into CodeMirror's own dark flag, so its base chrome (the autocomplete
+    // tooltip above all) renders dark-on-dark instead of light-on-dark. The theme root is an
+    // ancestor element, not a prop, so the value is read from the DOM and re-read whenever that
+    // element's attribute changes; themeRoot is held for the observer set up after the view exists.
+    const themeRoot = host.closest('[data-theme]');
+    const readIsDark = () => themeRoot?.getAttribute('data-theme')?.includes('dark') ?? false;
+    let isDark = readIsDark();
+    // The directive machinery treatment: rails, not bands. A row at depth N draws every rail
+    // 1..N as literal nested brackets: 2px accent bars on an 8px pitch (x offsets 0-2, 8-10,
+    // and 16-18) with 6px of surface between them (three times the bar weight, so nested bars
+    // separate cleanly instead of reading as one thick rule), stacked as inset box shadows (top
+    // layer first, so each bar sits over the spacer and deeper bar beneath it). The alphas step through the per-theme vars in
+    // cairn-admin.css; the fallbacks are the light values, so the editor still renders sensibly
+    // outside an admin theme wrapper. On a fence line the colon runs, brackets, and {attrs}
+    // braces dim to the marker tone while the name and label keep a depth-stepped ink. Leaf and
+    // inline directives keep a fixed 8% accent chip; the accent ink holds AA on it (4.75:1
+    // light, 5.20:1 dark).
+    const railFallbacks = ['72%', '82%', '92%'];
+    const railColor = (step: number | 'active', fallback: string) =>
+      `color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-${step}, ${fallback}), transparent)`;
+    // With `active`, the row's own (deepest) bar takes the full-strength -active mix at the same
+    // 2px width. The emphasis is strength only: a rail column carrying both an active and a
+    // quiet segment (two sibling containers at one depth) keeps one weight top to bottom. A paired
+    // opener row paints its full rail like any other fence row; the fold chevron lives in the gutter
+    // column left of the rails, so the opener no longer drops its innermost bar.
+    const rails = (depth: number, active = false): string => {
+      const layers: string[] = [];
+      for (let d = 1; d <= depth; d++) {
+        const edge = 8 * d - 6;
+        if (d > 1) layers.push(`inset ${edge - 2}px 0 0 0 var(--color-base-100, oklch(99% 0.004 75))`);
+        const own = active && d === depth;
+        layers.push(
+          `inset ${edge}px 0 0 0 ${own ? railColor('active', '100%') : railColor(d, railFallbacks[d - 1] ?? '92%')}`,
+        );
+      }
+      return layers.join(', ');
+    };
+    const directiveInk = {
+      backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+      color: 'var(--color-accent)',
+    };
+    // The rail rules, one quiet and one caret-active pair per visual depth step (deeper nesting
+    // shares the third step). Fence and content rows at a depth share a rule, so a fence and its
+    // body rail identically. The caret-active selector adds the caret-block class, so it outranks
+    // its quiet twin on any contested row and the caret's container reads one step stronger.
+    const railRules: Record<string, { boxShadow: string }> = {};
+    for (const depth of [1, 2, 3]) {
+      const row = (prefix: string) =>
+        `${prefix}.cm-cairn-directive-fence.cm-cairn-depth-${depth}, ${prefix}.cm-cairn-directive-content.cm-cairn-depth-${depth}`;
+      railRules[row('')] = { boxShadow: rails(depth) };
+      railRules[row('.cm-cairn-caret-block')] = { boxShadow: rails(depth, true) };
+    }
+    // Built per polarity rather than once: a theme extension carries CodeMirror's dark flag, so a
+    // later theme flip rebuilds these at the new value and reconfigures them in.
+    const buildBaseTheme = (dark: boolean) => EditorView.theme(
+      {
+        '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '1rem' },
+        // The 60vh floor keeps the surface reading as the page's center stage even when the
+        // entry is short, and because the contenteditable content area carries the height, a
+        // click in the empty space below the text still lands in the editor and focuses it.
+        // No inner measure cap: the surface fills the card the way a code editor fills its
+        // pane, and the card's own width (the host caps it near 89ch of this face) is the one
+        // constraint. The surface carries tables, attributed directives, and long URLs, so the
+        // ceiling leans toward the code-editor end of the ergonomic band rather than the
+        // long-form ideal; paragraphs wrap comfortably below it.
+        '.cm-content': {
+          // The theme roots set --font-editor to the self-hosted iA Writer Mono; the inline
+          // fallback keeps the surface monospace outside an admin theme wrapper.
+          fontFamily: "var(--font-editor, ui-monospace, monospace)",
+          // Vertical padding holds at least one line-height of the body (1.8 x 1rem), with a
+          // touch more below than above (the optical center sits high); the sides then read as
+          // gutters rather than letterboxing.
+          padding: '2rem 1.25rem 2.5rem',
+          minHeight: '60vh',
+        },
+        '.cm-cursor': { borderLeftColor: 'var(--color-primary)' },
+        // A quiet always-on focus hairline. :focus-visible is no escape here: browsers treat a
+        // focused text-entry surface as keyboard-modal, so a 2px ring would shout through every
+        // typing session. One subtle line keeps focus visible (WCAG 2.4.7) without competing
+        // with the manuscript. The 70% primary mix clears the 3:1 non-text contrast floor
+        // (WCAG 1.4.11) on both themes (3.23:1 light, 3.32:1 dark), where 45% measured near 2:1.
+        '&.cm-focused': {
+          outline: '1px solid color-mix(in oklab, var(--color-primary) 70%, transparent)',
+          outlineOffset: '-1px',
+        },
+        // Zen is the no-chrome mode, so the always-on hairline above reads as a resting frame
+        // the moment the editor is focused, which is effectively always while writing. Suppress
+        // it there (higher specificity than the bare rule above wins regardless of source order),
+        // but keep a real focus indicator for actual keyboard navigation: .cm-content is the
+        // element that receives DOM focus, so :focus-visible applies to it directly, no :has()
+        // needed. The `.cairn-editor-zen` marker is the editor card's own class, toggled by
+        // EditPage's `zen` state.
+        '.cairn-editor-zen &.cm-focused': { outline: 'none' },
+        '.cairn-editor-zen & .cm-content:focus-visible': {
+          outline: '1px solid color-mix(in oklab, var(--color-primary) 70%, transparent)',
+          outlineOffset: '-1px',
+        },
+        '.cm-line': { padding: '0' },
+        // A quote or list line hangs its wrapped continuation under the content: padding-left
+        // holds the marker width (the --cairn-hang the decoration sets) and the line's own
+        // negative text-indent (set inline) pulls the first line back, so the marker sits in the
+        // indent. This rule sits before the gutter rule so a container content line, which
+        // carries both classes, takes the gutter-plus-hang rule below.
+        '.cm-cairn-hang': { paddingLeft: 'var(--cairn-hang, 0ch)' },
+        // The gutter: directive rows pad left so the text clears the deepest rail stack (the
+        // depth-3 bar ends at 18px; 1.75rem keeps 10px of air beyond it). Static structure
+        // (caret-independent), so caret movement shifts no layout. The --cairn-hang term composes
+        // a quote/list marker's hang on top of the gutter; it defaults to 0 on rows without one.
+        '.cm-cairn-directive-fence, .cm-cairn-directive-content': {
+          paddingLeft: 'calc(1.75rem + var(--cairn-hang, 0ch))',
+        },
+        ...railRules,
+        '.cm-cairn-directive-mark': { color: 'var(--color-muted)' },
+        '.cm-cairn-directive-label': { color: 'var(--color-accent)' },
+        '.cm-cairn-directive-label.cm-cairn-depth-2': { color: 'var(--cairn-directive-ink-2, oklch(50% 0.16 300))' },
+        '.cm-cairn-directive-label.cm-cairn-depth-3': { color: 'var(--cairn-directive-ink-3, oklch(48% 0.16 300))' },
+        // Cursor-aware emphasis for the label ink: the caret's container takes the strongest
+        // ink, through the -active variable in cairn-admin.css. This selector TIES the depth
+        // rules above at two classes, so its place after them breaks the tie in its favor.
+        '.cm-cairn-caret-block .cm-cairn-directive-label': {
+          color: 'var(--cairn-directive-ink-active, oklch(46% 0.16 300))',
+        },
+        '.cm-cairn-directive-leaf': directiveInk,
+        '.cm-cairn-directive-inline': directiveInk,
+        // The media: source chip: the inline widget that stands in for a media reference token, in the
+        // directive accent language (the 8% accent chip, the accent ink that holds AA on it). An
+        // inline-flex pill carrying a small thumbnail and the asset's display name, so a reference
+        // reads as the image it points at without leaving the source view.
+        '.cm-cairn-media-chip': {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.3em',
+          verticalAlign: 'baseline',
+          padding: '0.05em 0.4em 0.05em 0.25em',
+          borderRadius: '0.375rem',
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+          color: 'var(--color-accent)',
+          fontFamily: 'var(--font-body, ui-sans-serif, sans-serif)',
+          fontSize: '0.8125rem',
+          lineHeight: '1.4',
+        },
+        // The thumbnail: a small square crop, curved to match the chip. object-fit keeps a
+        // non-square source from distorting. A faint border lifts a light image off the chip tint.
+        '.cm-cairn-media-thumb': {
+          width: '1.4em',
+          height: '1.4em',
+          objectFit: 'cover',
+          borderRadius: '0.25rem',
+          border: '1px solid color-mix(in oklab, var(--color-accent) 20%, transparent)',
+          flex: '0 0 auto',
+        },
+        '.cm-cairn-media-name': {
+          fontWeight: '500',
+          // Keep a long name from stretching the line; the title and the picker carry the full text.
+          maxWidth: '18ch',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        },
+        // The needs-alt marker: a glyph plus a label, never hue alone (the spec accessibility rule).
+        // It rides the warning tone so it reads as a caution, with the label spelling out the state.
+        // The text uses --cairn-warning-ink, the on-surface warning text token, not --color-warning
+        // (a fill tone that fails small-text contrast on the light chip tint, WCAG 1.4.3). The ink
+        // holds AA on the chip's tint on both themes and stands apart from the accent name.
+        '.cm-cairn-media-needs-alt': {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.2em',
+          color: 'var(--cairn-warning-ink, oklch(50% 0.13 70))',
+          fontSize: '0.6875rem',
+          fontWeight: '600',
+          textTransform: 'uppercase',
+          letterSpacing: '0.02em',
+        },
+        '.cm-cairn-media-needs-alt-glyph': { fontSize: '0.85em', lineHeight: '1' },
+        // The figure/role pill: a small bordered pill carrying the placement role (or "figure" for
+        // the measure default) when a media token sits inside a :::figure, in the directive accent
+        // language. The accent ink and a color-mix accent border on the base-100 surface read as a
+        // quiet tag beside the name. The ink is theme-defined, so it holds contrast in both themes
+        // (confirmed visually). A bare token renders no pill at all.
+        '.cm-cairn-media-role': {
+          fontFamily: 'var(--font-body, ui-sans-serif, sans-serif)',
+          fontSize: '0.625rem',
+          fontWeight: '600',
+          letterSpacing: '0.01em',
+          color: 'var(--color-accent)',
+          backgroundColor: 'var(--color-base-100)',
+          border: '1px solid color-mix(in oklab, var(--color-accent) 35%, transparent)',
+          borderRadius: '0.3rem',
+          padding: '0.04rem 0.34rem',
+          flex: '0 0 auto',
+        },
+        // The optimistic upload placeholder: an inline pill in the accent language, carrying a small
+        // thumbnail of the image the author is placing and a determinate progress bar beneath it. It
+        // stands in for the committed image text only while the upload runs; on resolve the seam
+        // swaps it for the real reference, and on failure the seam removes it (the source untouched).
+        // The accent tint matches the media chip so the two read as one visual family.
+        '.cm-cairn-media-placeholder': {
+          display: 'inline-flex',
+          flexDirection: 'column',
+          gap: '0.2em',
+          verticalAlign: 'baseline',
+          padding: '0.2em 0.35em',
+          borderRadius: '0.375rem',
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+          border: '1px solid color-mix(in oklab, var(--color-accent) 20%, transparent)',
+        },
+        '.cm-cairn-media-placeholder-thumb': {
+          width: '2.4em',
+          height: '2.4em',
+          objectFit: 'cover',
+          borderRadius: '0.25rem',
+          // A gentle pulse marks the placeholder as in-flight; reduced-motion drops it below.
+          opacity: '0.85',
+        },
+        // The determinate bar: native <progress> restyled to the accent ink so the fill reads as the
+        // upload's progress. Sized to the thumbnail width so the pill stays compact.
+        '.cm-cairn-media-placeholder-bar': {
+          width: '2.4em',
+          height: '0.3em',
+          appearance: 'none',
+          border: '0',
+          borderRadius: '0.15em',
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 18%, transparent)',
+          overflow: 'hidden',
+        },
+        '.cm-cairn-media-placeholder-bar::-webkit-progress-bar': {
+          backgroundColor: 'transparent',
+        },
+        // The fill snaps to each progress tick rather than easing: `width` is a layout property
+        // the admin's motion language does not transition, and the widget is recreated on every
+        // tick anyway (PlaceholderWidget.eq() in editor-placeholder.ts), so no previous value
+        // survives for a transition to run from.
+        '.cm-cairn-media-placeholder-bar::-webkit-progress-value': {
+          backgroundColor: 'var(--color-accent)',
+          borderRadius: '0.15em',
+        },
+        '.cm-cairn-media-placeholder-bar::-moz-progress-bar': {
+          backgroundColor: 'var(--color-accent)',
+          borderRadius: '0.15em',
+        },
+        // The include: source chip: the atomic widget that stands in for a resolved
+        // `::include{fragment="id"}` leaf directive line, in the directive accent language (the same
+        // 8% accent chip the media and leaf/inline directives use). It replaces the whole line, so
+        // there is no separate "role pill" the way the media chip carries one; the label and the
+        // resolved title are its entire content.
+        '.cm-cairn-include-chip': {
+          display: 'inline-flex',
+          alignItems: 'center',
+          padding: '0.05em 0.5em',
+          borderRadius: '0.375rem',
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+          color: 'var(--color-accent)',
+          fontFamily: 'var(--font-body, ui-sans-serif, sans-serif)',
+          fontSize: '0.8125rem',
+          lineHeight: '1.4',
+        },
+        '.cm-cairn-include-label': { fontWeight: '600' },
+        '.cm-cairn-include-name': { fontWeight: '500' },
+        // Container folding lives in a real gutter column now, not an in-text band. The gutter is a
+        // fixed-x column left of the content; the chevron is empty at rest and reveals on hovering
+        // the gutter cell (the VS Code / Zed / Obsidian standard), forced on when folded or when the
+        // caret is inside the container. One rotating chevron in the directive ink; the rails carry
+        // depth, so the ink does not restep. The lone gutter's wrapper loses its default background
+        // and border so the column blends into the quiet surface.
+        // Neutralize the gutter wrapper so the column blends in. This assumes the fold gutter is the
+        // only gutter (it is today: no lineNumbers or foldGutter in the build); a future line-number
+        // or lint gutter would need its own chrome and a narrower selector here.
+        '.cm-gutters': { backgroundColor: 'transparent', border: '0', color: 'inherit' },
+        // 24px wide so the cell clears the WCAG 2.5.8 target-size floor unconditionally.
+        '.cm-cairn-fold-gutter': { width: '24px' },
+        '.cm-cairn-fold-gutter .cm-gutterElement': { display: 'flex', alignItems: 'stretch', padding: '0' },
+        '.cm-cairn-fold-btn': {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          padding: '0',
+          background: 'transparent',
+          border: '0',
+          cursor: 'pointer',
+          color: 'var(--cairn-directive-ink-2, oklch(50% 0.16 300))',
+        },
+        '.cm-cairn-fold-btn svg': {
+          width: '11px',
+          height: '11px',
+          // Empty at rest; the gutter-cell hover, the folded state, and the caret-active state each
+          // force it on. A quick fade in and out, and a quick rotate for the folded turn.
+          opacity: '0',
+          transition: 'opacity var(--cairn-dur-quick) var(--cairn-ease-standard), transform var(--cairn-dur-quick) var(--cairn-ease-standard)',
+        },
+        // Reveal on gutter-cell hover, on the folded and caret-active states, and on keyboard focus
+        // so a focused control shows its glyph, not just the ring.
+        '.cm-cairn-fold-gutter .cm-gutterElement:hover .cm-cairn-fold-btn svg, .cm-cairn-fold-btn:focus-visible svg, .cm-cairn-fold-folded svg, .cm-cairn-fold-active svg':
+          { opacity: '1' },
+        // Folded rotates the single chevron to point right; caret-active takes the stronger ink.
+        '.cm-cairn-fold-folded svg': { transform: 'rotate(-90deg)' },
+        '.cm-cairn-fold-active': { color: 'var(--cairn-directive-ink-active, oklch(46% 0.16 300))' },
+        // A visible focus ring for keyboard users landing on the gutter button or the pill, reusing
+        // the surface hairline's 70% primary mix (3:1+ non-text contrast on both themes).
+        '.cm-cairn-fold-btn:focus-visible': {
+          outline: '2px solid color-mix(in oklab, var(--color-primary) 70%, transparent)',
+          outlineOffset: '-2px',
+          borderRadius: '4px',
+        },
+        '.cm-cairn-fold-pill:focus-visible': {
+          outline: '2px solid color-mix(in oklab, var(--color-primary) 70%, transparent)',
+          outlineOffset: '1px',
+        },
+        // No-hover pointers (touch) cannot reveal on hover, so the rest-state chevron is persistent
+        // and legible. Scoped to the rest state (not folded, not caret-active) so those forced-on
+        // states still read at full strength on touch rather than this rule clamping them to 0.65.
+        '@media (hover: none)': {
+          '.cm-cairn-fold-btn:not(.cm-cairn-fold-folded):not(.cm-cairn-fold-active) svg': { opacity: '0.65' },
+        },
+        // Respect a reduced-motion preference: drop the chevron fade/rotate and the unfold flash.
+        '@media (prefers-reduced-motion: reduce)': {
+          '.cm-cairn-fold-btn svg': { transition: 'none' },
+          '.cm-cairn-fold-flash': { transition: 'none' },
+        },
+        // The folded-row wash: a soft accent tint, square and full-row, returning as a STATE signal
+        // so folded spots read in a scan. The rails are inset box-shadows on the same line element
+        // and render above this background, so the rail column runs through the wash unbroken.
+        '.cm-cairn-folded-row': {
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 7%, transparent)',
+        },
+        // The fold pill: the placeholder widget and the screen-reader story, a real focusable
+        // button counting the hidden lines in accent ink. The 30% accent border lifts on hover.
+        '.cm-cairn-fold-pill': {
+          fontFamily: 'var(--font-body, ui-sans-serif, sans-serif)',
+          fontSize: '0.6875rem',
+          color: 'var(--color-accent)',
+          border: '1px solid color-mix(in oklab, var(--color-accent) 30%, transparent)',
+          borderRadius: '0.375rem',
+          padding: '1px 7px',
+          marginLeft: '10px',
+          verticalAlign: '1px',
+          backgroundColor: 'var(--color-base-100)',
+          cursor: 'pointer',
+        },
+        '.cm-cairn-fold-pill:hover': {
+          borderColor: 'color-mix(in oklab, var(--color-accent) 60%, transparent)',
+        },
+        // The pill's registry label truncates past ~24 characters (a long component label should
+        // not crowd the pill); the count sits outside this span as a bare text node, so it is
+        // never subject to the ellipsis.
+        '.cm-cairn-fold-pill-label': {
+          display: 'inline-block',
+          maxWidth: '24ch',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          verticalAlign: 'bottom',
+        },
+        // The one-time unfold flash: a low-alpha accent background on the revealed lines, removed
+        // after the animation. The transition runs as the field clears the class.
+        '.cm-cairn-fold-flash': {
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 12%, transparent)',
+          transition: 'background-color var(--cairn-dur-base) var(--cairn-ease-standard)',
+        },
+        // Focus mode's dim ink, on the lines editor-modes marks outside the caret's paragraph.
+        // Last on purpose: a dimmed line's spans (markers, tokens, directive labels) all drop to
+        // the dim tone, and spec order breaks the specificity ties with the label rules above.
+        // The fallback is the light theme's value, like the rail fallbacks. Backgrounds flatten
+        // along with the ink: the dim tone on the code chip or an 8% accent chip measures under
+        // the design's 3:1 floor, so a dimmed line keeps no tinted chip behind its text. The
+        // span arm outranks the chip rules on specificity (the highlight style's generated
+        // class, the inline-directive mark); the line arm covers the leaf chip, where spec
+        // order breaks the tie.
+        '.cm-cairn-focus-dim, .cm-cairn-focus-dim span, .cm-cairn-focus-dim .cm-cairn-directive-label': {
+          color: 'var(--cairn-focus-dim-ink, oklch(66% 0.01 75))',
+          backgroundColor: 'transparent',
+        },
+        // The fold pill dims with its folded opener row like any machinery line (the pill is a
+        // widget inside the line). The gutter chevron lives in a separate DOM column that focus-dim
+        // cannot reach by descendant selector, and it is already hidden at rest and forced visible
+        // only when folded or caret-active, so a folded chevron stays findable without a dim rule.
+        '.cm-cairn-focus-dim .cm-cairn-fold-pill': {
+          color: 'var(--cairn-focus-dim-ink, oklch(66% 0.01 75))',
+        },
+        '.cm-cairn-focus-dim.cm-cairn-folded-row': { backgroundColor: 'transparent' },
+        // The rails dim with their text: the rail color-mix reads --cairn-directive-rail-N per
+        // element, so overriding the percentages on dimmed lines re-resolves every bar in place.
+        // Without this the directive block keeps full-strength bars and becomes the one
+        // chromatic object in the dimmed field. The active step needs the override too: focus
+        // mode's lit unit is the caret PARAGRAPH while the caret-block class spans the whole
+        // container, so a container holding a blank line has dimmed rows that still carry the
+        // active rail.
+        '.cm-cairn-focus-dim': {
+          '--cairn-directive-rail-1': 'var(--cairn-focus-dim-rail-1, 24%)',
+          '--cairn-directive-rail-2': 'var(--cairn-focus-dim-rail-2, 28%)',
+          '--cairn-directive-rail-3': 'var(--cairn-focus-dim-rail-3, 32%)',
+          '--cairn-directive-rail-active': 'var(--cairn-focus-dim-rail-active, 36%)',
+        },
+        // Tidy review decorations (spec 2.5). The author's original stays in the buffer; a deletion run
+        // strikes through in --cairn-error-ink (reserved for tidy deletions) and the proposed insertion
+        // shows as decoration content in --color-positive-ink (the locked addition token). The two are
+        // a locked pair: deletion red and insertion green never speak the same color, so the author sees
+        // exactly what tidy removes and what it adds. Both carry a non-color cue (the strike-through and
+        // the leading marker) so the change reads without hue alone.
+        '.cm-cairn-tidy-del': {
+          color: 'var(--cairn-error-ink, oklch(50% 0.19 25))',
+          textDecoration: 'line-through',
+          textDecorationThickness: '1px',
+          backgroundColor: 'color-mix(in oklab, var(--cairn-error-ink, oklch(50% 0.19 25)) 12%, transparent)',
+          borderRadius: '2px',
+        },
+        '.cm-cairn-tidy-del-marker': {
+          // A small leading wedge in the deletion ink, the non-color marker that pairs with the red.
+          display: 'inline-block',
+          width: '0',
+          borderLeft: '2px solid var(--cairn-error-ink, oklch(50% 0.19 25))',
+          height: '1em',
+          verticalAlign: '-0.15em',
+          marginRight: '1px',
+        },
+        '.cm-cairn-tidy-ins': {
+          color: 'var(--color-positive-ink, oklch(48% 0.12 150))',
+          backgroundColor: 'color-mix(in oklab, var(--color-positive-ink, oklch(48% 0.12 150)) 16%, transparent)',
+          borderRadius: '2px',
+          padding: '0 1px',
+          marginLeft: '2px',
+          // The non-color cue for an insertion: a leading caret glyph in the addition ink.
+          '&::before': { content: '"+"', fontSize: '0.8em', opacity: '0.7', marginRight: '1px' },
+        },
+      },
+      { dark },
+    );
+
+    // The prose posture: the writing instrument. A 72ch measure centered in the card, one type
+    // step up, looser leading. Markup posture (the base theme) keeps the dense fill for tables,
+    // directives, and long URLs. Placed after the base theme in the extension list, so its keys
+    // win the spec-order ties.
+    const buildProseTheme = (dark: boolean) =>
+      EditorView.theme(
+        {
+          // Scoped to the content node (not the editor root) so the base theme's root font-size
+          // never contests it, and so the 72ch measure resolves against the prose type step.
+          '.cm-content': { fontSize: '1.125rem', lineHeight: '1.85', maxWidth: '72ch', margin: '0 auto' },
+        },
+        { dark },
+      );
+    const buildMarkupTheme = (dark: boolean) =>
+      EditorView.theme({ '.cm-content': { lineHeight: '1.8' } }, { dark });
+
+    // The three themes at one polarity. The posture pair lands in the module-level holders the
+    // surface compartment and its effect read; the base theme is returned for this compartment.
+    const buildThemes = (dark: boolean) => {
+      proseTheme = buildProseTheme(dark);
+      markupTheme = buildMarkupTheme(dark);
+      return buildBaseTheme(dark);
+    };
+    const theme = buildThemes(isDark);
+
+    modes = modesMod;
+    focusCompartment = new stateMod.Compartment();
+    typewriterCompartment = new stateMod.Compartment();
+    surfaceCompartment = new stateMod.Compartment();
+    mediaCompartment = new stateMod.Compartment();
+    includeCompartment = new stateMod.Compartment();
+    spellcheckCompartment = new stateMod.Compartment();
+    themeCompartment = new stateMod.Compartment();
+    tidyCompartment = new stateMod.Compartment();
+    tidyReadonlyCompartment = new stateMod.Compartment();
+    // The read-only posture while a tidy review is open: EditorState.readOnly bars edits, and
+    // editable: false drops the contenteditable so the surface is inert under the review (the same
+    // posture Preview takes). The compartment starts empty and the tidyMode effect swaps this in.
+    tidyReadonlyExt = [stateMod.EditorState.readOnly.of(true), viewMod.EditorView.editable.of(false)];
+    // Build the spellcheck extension once: the lint source resolves the dictionary asset URL from the
+    // dialect-resolved filename and posts it to the Worker's init. The compartment starts with the
+    // extension only when spellcheck is on, so a site that opens with it off never spins up the Worker.
+    spellcheckExt = await spellcheckMod.cairnSpellcheck({
+      dictionaryFile: spellcheckDictionary,
+      // Seed the Worker's personal layer from the committed site dictionary, and share the host's
+      // pending-additions set so an add-to-dictionary choice records here for the host to commit.
+      siteWords: siteDictionary,
+      pendingAdditions,
+      // Hand the lint source the editor's own CodeMirror module instances so its extension lands on the
+      // same copies; a separate dynamic import can resolve to a different instance and break instanceof.
+      modules: { lint: lintMod, language: languageMod, view: viewMod, state: stateMod },
+      // The test seam: a deterministic fake Worker and the skip-ready flag, both straight through to the
+      // lint source. Absent in production, where the real Worker and real asset resolution run.
+      createWorker: spellcheckTest?.createWorker,
+      assumeReady: spellcheckTest?.assumeReady,
+    });
+
+    view = new EditorView({
+      parent: host,
+      state: stateMod.EditorState.create({
+        doc: value,
+        extensions: [
+          focusCompartment.of(focusMode ? modesMod.focusMode() : []),
+          typewriterCompartment.of(typewriter ? modesMod.typewriterScroll() : []),
+          commandsMod.history(),
+          keymap.of([...autocompleteMod.completionKeymap, ...commandsMod.defaultKeymap, ...commandsMod.historyKeymap]),
+          // The GFM base (strikethrough, tables, task lists, autolink) over the commonmark
+          // default. markdown() also wires markdownKeymap (Enter continues a list, Backspace
+          // removes an empty marker) at high precedence through its addKeymap default.
+          markdownMod.markdown({ base: markdownMod.markdownLanguage }),
+          ...(completionSources.length
+            ? // interactionDelay 0: the popup opens only on an explicit `[[` trigger, so the default
+              // accidental-accept guard adds no value and would swallow an immediate Enter into a newline.
+              [autocompleteMod.autocompletion({ override: completionSources, interactionDelay: 0 })]
+            : []),
+          EditorView.lineWrapping,
+          languageMod.syntaxHighlighting(highlightMod.cairnHighlightStyle()),
+          highlightMod.cairnDirectivePlugin(),
+          // Container folding: the fold system, the chevron and wash affordance, and the safety
+          // invariant. Placed after the directive plugin so its chevron widget on an opener row
+          // composes with the row's rail and gutter; its keymap is internal to the extension. The
+          // label lookups resolve a folded block's directive name through the site's registry,
+          // baked in at mount since the registry is a static, per-site configuration.
+          foldingMod.cairnFolding({
+            labelFor: (name) => registry?.get(name)?.label,
+            useFor: (name) => registry?.get(name)?.use,
+          }),
+          // The optimistic image placeholder field: a widget-only decoration the insert popover
+          // drives through EditorApi.imagePlaceholders. It never writes doc text, so a failed
+          // upload leaves the source untouched (open risk 2). Placed after folding so a placeholder
+          // landing inside a directive composes with the rails.
+          placeholderMod.cairnImagePlaceholders(),
+          // The media: source decoration, in its own compartment so a mediaLibrary prop change
+          // reconfigures it without rebuilding the editor. The chip and the atomic ranges read the
+          // library; an empty library decorates nothing.
+          mediaCompartment.of(mediaMod.cairnMediaDecorations(mediaLibrary, mediaBase)),
+          // The include: source decoration, in its own compartment so a fragmentTitles prop change
+          // reconfigures it without rebuilding the editor. A resolved include line always chips,
+          // named by its title when the lookup has one and by its raw id otherwise.
+          includeCompartment.of(includeMod.cairnIncludeDecorations(fragmentTitles)),
+          // The spellcheck and objective-error lint sources plus the locked amber underline theme, in
+          // their own compartment so the footer toggle gates both surfaces at once. Empty when off.
+          spellcheckCompartment.of(spellcheck ? spellcheckExt : []),
+          // The tidy decoration field, in its own compartment so entering and leaving a review is a
+          // reconfigure beside the media and fold decorations. The api the host drives is built below.
+          tidyCompartment.of(tidyMod.cairnTidy()),
+          // The read-only posture while a review is open, empty until the host sets tidyMode.
+          tidyReadonlyCompartment.of(tidyMode ? tidyReadonlyExt : []),
+          // Paste and drop ingest: an image carried by either gesture is preventDefault'd and handed
+          // to onImageIngest (the host opens the capture card with the bytes); a gesture carrying no
+          // image falls through to CodeMirror's default. 2b is single-file per gesture (open risk 3),
+          // so only the first image routes.
+          EditorView.domEventHandlers({
+            dragover(event) {
+              // Allow the drop only when the drag carries image files; otherwise let it pass so a
+              // non-image drag (text, a link) keeps its native behavior.
+              if (event.dataTransfer && firstImageFile(event.dataTransfer)) {
+                guardDropTarget(event);
+                return true;
+              }
+              return false;
+            },
+            drop(event) {
+              const file = event.dataTransfer ? firstImageFile(event.dataTransfer) : null;
+              if (!file) return false;
+              guardDropTarget(event);
+              onImageIngest?.(file);
+              return true;
+            },
+            paste(event, pasteView) {
+              const file = event.clipboardData ? firstImageFile(event.clipboardData) : null;
+              if (file) {
+                event.preventDefault();
+                onImageIngest?.(file);
+                return true;
+              }
+              // Rich-text paste conversion: a clipboard carrying a text/html flavor converts its
+              // headings, bold/italic, links, lists, and paragraphs to markdown; everything else
+              // degrades to plain text (paste-html-to-markdown.ts). getData returns '' when the
+              // flavor is absent, which is also what the browser's own paste-as-plain-text chord
+              // leaves behind, so both cases fall through to CodeMirror's default paste below.
+              const html = event.clipboardData?.getData('text/html') ?? '';
+              const markdown = html ? htmlToMarkdown(html) : '';
+              if (!markdown) return false;
+              event.preventDefault();
+              const { from, to } = pasteView.state.selection.main;
+              pasteView.dispatch({
+                changes: { from, to, insert: markdown },
+                selection: { anchor: from + markdown.length },
+              });
+              return true;
+            },
+          }),
+          // No native text-correction override here. The old `spellcheck: 'true'` is gone, so
+          // the content node falls back to CodeMirror's own defaults: spellcheck "false", autocorrect
+          // "off", autocapitalize "off". The cairn lint source replaces the browser's spellcheck
+          // (running both would double-underline), and autocorrect/autocapitalize stay off so a browser
+          // never silently rewrites a `media:` token, a directive name, or frontmatter.
+          themeCompartment.of(theme),
+          surfaceCompartment.of(surfaceTheme(surface)),
+          // The live content's accessible name (WCAG 4.1.2): the only aria-label in this file otherwise
+          // sits on the SSR-fallback textarea below, which hydration removes, so the same string carries
+          // across the swap. A public facet, so this adds no CodeMirror-internal coupling.
+          EditorView.contentAttributes.of({ 'aria-label': 'Markdown source' }),
+          // The diagnostics-summary announcer: general and top-level (any lint source), unlike the
+          // spellcheck-specific suggestion popover, which stays inside spellcheckCompartment. Always on;
+          // accessibility is not opt-in.
+          announcerMod.cairnDiagnosticsAnnouncer({ view: viewMod, lint: lintMod }, onDiagnosticsCounts),
+          // Diagnostic traversal: F8/Shift-F8 jump the caret to the next/previous diagnostic range and
+          // land it in the cairn recipe popover (never the stock lint tooltip, which tooltipFilter
+          // suppresses; see spellcheck.ts). The stock exported commands, not lintKeymap (which also binds
+          // Mod-Shift-m to openLintPanel, the unaligned stock panel this component avoids). General and
+          // top-level, like the announcer above: any lint source, not just spellcheck.
+          keymap.of([
+            { key: 'F8', run: lintMod.nextDiagnostic },
+            { key: 'Shift-F8', run: lintMod.previousDiagnostic },
+          ]),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) value = update.state.doc.toString();
+            // A doc edit can change the block's span and a caret move can change which block the
+            // caret sits in, so the reporter runs on either; the dedupe below absorbs the no-ops.
+            if (onComponentAtCaret && (update.docChanged || update.selectionSet))
+              reportComponentAtCaret(update.state);
+            // The media-image reporter rides the same two triggers: a caret move lands on or off an
+            // image, an edit shifts the figure's span. The dedupe absorbs the keystroke no-ops.
+            if (onMediaImageAtCaret && (update.docChanged || update.selectionSet))
+              reportMediaImageAtCaret(update.state);
+          }),
+        ],
+      }),
+    });
+
+    // Follow a later theme flip. The polarity comes from an ancestor's attribute rather than a
+    // prop, so a mutation observer is what makes it reactive; the reconfigure rebuilds the three
+    // themes at the new value and swaps both compartments in one transaction, which keeps the doc,
+    // the history, and the caret (a re-mount would lose all three). No theme root above the editor
+    // means nothing to observe, and the mount polarity stays the light default.
+    if (themeRoot) {
+      themeObserver = new MutationObserver(() => {
+        const nowDark = readIsDark();
+        if (nowDark === isDark || !view || !themeCompartment || !surfaceCompartment) return;
+        isDark = nowDark;
+        const nextBase = buildThemes(nowDark);
+        view.dispatch({
+          effects: [
+            themeCompartment.reconfigure(nextBase),
+            surfaceCompartment.reconfigure(surfaceTheme(surface)),
+          ],
+        });
+      });
+      themeObserver.observe(themeRoot, { attributes: true, attributeFilter: ['data-theme'] });
+    }
+
+    // Fold every component block before the author can act, so an entry opens with its blocks
+    // collapsed and only the prose reads at a glance. One transaction, before any registration
+    // below hands out a live api, so nothing observes the pre-fold state.
+    if (foldOnMount) foldingMod.foldContainersOnLoad(view);
+
+    // The one uniform grant (ruling 1; docs/internal/engine-rulings.md,
+    // `audit-admin-markdowneditor`): every registerEditor caller now receives the full
+    // buffer-scoped EditorApi, where the retired register* props each handed back only the one
+    // callback (or object) that caller wired.
+    registerEditor?.({
+      insert: insertAtCursor,
+      insertLink,
+      getSelection: selectedText,
+      caretCoords,
+      focus,
+      undo: () => {
+        if (view) commandsMod.undo(view);
+      },
+      format: applyFormat,
+      replaceRange,
+      selectRange,
+      insertImage,
+      getSelectionRange: selectedRange,
+      tidy: tidyMod.tidyApi(view),
+      imagePlaceholders: placeholderMod.imagePlaceholderApi(view),
+    });
+    // Report the caret's starting container once the editor exists, so a caret that mounts inside
+    // a block is known without waiting for the first move.
+    if (onComponentAtCaret) reportComponentAtCaret(view.state);
+    if (onMediaImageAtCaret) reportMediaImageAtCaret(view.state);
+    mounted = true;
+  });
+
+  onDestroy(() => {
+    themeObserver?.disconnect();
+    view?.destroy();
+    // Revoke the grant unconditionally, even when this instance never reached the mount branch
+    // above (an SSR teardown, or a remount superseded before its own dynamic imports resolved):
+    // a host holding no grant from this instance treats the null as a no-op, per the identity
+    // guard documented on the prop above.
+    registerEditor?.(null);
+  });
+
+  // Reconcile an externally reassigned `value` into the mounted editor. A no-op until `view` exists,
+  // and the doc-equality guard ignores the updateListener's own writes so the two never feed back.
+  $effect(() => {
+    const incoming = value;
+    if (!view) return;
+    const current = view.state.doc.toString();
+    if (incoming === current) return;
+    view.dispatch({ changes: { from: 0, to: current.length, insert: incoming } });
+  });
+
+  // Reconfigure the writing-mode compartments when their props change. Reading `mounted` re-runs
+  // the effect once the editor exists, so a preference arriving between render and mount still
+  // applies; the reconfigure is idempotent, so the extra pass after mount costs nothing.
+  $effect(() => {
+    const focus = focusMode;
+    const typing = typewriter;
+    const posture = surface;
+    if (!mounted || !view || !modes || !focusCompartment || !typewriterCompartment || !surfaceCompartment) return;
+    view.dispatch({
+      effects: [
+        focusCompartment.reconfigure(focus ? modes.focusMode() : []),
+        typewriterCompartment.reconfigure(typing ? modes.typewriterScroll() : []),
+        surfaceCompartment.reconfigure(surfaceTheme(posture)),
+      ],
+    });
+  });
+
+  // Reconfigure the media decoration when the mediaLibrary prop changes, so a just-uploaded image
+  // (added to the library by the host) decorates without rebuilding the editor. Reading the prop
+  // tracks it; the guard waits for the mounted editor and its media module.
+  $effect(() => {
+    const library = mediaLibrary;
+    if (!mounted || !view || !mediaMod || !mediaCompartment) return;
+    view.dispatch({
+      effects: mediaCompartment.reconfigure(mediaMod.cairnMediaDecorations(library, mediaBase)),
+    });
+  });
+
+  // Reconfigure the include decoration when the fragmentTitles prop changes, so a fragment renamed
+  // (or newly published) after mount relabels its chip without rebuilding the editor. Reading the
+  // prop tracks it; the guard waits for the mounted editor and its include module.
+  $effect(() => {
+    const titles = fragmentTitles;
+    if (!mounted || !view || !includeMod || !includeCompartment) return;
+    view.dispatch({ effects: includeCompartment.reconfigure(includeMod.cairnIncludeDecorations(titles)) });
+  });
+
+  // Reconfigure the spellcheck compartment when the footer toggle flips. On restores the bundled
+  // extension (both lint sources and the theme); off swaps in an empty extension, so the underlines
+  // vanish and the Worker goes idle. Reading the prop tracks it; the guard waits for the mounted
+  // editor and the resolved extension.
+  $effect(() => {
+    const on = spellcheck;
+    if (!mounted || !view || !spellcheckCompartment || !spellcheckExt) return;
+    view.dispatch({ effects: spellcheckCompartment.reconfigure(on ? spellcheckExt : []) });
+  });
+
+  // Reconfigure the read-only posture when tidyMode flips. On makes the surface inert under the open
+  // review (no edits beneath a pending review); off restores editing on apply or cancel. Reading the
+  // prop tracks it; the guard waits for the mounted editor and the resolved extension.
+  $effect(() => {
+    const on = tidyMode;
+    if (!mounted || !view || !tidyReadonlyCompartment || !tidyReadonlyExt) return;
+    view.dispatch({ effects: tidyReadonlyCompartment.reconfigure(on ? tidyReadonlyExt : []) });
+  });
+
+  // The last value handed to onComponentAtCaret, so the reporter fires only on a change. The
+  // identity compared is name + markdown + from + to. A pure caret move within one block leaves all
+  // four unchanged, so it does not refire; an edit inside the block changes the markdown even when
+  // it keeps the same length (an equal-length replacement leaves from and to unchanged), so the
+  // markdown must be part of the equality or such an edit would keep a stale report.
+  let lastCaretReport: ComponentAtCaret | null = null;
+
+  // Compute the directive container at the caret from a CodeMirror state and report it through
+  // onComponentAtCaret, deduped so a caret move within the same block does not refire. fenceScan
+  // lines are 0-based; doc.line(n) is 1-based, so the line range maps with a +1 on each bound.
+  function reportComponentAtCaret(state: import('@codemirror/state').EditorState) {
+    const doc = state.doc;
+    const lines: string[] = [];
+    for (let n = 1; n <= doc.lines; n++) lines.push(doc.line(n).text);
+    const caretLine = doc.lineAt(state.selection.main.head).number - 1;
+    const range = caretContainerRange(fenceScan(lines), caretLine);
+    let next: ComponentAtCaret | null = null;
+    if (range) {
+      const fromPos = doc.line(range.fromLine + 1).from;
+      const toPos = doc.line(range.toLine + 1).to;
+      next = {
+        name: directiveOpenerName(lines[range.fromLine] ?? ''),
+        markdown: doc.sliceString(fromPos, toPos),
+        from: fromPos,
+        to: toPos,
+      };
+    }
+    const prev = lastCaretReport;
+    const same =
+      prev === next ||
+      (prev !== null &&
+        next !== null &&
+        prev.name === next.name &&
+        prev.markdown === next.markdown &&
+        prev.from === next.from &&
+        prev.to === next.to);
+    if (same) return;
+    lastCaretReport = next;
+    onComponentAtCaret?.(next);
+  }
+
+  // The last media-image report, so the reporter fires only on a change. The compared identity is
+  // the image span plus the figure's range/caption/role; a pure caret move within one image (or one
+  // figure) leaves them unchanged, so it does not refire, while an edit that shifts the figure span
+  // or rewrites the caption does. A null transitions to or from null on entering/leaving an image.
+  let lastMediaReport: FigureAtImage | null = null;
+
+  // Compute the media image at the caret from a CodeMirror state and report it through
+  // onMediaImageAtCaret, deduped so a caret move that stays on the same image does not refire.
+  function reportMediaImageAtCaret(state: import('@codemirror/state').EditorState) {
+    const next = figureAtImage(state.doc.toString(), state.selection.main.head);
+    const prev = lastMediaReport;
+    const same =
+      prev === next ||
+      (prev !== null &&
+        next !== null &&
+        prev.imageFrom === next.imageFrom &&
+        prev.imageTo === next.imageTo &&
+        (prev.figure?.from ?? null) === (next.figure?.from ?? null) &&
+        (prev.figure?.to ?? null) === (next.figure?.to ?? null) &&
+        (prev.figure?.caption ?? null) === (next.figure?.caption ?? null) &&
+        (prev.figure?.role ?? null) === (next.figure?.role ?? null));
+    if (same) return;
+    lastMediaReport = next;
+    onMediaImageAtCaret?.(next);
+  }
+
+  // Overwrite a document span with new text and drop the caret after it, mirroring insertAtCursor's
+  // dispatch shape. A no-op before the editor mounts, the same guard the other seams carry.
+  function replaceRange(from: number, to: number, text: string) {
+    if (!view) return;
+    view.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } });
+    view.focus();
+  }
+
+  // Select a document span, focus the surface, and scroll the range into view. The needs-alt notice's
+  // jump control calls it to land the author on an image that lacks alt text. A no-op before the
+  // editor mounts, the same guard the other seams carry.
+  function selectRange(from: number, to: number) {
+    if (!view) return;
+    view.dispatch({ selection: { anchor: from, head: to }, scrollIntoView: true });
+    view.focus();
+  }
+
+  // Insert a block at the cursor, padded by the rule in insert-padding so it never fuses onto
+  // adjacent text. The pre-mount fallback pads against the end of the raw value, the same rule the
+  // mounted path applies against the live caret. The mounted path changes only the span the rule
+  // strips around the caret, so a fold or an upload placeholder elsewhere in the document is left
+  // alone, and it is isolated in history so typing after it does not join its undo step.
+  function insertAtCursor(text: string) {
+    if (!view) {
+      value = padInsertedBlock(value, value.length, text).doc;
+      return;
+    }
+    const span = paddedInsertSpan(view.state.doc.toString(), view.state.selection.main.head, text);
+    view.dispatch({
+      changes: { from: span.from, to: span.to, insert: span.insert },
+      selection: { anchor: span.caret },
+      userEvent: 'input',
+      annotations: isolateHistory ? isolateHistory.of('full') : [],
+      scrollIntoView: true,
+    });
+    view.focus();
+  }
+
+  // Run a pure selection transform over the mounted editor: hand it the document and selection,
+  // dispatch the document and selection it returns, and put focus back on the surface.
+  function transformSelection(transform: (doc: string, from: number, to: number) => FormatResult) {
+    if (!view) return;
+    const { from, to } = view.state.selection.main;
+    const doc = view.state.doc.toString();
+    const next = transform(doc, from, to);
+    view.dispatch({
+      changes: { from: 0, to: doc.length, insert: next.doc },
+      selection: { anchor: next.from, head: next.to },
+    });
+    view.focus();
+  }
+
+  function insertLink(href: string, title: string) {
+    if (!view) {
+      // The editor has not mounted yet; append the link to the raw value so a pick is never lost,
+      // mirroring insertAtCursor's pre-mount fallback.
+      const link = insertInlineLink('', 0, 0, href, title).doc;
+      value = value ? `${value} ${link}` : link;
+      return;
+    }
+    transformSelection((doc, from, to) => insertInlineLink(doc, from, to, href, title));
+  }
+
+  function insertImage(alt: string, ref: string) {
+    if (!view) {
+      // The editor has not mounted yet; append the image to the raw value so a pick is never lost,
+      // mirroring insertLink's pre-mount fallback.
+      const image = insertImageFormat('', 0, 0, alt, ref).doc;
+      value = value ? `${value} ${image}` : image;
+      return;
+    }
+    transformSelection((doc, from, to) => insertImageFormat(doc, from, to, alt, ref));
+  }
+
+  function selectedText(): string {
+    if (!view) return '';
+    const { from, to } = view.state.selection.main;
+    return view.state.sliceDoc(from, to);
+  }
+
+  // The selection's document offsets, for the tidy host to scope a selection tidy to the exact span.
+  // Null when the selection is empty (a bare caret), which the host reads as document scope.
+  function selectedRange(): { from: number; to: number } | null {
+    if (!view) return null;
+    const { from, to } = view.state.selection.main;
+    return from === to ? null : { from, to };
+  }
+
+  // The caret's viewport coordinates, for the insert popover to anchor itself to the cursor. Null
+  // before the editor mounts or when the caret has no measurable position (an unrendered line).
+  function caretCoords(): { left: number; right: number; top: number; bottom: number } | null {
+    if (!view) return null;
+    const rect = view.coordsAtPos(view.state.selection.main.head);
+    return rect ? { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom } : null;
+  }
+
+  // Return focus to the editor surface; the popover calls it on close or Escape. The selection is
+  // intact because opening the popover only blurred the editor, it never edited the doc.
+  function focus() {
+    view?.focus();
+  }
+
+  function applyFormat(kind: FormatKind) {
+    transformSelection((doc, from, to) => applyMarkdownFormat(doc, from, to, kind));
+  }
+</script>
+
+<input type="hidden" {name} {value} />
+
+<div bind:this={host}></div>
+{#if !mounted}
+  <textarea class="textarea min-h-[50vh] w-full font-mono type-body" bind:value aria-label="Markdown source"></textarea>
+{/if}

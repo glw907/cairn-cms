@@ -8,10 +8,10 @@
 // its own snippet, reachable only through the shell), so it shares ./support.ts's prop bag rather
 // than building a second one.
 import type { Component } from 'svelte';
-import CairnHistory from '../../components/CairnHistory.svelte';
-import ConceptList from '../../components/ConceptList.svelte';
-import EditPage from '../../components/EditPage.svelte';
-import WelcomeView from '../../components/WelcomeView.svelte';
+import CairnHistory from '../../admin/CairnHistory.svelte';
+import ConceptList from '../../admin/ConceptList.svelte';
+import EditPage from '../../admin/EditPage.svelte';
+import WelcomeView from '../../admin/WelcomeView.svelte';
 import type { InboundLink } from '../../content/manifest.js';
 import type { DeleteFailure } from '../../sveltekit/content-routes-entry-destructive.js';
 import { fixtureDeskPathname, fixtureEditor, fixtureEntries, fixtureSiteName } from '../fixtures.js';

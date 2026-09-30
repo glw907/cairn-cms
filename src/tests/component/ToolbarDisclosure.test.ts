@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 import ToolbarDisclosureHarness from './_ToolbarDisclosureHarness.svelte';
 
 describe('ToolbarDisclosure', () => {

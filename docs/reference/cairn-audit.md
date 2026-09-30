@@ -7,6 +7,7 @@ puts it on the project's path.
 npx cairn-audit                          # run the static rules over the admin surfaces
 npx cairn-audit --rendered               # run the rendered rules against a running admin
 npx cairn-audit --rule motion-reduced-delay --rendered  # run only the named rule
+npx cairn-audit --rule public-literals --rule theme-conformance --rule theme-contrast  # audit the public files alone
 npx cairn-audit norms <selector-or-role> # look up a measured norm
 npx cairn-audit --help                   # print usage and exit
 ```
@@ -28,10 +29,12 @@ skill in a consumer repo.
 ## What ships
 
 `cairn-audit` ships whole, as consumer product: every registered rule, the static and rendered
-rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 34
-registered rules audit the `/admin` surface, and a consumer's admin IS cairn's own admin toolkit,
-so conformance to cairn's design system is exactly the product being audited, not apparatus that
-measures the engine from outside.
+rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 38
+registered rules ship, and 35 of them audit the `/admin` surface. A consumer's admin IS cairn's
+own admin toolkit, so conformance to cairn's design system is exactly the product being audited,
+not apparatus that measures the engine from outside. The other three, `public-literals`,
+`theme-conformance`, and `theme-contrast`, audit the site's public files instead: see
+[The public scope](#the-public-scope).
 
 Two things stay engine-side, both apparatus for producing the manifest the CLI ships rather than
 part of the audit a consumer runs: the norms generator that renders the admin and derives the
@@ -70,8 +73,8 @@ The CSS-family rules read each component's own scoped `<style>` block, plus any 
 
 ### The static rules
 
-Seventeen rules run: fifteen error tier, and two advisory (`log-event-grammar`,
-`log-secret-field`, both below). (`motion-reduced-delay`, the rendered counterpart to the two
+Twenty-one rules run: seventeen error tier, and four advisory (`radius-scale`, `public-literals`,
+`theme-conformance`, `theme-contrast`, all below). (`motion-reduced-delay`, the rendered counterpart to the two
 vocabulary rules below, is advisory too; see [The rules](#the-rules) under Rendered mode.)
 
 | ID | What it checks |
@@ -79,7 +82,8 @@ vocabulary rules below, is advisory too; see [The rules](#the-rules) under Rende
 | `no-uncompiled-class` | Every class token a component's markup writes compiles into the built admin stylesheet, or is a name that component's own scoped `<style>` block defines. A class that reaches neither is in the author's mind and absent from what ships |
 | `type-scale` | Every font size a text-sizing class token resolves to comes from a `--cairn-type-*` role. The rule reads only Tailwind's own text-sizing namespace and the `type-*` role utilities. A daisyUI component class carries its own size as part of the control's chrome, a separate system with its own `btn-sm`-style modifiers |
 | `gap-scale` | An arbitrary margin, padding, or gap literal, a Tailwind bracket rather than a named step, resolves to a `--cairn-gap-*` role or lands on an exact half-step of Tailwind's spacing grid. A bracket whose value isn't a plain length, a viewport unit or a `calc()`, expresses geometry the spacing scale has no vocabulary for, so it falls outside the rule rather than failing it |
-| `stock-default-hazards` | Four stock daisyUI patterns cairn's own recipes replace: `badge-ghost`, the focus-driven bare `.dropdown`, a native `disabled` on a guarded button, and a flat `base-300` card border. A fifth arm names cairn's own retired marker class, `cairn-btn-guarded`, whose reason text belongs in a `Tooltip` around the control instead: that one finding is reported at **advisory** tier until `0.98.0` promotes it to error, while the class itself stays compiled until a later release removes it. Each finding names the refuted alternative and cites where the decision lives |
+| `radius-scale` **advisory** | Every framed element's corner resolves to one of `rounded-selector`, `rounded-field`, or `rounded-box`. The rule reads `utilityBase()`, so a variant-prefixed radius (`md:rounded-lg`) is caught. It flags a bare `rounded`, a fixed size (`xs` through `4xl`), an arbitrary bracket or the `rounded-(--x)` variable shorthand, and any side or corner form of those; it passes the three role classes and their side forms, `rounded-none` and its structural zeros, and `rounded-full` except on an element that also carries `badge` (chips leave the pill). Each finding names the replacement role class the element's own daisyUI class fixes, the exact role for an arbitrary `var(--radius-<role>)` reference, or the three-role mapping otherwise. Reported at **advisory** tier until `0.99.0` promotes it to error. Coverage is class tokens only: a `border-radius` literal in a scoped `<style>` block is outside this rule's remit |
+| `stock-default-hazards` | Four stock daisyUI patterns cairn's own recipes replace: `badge-ghost`, the focus-driven bare `.dropdown`, a native `disabled` on a guarded button, and a flat `base-300` card border. A fifth arm names cairn's own retired marker class, `cairn-btn-guarded`, whose reason text belongs in a `Tooltip` around the control instead: that finding is error tier, while the class itself stays compiled until a later release removes it. Three more arms, each on a `btn` element only, guard the patches cairn's own ratified button recipes replaced: an ink-opener patch (`bg-neutral` or `bg-[var(--cairn-ink-hover)]` with no `btn-neutral`, names `btn btn-neutral`), a Publish-tint patch (`bg-primary/10` with no `btn-soft`, names `btn btn-soft btn-primary`), and a `shadow-none` cancel that names nothing to add, since the theme's own depth is already zero. All three report at **advisory** tier until `0.99.0` promotes them to error; a recipe arm (ink opener or Publish tint) takes precedence over `shadow-none` on the same element, so a full retired recipe raises exactly one finding. Each finding names the refuted alternative and cites where the decision lives, eight arms total |
 | `token-colors` | No raw hex, `rgb()`, or named-color literal, and no pure achromatic, a color function whose chroma or saturation is exactly zero. `transparent` and `currentColor` are excluded: neither names a color the palette could have supplied. A file listed in `static.paletteFiles` is exempt, since writing literal values down is what a palette declaration site is for |
 | `grammar-boundary` | CSS never redeclares a grammar token. A site re-tunes the palette tokens freely; a grammar token names structure and holds across both themes |
 | `focus-parity` | Every hand-authored `:hover` selector has a sibling selector in the same source that swaps `:hover` for `:focus-visible`, or for `:focus-within` when a container's wash acknowledges a descendant gaining focus. Tailwind's `hover:` variant classes are deliberately out of scope: their keyboard affordance is the admin's blanket focus ring, a real guarantee of a different shape |
@@ -91,13 +95,138 @@ vocabulary rules below, is advisory too; see [The rules](#the-rules) under Rende
 | `stripe-trim-parity` | A striped row's `:nth-child` background pattern, or a `.table-zebra`-style class, never co-occurs with an unconditioned first/last-child padding trim on the same row class in the same source: the trim clips the stripe fill on an even-count group unless it's scoped to its own parity (`:last-child:nth-child(odd)`). Applies to any row component, not only the admin's own tables |
 | `unlayered-font-clobber` | A scoped `<style>` block never declares `font-family`, `font-size`, `font-weight`, or the `font` shorthand outside an `@layer` on an element that also carries a font-affecting utility class (a `text-*` size or a `font-*` weight/family). Under the no-Preflight admin, a Svelte scoped style carries no layer of its own while Tailwind utilities sit in `@layer utilities`, so cascade layer precedence, not specificity, decides the winner; the finding names that mechanism and points at moving the typography onto the ancestor the control inherits from. Applies to any component, not only the admin's own |
 | `list-role` | A `<ul>`/`<ol>`/`<menu>` carries no role attribute while its marker is suppressed: either its own classes remove it, a `list-style`/`list-style-type: none` declaration such as Tailwind's `list-none`, or an item's classes change that item's rendered display away from `list-item` to another display that still renders the item, such as `flex`, `grid`, `block`, or `inline-flex`, the way daisyUI's own `.list-row` renders `display: grid`. `display: none` (Tailwind's `hidden` and its responsive variants) is excluded: a hidden item never reaches the accessibility tree, so it cannot strip the enclosing list's implicit role. WebKit/VoiceOver stop announcing a marker-suppressed list as a list once it loses its implicit role this way; the fix is `role="list"`, plus `role="listitem"` on the item whose class caused the change (HTML-AAM's implicit `li` mapping depends on the parent relationship that change already disrupts). A list already carrying a different explicit role stays exempt: the explicit role already overrides the implicit one on purpose, so a second, conflicting role would be the wrong remedy. Coverage is own-class only: the rule resolves an element's display from classes that element itself carries, so a descendant-selector rule that reshapes an item from the *list's* own class, daisyUI's `.menu :where(li)` or breadcrumbs' `> li`, sits outside what it can see. That gap is closed by the rendered-mode `list-role` rule below, which reads each item's actual computed display in a live browser instead |
-| `log-event-grammar` **advisory** | A name heuristic over `<ident>.info(`, `.warn(`, `.error(` calls whose first argument is a plain string literal: the literal collides with a name `CairnLogEvent` already reserves, or its shape doesn't read as `area[.subject].verb_phrase`. It has no way to tell your own logger from `console.info` or another library's, and it never resolves a computed event name, a template literal, or a re-exported logger, since none of those carry a string literal it can read. Scans `static.sourceScope`, not `static.scope`: a log call isn't confined to an admin surface |
-| `log-secret-field` **advisory** | The same call heuristic, over each call's second, fields argument: a property key that whole-matches (never a substring) a member of `REDACTED_LOG_KEYS` (`@glw907/cairn-cms/log`). It can't tell your logger from `console.info` or another library's: if the call goes through a cairn `createLogger` instance the runtime already redacts that field's value, but on a bare `console` call the value ships as written. Either way this rule exists for what redaction can't reach even when it applies, the same secret's value also written directly into the message string |
+| `log-event-grammar` | A name heuristic over `<ident>.info(`, `.warn(`, `.error(` calls whose first argument is a plain string literal: the literal collides with a name `CairnLogEvent` already reserves, or its shape doesn't read as `area[.subject].verb_phrase`. It has no way to tell your own logger from `console.info` or another library's, and it never resolves a computed event name, a template literal, or a re-exported logger, since none of those carry a string literal it can read. Scans `static.sourceScope`, not `static.scope`: a log call isn't confined to an admin surface |
+| `log-secret-field` | The same call heuristic, over each call's second, fields argument: a property key that whole-matches (never a substring) a member of `REDACTED_LOG_KEYS` (`@glw907/cairn-cms/log`). It can't tell your logger from `console.info` or another library's: if the call goes through a cairn `createLogger` instance the runtime already redacts that field's value, but on a bare `console` call the value ships as written. Either way this rule exists for what redaction can't reach even when it applies, the same secret's value also written directly into the message string |
+| `public-literals` **advisory** | A color literal or an absolute font size in a public file, in a CSS declaration, a `style=` value (the static parts of a mixed one included), a Svelte `style:` directive, or a Tailwind arbitrary value such as `text-[#abc]` or `text-[14px]`. It reads the [public scope](#the-public-scope), never the admin surfaces. Color literals are hex, `rgb()`, `hsl()`, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color()`, and the named colors; `transparent`, `currentColor`, and the CSS-wide keywords are not literals, and nothing inside a quoted string or a `url()` argument is read (`content: "Issue #123"`, a quoted font family name, `fill: url(#fade)`). An absolute font size is `px`, `pt`, or `rem`, including the size inside the `font` shorthand; `em`, `%`, a keyword, and a `var()` or `calc()` over tokens pass. A custom-property definition is legal anywhere under a theme root, a component's `<style>` block included, and the root element's `font-size` is exempt, since it defines `rem` for the page. Tailwind's own utilities (`text-sm`, `bg-red-500`) are tokens a designer may choose, so it never flags them. A `<style lang="...">` block the parser can't read, such as Sass or Less, raises an "unparsed style block, not audited" finding for that file, and the rest of the run continues. It stays advisory for a consumer, since it polices your own markup |
+| `theme-conformance` **advisory** | A public theme that defines everything the public stylesheets read. **Completeness:** each `@plugin "daisyui/theme"` block defines every key daisyUI's theme object carries, `color-scheme` included, except a block named after a built-in daisyUI theme (a partial block named `nord`), which daisyUI completes by merging. A hole in the default block reads as a runtime hole, and one in a secondary block as a value the default block fills. A scope with no theme block is a finding. The key list is read from `daisyui/theme/object`, and the rule fails when that list is empty or lacks `--color-base-100` or `--radius-box`. **Resolution:** a `var(--x)` with no fallback resolves to a property in the site's real [`@import` chain](#the-import-chain), a Tailwind theme variable (from Tailwind's own theme file, or the `--tw-` namespace), a key of a theme block found complete, or a custom property declared anywhere in the scanned tree (in CSS, a `<style>` block, a `style=` value, a `style:` directive, or a Tailwind arbitrary property). A `var()` with a fallback, and a name that isn't a plain custom-property identifier, are skipped. **Three more findings:** the chain never imports the engine's public stylesheet, `cairn-public.css`; a chassis file redeclares a default `cairn-public.css` sets (a stale copy of the old `tokens.css` beats the engine's layered default and cancels the derived status inks); and an `@theme` block declares a `--font-<name>` face beside a `--font-weight-<name>` weight, which Tailwind resolves to the face, so the weight utility never generates. It needs `daisyui` and `tailwindcss` installed beside the site. It is advisory on a consumer |
+| `theme-contrast` **advisory** | Every text-bearing pair a public theme paints clears WCAG AA, 4.5:1, and the focus ring clears 3:1, in both sRGB and display-p3, in every scheme the theme defines. The text pairs are body text (`--color-base-content`) on `--color-base-100` and `--color-base-200`; `--color-primary` on `--color-base-100`, the link color; each role's `-content` on its own fill; `--color-muted` on `--color-base-100` and `--color-base-200`; each status ink (`--cairn-<status>-ink`) on `--color-base-100`, `--color-base-200`, and its callout tint; and each code role (`--cairn-code-ink`, `-keyword`, `-string`, `-function`, `-number`, `-comment`, `-punct`) on `--cairn-code-bg`. The non-text pair is the focus-ring color, `--color-primary`, on `--color-base-100` and `--color-base-200` at 3:1. A callout tint is the highest-percentage `color-mix(in oklab, var(--color-<status>) N%, var(--color-base-100))` (or the same mix `in oklch`) the [`@import` chain](#the-import-chain) declares for that status. A status mix in another form, such as swapped operands or `in srgb`, keeps that status's tint pair and reports it as unmeasured. The schemes are the chain's `@plugin "daisyui/theme"` blocks, never fixed names: each block is measured as a page naming it through `data-theme`, the default block also as a page naming none on a light OS, and the `prefersdark` block also as a page naming none on a dark OS, with every `:root` rule the chain declares applied in its layer and cascade order. A block with no `name` is measured as `custom-theme`, the name daisyUI gives it. A block named after a built-in daisyUI theme takes that theme's own values where it's silent. A value the resolver can't evaluate is reported as unmeasured, never passed: see [What theme-contrast doesn't cover](#what-theme-contrast-doesnt-cover). A finding names the block and points at it. It needs `daisyui` installed beside the site. It is advisory on a consumer |
 
 `list-role`'s two halves are complementary, not redundant: the static mode is the cheap own-class
 check every run gets for free, and the rendered mode is the only one that sees a descendant-selector
 change. A consumer that runs `cairn-audit` without `--rendered` gets the static half alone, so full
 `list-role` coverage needs both modes run.
+
+### The public scope
+
+The admin rules read the admin surfaces. `public-literals`, `theme-conformance`, and
+`theme-contrast` read a second scope, the public files a site ships to its visitors: the `.svelte` and `.css` files under `public.scope`, minus
+`public.exclude`. The default roots are `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`,
+and `src/lib/components`, with `src/routes/admin` excluded. `src/lib/components` is where a site
+keeps its shared public components.
+
+No file answers to two scopes. The public scope never claims a file under a root the admin scope
+reads, whether the root comes from `static.scope` or `static.adminScope`, by default or by your
+config, and never a standalone CSS file you name under `static.cssFiles`. Widening `public.scope` to
+`src` or writing your own `public.exclude` therefore can't move an admin file from an error-tier
+rule to the advisory public one, and `token-colors` and `public-literals` never both report the same
+file. A root you name under one scope leaves the other scope's defaults: naming
+`src/lib/components` under `static.scope` removes it from the public defaults, and naming an admin
+default such as `src/lib/admin-toolkit` under `public.scope` removes it from the admin defaults.
+An admin default that a public exclusion covers stays in the admin scope: naming
+`src/routes/admin` under `public.scope` leaves your admin routes under the admin rules, since the
+public scope never reads them.
+
+A root you name under `static.adminScope` leaves the public scope too, but only the three `adminOnly`
+motion rules (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) scan it. The other admin
+rules read `static.scope`, so name the root there as well when it holds admin screens that every
+admin rule should check.
+
+Every path you configure is normalized before it's compared: a leading `./`, a trailing `/`, and a
+doubled `/` are removed, so `./src`, `src/`, and `src` name the same root and a file never lands in
+two scopes through a spelling.
+
+A default public root your tree doesn't have is skipped. A root you wrote in `public.scope` yourself
+fails the run when it doesn't exist. A root you wrote in `public.scope` that is, or lies under, a
+`public.exclude` path fails the run too, naming both, unless an admin root reads it, since no rule
+would read its files. When a run includes a public rule and every root together
+matches no file, the run fails, naming `public.scope`, so a scan that read nothing never reports a
+clean tree. A run that selects no public rule, such as `--rule` naming only admin rules, never reads
+the public scope and never raises that error.
+
+#### Running the public scope alone
+
+Name the three public rules to audit a theme without the admin surfaces:
+
+```bash
+npx cairn-audit --rule public-literals --rule theme-conformance --rule theme-contrast
+```
+
+A run whose selected rules are all public-scope rules needs no built admin stylesheet and no file
+under the admin roots. The admin stylesheet is read only when a selected rule reads the admin scope,
+so this command works on a tree where you haven't built the package's admin sheet. Plain `npx
+cairn-audit` runs every static rule, the public three included, and does need the sheet. A finding
+from these rules never changes the exit code, since all three are advisory on a consumer.
+
+The roots in `public.scope` decide what the run reads, and `public.exclude` removes paths from them.
+The report's scanned-file count includes every public file, so a count that doesn't rise when you add
+a file means the file sits outside the roots. To confirm one file is covered, write a color literal
+into it, such as `style="color: #abc"`, run the public rules, and look for a `public-literals`
+finding that names the file. Remove the literal afterward. A file outside every root, or under
+`src/routes/admin` or another admin root, is never read, and the run says nothing about it.
+
+#### The import chain
+
+`theme-conformance` and `theme-contrast` read the site's real stylesheets, not just the files that
+sit in the public scope. It starts at each entry in `public.stylesheets` and follows every `@import` in order:
+relative paths from the importing file, and package specifiers from the packages installed for
+your site. A relative import with no extension, such as `@import "./tokens"`, reads `tokens.css`
+when that file exists, the way Tailwind resolves it. A package specifier resolves the way a CSS bundler resolves it, through the package's
+`exports` map under the `style` condition, then its `style` field, and to the plain file path when
+the package has no `exports` field. It never uses Node's own resolution, which sends `tailwindcss`
+to a JavaScript file. The rule doesn't follow `tailwindcss` itself and reads its variables from
+its own theme file. The `layer()`, `source()`, and `supports()` modifiers on an `@import` are
+accepted.
+
+An entry you wrote in `public.stylesheets` yourself fails the run when it doesn't exist. The
+default entry, `src/theme/theme.css`, is listed as unread when your tree doesn't have it.
+
+An import the audit can't read is never a finding. A package that isn't installed, a subpath the
+package doesn't export, and a missing file are listed at the end of the report under the Unread imports heading, so a font package you haven't installed doesn't fail a run. An import that resolves to a
+file that isn't CSS is a finding, and the audit never parses the file.
+
+`theme-conformance` resolves `daisyui` and `tailwindcss` from the audited root when it runs, and
+`theme-contrast` resolves `daisyui`. When either is
+missing, the run exits nonzero and names the package and the `npm install --save-dev` command. Both
+are optional peer dependencies of the engine: a run that selects only admin rules doesn't need them.
+
+The theme roots (`public.themeRoots`) are where a design value may legally be defined: a directory
+or a single file, `src/theme` and the chassis `tokens.css` by default. A custom-property definition
+under one is a token definition, and a literal there is the point, not a finding. The report's
+scanned-file count includes the public files.
+
+#### What theme-contrast doesn't cover
+
+`theme-contrast` reads values, not a rendered page, so the rendered audit's `interactive-contrast`
+and the page itself stay the ground truth. Its resolver has a stated bound. It follows `var()`
+chains to a color literal and evaluates one `color-mix()` form: two operands, `in oklab` or
+`in oklch`, and exactly one percentage, mixed in premultiplied alpha the way CSS mixes. A
+translucent result is composited over its ground, and a translucent ground over `--color-base-100`.
+Anything else is reported as unmeasured: a relative color (`oklch(from ...)`), `light-dark()`, a
+third operand, a hue interpolation method, another mixing space, `currentColor`, and a `var()`
+inside a color function.
+
+The static cascade has limits too:
+
+- It measures the root element only. A nested `data-theme` region recomputes a derived ink in the
+  browser, and the rule doesn't measure that region.
+- A media query applies when its only features are `prefers-color-scheme` tests, with or without
+  the `screen` or `all` type. A `print` query never applies. A positive `@supports` applies, and
+  one that starts with `not` never does.
+- A nested rule resolves against the rule it sits in: `:root { @media (prefers-color-scheme: dark)
+  { ... } }` and `:root { &[data-theme="x"] { ... } }` apply the way CSS nesting applies them.
+- An `@import` carrying `layer()` is read as unlayered, since the loader doesn't record the
+  modifier.
+- A selector matches the root only when every part of it is `:root`, `html`, `:host`, `*`, a
+  `data-theme` attribute test, or `:where()`, `:is()`, or `:not()` over those. A daisyUI block's
+  `root` option is read the same way.
+- A root custom property set anywhere else is never dropped silently. A width or container query,
+  a class or another test on the root element (`:root.dark`), and a daisyUI block whose `root` is
+  another element each make every pair that reads the property unmeasured, following `var()`
+  chains, so an override of `--color-info` under a width query leaves the info ink's pairs
+  unmeasured too.
+- An operand written in sRGB (a hex value, `white`) converts into oklab through culori's matrices,
+  which differ from Chromium's in the fifth significant digit. A ratio can't see a difference that
+  small.
 
 ### What the motion rules don't cover
 
@@ -165,12 +294,16 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 
 | Key | Default | What it names |
 |---|---|---|
-| `static.scope` | `src/routes/admin`, `src/lib/admin-toolkit`, `src/lib/components` | Directories the static scan reads components from, recursively |
+| `static.scope` | `src/routes/admin`, `src/lib/admin`, `src/lib/admin-toolkit` | Directories the static scan reads components from, recursively |
 | `static.sourceScope` | `src` | Directories `log-event-grammar` and `log-secret-field` walk for `.ts` and `.svelte` files, read as plain text rather than parsed markup |
-| `static.adminScope` | `src/routes/admin`, `src/lib/admin-toolkit` | Roots the three motion rules (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) resolve over instead of `static.scope`, since they're `adminOnly`. Name your own screens here if they live outside those two defaults |
+| `static.adminScope` | `src/routes/admin`, `src/lib/admin`, `src/lib/admin-toolkit` | Roots the three motion rules (`motion-property`, `motion-vocabulary`, `motion-hover-gate`) resolve over instead of `static.scope`, since they're `adminOnly`. Name your own screens here if they live outside those three defaults. A root named here leaves the public scope, and only those three rules scan it unless it's also under `static.scope` |
 | `static.cssFiles` | none | Standalone CSS files the CSS-family rules also scan |
 | `static.paletteFiles` | the engine's own admin stylesheet | Palette declaration sites `token-colors` skips. Name your own theme file here |
-| `sheet` | the built admin stylesheet, in your tree or your installed package | One or more compiled-class sources the `no-uncompiled-class` rule resolves class tokens against, same shape as `static.paletteFiles`. A string still works as a single source. A site with its own compiled stylesheet lists it alongside the packaged one: `"sheet": ["dist/site.css", "node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css"]` |
+| `public.scope` | `src/theme`, `src/chassis`, `src/routes`, `src/lib/public`, `src/lib/components` | The roots the [public scope](#the-public-scope) reads `.svelte` and `.css` files under, recursively. Naming this key replaces the defaults, and a configured root your tree doesn't have, or one a `public.exclude` path covers, fails the run |
+| `public.exclude` | `src/routes/admin` | Paths the public scope never reads. A list you write merges with the default, never replaces it |
+| `public.themeRoots` | `src/theme`, `src/chassis/tokens.css` | Directories or files where a design value may legally be defined. `public-literals` allows a custom-property definition under one |
+| `public.stylesheets` | `src/theme/theme.css` | The entry stylesheets whose [`@import` chain](#the-import-chain) is the site's real chain. `theme-conformance` and `theme-contrast` read it. Name a second entry to audit an overlay layered after the theme. A configured entry your tree doesn't have fails the run |
+| `sheet` | the built admin stylesheet, in your tree or your installed package | One or more compiled-class sources the `no-uncompiled-class` rule resolves class tokens against, same shape as `static.paletteFiles`. A string still works as a single source. A site with its own compiled stylesheet lists it alongside the packaged one: `"sheet": ["dist/site.css", "node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css"]` |
 | `rendered.pages` | the core admin routes | The pages rendered mode visits. Naming this key replaces the default list |
 | `rendered.extraPages` | none | Pages rendered mode visits IN ADDITION to `rendered.pages` (or, absent that key, the core admin routes). Name your own screen here rather than restating the six core routes beside it |
 | `rendered.allowlist` | none | Rendered-mode exemptions. See [The allowlist](#the-allowlist) |
@@ -178,6 +311,14 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 A default scan path your tree doesn't have is skipped, since the defaults span a library and a
 consumer site. A path you wrote in `static.scope` yourself fails the run when it doesn't exist: a
 typo that quietly narrows the audit to nothing is the silent green this engine exists to rule out.
+A root you name explicitly under `static.scope` is an admin root, and the audit treats it as one
+wherever another scope's defaults would also reach it. If your own tree still keeps a directory
+named `src/lib/components` (its own convention, from before this engine's admin barrel moved to
+`src/lib/admin`) and you want it back under the static scan, set `static.scope` to the default
+roots your tree has plus that directory, for example
+`["src/routes/admin", "src/lib/components"]`, rather than naming `src/lib/components` alone:
+`static.scope` replaces the defaults outright, so the bare form would silently drop
+`src/routes/admin` from every static rule.
 `static.sourceScope` carries the same rule.
 
 `sheet` behaves the same way from the other side: leave it unset and the run resolves it to a
@@ -449,6 +590,10 @@ the admin screens in both themes, reads the computed styles of each semantic rol
 bands the query returns. The query exists so an agent or a developer building a new admin surface
 reads a measured number instead of inferring one from a screenshot.
 
+A role a shipped recipe covers also prints a `recipe:` line: the plain class to write and the look
+it produces, right under the role's own header. A role no recipe covers prints as it always has,
+with no `recipe:` line.
+
 ```bash
 npx cairn-audit norms card
 ```
@@ -456,6 +601,8 @@ npx cairn-audit norms card
 ```text
 card  (container)  .card-shell
   The floating card surface: the list table, the editor panes, the auth card.
+  recipe: card-shell card-shadow
+    a floating card surface: the box radius, a hairline edge, and elevation.
 
   background-color  var(--color-base-100)  15 sites  observed
   border-color  var(--cairn-card-border)  15 sites  ratified

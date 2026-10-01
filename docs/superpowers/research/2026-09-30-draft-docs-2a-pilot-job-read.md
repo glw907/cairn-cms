@@ -59,3 +59,38 @@ pilot pages at the page level (his two introductions included), and republish th
 Task 8 runs after the 2026-10-02 reset if the week runs short. The threat position for `security-model` is his: cairn
 assumes the likeliest attacker holds an editor's account; an anonymous visitor reaches only the public site and the
 sign-in form (wording to verify against the code at the fold).
+
+## The two introductions for task 7b (drafted by the conductor, Geoff approved the direction)
+
+Both replace the page's current first paragraph; the fact read verifies every claim before they land, and the attacker
+sentence cites the owner-ruled position fact from task 7a.
+
+`security-model.md` (the default-identity paragraph follows unchanged):
+
+> cairn signs in a site's editors and commits their edits, so its security design decides who can change the site. It
+> assumes the likeliest attacker holds an editor's account, through a stolen or phished sign-in link. An anonymous
+> visitor reaches only the public site and the sign-in form.
+>
+> Each section below takes one component cairn exposes, says what cairn defends, and names the risk it leaves to the
+> site. The page ends with the responsibilities that stay with the site. Read it before you replace cairn's sign-in or
+> access rules, and again before you ship.
+
+If preview links, the media route, or `/healthz` make "only the public site and the sign-in form" too strong, use
+"reaches nothing behind `/admin` except the sign-in form".
+
+`add-cairn-to-a-sveltekit-app.md` (the milestone list follows):
+
+> cairn gives a SvelteKit site an admin at `/admin`, where editors sign in by email and publish their markdown edits
+> through a GitHub App you register. This tutorial adds it by hand, so you see every file the engine needs and why. To
+> start a new site without the walkthrough, the setup command, `create-cairn-site`, scaffolds a complete site with its
+> theme in one step, and [Scaffolded site files](scaffolded-site-files.md) explains what it writes.
+>
+> The tutorial carries one example throughout: Field Notes, a site with one post. By the end, Field Notes runs in
+> production, and an editor can sign in, edit the post, and publish it to the deployed site.
+
+## Carried into 7a (not yet done)
+
+- A brief sentence holds one fact id and the brief has no cut field (filed in the friction log); take it in 7a only if
+  it is cheap, else leave it for the 2b plan.
+- Geoff's pilot review page (https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs) holds no edits of his yet; read it back
+  before 7b in case he saves edits, and republish to the same URL for the second read.

@@ -495,16 +495,16 @@ quotes the parts adopted.
 - **Drafter.** The drafter definition and the runner's draft prompt follow the adopted anatomy for openings, hand-offs,
   and endings, and record those sentences `no-claim` in the brief (the existing tag), instead of cutting them under the
   removal rule.
-- **Positions through existing mechanisms.** Geoff's threat position for `security-model` is recorded in the existing
-  `docs/internal/engine-rulings.md`, and the page's sentence cites it through the brief's existing source mechanism, or,
-  if the brief has no way to cite a ruling, it is recorded `no-claim` with the ruling named in the stage record. No new
+- **Positions through existing mechanisms.** Geoff's threat position for `security-model` goes through the facts
+  container's existing owner tier, since a brief cannot cite an `engine-rulings.md` entry (prior-art record, d): a dated
+  section in `docs/internal/what-cairn-is-and-is-not.md` and the owner-tier fact `f:v85shm` (landed `6e5f54e6`). No new
   fact tag.
 - No new outline fields: a page's reader and its read-instead page go into its existing `job` and `covers` text where
   the adopted template asks for them.
 
 **Acceptance:** the prior-art record cites a source for every outcome taken; runner dry-run cases show the new seat in
 the round and its findings in the redraft, and the final reader read running last with its `fix` driving one scoped
-redraft; the register's anatomies carry the adopted sections with provenance; both
+redraft and one re-test (Part V: "Plan to test at least twice"), a second `fix` escalating; the register's anatomies carry the adopted sections with provenance; both
 repos' gates green; one `diff-reviewer` read per repo, which checks that nothing in the diff lacks a cited source.
 
 ### Task 7b: rework the pilot at the page level
@@ -513,8 +513,10 @@ repos' gates green; one `diff-reviewer` read per repo, which checks that nothing
 
 **Outcomes:** each of the six pilot pages reworked against the job-read record and the new anatomy, page-level only
 (opening, order, hand-offs, depth, ending, covers), sentences kept where they stand; Geoff's two introductions
-(`security-model`, `add-cairn-to-a-sveltekit-app`) land with the threat position cited per task 7a; briefs in
-step; each page then passes the job read and scoped register and fact reads on what changed. The three owner pages are
+(`security-model`, `add-cairn-to-a-sveltekit-app`) land with the threat position cited as `f:v85shm`; every page gets an
+introduction per the register's anatomy, the four with a one-line contract included (Geoff, 2026-10-01); briefs in
+step; each page then passes the structural edit seat, scoped register and fact reads on what changed, and the final
+reader read. The three owner pages are
 republished for Geoff's second read; task 8 waits for it.
 
 ### Task 8: the rest of 2a

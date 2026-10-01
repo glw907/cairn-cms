@@ -488,6 +488,10 @@ quotes the parts adopted.
 - **Structural edit seat.** The runner adds one review seat that runs the adopted structural-edit checklist, as
   published, over the whole page against its outline entry; its `fix` joins the round's findings like the other
   reviewers', and `bothReviewers` re-reads it.
+- **Final reader read (Geoff, 2026-10-01).** Separate from the structural edit seat, the chain ends each page with one
+  read that runs last, after the fact read, from the reader's seat: does the page get its reader where the outline job
+  says. It adopts the reader test the prior-art record names (the 09-08 standard's "Reader test" and its published
+  sources, the 09-21 spec's cold reader), as published; its `fix` sends the page back for one scoped redraft.
 - **Drafter.** The drafter definition and the runner's draft prompt follow the adopted anatomy for openings, hand-offs,
   and endings, and record those sentences `no-claim` in the brief (the existing tag), instead of cutting them under the
   removal rule.
@@ -499,7 +503,8 @@ quotes the parts adopted.
   the adopted template asks for them.
 
 **Acceptance:** the prior-art record cites a source for every outcome taken; runner dry-run cases show the new seat in
-the round and its findings in the redraft; the register's anatomies carry the adopted sections with provenance; both
+the round and its findings in the redraft, and the final reader read running last with its `fix` driving one scoped
+redraft; the register's anatomies carry the adopted sections with provenance; both
 repos' gates green; one `diff-reviewer` read per repo, which checks that nothing in the diff lacks a cited source.
 
 ### Task 7b: rework the pilot at the page level

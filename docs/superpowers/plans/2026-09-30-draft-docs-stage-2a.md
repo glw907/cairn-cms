@@ -47,6 +47,12 @@ runner and helper are outside its scope (spec, "What stage 2a inherits").
   (S7); the release sweep runs on capability releases only, capped at 1M per cut, never blocking
   the cut (S8).
 
+- **Initiative budget after the pilot (Geoff, 2026-09-30):** 45 to 60M for the remaining pages
+  (task 8, stage 2b, stages 3 to 5) is accepted, at the pilot's measured cost of about 1.3M a page.
+  Efficiency is taken only where quality holds. The pilot's cross-regression rate (2 of 6 pages:
+  the figure verifier on `add-a-custom-admin-screen`, the fact read on `theme-your-public-site`)
+  keeps `bothReviewers: true` for task 8 unless the checkpoint shows otherwise.
+
 ## Page set (Geoff, 2026-09-30)
 
 The outline's 25 pages are 23 drawn from the extend reader's jobs plus the sweep's two (S5), with

@@ -556,5 +556,6 @@ Run `cairn-pass`'s close:
 | S1 boundary | merge `3e19de2a`; friction DAD-1, EXB-4, EXB-5, and the unlinted `scripts/` (`39bd5faf`); README slug skip and the verified drift routine (`12b97d1e`) | done | ~0.1M |
 | 5 | `f6cee04f`, `98f0c17e`, `1311ebc3` (one fix round: 11 interim relink entries repointed by 2b pages retagged `2b`; relink stages now 2a 74, 2b 43) | accept | implementer ~0.12M, review ~0.07M (attribution only) |
 | 6 pre-pilot commit | the ledger commit that adds this row (map selection counts are computed at it) | | |
+| 6 | run `wf_3d221b24-d37`; forward-link rule `c498b6fa`; pilot `297c0282`; carry `a0213cc3`; file-set fix `0d8b55be` (committer facts made consistent against 907-life `18644a55`; two runtime map rows mapped to f:16cx9j) | all six escalated after round 2, resolved by conductor-ruled resolution passes with accepted scoped reviews; post-run accept after one fix round | about 8.0M (workflow 6.09M, resolution about 1.9M); weekly meter 87% to 93% |
 
 ## Post-mortem

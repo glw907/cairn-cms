@@ -464,6 +464,46 @@ record; the post-run commit and the run's `/cost` delta in the ledger.
 scoped-review verdicts in the stage record, any `fix` applied before the commit; no task 8
 dispatch before the answer.
 
+### Task 7a: the chain owns the page (Geoff, 2026-09-30)
+
+**Pass class:** `engine-logic` for the runner and `check:facts`, `docs` for the register, drafter, and outline. **Why:**
+`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md` (every pilot page has page-level weaknesses no
+seat grades; the four causes there). **Lean guard:** each mechanism names a failure that record found and rides a step
+that already runs.
+
+**Outcomes:**
+- **Outline contract.** Every `docs/internal/outlines/extend.json` page gains `reader` (who reads it and when) and
+  `instead` (the other page or path to take when this one is the wrong one, or null); `covers` is documented as an
+  inventory, not a reading order. The runner and `cairn-docs-outline` carry both fields to page inputs, the drafter,
+  and the new seat, inside the entry checksum (both copies kept identical).
+- **Register.** `docs/internal/docs-register.md` gains a concept-page anatomy, and every page anatomy gains a page-level
+  opening (what the reader gets, who the page is for, the page to read instead) and ending (what the reader has achieved
+  or does next).
+- **Drafter.** `cairn-docs-drafter.md` and the runner's draft prompt exempt orientation sentences (opening, hand-offs,
+  ending, read-instead) from the removal rule, record them `no-claim` in the brief, and tell the drafter to sequence
+  sections for the reader rather than in `covers` order.
+- **Job read.** The runner adds a page-level seat (Opus 5.5) after the fact read, reading the page whole with its outline
+  entry, the track profile, and the register's anatomy: opening, job, order and flow, depth balance, ending,
+  orientation, covers fulfilment. Its `fix` joins the round's combined findings like the other reviewers'; it reports
+  no friction. `bothReviewers` re-reads it too.
+- **Owner-ruled positions.** The facts README and `check:facts` accept an owner-ruled position tag whose `Source:` names
+  the ruling (Geoff and the date, or an `engine-rulings.md` entry), so a stated design position is citable.
+
+**Acceptance:** runner dry-run cases show the new fields in all three prompts and the checksum, and the job read in the
+round and its findings in the redraft; `check:facts` unit tests accept the new tag with a ruling source and reject it
+without one; the register's anatomies carry the opening and ending; both repos' gates green; one `diff-reviewer` read per
+repo.
+
+### Task 7b: rework the pilot at the page level
+
+**Pass class:** `docs`. **Depends on:** task 7a.
+
+**Outcomes:** each of the six pilot pages reworked against the job-read record and the new anatomy, page-level only
+(opening, order, hand-offs, depth, ending, covers), sentences kept where they stand; Geoff's two introductions
+(`security-model`, `add-cairn-to-a-sveltekit-app`) land with the threat position filed as an owner-ruled fact; briefs in
+step; each page then passes the job read and scoped register and fact reads on what changed. The three owner pages are
+republished for Geoff's second read; task 8 waits for it.
+
 ### Task 8: the rest of 2a
 
 **Pass class:** `docs`. **Gate:** the chain's per-page gate.

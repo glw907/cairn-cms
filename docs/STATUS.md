@@ -16,21 +16,18 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Draft docs stage 2a: task 7a is done; task 7b's rework run is in flight (2026-10-01).** Task 7a landed the
-  register's introduction and ending anatomies, the owner-tier threat position `f:v85shm`, the structural edit seat, the
-  final reader read with its re-test, and a `rework` entry point (ledger row 7a; dotfiles through `5fb8ce2`). Task 7b
-  runs the six pilot pages as rework pages, run `wf_55b254af-82a`; its args sit in the session scratchpad only. Geoff
-  ruled on 2026-10-01 that every pilot page lacks an introduction and that structure comes before line editing. Branch and worktree
-  `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
-  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (its ledger is the task record). Tasks 1 to 6 are done;
-  the six pilot pages are committed (`297c0282`, `a0213cc3`, `0d8b55be`), stage record
-  `docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-record.md`. Geoff's read found the pages lack page-level
-  structure (openings, order, hand-offs, endings); a job read of all six confirmed it
-  (`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md`, which also holds his two introductions).
-  Geoff's rulings: fix the chain (task 7a, grounded in prior art first), rework the pilot (task 7b), republish the same
-  three pages for his second read (https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs), then task 8. Budget for the
-  remaining pages 45 to 60M, quality first; `bothReviewers` stays on. Weekly limit about 93%, reset 2026-10-02 23:59;
-  task 8 may wait for it.
+- **Draft docs stage 2a: task 7b's resolution pass is next, after the 2026-10-02 23:59 reset (Geoff, 2026-10-01).**
+  Branch and worktree `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
+  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (ledger rows 7a and 7b, and the "Resolution pass" paragraph
+  under task 7b). Task 7a is done: introduction and ending anatomies in the register, Geoff's threat position as the
+  owner-tier fact `f:v85shm`, a structural edit seat, a final reader read with one re-test, and a `rework` entry point
+  (dotfiles through `5fb8ce2`). Task 7b's rework run left all six pilot pages escalated at round 2 with 26 narrow
+  blocking findings; the pages sit in WIP commit `a6885750`, and the findings are in
+  `docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`. The final reader read has run on no page yet.
+  Geoff's rulings of 2026-10-01: every page needs a real introduction, and structure comes before line editing. After
+  the resolution pass, republish the same three pages for his structural read
+  (https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs), then task 8. Budget for the remaining pages 45 to 60M, quality
+  first; 7a and 7b ran past their 4 to 5M.
 - The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
   `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and filed its 12 code defects in the
   friction log (`bd8ab1fe`, on `main`, not pushed).
@@ -54,18 +51,19 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Resume prompt
 
-### Next action (draft docs stage 2a, tasks 7a and 7b)
+### Next action (draft docs stage 2a, task 7b resolution pass)
 
-> **Goal.** Make the page chain own the page as a whole, then rework the six pilot pages at the page level.
+> **Goal.** Bring the six reworked pilot pages to acceptance, final reader read included, and republish three for
+> Geoff's structural read.
 >
-> **Scope.** The plan's tasks 7a and 7b on `draft-docs-2a`, then Geoff's second read. Task 8 waits for it.
+> **Scope.** The plan's "Resolution pass" under task 7b on `draft-docs-2a`, then the republish. Task 8 waits for
+> Geoff's read. Run it only after the 2026-10-02 23:59 weekly reset.
 >
-> **Settled (do not re-brainstorm):** the spec (S1 to S9), the plan and its ledger, the forward-link rule
-> (`c498b6fa`), the 45 to 60M budget, `bothReviewers: true`, Geoff's threat position and his two introductions (in the
-> job-read record), and that 7a adopts published systems and existing mechanisms only (no new tags, fields, or checklists), starting with a prior-art sweep whose sources set the review seat and the anatomy
-> wording.
+> **Settled (do not re-brainstorm):** the spec (S1 to S9), the plan and its ledger, task 7a's mechanisms and rulings
+> (ledger row 7a), the conductor rulings in the "Resolution pass" paragraph, `bothReviewers: true`, and the stale-script
+> guard in `pass-gate-economy.md` (verify a run's persisted script against the committed runner before relying on it).
 >
-> **Entry.** Read the job-read record, then Artifact `read` the review page in case Geoff saved edits there.
+> **Entry.** Read the rework record, then the plan's "Resolution pass" paragraph.
 >
-> **Approach.** Invoke `cairn-pass` to resume; the plan's Execution mode governs. Launch directory
-> `~/Projects/cairn-cms`; `claude --model claude-opus-5-5` at medium effort.
+> **Approach.** Invoke `cairn-pass` to resume. Launch directory `~/Projects/cairn-cms`;
+> `claude --model claude-opus-5-5` at medium effort.

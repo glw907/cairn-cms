@@ -1,13 +1,84 @@
 # Theme your public site
 
 Re-skin the theme your site ships with, or port your own theme onto the chassis beneath it, and
-confirm the result against the public-scope audit rules.
+iterate against real content until the result passes the public-scope audit rules.
 
-This page assumes a site scaffolded by `create-cairn-site`, which ships Waymark, cairn's public
-reading template, on top of the chassis, a set of design-neutral modules and style sheets that
-every scaffolded site shares. A site built by hand from `sv create` starts with neither and brings
-its own theme. [Theme a hand-built site](#theme-a-hand-built-site) covers the styling stack such a site
-adds. [Scaffolded site files](scaffolded-site-files.md) maps every file the setup command writes.
+A site scaffolded by `create-cairn-site` ships Waymark, cairn's public reading template, on top of
+the chassis, a set of design-neutral modules and style sheets that every scaffolded site shares. A
+re-skin keeps Waymark's layouts and changes about fourteen color and type values, which suits a site
+whose content those layouts already fit. A port puts a design the site already has onto the same
+chassis in Waymark's place.
+
+A theme is the work of the developer who owns a site's public design, and it takes working
+knowledge of Tailwind CSS, daisyUI themes, and CSS cascade layers.
+
+A site built by hand from `sv create` starts with neither Waymark nor the chassis and brings its own
+theme, so its work begins at [Theme a hand-built site](#theme-a-hand-built-site). A scaffolded site
+already carries the styling stack and begins at [The chassis boundary](#the-chassis-boundary).
+[Scaffolded site files](scaffolded-site-files.md) maps every file the setup command writes. To style
+a custom admin screen instead, see [Style the screen](add-a-custom-admin-screen.md#style-the-screen)
+in Add a custom admin screen.
+
+## Before you begin
+
+The steps assume the following:
+
+- A site that `create-cairn-site` scaffolded, or a hand-built site that
+  [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) produces.
+- Tailwind CSS in a hand-built site, installed through
+  [Tailwind's SvelteKit guide](https://tailwindcss.com/docs/installation/framework-guides/sveltekit).
+- The `daisyui` package installed in the site, which the `theme-contrast` audit rule needs. A
+  scaffolded site already carries it, and [Theme a hand-built site](#theme-a-hand-built-site)
+  installs it in a hand-built one.
+- A deployed site with a media library, which [Configure media](configure-media.md) sets up, for
+  seeded media in local development.
+
+## Theme a hand-built site
+
+A site built without the setup command adds the styling stack that the scaffold would have
+supplied. The engine ships its public defaults as one CSS asset,
+`@glw907/cairn-cms/cairn-public.css`, which
+[the public style sheet reference](../reference/public-css.md) documents key by key. The sheet
+declares no daisyUI theme variable and activates no daisyUI plugin, yet its roles read daisyUI
+roles such as `--color-base-content` and `--color-primary`.
+
+To theme a hand-built site, follow these steps:
+
+1. In the site directory, install daisyUI alongside Tailwind by following
+   [daisyUI's installation guide](https://daisyui.com/docs/install/).
+2. In the site's global style sheet, import `@glw907/cairn-cms/cairn-public.css` once, after
+   `@import "tailwindcss"` and before the style sheet that styles rendered markdown.
+
+   That order lets a later declaration in the site's `@theme` block win over the sheet's two
+   `@theme` colors, `--color-muted` and `--color-card-border`.
+
+3. In the same style sheet, add a `@plugin "daisyui/theme"` block with the site's role colors.
+
+   The following style sheet is illustrative, and the theme block elides most of daisyUI's keys:
+
+   ```css
+   @import "tailwindcss";
+   @import "@glw907/cairn-cms/cairn-public.css";
+   @plugin "daisyui";
+
+   @plugin "daisyui/theme" {
+     name: "site";
+     default: true;
+     color-scheme: light;
+     --color-base-100: oklch(98% 0 0);
+     --color-base-content: oklch(25% 0 0);
+     --color-primary: oklch(45% 0.1 248);
+     /* every other daisyUI theme key */
+   }
+   ```
+
+4. Run the checks in [Verify the theme](#verify-the-theme).
+
+The engine's ink derivation in [Rebrand the status colors](#rebrand-the-status-colors) holds for a
+hand-built theme, since it lives in `cairn-public.css`. A role resolves by layer on a hand-built
+site the same way [Token tiers and cascade order](#token-tiers-and-cascade-order) describes. The
+steps in [Style the editor preview](#style-the-editor-preview) apply with the site's adapter file in
+place of `src/theme/cairn.config.ts`.
 
 ## The chassis boundary
 
@@ -58,14 +129,73 @@ declaration of a key wins:
   engine's declaration in `@layer theme`, the lowest layer Tailwind declares.
 
 The engine declares its roles on `:root, [data-theme]`, so the `[data-theme]` selector recomputes
-a role inside a nested theme region. An unlayered rule in a site style sheet also beats every
-Tailwind utility, which [Chassis conventions](#chassis-conventions) covers.
+a role inside a nested theme region.
 
 Every heading reads two keys, `--font-weight-heading` for its weight and `--cairn-heading-case`
 for its case, which defaults to `none`. Chrome markup applies them with the `font-heading` and
 `heading-case` utilities, and a scoped `<style>` rule reads the two variables directly.
 `prose.css` headings and the hero title read the same keys, so a theme that sets
 `--cairn-heading-case: uppercase` uppercases every heading.
+
+## Chassis conventions
+
+Every class and layout rule that a port adds follows the chassis's conventions:
+
+- A class carries its owner's prefix, such as `cairn-*` for the engine and the chassis or
+  `site-*` for the theme's chrome.
+- A width uses `max-w-measure`, `max-w-measure-wide`, or an arbitrary value, never a shadowed
+  size such as `max-w-2xl`.
+- A centered container uses `margin-inline: auto`, never the `margin: 0 auto` shorthand.
+- A layout dimension uses rem units, never a fixed px value.
+
+A theme colors the `cairn-*` classes through tokens and never restyles their structure. The
+`sg-*` classes belong to the styleguide route alone. A directive class such as `.callout` carries no
+prefix, as [Style rendered markdown](#style-rendered-markdown) describes.
+
+Five chassis spacing keys, such as `--spacing-2xl`, share suffixes with Tailwind's `--container-*`
+keys, and Tailwind resolves `max-w-<key>` to the spacing variable. `max-w-2xl` therefore compiles
+to `max-width: var(--spacing-2xl)`, about 4rem.
+
+An unlayered rule in a site style sheet beats a Tailwind utility, which lives in
+`@layer utilities`. A container class with the `margin: 0 auto` shorthand therefore cancels
+`mt-*` and `mb-*` on the same element.
+
+Waymark's `site.css` sets a fluid root font size that grows from 16px to 18px between about
+1440px and 2200px. Rem-based layout scales with the root size on ultrawide screens.
+
+A theme renders every archive and article date through `formatDate` in the chassis's `date.ts`,
+which is hard-coded to the `en-GB` locale and Coordinated Universal Time (UTC), so a new format or
+locale is an edit to that file alone.
+
+## Iterate locally
+
+While you re-skin or port, the scaffold's `/styleguide` route renders every directive in the
+registry, plus the type scale and component recipes, against the current `theme.css`. Vite's hot
+module replacement shows each saved change there without a reload. A directive that declares a
+`preview` renders as a sample, and one without a `preview` is listed by name.
+
+To check a theme against real images, `cairn-media-seed --from <url>` seeds Wrangler's local R2
+state from a deployed site's media library, so a site with nothing deployed has nothing to seed. The
+command downloads each row of the site's media manifest from `<url>/media/`. It ignores
+`assets.publicBase`, so it cannot seed a site that mounts its media route elsewhere. The command is
+idempotent, since a re-run writes each key again from the deployed library.
+
+To see seeded media locally, follow these steps:
+
+1. In the site directory, run `cairn-media-seed` against the deployed site's URL:
+
+   ```bash
+   npx cairn-media-seed --from https://your-site.com
+   ```
+
+2. In the site directory, start the dev server with the dev backend off, through `npx vite dev`
+   without `CAIRN_DEV_BACKEND` or through `wrangler dev`.
+
+   The scaffold's `npm run dev` sets `CAIRN_DEV_BACKEND=1`, whose handle serves `/media` from an
+   in-memory fake bucket, so seeded objects do not appear under it.
+
+The [`cairn-media-seed` reference](../reference/cli-cairn-media-seed.md) lists the command's flags
+and exit codes.
 
 ## Re-skin Waymark
 
@@ -172,6 +302,26 @@ To port a theme onto the chassis, follow these steps:
    that [Page shell behavior](#page-shell-behavior) describes.
 10. Run the checks in [Verify the theme](#verify-the-theme).
 
+## Style rendered markdown
+
+Rendered markdown takes its typography from `prose.css`, which binds every element to the daisyUI
+roles and the cairn tokens, so a re-skin restyles entry bodies with no edit to that file.
+`ArticleView.svelte` wraps each entry on the public site in `<article class="prose">`.
+
+A directive's markup carries an unprefixed class from the theme's `markdown-components.ts`, such as
+`.callout`, which the theme styles and may rename.
+
+Waymark's `theme.css` lists the code-highlight binding in Tier 2, beside the on-surface inks. The
+binding's rules, for `pre.shiki` and the six `.cairn-tok-*` classes, sit in the engine's
+`cairn-public.css` in `@layer components`. Those rules read their colors from the engine's roles,
+which [the public style sheet reference](../reference/public-css.md) lists with their defaults.
+
+`prose.css` places three decorative styles, the cairn-glyph rule, the diamond bullet, and the
+margin-hanging pull quote, behind the `.prose[data-flourish]` selector, so they are off by
+default.
+
+- To turn the decorative styles on, add a `data-flourish` attribute to the theme's `.prose` root.
+
 ## Style the editor preview
 
 The admin's preview frame loads none of the site's CSS, so a site names its compiled style sheets
@@ -231,128 +381,10 @@ document's root element carries `data-cairn-preview`, so a site's style sheet ca
 suppress entrance animations such as `[data-rise]` inside the frame. The frame also ignores every
 link click inside it.
 
-## Style rendered markdown
-
-Rendered markdown takes its typography from `prose.css`, which binds every element to the daisyUI
-roles and the cairn tokens, so a re-skin restyles entry bodies with no edit to that file.
-`prose.css` places three decorative styles, the cairn-glyph rule, the diamond bullet, and the
-margin-hanging pull quote, behind the `.prose[data-flourish]` selector, so they are off by
-default.
-
-- To turn the decorative styles on, add a `data-flourish` attribute to the theme's `.prose` root.
-
-## Theme a hand-built site
-
-A site built without the setup command adds the styling stack that the scaffold would have
-supplied. The engine ships its public defaults as one CSS asset,
-`@glw907/cairn-cms/cairn-public.css`, which
-[the public style sheet reference](../reference/public-css.md) documents key by key. The sheet
-declares no daisyUI theme variable and activates no daisyUI plugin, yet its roles read daisyUI
-roles such as `--color-base-content` and `--color-primary`.
-
-To theme a hand-built site, follow these steps:
-
-1. In the site directory, install daisyUI alongside Tailwind by following
-   [daisyUI's installation guide](https://daisyui.com/docs/install/).
-2. In the site's global style sheet, import `@glw907/cairn-cms/cairn-public.css` once, after
-   `@import "tailwindcss"` and before the style sheet that styles rendered markdown.
-
-   That order lets a later declaration in the site's `@theme` block win over the sheet's two
-   `@theme` colors, `--color-muted` and `--color-card-border`.
-
-3. In the same style sheet, add a `@plugin "daisyui/theme"` block with the site's role colors.
-
-   The following style sheet is illustrative, and the theme block elides most of daisyUI's keys:
-
-   ```css
-   @import "tailwindcss";
-   @import "@glw907/cairn-cms/cairn-public.css";
-   @plugin "daisyui";
-
-   @plugin "daisyui/theme" {
-     name: "site";
-     default: true;
-     color-scheme: light;
-     --color-base-100: oklch(98% 0 0);
-     --color-base-content: oklch(25% 0 0);
-     --color-primary: oklch(45% 0.1 248);
-     /* every other daisyUI theme key */
-   }
-   ```
-
-4. Run the checks in [Verify the theme](#verify-the-theme).
-
-The engine's ink derivation in [Rebrand the status colors](#rebrand-the-status-colors) holds for a
-hand-built theme, since it lives in `cairn-public.css`.
-
-## Iterate locally
-
-The scaffold's `/styleguide` route renders every directive in the registry, plus the
-type scale and component recipes, against the current `theme.css`, so a theme change shows on one
-page. A directive that declares a `preview` renders as a sample, and one without a `preview` is
-listed by name. Vite hot module replacement applies a changed style sheet or component to the
-running page without a manual reload.
-
-`cairn-media-seed --from <url>` seeds Wrangler's local R2 state from a deployed site's media
-library, so it has nothing to seed before a site's first deploy. The command downloads each row
-of the site's media manifest from `<url>/media/` and ignores `assets.publicBase`, so it cannot seed
-a site that mounts its media route elsewhere. The command is idempotent, since a re-run writes each key again from the
-deployed library.
-
-To see seeded media locally, follow these steps:
-
-1. In the site directory, run `cairn-media-seed` against the deployed site's URL:
-
-   ```bash
-   npx cairn-media-seed --from https://your-site.com
-   ```
-
-2. In the site directory, start the dev server with the dev backend off, through `npx vite dev`
-   without `CAIRN_DEV_BACKEND` or through `wrangler dev`.
-
-   The scaffold's `npm run dev` sets `CAIRN_DEV_BACKEND=1`, whose handle serves `/media` from an
-   in-memory fake bucket, so seeded objects do not appear under it.
-
-The [`cairn-media-seed` reference](../reference/cli-cairn-media-seed.md) lists the command's flags
-and exit codes.
-
-## Chassis conventions
-
-The following conventions govern a theme built on the chassis:
-
-- A class carries its owner's prefix, such as `cairn-*` for the engine and the chassis or
-  `site-*` for the theme's chrome.
-- A width uses `max-w-measure`, `max-w-measure-wide`, or an arbitrary value, never a shadowed
-  size such as `max-w-2xl`.
-- A centered container uses `margin-inline: auto`, never the `margin: 0 auto` shorthand.
-- A layout dimension uses rem units, never a fixed px value.
-- A date renders through `formatDate` in the chassis's `date.ts`, the one date vocabulary for the
-  archive and article surfaces.
-
-A theme colors the `cairn-*` classes through tokens and never restyles their structure. The
-`sg-*` classes belong to the styleguide route alone. An unprefixed class such as `.callout` is a
-directive class from `markdown-components.ts`.
-
-Five chassis spacing keys, such as `--spacing-2xl`, share suffixes with Tailwind's `--container-*`
-keys, and Tailwind resolves `max-w-<key>` to the spacing variable. `max-w-2xl` therefore compiles
-to `max-width: var(--spacing-2xl)`, about 4rem.
-
-An unlayered rule in a site style sheet beats a Tailwind utility, which lives in
-`@layer utilities`. A container class with the `margin: 0 auto` shorthand therefore cancels
-`mt-*` and `mb-*` on the same element.
-
-Waymark's `site.css` sets a fluid root font size that grows from 16px to 18px between about
-1440px and 2200px. Rem-based layout scales with the root size on ultrawide screens.
-
-Every archive and article date renders through `formatDate`, which is hard-coded to the `en-GB`
-locale and Coordinated Universal Time (UTC), so a new format or locale is an edit to `date.ts`
-alone.
-
 ## Verify the theme
 
 The three public-scope audit rules ship in `cairn-audit`, which the scaffold's `check:cairn` script
-runs at advisory tier on your site. The `theme-contrast` rule reads the site's import chain, so it
-needs `daisyui` installed in the site.
+runs at advisory tier on your site.
 
 To verify the theme, follow these steps:
 
@@ -364,15 +396,11 @@ To verify the theme, follow these steps:
 
 2. In the report, confirm that none of the three rules raises a finding.
 
-   `theme-contrast` measures text-bearing pairs against the
-   [Web Content Accessibility Guidelines (WCAG)](https://www.w3.org/TR/WCAG22/) AA level of
-   4.5:1, in sRGB and display-p3, in each scheme the theme defines. It measures the focus-ring
-   color against 3:1, and it reports a value it cannot place as unmeasured instead of passing it.
-   For what the rule does not measure, see
-   [What theme-contrast doesn't cover](../reference/cairn-audit.md#what-theme-contrast-doesnt-cover).
-
-   `theme-conformance` resolves each `var()` with no fallback against the declarations in the
-   public scope and its import chain.
+   A clean `theme-contrast` result means every text-bearing pair the theme paints meets the
+   [Web Content Accessibility Guidelines (WCAG)](https://www.w3.org/TR/WCAG22/) AA level of 4.5:1
+   in each scheme the theme defines. For the pairs, the color spaces, and the focus-ring
+   threshold, see the `theme-contrast` row of the
+   [static rules table](../reference/cairn-audit.md#the-static-rules).
 
 The cairn repository runs the same three rules over its example site in the
 `check:public-tokens` gate, which a scaffolded site's `package.json` does not carry.
@@ -390,11 +418,14 @@ To resolve a public-rule finding, follow these steps:
    ink the daisyUI block overrides alongside its fill.
 3. If the conformance rule reports one of the five `--cairn-cta-*` keys or
    `--cairn-caption-tracking` as unresolved, declare it in the theme.
+
+   `theme-conformance` resolves each `var()` with no fallback against the declarations in the
+   public scope and its import chain.
 4. If the finding persists, work through [Debug your site](debug-your-site.md).
 
-## Next steps
+## See also
 
-The following pages continue from a themed site:
+The following pages cover the work around a theme:
 
 - [Configure rendering](configure-rendering.md) builds the components a theme styles.
 - [Build the public routes](build-the-public-routes.md) wires the delivery routes the chassis
@@ -402,3 +433,5 @@ The following pages continue from a themed site:
 - [Configure media](configure-media.md) sets up the media storage that seeded images come from.
 - [Run cairn-audit on your site](run-cairn-audit-on-your-site.md) configures `cairn-audit` for the
   whole site.
+- [The public style sheet reference](../reference/public-css.md) lists every key the engine's sheet
+  declares, with its default.

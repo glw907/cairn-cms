@@ -3,11 +3,22 @@
 Replace cairn's magic-link sign-in with your organization's identity provider, using a Cloudflare
 Access application in front of the admin and a resolver that maps its token to a roster email.
 
-This page assumes a site whose guard already signs editors in by magic link, as
-[Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) sets it up.
-
 A Cloudflare Access self-hosted application in front of the Worker admits only the users who match
 its policies. It signs those users in through a connected identity provider (IdP).
+
+A site replaces magic links with Access when its editors already hold accounts in the organization's
+IdP, such as Google Workspace or Microsoft Entra ID, and should sign in to the admin with them. The
+work spans the site's server hooks and the Cloudflare account's Zero Trust settings, so it needs a
+developer who can change both. This page assumes a site whose guard already signs editors in by
+magic link, as [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) sets it up.
+
+The guard's `identity` option takes any
+[`IdentityResolver`](../reference/sveltekit.md#identityresolver), so a site behind a different
+authenticating reverse proxy writes the same kind of resolver for that proxy's token. A site that
+needs a second population with its own sign-in, beside editors who keep magic links, follows
+[Add a second sign-in group](add-a-second-sign-in-group.md) instead. For the threat analysis of
+running the guard with that option, see
+[Identity mode's threat surface](security-model.md#identity-modes-threat-surface).
 
 ```mermaid
 flowchart LR
@@ -30,15 +41,19 @@ flowchart LR
   browser -->|"/preview/#lt;token#gt;"| preview
 ```
 
-*Access admits a request only when it matches the application's policies. The guard passes the
-request to the site's resolver, which verifies the token Access attaches. The guard then looks the
-returned email up in the roster. A `/preview/<token>` request stays outside the application.*
+*Access admits a request only when it matches the application's policies. The guard admits it only
+when the email the resolver returns matches a roster row. The two lists never reconcile
+automatically. A `/preview/<token>` request reaches the Worker without passing the application.*
 
 ## Decide whether to switch
 
 Configuring [`createAuthGuard`](../reference/sveltekit.md#createauthguard)'s `identity` option
 replaces the whole magic-link path, with no partial adoption where some editors keep magic links
-and others go through the gate. To stay on magic links and change the sign-in email instead, see
+and others go through the gate. Under `identity`, the guard mints no token and creates no session
+or session cookie. The `identity.resolve` function reads the gate's proof of identity, and the guard
+looks the proven email up in the roster as it would a magic-link session's email.
+
+To stay on magic links and change the sign-in email instead, see
 [Customize the sign-in email](add-cairn-to-a-sveltekit-app.md#customize-the-sign-in-email). The
 guard's reference entry records the stability tier of this option and of the three types it names.
 
@@ -53,6 +68,11 @@ The Access application and the roster are two independent admission lists that n
 automatically. A user must pass the application's policies to reach `/admin` and must also hold a
 roster row to edit.
 
+A [`ResolvedIdentity`](../reference/sveltekit.md#resolvedidentity) carries an email and an optional
+advisory `displayName`, never a role, since the guard takes the role from the roster row. The guard
+trims and lowercases the returned email and looks it up with no cross-check. That string is the only
+join between the gate and the roster.
+
 Before you enable `identity`, prepare the roster with these steps:
 
 1. In the roster screen, confirm that every editor's email is the primary address the IdP
@@ -63,8 +83,9 @@ Before you enable `identity`, prepare the roster with these steps:
 
 2. In `AUTH_DB`, confirm that the first owner's row exists.
 
-   Identity mode can't bootstrap an owner, since the owner bootstrap lives only in the magic-link
-   routes, which the `identity` branch never reaches. Seed the owner through `create-cairn-site` or
+   Identity mode can't bootstrap an owner. The `bootstrapOwner` pair that
+   [Compose the runtime and the admin](add-cairn-to-a-sveltekit-app.md#compose-the-runtime-and-the-admin)
+   sets lives only in the magic-link routes, which the `identity` branch never reaches. Seed the owner through `create-cairn-site` or
    with `wrangler d1 execute` against `AUTH_DB`.
 
 ## Create the Access application
@@ -175,11 +196,12 @@ export const accessIdentity: IdentityResolver = {
 };
 ```
 
-The guard logs an identity refusal at error when its reason is `audience`, `issuer`, `keys`, or
-`error`. Each of those reasons marks a misconfigured gate that would refuse the whole roster. Every
-other reason logs at warn, and a resolver that throws is refused and logged at error. The
-illustrative module returns `invalid` for every failed verification, so a wrong AUD tag logs at
-warn.
+The refusal reason a verifier returns sets the level at which the guard logs the refusal. The guard
+logs an identity refusal at error when its reason is `audience`, `issuer`, `keys`, or `error`. Each
+of those reasons marks a misconfigured gate that would refuse the whole roster. Every other reason
+logs at warn, and a resolver that throws is refused and logged at error. The illustrative module
+returns `invalid` for every failed verification, so a wrong AUD tag logs at warn. A verifier that
+returns `audience` for an AUD mismatch gets that failure logged at error.
 
 `createAuthGuard` validates `logoutUrl` once, at construction, and throws unless the value is a
 root-relative path or an absolute URL whose protocol is `https:`. For the address Access logs a
@@ -210,25 +232,12 @@ import { theme } from './theme-handle.js';
 export const handle = sequence(theme, createAuthGuard({ access, identity: accessIdentity }));
 ```
 
-Under `identity`, the guard mints no token and creates no session or session cookie. The
-`identity.resolve` function reads the gate's proof of identity, and the guard looks the proven
-email up in the roster as it would a magic-link session's email.
-
-The guard awaits `identity.resolve` on every non-public `/admin` request and keeps no session that
-caches a verified identity, so the signature check runs once per request. That work also runs for a
-request that reaches the Worker without passing the gate. A site can call
+The guard awaits `identity.resolve` on every non-public `/admin` request and caches no verified
+identity, so the signature check runs once per request. That work also runs for a request that
+reaches the Worker without passing the gate. A handle placed ahead of the guard can limit that work
+on a best-effort basis by calling
 [`resolveRateLimit`](../reference/cloudflare.md#resolveratelimit) from
-`@glw907/cairn-cms/cloudflare` ahead of the guard to limit that work on a best-effort basis.
-
-A [`ResolvedIdentity`](../reference/sveltekit.md#resolvedidentity) carries an email and an optional
-advisory `displayName`, never a role, since the guard takes the role from the roster row. The guard
-trims and lowercases the returned email and looks it up with no cross-check. That string is the only
-join between the gate and the roster. A proven email with no roster row gets the unknown-identity
-page, and adding the row lets the next request succeed.
-
-The `identity` option takes any [`IdentityResolver`](../reference/sveltekit.md#identityresolver), a
-`resolve` function plus a `logoutUrl`. A site behind a different authenticating reverse proxy writes a resolver for that proxy's token in the
-same shape.
+`@glw907/cairn-cms/cloudflare`.
 
 ## Logout and session lifetime under Access
 
@@ -269,3 +278,34 @@ follow these steps:
    `/admin/login`, and confirm that the redirect lands on the gate's hostname.
 5. Send an unauthenticated `GET` to `/admin` on `<worker-name>.<subdomain>.workers.dev` and on each
    preview URL, and confirm that no response comes from the Worker.
+
+## Resolve a refused sign-in
+
+The guard shows the identity-unresolved page when the resolver refuses the request or throws while
+resolving it. It shows the unknown-identity page when a proven email matches no roster row.
+
+To find why the guard refused an editor, follow these steps:
+
+1. In the Worker's logs, look for an `auth.identity.unknown` record from the refused request.
+2. If one appears, add or correct the editor's roster row so that it carries the address in the
+   record's `email` field.
+3. Otherwise, find the request's `guard.refused` record with `reason: identity`, and read the
+   refusal's reason in its `detail`.
+4. If that reason is `missing`, confirm that the application's paths cover the requested path and
+   that the request arrived on the primary hostname.
+5. If that reason is `invalid` for every rostered editor, check the config module's team domain and
+   AUD tag against the Access application.
+6. If the refusal persists, work through [Debug your site](debug-your-site.md).
+
+The [log events](../reference/log-events.md) reference lists the fields of both records.
+
+## See also
+
+The following pages cover the seams and limits around identity mode:
+
+- [Identity mode's threat surface](security-model.md#identity-modes-threat-surface) records the
+  risks the gate leaves open.
+- [Restrict admin access](restrict-admin-access.md) narrows which roster roles reach which admin
+  screens.
+- [Share a draft preview](share-a-draft-preview.md) sets up the `/preview/<token>` route that the
+  Access application leaves uncovered.

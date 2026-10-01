@@ -10,11 +10,27 @@
       "id": "f:9xthnq"
     },
     {
+      "text": "A site adds one to manage data it keeps outside its markdown content, such as the rows of a `signups` table that editors read and change in the admin.",
+      "id": "f:onqm6k"
+    },
+    {
+      "text": "Building one takes fluency with SvelteKit's form actions and server hooks.",
+      "id": "no-claim"
+    },
+    {
       "text": "The worked example is the signups screen in `examples/showcase`, the repository's example site, from its route through its actions and their audit calls.",
       "id": "f:pyt58u"
     },
     {
-      "text": "This page assumes the following:",
+      "text": "To change who reaches an existing admin screen without adding one, see [Restrict admin access](restrict-admin-access.md) instead.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Listing the screen in the sidebar and configuring the audit for the whole site are separate tasks, which [Arrange the admin sidebar](arrange-the-admin-sidebar.md) and [Run cairn-audit on your site](run-cairn-audit-on-your-site.md) cover.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The steps assume the following:",
       "id": "no-claim"
     },
     {
@@ -90,20 +106,32 @@
       "id": "no-claim"
     },
     {
-      "text": "A custom screen enforces the site's access map by calling [`requireAccess`](../reference/sveltekit.md#requireaccess) in its `load` and by wrapping every form action in [`createSectionAction`](../reference/sveltekit.md#createsectionaction).",
+      "text": "A custom screen enforces the site's access map by calling [`requireAccess`](../reference/sveltekit.md#requireaccess) in its `load` and by checking the same map in every form action.",
       "id": "f:10ojk8"
-    },
-    {
-      "text": "`createSectionAction`",
-      "id": "f:xbjxit"
     },
     {
       "text": "[`createAuthGuard`](../reference/sveltekit.md#createauthguard) gates the whole `/admin` subtree before any load runs, but it decides nothing per route.",
       "id": "f:2sd4if"
     },
     {
-      "text": "The two calls share one fail-closed predicate, so a session the access map doesn't admit is refused on the read and on the write.",
+      "text": "`requireAccess` and [`createSectionAction`](../reference/sveltekit.md#createsectionaction) share one fail-closed predicate, so a session the access map doesn't admit is refused on the read and on the write.",
       "id": "f:10ojk8"
+    },
+    {
+      "text": "To gate the screen, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the screen's `+page.server.ts`, call `requireAccess` in `load` before it reads anything.",
+      "id": "f:onqm6k"
+    },
+    {
+      "text": "For each route nested under the screen, such as a detail endpoint, add a separate `requireAccess` call and access-map entry.",
+      "id": "f:lmtfkt"
+    },
+    {
+      "text": "In the same server file, wrap every form action in a wrapper that checks the access map, as [Choose an action wrapper](#choose-an-action-wrapper) describes.",
+      "id": "f:chsstm"
     },
     {
       "text": "The signups `load` calls `requireAccess` before it reads anything.",
@@ -111,10 +139,6 @@
     },
     {
       "text": "A route nested under the screen, such as a detail endpoint, inherits the guard but not the screen's `requireAccess` rule.",
-      "id": "f:lmtfkt"
-    },
-    {
-      "text": "It needs a separate `requireAccess` call and a separate access-map entry.",
       "id": "f:lmtfkt"
     },
     {
@@ -150,92 +174,20 @@
       "id": "f:xbjxit"
     },
     {
-      "text": "`createSectionAction<Env, Db>({ resolveDb })` builds one reusable wrapper per section, and `resolveDb` reads the section's binding from the site's platform env.",
-      "id": "f:3j02dk"
-    },
-    {
-      "text": "`Env` is a type parameter for the site's platform bindings, since the engine ships no `Env` type.",
-      "id": "f:esp93u"
-    },
-    {
-      "text": "`resolveDb` receives `Env | undefined`.",
-      "id": "f:esp93u"
-    },
-    {
-      "text": "`Env` doesn't infer from an unannotated `resolveDb` parameter, so reads off `env` stop typechecking unless the site annotates it or passes explicit type arguments.",
-      "id": "f:pmmtdv"
-    },
-    {
-      "text": "The example site passes `App.Platform['env']`.",
-      "id": "f:esp93u"
-    },
-    {
-      "text": "To wrap the actions, follow these steps:",
+      "text": "Choose the wrapper by whether the screen's actions write through a database binding:",
       "id": "no-claim"
     },
     {
-      "text": "In the screen's server file, build one wrapper with `createSectionAction`, passing a `resolveDb` that reads the section's binding.",
-      "id": "f:3j02dk"
-    },
-    {
-      "text": "In the exported form actions, wrap each handler in that wrapper, passing its audited `action` and `entity`.",
-      "id": "f:pyt58u"
-    },
-    {
-      "text": "Each handler receives `{ form, ctx }`, writes through `ctx.db`, and calls `ctx.audit` with a `detail` or an `entityId`.",
-      "id": "f:pyt58u"
-    },
-    {
-      "text": "The destructive `remove` adds `ownerOnly: true` to its second argument.",
-      "id": "f:pyt58u"
-    },
-    {
-      "text": "Underneath, `createSectionAction` runs the editor identity, CSRF, and single form-read work of [`createAdminAction`](../reference/sveltekit.md#createadminaction), so a section never calls `createAdminAction` directly.",
-      "id": "f:lblh3u"
-    },
-    {
-      "text": "`createAdminAction`",
-      "id": "f:xbjxit"
-    },
-    {
-      "text": "The wrapper requires an audit entry from every successful action, and it records one for each access-map, owner, or binding refusal it makes.",
-      "id": "f:da6d2z"
-    },
-    {
-      "text": "The rate-limit refusal returns `fail(429)` with no `ctx.audit` call, so it leaves no audit entry.",
-      "id": "f:da6d2z"
-    },
-    {
-      "text": "The session and CSRF refusals that `createAdminAction` makes underneath redirect or throw before any audit call, so they leave none either.",
-      "id": "f:da6d2z"
-    },
-    {
-      "text": "A successful action that returns without calling `ctx.audit` throws `UnauditedActionError` in dev and logs `admin.action.unaudited` at error in production.",
-      "id": "f:07efts"
-    },
-    {
-      "text": "A section takes a rate limit through the `rateLimit` option, and the limit runs before the access-map checks.",
-      "id": "f:hafpqf"
-    },
-    {
-      "text": "Because the wrapper records each refusal it makes, a limit keeps a refused caller from filling a persisted audit table cheaply.",
-      "id": "f:da6d2z"
-    },
-    {
-      "text": "To rate-limit the section, follow this step:",
-      "id": "no-claim"
-    },
-    {
-      "text": "In the section wrapper's options, set `rateLimit` to an object with `resolve`, `key`, and an optional `message`, as [`SectionActionConfig`](../reference/sveltekit.md#sectionactionconfig) describes.",
-      "id": "f:hafpqf"
-    },
-    {
-      "text": "An unresolved binding, or a `key()` or `limit()` call that throws, degrades to open and logs, except a SvelteKit `redirect()` or `error()`, which propagates.",
-      "id": "f:hafpqf"
-    },
-    {
-      "text": "A section with no database binding uses `createAdminAction`, because `createSectionAction` requires a `resolveDb` binding resolver.",
+      "text": "A screen whose actions write through a binding uses `createSectionAction`, which requires a `resolveDb` binding resolver.",
       "id": "f:hroqbu"
+    },
+    {
+      "text": "A screen with no binding uses `createAdminAction`.",
+      "id": "f:hroqbu"
+    },
+    {
+      "text": "The choice also decides when an action meets the access map and how it refuses a session.",
+      "id": "f:xbjxit"
     },
     {
       "text": "The following table compares the two wrappers.",
@@ -244,6 +196,14 @@
     {
       "text": "Behavior",
       "id": "no-claim"
+    },
+    {
+      "text": "`createSectionAction`",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "`createAdminAction`",
+      "id": "f:xbjxit"
     },
     {
       "text": "Checks the access map",
@@ -322,6 +282,94 @@
       "id": "f:xbjxit"
     },
     {
+      "text": "The signups screen writes through `APP_DB`, so the remaining steps use `createSectionAction`.",
+      "id": "f:onqm6k"
+    },
+    {
+      "text": "`createSectionAction<Env, Db>({ resolveDb })` builds one reusable wrapper per section, and `resolveDb` reads the section's binding from the site's platform env.",
+      "id": "f:3j02dk"
+    },
+    {
+      "text": "`Env` is a type parameter for the site's platform bindings, since the engine ships no `Env` type.",
+      "id": "f:esp93u"
+    },
+    {
+      "text": "`resolveDb` receives `Env | undefined`.",
+      "id": "f:esp93u"
+    },
+    {
+      "text": "`Env` doesn't infer from an unannotated `resolveDb` parameter, so reads off `env` stop typechecking unless the site annotates it or passes explicit type arguments.",
+      "id": "f:pmmtdv"
+    },
+    {
+      "text": "The example site passes `App.Platform['env']`.",
+      "id": "f:esp93u"
+    },
+    {
+      "text": "To wrap the actions, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the screen's server file, build one wrapper with `createSectionAction`, passing a `resolveDb` that reads the section's binding.",
+      "id": "f:3j02dk"
+    },
+    {
+      "text": "In the exported form actions, wrap each handler in that wrapper, passing its audited `action` and `entity`.",
+      "id": "f:pyt58u"
+    },
+    {
+      "text": "Each handler receives `{ form, ctx }`, writes through `ctx.db`, and calls `ctx.audit` with a `detail` or an `entityId`.",
+      "id": "f:pyt58u"
+    },
+    {
+      "text": "The destructive `remove` adds `ownerOnly: true` to its second argument.",
+      "id": "f:pyt58u"
+    },
+    {
+      "text": "Underneath, `createSectionAction` runs the editor identity, CSRF, and single form-read work of [`createAdminAction`](../reference/sveltekit.md#createadminaction), so a section never calls `createAdminAction` directly.",
+      "id": "f:lblh3u"
+    },
+    {
+      "text": "The wrapper requires an audit entry from every successful action, and it records one for each access-map, owner, or binding refusal it makes.",
+      "id": "f:da6d2z"
+    },
+    {
+      "text": "The rate-limit refusal returns `fail(429)` with no `ctx.audit` call, so it leaves no audit entry.",
+      "id": "f:da6d2z"
+    },
+    {
+      "text": "The session and CSRF refusals that `createAdminAction` makes underneath redirect or throw before any audit call, so they leave none either.",
+      "id": "f:da6d2z"
+    },
+    {
+      "text": "A successful action that returns without calling `ctx.audit` throws `UnauditedActionError` in dev and logs `admin.action.unaudited` at error in production.",
+      "id": "f:07efts"
+    },
+    {
+      "text": "A rate limit is optional.",
+      "id": "f:hafpqf"
+    },
+    {
+      "text": "A section sets one through the `rateLimit` option, and the limit runs before the access-map checks.",
+      "id": "f:hafpqf"
+    },
+    {
+      "text": "Because the wrapper records each refusal it makes, a limit keeps a refused caller from filling a persisted audit table cheaply.",
+      "id": "f:da6d2z"
+    },
+    {
+      "text": "To rate-limit the section, follow this step:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the section wrapper's options, set `rateLimit` to an object with `resolve`, `key`, and an optional `message`, as [`SectionActionConfig`](../reference/sveltekit.md#sectionactionconfig) describes.",
+      "id": "f:hafpqf"
+    },
+    {
+      "text": "An unresolved binding, or a `key()` or `limit()` call that throws, degrades to open and logs, except a SvelteKit `redirect()` or `error()`, which propagates.",
+      "id": "f:hafpqf"
+    },
+    {
       "text": "`ctx.audit` needs an `AdminActionAuditSink` on `event.locals.cairnAuditSink`, set in `hooks.server.ts`, typically through `createD1AuditSink` over a bound D1 database.",
       "id": "f:68h31z"
     },
@@ -354,11 +402,11 @@
       "id": "f:ff3l1u"
     },
     {
-      "text": "A screen composes the [admin toolkit](../reference/admin-toolkit.md), the general-purpose primitive set that cairn's admin screens compose too, instead of hand-rolling a bespoke list, table, or field.",
+      "text": "A screen's markup composes the [admin toolkit](../reference/admin-toolkit.md), a set of general-purpose primitives, in place of a hand-rolled list, table, or field.",
       "id": "f:5t1i7o"
     },
     {
-      "text": "`ManageEditors`, for one, builds from the toolkit's `PageHeader` and `AdminTable`.",
+      "text": "The engine's admin screens compose it too, and `ManageEditors`, for one, builds from the toolkit's `PageHeader` and `AdminTable`.",
       "id": "f:5t1i7o"
     },
     {
@@ -386,20 +434,16 @@
       "id": "f:8x0qpa"
     },
     {
-      "text": "`ExpandableRow` renders the caller's summary cells plus one trailing trigger cell, and the `colspan` the caller passes must count that trigger cell.",
-      "id": "f:vao0dd"
-    },
-    {
-      "text": "The `header` snippet heads the trigger cell with a `<th scope=\"col\">` holding an `sr-only` span, as the signups table does for its actions column.",
-      "id": "f:n2bhjw"
-    },
-    {
-      "text": "An interactive summary cell wraps its content in `data-cairn-inert-cell`, since `ExpandableRow` ignores a row click inside that attribute.",
-      "id": "f:pswc3n"
-    },
-    {
-      "text": "A screen that mounts the engine's admin components beside the toolkit can set their props, such as `CairnAdminShell`'s [`themeOverride`](../reference/admin.md#cairnadminshell), which pins the admin theme and removes the theme toggle.",
+      "text": "A screen can also mount the engine's admin components beside the toolkit and set their props.",
       "id": "f:qkr057"
+    },
+    {
+      "text": "`CairnAdminShell`'s [`themeOverride`](../reference/admin.md#cairnadminshell), for one, pins the admin theme and removes the theme toggle.",
+      "id": "f:qkr057"
+    },
+    {
+      "text": "The [admin components](../reference/admin.md) reference lists each component's props.",
+      "id": "no-claim"
     },
     {
       "text": "The admin uses daisyUI and Tailwind, and a custom screen extends it in the same idiom.",
@@ -408,30 +452,6 @@
     {
       "text": "A screen's utility classes compile only through the site admin sheet, `src/admin.css`, and only when the screen's file sits under a root that sheet scans.",
       "id": "f:vkfd7b"
-    },
-    {
-      "text": "The sheet turns off automatic source detection, scans `./routes/admin` and `./lib/admin` through `@source`, and then imports `@glw907/cairn-cms/admin-sources.css`.",
-      "id": "f:vkfd7b"
-    },
-    {
-      "text": "That import holds only the `@source` directives for the engine's shipped admin markup.",
-      "id": "f:vs6k2k"
-    },
-    {
-      "text": "The `build:admin-css` script compiles the sheet to `.cairn/admin.css`, which `src/routes/admin/+layout.svelte` imports.",
-      "id": "f:vkfd7b"
-    },
-    {
-      "text": "The scaffold's `predev`, `prebuild`, and `precheck` scripts run that compile, so a build needs no separate style sheet step.",
-      "id": "f:666eg6"
-    },
-    {
-      "text": "The engine's packaged admin sheet scans only the engine's admin components and the toolkit, so a site's route markup never feeds that build.",
-      "id": "f:zpi2ux"
-    },
-    {
-      "text": "The scaffold's `cairn-audit.config.json` names both compiled sheets, so the static checks see every class a site's admin route writes.",
-      "id": "f:guiavc"
     },
     {
       "text": "Every daisyUI component and utility class except calendar compiles into the packaged admin sheet, so a screen can use any of them without a safelist entry.",
@@ -462,7 +482,35 @@
       "id": "f:q4jyat"
     },
     {
-      "text": "A form in a native `<dialog>` submitted with `enhance` keeps the dialog intact only when its callback handles each result type.",
+      "text": "A scaffolded site already carries the build that compiles the site admin sheet.",
+      "id": "f:vkfd7b"
+    },
+    {
+      "text": "The sheet turns off automatic source detection, scans `./routes/admin` and `./lib/admin` through `@source`, and then imports `@glw907/cairn-cms/admin-sources.css`.",
+      "id": "f:vkfd7b"
+    },
+    {
+      "text": "That import holds only the `@source` directives for the engine's shipped admin markup.",
+      "id": "f:vs6k2k"
+    },
+    {
+      "text": "The `build:admin-css` script compiles the sheet to `.cairn/admin.css`, which `src/routes/admin/+layout.svelte` imports.",
+      "id": "f:vkfd7b"
+    },
+    {
+      "text": "The scaffold's `predev`, `prebuild`, and `precheck` scripts run that compile, so a build needs no separate style sheet step.",
+      "id": "f:666eg6"
+    },
+    {
+      "text": "The engine's packaged admin sheet scans only the engine's admin components and the toolkit, so a site's route markup never feeds that build.",
+      "id": "f:zpi2ux"
+    },
+    {
+      "text": "The scaffold's `cairn-audit.config.json` names both compiled sheets, so the static checks see every class a site's admin route writes.",
+      "id": "f:guiavc"
+    },
+    {
+      "text": "When a screen collects input in a native `<dialog>` submitted with `enhance`, the dialog stays intact only when the callback handles each result type.",
       "id": "f:jra92k"
     },
     {
@@ -522,7 +570,11 @@
       "id": "f:5vn194"
     },
     {
-      "text": "A list screen fetches a row's detail when its panel opens and caches it per row, so it pays only for opened rows.",
+      "text": "When a screen's rows expand to show detail, the screen fetches each row's detail as its panel opens and caches it per row.",
+      "id": "f:uy7vyc"
+    },
+    {
+      "text": "A list `load` that fetched every row's detail would pay for all of them on every visit.",
       "id": "f:uy7vyc"
     },
     {
@@ -530,8 +582,24 @@
       "id": "f:b5mcea"
     },
     {
+      "text": "`ExpandableRow` renders the caller's summary cells plus one trailing trigger cell, and the `colspan` the caller passes must count that trigger cell.",
+      "id": "f:vao0dd"
+    },
+    {
+      "text": "The `header` snippet heads the trigger cell with a `<th scope=\"col\">` holding an `sr-only` span, as the signups table does for its actions column.",
+      "id": "f:n2bhjw"
+    },
+    {
+      "text": "An interactive summary cell wraps its content in `data-cairn-inert-cell`, since `ExpandableRow` ignores a row click inside that attribute.",
+      "id": "f:pswc3n"
+    },
+    {
       "text": "To fetch a row's detail when its panel opens, follow these steps:",
       "id": "no-claim"
+    },
+    {
+      "text": "Under the screen's directory, add the detail endpoint as a nested route with a separate `requireAccess` call and access-map entry.",
+      "id": "f:lmtfkt"
     },
     {
       "text": "In the panel's open handler, return the cached detail when the row already has one.",
@@ -554,7 +622,11 @@
       "id": "f:od9mww"
     },
     {
-      "text": "A custom screen animates with the admin's motion tokens, and `cairn-audit` holds its motion to the same error-tier rules as the engine's screens.",
+      "text": "The following handler follows those steps, with the detail endpoint's URL passed in.",
+      "id": "no-claim"
+    },
+    {
+      "text": "When a screen animates, it uses the admin's motion tokens, and `cairn-audit` holds that motion to the same error-tier rules as the engine's screens.",
       "id": "f:326755"
     },
     {
@@ -582,51 +654,31 @@
       "id": "f:2p5otw"
     },
     {
-      "text": "A rendered run adds `motion-reduced-delay`, an advisory rule that flags an element whose computed `transition-delay` or `animation-delay` stays above zero under reduced motion.",
-      "id": "f:0w432q"
-    },
-    {
-      "text": "Three admin-only error-tier rules hold a screen's motion to those tokens and to a closed set of properties.",
+      "text": "The following three admin-only error-tier rules hold a screen's motion to those tokens and to a closed set of properties:",
       "id": "f:1x8r1x"
     },
     {
-      "text": "`motion-property` limits a `transition` or `transition-property` to thirteen properties, such as `opacity` and `transform`, and fails a declaration naming more than three properties.",
+      "text": "`motion-property` lets a `transition` name only thirteen properties, such as `opacity`, `transform`, and `grid-template-rows`, and fails a layout property such as `width`.",
       "id": "f:09g8ev"
     },
     {
-      "text": "`motion-vocabulary` fails a literal duration or easing, and its duration message names the nearest duration token.",
+      "text": "`motion-vocabulary` fails a literal duration or easing that isn't written as a `--cairn-dur-*` or `--cairn-ease-*` `var()`.",
       "id": "f:0aa9tp"
     },
     {
-      "text": "`motion-hover-gate` fails a hand-authored `:hover` rule that declares motion outside `@media (hover: hover)`.",
+      "text": "`motion-hover-gate` fails a hand-authored `:hover` rule that declares motion outside `@media (hover: hover)`, and it exempts a Tailwind `hover:` utility.",
       "id": "f:0mbj5n"
     },
     {
-      "text": "A Tailwind `hover:` utility already compiles inside that media query.",
-      "id": "f:0mbj5n"
-    },
-    {
-      "text": "The hover rule's fix splits a `:hover` and `:focus-visible` pair first, since a keyboard user on a touch device still needs the focus motion.",
-      "id": "f:0mbj5n"
-    },
-    {
-      "text": "Two more error-tier rules, `motion-band` and `reduced-motion`, read the whole static scope and every named CSS file, not only the admin roots.",
-      "id": "f:1x8r1x"
-    },
-    {
-      "text": "The [static rules](../reference/cairn-audit.md#the-static-rules) table describes all five.",
-      "id": "no-claim"
-    },
-    {
-      "text": "The rules check both a component's authored CSS and the declarations its classes compile to.",
+      "text": "The rules check a component's scoped `<style>` block and what each class in its markup compiles to.",
       "id": "f:24f8gn"
     },
     {
-      "text": "For the daisyUI classes the rules exempt and the frame-offset allowance, see [What the motion rules don't cover](../reference/cairn-audit.md#what-the-motion-rules-dont-cover).",
-      "id": "no-claim"
+      "text": "The three rules read only the components under `static.adminScope` and the `static.cssFiles` entries inside those roots.",
+      "id": "f:1x8r1x"
     },
     {
-      "text": "The three admin-only rules resolve over `static.adminScope`, which defaults to `src/routes/admin`, `src/lib/admin`, and `src/lib/admin-toolkit`.",
+      "text": "`static.adminScope` defaults to `src/routes/admin`, `src/lib/admin`, and `src/lib/admin-toolkit`.",
       "id": "f:t767qb"
     },
     {
@@ -634,7 +686,15 @@
       "id": "f:t767qb"
     },
     {
-      "text": "To verify the screen against the four results this page opens on, follow these steps:",
+      "text": "For each rule's full check, see [the static rules](../reference/cairn-audit.md#the-static-rules).",
+      "id": "no-claim"
+    },
+    {
+      "text": "For the frame-offset allowance and the daisyUI classes the rules exempt, see [What the motion rules don't cover](../reference/cairn-audit.md#what-the-motion-rules-dont-cover).",
+      "id": "no-claim"
+    },
+    {
+      "text": "To verify the screen, follow these steps:",
       "id": "no-claim"
     },
     {
@@ -702,6 +762,10 @@
       "id": "no-claim"
     },
     {
+      "text": "A rendered run also adds the advisory `motion-reduced-delay` rule, which flags a transition or animation delay above zero under reduced motion.",
+      "id": "f:0w432q"
+    },
+    {
       "text": "In a rendered run, the radius bands are 6px for buttons, inputs, and selects, 8px for a card, and 4px for a status chip, and the control height bands follow `--size-field`.",
       "id": "f:39sn8c"
     },
@@ -735,6 +799,30 @@
     },
     {
       "text": "[Debug your site](debug-your-site.md) maps both events to their causes, and the [log events](../reference/log-events.md) reference lists their fields.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The following pages cover the tasks and reasoning around a custom screen:",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Restrict admin access](restrict-admin-access.md) declares the access-map rule each screen and nested route needs.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Arrange the admin sidebar](arrange-the-admin-sidebar.md) adds the screen to the admin's navigation.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Run cairn-audit on your site](run-cairn-audit-on-your-site.md) configures the audit for the whole site, including rendered runs, suppressions, and allowlists.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Security model](security-model.md) sets out the reasoning behind the access map.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Admin toolkit](../reference/admin-toolkit.md) documents each primitive's props.",
       "id": "no-claim"
     }
   ]

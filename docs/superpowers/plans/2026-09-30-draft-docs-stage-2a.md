@@ -508,7 +508,7 @@ repos' gates green; one `diff-reviewer` read per repo, which checks that nothing
 
 **Outcomes:** each of the six pilot pages reworked against the job-read record and the new anatomy, page-level only
 (opening, order, hand-offs, depth, ending, covers), sentences kept where they stand; Geoff's two introductions
-(`security-model`, `add-cairn-to-a-sveltekit-app`) land with the threat position filed as an owner-ruled fact; briefs in
+(`security-model`, `add-cairn-to-a-sveltekit-app`) land with the threat position cited per task 7a; briefs in
 step; each page then passes the job read and scoped register and fact reads on what changed. The three owner pages are
 republished for Geoff's second read; task 8 waits for it.
 

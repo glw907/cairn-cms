@@ -60,6 +60,16 @@ Task 8 runs after the 2026-10-02 reset if the week runs short. The threat positi
 assumes the likeliest attacker holds an editor's account; an anonymous visitor reaches only the public site and the
 sign-in form (wording to verify against the code at the fold).
 
+## Owner rulings at resume (Geoff, 2026-10-01)
+
+- **Every pilot page lacks an introduction**, the four graded `pass` on Open above included. A task guide's one-line
+  contract is not an introduction. Task 7a's anatomy requires an introduction on every page type, and its structural
+  edit seat checks for one on every page; task 7b writes one for all six pages (the two below are two of the six).
+- **Line editing waits for structure.** The pages still carry significant structural problems, so Geoff saved no edits
+  on the review page. His second read after 7b is a structural read first; line edits follow only once the structure
+  holds. The pilot review page held no edits at resume (its one difference from the repo is a clause the carry commit
+  `a0213cc3` removed after publish).
+
 ## The two introductions for task 7b (drafted by the conductor, Geoff approved the direction)
 
 Both replace the page's current first paragraph; the fact read verifies every claim before they land, and the attacker

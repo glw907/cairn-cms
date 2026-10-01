@@ -1537,7 +1537,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:buh7cc` `engines.node` in the package's own `package.json` is `>=24`. Source: `package.json:7`.
   [verified]
 - `f:xg1per` `svelte` peerDependency is `^5.56.10`; `@sveltejs/kit` is `^2.70`; `@cloudflare/workers-types` is
-  `^5`. Source: `package.json:197-199`. [verified]
+  `^5`. Source: `package.json:220-223`. [verified]
 - `f:gjyk0p` The showcase's own devDependency pins `typescript` to `^6` and `@cloudflare/workers-types` to
   `^5.20260821.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:45`,
   `package.json:258`. [verified]

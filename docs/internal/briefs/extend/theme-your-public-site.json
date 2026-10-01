@@ -1,0 +1,629 @@
+{
+  "page": "docs/extend/theme-your-public-site.md",
+  "sentences": [
+    {
+      "text": "Re-skin the theme your site ships with, or port your own theme onto the chassis beneath it, and confirm the result against the public-scope audit rules.",
+      "id": "no-claim"
+    },
+    {
+      "text": "This page assumes a site scaffolded by `create-cairn-site`, which ships Waymark, cairn's public reading template, on top of the chassis, a set of design-neutral modules and style sheets that every scaffolded site shares.",
+      "id": "f:rxj43c"
+    },
+    {
+      "text": "A site built by hand from `sv create` starts with neither and brings its own theme.",
+      "id": "f:rxj43c"
+    },
+    {
+      "text": "[Theme a hand-built site](#theme-a-hand-built-site) covers the styling stack such a site adds.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Scaffolded site files](scaffolded-site-files.md) maps every file the setup command writes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A re-skin or a port edits files on the theme's side of a boundary the scaffold draws.",
+      "id": "no-claim"
+    },
+    {
+      "text": "`src/chassis/` holds the code every scaffolded site shares regardless of design, one concern per file, from content indexing in `content.ts` to the token system in `tokens.css`.",
+      "id": "f:s4prb0"
+    },
+    {
+      "text": "Everything outside `src/chassis/`, including the adapter config, the chrome components, the color and type values, and the page compositions, belongs to Waymark.",
+      "id": "f:s4prb0"
+    },
+    {
+      "text": "The setup command copies the chassis and Waymark into the site's tree, and the npm package ships neither, so an engine upgrade leaves their files unchanged.",
+      "id": "f:l2mbcj"
+    },
+    {
+      "text": "Those files still read their roles from the engine's `cairn-public.css`, which [Token tiers and cascade order](#token-tiers-and-cascade-order) covers.",
+      "id": "f:iel6v5"
+    },
+    {
+      "text": "By convention, a theme file imports from the chassis only through the `$chassis` alias in TypeScript and Svelte or a relative `@import` in CSS.",
+      "id": "f:lwrqfd"
+    },
+    {
+      "text": "No gate enforces the convention in a scaffolded site, since the `check:chassis-boundary` gate runs only in the cairn repository.",
+      "id": "f:lwrqfd"
+    },
+    {
+      "text": "A chassis file is safe to delete only when everything that depends on it changes in the same edit.",
+      "id": "f:kj37zz"
+    },
+    {
+      "text": "`feed.ts` has two dependents, the two feed routes, so it deletes along with them and nothing else changes.",
+      "id": "f:kj37zz"
+    },
+    {
+      "text": "`content.ts` supplies six delivery routes, so removing it means replacing all six routes' imports in the same change.",
+      "id": "f:kj37zz"
+    },
+    {
+      "text": "Before you delete a chassis file, read its row in the dependents table in `src/chassis/README.md`.",
+      "id": "f:kj37zz"
+    },
+    {
+      "text": "Waymark's `theme.css` names three token tiers by how far a re-skin reaches:",
+      "id": "f:kq6ud3"
+    },
+    {
+      "text": "Tier 1 is the two [daisyUI](https://daisyui.com/docs/install/) theme blocks.",
+      "id": "f:kq6ud3"
+    },
+    {
+      "text": "Tier 2 is the on-surface inks, the elevation pair (`--color-card-border` and `--cairn-shadow`), the call-to-action (CTA) pair (`--cairn-cta-*`), and the code-highlight binding.",
+      "id": "f:kq6ud3"
+    },
+    {
+      "text": "Tier 3 is the design-scale keys that override the chassis defaults.",
+      "id": "f:kq6ud3"
+    },
+    {
+      "text": "`tokens.css` declares the design-scale keys, such as the `--font-*`, `--spacing-*`, and `--text-step-*` families, each with a generic default.",
+      "id": "f:iel6v5"
+    },
+    {
+      "text": "The roles, such as `--color-muted`, the status inks, the shadow, and the focus ring, come from the engine's `cairn-public.css`, which `tokens.css` imports right after Tailwind.",
+      "id": "f:iel6v5"
+    },
+    {
+      "text": "The scaffold's `theme.css` and `site.css` carry the theme's tokens and page styling, layered over the engine's roles and the chassis's generic design-scale defaults.",
+      "id": "f:s23sk0"
+    },
+    {
+      "text": "Two orders decide which declaration of a key wins:",
+      "id": "f:s23sk0"
+    },
+    {
+      "text": "A design-scale key resolves by source order, so the theme's redeclaration in a later `@theme` block overrides the default `tokens.css` declares.",
+      "id": "f:iel6v5"
+    },
+    {
+      "text": "A role resolves by layer, so a daisyUI block or an unlayered `:root` value overrides the engine's declaration in `@layer theme`, the lowest layer Tailwind declares.",
+      "id": "f:hva8r5"
+    },
+    {
+      "text": "The engine declares its roles on `:root, [data-theme]`, so the `[data-theme]` selector recomputes a role inside a nested theme region.",
+      "id": "f:hva8r5"
+    },
+    {
+      "text": "An unlayered rule in a site style sheet also beats every Tailwind utility, which [Chassis conventions](#chassis-conventions) covers.",
+      "id": "f:h1qxlq"
+    },
+    {
+      "text": "Every heading reads two keys, `--font-weight-heading` for its weight and `--cairn-heading-case` for its case, which defaults to `none`.",
+      "id": "f:p8hsnz"
+    },
+    {
+      "text": "Chrome markup applies them with the `font-heading` and `heading-case` utilities, and a scoped `<style>` rule reads the two variables directly.",
+      "id": "f:p8hsnz"
+    },
+    {
+      "text": "`prose.css` headings and the hero title read the same keys, so a theme that sets `--cairn-heading-case: uppercase` uppercases every heading.",
+      "id": "f:p8hsnz"
+    },
+    {
+      "text": "The re-skin recipe edits about fourteen values across the light and dark daisyUI blocks in `src/theme/theme.css`.",
+      "id": "f:kt0epf"
+    },
+    {
+      "text": "The following excerpt shows five of the recipe's keys in the scaffold's light block:",
+      "id": "f:kt0epf"
+    },
+    {
+      "text": "To re-skin Waymark, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In both daisyUI blocks, rotate the hue of `--color-primary` while holding its lightness and chroma.",
+      "id": "f:kt0epf"
+    },
+    {
+      "text": "In the same two blocks, edit the `base-100/200/300` ladder and `base-content`.",
+      "id": "f:kt0epf"
+    },
+    {
+      "text": "Optionally, in the `@theme` block of the same file, swap the two `--font-*` tokens.",
+      "id": "f:iel6v5"
+    },
+    {
+      "text": "Optionally, in the same `@theme` block, retune one type ratio or space-scale step.",
+      "id": "f:iel6v5"
+    },
+    {
+      "text": "Run the checks in [Verify the theme](#verify-the-theme).",
+      "id": "no-claim"
+    },
+    {
+      "text": "Waymark hand-tunes all four status inks in both daisyUI blocks, so a Waymark status rebrand sets a fill and an ink for each status in each scheme.",
+      "id": "f:u893cs"
+    },
+    {
+      "text": "Where a theme leaves an ink unset, the engine derives it by mixing its fill 50 percent with `--color-base-content`, so that theme's rebrand needs one fill per status in each scheme.",
+      "id": "f:ylmc9c"
+    },
+    {
+      "text": "To rebrand the status colors, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In both daisyUI blocks, set the fill for each status.",
+      "id": "f:ylmc9c"
+    },
+    {
+      "text": "In the same two blocks, retune each status ink, such as `--cairn-success-ink`, to match its new fill, or delete its override.",
+      "id": "f:u893cs"
+    },
+    {
+      "text": "An overridden ink left unchanged no longer matches its fill in directive text and code highlighting.",
+      "id": "f:ylmc9c"
+    },
+    {
+      "text": "A port that replaces Waymark's chrome reproduces two behaviors of its page shell, the theme toggle's resolution and the skip link's focus handling.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The theme toggle's `resolveTheme` returns the live `data-theme` when it names one of the config's two themes.",
+      "id": "f:i9pgd2"
+    },
+    {
+      "text": "Otherwise it resolves from the root's computed `color-scheme`, so a dark-first theme resolves dark on a light OS with no edit to the page shell.",
+      "id": "f:i9pgd2"
+    },
+    {
+      "text": "The two theme names, the cookie name, and the toggle's config live in `theme-names.ts`.",
+      "id": "f:i9pgd2"
+    },
+    {
+      "text": "The chrome's skip link is an `sr-only` anchor to `#main` that becomes visible on focus with `focus:not-sr-only focus:absolute`.",
+      "id": "f:nz87b3"
+    },
+    {
+      "text": "`<main id=\"main\" tabindex=\"-1\">` makes the target focusable, so activating the link moves keyboard focus and not only the scroll position.",
+      "id": "f:nz87b3"
+    },
+    {
+      "text": "That focus is programmatic, so `main:focus` draws no ring.",
+      "id": "f:nz87b3"
+    },
+    {
+      "text": "A port replaces Waymark's style sheets, chrome components, and page compositions with the new theme's, and it keeps the files in `src/chassis/`.",
+      "id": "f:s4prb0"
+    },
+    {
+      "text": "To port a theme onto the chassis, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the theme's style sheet, import `tokens.css` first.",
+      "id": "f:iel6v5"
+    },
+    {
+      "text": "In a later `@theme` block in the same sheet, redeclare the design-scale keys with the theme's values.",
+      "id": "f:iel6v5"
+    },
+    {
+      "text": "In the same style sheet, replace the two daisyUI theme blocks with the new theme's role colors.",
+      "id": "f:kq6ud3"
+    },
+    {
+      "text": "The chassis's `tokens.css` activates the daisyUI plugin with only four of its components, the button, badge, alert, and card.",
+      "id": "f:h5e8d4"
+    },
+    {
+      "text": "New chrome that renders another daisyUI component drops that component's key from the `exclude` list in `tokens.css`.",
+      "id": "f:h5e8d4"
+    },
+    {
+      "text": "In an unlayered `:root` rule in the theme's style sheet, declare the five `--cairn-cta-*` keys and `--cairn-caption-tracking`.",
+      "id": "f:18qj2u"
+    },
+    {
+      "text": "Neither the engine sheet nor `tokens.css` defaults these six keys.",
+      "id": "f:18qj2u"
+    },
+    {
+      "text": "Waymark repeats the dark CTA values in a media-guarded `:root:not([data-theme])` block and a `:root[data-theme=\"cairn-dark\"]` block, which it keeps identical by hand.",
+      "id": "f:18qj2u"
+    },
+    {
+      "text": "In the page compositions, build each layout from the `composition.css` primitives, `.cairn-card`, `.cairn-band`, `.cairn-section`, `.cairn-hero`, and `.cairn-sidebar-layout`.",
+      "id": "f:ctognq"
+    },
+    {
+      "text": "Each primitive exposes `--cairn-<primitive>-*` custom properties, such as `--cairn-card-padding`, for a per-instance override on top of the shared tokens.",
+      "id": "f:ctognq"
+    },
+    {
+      "text": "In the theme's `@theme` block, set `--font-weight-heading` to the new theme's heading weight.",
+      "id": "f:p8hsnz"
+    },
+    {
+      "text": "In the theme's unlayered `:root` rule, set `--cairn-heading-case` to the new theme's heading case.",
+      "id": "f:p8hsnz"
+    },
+    {
+      "text": "If you rename the daisyUI themes, edit `theme-names.ts`, the no-flash script in `src/app.html`, and the two `@plugin \"daisyui/theme\"` names in `theme.css` together.",
+      "id": "f:i3rn6f"
+    },
+    {
+      "text": "The no-flash script hard-codes the theme cookie, `cairn-site-theme`, and both theme names.",
+      "id": "f:i3rn6f"
+    },
+    {
+      "text": "`theme-names.test.ts` fails when the three places drift.",
+      "id": "f:i3rn6f"
+    },
+    {
+      "text": "In the new chrome, reproduce the theme toggle's resolution and the skip link's focus handling that [Page shell behavior](#page-shell-behavior) describes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Run the checks in [Verify the theme](#verify-the-theme).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The admin's preview frame loads none of the site's CSS, so a site names its compiled style sheets in the `preview` member of the adapter's `editor` group.",
+      "id": "f:gnn3pv"
+    },
+    {
+      "text": "With no `preview` set, the frame renders unstyled markup behind a hint that says so.",
+      "id": "f:gnn3pv"
+    },
+    {
+      "text": "To style the preview, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `src/theme/cairn.config.ts`, import each compiled style sheet the public pages load through a Vite `?url` import.",
+      "id": "f:gtg454"
+    },
+    {
+      "text": "A plain side-effect import such as `import './theme.css'` folds the sheet into a layout CSS chunk whose basename differs between the client and server builds.",
+      "id": "f:gtg454"
+    },
+    {
+      "text": "The preview frame then links a URL that returns a 404 error in the browser.",
+      "id": "f:gtg454"
+    },
+    {
+      "text": "In the adapter's `editor` group, set the `preview` member's `stylesheets` to those URLs.",
+      "id": "f:gnn3pv"
+    },
+    {
+      "text": "Optionally, in the same `preview` member, set `containerClass` to the classes that wrap an entry on the public site.",
+      "id": "f:spn4hj"
+    },
+    {
+      "text": "The following list describes the four members of `PreviewConfig`, the type of the `preview` member:",
+      "id": "f:blhd7f"
+    },
+    {
+      "text": "`stylesheets`, the one required member, holds the absolute or root-relative URLs linked inside the preview document.",
+      "id": "f:blhd7f"
+    },
+    {
+      "text": "`bodyClass` sets a class list on the preview document's body.",
+      "id": "f:blhd7f"
+    },
+    {
+      "text": "`containerClass` sets a class list on one wrapper element around the rendered content, and without it the content renders bare.",
+      "id": "f:blhd7f"
+    },
+    {
+      "text": "`byConcept` maps a concept id to an optional `bodyClass` and an optional `containerClass` for that concept's entries.",
+      "id": "f:blhd7f"
+    },
+    {
+      "text": "An absent override key keeps the top-level value, and the style sheets are always the shared top-level list.",
+      "id": "f:blhd7f"
+    },
+    {
+      "text": "The [`preview` entry](../reference/core.md#preview-adapter-editor-member) in the core reference carries the full type.",
+      "id": "f:gnn3pv"
+    },
+    {
+      "text": "The scaffold sets `stylesheets` to `[themeCss, siteCss]`, imported through `?url`, and `containerClass` to `'site-main prose'`.",
+      "id": "f:spn4hj"
+    },
+    {
+      "text": "On the public site those two classes sit on separate elements, the `(site)` layout's `<main>` and the `<article>` in `ArticleView.svelte`.",
+      "id": "f:spn4hj"
+    },
+    {
+      "text": "The preview frame renders one wrapper element, so both classes go on it.",
+      "id": "f:spn4hj"
+    },
+    {
+      "text": "The following snippet shows that value on its own:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The frame paints its body with `var(--color-base-100,#fff)`, so the preview background follows the site's `base-100` once the site's style sheet loads, and falls back to white without one.",
+      "id": "f:faofr4"
+    },
+    {
+      "text": "The frame's `<html>` carries no `data-theme`, so only the OS color scheme reaches it.",
+      "id": "f:faofr4"
+    },
+    {
+      "text": "The preview document's root element carries `data-cairn-preview`, so a site's style sheet can select on it to suppress entrance animations such as `[data-rise]` inside the frame.",
+      "id": "f:guthtp"
+    },
+    {
+      "text": "The frame also ignores every link click inside it.",
+      "id": "f:guthtp"
+    },
+    {
+      "text": "Rendered markdown takes its typography from `prose.css`, which binds every element to the daisyUI roles and the cairn tokens, so a re-skin restyles entry bodies with no edit to that file.",
+      "id": "f:kt0epf"
+    },
+    {
+      "text": "`prose.css` places three decorative styles, the cairn-glyph rule, the diamond bullet, and the margin-hanging pull quote, behind the `.prose[data-flourish]` selector, so they are off by default.",
+      "id": "f:ivp8wl"
+    },
+    {
+      "text": "To turn the decorative styles on, add a `data-flourish` attribute to the theme's `.prose` root.",
+      "id": "f:ivp8wl"
+    },
+    {
+      "text": "A site built without the setup command adds the styling stack that the scaffold would have supplied.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The engine ships its public defaults as one CSS asset, `@glw907/cairn-cms/cairn-public.css`, which [the public style sheet reference](../reference/public-css.md) documents key by key.",
+      "id": "f:c4nnu9"
+    },
+    {
+      "text": "The sheet declares no daisyUI theme variable and activates no daisyUI plugin, yet its roles read daisyUI roles such as `--color-base-content` and `--color-primary`.",
+      "id": "f:f28x0x"
+    },
+    {
+      "text": "To theme a hand-built site, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the site directory, install daisyUI alongside Tailwind by following [daisyUI's installation guide](https://daisyui.com/docs/install/).",
+      "id": "f:f28x0x"
+    },
+    {
+      "text": "In the site's global style sheet, import `@glw907/cairn-cms/cairn-public.css` once, after `@import \"tailwindcss\"` and before the style sheet that styles rendered markdown.",
+      "id": "f:f28x0x"
+    },
+    {
+      "text": "That order lets a later declaration in the site's `@theme` block win over the sheet's two `@theme` colors, `--color-muted` and `--color-card-border`.",
+      "id": "f:f28x0x"
+    },
+    {
+      "text": "In the same style sheet, add a `@plugin \"daisyui/theme\"` block with the site's role colors.",
+      "id": "f:f28x0x"
+    },
+    {
+      "text": "The following style sheet is illustrative, and the theme block elides most of daisyUI's keys:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Run the checks in [Verify the theme](#verify-the-theme).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The engine's ink derivation in [Rebrand the status colors](#rebrand-the-status-colors) holds for a hand-built theme, since it lives in `cairn-public.css`.",
+      "id": "f:ylmc9c"
+    },
+    {
+      "text": "The scaffold's `/styleguide` route renders every directive in the registry, plus the type scale and component recipes, against the current `theme.css`, so a theme change shows on one page.",
+      "id": "f:bdnzcy"
+    },
+    {
+      "text": "A directive that declares a `preview` renders as a sample, and one without a `preview` is listed by name.",
+      "id": "f:bdnzcy"
+    },
+    {
+      "text": "Vite hot module replacement applies a changed style sheet or component to the running page without a manual reload.",
+      "id": "f:mvkyea"
+    },
+    {
+      "text": "`cairn-media-seed --from <url>` seeds Wrangler's local R2 state from a deployed site's media library, so it has nothing to seed before a site's first deploy.",
+      "id": "f:7pv6se"
+    },
+    {
+      "text": "The command downloads each row of the site's media manifest from `<url>/media/` and ignores `assets.publicBase`, so it cannot seed a site that mounts its media route elsewhere.",
+      "id": "f:4xptbu"
+    },
+    {
+      "text": "The command is idempotent, since a re-run writes each key again from the deployed library.",
+      "id": "f:7pv6se"
+    },
+    {
+      "text": "To see seeded media locally, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the site directory, run `cairn-media-seed` against the deployed site's URL:",
+      "id": "f:7pv6se"
+    },
+    {
+      "text": "In the site directory, start the dev server with the dev backend off, through `npx vite dev` without `CAIRN_DEV_BACKEND` or through `wrangler dev`.",
+      "id": "f:j2qzct"
+    },
+    {
+      "text": "The scaffold's `npm run dev` sets `CAIRN_DEV_BACKEND=1`, whose handle serves `/media` from an in-memory fake bucket, so seeded objects do not appear under it.",
+      "id": "f:j2qzct"
+    },
+    {
+      "text": "The [`cairn-media-seed` reference](../reference/cli-cairn-media-seed.md) lists the command's flags and exit codes.",
+      "id": "f:7pv6se"
+    },
+    {
+      "text": "The following conventions govern a theme built on the chassis:",
+      "id": "no-claim"
+    },
+    {
+      "text": "A class carries its owner's prefix, such as `cairn-*` for the engine and the chassis or `site-*` for the theme's chrome.",
+      "id": "f:i80vsl"
+    },
+    {
+      "text": "A width uses `max-w-measure`, `max-w-measure-wide`, or an arbitrary value, never a shadowed size such as `max-w-2xl`.",
+      "id": "f:gzw7os"
+    },
+    {
+      "text": "A centered container uses `margin-inline: auto`, never the `margin: 0 auto` shorthand.",
+      "id": "f:h1qxlq"
+    },
+    {
+      "text": "A layout dimension uses rem units, never a fixed px value.",
+      "id": "f:hectgs"
+    },
+    {
+      "text": "A date renders through `formatDate` in the chassis's `date.ts`, the one date vocabulary for the archive and article surfaces.",
+      "id": "f:hgal3e"
+    },
+    {
+      "text": "A theme colors the `cairn-*` classes through tokens and never restyles their structure.",
+      "id": "f:i80vsl"
+    },
+    {
+      "text": "The `sg-*` classes belong to the styleguide route alone.",
+      "id": "f:i80vsl"
+    },
+    {
+      "text": "An unprefixed class such as `.callout` is a directive class from `markdown-components.ts`.",
+      "id": "f:i80vsl"
+    },
+    {
+      "text": "Five chassis spacing keys, such as `--spacing-2xl`, share suffixes with Tailwind's `--container-*` keys, and Tailwind resolves `max-w-<key>` to the spacing variable.",
+      "id": "f:gzw7os"
+    },
+    {
+      "text": "`max-w-2xl` therefore compiles to `max-width: var(--spacing-2xl)`, about 4rem.",
+      "id": "f:gzw7os"
+    },
+    {
+      "text": "An unlayered rule in a site style sheet beats a Tailwind utility, which lives in `@layer utilities`.",
+      "id": "f:h1qxlq"
+    },
+    {
+      "text": "A container class with the `margin: 0 auto` shorthand therefore cancels `mt-*` and `mb-*` on the same element.",
+      "id": "f:h1qxlq"
+    },
+    {
+      "text": "Waymark's `site.css` sets a fluid root font size that grows from 16px to 18px between about 1440px and 2200px.",
+      "id": "f:hectgs"
+    },
+    {
+      "text": "Rem-based layout scales with the root size on ultrawide screens.",
+      "id": "f:hectgs"
+    },
+    {
+      "text": "Every archive and article date renders through `formatDate`, which is hard-coded to the `en-GB` locale and Coordinated Universal Time (UTC), so a new format or locale is an edit to `date.ts` alone.",
+      "id": "f:hgal3e"
+    },
+    {
+      "text": "The three public-scope audit rules ship in `cairn-audit`, which the scaffold's `check:cairn` script runs at advisory tier on your site.",
+      "id": "f:xv2ien"
+    },
+    {
+      "text": "The `theme-contrast` rule reads the site's import chain, so it needs `daisyui` installed in the site.",
+      "id": "f:mzmvt8"
+    },
+    {
+      "text": "To verify the theme, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the site directory, run the three public rules:",
+      "id": "f:xv2ien"
+    },
+    {
+      "text": "In the report, confirm that none of the three rules raises a finding.",
+      "id": "f:xv2ien"
+    },
+    {
+      "text": "`theme-contrast` measures text-bearing pairs against the [Web Content Accessibility Guidelines (WCAG)](https://www.w3.org/TR/WCAG22/) AA level of 4.5:1, in sRGB and display-p3, in each scheme the theme defines.",
+      "id": "f:mzmvt8"
+    },
+    {
+      "text": "It measures the focus-ring color against 3:1, and it reports a value it cannot place as unmeasured instead of passing it.",
+      "id": "f:mzmvt8"
+    },
+    {
+      "text": "For what the rule does not measure, see [What theme-contrast doesn't cover](../reference/cairn-audit.md#what-theme-contrast-doesnt-cover).",
+      "id": "no-claim"
+    },
+    {
+      "text": "`theme-conformance` resolves each `var()` with no fallback against the declarations in the public scope and its import chain.",
+      "id": "f:tbq6gh"
+    },
+    {
+      "text": "The cairn repository runs the same three rules over its example site in the `check:public-tokens` gate, which a scaffolded site's `package.json` does not carry.",
+      "id": "f:xv2ien"
+    },
+    {
+      "text": "The three public-scope rules read the files that the [public scope section](../reference/cairn-audit.md#the-public-scope) of the audit reference lists.",
+      "id": "f:xv2ien"
+    },
+    {
+      "text": "To resolve a public-rule finding, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "If the `public-literals` rule raises a finding, read that rule's row in the [static rules table](../reference/cairn-audit.md#the-static-rules).",
+      "id": "f:xv2ien"
+    },
+    {
+      "text": "If the contrast rule flags directive text or code highlighting after a fill change, retune any ink the daisyUI block overrides alongside its fill.",
+      "id": "f:ylmc9c"
+    },
+    {
+      "text": "If the conformance rule reports one of the five `--cairn-cta-*` keys or `--cairn-caption-tracking` as unresolved, declare it in the theme.",
+      "id": "f:18qj2u"
+    },
+    {
+      "text": "If the finding persists, work through [Debug your site](debug-your-site.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The following pages continue from a themed site:",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Configure rendering](configure-rendering.md) builds the components a theme styles.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Build the public routes](build-the-public-routes.md) wires the delivery routes the chassis feeds.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Configure media](configure-media.md) sets up the media storage that seeded images come from.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Run cairn-audit on your site](run-cairn-audit-on-your-site.md) configures `cairn-audit` for the whole site.",
+      "id": "f:xv2ien"
+    }
+  ]
+}

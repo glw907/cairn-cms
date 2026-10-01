@@ -1,0 +1,1145 @@
+{
+  "page": "docs/extend/add-cairn-to-a-sveltekit-app.md",
+  "sentences": [
+    {
+      "text": "This page takes a SvelteKit app, a new project or one you already have, to a cairn site whose admin commits through a GitHub App you register.",
+      "id": "f:gyu7jc"
+    },
+    {
+      "text": "The page carries one running example throughout, a site named Field Notes with one post, and each milestone extends the files the one before it wrote.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The work runs in four milestones, each ending with a check:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Deploy a bare SvelteKit site to its `workers.dev` address.",
+      "id": "f:9ug9mo"
+    },
+    {
+      "text": "Install the engine and mount the admin.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Put content on disk and render an entry from it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Move the site to production with its own GitHub App, an auth database, and the Worker bindings.",
+      "id": "f:e5vm42"
+    },
+    {
+      "text": "Between the third and fourth milestones, the dev backend signs you in at `/admin` with no email loop.",
+      "id": "f:dqjkci"
+    },
+    {
+      "text": "For its setup, see [Wire the dev backend and the CSRF handoff](#wire-the-dev-backend-and-the-csrf-handoff).",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Customize the sign-in email](#customize-the-sign-in-email) closes the page with the parts of the sign-in message a site can change.",
+      "id": "no-claim"
+    },
+    {
+      "text": "This page assumes the following accounts, tools, and services:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Node 24 or later.",
+      "id": "f:75hawi"
+    },
+    {
+      "text": "TypeScript on major version 6, which `npx sv create` already pins, since `svelte-check` cannot run on TypeScript 7 yet.",
+      "id": "f:yegr67"
+    },
+    {
+      "text": "A GitHub account and a Cloudflare account.",
+      "id": "f:75hawi"
+    },
+    {
+      "text": "Cloudflare's Workers Paid plan from the first deploy that carries the admin.",
+      "id": "f:75hawi"
+    },
+    {
+      "text": "A domain whose zone is on your Cloudflare account, which real sign-in mail needs.",
+      "id": "f:75hawi"
+    },
+    {
+      "text": "The `cairn` CLI, which runs the production milestone's [`cairn doctor`](../reference/cli-cairn-doctor.md) check.",
+      "id": "f:m0ouh8"
+    },
+    {
+      "text": "The first milestone's bare deploy runs on Cloudflare's free tier.",
+      "id": "f:75hawi"
+    },
+    {
+      "text": "Cloudflare's [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page states each plan's current terms, including the plan that sign-in mail to a second person needs.",
+      "id": "f:t4pwpw"
+    },
+    {
+      "text": "This milestone ends with a plain SvelteKit site, with no cairn code yet, answering at its `workers.dev` address.",
+      "id": "f:9ug9mo"
+    },
+    {
+      "text": "It starts from an empty directory.",
+      "id": "no-claim"
+    },
+    {
+      "text": "An existing app starts at the adapter swap and skips the step that creates the project.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A fresh `sv create` project uses `@sveltejs/adapter-auto` as its adapter.",
+      "id": "f:7e1t0j"
+    },
+    {
+      "text": "`adapter-auto` picks an adapter at build time by guessing the deploy target, so a self-deployed site names `@sveltejs/adapter-cloudflare` explicitly.",
+      "id": "f:mhsere"
+    },
+    {
+      "text": "A scaffolded cairn site builds with the same adapter and deploys to Cloudflare Workers.",
+      "id": "f:xyizai"
+    },
+    {
+      "text": "To create the project and swap its adapter, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a terminal, create a minimal TypeScript project with no add-ons:",
+      "id": "f:7e1t0j"
+    },
+    {
+      "text": "In the project directory, replace the scaffold's adapter with the Cloudflare one:",
+      "id": "f:7e1t0j"
+    },
+    {
+      "text": "A current `sv create` scaffold has no `svelte.config.js`, so the kit config, the adapter included, sits inline in the `sveltekit()` call in `vite.config.ts`.",
+      "id": "f:ifuvcl"
+    },
+    {
+      "text": "That call takes the kit options, such as `adapter` and `csrf`, as sibling keys beside the compiler options.",
+      "id": "f:979v0a"
+    },
+    {
+      "text": "The `sv create` scaffold also passes `compilerOptions` to that call, and its `runes` option forces runes mode for every file outside `node_modules`.",
+      "id": "f:87hc1y"
+    },
+    {
+      "text": "Each `vite.config.ts` sample on this page shows that setting as a comment, and every edit leaves the setting in place.",
+      "id": "f:87hc1y"
+    },
+    {
+      "text": "An existing app that keeps its kit config in `svelte.config.js` makes each kit edit on this page in that file instead.",
+      "id": "f:e5hqn3"
+    },
+    {
+      "text": "In `vite.config.ts`, import the Cloudflare adapter and pass it as the `adapter` option:",
+      "id": "f:ifuvcl"
+    },
+    {
+      "text": "The minimal `wrangler.jsonc` names the Worker, sets a compatibility date, and points `main` and the `ASSETS` assets binding at the Cloudflare adapter's build output.",
+      "id": "f:q13lck"
+    },
+    {
+      "text": "In the project root, create `wrangler.jsonc`:",
+      "id": "f:q13lck"
+    },
+    {
+      "text": "`npx wrangler login` signs Wrangler in to Cloudflare, and `npx wrangler deploy` uploads the built Worker and prints its `workers.dev` address.",
+      "id": "f:9ug9mo"
+    },
+    {
+      "text": "To deploy the site, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, sign in to Cloudflare:",
+      "id": "f:9ug9mo"
+    },
+    {
+      "text": "Build the site and upload the Worker:",
+      "id": "f:9ug9mo"
+    },
+    {
+      "text": "The deploy output ends with an address of the form `<worker name>.<account subdomain>.workers.dev`, which serves the site with no domain purchase or DNS change.",
+      "id": "f:9ug9mo"
+    },
+    {
+      "text": "To confirm the milestone, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a browser, open the address the deploy printed.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Confirm that the page the scaffold wrote loads.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Before you continue, confirm that you can do the following:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Name the Cloudflare adapter explicitly in the `sveltekit()` call in `vite.config.ts`.",
+      "id": "f:ifuvcl"
+    },
+    {
+      "text": "Deploy the Worker and load it at its `workers.dev` address.",
+      "id": "f:9ug9mo"
+    },
+    {
+      "text": "This milestone installs the engine, gives it a site config and a minimal adapter, and mounts the admin through one catch-all route and a shared layout.",
+      "id": "f:dqe7ij"
+    },
+    {
+      "text": "It starts from the deployed bare site.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The admin answers only once the dev backend or real bindings exist, so this milestone ends with a clean build, and the sign-in check waits for the dev backend.",
+      "id": "f:jbt2hh"
+    },
+    {
+      "text": "The engine's shipped type declarations import `D1Database` and `R2Bucket` from `@cloudflare/workers-types`, which makes that package a required peer at `^5`.",
+      "id": "f:ew4uk7"
+    },
+    {
+      "text": "In the project directory, install the engine and its peer:",
+      "id": "f:ew4uk7"
+    },
+    {
+      "text": "The package ships its `.svelte` files as source under its `svelte` export condition, so the site's Svelte plugin must compile them.",
+      "id": "f:c8efq5"
+    },
+    {
+      "text": "Without a `noExternal` entry, the admin components fail to build.",
+      "id": "f:c8efq5"
+    },
+    {
+      "text": "In `vite.config.ts`, add an `ssr` block that lists the engine under `noExternal`:",
+      "id": "f:c8efq5"
+    },
+    {
+      "text": "`src/app.d.ts` imports `@glw907/cairn-cms/ambient` to augment `App.Locals` with the five fields the engine reads and writes on every admin request.",
+      "id": "f:vvgpr5"
+    },
+    {
+      "text": "A custom route that reads `event.platform.env` needs `App.Platform` declared separately.",
+      "id": "f:vvgpr5"
+    },
+    {
+      "text": "In `src/app.d.ts`, add the import:",
+      "id": "f:vvgpr5"
+    },
+    {
+      "text": "The site config is a YAML mapping whose one required key, `siteName`, names the site in the admin shell and in the sign-in email's subject.",
+      "id": "f:ebx4pv"
+    },
+    {
+      "text": "[`parseSiteConfig`](../reference/core.md#parsesiteconfig) rejects any top-level key outside the set it knows.",
+      "id": "f:em69ru"
+    },
+    {
+      "text": "`parseSiteConfig` passes the optional `description`, `author`, and `locale` keys through without reading them, for the site's code to use.",
+      "id": "f:ebx4pv"
+    },
+    {
+      "text": "In `src/lib`, create `site.config.yaml`:",
+      "id": "f:em69ru"
+    },
+    {
+      "text": "The adapter declares one concept for posts, a renderer, and the backend and sender values that take effect only in production.",
+      "id": "f:dujlzg"
+    },
+    {
+      "text": "`createGithubApp` builds a provider from its five strings with no network call and no validation, so placeholder values serve until the production milestone.",
+      "id": "f:dujlzg"
+    },
+    {
+      "text": "In `src/lib`, create the adapter module, which exports the adapter as `cairn` beside the parsed `siteConfig`:",
+      "id": "f:fj28xs"
+    },
+    {
+      "text": "`defineRegistry({ components: [] })` gives an empty component registry, and `createRenderer(registry)` returns the `renderMarkdown` that the adapter's `rendering.render` calls.",
+      "id": "f:d0sp1t"
+    },
+    {
+      "text": "For every other adapter option, see the [`defineAdapter`](../reference/core.md#defineadapter) entry.",
+      "id": "f:d0sp1t"
+    },
+    {
+      "text": "[`composeRuntime`](../reference/core.md#composeruntime) combines the adapter and the parsed site config into the runtime.",
+      "id": "f:d0sp1t"
+    },
+    {
+      "text": "[`createCairnAdmin`](../reference/sveltekit.md#createcairnadmin) returns the `load`, `actions`, and `shellLoad` a single-mount admin exports.",
+      "id": "f:dqe7ij"
+    },
+    {
+      "text": "The `bootstrapOwner` pair names the site's first owner.",
+      "id": "f:g81luc"
+    },
+    {
+      "text": "When that email requests a sign-in while the `editor` table is empty, the engine inserts the owner row before the allowlist lookup, so the first sign-in proceeds like any allow-listed editor's.",
+      "id": "f:g81luc"
+    },
+    {
+      "text": "A non-matching email or a non-empty table grants nothing.",
+      "id": "f:g81luc"
+    },
+    {
+      "text": "In `src/lib`, create the server module, with your email and name in `bootstrapOwner`:",
+      "id": "f:g81luc"
+    },
+    {
+      "text": "The admin mounts as a catch-all page that renders `CairnAdmin` and a shared layout that renders `CairnAdminShell`, both imported from `@glw907/cairn-cms/admin`.",
+      "id": "f:jzb3d0"
+    },
+    {
+      "text": "The catch-all route module exports `prerender = false`, because a site that prerenders by default would otherwise bake a build-time snapshot of a session-gated page.",
+      "id": "f:exxsvk"
+    },
+    {
+      "text": "Create the catch-all route module, which exports the admin's `load` and `actions`:",
+      "id": "f:exxsvk"
+    },
+    {
+      "text": "Create the catch-all page, which passes `CairnAdmin` the route's `data` and `form` and the adapter's `render`:",
+      "id": "f:dqe7ij"
+    },
+    {
+      "text": "Create the layout server module, which exports the admin's `shellLoad`:",
+      "id": "f:dqe7ij"
+    },
+    {
+      "text": "Create the layout, which renders `CairnAdminShell` over the layout load's `shell` data:",
+      "id": "f:dqe7ij"
+    },
+    {
+      "text": "To confirm the milestone, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, build the site:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Confirm that the build finishes with no error.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Before you continue, confirm that you can do the following:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Say why the engine is listed under `noExternal` in `vite.config.ts`.",
+      "id": "f:c8efq5"
+    },
+    {
+      "text": "Trace the runtime from the adapter through `composeRuntime` to the admin.",
+      "id": "f:d0sp1t"
+    },
+    {
+      "text": "Name the three exports the admin routes read from `createCairnAdmin`.",
+      "id": "f:dqe7ij"
+    },
+    {
+      "text": "This milestone adds a posts directory with one markdown entry, builds the typed content index over it, and renders the entry at its permalink.",
+      "id": "f:gj96px"
+    },
+    {
+      "text": "It starts from the build the engine milestone left.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Content is markdown files with YAML frontmatter, one directory per concept, named by the concept's `dir`.",
+      "id": "f:gj96px"
+    },
+    {
+      "text": "The entry's frontmatter carries `title`, `date`, and `description`, the fields the posts concept declares.",
+      "id": "f:gj96px"
+    },
+    {
+      "text": "In `src/content/posts`, create the entry file the tree shows:",
+      "id": "f:gj96px"
+    },
+    {
+      "text": "Vite needs each glob's literal pattern at its call site, so the site passes [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes) one literal `import.meta.glob` per concept.",
+      "id": "f:pdgkex"
+    },
+    {
+      "text": "`createSiteIndexes` throws at build time for a declared concept with no glob.",
+      "id": "f:pdgkex"
+    },
+    {
+      "text": "In `src/lib`, create the content module, which passes the posts glob to `createSiteIndexes`:",
+      "id": "f:pdgkex"
+    },
+    {
+      "text": "The `origin` constant names the local origin until the production milestone points it at the deployed one.",
+      "id": "f:7bch04"
+    },
+    {
+      "text": "The [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin reads every path it takes as app-root-absolute.",
+      "id": "f:fj28xs"
+    },
+    {
+      "text": "`configModule` names the module that exports `cairn` and `siteConfig`, and `content` maps each concept id to its glob.",
+      "id": "f:fj28xs"
+    },
+    {
+      "text": "The manifest lands at `/src/content/.cairn/index.json` unless `manifestPath` names another path.",
+      "id": "f:fj28xs"
+    },
+    {
+      "text": "In the Vite config, add the plugin:",
+      "id": "f:fj28xs"
+    },
+    {
+      "text": "The build then verifies the committed manifest against the markdown on disk, so the manifest has to exist before the next build.",
+      "id": "f:n0laoh"
+    },
+    {
+      "text": "To write and commit the manifest, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, write the manifest:",
+      "id": "f:n0laoh"
+    },
+    {
+      "text": "Commit the manifest with the entry:",
+      "id": "f:n0laoh"
+    },
+    {
+      "text": "The [manifest command's reference](../reference/cli-cairn-manifest.md) covers when to write the manifest again.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The entry route is a prerendered catch-all built on the engine's public routes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Its load data carries the `entry`, its rendered `html`, its `canonicalUrl`, and its `seo` metadata.",
+      "id": "f:fvi8rk"
+    },
+    {
+      "text": "The entry page in this milestone renders only `html`, and [`CairnHead`](../reference/delivery.md#cairnhead) from `@glw907/cairn-cms/delivery/head` takes the `seo` data as its `seo` prop.",
+      "id": "f:fvi8rk"
+    },
+    {
+      "text": "The [public routes reference](../reference/delivery.md#createpublicroutes) documents the loader and its config.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Create the entry route module:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Create the entry page:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Every concept except `pages` defaults to the permalink `/<id>/:slug`, and the default `datePrefix` of `day` strips the filename's date stem from the slug.",
+      "id": "f:6ebew3"
+    },
+    {
+      "text": "To confirm the milestone, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, start the dev server:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a browser, open the entry's permalink:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Confirm that the entry's body renders.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The entry renders as unstyled markup, since the site loads no style sheet yet.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The engine ships its public defaults as one style sheet, `@glw907/cairn-cms/cairn-public.css`, which the [public style sheet reference](../reference/public-css.md) documents.",
+      "id": "f:c4nnu9"
+    },
+    {
+      "text": "Tailwind and daisyUI are optional peers of the engine, so a site installs them only when its pages use them.",
+      "id": "f:26kuvx"
+    },
+    {
+      "text": "The content wiring fails in three ways, and only the first two stop the build:",
+      "id": "no-claim"
+    },
+    {
+      "text": "A declared concept with no glob passed to `createSiteIndexes` throws at build time, until the content module passes that concept's glob.",
+      "id": "f:pdgkex"
+    },
+    {
+      "text": "A committed manifest that has drifted from the markdown on disk fails the build, until you write the manifest again and commit it.",
+      "id": "f:n0laoh"
+    },
+    {
+      "text": "A concept missing from the plugin's `content` option produces zero manifest rows for that concept, with no error, until you add its glob to `content`.",
+      "id": "f:n0laoh"
+    },
+    {
+      "text": "Add a `pages` concept at `src/content/pages` with one `about.md` entry, then load the page in the dev server.",
+      "id": "f:gj96px"
+    },
+    {
+      "text": "The `pages` concept defaults to the permalink `/:slug`, so the page's address carries no concept segment.",
+      "id": "f:6ebew3"
+    },
+    {
+      "text": "When you finish, compare your edits with [Show me the steps](#show-me-the-steps).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The answer takes the following steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the adapter's `content` group, add a `pages` concept whose `dir` is `src/content/pages`.",
+      "id": "f:gj96px"
+    },
+    {
+      "text": "In the content module, pass a second literal glob to `createSiteIndexes`.",
+      "id": "f:pdgkex"
+    },
+    {
+      "text": "In the Vite config, add the same glob to the plugin's `content` option, since a concept missing there produces zero rows.",
+      "id": "f:n0laoh"
+    },
+    {
+      "text": "Create `about.md` in `src/content/pages`, with a `title` in its frontmatter.",
+      "id": "f:gj96px"
+    },
+    {
+      "text": "Write the manifest again.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a browser, open the page at its address:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The three module edits read as follows:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Before you continue, confirm that you can do the following:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Place an entry in the directory its concept's `dir` names.",
+      "id": "f:gj96px"
+    },
+    {
+      "text": "Tell a manifest drift failure from a concept left out of the plugin's `content` option.",
+      "id": "f:n0laoh"
+    },
+    {
+      "text": "This section wires the dev backend for a local sign-in and hands CSRF for the admin to the engine's guard.",
+      "id": "f:dqjkci"
+    },
+    {
+      "text": "It starts from the site that renders its first entry.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The dev backend is `devBackendHandle` from `@glw907/cairn-cms-dev`.",
+      "id": "f:dqjkci"
+    },
+    {
+      "text": "It installs an in-memory GitHub backend, a fake `AUTH_DB`, and a fake media bucket, and it mints an owner editor on `/admin`, so no email loop runs.",
+      "id": "f:dqjkci"
+    },
+    {
+      "text": "Its state lasts as long as the server process, and no save or publish leaves the machine.",
+      "id": "f:dqjkci"
+    },
+    {
+      "text": "Three layers keep the dev package out of a deployed site:",
+      "id": "f:9mx680"
+    },
+    {
+      "text": "The `__CAIRN_DEV_BUILD__` define strips it from a production bundle.",
+      "id": "f:9mx680"
+    },
+    {
+      "text": "`@glw907/cairn-cms-dev` installs as a `devDependency`.",
+      "id": "f:9mx680"
+    },
+    {
+      "text": "The admin guard refuses to serve a production build that has `CAIRN_DEV_BACKEND` set.",
+      "id": "f:tkpmxr"
+    },
+    {
+      "text": "In the project directory, install the dev package as a development dependency:",
+      "id": "f:ew4uk7"
+    },
+    {
+      "text": "Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly, never through a shared exported constant.",
+      "id": "f:72mctx"
+    },
+    {
+      "text": "A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker.",
+      "id": "f:72mctx"
+    },
+    {
+      "text": "SvelteKit's origin check runs ahead of any handle and would reject a JavaScript-free form POST that arrives without an `Origin` header.",
+      "id": "f:e5hqn3"
+    },
+    {
+      "text": "The admin guard's double-submit token tolerates the missing header, so the site sets `csrf: { checkOrigin: false }` to leave CSRF to the guard.",
+      "id": "f:d2jumm"
+    },
+    {
+      "text": "The setting turns the check off for every route, and the guard restores an equivalent strict `Origin` check on every route outside `/admin`.",
+      "id": "f:gncd64"
+    },
+    {
+      "text": "`checkOrigin` is deprecated as of SvelteKit 2.61 in favor of `csrf.trustedOrigins`, and it stays supported across the engine's tested range.",
+      "id": "f:d2jumm"
+    },
+    {
+      "text": "The [`checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-deprecation) section tracks the change, and the [security model](security-model.md) sets out the CSRF design.",
+      "id": "f:d2jumm"
+    },
+    {
+      "text": "In `vite.config.ts`, add the define plugin and the CSRF handoff:",
+      "id": "f:7bch04"
+    },
+    {
+      "text": "In `src/app.d.ts`, declare the define as a global boolean:",
+      "id": "f:vvgpr5"
+    },
+    {
+      "text": "The hooks module picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if`.",
+      "id": "f:f21bcz"
+    },
+    {
+      "text": "Its test reads the build-time `__CAIRN_DEV_BUILD__` define directly first and the runtime opt-in `CAIRN_DEV_BACKEND === '1'` second.",
+      "id": "f:f21bcz"
+    },
+    {
+      "text": "Importing `devBackendHandle` dynamically behind the define keeps a default build from carrying it.",
+      "id": "f:eiaqkh"
+    },
+    {
+      "text": "`createAuthGuard` takes an optional config, and a bare call is valid.",
+      "id": "f:f21bcz"
+    },
+    {
+      "text": "In the `src` directory, create the hooks module:",
+      "id": "f:f21bcz"
+    },
+    {
+      "text": "In the project directory, start the dev server with `CAIRN_DEV_BACKEND` set to `1`:",
+      "id": "f:f21bcz"
+    },
+    {
+      "text": "The inline `NAME=1 command` form works only in POSIX shells.",
+      "id": "f:e8dr5r"
+    },
+    {
+      "text": "On Windows, start the dev server with the command for your shell:",
+      "id": "f:e8dr5r"
+    },
+    {
+      "text": "In `cmd.exe`, run `set \"CAIRN_DEV_BACKEND=1\" && npm run dev`.",
+      "id": "f:e8dr5r"
+    },
+    {
+      "text": "In PowerShell, run `$env:CAIRN_DEV_BACKEND=1; npm run dev`.",
+      "id": "f:e8dr5r"
+    },
+    {
+      "text": "The quotes in the `cmd.exe` form keep a trailing space out of the value, which the `=== '1'` test would otherwise read as unset.",
+      "id": "f:e8dr5r"
+    },
+    {
+      "text": "To confirm the section, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a browser, open `/admin` on the dev server.",
+      "id": "f:dqjkci"
+    },
+    {
+      "text": "Confirm that the admin opens signed in as an owner, with no sign-in email.",
+      "id": "f:dqjkci"
+    },
+    {
+      "text": "In the admin's list, open a post.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the editor, change a line.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the editor, save the edit.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Confirm that the save completes against the in-memory backend, with nothing sent to GitHub.",
+      "id": "f:dqjkci"
+    },
+    {
+      "text": "`bootstrapOwner` does nothing while the dev backend is active, since the dev backend signs in without touching the auth store.",
+      "id": "f:f2vudv"
+    },
+    {
+      "text": "When the admin does not open signed in, check the following in order:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Check that the dev server started with `CAIRN_DEV_BACKEND` set to `1`.",
+      "id": "f:f21bcz"
+    },
+    {
+      "text": "Check that the hooks module reads `__CAIRN_DEV_BUILD__` itself, with no imported constant in its place.",
+      "id": "f:72mctx"
+    },
+    {
+      "text": "Before you continue, confirm that you can do the following:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Say why every call site names `__CAIRN_DEV_BUILD__` directly.",
+      "id": "f:72mctx"
+    },
+    {
+      "text": "Say why the site turns `checkOrigin` off.",
+      "id": "f:d2jumm"
+    },
+    {
+      "text": "Sign in at `/admin` on the dev backend with no email.",
+      "id": "f:dqjkci"
+    },
+    {
+      "text": "This milestone replaces the dev backend's fakes with a GitHub App you register, a D1 auth database, and the Worker bindings and secret.",
+      "id": "f:e5vm42"
+    },
+    {
+      "text": "It ends with a deploy whose sign-in works, and it starts from a site that signs in on the dev backend.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Each site registers its own GitHub App, since the engine ships no App and no shared credential.",
+      "id": "f:gyu7jc"
+    },
+    {
+      "text": "The engine commits through the App's installation token, with the signed-in editor as the commit's author.",
+      "id": "f:5f4kmk"
+    },
+    {
+      "text": "To register and install the App, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "If the project is not on GitHub yet, push it to a GitHub repository.",
+      "id": "no-claim"
+    },
+    {
+      "text": "On GitHub, open the form that [registers a GitHub App](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app).",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the form, enter any name and homepage URL, since the engine never reads either.",
+      "id": "f:9yi7fu"
+    },
+    {
+      "text": "In the form, turn the webhook off, since cairn never receives a webhook.",
+      "id": "f:vgw8x9"
+    },
+    {
+      "text": "In the form, grant the repository permission **Contents** at **Read and write**, and grant no other permission.",
+      "id": "f:vgw8x9"
+    },
+    {
+      "text": "In the form, create the App.",
+      "id": "no-claim"
+    },
+    {
+      "text": "On the App's settings page, note the App ID.",
+      "id": "f:02g94x"
+    },
+    {
+      "text": "On the App's settings page, generate a private key, following GitHub's page on [managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps).",
+      "id": "f:02g94x"
+    },
+    {
+      "text": "On the App's settings page, install the App on the repository owner's account, following GitHub's page on [installing your own GitHub App](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app).",
+      "id": "f:rp65d2"
+    },
+    {
+      "text": "In the installation form, grant the App access to the site's repository.",
+      "id": "f:rp65d2"
+    },
+    {
+      "text": "In the installation settings address that GitHub opens after the install, note the trailing number, which is the Installation ID.",
+      "id": "f:nbnq9c"
+    },
+    {
+      "text": "The **Contents** permission is repository-wide, and only engine code confines writes to the declared content directories.",
+      "id": "f:gglwt4"
+    },
+    {
+      "text": "Installing the App on a repository that also holds code or other teams' content puts that content inside the token's write reach.",
+      "id": "f:l5gx1t"
+    },
+    {
+      "text": "The [security model](security-model.md) covers the reasoning behind that reach.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The App ID and Installation ID identify the App and grant nothing, so they sit in the adapter source and pass directly into `createGithubApp`.",
+      "id": "f:zcwf5i"
+    },
+    {
+      "text": "`createGithubApp` takes `owner`, `repo`, `branch`, `appId`, and `installationId`, all required strings, with `branch` the backend's default branch.",
+      "id": "f:0w7jar"
+    },
+    {
+      "text": "To point the adapter at the App, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the adapter module, replace the `createGithubApp` placeholders with your repository and App values.",
+      "id": "f:0w7jar"
+    },
+    {
+      "text": "In the same module, set the `email` group's `from` to the address that sends sign-in mail.",
+      "id": "f:2gtftn"
+    },
+    {
+      "text": "The `.pem` file is the credential that signs the App's requests for installation tokens, so it stays out of the repository and lives only as the Worker secret `GITHUB_APP_PRIVATE_KEY_B64`.",
+      "id": "f:7dtrwy"
+    },
+    {
+      "text": "The engine decodes the secret with `atob()` before signing, so the value is the PEM's base64 encoding on a single line.",
+      "id": "f:vpieos"
+    },
+    {
+      "text": "To store the key, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, encode the downloaded key onto one line and pipe it into the secret, replacing the path with the file's location:",
+      "id": "f:vpieos"
+    },
+    {
+      "text": "Store the `.pem` file outside every repository, so git never tracks it.",
+      "id": "f:7dtrwy"
+    },
+    {
+      "text": "A production build with no dev backend and no `AUTH_DB` binding runs the real guard.",
+      "id": "f:jbt2hh"
+    },
+    {
+      "text": "The guard answers every `/admin` path, the login path included, with a branded HTTP 500 page.",
+      "id": "f:jbt2hh"
+    },
+    {
+      "text": "Seeing that page before the database exists confirms that the deployed build runs the real guard, with the dev backend dropped.",
+      "id": "f:jbt2hh"
+    },
+    {
+      "text": "To see the refusal, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, build and deploy the site:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a browser, open `/admin` at the deployed address.",
+      "id": "f:jbt2hh"
+    },
+    {
+      "text": "Confirm that the page shows the heading **Wrangler bindings are missing**.",
+      "id": "f:jbt2hh"
+    },
+    {
+      "text": "The engine reads the auth database through the `AUTH_DB` binding.",
+      "id": "f:ntdafg"
+    },
+    {
+      "text": "The package ships five migrations under `migrations/`.",
+      "id": "f:gffvfd"
+    },
+    {
+      "text": "A site copies the ones it needs into its `migrations_dir`.",
+      "id": "f:xxtooz"
+    },
+    {
+      "text": "The following list names each migration and when a site applies it:",
+      "id": "no-claim"
+    },
+    {
+      "text": "`0000_auth.sql`, which every site applies.",
+      "id": "f:hft8s8"
+    },
+    {
+      "text": "`0004_login_nonce.sql`, which every site applies.",
+      "id": "f:hft8s8"
+    },
+    {
+      "text": "`0001_roles.sql`, which a site applies only for a role vocabulary beyond the default owner and editor pair.",
+      "id": "f:rn62i1"
+    },
+    {
+      "text": "`0003_preview.sql`, which a site applies only for draft-preview links.",
+      "id": "f:rn62i1"
+    },
+    {
+      "text": "`0002_audit.sql`, which belongs on an optional audit database with a separate binding.",
+      "id": "f:pkrwom"
+    },
+    {
+      "text": "The `0004_login_nonce.sql` migration binds a sign-in token to the browser that requested it, and a store call against a database without it fails with an error naming that file.",
+      "id": "f:hft8s8"
+    },
+    {
+      "text": "To create and migrate the database, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, create the database, and note the database id in the output:",
+      "id": "f:e5vm42"
+    },
+    {
+      "text": "Copy the two migrations every site applies into a directory of the site's:",
+      "id": "f:xxtooz"
+    },
+    {
+      "text": "In the Wrangler config, bind the database as `AUTH_DB`, with `migrations_dir` pointing at the copied directory:",
+      "id": "f:if45on"
+    },
+    {
+      "text": "Apply the migrations to the remote database:",
+      "id": "f:xxtooz"
+    },
+    {
+      "text": "The same command with `--local` applies them to the local development database.",
+      "id": "f:xxtooz"
+    },
+    {
+      "text": "The `0002_audit.sql` table belongs on a separate D1 binding such as `AUDIT_DB`, with a separate `migrations_dir`.",
+      "id": "f:pkrwom"
+    },
+    {
+      "text": "That keeps audit writes off the database that serves session and token lookups.",
+      "id": "f:pkrwom"
+    },
+    {
+      "text": "The [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry shows the hook that writes to it.",
+      "id": "f:fekvhi"
+    },
+    {
+      "text": "Sign-in mail goes out through the `EMAIL` binding, which needs the domain in `PUBLIC_ORIGIN` onboarded for Cloudflare Email Sending.",
+      "id": "f:xhwl32"
+    },
+    {
+      "text": "A `workers.dev` subdomain has no zone to onboard, so the production site runs on a domain of your own.",
+      "id": "f:xhwl32"
+    },
+    {
+      "text": "`PUBLIC_ORIGIN` is the canonical origin for sign-in links, and an unset or invalid value throws `config.public-origin-invalid`.",
+      "id": "f:ntdafg"
+    },
+    {
+      "text": "To add the binding, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, onboard the domain for Email Sending:",
+      "id": "f:xhwl32"
+    },
+    {
+      "text": "Serve the Worker on that domain, following Cloudflare's page on [Workers custom domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `wrangler.jsonc`, add the `EMAIL` binding and set `PUBLIC_ORIGIN` to the deployed origin:",
+      "id": "f:7bch04"
+    },
+    {
+      "text": "A site that sends through another provider passes a `SendMagicLink` as `auth.send`, and that sender receives the same built magic-link message as the built-in sender.",
+      "id": "f:lbetsq"
+    },
+    {
+      "text": "[Edit the message in a custom sender](#edit-the-message-in-a-custom-sender) shows the sender's shape.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The hooks module needs no edit, because `__CAIRN_DEV_BUILD__` is `false` on a production build and the build drops the dev-backend import.",
+      "id": "f:7bch04"
+    },
+    {
+      "text": "The adapter and the Wrangler config already carry their production values, so the content module's `origin` is the last edit.",
+      "id": "f:7bch04"
+    },
+    {
+      "text": "The entry route builds each entry's canonical URL from `origin` plus the permalink, and the same origin anchors its `og:url` and image URLs.",
+      "id": "f:k16chc"
+    },
+    {
+      "text": "A prerendered route writes that origin into the build output, so `origin` names the deployed origin before the production build.",
+      "id": "f:k16chc"
+    },
+    {
+      "text": "In the content module, set `origin` to the deployed origin, the same value as `PUBLIC_ORIGIN`.",
+      "id": "f:7bch04"
+    },
+    {
+      "text": "`cairn doctor`, run with no flags from the site's directory, has a `config.bindings` check that confirms `AUTH_DB` and `EMAIL` are both wired.",
+      "id": "f:m0ouh8"
+    },
+    {
+      "text": "No command checks the GitHub App itself, so the last check is a manual publish whose commit lands on `main`.",
+      "id": "f:m0ouh8"
+    },
+    {
+      "text": "To confirm the milestone, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, run `cairn doctor`:",
+      "id": "f:m0ouh8"
+    },
+    {
+      "text": "In the output, confirm that the `config.bindings` check passes.",
+      "id": "f:m0ouh8"
+    },
+    {
+      "text": "Build and deploy the site:",
+      "id": "no-claim"
+    },
+    {
+      "text": "On the deployed origin, request a sign-in to the admin with the `bootstrapOwner` email.",
+      "id": "f:f2vudv"
+    },
+    {
+      "text": "In the sign-in email, open the link.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the admin, open the hello post.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the editor, change a line.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the editor, publish the edit.",
+      "id": "no-claim"
+    },
+    {
+      "text": "On GitHub, confirm that the commit lands on `main`.",
+      "id": "f:m0ouh8"
+    },
+    {
+      "text": "The commit's author is the signed-in editor.",
+      "id": "f:5f4kmk"
+    },
+    {
+      "text": "The first real sign-in creates the owner row and logs [`editor.bootstrapped`](../reference/log-events.md).",
+      "id": "f:f2vudv"
+    },
+    {
+      "text": "The [`cairn doctor` checks table](../reference/cli-cairn-doctor.md#the-checks) describes the command's other checks.",
+      "id": "f:m0ouh8"
+    },
+    {
+      "text": "Before you finish, confirm that you can do the following:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Register a GitHub App with one repository permission and no webhook.",
+      "id": "f:vgw8x9"
+    },
+    {
+      "text": "Store the App's private key as a single-line base64 Worker secret.",
+      "id": "f:vpieos"
+    },
+    {
+      "text": "Apply the two migrations every site needs to the auth database.",
+      "id": "f:hft8s8"
+    },
+    {
+      "text": "Read a passing `config.bindings` check from `cairn doctor`.",
+      "id": "f:m0ouh8"
+    },
+    {
+      "text": "The sign-in email is engine copy, and a site changes its site name and sender through `auth.branding` and anything else through a custom `auth.send`.",
+      "id": "f:2gtftn"
+    },
+    {
+      "text": "The subject is “Sign in to” followed by the site name.",
+      "id": "f:2gtftn"
+    },
+    {
+      "text": "The body carries the fixed sentence “The link expires in 10 minutes.”",
+      "id": "f:2gtftn"
+    },
+    {
+      "text": "By default, the site name comes from the site config and the sender from the adapter's `email` group.",
+      "id": "f:2gtftn"
+    },
+    {
+      "text": "A supplied `branding` takes `siteName` and `from` as required strings and `replyTo` as one optional address, and it replaces the default whole.",
+      "id": "f:v72g9z"
+    },
+    {
+      "text": "A `branding` that leaves `replyTo` off sends with no `replyTo` address even when the adapter's `email` group sets one.",
+      "id": "f:v72g9z"
+    },
+    {
+      "text": "In the server module, pass `auth.branding` in the admin's `auth` config:",
+      "id": "f:2gtftn"
+    },
+    {
+      "text": "A custom `auth.send` is a `SendMagicLink` that receives the built `MagicLinkMessage`, with `to`, `from`, `subject`, `html`, and `text`, plus optional `cc`, `bcc`, `replyTo`, and `attachments`.",
+      "id": "f:1b54g7"
+    },
+    {
+      "text": "Its `replyTo` takes a single address string.",
+      "id": "f:1b54g7"
+    },
+    {
+      "text": "The engine truncates the text of anything the sender throws and scrubs token values from it before it reaches the log.",
+      "id": "f:1b54g7"
+    },
+    {
+      "text": "A thrown message must never embed the message body or the sign-in link.",
+      "id": "f:1b54g7"
+    },
+    {
+      "text": "In the server module, pass a sender that edits the message before it sends it:",
+      "id": "f:2gtftn"
+    },
+    {
+      "text": "To confirm the change, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "On the deployed origin, request a sign-in to the admin.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the sign-in email, confirm that the message carries the values the site set.",
+      "id": "no-claim"
+    }
+  ]
+}

@@ -1,0 +1,741 @@
+{
+  "page": "docs/extend/add-a-custom-admin-screen.md",
+  "sentences": [
+    {
+      "text": "Add a screen under `/admin` that renders inside the admin shell, enforces the access map, records each write in the audit trail, and passes `cairn-audit`.",
+      "id": "f:326755"
+    },
+    {
+      "text": "A custom admin screen is a SvelteKit route under `src/routes/admin/` that renders inside [`CairnAdminShell`](../reference/admin.md#cairnadminshell), behind the same sign-in guard as the engine's screens.",
+      "id": "f:9xthnq"
+    },
+    {
+      "text": "The worked example is the signups screen in `examples/showcase`, the repository's example site, from its route through its actions and their audit calls.",
+      "id": "f:pyt58u"
+    },
+    {
+      "text": "This page assumes the following:",
+      "id": "no-claim"
+    },
+    {
+      "text": "A site that `create-cairn-site` scaffolded, with its `cairn-audit.config.json` file.",
+      "id": "f:guiavc"
+    },
+    {
+      "text": "For a hand-built site, see [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "An access map rule for the screen's route, as [Restrict admin access](restrict-admin-access.md) describes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Without one, every session gets a 403, owner included.",
+      "id": "f:3lbdl6"
+    },
+    {
+      "text": "A D1 binding for the screen's data in the site's platform env, as Cloudflare's [D1 Workers Binding API](https://developers.cloudflare.com/d1/worker-api/) describes.",
+      "id": "f:3j02dk"
+    },
+    {
+      "text": "A D1 database for the audit trail, prepared as the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry describes.",
+      "id": "f:68h31z"
+    },
+    {
+      "text": "The setup command writes the admin layout, the `[...path]` catch-all, and a `signups/` directory in its `admin/` route directory.",
+      "id": "f:qtm9y2"
+    },
+    {
+      "text": "`signups/` is itself a custom screen beside the catch-all, and a new screen adds one more directory beside it.",
+      "id": "f:onqm6k"
+    },
+    {
+      "text": "A route file under `src/routes/admin/` wins over the `[...path]` catch-all, because SvelteKit resolves the more specific route first.",
+      "id": "f:03zj56"
+    },
+    {
+      "text": "Every `/admin/**` route renders as `CairnAdminShell`'s children through the shared layout, so the screen gets the shell's nav, user, and theme with no registration.",
+      "id": "f:brfitv"
+    },
+    {
+      "text": "The shell's favicon and sidebar brand mark are fixed to the cairn glyph and wordmark.",
+      "id": "f:qz4gj2"
+    },
+    {
+      "text": "The only site identity it shows is `siteName`, in the page title and the topbar.",
+      "id": "f:qz4gj2"
+    },
+    {
+      "text": "To place the route, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `src/routes/admin/`, create a directory named for the screen.",
+      "id": "f:brfitv"
+    },
+    {
+      "text": "In that directory, create `+page.server.ts` for the load and the actions, and `+page.svelte` for the markup.",
+      "id": "f:b8rkq9"
+    },
+    {
+      "text": "The site's root layout must render no visible chrome around `/admin`, since a header, a footer, or a width cap stops the shell from filling the viewport.",
+      "id": "f:g7zuji"
+    },
+    {
+      "text": "In dev, a check logs one console error when an ancestor of the shell caps its width, and it never throws or changes rendering.",
+      "id": "f:g7zuji"
+    },
+    {
+      "text": "To list the screen in the sidebar, see [Arrange the admin sidebar](arrange-the-admin-sidebar.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "A custom screen enforces the site's access map by calling [`requireAccess`](../reference/sveltekit.md#requireaccess) in its `load` and by wrapping every form action in [`createSectionAction`](../reference/sveltekit.md#createsectionaction).",
+      "id": "f:10ojk8"
+    },
+    {
+      "text": "`createSectionAction`",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "[`createAuthGuard`](../reference/sveltekit.md#createauthguard) gates the whole `/admin` subtree before any load runs, but it decides nothing per route.",
+      "id": "f:2sd4if"
+    },
+    {
+      "text": "The two calls share one fail-closed predicate, so a session the access map doesn't admit is refused on the read and on the write.",
+      "id": "f:10ojk8"
+    },
+    {
+      "text": "The signups `load` calls `requireAccess` before it reads anything.",
+      "id": "f:pyt58u"
+    },
+    {
+      "text": "A route nested under the screen, such as a detail endpoint, inherits the guard but not the screen's `requireAccess` rule.",
+      "id": "f:lmtfkt"
+    },
+    {
+      "text": "It needs a separate `requireAccess` call and a separate access-map entry.",
+      "id": "f:lmtfkt"
+    },
+    {
+      "text": "An action needs a separate check, because SvelteKit dispatches a matched form action without re-running `load`.",
+      "id": "f:chsstm"
+    },
+    {
+      "text": "A hand-rolled action that skips the check admits any signed-in session to the write and records nothing.",
+      "id": "f:chsstm"
+    },
+    {
+      "text": "`createSectionAction` runs that check through three ordered gates, and the first gate that fails refuses the call.",
+      "id": "f:4q8kin"
+    },
+    {
+      "text": "The wrapper refuses a target with no rule.",
+      "id": "f:4q8kin"
+    },
+    {
+      "text": "The wrapper refuses a session whose role the rule doesn't name, unless the session is an owner's.",
+      "id": "f:4q8kin"
+    },
+    {
+      "text": "The wrapper refuses a non-owner session when the action sets `ownerOnly`.",
+      "id": "f:4q8kin"
+    },
+    {
+      "text": "A refused action returns `fail(403)` with `You do not have access to this action.`, which names no gate.",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "The `deniedMessage` option replaces that message.",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "`createSectionAction<Env, Db>({ resolveDb })` builds one reusable wrapper per section, and `resolveDb` reads the section's binding from the site's platform env.",
+      "id": "f:3j02dk"
+    },
+    {
+      "text": "`Env` is a type parameter for the site's platform bindings, since the engine ships no `Env` type.",
+      "id": "f:esp93u"
+    },
+    {
+      "text": "`resolveDb` receives `Env | undefined`.",
+      "id": "f:esp93u"
+    },
+    {
+      "text": "`Env` doesn't infer from an unannotated `resolveDb` parameter, so reads off `env` stop typechecking unless the site annotates it or passes explicit type arguments.",
+      "id": "f:pmmtdv"
+    },
+    {
+      "text": "The example site passes `App.Platform['env']`.",
+      "id": "f:esp93u"
+    },
+    {
+      "text": "To wrap the actions, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the screen's server file, build one wrapper with `createSectionAction`, passing a `resolveDb` that reads the section's binding.",
+      "id": "f:3j02dk"
+    },
+    {
+      "text": "In the exported form actions, wrap each handler in that wrapper, passing its audited `action` and `entity`.",
+      "id": "f:pyt58u"
+    },
+    {
+      "text": "Each handler receives `{ form, ctx }`, writes through `ctx.db`, and calls `ctx.audit` with a `detail` or an `entityId`.",
+      "id": "f:pyt58u"
+    },
+    {
+      "text": "The destructive `remove` adds `ownerOnly: true` to its second argument.",
+      "id": "f:pyt58u"
+    },
+    {
+      "text": "Underneath, `createSectionAction` runs the editor identity, CSRF, and single form-read work of [`createAdminAction`](../reference/sveltekit.md#createadminaction), so a section never calls `createAdminAction` directly.",
+      "id": "f:lblh3u"
+    },
+    {
+      "text": "`createAdminAction`",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "The wrapper requires an audit entry from every successful action, and it records one for each access-map, owner, or binding refusal it makes.",
+      "id": "f:da6d2z"
+    },
+    {
+      "text": "The rate-limit refusal returns `fail(429)` with no `ctx.audit` call, so it leaves no audit entry.",
+      "id": "f:da6d2z"
+    },
+    {
+      "text": "The session and CSRF refusals that `createAdminAction` makes underneath redirect or throw before any audit call, so they leave none either.",
+      "id": "f:da6d2z"
+    },
+    {
+      "text": "A successful action that returns without calling `ctx.audit` throws `UnauditedActionError` in dev and logs `admin.action.unaudited` at error in production.",
+      "id": "f:07efts"
+    },
+    {
+      "text": "A section takes a rate limit through the `rateLimit` option, and the limit runs before the access-map checks.",
+      "id": "f:hafpqf"
+    },
+    {
+      "text": "Because the wrapper records each refusal it makes, a limit keeps a refused caller from filling a persisted audit table cheaply.",
+      "id": "f:da6d2z"
+    },
+    {
+      "text": "To rate-limit the section, follow this step:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the section wrapper's options, set `rateLimit` to an object with `resolve`, `key`, and an optional `message`, as [`SectionActionConfig`](../reference/sveltekit.md#sectionactionconfig) describes.",
+      "id": "f:hafpqf"
+    },
+    {
+      "text": "An unresolved binding, or a `key()` or `limit()` call that throws, degrades to open and logs, except a SvelteKit `redirect()` or `error()`, which propagates.",
+      "id": "f:hafpqf"
+    },
+    {
+      "text": "A section with no database binding uses `createAdminAction`, because `createSectionAction` requires a `resolveDb` binding resolver.",
+      "id": "f:hroqbu"
+    },
+    {
+      "text": "The following table compares the two wrappers.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Behavior",
+      "id": "no-claim"
+    },
+    {
+      "text": "Checks the access map",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "On every call",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "Only when the call sets the `access` option",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "Refuses a session",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "Returns `fail(403)`",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "Throws `error(403, ...)`",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "Refusal message",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "Replaced by the `deniedMessage` option",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "Fixed",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "Access-map target",
+      "id": "f:bcybve"
+    },
+    {
+      "text": "`target`, which defaults to the route id with route-group segments dropped",
+      "id": "f:bcybve"
+    },
+    {
+      "text": "`access.target`, which is required and names an access-map key, never a request `pathname`",
+      "id": "f:bcybve"
+    },
+    {
+      "text": "Refusal record",
+      "id": "f:bcybve"
+    },
+    {
+      "text": "An audit entry, logged as `auth.access.refused`",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "An audit entry with the action `deny` and the entity `admin-action`, logged as `auth.access.refused`",
+      "id": "f:bcybve"
+    },
+    {
+      "text": "Database binding",
+      "id": "f:hroqbu"
+    },
+    {
+      "text": "Required, through `resolveDb`",
+      "id": "f:hroqbu"
+    },
+    {
+      "text": "None",
+      "id": "f:hroqbu"
+    },
+    {
+      "text": "With the `access` option omitted, `createAdminAction` runs no access-map check.",
+      "id": "f:xbjxit"
+    },
+    {
+      "text": "`ctx.audit` needs an `AdminActionAuditSink` on `event.locals.cairnAuditSink`, set in `hooks.server.ts`, typically through `createD1AuditSink` over a bound D1 database.",
+      "id": "f:68h31z"
+    },
+    {
+      "text": "The file holds one `handle` export, so the sink's handle composes with the auth guard through `sequence()`, which runs them in order.",
+      "id": "f:rurhey"
+    },
+    {
+      "text": "The sink's handle only sets a `locals` field the route reads, so it needs nothing an earlier handle sets and works placed after `createAuthGuard`.",
+      "id": "f:6quvqm"
+    },
+    {
+      "text": "To wire the sink, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `hooks.server.ts`, add a handle that sets `event.locals.cairnAuditSink`.",
+      "id": "f:68h31z"
+    },
+    {
+      "text": "In the same file, compose that handle after `createAuthGuard` through `sequence`.",
+      "id": "f:6quvqm"
+    },
+    {
+      "text": "The handle binds `waitUntil` to its `ExecutionContext`, because the unbound method typechecks and then throws `Illegal invocation` in workerd, and the insert can be lost.",
+      "id": "f:ph6kjg"
+    },
+    {
+      "text": "The sink returns before the insert settles, and it logs a rejected insert, so a failed insert never fails the audited action.",
+      "id": "f:ff3l1u"
+    },
+    {
+      "text": "A screen composes the [admin toolkit](../reference/admin-toolkit.md), the general-purpose primitive set that cairn's admin screens compose too, instead of hand-rolling a bespoke list, table, or field.",
+      "id": "f:5t1i7o"
+    },
+    {
+      "text": "`ManageEditors`, for one, builds from the toolkit's `PageHeader` and `AdminTable`.",
+      "id": "f:5t1i7o"
+    },
+    {
+      "text": "Each primitive has one job, such as `PageHeader` for the eyebrow, title, and meta band, or `AdminTable` for the table chrome around the caller's rows.",
+      "id": "f:clyg9r"
+    },
+    {
+      "text": "The toolkit's reference entry lists every export, `Tooltip` and the `format.js` helpers included.",
+      "id": "f:7ik6ng"
+    },
+    {
+      "text": "Each primitive ships its compiled classes and scoped styles with the package, so a later release still renders it under a site's route with no change on the site's side.",
+      "id": "f:7m5o61"
+    },
+    {
+      "text": "A component tied to one site's data stays in the site's `src/lib/admin/`, since the toolkit admits general-purpose primitives only.",
+      "id": "f:mfa5vi"
+    },
+    {
+      "text": "The following minimal screen, separate from the signups example, composes three primitives, with the table inside a card.",
+      "id": "no-claim"
+    },
+    {
+      "text": "`AdminTable` scrolls horizontally by itself, so the wrapping `<div>` carries `overflow-hidden card-shell card-shadow` and never `overflow-x-auto`.",
+      "id": "f:8x0qpa"
+    },
+    {
+      "text": "`ExpandableRow` renders the caller's summary cells plus one trailing trigger cell, and the `colspan` the caller passes must count that trigger cell.",
+      "id": "f:vao0dd"
+    },
+    {
+      "text": "The `header` snippet heads the trigger cell with a `<th scope=\"col\">` holding an `sr-only` span, as the signups table does for its actions column.",
+      "id": "f:n2bhjw"
+    },
+    {
+      "text": "An interactive summary cell wraps its content in `data-cairn-inert-cell`, since `ExpandableRow` ignores a row click inside that attribute.",
+      "id": "f:pswc3n"
+    },
+    {
+      "text": "A screen that mounts the engine's admin components beside the toolkit can set their props, such as `CairnAdminShell`'s [`themeOverride`](../reference/admin.md#cairnadminshell), which pins the admin theme and removes the theme toggle.",
+      "id": "f:qkr057"
+    },
+    {
+      "text": "The admin uses daisyUI and Tailwind, and a custom screen extends it in the same idiom.",
+      "id": "f:k6aopn"
+    },
+    {
+      "text": "A screen's utility classes compile only through the site admin sheet, `src/admin.css`, and only when the screen's file sits under a root that sheet scans.",
+      "id": "f:vkfd7b"
+    },
+    {
+      "text": "The sheet turns off automatic source detection, scans `./routes/admin` and `./lib/admin` through `@source`, and then imports `@glw907/cairn-cms/admin-sources.css`.",
+      "id": "f:vkfd7b"
+    },
+    {
+      "text": "That import holds only the `@source` directives for the engine's shipped admin markup.",
+      "id": "f:vs6k2k"
+    },
+    {
+      "text": "The `build:admin-css` script compiles the sheet to `.cairn/admin.css`, which `src/routes/admin/+layout.svelte` imports.",
+      "id": "f:vkfd7b"
+    },
+    {
+      "text": "The scaffold's `predev`, `prebuild`, and `precheck` scripts run that compile, so a build needs no separate style sheet step.",
+      "id": "f:666eg6"
+    },
+    {
+      "text": "The engine's packaged admin sheet scans only the engine's admin components and the toolkit, so a site's route markup never feeds that build.",
+      "id": "f:zpi2ux"
+    },
+    {
+      "text": "The scaffold's `cairn-audit.config.json` names both compiled sheets, so the static checks see every class a site's admin route writes.",
+      "id": "f:guiavc"
+    },
+    {
+      "text": "Every daisyUI component and utility class except calendar compiles into the packaged admin sheet, so a screen can use any of them without a safelist entry.",
+      "id": "f:9rxw92"
+    },
+    {
+      "text": "Both admin themes set a three-step corner ladder on daisyUI's radius tokens, which the [container roles](../reference/admin-grammar-tokens.md#container-roles) section of the admin grammar tokens entry lists.",
+      "id": "f:9oa6sk"
+    },
+    {
+      "text": "A fixed Tailwind radius such as `rounded-lg` still compiles but doesn't follow the ladder, so markup that should follow it uses a ladder class such as `rounded-box`.",
+      "id": "f:2babfl"
+    },
+    {
+      "text": "A bare `btn`, with no color, style, selected, or disabled form, renders as an outlined button on the base fill.",
+      "id": "f:gc0hx3"
+    },
+    {
+      "text": "A selected `btn`, such as one with `.btn-active` or `aria-pressed=\"true\"`, renders with a neutral background, a thin border, and weight 600 text.",
+      "id": "f:5stbq2"
+    },
+    {
+      "text": "For warning or success text, a screen uses `cairn-text-warning` and `cairn-text-success`, which the packaged admin sheet defines with a light-theme fallback.",
+      "id": "f:q4jyat"
+    },
+    {
+      "text": "That sheet doesn't compile the bracketed `text-[var(--cairn-warning-ink)]` and `text-[var(--color-positive-ink)]` forms.",
+      "id": "f:q4jyat"
+    },
+    {
+      "text": "A form in a native `<dialog>` submitted with `enhance` keeps the dialog intact only when its callback handles each result type.",
+      "id": "f:jra92k"
+    },
+    {
+      "text": "`enhance` hands the callback one of four result types, and SvelteKit's [form actions documentation](https://svelte.dev/docs/kit/form-actions#Progressive-enhancement) describes what the default `update()` does with each.",
+      "id": "f:xgy3iu"
+    },
+    {
+      "text": "The dialog opens with `showModal()`, which lets Escape close it.",
+      "id": "f:ho6dxa"
+    },
+    {
+      "text": "The action form never nests inside a `<form method=\"dialog\">`, since nested forms are invalid HTML.",
+      "id": "f:ho6dxa"
+    },
+    {
+      "text": "To keep the dialog intact, handle each result type in the callback as follows.",
+      "id": "no-claim"
+    },
+    {
+      "text": "On `'failure'`, show the message in the dialog, then call `update()`, which for a same-page failure only updates `form` and the page status.",
+      "id": "f:jra92k"
+    },
+    {
+      "text": "On `'error'`, report the error in the dialog without calling `update()`, whose `applyAction` would render the nearest `+error` page and destroy the dialog.",
+      "id": "f:9fwsz5"
+    },
+    {
+      "text": "On `'success'`, close the dialog before awaiting `update()`, so it never sits open through `invalidateAll()`.",
+      "id": "f:jra92k"
+    },
+    {
+      "text": "On `'redirect'`, hand the result to `update()`.",
+      "id": "f:jra92k"
+    },
+    {
+      "text": "The callback can leave `reset` unset when the dialog closes anyway, since `reset` applies only on `'success'`.",
+      "id": "f:cdllbv"
+    },
+    {
+      "text": "The dialog's markup carries the following attributes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The `<dialog>` takes `aria-labelledby` pointing at its heading, so its accessible name doesn't depend on its body text.",
+      "id": "f:tskfz1"
+    },
+    {
+      "text": "The failure message renders into a `role=\"alert\"` paragraph mounted empty, since a live region inserted with its text already present is announced unreliably.",
+      "id": "f:tkqoia"
+    },
+    {
+      "text": "The input's `aria-describedby` names that paragraph, and `aria-invalid=\"true\"` marks the failed value.",
+      "id": "f:5vn194"
+    },
+    {
+      "text": "The submit button is disabled while the request is pending, so it can't fire the action a second time.",
+      "id": "f:5vn194"
+    },
+    {
+      "text": "A list screen fetches a row's detail when its panel opens and caches it per row, so it pays only for opened rows.",
+      "id": "f:uy7vyc"
+    },
+    {
+      "text": "Streaming an unawaited promise from `load` doesn't save that cost, because the promise starts running when `load` creates it.",
+      "id": "f:b5mcea"
+    },
+    {
+      "text": "To fetch a row's detail when its panel opens, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the panel's open handler, return the cached detail when the row already has one.",
+      "id": "f:uy7vyc"
+    },
+    {
+      "text": "Otherwise, call `fetch` for the row's detail inside a `try` block.",
+      "id": "f:od9mww"
+    },
+    {
+      "text": "Inside the `try` block, check `response.ok`, since `fetch` resolves on an HTTP error status.",
+      "id": "f:od9mww"
+    },
+    {
+      "text": "In the same block, parse the body with `Response.json()`, which rejects on a body that isn't JSON.",
+      "id": "f:od9mww"
+    },
+    {
+      "text": "Cache the detail only after the status check and the parse both succeed, so a failed row stays retryable.",
+      "id": "f:od9mww"
+    },
+    {
+      "text": "A custom screen animates with the admin's motion tokens, and `cairn-audit` holds its motion to the same error-tier rules as the engine's screens.",
+      "id": "f:326755"
+    },
+    {
+      "text": "Both admin theme roots declare five duration tokens, from `--cairn-dur-instant` at `70ms` to `--cairn-dur-settle` at `400ms`, and three curves.",
+      "id": "f:017qss"
+    },
+    {
+      "text": "The curves are `--cairn-ease-standard`, `--cairn-ease-entrance`, and `--cairn-ease-exit`.",
+      "id": "f:017qss"
+    },
+    {
+      "text": "Both theme roots repoint Tailwind's default transition duration at `--cairn-dur-base` and its default timing function at `--cairn-ease-standard`, so a bare `transition-*` utility animates on those.",
+      "id": "f:018sgk"
+    },
+    {
+      "text": "The admin's blanket `prefers-reduced-motion: reduce` rule sets every animation and transition duration to `0.01ms !important`.",
+      "id": "f:2p5otw"
+    },
+    {
+      "text": "A paint transition on `opacity`, a color, `box-shadow`, or `outline-*` may opt back in by restating it inside the same guard with `!important`.",
+      "id": "f:2p5otw"
+    },
+    {
+      "text": "Transform, `grid-template-rows`, and frame-offset motion stay at `0.01ms` with no opt-back-in.",
+      "id": "f:2p5otw"
+    },
+    {
+      "text": "A rendered run adds `motion-reduced-delay`, an advisory rule that flags an element whose computed `transition-delay` or `animation-delay` stays above zero under reduced motion.",
+      "id": "f:0w432q"
+    },
+    {
+      "text": "Three admin-only error-tier rules hold a screen's motion to those tokens and to a closed set of properties.",
+      "id": "f:1x8r1x"
+    },
+    {
+      "text": "`motion-property` limits a `transition` or `transition-property` to thirteen properties, such as `opacity` and `transform`, and fails a declaration naming more than three properties.",
+      "id": "f:09g8ev"
+    },
+    {
+      "text": "`motion-vocabulary` fails a literal duration or easing, and its duration message names the nearest duration token.",
+      "id": "f:0aa9tp"
+    },
+    {
+      "text": "`motion-hover-gate` fails a hand-authored `:hover` rule that declares motion outside `@media (hover: hover)`.",
+      "id": "f:0mbj5n"
+    },
+    {
+      "text": "A Tailwind `hover:` utility already compiles inside that media query.",
+      "id": "f:0mbj5n"
+    },
+    {
+      "text": "The hover rule's fix splits a `:hover` and `:focus-visible` pair first, since a keyboard user on a touch device still needs the focus motion.",
+      "id": "f:0mbj5n"
+    },
+    {
+      "text": "Two more error-tier rules, `motion-band` and `reduced-motion`, read the whole static scope and every named CSS file, not only the admin roots.",
+      "id": "f:1x8r1x"
+    },
+    {
+      "text": "The [static rules](../reference/cairn-audit.md#the-static-rules) table describes all five.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The rules check both a component's authored CSS and the declarations its classes compile to.",
+      "id": "f:24f8gn"
+    },
+    {
+      "text": "For the daisyUI classes the rules exempt and the frame-offset allowance, see [What the motion rules don't cover](../reference/cairn-audit.md#what-the-motion-rules-dont-cover).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The three admin-only rules resolve over `static.adminScope`, which defaults to `src/routes/admin`, `src/lib/admin`, and `src/lib/admin-toolkit`.",
+      "id": "f:t767qb"
+    },
+    {
+      "text": "A site whose admin screens live elsewhere names their roots under that key, as the [audit configuration](../reference/cairn-audit.md#configuration) describes.",
+      "id": "f:t767qb"
+    },
+    {
+      "text": "To verify the screen against the four results this page opens on, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a browser, signed in as an owner, open the screen under `/admin`.",
+      "id": "f:brfitv"
+    },
+    {
+      "text": "The screen renders as `CairnAdminShell`'s children, with the shell's nav, user, and theme.",
+      "id": "f:brfitv"
+    },
+    {
+      "text": "Signed in as an editor whose role the screen's rule doesn't name, open the screen again.",
+      "id": "f:10ojk8"
+    },
+    {
+      "text": "The `requireAccess` call refuses the session with a 403.",
+      "id": "f:3lbdl6"
+    },
+    {
+      "text": "Signed in as an owner, submit one of the screen's actions.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the audit database, query the `audit_log` table for its newest row.",
+      "id": "f:wnvqlz"
+    },
+    {
+      "text": "The row's `action` and `entity` match that action's wrapper options, unless its `ctx.audit` call overrides them.",
+      "id": "f:6vy0ka"
+    },
+    {
+      "text": "In the site directory, run `npm run check:cairn`.",
+      "id": "f:guiavc"
+    },
+    {
+      "text": "The script compiles the site admin sheet with `build:admin-css`, then runs `cairn-audit` over the whole static registry.",
+      "id": "f:mrv24k"
+    },
+    {
+      "text": "In the report, fix each unsuppressed error-tier finding, since only such a finding makes `cairn-audit` exit 1.",
+      "id": "f:1md5oj"
+    },
+    {
+      "text": "Run the script again until no error-tier finding remains.",
+      "id": "f:1md5oj"
+    },
+    {
+      "text": "The packaged `cairn-audit` bin's default scan scope names `src/routes/admin` beside the engine's admin sources, so a custom screen meets the same static rules as the engine's screens.",
+      "id": "f:326755"
+    },
+    {
+      "text": "An advisory finding prints without changing the exit code.",
+      "id": "f:1md5oj"
+    },
+    {
+      "text": "For both tiers, see [tiers and exit codes](../reference/cairn-audit.md#tiers-and-exit-codes).",
+      "id": "no-claim"
+    },
+    {
+      "text": "A bare run is static, and `--rendered` drives a browser against an already-running server.",
+      "id": "f:1md5oj"
+    },
+    {
+      "text": "[Run cairn-audit on your site](run-cairn-audit-on-your-site.md) sets up a rendered run for a custom screen.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a rendered run, the radius bands are 6px for buttons, inputs, and selects, 8px for a card, and 4px for a status chip, and the control height bands follow `--size-field`.",
+      "id": "f:39sn8c"
+    },
+    {
+      "text": "A missing audit record means a handler skipped `ctx.audit` or no handle set the sink.",
+      "id": "f:68h31z"
+    },
+    {
+      "text": "A record also goes missing when the sink's insert fails.",
+      "id": "f:ff3l1u"
+    },
+    {
+      "text": "Production logs `admin.action.unaudited` for a skipped call instead of throwing `UnauditedActionError` as dev does, since an error response mid-request would be worse than a gap in the audit trail.",
+      "id": "f:07efts"
+    },
+    {
+      "text": "To find why an audit record is missing, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the action's handler, check that every successful path calls `ctx.audit` before it returns.",
+      "id": "f:07efts"
+    },
+    {
+      "text": "In `hooks.server.ts`, check that a handle sets `event.locals.cairnAuditSink`.",
+      "id": "f:68h31z"
+    },
+    {
+      "text": "In the logs, look for `audit.sink.write_failed`, whose reason `wait_until_failed` names a `waitUntil` that threw, such as an unbound one.",
+      "id": "f:ph6kjg"
+    },
+    {
+      "text": "[Debug your site](debug-your-site.md) maps both events to their causes, and the [log events](../reference/log-events.md) reference lists their fields.",
+      "id": "no-claim"
+    }
+  ]
+}

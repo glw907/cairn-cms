@@ -58,7 +58,7 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 >
 > **Settled (do not re-brainstorm):** the spec (S1 to S9), the plan and its ledger, the forward-link rule
 > (`c498b6fa`), the 45 to 60M budget, `bothReviewers: true`, Geoff's threat position and his two introductions (in the
-> job-read record), and that 7a starts with a prior-art sweep whose sources set the job read's questions and the anatomy
+> job-read record), and that 7a adopts published systems and existing mechanisms only (no new tags, fields, or checklists), starting with a prior-art sweep whose sources set the review seat and the anatomy
 > wording.
 >
 > **Entry.** Read the job-read record, then Artifact `read` the review page in case Geoff saved edits there.

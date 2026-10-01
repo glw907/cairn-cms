@@ -82,7 +82,7 @@
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "'file-path:docs/extend/security-model.md'",
       "oldTarget": "docs/extend/security-model.md",
-      "done": "Allowlisted: migration-notes.md's 0.97.0 record cites the page by path in a code span (the security-model.md#recovering-whitelist-semantics recipe); the record is immutable, so the path stays and is excused. The extend rebuild decides whether a rebuilt page carries the recipe.",
+      "done": "Allowlisted: migration-notes.md's 0.97.0 record cites the page by path in a code span (the security-model.md#recovering-whitelist-semantics recipe); the path was excused until the extend rebuild. The rebuilt page carries the recipe under \"Allowlist semantics from an exhaustive map\", so commit a0213cc3 repointed the anchor in migration-notes.md to #allowlist-semantics-from-an-exhaustive-map (link restoration only).",
       "stage": "2a"
     },
     {

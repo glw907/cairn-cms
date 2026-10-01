@@ -76,15 +76,17 @@ Verdicts read `verdict(blocking count)`.
 - Round 1: register editor fix(7), fact read fix(8). Round 2: register editor fix(4), fact read
   fix(2). No figure.
 - Cross-regression flag: false.
-- Rows received 26, disposed 14 (11 `filed`, 1 `carried`, 2 `cut`); the other 12 received rows were
-  fact-id context rows.
+- Rows received 26, disposed 14: 11 `filed` (AuthBranding x3, bootstrapOwner x3, `AuthRoutesConfig.branding`,
+  SiteConfig x4), 1 `carried` (`AuthRoutesConfig.send` to f:lbetsq), and 2 recorded by the run as excluded
+  (`ContentRoutesConfig.runtime`, `NavRoutesConfig.runtime`). The follow-up review ruled those two are set through the
+  public factories, so both rows now read f:16cx9j (count-neutral; `pendingCount` stays 126). The other 12
+  received rows were fact-id context rows.
 - `frictionFiled` (3): `auth.branding` replaces the runtime default whole, so a branding without
   `replyTo` drops the adapter's reply-to (f:v72g9z); SiteConfig description, author, and locale are
   accepted but read by no `src/lib` module (f:ebx4pv); f:t4pwpw and f:75hawi give different Workers
   Paid triggers, and no fact measures a hand-built bundle.
 - Facts filed: f:g81luc, f:v72g9z, f:ebx4pv.
-- Cuts: rows `ContentRoutesConfig.runtime` and `NavRoutesConfig.runtime` (excluded: the single mount
-  forwards its own runtime); facts f:pg2smj, f:dzmj90, f:jzb3d0 (second half), f:t4pwpw (vendor
+- Cuts: facts f:pg2smj, f:dzmj90, f:jzb3d0 (second half), f:t4pwpw (vendor
   figure, link the pricing page).
 - Carry: f:5f4kmk and f:9yi7fu mis-state the committer (Part B item 1).
 

@@ -367,8 +367,8 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   naming every concept and fixed screen a site's declared map leaves uncovered. Audit your access
   map for coverage: a map you believed was a whitelist may have left a screen or concept open to
   every editor-capability session; the warning names exactly which ones on the next server start,
-  and `docs/extend/security-model.md#allowlist-semantics-from-an-exhaustive-map` gives the exhaustive-map
-  recipe to close the gap.
+  and `docs/extend/security-model.md#allowlist-semantics-from-an-exhaustive-map` gives the
+  exhaustive-map recipe to close the gap.
 - **Two log event names change to match the vocabulary's own grammar.** taxonomy.unmarked_field
   becomes `content.field_unmarked` and `publish.address_collision` becomes
   `publish.address_collided`. Rename both in any log filter or alert.

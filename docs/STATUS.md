@@ -16,15 +16,19 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Draft docs stage 2a is executing; segment S1 is done (checkpoint 2026-09-30).** Branch and
-  worktree `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
-  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (its ledger is the task record);
-  spec: `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`. Ceiling 25M, flag 20M.
-  Geoff approved the extend outline as saved (both sweep pages kept). Done and accepted: tasks 1
-  to 4, task 4b (the workstation infra carries the docs-sync system; Geoff, 2026-09-30), and the
-  S1 boundary merge and friction filings. The option map holds 264 paths, 152 pending. Next:
-  the S2 pre-flight, then task 5 (re-arm extend), task 6 (the six-page pilot), and task 7, the
-  pilot checkpoint, which asks Geoff one combined question.
+- **Draft docs stage 2a is at the pilot checkpoint (task 7, 2026-09-30).** Branch and worktree
+  `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
+  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (ledger is the task record); spec:
+  `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`. Tasks 1 to 6 are done: the six
+  pilot pages are committed (`297c0282`, carry fixes `a0213cc3`), stage record
+  `docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-record.md`. Every pilot page escalated
+  after round 2 (forward links to undrafted pages, fixed by `c498b6fa`) and was resolved by one
+  resolution pass with accepted scoped reviews. Measured cost about 1.3M a page (about 8.0M for the
+  pilot). Geoff accepted 45 to 60M for the remaining pages, quality first; `bothReviewers` stays on.
+  **Waiting on Geoff:** his read of the three owner pages at
+  https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs, then task 7's fold (read back his saved
+  version, apply it with the briefs, scoped reviews), and his answer on pre-authorizing task 10's
+  merge. Weekly limit 93% at the pilot's end; the reset is 2026-10-02 23:59.
 - The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
   `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and filed its 12 code defects in the
   friction log (`bd8ab1fe`, on `main`, not pushed).

@@ -30,7 +30,7 @@
       "id": "f:emrebl"
     },
     {
-      "text": "A `/preview/<token>` request stays outside the application, since a preview link's reviewer has no reason to be admitted to `/admin`.",
+      "text": "A `/preview/<token>` request stays outside the application.",
       "id": "f:vnm1p5"
     },
     {

@@ -50,9 +50,10 @@ look busy.
 
 Routine id: `trig_015UPQostYVisXuExTHTH2vu` ("cairn docs freshness (monthly drift check)"), created
 2026-07-04. Verified 2026-09-30 through the RemoteTrigger API: it is enabled, its cron is `0 17 1 * *`,
-its last run (2026-09-01) succeeded, and its next run is 2026-10-01 17:02 UTC. Its scope check requires
-all four track directories, so it stops with "SCOPE BROKEN" while `docs/admin` and `docs/editors` are
-empty. That stop is its designed guard, and re-scoping the routine waits on Geoff.
+its last run (2026-09-01) succeeded, and its next run is 2026-10-01 17:02 UTC. Its original scope check
+required all four track directories and stopped with "SCOPE BROKEN" while `docs/admin` and `docs/editors`
+were empty. Geoff approved a re-scope on 2026-09-30: it samples `docs/reference` and the existing
+`docs/extend` pages, and widens to all four tracks at stage 4's merge.
 
 The release sweep (`cairn-release`, step 3, capability releases only) is the second drift mechanism. At
 each cut it finds new gaps in scaffold behavior and changelog-described behavior, the ground `check:options`

@@ -187,7 +187,7 @@ of 1 qualifying. `bothReviewers` stays on for task 8 on this evidence.
 
 ## Carry list (conductor)
 
-Applied in the second post-run commit: committer wording in f:5f4kmk and f:9yi7fu; f:cvv6to
+Applied in the second post-run commit: committer wording in f:5f4kmk, f:9yi7fu, and f:w379wu (the same claim, in `facts/front-door.md`); f:cvv6to
 narrowing and Source; the `migration-notes.md` anchor repoint; the magic-links caption cut;
 `isPublishedDoc` narrowed to the arm paths with a boundary test; the drift routine's re-scope in
 `docs-maintenance.md`; friction-log entries (selected-`btn` and bare-`btn` look, fixed glyph and

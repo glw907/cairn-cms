@@ -349,12 +349,17 @@ function outlinePagePaths(root) {
   return paths;
 }
 
+// The published arm paths, the only places a pending link is excused. The rolling STATUS and
+// HISTORY stay strict: they name pages by path while an arm is in flight and must not hide a typo.
+const PUBLISHED_DOC_PREFIXES = ['docs/extend/', 'docs/admin/', 'docs/editors/', 'docs/reference/'];
+const PUBLISHED_DOC_FILES = ['docs/why-cairn.md'];
+
 /**
  * Whether a repo-relative file is a published docs page, the only place a pending link is excused.
  * @param {string} file
  */
 function isPublishedDoc(file) {
-  return file.startsWith('docs/') && !file.startsWith('docs/internal/');
+  return PUBLISHED_DOC_FILES.includes(file) || PUBLISHED_DOC_PREFIXES.some((prefix) => file.startsWith(prefix));
 }
 
 /**

@@ -127,8 +127,8 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   event names cannot. Source: `src/lib/log/events.ts:1-16` (module comment: "renaming one is a
   breaking change... See docs/reference/log-events.md, kept in step with this union.");
   `src/lib/log/` contains `emit.ts`, `events.ts`, `index.ts`. [verified]
-- `f:w379wu` Every publish is a commit with the editor as author and, since no committer is set, the editor
-  as committer too. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`, https://docs.github.com/en/rest/git/commits#create-a-commit. [verified]
+- `f:w379wu` Every publish is a commit with the editor as author and no committer set, so GitHub attributes
+  the commit to the App. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`. [verified]
 - `f:ab9kzr` The current published version is `0.97.0`. Source: `package.json:3`. [verified]
 - `f:0xsi67` `check:surface` runs a public-surface snapshot gate (`check-surface.mjs`) plus a leak check
   (`check-surface-leaks.mjs`). Source: `package.json:41`. [verified]

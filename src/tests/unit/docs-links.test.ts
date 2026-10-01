@@ -387,6 +387,21 @@ describe('forward links to outline pages', () => {
     expect(broken).toHaveLength(1);
   });
 
+  it.each([
+    ['docs/extend/here.md', 'later-page.md', true],
+    ['docs/admin/here.md', '../extend/later-page.md', true],
+    ['docs/editors/here.md', '../extend/later-page.md', true],
+    ['docs/reference/here.md', '../extend/later-page.md', true],
+    ['docs/why-cairn.md', 'extend/later-page.md', true],
+    ['docs/STATUS.md', 'extend/later-page.md', false],
+    ['docs/HISTORY.md', 'extend/later-page.md', false],
+  ])('excuses a pending link from %s only inside the arm paths (%s: %s)', (file, dest, excused) => {
+    const root = fixtureRoot({ [file]: `see [later](${dest})\n` });
+    const { broken, pending } = checkLinks(root);
+    expect(pending).toHaveLength(excused ? 1 : 0);
+    expect(broken).toHaveLength(excused ? 0 : 1);
+  });
+
   it('goes strict again once the outline is gone', () => {
     const root = fixtureRoot({ 'docs/extend/here.md': 'see [later](later-page.md)\n' });
     rmSync(join(root, 'docs/internal/outlines'), { recursive: true });

@@ -32,8 +32,7 @@ flowchart LR
 
 *Access admits a request only when it matches the application's policies. The guard passes the
 request to the site's resolver, which verifies the token Access attaches. The guard then looks the
-returned email up in the roster. A `/preview/<token>` request stays outside the application, since
-a preview link's reviewer has no reason to be admitted to `/admin`.*
+returned email up in the roster. A `/preview/<token>` request stays outside the application.*
 
 ## Decide whether to switch
 

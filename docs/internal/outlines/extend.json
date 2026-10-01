@@ -1729,7 +1729,7 @@
       "group": "start",
       "order": 1,
       "batch": "pilot",
-      "job": "Learn where cairn ends and your site begins: which export subpath each piece of your site imports, which seams you extend through, where each kind of state lives, and what each tier of the public surface promises across versions.",
+      "job": "Learn where cairn ends and your site begins: which export subpath each piece of your site imports, which seams you extend through, where each kind of state lives, and what each tier of the public surface promises across versions. For a Svelte-fluent web developer evaluating cairn against alternatives or taking over a scaffolded site.",
       "pageType": "concept",
       "exemplars": [
         {
@@ -1843,7 +1843,7 @@
       "group": "start",
       "order": 2,
       "batch": "pilot",
-      "job": "Add cairn to a SvelteKit app, from an empty sv create project or one you already have, through a working /admin on the dev backend to a production deploy that commits through your own GitHub App.",
+      "job": "Add cairn to a SvelteKit app, from an empty sv create project or one you already have, through a working /admin on the dev backend to a production deploy that commits through your own GitHub App. For a Svelte-fluent web developer who has Node 24, a GitHub account, and a Cloudflare account.",
       "pageType": "tutorial milestone",
       "exemplars": [
         {
@@ -1948,6 +1948,7 @@
         "Customize the sign-in email (a closing section after the milestones, not a milestone): which parts are engine copy, where the site name and sender come from, auth.branding replacing all three, and a custom auth.send's MagicLinkMessage and the log scrubbing of what it throws."
       ],
       "outOfScope": [
+        "The faster path: the setup command, create-cairn-site, which scaffolds a site in one step (scaffolded-site-files).",
         "The scaffolded tree file by file (scaffolded-site-files).",
         "Every adapter option (define-an-adapter-and-schema).",
         "The security reasoning behind the GitHub App's repository-wide write and the CSRF design (security-model).",
@@ -1975,7 +1976,7 @@
       "group": "start",
       "order": 3,
       "batch": "2a",
-      "job": "Take over a site the setup command scaffolded: learn what each generated file and directory does, which ones you own and may change, and which ones the engine or its gates depend on.",
+      "job": "Take over a site the setup command scaffolded: learn what each generated file and directory does, which ones you own and may change, and which ones the engine or its gates depend on. For a Svelte-fluent web developer who took over a scaffolded site and wants to know what the tool wrote and why.",
       "pageType": "concept",
       "exemplars": [
         {
@@ -2083,7 +2084,7 @@
       "group": "model-content",
       "order": 4,
       "batch": "2b",
-      "job": "Understand cairn's content model before you declare one: what a concept is, how a fieldset drives the form, the validator, and your types, how entries are identified and routed, and what the manifest records.",
+      "job": "Understand cairn's content model before you declare one: what a concept is, how a fieldset drives the form, the validator, and your types, how entries are identified and routed, and what the manifest records. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "concept",
       "exemplars": [
         {
@@ -2166,7 +2167,7 @@
       "group": "model-content",
       "order": 5,
       "batch": "2b",
-      "job": "Declare your site's adapter and its concepts: write the defineAdapter call, add a concept with its fields, permalink, and date prefix, and confirm the declaration typechecks and builds.",
+      "job": "Declare your site's adapter and its concepts: write the defineAdapter call, add a concept with its fields, permalink, and date prefix, and confirm the declaration typechecks and builds. For a Svelte-fluent web developer who has installed the engine and read the content model.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -2255,7 +2256,7 @@
       "group": "model-content",
       "order": 6,
       "batch": "2b",
-      "job": "Build the one render function your admin preview and public pages share, and register your own markdown components with typed attributes and slots.",
+      "job": "Build the one render function your admin preview and public pages share, and register your own markdown components with typed attributes and slots. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -2338,7 +2339,7 @@
       "group": "model-content",
       "order": 7,
       "batch": "2b",
-      "job": "Connect one entry to another with a typed reference field, render the resolved target on a public page, and rely on the build and the admin guards to keep every reference pointing at a real entry.",
+      "job": "Connect one entry to another with a typed reference field, render the resolved target on a public page, and rely on the build and the admin guards to keep every reference pointing at a real entry. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -2408,7 +2409,7 @@
       "group": "model-content",
       "order": 8,
       "batch": "2b",
-      "job": "Write a block of content once as a fragment and include it in any entry, with the build and the delete guard keeping every include valid.",
+      "job": "Write a block of content once as a fragment and include it in any entry, with the build and the delete guard keeping every include valid. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -2475,7 +2476,7 @@
       "order": 9,
       "batch": "2b",
       "origin": "gap-sweep",
-      "job": "Turn on media for your site: bind the R2 bucket, set the adapter's media options, mount the media route, and know what the engine refuses at upload, serves at delivery, and counts as a use.",
+      "job": "Turn on media for your site: bind the R2 bucket, set the adapter's media options, mount the media route, and know what the engine refuses at upload, serves at delivery, and counts as a use. For a Svelte-fluent web developer who has the R2 bucket binding in wrangler.jsonc.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -2538,7 +2539,7 @@
       "group": "model-content",
       "order": 10,
       "batch": "2b",
-      "job": "Move an existing site's markdown into cairn's concepts with a short script, so every entry keeps a stable id, validates, and links correctly.",
+      "job": "Move an existing site's markdown into cairn's concepts with a short script, so every entry keeps a stable id, validates, and links correctly. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -2604,7 +2605,7 @@
       "group": "public-site",
       "order": 11,
       "batch": "pilot",
-      "job": "Own your public site's design: re-skin the scaffolded theme through its token tiers, or port your own theme onto the chassis, and iterate locally against real content until it passes the audit gates.",
+      "job": "Own your public site's design: re-skin the scaffolded theme through its token tiers, or port your own theme onto the chassis, and iterate locally against real content until it passes the audit gates. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -2697,7 +2698,7 @@
       "group": "public-site",
       "order": 12,
       "batch": "2b",
-      "job": "Wire your public routes to the engine: the entry pages and their markdown twins, the archive, the feeds, the sitemap, and robots.txt, all reading one typed index and one origin.",
+      "job": "Wire your public routes to the engine: the entry pages and their markdown twins, the archive, the feeds, the sitemap, and robots.txt, all reading one typed index and one origin. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -2801,7 +2802,7 @@
       "group": "public-site",
       "order": 13,
       "batch": "2b",
-      "job": "Let an editor share an unpublished draft through a revocable link, mounted so the preview renders with your site's own chrome and styles.",
+      "job": "Let an editor share an unpublished draft through a revocable link, mounted so the preview renders with your site's own chrome and styles. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -2876,7 +2877,7 @@
       "group": "public-site",
       "order": 14,
       "batch": "2b",
-      "job": "Detect which entries a deploy newly published by diffing two manifests and hand them to your own notification code, or give editors a next-step link the moment they publish.",
+      "job": "Detect which entries a deploy newly published by diffing two manifests and hand them to your own notification code, or give editors a next-step link the moment they publish. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -2935,7 +2936,7 @@
       "group": "public-site",
       "order": 15,
       "batch": "2b",
-      "job": "Make one markdown component interactive on the public site by hydrating it as an island, while its static fallback still serves readers without JavaScript.",
+      "job": "Make one markdown component interactive on the public site by hydrating it as an island, while its static fallback still serves readers without JavaScript. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -3005,7 +3006,7 @@
       "group": "extend-the-admin",
       "order": 16,
       "batch": "pilot",
-      "job": "Add your own screen under /admin that renders inside the admin shell, gates its reads and writes through the access map, audits its actions, and passes the admin audit.",
+      "job": "Add your own screen under /admin that renders inside the admin shell, gates its reads and writes through the access map, audits its actions, and passes the admin audit. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -3156,7 +3157,7 @@
       "group": "extend-the-admin",
       "order": 17,
       "batch": "2b",
-      "job": "Arrange the admin sidebar into sections of your own, relabel or hide engine screens, and add links to your custom screens, without mistaking a hidden door for a locked one.",
+      "job": "Arrange the admin sidebar into sections of your own, relabel or hide engine screens, and add links to your custom screens, without mistaking a hidden door for a locked one. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -3228,7 +3229,7 @@
       "group": "extend-the-admin",
       "order": 18,
       "batch": "2b",
-      "job": "Turn on tidy, the AI copy-edit editors run on a draft, choose its model and conventions, and know what it refuses and why.",
+      "job": "Turn on tidy, the AI copy-edit editors run on a draft, choose its model and conventions, and know what it refuses and why. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -3309,7 +3310,7 @@
       "group": "auth-and-access",
       "order": 19,
       "batch": "pilot",
-      "job": "Assess what cairn defends and what it leaves to you: the sign-in and session design, CSRF, the access map's limits, the render pipeline's sanitizing, the GitHub App's reach, and the residual risks of each seam you replace.",
+      "job": "Assess what cairn defends and what it leaves to you: the sign-in and session design, CSRF, the access map's limits, the render pipeline's sanitizing, the GitHub App's reach, and the residual risks of each seam you replace. For a Svelte-fluent web developer assessing cairn before adopting it, and for one about to replace its sign-in or access rules.",
       "pageType": "concept",
       "exemplars": [
         {
@@ -3471,7 +3472,7 @@
       "group": "auth-and-access",
       "order": 20,
       "batch": "2a",
-      "job": "Declare an access map that narrows which roles reach which admin screens and routes, and enforce it on your own screens' reads and writes.",
+      "job": "Declare an access map that narrows which roles reach which admin screens and routes, and enforce it on your own screens' reads and writes. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -3543,7 +3544,7 @@
       "group": "auth-and-access",
       "order": 21,
       "batch": "pilot",
-      "job": "Replace the magic link with your organization's identity provider by putting Cloudflare Access in front of /admin and writing the resolver that turns its token into a roster email.",
+      "job": "Replace the magic link with your organization's identity provider by putting Cloudflare Access in front of /admin and writing the resolver that turns its token into a roster email. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -3624,7 +3625,7 @@
       "group": "auth-and-access",
       "order": 22,
       "batch": "2a",
-      "job": "Give a second population its own sign-in and its own area, either as a declared role inside the admin or as a separate auth channel with its own login, roster, and sessions.",
+      "job": "Give a second population its own sign-in and its own area, either as a declared role inside the admin or as a separate auth channel with its own login, roster, and sessions. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -3709,7 +3710,7 @@
       "group": "operate",
       "order": 23,
       "batch": "2a",
-      "job": "Diagnose a cairn site that misbehaves in development or production by matching the symptom to its log event and to the code change that fixes it.",
+      "job": "Diagnose a cairn site that misbehaves in development or production by matching the symptom to its log event and to the code change that fixes it. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "symptom row",
       "exemplars": [
         {
@@ -3788,7 +3789,7 @@
       "group": "operate",
       "order": 24,
       "batch": "2a",
-      "job": "Replace your GitHub App's private key without a publishing outage, and recover if the new key fails.",
+      "job": "Replace your GitHub App's private key without a publishing outage, and recover if the new key fails. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {
@@ -3848,7 +3849,7 @@
       "order": 25,
       "batch": "2b",
       "origin": "gap-sweep",
-      "job": "Run cairn-audit as your site's gate: scope its static and rendered passes to your own sources, stylesheets, and admin pages, sign the rendered pass in, and suppress or allowlist a finding with a recorded reason.",
+      "job": "Run cairn-audit as your site's gate: scope its static and rendered passes to your own sources, stylesheets, and admin pages, sign the rendered pass in, and suppress or allowlist a finding with a recorded reason. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
       "pageType": "task guide",
       "exemplars": [
         {

@@ -102,6 +102,10 @@ single-source on cairn.pub with every other page: contracts under `docs/referenc
 how-tos under `docs/admin/`, while `tool/docs/` keeps only ADRs and design inputs, since a
 second docs home drifts.
 
+## Threat position (Geoff, 2026-09-30)
+
+cairn assumes the likeliest attacker holds an editor's account, through a stolen or phished sign-in link. An anonymous visitor reaches nothing behind `/admin` except the sign-in form.
+
 ## The failure mode this resists
 
 Over-building: speculative generality, abstraction layers, and "a developer might want…" features that

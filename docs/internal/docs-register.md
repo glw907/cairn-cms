@@ -594,9 +594,30 @@ Each track builds its pages from a small set of reproducible shapes. A page stat
 anatomy it follows by following it, not by naming it; the shapes below exist so a writer or
 reviewer can check a page against a checklist rather than a feeling.
 
+Every page type opens with an introduction and ends with a closing section for its type (Geoff,
+2026-10-01). The introduction follows Google's three parts: what the document covers, what prior
+knowledge the reader needs, and what it does not cover ([Organizing large
+documents](https://developers.google.com/tech-writing/two/large-docs)). It states the page's
+subject and never describes the page itself, the "page describing itself" tell
+(`docs/superpowers/specs/2026-09-08-docs-standard-design.md`, the voice tells). Each type adds
+what its template asks of the opening, as the following anatomies state.
+
+- **Concept page** (the extend track's concept pages). It opens with the introduction, a summary paragraph that introduces the concept,
+  explains its importance or relevance, and gives an overview of the content the page covers,
+  its scope, and that states what is out of scope and the pages that cover it. A definition of
+  the concept follows. Each later section takes one subtopic. The page ends with a
+  related-resources section, grouped as how-to guides, linked concepts, and external resources,
+  with not more than 3 to 5 links in each group ([Good Docs concept
+  template](https://gitlab.com/tgdp/templates/-/blob/main/concept/template_concept.md) and its
+  guide, templates v1.6.0).
 - **Task guide** (most admin and extend pages). Its sections run in the following order:
 
-  1. A one-line contract naming what the reader accomplishes.
+  1. An introduction that states the task, when and why the reader would do it, and who the page
+     is for, and that names the page to read instead where a reader could be in the wrong place.
+     A one-line contract naming what the reader accomplishes stays as its first sentence, and
+     the contract alone does not meet the introduction requirement ([Good Docs how-to
+     template](https://gitlab.com/tgdp/templates/-/blob/main/how-to/template_how-to.md) and its
+     guide, templates v1.6.0).
   2. Preconditions, each stated with a link to whatever produces it.
   3. The steps, as a numbered list with one action to a step and the location named before the
      action. A procedure of one step is a single bulleted item.
@@ -608,16 +629,26 @@ reviewer can check a page against a checklist rather than a feeling.
   5. Failure paths that point at the track's recovery surface (`admin/setup-recovery.md`,
      `admin/troubleshooting.md`, or `extend/debug-your-site.md`) rather than restating recovery
      prose inline. Ordered diagnostic checks form a numbered list here too.
+  6. A see-also section that links related how-to guides, concept pages, and the limitations the
+     page leaves out. The recovery link in item 5 is not repeated here.
 
   Explanation stays subordinate to the steps. A guide carries only the explanation a reader
   needs to choose or verify, and each such section opens with a sentence tying it to the task,
   so the page never turns from instruction to exposition without a lead-in. Anything more (a
   full output listing, the behavior's limits, its rationale) belongs on the reference entry or
   a separate page, linked from the step that needs it.
-- **Tutorial milestone** (the extend track's deep path): stated objectives, the state the
-  prior milestone produced, steps, a checklist before advancing, and a disclosure block (the
-  Astro "Show me the steps" device) for a reader who wants to try first and check the answer
-  after.
+- **Tutorial** (a page of milestones, the extend track's deep path). It opens with an overview
+  that says what the tutorial teaches the reader to do, who it is intended for, the knowledge it
+  assumes, and what the reader can do by the end, written in second person (Google's voice,
+  and the template's). A prerequisites section follows, then the milestones, each in the shape
+  below. The page ends with a summary of what the reader learned, in different words from the
+  overview's objectives, and a next-steps section that links related tutorials and other
+  documentation ([Good Docs tutorial
+  template](https://gitlab.com/tgdp/templates/-/blob/main/tutorial/template_tutorial.md) and
+  its guide, templates v1.6.0).
+- **Tutorial milestone**: stated objectives, the state the prior milestone produced, steps, a
+  checklist before advancing, and a disclosure block (the Astro "Show me the steps" device) for
+  a reader who wants to try first and check the answer after.
 - **Reference entry** (`docs/reference/`): the existing gated template (signature, parameters,
   defaults, failure modes), now opening with a short narrative lede, a sentence or two of
   what the shape is and why it exists, before the table. The lede is additive to the gates,

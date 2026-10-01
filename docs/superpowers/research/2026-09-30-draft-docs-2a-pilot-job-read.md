@@ -104,3 +104,7 @@ If preview links, the media route, or `/healthz` make "only the public site and 
   it is cheap, else leave it for the 2b plan.
 - Geoff's pilot review page (https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs) holds no edits of his yet; read it back
   before 7b in case he saves edits, and republish to the same URL for the second read.
+- Landed in 7a (cairn-cms half): the threat position is in the owner tier, a section in
+  `docs/internal/what-cairn-is-and-is-not.md` filed as `f:v85shm` in `docs/internal/facts/extend.md`; the second sentence
+  reads "An anonymous visitor reaches nothing behind `/admin` except the sign-in form", since preview links and the
+  media route are reachable anonymously. The `security-model` brief cites `f:v85shm`, not `engine-rulings.md`.

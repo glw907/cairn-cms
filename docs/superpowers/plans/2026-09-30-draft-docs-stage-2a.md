@@ -471,6 +471,14 @@ dispatch before the answer.
 seat grades; the four causes there). **Lean guard:** each mechanism names a failure that record found and rides a step
 that already runs.
 
+**First step, prior art (Geoff, 2026-09-30):** before any build, one research agent grounds each mechanism in
+published practice and records it in `docs/superpowers/research/2026-09-30-page-level-review-prior-art.md`, with
+citations. Candidates to confirm or refuse: the editing levels (developmental or structural edit versus line and copy
+edit; the chain has only the latter two plus a fact check), Diátaxis's page types (an explanation page's and a tutorial's
+opening and ending), The Good Docs Project's concept and tutorial templates, Google's and Microsoft's guidance on
+introductions and next steps, and task-based documentation review. A mechanism with no source is cut or deferred with a
+trigger (the lean guard); the job read's questions and the anatomy wording come from the sources, not from this plan.
+
 **Outcomes:**
 - **Outline contract.** Every `docs/internal/outlines/extend.json` page gains `reader` (who reads it and when) and
   `instead` (the other page or path to take when this one is the wrong one, or null); `covers` is documented as an

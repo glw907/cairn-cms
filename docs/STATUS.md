@@ -52,20 +52,18 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Resume prompt
 
-### Next action (draft docs stage 2a, execute)
+### Next action (draft docs stage 2a, task 7 fold, then tasks 8 to 10)
 
-> **Goal.** Execute stage 2a: the option-coverage and friction mechanisms, the re-arm, the
-> six-page pilot and its checkpoint, the rest of 2a, and the close.
+> **Goal.** Fold Geoff's pilot read, then run the rest of 2a and close.
 >
-> **Scope.** The plan's tasks 2 to 10 on `draft-docs-2a`. Task 1 is done. Stage 2b's pages are out.
+> **Scope.** The plan's task 7 fold and tasks 8 to 10 on `draft-docs-2a`. Stage 2b is out.
 >
-> **Settled (do not re-brainstorm):** the spec (`docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`,
-> S1 to S9), the plan and its review record, the outline (after Geoff's R10 fold), the 25M ceiling.
+> **Settled (do not re-brainstorm):** the spec (S1 to S9), the plan and its ledger, the forward-link
+> rule (`c498b6fa`), the 45 to 60M budget for the remaining pages, `bothReviewers: true` for task 8.
 >
-> **Entry condition.** Geoff has approved the outline on its R10 page. Before task 2, the conductor
-> reads back his saved version (Artifact `read` on the URL above), folds its diff into
-> `docs/internal/outlines/extend.json`, and commits; the plan cites that commit.
+> **Entry condition.** Geoff has read the three pages at
+> https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs. Read back his saved version (Artifact `read`),
+> diff it against the committed pages, and run task 7's fold per the plan.
 >
-> **Approach.** Invoke `cairn-pass` to start; the plan's Execution mode governs (Agent-tool chains,
-> then `docs-page-chain` for the pilot). Launch directory `~/Projects/cairn-cms`;
-> `claude --model claude-opus-5-5` at medium effort.
+> **Approach.** Invoke `cairn-pass` to resume; the plan's Execution mode governs. Launch directory
+> `~/Projects/cairn-cms`; `claude --model claude-opus-5-5` at medium effort.

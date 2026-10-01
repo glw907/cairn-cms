@@ -16,19 +16,17 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Draft docs stage 2a is at the pilot checkpoint (task 7, 2026-09-30).** Branch and worktree
+- **Draft docs stage 2a: the pilot is done; tasks 7a and 7b are next (2026-09-30).** Branch and worktree
   `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
-  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (ledger is the task record); spec:
-  `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`. Tasks 1 to 6 are done: the six
-  pilot pages are committed (`297c0282`, carry fixes `a0213cc3`), stage record
-  `docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-record.md`. Every pilot page escalated
-  after round 2 (forward links to undrafted pages, fixed by `c498b6fa`) and was resolved by one
-  resolution pass with accepted scoped reviews. Measured cost about 1.3M a page (about 8.0M for the
-  pilot). Geoff accepted 45 to 60M for the remaining pages, quality first; `bothReviewers` stays on.
-  **Waiting on Geoff:** his read of the three owner pages at
-  https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs, then task 7's fold (read back his saved
-  version, apply it with the briefs, scoped reviews), and his answer on pre-authorizing task 10's
-  merge. Weekly limit 93% at the pilot's end; the reset is 2026-10-02 23:59.
+  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (its ledger is the task record). Tasks 1 to 6 are done;
+  the six pilot pages are committed (`297c0282`, `a0213cc3`, `0d8b55be`), stage record
+  `docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-record.md`. Geoff's read found the pages lack page-level
+  structure (openings, order, hand-offs, endings); a job read of all six confirmed it
+  (`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md`, which also holds his two introductions).
+  Geoff's rulings: fix the chain (task 7a, grounded in prior art first), rework the pilot (task 7b), republish the same
+  three pages for his second read (https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs), then task 8. Budget for the
+  remaining pages 45 to 60M, quality first; `bothReviewers` stays on. Weekly limit about 93%, reset 2026-10-02 23:59;
+  task 8 may wait for it.
 - The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
   `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and filed its 12 code defects in the
   friction log (`bd8ab1fe`, on `main`, not pushed).
@@ -52,18 +50,18 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Resume prompt
 
-### Next action (draft docs stage 2a, task 7 fold, then tasks 8 to 10)
+### Next action (draft docs stage 2a, tasks 7a and 7b)
 
-> **Goal.** Fold Geoff's pilot read, then run the rest of 2a and close.
+> **Goal.** Make the page chain own the page as a whole, then rework the six pilot pages at the page level.
 >
-> **Scope.** The plan's task 7 fold and tasks 8 to 10 on `draft-docs-2a`. Stage 2b is out.
+> **Scope.** The plan's tasks 7a and 7b on `draft-docs-2a`, then Geoff's second read. Task 8 waits for it.
 >
-> **Settled (do not re-brainstorm):** the spec (S1 to S9), the plan and its ledger, the forward-link
-> rule (`c498b6fa`), the 45 to 60M budget for the remaining pages, `bothReviewers: true` for task 8.
+> **Settled (do not re-brainstorm):** the spec (S1 to S9), the plan and its ledger, the forward-link rule
+> (`c498b6fa`), the 45 to 60M budget, `bothReviewers: true`, Geoff's threat position and his two introductions (in the
+> job-read record), and that 7a starts with a prior-art sweep whose sources set the job read's questions and the anatomy
+> wording.
 >
-> **Entry condition.** Geoff has read the three pages at
-> https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs. Read back his saved version (Artifact `read`),
-> diff it against the committed pages, and run task 7's fold per the plan.
+> **Entry.** Read the job-read record, then Artifact `read` the review page in case Geoff saved edits there.
 >
 > **Approach.** Invoke `cairn-pass` to resume; the plan's Execution mode governs. Launch directory
 > `~/Projects/cairn-cms`; `claude --model claude-opus-5-5` at medium effort.

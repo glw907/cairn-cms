@@ -16,7 +16,11 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Draft docs stage 2a: the pilot is done; tasks 7a and 7b are next (2026-09-30).** Branch and worktree
+- **Draft docs stage 2a: task 7a is done; task 7b's rework run is in flight (2026-10-01).** Task 7a landed the
+  register's introduction and ending anatomies, the owner-tier threat position `f:v85shm`, the structural edit seat, the
+  final reader read with its re-test, and a `rework` entry point (ledger row 7a; dotfiles through `5fb8ce2`). Task 7b
+  runs the six pilot pages as rework pages, run `wf_55b254af-82a`; its args sit in the session scratchpad only. Geoff
+  ruled on 2026-10-01 that every pilot page lacks an introduction and that structure comes before line editing. Branch and worktree
   `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
   `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (its ledger is the task record). Tasks 1 to 6 are done;
   the six pilot pages are committed (`297c0282`, `a0213cc3`, `0d8b55be`), stage record

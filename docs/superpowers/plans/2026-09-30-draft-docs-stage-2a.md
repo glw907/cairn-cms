@@ -519,7 +519,67 @@ step; each page then passes the structural edit seat, scoped register and fact r
 reader read. The three owner pages are
 republished for Geoff's second read; task 8 waits for it.
 
-**Resolution pass (Geoff, 2026-10-01: after the 2026-10-02 reset).** Per page, one resolver fixes that page's round-2 blocking findings from the rework record, under the conductor rulings below, then scoped register and fact reads on what changed, then the final reader read with its re-test; the pilot's task 6 resolution is the precedent. Conductor rulings (2026-10-01): on `add-a-custom-admin-screen`, the outline's covers items 10 and 11 govern, so f:pb0vh9, f:pyfbqv, f:qmhbgs, and f:qk0l7p return to carried; the motion item takes links to the reference headings only. The stale-script guard in `pass-gate-economy.md` (dotfiles `28633b4`) applies to every run.
+**Resolution pass (Geoff, 2026-10-01: after the 2026-10-02 reset, and after task 7c).** Superseded in shape by task 7c (Geoff's read of `a6885750`, 2026-10-01: the pages read as atoms; record `docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`). The six pilot pages run as `rework` pages through the chain with the plan step: plan, plan read, redraft from the plan, the reads, the final reader read with its re-test. Each page's rework text carries its round-2 blocking findings from the rework record where the plan keeps the sentence they cite; a finding on a sentence the plan drops is recorded as disposed by the plan. Conductor rulings (2026-10-01) still apply: on `add-a-custom-admin-screen`, the outline's covers items 10 and 11 govern, so f:pb0vh9, f:pyfbqv, f:qmhbgs, and f:qk0l7p return to carried unless the page's plan subordinates them with a reason; the motion item takes links to the reference headings only. The stale-script guard in `pass-gate-economy.md` (dotfiles `28633b4`) applies to every run. The three owner pages are republished with a link to each page's plan.
+
+### Task 7c: the page plan (Geoff, 2026-10-01)
+
+**Pass class:** `engine-logic` for the runner and `check:provenance`, `docs` for the register and the
+drafter. **Runs before** task 7b's resolution pass. **Why:**
+`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md` (the chain carries no
+artifact that holds a page's argument; inputs, brief, and reviewers are all atomic).
+
+**Adopt, never invent** (task 7a's rule). Every outcome names its source in the task 7a prior-art
+record or Google's "Organizing large documents"; no new field, tag, or rule wording of our own.
+
+**Owner rulings (Geoff, 2026-10-01):** the plan is a committed artifact; Geoff reads finished pages by
+default, with the plan available on the review page for tuning; a plan may push facts off a page,
+since the pilot pages carried too many facts with no priority or relationship among them.
+
+**Files:** `~/.dotfiles/claude/.claude/workflows/docs-page-chain.js` and its outline test
+harness; `~/.claude/agents/cairn-docs-drafter.md`; `docs/internal/docs-register.md`;
+`scripts/checks/check-provenance.mjs` and its unit test; `docs/internal/briefs/extend/<slug>.plan.md`
+per page (created by the run); `scripts/docs-review/` (the review page links the plan).
+
+**Outcomes:**
+- **The plan step.** After page inputs and before the draft, one agent on the drafter's model writes
+  the page plan at `docs/internal/briefs/<track>/<slug>.plan.md` from the job, page type, anatomy,
+  exemplar takes, fact ids, and claim inventory. It is Google's outline, written down: the
+  introduction's three parts; the sections in the order the plan argues for, each with its
+  heading, the one sentence a reader takes from it (the drafter's "first sentence states its
+  answer", now decided before drafting), the fact ids it draws on, and its hand-off; the ending
+  section the anatomy requires. Every fact id the inventory carries is placed in a section,
+  subordinated (a link to the reference page or entry that states it, named), or cut with a reason;
+  the plan writes those dispositions back into the claim inventory the drafter and fact read
+  receive, as `carried` with a section, or `cut` with the reason (the existing dispositions; no
+  new one). A subordinated fact whose reference target does not state it is a `couldNotDo` naming
+  the reference page, filed as reference-arm friction, never a reason to keep it on the page.
+- **The plan read.** The structural seat reads the plan before any prose, with its existing
+  checklist and the outline entry, and grades order, pace, user goal, and the introduction's three
+  parts at the plan level; one `fix` round revises the plan. The seat's page-level read in each
+  later round stays, and it grades the page against its plan and the checklist, no longer against
+  the outline's cover order, since the plan now carries the order and its reason.
+- **The drafter drafts from the plan.** The draft prompt hands the plan path as the source of the
+  page's order, each section's claim, and each fact's placement, and the register's brief as the
+  source of voice. The drafter definition's removal rule keeps a sentence that carries a section's
+  claim from the plan, the same exemption the anatomy sentences have.
+- **A brief sentence cites several ids.** `check:provenance` accepts `id` as a string or an array
+  of ids, so a sentence that synthesizes two facts cites both, and a brief carries a `cuts` list
+  mirroring the plan's cut dispositions (the friction log's `contributor` item of 2026-09-30).
+- **The fact read's coverage rule reads the plan.** An outline id the plan subordinates or cuts
+  with a reason is disposed, not dropped; the read still blocks on an id the plan places that the
+  page omits.
+- **The register** states, in the developer and editor drafting briefs' Structure sections, that a
+  page is drafted from its plan and what the plan holds, cited to Google's lesson, with provenance
+  like the other overlay rows.
+- **The review page** links each page's plan beside the page.
+
+**Acceptance:** runner dry-run cases show the plan step between page inputs and the draft, the
+structural seat's plan read with a `fix` driving one plan revision, the plan path in the drafter
+prompt, the plan's dispositions in the drafter's and fact read's inventories, and the page-level
+structural read no longer citing cover order; `check:provenance` unit cases pass a multi-id
+sentence and a `cuts` list and still fail a no-claim sentence holding a fact; the register rows
+carry their source; both repos' gates green; one `diff-reviewer` read per repo, which checks that
+nothing in the diff lacks a cited source.
 
 ### Task 8: the rest of 2a
 
@@ -615,6 +675,7 @@ Run `cairn-pass`'s close:
 | 6 pre-pilot commit | the ledger commit that adds this row (map selection counts are computed at it) | | |
 | 6 | run `wf_3d221b24-d37`; forward-link rule `c498b6fa`; pilot `297c0282`; carry `a0213cc3`; file-set fix `0d8b55be` (committer facts made consistent against 907-life `18644a55`; two runtime map rows mapped to f:16cx9j) | all six escalated after round 2, resolved by conductor-ruled resolution passes with accepted scoped reviews; post-run accept after one fix round | about 8.0M (workflow 6.09M, resolution about 1.9M); weekly meter 87% to 93% |
 | 7a | prior art `7fa933d4`; cairn `6e5f54e6` (register anatomies, owner-tier threat position `f:v85shm`, outline reader clauses), plan `c9527193`, `1ff973bd`; dotfiles `5d5ecb9`, `e469091` (reader re-test, TOC item inapplicable), `98d6c94` (red-gate case) | cairn accept; dotfiles accept after one fix round | conductor-ruled: intro states the subject (Google three parts), second person, owner tier, Part V re-test |
-| 7b (in flight) | rework run `wf_f5f6eb81-c35` on dotfiles `5fb8ce2` (rework entry `04afaa3`, `c3ee87c`, `5fb8ce2`, all accepted); held as WIP `a6885750`; record `d38af9b3` (`docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`) | all six escalated at round 2 (26 blocking findings, none on the final read, which ran on no page); stale by-name run `wf_55b254af-82a` stopped and discarded | about 5.1M subagent (rework run) plus the aborted run; Geoff: resolve after the 2026-10-02 reset |
+| 7b (in flight) | rework run `wf_f5f6eb81-c35` on dotfiles `5fb8ce2` (rework entry `04afaa3`, `c3ee87c`, `5fb8ce2`, all accepted); held as WIP `a6885750`; record `d38af9b3` (`docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`) | all six escalated at round 2 (26 blocking findings, none on the final read, which ran on no page); stale by-name run `wf_55b254af-82a` stopped and discarded; Geoff's read of `a6885750`: pages read as atoms, resolution waits for 7c | about 5.1M subagent (rework run) plus the aborted run; Geoff: resolve after the 2026-10-02 reset |
+| 7c (next) | diagnosis record `docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`; rulings of 2026-10-01 (committed plan, pages read by default, plan may push facts off) | planned | |
 
 ## Post-mortem

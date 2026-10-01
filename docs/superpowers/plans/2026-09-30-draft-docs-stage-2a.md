@@ -466,41 +466,41 @@ dispatch before the answer.
 
 ### Task 7a: the chain owns the page (Geoff, 2026-09-30)
 
-**Pass class:** `engine-logic` for the runner and `check:facts`, `docs` for the register, drafter, and outline. **Why:**
+**Pass class:** `engine-logic` for any runner change, `docs` for the register and drafter. **Why:**
 `docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md` (every pilot page has page-level weaknesses no
-seat grades; the four causes there). **Lean guard:** each mechanism names a failure that record found and rides a step
-that already runs.
+seat grades; the four causes there).
 
-**First step, prior art (Geoff, 2026-09-30):** before any build, one research agent grounds each mechanism in
-published practice and records it in `docs/superpowers/research/2026-09-30-page-level-review-prior-art.md`, with
-citations. Candidates to confirm or refuse: the editing levels (developmental or structural edit versus line and copy
-edit; the chain has only the latter two plus a fact check), Diátaxis's page types (an explanation page's and a tutorial's
-opening and ending), The Good Docs Project's concept and tutorial templates, Google's and Microsoft's guidance on
-introductions and next steps, and task-based documentation review. A mechanism with no source is cut or deferred with a
-trigger (the lean guard); the job read's questions and the anatomy wording come from the sources, not from this plan.
+**Adopt, never invent (Geoff, 2026-09-30).** Every piece of this task is either a published system taken as written or
+a mechanism this repo already has. Nothing is designed here: no new tag, field, checklist, or rule wording of our own.
+A gap that neither covers is dropped and recorded, never filled with a bespoke mechanism.
+
+**First step, prior art:** one research agent records in
+`docs/superpowers/research/2026-09-30-page-level-review-prior-art.md`, with citations: a published checklist for the
+structural (developmental or substantive) edit, the level above the line and copy edits the register editor already
+does; The Good Docs Project's concept, tutorial, and how-to templates (their required opening and closing sections);
+and Diátaxis's explanation and tutorial guidance as a cross-check. It names which source each outcome below takes, and
+quotes the parts adopted.
 
 **Outcomes:**
-- **Outline contract.** Every `docs/internal/outlines/extend.json` page gains `reader` (who reads it and when) and
-  `instead` (the other page or path to take when this one is the wrong one, or null); `covers` is documented as an
-  inventory, not a reading order. The runner and `cairn-docs-outline` carry both fields to page inputs, the drafter,
-  and the new seat, inside the entry checksum (both copies kept identical).
-- **Register.** `docs/internal/docs-register.md` gains a concept-page anatomy, and every page anatomy gains a page-level
-  opening (what the reader gets, who the page is for, the page to read instead) and ending (what the reader has achieved
-  or does next).
-- **Drafter.** `cairn-docs-drafter.md` and the runner's draft prompt exempt orientation sentences (opening, hand-offs,
-  ending, read-instead) from the removal rule, record them `no-claim` in the brief, and tell the drafter to sequence
-  sections for the reader rather than in `covers` order.
-- **Job read.** The runner adds a page-level seat (Opus 5.5) after the fact read, reading the page whole with its outline
-  entry, the track profile, and the register's anatomy: opening, job, order and flow, depth balance, ending,
-  orientation, covers fulfilment. Its `fix` joins the round's combined findings like the other reviewers'; it reports
-  no friction. `bothReviewers` re-reads it too.
-- **Owner-ruled positions.** The facts README and `check:facts` accept an owner-ruled position tag whose `Source:` names
-  the ruling (Geoff and the date, or an `engine-rulings.md` entry), so a stated design position is citable.
+- **Anatomies.** Where the register's page anatomies are silent on a page's opening and ending, or a concept page has no
+  anatomy, the register adopts the Good Docs template's sections for that page type, cited, as an overlay row with
+  provenance like its other departures.
+- **Structural edit seat.** The runner adds one review seat that runs the adopted structural-edit checklist, as
+  published, over the whole page against its outline entry; its `fix` joins the round's findings like the other
+  reviewers', and `bothReviewers` re-reads it.
+- **Drafter.** The drafter definition and the runner's draft prompt follow the adopted anatomy for openings, hand-offs,
+  and endings, and record those sentences `no-claim` in the brief (the existing tag), instead of cutting them under the
+  removal rule.
+- **Positions through existing mechanisms.** Geoff's threat position for `security-model` is recorded in the existing
+  `docs/internal/engine-rulings.md`, and the page's sentence cites it through the brief's existing source mechanism, or,
+  if the brief has no way to cite a ruling, it is recorded `no-claim` with the ruling named in the stage record. No new
+  fact tag.
+- No new outline fields: a page's reader and its read-instead page go into its existing `job` and `covers` text where
+  the adopted template asks for them.
 
-**Acceptance:** runner dry-run cases show the new fields in all three prompts and the checksum, and the job read in the
-round and its findings in the redraft; `check:facts` unit tests accept the new tag with a ruling source and reject it
-without one; the register's anatomies carry the opening and ending; both repos' gates green; one `diff-reviewer` read per
-repo.
+**Acceptance:** the prior-art record cites a source for every outcome taken; runner dry-run cases show the new seat in
+the round and its findings in the redraft; the register's anatomies carry the adopted sections with provenance; both
+repos' gates green; one `diff-reviewer` read per repo, which checks that nothing in the diff lacks a cited source.
 
 ### Task 7b: rework the pilot at the page level
 

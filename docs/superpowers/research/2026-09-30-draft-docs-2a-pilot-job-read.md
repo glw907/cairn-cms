@@ -63,7 +63,7 @@ sign-in form (wording to verify against the code at the fold).
 ## The two introductions for task 7b (drafted by the conductor, Geoff approved the direction)
 
 Both replace the page's current first paragraph; the fact read verifies every claim before they land, and the attacker
-sentence cites the owner-ruled position fact from task 7a.
+sentence cites Geoff's ruling as task 7a records it (engine-rulings.md; no new fact tag).
 
 `security-model.md` (the default-identity paragraph follows unchanged):
 

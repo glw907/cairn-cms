@@ -519,6 +519,8 @@ step; each page then passes the structural edit seat, scoped register and fact r
 reader read. The three owner pages are
 republished for Geoff's second read; task 8 waits for it.
 
+**Resolution pass (Geoff, 2026-10-01: after the 2026-10-02 reset).** Per page, one resolver fixes that page's round-2 blocking findings from the rework record, under the conductor rulings below, then scoped register and fact reads on what changed, then the final reader read with its re-test; the pilot's task 6 resolution is the precedent. Conductor rulings (2026-10-01): on `add-a-custom-admin-screen`, the outline's covers items 10 and 11 govern, so f:pb0vh9, f:pyfbqv, f:qmhbgs, and f:qk0l7p return to carried; the motion item takes links to the reference headings only. The stale-script guard in `pass-gate-economy.md` (dotfiles `28633b4`) applies to every run.
+
 ### Task 8: the rest of 2a
 
 **Pass class:** `docs`. **Gate:** the chain's per-page gate.
@@ -613,5 +615,6 @@ Run `cairn-pass`'s close:
 | 6 pre-pilot commit | the ledger commit that adds this row (map selection counts are computed at it) | | |
 | 6 | run `wf_3d221b24-d37`; forward-link rule `c498b6fa`; pilot `297c0282`; carry `a0213cc3`; file-set fix `0d8b55be` (committer facts made consistent against 907-life `18644a55`; two runtime map rows mapped to f:16cx9j) | all six escalated after round 2, resolved by conductor-ruled resolution passes with accepted scoped reviews; post-run accept after one fix round | about 8.0M (workflow 6.09M, resolution about 1.9M); weekly meter 87% to 93% |
 | 7a | prior art `7fa933d4`; cairn `6e5f54e6` (register anatomies, owner-tier threat position `f:v85shm`, outline reader clauses), plan `c9527193`, `1ff973bd`; dotfiles `5d5ecb9`, `e469091` (reader re-test, TOC item inapplicable), `98d6c94` (red-gate case) | cairn accept; dotfiles accept after one fix round | conductor-ruled: intro states the subject (Google three parts), second person, owner tier, Part V re-test |
+| 7b (in flight) | rework run `wf_f5f6eb81-c35` on dotfiles `5fb8ce2` (rework entry `04afaa3`, `c3ee87c`, `5fb8ce2`, all accepted); held as WIP `a6885750`; record `d38af9b3` (`docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`) | all six escalated at round 2 (26 blocking findings, none on the final read, which ran on no page); stale by-name run `wf_55b254af-82a` stopped and discarded | about 5.1M subagent (rework run) plus the aborted run; Geoff: resolve after the 2026-10-02 reset |
 
 ## Post-mortem

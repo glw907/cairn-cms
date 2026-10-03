@@ -52,19 +52,18 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Resume prompt
 
-### Next action (draft docs stage 2a, task 7c then the 7b resolution pass)
+### Next action (draft docs stage 2a, task 8)
 
-> **Goal.** Land the page plan step (task 7c), then bring the six pilot pages to acceptance from plans, final reader
-> read included, and republish three with their plans linked for Geoff's read.
+> **Goal.** After Geoff's read of the republished pilot pages, land the round-2 convergence change in the page chain,
+> then draft task 8's five pages from plans.
 >
-> **Scope.** Task 7c, then the plan's amended "Resolution pass" under task 7b on `draft-docs-2a`, then the republish.
-> Task 8 waits for Geoff's read. Run only after the 2026-10-02 23:59 weekly reset.
+> **Scope.** Fold Geoff's read into the three owner pages (scoped reviews per "Edits after the chain"); the runner
+> change (round-2 reads check round-1 fixes and changed sentences; new catches on untouched text are advisory);
+> task 8 on `draft-docs-2a`. The SvelteKit 3 major is a separate engine pass on Geoff's go.
 >
-> **Settled (do not re-brainstorm):** the spec (S1 to S9), the plan and its ledger, task 7a's mechanisms and rulings,
-> the 7c diagnosis record and Geoff's three rulings in it, the conductor rulings in the "Resolution pass" paragraph,
-> `bothReviewers: true`, and the stale-script guard in `pass-gate-economy.md`.
->
-> **Entry.** Read the diagnosis record, then task 7c, then the rework record.
+> **Settled (do not re-brainstorm):** the spec (S1 to S9), tasks 7a and 7c, the targeted-close rulings in its record,
+> `bothReviewers: true`, the stale-script guard and its scratchpad fallback in `pass-gate-economy.md`.
 >
 > **Approach.** Invoke `cairn-pass` to resume. Launch directory `~/Projects/cairn-cms`;
-> `claude --model claude-opus-5-5` at medium effort.
+> `claude --model claude-opus-5-5` at medium effort. Put scratch projects under `$HOME/.cache`, since `/tmp` has a
+> 6.1G per-user quota that reader runs filled on 2026-10-03.

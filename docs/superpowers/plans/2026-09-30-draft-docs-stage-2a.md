@@ -533,7 +533,9 @@ record or Google's "Organizing large documents"; no new field, tag, or rule word
 
 **Owner rulings (Geoff, 2026-10-01):** the plan is a committed artifact; Geoff reads finished pages by
 default, with the plan available on the review page for tuning; a plan may push facts off a page,
-since the pilot pages carried too many facts with no priority or relationship among them.
+since the pilot pages carried too many facts with no priority or relationship among them; the plan step is the
+one judgment seat in the chain, so it runs on the strongest seat the model economy allows, and Geoff spends the tokens
+where it benefits the outcome (2026-10-02).
 
 **Files:** `~/.dotfiles/claude/.claude/workflows/docs-page-chain.js` and its outline test
 harness; `~/.claude/agents/cairn-docs-drafter.md`; `docs/internal/docs-register.md`;
@@ -541,7 +543,8 @@ harness; `~/.claude/agents/cairn-docs-drafter.md`; `docs/internal/docs-register.
 per page (created by the run); `scripts/docs-review/` (the review page links the plan).
 
 **Outcomes:**
-- **The plan step.** After page inputs and before the draft, one agent on the drafter's model writes
+- **The plan step.** After page inputs and before the draft, one agent on `claude-opus-5-5` at `xhigh` (a
+  `planModel` and `planEffort` arg, defaulting there; the pilot's six plans run on `fable` under Geoff's grant) writes
   the page plan at `docs/internal/briefs/<track>/<slug>.plan.md` from the job, page type, anatomy,
   exemplar takes, fact ids, and claim inventory. It is Google's outline, written down: the
   introduction's three parts; the sections in the order the plan argues for, each with its

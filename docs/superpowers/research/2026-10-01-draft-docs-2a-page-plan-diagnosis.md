@@ -65,6 +65,9 @@ are detail the reference already holds.
   with no sense of priority or relationship. A fact the page does not need for its job is
   subordinated to the reference arm (linked) or cut with a reason, and that disposition is not a
   dropped fact.
+- **Spend on the plan seat (2026-10-02).** If a higher-level agent at more effort writing the plans would
+  significantly benefit the outcome, Geoff spends the tokens. The plan step defaults to Opus 5.5 at
+  `xhigh`, and the pilot's six plans run on Fable under this grant.
 
 ## The fix, as adopted from published method
 

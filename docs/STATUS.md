@@ -16,14 +16,17 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Draft docs stage 2a: task 7c (the page plan) is done; task 7b's resolution run from plans is in flight (2026-10-03).**
-  Branch and worktree `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
+- **Draft docs stage 2a: task 7c is done; task 7b's resolution waits on Geoff's budget answer (2026-10-03).**
+  Branch and worktree `draft-docs-2a` (local only, not pushed). Plan:
   `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (ledger rows 7c and "7b resolution"). Task 7c landed at
-  cairn `e48a61a1`, `b78d8cf2` and dotfiles `de6cf8d`, `526c111`, each accepted after one fix round. The six pilot pages
-  now run as `rework` pages through `docs-page-chain` with the plan step on `fable`; after the run, a stage record and
-  commit, then the three owner pages republish with their plans linked
-  (https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs), then task 8 after Geoff's read. Budget for the remaining pages
-  45 to 60M, quality first.
+  cairn `e48a61a1`, `b78d8cf2` and dotfiles `de6cf8d`, `526c111`. Two resolution runs from plans (`wf_fe61a650-884`,
+  6.5M; `wf_ab29e38c-e13`, 8.0M) each ended 0 of 6 accepted at the two-round cap; held as WIP `2aacb280` and
+  `bf156175`, records `docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run{,-2}-record.md` (run 2's
+  "Convergence" section: blocking findings fall 35 to 21 across rounds, 13 of the 21 on sentences the redraft just
+  changed, 6 late catches on unchanged ones). Residue: 21 round-2 blocking findings on five drafted pages, plus
+  `security-model`'s plan (two blocking, concepts used before introduced; page unchanged since `2aacb280`). The
+  final reader read has run on no page. Open question to Geoff: the close-out route for the residue and the per-page
+  rate for task 8 onward (measured about 2.4M a page per run against the 1.3M the 45 to 60M budget assumed).
 - The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
   `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and filed its 12 code defects in the
   friction log (`bd8ab1fe`, on `main`, not pushed).

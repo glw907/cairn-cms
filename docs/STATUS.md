@@ -16,16 +16,15 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Draft docs stage 2a: task 7b's resolution pass is next, after the 2026-10-02 23:59 reset (Geoff, 2026-10-01).**
+- **Draft docs stage 2a: task 7c, the page plan, is next, then task 7b's resolution pass from plans (Geoff, 2026-10-01; after the 2026-10-02 23:59 reset).**
   Branch and worktree `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
-  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (ledger rows 7a and 7b, and the "Resolution pass" paragraph
-  under task 7b). Task 7a is done: introduction and ending anatomies in the register, Geoff's threat position as the
-  owner-tier fact `f:v85shm`, a structural edit seat, a final reader read with one re-test, and a `rework` entry point
-  (dotfiles through `5fb8ce2`). Task 7b's rework run left all six pilot pages escalated at round 2 with 26 narrow
-  blocking findings; the pages sit in WIP commit `a6885750`, and the findings are in
-  `docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`. The final reader read has run on no page yet.
-  Geoff's rulings of 2026-10-01: every page needs a real introduction, and structure comes before line editing. After
-  the resolution pass, republish the same three pages for his structural read
+  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (task 7c, the amended "Resolution pass" paragraph under
+  task 7b, ledger rows 7a to 7c). Geoff's read of the rework pages (WIP `a6885750`): correct facts, well explained, and
+  still a loosely connected collection of atoms. Diagnosis and rulings:
+  `docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md` (the chain carries no artifact holding a
+  page's argument). Task 7c adds a committed page plan between page inputs and the draft, graded by the structural seat
+  before prose; the drafter drafts from it; a plan may subordinate facts to the reference or cut them. Then the six
+  pilot pages rerun as rework pages from plans, and the three owner pages republish with their plans linked
   (https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs), then task 8. Budget for the remaining pages 45 to 60M, quality
   first; 7a and 7b ran past their 4 to 5M.
 - The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
@@ -51,19 +50,19 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Resume prompt
 
-### Next action (draft docs stage 2a, task 7b resolution pass)
+### Next action (draft docs stage 2a, task 7c then the 7b resolution pass)
 
-> **Goal.** Bring the six reworked pilot pages to acceptance, final reader read included, and republish three for
-> Geoff's structural read.
+> **Goal.** Land the page plan step (task 7c), then bring the six pilot pages to acceptance from plans, final reader
+> read included, and republish three with their plans linked for Geoff's read.
 >
-> **Scope.** The plan's "Resolution pass" under task 7b on `draft-docs-2a`, then the republish. Task 8 waits for
-> Geoff's read. Run it only after the 2026-10-02 23:59 weekly reset.
+> **Scope.** Task 7c, then the plan's amended "Resolution pass" under task 7b on `draft-docs-2a`, then the republish.
+> Task 8 waits for Geoff's read. Run only after the 2026-10-02 23:59 weekly reset.
 >
-> **Settled (do not re-brainstorm):** the spec (S1 to S9), the plan and its ledger, task 7a's mechanisms and rulings
-> (ledger row 7a), the conductor rulings in the "Resolution pass" paragraph, `bothReviewers: true`, and the stale-script
-> guard in `pass-gate-economy.md` (verify a run's persisted script against the committed runner before relying on it).
+> **Settled (do not re-brainstorm):** the spec (S1 to S9), the plan and its ledger, task 7a's mechanisms and rulings,
+> the 7c diagnosis record and Geoff's three rulings in it, the conductor rulings in the "Resolution pass" paragraph,
+> `bothReviewers: true`, and the stale-script guard in `pass-gate-economy.md`.
 >
-> **Entry.** Read the rework record, then the plan's "Resolution pass" paragraph.
+> **Entry.** Read the diagnosis record, then task 7c, then the rework record.
 >
 > **Approach.** Invoke `cairn-pass` to resume. Launch directory `~/Projects/cairn-cms`;
 > `claude --model claude-opus-5-5` at medium effort.

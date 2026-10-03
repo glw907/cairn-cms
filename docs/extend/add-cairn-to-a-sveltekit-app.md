@@ -4,48 +4,53 @@ cairn gives a SvelteKit site an admin at `/admin`, where editors sign in by emai
 
 The tutorial carries one example throughout: Field Notes, a site with one post. By the end, Field Notes runs in production, and an editor can sign in, edit the post, and publish it to the deployed site.
 
-The tutorial serves a web developer who builds with SvelteKit and TypeScript and works in a terminal.
+The tutorial serves a web developer who builds with SvelteKit and TypeScript and works in a terminal. An app you already have follows the same milestones and skips the steps that create the project.
 
-The work runs in four milestones, each ending with a check:
+You work through four milestones, and each ends with a check:
 
 1. Deploy a bare SvelteKit site to its `workers.dev` address.
 2. Install the engine, mount the admin, and sign in to it on the dev backend.
-3. Put content on disk and render an entry from it.
-4. Move the site to production with its own GitHub App, an auth database, and the Worker bindings.
+3. Put content on disk, render an entry from it, and push the site to its GitHub repository.
+4. Move the site to production with a GitHub App you register, an auth database, and the Worker's bindings and secret.
+
+A closing section after the milestones customizes the sign-in email.
 
 The tutorial leaves the following topics to other pages:
 
 - Every adapter option, which [Define an adapter and schema](define-an-adapter-and-schema.md) covers.
 - The delivery routes beyond the entry catch-all, which [Build the public routes](build-the-public-routes.md) covers.
-- The reasoning behind the GitHub App's write reach and the CSRF design, which the [security model](security-model.md) sets out.
+- The reasoning behind the GitHub App's repository-wide write and the CSRF design, which the [security model](security-model.md) sets out.
 - Rotating the App's private key later, which [Rotate the GitHub App key](rotate-the-github-app-key.md) covers.
 
 ## Before you begin
 
-This tutorial needs the following accounts, tools, and services:
+You need Node 24 or later, a GitHub account, a Cloudflare account, and, from the first deploy that carries the admin, Cloudflare's Workers Paid plan. You also need the following:
 
-- Node 24 or later.
 - TypeScript on major version 6, which `npx sv create` already pins, since `svelte-check` cannot run on TypeScript 7 yet.
-- A GitHub account and a Cloudflare account.
-- Cloudflare's Workers Paid plan from the first deploy that carries the admin.
-- A domain whose zone is on your Cloudflare account, which real sign-in mail needs.
-- The `cairn` CLI, which runs the production milestone's [`cairn doctor`](../reference/cli-cairn-doctor.md) check.
+- A domain whose zone is on your Cloudflare account, since a `workers.dev` subdomain has no zone to onboard for sign-in mail.
+- The `cairn` CLI, a separate Go module installed once per machine, which runs [`cairn doctor`](../reference/cli-cairn-doctor.md) in the production milestone.
 
-The first milestone's bare deploy runs on Cloudflare's free tier. Cloudflare's [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page states each plan's current terms, including the plan that sign-in mail to a second person needs.
+To install the `cairn` CLI, run the following `go install` command, or download a release archive instead:
+
+```bash
+go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest
+```
+
+The first milestone's bare deploy runs on Cloudflare's free tier. The Workers Paid plan also covers sign-in mail to a second person, and Cloudflare's [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page states its current terms.
 
 ## Deploy a bare SvelteKit site
 
-This milestone ends with a plain SvelteKit site, with no cairn code yet, answering at its `workers.dev` address. In this milestone, you do the following:
+This milestone ends with a plain SvelteKit site, with no cairn code yet, answering at its `workers.dev` address, so the deploy path works before the engine joins it. In this milestone, you do the following:
 
-- Create a SvelteKit project.
+- Create the project under version control.
 - Name the Cloudflare adapter in the kit config.
 - Describe the Worker to Wrangler and deploy it.
 
-The milestone starts from an empty directory. An existing app starts at the adapter swap and skips the step that creates the project.
+The milestone starts from an empty directory. An existing app skips the project step, and an app that keeps its kit config in `svelte.config.js` makes each kit edit on this page in that file instead.
 
-### Create the project and install the Cloudflare adapter
+### Create the project on the Cloudflare adapter
 
-A fresh `sv create` project uses `@sveltejs/adapter-auto` as its adapter. `adapter-auto` picks an adapter at build time by guessing the deploy target, so a self-deployed site names `@sveltejs/adapter-cloudflare` explicitly. A site that the setup command scaffolds builds with the same adapter and deploys to Cloudflare Workers.
+A self-deployed site names `@sveltejs/adapter-cloudflare` explicitly, because the scaffold's `adapter-auto` guesses the deploy target at build time. A current `sv create` scaffold has no `svelte.config.js`, so the kit config sits inline in the `sveltekit()` call in `vite.config.ts`. That call takes `adapter` and `csrf` as sibling keys, beside the `compilerOptions` the scaffold already passes. Each `vite.config.ts` sample on this page keeps that `compilerOptions` setting as a comment.
 
 To create the project and swap its adapter, follow these steps:
 
@@ -56,79 +61,81 @@ To create the project and swap its adapter, follow these steps:
    cd field-notes
    ```
 
-2. In the project directory, replace the scaffold's adapter with the Cloudflare one:
+2. In the project directory, start a git repository on the `main` branch and commit the scaffold:
+
+   ```bash
+   git init -b main
+   git add .
+   git commit -m "Create the project"
+   ```
+
+   The production milestone names this branch in the adapter and reads the publish commit from it. An app that is already a repository skips this step.
+
+3. In the project directory, replace the scaffold's adapter with the Cloudflare one:
 
    ```bash
    npm uninstall @sveltejs/adapter-auto
    npm install -D @sveltejs/adapter-cloudflare
    ```
 
-### Point the kit config at Cloudflare
+4. In `vite.config.ts`, import the Cloudflare adapter and pass it as the `adapter` option:
 
-A current `sv create` scaffold has no `svelte.config.js`, so the kit config, the adapter included, sits inline in the `sveltekit()` call in `vite.config.ts`. That call takes the kit options, such as `adapter` and `csrf`, as sibling keys beside the compiler options. The `sv create` scaffold also passes `compilerOptions` to that call, and its `runes` option forces runes mode for every file outside `node_modules`. Each `vite.config.ts` sample on this page shows that setting as a comment, and every edit leaves the setting in place. An existing app that keeps its kit config in `svelte.config.js` makes each kit edit on this page in that file instead.
+   ```text
+   field-notes/
+   ├── src/
+   ├── package.json
+   └── vite.config.ts
+   ```
 
-```text
-field-notes/
-├── src/
-├── package.json
-└── vite.config.ts
-```
+   ```ts
+   // vite.config.ts
+   import adapter from '@sveltejs/adapter-cloudflare';
+   import { sveltekit } from '@sveltejs/kit/vite';
+   import { defineConfig } from 'vite';
 
-- In `vite.config.ts`, import the Cloudflare adapter and pass it as the `adapter` option:
+   export default defineConfig({
+     plugins: [
+       sveltekit({
+         // compilerOptions stays as sv create wrote it.
+         adapter: adapter(),
+       }),
+     ],
+   });
+   ```
 
-```ts
-// vite.config.ts
-import adapter from '@sveltejs/adapter-cloudflare';
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+### Describe the Worker and deploy it
 
-export default defineConfig({
-  plugins: [
-    sveltekit({
-      // compilerOptions stays as sv create wrote it.
-      adapter: adapter(),
-    }),
-  ],
-});
-```
+The minimal `wrangler.jsonc` names the Worker, sets a compatibility date, and points `main` and the `ASSETS` binding at the adapter's build output. `npx wrangler login` signs Wrangler in to Cloudflare, and `npx wrangler deploy` uploads the built Worker.
 
-### Describe the Worker to Wrangler
+To describe the Worker and deploy it, follow these steps:
 
-The minimal `wrangler.jsonc` names the Worker, sets a compatibility date, and points `main` and the `ASSETS` assets binding at the Cloudflare adapter's build output.
+1. In the project root, create `wrangler.jsonc`:
 
-```text
-field-notes/
-├── src/
-├── package.json
-├── vite.config.ts
-└── wrangler.jsonc
-```
+   ```text
+   field-notes/
+   ├── src/
+   ├── package.json
+   ├── vite.config.ts
+   └── wrangler.jsonc
+   ```
 
-- In the project root, create `wrangler.jsonc`:
+   ```jsonc
+   // wrangler.jsonc
+   {
+     "name": "field-notes",
+     "compatibility_date": "2026-09-01",
+     "main": ".svelte-kit/cloudflare/_worker.js",
+     "assets": { "directory": ".svelte-kit/cloudflare", "binding": "ASSETS" }
+   }
+   ```
 
-```jsonc
-// wrangler.jsonc
-{
-  "name": "field-notes",
-  "compatibility_date": "2026-09-01",
-  "main": ".svelte-kit/cloudflare/_worker.js",
-  "assets": { "directory": ".svelte-kit/cloudflare", "binding": "ASSETS" }
-}
-```
-
-### Deploy the bare site
-
-`npx wrangler login` signs Wrangler in to Cloudflare, and `npx wrangler deploy` uploads the built Worker and prints its `workers.dev` address.
-
-To deploy the site, follow these steps:
-
-1. In the project directory, sign in to Cloudflare:
+2. In the project directory, sign in to Cloudflare:
 
    ```bash
    npx wrangler login
    ```
 
-2. Build the site and upload the Worker:
+3. Build the site and upload the Worker:
 
    ```bash
    npm run build
@@ -150,9 +157,9 @@ When the deploy fails or the address does not load, check the following in order
 2. Check that the kit config names `@sveltejs/adapter-cloudflare` as its adapter.
 3. Check that `main` and the `assets` directory in `wrangler.jsonc` point at `.svelte-kit/cloudflare`.
 
-### Deploy a change to the site
+### Deploy a change
 
-As practice for the deploys in later milestones, change a line of the scaffold's home page and deploy the site again. Then confirm the change at the same `workers.dev` address.
+Change one line of the scaffold's home page, deploy again, and confirm the change at the same address.
 
 #### Show me the steps
 
@@ -171,198 +178,193 @@ The answer takes the following steps:
 
 ### Checklist before the engine
 
-Before you continue, confirm that you can do the following:
+Before you continue, confirm that each of the following statements holds:
 
-- Name the Cloudflare adapter explicitly in the `sveltekit()` call in `vite.config.ts`.
-- Deploy the Worker and load it at its `workers.dev` address.
+- I can name the Cloudflare adapter explicitly in the `sveltekit()` call in `vite.config.ts`.
+- I can deploy the Worker and load it at its `workers.dev` address.
 
 ## Install and wire the engine
 
-This milestone installs the engine, mounts the admin, and ends with you signed in at `/admin` on the dev backend, with no sign-in email. It starts from the deployed bare site. The admin answers only once the dev backend or real bindings exist, so this milestone wires the dev backend before its check.
+This milestone installs the engine, mounts the admin, and ends with you signed in at `/admin` on the dev backend, with no sign-in email. It starts from the deployed bare site. The admin answers only once the dev backend or the real bindings exist, so the milestone wires the dev backend before its check.
 
 In this milestone, you do the following:
 
-- Install the engine and let Vite compile its Svelte source.
+- Install the engine and let Vite compile it.
 - Give the engine a site config, a minimal adapter, and a runtime.
-- Mount the admin through one catch-all route and a shared layout.
-- Wire the dev backend, which keeps every save and publish on your machine.
-- Hand CSRF for the admin to the engine's guard, so a form posted without JavaScript reaches it.
+- Mount the admin as one catch-all route and a layout.
+- Wire the dev backend and hand the admin's CSRF check to the engine's guard.
 
-### Install the engine and its peer
+### Install the engine and let Vite compile it
 
-The engine's shipped type declarations import `D1Database` and `R2Bucket` from `@cloudflare/workers-types`, which makes that package a required peer at `^5`.
+Before any route exists, the engine needs its package with the `@cloudflare/workers-types` peer, an `ssr` entry that lists it under `noExternal`, and an ambient import that types `App.Locals`. The engine's shipped `.d.ts` files import `D1Database` and `R2Bucket` from `@cloudflare/workers-types`, which makes that package a required peer at `^5`. The package ships its `.svelte` files as source under its `svelte` export condition, so the site's Svelte plugin must compile them. Without the `noExternal` entry, the admin components fail to build. The ambient import augments `App.Locals` with the five fields the engine reads and writes on every admin request, which the [ambient types reference](../reference/ambient.md) names. A custom route that reads `event.platform.env` needs `App.Platform` declared separately.
 
-- In the project directory, install the engine and its peer:
+To install the engine, follow these steps:
 
-  ```bash
-  npm install @glw907/cairn-cms
-  npm install -D @cloudflare/workers-types
-  ```
+1. In the project directory, install the engine and its peer:
 
-### Let Vite compile the engine
+   ```bash
+   npm install @glw907/cairn-cms
+   npm install -D @cloudflare/workers-types
+   ```
 
-The package ships its `.svelte` files as source under its `svelte` export condition, so the site's Svelte plugin must compile them. Without a `noExternal` entry, the admin components fail to build.
+2. In `vite.config.ts`, add an `ssr` block that lists the engine under `noExternal`:
 
-- In `vite.config.ts`, add an `ssr` block that lists the engine under `noExternal`:
+   ```ts
+   // vite.config.ts
+   import adapter from '@sveltejs/adapter-cloudflare';
+   import { sveltekit } from '@sveltejs/kit/vite';
+   import { defineConfig } from 'vite';
 
-```ts
-// vite.config.ts
-import adapter from '@sveltejs/adapter-cloudflare';
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+   export default defineConfig({
+     plugins: [
+       sveltekit({
+         // compilerOptions stays as sv create wrote it.
+         adapter: adapter(),
+       }),
+     ],
+     ssr: { noExternal: ['@glw907/cairn-cms'] },
+   });
+   ```
 
-export default defineConfig({
-  plugins: [
-    sveltekit({
-      // compilerOptions stays as sv create wrote it.
-      adapter: adapter(),
-    }),
-  ],
-  ssr: { noExternal: ['@glw907/cairn-cms'] },
-});
-```
+3. In `src/app.d.ts`, add the ambient import:
 
-### Import the ambient types
+   ```text
+   field-notes/
+   └── src/
+       └── app.d.ts
+   ```
 
-`src/app.d.ts` imports `@glw907/cairn-cms/ambient` to augment `App.Locals` with the five fields the engine reads and writes on every admin request. A custom route that reads `event.platform.env` needs `App.Platform` declared separately.
+   ```ts
+   // src/app.d.ts
+   import '@glw907/cairn-cms/ambient';
 
-```text
-field-notes/
-└── src/
-    └── app.d.ts
-```
+   declare global {
+     namespace App {
+       // interface Platform {}
+     }
+   }
 
-- In `src/app.d.ts`, add the import:
+   export {};
+   ```
 
-```ts
-// src/app.d.ts
-import '@glw907/cairn-cms/ambient';
+The admin reads a runtime, and the runtime reads an adapter and a site config.
 
-declare global {
-  namespace App {
-    // interface Platform {}
-  }
-}
+### Write the site config and a minimal adapter
 
-export {};
-```
+The adapter declares one posts concept, a renderer, and the backend and sender that the dev backend stands in for until production. `createGithubApp` builds a provider from its five strings with no network call and no validation. The dev backend replaces that provider for every request it serves, so placeholder values serve until the production milestone.
 
-### Write the site config
+The site config is a YAML mapping whose one required key, `siteName`, names the site in the admin shell and in the sign-in email's subject. [`parseSiteConfig`](../reference/core.md#parsesiteconfig) rejects any top-level key outside the set its reference entry lists, and it passes `description` through unread for the site's code.
 
-The site config is a YAML mapping whose one required key, `siteName`, names the site in the admin shell and in the sign-in email's subject. [`parseSiteConfig`](../reference/core.md#parsesiteconfig) rejects any top-level key outside the set it knows. `parseSiteConfig` passes the optional `description`, `author`, and `locale` keys through without reading them, for the site's code to use.
+To write both files, follow these steps:
 
-```text
-field-notes/
-└── src/
-    └── lib/
-        └── site.config.yaml
-```
+1. In `src/lib`, create `site.config.yaml`:
 
-- In `src/lib`, create `site.config.yaml`:
+   ```text
+   field-notes/
+   └── src/
+       └── lib/
+           └── site.config.yaml
+   ```
 
-```yaml
-siteName: Field Notes
-description: Notes from the trail.
-```
+   ```yaml
+   siteName: Field Notes
+   description: Notes from the trail.
+   ```
 
-### Declare a minimal adapter
+2. In `src/lib`, create the adapter module, which exports the adapter as `cairn` beside the parsed `siteConfig`:
 
-The adapter declares one concept for posts, a renderer, and the backend and sender values that take effect only in production. `createGithubApp` builds a provider from its five strings with no network call and no validation, so placeholder values serve until the production milestone.
+   ```text
+   field-notes/
+   └── src/
+       └── lib/
+           ├── cairn.config.ts
+           └── site.config.yaml
+   ```
 
-```text
-field-notes/
-└── src/
-    └── lib/
-        ├── cairn.config.ts
-        └── site.config.yaml
-```
+   ```ts
+   // src/lib/cairn.config.ts
+   import {
+     createGithubApp,
+     createRenderer,
+     defineAdapter,
+     defineConcept,
+     defineFieldset,
+     defineRegistry,
+     fields,
+     parseSiteConfig,
+   } from '@glw907/cairn-cms';
+   import siteYaml from './site.config.yaml?raw';
 
-- In `src/lib`, create the adapter module, which exports the adapter as `cairn` beside the parsed `siteConfig`:
+   const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
 
-```ts
-// src/lib/cairn.config.ts
-import {
-  createGithubApp,
-  createRenderer,
-  defineAdapter,
-  defineConcept,
-  defineFieldset,
-  defineRegistry,
-  fields,
-  parseSiteConfig,
-} from '@glw907/cairn-cms';
-import siteYaml from './site.config.yaml?raw';
+   export const cairn = defineAdapter({
+     content: {
+       posts: defineConcept({
+         dir: 'src/content/posts',
+         label: 'Posts',
+         singular: 'post',
+         routing: 'feed',
+         fields: defineFieldset({
+           title: fields.text({ label: 'Title', required: true }),
+           date: fields.date({ label: 'Date' }),
+           description: fields.textarea({ label: 'Description' }),
+         }),
+       }),
+     },
+     // Placeholders: the dev backend stands in for both until production.
+     backend: createGithubApp({
+       owner: 'your-account',
+       repo: 'field-notes',
+       branch: 'main',
+       appId: '0',
+       installationId: '0',
+     }),
+     email: { from: 'cms@example.com' },
+     rendering: {
+       render: ({ body, resolve, resolveMedia, resolveFragment }) =>
+         renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
+     },
+   });
 
-const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+   export const siteConfig = parseSiteConfig(siteYaml);
+   ```
 
-export const cairn = defineAdapter({
-  content: {
-    posts: defineConcept({
-      dir: 'src/content/posts',
-      label: 'Posts',
-      singular: 'post',
-      routing: 'feed',
-      fields: defineFieldset({
-        title: fields.text({ label: 'Title', required: true }),
-        date: fields.date({ label: 'Date' }),
-        description: fields.textarea({ label: 'Description' }),
-      }),
-    }),
-  },
-  // Placeholders: the dev backend stands in for both until production.
-  backend: createGithubApp({
-    owner: 'your-account',
-    repo: 'field-notes',
-    branch: 'main',
-    appId: '0',
-    installationId: '0',
-  }),
-  email: { from: 'cms@example.com' },
-  rendering: {
-    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
-      renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
-  },
-});
-
-export const siteConfig = parseSiteConfig(siteYaml);
-```
-
-`defineRegistry({ components: [] })` gives an empty component registry, and `createRenderer(registry)` returns the `renderMarkdown` that the adapter's `rendering.render` calls. For every other adapter option, see the [`defineAdapter`](../reference/core.md#defineadapter) entry.
+`defineRegistry({ components: [] })` gives an empty component registry, and `createRenderer` returns the `renderMarkdown` that the adapter's `rendering.render` calls. For every other adapter option, see the [`defineAdapter`](../reference/core.md#defineadapter) entry and [Define an adapter and schema](define-an-adapter-and-schema.md).
 
 ### Compose the runtime and the admin
 
-[`composeRuntime`](../reference/core.md#composeruntime) combines the adapter and the parsed site config into the runtime. [`createCairnAdmin`](../reference/sveltekit.md#createcairnadmin) returns the `load`, `actions`, and `shellLoad` a single-mount admin exports. The `bootstrapOwner` pair names the site's first owner. When that email requests a sign-in while the `editor` table is empty, the engine inserts the owner row before the allowlist lookup, so the first sign-in proceeds like any allow-listed editor's. A non-matching email or a non-empty table grants nothing.
-
-```text
-field-notes/
-└── src/
-    └── lib/
-        ├── cairn.config.ts
-        ├── cairn.server.ts
-        └── site.config.yaml
-```
+[`composeRuntime`](../reference/core.md#composeruntime) folds the adapter and the site config into the runtime, and [`createCairnAdmin`](../reference/sveltekit.md#createcairnadmin) turns the runtime into the `load`, `actions`, and `shellLoad` the admin routes export. The `bootstrapOwner` pair names the site's first owner. When that email requests a sign-in while the `editor` table is empty, the engine inserts the owner row before the allowlist lookup. A non-matching email or a non-empty table grants nothing. `bootstrapOwner` acts on the first real sign-in, in the production milestone, and does nothing while the dev backend is active.
 
 - In `src/lib`, create the server module, with your email and name in `bootstrapOwner`:
 
-```ts
-// src/lib/cairn.server.ts
-import { composeRuntime } from '@glw907/cairn-cms';
-import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from './cairn.config.js';
+  ```text
+  field-notes/
+  └── src/
+      └── lib/
+          ├── cairn.config.ts
+          ├── cairn.server.ts
+          └── site.config.yaml
+  ```
 
-export const runtime = composeRuntime({ adapter: cairn, siteConfig });
+  ```ts
+  // src/lib/cairn.server.ts
+  import { composeRuntime } from '@glw907/cairn-cms';
+  import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
+  import { cairn, siteConfig } from './cairn.config.js';
 
-export const admin = createCairnAdmin({
-  runtime,
-  auth: {
-    bootstrapOwner: { email: 'you@example.com', displayName: 'Your Name' },
-  },
-});
-```
+  export const runtime = composeRuntime({ adapter: cairn, siteConfig });
+
+  export const admin = createCairnAdmin({
+    runtime,
+    auth: {
+      bootstrapOwner: { email: 'you@example.com', displayName: 'Your Name' },
+    },
+  });
+  ```
 
 ### Mount the admin routes
 
-The admin mounts as a catch-all page that renders `CairnAdmin` and a shared layout that renders `CairnAdminShell`, both imported from `@glw907/cairn-cms/admin`. The catch-all route module exports `prerender = false`, because a site that prerenders by default would otherwise bake a build-time snapshot of a session-gated page.
+The admin mounts as one catch-all page under `src/routes/admin` and one shared layout, and the catch-all exports `prerender = false` so a site that prerenders by default never bakes a session-gated page. `CairnAdmin` and `CairnAdminShell` import from `@glw907/cairn-cms/admin`. The catch-all page passes `CairnAdmin` the route's `data` and `form` and the adapter's `render`, and the layout renders `CairnAdminShell` over the layout load's `shell` data.
 
 ```text
 field-notes/
@@ -376,193 +378,184 @@ field-notes/
             └── +layout.svelte
 ```
 
-- Create the catch-all route module, which exports the admin's `load` and `actions`:
+To mount the admin, follow these steps:
 
-```ts
-// src/routes/admin/[...path]/+page.server.ts
-import { admin } from '$lib/cairn.server.js';
+1. In `src/routes/admin/[...path]`, create the route module, which exports the admin's `load` and `actions` beside `prerender`:
 
-export const prerender = false;
+   ```ts
+   // src/routes/admin/[...path]/+page.server.ts
+   import { admin } from '$lib/cairn.server.js';
 
-export const load = admin.load;
-export const actions = admin.actions;
-```
+   export const prerender = false;
 
-- Create the catch-all page, which passes `CairnAdmin` the route's `data` and `form` and the adapter's `render`:
+   export const load = admin.load;
+   export const actions = admin.actions;
+   ```
 
-```svelte
-<!-- src/routes/admin/[...path]/+page.svelte -->
-<script lang="ts">
-  import { CairnAdmin } from '@glw907/cairn-cms/admin';
-  import type { AdminData } from '@glw907/cairn-cms/sveltekit';
-  import { cairn } from '$lib/cairn.config.js';
-  import type { ActionData } from './$types';
+2. In the same directory, create the page, which renders `CairnAdmin`:
 
-  let { data, form }: { data: AdminData; form: ActionData } = $props();
-</script>
+   ```svelte
+   <!-- src/routes/admin/[...path]/+page.svelte -->
+   <script lang="ts">
+     import { CairnAdmin } from '@glw907/cairn-cms/admin';
+     import type { AdminData } from '@glw907/cairn-cms/sveltekit';
+     import { cairn } from '$lib/cairn.config.js';
+     import type { ActionData } from './$types';
 
-<CairnAdmin {data} {form} render={cairn.rendering.render} />
-```
+     let { data, form }: { data: AdminData; form: ActionData } = $props();
+   </script>
 
-- Create the layout server module, which exports the admin's `shellLoad`:
+   <CairnAdmin {data} {form} render={cairn.rendering.render} />
+   ```
 
-```ts
-// src/routes/admin/+layout.server.ts
-import { admin } from '$lib/cairn.server.js';
+3. In `src/routes/admin`, create the layout server module, which exports the admin's `shellLoad`:
 
-export const load = admin.shellLoad;
-```
+   ```ts
+   // src/routes/admin/+layout.server.ts
+   import { admin } from '$lib/cairn.server.js';
 
-- Create the layout, which renders `CairnAdminShell` over the layout load's `shell` data:
+   export const load = admin.shellLoad;
+   ```
 
-```svelte
-<!-- src/routes/admin/+layout.svelte -->
-<script lang="ts">
-  import { CairnAdminShell } from '@glw907/cairn-cms/admin';
-  import type { AdminShellData } from '@glw907/cairn-cms/sveltekit';
-  import type { Snippet } from 'svelte';
+4. In the same directory, create the layout, which renders `CairnAdminShell`:
 
-  let { data, children }: { data: { shell: AdminShellData }; children: Snippet } = $props();
-</script>
+   ```svelte
+   <!-- src/routes/admin/+layout.svelte -->
+   <script lang="ts">
+     import { CairnAdminShell } from '@glw907/cairn-cms/admin';
+     import type { AdminShellData } from '@glw907/cairn-cms/sveltekit';
+     import type { Snippet } from 'svelte';
 
-<CairnAdminShell data={data.shell}>{@render children()}</CairnAdminShell>
-```
+     let { data, children }: { data: { shell: AdminShellData }; children: Snippet } = $props();
+   </script>
+
+   <CairnAdminShell data={data.shell}>{@render children()}</CairnAdminShell>
+   ```
+
+No `AUTH_DB` binding exists yet, and the dev backend supplies a fake one.
 
 ### Wire the dev backend and the CSRF handoff
 
-The dev backend is `devBackendHandle` from `@glw907/cairn-cms-dev`. It installs an in-memory GitHub backend, a fake `AUTH_DB`, and a fake media bucket, and it mints an owner editor on `/admin`, so no email loop runs. Its state lasts as long as the server process, and no save or publish leaves the machine.
-
-- In the project directory, install the dev package as a development dependency:
-
-  ```bash
-  npm install -D @glw907/cairn-cms-dev
-  ```
-
-Three layers keep the dev package out of a deployed site:
+The dev backend, `devBackendHandle` from `@glw907/cairn-cms-dev`, replaces the GitHub backend, the auth database, and the media bucket with in-memory fakes and signs you in as an owner, so the admin runs before any credential exists. Its state lasts as long as the server process, so no save or publish leaves the machine. Three layers keep the dev package out of a deployed site:
 
 - The `__CAIRN_DEV_BUILD__` define strips it from a production bundle.
-- `@glw907/cairn-cms-dev` installs as a `devDependency`.
-- The admin guard refuses to serve a production build that has `CAIRN_DEV_BACKEND` set.
+- The package installs as a `devDependency`.
+- The guard refuses to serve a production build that has `CAIRN_DEV_BACKEND` set, and the [log events reference](../reference/log-events.md) records that refusal.
 
-#### Define the build flag and hand off CSRF
+Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly. A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker. The hooks module is that call site, and it picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if` that reads the define first and `CAIRN_DEV_BACKEND === '1'` second. It imports `devBackendHandle` dynamically, so a default build never carries it, and a bare `createAuthGuard()` call is valid.
 
-Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly, never through a shared exported constant. A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker.
+SvelteKit's origin check runs ahead of any handle and would reject a JavaScript-free form POST that arrives without an `Origin` header. The guard's double-submit token tolerates the missing header, so the site sets `csrf: { checkOrigin: false }` to hand the admin's CSRF authority to the guard. The setting turns the check off for every route, and the guard restores an equivalent strict `Origin` check on every route outside `/admin`. `checkOrigin` is deprecated as of SvelteKit 2.61 and stays supported across cairn's tested range, and the [`checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-deprecation) section tracks its status. The [security model](security-model.md) sets out the CSRF design.
 
-SvelteKit's origin check runs ahead of any handle and would reject a JavaScript-free form POST that arrives without an `Origin` header. The admin guard's double-submit token tolerates the missing header, so the site sets `csrf: { checkOrigin: false }` to leave CSRF to the guard.
+To wire the dev backend, follow these steps:
 
-The setting turns the check off for every route, and the guard restores an equivalent strict `Origin` check on every route outside `/admin`. The [`checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-deprecation) section tracks the option's status in SvelteKit, and the [security model](security-model.md) sets out the CSRF design.
+1. In the project directory, install the dev package as a development dependency:
 
-- In `vite.config.ts`, add the define plugin and the CSRF handoff:
+   ```bash
+   npm install -D @glw907/cairn-cms-dev
+   ```
 
-```ts
-// vite.config.ts
-import adapter from '@sveltejs/adapter-cloudflare';
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig, type Plugin } from 'vite';
+2. In `vite.config.ts`, add the define plugin and the CSRF handoff:
 
-// True while Vite serves the site, false in a build.
-function devBuildDefine(): Plugin {
-  return {
-    name: 'cairn-dev-build-define',
-    config(_config, { command }) {
-      return { define: { __CAIRN_DEV_BUILD__: JSON.stringify(command === 'serve') } };
-    },
-  };
-}
+   ```ts
+   // vite.config.ts
+   import adapter from '@sveltejs/adapter-cloudflare';
+   import { sveltekit } from '@sveltejs/kit/vite';
+   import { defineConfig, type Plugin } from 'vite';
 
-export default defineConfig({
-  plugins: [
-    devBuildDefine(),
-    sveltekit({
-      // compilerOptions stays as sv create wrote it.
-      adapter: adapter(),
-      // The engine's guard owns CSRF for the admin.
-      csrf: { checkOrigin: false },
-    }),
-  ],
-  ssr: { noExternal: ['@glw907/cairn-cms'] },
-});
-```
+   // True while Vite serves the site, false in a build.
+   function devBuildDefine(): Plugin {
+     return {
+       name: 'cairn-dev-build-define',
+       config(_config, { command }) {
+         return { define: { __CAIRN_DEV_BUILD__: JSON.stringify(command === 'serve') } };
+       },
+     };
+   }
 
-- In `src/app.d.ts`, declare the define as a global boolean:
+   export default defineConfig({
+     plugins: [
+       devBuildDefine(),
+       sveltekit({
+         // compilerOptions stays as sv create wrote it.
+         adapter: adapter(),
+         // The engine's guard owns CSRF for the admin.
+         csrf: { checkOrigin: false },
+       }),
+     ],
+     ssr: { noExternal: ['@glw907/cairn-cms'] },
+   });
+   ```
 
-```ts
-// src/app.d.ts
-import '@glw907/cairn-cms/ambient';
+3. In `src/app.d.ts`, declare the define as a global boolean:
 
-declare global {
-  const __CAIRN_DEV_BUILD__: boolean;
+   ```ts
+   // src/app.d.ts
+   import '@glw907/cairn-cms/ambient';
 
-  namespace App {
-    // interface Platform {}
-  }
-}
+   declare global {
+     const __CAIRN_DEV_BUILD__: boolean;
 
-export {};
-```
+     namespace App {
+       // interface Platform {}
+     }
+   }
 
-#### Pick the handle in the hooks
+   export {};
+   ```
 
-The hooks module picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if`. Its test reads the build-time `__CAIRN_DEV_BUILD__` define directly first and the runtime opt-in `CAIRN_DEV_BACKEND === '1'` second. Importing `devBackendHandle` dynamically behind the define keeps a default build from carrying it. `createAuthGuard` takes an optional config, and a bare call is valid.
+4. In the `src` directory, create `hooks.server.ts`:
 
-```text
-field-notes/
-└── src/
-    ├── app.d.ts
-    └── hooks.server.ts
-```
+   ```text
+   field-notes/
+   └── src/
+       ├── app.d.ts
+       └── hooks.server.ts
+   ```
 
-- In the `src` directory, create the hooks module:
+   <!-- snippet-check-skip: reads the __CAIRN_DEV_BUILD__ global that the site declares in its ambient types file -->
+   ```ts
+   // src/hooks.server.ts
+   import type { Handle } from '@sveltejs/kit';
+   import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 
-<!-- snippet-check-skip: reads the __CAIRN_DEV_BUILD__ global that the site declares in its ambient types file -->
-```ts
-// src/hooks.server.ts
-import type { Handle } from '@sveltejs/kit';
-import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+   let handle: Handle;
+   if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
+     const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
+     handle = devBackendHandle();
+   } else {
+     handle = createAuthGuard();
+   }
 
-let handle: Handle;
-if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
-  const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
-  handle = devBackendHandle();
-} else {
-  handle = createAuthGuard();
-}
-
-export { handle };
-```
+   export { handle };
+   ```
 
 ### Verify the dev sign-in
 
+With `CAIRN_DEV_BACKEND` set to `1`, the dev server opens `/admin` signed in as an owner, with no sign-in email.
+
 To confirm the milestone, follow these steps:
 
-1. In the project directory, start the dev server with `CAIRN_DEV_BACKEND` set to `1`:
+1. In the project directory, start the dev server with `CAIRN_DEV_BACKEND` set to `1`, using the form for your shell:
 
-   ```bash
-   CAIRN_DEV_BACKEND=1 npm run dev
-   ```
+   - In a POSIX shell, run `CAIRN_DEV_BACKEND=1 npm run dev`.
+   - In `cmd.exe`, run `set "CAIRN_DEV_BACKEND=1" && npm run dev`.
+   - In PowerShell, run `$env:CAIRN_DEV_BACKEND=1; npm run dev`.
+
+   The quotes in the `cmd.exe` form keep a trailing space out of the value, which the `=== '1'` test would otherwise fail to match.
 
 2. In a browser, open `/admin` on the dev server.
 3. Confirm that the admin opens signed in as an owner, with no sign-in email.
 
-The inline `NAME=1 command` form works only in POSIX shells. On Windows, start the dev server with the command for your shell:
-
-- In `cmd.exe`, run `set "CAIRN_DEV_BACKEND=1" && npm run dev`.
-- In PowerShell, run `$env:CAIRN_DEV_BACKEND=1; npm run dev`.
-
-The quotes in the `cmd.exe` form keep a trailing space out of the value, which the `=== '1'` test would otherwise read as unset.
-
-`bootstrapOwner` does nothing while the dev backend is active, since the dev backend signs in without touching the auth store.
-
 When the admin does not open signed in, check the following in order:
 
 1. Check that the dev server started with `CAIRN_DEV_BACKEND` set to `1`.
-2. Check that the hooks module reads `__CAIRN_DEV_BUILD__` itself, with no imported constant in its place.
+2. Check that the hooks module names `__CAIRN_DEV_BUILD__` itself, with no imported constant in its place.
 
 [Debug your site](debug-your-site.md) covers the dev backend's other failures.
 
 ### Rename the site
 
-As practice with the site config, change the site's name and confirm that the admin shell shows the new one.
+Change `siteName` in the site config, confirm that the admin shell shows the new name, and then change it back.
 
 #### Show me the steps
 
@@ -575,148 +568,143 @@ The answer takes the following steps:
 
 ### Checklist before content
 
-Before you continue, confirm that you can do the following:
+Before you continue, confirm that each of the following statements holds:
 
-- Say why the engine is listed under `noExternal` in `vite.config.ts`.
-- Trace the runtime from the adapter through `composeRuntime` to the admin.
-- Say why every call site names `__CAIRN_DEV_BUILD__` directly.
-- Say why the site turns `checkOrigin` off.
-- Sign in at `/admin` on the dev backend with no email.
+- I can sign in at `/admin` on the dev backend with no sign-in email.
+- I can trace the runtime from the adapter through `composeRuntime` to the admin.
+- I can say why every call site names `__CAIRN_DEV_BUILD__` directly.
 
 ## Put content on disk
 
-This milestone adds a posts directory with one markdown entry, builds the typed content index over it, and renders the entry at its permalink. It starts from the site the engine milestone left, which signs you in on the dev backend.
+This milestone adds a posts directory with one markdown entry, indexes it, and renders the entry at its permalink. It ends with the site pushed to the GitHub repository that cairn commits to. It starts from the site the engine milestone left, which signs you in on the dev backend.
 
 In this milestone, you do the following:
 
 - Place an entry in the directory its concept declares.
-- Build the content index, and commit the manifest that every build checks against the markdown on disk.
+- Index the content and commit the manifest that every build checks.
 - Render the entry at its permalink.
+- Push the site to its GitHub repository.
 
 ### Add the first entry
 
 Content is markdown files with YAML frontmatter, one directory per concept, named by the concept's `dir`. The entry's frontmatter carries `title`, `date`, and `description`, the fields the posts concept declares.
 
-```text
-field-notes/
-└── src/
-    └── content/
-        └── posts/
-            └── 2026-08-14-hello.md
-```
-
 - In `src/content/posts`, create the entry file the tree shows:
 
-```md
----
-title: Hello
-date: 2026-08-14
-description: The first entry on Field Notes.
----
+  ```text
+  field-notes/
+  └── src/
+      └── content/
+          └── posts/
+              └── 2026-08-14-first-light.md
+  ```
 
-The first post on the site, written in plain markdown.
-```
+  ```md
+  ---
+  title: First light
+  date: 2026-08-14
+  description: The first entry on Field Notes.
+  ---
 
-### Build the content index
+  The first post on the site, written in plain markdown.
+  ```
 
-Vite needs each glob's literal pattern at its call site, so the site passes [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes) one literal `import.meta.glob` per concept. `createSiteIndexes` throws at build time for a declared concept with no glob.
+### Index the content and commit its manifest
 
-```text
-field-notes/
-└── src/
-    └── lib/
-        ├── cairn.config.ts
-        ├── cairn.server.ts
-        ├── content.ts
-        └── site.config.yaml
-```
+The site passes [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes) one literal `import.meta.glob` per concept, and the [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin checks a committed manifest against the markdown on every build. Vite needs each glob's literal pattern at its call site, so `createSiteIndexes` throws at build time for a declared concept with no glob.
 
-- In `src/lib`, create the content module, which passes the posts glob to `createSiteIndexes`:
+The plugin's `configModule` names the module that exports `cairn` and `siteConfig`, and its `content` option maps each concept id to its glob. The [plugin's options reference](../reference/vite.md#cairnmanifestoptions) lists its optional output paths and their defaults. A committed manifest that has drifted from the markdown fails the build, so you write the manifest before the next build.
 
-```ts
-// src/lib/content.ts
-import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
-import { cairn, siteConfig } from './cairn.config.js';
+To index the content and commit the manifest, follow these steps:
 
-const postsRaw = import.meta.glob('/src/content/posts/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>;
+1. In `src/lib`, create the content module, which passes the posts glob to `createSiteIndexes`:
 
-const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw });
+   ```text
+   field-notes/
+   └── src/
+       └── lib/
+           ├── cairn.config.ts
+           ├── cairn.server.ts
+           ├── content.ts
+           └── site.config.yaml
+   ```
 
-export const site = indexes.site;
+   ```ts
+   // src/lib/content.ts
+   import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
+   import { cairn, siteConfig } from './cairn.config.js';
 
-// The local dev origin, until production names the deployed one.
-export const origin = 'http://localhost:5173';
-```
+   const postsRaw = import.meta.glob('/src/content/posts/*.md', {
+     query: '?raw',
+     import: 'default',
+     eager: true,
+   }) as Record<string, string>;
 
-The `origin` constant names the local origin until the production milestone points it at the deployed one.
+   const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw });
 
-### Add the manifest plugin
+   export const site = indexes.site;
 
-The [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin reads every path it takes as app-root-absolute. `configModule` names the module that exports `cairn` and `siteConfig`, and `content` maps each concept id to its glob. The manifest lands at `/src/content/.cairn/index.json` unless `manifestPath` names another path.
+   // The local dev origin, until production names the deployed one.
+   export const origin = 'http://localhost:5173';
+   ```
 
-- In the Vite config, add the plugin:
+   The content module also exports `origin`, the local dev origin for now, which the production milestone changes.
 
-```ts
-// vite.config.ts
-import adapter from '@sveltejs/adapter-cloudflare';
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig, type Plugin } from 'vite';
-import { cairnManifest } from '@glw907/cairn-cms/vite';
+2. In `vite.config.ts`, add the `cairnManifest` plugin:
 
-// True while Vite serves the site, false in a build.
-function devBuildDefine(): Plugin {
-  return {
-    name: 'cairn-dev-build-define',
-    config(_config, { command }) {
-      return { define: { __CAIRN_DEV_BUILD__: JSON.stringify(command === 'serve') } };
-    },
-  };
-}
+   ```ts
+   // vite.config.ts
+   import adapter from '@sveltejs/adapter-cloudflare';
+   import { sveltekit } from '@sveltejs/kit/vite';
+   import { defineConfig, type Plugin } from 'vite';
+   import { cairnManifest } from '@glw907/cairn-cms/vite';
 
-export default defineConfig({
-  plugins: [
-    devBuildDefine(),
-    sveltekit({
-      // compilerOptions stays as sv create wrote it.
-      adapter: adapter(),
-      // The engine's guard owns CSRF for the admin.
-      csrf: { checkOrigin: false },
-    }),
-    cairnManifest({
-      configModule: '/src/lib/cairn.config.ts',
-      content: { posts: '/src/content/posts/*.md' },
-    }),
-  ],
-  ssr: { noExternal: ['@glw907/cairn-cms'] },
-});
-```
+   // True while Vite serves the site, false in a build.
+   function devBuildDefine(): Plugin {
+     return {
+       name: 'cairn-dev-build-define',
+       config(_config, { command }) {
+         return { define: { __CAIRN_DEV_BUILD__: JSON.stringify(command === 'serve') } };
+       },
+     };
+   }
 
-The build then verifies the committed manifest against the markdown on disk, so the manifest has to exist before the next build.
+   export default defineConfig({
+     plugins: [
+       devBuildDefine(),
+       sveltekit({
+         // compilerOptions stays as sv create wrote it.
+         adapter: adapter(),
+         // The engine's guard owns CSRF for the admin.
+         csrf: { checkOrigin: false },
+       }),
+       cairnManifest({
+         configModule: '/src/lib/cairn.config.ts',
+         content: { posts: '/src/content/posts/*.md' },
+       }),
+     ],
+     ssr: { noExternal: ['@glw907/cairn-cms'] },
+   });
+   ```
 
-To write and commit the manifest, follow these steps:
-
-1. In the project directory, write the manifest:
+3. In the project directory, write the manifest:
 
    ```bash
    npx cairn-manifest
    ```
 
-2. Commit the manifest with the entry:
+4. Commit the entry and its manifest to the repository the first milestone started:
 
    ```bash
    git add src/content
    git commit -m "Add the first post and its manifest"
    ```
 
-The [manifest command's reference](../reference/cli-cairn-manifest.md) covers when to write the manifest again.
+The [`cairn-manifest` reference](../reference/cli-cairn-manifest.md) covers when to write the manifest again.
 
 ### Render the entry
 
-The entry route is a prerendered catch-all built on the engine's public routes. Its load data carries the `entry`, its rendered `html`, its `canonicalUrl`, and its `seo` metadata. The entry page in this milestone renders only `html`, and [`CairnHead`](../reference/delivery.md#cairnhead) from `@glw907/cairn-cms/delivery/head` takes the `seo` data as its `seo` prop. The [public routes reference](../reference/delivery.md#createpublicroutes) documents the loader and its config.
+The entry route is a prerendered catch-all built on the engine's [public routes loader](../reference/delivery.md#createpublicroutes), whose load data carries the `entry`, its rendered `html`, its `canonicalUrl`, and its `seo` metadata. The page in this milestone renders only `html`, and [`CairnHead`](../reference/delivery.md#cairnhead) from `@glw907/cairn-cms/delivery/head` takes the `seo` data as its `seo` prop. The route builds each entry's canonical URL from `origin` plus the permalink, so the route module passes `origin` in. [Build the public routes](build-the-public-routes.md) covers the routes beyond this one.
 
 ```text
 field-notes/
@@ -728,62 +716,60 @@ field-notes/
         └── admin/
 ```
 
-- Create the entry route module:
+To render the entry, follow these steps:
 
-```ts
-// src/routes/[...path]/+page.server.ts
-import type { EntryGenerator, PageServerLoad } from './$types';
-import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
-import { cairn, siteConfig } from '$lib/cairn.config.js';
-import { origin, site } from '$lib/content.js';
+1. In the new `[...path]` directory, create the route module:
 
-export const prerender = true;
+   ```ts
+   // src/routes/[...path]/+page.server.ts
+   import type { EntryGenerator, PageServerLoad } from './$types';
+   import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
+   import { cairn, siteConfig } from '$lib/cairn.config.js';
+   import { origin, site } from '$lib/content.js';
 
-const routes = createPublicRoutes({
-  site,
-  render: cairn.rendering.render,
-  origin,
-  siteName: siteConfig.siteName,
-  description: siteConfig.description ?? '',
-});
+   export const prerender = true;
 
-export const entries: EntryGenerator = () => routes.entries();
+   const routes = createPublicRoutes({
+     site,
+     render: cairn.rendering.render,
+     origin,
+     siteName: siteConfig.siteName,
+     description: siteConfig.description ?? '',
+   });
 
-export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
-```
+   export const entries: EntryGenerator = () => routes.entries();
 
-- Create the entry page:
+   export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
+   ```
 
-```svelte
-<!-- src/routes/[...path]/+page.svelte -->
-<script lang="ts">
-  import type { PageData } from './$types';
+2. In the same directory, create the page, which renders `html`:
 
-  let { data }: { data: PageData } = $props();
-</script>
+   ```svelte
+   <!-- src/routes/[...path]/+page.svelte -->
+   <script lang="ts">
+     import type { PageData } from './$types';
 
-<article>{@html data.html}</article>
-```
+     let { data }: { data: PageData } = $props();
+   </script>
+
+   <article>{@html data.html}</article>
+   ```
 
 ### Verify the rendered entry
 
-Every concept except `pages` defaults to the permalink `/<id>/:slug`, and the default `datePrefix` of `day` strips the filename's date stem from the slug.
+The post renders at its default permalink, `/<id>/:slug`, which every concept except `pages` takes. The default `datePrefix` of `day` strips the filename's date stem from the slug.
 
-To confirm the milestone, follow these steps:
+To confirm the rendered entry, follow these steps:
 
-1. In the project directory, start the dev server with `CAIRN_DEV_BACKEND` set to `1`:
+1. In the project directory, start the dev server with `CAIRN_DEV_BACKEND` set to `1`, in the form [Verify the dev sign-in](#verify-the-dev-sign-in) gives for your shell.
 
-   ```bash
-   CAIRN_DEV_BACKEND=1 npm run dev
-   ```
-
-2. In a browser, open the entry's permalink:
+2. In a browser, open the post's permalink:
 
    ```text
-   http://localhost:5173/posts/hello
+   http://localhost:5173/posts/first-light
    ```
 
-3. Confirm that the entry's body renders.
+3. Confirm that the post's body renders.
 
 The entry renders as unstyled markup, since the site loads no style sheet yet. The engine ships its public defaults as one style sheet, `@glw907/cairn-cms/cairn-public.css`, which the [public style sheet reference](../reference/public-css.md) documents. Tailwind and daisyUI are optional peers of the engine, so a site installs them only when its pages use them. To style the entry, see [Theme your public site](theme-your-public-site.md#theme-a-hand-built-site).
 
@@ -795,107 +781,85 @@ The content wiring fails in three ways, and only the first two stop the build:
 - A committed manifest that has drifted from the markdown on disk fails the build, until you write the manifest again and commit it.
 - A concept missing from the plugin's `content` option produces zero manifest rows for that concept, with no error, until you add its glob to `content`.
 
-### Add an about page
+[Debug your site](debug-your-site.md) covers the recovery from each content failure.
 
-This exercise is optional, and no later milestone depends on it. Add a `pages` concept at `src/content/pages` with one `about.md` entry, then load the page in the dev server. The `pages` concept defaults to the permalink `/:slug`, so the page's address carries no concept segment.
+### Push the site to GitHub
+
+The production milestone registers a GitHub App that commits to the site's repository, so the repository exists on GitHub first. The App's one installation covers that repository, and the adapter names it as `owner` and `repo`. An app already on GitHub skips this section, and the production milestone writes that repository and its default branch into `createGithubApp`.
+
+To push the site, follow these steps:
+
+1. On GitHub, create an empty repository named field-notes with no starter files, following [Creating a new repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository).
+2. In the project directory, add the GitHub repository as a remote and push the main branch:
+
+   ```bash
+   git remote add origin https://github.com/your-account/field-notes.git
+   git push -u origin main
+   ```
+
+3. On GitHub, confirm that the repository lists the post under `src/content/posts` and the manifest at `src/content/.cairn/index.json`.
+
+### Add a second post
+
+Add a second post, build without writing the manifest to see the drift failure, then write the manifest and open the new permalink.
 
 #### Show me the steps
 
 The answer takes the following steps:
 
-1. In the adapter's `content` group, add a `pages` concept whose `dir` is `src/content/pages`.
-2. In the content module, pass a second literal glob to `createSiteIndexes`.
-3. In the Vite config, add the same glob to the plugin's `content` option, since a concept missing there produces zero rows.
-4. Create `about.md` in `src/content/pages`, with a `title` in its frontmatter.
-5. Write the manifest again.
-6. In a browser, open the page at its address:
+1. In `src/content/posts`, create a second dated entry with a `title` in its frontmatter.
+2. In the project directory, build the site, and read the drift error that stops the build:
 
-   ```text
-   http://localhost:5173/about
+   ```bash
+   npm run build
    ```
+
+3. Write the manifest again, and commit it with the new post:
+
+   ```bash
+   npx cairn-manifest
+   git add src/content
+   git commit -m "Add a second post"
+   ```
+
+4. In a browser, open the new post's permalink on the dev server.
 
 ### Checklist before production
 
-Before you continue, confirm that you can do the following:
+Before you continue, confirm that each of the following statements holds:
 
-- Place an entry in the directory its concept's `dir` names.
-- Tell a manifest drift failure from a concept left out of the plugin's `content` option.
+- I can place an entry in the directory its concept's `dir` names.
+- I can tell a manifest drift failure from a concept left out of the plugin's `content` option.
+- I can open an entry at its permalink.
+- I can push the site to the GitHub repository that cairn commits to.
 
 ## Move the site to production
 
-This milestone replaces the dev backend's fakes with a GitHub App you register, a D1 auth database, and the Worker bindings and secret. It starts from the site that renders its first entry, and it ends with an edit published from the deployed admin to the public page.
+This milestone replaces the dev backend's fakes with a GitHub App you register, a D1 auth database, and the Worker's bindings and secret. It starts from the content site, pushed to its GitHub repository, and it ends with an edit published from the deployed admin to the public page.
 
 In this milestone, you do the following:
 
-- Register a GitHub App, and pass its identity to the adapter.
-- Keep the App's private key out of the repository, as a Worker secret.
-- Create the auth database.
-- Add the Email Sending binding on a domain of your own.
-- Publish an edit, and follow it to `main` and the deployed page.
+- Confirm that a production build refuses to serve the admin without its bindings.
+- Register a GitHub App and store its credentials.
+- Create and migrate the auth database.
+- Add the Email Sending binding on a domain you control.
+- Publish an edit and follow it to the deployed page.
 
-### Register the GitHub App
+Moving a dev-backend site to production takes three edits:
 
-Each site registers its own GitHub App, since the engine ships no App and no shared credential. The engine commits through the App's installation token, with the signed-in editor as the commit's author.
+- The adapter's `backend` and `email` take real values.
+- `wrangler.jsonc` gains the `EMAIL`, `AUTH_DB`, and `PUBLIC_ORIGIN` entries.
+- The content module's `origin` names the deployed origin.
 
-To register and install the App, follow these steps:
+The hooks module needs no edit, because `__CAIRN_DEV_BUILD__` is `false` in a build and the build drops the dev-backend import. The App yields the App ID, the Installation ID, and the private key, and the database's create output carries the id the `AUTH_DB` entry needs, so each section of this milestone makes its part of these edits once the value it needs exists.
 
-1. If the project is not on GitHub yet, push it to a GitHub repository.
-2. On GitHub, open the form that [registers a GitHub App](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app).
-3. In the form, enter any name and homepage URL, since the engine never reads either.
-4. In the form, turn the webhook off, since cairn never receives a webhook.
-5. In the form, grant the repository permission **Contents** at **Read and write**, and grant no other permission.
-6. In the form, create the App.
-7. On the App's settings page, note the App ID.
-8. On the App's settings page, generate a private key, following GitHub's page on [managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps).
-9. On the App's settings page, install the App on the repository owner's account, following GitHub's page on [installing your own GitHub App](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app).
-10. In the installation form, grant the App access to the site's repository.
-11. In the installation settings address that GitHub opens after the install, note the trailing number, which is the Installation ID.
+### Deploy the production build and read the refusal
 
-The **Contents** permission is repository-wide, and only engine code confines writes to the declared content directories. Installing the App on a repository that also holds code or other teams' content puts that content inside the token's write reach. The [security model](security-model.md) covers the reasoning behind that reach.
-
-### Pass the App identity to the adapter
-
-The App ID and Installation ID identify the App and grant nothing, so they sit in the adapter source and pass directly into `createGithubApp`. `createGithubApp` takes `owner`, `repo`, `branch`, `appId`, and `installationId`, all required strings, with `branch` the backend's default branch.
-
-To point the adapter at the App, follow these steps:
-
-1. In the adapter module, replace the `createGithubApp` placeholders with your repository and App values.
-2. In the same module, set the `email` group's `from` to the address that sends sign-in mail.
-
-<!-- snippet-check-skip: two members of the adapter object that the engine milestone shows whole -->
-```ts
-// src/lib/cairn.config.ts, the backend and email members
-backend: createGithubApp({
-  owner: 'your-account',
-  repo: 'field-notes',
-  branch: 'main',
-  appId: '123456',
-  installationId: '7890123',
-}),
-email: { from: 'cms@notes.example.com' },
-```
-
-### Store the private key as a Worker secret
-
-The `.pem` file is the credential that signs the App's requests for installation tokens, so it stays out of the repository and lives only as the Worker secret `GITHUB_APP_PRIVATE_KEY_B64`. The engine decodes the secret with `atob()` before signing, so the value is the PEM's base64 encoding on a single line.
-
-To store the key, follow these steps:
-
-1. In the project directory, encode the downloaded key onto one line and pipe it into the secret, replacing the path with the file's location:
-
-   ```bash
-   base64 < ~/Downloads/your-app.private-key.pem | tr -d '\n' | npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
-   ```
-
-2. Store the `.pem` file outside every repository, so git never tracks it.
-
-### Confirm the guard refuses a site with no database
-
-A production build with no dev backend and no `AUTH_DB` binding runs the real guard. The guard answers every `/admin` path, the login path included, with a branded HTTP 500 page. Seeing that page before the database exists confirms that the deployed build runs the real guard, with the dev backend dropped.
+A production build with no dev backend and no `AUTH_DB` binding answers every `/admin` path, the sign-in path included, with a branded 500 page headed **Wrangler bindings are missing**. That page shows that the deployed build runs the real guard with the dev backend dropped, and it names the bindings this milestone supplies. The engine reads `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, and `GITHUB_APP_PRIVATE_KEY_B64` from the platform env, and a missing `AUTH_DB` throws `config.bindings-missing`.
 
 To see the refusal, follow these steps:
 
-1. In the project directory, build and deploy the site:
+1. In the project directory, build the site and deploy it:
 
    ```bash
    npm run build
@@ -905,29 +869,73 @@ To see the refusal, follow these steps:
 2. In a browser, open `/admin` at the deployed address.
 3. Confirm that the page shows the heading **Wrangler bindings are missing**.
 
+### Register the GitHub App
+
+Each site registers its own GitHub App, with one repository permission, **Contents** at **Read and write**, and no webhook. The engine ships no App and no shared credential, and cairn never receives a webhook.
+
+To register and install the App, follow these steps:
+
+1. On GitHub, open the App registration form, following [Registering a GitHub App](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app).
+2. In the form, enter any name and homepage URL, since the engine reads neither.
+3. In the form, turn the webhook off.
+4. In the form, grant the repository permission **Contents** at **Read and write**, and grant no other permission.
+5. In the form, allow installation on the account that owns the field-notes repository.
+6. In the form, create the App.
+7. On the App's settings page, note the App ID.
+8. On the same page, generate a private key and download its `.pem` file, following [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps).
+9. On the same page, install the App on the account that owns the repository, following [Installing your own GitHub App](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app).
+10. In the installation form, grant the App access to the field-notes repository only.
+11. In the installation settings address that GitHub opens after the install, note the trailing number, which is the Installation ID.
+
+The **Contents** permission is repository-wide, and only engine code confines writes to the declared content directories. Installing the App on a repository that also holds code or other teams' content puts that content inside the token's write reach, and the [security model](security-model.md) sets out the reasoning.
+
+### Store the App's credentials
+
+The App ID and Installation ID identify the App and grant nothing, so they pass directly into `createGithubApp` in the adapter source. The private key signs the App's requests for installation tokens, so it lives only as the Worker secret `GITHUB_APP_PRIVATE_KEY_B64`, never in a tracked file.
+
+To store the credentials, follow these steps:
+
+1. In the adapter module, replace the placeholder `appId` and `installationId` with the values you noted:
+
+   <!-- snippet-check-skip: one member of the adapter object that the engine milestone shows whole -->
+   ```ts
+   // src/lib/cairn.config.ts, the backend member
+   backend: createGithubApp({
+     owner: 'your-account',
+     repo: 'field-notes',
+     branch: 'main',
+     appId: '123456',
+     installationId: '7890123',
+   }),
+   ```
+
+   `createGithubApp` takes `owner`, `repo`, `branch`, `appId`, and `installationId`, all required strings, with `branch` the repository's default branch.
+
+2. In the project directory, encode the downloaded key onto one line and pipe it into the Worker secret, replacing the path with the file's location:
+
+   ```bash
+   base64 < ~/Downloads/your-app.private-key.pem | tr -d '\n' | npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
+   ```
+
+   The engine decodes the secret with `atob()` before signing, so a multi-line encoding does not parse.
+
+3. Move the `.pem` file outside every repository, so git never tracks it.
+
+To replace the key later, see [Rotate the GitHub App key](rotate-the-github-app-key.md). A deploy at this point still shows the refusal page, since the `AUTH_DB` binding does not exist yet.
+
 ### Create the auth database
 
-The engine reads the auth database through the `AUTH_DB` binding. The package ships five migrations under `migrations/`. A site copies the ones it needs into its `migrations_dir`.
-
-The following list names each migration and when a site applies it:
-
-- `0000_auth.sql`, which every site applies.
-- `0004_login_nonce.sql`, which every site applies.
-- `0001_roles.sql`, which a site applies only for a role vocabulary beyond the default owner and editor pair.
-- `0003_preview.sql`, which a site applies only for draft-preview links.
-- `0002_audit.sql`, which belongs on an optional audit database with a separate binding.
-
-The `0004_login_nonce.sql` migration binds a sign-in token to the browser that requested it, and a store call against a database without it fails with an error naming that file.
+The engine keeps its sign-in tokens and sessions in the D1 database bound as `AUTH_DB`, and every site applies two of the five migrations the package ships. Those two are `0000_auth.sql` and `0004_login_nonce.sql`, whose nonce column binds a sign-in token to the browser that requested it.
 
 To create and migrate the database, follow these steps:
 
-1. In the project directory, create the database, and note the database id in the output:
+1. In the project directory, create the database, and note the database id in its output:
 
    ```bash
    npx wrangler d1 create field-notes-auth
    ```
 
-2. Copy the two migrations every site applies into a directory of the site's:
+2. Copy the two migrations every site applies into a `migrations` directory:
 
    ```bash
    mkdir -p migrations
@@ -935,7 +943,7 @@ To create and migrate the database, follow these steps:
    cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/
    ```
 
-3. In the Wrangler config, bind the database as `AUTH_DB`, with `migrations_dir` pointing at the copied directory:
+3. In `wrangler.jsonc`, bind the database as `AUTH_DB`, with `migrations_dir` pointing at the copied directory:
 
    ```jsonc
    "d1_databases": [
@@ -954,24 +962,22 @@ To create and migrate the database, follow these steps:
    npx wrangler d1 migrations apply field-notes-auth --remote
    ```
 
-The same command with `--local` applies them to the local development database.
+The same command with `--local` applies them to the local development database, which the opt-in migration exercise uses. `0001_roles.sql` serves only a role vocabulary beyond owner and editor, and `0003_preview.sql` serves only draft-preview links. A separate binding with a separate `migrations_dir` is the recommended home for `0002_audit.sql`, so audit writes never contend with session and token lookups. The [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry shows the hook that writes to it.
 
-The `0002_audit.sql` table belongs on a separate D1 binding such as `AUDIT_DB`, with a separate `migrations_dir`. That keeps audit writes off the database that serves session and token lookups. The [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry shows the hook that writes to it.
+### Add the Email Sending binding and name the origin
 
-### Add the Email Sending binding
+Sign-in mail leaves through the `EMAIL` binding on a domain you control, and that domain supplies the sender address and the origin the site writes in two places. A `workers.dev` subdomain has no zone to onboard for Email Sending, so the production site runs on that domain.
 
-Sign-in mail goes out through the `EMAIL` binding, which needs the domain in `PUBLIC_ORIGIN` onboarded for Cloudflare Email Sending. A `workers.dev` subdomain has no zone to onboard, so the production site runs on a domain of your own. `PUBLIC_ORIGIN` is the canonical origin for sign-in links, and an unset or invalid value throws `config.public-origin-invalid`.
+To add the binding and name the origin, follow these steps:
 
-To add the binding, follow these steps:
-
-1. In the project directory, onboard the domain for Email Sending:
+1. In the project directory, onboard the domain for Email Sending, following Cloudflare's [Email Service domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/) page:
 
    ```bash
    npx wrangler email sending enable notes.example.com
    ```
 
-2. Serve the Worker on that domain, following Cloudflare's page on [Workers custom domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
-3. In `wrangler.jsonc`, add the `EMAIL` binding and set `PUBLIC_ORIGIN` to the deployed origin:
+2. Serve the Worker on the domain, following Cloudflare's page on [Workers custom domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
+3. In `wrangler.jsonc`, add the `EMAIL` binding, `PUBLIC_ORIGIN`, and `observability` beside the `AUTH_DB` entry:
 
    ```jsonc
    // wrangler.jsonc
@@ -989,164 +995,104 @@ To add the binding, follow these steps:
          "migrations_dir": "migrations"
        }
      ],
-     "vars": { "PUBLIC_ORIGIN": "https://notes.example.com" }
+     "vars": { "PUBLIC_ORIGIN": "https://notes.example.com" },
+     "observability": { "enabled": true }
    }
    ```
 
-A site that sends through another provider passes a `SendMagicLink` as `auth.send`, and that sender receives the same built magic-link message as the built-in sender. [Edit the message in a custom sender](#edit-the-message-in-a-custom-sender) shows the sender's shape.
+4. In the adapter module, set the `email` group's `from` to an address on the domain:
 
-### Point the site at production
+   <!-- snippet-check-skip: one member of the adapter object that the engine milestone shows whole -->
+   ```ts
+   // src/lib/cairn.config.ts, the email member
+   email: { from: 'cms@notes.example.com' },
+   ```
 
-Moving a dev-backend site to production takes the following three edits:
+5. In the content module, set `origin` to the same value as `PUBLIC_ORIGIN`:
 
-- The adapter's `backend` and `email` take real values.
-- `wrangler.jsonc` gains the `EMAIL`, `AUTH_DB`, and `PUBLIC_ORIGIN` entries.
-- The content module's `origin` constant names the deployed origin.
+   ```ts
+   // src/lib/content.ts, the origin constant
+   export const origin = 'https://notes.example.com';
+   ```
 
-The adapter and the Wrangler config already carry their production values, so the content module's `origin` is the last edit. The hooks module needs no edit, because `__CAIRN_DEV_BUILD__` is `false` on a production build and the build drops the dev-backend import. The entry route builds each entry's canonical URL from `origin` plus the permalink, and the same origin anchors its `og:url` and image URLs. A prerendered route writes that origin into the build output, so `origin` names the deployed origin before the production build.
-
-- In the content module, set `origin` to the deployed origin, the same value as `PUBLIC_ORIGIN`.
+`PUBLIC_ORIGIN` is the canonical origin for sign-in links, and an unset or invalid value throws `config.public-origin-invalid`. A prerendered route writes `origin` into the build output, so the content module names the deployed origin before the production build. `observability.enabled: true` sends the engine's log records to Workers Logs and satisfies the `config.observability` check of `cairn doctor`. A site that sends through another provider passes a custom `auth.send` instead, and [Edit the message in a custom sender](#edit-the-message-in-a-custom-sender) shows the sender's shape.
 
 ### Verify the production site
 
-`cairn doctor`, run with no flags from the site's directory, has a `config.bindings` check that confirms `AUTH_DB` and `EMAIL` are both wired. No command checks the GitHub App itself, so the last check is a manual publish whose commit lands on `main`. The entry route is prerendered, so a published edit reaches the deployed page only after the next build and deploy.
+[`cairn doctor`](../reference/cli-cairn-doctor.md) confirms the two bindings, and a publish from the deployed admin confirms the App, since no command checks the App itself. The entry route is prerendered, so a published edit reaches the deployed page after the next build and deploy, which the steps perform.
 
-To confirm the milestone, follow these steps:
+To check the bindings and deploy the production build, follow these steps:
 
-1. In the project directory, run `cairn doctor`:
+1. In the project directory, run `cairn doctor` with no flags:
 
    ```bash
    cairn doctor
    ```
 
 2. In the output, confirm that the `config.bindings` check passes.
-3. Build and deploy the site:
+3. Commit this milestone's edits and push the main branch, so the pull after the publish is a fast-forward:
+
+   ```bash
+   git add .
+   git commit -m "Move the site to production"
+   git push
+   ```
+
+4. Build the site and deploy it:
 
    ```bash
    npm run build
    npx wrangler deploy
    ```
 
-4. On the deployed origin, request a sign-in to the admin with the `bootstrapOwner` email.
-5. In the sign-in email, open the link.
-6. In the admin, open the hello post.
-7. In the editor, change a line.
-8. In the editor, publish the edit.
-9. On GitHub, confirm that the commit lands on `main`.
+To publish an edit and follow it to the deployed page, follow these steps:
 
-   The commit's author is the signed-in editor.
+1. On the deployed origin, request a sign-in to the admin with the `bootstrapOwner` email.
+2. In the sign-in email, open the link.
+3. In the admin, open the First light post.
+4. In the editor, change a line.
+5. In the editor, publish the edit.
+6. On GitHub, confirm that the commit lands on `main` of the field-notes repository, with you as its author and the App's bot as its committer.
+7. In the project directory, pull the published commit:
 
-10. In the project directory, pull the published commit:
+   ```bash
+   git pull
+   ```
 
-    ```bash
-    git pull
-    ```
+8. Build the site and deploy it:
 
-11. Build and deploy the site:
+   ```bash
+   npm run build
+   npx wrangler deploy
+   ```
 
-    ```bash
-    npm run build
-    npx wrangler deploy
-    ```
-
-12. On the deployed origin, open the hello post's permalink.
-13. Confirm that the post shows the edit.
+9. On the deployed origin, open the post's permalink.
+10. Confirm that the post shows the edit.
 
 The first real sign-in creates the owner row and logs [`editor.bootstrapped`](../reference/log-events.md). The [`cairn doctor` checks table](../reference/cli-cairn-doctor.md#the-checks) describes the command's other checks.
 
 ### Resolve a production failure
 
-The following list maps each failed production check to the setting it points at:
+Each failed production check points at one setting that this milestone made:
 
-- A failed `config.bindings` check from `cairn doctor` points at a Wrangler config that lacks `AUTH_DB` or `EMAIL`.
-- The **Wrangler bindings are missing** page at `/admin` points at a deployed build that carries no `AUTH_DB` binding.
-- A sign-in email that never arrives points at a domain in `PUBLIC_ORIGIN` that is not onboarded for Email Sending.
-- A publish that fails points at an App without **Contents** at **Read and write**, or one not installed on the site's repository.
+- A failed `config.bindings` check points at a Wrangler config that lacks `AUTH_DB` or `EMAIL`.
+- The **Wrangler bindings are missing** page at `/admin` points at a deployed build with no `AUTH_DB` binding.
+- A `config.public-origin-invalid` error points at an unset or invalid `PUBLIC_ORIGIN`.
+- A sign-in email that never arrives points at a domain that is not onboarded for Email Sending.
+- A store error that names `0004_login_nonce.sql` points at a database without that migration.
+- A failed publish points at an App without **Contents** at **Read and write**, or at one not installed on the site's repository.
 
-[Debug your site](debug-your-site.md) covers the recovery for each binding failure.
-
-### Customize the sign-in email
-
-This section is optional, and the production checklist does not depend on it. The sign-in email is engine copy, and a site changes its site name and sender through `auth.branding` and anything else through a custom `auth.send`. The subject is “Sign in to” followed by the site name. The body carries the fixed sentence “The link expires in 10 minutes.” By default, the site name comes from the site config and the sender from the adapter's `email` group.
-
-#### Rebrand the email
-
-A supplied `branding` takes `siteName` and `from` as required strings and `replyTo` as one optional address, and it replaces the default whole. A `branding` that leaves `replyTo` off sends with no `replyTo` address even when the adapter's `email` group sets one.
-
-- In the server module, pass `auth.branding` in the admin's `auth` config:
-
-```ts
-// src/lib/cairn.server.ts
-import { composeRuntime } from '@glw907/cairn-cms';
-import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from './cairn.config.js';
-
-export const runtime = composeRuntime({ adapter: cairn, siteConfig });
-
-export const admin = createCairnAdmin({
-  runtime,
-  auth: {
-    bootstrapOwner: { email: 'you@example.com', displayName: 'Your Name' },
-    branding: {
-      siteName: 'Field Notes',
-      from: 'cms@notes.example.com',
-      replyTo: 'editor@notes.example.com',
-    },
-  },
-});
-```
-
-#### Edit the message in a custom sender
-
-A custom `auth.send` is a `SendMagicLink` that receives the built `MagicLinkMessage`, with `to`, `from`, `subject`, `html`, and `text`, plus optional `cc`, `bcc`, `replyTo`, and `attachments`. Its `replyTo` takes a single address string. The engine truncates the text of anything the sender throws and scrubs token values from it before it reaches the log. A thrown message must never embed the message body or the sign-in link.
-
-- In the server module, pass a sender that edits the message before it sends it:
-
-```ts
-// src/lib/cairn.server.ts
-import { composeRuntime } from '@glw907/cairn-cms';
-import { createCairnAdmin, type SendMagicLink } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from './cairn.config.js';
-
-export const runtime = composeRuntime({ adapter: cairn, siteConfig });
-
-const send: SendMagicLink = async (env, message) => {
-  if (!env.EMAIL) throw new Error('The EMAIL binding is not wired.');
-  await env.EMAIL.send({ ...message, subject: `${message.subject}: your sign-in link` });
-};
-
-export const admin = createCairnAdmin({
-  runtime,
-  auth: {
-    bootstrapOwner: { email: 'you@example.com', displayName: 'Your Name' },
-    send,
-  },
-});
-```
-
-#### Verify the sign-in email
-
-To confirm the change, follow these steps:
-
-1. Build and deploy the site:
-
-   ```bash
-   npm run build
-   npx wrangler deploy
-   ```
-
-2. On the deployed origin, request a sign-in to the admin.
-3. In the sign-in email, confirm that the message carries the values the site set.
+[Debug your site](debug-your-site.md) covers the recovery for each failure.
 
 ### Apply an opt-in migration locally
 
-As practice with the opt-in migrations, apply `0003_preview.sql` to the local development database beside the two that every site applies. A site that never mints draft-preview links leaves it out of production.
+Apply `0003_preview.sql` to the local development database beside the two that every site applies, and find it in the apply output.
 
 #### Show me the steps
 
 The answer takes the following steps:
 
-1. In the project directory, copy `0003_preview.sql` into the site's migrations directory:
+1. In the project directory, copy `0003_preview.sql` into the `migrations` directory:
 
    ```bash
    cp node_modules/@glw907/cairn-cms/migrations/0003_preview.sql migrations/
@@ -1159,27 +1105,102 @@ The answer takes the following steps:
    ```
 
 3. In the output, confirm that `0003_preview.sql` is among the applied migrations.
-4. Delete the copied file, unless the site will mint draft-preview links.
+4. Unless the site mints draft-preview links, delete the copied file.
 
 ### Checklist for production
 
-Before you finish, confirm that you can do the following:
+Before you finish, confirm that each of the following statements holds:
 
-- Register a GitHub App with one repository permission and no webhook.
-- Store the App's private key as a single-line base64 Worker secret.
-- Apply the two migrations every site needs to the auth database.
-- Read a passing `config.bindings` check from `cairn doctor`.
-- Carry a published edit to the deployed page with a build and deploy.
+- I can register a GitHub App with one repository permission and no webhook.
+- I can store the App's private key as a single-line base64 Worker secret.
+- I can apply the two migrations every site needs to the auth database.
+- I can read a passing `config.bindings` check from `cairn doctor`.
+- I can carry a published edit to the deployed page with a build and deploy.
 
-## Summary
+## Customize the sign-in email
 
-You wired the engine into a SvelteKit app by hand, from the kit config through the admin routes. You kept the dev backend out of every production bundle with a build-time define that each call site names directly. You committed a content manifest that every build checks against the markdown on disk. For production, you registered a GitHub App, created a D1 auth database, and wired the Worker's bindings and secret. A publish from the deployed admin committed your edit to `main`, and the next build carried it to the public page.
+A site that keeps the engine's sign-in email needs nothing from this section. The engine writes the message, whose subject is “Sign in to” followed by the site name and whose body carries the fixed sentence “The link expires in 10 minutes.” By default, the site name comes from the site config and the sender from the adapter's `email` group. A supplied `auth.branding` replaces the site name, the sender, and the `replyTo` address together, and any other change goes through a custom `auth.send`.
+
+### Rebrand the email
+
+A supplied `branding` takes `siteName` and `from` as required strings and `replyTo` as one optional address, and it replaces the default whole. A `branding` that leaves `replyTo` off sends with no `replyTo` address, even when the adapter's `email` group sets one.
+
+- In the server module, pass `branding` in the admin's `auth` config:
+
+  ```ts
+  // src/lib/cairn.server.ts
+  import { composeRuntime } from '@glw907/cairn-cms';
+  import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
+  import { cairn, siteConfig } from './cairn.config.js';
+
+  export const runtime = composeRuntime({ adapter: cairn, siteConfig });
+
+  export const admin = createCairnAdmin({
+    runtime,
+    auth: {
+      bootstrapOwner: { email: 'you@example.com', displayName: 'Your Name' },
+      branding: {
+        siteName: 'Field Notes',
+        from: 'cms@notes.example.com',
+        replyTo: 'editor@notes.example.com',
+      },
+    },
+  });
+  ```
+
+### Edit the message in a custom sender
+
+A custom `auth.send` is a `SendMagicLink`, exported from the engine's `/sveltekit` subpath, that replaces the Cloudflare sender and receives the same built message. That message is a `MagicLinkMessage` with `to`, `from`, `subject`, `html`, and `text`, plus optional `cc`, `bcc`, `replyTo`, and `attachments`, where `replyTo` takes one address. The text of anything the sender throws reaches the log scrubbed of token values and truncated, so a thrown message must never embed the message body or the sign-in link.
+
+- In the server module, pass a sender that edits the message before it sends it:
+
+  ```ts
+  // src/lib/cairn.server.ts
+  import { composeRuntime } from '@glw907/cairn-cms';
+  import { createCairnAdmin, type SendMagicLink } from '@glw907/cairn-cms/sveltekit';
+  import { cairn, siteConfig } from './cairn.config.js';
+
+  export const runtime = composeRuntime({ adapter: cairn, siteConfig });
+
+  const send: SendMagicLink = async (env, message) => {
+    if (!env.EMAIL) throw new Error('The EMAIL binding is not wired.');
+    await env.EMAIL.send({ ...message, subject: `${message.subject}: your sign-in link` });
+  };
+
+  export const admin = createCairnAdmin({
+    runtime,
+    auth: {
+      bootstrapOwner: { email: 'you@example.com', displayName: 'Your Name' },
+      send,
+    },
+  });
+  ```
+
+### Verify the sign-in email
+
+To confirm either change, follow these steps:
+
+1. Build the site and deploy it:
+
+   ```bash
+   npm run build
+   npx wrangler deploy
+   ```
+
+2. On the deployed origin, request a sign-in to the admin.
+3. In the sign-in email, confirm that the message carries the values the site set.
+
+When the message does not arrive or still carries the engine's defaults, see [Debug your site](debug-your-site.md).
+
+## The finished site
+
+The engine now runs inside a SvelteKit app that you configured by hand, from the kit config through the admin routes. Because each call site names the build-time define directly, the dev backend that the earlier milestones ran on never reaches a production bundle. Every build compares the committed manifest with the markdown on disk and stops when the two have drifted apart. In production, editors sign in against a D1 auth database, and their edits commit through a GitHub App you registered. A published edit lands on `main` and reaches the public page with the next build and deploy.
 
 ## Next steps
 
 The following pages build on the site this tutorial leaves:
 
-- [Theme your public site](theme-your-public-site.md#theme-a-hand-built-site) styles the public pages this tutorial leaves unstyled.
-- [Configure media](configure-media.md) turns on uploads for the production site.
-- [Define an adapter and schema](define-an-adapter-and-schema.md) grows the minimal adapter this tutorial declares.
+- [Theme your public site](theme-your-public-site.md#theme-a-hand-built-site) styles the pages this tutorial leaves unstyled.
+- [Configure media](configure-media.md) turns on uploads.
+- [Define an adapter and schema](define-an-adapter-and-schema.md) grows the minimal adapter.
 - [Build the public routes](build-the-public-routes.md) adds the delivery routes beyond the entry catch-all.

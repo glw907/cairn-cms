@@ -349,6 +349,129 @@ Filed 2026-09-30 by the scoped fact read of `docs/extend/theme-your-public-site.
 
 - **`extender`.** Found by the theme fact read on 2026-09-30 (`f:kq6ud3`, `f:c4nnu9`). Waymark's `theme.css` lists the code-highlight binding as Tier 2, the theme's "owned, documented floor" (`examples/showcase/src/theme/theme.css:78-82`), but the theme declares none of it: the `pre.shiki` and `.cairn-tok-*` rules and every `--cairn-code-*` role they read live in the engine's `cairn-public.css` (`src/lib/public/cairn-public.css:28-36,65-90`), and `theme.css` sets no `--cairn-code-*` key. A page that follows the tier comment calls the binding "a Tier 2 token in `theme.css`", which the file does not hold. A fix either moves the binding out of the Tier 2 list (naming the `--cairn-code-*` roles as the override point) or has Waymark declare the roles it owns.
 
+Filed 2026-10-03 by the page plan for `docs/extend/add-a-custom-admin-screen.md` (draft docs stage 2a, task 7c), each verified against the tree first.
+
+- **`extender`.** Found by the add-a-custom-admin-screen page plan on 2026-10-03, a hole in `docs/internal/facts/`. The page's fact ids carry no statement that a custom screen's form mounts `CsrfField`, yet the `CsrfField` entry in `docs/reference/admin.md` says a form that renders none fails the guard's token check, and the showcase signups screen mounts it in both of its forms (`examples/showcase/src/routes/admin/signups/+page.svelte:8,64,145`). The committed page's dialog-form snippet posts `?/create` through `use:enhance` with no `CsrfField`, so a reader who copies it builds a form the guard refuses. The plan keeps `<CsrfField />` in the snippet's code and makes no prose claim about it, since no fact backs one. A fix mints a `[verified]` fact from `src/lib/admin/CsrfField.svelte` and the guard's check and cites it from the dialog-form section.
+- **`extender`.** Found by the add-a-custom-admin-screen page plan on 2026-10-03 (`f:hafpqf`), while subordinating the rate limit to `docs/reference/sveltekit.md`. The `createSectionAction` entry (check order item 2) and the `SectionActionConfig` type row state the three `rateLimit` members, that the limit runs before the access-map checks, and that an unresolved binding or a throwing `key()` or `limit()` degrades to open, but neither states the default 429 copy (`Too many requests. Wait a moment and try again.`, `src/lib/sveltekit/section-action.ts`) or that a SvelteKit `redirect()` or `error()` thrown from `key()` or `limit()` propagates instead of degrading. A fix adds both clauses to the `createSectionAction` entry's check-order item 2.
+- **`extender`.** Found by the add-a-custom-admin-screen page plan's revision on 2026-10-03 (`f:3lbdl6`), while placing the page's most likely first failure. An owner who opens a new custom screen before the access map carries a rule for its route gets a 403 and an `auth.access.refused` record with the resolved target, since `hasAccessRule` carries no owner exemption (`src/lib/sveltekit/guard.ts:476-482`), and `config.access_unmapped` reports only an unmapped concept id or fixed engine screen, never a site's own route (`docs/reference/log-events.md`, its row). The extend track's recovery surface, `docs/extend/debug-your-site.md`, lists no `auth.access.refused` symptom row in its outline covers or its fact ids (`docs/internal/outlines/extend.json`), so the page's diagnostic sentence points at `docs/extend/restrict-admin-access.md` and the `auth.access.refused` row in `docs/reference/log-events.md` instead of the surface the task-guide anatomy names. A fix adds an `auth.access.refused` row, with an owner's 403 on an unmapped custom route among its causes, to debug-your-site's page inputs ahead of its draft.
+
+Filed 2026-10-03 by the page plan for `docs/extend/add-cairn-to-a-sveltekit-app.md` (draft docs stage 2a, task 7c), verified against the reference arm first.
+
+- **`extender`.** Found by the add-cairn page plan on 2026-10-03 (`f:gffvfd`, `f:hft8s8`, `f:rn62i1`, `f:pkrwom`). The five shipped migrations under `migrations/` and which of them a site applies (`0000_auth.sql` and `0004_login_nonce.sql` for every site, `0001_roles.sql` and `0003_preview.sql` opt-in, `0002_audit.sql` on a separate audit binding) have no reference page. `docs/reference/auth-store.md` documents the D1 roster functions over the same tables and names no migration, `docs/reference/sveltekit.md` names `0002_audit.sql` only inside its `createD1AuditSink` entry (`:639-667`) and `0003_preview.sql` only inside `loadPreview` (`:1174`), and no other reference page names a migration file. The tutorial has to carry the whole catalogue itself where a link would serve, and the plan could subordinate the table-per-file detail of `f:gffvfd` to no page. A fix adds a migrations section to `docs/reference/auth-store.md`, the D1 schema's home, listing each file, what it creates or alters, and which sites apply it.
+
+Filed 2026-10-03 by the page plan of `docs/extend/security-model.md` (draft docs stage 2a, task 7c).
+
+- **`extender`.** Found by the security-model fact read on 2026-10-03 (`f:ubuj1w`, `f:t976f1`,
+  `f:n3k03a`). The guard's admin security headers reach only the response `resolve` returns
+  (`src/lib/sveltekit/guard.ts:370-371`). The branded rejection pages re-apply them less
+  `Strict-Transport-Security` (`src/lib/sveltekit/admin-response.ts:67`), but the 303 redirect to
+  `/admin/login` for a missing or invalid session is thrown before `resolve`
+  (`src/lib/sveltekit/guard.ts:355`), so it carries no `nosniff`, no frame denial, no
+  `no-referrer`, and no `Cache-Control: private, no-store`. A page cannot say "every admin
+  response carries" the list without two exceptions on different terms. A fix catches the redirect
+  in the guard and applies the HSTS-less header set to it, the same as a rejection page.
+
+- **`extender`.** Found by the security-model page plan on 2026-10-03 (`f:9pmipf`). The
+  `NO_PENDING_REQUEST_ERROR` entry in `docs/reference/sveltekit.md` says `confirmAction` redirects
+  with the code "when the confirming browser carries no pending-login cookie and the submitted
+  token is bound to another browser's nonce", but the code (`src/lib/sveltekit/auth-routes.ts:346-362`)
+  sends `no-pending-request` for every failed confirm from a browser holding no cookie, whether
+  the row was bound, missing, expired, or replayed; only a browser that holds the cookie reads
+  `expired`. The plan subordinates the fact to that entry, which states the condition narrower
+  than the code it now stands in for. Reference-arm fix: widen the entry's first sentence to the
+  cookie-less case as a whole.
+- **`extender`.** Found by the security-model page plan on 2026-10-03 (`f:zzbzo8`). The
+  `createRenderer` entry in `docs/reference/core.md` lists the hast-stage steps a site's rehype
+  plugin runs after as "dispatch, the sanitize floor, heading slugs, highlighting, anchor
+  hardening, the sink guard, the default table-scroll wrap", which puts the dispatch before the
+  floor and omits `rehype-raw`; the pipeline runs `rehype-raw`, then the floor, then the `build()`
+  dispatch (`src/lib/render/pipeline.ts:93-140`). The floor-before-dispatch position is the render
+  section's load-bearing claim, so a reader who checks the page against the reference finds the
+  two in different orders. Reference-arm fix: list the steps in pipeline order and name
+  `rehype-raw`. The plan carries the fact on the page, so no page leans on the entry's order.
+- **`extender`.** Found by the security-model redraft on 2026-10-03 (`f:cvv6to`, `f:arr13a`).
+  Two engine surfaces share the word "tidy" and gate on different terms: the tidy settings save
+  always gates through the access map against `settings`
+  (`src/lib/sveltekit/content-routes-settings.ts`), while the tidy action runs its check only when
+  the route carries a `concept` parameter (`src/lib/sveltekit/content-routes-tidy.ts:123`). A page
+  that excludes "the tidy action" from the map's coverage reads as excluding the settings save too,
+  so the security model has to name the settings save back in by qualifier. A fix either gates the
+  tidy and dictionary actions against a fixed target when no `concept` is mounted, which removes the
+  exception, or names the two surfaces apart in the reference.
+
+Filed 2026-10-03 by the page plan of `docs/extend/replace-magic-links-with-cloudflare-access.md`
+(draft docs stage 2a, task 7c).
+
+- **`extender`.** Found by the replace-magic-links page plan on 2026-10-03 (`f:q0icwk`, `f:s9s8mw`,
+  `f:pwmybh`). The resolver's `logoutUrl` is the one value in the Access recipe the reader sets
+  from Cloudflare's side, and the facts container holds no fact stating Access's logout address:
+  `f:q0icwk` cites the session management page for what a logout does, `f:s9s8mw` gives the team
+  domain's form, and `f:pwmybh` gives the guard's validation of whatever the site passes. The page
+  can only link the session management page at the step that sets the value, and the sample
+  imports it from a config module without spelling it. A fix harvests the address from
+  https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/
+  as a vendor fact (`[external: Cloudflare]`), so the config module step can state it.
+- **`extender`.** Found by the replace-magic-links page plan on 2026-10-03 (`f:qhmydf`). Identity
+  mode has no owner bootstrap: `bootstrapOwner` lives only in the magic-link routes
+  (`src/lib/sveltekit/auth-routes.ts:44,201-203`), which the guard's `identity` branch never
+  reaches (`src/lib/sveltekit/guard.ts:287-293`), so a site that goes live behind a gate before
+  any magic-link sign-in has no owner and no admin path that could create one. The page has to
+  carry the first owner as a precondition seeded out of band (`create-cairn-site` or
+  `wrangler d1 execute` against `AUTH_DB`), and the reference says the same
+  (`docs/reference/sveltekit.md`, the "Under identity mode" paragraph). A fix lets the `identity`
+  branch honor a `bootstrapOwner` on `AuthGuardConfig` for the first proven email when the roster
+  is empty, or records the out-of-band seed as the ruling.
+
+Filed 2026-10-03 by the page plan of `docs/extend/architecture.md` (draft docs stage 2a, task
+7c), verified against the tree first.
+
+- **`extender`.** Found by the architecture page plan on 2026-10-03 (`f:70mf58`, `f:0xxou5`,
+  `f:qehbx3`). `f:70mf58` says every save and every publish is a git commit with the editor as
+  author, so the repository's history records who changed each entry and when. A publish is a
+  fresh commit on the default branch carrying the entry file and the manifest
+  (`src/lib/sveltekit/content-routes-entry-write.ts:350-378`), never a merge of the holding
+  branch, and the branch is deleted once that commit lands with the branch head unmoved
+  (`src/lib/sveltekit/content-routes-entry-write.ts:401-405`), after which no ref keeps the save
+  commits. The default branch therefore holds one commit per publish, and stating git history as
+  the edit record takes a caveat the fact does not carry: the record is at publish granularity,
+  and the save-by-save trail lasts only as long as the holding branch. The plan has the page state
+  the publish record alone and makes no claim about the save trail. A fix either narrows
+  `f:70mf58` to the publish record, or has the publish carry the save trail onto the default
+  branch, a design decision for the write path.
+
+Filed 2026-10-03 by the page plan of `docs/extend/theme-your-public-site.md` (draft docs stage
+2a, task 7c).
+
+- **`extender`.** Found by the theme-your-public-site page plan on 2026-10-03 (`f:4xptbu`). The
+  plan subordinates the media-seed download path to `docs/reference/cli-cairn-media-seed.md`,
+  whose `--from` row and "What it writes" section state the fixed
+  `<base-url>/media/<slug>.<hash>.<ext>` path, but no sentence on that page says the command
+  never reads the adapter's `assets.publicBase`, so a site whose media route is mounted at
+  another path cannot seed with it (`src/lib/media-seed/assemble.ts#downloadUrl`). The theme
+  page links the reference and states nothing about the path, so a reader with a relocated media
+  route learns the limit only from a failed run. A fix adds the sentence to the `--from` row; the
+  tool-side finding (no flag for the path) is the `scripter` entry of 2026-09-30 above and is not
+  refiled.
+- **`extender`.** Found by the theme-your-public-site page plan on 2026-10-03 (`f:faofr4`,
+  `f:i9pgd2`). The editor's preview frame emits `<html data-cairn-preview>` with no `data-theme`,
+  so only the OS color scheme reaches it (`src/lib/admin/preview-doc.ts:99-105`), while the public
+  site resolves its scheme from the visitor's cookie and the live `data-theme` through the
+  chassis's `resolveTheme` (`examples/showcase/src/chassis/theme-toggle.ts:28-42`). An editor who
+  chose the site's dark scheme on the public site previews an entry in the scheme the OS picks,
+  and a theme whose two schemes differ in more than color (Waymark's inverted CTA panel, its
+  dark card border) cannot be proofed in the other scheme from the editor. The theme page states
+  the OS-only behavior as a caveat beside the base-100 ground. A fix lets the preview document
+  carry a `data-theme` the editor can set, or reads the site's theme cookie into the frame.
+- **`extender`.** Found by the theme-your-public-site page plan on 2026-10-03 (`f:lwrqfd`). A
+  theme file reaches the chassis only through the `$chassis` alias or a relative `@import`, and
+  the engine repository gates that boundary on its example site with `check:chassis-boundary`
+  (`scripts/checks/check-chassis-boundary.mjs:2-13`), but the scaffold a site receives carries no
+  such script (`templates/waymark/package.json`), so the boundary the page describes as the
+  reason a port can keep `src/chassis/` across engine upgrades is a convention a site can break
+  without notice. The page has to say "by convention" and "no gate enforces it". A fix ships the
+  check in the scaffold's `check:cairn` chain, or as a `cairn-audit` static rule over the public
+  scope, reading the same seam table in `src/chassis/README.md`.
+
 ## Clearings
 
 The detail of a cleared finding lives in the pass post-mortem that cleared it and in

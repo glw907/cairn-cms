@@ -65,7 +65,8 @@ from its page's.
 - `cuts` is optional: an array of `{ "id": "f:...", "reason": "..." }` mirroring the cut
   dispositions of the page's plan (see "The page plan" below). A fact the plan subordinates to the
   reference arm is a cut whose reason names the reference link. Each entry needs a fact id and a
-  non-empty reason; the check does not resolve a cut id against the container.
+  non-empty reason, and the id must resolve to a fact bullet in the container (any tag is allowed,
+  since a cut cites nothing).
 
 Headings, fenced code blocks, images, HTML comments, and front matter are not sentences and stay
 out of the list. Table cells and list items are sentences.
@@ -92,6 +93,7 @@ page-inputs step first, because a claim with no fact is the defect this check ex
 - A sentence with no `id`, an empty `id` array, or an `id` that is neither `f:` plus six base36
   characters nor `"no-claim"`.
 - A `cuts` entry that is not an object, whose `id` is not a fact id, or that has no `reason`.
+- A `cuts` entry whose `id` resolves to no fact bullet.
 - A sentence on the page that the brief leaves out, or a brief sentence the page does not carry.
 - An `id` (any id of an array) that resolves to no fact bullet.
 - A cited bullet tagged `[candidate]` (any qualifier, `[candidate: excluded, ...]` included),

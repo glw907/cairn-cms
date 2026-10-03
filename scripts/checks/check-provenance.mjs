@@ -10,7 +10,8 @@
 // `{ "id": "f:...", "reason": "..." }`, mirroring the cut dispositions of the page's plan at
 // docs/internal/briefs/<track>/<page>.plan.md: a fact the plan leaves off the page, or
 // subordinates to a named reference link, is a cut whose reason says which. Each cut needs a fact id
-// and a non-empty reason; `cuts` is optional, and a cut id is not resolved against the container.
+// and a non-empty reason; `cuts` is optional, and a cut id must resolve to a fact bullet in the
+// container, with any tag allowed, since a cut cites nothing.
 //
 // Run it over every brief with `node scripts/checks/check-provenance.mjs`, or over just the
 // briefs a page chain drafted with `node scripts/checks/check-provenance.mjs <brief path>...`
@@ -29,7 +30,8 @@
 //   page's prose, after its front matter, headings, fenced code blocks, images, and HTML
 //   comments are set aside, must be exactly the brief's sentences plus markdown punctuation);
 // - an id (each id of an array) that resolves to no fact bullet in docs/internal/facts/;
-// - a malformed `cuts` entry (not an object, an id that is not a fact id, or a missing reason);
+// - a malformed `cuts` entry (not an object, an id that is not a fact id, or a missing reason),
+//   and a cut id that resolves to no fact bullet;
 // - a cited bullet tagged [candidate] (any qualifier, `[candidate: excluded, ...]` included),
 //   [rejected], or [docs-drift] (citable again once the drift is resolved and retagged);
 //   [verified], [external], and [vendor] bullets are citable;
@@ -350,12 +352,13 @@ export function loadFactIndex(factsDir) {
 /**
  * The defects in a brief's top-level `cuts` list, which mirrors a page plan's cut dispositions: an
  * array of `{ id, reason }`, each `id` a fact id (one id, never a list or `no-claim`) and each
- * `reason` a non-empty string. An absent list has no defects. A cut id is not resolved against the
- * container, since a cut fact is by definition not cited.
+ * `reason` a non-empty string. An absent list has no defects. A cut id must resolve to a fact
+ * bullet in the container; any tag is allowed, since a cut fact is by definition not cited.
  * @param {unknown} cuts
+ * @param {FactIndex} index
  * @returns {string[]}
  */
-export function checkCuts(cuts) {
+export function checkCuts(cuts, index) {
   if (cuts === undefined) return [];
   if (!Array.isArray(cuts)) return ['cuts: not an array of { id, reason } entries'];
   /** @type {string[]} */
@@ -369,6 +372,8 @@ export function checkCuts(cuts) {
     const { id, reason } = /** @type {{ id?: unknown, reason?: unknown }} */ (cut);
     if (typeof id !== 'string' || !BRIEF_ID_RE.test(id)) {
       defects.push(`cuts: ${label}: "id" is not a fact id (\`f:\` plus six base36 characters)`);
+    } else if (!index.facts.has(id)) {
+      defects.push(`cuts: ${label}: ${id} resolves to no fact in the container`);
     }
     if (typeof reason !== 'string' || reason.trim().length === 0) {
       defects.push(`cuts: ${label}: missing its "reason"`);
@@ -633,8 +638,9 @@ export function checkBrief(briefPath, index, root) {
   /** @type {BriefSentence[]} */
   const list = sentences.map((s) => (typeof s === 'object' && s !== null ? s : {}));
   result.sentences = list.length;
+  const isFactId = (/** @type {unknown} */ id) => typeof id === 'string' && BRIEF_ID_RE.test(id);
   result.cited = list.filter(
-    (s) => Array.isArray(s.id) || (typeof s.id === 'string' && BRIEF_ID_RE.test(s.id)),
+    (s) => isFactId(s.id) || (Array.isArray(s.id) && s.id.length > 0 && s.id.every(isFactId)),
   ).length;
   result.noClaim = list.filter((s) => s.id === NO_CLAIM).length;
 
@@ -646,7 +652,7 @@ export function checkBrief(briefPath, index, root) {
   if (!pageExists) result.defects.push(`page "${page}" does not exist`);
 
   result.defects.push(...checkSentences(list, index));
-  result.defects.push(...checkCuts(cuts));
+  result.defects.push(...checkCuts(cuts, index));
   if (pageExists) result.defects.push(...checkPageCoverage(readFileSync(pagePath, 'utf8'), list));
   return result;
 }

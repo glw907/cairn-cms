@@ -93,10 +93,12 @@ describe('checkSentences, one failure mode per case', () => {
 });
 
 describe('checkCuts', () => {
+  const index = loadFactIndex(FACTS);
+
   it('accepts an absent list and a list of well-formed cuts', () => {
-    expect(checkCuts(undefined)).toEqual([]);
-    expect(checkCuts([{ id: 'f:pv0004', reason: 'Stated on the reference page.' }])).toEqual([]);
-    expect(checkCuts([])).toEqual([]);
+    expect(checkCuts(undefined, index)).toEqual([]);
+    expect(checkCuts([{ id: 'f:pv0004', reason: 'Stated on the reference page.' }], index)).toEqual([]);
+    expect(checkCuts([], index)).toEqual([]);
   });
 
   it.each([
@@ -109,7 +111,18 @@ describe('checkCuts', () => {
     ['an entry with no reason', [{ id: 'f:pv0004' }], 'cut 1: missing its "reason"'],
     ['an entry with a blank reason', [{ id: 'f:pv0004', reason: '   ' }], 'cut 1: missing its "reason"'],
   ])('rejects %s', (_name, cuts, message) => {
-    expect(checkCuts(cuts)).toEqual([expect.stringContaining(message)]);
+    expect(checkCuts(cuts, index)).toEqual([expect.stringContaining(message)]);
+  });
+
+  it('rejects a well-formed cut whose id resolves to no fact, and allows any tag on a resolving one', () => {
+    expect(checkCuts([{ id: 'f:zzzzzz', reason: 'Stated on the reference page.' }], index)).toEqual([
+      'cuts: cut 1: f:zzzzzz resolves to no fact in the container',
+    ]);
+    // pv0006 is a [candidate] and pv0008 is [rejected]; a cut cites nothing, so neither tag blocks it.
+    expect(checkCuts([
+      { id: 'f:pv0006', reason: 'Not needed.' },
+      { id: 'f:pv0008', reason: 'Not needed.' },
+    ], index)).toEqual([]);
   });
 });
 

@@ -26,11 +26,31 @@
       "id": "no-claim"
     },
     {
-      "text": "The built-in defenses are the sign-in link and its browser binding, the session cookie, CSRF protection and the guard's response headers, the dev-backend flag's refusals, the access map's coverage, the render pipeline's sanitizing, and the GitHub App's reach.",
+      "text": "The built-in design's defenses fall into the following groups:",
       "id": "no-claim"
     },
     {
-      "text": "A site can also replace magic links with an identity gate, or add an auth channel that signs in a second group of users from a form any anonymous caller can post, and each seam changes what the site must defend.",
+      "text": "The sign-in link, its browser binding, and the session cookie, which protect the account itself.",
+      "id": "no-claim"
+    },
+    {
+      "text": "CSRF protection and the admin response headers, which protect against requests forged in the account's name.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The dev-backend flag's refusals, which guard against a development flag reaching a deployed Worker.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The access map's coverage, the render pipeline's sanitizing, and the GitHub App's reach, which bound what a taken account reaches.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A site can also replace magic links with an identity gate, or add an auth channel that signs in a second group of users from a form any anonymous caller can post.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Each of those seams changes what the site must defend.",
       "id": "no-claim"
     },
     {
@@ -38,7 +58,15 @@
       "id": "no-claim"
     },
     {
-      "text": "Configuring each defense and seam belongs to the how-to guides [Restrict admin access](restrict-admin-access.md), [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md), [Add a second sign-in group](add-a-second-sign-in-group.md), [Configure rendering](configure-rendering.md), and [Rotate the GitHub App key](rotate-the-github-app-key.md).",
+      "text": "Configuring the access map belongs to [Restrict admin access](restrict-admin-access.md), and an identity gate to [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "Building an auth channel belongs to [Add a second sign-in group](add-a-second-sign-in-group.md), the renderer's options to [Configure rendering](configure-rendering.md), and the App's private key to [Rotate the GitHub App key](rotate-the-github-app-key.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The history of when the sanitize floor shipped is out of scope.",
       "id": "no-claim"
     },
     {
@@ -46,14 +74,25 @@
       "id": "f:u77pea"
     },
     {
+      "text": "Every `/admin` request passes through [the auth guard](#the-auth-guard), the server hook [`createAuthGuard`](../reference/sveltekit.md#createauthguard) builds.",
+      "id": [
+        "f:7qqhda",
+        "f:n3k03a"
+      ]
+    },
+    {
+      "text": "The defaults are floors, not ceilings.",
+      "id": "f:y3ljm0"
+    },
+    {
       "text": "A developer can replace those defaults, the owner and editor roles and magic-link sign-in, with their own auth framework, after which cairn mints no session and reads an owner or editor identity through a defined hand-off.",
       "id": "f:y3ljm0"
     },
     {
-      "text": "That hand-off is the `identity` option on `createAuthGuard`, which reads the proof of identity an external gate supplies in place of cairn's session resolution.",
+      "text": "That hand-off is the `identity` option on the guard, which reads the proof of identity an external gate supplies in place of cairn's session resolution.",
       "id": [
-        "f:fhit7f",
-        "f:u77pea"
+        "f:u77pea",
+        "f:fhit7f"
       ]
     },
     {
@@ -72,7 +111,7 @@
       "id": "f:u1bjul"
     },
     {
-      "text": "Only an address in the `editor` table is sent a token, and the owner curates that table through the owner-only `editors` screen.",
+      "text": "The owner curates the roster, the `editor` table, through the owner-only `editors` screen.",
       "id": "f:u1bjul"
     },
     {
@@ -88,7 +127,7 @@
       "id": "f:f39xqq"
     },
     {
-      "text": "The token lifetime, the session lifetime, and the throttle are named engine constants that no adapter option changes, so an adapter cannot loosen any of them.",
+      "text": "The token lifetime, the session lifetime, and the throttle are named engine constants, and no adapter option loosens them.",
       "id": "f:f39xqq"
     },
     {
@@ -96,24 +135,32 @@
       "id": "f:8l4wwr"
     },
     {
-      "text": "No log record carries a sign-in token, a session id, or a link's contents, and the [log events](../reference/log-events.md) reference lists the fields each event does carry.",
-      "id": "f:wi766c"
+      "text": "Against another person's address, a requester can at most replace its live token or rebind it to the requester's browser, and learn from a throttled answer that the address is on the roster.",
+      "id": [
+        "f:8l4wwr",
+        "f:91dwrk",
+        "f:s32y4a"
+      ]
     },
     {
-      "text": "The most a requester can do to another person's address is replace or rebind its live token.",
-      "id": "f:8l4wwr"
+      "text": "No log record carries a sign-in token, a session id, or a link's contents, and the [log events](../reference/log-events.md) reference lists the fields each event does carry.",
+      "id": "f:wi766c"
     },
     {
       "text": "An address off the roster receives the same `{ outcome: 'sent' }` answer that an editor's address receives, so the common case of the request form does not reveal who is on the roster.",
       "id": "f:s32y4a"
     },
     {
-      "text": "A repeat request inside the one-minute cooldown is the exception, since it returns a distinct `throttled` status and so reveals that the address belongs to an editor.",
+      "text": "A repeat request inside the one-minute cooldown returns a distinct `throttled` status, which reveals that the address belongs to an editor.",
       "id": "f:s32y4a"
     },
     {
       "text": "That status is a deliberate relaxation of the non-enumerating answer, traded for sending no second email to an editor who presses the button again.",
       "id": "f:z0296p"
+    },
+    {
+      "text": "A token that exists can still be spent by a browser other than the one that asked for it, and [Browser binding for sign-in](#browser-binding-for-sign-in) closes that path.",
+      "id": "f:k3gfbi"
     },
     {
       "text": "A bound sign-in completes only in the browser that requested it, and a confirm from any other browser refuses without consuming the token.",
@@ -156,9 +203,13 @@
     {
       "text": "A throttled re-request therefore rebinds the live token to the browser that just asked, so the last browser to ask holds the binding, and the rebind leaves an expired or unbound row untouched.",
       "id": [
-        "f:91dwrk",
-        "f:qep9a9"
+        "f:qep9a9",
+        "f:91dwrk"
       ]
+    },
+    {
+      "text": "The [reference entry for the no-pending-request error](../reference/sveltekit.md#no_pending_request_error) states which error a failed confirm reports.",
+      "id": "no-claim"
     },
     {
       "text": "A token row with no binding still matches a confirm from a browser that holds no cookie.",
@@ -173,16 +224,16 @@
       "id": "f:an087n"
     },
     {
-      "text": "The [reference entry for the no-pending-request error](../reference/sveltekit.md#no_pending_request_error) states which error a failed confirm reports.",
-      "id": "no-claim"
-    },
-    {
       "text": "Someone holding a forwarded token can make it work by posting the request form for that address inside the one-minute cooldown, which rebinds the row to their browser.",
       "id": "f:678law"
     },
     {
       "text": "Outside the cooldown, the same request deletes the earlier row and mints a new token, which destroys the forwarded one.",
       "id": "f:678law"
+    },
+    {
+      "text": "A confirmed sign-in, bound or unbound, becomes a session, and [The session cookie](#the-session-cookie) carries it on every later admin request.",
+      "id": "no-claim"
     },
     {
       "text": "A confirmed sign-in becomes a session cookie that carries the `__Host-` prefix on every https deploy, so the browser binds it to the site's origin.",
@@ -209,24 +260,30 @@
       "id": "f:8xxe3b"
     },
     {
-      "text": "Under `identity`, logout skips the session-row delete, still clears every cookie, and redirects to the gate's `logoutUrl`.",
-      "id": "f:8xxe3b"
+      "text": "Outside `/admin`, a route served over http on a non-local host under an https `PUBLIC_ORIGIN` mints a `__Host-` cookie that the browser discards, since the guard answers a plain-http request with its help page only on an `/admin` path.",
+      "id": [
+        "f:g22dnw",
+        "f:n3k03a"
+      ]
     },
     {
-      "text": "Outside `/admin`, a route served over http on a non-local host under an https `PUBLIC_ORIGIN` mints a `__Host-` cookie that the browser discards, since only an `/admin` path gets the guard's https help page.",
-      "id": "f:g22dnw"
+      "text": "The cookie rides every admin request the browser sends, including a form post the editor never meant to send, and [CSRF protection](#csrf-protection) answers that post.",
+      "id": "no-claim"
     },
     {
       "text": "A forged form post would act with the editor's session, so every unsafe admin form post needs a CSRF check, and cairn runs that check in the guard in place of SvelteKit's.",
       "id": "f:gncd64"
     },
     {
-      "text": "A site sets `csrf: { checkOrigin: false }` in `svelte.config.js`, and the guard that [`createAuthGuard`](../reference/sveltekit.md#createauthguard) builds enforces an Origin-independent double-submit check on every unsafe `/admin` form post, restoring an equivalent strict Origin check on every other route.",
+      "text": "A site sets `csrf: { checkOrigin: false }` in `svelte.config.js`, and the guard enforces an Origin-independent double-submit check on every unsafe `/admin` form post, restoring an equivalent strict Origin check on every other route.",
       "id": "f:gncd64"
     },
     {
       "text": "The admin needs a check that does not read the `Origin` header, because of the referrer policy it serves.",
-      "id": "f:ix10bm"
+      "id": [
+        "f:x2stjk",
+        "f:ix10bm"
+      ]
     },
     {
       "text": "Under the [Fetch Standard](https://fetch.spec.whatwg.org/), a non-`cors` request whose method is not `GET` or `HEAD` sends `Origin: null` when its referrer policy is `no-referrer`, which is the policy every admin response sets.",
@@ -240,7 +297,7 @@
       "id": "f:ix10bm"
     },
     {
-      "text": "SvelteKit's default check compares the same header, and since it is one global setting with no per-route exception, a site hands the admin's CSRF authority to the guard by turning it off everywhere.",
+      "text": "[SvelteKit's default check](https://svelte.dev/docs/kit/configuration#csrf) compares the same header, and since it is one global setting with no per-route exception, a site hands the admin's CSRF authority to the guard by turning it off everywhere.",
       "id": "f:3cekcy"
     },
     {
@@ -276,14 +333,15 @@
     },
     {
       "text": "A site therefore keeps `no-referrer` off its site-wide default, and [`cairn doctor`](../reference/cli-cairn-doctor.md) warns through its `config.no-referrer-blanket` check when it finds a site-wide `no-referrer`.",
-      "id": [
-        "f:ix10bm",
-        "f:qbfriw"
-      ]
+      "id": "f:qbfriw"
     },
     {
       "text": "The check's remediation is to serve `strict-origin-when-cross-origin` or `same-origin` as the site-wide default.",
       "id": "f:qbfriw"
+    },
+    {
+      "text": "The CSRF check is one step in [The auth guard](#the-auth-guard)'s fixed order.",
+      "id": "no-claim"
     },
     {
       "text": "The guard handles every request in a fixed order, and every refusing step before the session resolve logs a named `guard.refused` reason.",
@@ -370,7 +428,7 @@
       "id": "f:ubuj1w"
     },
     {
-      "text": "The admin sends no full Content-Security-Policy by design, since the engine's defense against script in author-written markup is the sanitize floor that [render safety](#render-safety) describes.",
+      "text": "The admin sends no full Content-Security-Policy by design, since the engine's defense against script in author-written markup is the sanitize floor that [Render safety](#render-safety) describes.",
       "id": "f:yzbvk4"
     },
     {
@@ -386,19 +444,22 @@
       "id": "f:horkxq"
     },
     {
+      "text": "The guard's first step, the dev-backend tripwire, refuses a flag that must never reach a deployed Worker, and [The dev-backend flag's two refusals](#the-dev-backend-flags-two-refusals) state what each refusal catches and what it leaves open.",
+      "id": [
+        "f:7qqhda",
+        "f:tkpmxr"
+      ]
+    },
+    {
       "text": "A deployed Worker must never carry the `CAIRN_DEV_BACKEND` flag, so the engine refuses the flag in two places, on different terms.",
       "id": "f:tkpmxr"
     },
     {
-      "text": "Both refusals read the flag from `platform.env` and `process.env`, and they apply it as follows:",
+      "text": "Both refusals read the flag from `platform.env` and `process.env`.",
       "id": "f:tkpmxr"
     },
     {
-      "text": "`createAuthGuard` refuses with a 503 on the flag alone and logs `guard.refused` with reason `dev_backend_in_prod`.",
-      "id": "f:tkpmxr"
-    },
-    {
-      "text": "Every [`createAuthChannel`](../reference/auth-channel.md#createauthchannel) action refuses with a 503 before any other work, only when the flag is set and the request counts as deployed.",
+      "text": "The first refusal belongs to the guard, which answers with a 503 on the flag alone and logs `guard.refused` with reason `dev_backend_in_prod`.",
       "id": "f:tkpmxr"
     },
     {
@@ -406,15 +467,32 @@
       "id": "f:tkpmxr"
     },
     {
-      "text": "The channel also requires a deployed request, because the flag is a dev transport's enable contract.",
-      "id": "f:tkpmxr"
+      "text": "The second refusal belongs to an [auth channel](#the-auth-channels-threat-surface), the seam a site adds for a second sign-in audience on the site's member routes, which the guard's admin-path handling never covers.",
+      "id": [
+        "f:tkpmxr",
+        "f:8u4iiv"
+      ]
+    },
+    {
+      "text": "[`createAuthChannel`](../reference/auth-channel.md#createauthchannel) builds a channel from functions the site supplies, among them `lookup`, which resolves a contact against the channel's roster, and `deliver`, which carries a code to the contact.",
+      "id": [
+        "f:irs7fg",
+        "f:fslodf"
+      ]
+    },
+    {
+      "text": "Every channel action refuses with a 503 before any other work, only when the flag is set and the request counts as deployed, because the flag is the enable contract of a dev transport, a `deliver` that prints the code in development instead of sending it.",
+      "id": [
+        "f:tkpmxr",
+        "f:wuwk2q"
+      ]
     },
     {
       "text": "A request counts as deployed when the configured `PUBLIC_ORIGIN` names a non-local host, whatever `Host` claims.",
       "id": "f:i2udr5"
     },
     {
-      "text": "A local, absent, or unparseable `PUBLIC_ORIGIN` hands the answer to the request's hostname, so a configured `PUBLIC_ORIGIN` can make a request count as deployed but never as local, and a deployment with no `PUBLIC_ORIGIN` rests on `Host`.",
+      "text": "A local, absent, or unparseable `PUBLIC_ORIGIN` hands the answer to the request's hostname, so a configured origin can only move the answer toward refusing, and a deployment with no `PUBLIC_ORIGIN` rests on `Host`.",
       "id": "f:i2udr5"
     },
     {
@@ -430,8 +508,15 @@
       "id": "f:irs7fg"
     },
     {
-      "text": "The engine's CI closes the bundle case for the example site alone, since its e2e workflow runs `wrangler deploy --dry-run` on a default build and fails if any string in `scripts/checks/dev-fold-markers.txt` survives in the output.",
+      "text": "The engine's CI closes the bundle case for the example site alone, with a `wrangler deploy --dry-run` of a default build that fails if any dev-only marker survives in the output.",
       "id": "f:irs7fg"
+    },
+    {
+      "text": "A request the guard admits to a guarded path belongs to a signed-in editor, and [Access map coverage](#access-map-coverage) decides which screens that editor reaches.",
+      "id": [
+        "f:7qqhda",
+        "f:vqh4a9"
+      ]
     },
     {
       "text": "An access map narrows only the targets it names, so a screen or concept the map never mentions stays reachable to any editor-capability session.",
@@ -442,11 +527,11 @@
       "id": "f:vqh4a9"
     },
     {
-      "text": "Apart from the site-wide publish, the tidy action, and the personal-dictionary action, every engine write action, the tidy settings save included, gates through the map against one target, either the concept id or one of the fixed screens `media`, `nav`, `settings`, and `vocabulary`.",
+      "text": "Each engine write action gates through the map against one target, the concept id or one of the fixed screens `media`, `nav`, `settings`, or `vocabulary`, with the exceptions that [Limits of access map coverage](#limits-of-access-map-coverage) names.",
       "id": "f:cvv6to"
     },
     {
-      "text": "A site's action that opts into the map through the `access` option of [`createAdminAction`](../reference/sveltekit.md#createadminaction) fails closed instead, at the following three ordered gates:",
+      "text": "A site's action built with [`createSectionAction`](../reference/sveltekit.md#createsectionaction), or one that opts into the map through the `access` option of [`createAdminAction`](../reference/sveltekit.md#createadminaction), fails closed instead, at the following three ordered gates:",
       "id": "f:4q8kin"
     },
     {
@@ -489,8 +574,19 @@
       "id": "f:arr13a"
     },
     {
-      "text": "Every renderer that [`createRenderer`](../reference/core.md#createrenderer) builds runs a `rehype-sanitize` floor by default, seeded from GitHub's `defaultSchema`, before the `build()` dispatch or any later stage touches the tree.",
+      "text": "An editor's reach also includes the markup they write, which every visitor's browser renders, and [Render safety](#render-safety) covers what the engine does with it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Every renderer that [`createRenderer`](../reference/core.md#createrenderer) builds runs a sanitize floor by default, seeded from GitHub's `defaultSchema`, before the `build()` dispatch or any later stage touches the tree.",
       "id": "f:z3a58a"
+    },
+    {
+      "text": "A [`build()`](../reference/core.md#definecomponent) is the function a site registers for one of its components, site-developer code that the dispatch stage runs to turn each use of that component in the markdown into markup.",
+      "id": [
+        "f:21by9u",
+        "f:zzbzo8"
+      ]
     },
     {
       "text": "The floor strips `<script>` tags, inline event-handler attributes, and `javascript:` and `data:` URLs.",
@@ -585,8 +681,15 @@
       "id": "f:21by9u"
     },
     {
+      "text": "An editor's edits reach the repository through the engine's own credential, and [The GitHub App's reach](#the-github-apps-reach) sets out what that credential can write.",
+      "id": "no-claim"
+    },
+    {
       "text": "Every save and publish commits through the site's GitHub App, so the App's permissions set what its private key and installation token can write.",
-      "id": "f:gglwt4"
+      "id": [
+        "f:gglwt4",
+        "f:kkp5bi"
+      ]
     },
     {
       "text": "Publishing authenticates to GitHub as the site's GitHub App, never a personal account, with the private key held as a single Worker secret that signs a JWT to mint a short-lived installation token.",
@@ -609,6 +712,10 @@
     },
     {
       "text": "[Rotate the GitHub App key](rotate-the-github-app-key.md) covers operating the key.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Every defense of the built-in design assumes cairn's own sign-in, and a site that replaces it with [an identity gate](#identity-modes-threat-surface) or adds [an auth channel](#the-auth-channels-threat-surface) moves some of them.",
       "id": "no-claim"
     },
     {
@@ -636,6 +743,10 @@
       "id": "f:8rnym5"
     },
     {
+      "text": "A cairn logout under `identity` skips the session-row delete, still clears every cookie, and redirects to the gate's `logoutUrl`.",
+      "id": "f:8xxe3b"
+    },
+    {
       "text": "Every refusal the resolver produces logs `guard.refused` with reason `identity`, and a proven email that matches no roster row logs `auth.identity.unknown`.",
       "id": "f:n3k03a"
     },
@@ -658,6 +769,10 @@
     {
       "text": "The guard makes no hostname check under `identity`, so a hostname that reaches the Worker outside the gate's coverage is admitted whenever the resolver accepts the presented token.",
       "id": "f:jha9f7"
+    },
+    {
+      "text": "[Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md) sets up the gate these risks belong to, and the other seam a site can add, an auth channel, has [a threat surface of its own](#the-auth-channels-threat-surface).",
+      "id": "no-claim"
     },
     {
       "text": "An auth channel's sign-in form takes a contact from an unauthenticated caller, so the channel rests on the rule that no control keyed on the victim's identity may deny, delay, or destroy anything, and denial keys only on the requester.",
@@ -700,11 +815,12 @@
       "id": "f:dipwmx"
     },
     {
-      "text": "A numeric confirmation code is drawn by rejection sampling over Web Crypto random bytes, which avoids the low-end bias that a naive modulo introduces, and [NIST's digital identity guidelines](https://pages.nist.gov/800-63-3/sp800-63b.html) require the secrets behind authenticators to come from an approved random bit generator.",
-      "id": [
-        "f:plcf5v",
-        "f:s047l1"
-      ]
+      "text": "A numeric confirmation code is drawn by rejection sampling over Web Crypto random bytes, which avoids the low-end bias that a naive modulo introduces.",
+      "id": "f:plcf5v"
+    },
+    {
+      "text": "The random source matters because [NIST's digital identity guidelines](https://pages.nist.gov/800-63-3/sp800-63b.html) require the secrets behind authenticators to come from an approved random bit generator.",
+      "id": "f:s047l1"
     },
     {
       "text": "A dev transport that prints a channel's code to the console is a roster oracle by construction, since delivery runs only for a known subject, so an unauthenticated caller learns whether any contact is on the roster without guessing a code.",
@@ -719,7 +835,11 @@
       "id": "f:wuwk2q"
     },
     {
-      "text": "In short, cairn defends the sign-in path and every admin request, and the following responsibilities stay with the site:",
+      "text": "[Add a second sign-in group](add-a-second-sign-in-group.md) builds a channel, and [Config obligations](../reference/auth-channel.md#config-obligations) states what each supplied function owes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In short, cairn makes an editor's sign-in hard to take, and what a taken session reaches depends on how the site configures it, so the following responsibilities stay with the site:",
       "id": "no-claim"
     },
     {
@@ -748,10 +868,7 @@
     },
     {
       "text": "Keeping dev transports and the `CAIRN_DEV_BACKEND` flag out of a deployed Worker, with a refusal inside any dev-shaped transport.",
-      "id": [
-        "f:irs7fg",
-        "f:tkpmxr"
-      ]
+      "id": "f:irs7fg"
     },
     {
       "text": "Making an access map exhaustive when the site intends an allowlist.",
@@ -797,7 +914,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The following guides configure the seams these defenses depend on:",
+      "text": "The following guides configure and operate the parts of a site these defenses depend on:",
       "id": "no-claim"
     },
     {
@@ -821,15 +938,11 @@
       "id": "no-claim"
     },
     {
-      "text": "The following pages explain the system these defenses protect and record when a defense changed:",
+      "text": "The following page explains the system these defenses protect:",
       "id": "no-claim"
     },
     {
       "text": "[Architecture](architecture.md), for how the engine's parts and seams fit together.",
-      "id": "no-claim"
-    },
-    {
-      "text": "[Migration notes](migration-notes.md), for when the access-map warning shipped.",
       "id": "no-claim"
     },
     {
@@ -842,7 +955,7 @@
     },
     {
       "text": "[The Fetch Standard](https://fetch.spec.whatwg.org/), for when a browser sends `Origin: null`.",
-      "id": "no-claim"
+      "id": "f:x2stjk"
     },
     {
       "text": "[NIST's digital identity guidelines](https://pages.nist.gov/800-63-3/sp800-63b.html), for the random generation of authenticator secrets.",
@@ -856,31 +969,31 @@
   "cuts": [
     {
       "id": "f:ez788q",
-      "reason": "Subordinated to docs/reference/auth-channel.md, \"Config obligations\", which states the normalize, lookup, and challenge obligations in full"
+      "reason": "Subordinated to docs/reference/auth-channel.md, Config obligations, which states all three in full"
     },
     {
       "id": "f:2w1yrc",
-      "reason": "The rule's design history is history, not a defense or a residual; the page states the rule as it is and docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md holds the history"
+      "reason": "History, not a defense or a residual; the page states the rule as it is and docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md holds the history"
     },
     {
       "id": "f:j254i8",
-      "reason": "Subordinated to docs/reference/auth-channel.md, the challenge bullet under createAuthChannel, which states the challenge is awaited before any mint on request and on an escalated confirm, writing no row, charging no attempt, and consuming nothing"
+      "reason": "Subordinated to docs/reference/auth-channel.md, createAuthChannel, the challenge bullet, which states the order and that a failure writes no row, charges no attempt, and consumes nothing"
     },
     {
       "id": "f:d2j9cj",
-      "reason": "An example-site instance of the hazard f:wuwk2q states on the page"
+      "reason": "An example-site instance of the hazard f:wuwk2q states"
     },
     {
       "id": "f:rv9gdc",
-      "reason": "Repeats the example-site closure f:irs7fg already states in the same section; the dynamic-import detail is example-site wiring"
+      "reason": "Example-site wiring that repeats the closure f:irs7fg already states in the same section"
     },
     {
       "id": "f:r0cv6e",
-      "reason": "When the floor shipped is out of scope for this page; docs/extend/migration-notes.md holds the record (the pilot's cut, kept)"
+      "reason": "The outline's sixth out-of-scope item; the page states the floor as it stands, and no published page records the date (migration-notes starts at 0.86.0, CHANGELOG at 0.22.0), a gap filed in docs/internal/docs-friction-log.md"
     },
     {
       "id": "f:9uhscf",
-      "reason": "Subordinated to docs/reference/sveltekit.md, the NO_PENDING_REQUEST_ERROR entry, which states the constant, its wire value, and that a site's own login page branches on it"
+      "reason": "Subordinated to docs/reference/sveltekit.md, NO_PENDING_REQUEST_ERROR, which states the constant, its wire value, and that a site's own login page branches on it"
     },
     {
       "id": "f:jud805",
@@ -888,7 +1001,7 @@
     },
     {
       "id": "f:njh87y",
-      "reason": "Subordinated to docs/reference/auth-crypto.md, the buildCookieName entry (\"Both cookies route through this one derivation\"); the logout half is on the page through f:8xxe3b"
+      "reason": "Subordinated to docs/reference/auth-crypto.md, buildCookieName: the engine's own two cookies derive secure the same way; the logout half is on the page through f:8xxe3b"
     },
     {
       "id": "f:diro7m",
@@ -900,19 +1013,19 @@
     },
     {
       "id": "f:9pmipf",
-      "reason": "Subordinated to docs/reference/sveltekit.md, the NO_PENDING_REQUEST_ERROR entry, which states the code and that it is distinct from expired; the entry states the cookie-less condition narrower than the code (bound rows only), reported as couldNotDo and filed as reference-arm friction"
+      "reason": "Subordinated to docs/reference/sveltekit.md, NO_PENDING_REQUEST_ERROR, which states the code and that it is distinct from expired; the entry states the cookie-less condition narrower than the code, filed earlier as reference-arm friction"
     },
     {
       "id": "f:uz38ef",
-      "reason": "Statement-level race detail below either reader's decision; no reference entry carries the magic-token store"
+      "reason": "Statement-level race detail below either reader's decision, with no reference entry carrying the magic-token store"
     },
     {
       "id": "f:9exogy",
-      "reason": "A usability consequence of the rotation with no security residual, and moot under identity, where the rotation never runs"
+      "reason": "A usability consequence (one 403 a reload clears) with no security residual, and moot under identity"
     },
     {
       "id": "f:t976f1",
-      "reason": "Subordinated to docs/reference/sveltekit.md, the createAuthGuard entry's config.includeSubDomains paragraph, which states that the rejection pages and the login redirect send no Strict-Transport-Security and why"
+      "reason": "Subordinated to docs/reference/sveltekit.md, createAuthGuard, the config.includeSubDomains paragraph, which states that the rejection pages and the login redirect send no HSTS and why"
     },
     {
       "id": "f:doq8s2",
@@ -920,7 +1033,7 @@
     },
     {
       "id": "f:d2jumm",
-      "reason": "Subordinated to docs/reference/supported-toolchain.md, \"The checkOrigin deprecation\", which states the 2.61 deprecation, that it is not removed, and that cairn's admin CSRF ownership depends on disabling it"
+      "reason": "Subordinated to docs/reference/supported-toolchain.md, The checkOrigin deprecation, which states the deprecation in favor of trustedOrigins, that it is not removed, and that cairn's admin CSRF ownership depends on disabling it"
     }
   ]
 }

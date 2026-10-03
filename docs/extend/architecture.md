@@ -31,7 +31,7 @@ A site touches the engine in three places, which between them import four subpat
 
 Behind those calls, the `/sveltekit` layer reads and writes the content repository through the `Backend`, renders through the render pipeline, and reads and writes the media store and the auth store. The admin's Svelte components sit on `/admin` and receive the data that layer loads as props.
 
-The directive stamping and dispatch inside the render pipeline, the commit tree shape sent to the GitHub API, and the guard's CSRF and session resolution are engine-internal. Each sits behind a stability-tiered subpath, `/render`, `/sveltekit`, or `/auth-crypto`, and none of them is a seam a site reaches into. The export map holds more subpaths than these four, and placement rules fix what each one may contain.
+The directive stamping and dispatch inside the render pipeline, the commit tree shape sent to the GitHub API, and the guard's CSRF and session resolution are engine-internal. Each sits behind a stability-tiered subpath, `/render`, `/sveltekit`, or `/auth-crypto`, and none of them is a seam a site reaches into. The full export map holds more subpaths than the four a site imports. Placement rules govern what the root barrel, `/sveltekit`, `/admin`, and `/public` contain.
 
 ## Export map
 
@@ -106,11 +106,11 @@ flowchart LR
 
 ### The holding branch
 
-A save commits the edit to a per-entry branch named `cairn/<concept>/<id>` through the site's GitHub App installation token, with the signed-in editor as author and no committer. Each later save commits onto the same branch, so an editor iterates across saves while the entry stays off the live site. A save commits no manifest change. An entry is pending when its holding branch exists, and no other state marks it. The concept list finds pending entries by listing the branches under `cairn/<concept>/`. The branch holds the edit until a deliberate publish copies it to the default branch.
+A save commits the edit to a per-entry branch named `cairn/<concept>/<id>` through the site's GitHub App installation token, with the signed-in editor as author. The engine sets no committer, so GitHub records the App's bot identity as the committer. Each later save commits onto the same branch, so an editor iterates across saves while the entry stays off the live site. A save commits no manifest change. An entry is pending when its holding branch exists, and no other state marks it. The concept list finds pending entries by listing the branches under `cairn/<concept>/`. The branch holds the edit until a deliberate publish copies it to the default branch.
 
 ### The publish commit
 
-A publish copies the holding branch's content onto the default branch in one commit with the editor as author, and the entry's row in the content manifest lands in the same commit. The engine sets no committer, so GitHub attributes the commit to the App. Publish-all commits every pending entry the editor can reach, plus the content manifest, as one commit to the default branch, so one deploy fires.
+A publish copies the holding branch's content onto the default branch in one commit with the editor as author, and the entry's row in the content manifest lands in the same commit. As on a save, the App's bot identity is the committer. Publish-all commits every pending entry the editor can reach, plus the content manifest, as one commit to the default branch, so one deploy fires.
 
 A delete or a rename carries its manifest change in the same default-branch commit as its file change, so the content manifest changes only in a default-branch commit that changes an entry. After a publish lands, the engine deletes the entry's holding branch only when the branch head still equals the SHA the publish captured, so a save that lands during the publish keeps the entry pending. A save or a publish can land on a head that another commit moved after the admin read it.
 
@@ -125,7 +125,7 @@ The retry makes three further attempts against the moved head before it reports 
 
 ### Build verification
 
-The publish commit triggers the site's existing deploy, and the build rebuilds the content manifest and verifies it against the markdown on disk. The [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin runs both steps in `buildStart`, and a committed manifest that has drifted from the markdown fails the build. The admin reads content back from both the holding branches and the default branch, the two places the path writes it.
+The publish commit triggers the site's existing deploy, and the build rebuilds the content manifest from the markdown on disk and compares it against the committed manifest. The [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin runs both steps in `buildStart`, and a committed manifest that has drifted from the markdown fails the build. The admin reads content back from both the holding branches and the default branch, the two places the path writes it.
 
 ## Read path
 
@@ -147,7 +147,7 @@ The guard looks up the `session` row by its session-cookie id on each admin requ
 
 Because neither a git repository nor a D1 row suits binary assets at megabyte scale, R2 holds the media bytes. The delivery route streams those bytes from R2. [Configure media](configure-media.md) covers the media store's settings.
 
-A site places its extension data, such as a member roster or an event schedule, where it chooses, provided its cookie and table names avoid the reserved `cairn_` prefix. D1 and R2 are Cloudflare services, and the content store in git is the only tier a site can replace.
+A site places its extension data, such as a member roster or an event schedule, where it chooses, provided its cookie and table names avoid the reserved `cairn_` prefix. The content store in git is the only tier a site can replace.
 
 ## Hard dependencies
 
@@ -164,11 +164,11 @@ A `BackendProvider` connects to a live `Backend` for a route that needs one, and
 - `createBranch` returns the SHA it branched at and throws `BranchExistsError` on a name collision.
 - `deleteBranch` treats a missing branch as success.
 
-The head-guarded commits, such as the nav, vocabulary, and revert commits, pass `expectedHead`, and the retried commits, a save and a publish among them, omit it. The `Backend` and `BackendProvider` rows of the core reference's [types table](../reference/core.md#types) carry the signatures, and its [error classes](../reference/core.md#error-classes) entry documents both errors. The contract is one Extension-tier surface among many, and its tier decides what a provider written against it can expect across versions.
+The head-guarded commits, such as the nav, vocabulary, and revert commits, pass `expectedHead`, and the retried commits, a save and a publish among them, omit it. The `Backend` and `BackendProvider` rows of the core reference's [types table](../reference/core.md#types) carry the signatures, and its [error classes](../reference/core.md#error-classes) entry documents both errors. The contract is one exported surface among many, and its stability tier decides what a provider written against it can expect across versions.
 
 ## Stability tiers
 
-Every export carries one of three stability tiers, and the tier states what the export promises across versions. Extension API and Scaffold API become frozen contracts at 1.0, and Unstable API is importable today with no promise across minor versions. The [reference index](../reference/README.md#stability-tiers) defines each tier, and each export's reference entry names its tier. Because the engine is still pre-1.0, an Extension-tier break can ship in a minor release, and until 1.0 the `check:surface` snapshot gate detects and discloses such a break instead of preventing it.
+Every export carries one of three stability tiers, and the tier states what the export promises across versions. Extension API and Scaffold API, the tier for the copied wiring a scaffolded site owns, become frozen contracts at 1.0, and Unstable API is importable today with no promise across minor versions. The [reference index](../reference/README.md#stability-tiers) defines each tier, and each export's reference entry names its tier. Because the engine is still pre-1.0, an Extension-tier break can ship in a minor release, and until 1.0 the `check:surface` snapshot gate detects and discloses such a break instead of preventing it.
 
 In `0.86.0`, the minor version that shipped `navLayout`, the nav fields on `AdminShellData` and the parameter and return types of `navFilter` changed shape, both inside the Extension API tier. A site that read those fields or declared a `navFilter` had code to change before it could take the upgrade. The [migration notes for `0.86.0`](migration-notes.md#0860) list the edits that release asks of a site. A later minor version, `0.94.0`, renamed the `navLayout` types as well, and the [migration notes for `0.94.0`](migration-notes.md#0940) record that rename.
 

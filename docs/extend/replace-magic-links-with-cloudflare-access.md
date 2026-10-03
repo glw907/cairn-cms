@@ -111,8 +111,8 @@ To create and configure the application, follow these steps:
    Cloudflare's [policies page](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/)
    describes.
 
-   This policy is the application's admission list, so it must admit the same editors that the
-   roster holds.
+   An editor the policy leaves out never reaches the guard. A user the policy admits but the roster
+   lacks reaches the guard, which refuses them as unknown.
 
 4. In the application's login methods, enable your identity provider but no method whose email
    claim the signing-in user controls.
@@ -139,7 +139,7 @@ To create and configure the application, follow these steps:
 From the moment you save it, the application challenges every request to `/admin` on the site's
 hostname, magic-link editors included. The guard behind it keeps signing editors in by magic link
 until the deploy that switches it to identity. Two settings outside the application can still
-deliver an admin response around it.
+deliver an admin response that bypasses the application or the guard.
 
 ## Close the exposures outside the application
 
@@ -181,13 +181,8 @@ A verifier for an Access token meets the following requirements:
 - It refuses a token with no `email` claim, which also refuses a service token.
 - It returns the email and, optionally, a display name, never a role, since the guard takes the
   role from the roster row.
-- Its refusal reason names the failure, since the guard logs `audience`, `issuer`, `keys`, and
-  `error` at error level and other reasons at warn.
-
-The signature check is stateless and has no revocation step, so a logout or revoke takes effect
-only where Access sits in the request path. The guard uses the resolver's display name only when
-the roster row's name is empty. The four reasons logged at error mark a misconfigured gate that
-would refuse the whole roster.
+- Its refusal reason names the failure, since the guard logs a misconfigured gate's `audience`,
+  `issuer`, `keys`, and `error` reasons at error level.
 
 To write the verifier, follow these steps:
 
@@ -200,6 +195,8 @@ To write the verifier, follow these steps:
 
 3. In the site's project, create a resolver module that exports an `IdentityResolver` meeting the
    verifier requirements.
+
+   The guard uses the resolver's display name only when the roster row's name is empty.
 
 The following resolver module is illustrative and adapted from Cloudflare's Workers sample in
 [Validate JWTs](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/),
@@ -289,7 +286,8 @@ To turn on identity mode, follow these steps:
    export const handle = sequence(theme, createAuthGuard({ access, identity: accessIdentity }));
    ```
 
-2. In the project directory, build the site and deploy it with `npx wrangler deploy`, as in
+2. In the project directory, build the site with `npm run build`.
+3. In the project directory, deploy the Worker with `npx wrangler deploy`, as in
    [Describe the Worker and deploy it](add-cairn-to-a-sveltekit-app.md#describe-the-worker-and-deploy-it).
 
    This deploy uploads the hooks option and the `workers_dev` and `preview_urls` settings from
@@ -307,6 +305,8 @@ following ways:
   governs how long an editor stays signed in, and cairn's 30-day session no longer applies.
 - Sign-out skips the session-row delete, clears every cairn cookie, and redirects to the gate's
   `logoutUrl`, where Access clears its authorization cookie.
+- A sign-out or a revocation takes effect only where Access sits in the request path, since the
+  signature check is stateless.
 
 A handle placed ahead of the guard can limit the per-request work on a best-effort basis by calling
 [`resolveRateLimit`](../reference/cloudflare.md#resolveratelimit) from

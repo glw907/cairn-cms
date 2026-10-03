@@ -69,10 +69,6 @@
       "id": "f:guiavc"
     },
     {
-      "text": "For a hand-built site, [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) brings it to the same shape.",
-      "id": "no-claim"
-    },
-    {
       "text": "An access-map rule for the screen's route, as [Restrict admin access](restrict-admin-access.md) describes.",
       "id": "no-claim"
     },
@@ -81,16 +77,20 @@
       "id": "no-claim"
     },
     {
-      "text": "The scaffold binds `APP_DB`, whose `signups` table exists only after the signups migration in the scaffold's `migrations-app` directory is applied.",
+      "text": "A D1 database for the audit trail, prepared as the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry describes.",
+      "id": "f:68h31z"
+    },
+    {
+      "text": "The scaffold binds `APP_DB`.",
+      "id": "f:onqm6k"
+    },
+    {
+      "text": "Its `signups` table exists only after you apply the signups migration in the scaffold's `migrations-app` directory.",
       "id": "f:onqm6k"
     },
     {
       "text": "Cloudflare's [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/) documentation describes how to apply a migration.",
       "id": "no-claim"
-    },
-    {
-      "text": "A D1 database for the audit trail, prepared as the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry describes.",
-      "id": "f:68h31z"
     },
     {
       "text": "The setup command writes the admin layout's two files and the `[...path]` catch-all's two files into `src/routes/admin/`.",
@@ -102,6 +102,10 @@
     {
       "text": "The `signups/` directory beside them is already a custom screen, so a new screen adds one more directory beside it.",
       "id": "f:onqm6k"
+    },
+    {
+      "text": "For a hand-built site, [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) brings it to the same shape as a scaffolded site.",
+      "id": "no-claim"
     },
     {
       "text": "A route directory under `src/routes/admin/` is the whole registration, since SvelteKit resolves it ahead of the `[...path]` catch-all and the shared layout renders it inside `CairnAdminShell`.",
@@ -377,6 +381,14 @@
       ]
     },
     {
+      "text": "The snippet's `access` import is the access map that [Restrict admin access](restrict-admin-access.md) describes.",
+      "id": "f:qlgggh"
+    },
+    {
+      "text": "A scaffolded site declares it with `defineAccess` in `access.ts`, beside `hooks.server.ts`.",
+      "id": "f:qlgggh"
+    },
+    {
       "text": "The handle binds `waitUntil` to its `ExecutionContext`, because the unbound method typechecks and then throws `Illegal invocation` in workerd, after which the row can be lost.",
       "id": "f:ph6kjg"
     },
@@ -405,12 +417,28 @@
       "id": "f:5t1i7o"
     },
     {
-      "text": "To compose the markup, follow this step:",
+      "text": "To compose the markup, follow these steps:",
       "id": "no-claim"
     },
     {
       "text": "In the screen's markup, import the primitives it needs from the admin toolkit.",
       "id": "f:5t1i7o"
+    },
+    {
+      "text": "In each form that posts to one of the screen's actions, mount a `CsrfField` from `@glw907/cairn-cms/admin`.",
+      "id": "f:fers77"
+    },
+    {
+      "text": "Inside the admin shell, the field reads its token from context, so it takes no prop.",
+      "id": "f:fers77"
+    },
+    {
+      "text": "The guard refuses a form without it with a 403.",
+      "id": "f:fers77"
+    },
+    {
+      "text": "The signups screen mounts one in its `create` form and in its `remove` form.",
+      "id": "f:fers77"
     },
     {
       "text": "A smaller screen shows the toolkit alone, as an Events list that composes three primitives with the table inside a card.",
@@ -742,7 +770,7 @@
       "id": "no-claim"
     },
     {
-      "text": "When a screen animates, `cairn-audit` holds its motion to the same error-tier rules as the engine's screens, so each transition names its duration and easing with the admin's motion tokens.",
+      "text": "When a screen animates, `cairn-audit` holds its motion to the same rules as the engine's screens, so each transition names its duration and easing with the admin's motion tokens.",
       "id": [
         "f:326755",
         "f:017qss"

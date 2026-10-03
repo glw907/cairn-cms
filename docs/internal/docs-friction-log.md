@@ -355,7 +355,7 @@ Filed 2026-09-30 by the scoped fact read of `docs/extend/theme-your-public-site.
 
 Filed 2026-10-03 by the page plan for `docs/extend/add-a-custom-admin-screen.md` (draft docs stage 2a, task 7c), each verified against the tree first.
 
-- **`extender`.** Found by the add-a-custom-admin-screen page plan on 2026-10-03, a hole in `docs/internal/facts/`. The page's fact ids carry no statement that a custom screen's form mounts `CsrfField`, yet the `CsrfField` entry in `docs/reference/admin.md` says a form that renders none fails the guard's token check, and the showcase signups screen mounts it in both of its forms (`examples/showcase/src/routes/admin/signups/+page.svelte:8,64,145`). The committed page's dialog-form snippet posts `?/create` through `use:enhance` with no `CsrfField`, so a reader who copies it builds a form the guard refuses. The plan keeps `<CsrfField />` in the snippet's code and makes no prose claim about it, since no fact backs one. A fix mints a `[verified]` fact from `src/lib/admin/CsrfField.svelte` and the guard's check and cites it from the dialog-form section.
+- **`extender`.** Found by the add-a-custom-admin-screen page plan on 2026-10-03, a hole in `docs/internal/facts/`. The page's fact ids carry no statement that a custom screen's form mounts `CsrfField`, yet the `CsrfField` entry in `docs/reference/admin.md` says a form that renders none fails the guard's token check, and the showcase signups screen mounts it in both of its forms (`examples/showcase/src/routes/admin/signups/+page.svelte:8,64,145`). The committed page's dialog-form snippet posts `?/create` through `use:enhance` with no `CsrfField`, so a reader who copies it builds a form the guard refuses. The plan keeps `<CsrfField />` in the snippet's code and makes no prose claim about it, since no fact backs one. A fix mints a `[verified]` fact from `src/lib/admin/CsrfField.svelte` and the guard's check and cites it from the dialog-form section. Fact filed 2026-10-03 as `f:fers77` by the scoped redraft of the page (task 7b), cited from a `CsrfField` step in "Compose the screen from the toolkit" that covers every action form on the screen.
 - **`extender`.** Found by the add-a-custom-admin-screen page plan on 2026-10-03 (`f:hafpqf`), while subordinating the rate limit to `docs/reference/sveltekit.md`. The `createSectionAction` entry (check order item 2) and the `SectionActionConfig` type row state the three `rateLimit` members, that the limit runs before the access-map checks, and that an unresolved binding or a throwing `key()` or `limit()` degrades to open, but neither states the default 429 copy (`Too many requests. Wait a moment and try again.`, `src/lib/sveltekit/section-action.ts`) or that a SvelteKit `redirect()` or `error()` thrown from `key()` or `limit()` propagates instead of degrading. A fix adds both clauses to the `createSectionAction` entry's check-order item 2.
 - **`extender`.** Found by the add-a-custom-admin-screen page plan's revision on 2026-10-03 (`f:3lbdl6`), while placing the page's most likely first failure. An owner who opens a new custom screen before the access map carries a rule for its route gets a 403 and an `auth.access.refused` record with the resolved target, since `hasAccessRule` carries no owner exemption (`src/lib/sveltekit/guard.ts:476-482`), and `config.access_unmapped` reports only an unmapped concept id or fixed engine screen, never a site's own route (`docs/reference/log-events.md`, its row). The extend track's recovery surface, `docs/extend/debug-your-site.md`, lists no `auth.access.refused` symptom row in its outline covers or its fact ids (`docs/internal/outlines/extend.json`), so the page's diagnostic sentence points at `docs/extend/restrict-admin-access.md` and the `auth.access.refused` row in `docs/reference/log-events.md` instead of the surface the task-guide anatomy names. A fix adds an `auth.access.refused` row, with an owner's 403 on an unmapped custom route among its causes, to debug-your-site's page inputs ahead of its draft.
 - **`extender`.** Found by the add-a-custom-admin-screen page plan's second revision on 2026-10-03 (`f:vao0dd`, `f:n2bhjw`, `f:pswc3n`), a hole in `docs/internal/facts/`. The page's row-detail recipe now carries a step that renders each row as an `ExpandableRow` and a step that wires the panel's open handler, but no fact in the page's inventory states the component's controlled contract: `expanded` and `onToggle` are caller-held props, with the caller deriving `expanded={expandedId === row.id}` per instance (`src/lib/admin-toolkit/ExpandableRow.svelte:9-11`; the `ExpandableRow` entry in `docs/reference/admin-toolkit.md`). The five `ExpandableRow` facts name its job, graduation, `colspan`, the `header` snippet, and `data-cairn-inert-cell`, so the page links the entry for the props and names none, and a reader learns which prop opens the panel only off the page. A fix mints a `[verified]` fact for the `expanded`/`onToggle` contract from the component's `@component` comment and cites it from the row-detail step.
@@ -427,6 +427,35 @@ Filed 2026-10-03 by the page plan of `docs/extend/security-model.md` (draft docs
   pre-0.86.0 note to `docs/extend/migration-notes.md` for the floor's arrival, or re-points the
   outline's sixth item at no page so the anatomy's "pages that cover it" clause is not owed where
   no page exists.
+- **`extender`.** Found by the security-model page plan's targeted close on 2026-10-03
+  (`f:8u4iiv`, `f:tkpmxr`, `f:irs7fg`). The facts container holds no bullet stating what an auth
+  channel is for. Every channel fact is mechanism-level (the governing rule, the origin check,
+  hashing, code generation, the dev-backend refusal), and the only words for the seam's purpose
+  are asides, `f:tkpmxr`'s "second-audience" and `f:8u4iiv`'s "the site's own member routes",
+  which the round-2 fact read called indirect support for "signs the site's members in". The
+  reference lede states the purpose in full (`docs/reference/auth-channel.md:3-8`: a factory for a
+  site's own second-audience login channel, over any transport the site's `deliver` sends, for
+  members, athletes, boosters, or any roster the owner/editor auth was never meant to model). The
+  page has to introduce the channel where it first depends on it, in the dev-backend section, and
+  the plan assembles that sentence from four mechanism facts' asides; the round-1 drafter dropped
+  the purpose clause from a hand-off for the same want. A fix harvests one `[verified]` fact for
+  the channel's purpose from that lede and `src/lib/auth-channel/factory.ts`'s module comment, so
+  an orienting sentence has one citation.
+- **`extender`.** Found by the security-model page plan's third structural revision on 2026-10-03
+  (`f:21by9u`, `f:zzbzo8`). The page's fact inputs (`docs/internal/outlines/extend.json`, the
+  `security-model` entry's `factIds`) carry no bullet stating what a `build()` is, though the
+  container does: `f:htxey1` (`defineComponent` declares one container directive with a required
+  `build` returning a hast `Element`) and `f:tg9e0z` (a site's component is declared with
+  `defineComponent`, collected by `defineRegistry`, and invoked as a container directive the
+  pipeline stamps for dispatch) sit under the component pages' sections
+  (`docs/internal/facts/extend.md:309,504`). The structural read blocked on `build()` used as a
+  known term in Render safety, and the plan's introducing sentence is assembled from two
+  render-safety facts' asides, `f:21by9u`'s "registered `build()` component" and "running
+  site-developer code" and `f:zzbzo8`'s "`build()` dispatch", with the `defineComponent` reference
+  entry linked for the contract, the same want the channel entry above records. A fix either adds
+  `f:htxey1` and `f:tg9e0z` to the security-model entry's `factIds`, or lets a page plan cite a
+  container bullet outside its page's inputs when the page depends on the concept, which
+  `check:provenance` already accepts, since it resolves any container bullet.
 
 Filed 2026-10-03 by the page plan of `docs/extend/replace-magic-links-with-cloudflare-access.md`
 (draft docs stage 2a, task 7c).
@@ -590,6 +619,33 @@ resolution redraft (draft docs stage 2a, task 7b).
   the dictionary commit nor the extra caller retry, so the page's list of commits under each rule is
   short one commit. A fix either adds the dictionary commit to `f:0gihxq` with its caller retry, or
   drops the caller retry so the commit keeps the one shared rule.
+
+- **`extender`.** Found by the add-cairn final reader read on 2026-10-03 (`f:skeche`, `f:ghzx9c`,
+  `f:jzm5ef`, `docs/extend/add-cairn-to-a-sveltekit-app.md`, Create the project on the Cloudflare
+  adapter; engine 0.98.0). SvelteKit 3.0.0 and `@sveltejs/adapter-cloudflare` 8.0.0 have been npm
+  `latest` since 2026-10-01, and the engine's `@sveltejs/kit` peer range `^2.70` (`package.json:221`)
+  rejects them, so `npm install @glw907/cairn-cms` in a fresh `sv create` project stops with
+  `ERESOLVE`. Kit 3 also removes `csrf.checkOrigin` (`@sveltejs/kit` 3.0.0
+  `src/core/config/options.js:94`, the kit#15992 watch item), which the admin's CSRF handoff sets.
+  The tutorial pins the project to `@sveltejs/kit@^2.70` and `@sveltejs/adapter-cloudflare@^7` and
+  gives the SvelteKit 2 `tsconfig.json` as a stopgap; an engine pass must take the major.
+
+- **`extender`.** Found by the add-cairn final reader re-test on 2026-10-03
+  (`docs/extend/add-cairn-to-a-sveltekit-app.md`, Add a second post; engine 0.98.0). The
+  manifest-drift build error, thrown by `verifyManifest` (`src/lib/content/manifest.ts:373-377`),
+  ends "Regenerate it (npm run cairn:manifest) and commit the result.", but a hand-built site
+  defines no `cairn:manifest` script; the tutorial writes the manifest with `npx cairn-manifest`,
+  the package's `bin` (`package.json:199`). A reader who follows the error's own instruction gets
+  npm's missing-script error. A fix either names `npx cairn-manifest` in the message, which every
+  site can run, or the docs tell a hand-built site to add the script.
+
+- **`extender`.** Found by the theme-your-public-site reader re-test on 2026-10-03
+  (`docs/extend/theme-your-public-site.md`; engine 0.98.0). The Waymark template's
+  `src/theme/theme.css` header comment (line 66) names the `check:public-tokens` CI gate as proof
+  the re-skinned theme still clears AA, but a scaffolded `package.json` carries no such script, and
+  the page states that correctly, so the comment contradicts it. A template fix, emitted from
+  `examples/showcase`: reword the comment to say the engine repo's gate checks the shipped theme, or
+  drop the claim from the scaffold.
 
 ## Clearings
 

@@ -15,8 +15,9 @@ check, the three public-scope rules that `cairn-audit` ships.
 A site built by hand from `sv create` starts with neither Waymark nor the chassis and brings its own
 theme, so after the preconditions its work begins at
 [Theme a hand-built site](#theme-a-hand-built-site). A scaffolded site skips that section and works
-through the chassis boundary, the token tiers, the local loop, and one recipe, then verifies the
-theme.
+through the chassis boundary, the token tiers, the local loop, and one of the two recipes. The
+recipe leads into styling rendered markdown and the editor preview, then verifying the theme and
+resolving any audit finding.
 
 Theming takes working knowledge of Tailwind CSS v4 theme variables and cascade layers, daisyUI
 theme blocks, and Svelte components.
@@ -130,10 +131,10 @@ The tiers group the theme's tokens as follows:
 
 `tokens.css` declares the design-scale keys, among them the `--font-*`, `--text-step-*`, and
 `--spacing-*` families a re-skin retunes and `--font-weight-heading`, each with a generic default.
-The roles, `--color-muted`, `--color-card-border`, the status inks, the shadow, and the focus ring,
-come from the engine's `cairn-public.css`, which `tokens.css` imports right after Tailwind. The
-scaffold's `theme.css` and `site.css` carry the theme's tokens and page styling, layered over those
-two lower sources.
+The engine's roles, such as the status inks, the shadow, and the focus ring, come from its
+`cairn-public.css`, which `tokens.css` imports right after Tailwind. That sheet also declares two
+`@theme` colors, `--color-muted` and `--color-card-border`. The scaffold's `theme.css` and
+`site.css` carry the theme's tokens and page styling, layered over those two lower sources.
 
 The two orders work as follows:
 
@@ -157,9 +158,9 @@ keys a theme on the chassis defines that nothing defaults.
 
 ## Iterate locally
 
-The local loop is the dev server with `/styleguide` open, which renders every registered
-directive, the type scale, and the component recipes against the current `theme.css`, and Vite's
-hot module replacement shows each saved change there without a reload.
+The local loop is the dev server with `/styleguide` open. That route renders every registered
+directive, the type scale, and the component recipes against the current `theme.css`. Vite's hot
+module replacement shows each saved change there without a reload.
 
 To start the loop, follow these steps:
 
@@ -176,7 +177,9 @@ To start the loop, follow these steps:
    `CAIRN_DEV_BACKEND`, or run `wrangler dev`. Otherwise, run `npm run dev`.
 
    The scaffold's `npm run dev` sets `CAIRN_DEV_BACKEND=1`, whose handle serves `/media` from an
-   in-memory fake bucket, so seeded objects don't appear under it.
+   in-memory fake bucket, so seeded objects don't appear under it. Without the dev backend, the
+   scaffold's hooks mount the engine's auth guard, which redirects an `/admin` request with no
+   session to the sign-in page.
 
 3. In the browser, open `/styleguide`, where a directive that declares a `preview` renders as a
    sample and one without is listed by name.
@@ -213,8 +216,19 @@ To re-skin Waymark, follow these steps:
 1. In both daisyUI blocks, rotate the hue of `--color-primary` while holding its lightness and
    chroma.
 2. In the same two blocks, edit the `base-100/200/300` ladder and `base-content`.
-3. Optionally, in the `@theme` block of the same file, swap the two `--font-*` tokens.
-4. Optionally, in the same `@theme` block, retune one type ratio or space-scale step.
+3. Optionally, to swap the display or body face, follow these steps:
+
+   1. In the site directory, install the new face's Fontsource variable package.
+   2. In `src/theme/theme.css`, replace the old face's `@import` under the chassis import with the
+      new package's `index.css`.
+   3. In the `@theme` block of the same file, set `--font-display` or `--font-body` to the family
+      that Fontsource registers, `"<Name> Variable"`.
+
+   A token that names a face with no imported package falls through to the next family in its
+   stack, `system-ui`, with no error.
+
+4. Optionally, in the `@theme` block of `src/theme/theme.css`, retune one type ratio or
+   space-scale step.
 5. Optionally, in `ArticleView.svelte` under `src/theme/components/`, add a `data-flourish`
    attribute to the `<article class="prose">` element.
 
@@ -237,7 +251,8 @@ or deletes the override.
 
 To rebrand the status colors in Waymark, follow these steps:
 
-1. In both daisyUI blocks, set the fill for each status.
+1. In both daisyUI blocks, set the fill for each status, `--color-info`, `--color-success`,
+   `--color-warning`, and `--color-error`.
 2. In the same two blocks, retune each status ink, such as `--cairn-success-ink`, to its new fill,
    or delete its override.
 
@@ -251,9 +266,9 @@ in [Verify the theme](#verify-the-theme).
 ## Port your own theme onto the chassis
 
 A port replaces Waymark's style sheets, chrome components, and page compositions with the new
-theme's, and keeps `src/chassis/`, reaching it through its exported seams and editing or deleting a
-chassis file only where a step or a convention names the edit. A design the site already has takes
-this recipe in place of the re-skin, whose steps assume Waymark's layouts.
+theme's, and keeps `src/chassis/`. The port reaches the chassis through its exported seams. It
+edits or deletes a chassis file only where a step or a convention names the edit. A design the
+site already has takes this recipe in place of the re-skin, whose steps assume Waymark's layouts.
 
 A theme file imports from the chassis only through the `$chassis` alias in TypeScript and Svelte,
 or through a relative `@import` in CSS. The cairn repository gates that boundary on its example
@@ -306,8 +321,8 @@ To port a theme onto the chassis, follow these steps:
    `theme-names.ts`.
 
    `theme-names.ts` holds the two theme names, the cookie name, and the toggle's config. The
-   toggle's `resolveTheme` returns the live `data-theme` when it names one of the two themes and
-   otherwise reads the root's computed `color-scheme`, so a dark-first theme resolves dark on a
+   toggle's `resolveTheme` returns the live `data-theme` when it names one of the two themes.
+   Otherwise it reads the root's computed `color-scheme`, so a dark-first theme resolves dark on a
    light OS with no edit to the page shell.
 
 10. If you rename the daisyUI themes, edit `theme-names.ts`, the no-flash script in `src/app.html`,
@@ -359,17 +374,17 @@ To turn the three styles on, follow this step:
 - On the theme's `.prose` root, which for Waymark is the `<article class="prose">` in
   `ArticleView.svelte`, add a `data-flourish` attribute.
 
-A re-skin returns from here to [Re-skin Waymark](#re-skin-waymark) at its status-rebrand option,
-and a port continues with [Style the editor preview](#style-the-editor-preview), where the
-admin's preview frame shows the same rendered markdown.
+A re-skin returns from here to [Re-skin Waymark](#re-skin-waymark) at its status-rebrand option. A
+port continues with [Style the editor preview](#style-the-editor-preview), where the admin's
+preview frame shows the same rendered markdown.
 
 ## Style the editor preview
 
 A scaffolded site's adapter already points the admin's preview frame at `theme.css` and
 `site.css`, so a re-skin changes nothing here. A port that adds or renames a compiled style sheet,
-or changes the classes that wrap an entry, updates the `preview` member of the adapter's `editor`
-group, and a hand-built site adds it. The frame loads none of the site's CSS, so with no `preview`
-set it renders unstyled markup behind a hint that says so.
+or changes the classes that wrap an entry, updates the adapter's `preview` member. A hand-built
+site adds the member. The frame loads none of the site's CSS, so with no `preview` set it renders
+unstyled markup behind a hint that says so.
 
 The scaffold sets the following value in `src/theme/cairn.config.ts`, the shape a port keeps or
 edits and a hand-built site adds to its adapter:
@@ -418,9 +433,9 @@ The theme passes when the three public-scope rules, `public-literals`, `theme-co
 `theme-contrast`, raise no finding on the site and the editor preview renders an entry in the
 theme's styles. The three rules ship in `cairn-audit`, which the scaffold's `check:cairn` script
 runs at advisory tier on your site. The cairn repository gates its example site on the same three
-rules as `check:public-tokens`, a script that a scaffolded `package.json` does not carry, so a
-theme that clears the three rules meets the bar the example site meets. The `theme-contrast` rule
-reads the site's real import chain, so it needs `daisyui` installed in the site.
+rules as `check:public-tokens`, a script that a scaffolded `package.json` doesn't carry. The
+`theme-contrast` rule reads the site's real import chain, so it needs `daisyui` installed in the
+site.
 
 To verify the theme, follow these steps:
 
@@ -441,14 +456,18 @@ To verify the theme, follow these steps:
    [What theme-contrast doesn't cover](../reference/cairn-audit.md#what-theme-contrast-doesnt-cover)
    lists the values it reports as unmeasured.
 
-3. In the admin, open an entry in the editor.
-4. In the preview, confirm that the entry renders in the theme's styles in your OS color scheme,
+3. If the dev server runs without the dev backend, restart it with `npm run dev`.
+
+   The dev backend mints an owner editor on `/admin`, so the admin opens with no sign-in.
+
+4. In the admin, open an entry in the editor.
+5. In the preview, confirm that the entry renders in the theme's styles in your OS color scheme,
    with its background following `base-100`.
 
 ## Resolve an audit finding
 
-A finding from the three public rules names its file or theme block, and each rule's fix is an
-edit to the theme. The three rules read the files that
+Each public rule has one check in the following list, and each check names the edit or the
+reference row that resolves its finding. The three rules read the files that
 [The public scope](../reference/cairn-audit.md#the-public-scope) in the audit reference lists.
 
 To resolve a public-rule finding, work through the following checks in order:
@@ -456,8 +475,12 @@ To resolve a public-rule finding, work through the following checks in order:
 1. If `public-literals` raises a finding, read its row in
    [The static rules](../reference/cairn-audit.md#the-static-rules) for what the rule reads and
    where a literal is legal.
-2. If `theme-contrast` flags directive text or code highlighting after a fill change, retune that
-   status ink to its fill, or delete its override.
+2. If `theme-contrast` flags directive text or code highlighting after a fill change, retune the
+   overridden ink to its fill, or delete the override.
+
+   If a derived ink fails on the theme's fills, apply the fix in
+   [Ink derivation](../reference/public-css.md#ink-derivation).
+
 3. If `theme-conformance` reports one of the five `--cairn-cta-*` keys or `--cairn-caption-tracking`
    as unresolved, declare it in the theme.
 
@@ -468,10 +491,14 @@ To resolve a public-rule finding, work through the following checks in order:
 
 ## See also
 
-The following pages hold the tutorial and the reference detail a theme builds on:
+The following pages cover the work around a theme:
 
-- [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) builds the hand-built site that
-  [Theme a hand-built site](#theme-a-hand-built-site) styles.
+- [Configure rendering](configure-rendering.md) builds the components a theme styles.
+- [Build the public routes](build-the-public-routes.md) wires the delivery routes the chassis feeds.
+- [Configure media](configure-media.md) sets up the media storage that seeded images come from.
+- [Run cairn-audit on your site](run-cairn-audit-on-your-site.md) configures `cairn-audit` for the
+  whole site.
+- [Scaffolded site files](scaffolded-site-files.md) maps every file the setup command writes.
 - [The public style sheet reference](../reference/public-css.md) lists every key the engine's sheet
   declares, with its default.
 - [The `cairn-audit` reference](../reference/cairn-audit.md) documents the three public rules and

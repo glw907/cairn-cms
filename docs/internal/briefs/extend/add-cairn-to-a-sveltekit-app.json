@@ -33,7 +33,7 @@
       "id": "no-claim"
     },
     {
-      "text": "If you start from an existing app, you work through the same milestones, and each step that creates the project or its repository says when your app skips it.",
+      "text": "If you start from an existing app, you work through the same milestones, and the tutorial notes where your app skips creating the project or its repository.",
       "id": "no-claim"
     },
     {
@@ -164,7 +164,18 @@
       ]
     },
     {
-      "text": "A current `sv create` scaffold has no `svelte.config.js`, so the kit config sits inline in the `sveltekit()` call in `vite.config.ts`.",
+      "text": "Since October 1, 2026, `sv create` scaffolds SvelteKit 3, which the engine's `@sveltejs/kit` peer range of `^2.70` does not admit.",
+      "id": [
+        "f:ghzx9c",
+        "f:skeche"
+      ]
+    },
+    {
+      "text": "The project therefore pins SvelteKit 2 and the matching major version of the Cloudflare adapter before the engine installs.",
+      "id": "f:jzm5ef"
+    },
+    {
+      "text": "The scaffold has no `svelte.config.js`, so the kit config sits inline in the `sveltekit()` call in `vite.config.ts`.",
       "id": "f:ifuvcl"
     },
     {
@@ -179,8 +190,8 @@
       "id": "f:87hc1y"
     },
     {
-      "text": "To create the project and swap its adapter, follow these steps:",
-      "id": "no-claim"
+      "text": "To create the project, pin SvelteKit 2, and swap its adapter, follow these steps:",
+      "id": "f:jzm5ef"
     },
     {
       "text": "In a terminal, create a minimal TypeScript project with no add-ons:",
@@ -202,8 +213,22 @@
       "id": "no-claim"
     },
     {
-      "text": "In the project directory, replace the scaffold's adapter with the Cloudflare one:",
-      "id": "f:7e1t0j"
+      "text": "In the project directory, replace the scaffold's adapter with the Cloudflare one and pin SvelteKit 2:",
+      "id": [
+        "f:7e1t0j",
+        "f:jzm5ef"
+      ]
+    },
+    {
+      "text": "In `tsconfig.json`, replace the contents with the SvelteKit 2 form:",
+      "id": "f:g48ytv"
+    },
+    {
+      "text": "The scaffold's version extends `$app/tsconfig`, which does not resolve on SvelteKit 2.",
+      "id": [
+        "f:ghzx9c",
+        "f:g48ytv"
+      ]
     },
     {
       "text": "In `vite.config.ts`, import the Cloudflare adapter and pass it as the `adapter` option:",
@@ -277,8 +302,8 @@
       "id": "no-claim"
     },
     {
-      "text": "In the home page's route component, change a line of text.",
-      "id": "no-claim"
+      "text": "In `src/routes/+page.svelte`, change a line of text.",
+      "id": "f:ibis7z"
     },
     {
       "text": "In the project directory, build the site and deploy it again:",
@@ -950,6 +975,10 @@
       "id": "no-claim"
     },
     {
+      "text": "In the remote URL, replace the account name with the GitHub account that owns the repository.",
+      "id": "no-claim"
+    },
+    {
       "text": "On GitHub, confirm that the repository lists the post under `src/content/posts` and the manifest at `src/content/.cairn/index.json`.",
       "id": [
         "f:gj96px",
@@ -1189,8 +1218,11 @@
       "id": "no-claim"
     },
     {
-      "text": "In the adapter module, replace the placeholder `appId` and `installationId` with the values you noted:",
-      "id": "f:0w7jar"
+      "text": "In the adapter module, set `owner` to your GitHub account, and set `appId` and `installationId` to the values you noted:",
+      "id": [
+        "f:rp65d2",
+        "f:0w7jar"
+      ]
     },
     {
       "text": "`createGithubApp` takes `owner`, `repo`, `branch`, `appId`, and `installationId`, all required strings, with `branch` the repository's default branch.",
@@ -1245,7 +1277,7 @@
       ]
     },
     {
-      "text": "In `wrangler.jsonc`, bind the database as `AUTH_DB`, with `migrations_dir` pointing at the copied directory:",
+      "text": "In `wrangler.jsonc`, add the following entry at the top level of the file, binding the database as `AUTH_DB` with `migrations_dir` pointing at the copied directory:",
       "id": [
         "f:if45on",
         "f:7bch04"
@@ -1291,15 +1323,16 @@
       "id": "f:xhwl32"
     },
     {
-      "text": "Serve the Worker on the domain, following Cloudflare's page on [Workers custom domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).",
-      "id": "no-claim"
-    },
-    {
-      "text": "In `wrangler.jsonc`, add the `EMAIL` binding, `PUBLIC_ORIGIN`, and `observability` beside the `AUTH_DB` entry:",
+      "text": "In `wrangler.jsonc`, add the `EMAIL` binding, `PUBLIC_ORIGIN`, `observability`, and a `routes` entry for the domain beside the `AUTH_DB` entry:",
       "id": [
         "f:7bch04",
-        "f:txgoyy"
+        "f:txgoyy",
+        "f:thgmpz"
       ]
+    },
+    {
+      "text": "The `routes` entry serves the Worker on the domain as a [Workers Custom Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/), which the next deploy creates with its DNS record and certificate.",
+      "id": "f:thgmpz"
     },
     {
       "text": "`observability.enabled: true` sends the engine's log records to Workers Logs and satisfies the `config.observability` check of `cairn doctor`.",

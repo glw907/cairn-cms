@@ -7,8 +7,19 @@ resolution), and revised the same day for the resolution run's second round (con
 `docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`, "### security-model",
 requires. Revised once more the same day on the structural edit's read of the plan itself: one
 blocking finding (the guard used as a known term before anything defines it) and four advisories,
-each disposed in the third table near the end. The drafter drafts from this plan: it is the source of the page's order, each section's
-claim, and each fact's placement. The brief sits beside it at
+each disposed in the third table near the end. Revised a fourth time in the targeted close Geoff
+ruled on 2026-10-03, after the plan's second structural read
+(`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-2-record.md`,
+"### security-model") blocked on a second concept used before its introduction, the auth channel
+in the dev-backend section: both concepts, the guard and the channel, are now introduced before or
+where the page first depends on them, the fourth table near the end disposes that read's findings,
+and nothing the reads passed is changed. Revised a fifth time on the targeted close's own
+structural read of that revision, which passed the order, the introduction, both concept
+introductions, the cross-links, and the anatomy, and blocked on a third concept used as a known
+term, `build()` in Render safety's first sentence: that section's second sentence now says what a
+`build()` is, three advisories are taken, and the fifth table near the end disposes all four. The
+drafter drafts from this plan: it is the source of the page's order, each section's claim, and each
+fact's placement. The brief sits beside it at
 `docs/internal/briefs/extend/security-model.json`. The plan is Google's outline written down
 (Google Technical Writing Two, "Organizing large documents",
 https://developers.google.com/tech-writing/two/large-docs).
@@ -26,7 +37,8 @@ https://developers.google.com/tech-writing/two/large-docs).
 - **Anatomy** (`docs/internal/docs-register.md`, "The page anatomies", concept page): an
   introduction in Google's three parts that states the subject and never describes the page
   itself; a definition of the concept; one subtopic per section; a related-resources ending
-  grouped as how-to guides, concepts, and external resources, 3 to 5 links each.
+  grouped as how-to guides, concepts, and external resources, with not more than 3 to 5 links in
+  each group (the register's words set a ceiling, not a floor).
 - **Exemplar takes.** From the Cloudflare Workers security model
   (`~/.local/share/cairn/exemplars/evaluators/cloudflare-workers-security-model/page.md`):
   organize around the questions a reviewer asks, each section carrying the threat, the defense
@@ -56,6 +68,29 @@ https://developers.google.com/tech-writing/two/large-docs).
   section 5, the identity-mode logout clause placed before identity mode is introduced, and the
   density of one paragraph carrying covers, prior knowledge, and doesn't-cover together. The third
   table near the end maps all five.
+- **The second structural edit of this plan, and the targeted close (Geoff, 2026-10-03).** The
+  second read passed the order, the introduction's three parts, the cross-links, and the module
+  types, and blocked on the auth channel: section 6 depends on `createAuthChannel`, a dev
+  transport, and the channel's `deliver` and `lookup` functions, and nothing before section 11
+  says what a channel is, the same defect class as the guard. Geoff's ruling for the close: start
+  from the revised plan, keep everything the reads passed, and close both concepts, each
+  introduced where first used or the sections reordered so it is. The guard keeps its
+  introduction in the definition paragraph, now split in two on the read's density advisory. The
+  channel is introduced in section 6, at its first use, in two fixed sentences linked to its own
+  section, because no reorder serves it (the reason is under section 6). The read's other
+  advisory, that no planned sentence carries the outline's "floors, not ceilings", is taken as
+  one short sentence citing `f:y3ljm0`. The fourth table near the end maps all three.
+- **The third structural edit of this plan (2026-10-03).** The read of the targeted close's
+  revision passed the attacker's-path order and its stated grouping, the introduction's three
+  parts, the guard's and the channel's introductions, the four outline cross-links, and the concept
+  anatomy, and blocked on one more concept used before anything says what it is: Render safety's
+  first sentence names "the `build()` dispatch", the section builds on `build()` three more times
+  and the responsibilities list once, and no sentence said that a `build()` is site code a site
+  registers for a component. The section's fixed second sentence now says so, citing `f:21by9u`
+  and `f:zzbzo8` and linking the `defineComponent` reference entry. Three advisories taken: the
+  session cookie's Limits glosses its "https help page" clause, section 6 sets its two refusals as
+  a two-item list, and Migration notes leaves the Concepts group. The fifth table near the end maps
+  all four.
 - **The diagnosis** (`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`):
   the committed page reads as atoms. This plan decides what the page argues, which facts carry the
   argument, and which are detail the reference already holds.
@@ -78,6 +113,9 @@ path to the next component.
    check and sets every admin response's headers, then the dev-backend flag the guard refuses as its
    first step. The round-2 structural read asked for the flag's section directly after the guard:
    the guard's first listed step is the tripwire, and its explanation now follows within a page.
+   The flag's second refusal is the auth channel's, so that section introduces the channel at the
+   page's first use of it, five sections ahead of the channel's own; section 6 records why no
+   reorder serves that.
 3. **What the account reaches** (sections 7 to 9). The access map (which screens a signed-in editor
    may reach), then render safety (what an editor's markup does to every visitor), then the GitHub
    App's reach (what the engine's own credential can write). Each widens the blast radius of one
@@ -165,7 +203,7 @@ subsection, so the pattern is even (a round-2 non-blocking finding).
 
 ## Introduction
 
-Six paragraphs under the title, no heading. Google's three parts arrive as statements about the
+Seven paragraphs under the title, no heading. Google's three parts arrive as statements about the
 subject, never about the page: outside Geoff's two paragraphs, no sentence opens on the page or
 refers to a position.
 
@@ -198,7 +236,7 @@ doesn't-cover sentences take paragraph 4.
   from an anonymous form. This answers the round-2 structural finding that the introduction never
   named the areas, states the grouping the same finding asked for, and widens the attacker framing
   to the channel's anonymous caller without touching Geoff's sentence. The headers are "the admin
-  response headers", never "the guard's", since the guard is defined two paragraphs later and the
+  response headers", never "the guard's", since the guard is defined in paragraph 5 and the
   introduction uses no term before its definition.
 - *Prior knowledge.* Weighing these defenses takes working knowledge of SvelteKit hooks, form
   actions, and cookie attributes.
@@ -235,35 +273,50 @@ record, and the plan step confirmed it: the oldest entry in `docs/extend/migrati
 0.86.0, the oldest in `CHANGELOG.md` is 0.22.0, and the floor shipped in v0.17.0 (`f:r0cv6e`, git
 `40d466ad`). A sentence naming either file as the record would be false. The anatomy's "and the
 pages that cover it" clause goes unmet for this one item because no published page covers it;
-the gap is filed in `docs/internal/docs-friction-log.md` as the plan's friction, and the
-Concepts entry for Migration notes in section 13 names only what that page does record.
+the gap is filed in `docs/internal/docs-friction-log.md` as the plan's friction, and section 13
+links Migration notes nowhere: the third structural read found the Concepts entry that named it
+pointing at release history, the subject this paragraph leaves out, and a per-version record is
+not a concept page.
 
 Paragraphs 3 and 4 are anatomy sentences (`no-claim`), so they carry no code span, numeral, or
 version that `check:provenance` would read as an extractable fact.
 
-**Paragraph 5: the definition** (the anatomy's "a definition of the concept follows"). Under the
-zero-config default cairn is the identity system for a site's editors, since its D1 store,
-`AUTH_DB`, holds the roster, the sessions, and the single-use sign-in tokens (`f:u77pea`). Then
-the original sentence the round-2 register read asked to restore, verbatim: "A developer can
-replace those defaults, the owner and editor roles and magic-link sign-in, with their own auth
-framework, after which cairn mints no session and reads an owner or editor identity through a
-defined hand-off." (`f:y3ljm0`; a sentence anywhere on the page that uses its key phrase "floors,
-not ceilings" must cite `f:y3ljm0`). Then the guard, defined before any section uses it, in one
-sentence: "Every `/admin` request passes through the auth guard, the server hook `createAuthGuard`
-builds." (`f:7qqhda`, whose source is that hook's `handle` function; "the auth guard" is rendered
-as a link to the heading The auth guard, and `createAuthGuard` as a link to
+**Paragraph 5: the definition, what cairn is and where every admin request passes** (the
+anatomy's "a definition of the concept follows"). Two sentences. Under the zero-config default
+cairn is the identity system for a site's editors, since its D1 store, `AUTH_DB`, holds the
+roster, the sessions, and the single-use sign-in tokens (`f:u77pea`). Then the guard, defined
+before any section uses it: "Every `/admin` request passes through the auth guard, the server hook
+`createAuthGuard` builds." (`f:7qqhda`, whose source is that hook's `handle` function; "the auth
+guard" is rendered as a link to the heading The auth guard, and `createAuthGuard` as a link to
 `docs/reference/sveltekit.md`, "`createAuthGuard`", which states the hook and its wiring in
-`hooks.server.ts`.) The structural edit of this plan blocked on the guard arriving as an undefined
-actor in section 3's Limits and section 4's first sentence; this sentence names the guard and what
-passes through it, and leaves the fixed order and the logged refusals to section 5, so that
-section's first sentence restates nothing. Then the hand-off named: the `identity` option on that
-guard, which reads the proof of identity an external gate supplies (`f:u77pea` supports the gate
-replacing session resolution when a site configures one; the sentence may also cite `f:fhit7f`,
-whose full statement lives in section 10). No channel sentence here: the channel is introduced by
-its own section's first sentence, and no earlier section depends on it (the round-2 fact read
-found the committed channel sentence's citation only indirect).
+`hooks.server.ts`.) The first structural edit of this plan blocked on the guard arriving as an
+undefined actor in section 3's Limits and section 4's first sentence; this sentence names the guard
+and what passes through it, and leaves the fixed order and the logged refusals to section 5, so
+that section's first sentence restates nothing. The second edit passed the introduction and found
+the one paragraph that carried the store, the guard, the replaceable defaults, and the `identity`
+hand-off dense; the split it suggested is this paragraph and the next.
 
-**Paragraph 6: platform isolation, linked out** (the Cloudflare take). "The isolation of the
+**Paragraph 6: the replaceable defaults and the hand-off.** Three sentences. First, the floor
+stated outright, the four words the outline's first cover item names and no earlier plan sentence
+carried: "The defaults are floors, not ceilings." (`f:y3ljm0`, whose key phrase this is; any other
+sentence on the page that uses the phrase cites `f:y3ljm0` too.) Then the original sentence the
+round-2 register read asked to restore, verbatim: "A developer can replace those defaults, the
+owner and editor roles and magic-link sign-in, with their own auth framework, after which cairn
+mints no session and reads an owner or editor identity through a defined hand-off." (`f:y3ljm0`.)
+The floor sentence states the principle and the restored sentence the mechanism and its
+consequence, so the pair is not a restatement; the drafter keeps them as two sentences, never a
+lead clause and a colon. Then the hand-off named: the `identity` option on that guard, which reads
+the proof of identity an external gate supplies in place of cairn's session resolution
+(`f:u77pea` supports the gate replacing session resolution when a site configures one; the sentence
+may also cite `f:fhit7f`, whose full statement lives in section 10; `createAuthGuard` is already
+linked in paragraph 5, so this sentence links nothing). No channel sentence here. The channel is
+the seam a site adds, not the default a site replaces, so it is not this paragraph's subject; the
+covers sentence in paragraph 3 names it as a seam, and the page first depends on it in section 6,
+The dev-backend flag's two refusals, which introduces it there. The second structural edit blocked
+on this plan's earlier claim that no section before section 11 depends on the channel; section 6
+does, and the correction is under that section.
+
+**Paragraph 7: platform isolation, linked out** (the Cloudflare take). "The isolation of the
 Worker that runs the engine belongs to Cloudflare, and the Workers security model describes it."
 Link https://developers.cloudflare.com/workers/reference/security-model/ ; `no-claim`.
 
@@ -338,7 +391,11 @@ with any subordination or cut the section carries.
   carried it before either CSRF or identity mode had arrived).
 - **Limits of the session cookie:** `f:g22dnw`'s residual: a route outside `/admin`, served over
   http on a non-local host under an https `PUBLIC_ORIGIN`, mints a `__Host-` cookie the browser
-  discards, since only an `/admin` path gets the guard's https help page.
+  discards, since the guard answers a plain-http request with its help page only on an `/admin`
+  path. The closing clause cites `f:g22dnw`, whose residual sentence it is, with `f:n3k03a`, which
+  states the help page's condition; the third structural read's advisory asked it to gloss the
+  bare "https help page", a term The auth guard explains, and the gloss closes the forward
+  dependency without a link, since the guard itself is defined in paragraph 5.
 - **Hand-off:** "The cookie rides every admin request the browser sends, including a form post the
   editor never meant to send, and CSRF protection answers that post." (`no-claim`.) Subordinated:
   `f:njh87y` (the CSRF cookie shares the session cookie's `__Host-` and `Secure` derivation; stated
@@ -418,22 +475,52 @@ with any subordination or cut the section carries.
 
 - **Takes:** A deployed Worker must never carry the `CAIRN_DEV_BACKEND` flag, so the engine
   refuses the flag in two places, on different terms. (`f:tkpmxr`)
+- **Shape** (the third structural read's pace advisory): the first sentence is the lead-in of a
+  two-item list, one item per refusal. The first item is the guard's refusal. The second opens on
+  the two fixed channel sentences below, then states the channel's refusal with its dev-transport
+  clause, and closes on the deployed-detection rule (`f:i2udr5`). The Limits subsection follows the
+  list. The list holds the channel's introduction to one item, so the section's densest stretch
+  reads as two cases, and no sentence is reordered or reworded for it.
 - **Draws on:** `f:tkpmxr` (both refusals read the flag from `platform.env` and `process.env`;
   `createAuthGuard` refuses with a 503 on the flag alone and logs `guard.refused` with reason
   `dev_backend_in_prod`, because it mounts only in a production build and a site's dev branch
-  replaces it; every `createAuthChannel` action refuses with a 503 before any other work, only
-  when the flag is set and the request counts as deployed, because the flag is a dev transport's
-  enable contract; link `docs/reference/auth-channel.md`); `f:i2udr5` (a request counts as
-  deployed when the configured `PUBLIC_ORIGIN` names a non-local host, whatever `Host` claims; a
+  replaces it). Then the auth channel, introduced here because this is the first sentence on the
+  page that depends on it, in two fixed sentences the drafter carries word for word, link syntax
+  aside, ahead of the second refusal: "The second refusal belongs to an auth channel, the seam a
+  site adds for a second sign-in audience on routes the guard never covers. `createAuthChannel`
+  builds a channel from functions the site supplies, among them `lookup`, which resolves a contact
+  against the channel's own roster, and `deliver`, which carries a code to the contact." The first
+  sentence cites `f:tkpmxr`, whose "second-audience" names the audience, and `f:8u4iiv`, whose
+  clause that the guard's admin-path handling never covers a site's member routes it draws on,
+  with "an auth channel" rendered as a link to the heading The auth channel's threat surface. The
+  second cites `f:irs7fg`, which names `deliver`, `lookup`, and the rest of the config as opaque
+  site functions, and `f:fslodf`, whose "roster lookup resolved a stable subject" is what `lookup`
+  does, with `createAuthChannel` linked to `docs/reference/auth-channel.md`, whose lede states the
+  seam in full. Then the second refusal: every channel action refuses with a 503 before any other
+  work, only when the flag is set and the request counts as deployed, because the flag is the
+  enable contract of a dev transport, a `deliver` that prints the code in development instead of
+  sending it (`f:tkpmxr` with `f:wuwk2q`, whose printing transport is the definition; its
+  roster-oracle consequence stays in section 11's Limits). Then, closing the second item,
+  `f:i2udr5` (a request counts as deployed when the configured `PUBLIC_ORIGIN` names a non-local host, whatever `Host` claims; a
   local, absent, or unparseable `PUBLIC_ORIGIN` hands the answer to the request's hostname, so a
   configured origin can only move the answer toward refusing, and a deployment with no
   `PUBLIC_ORIGIN` rests on `Host`).
+- **Why the channel is introduced here and not by a reorder.** The second structural edit offered
+  two fixes and recommended this one. The other, moving the channel half of `f:tkpmxr` and the
+  transport half of `f:irs7fg` to section 11 and keeping this section to the guard's refusal and
+  the bundle residual, would leave one refusal under a heading, a restored slug, and a first
+  sentence that all say two, and the outline's cover item is the two refusals together. A reorder
+  cannot help either: this section must follow the guard directly (the rework-record round-2
+  structural finding on the 240-line gap), and the channel's own section belongs to the
+  replaced-seams group after the built-in design, so the two refusals meet the channel before its
+  section whichever way the groups run. Introducing it at first use, linked forward, is Google's
+  "when it's most relevant" for this page.
 - **Limits of the dev-backend refusals:** `f:irs7fg` (neither refusal sees a dev-shaped transport
   deployed with the flag unset, since `deliver`, `lookup`, and the rest of the channel's config are
-  opaque site functions; a dev-branch bundle that replaces the guard behind the build-time
-  `__CAIRN_DEV_BUILD__` conditional sits outside both; the example site closes the transport case
-  with a refusal inside its capture transport and the bundle case in CI with a
-  `wrangler deploy --dry-run` marker scan, for itself alone).
+  opaque site functions, the functions the introduction above named; a dev-branch bundle that
+  replaces the guard behind the build-time `__CAIRN_DEV_BUILD__` conditional sits outside both;
+  the example site closes the transport case with a refusal inside its capture transport and the
+  bundle case in CI with a `wrangler deploy --dry-run` marker scan, for itself alone).
 - **Hand-off:** "A request the guard admits to a guarded path belongs to a signed-in editor, and
   Access map coverage decides which screens that editor reaches." (`no-claim`.) Cut: `f:gh73p5`
   (the flag counts only as `1` or boolean `true`, so a `true` string reads as unset: the parsing
@@ -483,6 +570,21 @@ with any subordination or cut the section carries.
 - **Takes:** Every renderer that `createRenderer` builds runs a sanitize floor by default, seeded
   from GitHub's `defaultSchema`, before the `build()` dispatch or any later stage touches the tree.
   (`f:z3a58a`)
+- **The second sentence, fixed** (the third structural read's blocking finding: `build()` was used
+  as a known term here, three more times in this section, and once in The site's responsibilities,
+  with no sentence on the page saying what one is): "A `build()` is the function a site registers
+  for one of its own components, site-developer code that the dispatch stage runs to turn each use
+  of that component in the markdown into markup." It cites `f:21by9u`, whose "registered `build()`
+  component" and source comment ("running site-developer code") carry the registration and the
+  trust, with `f:zzbzo8`, whose dispatch stage runs it; `build()` is rendered as a link to
+  `docs/reference/core.md`, "`defineComponent`", the entry that states the function's contract (a
+  hast `Element`, returned synchronously, once per rendered directive occurrence). The sentence
+  names no other identifier in a code span, since neither cited bullet contains `defineComponent`
+  and `check:provenance` matches a code-span identifier against the cited bullets; the entry is
+  reached through the link. It sits directly after the first sentence and ahead of the nine-stage
+  list, so the reader meets the term, its definition, and then its position in the order, and the
+  first sentence keeps its claim and its floor-before-dispatch position, the section's load-bearing
+  one. The drafter changes only the link syntax.
 - **Draws on:** `f:z3a58a` (the floor strips `<script>` tags, inline event-handler attributes, and
   `javascript:` and `data:` URLs; link `docs/reference/core.md`, "`createRenderer`"); `f:zzbzo8`
   (the fixed nine-stage order as a numbered list; the two positions that carry the argument are the
@@ -573,7 +675,8 @@ Heading fixed by inbound links (see Heading policy).
 - **Takes:** An auth channel's sign-in form takes a contact from an unauthenticated caller, so the
   channel rests on the rule that no control keyed on the victim's identity may deny, delay, or
   destroy anything, and denial keys only on the requester. (`f:pjjo64`; the round-2 register
-  rewrite)
+  rewrite. The channel itself was introduced in section 6, so this sentence states the rule the
+  channel rests on, not what a channel is, and restates nothing.)
 - **Draws on:** `f:pjjo64` (an identity-keyed control either escalates through a channel the site
   can act on or only logs). The rule's three instances, as a short list under a lead-in that cites
   `f:pjjo64` (the round-1 drafter found one sentence became a semicolon chain): `f:7idpoq`
@@ -650,7 +753,7 @@ section.
 
 ### 13. Related resources
 
-The anatomy's ending, grouped as the register asks, 3 to 5 links a group.
+The anatomy's ending, grouped as the register asks, not more than 3 to 5 links a group.
 
 - **Takes:** The following resources cover the tasks, the system, and the standards behind these
   defenses. (`no-claim`; each group's list is introduced by a complete sentence)
@@ -659,13 +762,17 @@ The anatomy's ending, grouped as the register asks, 3 to 5 links a group.
   `docs/extend/add-a-second-sign-in-group.md` (an auth channel),
   `docs/extend/configure-rendering.md` (the renderer's options),
   `docs/extend/rotate-the-github-app-key.md` (the App's private key).
-- **Concepts** (two): `docs/extend/architecture.md` (how the engine's parts and seams fit
-  together), `docs/extend/migration-notes.md` (for when the access-map warning shipped). The gloss
-  names only the access-map warning: `docs/extend/migration-notes.md:365-370` records the
-  `config.access_unmapped` warning under 0.97.0, and the file records nothing about the sanitize
-  floor, so the earlier gloss "when the sanitize floor and the access-map warning shipped", and the
-  round-2 structural rewrite that restated it, cannot land (see the introduction's doesn't-cover
-  entry).
+- **Concepts** (one): `docs/extend/architecture.md` (how the engine's parts and seams fit
+  together). Migration notes left this group on the third structural read's advisory:
+  `docs/extend/migration-notes.md` is a per-version record, not a concept page; its gloss, "for
+  when the access-map warning shipped", pointed at release history, the subject paragraph 4 of the
+  introduction leaves out; and the inbound link from `docs/extend/migration-notes.md:370` to the
+  allowlist heading needs no reciprocal link. The register's 3 to 5 is a ceiling, and no other
+  concept page the extend outline names bears on this subject, so the group holds one link. The
+  earlier revisions narrowed that gloss to the access-map warning alone because the file records the
+  `config.access_unmapped` warning under 0.97.0 at `:365-370` and nothing about the sanitize floor;
+  that finding is why the round-2 structural rewrite could not land, and the introduction's
+  doesn't-cover entry keeps it.
 - **External resources** (four): the Workers security model
   (https://developers.cloudflare.com/workers/reference/security-model/, the Worker's isolation);
   the Fetch Standard (https://fetch.spec.whatwg.org/, when a browser sends `Origin: null`); NIST
@@ -684,7 +791,7 @@ fact; each named entry was opened and read before it was named, and re-read at t
 | --- | --- | --- |
 | `f:v85shm` | placed | Introduction (paragraph 1, sentences 2 and 3; owner ruling) |
 | `f:u77pea` | placed | Introduction (paragraph 5, the definition) |
-| `f:y3ljm0` | placed | Introduction (paragraph 5, the restored sentence) |
+| `f:y3ljm0` | placed | Introduction (paragraph 6, the floor sentence and the restored sentence) |
 | `f:u1bjul` | placed | Magic-link sign-in |
 | `f:f39xqq` | placed | Magic-link sign-in |
 | `f:8l4wwr` | placed | Magic-link sign-in |
@@ -718,14 +825,14 @@ fact; each named entry was opened and read before it was named, and re-read at t
 | `f:d2jumm` | subordinated | `docs/reference/supported-toolchain.md`, "The `checkOrigin` deprecation": states the 2.61 deprecation in favor of `trustedOrigins`, that it is not removed, and that cairn's admin CSRF ownership depends on disabling it |
 | `f:9exogy` | cut | A re-authentication in one tab rotating the CSRF value under another tab's form is a usability consequence (one 403 a reload clears) with no security residual, and moot under `identity` |
 | `f:7qqhda` | placed | The auth guard (also cited by the introduction's definition sentence that names the guard, paragraph 5) |
-| `f:n3k03a` | placed | The auth guard (its identity half is cited again from Identity mode's threat surface) |
+| `f:n3k03a` | placed | The auth guard (its identity half is cited again from Identity mode's threat surface, and its https-help-page condition from The session cookie's Limits) |
 | `f:ubuj1w` | placed | The auth guard |
 | `f:yzbvk4` | placed | The auth guard (Limits) |
 | `f:72xplg` | placed | The auth guard (Limits; re-cited in The site's responsibilities) |
 | `f:horkxq` | placed | The auth guard (Limits; re-cited in The site's responsibilities) |
 | `f:t976f1` | subordinated | `docs/reference/sveltekit.md`, "`createAuthGuard`", the `config.includeSubDomains` paragraph: states that the rejection pages and the login redirect send no `Strict-Transport-Security` and why |
 | `f:tkpmxr` | placed | The dev-backend flag's two refusals |
-| `f:i2udr5` | placed | The dev-backend flag's two refusals |
+| `f:i2udr5` | placed | The dev-backend flag's two refusals (the last sentence of the channel's list item) |
 | `f:irs7fg` | placed | The dev-backend flag's two refusals (Limits) |
 | `f:gh73p5` | cut | The flag's truthiness rule (`1` or boolean `true` only) is the same on the enabling and the refusing side, so it changes no reviewer's decision |
 | `f:rv9gdc` | cut | The example site's dev wiring loading by dynamic import repeats the example-site closure `f:irs7fg` already states in the same section |
@@ -736,7 +843,7 @@ fact; each named entry was opened and read before it was named, and re-read at t
 | `f:arr13a` | placed | Access map coverage (Limits and the allowlist subsection) |
 | `f:8ciz2s` | placed | Access map coverage (Limits and the allowlist subsection) |
 | `f:z3a58a` | placed | Render safety |
-| `f:zzbzo8` | placed | Render safety |
+| `f:zzbzo8` | placed | Render safety (the nine-stage list; also cited by the fixed second sentence that says what a `build()` is) |
 | `f:296ar7` | placed | Render safety |
 | `f:q9yndd` | placed | Render safety |
 | `f:3yzqup` | placed | Render safety |
@@ -744,12 +851,12 @@ fact; each named entry was opened and read before it was named, and re-read at t
 | `f:2fwybn` | placed | Render safety (Limits) |
 | `f:r7sbt1` | placed | Render safety (Limits) |
 | `f:wgovy6` | placed | Render safety (Limits) |
-| `f:21by9u` | placed | Render safety (Limits) |
+| `f:21by9u` | placed | Render safety (Limits; also cited by the fixed second sentence that says what a `build()` is, and re-cited in The site's responsibilities) |
 | `f:r0cv6e` | cut | When the sanitize floor shipped is the outline's sixth out-of-scope item, so the page states the floor as it stands (the pilot's cut, kept). No published page records the date: `docs/extend/migration-notes.md` starts at 0.86.0 and `CHANGELOG.md` at 0.22.0, while the floor shipped in v0.17.0 (git `40d466ad`), so the reason names no record, and the gap is filed in `docs/internal/docs-friction-log.md` |
 | `f:kkp5bi` | placed | The GitHub App's reach |
 | `f:gglwt4` | placed | The GitHub App's reach (first sentence and Limits) |
 | `f:l5gx1t` | placed | The GitHub App's reach (Limits) |
-| `f:fhit7f` | placed | Identity mode's threat surface (the introduction's hand-off sentence may cite it too) |
+| `f:fhit7f` | placed | Identity mode's threat surface (paragraph 6's hand-off sentence may cite it too) |
 | `f:2glcaf` | placed | Identity mode's threat surface |
 | `f:8rnym5` | placed | Identity mode's threat surface |
 | `f:emrebl` | placed | Identity mode's threat surface (Limits) |
@@ -761,12 +868,12 @@ fact; each named entry was opened and read before it was named, and re-read at t
 | `f:k6u4g2` | placed | The auth channel's threat surface (the three-instances list) |
 | `f:e0imm6` | placed | The auth channel's threat surface (the three-instances list) |
 | `f:wu8x70` | placed | The auth channel's threat surface (the origin check) |
-| `f:8u4iiv` | placed | The auth channel's threat surface (the origin check) |
-| `f:fslodf` | placed | The auth channel's threat surface (hashing) |
+| `f:8u4iiv` | placed | The auth channel's threat surface (the origin check; its never-covers clause is cited again from The dev-backend flag's two refusals, where the channel is introduced) |
+| `f:fslodf` | placed | The auth channel's threat surface (hashing; its roster-lookup clause is cited again from The dev-backend flag's two refusals, where the channel is introduced) |
 | `f:dipwmx` | placed | The auth channel's threat surface (hashing) |
 | `f:plcf5v` | placed | The auth channel's threat surface (code generation) |
 | `f:s047l1` | placed | The auth channel's threat surface (code generation; the external link) |
-| `f:wuwk2q` | placed | The auth channel's threat surface (Limits) |
+| `f:wuwk2q` | placed | The auth channel's threat surface (Limits; its printing transport is cited again from The dev-backend flag's two refusals as the definition of a dev transport) |
 | `f:ez788q` | subordinated | `docs/reference/auth-channel.md`, "Config obligations": states the `normalize`, `lookup`, and `challenge` obligations in full |
 | `f:j254i8` | subordinated | `docs/reference/auth-channel.md`, "`createAuthChannel`", the `challenge` bullet: states that the challenge is awaited before any code is minted on `request` and on an escalated `confirm`, and that a failure writes no row, charges no attempt, and consumes nothing |
 | `f:2w1yrc` | cut | The rule's design history (three review rounds that failed on the same move) is history, not a defense or a residual; the page states the rule as it is and `docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md` holds the history |
@@ -779,7 +886,7 @@ fact; each named entry was opened and read before it was named, and re-read at t
 | --- | --- |
 | Structural, `:3`: the introduction never names the areas the page assesses; the attacker framing omits the channel's anonymous caller | Applies. Paragraph 3 names the areas in page order as two groups and names the channel's caller; Geoff's sentences stay |
 | Structural, `:421`: the dev-backend section sits about 240 lines after the guard step that names it; Log contents sits mid-page; the grouping is unstated | Applies, with one change. Section 6 follows section 5 directly; the built-in-then-replaced grouping is stated in paragraph 3; the logs claim becomes one sentence in section 1 rather than a section moved to the end |
-| Register, `:16-20`: the default-identity sentence was rewritten and grew a restatement tell | Applies. Paragraph 5 restores the original sentence verbatim |
+| Register, `:16-20`: the default-identity sentence was rewritten and grew a restatement tell | Applies. Paragraph 6 (paragraph 5 before the second read's split) restores the original sentence verbatim |
 | Register, `:29-30`: the magic-link lead-in restates the anonymous surface and contradicts the introduction | Disposed by the plan. The sentence is dropped; section 1 opens on its claim |
 | Register, `:58-61`: the browser-binding lead-in restates its own second sentence | Applies. Section 2's first sentence is the finding's rewrite |
 | Register, `:365-368`: the channel lead-in previews the sentence that follows | Applies. Section 11's first sentence is the finding's rewrite |
@@ -798,7 +905,7 @@ answers it, and the plan changes nothing else.
 
 | Finding (seat, page line) | Disposition |
 | --- | --- |
-| Structural, `:16-20`: the doesn't-cover list names five of the outline's six out-of-scope items and leaves out the sanitize floor's history; the Concepts gloss for Migration notes names only the access-map warning | Applies, with one correction. Paragraph 4 closes on the sixth item as a subject-stated sentence. The rewrite's claim that Migration notes records when the floor shipped cannot land, since no published page does (the file starts at 0.86.0, the floor shipped in v0.17.0); the sentence names no page, the Concepts gloss keeps the access-map warning alone, and the gap is filed as friction |
+| Structural, `:16-20`: the doesn't-cover list names five of the outline's six out-of-scope items and leaves out the sanitize floor's history; the Concepts gloss for Migration notes names only the access-map warning | Applies, with one correction. Paragraph 4 closes on the sixth item as a subject-stated sentence. The rewrite's claim that Migration notes records when the floor shipped cannot land, since no published page does (the file starts at 0.86.0, the floor shipped in v0.17.0); the sentence names no page, the Concepts gloss keeps the access-map warning alone (the third structural read later dropped the Concepts link itself; see the fifth table), and the gap is filed as friction |
 | Structural, `:338-342`: every planned hand-off is missing, the built-in-to-seams turn above all, and the seam sections lost their setup links | Applies. "Hand-offs" fixes the rule: each section's last sentence, after the Limits content, word for word per section; the group turn closes section 9; sections 10 and 11 end on their setup links |
 | Register, every section end: none of the plan's hand-offs made the draft, so the page still reads as atoms; the turn should sit just before the Limits heading | Applies, with the placement decided the other way. The turns are restored word for word; "Hand-offs" places them after the Limits content and records why, and the form rule (opens on the residual, closes on the named target, no restatement) answers the seat's reason for placing them earlier |
 | Register, `:16-20`: "Configuring each defense and seam belongs to the how-to guides" is an overstated universal and a five-link inventory in prose | Applies. Paragraph 4 carries the finding's two-sentence rewrite verbatim, each guide paired with its subject |
@@ -807,8 +914,9 @@ Plan corrections the round-2 drafter asked the conductor for, taken here: the cu
 `f:r0cv6e` no longer names `docs/extend/migration-notes.md` as the record of when the floor shipped
 (the round-2 fact read found none there); section 12's list now carries the three residual items
 its own rule implied and the page already had (`f:an087n`, `f:g22dnw`, `f:horkxq`), in page order;
-the Concepts gloss for Migration notes names only the access-map warning. The hand-off lines for
-sections 1 to 11 are the plan's text the page must carry, not a record of the page as drafted.
+the Concepts gloss for Migration notes names only the access-map warning (a gloss the third
+structural read later removed with its link). The hand-off lines for sections 1 to 11 are the
+plan's text the page must carry, not a record of the page as drafted.
 
 Round-2 advisories this revision leaves to the drafter's scoped redraft, since no blocking finding
 requires them: the `f:cvv6to` sentence stating the gate in one sentence with the exceptions left to
@@ -829,7 +937,38 @@ that answers it; the plan changes nothing else.
 | Advisory, `:209`: the third doesn't-cover sentence, "the floor is described here as it stands", points at the page itself | Taken. The sentence is the subject alone, "When the sanitize floor shipped is release history."; the rationale for naming no page stands |
 | Advisory, `:371`: section 5's Limits refers to the sanitize floor by section number | Taken. The reference is "the sanitize floor Render safety describes", rendered as a link, per the hand-off form rule |
 | Advisory, `:306`: section 3 carries the `identity` clause of `f:8xxe3b` before identity mode is introduced | Taken. Section 3 keeps the magic-link logout; section 10 cites `f:8xxe3b` a second time for the `identity` clause, and the dispositions table records both |
-| Advisory, `:178`: one paragraph carries covers, prior knowledge, and three doesn't-cover sentences with five links | Taken. Paragraph 3 carries covers and prior knowledge, paragraph 4 the doesn't-cover sentences; the definition is paragraph 5 and the platform link paragraph 6, and every paragraph reference in this plan is renumbered |
+| Advisory, `:178`: one paragraph carries covers, prior knowledge, and three doesn't-cover sentences with five links | Taken. Paragraph 3 carries covers and prior knowledge, paragraph 4 the doesn't-cover sentences; the definition became paragraph 5 and the platform link paragraph 6, renumbered again by the second read's split below (the definition is paragraphs 5 and 6, the platform link paragraph 7) |
+
+## Second structural edit findings on this plan (2026-10-03), disposed
+
+The second read of this plan
+(`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-2-record.md`,
+"### security-model") returned fix: one blocking finding and two advisories, with
+`npm run check:vale` at 0 errors, and the order, the introduction's three parts, the cross-links,
+and the module types passed. Geoff's ruling for the targeted close: keep everything the reads
+passed and close both concept-before-definition findings, the guard and the channel. Each row
+names the plan change that answers it; the plan changes nothing else.
+
+| Finding (plan line) | Disposition |
+| --- | --- |
+| Blocking, `:262`: the plan claimed no section before 11 depends on the auth channel, and section 6 does (`createAuthChannel`, a dev transport, `deliver` and `lookup`), with only paragraph 3's covers gloss before it | Applies. The claim is gone from paragraph 6. Section 6 introduces the channel where the page first depends on it, in two fixed sentences ahead of the second refusal, linked to The auth channel's threat surface and to `docs/reference/auth-channel.md`, citing `f:tkpmxr`, `f:8u4iiv`, `f:irs7fg`, and `f:fslodf`, and the refusal sentence defines a dev transport from `f:wuwk2q`; the read's alternative, moving the channel half of `f:tkpmxr` and the transport half of `f:irs7fg` to section 11, is declined for the reason recorded under section 6 |
+| Advisory, `:250`: no planned sentence carries the outline's "floors, not ceilings"; the restored sentence only implies it | Taken. Paragraph 6 opens on "The defaults are floors, not ceilings.", citing `f:y3ljm0`, ahead of the restored sentence, and the plan records why the pair is not a restatement |
+| Advisory, `:244`: the definition paragraph holds four duties (the store, the restored sentence, the guard with two links, the `identity` hand-off) | Taken, as the read suggested. Paragraph 5 holds the store and the guard; paragraph 6 the floor, the restored sentence, and the hand-off; the platform link is paragraph 7, and every paragraph reference in this plan is renumbered |
+
+## Third structural edit findings on this plan (2026-10-03), disposed
+
+The third read of this plan, on the targeted close's revision, returned fix: one blocking finding
+and three advisories, with `npm run check:vale` at 0 errors. The order and its stated grouping,
+the introduction's three parts, the guard's and the channel's introductions, the four cross-links,
+the concept anatomy, and the module types passed, and this revision changes none of them. Each row
+names the plan change that answers it; the plan changes nothing else.
+
+| Finding (plan line) | Disposition |
+| --- | --- |
+| Blocking, `:541`: Render safety's first sentence uses "the `build()` dispatch" as a known term, the section builds on `build()` three more times and the responsibilities list once, and no sentence says what a `build()` is | Applies. Section 8's second sentence, fixed text, says a `build()` is the function a site registers for one of its components, site-developer code the dispatch stage runs, citing `f:21by9u` and `f:zzbzo8` and linking `docs/reference/core.md`, "`defineComponent`"; the first sentence keeps its claim and its floor-before-dispatch position, and the definition follows it directly, ahead of the nine-stage list |
+| Advisory, `:373`: the session cookie's Limits rests on "the guard's https help page", which section 5 first explains | Taken. The clause reads "since the guard answers a plain-http request with its help page only on an `/admin` path", citing `f:g22dnw` with `f:n3k03a` |
+| Advisory, `:453`: section 6 carries the guard's refusal, the channel's two introducing sentences, the channel's refusal, the dev-transport definition, the deployed-detection rule, and a three-case Limits in one stretch | Taken, as the read suggested. The two refusals are a two-item list under the first sentence, the channel's introduction and refusal in the second item with the deployed-detection rule as its last sentence; no sentence is reordered or reworded |
+| Advisory, `:721`: the Concepts group lists `docs/extend/migration-notes.md` for release history, the subject the introduction's paragraph 4 leaves out, and a per-version record is not a concept page | Taken. Migration notes leaves the Concepts group, which holds `docs/extend/architecture.md` alone under the register's ceiling; the introduction's paragraph 4 entry and the round-2 tables record the drop |
 
 ## Notes for the drafter
 
@@ -843,8 +982,17 @@ that answers it; the plan changes nothing else.
   with each heading or page name rendered as a link to that heading or page. No hand-off is
   dropped; one that reads as restating is reported, never deleted.
 - A fact placed in one section may be cited again from another sentence that needs it (`f:n3k03a`
-  and `f:8xxe3b` from section 10; `f:7qqhda` and, optionally, `f:fhit7f` from paragraph 5; the
-  Limits facts from the responsibilities list).
+  and `f:8xxe3b` from section 10; `f:7qqhda` from paragraph 5 and, optionally, `f:fhit7f` from
+  paragraph 6; `f:8u4iiv`, `f:fslodf`, and `f:wuwk2q` from section 6's channel introduction;
+  `f:n3k03a` from section 3's Limits gloss; the Limits facts from the responsibilities list).
+- Section 6's two channel sentences and its dev-transport clause are fixed text, like each
+  section's first sentence and hand-off: the drafter changes only the link syntax. They are the
+  page's introduction of the channel, so no earlier sentence names a transport or a site-supplied
+  channel function. The section's two refusals are a two-item list under its first sentence; the
+  second item carries the two channel sentences, the channel's refusal with its dev-transport
+  clause, and then the `f:i2udr5` sentence.
+- Section 8's second sentence, the one that says what a `build()` is, is fixed text the same way:
+  the drafter changes only the link syntax, and no earlier sentence on the page names `build()`.
 - The page edits no other page. The relink pointers in the heading-policy table belong to the
   relink pass; `docs/extend/migration-notes.md:370` already resolves.
 - Every link to a page this plan names in a code span becomes a relative Markdown link on the

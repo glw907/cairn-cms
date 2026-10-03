@@ -480,9 +480,10 @@ Hand-off: motion.
 
 ### Animate the screen
 
-First sentence: When a screen animates, `cairn-audit` holds its motion to the same error-tier
-rules as the engine's screens, so each transition names its duration and easing with the admin's
-motion tokens.
+First sentence: When a screen animates, `cairn-audit` holds its motion to the same rules as the
+engine's screens, so each transition names its duration and easing with the admin's motion
+tokens. (The "error-tier" qualifier is dropped: no carried fact states the motion rules' tier, per
+the run-2 fact read.)
 
 Facts: `f:017qss`, `f:018sgk`, `f:2p5otw`, `f:1x8r1x`, `f:24f8gn`, `f:t767qb`. Subordinated from
 here: `f:09g8ev`, `f:0aa9tp`, `f:0mbj5n` (what each rule checks) to `docs/reference/cairn-audit.md`,
@@ -678,6 +679,8 @@ each reason verbatim under `cuts`.
 | `f:6vy0ka` | carried | Verify the screen |
 | `f:0w432q` | cut | Subordinated: `docs/reference/cairn-audit.md`, "The rules" under Rendered mode, states `motion-reduced-delay`; Verify the screen links the rendered run to `run-cairn-audit-on-your-site` |
 | `f:07efts` | carried | Resolve a missing audit record |
+| `f:qlgggh` | carried (appended, scoped redraft) | Wire the audit sink, naming the snippet's `access` import as the access map |
+| `f:fers77` | carried (appended, minted by the scoped redraft) | Compose the screen from the toolkit, a second step that mounts `CsrfField` in each action form |
 
 Ids cut at the pilot draft and left cut, not re-disposed: `f:bwn0uo`, `f:x8rhdh`, `f:xh2mwb`,
 `f:22odbz`, `f:2c19kf`, `f:2gdaks`, `f:2gmjvn`. The four motion ids are the rule catalogue the

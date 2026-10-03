@@ -8,23 +8,37 @@ Each section below takes one component cairn exposes, says what cairn defends, a
 leaves to the site. The page ends with the responsibilities that stay with the site. Read it before
 you replace cairn's sign-in or access rules, and again before you ship.
 
-The built-in defenses are the sign-in link and its browser binding, the session cookie, CSRF
-protection and the guard's response headers, the dev-backend flag's refusals, the access map's
-coverage, the render pipeline's sanitizing, and the GitHub App's reach. A site can also replace magic
-links with an identity gate, or add an auth channel that signs in a second group of users from a form
-any anonymous caller can post, and each seam changes what the site must defend. Weighing these
-defenses takes working knowledge of SvelteKit hooks, form actions, and cookie attributes. Configuring
-each defense and seam belongs to the how-to guides [Restrict admin access](restrict-admin-access.md),
-[Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md), [Add a
-second sign-in group](add-a-second-sign-in-group.md), [Configure rendering](configure-rendering.md),
-and [Rotate the GitHub App key](rotate-the-github-app-key.md).
+The built-in design's defenses fall into the following groups:
+
+- The sign-in link, its browser binding, and the session cookie, which protect the account itself.
+- CSRF protection and the admin response headers, which protect against requests forged in the
+  account's name.
+- The dev-backend flag's refusals, which guard against a development flag reaching a deployed Worker.
+- The access map's coverage, the render pipeline's sanitizing, and the GitHub App's reach, which
+  bound what a taken account reaches.
+
+A site can also replace magic links with an identity gate, or add an auth channel that signs in a
+second group of users from a form any anonymous caller can post. Each of those seams changes what
+the site must defend. Weighing these defenses takes working knowledge of SvelteKit hooks, form
+actions, and cookie attributes.
+
+Configuring the access map belongs to [Restrict admin access](restrict-admin-access.md), and an
+identity gate to [Replace magic links with Cloudflare
+Access](replace-magic-links-with-cloudflare-access.md). Building an auth channel belongs to [Add a
+second sign-in group](add-a-second-sign-in-group.md), the renderer's options to [Configure
+rendering](configure-rendering.md), and the App's private key to [Rotate the GitHub App
+key](rotate-the-github-app-key.md). The history of when the sanitize floor shipped is out of scope.
 
 Under the zero-config default, cairn is the identity system for a site's editors, since its D1
-store, `AUTH_DB`, holds the editor roster, the sessions, and the single-use sign-in tokens. A
-developer can replace those defaults, the owner and editor roles and magic-link sign-in, with their
-own auth framework, after which cairn mints no session and reads an owner or editor identity through
-a defined hand-off. That hand-off is the `identity` option on `createAuthGuard`, which reads the
-proof of identity an external gate supplies in place of cairn's session resolution.
+store, `AUTH_DB`, holds the editor roster, the sessions, and the single-use sign-in tokens. Every
+`/admin` request passes through [the auth guard](#the-auth-guard), the server hook
+[`createAuthGuard`](../reference/sveltekit.md#createauthguard) builds.
+
+The defaults are floors, not ceilings. A developer can replace those defaults, the owner and editor
+roles and magic-link sign-in, with their own auth framework, after which cairn mints no session and
+reads an owner or editor identity through a defined hand-off. That hand-off is the `identity` option
+on the guard, which reads the proof of identity an external gate supplies in place of cairn's
+session resolution.
 
 The isolation of the Worker that runs the engine belongs to Cloudflare, and [the Workers security
 model](https://developers.cloudflare.com/workers/reference/security-model/) describes it.
@@ -34,31 +48,34 @@ model](https://developers.cloudflare.com/workers/reference/security-model/) desc
 A sign-in link carries a single-use token that reaches only a roster address, lives 10 minutes, and
 sits in the store as a hash. A sign-in request mints a 256-bit random token, stores only its SHA-256
 hash, and emails the raw token in a link to `/admin/auth/confirm`, so the stored row holds nothing
-that works as a link. Only an address in the `editor` table is sent a token, and the owner curates
-that table through the owner-only `editors` screen. Confirming consumes the token row in one atomic
-`DELETE ... RETURNING` and creates a session, and a new request for the same address deletes the
-earlier row first, so a fresh request replaces the previous token. A session resolves through a join
-on `editor`, so removing an editor stops that editor's session on the next request.
+that works as a link. The owner curates the roster, the `editor` table, through the owner-only
+`editors` screen. Confirming consumes the token row in one atomic `DELETE ... RETURNING` and creates
+a session, and a new request for the same address deletes the earlier row first, so a fresh request
+replaces the previous token. A session resolves through a join on `editor`, so removing an editor
+stops that editor's session on the next request.
 
 A session lives 30 days, and a repeat request from the same address is throttled to once per minute.
-The token lifetime, the session lifetime, and the throttle are named engine constants that no
-adapter option changes, so an adapter cannot loosen any of them.
+The token lifetime, the session lifetime, and the throttle are named engine constants, and no
+adapter option loosens them.
 
 The request action never returns a token, since every exit answers with an outcome and a `sent`
-flag, and the link travels only by email to the requested address. No log record carries a sign-in
-token, a session id, or a link's contents, and the [log events](../reference/log-events.md)
-reference lists the fields each event does carry.
+flag, and the link travels only by email to the requested address. Against another person's address,
+a requester can at most replace its live token or rebind it to the requester's browser, and learn
+from a throttled answer that the address is on the roster. No log
+record carries a sign-in token, a session id, or a link's contents, and the [log
+events](../reference/log-events.md) reference lists the fields each event does carry.
 
-The most a requester can do to another person's address is replace or rebind its live token. An
-address off the roster receives the same `{ outcome: 'sent' }` answer that an editor's address
+An address off the roster receives the same `{ outcome: 'sent' }` answer that an editor's address
 receives, so the common case of the request form does not reveal who is on the roster.
 
 ### Limits of the non-enumerating answer
 
-A repeat request inside the one-minute cooldown is the exception, since it returns a distinct
-`throttled` status and so reveals that the address belongs to an editor. That status is a deliberate
-relaxation of the non-enumerating answer, traded for sending no second email to an editor who
-presses the button again.
+A repeat request inside the one-minute cooldown returns a distinct `throttled` status, which reveals
+that the address belongs to an editor. That status is a deliberate relaxation of the non-enumerating
+answer, traded for sending no second email to an editor who presses the button again.
+
+A token that exists can still be spent by a browser other than the one that asked for it, and
+[Browser binding for sign-in](#browser-binding-for-sign-in) closes that path.
 
 ## Browser binding for sign-in
 
@@ -81,19 +98,24 @@ throttled the editor's re-request. A throttled re-request therefore rebinds the 
 browser that just asked, so the last browser to ask holds the binding, and the rebind leaves an
 expired or unbound row untouched.
 
+The [reference entry for the no-pending-request
+error](../reference/sveltekit.md#no_pending_request_error) states which error a failed confirm
+reports.
+
 ### Limits of the browser binding
 
 A token row with no binding still matches a confirm from a browser that holds no cookie. The
 engine's request action always writes a hash, so unbound rows come from an engine older than
 migration `0004`, from the bootstrap `INSERT` that `create-cairn-site`, the setup command, runs, and
 from a recovery row an operator seeds by hand. The setup command's first sign-in link therefore
-carries none of the binding's protection. The [reference entry for the no-pending-request
-error](../reference/sveltekit.md#no_pending_request_error) states which error a failed confirm
-reports.
+carries none of the binding's protection.
 
 Someone holding a forwarded token can make it work by posting the request form for that address
 inside the one-minute cooldown, which rebinds the row to their browser. Outside the cooldown, the
 same request deletes the earlier row and mints a new token, which destroys the forwarded one.
+
+A confirmed sign-in, bound or unbound, becomes a session, and [The session
+cookie](#the-session-cookie) carries it on every later admin request.
 
 ## The session cookie
 
@@ -108,22 +130,22 @@ the bare cookie name. On any other host a configured, parseable `PUBLIC_ORIGIN` 
 none the answer is false.
 
 Logout reads the session id from either cookie-name form and deletes both forms, `__Host-` and bare,
-of the session cookie and of the CSRF cookie, then clears the request's pending-login cookie. Under
-`identity`, logout skips the session-row delete, still clears every cookie, and redirects to the
-gate's `logoutUrl`.
+of the session cookie and of the CSRF cookie, then clears the request's pending-login cookie.
 
 ### Limits of the session cookie
 
 Outside `/admin`, a route served over http on a non-local host under an https `PUBLIC_ORIGIN` mints
-a `__Host-` cookie that the browser discards, since only an `/admin` path gets the guard's https
-help page.
+a `__Host-` cookie that the browser discards, since the guard answers a plain-http request with its
+help page only on an `/admin` path.
+
+The cookie rides every admin request the browser sends, including a form post the editor never meant
+to send, and [CSRF protection](#csrf-protection) answers that post.
 
 ## CSRF protection
 
 A forged form post would act with the editor's session, so every unsafe admin form post needs a CSRF
 check, and cairn runs that check in the guard in place of SvelteKit's. A site sets
-`csrf: { checkOrigin: false }` in `svelte.config.js`, and the guard that
-[`createAuthGuard`](../reference/sveltekit.md#createauthguard) builds enforces an Origin-independent
+`csrf: { checkOrigin: false }` in `svelte.config.js`, and the guard enforces an Origin-independent
 double-submit check on every unsafe `/admin` form post, restoring an equivalent strict Origin check
 on every other route.
 
@@ -132,12 +154,12 @@ serves. Under the [Fetch Standard](https://fetch.spec.whatwg.org/), a non-`cors`
 method is not `GET` or `HEAD` sends `Origin: null` when its referrer policy is `no-referrer`, which
 is the policy every admin response sets. The guard's origin check is a strict equality of the
 request's `Origin` header and the URL's origin, so a request that arrives with `Origin: null` fails
-it with the branded `auth.csrf-origin-mismatch` page. SvelteKit's default check compares the same
-header, and since it is one global setting with no per-route exception, a site hands the admin's
-CSRF authority to the guard by turning it off everywhere. SvelteKit has deprecated that setting in
-favor of `csrf.trustedOrigins`, and [the `checkOrigin`
-deprecation](../reference/supported-toolchain.md#the-checkorigin-deprecation) records what the
-deprecation means for the engine.
+it with the branded `auth.csrf-origin-mismatch` page. [SvelteKit's default
+check](https://svelte.dev/docs/kit/configuration#csrf) compares the same header, and since it is one
+global setting with no per-route exception, a site hands the admin's CSRF authority to the guard by
+turning it off everywhere. SvelteKit has deprecated that setting in favor of `csrf.trustedOrigins`,
+and [the `checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-deprecation)
+records what the deprecation means for the engine.
 
 On an unsafe `/admin` form request, an `X-Cairn-CSRF` header decides outright whenever one is sent,
 so a wrong header rejects instead of falling through, and only a request with no header has its
@@ -159,6 +181,8 @@ The guard sets `no-referrer` on `/admin` responses only, since the Origin check 
 warns through its `config.no-referrer-blanket` check when it finds a site-wide `no-referrer`. The
 check's remediation is to serve `strict-origin-when-cross-origin` or `same-origin` as the site-wide
 default.
+
+The CSRF check is one step in [The auth guard](#the-auth-guard)'s fixed order.
 
 ## The auth guard
 
@@ -196,34 +220,41 @@ A rejection page carries the same headers less `Strict-Transport-Security`, for 
 ### Limits of the admin headers
 
 The admin sends no full Content-Security-Policy by design, since the engine's defense against script
-in author-written markup is the sanitize floor that [render safety](#render-safety) describes. A
+in author-written markup is the sanitize floor that [Render safety](#render-safety) describes. A
 site that wants a CSP configures [`kit.csp`](https://svelte.dev/docs/kit/configuration#csp) in
 `svelte.config.js`, where SvelteKit adds a nonce or a hash to the inline scripts and styles it
 generates.
 
-The loads that issue a CSRF token are `loginLoad`, `confirmLoad`, and the admin shell load. The guard
-applies its headers, `Cache-Control: private, no-store` included, only to an `/admin` path, so a
-token issued from one of those loads mounted elsewhere travels without them.
+The loads that issue a CSRF token are `loginLoad`, `confirmLoad`, and the admin shell load. The
+guard applies its headers, `Cache-Control: private, no-store` included, only to an `/admin` path, so
+a token issued from one of those loads mounted elsewhere travels without them.
+
+The guard's first step, the dev-backend tripwire, refuses a flag that must never reach a deployed
+Worker, and [The dev-backend flag's two refusals](#the-dev-backend-flags-two-refusals) state what
+each refusal catches and what it leaves open.
 
 ## The dev-backend flag's two refusals
 
 A deployed Worker must never carry the `CAIRN_DEV_BACKEND` flag, so the engine refuses the flag in
-two places, on different terms. Both refusals read the flag from `platform.env` and `process.env`,
-and they apply it as follows:
+two places, on different terms. Both refusals read the flag from `platform.env` and `process.env`.
 
-- `createAuthGuard` refuses with a 503 on the flag alone and logs `guard.refused` with reason
-  `dev_backend_in_prod`.
-- Every [`createAuthChannel`](../reference/auth-channel.md#createauthchannel) action refuses with a
-  503 before any other work, only when the flag is set and the request counts as deployed.
+The first refusal belongs to the guard, which answers with a 503 on the flag alone and logs
+`guard.refused` with reason `dev_backend_in_prod`. The guard can refuse on the flag alone because it
+mounts only in a production build, and a site's dev branch replaces it.
 
-The guard can refuse on the flag alone because it mounts only in a production build, and a site's
-dev branch replaces it. The channel also requires a deployed request, because the flag is a dev
-transport's enable contract.
+The second refusal belongs to an [auth channel](#the-auth-channels-threat-surface), the seam a site
+adds for a second sign-in audience on the site's member routes, which the guard's admin-path
+handling never covers. [`createAuthChannel`](../reference/auth-channel.md#createauthchannel) builds
+a channel from functions the site supplies, among them `lookup`, which resolves a contact against
+the channel's roster, and `deliver`, which carries a code to the contact. Every channel action
+refuses with a 503 before any other work, only when the flag is set and the request counts as
+deployed, because the flag is the enable contract of a dev transport, a `deliver` that prints the
+code in development instead of sending it.
 
 A request counts as deployed when the configured `PUBLIC_ORIGIN` names a non-local host, whatever
 `Host` claims. A local, absent, or unparseable `PUBLIC_ORIGIN` hands the answer to the request's
-hostname, so a configured `PUBLIC_ORIGIN` can make a request count as deployed but never as local,
-and a deployment with no `PUBLIC_ORIGIN` rests on `Host`.
+hostname, so a configured origin can only move the answer toward refusing, and a deployment with no
+`PUBLIC_ORIGIN` rests on `Host`.
 
 ### Limits of the dev-backend refusals
 
@@ -232,9 +263,11 @@ Neither refusal can see a dev-shaped transport deployed with the flag unset, sin
 replaces the guard behind the build-time `__CAIRN_DEV_BUILD__` conditional sits outside both
 refusals. The example site, `examples/showcase`, closes the transport case for itself with a capture
 transport that refuses to deliver unless `ctx.env.CAIRN_DEV_BACKEND` is `'1'`. The engine's CI
-closes the bundle case for the example site alone, since its e2e workflow runs
-`wrangler deploy --dry-run` on a default build and fails if any string in
-`scripts/checks/dev-fold-markers.txt` survives in the output.
+closes the bundle case for the example site alone, with a `wrangler deploy --dry-run` of a default
+build that fails if any dev-only marker survives in the output.
+
+A request the guard admits to a guarded path belongs to a signed-in editor, and [Access map
+coverage](#access-map-coverage) decides which screens that editor reaches.
 
 ## Access map coverage
 
@@ -242,13 +275,13 @@ An access map narrows only the targets it names, so a screen or concept the map 
 reachable to any editor-capability session.
 [`canReach`](../reference/core.md#canreach-hasaccessrule) is the one function that decides both
 route enforcement and nav visibility, so the two cannot drift apart, and the `editors` roster screen
-stays owner-only whatever the map says. Apart from the site-wide publish, the tidy action, and the
-personal-dictionary action, every engine write action, the tidy settings save included, gates
-through the map against one target, either the concept id or one of the fixed screens `media`, `nav`,
-`settings`, and `vocabulary`.
+stays owner-only whatever the map says. Each engine write action gates through the map against one
+target, the concept id or one of the fixed screens `media`, `nav`, `settings`, or `vocabulary`,
+with the exceptions that [Limits of access map coverage](#limits-of-access-map-coverage) names.
 
-A site's action that opts into the map through the `access` option of
-[`createAdminAction`](../reference/sveltekit.md#createadminaction) fails closed instead, at the
+A site's action built with [`createSectionAction`](../reference/sveltekit.md#createsectionaction),
+or one that opts into the map through the `access` option of
+[`createAdminAction`](../reference/sveltekit.md#createadminaction), fails closed instead, at the
 following three ordered gates:
 
 1. A target with no rule refuses.
@@ -275,12 +308,18 @@ coverage whose absence the `config.access_unmapped` warning reports, and [Restri
 access](restrict-admin-access.md) gives the steps for writing one. Even an exhaustive map leaves
 open a tidy or dictionary action mounted on a route without a `concept` parameter.
 
+An editor's reach also includes the markup they write, which every visitor's browser renders, and
+[Render safety](#render-safety) covers what the engine does with it.
+
 ## Render safety
 
-Every renderer that [`createRenderer`](../reference/core.md#createrenderer) builds runs a
-`rehype-sanitize` floor by default, seeded from GitHub's `defaultSchema`, before the `build()`
-dispatch or any later stage touches the tree. The floor strips `<script>` tags, inline event-handler
-attributes, and `javascript:` and `data:` URLs. The pipeline runs nine stages in a fixed order:
+Every renderer that [`createRenderer`](../reference/core.md#createrenderer) builds runs a sanitize
+floor by default, seeded from GitHub's `defaultSchema`, before the `build()` dispatch or any later
+stage touches the tree. A [`build()`](../reference/core.md#definecomponent) is the function a site
+registers for one of its components, site-developer code that the dispatch stage runs to turn
+each use of that component in the markdown into markup. The floor strips `<script>` tags, inline
+event-handler attributes, and `javascript:` and `data:` URLs. The pipeline runs nine stages in a
+fixed order:
 
 1. Markdown parsing.
 2. Raw HTML parsing through `rehype-raw`.
@@ -320,6 +359,9 @@ every visitor. A registered `build()` can bypass every render-safety protection 
 literal markup outside the sanitized tree, since the protections stop at the boundary of what
 `createRenderer` produced.
 
+An editor's edits reach the repository through the engine's own credential, and [The GitHub App's
+reach](#the-github-apps-reach) sets out what that credential can write.
+
 ## The GitHub App's reach
 
 Every save and publish commits through the site's GitHub App, so the App's permissions set what its
@@ -337,6 +379,10 @@ declared content directories. Installing the App on a repository that also holds
 teams' content therefore puts that content inside the token's write reach. [Rotate the GitHub App
 key](rotate-the-github-app-key.md) covers operating the key.
 
+Every defense of the built-in design assumes cairn's own sign-in, and a site that replaces it with
+[an identity gate](#identity-modes-threat-surface) or adds [an auth
+channel](#the-auth-channels-threat-surface) moves some of them.
+
 ## Identity mode's threat surface
 
 A site that replaces magic-link sign-in with an identity gate leaves every sign-in defense to the
@@ -349,9 +395,10 @@ gate, and cairn's 30-day session constant no longer applies.
 
 No cairn step rotates the CSRF value under `identity`, so a change of gate identity in one browser
 keeps the same value until a cairn logout deletes the cookie or its `Max-Age` ends. The login-moment
-rotation never runs, because the confirm action is a 404 under `identity`. Every refusal the
-resolver produces logs `guard.refused` with reason `identity`, and a proven email that matches no
-roster row logs `auth.identity.unknown`.
+rotation never runs, because the confirm action is a 404 under `identity`. A cairn logout under
+`identity` skips the session-row delete, still clears every cookie, and redirects to the gate's
+`logoutUrl`. Every refusal the resolver produces logs `guard.refused` with reason `identity`, and a
+proven email that matches no roster row logs `auth.identity.unknown`.
 
 ### Limits of identity mode
 
@@ -364,6 +411,10 @@ provider returns, which an [OIDC provider's email claim
 setting](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/generic-oidc/)
 selects. The guard makes no hostname check under `identity`, so a hostname that reaches the Worker
 outside the gate's coverage is admitted whenever the resolver accepts the presented token.
+
+[Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md) sets up
+the gate these risks belong to, and the other seam a site can add, an auth channel, has [a threat
+surface of its own](#the-auth-channels-threat-surface).
 
 ## The auth channel's threat surface
 
@@ -389,11 +440,12 @@ The channel correlates identity through a salted hash of the subject, prefixed `
 lookup resolved one, or of the contact, prefixed `'c:'`, otherwise, and its logs carry only the
 first 16 hex characters of that hash, never the raw contact. The prefixes keep a subject-derived
 identity from colliding with a contact-derived one, and the per-deployment salt, provisioned on
-first use, keeps the hash from reversing against a small contact space. A numeric confirmation code
-is drawn by rejection sampling over Web Crypto random bytes, which avoids the low-end bias that a
-naive modulo introduces, and [NIST's digital identity
-guidelines](https://pages.nist.gov/800-63-3/sp800-63b.html) require the secrets behind
-authenticators to come from an approved random bit generator.
+first use, keeps the hash from reversing against a small contact space.
+
+A numeric confirmation code is drawn by rejection sampling over Web Crypto random bytes, which
+avoids the low-end bias that a naive modulo introduces. The random source matters because [NIST's
+digital identity guidelines](https://pages.nist.gov/800-63-3/sp800-63b.html) require the secrets
+behind authenticators to come from an approved random bit generator.
 
 ### Limits of the auth channel
 
@@ -403,10 +455,14 @@ contact is on the roster without guessing a code. The same transport, run in a d
 observability on, lands plaintext one-time codes in Workers Logs. No such transport ships in engine
 code, and the hazard is one that a site's `deliver` could introduce.
 
+[Add a second sign-in group](add-a-second-sign-in-group.md) builds a channel, and [Config
+obligations](../reference/auth-channel.md#config-obligations) states what each supplied function
+owes.
+
 ## The site's responsibilities
 
-In short, cairn defends the sign-in path and every admin request, and the following
-responsibilities stay with the site:
+In short, cairn makes an editor's sign-in hard to take, and what a taken session reaches depends on
+how the site configures it, so the following responsibilities stay with the site:
 
 - Treating the setup command's first sign-in link and any recovery row seeded by hand as unbound,
   since neither carries the browser binding's protection.
@@ -438,7 +494,7 @@ The following resources cover the tasks, the system, and the standards behind th
 
 ### How-to guides
 
-The following guides configure the seams these defenses depend on:
+The following guides configure and operate the parts of a site these defenses depend on:
 
 - [Restrict admin access](restrict-admin-access.md), for the access map.
 - [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md), for
@@ -449,10 +505,9 @@ The following guides configure the seams these defenses depend on:
 
 ### Concepts
 
-The following pages explain the system these defenses protect and record when a defense changed:
+The following page explains the system these defenses protect:
 
 - [Architecture](architecture.md), for how the engine's parts and seams fit together.
-- [Migration notes](migration-notes.md), for when the access-map warning shipped.
 
 ### External resources
 

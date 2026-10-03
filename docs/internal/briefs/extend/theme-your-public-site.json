@@ -39,7 +39,11 @@
       "id": "f:rxj43c"
     },
     {
-      "text": "A scaffolded site skips that section and works through the chassis boundary, the token tiers, the local loop, and one recipe, then verifies the theme.",
+      "text": "A scaffolded site skips that section and works through the chassis boundary, the token tiers, the local loop, and one of the two recipes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The recipe leads into styling rendered markdown and the editor preview, then verifying the theme and resolving any audit finding.",
       "id": "no-claim"
     },
     {
@@ -229,8 +233,15 @@
       "id": "f:iel6v5"
     },
     {
-      "text": "The roles, `--color-muted`, `--color-card-border`, the status inks, the shadow, and the focus ring, come from the engine's `cairn-public.css`, which `tokens.css` imports right after Tailwind.",
+      "text": "The engine's roles, such as the status inks, the shadow, and the focus ring, come from its `cairn-public.css`, which `tokens.css` imports right after Tailwind.",
       "id": "f:iel6v5"
+    },
+    {
+      "text": "That sheet also declares two `@theme` colors, `--color-muted` and `--color-card-border`.",
+      "id": [
+        "f:f28x0x",
+        "f:iel6v5"
+      ]
     },
     {
       "text": "The scaffold's `theme.css` and `site.css` carry the theme's tokens and page styling, layered over those two lower sources.",
@@ -272,11 +283,16 @@
       ]
     },
     {
-      "text": "The local loop is the dev server with `/styleguide` open, which renders every registered directive, the type scale, and the component recipes against the current `theme.css`, and Vite's hot module replacement shows each saved change there without a reload.",
-      "id": [
-        "f:bdnzcy",
-        "f:mvkyea"
-      ]
+      "text": "The local loop is the dev server with `/styleguide` open.",
+      "id": "f:bdnzcy"
+    },
+    {
+      "text": "That route renders every registered directive, the type scale, and the component recipes against the current `theme.css`.",
+      "id": "f:bdnzcy"
+    },
+    {
+      "text": "Vite's hot module replacement shows each saved change there without a reload.",
+      "id": "f:mvkyea"
     },
     {
       "text": "To start the loop, follow these steps:",
@@ -307,6 +323,13 @@
       "id": "f:j2qzct"
     },
     {
+      "text": "Without the dev backend, the scaffold's hooks mount the engine's auth guard, which redirects an `/admin` request with no session to the sign-in page.",
+      "id": [
+        "f:f21bcz",
+        "f:n3k03a"
+      ]
+    },
+    {
       "text": "In the browser, open `/styleguide`, where a directive that declares a `preview` renders as a sample and one without is listed by name.",
       "id": "f:bdnzcy"
     },
@@ -335,14 +358,30 @@
       "id": "f:kt0epf"
     },
     {
-      "text": "Optionally, in the `@theme` block of the same file, swap the two `--font-*` tokens.",
+      "text": "Optionally, to swap the display or body face, follow these steps:",
       "id": [
         "f:kt0epf",
-        "f:iel6v5"
+        "f:dh5f33"
       ]
     },
     {
-      "text": "Optionally, in the same `@theme` block, retune one type ratio or space-scale step.",
+      "text": "In the site directory, install the new face's Fontsource variable package.",
+      "id": "f:dh5f33"
+    },
+    {
+      "text": "In `src/theme/theme.css`, replace the old face's `@import` under the chassis import with the new package's `index.css`.",
+      "id": "f:dh5f33"
+    },
+    {
+      "text": "In the `@theme` block of the same file, set `--font-display` or `--font-body` to the family that Fontsource registers, `\"<Name> Variable\"`.",
+      "id": "f:dh5f33"
+    },
+    {
+      "text": "A token that names a face with no imported package falls through to the next family in its stack, `system-ui`, with no error.",
+      "id": "f:dh5f33"
+    },
+    {
+      "text": "Optionally, in the `@theme` block of `src/theme/theme.css`, retune one type ratio or space-scale step.",
       "id": [
         "f:kt0epf",
         "f:iel6v5"
@@ -384,8 +423,11 @@
       "id": "no-claim"
     },
     {
-      "text": "In both daisyUI blocks, set the fill for each status.",
-      "id": "f:ylmc9c"
+      "text": "In both daisyUI blocks, set the fill for each status, `--color-info`, `--color-success`, `--color-warning`, and `--color-error`.",
+      "id": [
+        "f:3v9jzj",
+        "f:ylmc9c"
+      ]
     },
     {
       "text": "In the same two blocks, retune each status ink, such as `--cairn-success-ink`, to its new fill, or delete its override.",
@@ -404,10 +446,16 @@
       "id": "no-claim"
     },
     {
-      "text": "A port replaces Waymark's style sheets, chrome components, and page compositions with the new theme's, and keeps `src/chassis/`, reaching it through its exported seams and editing or deleting a chassis file only where a step or a convention names the edit.",
+      "text": "A port replaces Waymark's style sheets, chrome components, and page compositions with the new theme's, and keeps `src/chassis/`.",
+      "id": "f:s4prb0"
+    },
+    {
+      "text": "The port reaches the chassis through its exported seams.",
+      "id": "f:lwrqfd"
+    },
+    {
+      "text": "It edits or deletes a chassis file only where a step or a convention names the edit.",
       "id": [
-        "f:s4prb0",
-        "f:lwrqfd",
         "f:kj37zz",
         "f:h5e8d4"
       ]
@@ -526,7 +574,11 @@
       "id": "f:i9pgd2"
     },
     {
-      "text": "The toggle's `resolveTheme` returns the live `data-theme` when it names one of the two themes and otherwise reads the root's computed `color-scheme`, so a dark-first theme resolves dark on a light OS with no edit to the page shell.",
+      "text": "The toggle's `resolveTheme` returns the live `data-theme` when it names one of the two themes.",
+      "id": "f:i9pgd2"
+    },
+    {
+      "text": "Otherwise it reads the root's computed `color-scheme`, so a dark-first theme resolves dark on a light OS with no edit to the page shell.",
       "id": "f:i9pgd2"
     },
     {
@@ -635,7 +687,11 @@
       ]
     },
     {
-      "text": "A re-skin returns from here to [Re-skin Waymark](#re-skin-waymark) at its status-rebrand option, and a port continues with [Style the editor preview](#style-the-editor-preview), where the admin's preview frame shows the same rendered markdown.",
+      "text": "A re-skin returns from here to [Re-skin Waymark](#re-skin-waymark) at its status-rebrand option.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A port continues with [Style the editor preview](#style-the-editor-preview), where the admin's preview frame shows the same rendered markdown.",
       "id": "f:gnn3pv"
     },
     {
@@ -643,7 +699,11 @@
       "id": "f:spn4hj"
     },
     {
-      "text": "A port that adds or renames a compiled style sheet, or changes the classes that wrap an entry, updates the `preview` member of the adapter's `editor` group, and a hand-built site adds it.",
+      "text": "A port that adds or renames a compiled style sheet, or changes the classes that wrap an entry, updates the adapter's `preview` member.",
+      "id": "f:gnn3pv"
+    },
+    {
+      "text": "A hand-built site adds the member.",
       "id": "f:gnn3pv"
     },
     {
@@ -715,7 +775,7 @@
       "id": "f:xv2ien"
     },
     {
-      "text": "The cairn repository gates its example site on the same three rules as `check:public-tokens`, a script that a scaffolded `package.json` does not carry, so a theme that clears the three rules meets the bar the example site meets.",
+      "text": "The cairn repository gates its example site on the same three rules as `check:public-tokens`, a script that a scaffolded `package.json` doesn't carry.",
       "id": "f:xv2ien"
     },
     {
@@ -747,6 +807,17 @@
       "id": "f:mzmvt8"
     },
     {
+      "text": "If the dev server runs without the dev backend, restart it with `npm run dev`.",
+      "id": [
+        "f:j2qzct",
+        "f:f21bcz"
+      ]
+    },
+    {
+      "text": "The dev backend mints an owner editor on `/admin`, so the admin opens with no sign-in.",
+      "id": "f:dqjkci"
+    },
+    {
       "text": "In the admin, open an entry in the editor.",
       "id": "no-claim"
     },
@@ -755,7 +826,7 @@
       "id": "f:faofr4"
     },
     {
-      "text": "A finding from the three public rules names its file or theme block, and each rule's fix is an edit to the theme.",
+      "text": "Each public rule has one check in the following list, and each check names the edit or the reference row that resolves its finding.",
       "id": "no-claim"
     },
     {
@@ -771,12 +842,16 @@
       "id": "f:xv2ien"
     },
     {
-      "text": "If `theme-contrast` flags directive text or code highlighting after a fill change, retune that status ink to its fill, or delete its override.",
+      "text": "If `theme-contrast` flags directive text or code highlighting after a fill change, retune the overridden ink to its fill, or delete the override.",
       "id": [
         "f:ylmc9c",
         "f:u893cs",
         "f:mzmvt8"
       ]
+    },
+    {
+      "text": "If a derived ink fails on the theme's fills, apply the fix in [Ink derivation](../reference/public-css.md#ink-derivation).",
+      "id": "f:ylmc9c"
     },
     {
       "text": "If `theme-conformance` reports one of the five `--cairn-cta-*` keys or `--cairn-caption-tracking` as unresolved, declare it in the theme.",
@@ -794,11 +869,27 @@
       "id": "no-claim"
     },
     {
-      "text": "The following pages hold the tutorial and the reference detail a theme builds on:",
+      "text": "The following pages cover the work around a theme:",
       "id": "no-claim"
     },
     {
-      "text": "[Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) builds the hand-built site that [Theme a hand-built site](#theme-a-hand-built-site) styles.",
+      "text": "[Configure rendering](configure-rendering.md) builds the components a theme styles.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Build the public routes](build-the-public-routes.md) wires the delivery routes the chassis feeds.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Configure media](configure-media.md) sets up the media storage that seeded images come from.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Run cairn-audit on your site](run-cairn-audit-on-your-site.md) configures `cairn-audit` for the whole site.",
+      "id": "f:xv2ien"
+    },
+    {
+      "text": "[Scaffolded site files](scaffolded-site-files.md) maps every file the setup command writes.",
       "id": "no-claim"
     },
     {

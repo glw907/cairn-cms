@@ -120,11 +120,15 @@
       "id": "f:n3cvf9"
     },
     {
-      "text": "The export map holds more subpaths than these four, and placement rules fix what each one may contain.",
+      "text": "The full export map holds more subpaths than the four a site imports.",
       "id": [
-        "f:a7qx4m",
-        "f:0duu5p"
+        "f:3rb362",
+        "f:a7qx4m"
       ]
+    },
+    {
+      "text": "Placement rules govern what the root barrel, `/sveltekit`, `/admin`, and `/public` contain.",
+      "id": "f:0duu5p"
     },
     {
       "text": "Most of the export map falls into six functional groups.",
@@ -395,7 +399,11 @@
       "id": "no-claim"
     },
     {
-      "text": "A save commits the edit to a per-entry branch named `cairn/<concept>/<id>` through the site's GitHub App installation token, with the signed-in editor as author and no committer.",
+      "text": "A save commits the edit to a per-entry branch named `cairn/<concept>/<id>` through the site's GitHub App installation token, with the signed-in editor as author.",
+      "id": "f:cjonmm"
+    },
+    {
+      "text": "The engine sets no committer, so GitHub records the App's bot identity as the committer.",
       "id": "f:cjonmm"
     },
     {
@@ -426,8 +434,11 @@
       ]
     },
     {
-      "text": "The engine sets no committer, so GitHub attributes the commit to the App.",
-      "id": "f:w379wu"
+      "text": "As on a save, the App's bot identity is the committer.",
+      "id": [
+        "f:w379wu",
+        "f:cjonmm"
+      ]
     },
     {
       "text": "Publish-all commits every pending entry the editor can reach, plus the content manifest, as one commit to the default branch, so one deploy fires.",
@@ -473,10 +484,11 @@
       ]
     },
     {
-      "text": "The publish commit triggers the site's existing deploy, and the build rebuilds the content manifest and verifies it against the markdown on disk.",
+      "text": "The publish commit triggers the site's existing deploy, and the build rebuilds the content manifest from the markdown on disk and compares it against the committed manifest.",
       "id": [
         "f:cjonmm",
-        "f:e69d0l"
+        "f:e69d0l",
+        "f:n0laoh"
       ]
     },
     {
@@ -610,11 +622,8 @@
       "id": "f:qrwncf"
     },
     {
-      "text": "D1 and R2 are Cloudflare services, and the content store in git is the only tier a site can replace.",
-      "id": [
-        "f:i74t7g",
-        "f:hk24xs"
-      ]
+      "text": "The content store in git is the only tier a site can replace.",
+      "id": "f:hk24xs"
     },
     {
       "text": "The engine depends on SvelteKit and Cloudflare and carries no framework- or host-agnostic layer.",
@@ -693,7 +702,7 @@
       "id": "f:gcd8h7"
     },
     {
-      "text": "The contract is one Extension-tier surface among many, and its tier decides what a provider written against it can expect across versions.",
+      "text": "The contract is one exported surface among many, and its stability tier decides what a provider written against it can expect across versions.",
       "id": [
         "f:c1ujrl",
         "f:gcd8h7"
@@ -704,10 +713,11 @@
       "id": "f:c1ujrl"
     },
     {
-      "text": "Extension API and Scaffold API become frozen contracts at 1.0, and Unstable API is importable today with no promise across minor versions.",
+      "text": "Extension API and Scaffold API, the tier for the copied wiring a scaffolded site owns, become frozen contracts at 1.0, and Unstable API is importable today with no promise across minor versions.",
       "id": [
         "f:c1ujrl",
-        "f:549u00"
+        "f:549u00",
+        "f:u1y47n"
       ]
     },
     {

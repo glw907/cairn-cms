@@ -4,7 +4,7 @@ cairn gives a SvelteKit site an admin at `/admin`, where editors sign in by emai
 
 The tutorial carries one example throughout: Field Notes, a site with one post. By the end, Field Notes runs in production, and an editor can sign in, edit the post, and publish it to the deployed site.
 
-The tutorial assumes working knowledge of SvelteKit, TypeScript, and a terminal. If you start from an existing app, you work through the same milestones, and each step that creates the project or its repository says when your app skips it.
+The tutorial assumes working knowledge of SvelteKit, TypeScript, and a terminal. If you start from an existing app, you work through the same milestones, and the tutorial notes where your app skips creating the project or its repository.
 
 You work through four milestones, and each ends with a check:
 
@@ -50,9 +50,13 @@ The milestone starts from an empty directory. An existing app skips the project 
 
 ### Create the project on the Cloudflare adapter
 
-A self-deployed site names `@sveltejs/adapter-cloudflare` explicitly, because the scaffold's `adapter-auto` guesses the deploy target at build time. A current `sv create` scaffold has no `svelte.config.js`, so the kit config sits inline in the `sveltekit()` call in `vite.config.ts`. That call takes `adapter` and `csrf` as sibling keys, beside the `compilerOptions` the scaffold already passes. Each `vite.config.ts` sample on this page keeps that `compilerOptions` setting as a comment.
+A self-deployed site names `@sveltejs/adapter-cloudflare` explicitly, because the scaffold's `adapter-auto` guesses the deploy target at build time.
 
-To create the project and swap its adapter, follow these steps:
+Since October 1, 2026, `sv create` scaffolds SvelteKit 3, which the engine's `@sveltejs/kit` peer range of `^2.70` does not admit. The project therefore pins SvelteKit 2 and the matching major version of the Cloudflare adapter before the engine installs.
+
+The scaffold has no `svelte.config.js`, so the kit config sits inline in the `sveltekit()` call in `vite.config.ts`. That call takes `adapter` and `csrf` as sibling keys, beside the `compilerOptions` the scaffold already passes. Each `vite.config.ts` sample on this page keeps that `compilerOptions` setting as a comment.
+
+To create the project, pin SvelteKit 2, and swap its adapter, follow these steps:
 
 1. In a terminal, create a minimal TypeScript project with no add-ons:
 
@@ -71,14 +75,35 @@ To create the project and swap its adapter, follow these steps:
 
    The production milestone names this branch in the adapter and reads the publish commit from it. An app that is already a repository skips this step.
 
-3. In the project directory, replace the scaffold's adapter with the Cloudflare one:
+3. In the project directory, replace the scaffold's adapter with the Cloudflare one and pin SvelteKit 2:
 
    ```bash
    npm uninstall @sveltejs/adapter-auto
-   npm install -D @sveltejs/adapter-cloudflare
+   npm install -D @sveltejs/kit@^2.70 @sveltejs/adapter-cloudflare@^7
    ```
 
-4. In `vite.config.ts`, import the Cloudflare adapter and pass it as the `adapter` option:
+4. In `tsconfig.json`, replace the contents with the SvelteKit 2 form:
+
+   ```json
+   {
+     "extends": "./.svelte-kit/tsconfig.json",
+     "compilerOptions": {
+       "allowJs": true,
+       "checkJs": true,
+       "esModuleInterop": true,
+       "forceConsistentCasingInFileNames": true,
+       "resolveJsonModule": true,
+       "skipLibCheck": true,
+       "sourceMap": true,
+       "strict": true,
+       "moduleResolution": "bundler"
+     }
+   }
+   ```
+
+   The scaffold's version extends `$app/tsconfig`, which does not resolve on SvelteKit 2.
+
+5. In `vite.config.ts`, import the Cloudflare adapter and pass it as the `adapter` option:
 
    ```text
    field-notes/
@@ -165,7 +190,7 @@ Change one line of the scaffold's home page, deploy again, and confirm the chang
 
 The answer takes the following steps:
 
-1. In the home page's route component, change a line of text.
+1. In `src/routes/+page.svelte`, change a line of text.
 2. In the project directory, build the site and deploy it again:
 
    ```bash
@@ -804,6 +829,8 @@ To push the site, follow these steps:
    git push -u origin main
    ```
 
+   In the remote URL, replace the account name with the GitHub account that owns the repository.
+
 3. On GitHub, confirm that the repository lists the post under `src/content/posts` and the manifest at `src/content/.cairn/index.json`.
 
 ### Add a second post
@@ -904,7 +931,7 @@ The App ID and Installation ID identify the App and grant nothing, so they pass 
 
 To store the credentials, follow these steps:
 
-1. In the adapter module, replace the placeholder `appId` and `installationId` with the values you noted:
+1. In the adapter module, set `owner` to your GitHub account, and set `appId` and `installationId` to the values you noted:
 
    <!-- snippet-check-skip: one member of the adapter object that the engine milestone shows whole -->
    ```ts
@@ -950,7 +977,7 @@ To create and migrate the database, follow these steps:
    cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/
    ```
 
-3. In `wrangler.jsonc`, bind the database as `AUTH_DB`, with `migrations_dir` pointing at the copied directory:
+3. In `wrangler.jsonc`, add the following entry at the top level of the file, binding the database as `AUTH_DB` with `migrations_dir` pointing at the copied directory:
 
    ```jsonc
    "d1_databases": [
@@ -983,8 +1010,7 @@ To add the binding and name the origin, follow these steps:
    npx wrangler email sending enable notes.example.com
    ```
 
-2. Serve the Worker on the domain, following Cloudflare's page on [Workers custom domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
-3. In `wrangler.jsonc`, add the `EMAIL` binding, `PUBLIC_ORIGIN`, and `observability` beside the `AUTH_DB` entry:
+2. In `wrangler.jsonc`, add the `EMAIL` binding, `PUBLIC_ORIGIN`, `observability`, and a `routes` entry for the domain beside the `AUTH_DB` entry:
 
    ```jsonc
    // wrangler.jsonc
@@ -993,6 +1019,7 @@ To add the binding and name the origin, follow these steps:
      "compatibility_date": "2026-09-01",
      "main": ".svelte-kit/cloudflare/_worker.js",
      "assets": { "directory": ".svelte-kit/cloudflare", "binding": "ASSETS" },
+     "routes": [{ "pattern": "notes.example.com", "custom_domain": true }],
      "send_email": [{ "name": "EMAIL" }],
      "d1_databases": [
        {
@@ -1007,9 +1034,11 @@ To add the binding and name the origin, follow these steps:
    }
    ```
 
+   The `routes` entry serves the Worker on the domain as a [Workers Custom Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/), which the next deploy creates with its DNS record and certificate.
+
    `observability.enabled: true` sends the engine's log records to Workers Logs and satisfies the `config.observability` check of `cairn doctor`.
 
-4. In the adapter module, set the `email` group's `from` to an address on the domain:
+3. In the adapter module, set the `email` group's `from` to an address on the domain:
 
    <!-- snippet-check-skip: one member of the adapter object that the engine milestone shows whole -->
    ```ts
@@ -1017,7 +1046,7 @@ To add the binding and name the origin, follow these steps:
    email: { from: 'cms@notes.example.com' },
    ```
 
-5. In the content module, set `origin` to the same value as `PUBLIC_ORIGIN`:
+4. In the content module, set `origin` to the same value as `PUBLIC_ORIGIN`:
 
    ```ts
    // src/lib/content.ts, the origin constant

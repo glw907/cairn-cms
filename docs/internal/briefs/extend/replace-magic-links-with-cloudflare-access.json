@@ -164,7 +164,14 @@
       "id": "f:agif8l"
     },
     {
-      "text": "This policy is the application's admission list, so it must admit the same editors that the roster holds.",
+      "text": "An editor the policy leaves out never reaches the guard.",
+      "id": [
+        "f:agif8l",
+        "f:k40l86"
+      ]
+    },
+    {
+      "text": "A user the policy admits but the roster lacks reaches the guard, which refuses them as unknown.",
       "id": [
         "f:agif8l",
         "f:k40l86"
@@ -220,8 +227,11 @@
       "id": "f:v5ndhs"
     },
     {
-      "text": "Two settings outside the application can still deliver an admin response around it.",
-      "id": "no-claim"
+      "text": "Two settings outside the application can still deliver an admin response that bypasses the application or the guard.",
+      "id": [
+        "f:zt0oag",
+        "f:51uyqr"
+      ]
     },
     {
       "text": "A cache rule that matches `/admin` can serve one editor's page to the next matching request, and an ungated `workers.dev` hostname answers `/admin` too.",
@@ -299,19 +309,7 @@
       "id": "f:hilyos"
     },
     {
-      "text": "Its refusal reason names the failure, since the guard logs `audience`, `issuer`, `keys`, and `error` at error level and other reasons at warn.",
-      "id": "f:fu4uis"
-    },
-    {
-      "text": "The signature check is stateless and has no revocation step, so a logout or revoke takes effect only where Access sits in the request path.",
-      "id": "f:fe0dyh"
-    },
-    {
-      "text": "The guard uses the resolver's display name only when the roster row's name is empty.",
-      "id": "f:hilyos"
-    },
-    {
-      "text": "The four reasons logged at error mark a misconfigured gate that would refuse the whole roster.",
+      "text": "Its refusal reason names the failure, since the guard logs a misconfigured gate's `audience`, `issuer`, `keys`, and `error` reasons at error level.",
       "id": "f:fu4uis"
     },
     {
@@ -336,6 +334,10 @@
     {
       "text": "In the site's project, create a resolver module that exports an `IdentityResolver` meeting the verifier requirements.",
       "id": "f:3p8yu8"
+    },
+    {
+      "text": "The guard uses the resolver's display name only when the roster row's name is empty.",
+      "id": "f:hilyos"
     },
     {
       "text": "The following resolver module is illustrative and adapted from Cloudflare's Workers sample in [Validate JWTs](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/), which stays the authoritative reference for the verification:",
@@ -369,7 +371,15 @@
       "id": "f:gun084"
     },
     {
-      "text": "In the project directory, build the site and deploy it with `npx wrangler deploy`, as in [Describe the Worker and deploy it](add-cairn-to-a-sveltekit-app.md#describe-the-worker-and-deploy-it).",
+      "text": "In the project directory, build the site with `npm run build`.",
+      "id": [
+        "f:o47i0q",
+        "f:7e1t0j",
+        "f:9ug9mo"
+      ]
+    },
+    {
+      "text": "In the project directory, deploy the Worker with `npx wrangler deploy`, as in [Describe the Worker and deploy it](add-cairn-to-a-sveltekit-app.md#describe-the-worker-and-deploy-it).",
       "id": "f:9ug9mo"
     },
     {
@@ -401,6 +411,10 @@
         "f:8xxe3b",
         "f:q0icwk"
       ]
+    },
+    {
+      "text": "A sign-out or a revocation takes effect only where Access sits in the request path, since the signature check is stateless.",
+      "id": "f:fe0dyh"
     },
     {
       "text": "A handle placed ahead of the guard can limit the per-request work on a best-effort basis by calling [`resolveRateLimit`](../reference/cloudflare.md#resolveratelimit) from `@glw907/cairn-cms/cloudflare`.",

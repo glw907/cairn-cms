@@ -21,12 +21,13 @@ The reasoning behind the access map, the audit's site-wide configuration, and th
 The steps assume a scaffolded site, an access-map rule for the screen, a D1 binding for the screen's data, and a D1 database for the audit trail:
 
 - A site that `create-cairn-site` scaffolded, whose `cairn-audit.config.json` names both compiled admin sheets.
-  For a hand-built site, [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) brings it to the same shape.
 - An access-map rule for the screen's route, as [Restrict admin access](restrict-admin-access.md) describes.
 - A D1 binding for the screen's data, as Cloudflare's [D1 Workers Binding API](https://developers.cloudflare.com/d1/worker-api/) describes.
-  The scaffold binds `APP_DB`, whose `signups` table exists only after the signups migration in the scaffold's `migrations-app` directory is applied.
-  Cloudflare's [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/) documentation describes how to apply a migration.
 - A D1 database for the audit trail, prepared as the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry describes.
+
+The scaffold binds `APP_DB`.
+Its `signups` table exists only after you apply the signups migration in the scaffold's `migrations-app` directory.
+Cloudflare's [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/) documentation describes how to apply a migration.
 
 The setup command writes the admin layout's two files and the `[...path]` catch-all's two files into `src/routes/admin/`.
 The `signups/` directory beside them is already a custom screen, so a new screen adds one more directory beside it.
@@ -46,6 +47,8 @@ src/
             ├── +page.server.ts
             └── +page.svelte
 ```
+
+For a hand-built site, [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) brings it to the same shape as a scaffolded site.
 
 ## Place the route
 
@@ -152,7 +155,6 @@ To wrap the actions, follow these steps:
 import type { Actions } from './$types';
 import { createSectionAction } from '@glw907/cairn-cms/sveltekit';
 import { fail } from '@sveltejs/kit';
-import type { D1Database } from '@cloudflare/workers-types';
 
 const sectionAction = createSectionAction<App.Platform['env'], D1Database>({
   resolveDb: (env: App.Platform['env'] | undefined) => env?.APP_DB,
@@ -221,6 +223,9 @@ const wireAuditSink: Handle = ({ event, resolve }) => {
 export const handle = sequence(createAuthGuard({ access }), wireAuditSink);
 ```
 
+The snippet's `access` import is the access map that [Restrict admin access](restrict-admin-access.md) describes.
+A scaffolded site declares it with `defineAccess` in `access.ts`, beside `hooks.server.ts`.
+
 The handle binds `waitUntil` to its `ExecutionContext`, because the unbound method typechecks and then throws `Illegal invocation` in workerd, after which the row can be lost.
 The sink returns before the insert settles and logs a rejected insert, so a failed insert never fails the audited action.
 
@@ -233,9 +238,14 @@ The 429 the wrapper returns for an exceeded limit writes no row, and neither do 
 The screen's markup composes the admin toolkit's primitives, the same set the engine's screens compose, in place of a hand-rolled table, list, or field.
 The engine's `ManageEditors` screen builds from the toolkit's `PageHeader` and `AdminTable`.
 
-To compose the markup, follow this step:
+To compose the markup, follow these steps:
 
-- In the screen's markup, import the primitives it needs from the admin toolkit.
+1. In the screen's markup, import the primitives it needs from the admin toolkit.
+2. In each form that posts to one of the screen's actions, mount a `CsrfField` from `@glw907/cairn-cms/admin`.
+
+   Inside the admin shell, the field reads its token from context, so it takes no prop.
+   The guard refuses a form without it with a 403.
+   The signups screen mounts one in its `create` form and in its `remove` form.
 
 A smaller screen shows the toolkit alone, as an Events list that composes three primitives with the table inside a card.
 Each of the three primitives has one job:
@@ -469,7 +479,7 @@ async function openDetail(id: number, url: string): Promise<unknown> {
 
 ## Animate the screen
 
-When a screen animates, `cairn-audit` holds its motion to the same error-tier rules as the engine's screens, so each transition names its duration and easing with the admin's motion tokens.
+When a screen animates, `cairn-audit` holds its motion to the same rules as the engine's screens, so each transition names its duration and easing with the admin's motion tokens.
 
 To animate the screen, follow this step:
 

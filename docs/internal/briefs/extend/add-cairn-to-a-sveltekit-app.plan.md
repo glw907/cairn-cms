@@ -128,9 +128,12 @@ cites `[f:u705t5]` (the front-door fact; a cross-arm citation the rework record 
 is no-claim, sentence 5 cites `[f:m0ouh8, f:k16chc]` (the publish lands on `main`; the prerendered
 page carries it after a build and deploy, which milestone 4's check performs).
 
-**What prior knowledge the reader has.** One sentence: the tutorial serves a web developer who
-builds with SvelteKit and TypeScript and works in a terminal (no-claim). Accounts and tools go in
-"Before you begin".
+**What prior knowledge the reader has.** Two sentences, both no-claim: the tutorial assumes
+working knowledge of SvelteKit, TypeScript, and a terminal; if you start from an existing app,
+you work through the same milestones, and the tutorial notes where your app skips creating the
+project or its repository
+(the notes sit in milestone 1's start state, the git step, and the lead-in to "Push the site to
+GitHub"). Accounts and tools go in "Before you begin".
 
 **The path.** Four milestones, each ending with a check, as a numbered list: deploy a bare
 SvelteKit site to its `workers.dev` address (f:9ug9mo); install the engine, mount the admin, and
@@ -213,13 +216,17 @@ sample (f:87hc1y).
   (why the explicit adapter), f:ifuvcl (no `svelte.config.js`; the kit config sits inline in the
   `sveltekit()` call), f:979v0a (`adapter` and `csrf` are sibling keys in that one call), f:87hc1y
   (the scaffold's call already carries `compilerOptions`; the samples keep it as a comment and
-  say nothing about runes).
+  say nothing about runes), f:ghzx9c (`sv create` scaffolds SvelteKit 3 since 2026-10-01, with a
+  `tsconfig.json` that extends `$app/tsconfig`), f:skeche (the engine's `@sveltejs/kit` peer
+  range `^2.70` rejects SvelteKit 3), f:jzm5ef (the pin to `@sveltejs/kit@^2.70` and
+  `@sveltejs/adapter-cloudflare@^7`), f:g48ytv (the SvelteKit 2 `tsconfig.json`).
 - Steps: `npx sv create --template minimal --types ts --no-add-ons field-notes`; initialize a
   git repository with `main` as its branch and commit the scaffold (no-claim procedure; the
   branch is the one `createGithubApp` names in milestone 4, f:0w7jar, and the one the production
   check reads, f:m0ouh8, so the page never has the reader rename it later); uninstall
-  `adapter-auto` and install `adapter-cloudflare`; edit `vite.config.ts` (tree, then the whole
-  file). An existing app that is already a repository skips the git step.
+  `adapter-auto` and install `@sveltejs/kit@^2.70` and `@sveltejs/adapter-cloudflare@^7`; replace
+  `tsconfig.json` with the SvelteKit 2 form (whole file); edit `vite.config.ts` (tree, then the
+  whole file). An existing app that is already a repository skips the git step.
 - Hand-off: Wrangler needs to know where the adapter's build lands.
 
 #### Describe the Worker and deploy it
@@ -250,7 +257,8 @@ sample (f:87hc1y).
   asks for cannot pass `check:provenance`; the defect is filed, and the heading is the fallback).
 - Sentence: Change one line of the scaffold's home page, deploy again, and confirm the change at
   the same address.
-- Facts: f:9ug9mo. Four steps in the answer.
+- Facts: f:9ug9mo, f:ibis7z (the home page is `src/routes/+page.svelte`). Four steps in the
+  answer.
 
 #### Checklist before the engine
 
@@ -499,7 +507,9 @@ sample (f:87hc1y).
   restated beyond what the step needs. No handed fact covers repository creation, and none is
   needed: the page claims nothing about git or GitHub beyond the two clauses above.
 - Steps: create an empty repository named `field-notes` under `your-account` on GitHub, with no
-  starter files, since the push carries the history; add it as the `origin` remote; push `main`.
+  starter files, since the push carries the history; add it as the `origin` remote, with one
+  sentence telling the reader to replace the account name in the remote URL with the account that
+  owns the repository (no placeholder named in the prose); push `main`.
   Check, in the same section: the repository's page lists `src/content/posts/2026-08-14-first-light.md`
   and `src/content/.cairn/index.json`. An app already on GitHub skips this section, and its
   repository and default branch are the values milestone 4 writes into `createGithubApp`.
@@ -594,7 +604,8 @@ sample (f:87hc1y).
   whitespace and a two-line value decoded to the same bytes, so the fact's causal clause is
   stale against it; the register editor's round-2 blocking finding at `:920`, filed in the
   friction log as the two bullets' disagreement, for the claims checker to resolve), f:gyu7jc.
-- Steps: replace the placeholder `createGithubApp` values (a two-member snippet with the
+- Steps: set `owner` to your GitHub account (f:rp65d2) and set `appId` and `installationId` to
+  the noted values (a two-member snippet with the
   snippet-check skip comment); `base64 < <key>.pem | tr -d '\n' | npx wrangler secret put
   GITHUB_APP_PRIVATE_KEY_B64`, with one clause after the command naming what it produces, the PEM
   base64-encoded onto one line, and no sentence on `atob()`; keep the `.pem` outside every
@@ -616,7 +627,8 @@ sample (f:87hc1y).
   with its own `migrations_dir`, so audit writes never contend with session and token lookups;
   the worked hook is `docs/reference/sveltekit.md#created1auditsink`).
 - Steps: `npx wrangler d1 create field-notes-auth` and note the id; copy the two migrations into
-  `migrations/`; add the `d1_databases` entry (a `jsonc` fragment); apply with `--remote`. One
+  `migrations/`; add the `d1_databases` entry at the top level of `wrangler.jsonc` (a `jsonc`
+  fragment); apply with `--remote`. One
   line after the steps: `--local` applies them to the local development database (the exercise
   uses it).
 - Hand-off: sign-in mail is the last binding.
@@ -638,9 +650,11 @@ sample (f:87hc1y).
   the page never explains, the friction log's f:m0ouh8 and f:q13lck entry), f:lbetsq (one
   hand-off sentence: a site that sends through another provider passes its own `auth.send`, the
   closing section shows the sender's shape).
-- Steps: `npx wrangler email sending enable notes.example.com`; serve the Worker on the domain
-  (link Cloudflare's custom-domains page); edit `wrangler.jsonc` (whole file: `send_email`,
-  `d1_databases`, `vars.PUBLIC_ORIGIN`, `observability`); set the adapter's `email.from` to an
+- Steps: `npx wrangler email sending enable notes.example.com`; edit `wrangler.jsonc` (whole
+  file: `routes` with the domain as a Custom Domain, `send_email`, `d1_databases`,
+  `vars.PUBLIC_ORIGIN`, `observability`), with one sentence after the file saying the `routes`
+  entry serves the Worker on the domain as a Workers Custom Domain the next deploy creates
+  (f:thgmpz, linking Cloudflare's custom-domains page); set the adapter's `email.from` to an
   address on the domain; set the content module's `origin` to the same value as `PUBLIC_ORIGIN`.
 - Hand-off: every edit on the opening map is made; the check runs the doctor and one publish.
 
@@ -835,6 +849,33 @@ heading findings traced to this plan's Heading lines, so the plan changed there 
   keep "the site's repository", and `field-notes` stays in code font in the push step's name block
   and the adapter sample until the gate learns a running-example allowlist.
 
+## Resolution run 4 findings, disposed
+
+- [BLOCKING] register editor, `:7`, the false universal "each step that creates the project or
+  its repository says when your app skips it" (two of the three skip notes sit in section prose,
+  not steps): the sentence now reads "An existing app works through the same milestones, and the
+  tutorial notes where that app skips creating the project or its repository", and the prior
+  knowledge line above matches the page. The final reader read's scoped redraft then restored
+  the second person ("If you start from an existing app, you work through the same milestones,
+  and the tutorial notes where your app skips creating the project or its repository").
+- [BLOCKING] final reader read, `:53, :60, :206`: `sv create` scaffolds SvelteKit 3 since
+  2026-10-01, and `npm install @glw907/cairn-cms` stops with `ERESOLVE` against the engine's
+  `^2.70` peer range. Milestone 1 now pins `@sveltejs/kit@^2.70` and
+  `@sveltejs/adapter-cloudflare@^7` and replaces `tsconfig.json` with the SvelteKit 2 form
+  (f:ghzx9c, f:skeche, f:jzm5ef, f:g48ytv), reproduced in a fresh scratch project on 2026-10-03
+  (install resolves, build and check exit 0). The engine-side major is in the friction log.
+- [BLOCKING] final reader read, `:907`: the credentials step now sets `owner` as well, and the push
+  step tells the reader to replace the account name in the remote URL.
+- [BLOCKING] scoped register read, `:828`: the push step's placeholder sentence names no
+  placeholder (conductor ruling; a code-font placeholder fails `check:provenance`, the friction
+  log's running-example entry). The same round splits milestone 1's opening paragraph so the
+  SvelteKit 2 pin stands as its own paragraph, writes the date as October 1, 2026, and rewords the
+  `tsconfig.json` and credentials steps.
+- The reader read's smaller items, all taken: the `routes` entry with `custom_domain: true` joins
+  the whole-file `wrangler.jsonc` and replaces the separate serve-on-the-domain step (f:thgmpz);
+  the exercise names `src/routes/+page.svelte` (f:ibis7z); the `d1_databases` step says the entry
+  sits at the top level.
+
 ## Dispositions, every fact id
 
 `carried` names the section the fact is placed under (its primary home when it is cited twice).
@@ -921,6 +962,12 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | f:vrue1g | carried | Index the content and commit its manifest (cited only by a sentence that names the `cairn-manifest` bin; a cross-arm citation the plan adds) |
 | f:1dhk1a | carried | Before you begin (the `cairn` CLI install; a cross-arm citation the plan adds) |
 | f:txgoyy | carried | Add the Email Sending binding and name the origin (`observability.enabled: true`; a cross-arm citation the plan adds) |
+| f:skeche | carried | Create the project on the Cloudflare adapter (the peer range that rejects SvelteKit 3) |
+| f:ghzx9c | carried | Create the project on the Cloudflare adapter (the SvelteKit 3 scaffold and its `tsconfig.json`) |
+| f:jzm5ef | carried | Create the project on the Cloudflare adapter (the SvelteKit 2 pin) |
+| f:g48ytv | carried | Create the project on the Cloudflare adapter (the SvelteKit 2 `tsconfig.json`) |
+| f:ibis7z | carried | Deploy a change (the home page's path) |
+| f:thgmpz | carried | Add the Email Sending binding and name the origin (the `routes` Custom Domain entry) |
 | f:n52h8f | carried | Wire the dev backend and the CSRF handoff (the `src/app.d.ts` declaration step, with f:72mctx; a cross-arm citation the plan adds on the fact read's round-2 finding) |
 
 ## Drafting constraints

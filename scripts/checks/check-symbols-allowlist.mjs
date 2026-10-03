@@ -126,6 +126,7 @@ export const ALLOWLIST = new Set([
   'file-path:src/content/.cairn/site-facts.json', // a site's own generated site-facts contract, by convention
   'file-path:src/content/.cairn/dictionary.txt', // a site's own spellcheck dictionary, by convention
   'file-path:cairn/admin.css', // a scaffolded site's gitignored compiled admin sheet, `.cairn/admin.css` (the extractor drops the leading dot)
+  'file-path:svelte-kit/tsconfig.json', // the tsconfig `svelte-kit sync` generates in a SvelteKit 2 site, `./.svelte-kit/tsconfig.json` in docs/extend/add-cairn-to-a-sveltekit-app.md (the extractor drops the leading dot)
   'file-path:src/lib/club/section.ts', // docs/extend/add-a-custom-admin-screen.md's illustrative section module
   'file-path:src/routes/admin/club/events/ApproveDialog.svelte', // docs/extend/add-a-custom-admin-screen.md's illustrative dialog-form recipe component
   'file-path:src/lib/today.ts', // docs/extend/debug-your-site.md's illustrative fixed-today helper module

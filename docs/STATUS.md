@@ -16,17 +16,14 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Draft docs stage 2a: task 7c, the page plan, is next, then task 7b's resolution pass from plans (Geoff, 2026-10-01; after the 2026-10-02 23:59 reset).**
+- **Draft docs stage 2a: task 7c (the page plan) is done; task 7b's resolution run from plans is in flight (2026-10-03).**
   Branch and worktree `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
-  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (task 7c, the amended "Resolution pass" paragraph under
-  task 7b, ledger rows 7a to 7c). Geoff's read of the rework pages (WIP `a6885750`): correct facts, well explained, and
-  still a loosely connected collection of atoms. Diagnosis and rulings:
-  `docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md` (the chain carries no artifact holding a
-  page's argument). Task 7c adds a committed page plan between page inputs and the draft, graded by the structural seat
-  before prose; the drafter drafts from it; a plan may subordinate facts to the reference or cut them. Then the six
-  pilot pages rerun as rework pages from plans, and the three owner pages republish with their plans linked
-  (https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs), then task 8. Budget for the remaining pages 45 to 60M, quality
-  first; 7a and 7b ran past their 4 to 5M.
+  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (ledger rows 7c and "7b resolution"). Task 7c landed at
+  cairn `e48a61a1`, `b78d8cf2` and dotfiles `de6cf8d`, `526c111`, each accepted after one fix round. The six pilot pages
+  now run as `rework` pages through `docs-page-chain` with the plan step on `fable`; after the run, a stage record and
+  commit, then the three owner pages republish with their plans linked
+  (https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs), then task 8 after Geoff's read. Budget for the remaining pages
+  45 to 60M, quality first.
 - The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
   `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and filed its 12 code defects in the
   friction log (`bd8ab1fe`, on `main`, not pushed).

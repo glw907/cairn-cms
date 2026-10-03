@@ -57,32 +57,49 @@ from its page's.
 - `page` is the page's path from the repository root.
 - `sentences` lists every sentence of the page's prose, in page order, each copied exactly as the
   markdown writes it (code spans, emphasis, and links included).
-- Each sentence carries `id`, either the fact id it rests on (a bullet in `docs/internal/facts/`)
-  or the literal `"no-claim"` for a sentence that states no fact: a transition, a pointer to the
-  next step, a table header.
+- Each sentence carries `id`, either the fact id it rests on (a bullet in `docs/internal/facts/`),
+  a non-empty array of fact ids for a sentence that synthesizes several facts (each id is checked
+  as a single id is, and a fact in the sentence must appear in at least one cited bullet), or the
+  literal `"no-claim"` for a sentence that states no fact: a transition, a pointer to the next
+  step, a table header. `"no-claim"` is not valid inside an array.
+- `cuts` is optional: an array of `{ "id": "f:...", "reason": "..." }` mirroring the cut
+  dispositions of the page's plan (see "The page plan" below). A fact the plan subordinates to the
+  reference arm is a cut whose reason names the reference link. Each entry needs a fact id and a
+  non-empty reason; the check does not resolve a cut id against the container.
 
 Headings, fenced code blocks, images, HTML comments, and front matter are not sentences and stay
 out of the list. Table cells and list items are sentences.
 
+## The page plan
+
+Beside a page's brief sits its plan, `docs/internal/briefs/<track>/<page>.plan.md`, a committed
+artifact the chain writes before the draft. It holds the introduction's three parts; each section
+in the order the plan argues for, with its heading, the one sentence a reader takes from it, the
+fact ids it draws on, and its hand-off; the ending; and a disposition for every fact id in the
+page's claim inventory: placed in a section, subordinated to a named reference link, or cut with a
+reason. `check:provenance` reads only the `.json` briefs, never the plan; the review page
+(`scripts/docs-review/`) shows the plan beside the page.
+
 ## The drafter writes it
 
 The drafter (`cairn-docs-drafter`, run by the workstation's `docs-page-chain.js`) writes the
-`sentences` list together with the page, in the same round, never after it. A sentence that states two facts from two bullets is two sentences. A drafted sentence with
+`sentences` list together with the page, in the same round, never after it. A sentence that states two facts from two bullets either splits into two sentences or cites both ids in an array. A drafted sentence with
 no fact to cite is either `no-claim`, because it claims nothing, or it goes back to the chain's
 page-inputs step first, because a claim with no fact is the defect this check exists to catch.
 
 ## What the check fails
 
-- A sentence with no `id`, or an `id` that is neither `f:` plus six base36 characters nor
-  `"no-claim"`.
+- A sentence with no `id`, an empty `id` array, or an `id` that is neither `f:` plus six base36
+  characters nor `"no-claim"`.
+- A `cuts` entry that is not an object, whose `id` is not a fact id, or that has no `reason`.
 - A sentence on the page that the brief leaves out, or a brief sentence the page does not carry.
-- An `id` that resolves to no fact bullet.
+- An `id` (any id of an array) that resolves to no fact bullet.
 - A cited bullet tagged `[candidate]` (any qualifier, `[candidate: excluded, ...]` included),
   `[rejected]`, or `[docs-drift]`. `[verified]`, `[external]`, and `[vendor]` bullets are
   citable.
 - A number, version, date, path, command, flag, or backticked export or config name in a
-  sentence that its cited bullet does not contain, and an owner-tier key phrase (see
-  `docs/internal/facts/README.md`) the cited bullet does not carry. A `no-claim` sentence
+  sentence that none of its cited bullets contains, and an owner-tier key phrase (see
+  `docs/internal/facts/README.md`) no cited bullet carries. A `no-claim` sentence
   holding any of these fails outright.
 
 The extractor's classes and the list of what it cannot see are in the header of

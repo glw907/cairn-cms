@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   embedBatch,
   inlineRuntimeSource,
+  planPathFor,
+  loadReviewFile,
   TEMPLATE_PATH,
   RUNTIME_PATH,
 } from '../../../scripts/docs-review/embed.mjs';
@@ -14,6 +17,8 @@ import {
   extractEmbeddedState,
   computeRestoredFiles,
   isReadOnlyRejection,
+  planSectionHtml,
+  renderMarkdown,
 } from '../../../scripts/docs-review/runtime.mjs';
 import { runReviewPage } from './_docs-review-vm.js';
 
@@ -152,5 +157,62 @@ describe('runtime.mjs source safety', () => {
     expect(RUNTIME_SOURCE).not.toContain('<script');
     expect(RUNTIME_SOURCE).not.toContain('<!--');
     expect(RUNTIME_SOURCE).not.toContain('-->');
+  });
+});
+
+describe('page plan on the review page', () => {
+  const PLAN = '# Plan\n\n- Section one: states `x`.\n';
+
+  it('finds a page\'s plan under its track in the briefs directory, front-door pages included', () => {
+    const root = '/repo';
+    expect(planPathFor('/repo/docs/extend/architecture.md', root)).toBe(
+      '/repo/docs/internal/briefs/extend/architecture.plan.md',
+    );
+    expect(planPathFor('/repo/docs/why-cairn.md', root)).toBe(
+      '/repo/docs/internal/briefs/front-door/why-cairn.plan.md',
+    );
+    expect(planPathFor('/repo/README.md', root)).toBeNull();
+    expect(planPathFor('/repo/docs/extend/architecture.json', root)).toBeNull();
+  });
+
+  it('reads the plan beside the page when it exists, and carries no plan key when it does not', () => {
+    const root = mkdtempSync(join(tmpdir(), 'cairn-docs-review-'));
+    mkdirSync(join(root, 'docs/extend'), { recursive: true });
+    mkdirSync(join(root, 'docs/internal/briefs/extend'), { recursive: true });
+    writeFileSync(join(root, 'docs/extend/planned.md'), '# Planned\n');
+    writeFileSync(join(root, 'docs/extend/unplanned.md'), '# Unplanned\n');
+    writeFileSync(join(root, 'docs/internal/briefs/extend/planned.plan.md'), PLAN);
+
+    const planned = loadReviewFile(join(root, 'docs/extend/planned.md'), root);
+    expect(planned.plan).toBe(PLAN);
+    expect(planned.markdown).toBe('# Planned\n');
+
+    const unplanned = loadReviewFile(join(root, 'docs/extend/unplanned.md'), root);
+    expect(unplanned.markdown).toBe('# Unplanned\n');
+    expect('plan' in unplanned).toBe(false);
+  });
+
+  it('renders the plan as a collapsed section for a planned file and nothing for an unplanned one', () => {
+    const planned = planSectionHtml({ path: 'docs/a.md', markdown: '# A', plan: PLAN }, renderMarkdown);
+    expect(planned).toContain('<details class="doc-file-plan">');
+    expect(planned).toContain('<summary>Page plan</summary>');
+    expect(planned).toContain('<code>x</code>');
+    expect(planSectionHtml({ path: 'docs/a.md', markdown: '# A' }, renderMarkdown)).toBe('');
+    expect(planSectionHtml({ path: 'docs/a.md', markdown: '# A', plan: '  \n' }, renderMarkdown)).toBe('');
+  });
+
+  it('shows the plan in the page\'s own file section only when the file carries one, and keeps it through the round trip', async () => {
+    const files = [
+      { path: 'docs/a.md', markdown: '# A\n', plan: PLAN },
+      { path: 'docs/b.md', markdown: '# B\n' },
+    ];
+    const embedded = embedBatch(TEMPLATE_SOURCE, RUNTIME_SOURCE, { title: 'Docs review', files });
+    const page = await runReviewPage(embedded);
+    const hooks = page.__cairnDocsReview!;
+    expect(hooks.fileSectionHtml(files[0], 0)).toContain('class="doc-file-plan"');
+    expect(hooks.fileSectionHtml(files[1], 1)).not.toContain('doc-file-plan');
+
+    const regenerated = hooks.buildDocument(extractEmbeddedState(embedded)!);
+    expect(extractEmbeddedState(regenerated)!.files).toEqual(files);
   });
 });

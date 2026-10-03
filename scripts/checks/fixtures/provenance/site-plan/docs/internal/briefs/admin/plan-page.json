@@ -1,0 +1,11 @@
+{
+  "page": "docs/admin/plan-page.md",
+  "sentences": [
+    { "text": "Run `cairn doctor --json` in the site directory, and a GitHub installation token expires after one hour.", "id": ["f:pv0001", "f:pv0003"] },
+    { "text": "The next section walks through it.", "id": "no-claim" }
+  ],
+  "cuts": [
+    { "id": "f:pv0004", "reason": "Stated on the pricing reference page, linked from the section." },
+    { "id": "f:pv0002", "reason": "The page's argument does not need it." }
+  ]
+}

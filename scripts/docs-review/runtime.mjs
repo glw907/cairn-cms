@@ -4,7 +4,7 @@
 // Both paths run the identical code, so the batch state they encode and decode never drifts
 // between the Node side and the browser side.
 
-/** @typedef {{ path: string, markdown: string }} DocsReviewFile */
+/** @typedef {{ path: string, markdown: string, plan?: string }} DocsReviewFile */
 /** @typedef {{ title: string, files: DocsReviewFile[] }} DocsReviewState */
 
 export const STATE_ELEMENT_ID = 'cairn-docs-review-state';
@@ -77,6 +77,22 @@ export function computeRestoredFiles(stashedFiles, embeddedFiles) {
     const stashed = stashByPath.get(file.path);
     return stashed && stashed.markdown !== file.markdown ? stashed : file;
   });
+}
+
+/**
+ * The read-only page plan shown beside one file's preview: a collapsed `details` element holding
+ * the plan's rendered markdown, or an empty string for a file with no plan, so a page without one
+ * shows nothing extra. The plan is displayed only; the page never edits or saves it.
+ * @param {DocsReviewFile} file
+ * @param {(markdown: string) => string} renderDoc The page's markdown renderer.
+ * @returns {string}
+ */
+export function planSectionHtml(file, renderDoc) {
+  if (typeof file.plan !== 'string' || file.plan.trim() === '') return '';
+  return (
+    '<details class="doc-file-plan"><summary>Page plan</summary>' +
+    '<div class="doc-file-plan-body">' + renderDoc(file.plan) + '</div></details>'
+  );
 }
 
 /**

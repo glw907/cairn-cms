@@ -150,6 +150,16 @@ guide is silent.
   2026-08-14). A reader does not need the taxonomy a page was planned under. Names such as task
   guide and reference entry belong to the writers and reviewers who plan a page, and a published
   page follows its form without naming it.
+- **A page is drafted from its committed page plan** (Geoff, 2026-10-01). The plan, at
+  `docs/internal/briefs/<track>/<page>.plan.md`, is Google's outline written down: "You might find
+  it useful to think of an outline as the narrative for your document" ([Organizing large
+  documents](https://developers.google.com/tech-writing/two/large-docs)). It holds the
+  introduction's three parts (what the document covers, what prior knowledge the reader needs,
+  and what it does not cover); the sections in the order the plan argues for, each with its
+  heading, the one sentence a reader takes from it, the fact ids it draws on, and its hand-off;
+  and the ending the page's anatomy requires. Every fact in the page's inventory is placed in a
+  section, subordinated to a named reference link, or cut with a reason. The draft follows the
+  plan's order, and the plan is kept beside the page's brief.
 
 ### Voice
 
@@ -365,6 +375,16 @@ guide is silent.
   cairn does not control.
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling, Geoff,
   2026-08-14). A reader does not need the taxonomy a page was planned under.
+- **A page is drafted from its committed page plan** (Geoff, 2026-10-01). The plan, at
+  `docs/internal/briefs/<track>/<page>.plan.md`, is an outline written down, which Google's
+  guidance on large documents calls "the narrative for your document" ([Organizing large
+  documents](https://developers.google.com/tech-writing/two/large-docs)). It holds the
+  introduction's three parts (what the document covers, what prior knowledge the reader needs,
+  and what it does not cover); the sections in the order the plan argues for, each with its
+  heading, the one sentence a reader takes from it, the fact ids it draws on, and its hand-off;
+  and the ending the page's anatomy requires. Every fact in the page's inventory is placed in a
+  section, subordinated to a named reference link, or cut with a reason. The draft follows the
+  plan's order.
 
 ### Voice
 
@@ -964,6 +984,10 @@ question and teaser headings and every tell. The figurative-language rule adopts
 in place of the register's earlier allowance for an explanatory metaphor (Geoff, 2026-09-28,
 ruling 8), and the "writing room" and "The four arms" specimens stay as illustrations of it.
 
+The page plan rule in both briefs adds a step the base guides are silent on and forbids no form
+either guide prescribes, so it is a tightening and needs no row. It adopts Google's outline
+guidance as published (Geoff, 2026-10-01).
+
 The editor brief departs from nothing in Microsoft (ruling 4). Its tightenings are the no-pitch
 keystone, the tells that pass this section's test against Microsoft, and the Names rules. Three
 developer-brief rules fail that test on the editors track and stay out of the editor brief: the
@@ -1002,6 +1026,11 @@ date.
 - [Writing for all abilities](https://learn.microsoft.com/en-us/style-guide/accessibility/writing-all-abilities)
 - [Top 10 tips for Microsoft style and voice](https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice)
 - [Writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)
+
+The page plan rule in both briefs cites one page of Google's Technical Writing Two course, read on
+2026-10-03.
+
+- [Organizing large documents](https://developers.google.com/tech-writing/two/large-docs)
 
 The exemplar captures carry their source URLs and licenses in
 [`exemplars/README.md`](./exemplars/README.md).

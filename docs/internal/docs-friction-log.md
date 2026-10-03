@@ -326,6 +326,10 @@ Filed 2026-09-30 by the fact read of `docs/extend/theme-your-public-site.md` (dr
 
 - **`extender`.** Found by the theme-your-public-site fact read on 2026-09-30 (`f:l2mbcj`, `f:s4prb0`). The daisyUI component set is a design choice, scoped to the four components Waymark's chrome renders (button, badge, alert, card), but it lives in the chassis: `src/chassis/tokens.css` activates `@plugin "daisyui"` with an `exclude` list of every other component (`templates/waymark/src/chassis/tokens.css:18-22,57-72`). A port "keeps `src/chassis/` unchanged" by the chassis's own boundary, yet a new chrome that renders a daisyUI menu, navbar, or modal must edit that chassis file's exclude list, so the page has to attribute the plugin to Waymark or add an exception to the port procedure. A fix moves the component selection to the theme's side (the theme's own `@plugin "daisyui"` options), leaving the chassis only the `themes: false` mechanism.
 
+Filed 2026-10-03 by the resolution-run fact read of `docs/extend/theme-your-public-site.md` (draft docs stage 2a).
+
+- **`extender`.** Found by the theme-your-public-site resolution-run fact read on 2026-10-03 (`f:hgal3e`, `f:s4prb0`, `f:kj37zz`). The site's date format and locale are a presentation choice, yet `formatDate` hard-codes `en-GB` and UTC inside the chassis file `date.ts` (`templates/waymark/src/chassis/date.ts:4-17`), so a theme that wants another format or locale edits a chassis file. With the `exclude` list in `tokens.css` and the dependents-table deletions, that makes three chassis edits a port may make, while the boundary tells a theme to keep `src/chassis/` whole, so the page cannot state the boundary without exceptions. A fix moves the locale and format options to the theme's side (a `theme-names.ts`-style config the chassis reads), or the chassis README names which chassis files a theme is expected to edit.
+
 Filed 2026-09-30 by the stage 2a pilot's post-run step, each verified against the tree first.
 
 - **`extender`.** Found by the add-a-custom-admin-screen fact reads (`f:5stbq2`, `f:gc0hx3`). No `docs/reference` entry lists the five forms that render a `btn` as the selected segment (`.btn-active`, `aria-pressed="true"`, `aria-checked="true"`, a non-empty non-false `aria-current`, `:checked`; `src/lib/admin/cairn-admin.css:1189-1304`) or the bare-`btn` hairline look (`cairn-admin.css:954-994`). `docs/reference/admin-toolkit.md` names `btn-active` only inside the `Pagination` and toolbar class inventories, so an extender writing a custom screen's own toggle finds the forms only in the facts container. A fix adds both to a reference page for the admin sheet (`admin-grammar-tokens.md` or `admin-toolkit.md`).
@@ -354,6 +358,17 @@ Filed 2026-10-03 by the page plan for `docs/extend/add-a-custom-admin-screen.md`
 - **`extender`.** Found by the add-a-custom-admin-screen page plan on 2026-10-03, a hole in `docs/internal/facts/`. The page's fact ids carry no statement that a custom screen's form mounts `CsrfField`, yet the `CsrfField` entry in `docs/reference/admin.md` says a form that renders none fails the guard's token check, and the showcase signups screen mounts it in both of its forms (`examples/showcase/src/routes/admin/signups/+page.svelte:8,64,145`). The committed page's dialog-form snippet posts `?/create` through `use:enhance` with no `CsrfField`, so a reader who copies it builds a form the guard refuses. The plan keeps `<CsrfField />` in the snippet's code and makes no prose claim about it, since no fact backs one. A fix mints a `[verified]` fact from `src/lib/admin/CsrfField.svelte` and the guard's check and cites it from the dialog-form section.
 - **`extender`.** Found by the add-a-custom-admin-screen page plan on 2026-10-03 (`f:hafpqf`), while subordinating the rate limit to `docs/reference/sveltekit.md`. The `createSectionAction` entry (check order item 2) and the `SectionActionConfig` type row state the three `rateLimit` members, that the limit runs before the access-map checks, and that an unresolved binding or a throwing `key()` or `limit()` degrades to open, but neither states the default 429 copy (`Too many requests. Wait a moment and try again.`, `src/lib/sveltekit/section-action.ts`) or that a SvelteKit `redirect()` or `error()` thrown from `key()` or `limit()` propagates instead of degrading. A fix adds both clauses to the `createSectionAction` entry's check-order item 2.
 - **`extender`.** Found by the add-a-custom-admin-screen page plan's revision on 2026-10-03 (`f:3lbdl6`), while placing the page's most likely first failure. An owner who opens a new custom screen before the access map carries a rule for its route gets a 403 and an `auth.access.refused` record with the resolved target, since `hasAccessRule` carries no owner exemption (`src/lib/sveltekit/guard.ts:476-482`), and `config.access_unmapped` reports only an unmapped concept id or fixed engine screen, never a site's own route (`docs/reference/log-events.md`, its row). The extend track's recovery surface, `docs/extend/debug-your-site.md`, lists no `auth.access.refused` symptom row in its outline covers or its fact ids (`docs/internal/outlines/extend.json`), so the page's diagnostic sentence points at `docs/extend/restrict-admin-access.md` and the `auth.access.refused` row in `docs/reference/log-events.md` instead of the surface the task-guide anatomy names. A fix adds an `auth.access.refused` row, with an owner's 403 on an unmapped custom route among its causes, to debug-your-site's page inputs ahead of its draft.
+- **`extender`.** Found by the add-a-custom-admin-screen page plan's second revision on 2026-10-03 (`f:vao0dd`, `f:n2bhjw`, `f:pswc3n`), a hole in `docs/internal/facts/`. The page's row-detail recipe now carries a step that renders each row as an `ExpandableRow` and a step that wires the panel's open handler, but no fact in the page's inventory states the component's controlled contract: `expanded` and `onToggle` are caller-held props, with the caller deriving `expanded={expandedId === row.id}` per instance (`src/lib/admin-toolkit/ExpandableRow.svelte:9-11`; the `ExpandableRow` entry in `docs/reference/admin-toolkit.md`). The five `ExpandableRow` facts name its job, graduation, `colspan`, the `header` snippet, and `data-cairn-inert-cell`, so the page links the entry for the props and names none, and a reader learns which prop opens the panel only off the page. A fix mints a `[verified]` fact for the `expanded`/`onToggle` contract from the component's `@component` comment and cites it from the row-detail step.
+- **`extender`.** Found by the add-a-custom-admin-screen page plan's third revision on 2026-10-03 (`f:od9mww`, `f:uy7vyc`), a hole in `docs/internal/facts/`. The row-detail recipe's final step renders a row's cached detail in its `ExpandableRow` panel, and the third plan read asked that step to also show a short failure message with a way to retry when the fetch fails. No fact in the page's inventory states what the panel shows while the fetch is pending or after it fails: `f:od9mww` states only that a failed row stays retryable, and the committed handler snippet (`docs/extend/add-a-custom-admin-screen.md`, "Load row detail on demand") returns `undefined` on either failure and leaves the panel's rendering unstated. The page therefore gives no failure display, and a reader who follows the recipe gets a panel that renders nothing on a failed fetch with no stated idiom for saying so. A fix mints a `[verified]` fact for the panel's pending and failed states, from whatever idiom the engine's own screens use for an inline fetch failure, and cites it from the recipe's final step.
+
+Filed 2026-10-03 by the resolution redraft of `docs/extend/add-a-custom-admin-screen.md` (draft docs stage 2a, task 7b).
+
+- **`extender`.** Found by the add-a-custom-admin-screen resolution redraft on 2026-10-03 (`f:7ik6ng`, `f:5t1i7o`, `f:clyg9r`, `f:jra92k`). The page's import step in "Compose the screen from the toolkit" cannot name the subpath it imports from, `@glw907/cairn-cms/admin-toolkit`, because the only fact that states it, `f:7ik6ng`, is subordinated to `docs/reference/admin-toolkit.md` as the export list, and the carried toolkit facts name primitives and never the subpath. The step therefore says "from the admin toolkit" and leaves the subpath to the snippet. The dialog-form recipe has the same shape: no carried fact names `use:enhance` (`f:jra92k` and `f:xgy3iu` say "submitted with `enhance`"), so step 3 reads "with `enhance` applied". A fix mints a narrow `[verified]` fact that a custom screen imports its primitives from `@glw907/cairn-cms/admin-toolkit` (`examples/showcase/src/routes/admin/signups/+page.svelte:9`), separate from the export list, and lets a page plan carry it apart from `f:7ik6ng`.
+- **`contributor`.** Found by the add-a-custom-admin-screen resolution redraft on 2026-10-03 (`f:onqm6k`). `check:symbols` resolves a file-path code span against the engine repository's root, so `migrations-app/0000_signups.sql`, a path in every scaffolded site (`templates/waymark/migrations-app/0000_signups.sql`, `examples/showcase/migrations-app/0000_signups.sql`), fails as unresolved on an extend page. The page says "the scaffold's signups migration" instead of naming the file the reader applies. A fix resolves a site-relative path against `templates/waymark/` as well, the way the allowlist already admits `.cairn/admin.css`.
+
+Filed 2026-10-03 by the fact read of `docs/extend/add-a-custom-admin-screen.md` (draft docs stage 2a, task 7b resolution run 2), verified against the tree first.
+
+- **`extender`.** Found by the add-a-custom-admin-screen fact read on 2026-10-03 (`f:n2bhjw`, `f:vao0dd`). The page's row-detail recipe tells a reader to head `ExpandableRow`'s trailing trigger cell with a `<th scope="col">` holding an `sr-only` span, the pattern the showcase signups table uses (`examples/showcase/src/routes/admin/signups/+page.svelte:106`), and its next step sends the reader to the `ExpandableRow` entry's example for the handler wiring. That example heads the same cell with a bare `<th></th>` (`docs/reference/admin-toolkit.md:840`), so a reader who copies the linked example builds the unlabeled column header the recipe warns against. A fix gives the reference example the `<th scope="col"><span class="sr-only">...</span></th>` header the recipe and the showcase use.
 
 Filed 2026-10-03 by the page plan for `docs/extend/add-cairn-to-a-sveltekit-app.md` (draft docs stage 2a, task 7c), verified against the reference arm first.
 
@@ -398,6 +413,20 @@ Filed 2026-10-03 by the page plan of `docs/extend/security-model.md` (draft docs
   so the security model has to name the settings save back in by qualifier. A fix either gates the
   tidy and dictionary actions against a fixed target when no `concept` is mounted, which removes the
   exception, or names the two surfaces apart in the reference.
+- **`extender`.** Found by the security-model page plan's resolution revision on 2026-10-03
+  (`f:r0cv6e`). The outline's sixth out-of-scope item for `docs/extend/security-model.md`
+  (`docs/internal/outlines/extend.json`, `outOfScope`: "When the sanitize floor shipped; state the
+  floor as it is (migration-notes, kept)") hands the floor's history to
+  `docs/extend/migration-notes.md`, and the concept anatomy asks the introduction to name the page
+  that covers what it leaves out, but no published page holds that record: the oldest entry in
+  `docs/extend/migration-notes.md` is 0.86.0, the oldest in `CHANGELOG.md` is 0.22.0, and the floor
+  shipped in v0.17.0 (git `40d466ad`, `f:r0cv6e`). The round-2 structural read asked the
+  introduction to name Migration notes as that record, which the file cannot back, so the page
+  states the floor as it stands and names no page for its history, and the Concepts gloss for
+  Migration notes names only the access-map warning it does record. A fix either adds a
+  pre-0.86.0 note to `docs/extend/migration-notes.md` for the floor's arrival, or re-points the
+  outline's sixth item at no page so the anatomy's "pages that cover it" clause is not owed where
+  no page exists.
 
 Filed 2026-10-03 by the page plan of `docs/extend/replace-magic-links-with-cloudflare-access.md`
 (draft docs stage 2a, task 7c).
@@ -421,6 +450,48 @@ Filed 2026-10-03 by the page plan of `docs/extend/replace-magic-links-with-cloud
   (`docs/reference/sveltekit.md`, the "Under identity mode" paragraph). A fix lets the `identity`
   branch honor a `bootstrapOwner` on `AuthGuardConfig` for the first proven email when the roster
   is empty, or records the out-of-band seed as the ruling.
+- **`extender`.** Found by the replace-magic-links page plan's second revision on 2026-10-03
+  (`f:fu4uis`, `f:sbv5xj`; `src/lib/sveltekit/guard.ts:288-313`; `docs/reference/log-events.md`,
+  the `guard.refused` row). The guard writes `detail: "error"` on `guard.refused` for two
+  different events: a resolver that threw (the `catch` at `guard.ts:309-312`, with the thrown
+  message in a separate `error` field) and a resolver that returned `{ ok: false, reason: 'error'
+  }` (the `!resolved.ok` branch, no `error` field), and both log at error, since
+  `IDENTITY_OPERATOR_FAULT_REASONS` lists `error`. `IdentityRefusal.reason` is typed `string`, so
+  nothing stops a site from returning the literal, and a reader diagnosing `error` cannot tell a
+  crash from a site-chosen reason except by whether the `error` field is present, which the
+  reference row states and no fact carries. The page's sample works around it by rethrowing any
+  `jose` failure its mapping does not name, so under the sample `error` always means a throw and
+  always carries a message, and the failure path's `error` step holds only for a site that keeps
+  that shape. A fix reserves the literal: coerce a returned `error` to another word before the
+  log, or name a thrown resolver with its own `detail` word such as `threw`, and say in the
+  `IdentityRefusal.reason` doc comment and the reference row which words are the guard's own.
+- **`extender`.** Found by the replace-magic-links page plan's third revision on 2026-10-03
+  (`f:agif8l`, `f:k40l86`), a hole in `docs/internal/facts/`. The page argues that the Access
+  application's policy and cairn's roster are two admission lists that must agree on the editor's
+  email, and the structural edit found that no step set the policy. `f:agif8l` states only that
+  users who match the application's policies reach the Worker, and `f:k40l86` only that the
+  application decides who reaches `/admin` at all; no fact states what a policy is made of, the
+  action that admits or the rule selectors a roster maps onto (an email, an email domain, or an
+  identity-provider group), so the policy step can name the policy's job and link Cloudflare's
+  policies page for the rest, spelling neither. A fix harvests the Allow action and the selectors
+  from https://developers.cloudflare.com/cloudflare-one/access-controls/policies/ as a vendor fact
+  (`[external: Cloudflare]`), so the step can tell the reader which selector to pick for a roster
+  of named editors.
+- **`extender`.** Found by the replace-magic-links fact read on 2026-10-03 (`f:fu4uis`,
+  `f:lyaf6p`, `f:s9s8mw`), a hole in `docs/internal/facts/`. The page's sample verifier now maps
+  `jose` error codes (`ERR_JWT_EXPIRED`, `ERR_JWT_CLAIM_VALIDATION_FAILED` with its `claim`,
+  the three `ERR_JWKS_*` codes, and the signature and malformed-token codes) to the refusal
+  reasons the guard logs at error, and the sentence after the sample says a wrong AUD tag or team
+  domain therefore logs at error. No fact states `jose`'s error codes or the `claim` property, so
+  the mapping the page's whole log-level argument rests on traces to nothing in the container.
+  The codes match `jose`'s own `src/util/errors.ts` on `main` (read 2026-10-03). A fix harvests
+  them from https://github.com/panva/jose/blob/main/src/util/errors.ts as a vendor fact
+  (`[external: jose]`), so the sample and its follow-on sentence can cite it; the deeper fix is
+  the earlier entry's, a typed `reason` union, which would let the guard own the mapping. Until
+  that harvest lands, the 2026-10-03 redraft keeps the mapping in the sample and drops the prose
+  claim that a wrong AUD tag or team domain logs at error. The earlier 2026-09-30 entry's account
+  of the page (a module returning `invalid` for every failure) no longer describes it, though its
+  proposed fix stands.
 
 Filed 2026-10-03 by the page plan of `docs/extend/architecture.md` (draft docs stage 2a, task
 7c), verified against the tree first.
@@ -471,6 +542,54 @@ Filed 2026-10-03 by the page plan of `docs/extend/theme-your-public-site.md` (dr
   without notice. The page has to say "by convention" and "no gate enforces it". A fix ships the
   check in the scaffold's `check:cairn` chain, or as a `cairn-audit` static rule over the public
   scope, reading the same seam table in `src/chassis/README.md`.
+
+Filed 2026-10-03 by the scoped fact read of `docs/extend/add-a-custom-admin-screen.md`'s
+resolution redraft (draft docs stage 2a, task 7b).
+
+- **`extender`.** Found by the add-a-custom-admin-screen fact read on 2026-10-03 (`f:2khr2m`,
+  rejected). The page's motion section sends a reader to `docs/reference/cairn-audit.md`, "What the
+  motion rules don't cover", for the frame-offset allowance, and that section says "The allowance
+  is one element per screen, in document order. A screen is one component file; the first carrying
+  element passes and a second is convicted." The rule counts across the whole run instead:
+  `checkFrameOffset` collects the carrying nodes from every file the run parses and exempts only
+  index 0 (`src/lib/audit/rules/static/motion-property.ts:354-374,395-396`), so a custom screen that carries one `data-cairn-motion="frame-offset"` element
+  is convicted whenever a carrier in another scanned admin file sorts first. The allowance's name
+  ("per screen") and its behavior (per run) differ. A fix either counts per file, matching the
+  reference, or rewrites the reference bullet to the per-run count.
+- **`extender`.** Found by the add-cairn page plan's resolution revision on 2026-10-03
+  (`f:vpieos`, `f:w78j1b`). Two bullets in `docs/internal/facts/extend.md` give opposite reasons
+  for the one-line form of `GITHUB_APP_PRIVATE_KEY_B64`. `f:vpieos` (`[verified]`) says the engine
+  decodes the secret with `atob()` before signing, "so a multi-line encoding will not parse", a
+  causal clause its source does not state: `src/lib/env.ts:31` documents the form ("base64 of the
+  PEM on one line, decoded with `atob()` before signing") and `src/lib/github/signing.ts:67,132`
+  show the decode, neither a rejection of a wrapped value. `f:w78j1b` (`[rejected]`) records a
+  workerd run from 2026-09-29 in which `atob()` ignored ASCII whitespace and a two-line value
+  decoded to the same bytes as one line, and `pemToPkcs8` strips whitespace from the decoded PEM
+  as well (`src/lib/github/signing.ts:42-43`). The tutorial therefore states the documented form,
+  keeps `tr -d '\n'` as the step that produces it, and gives no reason, since the only reason on
+  record is the one the container rejects. A fix retraces `f:vpieos` against the workerd run and
+  either narrows it to the documented form, tagging its causal clause `[docs-drift]`, or finds the
+  decode path that rejects whitespace and cites it.
+- **`contributor`.** Found by the add-cairn resolution redraft on 2026-10-03 (the register editor's
+  round-2 blocking finding at `docs/extend/add-cairn-to-a-sveltekit-app.md:792, 882, 887, 1055`).
+  The brief's code-font rule wants the running example's repository name, `field-notes`, in code
+  font where the reader types it, and the page plan's drafting constraint extends that to every
+  prose mention. `check:provenance` reads a code span holding one hyphenated identifier as a name
+  fact (`scripts/checks/check-provenance.mjs`, `codeSpanFacts` and `NAME_RE`), so every sentence
+  carrying `` `field-notes` `` must cite a fact bullet containing the string, and no bullet does,
+  since the name is the page's own invention; a `no-claim` sentence fails on it too. The gate
+  leaves a page-defined identifier no citable form in prose. The page therefore puts the typed name
+  in a fenced block, where the gate does not read, and names the repository elsewhere as "the
+  site's repository". A fix teaches the gate a page-scoped allowlist of running-example names (the
+  plan already lists them), or exempts a name the page's own fenced blocks define.
+- **`extender`.** Found by the architecture page's fact read on 2026-10-03 (`f:0gihxq`,
+  `docs/extend/architecture.md`, Concurrent writes). The personal-dictionary add commit
+  (`src/lib/sveltekit/content-routes-dictionary.ts:67,133-148`) omits `expectedHead`, so it takes
+  the head-merge retry, and its action then catches a conflict and re-merges and commits once more,
+  a third concurrency behavior beside the plain retry and the head guard. `f:0gihxq` lists neither
+  the dictionary commit nor the extra caller retry, so the page's list of commits under each rule is
+  short one commit. A fix either adds the dictionary commit to `f:0gihxq` with its caller retry, or
+  drops the caller retry so the commit keeps the one shared rule.
 
 ## Clearings
 

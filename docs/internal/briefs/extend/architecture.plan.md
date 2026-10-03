@@ -2,8 +2,11 @@
 
 The plan for `docs/extend/architecture.md`, a concept page in the extend track. Written
 2026-10-03 as the plan step of the docs page chain (stage 2a task 7c, run ahead of the task 7b
-resolution) and revised the same day on the structural edit seat's findings (the table near the
-end records each). The drafter drafts from this plan: it is the source of the page's order, each
+resolution), revised the same day on the structural edit seat's findings, and revised again the
+same day for the resolution run's two blocking register findings on the committed introduction
+(the tables near the end record each). Only the introduction's covers and out-of-scope parts
+changed at the second revision; every section, claim, and placement is unchanged from the version
+the plan read accepted. The drafter drafts from this plan: it is the source of the page's order, each
 section's claim, and each fact's placement. The brief sits beside it at
 `docs/internal/briefs/extend/architecture.json`. The plan is Google's outline written down
 (Google Technical Writing Two, "Organizing large documents",
@@ -42,6 +45,13 @@ https://developers.google.com/tech-writing/two/large-docs).
   this plan keeps the sentence it cites, and a finding on a sentence this plan drops is disposed
   here. The table near the end maps all three blocking findings and the non-blocking ones the
   plan takes.
+- **Resolution run findings**
+  (`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`,
+  "### architecture", "Escalation findings (final, in full)"): the structural edit, the fact
+  read, and the figure verifier accepted the drafted page; the register editor returned two
+  blocking findings, both in the introduction (the covers lead-in at `:5-12` and the
+  out-of-scope sentence at `:14`). The conductor's ruling of 2026-10-03 has this plan address
+  each at its line without widening; the last table records both dispositions.
 - **The job read** (`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md`,
   "Findings by page"): the seams section ended in three unrelated paragraphs, commit concurrency
   sat detached from the write path, the page stopped on a link with no closing synthesis, and
@@ -157,58 +167,84 @@ figure verifier reads the result.
 
 ## Introduction
 
-Three paragraphs under the title, no heading. Google's three parts arrive as statements about
-the subject, never about the page: no sentence opens on the page, names a section, or refers to a
-position.
+Under the title, no heading, in this order: the contract paragraph; the covers list under its
+lead-in; the prior-knowledge paragraph, which also leads into the out-of-scope list; and the
+definition paragraph. Google's three parts arrive as statements about the subject, never about
+the page: no sentence opens on the page, names a section, or refers to a position.
 
-**Paragraph 1: the subject, why it matters, and the one-line contract.** The first sentence is
-the contract: cairn manages a site's markdown content and its admin frame, and everything else a
-site needs is the developer's, reached through a short list of seams (`f:99f221`, `f:bhyvqg`).
-Then the consequence for this reader: the boundary between the two decides which code a site
-writes and which engine contracts it relies on across releases (`f:bhyvqg`). Then the surface's
-shape: the seams form a narrow, versioned public surface (`f:gknz29`). Key phrases: a sentence
-that uses "not a platform" cites `f:99f221`, one that uses "thin seam, not a built-in feature"
-cites `f:bhyvqg`, and one that uses "every break is disclosed" cites `f:gknz29`. The first two
-phrases carry the contrast frame the register lists as a tell, so the drafter writes the clauses
-without them (the committed page's "stops at markdown content management and the admin frame"
-is the model) and cites the facts for the claims they carry.
+**Paragraph 1: the subject, why it matters, and the one-line contract.** Three sentences. The
+first sentence is the contract, one line: cairn manages a site's markdown content and its admin
+frame, and everything else a site needs is the developer's, reached through a short list of
+seams (`f:99f221`, `f:bhyvqg`). The second is the consequence for this reader: the boundary
+between the two decides which code a site writes and which engine contracts it relies on across
+releases (`f:bhyvqg`). The third is the surface's shape: the seams form a narrow, versioned public
+surface (`f:gknz29`). Each takes its own sentence; the resolution run's drafter chained the
+three into one 50-word sentence, which the register editor flagged. Key phrases: a sentence that
+uses "not a platform" cites `f:99f221`, one that uses "thin seam, not a built-in feature" cites
+`f:bhyvqg`, and one that uses "every break is disclosed" cites `f:gknz29`. The first two phrases
+carry the contrast frame the register lists as a tell, so the drafter writes the clauses without
+them (the committed page's "stops at markdown content management and the admin frame" is the
+model) and cites the facts for the claims they carry.
 
-**Paragraph 2: what the subject covers, what the reader brings, what sits elsewhere.** One
-paragraph with three duties, in this order.
+**The covers list: what the subject covers.** A complete lead-in sentence and a bulleted list of
+six items in page order. The lead-in names the list's subject plainly and claims nothing about
+it: no "parts of the boundary", no "the boundary runs from ... to ...", no spatial or structural
+figure. Round 2 flagged the first of those frames and the resolution run's register editor
+blocked the second ("The boundary between the engine and a site has the following parts"): the
+edit path, the stores, and the dependencies are not parts of a boundary, so a lead-in that says
+they are makes a false claim in a structural position. Model lead-in: "The architecture has the
+following subjects." (the register editor's plainer rewrite without its "in the order a site
+meets them" clause, which asserts an order the page never demonstrates). The items, each a noun
+phrase in one form with no code span or numeral: the export subpaths a site imports; the seams a
+site extends through; the path an edit takes from a save to the deploy, and how the admin reads
+content back; the stores that hold each kind of state; the dependencies the engine never
+abstracts, and the contract the swappable content store keeps; the promise each export carries
+across versions. The list is the plan's own form, not a drafter departure: parallel items that
+need no order form a bulleted list (`docs/internal/docs-register.md`, "Structure"), and the
+structural edit confirmed that the committed list matched the body's subjects and order, which
+is what Google's review step asks of the introduction.
 
-- *Covers.* Enumerate the body's subjects in page order: the subpaths a site imports, the seams
-  it extends through, the path an edit takes from a save to the deploy and how the admin reads
-  content back, the three stores that hold state, the dependencies the engine never abstracts
-  and the contract the one swappable store keeps, and the promise each export carries across
-  versions. A plain enumeration with no code span or numeral, since the round-2 register read
-  flagged the committed "the boundary runs from ... to ..." as a figurative spatial claim in a
-  structural position, and Google's review step asks whether the introduction is an accurate
-  overview of the topics the body covers.
-- *Prior knowledge.* Working with the seams takes knowledge of SvelteKit routing, load
-  functions, and form actions, and of Cloudflare Worker bindings, because the engine builds on
-  both and abstracts neither (`f:djoxr9`; the external resources at the end link all four
-  subjects, which answers the round-2 note that the prior-knowledge sentence named load functions
-  the links did not cover).
-- *Doesn't cover.* Each stated as a subject with its page, in prose rather than a list (the
-  round-2 read called the six-item list soft overlinking): the security properties of each piece
-  (`docs/extend/security-model.md`), declaring the adapter field by field
-  (`docs/extend/define-an-adapter-and-schema.md`), concepts and fieldsets in depth
-  (`docs/extend/content-model.md`), each export's signature (`docs/reference/README.md`), and
-  the upgrade procedure (`docs/extend/upgrade-cairn.md`). Media settings and the migration record
-  are linked from the body sections that need them (Data tiers and Stability tiers), so the
-  introduction carries five links.
+**The prior-knowledge paragraph and the out-of-scope list: what the reader brings, what sits
+elsewhere.** One paragraph of two sentences, then a bulleted list of five items.
 
-These are anatomy sentences (`no-claim`) apart from the prior-knowledge sentence's citation, so
-they carry no code span, numeral, or version that `check:provenance` would read as an extractable
-fact.
+- *Prior knowledge*, the paragraph's first sentence. Working with the seams takes knowledge of
+  SvelteKit routing, load functions, and form actions, and of Cloudflare Worker bindings, because
+  the engine builds on both and abstracts neither (`f:djoxr9`; the external resources at the end
+  link all four subjects, which answers the round-2 note that the prior-knowledge sentence named
+  load functions the links did not cover).
+- *Doesn't cover*, the paragraph's second sentence and the list it introduces. The second
+  sentence is the list's lead-in, a complete sentence that says separate pages cover the subjects
+  that follow and never names the page itself (model: "Separate pages cover the following
+  subjects."). Then five items in one form, the subject first and its page last, each opening on
+  a capital letter: the security properties of each piece, in `docs/extend/security-model.md`;
+  the adapter, declared field by field, in `docs/extend/define-an-adapter-and-schema.md`;
+  concepts and fieldsets in depth, in `docs/extend/content-model.md`; each export's signature,
+  in `docs/reference/README.md` (link text "the export reference"); the upgrade procedure, in
+  `docs/extend/upgrade-cairn.md`. Media settings and the migration record are linked from the
+  body sections that need them (Data tiers and Stability tiers), so the introduction carries five
+  links. The earlier revision asked for these in prose because round 2 had called the committed
+  six-item list soft overlinking; the resolution run's drafter met that instruction with a
+  70-word sentence chaining five subject-and-link pairs, and the register editor blocked it as
+  list cadence in prose and asked the conductor to rule on the plan conflict. Ruled here, under
+  the conductor's dispatch: the list returns, because the guide prescribes a list for parallel
+  items (`docs/internal/docs-register.md`, "Structure", and the tell "No list cadence in prose"),
+  the covers list above already takes that form, so the introduction treats parallel items one
+  way, and the overlinking note was about the link count and the repetition in Related
+  resources, which the five-link set and the body-linked media and migration pages already
+  answer. The form changes; the five subjects and their pages do not.
 
-**Paragraph 3: the definition** (the anatomy's "a definition of the concept follows"). A cairn
+The lead-ins and every item in both lists are anatomy sentences (`no-claim`), and the
+prior-knowledge sentence carries its citation, so none holds a code span, numeral, or version
+that `check:provenance` would read as an extractable fact.
+
+**The definition paragraph** (the anatomy's "a definition of the concept follows"). A cairn
 site declares one adapter, a single `CairnAdapter` object, and every route factory, admin screen,
 and delivery helper reads its behavior from that object; the engine hard-codes no concept,
 directory, or field (`f:4esdoz`). This is the outline's first cover and the bird's-eye view the
 rust-analyzer take asks for: one paragraph, no list. The committed page placed it after the
 out-of-scope list and the round-2 read flagged the placement; here it is the paragraph the
-anatomy puts after the summary, and the out-of-scope material is prose inside paragraph 2.
+anatomy puts after the summary, and the out-of-scope list sits inside the introduction's
+scope statement, where the anatomy places what is out of scope and the pages that cover it.
 
 ## Sections
 
@@ -216,7 +252,10 @@ Each entry carries the heading; **Takes**, the one sentence a reader keeps, whic
 section's first sentence on the page; **Draws on**, the fact ids placed here with what each
 contributes; and **Hand-off**, the turn the section closes on, with any subordination or cut it
 carries. A hand-off is a turn in the subject and never a reference to the page's own order ("the
-next section", "below"); the heading that follows does the navigation.
+next section", "below"); the heading that follows does the navigation. It is the last sentence of
+the section's final paragraph, never a one-sentence paragraph of its own: the resolution run's
+first-round register read blocked twelve bridge paragraphs, the drafter then dropped the
+hand-offs, and the structural edit asked for them back as closing sentences.
 
 ### 1. Entry points
 
@@ -521,10 +560,11 @@ by a complete sentence.
 
 ## Dispositions
 
-One row per fact id the plan disposes: 49 placed (48 from the page's inventory plus `f:p1xmp5`,
-cited from the container for the role-to-capability mapping), 1 subordinated, and the pilot's 5
-cuts disposed again. "Subordinated" is a cut whose reason names the reference entry that states
-the fact; the named entry was opened and read before it was named.
+One row per fact id the plan disposes: the 49 carried ids in the page's inventory placed
+(`f:p1xmp5`, cited for the role-to-capability mapping, joined the inventory at the resolution
+run), and the inventory's 6 cuts disposed again, 1 of them subordinated and the pilot's 5 kept.
+"Subordinated" is a cut whose reason names the reference entry that states the fact; the named
+entry was opened and read before it was named, at this revision as at the first.
 
 | Fact | Disposition | Section, or reason |
 | --- | --- | --- |
@@ -613,6 +653,28 @@ disposition in the revision above.
 | Advisory, `:293`: hand-offs scripted as positional references ("the next section") | Taken. Every hand-off is a turn in the subject, and the Sections preamble states the rule |
 | Advisory, `:432`: the Backend contract's `expectedHead` semantics and Concurrent writes name one mechanism twice with no tie | Taken. The commit bullet ties `expectedHead` to the head guard and its absence to the retry, citing `f:025q6u` with `f:0gihxq`, and the dispositions table records the second placement |
 
+## Resolution run findings, disposed
+
+The resolution run (`wf_fe61a650-884`) drafted the page from this plan twice. Its final reads
+accepted the structure, the facts, and the figure, and the register editor returned two blocking
+findings, both on the introduction the drafter wrote from the earlier revision. Each is disposed
+in the Introduction section above; the table records the finding, the page line it cites, and
+what changed in the plan. Nothing outside the introduction changed, except the two clarifications
+the last rows record, which alter no section, claim, or placement.
+
+| Finding (seat, page line) | Disposition |
+| --- | --- |
+| Blocking (register, `:5-12`): the covers lead-in "The boundary between the engine and a site has the following parts:" frames the edit path, the stores, and the dependencies as parts of a boundary, a false claim in a structural position and the same figure round 2 flagged on "the boundary runs from" | Taken. The covers stay a bulleted list, now the plan's specified form; the lead-in names the subjects plainly with no boundary or parts frame, and the plan gives the model sentence and names the frames the sentence avoids |
+| Blocking (register, `:14`, second sentence): the out-of-scope pointers run as a 70-word sentence chaining five parallel subject-and-link pairs, list cadence in prose; the plan's prose instruction conflicted with the guide's parallel-items rule, and the seat asked the conductor to rule | Taken, ruled here under the conductor's dispatch. The pointers form a bulleted list of five items in one form, subject first and page last, under a complete lead-in that never names the page itself. The five subjects and their pages are unchanged; the round-2 soft-overlinking note is answered by the link count and the body-linked media and migration pages, not by the form |
+| Clarification (register advisory, `:3`): the contract sentence chained four claims into 50 words | The plan's three "Then" claims are now stated as three sentences, the contract one line; the content is the earlier revision's |
+| Clarification (register round-1 blocking on bridge paragraphs; structural edit advisory, `:118`): the drafter dropped the hand-offs when one-sentence bridge paragraphs were blocked, and the structural edit then asked for them back | The Sections preamble now states the form: a hand-off is the closing sentence of the section's final paragraph, never a paragraph of its own. No hand-off's content changed |
+
+The register editor's and the fact read's other advisories (the `identity` row's relative clause,
+the seams table cell lengths, the dangling "since" in the R2 sentence, the `0.94.0` clause's
+missing link, the two universals flagged for the claims checker, the figure's added edge) are the
+drafter's and the line-edit read's to take on the page; none changes a section, a claim, or a
+placement, so the plan leaves them where they were found.
+
 ## Notes for the drafter
 
 - A sentence that synthesizes two facts cites both ids; the brief accepts an array. The sentences
@@ -624,9 +686,13 @@ disposition in the revision above.
 - A fact placed in one section may be cited again from another sentence that needs it
   (`f:gknz29`, `f:djoxr9`, `f:n1om0r`, `f:pgy0mr`, `f:w379wu`, `f:e69d0l`, `f:cjonmm`,
   `f:0gihxq`).
-- `f:p1xmp5` lives in `docs/internal/facts/extend.md` outside the outline's `factIds`; the
-  rework record's "Not conflicts" note records that a citation from the container outside the
-  outline's list is accepted. It is cited only from the roles and access map row.
+- `f:p1xmp5` lives in `docs/internal/facts/extend.md` outside the outline's `factIds` and
+  entered the page's inventory as carried at the resolution run; the rework record's "Not
+  conflicts" note records that a citation from the container outside the outline's list is
+  accepted. It is cited only from the roles and access map row.
+- The introduction's two lists (the covers, the out-of-scope pointers) and their lead-ins are
+  `no-claim` entries in the brief, one per item, the same as the hand-offs and the
+  related-resources lead-ins.
 - The page edits no other page. The seven guide links in the seams table and the ending point at
   outlined pages that the link gate accepts as pending until each lands.
 - Every link to a page this plan names in a code span becomes a relative Markdown link on the

@@ -2,168 +2,188 @@
   "page": "docs/extend/replace-magic-links-with-cloudflare-access.md",
   "sentences": [
     {
-      "text": "Replace cairn's magic-link sign-in with your organization's identity provider, using a Cloudflare Access application in front of the admin and a resolver that maps its token to a roster email.",
+      "text": "Replace cairn's magic-link sign-in with your organization's identity provider by putting a Cloudflare Access application in front of the admin.",
       "id": "f:8289h7"
     },
     {
-      "text": "A Cloudflare Access self-hosted application in front of the Worker admits only the users who match its policies.",
+      "text": "A resolver on the guard turns the Access token into the email the guard looks up in the roster.",
+      "id": [
+        "f:8289h7",
+        "f:emrebl"
+      ]
+    },
+    {
+      "text": "A site makes this switch when its editors already hold accounts in an identity provider such as Google Workspace or Microsoft Entra ID.",
+      "id": [
+        "f:gw1oas",
+        "f:agif8l"
+      ]
+    },
+    {
+      "text": "Access admits only the users who match an application's policies, and it signs them in through the identity provider the application connects to.",
       "id": "f:agif8l"
     },
     {
-      "text": "It signs those users in through a connected identity provider (IdP).",
-      "id": "f:agif8l"
-    },
-    {
-      "text": "A site replaces magic links with Access when its editors already hold accounts in the organization's IdP, such as Google Workspace or Microsoft Entra ID, and should sign in to the admin with them.",
-      "id": "f:gw1oas"
-    },
-    {
-      "text": "The work spans the site's server hooks and the Cloudflare account's Zero Trust settings, so it needs a developer who can change both.",
+      "text": "The work spans the site's server hooks and the account's Zero Trust settings, so it takes a developer who can change both.",
       "id": "no-claim"
     },
     {
-      "text": "This page assumes a site whose guard already signs editors in by magic link, as [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) sets it up.",
-      "id": "no-claim"
-    },
-    {
-      "text": "The guard's `identity` option takes any [`IdentityResolver`](../reference/sveltekit.md#identityresolver), so a site behind a different authenticating reverse proxy writes the same kind of resolver for that proxy's token.",
-      "id": "f:3p8yu8"
-    },
-    {
-      "text": "A site that needs a second population with its own sign-in, beside editors who keep magic links, follows [Add a second sign-in group](add-a-second-sign-in-group.md) instead.",
-      "id": "no-claim"
-    },
-    {
-      "text": "For the threat analysis of running the guard with that option, see [Identity mode's threat surface](security-model.md#identity-modes-threat-surface).",
-      "id": "no-claim"
-    },
-    {
-      "text": "Access admits a request only when it matches the application's policies.",
-      "id": "f:agif8l"
-    },
-    {
-      "text": "The guard admits it only when the email the resolver returns matches a roster row.",
-      "id": "f:emrebl"
-    },
-    {
-      "text": "The two lists never reconcile automatically.",
-      "id": "f:k40l86"
-    },
-    {
-      "text": "A `/preview/<token>` request reaches the Worker without passing the application.",
-      "id": "f:vnm1p5"
-    },
-    {
-      "text": "Configuring [`createAuthGuard`](../reference/sveltekit.md#createauthguard)'s `identity` option replaces the whole magic-link path, with no partial adoption where some editors keep magic links and others go through the gate.",
+      "text": "Setting [`createAuthGuard`](../reference/sveltekit.md#createauthguard)'s `identity` option replaces the whole magic-link path, so every editor signs in through the gate or none does.",
       "id": "f:v5ndhs"
     },
     {
-      "text": "Under `identity`, the guard mints no token and creates no session or session cookie.",
+      "text": "Under `identity`, the guard mints no token and sets no session cookie, since `identity.resolve` reads the gate's proof of identity and the guard looks the proven email up in the roster as it would a magic-link session's email.",
       "id": "f:fhit7f"
     },
     {
-      "text": "The `identity.resolve` function reads the gate's proof of identity, and the guard looks the proven email up in the roster as it would a magic-link session's email.",
+      "text": "The free Cloudflare Zero Trust plan caps the number of users who authenticate through Access, so an editorial team larger than the cap on the [Zero Trust plans page](https://www.cloudflare.com/plans/zero-trust-services/) needs a paid plan.",
+      "id": "f:4olp4u"
+    },
+    {
+      "text": "This task assumes that you have edited a SvelteKit server hooks file, deployed a Worker with Wrangler, and can read a JWT verification sample closely enough to own the code it becomes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A site that wants only a different sign-in email keeps magic links and follows [Customize the sign-in email](add-cairn-to-a-sveltekit-app.md#customize-the-sign-in-email) instead.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The guard's `identity` option takes any [`IdentityResolver`](../reference/sveltekit.md#identityresolver), so a site behind a different authenticating reverse proxy writes the same kind of resolver for that proxy's token and configures that proxy in place of the Cloudflare steps.",
+      "id": "f:3p8yu8"
+    },
+    {
+      "text": "A site that needs a second population with a separate sign-in, beside editors who keep magic links, follows [Add a second sign-in group](add-a-second-sign-in-group.md) instead.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The threat analysis of running the guard in identity mode is in [Identity mode's threat surface](security-model.md#identity-modes-threat-surface).",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) sets up magic-link sign-in itself.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The guard reads the gate's token through `identity.resolve` before it looks the proven email up in the roster.",
       "id": "f:fhit7f"
     },
     {
-      "text": "To stay on magic links and change the sign-in email instead, see [Customize the sign-in email](add-cairn-to-a-sveltekit-app.md#customize-the-sign-in-email).",
+      "text": "A `/preview/<token>` request and a `/healthz` request reach the Worker without passing the application.",
+      "id": [
+        "f:vnm1p5",
+        "f:paotzb"
+      ]
+    },
+    {
+      "text": "Before you switch, your site and Cloudflare account need the following:",
       "id": "no-claim"
     },
     {
-      "text": "The guard's reference entry records the stability tier of this option and of the three types it names.",
+      "text": "A deployed site whose guard signs editors in by magic link, as [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) sets it up.",
       "id": "no-claim"
     },
     {
-      "text": "The free Cloudflare Zero Trust plan caps the number of users who authenticate through Access, so a larger editorial team needs a paid plan.",
-      "id": "f:4olp4u"
-    },
-    {
-      "text": "The [Zero Trust plans page](https://www.cloudflare.com/plans/zero-trust-services/) states the current cap.",
-      "id": "f:4olp4u"
-    },
-    {
-      "text": "The Access application and the roster are two independent admission lists that never reconcile automatically.",
-      "id": "f:k40l86"
-    },
-    {
-      "text": "A user must pass the application's policies to reach `/admin` and must also hold a roster row to edit.",
-      "id": "f:k40l86"
-    },
-    {
-      "text": "A [`ResolvedIdentity`](../reference/sveltekit.md#resolvedidentity) carries an email and an optional advisory `displayName`, never a role, since the guard takes the role from the roster row.",
-      "id": "f:hilyos"
-    },
-    {
-      "text": "The guard trims and lowercases the returned email and looks it up with no cross-check.",
-      "id": "f:emrebl"
-    },
-    {
-      "text": "That string is the only join between the gate and the roster.",
-      "id": "f:emrebl"
-    },
-    {
-      "text": "Before you enable `identity`, prepare the roster with these steps:",
-      "id": "f:g0206o"
-    },
-    {
-      "text": "In the roster screen, confirm that every editor's email is the primary address the IdP asserts, not an alias.",
-      "id": "f:g0206o"
-    },
-    {
-      "text": "Once `identity` is on, the guard refuses an editor whose row carries an alias as unknown.",
-      "id": "f:g0206o"
-    },
-    {
-      "text": "Fix a mismatch from the roster screen or with `wrangler d1 execute` against `AUTH_DB`.",
-      "id": "f:g0206o"
-    },
-    {
-      "text": "In `AUTH_DB`, confirm that the first owner's row exists.",
+      "text": "The first owner's row in `AUTH_DB`, seeded by `create-cairn-site` or by [`wrangler d1 execute`](https://developers.cloudflare.com/workers/wrangler/commands/#d1-execute) if no magic-link sign-in has created it.",
       "id": "f:qhmydf"
     },
     {
-      "text": "Identity mode can't bootstrap an owner.",
-      "id": "f:qhmydf"
-    },
-    {
-      "text": "The `bootstrapOwner` pair that [Compose the runtime and the admin](add-cairn-to-a-sveltekit-app.md#compose-the-runtime-and-the-admin) sets lives only in the magic-link routes, which the `identity` branch never reaches.",
-      "id": "f:qhmydf"
-    },
-    {
-      "text": "Seed the owner through `create-cairn-site` or with `wrangler d1 execute` against `AUTH_DB`.",
-      "id": "f:qhmydf"
-    },
-    {
-      "text": "Create a self-hosted Access application for the site's hostname and connect it to your IdP, as Cloudflare's [self-hosted application guide](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/) describes.",
+      "text": "A Cloudflare Zero Trust team with your identity provider connected, as Cloudflare's [self-hosted application guide](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/) describes.",
       "id": "f:agif8l"
     },
     {
-      "text": "Google Workspace and Microsoft Entra ID each have a dedicated connector, and Cloudflare's one-time PIN is a separate login method.",
-      "id": "f:agif8l"
+      "text": "Identity mode can't create that row, since `bootstrapOwner` runs only in the magic-link routes that the `identity` branch never reaches.",
+      "id": "f:qhmydf"
     },
     {
-      "text": "An editor behind Access can then sign in with the organization's Google or Microsoft account.",
-      "id": "f:gw1oas"
+      "text": "The roster is the admission list that cairn holds, so it comes first.",
+      "id": "f:k40l86"
     },
     {
-      "text": "To configure the application and close the paths around it, follow these steps:",
+      "text": "The Access application and cairn's roster are two admission lists that never reconcile automatically, and the email string the resolver returns is their only join.",
+      "id": [
+        "f:k40l86",
+        "f:emrebl"
+      ]
+    },
+    {
+      "text": "Each roster email must match the address the identity provider asserts before the deploy that switches the guard to identity.",
+      "id": "f:g0206o"
+    },
+    {
+      "text": "The guard trims and lowercases the returned email and looks it up with no cross-check, so a roster alias matches nothing.",
+      "id": [
+        "f:emrebl",
+        "f:g0206o"
+      ]
+    },
+    {
+      "text": "To prepare the roster, follow these steps:",
       "id": "no-claim"
+    },
+    {
+      "text": "In the roster screen, compare each editor's email with the primary address the identity provider asserts, not an alias.",
+      "id": "f:g0206o"
+    },
+    {
+      "text": "In the roster screen or with `wrangler d1 execute` against `AUTH_DB`, correct each mismatch.",
+      "id": "f:g0206o"
+    },
+    {
+      "text": "The other admission list is the Access application's policy.",
+      "id": "f:k40l86"
+    },
+    {
+      "text": "The guard trusts whatever email the application asserts, so the application must cover every admin path and get that email from your identity provider.",
+      "id": [
+        "f:33upyd",
+        "f:vnm1p5"
+      ]
+    },
+    {
+      "text": "To create and configure the application, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In Zero Trust, create a self-hosted application for the site's hostname, as Cloudflare's [self-hosted application guide](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/) describes.",
+      "id": "f:agif8l"
     },
     {
       "text": "In the application's paths, cover `/admin`, every path beneath it, and `/admin/__data.json`.",
       "id": "f:vnm1p5"
     },
     {
-      "text": "The `/admin/__data.json` path is SvelteKit's data-only fetch.",
-      "id": "f:vnm1p5"
-    },
-    {
-      "text": "Leave `/preview/<token>` uncovered.",
+      "text": "The `/admin/__data.json` path is SvelteKit's data-only fetch, and `/preview/<token>` stays uncovered.",
       "id": "f:vnm1p5"
     },
     {
       "text": "Where application paths overlap, Access applies the most specific path first.",
       "id": "f:vnm1p5"
+    },
+    {
+      "text": "In the application's policies, add a policy that admits every editor in the roster, as Cloudflare's [policies page](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/) describes.",
+      "id": "f:agif8l"
+    },
+    {
+      "text": "This policy is the application's admission list, so it must admit the same editors that the roster holds.",
+      "id": [
+        "f:agif8l",
+        "f:k40l86"
+      ]
+    },
+    {
+      "text": "In the application's login methods, enable your identity provider but no method whose email claim the signing-in user controls.",
+      "id": [
+        "f:agif8l",
+        "f:33upyd"
+      ]
+    },
+    {
+      "text": "A user who controls that claim can sign in as any roster address.",
+      "id": "f:33upyd"
+    },
+    {
+      "text": "[Identity mode's threat surface](security-model.md#identity-modes-threat-surface) covers the risks that remain.",
+      "id": "no-claim"
     },
     {
       "text": "In the application's CORS settings, leave every setting off.",
@@ -174,43 +194,52 @@
       "id": "f:0gltjq"
     },
     {
-      "text": "In the application's login methods, enable no method whose email claim the signing-in user controls.",
-      "id": "f:33upyd"
-    },
-    {
-      "text": "The guard admits whatever email the resolver returns once it matches a roster row.",
-      "id": "f:33upyd"
-    },
-    {
-      "text": "A user who controls that claim can therefore sign in as any roster address.",
-      "id": "f:33upyd"
-    },
-    {
-      "text": "[Identity mode's threat surface](security-model.md#identity-modes-threat-surface) covers the residual risks.",
-      "id": "no-claim"
-    },
-    {
       "text": "In the application's **Additional settings**, copy the AUD tag.",
       "id": "f:gs23fb"
     },
     {
-      "text": "A verifier validates the token against this tag, never the application's id.",
+      "text": "The verifier validates the token against this tag, never the application's id, and the tag changes only when the application is deleted or recreated.",
       "id": "f:gs23fb"
     },
     {
-      "text": "The tag changes only when the application is deleted or recreated.",
-      "id": "f:gs23fb"
+      "text": "In Zero Trust, note the team domain, `https://<your-team-name>.cloudflareaccess.com`, and the logout address that Cloudflare's [session management page](https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/) gives.",
+      "id": [
+        "f:s9s8mw",
+        "f:q0icwk"
+      ]
+    },
+    {
+      "text": "From the moment you save it, the application challenges every request to `/admin` on the site's hostname, magic-link editors included.",
+      "id": [
+        "f:agif8l",
+        "f:vnm1p5"
+      ]
+    },
+    {
+      "text": "The guard behind it keeps signing editors in by magic link until the deploy that switches it to identity.",
+      "id": "f:v5ndhs"
+    },
+    {
+      "text": "Two settings outside the application can still deliver an admin response around it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A cache rule that matches `/admin` can serve one editor's page to the next matching request, and an ungated `workers.dev` hostname answers `/admin` too.",
+      "id": [
+        "f:zt0oag",
+        "f:51uyqr"
+      ]
+    },
+    {
+      "text": "To close both exposures before the deploy that switches the guard to identity, follow these steps:",
+      "id": "no-claim"
     },
     {
       "text": "In the zone's cache rules, confirm that no rule matches `/admin`.",
       "id": "f:zt0oag"
     },
     {
-      "text": "A cache rule can ignore the origin's `Cache-Control` and cache the response for a set TTL.",
-      "id": "f:zt0oag"
-    },
-    {
-      "text": "That overrides the engine's `private, no-store` on every admin response, so one editor's cached page can reach the next matching request.",
+      "text": "A cache rule can ignore the origin's `Cache-Control` and cache the response for a set TTL, which overrides the engine's `private, no-store` header.",
       "id": "f:zt0oag"
     },
     {
@@ -218,23 +247,31 @@
       "id": "f:51uyqr"
     },
     {
-      "text": "When `preview_urls` is omitted, Wrangler leaves an existing preview URL setting alone.",
+      "text": "When `preview_urls` is omitted, Wrangler leaves an existing preview URL setting alone, so a site with preview URLs on still serves `/admin` on `workers.dev`.",
       "id": "f:51uyqr"
     },
     {
-      "text": "A site with preview URLs on then still routes `/admin` requests to the Worker on an ungated `workers.dev` hostname.",
-      "id": "f:51uyqr"
-    },
-    {
-      "text": "The guard makes no hostname check, so it admits a request on any hostname whenever the resolver accepts the token it presents.",
+      "text": "The guard makes no hostname check, so it admits a request there whenever the resolver accepts its token.",
       "id": "f:jha9f7"
     },
     {
-      "text": "The verifier is site code, since the engine ships no OpenID Connect (OIDC) client and doesn't depend on `jose`.",
+      "text": "A token that Access has since revoked keeps verifying there until its `exp`.",
+      "id": "f:fe0dyh"
+    },
+    {
+      "text": "This setting takes effect at the deploy in [Wire the resolver and deploy the Worker](#wire-the-resolver-and-deploy-the-worker).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The verifier consumes the team domain, the AUD tag, and the logout address that you noted while creating the application.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The verifier is code you write and own, since cairn ships no OpenID Connect (OIDC) client and doesn't depend on [`jose`](https://github.com/panva/jose).",
       "id": "f:lyaf6p"
     },
     {
-      "text": "TypeScript checks the resolver's shape against its type, but no part of cairn checks the verification it performs.",
+      "text": "TypeScript checks the resolver's shape, and nothing in cairn checks the verification it performs.",
       "id": "f:lyaf6p"
     },
     {
@@ -258,6 +295,26 @@
       "id": "f:zas1dk"
     },
     {
+      "text": "It returns the email and, optionally, a display name, never a role, since the guard takes the role from the roster row.",
+      "id": "f:hilyos"
+    },
+    {
+      "text": "Its refusal reason names the failure, since the guard logs `audience`, `issuer`, `keys`, and `error` at error level and other reasons at warn.",
+      "id": "f:fu4uis"
+    },
+    {
+      "text": "The signature check is stateless and has no revocation step, so a logout or revoke takes effect only where Access sits in the request path.",
+      "id": "f:fe0dyh"
+    },
+    {
+      "text": "The guard uses the resolver's display name only when the roster row's name is empty.",
+      "id": "f:hilyos"
+    },
+    {
+      "text": "The four reasons logged at error mark a misconfigured gate that would refuse the whole roster.",
+      "id": "f:fu4uis"
+    },
+    {
       "text": "To write the verifier, follow these steps:",
       "id": "no-claim"
     },
@@ -266,67 +323,68 @@
       "id": "f:lyaf6p"
     },
     {
-      "text": "In the site's project, create a config module that exports the team domain, the AUD tag you copied, and the gate's logout address.",
-      "id": "f:s9s8mw"
+      "text": "In the site's project, create a config module that exports the team domain, the AUD tag, and the logout address you noted.",
+      "id": "no-claim"
+    },
+    {
+      "text": "For the forms of logout address that the guard accepts, see the [`IdentityResolver`](../reference/sveltekit.md#identityresolver) entry.",
+      "id": [
+        "f:3p8yu8",
+        "f:pwmybh"
+      ]
     },
     {
       "text": "In the site's project, create a resolver module that exports an `IdentityResolver` meeting the verifier requirements.",
       "id": "f:3p8yu8"
     },
     {
-      "text": "The following resolver module is illustrative, adapted from Cloudflare's Workers sample in [Validate JWTs](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/), which stays the authoritative reference:",
+      "text": "The following resolver module is illustrative and adapted from Cloudflare's Workers sample in [Validate JWTs](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/), which stays the authoritative reference for the verification:",
       "id": "f:s9s8mw"
     },
     {
-      "text": "The refusal reason a verifier returns sets the level at which the guard logs the refusal.",
+      "text": "The sample returns the reason its mapping gives and rethrows any other failure, which the guard logs at error.",
       "id": "f:fu4uis"
     },
     {
-      "text": "The guard logs an identity refusal at error when its reason is `audience`, `issuer`, `keys`, or `error`.",
-      "id": "f:fu4uis"
-    },
-    {
-      "text": "Each of those reasons marks a misconfigured gate that would refuse the whole roster.",
-      "id": "f:fu4uis"
-    },
-    {
-      "text": "Every other reason logs at warn, and a resolver that throws is refused and logged at error.",
-      "id": "f:fu4uis"
-    },
-    {
-      "text": "The illustrative module returns `invalid` for every failed verification, so a wrong AUD tag logs at warn.",
-      "id": "f:fu4uis"
-    },
-    {
-      "text": "A verifier that returns `audience` for an AUD mismatch gets that failure logged at error.",
-      "id": "f:fu4uis"
-    },
-    {
-      "text": "`createAuthGuard` validates `logoutUrl` once, at construction, and throws unless the value is a root-relative path or an absolute URL whose protocol is `https:`.",
-      "id": "f:pwmybh"
-    },
-    {
-      "text": "For the address Access logs a user out at, see Cloudflare's [session management](https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/) page.",
-      "id": "f:q0icwk"
-    },
-    {
-      "text": "The optional `label` names the gate on the hand-off, identity-unresolved, and unknown-identity pages, and it defaults to `your organization's sign-in`.",
+      "text": "The optional `label` names the gate on the sign-in hand-off page and the two refusal pages, and it defaults to `your organization's sign-in`.",
       "id": "f:ojr3qm"
     },
     {
-      "text": "`createAuthGuard` returns a plain SvelteKit `Handle` whether or not `identity` is set, so it composes through `sequence` as it did under magic links.",
+      "text": "`createAuthGuard` returns a plain SvelteKit `Handle` whether or not `identity` is set, so the guard composes through `sequence` as it did under magic links.",
       "id": "f:dwc4kp"
     },
     {
-      "text": "To turn on identity mode, follow this step:",
+      "text": "The resolver goes in as one option, and a deploy puts it into effect.",
+      "id": [
+        "f:gun084",
+        "f:9ug9mo"
+      ]
+    },
+    {
+      "text": "To turn on identity mode, follow these steps:",
       "id": "no-claim"
     },
     {
-      "text": "In the site's server hooks, pass the resolver as the guard's `identity` option.",
+      "text": "In the site's server hooks file, pass the resolver as the guard's `identity` option.",
       "id": "f:gun084"
     },
     {
-      "text": "The following hooks file shows the option beside another handle:",
+      "text": "In the project directory, build the site and deploy it with `npx wrangler deploy`, as in [Describe the Worker and deploy it](add-cairn-to-a-sveltekit-app.md#describe-the-worker-and-deploy-it).",
+      "id": "f:9ug9mo"
+    },
+    {
+      "text": "This deploy uploads the hooks option and the `workers_dev` and `preview_urls` settings from [Close the exposures outside the application](#close-the-exposures-outside-the-application) together.",
+      "id": [
+        "f:9ug9mo",
+        "f:51uyqr"
+      ]
+    },
+    {
+      "text": "From this deploy on, identity mode is live, and the guard refuses as unknown an editor whose roster email differs from the provider's primary address.",
+      "id": "f:g0206o"
+    },
+    {
+      "text": "Once the guard that carries the option is deployed, it differs from magic-link mode in the following ways:",
       "id": "no-claim"
     },
     {
@@ -334,43 +392,26 @@
       "id": "f:4uqi5r"
     },
     {
-      "text": "That work also runs for a request that reaches the Worker without passing the gate.",
-      "id": "f:4uqi5r"
-    },
-    {
-      "text": "A handle placed ahead of the guard can limit that work on a best-effort basis by calling [`resolveRateLimit`](../reference/cloudflare.md#resolveratelimit) from `@glw907/cairn-cms/cloudflare`.",
-      "id": "f:4uqi5r"
-    },
-    {
-      "text": "Logout and session lifetime follow the gate once identity mode is on.",
+      "text": "The Access application's [session duration](https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/) governs how long an editor stays signed in, and cairn's 30-day session no longer applies.",
       "id": "f:2glcaf"
     },
     {
-      "text": "Under `identity`, `logoutAction` skips the session-row delete, clears every cookie, and redirects to the gate's `logoutUrl`.",
-      "id": "f:8xxe3b"
+      "text": "Sign-out skips the session-row delete, clears every cairn cookie, and redirects to the gate's `logoutUrl`, where Access clears its authorization cookie.",
+      "id": [
+        "f:8xxe3b",
+        "f:q0icwk"
+      ]
     },
     {
-      "text": "The shell's logout posts to the bare `/admin`, a guarded path, so a stale tab whose gate session already ended is refused with the identity-unresolved page.",
-      "id": "f:ig5pn3"
+      "text": "A handle placed ahead of the guard can limit the per-request work on a best-effort basis by calling [`resolveRateLimit`](../reference/cloudflare.md#resolveratelimit) from `@glw907/cairn-cms/cloudflare`.",
+      "id": "f:4uqi5r"
     },
     {
-      "text": "On Access, a user-initiated logout clears the browser's authorization cookie, and Access stops accepting that session's tokens shortly after, as Cloudflare's session management page describes.",
-      "id": "f:q0icwk"
+      "text": "A working gate admits a rostered editor to `/admin`, sends a signed-out visitor to the gate's hostname, and serves nothing on an ungated hostname.",
+      "id": "f:iaqcq6"
     },
     {
-      "text": "Access enforces that cutoff in the request path.",
-      "id": "f:fe0dyh"
-    },
-    {
-      "text": "The origin verifier's validation is stateless and has no revocation step, so it accepts an already-issued token until its `exp`.",
-      "id": "f:fe0dyh"
-    },
-    {
-      "text": "Under `identity`, cairn's 30-day session no longer applies, and the Access application's session duration governs how long an editor stays signed in.",
-      "id": "f:2glcaf"
-    },
-    {
-      "text": "No tool checks the login redirect or the `workers.dev` exposure, so a site runs every check here by hand.",
+      "text": "No tool checks the login redirect or the `workers.dev` exposure yet, so you check both by hand against the deployed site.",
       "id": "f:iaqcq6"
     },
     {
@@ -378,15 +419,11 @@
       "id": "no-claim"
     },
     {
-      "text": "From a browser signed in through Access as a rostered editor, open `/admin`.",
+      "text": "From a browser signed in through Access as a rostered editor, open `/admin` on the deployed site and confirm that the admin shell opens.",
       "id": "f:k40l86"
     },
     {
-      "text": "In the Worker's logs, confirm that the request left no [`guard.refused`](../reference/log-events.md) record with `reason: identity`.",
-      "id": "f:sbv5xj"
-    },
-    {
-      "text": "When such a record appears, its `detail` names the refusal's reason, and the editor sees the `auth.identity-unresolved` condition.",
+      "text": "In Workers Logs, confirm that the request left no [`guard.refused`](../reference/log-events.md) record with `reason: identity`.",
       "id": "f:sbv5xj"
     },
     {
@@ -394,59 +431,148 @@
       "id": "f:fu4uis"
     },
     {
-      "text": "That warn event marks a proven identity the roster doesn't recognize.",
-      "id": "f:fu4uis"
+      "text": "From the admin, sign out and confirm that the browser lands on the gate's logout address.",
+      "id": "f:8xxe3b"
     },
     {
-      "text": "Its `email` is the gate's normalized and capped address, logged after the roster lookup fails.",
-      "id": "f:mjedcx"
+      "text": "If it lands elsewhere, check the logout address that the config module exports.",
+      "id": "f:8xxe3b"
     },
     {
-      "text": "From a signed-out client, send an unauthenticated `GET` to the primary hostname's `/admin/login`, and confirm that the redirect lands on the gate's hostname.",
+      "text": "From a signed-out client, send an unauthenticated `GET` to the primary hostname's `/admin/login` and confirm that the redirect lands on the gate's hostname.",
       "id": "f:iaqcq6"
     },
     {
-      "text": "Send an unauthenticated `GET` to `/admin` on `<worker-name>.<subdomain>.workers.dev` and on each preview URL, and confirm that no response comes from the Worker.",
-      "id": "f:iaqcq6"
+      "text": "If the redirect stays on the site's hostname, confirm that the application's paths cover `/admin/login`.",
+      "id": [
+        "f:iaqcq6",
+        "f:vnm1p5"
+      ]
     },
     {
-      "text": "The guard shows the identity-unresolved page when the resolver refuses the request or throws while resolving it.",
-      "id": "f:sbv5xj"
+      "text": "From the same client, send an unauthenticated `GET` to `/admin` on `<worker-name>.<subdomain>.workers.dev` and each preview URL, and confirm that no response comes from the Worker.",
+      "id": [
+        "f:iaqcq6",
+        "f:51uyqr"
+      ]
     },
     {
-      "text": "It shows the unknown-identity page when a proven email matches no roster row.",
-      "id": "f:hilyos"
+      "text": "If the Worker answers, set `workers_dev` and `preview_urls` to `false` as in [Close the exposures outside the application](#close-the-exposures-outside-the-application), and deploy again.",
+      "id": [
+        "f:51uyqr",
+        "f:9ug9mo"
+      ]
     },
     {
-      "text": "To find why the guard refused an editor, follow these steps:",
+      "text": "A refused sign-in in the first three checks either stops at Access or leaves one of the guard's two log records.",
+      "id": [
+        "f:agif8l",
+        "f:sbv5xj",
+        "f:fu4uis"
+      ]
+    },
+    {
+      "text": "[Resolve a refused sign-in](#resolve-a-refused-sign-in) works through both.",
       "id": "no-claim"
     },
     {
-      "text": "In the Worker's logs, look for an `auth.identity.unknown` record from the refused request.",
+      "text": "The guard shows the identity-unresolved page when the resolver refuses or throws, and the unknown-identity page when a proven email matches no roster row.",
+      "id": [
+        "f:sbv5xj",
+        "f:hilyos"
+      ]
+    },
+    {
+      "text": "Each page leaves one log record that names the cause.",
+      "id": [
+        "f:sbv5xj",
+        "f:hilyos"
+      ]
+    },
+    {
+      "text": "To find why an editor was refused, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "If the refused request was a sign-out from a tab left open, sign in through the gate again.",
+      "id": [
+        "f:ig5pn3",
+        "f:sbv5xj"
+      ]
+    },
+    {
+      "text": "The shell's logout posts to the bare `/admin`, a guarded path, so a tab whose gate session already ended is refused there before `logoutAction` runs.",
+      "id": "f:ig5pn3"
+    },
+    {
+      "text": "If the editor saw Cloudflare's Access block page rather than one of the guard's refusal pages, add the editor in the application's policies.",
+      "id": [
+        "f:agif8l",
+        "f:k40l86"
+      ]
+    },
+    {
+      "text": "That request never reached the Worker, so it left neither log record.",
+      "id": "f:agif8l"
+    },
+    {
+      "text": "Otherwise, in Workers Logs, look for an `auth.identity.unknown` record from the refused request.",
       "id": "f:fu4uis"
     },
     {
-      "text": "If one appears, add or correct the editor's roster row so that it carries the address in the record's `email` field.",
-      "id": "f:mjedcx"
+      "text": "If one appears, add or correct the editor's roster row so that it carries the address in the record's [`email` field](../reference/log-events.md).",
+      "id": "f:hilyos"
     },
     {
-      "text": "Otherwise, find the request's `guard.refused` record with `reason: identity`, and read the refusal's reason in its `detail`.",
+      "text": "The editor's next request succeeds.",
+      "id": "f:hilyos"
+    },
+    {
+      "text": "Otherwise, read the refusal's reason in the `detail` of the request's `guard.refused` record with `reason: identity`.",
       "id": "f:sbv5xj"
     },
     {
-      "text": "If that reason is `missing`, confirm that the application's paths cover the requested path and that the request arrived on the primary hostname.",
+      "text": "If the reason is `expired`, `invalid`, or `no_email`, have the editor sign in through the gate again.",
+      "id": [
+        "f:fu4uis",
+        "f:sbv5xj"
+      ]
+    },
+    {
+      "text": "The guard logs each of these at warn, below the four reasons that mark a misconfigured gate.",
       "id": "f:fu4uis"
     },
     {
-      "text": "If that reason is `invalid` for every rostered editor, check the config module's team domain and AUD tag against the Access application.",
+      "text": "If the reason is `audience`, check the config module's AUD tag against the one in the application's **Additional settings**.",
+      "id": [
+        "f:fu4uis",
+        "f:gs23fb"
+      ]
+    },
+    {
+      "text": "If the reason is `issuer` or `keys`, check the team domain in the config module.",
+      "id": "f:fu4uis"
+    },
+    {
+      "text": "If the reason is `missing`, confirm that the application's paths cover the requested path and that the request arrived on the primary hostname.",
+      "id": [
+        "f:fu4uis",
+        "f:vnm1p5"
+      ]
+    },
+    {
+      "text": "If the reason is `error`, read the thrown message in the `error` field of the [`guard.refused`](../reference/log-events.md) record and fix the resolver module.",
+      "id": [
+        "f:fu4uis",
+        "f:sbv5xj"
+      ]
+    },
+    {
+      "text": "The sample returns no `error` reason and rethrows any failure its mapping doesn't name, so under the sample `error` means that the resolver threw.",
       "id": "f:fu4uis"
     },
     {
       "text": "If the refusal persists, work through [Debug your site](debug-your-site.md).",
-      "id": "no-claim"
-    },
-    {
-      "text": "The [log events](../reference/log-events.md) reference lists the fields of both records.",
       "id": "no-claim"
     },
     {
@@ -464,6 +590,24 @@
     {
       "text": "[Share a draft preview](share-a-draft-preview.md) sets up the `/preview/<token>` route that the Access application leaves uncovered.",
       "id": "f:vnm1p5"
+    },
+    {
+      "text": "[Add a second sign-in group](add-a-second-sign-in-group.md) signs a second population in beside the editors.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[`createAuthGuard`](../reference/sveltekit.md#createauthguard) documents the `identity` option, the three types it names, and their stability tier.",
+      "id": "f:v5ndhs"
+    }
+  ],
+  "cuts": [
+    {
+      "id": "f:mjedcx",
+      "reason": "Subordinated to docs/reference/log-events.md, the auth.identity.unknown row (line 63) and the email note beneath the table (lines 109-110), both opened and confirmed to state it; the failure path's remedy step (step 4) cites f:hilyos for the normalized email and links the row."
+    },
+    {
+      "id": "f:pwmybh",
+      "reason": "Subordinated to docs/reference/sveltekit.md#identityresolver, the IdentityResolver row (line 2016), opened and confirmed to state the construction-time validation (root-relative path or absolute https: URL, or construction throws); the config module step links it, and the percent-decoding and character rules are detail no step depends on."
     }
   ]
 }

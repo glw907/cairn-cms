@@ -1,9 +1,11 @@
 # Page plan: `docs/extend/add-cairn-to-a-sveltekit-app.md`
 
 Agent-facing, committed beside the brief. Written 2026-10-03 by the plan step of the docs page
-chain (stage 2a, task 7c) for the task 7b resolution run, and revised once the same day on the
+chain (stage 2a, task 7c) for the task 7b resolution run, revised once the same day on the
 structural edit's findings (the repository step; "Structural edit findings on the plan, disposed"
-below). The drafter drafts from this plan: it
+below), and revised again the same day for resolution run 2, on the round-2 BLOCKING findings of
+`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md` alone ("Resolution
+run 2 findings, disposed" below; nothing else changed). The drafter drafts from this plan: it
 is the source of the page's order, each section's claim, and each fact's placement. The
 structural edit seat reads it before any prose exists. Method: Google Technical Writing Two,
 "Organizing large documents" (https://developers.google.com/tech-writing/two/large-docs), the
@@ -160,8 +162,10 @@ sample (f:87hc1y).
 ### Before you begin
 
 - Heading: `## Before you begin`
-- Sentence: Field Notes needs Node 24 or later, a GitHub account, a Cloudflare account, and, from
-  the first deploy that carries the admin, Cloudflare's Workers Paid plan.
+- Sentence: You need the following accounts and tools. (The lead-in names no item. The earlier
+  revision's sentence listed four items inline, and the drafter carried that series onto the page
+  as the first sentence, which split the prerequisites three ways; the register editor's round-2
+  blocking finding at `:27-39`.)
 - Facts: f:75hawi (Node 24, the two accounts, the bare deploy on the free tier, the Paid plan from
   the first deploy carrying the admin, the domain zone for mail), f:t4pwpw (the same plan covers
   sign-in mail to a second person), f:yegr67 (TypeScript stays on major version 6; `sv create`
@@ -170,10 +174,23 @@ sample (f:87hc1y).
   module, installed once per machine with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest`
   or from a release archive; a cross-arm citation the plan adds, since no public page yet carries
   the install).
-- Shape: a bulleted list, one item per item above; the Paid item says milestone 1's bare deploy
-  runs on the free tier and milestone 4's first deploy needs the plan, and links Cloudflare's
-  Workers pricing page with no price stated. The `cairn` CLI item links
-  `docs/reference/cli-cairn-doctor.md`.
+- Shape: the lead-in sentence, then one bulleted list, and nothing else in the section: no
+  inline series in the lead-in, no second list, and no paragraph or code block after the list.
+  Seven items, parallel and unordered, each carrying its own qualifying clause:
+  1. Node 24 or later.
+  2. A GitHub account.
+  3. A Cloudflare account; milestone 1's bare deploy runs on its free tier.
+  4. Cloudflare's Workers Paid plan, from the first deploy that carries the admin (milestone 4's
+     first step); the same plan covers sign-in mail to a second person; Cloudflare's Workers
+     pricing page is linked, with no price stated.
+  5. TypeScript on major version 6, which `npx sv create` already pins, since `svelte-check`
+     cannot run on TypeScript 7.
+  6. A domain whose zone is on the Cloudflare account, since a `workers.dev` subdomain has no
+     zone to onboard for sign-in mail.
+  7. The `cairn` CLI, a separate Go module installed once per machine, which runs `cairn doctor`
+     (link `docs/reference/cli-cairn-doctor.md`) in the production milestone; the `go install`
+     command sits as a fenced code block inside this item, and the release-archive alternative
+     is one clause of the same item.
 - Hand-off: the first milestone deploys with none of the engine's code, so the reader has an
   address before anything can fail.
 
@@ -345,14 +362,18 @@ sample (f:87hc1y).
   linked at `docs/reference/supported-toolchain.md#the-checkorigin-deprecation`, which answers the
   fact read's note that the page sets a deprecated option without saying so), f:gncd64 (the
   setting turns the check off for every route, and the guard restores an equivalent strict
-  `Origin` check on every route outside `/admin`).
+  `Origin` check on every route outside `/admin`), f:n52h8f (the scaffold's `src/app.d.ts`
+  declares the `__CAIRN_DEV_BUILD__` boolean global; the fact that backs step 3, a cross-arm
+  citation the plan adds on the fact read's round-2 blocking finding at `:493`, which found the
+  step cited f:vvgpr5 alone, a fact that says nothing about the declaration).
 - Shape: three short lead-in paragraphs (what the dev backend is and the fence; the define named at
   every call site; the CSRF handoff, linking the deprecation section and
   `docs/extend/security-model.md` for the design), then one numbered procedure of four steps:
   `npm install -D @glw907/cairn-cms-dev`; add the define plugin and `csrf: { checkOrigin: false }`
   to `vite.config.ts` (whole file); declare `const __CAIRN_DEV_BUILD__: boolean` in `src/app.d.ts`
-  (file); create `src/hooks.server.ts` (tree, file, with the snippet-check skip comment the
-  committed page carries).
+  (file; the step's sentence cites f:n52h8f and f:72mctx, never f:vvgpr5, whose claim is the
+  ambient import two sections earlier); create `src/hooks.server.ts` (tree, file, with the
+  snippet-check skip comment the committed page carries).
 - Hand-off: start the dev server with the opt-in set.
 
 #### Verify the dev sign-in
@@ -540,30 +561,44 @@ sample (f:87hc1y).
   account that owns the content repository and covering that repository), f:02g94x (the App ID on
   the settings page; the private key generated there and downloaded as a `.pem`), f:nbnq9c (the
   Installation ID is the trailing number of the installation settings address), f:gglwt4 and
-  f:l5gx1t (one caution sentence after the steps: the permission is repository-wide, only engine
-  code confines writes to the declared content directories, and installing the App on a repository
-  that also holds code or other teams' content puts that content inside the token's reach; the
-  reasoning is `docs/extend/security-model.md`).
+  f:l5gx1t (one caution after the steps, stated as the reader's own case: the **Contents**
+  permission is repository-wide, and only engine code confines writes to the declared content
+  directories, so the App's token can also write the site's code in `field-notes`, since the
+  repository this tutorial builds holds `src/lib`, the routes, `src/hooks.server.ts`, and
+  `vite.config.ts` beside `src/content`; the reasoning is `docs/extend/security-model.md`. The
+  caution never frames the reach as another arrangement's hazard, such as "a repository that also
+  holds code or other teams' content": `field-notes` is that repository, and the earlier page
+  left the reader believing the tutorial had avoided the case; the register editor's round-2
+  blocking finding at `:890`. The facts back the two clauses, repository-wide reach and
+  engine-side confinement; that `field-notes` holds the site's code is the page's own procedure,
+  no-claim).
 - Steps: open GitHub's registration form (link GitHub's page); name and homepage; webhook off;
   the permission; create; note the App ID; generate and download the key (link GitHub's page);
   install on the owning account (link GitHub's page); grant the `field-notes` repository
   milestone 3 pushed; note the Installation ID from the address.
 - Hand-off: three values are in hand, two of them identity and one a secret.
 
-#### Give the adapter the identity and the Worker the key
+#### Store the App's credentials
 
-- Heading: `### Give the adapter the identity and the Worker the key`
+- Heading: `### Store the App's credentials`
 - Sentence: The App ID and Installation ID identify the App and grant nothing, so they sit in the
   adapter source; the private key grants everything, so it lives only as the Worker secret
   `GITHUB_APP_PRIVATE_KEY_B64`.
 - Facts: f:zcwf5i (non-secret identity, passed into `createGithubApp`), f:0w7jar (`owner`,
   `repo`, `branch`, `appId`, `installationId`, all required strings, `branch` the default branch),
   f:7dtrwy (the `.pem` signs the App's requests for installation tokens, so it stays out of every
-  repository), f:vpieos (the secret is the PEM base64-encoded onto one line; the engine decodes
-  it with `atob()`, so a multi-line encoding does not parse), f:gyu7jc.
+  repository), f:vpieos (the one-line half only: the secret is the PEM base64-encoded onto one
+  line, the form the engine documents and the form `tr -d '\n'` produces; the page gives no
+  reason for the one-line form and never says a multi-line encoding fails to parse, since the
+  container's rejection record f:w78j1b found on a workerd run that `atob()` ignores ASCII
+  whitespace and a two-line value decoded to the same bytes, so the fact's causal clause is
+  stale against it; the register editor's round-2 blocking finding at `:920`, filed in the
+  friction log as the two bullets' disagreement, for the claims checker to resolve), f:gyu7jc.
 - Steps: replace the placeholder `createGithubApp` values (a two-member snippet with the
   snippet-check skip comment); `base64 < <key>.pem | tr -d '\n' | npx wrangler secret put
-  GITHUB_APP_PRIVATE_KEY_B64`; keep the `.pem` outside every repository.
+  GITHUB_APP_PRIVATE_KEY_B64`, with one clause after the command naming what it produces, the PEM
+  base64-encoded onto one line, and no sentence on `atob()`; keep the `.pem` outside every
+  repository.
 - Hand-off: the guard still refuses, since the database is missing.
 
 #### Create the auth database
@@ -690,9 +725,10 @@ sample (f:87hc1y).
 The tutorial anatomy's ending: a summary in different words from the overview's objectives, then
 next steps.
 
-- Heading: `## What you built` (the Good Docs tutorial template calls this section the summary;
+- Heading: `## The finished site` (the Good Docs tutorial template calls this section the summary;
   the register editor reported that tellgrader flags `## Summary` as a scaffold header, and a
-  heading that names the content serves the template's section without the flagged word).
+  noun phrase that names the content serves the template's section without the flagged word; the
+  earlier `## What you built` was a conversational heading, resolution run 3's blocking finding).
   One paragraph, prose cadence (the register editor's `:1174-1176` finding), in words other than
   the introduction's: the engine is wired by hand from the kit config through the admin routes;
   a build-time define each call site names keeps the dev backend out of every production bundle;
@@ -746,6 +782,59 @@ blocking finding and two advisories.
   below hold every milestone 4 section's lead-in to one or two sentences, so the opening map
   carries the reader through its nine sections.
 
+## Resolution run 2 findings, disposed
+
+The resolution run's round 2 (2026-10-03) drafted from this plan and returned five BLOCKING
+findings on the page, four from the register editor and one from the fact read, in
+`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`, "###
+add-cairn-to-a-sveltekit-app", the final escalation findings. The conductor's ruling for run 2
+starts from the accepted plan and changes it only where one of these requires; each change sits
+at the plan line the page defect traces to, and the round's advisories are outside the ruling's
+scope, so no advisory changed the plan.
+
+- [BLOCKING] register editor, `:27-39`, the prerequisites split across an inline series, a list,
+  and a detached paragraph: traced to this plan's own Sentence line for "Before you begin", which
+  enumerated four items inline and so became the page's first sentence. Fixed in that section:
+  the Sentence is a lead-in that names no item, and the Shape line fixes the section as the
+  lead-in plus one seven-item list with nothing after it, the install command inside its item.
+- [BLOCKING] register editor, `:920`, "a multi-line encoding does not parse", a claim the
+  container's rejection record f:w78j1b contradicts: fixed in "Give the adapter the identity and
+  the Worker the key". f:vpieos is carried for its one-line form only, the page gives no reason
+  for the form, and the two bullets' disagreement is filed in `docs/internal/docs-friction-log.md`
+  for the claims checker (the entry found by the add-cairn page plan's resolution revision on
+  2026-10-03, naming f:vpieos and f:w78j1b).
+- [BLOCKING] register editor, `:890`, the caution framed the token's repository-wide reach as
+  another arrangement's hazard while `field-notes` holds the site's code: fixed in "Register the
+  GitHub App". The caution states the reader's own case, that the token can also write the site's
+  code in `field-notes`, and the plan names the framing the page may not use.
+- [BLOCKING] register editor, `:792, 882, 887, 1055`, the repository name `field-notes` in plain
+  text where the reader types it: fixed as a drafting constraint, every fixed name of the running
+  example in code font at every mention, GitHub's form steps and the publish check included.
+- [BLOCKING] fact read, `:493`, the `src/app.d.ts` declaration step cited f:vvgpr5 alone: fixed
+  in "Wire the dev backend and the CSRF handoff". The step cites f:n52h8f (the scaffold's
+  `src/app.d.ts` declares the `__CAIRN_DEV_BUILD__` boolean global) and f:72mctx, and the fact
+  joins the dispositions table as carried.
+
+## Resolution run 3 findings, disposed
+
+Run 3 (2026-10-03) redrafted from this plan on the combined reads; the register editor's two
+heading findings traced to this plan's Heading lines, so the plan changed there and nowhere else.
+
+- [BLOCKING] register editor, `:901`, the balanced-halves heading "Give the adapter the identity
+  and the Worker the key": the section's Heading is now `### Store the App's credentials`, the
+  page's earlier name and the one its own lead-in uses.
+- [BLOCKING] register editor, `:1204`, the conversational heading `## What you built`: the
+  Ending's Heading is now `## The finished site`.
+- The register editor's other two blocking findings (two prerequisite items over 26 words; the
+  Paid-plan condition after its instruction) were page defects against this plan's Shape, fixed
+  on the page.
+- [advisory, not taken] structural edit, `:891, :895-896, :899, :1064`, the page writes "the
+  site's repository" where the drafting constraints name `field-notes`: `check:provenance` fails
+  any cited sentence that carries `field-notes`, since no fact bullet holds the string (the
+  friction log's code-font entry on the running example's repository name). Those four sentences
+  keep "the site's repository", and `field-notes` stays in code font in the push step's name block
+  and the adapter sample until the gate learns a running-example allowlist.
+
 ## Dispositions, every fact id
 
 `carried` names the section the fact is placed under (its primary home when it is cited twice).
@@ -756,15 +845,15 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | --- | --- | --- |
 | f:5f4kmk | carried | Verify the production site |
 | f:vgw8x9 | carried | Register the GitHub App |
-| f:gglwt4 | carried | Register the GitHub App (one caution sentence with f:l5gx1t) |
-| f:vpieos | carried | Give the adapter the identity and the Worker the key |
+| f:gglwt4 | carried | Register the GitHub App (the caution, with f:l5gx1t, stated as the reader's own `field-notes` case) |
+| f:vpieos | carried | Store the App's credentials (the one-line form only; the `atob()` causal clause stays off the page, since the rejection record f:w78j1b contradicts it, filed in the friction log) |
 | f:if45on | carried | Create the auth database |
 | f:gffvfd | subordinated | `docs/reference/auth-store.md`, the D1 schema's home; the page names each migration by purpose (f:hft8s8, f:rn62i1, f:pkrwom, f:xxtooz), and which file runs a `CREATE TABLE` is detail no step depends on. The page does not state it today; see couldNotDo. |
 | f:rn62i1 | carried | Create the auth database (one sentence); the exercise |
 | f:pkrwom | carried | Create the auth database (one sentence, linking `docs/reference/sveltekit.md#created1auditsink`) |
 | f:xhwl32 | carried | Add the Email Sending binding and name the origin |
 | f:t4pwpw | carried | Before you begin (the same plan covers mail to a second person; no price stated) |
-| f:zcwf5i | carried | Give the adapter the identity and the Worker the key |
+| f:zcwf5i | carried | Store the App's credentials |
 | f:m0ouh8 | carried | Verify the production site; the introduction's sentence 5 |
 | f:26kuvx | carried | Install the engine and let Vite compile it |
 | f:xyizai | subordinated | `docs/reference/supported-toolchain.md`, "The target stack" (the `@sveltejs/adapter-cloudflare` row from the template's `package.json`); the scaffold's build choices are `docs/extend/scaffolded-site-files.md`'s subject, and the page names the adapter on f:mhsere's reason. |
@@ -777,9 +866,9 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | f:02g94x | carried | Register the GitHub App |
 | f:9yi7fu | carried | Register the GitHub App (one clause in the name step) |
 | f:e5vm42 | carried | Move the site to production (the opening's order); the introduction's milestone 4 line |
-| f:7dtrwy | carried | Give the adapter the identity and the Worker the key |
-| f:l5gx1t | carried | Register the GitHub App (one caution sentence with f:gglwt4) |
-| f:0w7jar | carried | Give the adapter the identity and the Worker the key; Push the site to GitHub (one clause, `owner` and `repo`); Create the project on the Cloudflare adapter (the `main` branch clause) |
+| f:7dtrwy | carried | Store the App's credentials |
+| f:l5gx1t | carried | Register the GitHub App (the caution, with f:gglwt4; the page states the reach over `field-notes` itself, never the fact's "a repository that also holds code or other teams' content" framing) |
+| f:0w7jar | carried | Store the App's credentials; Push the site to GitHub (one clause, `owner` and `repo`); Create the project on the Cloudflare adapter (the `main` branch clause) |
 | f:rp65d2 | carried | Register the GitHub App; Resolve a production failure; Push the site to GitHub (one clause, the installation covers the content repository) |
 | f:75hawi | carried | Before you begin |
 | f:yegr67 | carried | Before you begin |
@@ -832,6 +921,7 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | f:vrue1g | carried | Index the content and commit its manifest (cited only by a sentence that names the `cairn-manifest` bin; a cross-arm citation the plan adds) |
 | f:1dhk1a | carried | Before you begin (the `cairn` CLI install; a cross-arm citation the plan adds) |
 | f:txgoyy | carried | Add the Email Sending binding and name the origin (`observability.enabled: true`; a cross-arm citation the plan adds) |
+| f:n52h8f | carried | Wire the dev backend and the CSRF handoff (the `src/app.d.ts` declaration step, with f:72mctx; a cross-arm citation the plan adds on the fact read's round-2 finding) |
 
 ## Drafting constraints
 
@@ -859,3 +949,9 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
   `scaffolded-site-files`, `debug-your-site`); docs-links counts them as pending.
 - A brief sentence that synthesizes facts cites them as an array; a `cuts` list mirrors the
   subordinated and cut rows above, each reason naming the reference link or the reason given.
+- Every fixed name of the running example sits in code font at every mention: `field-notes` (the
+  project and the repository), `your-account`, `main`, `field-notes-auth`, `notes.example.com`,
+  `cms@notes.example.com`, and the post's path. That holds in GitHub's form steps ("create an
+  empty repository named `field-notes`", "the account that owns the `field-notes` repository",
+  "grant the App access to the `field-notes` repository only") and in the publish check ("on
+  `main` of the `field-notes` repository"). Only the site name, Field Notes, is prose.

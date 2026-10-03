@@ -4,7 +4,7 @@ cairn gives a SvelteKit site an admin at `/admin`, where editors sign in by emai
 
 The tutorial carries one example throughout: Field Notes, a site with one post. By the end, Field Notes runs in production, and an editor can sign in, edit the post, and publish it to the deployed site.
 
-The tutorial serves a web developer who builds with SvelteKit and TypeScript and works in a terminal. An app you already have follows the same milestones and skips the steps that create the project.
+The tutorial assumes working knowledge of SvelteKit, TypeScript, and a terminal. If you start from an existing app, you work through the same milestones, and each step that creates the project or its repository says when your app skips it.
 
 You work through four milestones, and each ends with a check:
 
@@ -15,28 +15,28 @@ You work through four milestones, and each ends with a check:
 
 A closing section after the milestones customizes the sign-in email.
 
-The tutorial leaves the following topics to other pages:
+The following pages cover what this tutorial leaves out:
 
-- Every adapter option, which [Define an adapter and schema](define-an-adapter-and-schema.md) covers.
-- The delivery routes beyond the entry catch-all, which [Build the public routes](build-the-public-routes.md) covers.
-- The reasoning behind the GitHub App's repository-wide write and the CSRF design, which the [security model](security-model.md) sets out.
-- Rotating the App's private key later, which [Rotate the GitHub App key](rotate-the-github-app-key.md) covers.
+- [Define an adapter and schema](define-an-adapter-and-schema.md) covers every adapter option.
+- [Build the public routes](build-the-public-routes.md) covers the delivery routes beyond the entry catch-all.
+- The [security model](security-model.md) sets out the reasoning behind the GitHub App's repository-wide write and the CSRF design.
+- [Rotate the GitHub App key](rotate-the-github-app-key.md) covers rotating the App's private key later.
 
 ## Before you begin
 
-You need Node 24 or later, a GitHub account, a Cloudflare account, and, from the first deploy that carries the admin, Cloudflare's Workers Paid plan. You also need the following:
+You need the following accounts and tools:
 
+- Node 24 or later.
+- A GitHub account.
+- A Cloudflare account, whose free tier runs the first milestone's bare deploy.
+- [Cloudflare's Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/), which the first deploy that carries the admin needs, and which also covers sign-in mail to a second person.
 - TypeScript on major version 6, which `npx sv create` already pins, since `svelte-check` cannot run on TypeScript 7 yet.
 - A domain whose zone is on your Cloudflare account, since a `workers.dev` subdomain has no zone to onboard for sign-in mail.
-- The `cairn` CLI, a separate Go module installed once per machine, which runs [`cairn doctor`](../reference/cli-cairn-doctor.md) in the production milestone.
+- The `cairn` CLI, which runs [`cairn doctor`](../reference/cli-cairn-doctor.md) in the production milestone. Install it once per machine with the following command or from a release archive:
 
-To install the `cairn` CLI, run the following `go install` command, or download a release archive instead:
-
-```bash
-go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest
-```
-
-The first milestone's bare deploy runs on Cloudflare's free tier. The Workers Paid plan also covers sign-in mail to a second person, and Cloudflare's [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page states its current terms.
+  ```bash
+  go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest
+  ```
 
 ## Deploy a bare SvelteKit site
 
@@ -135,7 +135,7 @@ To describe the Worker and deploy it, follow these steps:
    npx wrangler login
    ```
 
-3. Build the site and upload the Worker:
+3. In the project directory, build the site and upload the Worker:
 
    ```bash
    npm run build
@@ -439,12 +439,12 @@ No `AUTH_DB` binding exists yet, and the dev backend supplies a fake one.
 The dev backend, `devBackendHandle` from `@glw907/cairn-cms-dev`, replaces the GitHub backend, the auth database, and the media bucket with in-memory fakes and signs you in as an owner, so the admin runs before any credential exists. Its state lasts as long as the server process, so no save or publish leaves the machine. Three layers keep the dev package out of a deployed site:
 
 - The `__CAIRN_DEV_BUILD__` define strips it from a production bundle.
-- The package installs as a `devDependency`.
+- `@glw907/cairn-cms-dev` installs as a `devDependency`.
 - The guard refuses to serve a production build that has `CAIRN_DEV_BACKEND` set, and the [log events reference](../reference/log-events.md) records that refusal.
 
-Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly. A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker. The hooks module is that call site, and it picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if` that reads the define first and `CAIRN_DEV_BACKEND === '1'` second. It imports `devBackendHandle` dynamically, so a default build never carries it, and a bare `createAuthGuard()` call is valid.
+Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly. A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker. The hooks module is that call site, and it picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if` that reads the define first and `CAIRN_DEV_BACKEND === '1'` second. It imports `devBackendHandle` dynamically, so a default build never carries it. The `if`'s other branch calls `createAuthGuard()` with no options, which the guard accepts.
 
-SvelteKit's origin check runs ahead of any handle and would reject a JavaScript-free form POST that arrives without an `Origin` header. The guard's double-submit token tolerates the missing header, so the site sets `csrf: { checkOrigin: false }` to hand the admin's CSRF authority to the guard. The setting turns the check off for every route, and the guard restores an equivalent strict `Origin` check on every route outside `/admin`. `checkOrigin` is deprecated as of SvelteKit 2.61 and stays supported across cairn's tested range, and the [`checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-deprecation) section tracks its status. The [security model](security-model.md) sets out the CSRF design.
+SvelteKit's origin check runs ahead of any handle and would reject a JavaScript-free form POST that arrives without an `Origin` header. The guard's double-submit token tolerates the missing header, so the site sets `csrf: { checkOrigin: false }` to hand the admin's CSRF authority to the guard. The setting turns the check off for every route, and the guard restores an equivalent strict `Origin` check on every route outside `/admin`. `checkOrigin` is deprecated as of SvelteKit 2.61 and stays supported across cairn's tested range, and the [`checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-deprecation) section tracks its status. For the reasoning behind the CSRF design, see the [security model](security-model.md).
 
 To wire the dev backend, follow these steps:
 
@@ -611,7 +611,7 @@ Content is markdown files with YAML frontmatter, one directory per concept, name
 
 ### Index the content and commit its manifest
 
-The site passes [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes) one literal `import.meta.glob` per concept, and the [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin checks a committed manifest against the markdown on every build. Vite needs each glob's literal pattern at its call site, so `createSiteIndexes` throws at build time for a declared concept with no glob.
+The site passes [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes) one literal `import.meta.glob` per concept, and the [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin checks a committed manifest against the markdown on every build. `createSiteIndexes` throws at build time for a declared concept with no glob, because Vite needs each literal glob pattern at its call site and cannot have one added programmatically.
 
 The plugin's `configModule` names the module that exports `cairn` and `siteConfig`, and its `content` option maps each concept id to its glob. The [plugin's options reference](../reference/vite.md#cairnmanifestoptions) lists its optional output paths and their defaults. A committed manifest that has drifted from the markdown fails the build, so you write the manifest before the next build.
 
@@ -693,7 +693,9 @@ To index the content and commit the manifest, follow these steps:
    npx cairn-manifest
    ```
 
-4. Commit the entry and its manifest to the repository the first milestone started:
+   The command writes the manifest to `src/content/.cairn/index.json`, the default path the plugin's options reference lists.
+
+4. In the project directory, commit the entry and its manifest to the repository the first milestone started:
 
    ```bash
    git add src/content
@@ -789,7 +791,12 @@ The production milestone registers a GitHub App that commits to the site's repos
 
 To push the site, follow these steps:
 
-1. On GitHub, create an empty repository named field-notes with no starter files, following [Creating a new repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository).
+1. On GitHub, create an empty repository with no starter files, following [Creating a new repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), and give it the following name:
+
+   ```text
+   field-notes
+   ```
+
 2. In the project directory, add the GitHub repository as a remote and push the main branch:
 
    ```bash
@@ -814,7 +821,7 @@ The answer takes the following steps:
    npm run build
    ```
 
-3. Write the manifest again, and commit it with the new post:
+3. In the project directory, write the manifest again, and commit it with the new post:
 
    ```bash
    npx cairn-manifest
@@ -845,17 +852,19 @@ In this milestone, you do the following:
 - Add the Email Sending binding on a domain you control.
 - Publish an edit and follow it to the deployed page.
 
-Moving a dev-backend site to production takes three edits:
+You register the App, create the database, and set one Worker secret, and the site's files take three edits:
 
 - The adapter's `backend` and `email` take real values.
 - `wrangler.jsonc` gains the `EMAIL`, `AUTH_DB`, and `PUBLIC_ORIGIN` entries.
 - The content module's `origin` names the deployed origin.
 
-The hooks module needs no edit, because `__CAIRN_DEV_BUILD__` is `false` in a build and the build drops the dev-backend import. The App yields the App ID, the Installation ID, and the private key, and the database's create output carries the id the `AUTH_DB` entry needs, so each section of this milestone makes its part of these edits once the value it needs exists.
+The hooks module needs no edit, because `__CAIRN_DEV_BUILD__` is `false` in a build and the build drops the dev-backend import. Each section of this milestone makes its edit once the value it needs exists. The App yields the App ID, the Installation ID, and the private key, and the database's create output carries the id the `AUTH_DB` entry needs.
 
 ### Deploy the production build and read the refusal
 
-A production build with no dev backend and no `AUTH_DB` binding answers every `/admin` path, the sign-in path included, with a branded 500 page headed **Wrangler bindings are missing**. That page shows that the deployed build runs the real guard with the dev backend dropped, and it names the bindings this milestone supplies. The engine reads `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, and `GITHUB_APP_PRIVATE_KEY_B64` from the platform env, and a missing `AUTH_DB` throws `config.bindings-missing`.
+A production build with no dev backend and no `AUTH_DB` binding runs the real guard, which answers every `/admin` path, the sign-in path included, with a branded 500 page headed **Wrangler bindings are missing**. The engine reads `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, and `GITHUB_APP_PRIVATE_KEY_B64` from the platform env, and a missing `AUTH_DB` throws `config.bindings-missing`, the condition behind that page.
+
+This deploy is the first to carry the admin, so it needs the Workers Paid plan.
 
 To see the refusal, follow these steps:
 
@@ -879,15 +888,15 @@ To register and install the App, follow these steps:
 2. In the form, enter any name and homepage URL, since the engine reads neither.
 3. In the form, turn the webhook off.
 4. In the form, grant the repository permission **Contents** at **Read and write**, and grant no other permission.
-5. In the form, allow installation on the account that owns the field-notes repository.
+5. In the form, allow installation on the account that owns the site's repository.
 6. In the form, create the App.
 7. On the App's settings page, note the App ID.
 8. On the same page, generate a private key and download its `.pem` file, following [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps).
 9. On the same page, install the App on the account that owns the repository, following [Installing your own GitHub App](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app).
-10. In the installation form, grant the App access to the field-notes repository only.
+10. In the installation form, grant the App access to the site's repository only.
 11. In the installation settings address that GitHub opens after the install, note the trailing number, which is the Installation ID.
 
-The **Contents** permission is repository-wide, and only engine code confines writes to the declared content directories. Installing the App on a repository that also holds code or other teams' content puts that content inside the token's write reach, and the [security model](security-model.md) sets out the reasoning.
+The **Contents** permission is repository-wide, and only engine code confines writes to the declared content directories, so the App's token can also write the site's code in the repository this tutorial builds. The [security model](security-model.md) sets out the reasoning.
 
 ### Store the App's credentials
 
@@ -917,15 +926,13 @@ To store the credentials, follow these steps:
    base64 < ~/Downloads/your-app.private-key.pem | tr -d '\n' | npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
    ```
 
-   The engine decodes the secret with `atob()` before signing, so a multi-line encoding does not parse.
-
 3. Move the `.pem` file outside every repository, so git never tracks it.
 
 To replace the key later, see [Rotate the GitHub App key](rotate-the-github-app-key.md). A deploy at this point still shows the refusal page, since the `AUTH_DB` binding does not exist yet.
 
 ### Create the auth database
 
-The engine keeps its sign-in tokens and sessions in the D1 database bound as `AUTH_DB`, and every site applies two of the five migrations the package ships. Those two are `0000_auth.sql` and `0004_login_nonce.sql`, whose nonce column binds a sign-in token to the browser that requested it.
+The engine keeps its editors, sign-in tokens, and sessions in the D1 database bound as `AUTH_DB`, and every site applies two of the five migrations the package ships. Those two are `0000_auth.sql` and `0004_login_nonce.sql`, whose nonce column binds a sign-in token to the browser that requested it.
 
 To create and migrate the database, follow these steps:
 
@@ -935,7 +942,7 @@ To create and migrate the database, follow these steps:
    npx wrangler d1 create field-notes-auth
    ```
 
-2. Copy the two migrations every site applies into a `migrations` directory:
+2. In the project directory, copy the two migrations every site applies into a `migrations` directory:
 
    ```bash
    mkdir -p migrations
@@ -956,7 +963,7 @@ To create and migrate the database, follow these steps:
    ]
    ```
 
-4. Apply the migrations to the remote database:
+4. In the project directory, apply the migrations to the remote database:
 
    ```bash
    npx wrangler d1 migrations apply field-notes-auth --remote
@@ -966,11 +973,11 @@ The same command with `--local` applies them to the local development database, 
 
 ### Add the Email Sending binding and name the origin
 
-Sign-in mail leaves through the `EMAIL` binding on a domain you control, and that domain supplies the sender address and the origin the site writes in two places. A `workers.dev` subdomain has no zone to onboard for Email Sending, so the production site runs on that domain.
+Sign-in mail leaves through the `EMAIL` binding on a domain you control, and that domain supplies the sender address and the origin the site writes in two places. A `workers.dev` subdomain has no zone to onboard for Email Sending, so the production site runs on the onboarded domain.
 
 To add the binding and name the origin, follow these steps:
 
-1. In the project directory, onboard the domain for Email Sending, following Cloudflare's [Email Service domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/) page:
+1. In the project directory, onboard the domain for Email Sending, following Cloudflare's [domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/) page:
 
    ```bash
    npx wrangler email sending enable notes.example.com
@@ -1000,6 +1007,8 @@ To add the binding and name the origin, follow these steps:
    }
    ```
 
+   `observability.enabled: true` sends the engine's log records to Workers Logs and satisfies the `config.observability` check of `cairn doctor`.
+
 4. In the adapter module, set the `email` group's `from` to an address on the domain:
 
    <!-- snippet-check-skip: one member of the adapter object that the engine milestone shows whole -->
@@ -1015,7 +1024,9 @@ To add the binding and name the origin, follow these steps:
    export const origin = 'https://notes.example.com';
    ```
 
-`PUBLIC_ORIGIN` is the canonical origin for sign-in links, and an unset or invalid value throws `config.public-origin-invalid`. A prerendered route writes `origin` into the build output, so the content module names the deployed origin before the production build. `observability.enabled: true` sends the engine's log records to Workers Logs and satisfies the `config.observability` check of `cairn doctor`. A site that sends through another provider passes a custom `auth.send` instead, and [Edit the message in a custom sender](#edit-the-message-in-a-custom-sender) shows the sender's shape.
+   A prerendered route writes `origin` into the build output, so the content module names the deployed origin before the production build.
+
+`PUBLIC_ORIGIN` is the canonical origin for sign-in links, and an unset or invalid value throws `config.public-origin-invalid`. A site that sends through another provider passes a custom `auth.send` instead, and [Edit the message in a custom sender](#edit-the-message-in-a-custom-sender) shows the sender's shape.
 
 ### Verify the production site
 
@@ -1030,7 +1041,7 @@ To check the bindings and deploy the production build, follow these steps:
    ```
 
 2. In the output, confirm that the `config.bindings` check passes.
-3. Commit this milestone's edits and push the main branch, so the pull after the publish is a fast-forward:
+3. In the project directory, commit every uncommitted file and push the main branch, so the pull after the publish is a fast-forward:
 
    ```bash
    git add .
@@ -1038,28 +1049,28 @@ To check the bindings and deploy the production build, follow these steps:
    git push
    ```
 
-4. Build the site and deploy it:
+4. In the project directory, build the site and deploy it:
 
    ```bash
    npm run build
    npx wrangler deploy
    ```
 
-To publish an edit and follow it to the deployed page, follow these steps:
+To publish an edit and confirm it on the deployed page, follow these steps:
 
 1. On the deployed origin, request a sign-in to the admin with the `bootstrapOwner` email.
 2. In the sign-in email, open the link.
 3. In the admin, open the First light post.
 4. In the editor, change a line.
 5. In the editor, publish the edit.
-6. On GitHub, confirm that the commit lands on `main` of the field-notes repository, with you as its author and the App's bot as its committer.
+6. On GitHub, confirm that the commit lands on `main` of the site's repository, with you as its author and the App's bot as its committer.
 7. In the project directory, pull the published commit:
 
    ```bash
    git pull
    ```
 
-8. Build the site and deploy it:
+8. In the project directory, build the site and deploy it:
 
    ```bash
    npm run build
@@ -1073,7 +1084,7 @@ The first real sign-in creates the owner row and logs [`editor.bootstrapped`](..
 
 ### Resolve a production failure
 
-Each failed production check points at one setting that this milestone made:
+Each of the following failures points at a setting this milestone made:
 
 - A failed `config.bindings` check points at a Wrangler config that lacks `AUTH_DB` or `EMAIL`.
 - The **Wrangler bindings are missing** page at `/admin` points at a deployed build with no `AUTH_DB` binding.
@@ -1098,7 +1109,7 @@ The answer takes the following steps:
    cp node_modules/@glw907/cairn-cms/migrations/0003_preview.sql migrations/
    ```
 
-2. Apply the migrations to the local development database:
+2. In the project directory, apply the migrations to the local development database:
 
    ```bash
    npx wrangler d1 migrations apply field-notes-auth --local
@@ -1150,7 +1161,7 @@ A supplied `branding` takes `siteName` and `from` as required strings and `reply
 
 ### Edit the message in a custom sender
 
-A custom `auth.send` is a `SendMagicLink`, exported from the engine's `/sveltekit` subpath, that replaces the Cloudflare sender and receives the same built message. That message is a `MagicLinkMessage` with `to`, `from`, `subject`, `html`, and `text`, plus optional `cc`, `bcc`, `replyTo`, and `attachments`, where `replyTo` takes one address. The text of anything the sender throws reaches the log scrubbed of token values and truncated, so a thrown message must never embed the message body or the sign-in link.
+A custom `auth.send` is a `SendMagicLink`, exported from the engine's `/sveltekit` subpath, that replaces the Cloudflare sender and receives the same built message. That message is a `MagicLinkMessage` with `to`, `from`, `subject`, `html`, and `text`, plus optional `cc`, `bcc`, `replyTo`, and `attachments`, where `replyTo` takes one address. The engine scrubs token values from the text of anything the sender throws, and truncates it, before logging it. That scrub removes token values only, so a thrown message must never embed the message body or the sign-in link.
 
 - In the server module, pass a sender that edits the message before it sends it:
 
@@ -1180,7 +1191,7 @@ A custom `auth.send` is a `SendMagicLink`, exported from the engine's `/svelteki
 
 To confirm either change, follow these steps:
 
-1. Build the site and deploy it:
+1. In the project directory, build the site and deploy it:
 
    ```bash
    npm run build
@@ -1194,7 +1205,7 @@ When the message does not arrive or still carries the engine's defaults, see [De
 
 ## The finished site
 
-The engine now runs inside a SvelteKit app that you configured by hand, from the kit config through the admin routes. Because each call site names the build-time define directly, the dev backend that the earlier milestones ran on never reaches a production bundle. Every build compares the committed manifest with the markdown on disk and stops when the two have drifted apart. In production, editors sign in against a D1 auth database, and their edits commit through a GitHub App you registered. A published edit lands on `main` and reaches the public page with the next build and deploy.
+You wired the engine into a SvelteKit app by hand, from the kit config through the admin routes. Because each call site names the build-time define directly, the dev backend you worked against never reaches a production bundle. Every build of your site compares the committed manifest with the markdown on disk and stops when the two have drifted apart. In production, your editors sign in against the D1 auth database you created, and their edits commit through the GitHub App you registered. You published an edit from the deployed admin, found its commit on `main`, and saw the next build and deploy carry it to the public page.
 
 ## Next steps
 

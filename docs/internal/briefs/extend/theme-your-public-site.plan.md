@@ -2,23 +2,29 @@
 
 Page: `docs/extend/theme-your-public-site.md`. Brief: `docs/internal/briefs/extend/theme-your-public-site.json`.
 Page type: task guide. Status: committed page under rework (plan task 7b resolution, from this plan).
-Written 2026-10-03 by the plan step of the docs page chain (stage 2a task 7c). Revised once the
-same day on the structural edit's reading of this plan (one blocking finding, four advisory), each
-disposed under Round-3 structural edit below.
+Written 2026-10-03 by the plan step of the docs page chain (stage 2a task 7c). Revised three times
+the same day: on the structural edit's first reading of this plan (one blocking finding, four
+advisory), each disposed under Round-3 structural edit below; in resolution run 2 on its second
+reading (one blocking finding, two advisory), each disposed under Second plan read below; and on
+its third reading in the same run (one blocking finding, two advisory), each disposed under Third
+plan read below. Every check the three plan reads passed is kept as it was.
 
 Inputs read: the outline entry in `docs/internal/outlines/extend.json`; the page anatomies and the
 developer drafting brief in `docs/internal/docs-register.md`; this page's entries in
 `docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md` ("Findings by page", "Owner
 ruling", "Owner rulings at resume") and `docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`
 ("### theme-your-public-site", the five round-2 blocking findings and the non-blocking ones);
-`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`; every fact bullet named
+`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`; both plan reads under
+"### theme-your-public-site" of
+`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`; every fact bullet named
 below in `docs/internal/facts/extend.md` and `docs/internal/facts/reference.md`; the reference pages
 each subordination names (`docs/reference/public-css.md`, `docs/reference/cairn-audit.md`,
 `docs/reference/cli-cairn-media-seed.md`, `docs/reference/core.md`); the two exemplars; the showcase
 sources the facts cite where a claim sentence below needed its shape confirmed
 (`examples/showcase/src/chassis/theme-toggle.ts`, `examples/showcase/src/theme/theme-names.ts`,
 `examples/showcase/src/routes/(site)/+layout.svelte`, `examples/showcase/src/chassis/README.md`,
-`examples/showcase/src/theme/theme.css`, `src/lib/admin/preview-doc.ts`).
+`examples/showcase/src/theme/theme.css`, `src/lib/admin/preview-doc.ts`,
+`templates/waymark/src/theme/components/ArticleView.svelte`, `templates/waymark/src/theme/theme.css`).
 
 Headings in this plan are the page's headings, verbatim. A claim inventory `section` names one of
 them. The introduction is the untitled text under the H1 and is named `Introduction` here.
@@ -51,12 +57,24 @@ Each carries only what the first edit needs: the boundary's upgrade rationale is
 the tiers name only the key families the recipes edit, the reference holding the rest. The local
 loop comes before any edit, the Shopify exemplar's shape (the dev server runs before the theme is
 touched), and it carries the dev-backend caveat that decides whether seeded media shows. The two
-recipes follow, cheaper first: the re-skin, with the status rebrand as its deeper subsection, then
-the port, with the chassis rules before its steps and the conventions after them, reached by an
-explicit forward jump from the step that adds a class, which disposes the structural edit's first
-blocking finding. Rendered markdown comes after both recipes, because its first sentence tells
-each recipe what it has already changed and what it may still choose, the task lead-in the
-structural edit's second blocking finding asked for. The editor preview follows, since it points at
+recipes follow, cheaper first: the re-skin, with the status rebrand as its deeper subsection,
+reached by the re-skin's optional step 6 and handing back to its step 7, the checks (the third plan
+read's blocking finding: a subsection no step routed to was one a literal reader never met, and a
+reader who did the rebrand had no route to Verify); then the port, which opens on the one routing
+sentence the rebrand's hand-off used to carry (a design the site already has takes the port), with
+the chassis rules before its steps and the conventions after them, reached by an explicit forward
+jump from the step that adds a class, which disposes the structural edit's first blocking finding.
+Rendered markdown comes after both recipes, because its first sentence tells each recipe what it
+has already changed and what it may still choose, the task lead-in the structural edit's second
+blocking finding asked for, and each recipe's closing steps route the reader by name and never
+past a section that holds its work: the re-skin makes its one flourish edit inline in step 5 and
+names Style rendered markdown only for what the three flourishes are (the third read's advisory on
+the round trip), offers the status rebrand in step 6, and jumps in step 7 to Verify the theme,
+which is safe because the scaffold already sets `editor.preview`, and the port continues through
+Style rendered markdown and Style the editor preview, the two sections that hold its remaining
+work, before Verify the theme (the second plan read's blocking finding; a port that jumped
+straight to Verify would fail check 3 with its `editor.preview` still naming the old sheets). The
+editor preview follows, since it points at
 compiled sheets that now exist, and its first sentence names who acts: the scaffold already sets
 `editor.preview`, so a re-skin changes nothing there, a port edits it when a compiled sheet or a
 wrapper class changes, and a hand-built site adds it. Verify closes the task; the failure path and
@@ -91,8 +109,14 @@ theme reaches: a re-skin keeps Waymark's layouts and changes about fourteen colo
 which suits a site whose content those layouts already fit (`f:kt0epf`); a port puts a design the
 site already has onto the same chassis in Waymark's place (`f:s4prb0`). Both end at the same
 check, the three public rules `cairn-audit` ships (`f:xv2ien`). One sentence then lists what the
-page walks through in order (the local loop, the two recipes, rendered markdown, the editor
-preview, the verification), so a reader who needs one recipe can tell the other is optional. The
+page walks through in order (for a hand-built site, the styling stack the scaffold would have
+supplied; then the chassis boundary, the token tiers, the local loop, the two recipes, rendered
+markdown, the editor preview, the verification, and the fix for each finding the audit raises), so
+the sentence predicts every body section the reader meets, in order, and a reader who needs one
+recipe can tell the other is optional (the second plan read's first advisory asked for the boundary
+and the tiers at the head of the list; the third read's first advisory asked for the hand-built
+on-ramp, scoped to its reader, and the audit-finding fixes at the end). The drafter may split the
+list into two sentences at the register's one-idea rule, the hand-built clause standing alone. The
 sentence describes the subject, never the page ("the page describing itself" tell).
 
 What prior knowledge the reader needs. Working knowledge of Tailwind CSS v4 (`@theme` and
@@ -185,7 +209,9 @@ with the tutorial's `src/lib/cairn.config.ts` as the adapter file; Verify the th
 check; Resolve an audit finding applies except its third check, since only Waymark's styleguide
 panel and header navigation read the six site-owned keys (`f:18qj2u`). One closing sentence names
 what is the scaffold's alone: The chassis boundary, the rest of both recipes, Chassis conventions,
-and `/styleguide`.
+the flourish edit (Re-skin Waymark's step 5 and the one step of Style rendered markdown; the
+flourishes live in the chassis's `prose.css`, which a hand-built site does not have), and
+`/styleguide`.
 
 Hand-off: the list above is the hand-off; a scaffolded reader continues with the boundary.
 
@@ -290,21 +316,36 @@ First sentence: A re-skin keeps Waymark's layouts and edits about fourteen value
 and dark daisyUI blocks in `src/theme/theme.css`, and `prose.css` follows at no extra edit because
 it reads the same role tokens.
 
-Facts: `f:kt0epf`. Cited again: `f:iel6v5`.
+Facts: `f:kt0epf`. Cited again: `f:iel6v5`, `f:ivp8wl`, `f:spn4hj`.
 
 Content. The excerpt first (the committed `theme.css` light-block snippet showing five of the
 recipe's keys, its comment noting the dark block carries the same keys), the Shopify take of
 starting from the reference theme: Waymark is the minimal reference theme a re-skin starts from.
-Steps, one action each: (1) in both daisyUI blocks, rotate the hue of `--color-primary` while
-holding its lightness and chroma; (2) in the same two blocks, edit the `base-100/200/300` ladder
-and `base-content` (`f:kt0epf`); (3) optionally, in the `@theme` block of the same file, swap the
-two `--font-*` tokens; (4) optionally, in the same `@theme` block, retune one type ratio or
-space-scale step (`f:kt0epf`, with `f:iel6v5` for the keys being design-scale keys the theme
-redeclares); (5) run the checks in Verify the theme. The count stays "about fourteen", the hedge
-the 2026-09-30 friction entry on `f:kt0epf` records, and the headline recipe stays apart from the
-status rebrand below.
+Steps, one action each, the location named before the action: (1) in both daisyUI blocks, rotate
+the hue of `--color-primary` while holding its lightness and chroma; (2) in the same two blocks,
+edit the `base-100/200/300` ladder and `base-content` (`f:kt0epf`); (3) optionally, in the `@theme`
+block of the same file, swap the two `--font-*` tokens; (4) optionally, in the same `@theme` block,
+retune one type ratio or space-scale step (`f:kt0epf`, with `f:iel6v5` for the keys being
+design-scale keys the theme redeclares); (5) optionally, in `src/theme/components/ArticleView.svelte`,
+add a `data-flourish` attribute to the `<article class="prose">` element, which turns on the three
+prose flourishes Waymark ships off, and Style rendered markdown names the three (`f:ivp8wl` for the
+attribute and the default, `f:spn4hj` for the element; the action is stated inline, the third plan
+read's second advisory, so the reader makes no round trip past the port for a one-attribute edit,
+and the section link carries only what the flourishes are; confirmed from the source:
+`templates/waymark/src/theme/components/ArticleView.svelte:108` renders `<article class="prose">`
+with no `data-flourish`, and `templates/waymark/src/theme/theme.css:4-8` names the attribute as the
+one edit that brings the three back); (6) optionally, to rebrand the status colors, follow Rebrand
+the status colors, below, and return to step 7 (the third plan read's blocking finding: the
+rebrand is a covers item of the theme guide, and without this step a reader who followed the steps
+literally verified in step 6 and never met the H3 that sat under them); (7) run the checks in
+Verify the theme, a direct jump that stays correct because the scaffold already sets
+`editor.preview`, so Style the editor preview changes nothing for a re-skin. The count stays "about
+fourteen", the hedge the 2026-09-30 friction entry on `f:kt0epf` records, and the headline recipe
+stays apart from the status rebrand below: step 6 is the one route into it, and the subsection's
+own hand-off is the one route out.
 
-Hand-off: a rebrand that reaches the status colors is the next subsection.
+Hand-off: step 6 routes a reader who rebrands the status colors into the next subsection; every
+other re-skin reader goes by step 7 to Verify the theme.
 
 #### Rebrand the status colors
 
@@ -326,7 +367,10 @@ one sentence naming the Ink derivation section of `docs/reference/public-css.md`
 and for the fix when a derived ink fails on the theme's own fills (a named reference, the link
 sits in Resolve an audit finding where the reader needs it).
 
-Hand-off: a design the site already has takes the port instead.
+Hand-off: the rebrand done, the reader returns to step 7 of Re-skin Waymark, the checks in Verify
+the theme, named in so many words. The third plan read's blocking finding caught the previous
+hand-off, which sent a rebrand reader on into the port; that routing sentence now opens the port
+section, where a reader choosing between the recipes meets it.
 
 ### Port your own theme onto the chassis
 
@@ -336,10 +380,14 @@ exported seams.
 
 Facts: `f:lwrqfd`, `f:kj37zz`, `f:h5e8d4`, `f:18qj2u` (scoped to the six undefaulted keys the
 theme declares; the placement detail is named to the reference), `f:ctognq`, `f:i3rn6f`,
-`f:i9pgd2`, `f:nz87b3`. Cited again: `f:s4prb0`, `f:iel6v5`, `f:kq6ud3`, `f:p8hsnz`.
+`f:i9pgd2`, `f:nz87b3`. Cited again: `f:s4prb0`, `f:kt0epf`, `f:iel6v5`, `f:kq6ud3`, `f:p8hsnz`.
 
-Content. Two paragraphs of the chassis rules before the steps, moved here from the committed
-page's The chassis boundary because only a port touches them. The seam: a theme file imports from
+Content. One routing sentence follows the first sentence, moved here from the rebrand
+subsection's hand-off at the third plan read: a design the site already has takes this recipe in
+place of the re-skin, since the re-skin keeps Waymark's layouts and a port keeps only the chassis
+(`f:kt0epf` and `f:s4prb0`, both cited again; no new fact). Then two paragraphs of the chassis
+rules before the steps, moved here from the committed page's The chassis boundary because only a
+port touches them. The seam: a theme file imports from
 the chassis only through the `$chassis` alias in TypeScript and Svelte or a relative `@import` in
 CSS; the cairn repository gates that boundary on its example site with `check:chassis-boundary`,
 and a scaffolded site inherits it as a convention with no gate of its own (`f:lwrqfd`; friction
@@ -383,13 +431,23 @@ dark on a light OS with no edit to the page shell (`f:i9pgd2`, with `f:s4prb0` f
 chassis home); (9) if you rename the daisyUI themes, edit `theme-names.ts`, the no-flash script in
 `src/app.html`, and the two `@plugin "daisyui/theme"` names in `theme.css` together, since the
 script hard-codes the cookie `cairn-site-theme` and both names and `theme-names.test.ts` fails
-when the three drift (`f:i3rn6f`, `f:i9pgd2`); (10) run the checks in Verify the theme.
+when the three drift (`f:i3rn6f`, `f:i9pgd2`); (10) continue with Style rendered markdown and
+Style the editor preview, which hold the port's remaining work, then run the checks in Verify the
+theme. Step 10 names the two sections in so many words (the second plan read's blocking finding,
+in the finding's first form): Style rendered markdown holds the port's directive-class edits and
+the flourish choice, and Style the editor preview holds the `editor.preview` update a port owes
+when it added or renamed a compiled sheet or changed the classes that wrap an entry. A port that
+jumped from step 9 to Verify the theme would run check 3, the preview renders in the theme's
+styles, with the adapter still naming Waymark's sheets, and fail it with no path back; the route
+through the two sections lands that update before the check reads the frame. The re-skin's
+direct jump is safe and the port's is not, because only a port changes what `editor.preview`
+names.
 
 The committed page's Page shell behavior section is dissolved into steps 7 and 8; its no-claim
 opener ("reproduces two behaviors") is not drafted, since the toggle's mechanism is chassis code
 the port keeps and only the skip link is reproduced.
 
-Hand-off: the conventions the compose step points at.
+Hand-off: the conventions the compose step points at, then, by step 10, Style rendered markdown.
 
 #### Chassis conventions
 
@@ -420,13 +478,24 @@ duplicate `formatDate` coverage is gone: this is its one home.
 ### Style rendered markdown
 
 First sentence: A re-skin restyles every entry body with no edit to `prose.css`, which binds each
-element to the daisyUI roles and the cairn tokens, and a port that keeps `prose.css` edits only the
-directive classes its `markdown-components.ts` owns and chooses whether to turn the flourishes on.
+element to the daisyUI roles and the cairn tokens, a port that keeps `prose.css` edits only the
+directive classes its `markdown-components.ts` owns, and either recipe may turn on the three
+flourishes Waymark ships off.
 
 Facts: `f:ivp8wl`. Cited again: `f:kt0epf`, `f:spn4hj`, `f:i80vsl`, `f:kq6ud3`, `f:c4nnu9`.
 
 Content. The first sentence is the task lead-in the structural edit's second blocking finding
-asked for, naming when each recipe touches this section. Then the Astro take, the render output's
+asked for, naming when each recipe touches this section; the drafter may split it into two
+sentences at the register's one-idea rule, with the three claims (the re-skin's no-edit, the
+port's directive classes, the flourish choice open to both) kept whole. The flourish choice is
+both recipes' because Waymark ships the attribute absent: `ArticleView.svelte` renders
+`<article class="prose">` with no `data-flourish` (`f:spn4hj` for the element, `f:ivp8wl` for the
+default), so a re-skin that wants the three flourishes adds the attribute to that element and a
+port adds it to its own `.prose` root (the second plan read's second advisory, its first form,
+since the source confirms the default is off rather than set or forbidden). The port arrives here
+by name from its step 10; a re-skin reader arrives only through the link in its step 5, which
+names this section for what the three flourishes are, the one edit having been made inline (the
+third plan read's second advisory). Then the Astro take, the render output's
 styling in three short paragraphs: `ArticleView.svelte` wraps each entry on the public site in
 `<article class="prose">` (`f:spn4hj`); a directive's markup carries an unprefixed class from the
 theme's `markdown-components.ts`, such as `.callout`, which the theme styles and may rename
@@ -436,10 +505,14 @@ in the engine's `cairn-public.css` in `@layer components` and read the `--cairn-
 (`f:c4nnu9`), so a theme recolors code by setting those roles in its blocks. The one step, a single
 bulleted item: to turn on the three decorative styles `prose.css` keeps behind
 `.prose[data-flourish]`, the cairn-glyph rule, the diamond bullet, and the margin-hanging pull
-quote, add a `data-flourish` attribute to the theme's `.prose` root (`f:ivp8wl`).
+quote, add a `data-flourish` attribute to the theme's `.prose` root, which for Waymark is the
+`<article class="prose">` in `ArticleView.svelte` (`f:ivp8wl`, with `f:spn4hj` for the element).
 
 Hand-off: the admin's preview frame shows the same rendered markdown through the adapter's
-`editor.preview`, which the scaffold already sets.
+`editor.preview`, which the scaffold already sets; a re-skin reader who followed the flourish link
+returns to step 6 of Re-skin Waymark, the status rebrand option, and then its step 7, the checks,
+and the port reader reads on, per its step 10 (the third plan read's blocking finding caught the
+previous return, which sent a re-skin reader to the Verify jump past the rebrand).
 
 ### Style the editor preview
 
@@ -483,8 +556,13 @@ white without one; its `<html>` carries no `data-theme`, so only the OS color sc
 `data-cairn-preview`, the hook a site's style sheet selects on to suppress entrance animations
 such as `[data-rise]` inside the frame, and every link click in the frame is inert (`f:guthtp`).
 
-Hand-off: verification, for every reader; Re-skin Waymark's step 5 jumps here directly and stays
-correct.
+Hand-off: Verify the theme, for every reader, and each reader arrives there by a named route (the
+second plan read's blocking finding asked that this hand-off cover both recipes): the re-skin's
+step 7 jumps from Re-skin Waymark past this section to Verify the theme and stays correct, since
+the scaffold already sets `editor.preview` and a re-skin changes none of what it names; the
+port's step 10 routes through Style rendered markdown and this section, so its `editor.preview`
+update lands before Verify check 3 reads the frame; the hand-built reader arrives through the
+hand-off list under Theme a hand-built site, having added the member here.
 
 ### Verify the theme
 
@@ -578,7 +656,7 @@ drafter's brief records each reason verbatim under `cuts`.
 | `f:mvkyea` | carried | Iterate locally |
 | `f:j2qzct` | carried | Iterate locally (cited again under Theme a hand-built site) |
 | `f:4xptbu` | cut | Subordinated: `docs/reference/cli-cairn-media-seed.md`, the Flags table's `--from` row and What it writes, state the fixed `<base-url>/media/<slug>.<hash>.<ext>` download path, linked from Iterate locally; the `assets.publicBase` consequence is not stated there (friction filed) |
-| `f:kt0epf` | carried | Re-skin Waymark (cited again under Introduction and Style rendered markdown) |
+| `f:kt0epf` | carried | Re-skin Waymark (cited again under Introduction, Style rendered markdown, and the routing sentence that opens Port your own theme onto the chassis) |
 | `f:ylmc9c` | carried | Rebrand the status colors (cited again under Theme a hand-built site and Resolve an audit finding) |
 | `f:u893cs` | carried | Rebrand the status colors (cited again under Resolve an audit finding) |
 | `f:lwrqfd` | carried | Port your own theme onto the chassis |
@@ -594,8 +672,8 @@ drafter's brief records each reason verbatim under `cuts`.
 | `f:h1qxlq` | carried | Chassis conventions |
 | `f:hectgs` | carried | Chassis conventions |
 | `f:hgal3e` | carried | Chassis conventions |
-| `f:ivp8wl` | carried | Style rendered markdown |
-| `f:spn4hj` | carried | Style the editor preview, the first sentence, the scaffold's snippet, and step 3 (cited again under Style rendered markdown) |
+| `f:ivp8wl` | carried | Style rendered markdown (cited again under Re-skin Waymark, step 5) |
+| `f:spn4hj` | carried | Style the editor preview, the first sentence, the scaffold's snippet, and step 3 (cited again under Style rendered markdown and under Re-skin Waymark, step 5, for the `<article class="prose">` element the flourish attribute goes on) |
 | `f:gnn3pv` | carried | Style the editor preview, the why sentence and step 2 |
 | `f:gtg454` | carried | Style the editor preview, step 1 |
 | `f:faofr4` | carried | Style the editor preview, scoped to the ground and the scheme (cited again under Verify the theme, check 3) |
@@ -652,8 +730,8 @@ table above, and every fact keeps its section.
   `templates/waymark/src/theme/cairn.config.ts:227` (`f:spn4hj`). A re-skin changes nothing
   there, a port edits it when a compiled sheet or a wrapper class changes, a hand-built site adds
   it, and the three steps are headed as the port's and the hand-built site's procedure. The frame
-  behavior stays as the explanation for every reader, and Re-skin Waymark's step 5 jumps to Verify
-  the theme as before.
+  behavior stays as the explanation for every reader, and Re-skin Waymark's final step jumps to
+  Verify the theme as before.
 - Advisory, Chassis conventions after step 10 while step 6 needs them (`:341-342`, `:354`,
   `:362-386`): kept after the steps, with step 6 saying "read Chassis conventions, below, before
   adding a class or layout rule" in so many words, the finding's second form. The reason for not
@@ -680,13 +758,93 @@ table above, and every fact keeps its section.
   defaults (confirmed: "the faces, `--text-step-*`, `--spacing-*`, `--leading-*`, `--tracking-*`,
   the two measures, and the two heading levers"), beside Roles for every role with its default.
 
+## Second plan read (resolution run 2), disposed by this revision
+
+The structural edit read the revised plan in run `wf_fe61a650-884` and returned one blocking
+finding and two advisory ones, recorded under "### theme-your-public-site" of
+`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`. Each is disposed
+below. No fact changes its disposition; `f:ivp8wl` and `f:spn4hj` gain one citation each, and
+every check the read listed as passed (the introduction's three parts and six out-of-scope pages,
+Before you begin's routing, the argued departures from the covers order, both outline cross-links
+in See also, the failure path to `docs/extend/debug-your-site.md`, the task-guide module types)
+is unchanged.
+
+- Blocking, port step 10 (`:386` of the second version; Block 1, "Information is presented in the
+  most logical order and location" and "Tasks reflect the intended goal of the user"): the step
+  sent a port reader straight to Verify the theme, past Style rendered markdown and Style the
+  editor preview, which still hold port work, so a port that renamed or added a compiled sheet
+  would run Verify check 3 with `editor.preview` still naming Waymark's sheets and fail with no
+  path back. Step 10 now reads "continue with Style rendered markdown and Style the editor
+  preview, then run the checks in Verify the theme", the finding's first form, with the two
+  sections' port work named beside it. The hand-off of Style the editor preview now covers both
+  recipes and the hand-built reader: the re-skin's final step jumps past the section to Verify
+  the theme, which is safe because a re-skin changes none of what `editor.preview` names, and the
+  port arrives through the section from step 10. What the page argues records the same
+  asymmetry as the reason the two recipes end differently.
+- Advisory, the introduction's in-order list (`:93-95`; Block 2, "Does your introduction provide
+  an accurate overview of the topics you cover?"): the list now opens with the chassis boundary
+  and the token tiers, so it predicts the section order the reader meets.
+- Advisory, the flourish option offered to a port only (`:422-439`; Block 1, "Tasks reflect the
+  intended goal"): the source confirms Waymark ships the attribute absent rather than set or
+  forbidden (`templates/waymark/src/theme/components/ArticleView.svelte:108` renders
+  `<article class="prose">` with no `data-flourish`; `templates/waymark/src/theme/theme.css:4-8`
+  names the attribute as the one edit that brings the three flourishes back), so the finding's
+  first form applies: Style rendered markdown's lead-in states that either recipe may turn the
+  flourishes on, and Re-skin Waymark gains an optional step 5 that takes the one step there
+  before its step 6 runs the checks. Theme a hand-built site's closing sentence names the
+  flourish step as the scaffold's alone, since the flourishes live in the chassis's `prose.css`.
+  (The third plan read then moved the step's action inline and renumbered the checks as step 7;
+  see Third plan read below.)
+
+## Third plan read (same run), disposed by this revision
+
+The structural edit read the second revision of this plan in the same run and returned one
+blocking finding and two advisory ones, each named by the line of the version it read. Each is
+disposed below. No fact changes its disposition; `f:spn4hj` gains one citation (Re-skin Waymark,
+step 5) and `f:kt0epf` one (the routing sentence that opens the port), and every check the read
+listed as passed (the introduction's contract and three parts with all six out-of-scope pages,
+Before you begin's routing of both readers, the argued departures from the covers order, both
+outline cross-links in See also, the numbered checks with observable results, the failure path to
+`docs/extend/debug-your-site.md`, and the two exposition sections' task lead-ins) is unchanged.
+
+- Blocking, the re-skin's route into the status rebrand (`:321-325`, `:349`, `:482` of the second
+  revision; Block 1, "Information is presented in the most logical order and location" and "Tasks
+  reflect the intended goal of the user"): the re-skin's step 6 sent the reader to Verify the
+  theme past the Rebrand the status colors H3 that sat under the steps, Style rendered markdown's
+  hand-off returned a re-skin reader to that same step, and the H3's own hand-off sent a rebrand
+  reader on into the port, so a reader who followed the steps literally never met the rebrand and
+  a reader who did it had no route to Verify, the dead end the second read caught on port step 10,
+  now on the re-skin side. The finding's rewrite is taken whole: Re-skin Waymark gains step 6,
+  "optionally, to rebrand the status colors, follow Rebrand the status colors, below", and its
+  Verify jump is step 7; the H3's hand-off returns the reader to step 7, named in so many words;
+  the routing sentence the H3's hand-off carried (a design the site already has takes the port)
+  opens Port your own theme onto the chassis, right after its first sentence, where a reader
+  choosing between the recipes meets it; and Style rendered markdown's hand-off returns a re-skin
+  reader to step 6, the rebrand option, and then step 7. Style the editor preview's hand-off and
+  What the page argues name step 7 for the re-skin's jump. Step 6 is the one route into the
+  subsection and its hand-off the one route out, so the two recipes stay apart as before.
+- Advisory, the introduction's in-order list (`:104-108`; Block 2, "Does your introduction provide
+  an accurate overview of the topics you cover?"): the list now opens with the hand-built styling
+  stack, scoped to that reader, and closes with the fix for each finding the audit raises, so it
+  predicts every body section in order, with the drafter licensed to split it in two at the
+  one-idea rule.
+- Advisory, the flourish step's round trip (`:315-321`; Block 1, "Information is provided at the
+  right pace"): the finding's rewrite is taken. Step 5 states the one action inline, location
+  first, "in `src/theme/components/ArticleView.svelte`, add a `data-flourish` attribute to the
+  `<article class="prose">` element" (`f:ivp8wl` for the attribute and the default, `f:spn4hj` for
+  the element), and names Style rendered markdown only for what the three flourishes are. Style
+  rendered markdown's content and hand-off no longer describe the re-skin as arriving by route,
+  only by that link, and Theme a hand-built site's closing sentence names the flourish edit in
+  both its homes as the scaffold's alone.
+
 ## Could not do, and friction filed
 
 - `f:4xptbu` is subordinated to `docs/reference/cli-cairn-media-seed.md`, whose `--from` row and
   What it writes state the fixed `/media/` download path but not that the command ignores the
   adapter's `assets.publicBase`, so a site whose media route is mounted elsewhere cannot seed.
   Filed as reference-arm friction; the fact stays subordinated. The tool-side finding (no flag
-  for the path) was filed 2026-09-30 by the extend gap sweep and is not refiled.
+  for the path) was filed 2026-09-30 by the extend gap sweep and is not refiled. Re-confirmed in
+  resolution run 2 against the reference page as committed; the disposition is unchanged.
 - The preview frame's `<html>` carries no `data-theme`, so the frame follows the OS scheme while
   the public site follows the visitor's cookie and `data-theme` (`f:faofr4`, `f:i9pgd2`). The
   page states it as the code's behavior. Filed as design friction.
@@ -700,3 +858,16 @@ table above, and every fact keeps its section.
   list living in a chassis file (`f:h5e8d4`, `f:s4prb0`). The reference's `vite dev` claim
   against the scaffold's dev backend (`f:j2qzct`) is on `ROADMAP.md`'s Next tier and is not
   refiled.
+- The three entries this plan filed on its first run (the media-seed reference's missing
+  `assets.publicBase` sentence, the preview frame's OS-only scheme, and the ungated `$chassis`
+  seam) sit in `docs/internal/docs-friction-log.md` under "Filed 2026-10-03 by the page plan of
+  `docs/extend/theme-your-public-site.md`" and are not refiled. Resolution run 2 filed no new
+  entry: the flourish default and the port's route through the preview section are the code and
+  the page's order, stated with no hedge. The third revision filed none either: the rebrand
+  route, the inline flourish edit, and the introduction's list are the page's order and one
+  attribute on one element, each stated with no hedge, and the reference entries each
+  subordination names were re-opened and still state their facts (`docs/reference/core.md`'s
+  `preview` entry, `docs/reference/cairn-audit.md`'s `theme-conformance` row and What
+  theme-contrast doesn't cover, `docs/reference/public-css.md`'s Changed defaults, and
+  `docs/reference/cli-cairn-media-seed.md`'s `--from` row and What it writes, the last still
+  silent on `assets.publicBase`).

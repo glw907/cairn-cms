@@ -29,11 +29,11 @@
       ]
     },
     {
-      "text": "The tutorial serves a web developer who builds with SvelteKit and TypeScript and works in a terminal.",
+      "text": "The tutorial assumes working knowledge of SvelteKit, TypeScript, and a terminal.",
       "id": "no-claim"
     },
     {
-      "text": "An app you already have follows the same milestones and skips the steps that create the project.",
+      "text": "If you start from an existing app, you work through the same milestones, and each step that creates the project or its repository says when your app skips it.",
       "id": "no-claim"
     },
     {
@@ -61,32 +61,47 @@
       "id": "f:2gtftn"
     },
     {
-      "text": "The tutorial leaves the following topics to other pages:",
+      "text": "The following pages cover what this tutorial leaves out:",
       "id": "no-claim"
     },
     {
-      "text": "Every adapter option, which [Define an adapter and schema](define-an-adapter-and-schema.md) covers.",
+      "text": "[Define an adapter and schema](define-an-adapter-and-schema.md) covers every adapter option.",
       "id": "no-claim"
     },
     {
-      "text": "The delivery routes beyond the entry catch-all, which [Build the public routes](build-the-public-routes.md) covers.",
+      "text": "[Build the public routes](build-the-public-routes.md) covers the delivery routes beyond the entry catch-all.",
       "id": "no-claim"
     },
     {
-      "text": "The reasoning behind the GitHub App's repository-wide write and the CSRF design, which the [security model](security-model.md) sets out.",
+      "text": "The [security model](security-model.md) sets out the reasoning behind the GitHub App's repository-wide write and the CSRF design.",
       "id": "no-claim"
     },
     {
-      "text": "Rotating the App's private key later, which [Rotate the GitHub App key](rotate-the-github-app-key.md) covers.",
+      "text": "[Rotate the GitHub App key](rotate-the-github-app-key.md) covers rotating the App's private key later.",
       "id": "no-claim"
     },
     {
-      "text": "You need Node 24 or later, a GitHub account, a Cloudflare account, and, from the first deploy that carries the admin, Cloudflare's Workers Paid plan.",
+      "text": "You need the following accounts and tools:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Node 24 or later.",
       "id": "f:75hawi"
     },
     {
-      "text": "You also need the following:",
-      "id": "no-claim"
+      "text": "A GitHub account.",
+      "id": "f:75hawi"
+    },
+    {
+      "text": "A Cloudflare account, whose free tier runs the first milestone's bare deploy.",
+      "id": "f:75hawi"
+    },
+    {
+      "text": "[Cloudflare's Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/), which the first deploy that carries the admin needs, and which also covers sign-in mail to a second person.",
+      "id": [
+        "f:75hawi",
+        "f:t4pwpw"
+      ]
     },
     {
       "text": "TypeScript on major version 6, which `npx sv create` already pins, since `svelte-check` cannot run on TypeScript 7 yet.",
@@ -100,23 +115,15 @@
       ]
     },
     {
-      "text": "The `cairn` CLI, a separate Go module installed once per machine, which runs [`cairn doctor`](../reference/cli-cairn-doctor.md) in the production milestone.",
+      "text": "The `cairn` CLI, which runs [`cairn doctor`](../reference/cli-cairn-doctor.md) in the production milestone.",
       "id": [
         "f:1dhk1a",
         "f:m0ouh8"
       ]
     },
     {
-      "text": "To install the `cairn` CLI, run the following `go install` command, or download a release archive instead:",
+      "text": "Install it once per machine with the following command or from a release archive:",
       "id": "f:1dhk1a"
-    },
-    {
-      "text": "The first milestone's bare deploy runs on Cloudflare's free tier.",
-      "id": "f:75hawi"
-    },
-    {
-      "text": "The Workers Paid plan also covers sign-in mail to a second person, and Cloudflare's [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page states its current terms.",
-      "id": "f:t4pwpw"
     },
     {
       "text": "This milestone ends with a plain SvelteKit site, with no cairn code yet, answering at its `workers.dev` address, so the deploy path works before the engine joins it.",
@@ -226,7 +233,7 @@
       "id": "f:9ug9mo"
     },
     {
-      "text": "Build the site and upload the Worker:",
+      "text": "In the project directory, build the site and upload the Worker:",
       "id": "f:9ug9mo"
     },
     {
@@ -530,7 +537,7 @@
       "id": "f:9mx680"
     },
     {
-      "text": "The package installs as a `devDependency`.",
+      "text": "`@glw907/cairn-cms-dev` installs as a `devDependency`.",
       "id": "f:9mx680"
     },
     {
@@ -553,11 +560,12 @@
       "id": "f:f21bcz"
     },
     {
-      "text": "It imports `devBackendHandle` dynamically, so a default build never carries it, and a bare `createAuthGuard()` call is valid.",
-      "id": [
-        "f:eiaqkh",
-        "f:f21bcz"
-      ]
+      "text": "It imports `devBackendHandle` dynamically, so a default build never carries it.",
+      "id": "f:eiaqkh"
+    },
+    {
+      "text": "The `if`'s other branch calls `createAuthGuard()` with no options, which the guard accepts.",
+      "id": "f:f21bcz"
     },
     {
       "text": "SvelteKit's origin check runs ahead of any handle and would reject a JavaScript-free form POST that arrives without an `Origin` header.",
@@ -579,7 +587,7 @@
       "id": "f:d2jumm"
     },
     {
-      "text": "The [security model](security-model.md) sets out the CSRF design.",
+      "text": "For the reasoning behind the CSRF design, see the [security model](security-model.md).",
       "id": "no-claim"
     },
     {
@@ -599,7 +607,10 @@
     },
     {
       "text": "In `src/app.d.ts`, declare the define as a global boolean:",
-      "id": "f:vvgpr5"
+      "id": [
+        "f:n52h8f",
+        "f:72mctx"
+      ]
     },
     {
       "text": "In the `src` directory, create `hooks.server.ts`:",
@@ -758,7 +769,7 @@
       ]
     },
     {
-      "text": "Vite needs each glob's literal pattern at its call site, so `createSiteIndexes` throws at build time for a declared concept with no glob.",
+      "text": "`createSiteIndexes` throws at build time for a declared concept with no glob, because Vite needs each literal glob pattern at its call site and cannot have one added programmatically.",
       "id": "f:pdgkex"
     },
     {
@@ -800,7 +811,14 @@
       "id": "f:n0laoh"
     },
     {
-      "text": "Commit the entry and its manifest to the repository the first milestone started:",
+      "text": "The command writes the manifest to `src/content/.cairn/index.json`, the default path the plugin's options reference lists.",
+      "id": [
+        "f:vrue1g",
+        "f:fj28xs"
+      ]
+    },
+    {
+      "text": "In the project directory, commit the entry and its manifest to the repository the first milestone started:",
       "id": "no-claim"
     },
     {
@@ -924,7 +942,7 @@
       "id": "no-claim"
     },
     {
-      "text": "On GitHub, create an empty repository named field-notes with no starter files, following [Creating a new repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository).",
+      "text": "On GitHub, create an empty repository with no starter files, following [Creating a new repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), and give it the following name:",
       "id": "no-claim"
     },
     {
@@ -955,7 +973,7 @@
       "id": "f:n0laoh"
     },
     {
-      "text": "Write the manifest again, and commit it with the new post:",
+      "text": "In the project directory, write the manifest again, and commit it with the new post:",
       "id": "f:n0laoh"
     },
     {
@@ -1021,8 +1039,11 @@
       ]
     },
     {
-      "text": "Moving a dev-backend site to production takes three edits:",
-      "id": "f:7bch04"
+      "text": "You register the App, create the database, and set one Worker secret, and the site's files take three edits:",
+      "id": [
+        "f:e5vm42",
+        "f:7bch04"
+      ]
     },
     {
       "text": "The adapter's `backend` and `email` take real values.",
@@ -1041,23 +1062,27 @@
       "id": "f:7bch04"
     },
     {
-      "text": "The App yields the App ID, the Installation ID, and the private key, and the database's create output carries the id the `AUTH_DB` entry needs, so each section of this milestone makes its part of these edits once the value it needs exists.",
+      "text": "Each section of this milestone makes its edit once the value it needs exists.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The App yields the App ID, the Installation ID, and the private key, and the database's create output carries the id the `AUTH_DB` entry needs.",
+      "id": "f:e5vm42"
+    },
+    {
+      "text": "A production build with no dev backend and no `AUTH_DB` binding runs the real guard, which answers every `/admin` path, the sign-in path included, with a branded 500 page headed **Wrangler bindings are missing**.",
+      "id": "f:jbt2hh"
+    },
+    {
+      "text": "The engine reads `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, and `GITHUB_APP_PRIVATE_KEY_B64` from the platform env, and a missing `AUTH_DB` throws `config.bindings-missing`, the condition behind that page.",
       "id": [
-        "f:e5vm42",
-        "f:7bch04"
+        "f:ntdafg",
+        "f:jbt2hh"
       ]
     },
     {
-      "text": "A production build with no dev backend and no `AUTH_DB` binding answers every `/admin` path, the sign-in path included, with a branded 500 page headed **Wrangler bindings are missing**.",
-      "id": "f:jbt2hh"
-    },
-    {
-      "text": "That page shows that the deployed build runs the real guard with the dev backend dropped, and it names the bindings this milestone supplies.",
-      "id": "f:jbt2hh"
-    },
-    {
-      "text": "The engine reads `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, and `GITHUB_APP_PRIVATE_KEY_B64` from the platform env, and a missing `AUTH_DB` throws `config.bindings-missing`.",
-      "id": "f:ntdafg"
+      "text": "This deploy is the first to carry the admin, so it needs the Workers Paid plan.",
+      "id": "f:75hawi"
     },
     {
       "text": "To see the refusal, follow these steps:",
@@ -1110,7 +1135,7 @@
       "id": "f:vgw8x9"
     },
     {
-      "text": "In the form, allow installation on the account that owns the field-notes repository.",
+      "text": "In the form, allow installation on the account that owns the site's repository.",
       "id": "f:rp65d2"
     },
     {
@@ -1130,7 +1155,7 @@
       "id": "f:rp65d2"
     },
     {
-      "text": "In the installation form, grant the App access to the field-notes repository only.",
+      "text": "In the installation form, grant the App access to the site's repository only.",
       "id": "f:rp65d2"
     },
     {
@@ -1138,15 +1163,15 @@
       "id": "f:nbnq9c"
     },
     {
-      "text": "The **Contents** permission is repository-wide, and only engine code confines writes to the declared content directories.",
+      "text": "The **Contents** permission is repository-wide, and only engine code confines writes to the declared content directories, so the App's token can also write the site's code in the repository this tutorial builds.",
       "id": [
         "f:gglwt4",
         "f:l5gx1t"
       ]
     },
     {
-      "text": "Installing the App on a repository that also holds code or other teams' content puts that content inside the token's write reach, and the [security model](security-model.md) sets out the reasoning.",
-      "id": "f:l5gx1t"
+      "text": "The [security model](security-model.md) sets out the reasoning.",
+      "id": "no-claim"
     },
     {
       "text": "The App ID and Installation ID identify the App and grant nothing, so they pass directly into `createGithubApp` in the adapter source.",
@@ -1176,10 +1201,6 @@
       "id": "f:vpieos"
     },
     {
-      "text": "The engine decodes the secret with `atob()` before signing, so a multi-line encoding does not parse.",
-      "id": "f:vpieos"
-    },
-    {
       "text": "Move the `.pem` file outside every repository, so git never tracks it.",
       "id": "f:7dtrwy"
     },
@@ -1192,9 +1213,10 @@
       "id": "f:jbt2hh"
     },
     {
-      "text": "The engine keeps its sign-in tokens and sessions in the D1 database bound as `AUTH_DB`, and every site applies two of the five migrations the package ships.",
+      "text": "The engine keeps its editors, sign-in tokens, and sessions in the D1 database bound as `AUTH_DB`, and every site applies two of the five migrations the package ships.",
       "id": [
         "f:if45on",
+        "f:g81luc",
         "f:hft8s8",
         "f:xxtooz",
         "f:pkrwom"
@@ -1216,7 +1238,7 @@
       ]
     },
     {
-      "text": "Copy the two migrations every site applies into a `migrations` directory:",
+      "text": "In the project directory, copy the two migrations every site applies into a `migrations` directory:",
       "id": [
         "f:hft8s8",
         "f:if45on"
@@ -1230,7 +1252,7 @@
       ]
     },
     {
-      "text": "Apply the migrations to the remote database:",
+      "text": "In the project directory, apply the migrations to the remote database:",
       "id": "f:xxtooz"
     },
     {
@@ -1257,7 +1279,7 @@
       ]
     },
     {
-      "text": "A `workers.dev` subdomain has no zone to onboard for Email Sending, so the production site runs on that domain.",
+      "text": "A `workers.dev` subdomain has no zone to onboard for Email Sending, so the production site runs on the onboarded domain.",
       "id": "f:xhwl32"
     },
     {
@@ -1265,7 +1287,7 @@
       "id": "no-claim"
     },
     {
-      "text": "In the project directory, onboard the domain for Email Sending, following Cloudflare's [Email Service domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/) page:",
+      "text": "In the project directory, onboard the domain for Email Sending, following Cloudflare's [domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/) page:",
       "id": "f:xhwl32"
     },
     {
@@ -1278,6 +1300,10 @@
         "f:7bch04",
         "f:txgoyy"
       ]
+    },
+    {
+      "text": "`observability.enabled: true` sends the engine's log records to Workers Logs and satisfies the `config.observability` check of `cairn doctor`.",
+      "id": "f:txgoyy"
     },
     {
       "text": "In the adapter module, set the `email` group's `from` to an address on the domain:",
@@ -1294,16 +1320,12 @@
       ]
     },
     {
-      "text": "`PUBLIC_ORIGIN` is the canonical origin for sign-in links, and an unset or invalid value throws `config.public-origin-invalid`.",
-      "id": "f:ntdafg"
-    },
-    {
       "text": "A prerendered route writes `origin` into the build output, so the content module names the deployed origin before the production build.",
       "id": "f:k16chc"
     },
     {
-      "text": "`observability.enabled: true` sends the engine's log records to Workers Logs and satisfies the `config.observability` check of `cairn doctor`.",
-      "id": "f:txgoyy"
+      "text": "`PUBLIC_ORIGIN` is the canonical origin for sign-in links, and an unset or invalid value throws `config.public-origin-invalid`.",
+      "id": "f:ntdafg"
     },
     {
       "text": "A site that sends through another provider passes a custom `auth.send` instead, and [Edit the message in a custom sender](#edit-the-message-in-a-custom-sender) shows the sender's shape.",
@@ -1330,15 +1352,15 @@
       "id": "f:m0ouh8"
     },
     {
-      "text": "Commit this milestone's edits and push the main branch, so the pull after the publish is a fast-forward:",
+      "text": "In the project directory, commit every uncommitted file and push the main branch, so the pull after the publish is a fast-forward:",
       "id": "no-claim"
     },
     {
-      "text": "Build the site and deploy it:",
+      "text": "In the project directory, build the site and deploy it:",
       "id": "f:9ug9mo"
     },
     {
-      "text": "To publish an edit and follow it to the deployed page, follow these steps:",
+      "text": "To publish an edit and confirm it on the deployed page, follow these steps:",
       "id": "no-claim"
     },
     {
@@ -1362,7 +1384,7 @@
       "id": "f:m0ouh8"
     },
     {
-      "text": "On GitHub, confirm that the commit lands on `main` of the field-notes repository, with you as its author and the App's bot as its committer.",
+      "text": "On GitHub, confirm that the commit lands on `main` of the site's repository, with you as its author and the App's bot as its committer.",
       "id": [
         "f:m0ouh8",
         "f:5f4kmk"
@@ -1373,7 +1395,7 @@
       "id": "no-claim"
     },
     {
-      "text": "Build the site and deploy it:",
+      "text": "In the project directory, build the site and deploy it:",
       "id": "f:9ug9mo"
     },
     {
@@ -1393,7 +1415,7 @@
       "id": "f:m0ouh8"
     },
     {
-      "text": "Each failed production check points at one setting that this milestone made:",
+      "text": "Each of the following failures points at a setting this milestone made:",
       "id": "no-claim"
     },
     {
@@ -1443,7 +1465,7 @@
       "id": "f:rn62i1"
     },
     {
-      "text": "Apply the migrations to the local development database:",
+      "text": "In the project directory, apply the migrations to the local development database:",
       "id": "f:xxtooz"
     },
     {
@@ -1518,7 +1540,11 @@
       "id": "f:1b54g7"
     },
     {
-      "text": "The text of anything the sender throws reaches the log scrubbed of token values and truncated, so a thrown message must never embed the message body or the sign-in link.",
+      "text": "The engine scrubs token values from the text of anything the sender throws, and truncates it, before logging it.",
+      "id": "f:1b54g7"
+    },
+    {
+      "text": "That scrub removes token values only, so a thrown message must never embed the message body or the sign-in link.",
       "id": "f:1b54g7"
     },
     {
@@ -1530,7 +1556,7 @@
       "id": "no-claim"
     },
     {
-      "text": "Build the site and deploy it:",
+      "text": "In the project directory, build the site and deploy it:",
       "id": "f:9ug9mo"
     },
     {
@@ -1546,26 +1572,26 @@
       "id": "no-claim"
     },
     {
-      "text": "The engine now runs inside a SvelteKit app that you configured by hand, from the kit config through the admin routes.",
+      "text": "You wired the engine into a SvelteKit app by hand, from the kit config through the admin routes.",
       "id": "no-claim"
     },
     {
-      "text": "Because each call site names the build-time define directly, the dev backend that the earlier milestones ran on never reaches a production bundle.",
+      "text": "Because each call site names the build-time define directly, the dev backend you worked against never reaches a production bundle.",
       "id": [
         "f:72mctx",
         "f:9mx680"
       ]
     },
     {
-      "text": "Every build compares the committed manifest with the markdown on disk and stops when the two have drifted apart.",
+      "text": "Every build of your site compares the committed manifest with the markdown on disk and stops when the two have drifted apart.",
       "id": "f:n0laoh"
     },
     {
-      "text": "In production, editors sign in against a D1 auth database, and their edits commit through a GitHub App you registered.",
+      "text": "In production, your editors sign in against the D1 auth database you created, and their edits commit through the GitHub App you registered.",
       "id": "f:e5vm42"
     },
     {
-      "text": "A published edit lands on `main` and reaches the public page with the next build and deploy.",
+      "text": "You published an edit from the deployed admin, found its commit on `main`, and saw the next build and deploy carry it to the public page.",
       "id": [
         "f:m0ouh8",
         "f:k16chc"
@@ -1595,27 +1621,27 @@
   "cuts": [
     {
       "id": "f:gffvfd",
-      "reason": "Subordinated to docs/reference/auth-store.md, the D1 schema's home; the page names each migration by purpose (f:hft8s8, f:rn62i1, f:pkrwom, f:xxtooz) and which file runs a CREATE TABLE is detail no step depends on. The reference page does not state it today (couldNotDo; friction filed)."
+      "reason": "Subordinated to docs/reference/auth-store.md, the D1 schema's home; the page names each migration by purpose (f:hft8s8, f:rn62i1, f:pkrwom, f:xxtooz) and no step depends on which file creates which table. That page does not state it today (re-verified: its one 'migration' mention is a generic word in the lede); the gap is filed in the friction log (the 2026-10-03 add-cairn page plan entry naming f:gffvfd, f:hft8s8, f:rn62i1, f:pkrwom), and the fact stays off the page."
     },
     {
       "id": "f:pg2smj",
-      "reason": "docs/extend/upgrade-cairn.md and docs/extend/migration-notes.md own the retired doctor (the outline's out-of-scope list); the page's doctor sentence (f:m0ouh8) already says no command checks the App. Cut at the pilot draft (brief at bbfb6788), cut again here; the omission from the introduction is now recorded as a disposition against the outline entry."
+      "reason": "The retired doctor is docs/extend/upgrade-cairn.md and docs/extend/migration-notes.md's subject (the outline's out-of-scope list); the page's doctor sentence (f:m0ouh8) already says no command checks the App. Cut at the pilot draft, cut again here."
     },
     {
       "id": "f:xyizai",
-      "reason": "Subordinated to docs/reference/supported-toolchain.md, \"The target stack\" (the @sveltejs/adapter-cloudflare row); the scaffold's build choices are docs/extend/scaffolded-site-files.md's subject, and the page names the adapter on f:mhsere's reason. Verified: the row is present."
+      "reason": "Subordinated to docs/reference/supported-toolchain.md, 'The target stack' (re-verified: the @sveltejs/adapter-cloudflare row from the template's package.json); the scaffold's build choices are docs/extend/scaffolded-site-files.md's subject, and the page names the adapter on f:mhsere's reason."
     },
     {
       "id": "f:fekvhi",
-      "reason": "Subordinated to docs/reference/sveltekit.md#created1auditsink, which states the signature, the AUDIT_DB binding, and the 0002_audit.sql copy; the page keeps one sentence on the separate binding from f:pkrwom. Verified: the entry states it."
+      "reason": "Subordinated to docs/reference/sveltekit.md#created1auditsink (re-verified: it states the AUDIT_DB binding, the separate migrations_dir, and the 0002_audit.sql copy); the page keeps one sentence on the separate binding from f:pkrwom."
     },
     {
       "id": "f:dzmj90",
-      "reason": "A contributor fact with no reader need on this page. Cut at the pilot draft (brief at bbfb6788), cut again here."
+      "reason": "A contributor test fixture with no reader need on this page; the heading it pins is not one the page uses. Cut at the pilot draft, cut again here."
     },
     {
       "id": "f:tkpmxr",
-      "reason": "Subordinated to docs/reference/log-events.md, the guard.refused row (reason dev_backend_in_prod, a 503 when CAIRN_DEV_BACKEND is set in a deployed runtime); the page names the fence's third layer in one clause from f:9mx680. Verified: the row states it."
+      "reason": "Subordinated to docs/reference/log-events.md, the guard.refused row (re-verified: reason dev_backend_in_prod, a 503 when CAIRN_DEV_BACKEND is set in a deployed runtime); the page names the fence's third layer in one clause from f:9mx680."
     }
   ]
 }

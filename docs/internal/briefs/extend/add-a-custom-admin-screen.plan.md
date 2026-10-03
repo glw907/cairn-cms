@@ -3,15 +3,20 @@
 Page: `docs/extend/add-a-custom-admin-screen.md`. Brief: `docs/internal/briefs/extend/add-a-custom-admin-screen.json`.
 Page type: task guide. Status: committed page under rework (plan task 7b resolution, from this plan).
 Written 2026-10-03 by the plan step of the docs page chain; revised once the same day on the
-structural edit's round-1 findings, disposed under their own heading below.
+structural edit's round-1 findings, revised again (resolution run 2) on the second plan read's
+three blocking findings, and revised a third time on the third plan read's one blocking and one
+advisory finding, each round disposed under its own heading below.
 
 Inputs read: the outline entry in `docs/internal/outlines/extend.json`; the page anatomies and the
 developer drafting brief in `docs/internal/docs-register.md`; this page's entries in
-`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md` and
+`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md`,
 `docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md` (round-2 findings and
-conflicts 1 to 3); `docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`;
+conflicts 1 to 3), and `docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`
+(both plan reads of run `wf_fe61a650-884`);
+`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`;
 every fact bullet named below in `docs/internal/facts/`; the reference entries each subordination
-names; the two exemplars; the showcase signups route (`examples/showcase/src/routes/admin/signups/`).
+names; the two exemplars; the example site's signups route (`examples/showcase/src/routes/admin/signups/`);
+`src/lib/admin-toolkit/ExpandableRow.svelte` for the controlled-row contract.
 
 Headings in this plan are the page's headings, verbatim. A claim inventory `section` names one of
 them. The introduction is the untitled text under the H1 and is named `Introduction` here.
@@ -25,7 +30,11 @@ write (the gate), record every write (the audit), and build it in the admin's id
 audit measures it the same way (the design language, verified by `cairn-audit`). The page's job
 sentence names exactly those four outcomes, so the page's spine is the four, in the order a
 developer builds them: route, gate, audit, markup. One running example, the signups screen every
-scaffolded site carries, runs the whole spine, the Django exemplar's shape.
+scaffolded site carries, runs the whole spine, the Django exemplar's shape. The spine has one
+deliberate aside: the toolkit section shows a smaller, toolkit-only Events screen beside the running
+example, because the only shell-hosted reproduction story transcribes that snippet, and the section
+marks the aside so a reader never takes it for a second screen to build (the reason is recorded
+under Compose the screen from the toolkit).
 
 The order argues itself from dependencies. A screen cannot be gated until it has a route. The
 action wrapper has to be chosen before the actions are written, so the choice sits between the
@@ -38,9 +47,10 @@ Load row detail on demand; Gate it states the inheritance fact as explanation, s
 before the reader has a thing to apply it to. The audit sink is wired after the wrapper,
 because the wrapper is what emits the records the sink persists. Markup follows the server side,
 and within markup the toolkit comes before styling (what to build with, then how its classes
-compile), then the two optional recipes (dialog form, lazy row detail), then motion, which is a
-constraint on markup the audit enforces. Verify closes the task; the failure path and the
-see-also close the page, per the anatomy.
+compile), then the two optional recipes (dialog form, lazy row detail), each a numbered procedure
+whose rules hang on the step they constrain, then motion, which is a constraint on markup the
+audit enforces. Verify closes the task; the failure path and the see-also close the page, per the
+anatomy.
 
 The committed page carried every fact at the same weight. This plan ranks them: a fact that the
 reader acts on or verifies inside this task stays on the page in one sentence; a prop catalogue, a
@@ -75,7 +85,7 @@ load, its actions, their audit calls, and its markup, then styles the screen, of
 recipes (a dialog form and on-demand row detail), and states the motion rules the audit enforces,
 so a reader who needs neither recipe can tell from here that they are optional. Attribute scaffold
 claims to `f:onqm6k` and
-showcase code claims to `f:pyt58u`, which disposes the round-2 fact read's note on the two sources.
+example-site code claims to `f:pyt58u`, which disposes the round-2 fact read's note on the two sources.
 
 What prior knowledge the reader needs. SvelteKit form actions and server hooks, Svelte 5 snippets
 and `$props`, and a site that `create-cairn-site` scaffolded or that `add-cairn-to-a-sveltekit-app`
@@ -91,9 +101,10 @@ listing the screen in the sidebar reads `docs/extend/arrange-the-admin-sidebar.m
 closing sentence for the rest of the outline's out-of-scope list, naming no page: the reasoning
 behind the access map, the site-wide audit configuration, and the media upload protocol are other
 pages' subjects, linked under See also (`security-model`, `run-cairn-audit-on-your-site`, and
-`configure-media`, each a See also bullet). The outline's sixth item, the audit norms' former
-values, is a drafting constraint rather than a place a reader could have meant to be: Style the
-screen states the current bands only, and the introduction does not mention `migration-notes`.
+`configure-media`, each a See also bullet; See also carries all three). The outline's sixth item,
+the audit norms' former values, is a drafting constraint rather than a place a reader could have
+meant to be: Style the screen states the current bands only, and the introduction does not mention
+`migration-notes`.
 
 The Sanity exemplar's "right tool for the job?" callout lands here as the concept-versus-screen
 sentence, in prose, never as a notice (register: a notice is rare).
@@ -221,7 +232,7 @@ from an unannotated `resolveDb` parameter, so the site annotates it or passes ex
 arguments (`f:pmmtdv`). Steps: (1) in the screen's server file, build one wrapper with
 `createSectionAction`, passing a `resolveDb` that reads the section's binding (`f:3j02dk`); (2) in
 the exported actions, wrap each handler in that wrapper, passing its `action` and `entity`; (3) on
-the destructive action, add `ownerOnly: true`. The showcase `actions` snippet (with its
+the destructive action, add `ownerOnly: true`. The example site's `actions` snippet (with its
 `snippet-check-skip` comment for `App.Platform['env']`). After it, the handler shape in one
 sentence: each handler receives `{ form, ctx }`, writes through `ctx.db`, and calls `ctx.audit`
 with a `detail` or an `entityId` (`f:pyt58u`); and the layering in one: the wrapper runs
@@ -276,15 +287,21 @@ selection) to its entry in `docs/reference/admin-toolkit.md`; `f:qkr057`, `f:qmh
 
 Content. The one step, since this is a task section: in the screen's `+page.svelte`, import the
 primitives the screen needs from `@glw907/cairn-cms/admin-toolkit`. The engine's screens compose
-the same set, `ManageEditors` from `PageHeader` and `AdminTable` (`f:5t1i7o`). The minimal
-example, the Sanity exemplar's "minimal example" before the typed signups route the reader has
-already seen on the server side: the Events screen composing `PageHeader`, `AdminTable`, and
-`StatusChip` inside a card, kept verbatim with `src/lib/reproductions/stories/CustomScreen.svelte`,
-whose comment requires lockstep. Name each of the three primitives' jobs in one sentence
-(`f:clyg9r`). The figure, the `repro` fence for `toolkit/custom-screen`, directly after the
-snippet, with alt and caption as committed; the outline's figure note asks for the signups screen
-with its dialog, and the friction log already records that no such story exists (2026-09-30,
-`f:pyt58u`), so the plan keeps the one shell-hosted story. Then the wrapper rule: `AdminTable`
+the same set, `ManageEditors` from `PageHeader` and `AdminTable` (`f:5t1i7o`). Then a
+deliberately smaller example, placed after the signups server side the reader has already built:
+the Events screen composing `PageHeader`, `AdminTable`, and `StatusChip` inside a card, kept
+verbatim with `src/lib/reproductions/stories/CustomScreen.svelte`, whose comment requires
+lockstep. It is the Sanity exemplar's minimal example with the exemplar's order inverted, since
+here the typed example is the running one and has already run the server side, and the smaller
+screen's job is to show the toolkit alone. The drafter opens it on one lead-in sentence that marks
+the switch, such as "A smaller screen shows the toolkit alone", so a reader does not take Events
+for a second screen they are meant to build; the committed page's lead-in ("separate from the
+signups example") is the sentence to tighten. Name each of the three primitives' jobs in one
+sentence (`f:clyg9r`). The figure, the `repro` fence for `toolkit/custom-screen`, directly after
+the snippet, with alt and caption as committed; the outline's figure note asks for the signups
+screen with its dialog, and the friction log already records that no such story exists
+(2026-09-30, `f:pyt58u`), so the plan keeps the one shell-hosted story and the Events snippet it
+transcribes. Then the wrapper rule: `AdminTable`
 scrolls horizontally itself, so the wrapping `div` carries `overflow-hidden card-shell
 card-shadow` and never `overflow-x-auto` (`f:8x0qpa`). Then the boundary in two sentences: the
 toolkit admits general-purpose primitives only, so a component tied to one site's data stays in
@@ -349,23 +366,50 @@ Facts: `f:jra92k`, `f:xgy3iu`, `f:9fwsz5`, `f:ho6dxa`, `f:tskfz1`, `f:tkqoia`, `
 from here: `f:cdllbv` (vendor specific; see Dispositions).
 
 Content. Open on the condition ("When a screen collects input in a native `<dialog>` submitted
-with `enhance`"), the optional marker the job read asked for. `enhance` hands the callback one of
-four result types, and SvelteKit's form actions documentation, linked, states what the default
-`update()` does with each (`f:xgy3iu`; the vendor's specifics stay behind the link). The four
-branches as a bulleted list of parallel conditions (`f:jra92k`), the `'error'` branch carrying its
-reason: `update()` would call `applyAction`, which renders the nearest `+error` page and destroys
-the dialog (`f:9fwsz5`). The dialog opens with `showModal()`, which lets Escape close it, and the
-action form never nests inside a `<form method="dialog">` (`f:ho6dxa`). The snippet is the signups
-screen's remove confirm, the running example's own dialog: a `<dialog class="modal"
-role="alertdialog">` whose form posts `?/remove` with `use:enhance`, mounts `<CsrfField />` from
-`@glw907/cairn-cms/admin` as the showcase does, and runs the four-branch callback. `CsrfField` is
-in the code only; no fact in the inventory states it, so the page makes no prose claim about it
-(friction filed, see below). Then the attribute rules as a bulleted list: `aria-labelledby` on the
-dialog pointing at its heading (`f:tskfz1`); the failure message in a `role="alert"` paragraph
-mounted empty, since a live region inserted with its text present is announced unreliably
-(`f:tkqoia`); the control's `aria-describedby` naming that paragraph and `aria-invalid="true"` on
-the failed value, and the submit button disabled while the request is pending (`f:5vn194`; the
-message is visible in the dialog, so the `sr-only` clause is not used).
+with `enhance`"), the optional marker the job read asked for, then the first sentence's claim.
+One sentence of why before the steps: `enhance` hands the callback one of four result types, and
+SvelteKit's form actions documentation, linked, states what the default `update()` does with each
+(`f:xgy3iu`; the vendor's specifics stay behind the link). Then the procedure, a numbered list of
+seven steps, one action each, the location named first, with each rule hung under the step it
+constrains (anatomy: explanation stays subordinate to the steps; the second plan read's finding 2):
+
+1. In the screen's `+page.svelte`, add a `<dialog class="modal">` whose `aria-labelledby` points
+   at its own heading. Under it: an element with the `dialog` role needs an accessible name, and
+   the heading supplies one that does not depend on the body text (`f:tskfz1`).
+2. In the handler of the button that opens it, call `showModal()`. Under it: a dialog opened this
+   way closes on Escape without script (`f:ho6dxa`).
+3. Inside the dialog, add the action form with `use:enhance`, as its own form element and never
+   nested inside a `<form method="dialog">`. Under it: a `<form method="dialog">` is its own form,
+   and nested forms are invalid HTML (`f:ho6dxa`).
+4. In the `enhance` callback, handle each of the four result types, and never call `update()` on
+   `'error'`. Under it, the four branches as a bulleted list of parallel conditions (`f:jra92k`):
+   on `'failure'`, show the message in the dialog, then call `update()`, which for a same-page
+   failure only updates `form` and the page status; on `'error'`, report it in the dialog without
+   `update()`, because `update()` would call `applyAction`, which renders the nearest `+error`
+   page and destroys the dialog (`f:9fwsz5`); on `'success'`, close the dialog before awaiting
+   `update()`, so it never sits open through `invalidateAll()`; on `'redirect'`, hand the result
+   to `update()`.
+5. In the form, mount an empty `role="alert"` paragraph for the failure message. Under it: a live
+   region inserted with its text already present is announced unreliably, so the paragraph is
+   mounted empty and filled on failure (`f:tkqoia`).
+6. On the input, point `aria-describedby` at that paragraph and set `aria-invalid="true"` while
+   its value is the failed one. Under it: the error is then read with its field when focus moves
+   to the input (`f:5vn194`; the message is visible in the dialog, so the `sr-only` clause is not
+   used).
+7. On the submit button, set `disabled` while the request is pending, so it cannot fire the
+   action a second time (`f:5vn194`).
+
+The snippet after the steps: the committed page's create dialog, an "Add a signup" `<dialog
+class="modal">` whose form posts to the running example's `?/create` action with `use:enhance`,
+mounts `<CsrfField />` from `@glw907/cairn-cms/admin` as the example site's forms do, carries the
+name and email inputs with the `aria-describedby` and `aria-invalid` wiring, the empty
+`role="alert"` paragraph, the pending-disabled submit, and the four-branch callback. The create
+dialog, not the example site's remove confirm, carries the snippet because steps 6 and 7 act on an
+input and a pending submit, which a confirm dialog with one hidden field has no element for; the
+running example supplies the action the form posts to and the `missing` token its handler returns.
+`CsrfField` is in the code only; no fact in the inventory states it, so the page makes no prose
+claim about it (friction filed 2026-10-03, see below). No attribute list follows the snippet; each
+rule now hangs under its step.
 
 Hand-off: the second recipe.
 
@@ -375,28 +419,62 @@ First sentence: When a screen's rows expand to show detail, the screen fetches e
 as its panel opens and caches it per row, since a `load` that fetched every row's detail would pay
 for all of them on every visit.
 
-Facts: `f:uy7vyc`, `f:b5mcea`, `f:od9mww`, `f:vao0dd`, `f:n2bhjw`, `f:pswc3n`. Cited again:
-`f:lmtfkt` (placed under Gate it; its two actions are steps here).
+Facts: `f:uy7vyc`, `f:b5mcea`, `f:od9mww`, `f:vao0dd` (its `colspan` clause under step 4, its
+`datum` clause under step 11), `f:n2bhjw`, `f:pswc3n`. Cited again:
+`f:lmtfkt` (placed under Gate it; its two actions are steps here). Linked without a claim:
+`docs/reference/admin-toolkit.md`, `ExpandableRow`, for the component's props (`expanded`,
+`onToggle`, `datum`, `colspan`, `summary`, `panel`, `triggerLabel`), none of which a fact in the
+inventory states; the entry's own example shows the handler wiring step 5 asks for.
 
-Content. Streaming an unawaited promise from `load` does not save the work, because the promise
-starts running when `load` creates it (`f:b5mcea`). The `ExpandableRow` markup rules in three
-sentences, each one a trap: the `colspan` the caller passes counts the trailing trigger cell
-(`f:vao0dd`); the `header` snippet heads that cell with a `<th scope="col">` holding an `sr-only`
-span, as the signups table does for its actions column (`f:n2bhjw`); an interactive summary cell
-wraps its content in `data-cairn-inert-cell`, since `ExpandableRow` ignores a row click inside it
-(`f:pswc3n`). Which prop fires the open handler is the `ExpandableRow` entry's to state, so the
-section links `docs/reference/admin-toolkit.md` for the component and claims no prop. Steps, one
-action each, the two nested-route actions moved here from Gate it (this is where the reader first
-creates a nested route) and kept as separate steps (the round-2 register editor's
-two-actions-in-one-step finding): (1) under the screen's directory, add the detail endpoint as a
-nested route; (2) in that route's server file, call `requireAccess`, since a nested route inherits
-the guard and never the page's rule (`f:lmtfkt`, cited again from Gate it); (3) in the site's
-access map, add an entry for the nested route, as `restrict-admin-access` describes; (4) in the
-panel's open handler, return the cached detail when the row has one; (5) otherwise call `fetch`
-inside a `try` block; (6) check `response.ok`, since `fetch` resolves on an HTTP error status; (7)
-parse with `Response.json()`, which rejects on a body that is not JSON; (8) cache only after both
-succeed, so a failed row stays retryable (`f:od9mww`). The short handler snippet, framed as
-illustrative, with the detail URL passed in.
+Content. Open on the condition ("When a screen's rows expand to show detail"), the optional
+marker, in the first sentence itself. Then the lead-in: streaming an unawaited promise from `load`
+does not save the work, because the promise starts running when `load` creates it (`f:b5mcea`).
+Then the procedure, a numbered list of eleven steps, one action each, the location named first,
+server side first, then the markup, then the handler the markup connects, and last the panel that
+shows the result, with the three `ExpandableRow` markup rules hung under the markup step as its
+explanation (the second plan read's finding 3). The procedure ends on the observable result the
+first sentence promises, a row that expands and shows its detail (the third plan read's finding):
+
+1. Under the screen's directory, add the detail endpoint as a nested route that returns one row's
+   detail as JSON.
+2. In that route's server file, call `requireAccess`. Under it: a nested route inherits the guard
+   and never the page's own rule (`f:lmtfkt`, cited again from Gate it).
+3. In the site's access map, add an entry for the nested route, as `restrict-admin-access`
+   describes.
+4. In the screen's `+page.svelte`, render each row as an `ExpandableRow` inside the `AdminTable`,
+   with the `ExpandableRow` entry in `docs/reference/admin-toolkit.md` linked for its props. Under
+   it, the three markup rules as a bulleted list, each one a trap: the `colspan` the caller passes
+   counts the trailing trigger cell the component adds, since the panel's one `<td>` spans it
+   (`f:vao0dd`); the `header` snippet heads that trigger cell with a `<th scope="col">` holding an
+   `sr-only` span, as the signups table does for its actions column (`f:n2bhjw`); an interactive
+   summary cell wraps its content in `data-cairn-inert-cell`, since `ExpandableRow` ignores a row
+   click inside it and the caller needs no `stopPropagation()` (`f:pswc3n`).
+5. In the same file, write the open handler and connect it to each `ExpandableRow` as the
+   `ExpandableRow` entry in `docs/reference/admin-toolkit.md` describes. No explanation hangs
+   here and the step names no prop: the link carries the prop names and the entry's example shows
+   the wiring, so the page claims nothing a fact in the inventory does not state.
+6. In that handler, return the cached detail when the row already has one. Under it: fetching on
+   open and caching per row costs only the rows a reader opens (`f:uy7vyc`).
+7. Otherwise, in the same handler, call `fetch` for the row's detail inside a `try` block.
+8. Inside the `try` block, check `response.ok`, since `fetch` resolves on an HTTP error status
+   (`f:od9mww`).
+9. In the same block, parse the body with `Response.json()`, which rejects on a body that is not
+   JSON (`f:od9mww`).
+10. Cache the detail only after the status check and the parse both succeed, so a failed row stays
+    retryable (`f:od9mww`).
+11. In the row's panel, render the cached detail. Under it: the panel snippet receives the row's
+    own `datum`, so it reaches its row's detail without a closure over the row (`f:vao0dd`, its
+    `datum` clause). The step carries the render clause only. No fact states what the panel shows
+    while the fetch is pending or after it fails, so the page gives no failure display, and the
+    hole is filed as friction below; a failed row's one stated behavior, that it stays retryable,
+    hangs under step 10 where `f:od9mww` states it.
+
+The short handler snippet after the steps, framed as illustrative, with the detail URL passed in,
+as committed: it is the fetch-and-cache body of steps 6 to 10, and the wiring of step 5 stays in
+the linked entry's example rather than in the snippet, so the snippet names no prop either. Which
+`ExpandableRow` prop fires the open handler is the entry's to state, so steps 4 and 5 link it and
+the page claims no prop; the hole (no fact states the controlled `expanded` and `onToggle`
+contract) is filed as friction below.
 
 Hand-off: motion.
 
@@ -496,13 +574,16 @@ point at.
 
 First sentence: The following pages cover the tasks and reasoning around a custom screen.
 
-No facts. One bullet per page, each a complete sentence naming what the page does:
-`restrict-admin-access` (declares the rule each screen and nested route needs),
+No facts. Seven bullets, one per page, each a complete sentence naming what the page does, and the
+set matches the pages the introduction's closing sentence sends here (the second plan read's
+finding 1): `restrict-admin-access` (declares the rule each screen and nested route needs),
 `arrange-the-admin-sidebar` (adds the screen to the navigation), `run-cairn-audit-on-your-site`
 (configures the audit site-wide, rendered runs, suppressions, allowlists), `security-model` (the
-reasoning behind the access map), `define-an-adapter-and-schema` (declares a concept, the
-alternative the introduction names), and the admin toolkit reference (each primitive's props). The
-recovery link is not repeated here (anatomy item 6).
+reasoning behind the access map), `configure-media` (sets up media storage and the upload
+protocol, the outline's out-of-scope item for the media protocol; the link passes the docs link
+gate as a pending link to an outline page), `define-an-adapter-and-schema` (declares a concept,
+the alternative the introduction names), and the admin toolkit reference (each primitive's
+props). The recovery link is not repeated here (anatomy item 6).
 
 ## Dispositions
 
@@ -655,19 +736,86 @@ exemptions and the frame-offset allowance they describe.
   corner classes over a fixed Tailwind radius (`f:2babfl`), carries the ladder, the norm bands, and
   the button looks as its explanation.
 
+## Structural edit, round 2 (2026-10-03, run `wf_fe61a650-884`), disposed by this revision
+
+The second plan read passed the order and pace, the introduction's three parts, the four
+cross-links, and the recorded departures from covers items 9, 10, 11, and 14; those stand as
+written. Its three blocking findings:
+
+- Blocking, `:499-504` (See also omits `configure-media`, which the introduction promises): See
+  also now carries a seventh bullet for `configure-media`, so the introduction's closing sentence
+  and the list name the same three pages and the outline's out-of-scope item for the media
+  protocol has a place on the page. Adding the bullet won over dropping the introduction's
+  mention, since the bullet disposes the out-of-scope item and the mention alone did not.
+- Blocking, `:343-368` (Build the dialog form has a task heading and no step): the section is now
+  a seven-step numbered procedure, one action each, location first, and every rule the section
+  used to state as free-standing lists hangs under the step it constrains: the dialog's name under
+  step 1, Escape under step 2, the nested-form rule under step 3, the four result branches under
+  step 4, the live region under step 5, the input's description and invalid state under step 6,
+  and the pending-disabled submit under step 7. The snippet follows the steps. The snippet reverts
+  to the committed create dialog with `<CsrfField />` added, because steps 6 and 7 act on an input
+  and a pending submit that the example site's remove confirm, the prior revision's choice, has no
+  element for; the running example still supplies the action it posts to.
+- Blocking, `:381-398` (`ExpandableRow` rules before any step, and no step renders the rows):
+  step 4 of Load row detail on demand now renders each row as an `ExpandableRow` inside the
+  `AdminTable`, linking the entry for its props, and the three markup rules (`colspan`, the
+  `header` snippet's `<th scope="col">`, `data-cairn-inert-cell`) hang under it as its explanation.
+  The order is now endpoint, gate, map entry, markup, then the open-handler steps the markup
+  wires, so the client-side rules sit beside the client-side steps; the streaming sentence
+  (`f:b5mcea`) stays as the lead-in after the first sentence. No fact states the component's
+  controlled `expanded`/`onToggle` contract, so the step claims no prop and the hole is filed.
+
+## Structural edit, round 3 (2026-10-03), disposed by this revision
+
+The third plan read passed the order, the pace, the introduction's three parts with the contract
+and the wrong-place routes, the four cross-links, the task-guide anatomy, and the recorded
+departures from covers items 9, 10, 11, and 14; those stand as written. Its two findings:
+
+- Blocking, `:420-446` (no step creates the open handler steps 5 to 9 work inside, and the
+  procedure ends at caching with nothing rendered): Load row detail on demand is now eleven steps.
+  A new step 5, after the markup step, writes the open handler and connects it to each
+  `ExpandableRow` as the `ExpandableRow` entry describes, so the former step 5 ("in the panel's
+  open handler") now refers to a thing the reader has built; the entry's link carries the prop
+  names, the step claims none, and the facts-container friction on the controlled contract stays
+  filed. A new step 11 renders the cached detail in the row's panel, with `f:vao0dd`'s `datum`
+  clause hung under it, so the procedure ends on the observable result the first sentence promises.
+  The read's failure-display clause is not carried: no fact covers it, so the step keeps the render
+  clause only, per the read's own fallback, and the hole is filed as friction below. The former
+  steps 5 to 9 are steps 6 to 10, and the snippet note says which steps the snippet covers.
+- Advisory, `:285-293` (the toolkit section's Events snippet against the one-running-example
+  promise, and a self-contradicting "minimal example before the typed route" sentence): the
+  section now says the Events screen is a deliberately smaller, toolkit-only example placed after
+  the signups server side, with the Sanity exemplar's order inverted for a stated reason, and the
+  drafter opens it on one lead-in sentence that marks the switch, such as "A smaller screen shows
+  the toolkit alone". What the page argues records the aside as the spine's one exception, with
+  its reason (the only shell-hosted story transcribes that snippet; friction logged 2026-09-30).
+
 ## Could not do, and friction filed
 
 - The extend track's recovery surface, `docs/extend/debug-your-site.md`, carries no symptom row for
   `auth.access.refused` in its outline, so the owner's-403 diagnostic on Verify check 1 points at
   `restrict-admin-access` and the `auth.access.refused` row in `docs/reference/log-events.md`
-  instead of the surface the anatomy names. Filed as friction feeding that page's inputs.
+  instead of the surface the anatomy names. Filed as friction feeding that page's inputs
+  (2026-10-03, first revision).
 - `f:hafpqf` is subordinated to `docs/reference/sveltekit.md`, which states its members, order,
   and degrade-to-open but not the default 429 copy or the `redirect()`/`error()` carve-out. Filed
-  as reference-arm friction; the fact stays subordinated.
+  as reference-arm friction (2026-10-03); the fact stays subordinated.
 - No fact in the inventory states that a custom screen's form mounts `CsrfField`, though
   `docs/reference/admin.md`'s `CsrfField` entry says a form without it fails the guard's token
-  check and the showcase mounts it in both signups forms. The plan keeps `<CsrfField />` in the
-  dialog snippet's code and lets the page make no prose claim. Filed as a facts-container hole.
+  check and the example site mounts it in both signups forms. The plan keeps `<CsrfField />` in the
+  dialog snippet's code and lets the page make no prose claim. Filed as a facts-container hole
+  (2026-10-03).
+- No fact in the inventory states `ExpandableRow`'s controlled contract, the `expanded` prop and
+  the `onToggle` callback the caller holds (`src/lib/admin-toolkit/ExpandableRow.svelte:9-11`, and
+  the `ExpandableRow` entry in `docs/reference/admin-toolkit.md`), which steps 4 and 5 of Load row
+  detail on demand need to render the rows and connect the open handler. Both steps link the entry
+  and claim no prop. Filed as a facts-container hole (2026-10-03, second revision).
+- The third plan read asked the final step of Load row detail on demand to render the cached
+  detail "or a short failure message with a way to retry when the fetch failed". No fact in the
+  inventory states what a row's panel shows while the fetch is pending or after it fails;
+  `f:od9mww` states only that a failed row stays retryable, which hangs under the cache step. Step
+  11 therefore carries the render clause alone, per the read's own fallback, and the page gives no
+  failure display. Filed as a facts-container hole (2026-10-03, third revision).
 - The outline's figure note asks for the signups screen with its dialog; the only shell-hosted
   story is `toolkit/custom-screen`, already logged 2026-09-30. The plan keeps that story.
 - Covers item 9 asks the motion section to cite `admin-design-system` by heading; that document is

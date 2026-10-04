@@ -59,10 +59,16 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 >
 > **Settled (do not re-brainstorm):** Geoff approved taking the major (2026-10-04). The upgrade takes on no technical
 > debt (Geoff, 2026-10-04): no compatibility shim, no deprecated 3.x API, no hand-built mechanism Kit 3 now provides,
-> and no site config kept only for cairn's sake.
+> and no site config kept only for cairn's sake. That makes the peer range Kit 3 only (`^3`), with one coordinated
+> `Consumers must:` list for the four sites. Geoff takes all three of the survey's opportunities (2026-10-04): retire
+> the hand-built Origin check and the site's `csrf` config by moving the admin off `Referrer-Policy: no-referrer`,
+> gated on a `web-auth-security-reviewer` read of the open questions; one internal env accessor over
+> `cloudflare:workers` in place of the `platform` reads, re-expressing `CairnPlatformBindings`; and `paths.origin` in
+> place of cairn's `PUBLIC_ORIGIN` logic, where a library can read it, with the evidence recorded if it cannot. The 4.0
+> deprecations (`$app/env`, `refreshAll`, `Response.json`) move now. Evidence:
+> `docs/superpowers/research/2026-10-04-sveltekit-3-survey.md`.
 >
-> **Still open, brainstorm these:** whether the engine supports Kit 2 and 3 side by side or moves to 3 only, and the
-> release this lands in. Both affect the four production sites' upgrade path.
+> **Still open, brainstorm these:** the release this lands in, and the order the four sites take it.
 >
 > **Approach.** Invoke `superpowers:brainstorming`, then `dependency-upgrade` for the changelog survey and the
 > refactor decisions, then `superpowers:writing-plans`. The pass class is likely `auth-data` (CSRF handoff). Launch

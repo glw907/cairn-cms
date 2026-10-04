@@ -33,8 +33,8 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   rewrites the add-cairn tutorial's SvelteKit 2 pin against Kit 3.
   Geoff's read (2026-10-04, three open threads on the artifact): every intro is too thin. The concept page needs two
   or three paragraphs of framing (the general model, where SvelteKit and Cloudflare fit); the add-cairn tutorial must
-  name the usual path (the setup command) and say why the manual one exists (doing it by hand, and learning what cairn
-  does); the Cloudflare Access page must say why cairn uses magic links and why a site would replace them, and must
+  serve both its readers (someone doing exactly this, someone curious about the nitty gritty) and tell them there the
+  usual route, the setup command, is much easier; the Cloudflare Access page must say why cairn uses magic links and why a site would replace them, and must
   not open on an imperative. The bodies after the intro read strong (Geoff), so the fix is a brief and page-inputs
   intro-framing rule, then a scoped redraft of each page's intro only, bodies kept. Intros take high-level
   reasoning, unlike the bodies: a separate framing step (Opus at `xhigh`, reading the whole doc set's map) decides

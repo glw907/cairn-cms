@@ -303,8 +303,8 @@ final run; only the harness and the record (Decision 1) reach the pass branch.
 - **Item 4:** a `building` gate in a probe module reached from the `./sveltekit` barrel keeps
   `src/tests/unit/dist-sveltekit-app-import-boundary.test.ts` green, with `cloudflare:*` added to its
   esbuild externals. Wrangler's bundler treats it so: its `cloudflare-internal-imports` esbuild
-  plugin returns `{ external: true }` for `/^cloudflare:.*/` (`wrangler-dist/cli.js:183712` at the
-  installed 4.137.0). The leading candidate is the form proven at HEAD,
+  plugin returns `{ external: true }` for `/^cloudflare:.*/` (`wrangler-dist/cli.js:184154` at the
+  installed 4.144.0). The leading candidate is the form proven at HEAD,
   `src/lib/sveltekit/preview.ts:433-440`: `building` read through `await import('$app/env')` inside
   `try`/`catch`, falling back to `false`. The record quotes, in order:
   1. a red run of the boundary test with a static `import { building } from '$app/env'` in the
@@ -353,8 +353,13 @@ Task 5; the record's "Building gate" line (item 4), consumed by Task 11b.
 imports `$app/environment`, calls `invalidateAll`, or imports `json` or `text` from `@sveltejs/kit`
 (plan time: 8 `$app/environment` lines, 11 `invalidateAll` lines, and 7 `json` import lines, all in
 showcase routes: `healthz` and six `/test/*`; no `text` import exists; the pre-flight recounts);
-`vitest.config.ts`, `src/tests/_app-environment.ts` (renamed `src/tests/_app-env.ts`), and the
-component project's own `$app/environment` stubs under `src/tests/component/`; `templates/waymark/**`
+`vitest.config.ts` (the shared alias at `:65`, `:132`, `:159` and the comments at `:60`, `:129`,
+`:157`), `src/tests/_app-environment.ts` (renamed `src/tests/_app-env.ts`; every vitest project
+aliases this one stub, and no component-local `$app/environment` stub exists), its importers
+`src/tests/integration/preview-load.test.ts` (`:22`, and the `vi.doMock('$app/environment')` at
+`:198-216`) and `src/tests/component/EditPage.test.ts:67`, and the `invalidateAll` stub in
+`src/tests/component/_app-navigation.ts:15` with its assertion in `CairnMediaLibrary.test.ts:1016-1018`
+(`src/tests/unit/check-snippets.test.ts:72` quotes the string as data); `templates/waymark/**`
 through `npm run emit:template`.
 
 **Outcome:** `$app/environment` becomes `$app/env`, the `invalidateAll` function becomes
@@ -388,7 +393,9 @@ aliases, every showcase file importing `$lib`, `$chassis`, or `$theme` (plan tim
 (the pre-flight lists them; `emit-template`, the bake, the showcase `vitest.config.ts`),
 `scripts/checks/check-chassis-boundary.mjs` (its `referencesChassis` matches only `$chassis/` and
 relative `chassis/` paths, `:76`, so `#chassis/` reach-ins would go unchecked), the seam rule in
-`examples/showcase/src/chassis/README.md` (`:10`, `:42`, `:45`, which the boundary script parses),
+`examples/showcase/src/chassis/README.md` (`:10`, `:42` to `:45`, which the boundary script parses;
+`:43` names `svelte.config.js`), the `.github/workflows/test.yml:28-35` comment on svelte-check
+loading Waymark's `svelte.config.js`,
 the dead alias map in `scripts/checks/check-public-skill.mjs:409-414`, and `templates/waymark/**`
 through `npm run emit:template`. `tool/` is not touched (Task 10 owns the doctor).
 

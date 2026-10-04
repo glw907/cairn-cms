@@ -16,23 +16,18 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Draft docs stage 2a: the six pilot pages are accepted from plans; task 8 waits for Geoff's read (2026-10-03).**
-  Branch and worktree `draft-docs-2a` (local only, not pushed), HEAD `04a73a86`. Plan:
-  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (ledger rows 7c and "7b resolution"). Two chain runs
-  from plans ended 0 of 6 at the round cap; Geoff chose a targeted close, and every page then passed its scoped reads
-  and the final reader read (record `docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md`,
-  commit `7675dd82`). The owner pages are republished with their plans:
-  https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs (version 2). Next: Geoff's read, then task 8.
-- Before task 8 (conductor's method call, from run 2's "Convergence" section): round-2 reads check the round-1 fixes
-  and the changed sentences, and a new catch on untouched text is advisory, so the round cap stops forcing
-  escalations. Run 2 measured about 2.4M a page; the remaining budget assumed 1.3M.
-- Open for Geoff: SvelteKit 3.0.0 is npm `latest` since 2026-10-01 and the engine's `^2.70` peer range rejects it, so
-  a fresh `sv create` project cannot install cairn (friction log; the tutorial pins Kit 2 meanwhile). Taking the
-  major is an engine pass and needs his go; Kit 3 also removes `csrf.checkOrigin`.
-- The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
-  `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and filed its 12 code defects in the
-  friction log (`bd8ab1fe`, on `main`, not pushed).
-- Theme identity is done; cairn-pub's pin bump takes its migration and link checks first.
+- **Next pass: the SvelteKit 3 upgrade (Geoff's go on the major, 2026-10-04).** SvelteKit 3.0.0 and
+  `@sveltejs/adapter-cloudflare` 8.0.0 have been npm `latest` since 2026-10-01; the engine's `@sveltejs/kit` peer range
+  `^2.70` rejects them, so a fresh `sv create` project cannot install cairn (friction log, `f:skeche`, `f:ghzx9c`).
+  Kit 3 removes `csrf.checkOrigin`, which the admin's CSRF handoff sets, so this pass absorbs the `checkOrigin` to
+  `csrf.trustedOrigins` watch (kit#15992) and touches the auth path. Not yet planned: a fresh brainstorm session
+  plans it through the `dependency-upgrade` skill.
+- **Draft docs stage 2a is paused** at Geoff's read of the six accepted pilot pages (worktree `draft-docs-2a`, local
+  only, HEAD `04a73a86`; record `docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md`; pages at
+  https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs, version 2). Before task 8, the chain's round-2 reads change to
+  check round-1 fixes and changed sentences only (run 2 measured about 2.4M a page against the 1.3M budgeted). The
+  add-cairn tutorial's SvelteKit 2 pin is a stopgap the upgrade pass rewrites.
+- The gap sweep's 12 code defects sit in the friction log (`bd8ab1fe`, on `main`, not pushed).
 
 ## Open decisions and watches
 
@@ -52,18 +47,21 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Resume prompt
 
-### Next action (draft docs stage 2a, task 8)
+### Next action (SvelteKit 3 upgrade, planning)
 
-> **Goal.** After Geoff's read of the republished pilot pages, land the round-2 convergence change in the page chain,
-> then draft task 8's five pages from plans.
+> **Goal.** Plan the pass that moves the engine, the showcase, the Waymark template, and `create-cairn-site` to
+> SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8, so a fresh `sv create` project installs cairn.
 >
-> **Scope.** Fold Geoff's read into the three owner pages (scoped reviews per "Edits after the chain"); the runner
-> change (round-2 reads check round-1 fixes and changed sentences; new catches on untouched text are advisory);
-> task 8 on `draft-docs-2a`. The SvelteKit 3 major is a separate engine pass on Geoff's go.
+> **Scope.** In: the peer range, the `csrf.checkOrigin` removal and its replacement in the admin's CSRF handoff, every
+> Kit 3 breaking change the engine or its consumers hit, the docs and reference pages that name Kit 2 (the
+> add-cairn tutorial's pin included), and a `Consumers must:` list. Out: draft docs task 8, which resumes after.
 >
-> **Settled (do not re-brainstorm):** the spec (S1 to S9), tasks 7a and 7c, the targeted-close rulings in its record,
-> `bothReviewers: true`, the stale-script guard and its scratchpad fallback in `pass-gate-economy.md`.
+> **Settled (do not re-brainstorm):** Geoff approved taking the major (2026-10-04).
 >
-> **Approach.** Invoke `cairn-pass` to resume. Launch directory `~/Projects/cairn-cms`;
-> `claude --model claude-opus-5-5` at medium effort. Put scratch projects under `$HOME/.cache`, since `/tmp` has a
-> 6.1G per-user quota that reader runs filled on 2026-10-03.
+> **Still open, brainstorm these:** whether the engine supports Kit 2 and 3 side by side or moves to 3 only, and the
+> release this lands in. Both affect the four production sites' upgrade path.
+>
+> **Approach.** Invoke `superpowers:brainstorming`, then `dependency-upgrade` for the changelog survey and the
+> refactor decisions, then `superpowers:writing-plans`. The pass class is likely `auth-data` (CSRF handoff). Launch
+> directory `~/Projects/cairn-cms`; `claude --model claude-opus-5-5` at high effort. Put scratch projects under
+> `$HOME/.cache`, since `/tmp` has a 6.1G per-user quota.

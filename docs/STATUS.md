@@ -21,7 +21,8 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   `^2.70` rejects them, so a fresh `sv create` project cannot install cairn (friction log, `f:skeche`, `f:ghzx9c`).
   Kit 3 removes `csrf.checkOrigin`, which the admin's CSRF handoff sets, so this pass absorbs the `checkOrigin` to
   `csrf.trustedOrigins` watch (kit#15992) and touches the auth path. Not yet planned: a fresh brainstorm session
-  plans it through the `dependency-upgrade` skill.
+  plans it through the `dependency-upgrade` skill, starting from the survey
+  `docs/superpowers/research/2026-10-04-sveltekit-3-survey.md`.
 - **Draft docs stage 2a is paused** at Geoff's read of the six accepted pilot pages (worktree `draft-docs-2a`, local
   only, HEAD `04a73a86`; record `docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md`; pages at
   https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs, version 2). Before task 8, the chain's round-2 reads change to

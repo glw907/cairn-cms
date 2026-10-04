@@ -100,3 +100,39 @@ Each finding was checked against the code at HEAD, the Kit 3 and adapter sources
   - 11b keeps 2.0M because 11a takes the prep slice; mechanics had sized the unsplit task near 3M.
   - The added mutation proofs fall inside the existing per-chain rate and the 1.0M fix reserve.
   - A "yes" on Ruling for Geoff 1 adds about 0.6M (Task 11c).
+
+## Second fold
+
+Input: the verification read `2026-10-03-sveltekit-3-plan-fold-verification.md` (PV1 to PV6) and
+Geoff's ruling of 2026-10-04. Each PV finding was re-checked against the code before folding.
+
+| ID | Disposition | Where |
+|---|---|---|
+| PV1 (major) | **Folded.** Verified the HEAD form at `preview.ts:433-440` and wrangler 4.137.0's `cloudflare-internal-imports` plugin (`wrangler-dist/cli.js:183712`, `{ external: true }` for `/^cloudflare:.*/`). Item 4 names the HEAD form as the leading candidate, quotes a red run with a static `$app/env` import in the probe (after `cloudflare:*` is external) and then the green run, and cites the plugin. Item 1's prerender uses the same form. The stop clause stays as a backstop. 11b's Building outcome names the form. | Task 1 items 1 and 4, go/stop; Task 11b |
+| PV2 (major) | **Folded.** Verified: `emit-template-dir.mjs:204-225` deletes and recopies `templates/waymark` and diffs on `--check`; the showcase's `wrangler.jsonc` holds `MEMBER_DB` inside exclude markers; the `.dev.vars.example` comes from the overlay. `composeTemplate` now regenerates Waymark's `worker-configuration.d.ts` in the scratch tree after the strip and overlay, with `wrangler types` against the stripped config and the overlay's `.dev.vars.example`. The emit scripts join 11b's Files. Three acceptance checks added: `grep -c MEMBER_DB` prints 0, `wrangler types --check` passes in `templates/waymark`, and `check:template` is green. | Task 11b Files, generated `Env`, acceptance |
+| PV3 (minor) | **Folded.** Verified `membersDevHandle` calls `resolveChannelDb()` per request (`dev-wiring.ts:42-43`). Item 3 runs with the handle removed from the scratch branch's hooks. Decision 10's stale `:53-63` citation corrected to `:42-52`. | Task 1 item 3; Decision 10 |
+| PV4 (minor) | **Folded.** 11a's fake gains `setFakeEnvThrowing()`, which 11a's unit test proves, and 11b's Building tests use it. | Task 11a; Task 11b |
+| PV5 (minor) | **Superseded** by Geoff's ruling (below). The wrong per-colo cost line and the Yes branch (Task 11c) are gone; the ROADMAP watch is unconditional. | Decision 14; Rulings for Geoff; Task 13 |
+| PV6 (minor) | **Folded.** Every listed cut applied: Decisions 10 and 12, the Ruling, Review focus (one line per item), the review-history phrases at Task 1 item 3 and Task 5, the adapter 7 cache narration, the admin regression rationale, D's parenthetical, and the `requireBucket` narration. No criterion, fixture, gate, file, interface, or decision was cut. | Throughout |
+
+### Ruling recorded
+
+Geoff, 2026-10-04: **no engine-side Cache API caching for `/media`.** Recorded as Decision 14 and
+in "Rulings for Geoff", which now reads "None open". Task 13 discloses that adapter 8 drops adapter
+7's `caches.default` caching (CHANGELOG `Consumers must:`, `migration-notes.md`, with an acceptance
+grep) and files a ROADMAP watch, in the tier where it bites, triggered by a measured R2 cost or
+`/media` latency problem on a production site. Reasons recorded: a Cache API purge is local to one
+data center while `/media` is immutable for a year, so a deleted image lingers at other edges
+(adapter 7's flaw today, fixed by the drop); a global purge needs the zone purge API and per-site
+token and zone id config; browsers already cache the bytes for a year; R2 reads are cheap; the Cache
+API has no effect on `*.workers.dev`. Task 13 must quote Cloudflare's docs for the per-data-center
+purge and `*.workers.dev` claims before either appears in published text.
+
+### Measures
+
+- **Plan line count:** 1108 before, 1100 after. The PV6 cuts (about 55 lines) nearly offset the
+  PV1, PV2, PV4, and ruling text (about 47).
+- **Token ceiling:** unchanged at 12.4M (80 percent trigger 9.9M). The ruling removes the "yes"
+  branch's +0.6M contingency. PV2's emit-script change sits inside 11b's 2.0M and the fix reserve;
+  PV1's red run and PV4's throw mode fall inside the existing spike and 11a rates.
+- **Owed:** none.

@@ -56,7 +56,9 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 > Kit 3 breaking change the engine or its consumers hit, the docs and reference pages that name Kit 2 (the
 > add-cairn tutorial's pin included), and a `Consumers must:` list. Out: draft docs task 8, which resumes after.
 >
-> **Settled (do not re-brainstorm):** Geoff approved taking the major (2026-10-04).
+> **Settled (do not re-brainstorm):** Geoff approved taking the major (2026-10-04). The upgrade takes on no technical
+> debt (Geoff, 2026-10-04): no compatibility shim, no deprecated 3.x API, no hand-built mechanism Kit 3 now provides,
+> and no site config kept only for cairn's sake.
 >
 > **Still open, brainstorm these:** whether the engine supports Kit 2 and 3 side by side or moves to 3 only, and the
 > release this lands in. Both affect the four production sites' upgrade path.

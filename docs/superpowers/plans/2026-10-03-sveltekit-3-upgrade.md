@@ -8,9 +8,9 @@ hand-built Origin check, reads bindings from `cloudflare:workers`, and closes un
 
 **Architecture:** Kit 2.70 hosts S1 through S3: the deprecations, the config move, the e2e host's move
 from `vite preview` to `wrangler dev`, and the CSRF handover, so each lands green before the bump. S4
-is one atomic Opus task that bumps the versions and replaces every `event.platform` read with one
-internal `cloudflare:workers` module, with `withEnv` in both dev handles. S5 brings the scaffold and
-the docs to the Kit 3 shape.
+opens with a Kit 2.70 prep task (11a) that lands green, then one atomic Opus task (11b) bumps the
+versions and replaces every `event.platform` read with one internal `cloudflare:workers` module, with
+`withEnv` in the dev handle. S5 brings the scaffold and the docs to the Kit 3 shape.
 
 **Tech stack:** SvelteKit 3.0.0, `@sveltejs/adapter-cloudflare` 8.0.0, `@sveltejs/package` 3.0.0, svelte
 `^5.57.1`, vite 8, vite-plugin-svelte 7, wrangler 4, vitest (unit, component, and workerd integration
@@ -25,16 +25,19 @@ decisions under "Decisions this plan takes".
 
 **Pass class:** `auth-data`. Overrides: Task 1 (spike) and Task 7 (security read) take no class and
 no gate; Tasks 2, 3, 4, 6, and 12 are `engine-logic` (no auth, session, or binding behavior moves in
-them); Task 10 is `tool`; Task 13 is `docs`. No task is `sweep`: the deprecation replacements can
-move a response header, and the config move changes the build.
+them); Task 6's class gate is overridden to E plus its named runs, and Task 12's to S, by blast
+radius (neither moves engine or showcase runtime code; the S2 boundary's F and CI cover Task 6); Task
+10 is `tool`; Task 13 is `docs`. Tasks 11a and 11b are `auth-data`. No task is `sweep`: the config
+move changes the build.
 
-**Token ceiling:** 12.0M for the whole pass, chains plus close. Basis: nine Sonnet chains at 0.55M
-each under a full gate (4.95M; the observed rate is 0.4M to 0.5M per chain, raised for the e2e in
-every `auth-data` gate), the S4 Opus task at 2.0M, the docs task at 1.2M, the spike at 0.5M, the
-security read at 0.3M, six pre-flights at 0.1M each (0.6M), one fix round per segment in reserve
-(1.0M), and the close at 1.45M (simplifier, four reviewer seats plus one Go reader per touched
-package, the consumer proof, the live smoke, ledgers). At 80 percent (9.6M) the conductor finishes
-the task in flight, writes STATUS, and asks one combined question at the next segment boundary.
+**Token ceiling:** 12.4M for the whole pass, chains plus close. Basis: ten Sonnet chains at 0.55M
+each under a full gate (5.5M, Task 11a included; the observed rate is 0.4M to 0.5M per chain, raised
+for the e2e in every `auth-data` gate), less 0.15M for Task 6's lighter gate, the 11b Opus task at
+2.0M, the docs task at 1.2M, the spike at 0.4M, the security read at 0.35M, six pre-flights at 0.1M
+each (0.6M), one fix round per segment in reserve (1.0M), and the close at 1.45M (simplifier, four
+reviewer seats plus one Go reader per touched package, the consumer proof, the live smoke, ledgers).
+At 80 percent (9.9M) the conductor finishes the task in flight, writes STATUS, and asks one combined
+question at the next segment boundary.
 
 **Checkpoint interval:** four tasks, aligned to segment boundaries (no segment holds more than four
 tasks): STATUS is written at the end of S0, S1, S2, S3, S4, and S5, at any split, and before any
@@ -48,19 +51,22 @@ question to Geoff.
 | S1, groundwork | 2, 3, 4 | Kit 2.70 | full gate green |
 | S2, e2e host | 5, 6 | Kit 2.70 | full gate green; branch pushed, CI `e2e`, `design`, and a dispatched `norms` run green with baselines unchanged |
 | S3, CSRF | 7, 8, 9, 10 | Kit 2.70 | full gate and tool gate green |
-| S4, the bump | 11 | Kit 3 | full gate green; branch pushed, every CI workflow green |
+| S4, the bump | 11a (Kit 2.70), 11b (Kit 3) | Kit 2.70, then Kit 3 | F green on 11a's commit; after 11b, full gate green, branch pushed, every CI workflow green |
 | S5, scaffold and docs | 12, 13 | Kit 3 | `check:close` green |
 
 **Split rule (spec "Split point"):** if the ceiling forces a split, cut after S2 and never after S3,
 because after S3 the guard's Rule 2 and the v1 doctor checks are gone while the engine still peers
-on Kit `^2.70`. A second pass would run S3 through S5 and the close. The conductor weighs the split
-at the S2 boundary against measured spend, never earlier.
+on Kit `^2.70`. Task 11a's commit is still on Kit `^2.70`, so the cut is never after 11a either. A
+second pass would run S3 through S5 and the close. The conductor weighs the split at the S2 boundary
+against measured spend, never earlier. Past the S2 boundary, ceiling pressure raises a budget
+question for Geoff, never a split: the spec names one cut point, and S3 never reaches `main` without
+11b.
 
 **Worktree:** `.claude/worktrees/sveltekit-3`, branch `sveltekit-3`, off `main` at the plan's commit.
 The spike runs in its own throwaway worktree (Task 1). **Worktree e2e gotcha**
 (`docs/internal/durable-gotchas.md`, "A worktree showcase e2e proves MAIN's engine"): a worktree's
 `examples/showcase/node_modules` resolves both `file:` deps to the main checkout's build. Task 0 and
-Task 11 (after its lockfile change) do a from-scratch showcase install in the worktree and confirm
+Task 11b (after its lockfile change) do a from-scratch showcase install in the worktree and confirm
 with `realpath examples/showcase/node_modules/@glw907/cairn-cms` that it resolves into the worktree.
 
 **Execution mode:** `pass-execute` by name, one invocation per segment for S1 through S5, sequential
@@ -73,11 +79,12 @@ but run in sequence for the same one-worktree reason. Tasks 0, 1, and 7 are cond
 outside the runner. `auth-data` fix rounds always run the full gate (no reduced gate).
 
 **Models:** implementers `sonnet` (agent pin); `diff-reviewer` on `claude-opus-5-5` at `medium`;
-the security read and the close's `web-auth-security-reviewer` at `high`. **Upshift:** Task 11
+the security read and the close's `web-auth-security-reviewer` at `high`. **Upshift:** Task 11b
 runs on `model: opus` (the spec names it: one atomic task, about 140 occurrences in about 40 files,
 whose intermediate states do not compile, with the `building` gate and the `withEnv` nesting as
-novel correctness-critical logic). No other task is upshifted: each is specified to its acceptance
-criteria, and Task 9's security-relevant proofs are spelled out in the spec.
+novel correctness-critical logic). Task 11a (the Kit 2.70 prep, Decision 12) stays on Sonnet. No
+other task is upshifted: each is specified to its acceptance criteria, and Task 9's
+security-relevant proofs are spelled out in the spec.
 
 **Pre-flight (every segment):** before each segment's first dispatch, one `haiku` or `sonnet`
 pre-flight lists every factual claim that segment's tasks make about existing code at HEAD (paths,
@@ -98,7 +105,9 @@ Every gate runs through `cairn-run-gate '<string>'`; on exit 75, re-issue until 
 - **Engine string (E):** the `engine` tier of the same script (docs gate, `npm run check`, the node
   projects, the serialized component project, the `create-cairn-site` workspace suite).
 - **Tool (T):** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`.
-- **Docs (D):** `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:docs-gate && npm run check:facts && npm run check:reference && npm run check:reference:signatures && npm run check:surface && npm run check:docs && npm run check:rulings-format && npm run check:vale'`.
+- **Docs (D):** `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:docs-gate && npm run check:surface && npm run check:rulings-format'`
+  (`check:docs-gate` already runs `check:docs`, `check:vale`, `check:facts`, `check:reference`, and
+  `check:reference:signatures` after one package, `scripts/checks/docs-gate.mjs`).
 - **Scaffold (S):** `CAIRN_GATE_LANE=light cairn-run-gate 'npm test -w packages/create-cairn-site && npm run test:emit && npm run check:template'`.
 
 A lone unrelated test-file failure, or a component run printing `Cannot connect to the server in 60
@@ -112,11 +121,15 @@ seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it
 - Debt-free (Geoff, 2026-10-04): no compatibility shim, no deprecated 3.x API, no hand-built mechanism Kit 3 provides, no site config kept only for cairn's sake.
 - No committed temporary `trustedOrigins`, at any commit, in any segment.
 - The site carries no `csrf` config; never `trustedOrigins: ['*']`.
-- Admin Referrer-Policy is `strict-origin` (header from `applySecurityHeaders` and the confirm page), plus `<meta name="referrer" content="strict-origin">` in the head of the admin shell, login, and confirm documents.
+- Admin Referrer-Policy is `strict-origin` (header from `applySecurityHeaders` and the confirm page), plus exactly one `<meta name="referrer" content="strict-origin">` in the head of every admin document (the shell's authed views, login, and confirm), from one home (Decision 11).
 - `/preview/[token]` keeps `Referrer-Policy: no-referrer`.
 - One internal module under `src/lib/sveltekit/` is the engine's only `cloudflare:workers` import site; nothing reachable from the Node-context entries (`.`, `/admin`, `/public`, `/vite`, `/cloudflare`, `/auth-crypto`, `/log`, the bins) imports it.
 - No engine code touches `env` or `withEnv` while `building` (`$app/env`).
-- The dev-backend flag reaches a worker through `.dev.vars` or `--var`, never `wrangler.jsonc` `vars`.
+- The dev-backend flag reaches a worker only through a command-scoped `--var CAIRN_DEV_BACKEND:1` on
+  the `wrangler dev` invocation that needs it. Never `wrangler.jsonc` `vars`, never an OS env var
+  (it reaches `vite preview`'s Node process but not workerd), and never a `.dev.vars` file, committed
+  or left behind (a lingering one turns every later default-build serve into the guard's 503).
+- The showcase and Waymark `preview` scripts stay flag-free: `wrangler dev` on the build output.
 - `originMatches` stays for `createAuthChannel`; `isUnsafeFormRequest` stays for guard Rule 1; the `__Host-cairn_csrf` double-submit token and its owners are unchanged.
 - `PUBLIC_ORIGIN` stays; `readPublicOrigin` reads the module `env` alone.
 - Audit tooling's `process.env` reads (Node CLI code) stay.
@@ -134,37 +147,89 @@ seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it
 
 1. **The spike harness is kept as a record.** It is committed on the pass branch at
    `docs/superpowers/research/2026-10-03-sveltekit-3-spike/harness.sh` beside the spike record
-   `record.md`, so Task 11 and the close re-run the same script from any session. It takes tarball
+   `record.md`, so Task 11b and the close re-run the same script from any session. It takes tarball
    paths and a scratch root as arguments and writes nothing inside the repo.
 2. **The spike's scratch branch widens the kit peer to `^3`** so the tarball installs into a Kit 3
    project with no `--legacy-peer-deps` or `--force`; nothing on that branch merges.
 3. **Every `vite preview` caller moves in S2**, not only the four the spec names (the e2e, its
-   baselines, the CI width matrix, `norms.yml`). `design.yml`'s theme fixture and the lab and check
+   baselines, the CI width sweep, `norms.yml`). `design.yml`'s theme fixture and the lab and check
    scripts that serve the showcase build also break once adapter 8 output lands, so Task 6 moves
-   them. The showcase keeps the `preview` script name and repoints it at `wrangler dev`, so a
-   Waymark site's `npm run preview` still works after `emit:template`.
+   them. The showcase keeps the `preview` script name and repoints it at `wrangler dev`, flag-free,
+   so a Waymark site's `npm run preview` still works after `emit:template`. A caller that needs the
+   dev backend appends `-- --var CAIRN_DEV_BACKEND:1` to its own invocation (Global constraints).
 4. **The condition registry has one owner per segment.** Task 9 deletes guard and response-mapping
    code; Task 10 owns every edit to `src/lib/diagnostics/conditions.ts` and
    `tool/internal/spine/conditions.json` (the mirror `check:tool-conditions` holds), the rewordings
    included.
 5. **The doctor's new names.** Check id `config.csrf-trusted-origins`; condition
-   `config.csrf-trusted-origins-wildcard`, severity `warning` (cairn's own surfaces keep their floors:
-   the admin token and `createAuthChannel`'s `originMatches`, so the exposure is the site's own forms,
-   the developer's domain, matching the retired `config.csrf-disable-missing`'s severity); docs
-   anchor `is-it-working.md#keep-sveltekits-origin-check-on`.
+   `config.csrf-trusted-origins-wildcard`, severity `warning`, subject to Task 7's verdict. The spec
+   requires a FAIL status on `'*'` and is silent on severity. Two premises, both checked against the
+   code: guard Rule 1 requires the double-submit token on every unsafe form POST under `/admin`, the
+   public login and confirm posts included; and `createAuthChannel` keeps `originMatches` (Global
+   constraints). So `'*'` leaves exposed only the site's own forms, the developer's domain, matching
+   the retired `config.csrf-disable-missing`'s severity (`conditions.json:113-114`). Docs anchor
+   `is-it-working.md#keep-sveltekits-origin-check-on`.
 6. **The tool's major is disclosed in Task 10** under `tool/CHANGELOG.md` `## Unreleased`; no
    `tool/v2.0.0` tag until the engine cut.
-7. **Task 11 re-runs the spike harness against its own tarball** before it reports, so a
-   registry-shaped install break surfaces in S4 rather than at the close.
+7. **Task 11b re-runs the spike harness against its own tarball** before it reports, so a
+   registry-shaped install break surfaces in S4 rather than at the close. That run is also the
+   harness's reproduction check from a fresh session; S0 adds no second harness run.
 8. **`@sveltejs/package` 3's survey record** lands at
    `docs/superpowers/research/2026-10-03-sveltekit-package-3-survey.md`, since the implementer cannot
    load the `dependency-upgrade` skill; the conductor pastes that skill's per-bump requirements into
    Task 4's notes.
 9. **The live smoke runs after merge readiness, before the merge**, on the showcase per Ruling 1.
+10. **The showcase's `membersDevHandle` retires in Task 5.** At HEAD it sets two env members
+    (`dev-wiring.ts:53-63`): the `MEMBER_DB` double, which S2 drops, and a `CAIRN_DEV_BACKEND: '1'`
+    stamp copying the OS env flag onto `platform.env`, which the `--var` delivery makes redundant.
+    Its `createChannelDb` also throws `Illegal constructor` under workerd (`node:sqlite`). With
+    nothing left to do, the handle, its dynamic import, its exclude block, and the stale ordering
+    comment in `hooks.server.ts` go. This departs from the spec sentence that names
+    `membersDevHandle` among the `withEnv` handles; the spec's purpose, proving two handles nest, is
+    kept by Task 11b's nesting test over `devBackendHandle` and a test-local second handle that adds
+    its own double, the shape a developer writes.
+11. **The admin referrer meta has one home: `CairnAdminShell`'s `<svelte:head>`.** Every `/admin/**`
+    route renders inside the shell (the documented wiring and the Waymark layout mount it), and its
+    head block sits outside the `data.public` branch (`CairnAdminShell.svelte:679`), so it reaches the
+    login and confirm documents as well as the authed views. `LoginPage` and `ConfirmPage` carry no
+    meta of their own, so no document carries two.
+12. **Task 11 splits into 11a and 11b (conductor decision on PM8).** 11a lands on Kit 2.70 what does
+    not need the bump: the two bodyless `members.spec.ts` POSTs gain a body, the guard's and the
+    auth-channel factory's `process.env` flag reads and `readPublicOrigin`'s `process.env` fallback
+    retire (the flag and `PUBLIC_ORIGIN` already arrive on `platform.env` after S2), and the
+    `cloudflare:workers` test fake and its per-project vitest aliases land. 11b is the atomic bump,
+    still upshifted to Opus.
+13. **Two `Consumers must:` lines beyond the spec's ten**, added when Task 13 finalizes the list: serve
+    a built site with `wrangler dev`, since `vite preview` cannot run adapter 8 output (kit#17271);
+    and adapter 8 no longer caches worker responses in the colo cache (adapter 7 put every response
+    carrying a public `Cache-Control` into `caches.default`, `/media` and public SSR pages included),
+    so a site that relied on it adds its own caching.
 
 ## Rulings for Geoff
 
-None. The spec's two rulings are recorded; this plan surfaces no new product fork.
+1. **Should the engine's `/media` route cache its own responses through the Cache API, now that
+   adapter 8 drops the colo cache adapter 7 applied?** Recommendation: **no, not this pass.**
+   - What the route does today: `createMediaRoute` streams content-addressed bytes from R2 and sets
+     `Cache-Control: public, max-age=31536000, immutable` on every non-404 response
+     (`src/lib/sveltekit/media-route.ts:36`). Browsers already keep each object for a year, so the
+     change costs one R2 read per cold visitor per colo, not per view. A read is an R2 Class B
+     operation, the cheaper tier of R2's published pricing.
+   - Why no: the charter adds to the engine only what demonstrably serves the core job, and no
+     production site has measured a `/media` latency or R2-cost problem; every consumer site still
+     runs adapter 7. Engine-side caching would also bring back the defect PM1 measured: after a safe-delete, a
+     cached 200 keeps serving the deleted object from every colo that cached it, and a Worker can
+     purge only its own colo's cache.
+   - **No builds:** Task 13 discloses the change (Decision 13, a fact bullet, `migration-notes.md`)
+     and files a `ROADMAP.md` watch triggered by measured `/media` R2 read volume or latency on a
+     migrated site.
+   - **Yes builds:** a Task 11c in S4 after 11b (`auth-data`, Sonnet). Files:
+     `src/lib/sveltekit/media-route.ts`, the media delete action, their tests, the test fake, and
+     `docs/reference/media.md`. Outcome: full-body 200 responses are served from and written to
+     `caches.default` through the module's `waitUntil`, ranged and conditional requests bypass the
+     cache, and a delete evicts the local entry. Tests: a workerd integration test showing a second
+     GET makes no R2 read, a ranged GET bypassing, and the post-delete 404 in
+     `media-library.spec.ts`. Cost about 0.6M; it also needs the cross-colo stale-after-delete
+     limit disclosed.
 
 ## Review focus
 
@@ -174,8 +239,10 @@ each pinned to a test in its owning task:
 1. **A site that prerenders behind cairn's handle.** Any `env` or `withEnv` touch while `building`
    throws `Cannot access cloudflare:workers in a prerenderable route` and fails the build. Pin: unit
    tests with the `$app/env` stub's `building` set true and the `cloudflare:workers` fake set to throw
-   on access, over the guard's dev-flag tripwire, `devBackendHandle`, and `membersDevHandle`; plus the
-   showcase build prerendering its `(site)` routes. Task 11 (and the spike's item 1).
+   on access, over the guard's dev-flag tripwire and `devBackendHandle`; plus the default and the
+   flagged showcase builds prerendering their `(site)` routes. The `building` read must not put a
+   `$app/*` import on the `./sveltekit` barrel, which a raw esbuild consumer bundles
+   (`dist-sveltekit-app-import-boundary.test.ts`). Task 11b (and the spike's items 1 and 4).
 2. **A site that sets `no-referrer` site-wide** (an outer handle header, or an `app.html` meta before
    `%sveltekit.head%`). Without cairn's meta every editor gets Kit's plain 403. Pin: a browser test
    that rewrites the admin document's response to carry `Referrer-Policy: no-referrer` and an early
@@ -183,18 +250,18 @@ each pinned to a test in its owning task:
    meta removed) gets Kit's 403. Task 9.
 3. **A registry-installed tarball, not a `file:` link.** `cloudflare:workers` must resolve from inside
    `node_modules` with no `ssr.noExternal`, no `file:`, no `npm link`. Pin: the spike harness, run in
-   Task 1, again in Task 11 against its tarball, and at the close against the final tarball.
+   Task 1, again in Task 11b against its tarball, and at the close against the final tarball.
 4. **The magic-link confirm POST in a real browser.** The confirm page carries the token, so it is the
    one page whose policy must stay strict while its form keeps a real Origin. Pin: the browser confirm
    case (cairn's response, never Kit's 403) and its mutation proof (the confirm page's header and meta
    reverted to `no-referrer` turns it into Kit's 403). Task 9; the close's live smoke covers the guard
-   path end to end.
+   path end to end, up to the commit path.
 5. **A stale tab.** A tab whose CSRF token went stale must still reach cairn's branded token-invalid
    response (the Origin is now real, so Kit passes it), while a tab loaded under the old `no-referrer`
    policy gets Kit's 403 with the literal body `Cross-site POST form submissions are forbidden`, the
    string the `log-events.md` anchor keys on. Pin: an integration test on the guard (real Origin, bad
-   token, branded response) and a browser test (null Origin, Kit's literal body). Task 9; the anchor
-   text in Task 13.
+   token, branded response) and the site-wide test's stripped-meta case (null Origin, Kit's literal
+   body). Task 9; the anchor text in Task 13.
 
 ---
 
@@ -258,20 +325,28 @@ final run; only the harness and the record (Decision 1) reach the pass branch.
   `building`.
 - **Item 2:** a `withEnv` set in the dev package's probe handle reaches an engine read and a site read
   across an `await` and a streamed load.
-- **Item 3:** on the Kit 2.70 / adapter 7 showcase (in the scratch worktree), the
-  `VITE_CAIRN_E2E=1` build boots under `wrangler dev` with the dev backend on, the members fixture on
-  local D1 `MEMBER_DB` (migrated from `migrations-members`), and the flag delivered through
-  `.dev.vars` or `--var`; the record states which delivery worked and the exact command.
+- **Item 3 (narrowed; the plan review's probe already booted this host):** on the Kit 2.70 /
+  adapter 7 showcase (in the scratch worktree), the `VITE_CAIRN_E2E=1` build boots under
+  `wrangler dev --var CAIRN_DEV_BACKEND:1` with the dev backend on and the members fixture on local
+  D1 `MEMBER_DB` (migrated from `migrations-members`); `/admin/posts` answers 200, not a redirect.
+  The record quotes the exact command. `.dev.vars` delivery is not probed (Global constraints).
+- **Item 4:** the probe's `building` gate on the `./sveltekit` barrel keeps
+  `src/tests/unit/dist-sveltekit-app-import-boundary.test.ts` green, with `cloudflare:*` added to its
+  esbuild externals as Wrangler's own bundler treats it. At HEAD that test fails the barrel on any
+  reachable `$app/*` import, so a `building` read from `$app/env` in the guard would break it and the
+  raw-esbuild consumer it guards. The record names the gate form that passes, or reports none.
 - The harness script reproduces items 1 and 2 from tarball paths, and also carries the close's
   consumer-proof mode (spec "Pass class and close": `npm install <tgz>` exit 0 with no flags, the
   documented wiring and `wrangler types`, `svelte-check` 0 errors and 0 warnings, `vite build` exit 0,
-  `wrangler dev` answering `GET /admin/login` with 200).
+  `wrangler dev` answering `GET /admin/login` with 200 and a body carrying cairn's login form marker,
+  the email field or the CSRF hidden input, so an error page or a site route served with 200 fails).
 - The record lists each `cloudflare:workers` fact proved, for `durable-gotchas.md` in Task 13.
 
 **Go/stop rule:** `vite build`, prerender, or `wrangler dev` needing site config (any config beyond
 the documented wiring) stops the pass as an architectural fork for Geoff. `vite dev` failing alone is
 a recorded gotcha and the pass goes on. Item 3 failing for a cause S2's planned scope (local D1, the
-flag delivery) does not cover stops the pass. A stop writes STATUS and sends Geoff one message with
+flag delivery) does not cover stops the pass. Item 4 finding no `building` gate that keeps the
+barrel free of `$app/*` stops the pass: the spec names `$app/env`, so the conflict is Geoff's. A stop writes STATUS and sends Geoff one message with
 the record.
 
 **Acceptance:**
@@ -279,12 +354,12 @@ the record.
   error); a mode with no quoted output counts as failed, so a skipped mode cannot pass.
 - `git -C <scratch worktree> log main..` shows the probe commits exist only on `sveltekit-3-spike`, and
   `git grep -n cloudflare:workers -- src/lib` on `sveltekit-3` prints nothing.
-- The harness, run once more by a fresh agent from the committed copy against the same tarballs,
-  reproduces items 1 and 2.
+- The harness is committed from the copy the record's runs used (Decision 7 names its reproduction
+  run).
 
 **Interfaces produced:** `harness.sh` with arguments `<engine.tgz> <dev.tgz> <scratch-root>
-[--mode spike|consumer]`; the record's "Flag delivery" line (`.dev.vars` or `--var`, with the exact
-command), consumed by Task 5.
+[--mode spike|consumer]`; the record's "Flag delivery" line (the exact `--var` command), consumed by
+Task 5; the record's "Building gate" line (item 4), consumed by Task 11b.
 
 ---
 
@@ -297,24 +372,24 @@ command), consumed by Task 5.
 
 **Files:** every file under `src/lib`, `packages/cairn-cms-dev`, and `examples/showcase/src` that
 imports `$app/environment`, calls `invalidateAll`, or imports `json` or `text` from `@sveltejs/kit`
-(plan time: 8 `$app/environment` lines, 11 `invalidateAll` lines, 7 `json`/`text` import lines; the
-pre-flight recounts); `vitest.config.ts` and `src/tests/_app-environment.ts` (renamed
-`src/tests/_app-env.ts`); the tests that assert on a changed response; `templates/waymark/**`
+(plan time: 8 `$app/environment` lines, 11 `invalidateAll` lines, and 7 `json` import lines, all in
+showcase routes: `healthz` and six `/test/*`; no `text` import exists; the pre-flight recounts);
+`vitest.config.ts`, `src/tests/_app-environment.ts` (renamed `src/tests/_app-env.ts`), and the
+component project's own `$app/environment` stubs under `src/tests/component/`; `templates/waymark/**`
 through `npm run emit:template`.
 
-**Outcome:** `$app/environment` becomes `$app/env`, `invalidateAll` becomes `refreshAll`, and the
-`json` and `text` helpers become `Response.json` and `new Response`, each response keeping the
-status, headers, and body type it had. The vitest stub moves with the import.
+**Outcome:** `$app/environment` becomes `$app/env`, the `invalidateAll` function becomes
+`refreshAll`, and the `json` helper becomes `Response.json`. The `goto` option
+`{ invalidateAll: true }` (`MediaUploadDialog.svelte:212`) stays: Kit 2.70's `goto` has no
+`refreshAll` option, so Task 11b renames it. The vitest stubs move with the import.
 
 **Acceptance:**
-- `git grep -nE '\$app/environment|invalidateAll' -- src/lib packages/cairn-cms-dev examples/showcase/src templates/waymark`
-  prints nothing, and no `json` or `text` named import from `@sveltejs/kit` remains (single- and
-  multi-line imports; the report states how multi-line imports were checked).
-- Every replaced `json(...)`/`text(...)` call site whose response a test reads keeps its
-  `Content-Type` and status: a test per distinct helper shape (one JSON, one text) asserts the header
-  and status on the new form, and would fail if `new Response(string)`'s default
-  `text/plain;charset=UTF-8` replaced a header the old helper set differently. The report lists each
-  call site with its old and new header.
+- `git grep -nE '\$app/environment|invalidateAll' -- src/lib packages/cairn-cms-dev examples/showcase/src templates/waymark src/tests vitest.config.ts`
+  prints only the `goto` option and lines the report names (a test that quotes the string as data),
+  and no `json` named import from `@sveltejs/kit` remains (single- and multi-line imports; the report
+  states how multi-line imports were checked).
+- `/healthz` still returns `application/json` with its old status (Kit 2.70.3's `json()` and
+  `Response.json` both set it; the existing `healthz.spec.ts` or one added assertion pins it).
 - F green.
 
 **Interfaces produced:** `src/tests/_app-env.ts`, aliased as `$app/env` in the unit project (and in
@@ -331,31 +406,41 @@ the Vite plugin"; "Kit 3 API moves", the subpath-imports bullet; S1.
 `examples/showcase/package.json` (`imports`), `examples/showcase/tsconfig.json` if its paths name the
 aliases, every showcase file importing `$lib`, `$chassis`, or `$theme` (plan time: 2 `$lib` and 85
 `$chassis`/`$theme` lines), any repo script or check that reads the showcase's `svelte.config.js`
-(the pre-flight lists them; `emit-template`, the bake, `check-chassis-boundary`, the showcase
-`vitest.config.ts`), and `templates/waymark/**` through `npm run emit:template`. `tool/` is not
-touched (Task 10 owns the doctor).
+(the pre-flight lists them; `emit-template`, the bake, the showcase `vitest.config.ts`),
+`scripts/checks/check-chassis-boundary.mjs` (its `referencesChassis` matches only `$chassis/` and
+relative `chassis/` paths, `:76`, so `#chassis/` reach-ins would go unchecked), the seam rule in
+`examples/showcase/src/chassis/README.md` (`:10`, `:42`, `:45`, which the boundary script parses),
+the dead alias map in `scripts/checks/check-public-skill.mjs:409-414`, and `templates/waymark/**`
+through `npm run emit:template`. `tool/` is not touched (Task 10 owns the doctor).
 
 **Outcome:**
 - The showcase's whole Kit config (adapter and its options, prerender handlers, the `csrf` block
   unchanged for now) lives in `sveltekit({ ... })` in `vite.config.ts`, and its `svelte.config.js` is
   gone. The emitted template matches.
 - `$lib`, `$chassis`, and `$theme` become `#lib`, `#chassis`, and `#theme` through a package.json
-  `imports` field (each with its `/*` form), and `kit.alias` is gone.
+  `imports` field (each with its `/*` form), and `kit.alias` is gone. The chassis boundary check,
+  its README rule, and `check-public-skill.mjs` follow the `#` form, with no `$` form kept.
 - If the subpath move fails `svelte-check` or the Kit 2.70 build, the config move still lands, the
-  alias change is reverted, and the report records the failure verbatim for Task 11 to carry.
+  alias change is reverted, and the report records the failure verbatim for Task 11b to carry.
 
 **Acceptance:**
 - `test ! -e examples/showcase/svelte.config.js && test ! -e templates/waymark/svelte.config.js`;
   `git grep -nE '\$(lib|chassis|theme)\b|kit\.alias|alias:' -- examples/showcase/src examples/showcase/vite.config.ts templates/waymark/src templates/waymark/vite.config.ts`
   prints nothing (or the report carries the recorded fallback).
 - `npm --prefix examples/showcase run check` prints 0 errors and 0 warnings, and the showcase build
-  prerenders the same route set as before: the report quotes the prerendered file count before and
-  after, equal, so a dropped prerender option cannot pass silently.
+  prerenders the same route set as before, measured on two builds: the default build and the flagged
+  build (`VITE_CAIRN_E2E=1` with `CAIRN_DEV_BACKEND=1` in the build process's environment, so
+  prerender runs behind the dev handle). The report quotes both counts before and after, each equal,
+  so a dropped prerender option cannot pass silently.
+- A scratch reach-in `import x from '#chassis/<unlisted>.js'` in a theme file fails
+  `npm run check:chassis-boundary` (red run quoted, then removed), and the check is green on the
+  task's tree. It runs only in `check:close`, so this task runs it by name.
 - `check:template` and `test:emit` green.
 - F green.
 
 **Interfaces produced:** `#lib`, `#chassis`, `#theme` import specifiers in the showcase and Waymark;
-the showcase Kit config's home is `examples/showcase/vite.config.ts`.
+the showcase Kit config's home is `examples/showcase/vite.config.ts`; the two prerender counts,
+consumed by Task 11b.
 
 **Gate:** F.
 
@@ -395,72 +480,103 @@ each release, each breaking change with its effect here, and each new capability
 
 **Pass class:** `auth-data` (it moves the members fixture onto a real D1 binding and the dev-backend
 flag's delivery). **Spec:** S2; "Bindings", the flag-delivery sentence. **Consumes:** Task 1's
-"Flag delivery" line.
+"Flag delivery" line; Decision 10.
 
 **Files:** `examples/showcase/playwright.config.ts`, `examples/showcase/package.json` (`preview` and
-any e2e scripts), `examples/showcase/src/members/dev-wiring.ts`,
-`examples/showcase/src/routes/test/reset-members/**`, `examples/showcase/.gitignore` if a generated
-`.dev.vars` needs it, `examples/showcase/e2e/**` only where a spec assumed the `vite preview` host,
-`.github/workflows/e2e.yml` (the width matrix and the `update_snapshots` path), and
-`templates/waymark/**` through `npm run emit:template`.
+any e2e scripts), `examples/showcase/src/members/dev-wiring.ts` (the handle retires, Decision 10),
+`examples/showcase/src/hooks.server.ts` (the `membersDevHandle` import, its exclude block, and the
+ordering comment at `:22-28`), `examples/showcase/src/routes/test/{reset-members,last-otp,revoke-member-session}/**`,
+`examples/showcase/e2e/media-library.spec.ts` (the post-delete probe), `examples/showcase/e2e/**`
+only where a spec assumed the `vite preview` host, `.github/workflows/e2e.yml` (comments and the
+`update_snapshots` path if they name the host; it has no width matrix, the width sweep lives in the
+specs and rides the `webServer` change), and `templates/waymark/**` through `npm run emit:template`.
 
 **Outcome:**
 - The e2e `webServer` builds with `VITE_CAIRN_E2E=1`, applies `migrations-members` to the local D1
-  `MEMBER_DB`, and serves the build through `wrangler dev` on `E2E_PORT`, with the dev-backend flag
-  delivered per Task 1 and never through `wrangler.jsonc` `vars`.
-- The showcase `preview` script serves the built output through `wrangler dev` (Decision 3).
-- `membersDevHandle` no longer installs a `MEMBER_DB` double; the fixture reads the local D1 binding,
-  and `/test/reset-members` resets that D1. The dev package's double set is unchanged.
-- CI's e2e job and its width matrix run on the same host; visual baselines are unchanged.
+  `MEMBER_DB`, and serves the build through `wrangler dev` on `E2E_PORT` with the command-scoped
+  `--var CAIRN_DEV_BACKEND:1` Task 1 recorded. No `.dev.vars` file is written.
+- The showcase `preview` script serves the built output through `wrangler dev`, flag-free
+  (Decision 3).
+- `membersDevHandle` retires (Decision 10); the members fixture and the `/test/*` routes read the
+  local D1 binding, and `/test/reset-members` resets that D1. Each `/test/*` route keeps both of its
+  body refusals (a local host, and `CAIRN_DEV_BACKEND === '1'` in env). The dev package's double set
+  is unchanged.
+- Adapter 7's built worker caches every response carrying a public `Cache-Control` in
+  `caches.default` and serves from it first, which `vite preview` never ran. The `/media` route's
+  `immutable` header lets a cached 200 answer after the safe-delete, so `media-library.spec.ts:189`
+  fails on this host (measured by the plan review). The post-delete probe sends
+  `Cache-Control: no-cache`, which the adapter honors by skipping the cache read, so it asserts the
+  R2 state the spec names.
+- CI's e2e job runs on the same host; visual baselines are unchanged.
 
 **Acceptance:**
 - The whole existing showcase e2e suite is green on the new host with zero baseline files changed
   (`git diff --stat -- '*-snapshots/*'` empty), so a host move that shifted paint cannot pass.
-- `git grep -n "vite preview\|run preview" -- examples/showcase/playwright.config.ts .github/workflows/e2e.yml`
-  prints nothing; `git grep -n "MEMBER_DB" -- examples/showcase/src/members/dev-wiring.ts` shows no
-  double construction.
+  `media-library.spec.ts:189` is green, and the report quotes its red run without the header.
+- `git grep -n "vite preview" -- examples/showcase/playwright.config.ts .github/workflows/e2e.yml`
+  prints nothing, and the `preview` value in `examples/showcase/package.json` and
+  `templates/waymark/package.json` names `wrangler dev` with no flag.
+- `git grep -n "CAIRN_DEV_BACKEND\|MEMBER_DB" -- examples/showcase/src/members examples/showcase/src/hooks.server.ts`
+  prints no flag stamp and no double construction; `git grep -n CAIRN_DEV_BACKEND -- examples/showcase/wrangler.jsonc templates/waymark/wrangler.jsonc`
+  prints nothing; `git ls-files examples/showcase templates/waymark | grep -E '\.dev\.vars$'` prints
+  nothing.
 - A members spec that requests, then reads back, a member across a `/test/reset-members` call proves
-  the reset clears the D1: it fails if the reset leaves rows (assert an empty read after reset).
-- `git grep -n CAIRN_DEV_BACKEND -- examples/showcase/wrangler.jsonc templates/waymark/wrangler.jsonc`
-  prints nothing.
+  the reset clears the D1 (an empty read after reset). Mutation proof: with the reset made a no-op,
+  that spec goes red (quoted run, then restored).
+- A test asserts each `/test/*` route answers 404 on a local host with the flag absent. Mutation
+  proof: with one route's env check dropped, the test goes red (quoted run, then restored).
 - The default (unflagged) build's `wrangler deploy --dry-run` grep in `e2e.yml` still proves the dev
   package folds out (step unchanged or updated, still asserting).
 - F green.
 
-**Interfaces produced:** the showcase `preview` script (serves built output via `wrangler dev`); the
-e2e host command; the local-D1 members fixture, reused by Task 9's cross-origin proof and the close's
-live smoke.
+**Interfaces produced:** the showcase `preview` script (serves built output via `wrangler dev`,
+flag-free); the e2e host command; the local-D1 members fixture, reused by Task 9's cross-origin proof.
 
 **Gate:** F.
 
 ### Task 6: Every other `vite preview` caller moves
 
-**Pass class:** `engine-logic`. **Spec:** S2 (`norms.yml`); Decision 3.
+**Pass class:** `engine-logic`, gate overridden to E plus the named runs below (no engine or
+showcase runtime code moves; the S2 boundary runs F and CI). **Spec:** S2 (`norms.yml`); Decision 3.
 
 **Files:** `.github/workflows/norms.yml`, `.github/workflows/design.yml` if a step changes,
 `scripts/lab/theme-fixture.mjs`, `scripts/lab/generate-norms-manifest.mjs`,
 `scripts/lab/probe-vertical-alignment.mjs`, `scripts/checks/check-interactive-contrast.mjs`,
 `scripts/checks/check-touch-targets.mjs`, `examples/showcase/scripts/capture-surfaces.mjs`,
 `examples/showcase/scripts/design-probe.mjs`, `docs/internal/design/README.md` (the serve command),
-and any further caller the pre-flight's `git grep -n "vite preview\|run preview\|'preview'"` finds
-outside records.
+`docs/reference/cairn-audit.md` (`:693`, the flagged serve command), and any further caller the
+pre-flight's `git grep -n "vite preview"` finds outside records.
+
+**Notes:** an OS env var does not reach workerd, so every caller that today prefixes
+`CAIRN_DEV_BACKEND=1` (`norms.yml:55`, `:94`; `theme-fixture.mjs:66`; the instructions in
+`generate-norms-manifest.mjs:127`, `probe-vertical-alignment.mjs:49`, `capture-surfaces.mjs:294`,
+`cairn-audit.md:693`) moves to `-- --var CAIRN_DEV_BACKEND:1`. Without the flag the guard mounts and
+`/admin/posts` redirects to login, and `norms.yml`'s `curl -sf` readiness loop accepts the 30x, so
+the failure is silent. `wrangler dev` takes `--port` but rejects `--strictPort`
+(`theme-fixture.mjs:150`); the fixture's own `listening(PORT)` pre-check covers the strict-port
+intent.
 
 **Outcome:** every repo tool that serves a built showcase or template site does so through
-`wrangler dev` (directly, or through the repointed `preview` script); comments naming `vite preview`
-as the host are corrected; the theme fixture's template arm serves its installed site the same way.
+`wrangler dev` (directly, or through the repointed `preview` script), with the flag delivered by
+`--var` wherever the dev backend is needed; each flagged readiness probe requires a 200 from
+`/admin/posts`; comments naming `vite preview` as the host are corrected; the theme fixture's
+template arm serves its installed site the same way.
 
 **Acceptance:**
-- The pre-flight grep, re-run excluding `docs/internal/record`, `docs/internal/history`,
-  `docs/superpowers`, `docs/HISTORY.md`, `CHANGELOG.md`, and fact bullets that quote a past
-  measurement, prints nothing.
+- `git grep -nE "vite preview|CAIRN_DEV_BACKEND=1 [^|]*run preview"`, excluding
+  `docs/internal/record`, `docs/internal/history`, `docs/superpowers`, `docs/HISTORY.md`,
+  `CHANGELOG.md`, and fact bullets that quote a past measurement, prints nothing, or only survivors
+  the report names with a reason.
+- Each flagged readiness probe fails on a redirect: the report quotes one probe's output against a
+  default build (non-200, so the probe fails) and against the flagged serve (200).
 - `TMPDIR=$HOME/.cache/cairn-tmp npm run test:theme-fixture -- --arm both --build-only` green, and
-  `npm run norms:check` against a showcase served by the repointed `preview` script green, each
-  quoted; a script still spawning `vite preview` would pass today but is caught by the grep.
-- F green.
+  `npm run norms:check` against a showcase served by the repointed `preview` script with the `--var`
+  flag green, each quoted.
+- E green.
 
 **Interfaces produced:** none new.
 
-**Gate:** F.
+**Gate:** E plus the two named runs.
 
 **S2 boundary:** F green; push; CI `e2e`, `design`, and `test` green on the segment head, and
 `gh workflow run norms.yml --ref sveltekit-3` green, with no baseline file changed. The conductor
@@ -473,35 +589,53 @@ weighs the split here. STATUS written.
 ### Task 7: Security read of the fold's CSRF deltas (conductor-led, no gate)
 
 **Dispatch:** `web-auth-security-reviewer` at `high`, read-only. **Spec:** "CSRF", last paragraph.
+The reviewer starts with zero context, so the dispatch names every input by path:
+- the spec's "Evidence" bullets on Kit's CSRF check and Referrer-Policy, and its "CSRF" section;
+- the spec risk review's R2, R5, and R6 (`docs/superpowers/research/2026-10-03-sveltekit-3-spec-review-risk.md`);
+- Kit 3's `runtime/server/respond.js:98-133` and `runtime/server/csrf.js`, and the `'*'` switch at
+  `exports/vite/index.js:495`, under `~/.cache/kit3-research/kit/package/src/`; Kit 2.70.3's
+  `respond.js:73-100` from the repo's `node_modules/@sveltejs/kit`;
+- `src/lib/sveltekit/{guard,csrf,admin-response,auth-routes}.ts` and `src/lib/auth-channel/factory.ts`;
+- the admin heads in `CairnAdminShell.svelte`, `LoginPage.svelte`, and `ConfirmPage.svelte`;
+- the full text of Tasks 8, 9, and 10 and Decisions 5 and 11.
 
 **Outcome:** a verdict on the fold's three CSRF deltas: the Kit 2.70 ordering (Kit's check before
 `handle`, skipped in dev, an absent content type passing on 2.70 and refused on 3), the admin referrer
-meta (header plus meta, site-meta precedence, the token never reaching a Referer), and the doctor's
-`trustedOrigins` check (`'*'` fails, other entries pass with a detail). Recorded at
-`docs/superpowers/research/2026-10-03-sveltekit-3-csrf-security-read.md`, committed by the conductor.
+meta (header plus one meta from the shell, site-meta precedence, the token never reaching a Referer),
+and the doctor's `trustedOrigins` check (`'*'` fails, other entries pass with a detail). The read also
+rules the wildcard condition's severity: accept `warning` or amend Task 10, checking Decision 5's two
+premises (Rule 1 covers the login and confirm posts; the factory keeps `originMatches`) against the
+code. Recorded at `docs/superpowers/research/2026-10-03-sveltekit-3-csrf-security-read.md`, committed
+by the conductor.
 
-**Acceptance:** the record names each delta with accept, amend (with the task it amends and the
-amendment), or block. Amendments are written into Tasks 8 to 10 and committed before Task 8 dispatches.
-A block, or a finding that raises a question the spec did not settle, halts S3 for Geoff.
+**Acceptance:** the record names each delta, and the severity, with accept, amend (with the task it
+amends and the amendment), or block, each citing the input it rests on. Amendments are written into
+Tasks 8 to 10 and committed before Task 8 dispatches. A block, or a finding that raises a question the
+spec did not settle, halts S3 for Geoff.
 
 ### Task 8: `strict-origin` on admin responses, and the referrer meta
 
 **Pass class:** `auth-data`. **Spec:** "CSRF", the first "After the change" bullet.
 
 **Files:** `src/lib/sveltekit/admin-response.ts`, `src/lib/sveltekit/auth-routes.ts`
-(`confirmLoad`), `src/lib/admin/CairnAdminShell.svelte`, `src/lib/admin/LoginPage.svelte`,
-`src/lib/admin/ConfirmPage.svelte`, their tests under `src/tests/` (integration and component),
-and the comments that state the old policy.
+(`confirmLoad`), `src/lib/admin/CairnAdminShell.svelte` (the meta's one home, Decision 11),
+`src/lib/admin/LoginPage.svelte` and `src/lib/admin/ConfirmPage.svelte` (comments only; no meta),
+their tests under `src/tests/` (integration and component), a showcase e2e spec for the
+document-level count, and the comments that state the old policy.
 
-**Outcome:** `applySecurityHeaders` and `confirmLoad` serve `Referrer-Policy: strict-origin`; the admin
-shell, login, and confirm documents emit `<meta name="referrer" content="strict-origin">` in their
-head; `/preview/[token]` keeps `no-referrer`; comments state the new policy and why the meta exists.
+**Outcome:** `applySecurityHeaders` and `confirmLoad` serve `Referrer-Policy: strict-origin`; every
+admin document (the shell's authed views, login, and confirm) carries exactly one
+`<meta name="referrer" content="strict-origin">` in its head, emitted by the shell; `/preview/[token]`
+keeps `no-referrer`; comments state the new policy and why the meta exists.
 
 **Acceptance (test-first; each test fails on the old code):**
 - An integration test asserts `strict-origin` from `applySecurityHeaders` and from `confirmLoad`'s
   headers; on the old code both read `no-referrer`.
-- A test renders each of the three documents and asserts exactly one referrer meta with content
-  `strict-origin` in the head output; on the old code there is none.
+- A component test renders `CairnAdminShell` with a public payload and with an authed payload and
+  asserts one referrer meta with content `strict-origin` in each head output; on the old code there is
+  none.
+- A document-level e2e check counts `head meta[name="referrer"]` at exactly 1 on the login, confirm,
+  and edit documents, so a second meta added by a child component fails.
 - A test asserts `/preview/[token]` still serves `no-referrer`, so an over-broad change fails.
 - Mutation proof: reverting `confirmLoad`'s header to `no-referrer` turns its test red; the report
   quotes the red run.
@@ -533,22 +667,29 @@ condition-response, new e2e specs under `examples/showcase/e2e/`, and the minima
 
 **Acceptance (test-first; the cross-origin pair proves the check is live):**
 - **Cross-origin:** a page loaded at `http://127.0.0.1:$E2E_PORT` submits a native form to the members
-  request form at `http://localhost:$E2E_PORT` and gets 403 with Kit's body; the same submission from
-  `localhost` passes. The pair fails under `vite dev` or `trustedOrigins: ['*']`, and fails on a host
-  that serves only one of the two names.
-- **Admin:** a browser-submitted Save on the edit page (form content type) passes.
+  request form at `http://localhost:$E2E_PORT` and gets 403 with Kit's exact body
+  `Cross-site POST form submissions are forbidden`, never the factory's
+  `cairn auth-channel: origin mismatch` (the factory also answers 403 when Kit's check is off, so a
+  status-only assertion would pass under `'*'`). The same submission from `localhost` reaches the
+  members form's own success or validation state, never either 403 body. The pair fails under
+  `vite dev` or `trustedOrigins: ['*']`, and fails on a host that serves only one of the two names.
+- **Admin (regression case):** a browser-submitted Save on the edit page (form content type)
+  passes. The e2e build runs `devBackendHandle` in place of the guard, so no `Referrer-Policy` header
+  is served and the browser default sends the Origin either way: this pins Kit admitting a
+  same-origin admin form and is not evidence for Task 8's header or meta.
 - **Confirm:** the browser loads the confirm page and POSTs its form; the response is cairn's (an
   invalid-token page is fine), never Kit's 403.
-- **Mutation proof:** with the confirm page's header and meta temporarily reverted to `no-referrer`,
-  the confirm case gets Kit's 403; the report quotes the red run, then restores.
-- **Site-wide `no-referrer` (Review focus 2):** a Playwright test rewrites the admin login (or edit)
-  document's response to carry `Referrer-Policy: no-referrer` and an early `no-referrer` meta, then
-  submits the form and gets cairn's response; with cairn's meta stripped from the rewritten document
-  the same submission gets Kit's 403 (quoted red run).
-- **Stale tab (Review focus 5):** an integration test sends the guard an admin form POST with a
-  matching Origin and a stale token and gets the branded `auth.csrf-token-invalid` response; a browser
-  test posts from a document under `no-referrer` with no cairn meta and asserts Kit's literal body
-  `Cross-site POST form submissions are forbidden`.
+- **Mutation proof:** with the confirm page's header and every cairn referrer meta temporarily
+  reverted to `no-referrer`, the confirm case gets Kit's 403; the report quotes the meta count before
+  and after and the red run, then restores.
+- **Site-wide `no-referrer` (Review focus 2 and 5):** a Playwright test rewrites the admin login (or
+  edit) document's response to carry `Referrer-Policy: no-referrer` and an early `no-referrer` meta,
+  then submits the form and gets cairn's response. With every cairn referrer meta stripped from the
+  rewritten document (count quoted before and after), the same submission gets Kit's literal body
+  `Cross-site POST form submissions are forbidden` (quoted red run). This stripped case is also the
+  stale-tab browser case: a tab loaded under the old `no-referrer` policy.
+- **Stale tab, guard side (Review focus 5):** an integration test sends the guard an admin form POST
+  with a matching Origin and a stale token and gets the branded `auth.csrf-token-invalid` response.
 - Guard unit tests: a non-admin form POST with a foreign Origin now passes the guard (Kit owns it);
   on the old code Rule 2 refused it.
 - `git grep -nE "checkOrigin|csrf-origin-mismatch|REASON_CONDITION\.origin" -- src/lib examples/showcase templates/waymark`
@@ -569,7 +710,9 @@ by the close's review.
 `check_referrer_test.go`, `check.go`, `check_floors_test.go`, `report_test.go`, the doctor goldens
 under `tool/internal/doctor/testdata/golden/`, `tool/internal/render/testdata/json/doctor.json`,
 `tool/internal/spine/conditions.json`, `tool/internal/spine/condition.go`,
-`tool/internal/doctor/doc_comment_symbols_test.go`, `src/lib/diagnostics/conditions.ts`,
+`tool/internal/doctor/doc_comment_symbols_test.go`, `tool/cmd/cairn/doctor_test.go` (its clean-site
+fixture at `:47` writes a `svelte.config.js` with `checkOrigin: false`; it moves to the Kit 3 shape),
+`src/lib/diagnostics/conditions.ts`,
 `src/tests/unit/conditions.test.ts`, `src/tests/unit/condition-response.test.ts`,
 `scripts/checks/tool-check-ids.mjs`, `scripts/checks/check-tool-heuristics.mjs`,
 `scripts/checks/check-rulings-format.mjs` if it lists ids, `scripts/checks/shipped-anchors.json`
@@ -580,7 +723,16 @@ under `tool/internal/doctor/testdata/golden/`, `tool/internal/render/testdata/js
 - `check_csrf.go` reads the `csrf` key in the Vite config and fails on a `trustedOrigins` entry of
   `'*'`; any other entry passes with a detail that it widens `/admin` too; no `csrf` key passes. It
   reports as check `config.csrf-trusted-origins` under condition
-  `config.csrf-trusted-origins-wildcard` (severity `warning`), present in both registries.
+  `config.csrf-trusted-origins-wildcard` (severity `warning`, or as Task 7 amends), present in both
+  registries. The condition's `why` states the exposure plainly: `'*'` turns off SvelteKit's Origin
+  check on every route; cairn's admin keeps its token and member actions keep their own origin
+  compare; the site's own forms have no Origin check.
+- States the check cannot read never pass silently. No `vite.config.*` stays UNCHECKED, as the
+  current check reports (`uncheckedCsrfDetail`, `check_csrf.go:13`). A `trustedOrigins` value it
+  cannot read statically (an identifier, a spread, an env-derived list) is UNCHECKED with a detail
+  saying so. A site still carrying `svelte.config.js` is UNCHECKED with a detail pointing at the
+  config move (the `Consumers must:` line's population, where `checkOrigin` is a Kit 3 build error).
+  `trustedOrigins: []` passes.
 - `config.csrf-disable`, `config.csrf-disable-missing`, and `auth.csrf-origin-mismatch` retire from
   both registries; the anchors `non-admin-origin-rejected` and `wire-cairns-csrf-guard` stay on
   `shipped-anchors.json`.
@@ -597,8 +749,9 @@ under `tool/internal/doctor/testdata/golden/`, `tool/internal/render/testdata/js
 **Acceptance:**
 - Table-driven Go tests over Vite-config fixtures: `trustedOrigins: ['*']` (and `"*"`, and `'*'` among
   other entries) fails; `['https://a.example']` passes with the widening detail; no `csrf` key passes;
-  a commented-out `'*'` passes. The `'*'` case fails on the old check, which never read
-  `trustedOrigins`.
+  a commented-out `'*'` passes; `[]` passes; an unreadable value is UNCHECKED; no Vite config is
+  UNCHECKED, never PASS; a remaining `svelte.config.js` is UNCHECKED with the move detail. The `'*'`
+  case fails on the old check, which never read `trustedOrigins`.
 - `check:tool-conditions` green, so the two registries agree id for id; `conditions.test.ts` asserts
   the new condition's fields and the three ids' absence.
 - `git grep -nE "csrf-disable|csrf-origin-mismatch|checkOrigin" -- tool src/lib scripts/checks`
@@ -619,28 +772,70 @@ consumed by Task 13's reference and facts edits.
 
 ## S4: the bump
 
-### Task 11: Kit 3, adapter 8, and `cloudflare:workers` (one atomic task)
+### Task 11a: Kit 2.70 prep for the bump
+
+**Pass class:** `auth-data` (it retires reads the dev-flag tripwires and `readPublicOrigin` depend
+on). **Spec:** "Bindings", the `process.env` and test-fake bullets; S4. Decision 12.
+
+**Files:** `src/lib/sveltekit/guard.ts` (the `process.env` flag read at `:197`),
+`src/lib/auth-channel/factory.ts` (`:126`), `src/lib/dev-flag.ts` (`readPublicOrigin`'s fallback at
+`:89`, the `depth` it no longer needs, the comments that name `process.env` or adapter-node),
+`src/lib/sveltekit/csrf.ts` (comments only), their tests, `examples/showcase/e2e/members.spec.ts`
+(the two bodyless POSTs at `:26`, `:177`), a new `src/tests/helpers/cloudflare-workers-fake.ts` with
+its unit test and setup file, `vitest.config.ts` (the `unit` and `component` aliases), and the minimal
+reference edits that keep the gates green.
+
+**Outcome:**
+- The guard's and the factory's dev-flag reads and `readPublicOrigin` read `platform.env` alone; the
+  `process.env` reads, the adapter-node comment, and `readPublicOrigin`'s `PUBLIC_ORIGIN` fallback
+  retire, and `depth: 'platform-only'` collapses.
+- The two `members.spec.ts` helpers that POST with no content type send a body.
+- The `cloudflare:workers` fake lands, browser-safe (no `node:async_hooks`), with a swap-and-restore
+  `withEnv`, a collecting `waitUntil`, and a `beforeEach` reset; `unit` and `component` alias
+  `cloudflare:workers` to it. Nothing in `src/lib` imports it yet.
+
+**Acceptance (test-first):**
+- A guard test with the flag set only in `process.env` gets no refusal, and with the flag in
+  `platform.env` gets the 503. Mutation proof: with the `process.env` read restored, the first test
+  goes red (quoted run, then restored).
+- A factory test, on a fresh `createAuthChannel` instance per case (its flag cache latches per
+  instance), shows the same pair. A `readPublicOrigin` test with `PUBLIC_ORIGIN` only in
+  `process.env` returns nothing.
+- The fake's unit test proves `withEnv` restores the outer `env` after a nested call and after a
+  throw, and that `flushWaitUntil` settles every collected promise.
+- `git grep -n "process.env" -- src/lib/sveltekit/guard.ts src/lib/auth-channel/factory.ts src/lib/dev-flag.ts`
+  prints nothing.
+- F green.
+
+**Interfaces produced:** `src/tests/helpers/cloudflare-workers-fake.ts` exporting the module surface
+(`env`, `waitUntil`, `withEnv`) plus `setFakeEnv(bindings: Record<string, unknown>): void`,
+`resetFakeEnv(): void`, `flushWaitUntil(): Promise<void>`; consumed by Task 11b.
+
+**Gate:** F.
+
+### Task 11b: Kit 3, adapter 8, and `cloudflare:workers` (one atomic task)
 
 **Pass class:** `auth-data`. **Model:** `opus`. **Spec:** "Bindings" (all), "Public surface" (the
 table and the closing sentence), "Kit 3 API moves", "Public origin", S4. **Consumes:** Task 1's
-record; Task 2's `$app/env` stub; Task 3's recorded fallback, if any.
+record (its "Building gate" line); Task 2's `$app/env` stub; Task 3's recorded fallback, if any, and
+its two prerender counts; Task 11a's fake.
 
 **Files:** `package.json`, `package-lock.json`, `packages/cairn-cms-dev/package.json`,
 `examples/showcase/package.json` and its lockfile, `examples/showcase/vite.config.ts`,
-`examples/showcase/wrangler.jsonc` if adapter 8 requires it, `examples/showcase/src/app.d.ts`,
-`examples/showcase/src/hooks.server.ts`, `examples/showcase/src/members/dev-wiring.ts`,
-`examples/showcase/src/chassis/**` where it reads `platform`, a new
-`src/lib/sveltekit/workers-env.ts`, every `src/lib` file with a `platform` read (plan time: 62 lines
-in 25 files), `src/lib/sveltekit/platform-bindings.ts`, `src/lib/sveltekit/types.ts`,
-`src/lib/sveltekit/guard.ts`, `src/lib/sveltekit/csrf.ts`, `src/lib/dev-flag.ts`,
-`src/lib/auth-channel/factory.ts`, `src/lib/sveltekit/auth-routes.ts`,
+`examples/showcase/wrangler.jsonc` if adapter 8 requires it, `examples/showcase/src/app.d.ts`, a new
+committed `examples/showcase/worker-configuration.d.ts` and its Waymark counterpart (through emit or
+generated beside it), `examples/showcase/src/hooks.server.ts`, `examples/showcase/src/chassis/**`
+where it reads `platform`, a new `src/lib/sveltekit/workers-env.ts`, every `src/lib` file with a
+`platform` read (plan time: 62 lines in 25 files), `src/lib/sveltekit/platform-bindings.ts`,
+`src/lib/sveltekit/types.ts`, `src/lib/sveltekit/guard.ts`, `src/lib/sveltekit/csrf.ts`,
+`src/lib/dev-flag.ts`, `src/lib/auth-channel/factory.ts`, `src/lib/sveltekit/auth-routes.ts`,
 `src/lib/sveltekit/section-action.ts`, `src/lib/sveltekit/admin-action.ts`,
-`packages/cairn-cms-dev/src/handle.ts` and its tests, `vitest.config.ts`, a new
-`src/tests/helpers/cloudflare-workers-fake.ts` and setup file, `src/tests/_app-env.ts`, every test
-building an event literal with `platform:`, `examples/showcase/e2e/members.spec.ts`, the type test
-for `CairnPlatformBindings`, `templates/waymark/**` through `npm run emit:template`,
-`docs/internal/api-surface.md` (regenerated), and the minimal reference and `log-events.md` edits
-that keep the gates green.
+`src/lib/admin/MediaUploadDialog.svelte` (the `goto` option), `packages/cairn-cms-dev/src/handle.ts`
+and its tests, `vitest.config.ts`, `src/tests/_app-env.ts`,
+`src/tests/unit/dist-sveltekit-app-import-boundary.test.ts` (its externals), every test building an
+event literal with `platform:`, the type test for `CairnPlatformBindings`, `templates/waymark/**`
+through `npm run emit:template`, `docs/internal/api-surface.md` (regenerated), and the minimal
+reference and `log-events.md` edits that keep the gates green.
 
 **Outcome:**
 - **Versions:** `@sveltejs/kit` `^3` (peer and devDependency), svelte peer `^5.57.1`, dev package kit
@@ -651,31 +846,35 @@ that keep the gates green.
   `issueCsrfToken`, `csrfHeaderVerdict`, and `readPublicOrigin` drop their `platform` member;
   `dev-flag.ts` and `env.ts` keep taking `env` as an argument.
 - **Building:** no engine code touches `env` or `withEnv` while `building`; the guard's dev-flag
-  tripwire and both dev handles skip while building.
-- **Dev backend:** `devBackendHandle` and `membersDevHandle` wrap `resolve` in
-  `withEnv({ ...env, ...doubles }, () => resolve(event))`, nesting; no `locals` key, no layering code.
+  tripwire and `devBackendHandle` skip while building, in the gate form Task 1's item 4 recorded, so
+  the `./sveltekit` barrel stays free of any `$app/*` import and the existing esbuild boundary test
+  stays green (with `cloudflare:*` external, as Wrangler's bundler treats it).
+- **Dev backend:** `devBackendHandle` wraps `resolve` in
+  `withEnv({ ...env, ...doubles }, () => resolve(event))`, spreading so a second handle nests; no
+  `locals` key, no layering code (Decision 10 retired the showcase's second handle).
 - **`waitUntil`:** from the module, always defined; the auth channel's inline-await branch and
   `auth.channel.delivery_inline` retire.
-- **`process.env`:** the guard's and the auth-channel factory's dev-flag reads, the `adapter-node`
-  comment, and `readPublicOrigin`'s `PUBLIC_ORIGIN` fallback retire; `depth: 'platform-only'`
-  collapses. The tripwire tests are rewritten: the flag in `env` on a deployed host still gives a 503.
 - **Public surface,** per the spec's table: `CairnPlatformBindings` re-expressed as the interface a
   `wrangler types` `Env` satisfies, with a `satisfies` type test against the showcase's committed
   generated `Env` under `npm run check`; `CairnEvent` loses `platform` and its `Env` parameter;
   `PlatformContext` retires; `resolveDb`, `DeliverContext`, `lookup`/`verify`, and
   `createD1AuditSink` keep their shapes, sourced from the module; route factories keep `Env` on their
   own config callbacks.
+- **The generated `Env`:** generated from a named, committed input that carries every secret name
+  `CairnPlatformBindings` requires (`GITHUB_APP_PRIVATE_KEY_B64` is a secret absent from
+  `wrangler.jsonc`) and never the dev flag, such as the template's `.dev.vars.example` through
+  `--env-file`; the report names the input and the command. Waymark's `Env` carries no `MEMBER_DB`
+  (the binding sits inside `cairn-template:exclude` markers that a generated file cannot carry).
 - **Kit 3 API:** `Handle` from `@sveltejs/kit/hooks` in the engine, the dev package, and every
-  template `hooks.server.ts`; the identity `logoutUrl` redirect passes `{ external: [<the validated
+  template `hooks.server.ts`; the `goto` option `{ invalidateAll: true }` becomes
+  `{ refreshAll: true }`; the identity `logoutUrl` redirect passes `{ external: [<the validated
   logoutUrl's origin>] }` (relative fallback unchanged; the guard's validation stays); the
   `handleError` comments at `section-action.ts:118` and `admin-action.ts:60` corrected only if they
   misstate Kit 3. Task 3's fallback, if recorded, lands here.
 - **Showcase, Waymark, scaffold:** `App.Platform` deleted; the committed `wrangler types` `Env` is the
   binding type; any adapter option adapter 8 removed is gone.
-- **Tests:** `unit` and `component` each alias `cloudflare:workers` to the one browser-safe fake (no
-  `node:async_hooks`) with a swap-and-restore `withEnv` and a collecting `waitUntil`; a setup file
-  resets it in `beforeEach`; `integration` runs on the native module in workerd. The two
-  `members.spec.ts` helpers that POST with no content type send a body.
+- **Tests:** `unit` and `component` use Task 11a's fake; `integration` runs on the native module in
+  workerd.
 
 **Acceptance:**
 - **Grep-zero** (each prints nothing):
@@ -684,36 +883,51 @@ that keep the gates green.
   `text` named import from `@sveltejs/kit` in those trees; `git grep -n "cloudflare:workers" -- src/lib`
   prints exactly `src/lib/sveltekit/workers-env.ts`.
 - **Import graph:** a test (or check script) walks the packed `dist` from each Node-context entry and
-  fails if any reaches `workers-env`; it fails today's tree only if the module is mis-imported.
+  fails if any reaches `workers-env`. Positive control: the walk from the `./sveltekit` entry must
+  reach `workers-env`, and the check fails if it does not; the report quotes the reached-module count
+  per entry, so an entry resolving zero modules shows as zero.
 - **Building (Review focus 1):** unit tests with `building` true and the fake set to throw on any
-  access prove the tripwire and both dev handles never touch `env` or `withEnv`; each fails if its
-  `building` guard is removed. The showcase build prerenders its `(site)` routes behind
-  `devBackendHandle` (the report quotes the prerendered count, equal to Task 3's).
-- **`withEnv` nesting:** a test sequences both dev handles and reads a double from each inside a
-  route and an engine read; it fails if either handle replaces rather than spreads `env`.
+  access prove the tripwire and `devBackendHandle` never touch `env` or `withEnv`. The default and
+  the flagged showcase builds each prerender their `(site)` routes, the report quoting both counts,
+  each equal to Task 3's counterpart: the default build proves the guard's tripwire under prerender,
+  the flagged build the dev handle's.
+- **`withEnv` nesting:** a test sequences `devBackendHandle` with a test-local second handle that
+  adds its own double and reads a double from each inside a route and an engine read.
 - **`waitUntil`:** a test flushes the fake's collected promises and observes the deferred delivery and
-  audit-sink writes; it fails if the inline branch survives (the work would complete before flush).
-- **Tripwire:** a test sets the flag in the fake `env` outside dev and gets the 503.
+  audit-sink writes.
+- **Tripwires and `csrfSecure`:** a test sets the flag in the fake `env` outside dev and gets the
+  guard's 503; a factory test on a fresh instance gets the set-and-deployed refusal, and a passing
+  case (flag set on a local host) gets none; a `csrfSecure` test with the fake `env` carrying an
+  `https` `PUBLIC_ORIGIN` and a non-local http URL takes the Secure branch.
 - **Redirect:** a test asserts the identity logout redirect leaves for the validated external origin
-  and a relative fallback still redirects; on Kit 3 without the allowlist the external case throws.
-- **Type test:** the `satisfies` test is green under `npm run check` and fails if a required member of
-  `CairnPlatformBindings` is missing from the generated `Env`.
+  and a relative fallback still redirects.
+- **Type test:** the `satisfies` test is green under `npm run check`; `wrangler types --check` against
+  the named input passes on the committed files (quoted).
+- **Mutation proofs** (`auth-data`): the report quotes one red run per item, each restored after:
+  a `building` guard removed (the tripwire, then `devBackendHandle`); spread replaced by replace in
+  `devBackendHandle`; the inline `waitUntil` branch restored; the guard's module-`env` flag read
+  removed; the factory's flag read or its `isDeployedHost` `PUBLIC_ORIGIN` read removed;
+  `csrfSecure`'s `PUBLIC_ORIGIN` branch removed; a required member deleted from a copy of the
+  generated `Env` (`npm run check` red); the redirect allowlist dropped; a temporary `workers-env`
+  import added to a Node-context entry (the import-graph check red).
 - **Warnings:** zero Kit `config_option_deprecated*` warnings in the showcase build and in the Waymark
   build (`TMPDIR=$HOME/.cache/cairn-tmp npm run test:theme-fixture -- --arm template --build-only`),
-  each log grep quoted; the scaffolded-site build is proven by CI's `scaffold.yml` at the S4 boundary.
+  each beside the build's exit 0 and a line every successful build prints (the adapter banner or the
+  prerender summary), so an empty or failed log cannot pass; the scaffolded-site build is proven by
+  CI's `scaffold.yml` at the S4 boundary.
 - **Registry install (Review focus 3):** the spike harness in consumer mode against this task's
-  `npm pack` tarballs passes all six conditions (quoted).
+  `npm pack` tarballs passes all six conditions, the login marker included (quoted).
 - A from-scratch showcase reinstall precedes the e2e (`realpath` quoted), and the full e2e suite is
   green under `wrangler dev`. `check:reference`, `check:reference:signatures`, and `check:surface`
   green. F green.
 
 **Interfaces produced:** `src/lib/sveltekit/workers-env.ts` exporting `env` (typed as
-`CairnPlatformBindings`; a binding a site names itself, such as the media bucket, is read by name
-from the same object) and `waitUntil(promise: Promise<unknown>): void`;
-`src/tests/helpers/cloudflare-workers-fake.ts` exporting the module surface (`env`, `waitUntil`,
-`withEnv`) plus `setFakeEnv(bindings: Record<string, unknown>): void`, `resetFakeEnv(): void`,
-`flushWaitUntil(): Promise<void>`; `$app/env` stub with a settable `building`;
-`CairnEvent` (no type parameter); `CairnPlatformBindings` (interface, `wrangler types`-satisfied).
+`CairnPlatformBindings`; the media bucket, whose binding name the adapter configures, is read by that
+name from the same object through `requireBucket(env, bindingName)`, `src/lib/env.ts:98`, which takes
+a `Record<string, unknown>`; the report states the type that call site sees) and
+`waitUntil(promise: Promise<unknown>): void`; `$app/env` stub with a settable `building`;
+`CairnEvent` (no type parameter); `CairnPlatformBindings` (interface, `wrangler types`-satisfied); the
+type test, whose `CairnPlatformBindings` snippet Task 13's reference page quotes.
 
 **Gate:** F.
 
@@ -726,7 +940,8 @@ from the same object) and `waitUntil(promise: Promise<unknown>): void`;
 
 ### Task 12: `create-cairn-site` at the Kit 3 shape
 
-**Pass class:** `engine-logic` (gate scoped by blast radius: no engine source changes). **Spec:** S5.
+**Pass class:** `engine-logic`, class gate overridden to S by blast radius (no engine source
+changes; header Overrides). **Spec:** S5.
 
 **Files:** `packages/create-cairn-site/src/**` and `test/**` wherever they name Kit 2, adapter 7,
 `svelte.config.js`, `App.Platform`, `checkOrigin`, or `$lib` (the pre-flight lists them;
@@ -742,8 +957,9 @@ serves through `wrangler dev`; its preflight and README name the Kit 3 floors.
 - A scaffold test over the baked template asserts the absence of `svelte.config.js`, any `csrf` key,
   and `App.Platform`, and the presence of the `imports` field; each assertion fails on the Kit 2
   template.
-- `git grep -nE "svelte\.config|checkOrigin|App\.Platform|\^2\.70|adapter-cloudflare.*\^7" -- packages/create-cairn-site ':!**/fixtures/**'`
-  prints nothing.
+- `git grep -nE "svelte\.config|checkOrigin|App\.Platform|event\.platform|platform\.env|\\\$lib\b|\^2\.70|adapter-cloudflare.*\^7" -- packages/create-cairn-site ':!**/fixtures/**' ':!packages/create-cairn-site/scripts/emit-template-dir.test.mjs'`
+  prints nothing (the excluded test uses `svelte.config.js` as a linkcheck fixture filename, `:143`;
+  `process.platform` is not a binding read and does not match).
 - S green; the CI `scaffold.yml` and `create-site.yml` runs on the task's push are green.
 
 **Interfaces produced:** none new.
@@ -764,8 +980,8 @@ and every other page the repoint grep names; `docs/internal/facts/*.md`;
 (erratum at `:228`); `docs/internal/admin-smoke-test.md`; `CLAUDE.md`; `ROADMAP.md`.
 
 **Outcome:**
-- **Reference pages** state the new surface: `CairnPlatformBindings` and the CSRF handoff
-  (`admin-routes.md`); `CairnEvent`, `PlatformContext`'s retirement, `resolveDb`'s rewritten rationale
+- **Reference pages** state the new surface: `CairnPlatformBindings` (its snippet quoted from Task
+  11b's type test, per the spec's table) and the CSRF handoff (`admin-routes.md`); `CairnEvent`, `PlatformContext`'s retirement, `resolveDb`'s rewritten rationale
   (`sveltekit.md:768-772`, which calls itself ratified), and the `createD1AuditSink` call form
   `import { env, waitUntil } from 'cloudflare:workers'` (`sveltekit.md`); `DeliverContext`,
   `waitUntil`, and the `process.env` sentence at `auth-channel.md:140`; `core.md`;
@@ -784,13 +1000,20 @@ and every other page the repoint grep names; `docs/internal/facts/*.md`;
   `f:d2jumm` `f:e5hqn3` `f:gs1wzb` `f:gnlib7` `f:ogz5eu` `f:swjwxb` `f:iw346n` `f:l41gju` `f:sjo4cx`
   `f:gh73p5` `f:gncd64` `f:ubuj1w` `f:g22dnw` `f:tkpmxr` `f:ix10bm` `f:qbfriw` `f:3cekcy` `f:x2stjk`
   `f:72xplg` `f:zke3iw` `f:7rehzh` `f:t2t5lx` `f:n4rg1z` `f:n52h8f` `f:oh5rdd` `f:onqm6k` `f:phknca`
-  `f:qlgggh` `f:gwpffe` (the pre-flight re-runs the keyword grep and amends the set). New bullets: the
+  `f:qlgggh` `f:gwpffe` (the task re-runs the keyword grep and amends the set; the S5 pre-flight
+leaves the set to it). New bullets: the
   bodyless server-to-server POST refusal; the `custom_domain`-under-`wrangler dev` Origin mismatch;
   `paths.origin` behind a proxy; `createChannelDb` is Node only, not under workerd; the new doctor
-  condition and its anchor; Kit's 403 anchor in `is-it-working`.
-- **CHANGELOG** `## Unreleased`: the pass's entry with the spec's ten `Consumers must:` lines,
-  finalized against what shipped. `migration-notes.md` and `upgrade-cairn.md` carry the same version
-  record.
+  condition and its anchor; Kit's 403 anchor in `is-it-working`; adapter 8 no longer caches worker
+  responses in `caches.default` (adapter 7 did for every public `Cache-Control` response, `/media`
+  and public SSR pages included).
+- **CHANGELOG** `## Unreleased`: the pass's entry with the spec's ten `Consumers must:` lines plus
+  Decision 13's two (`vite preview` cannot serve adapter 8 output; adapter 8 drops the worker-level
+  cache), finalized against what shipped. `migration-notes.md` and `upgrade-cairn.md` carry the same
+  version record, the cache change included.
+- **ROADMAP:** if Geoff answers Ruling for Geoff 1 "no", a watch for engine-side `/media` caching,
+  triggered by measured `/media` R2 read volume or latency on a migrated site, in the tier where it
+  bites.
 - **`durable-gotchas.md`** gains the `cloudflare:workers` facts Task 1 proved, the prerender rule, the
   `vite preview` limit (kit#17271), and `node:sqlite`'s illegal constructor under workerd.
 - **`engine-rulings.md`** dated notes, verdicts unchanged unless stated: `originmatches-strict-guard`,
@@ -814,7 +1037,8 @@ and every other page the repoint grep names; `docs/internal/facts/*.md`;
 - `git grep -n "kit#15992" -- CLAUDE.md ROADMAP.md` prints no line presenting it as a live watch.
 - Each of the nine `engine-rulings.md` ids carries a 2026-10 dated note (`check:rulings-format` green).
 - The facts triage report covers every id in the candidate set; `check:facts` green.
-- The CHANGELOG entry carries one `Consumers must:` line per spec line, and the spike harness's
+- The CHANGELOG entry carries one `Consumers must:` line per spec line plus Decision 13's two, and
+  the spike harness's
   consumer-mode wiring matches `upgrade-cairn.md` step for step (a step the harness needs that the
   page lacks is a docs defect fixed here).
 - D green.
@@ -839,18 +1063,30 @@ Run `pass-core`'s ritual with the cairn specifics, in order:
    `npx sv create` (current release, minimal TypeScript); `npm install <tgz>` exits 0 with no
    `--legacy-peer-deps` or `--force`; the documented wiring and `wrangler types` applied;
    `svelte-check` 0 errors and 0 warnings; `vite build` exits 0; `wrangler dev` answers
-   `GET /admin/login` with 200. Plus the CI `e2e` run on the pushed head. Evidence quoted.
+   `GET /admin/login` with 200 and cairn's login form marker in the body. Plus the CI `e2e` run on
+   the pushed head. Evidence quoted.
 4. **Review fan-out, in parallel:** `web-auth-security-reviewer` (at `high`), `svelte-reviewer`,
    `cloudflare-workers-reviewer`, and a `go-architecture-reader` per touched Go package
    (`tool/internal/doctor`, `tool/internal/spine`, and any other the diff names). Blocking findings go
    through one fix chain; out-of-scope findings go to `docs/internal/docs-friction-log.md`.
-5. **Live auth smoke (Ruling 1):** the showcase under local `wrangler dev` on S2's host, dev backend
-   off, a local D1 migrated and seeded with an editor, `PUBLIC_ORIGIN` set to the local origin. Request
-   a magic link; read it from wrangler's local `send_email` message file
-   (`.wrangler/tmp/email/.../email-text/<id>.txt`); Geoff makes the click; confirm lands in `/admin`
-   and a Save commits through the guard. Follow `docs/internal/admin-smoke-test.md` (its POSTs send a
-   matching `Origin`) and record the evidence. Accepted cost: over http, the `__Host-` prefix and the
-   Secure branch go unexercised until cairn.pub's migration.
+5. **Live auth smoke (Ruling 1):** the showcase under local `wrangler dev`, dev backend off.
+   - **Build and env:** the default `npm run build` (no `VITE_CAIRN_E2E`), and no `CAIRN_DEV_BACKEND`
+     in `--var` or in any `.dev.vars` in the showcase (checked first); the guard's tripwire 503 is the
+     self-check if the flag leaks in.
+   - **Server:** `wrangler dev` on a port from an environment variable (never 4173 or 4392), with
+     `--var PUBLIC_ORIGIN:http://localhost:$PORT`; a local `AUTH_DB` migrated and seeded with an
+     editor row.
+   - **Session:** only from Geoff's confirm click. Request a magic link; read it from wrangler's local
+     `send_email` message file (`.wrangler/tmp/email/.../email-text/<id>.txt`); Geoff clicks it in
+     Firefox; confirm lands in `/admin`. No seeded `session` row: `docs/internal/admin-smoke-test.md`
+     mints sessions by row insert, so it is followed only for its POST-`Origin` steps.
+   - **Save evidence:** the showcase's GitHub App is a placeholder
+     (`examples/showcase/src/theme/cairn.config.ts:149`) and Ruling 1 provisions none, so no Save can
+     commit. The evidence is a browser Save POST that passes Kit's check and the guard's token and
+     reaches the commit path: no Kit 403, no `guard.refused`, no `auth.csrf-token-invalid`, and the
+     commit path's own failure record (expected `commit.failed` at `error`) quoted from the logs.
+   - Accepted cost: over http, the `__Host-` prefix and the Secure branch go unexercised until
+     cairn.pub's migration, and so does a real commit; both are recorded with the evidence.
 6. **Docs check:** Task 13's pages re-read against any close-time fix; `check:surface -- --update`
    re-run if a reviewer fix moved a typed export; the friction log triaged complete-or-move.
 7. **Ledgers:** `docs/STATUS.md` rewritten present tense (≤60 lines): the pass closed unreleased, the
@@ -860,7 +1096,7 @@ Run `pass-core`'s ritual with the cairn specifics, in order:
    resume prompt's "add-cairn tutorial's pin included" and the "stopgap the upgrade pass rewrites"
    line are removed. `docs/HISTORY.md` takes the pass entry (what landed, what the gates caught, what
    a later pass would be wrong to rediscover, and whether any refused fold finding turned real). The
-   plan takes its post-mortem with the budget score: tokens against 12.0M via `/cost`, planning misses,
+   plan takes its post-mortem with the budget score: tokens against 12.4M via `/cost`, planning misses,
    and execution sittings.
 8. **Merge:** the PR leaves draft once CI is green; the merge to `main` waits for Geoff's go. No
    version bump, no `tool/v2.0.0` tag, no publish. The spike worktree and branch are removed.

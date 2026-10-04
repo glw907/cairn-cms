@@ -31,6 +31,11 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   check round-1 fixes and changed sentences only (run 2 measured about 2.4M a page against the 1.3M budgeted).
   Carry-forward: the SvelteKit 3 pass lands on `main` first and never edits this worktree; 2a rebases onto it and
   rewrites the add-cairn tutorial's SvelteKit 2 pin against Kit 3.
+  Geoff's read (2026-10-04, three open threads on the artifact): every intro is too thin. The concept page needs two
+  or three paragraphs of framing (the general model, where SvelteKit and Cloudflare fit); the add-cairn tutorial must
+  name the usual path (the setup command) and say why the manual one exists (doing it by hand, and learning what cairn
+  does); the Cloudflare Access page must say why cairn uses magic links and why a site would replace them, and must
+  not open on an imperative. Treat it as a brief and page-inputs fix (an intro-framing rule), then redraft the six.
 - The gap sweep's 12 code defects sit in the friction log (`bd8ab1fe`, on `main`, not pushed).
 
 ## Open decisions and watches

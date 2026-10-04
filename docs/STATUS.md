@@ -35,7 +35,8 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   or three paragraphs of framing (the general model, where SvelteKit and Cloudflare fit); the add-cairn tutorial must
   name the usual path (the setup command) and say why the manual one exists (doing it by hand, and learning what cairn
   does); the Cloudflare Access page must say why cairn uses magic links and why a site would replace them, and must
-  not open on an imperative. Treat it as a brief and page-inputs fix (an intro-framing rule), then redraft the six.
+  not open on an imperative. The bodies after the intro read strong (Geoff), so the fix is a brief and page-inputs
+  intro-framing rule, then a scoped redraft of each page's intro only, bodies kept.
 - The gap sweep's 12 code defects sit in the friction log (`bd8ab1fe`, on `main`, not pushed).
 
 ## Open decisions and watches

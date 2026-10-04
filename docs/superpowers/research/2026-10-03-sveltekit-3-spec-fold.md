@@ -212,3 +212,34 @@ became Ruling 2 alongside its fold.
   tool major. Six segments with S4 still one atomic Opus task is near the split threshold; the
   conductor should weigh cutting the pass after S3 (Kit 2.70 work: groundwork, host move, CSRF) with
   the bump, scaffold, and docs as the follow-up, each half ending green on `main`.
+
+## Second fold (2026-10-03)
+
+Input: the verification read `2026-10-03-sveltekit-3-spec-fold-verification.md` (V1-V7) and Geoff's
+two rulings. Each minor was checked against the repo before folding.
+
+**Correction to the token-ceiling note above.** Its suggested cut after S3 is wrong (V1). After S3,
+guard Rule 2 and the old doctor checks are gone while the engine still peers on Kit `^2.70`, so a
+`main` cut there strips the only non-admin Origin check from every site still carrying
+`checkOrigin: false`, with no doctor warning. If the pass splits, the cut is after S2. The note is kept
+as written; this entry supersedes it.
+
+| ID | Disposition |
+|---|---|
+| V1 (major) | Folded: a "Split point" paragraph in Segments says cut after S2, never after S3, with the releasable-`main` reason. The spec carried no contrary advice; the fold record's is corrected above. |
+| V2 | Folded. The workerd probe facts (`node:sqlite` resolves but `DatabaseSync` throws; `process.env` carries vars) are an Evidence bullet. The local-D1 move is S2 scope (`MEMBER_DB` is already declared in the showcase's `wrangler.jsonc`), not a stop rule. S0 item 3 runs on the Kit 2.70 showcase. `createChannelDb` is kept, ruled in the Public surface table: it is the documented Node real-SQL double for site channel tests (`f:fcqs22`), a live feature rather than a shim; its facts gain "Node only". |
+| V3 | Folded into Ruling 1: the magic link is read from the message file wrangler's local `send_email` emulation writes. |
+| V4 | Folded: the Referrer-Policy Evidence bullet cites the Chromium probe and the unprobed after-head case; the CSRF bullet names `app.html`'s default meta position; the reworded `config.no-referrer-blanket` names the after-head exception. |
+| V5 | Folded, decided in the spec: `readPublicOrigin`'s `process.env.PUBLIC_ORIGIN` fallback (`dev-flag.ts:89`) retires under the Cloudflare-only rule; the `depth: 'platform-only'` option collapses with it. |
+| V6 | Folded: the subpath-import move goes to S1 on Kit 2.70, gated on `svelte-check` plus a build (falls back to S4 with a recorded reason). Verified from source: Kit 2.70.3 has no `#` handling, Vite resolves package.json `imports`, and the generated tsconfig uses `moduleResolution: "bundler"`; Kit 3 forces only `$lib`'s removal. |
+| V7 | Folded: cut the debt-free rationale, noExternal mechanics, occurrence counts, token-owner enumeration, risk-lens history, tombstone argument, `site-config-path.json` negation, STATUS-rewrite procedure, done-work narration (stated twice), and the facts id inventory. No decision, constraint, acceptance criterion, fixture, or Consumers must line was cut. |
+
+**Rulings recorded (Geoff, 2026-10-03).** Ruling 1: yes, the live auth smoke runs on the showcase
+under local `wrangler dev`. Ruling 2: yes, `@sveltejs/package` 3.0.0 is taken this pass, in S1, through
+`dependency-upgrade` with its changelog surveyed; a break is handled in-pass. Its peers (svelte,
+typescript `^6`; the repo is on 6.0.3) carry no Kit dependency, so S1 on Kit 2.70 can host it.
+
+**Spec line count:** 405 before, 379 after. The V7 cuts removed about 80 lines; the folds added back
+about 50 (the workerd evidence, the split point, the `createChannelDb` ruling, the S2 local-D1 move, the
+V5 decision, and the recorded rulings), so the result sits above the verification's ~325 estimate,
+which predated those additions.

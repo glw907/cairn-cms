@@ -24,6 +24,7 @@ import {
   parseApiSurface,
   findUnresolvedSymbols,
   filesInScope,
+  envVarInSourceTree,
 } from '../../../scripts/checks/check-symbols.mjs';
 import { ALLOWLIST } from '../../../scripts/checks/check-symbols-allowlist.mjs';
 import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
@@ -552,10 +553,49 @@ describe('cairnLineFindings', () => {
   });
 });
 
+// The env-var ground truth counts source files only: generated output and installed dependencies
+// are excluded at the grep walk, so a token that lives only in one of them is absent.
+describe('envVarInSourceTree, generated and dependency trees', () => {
+  function tree(files: Record<string, string>): string {
+    const root = mkdtempSync(join(tmpdir(), 'cairn-symbols-env-'));
+    for (const [path, content] of Object.entries(files)) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(join(root, path), content);
+    }
+    return root;
+  }
+
+  it.each([
+    'examples/showcase/node_modules/dep/index.js',
+    'examples/showcase/.wrangler/tmp/bundle/index.js',
+    'examples/showcase/.svelte-kit/output/server/index.js',
+    'examples/showcase/test-results/run/trace.txt',
+  ])('does not count a token found only in %s', (path) => {
+    const root = tree({ [path]: 'const k = "CAIRN_ONLY_GENERATED";\n' });
+    try {
+      expect(envVarInSourceTree('CAIRN_ONLY_GENERATED', root)).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('counts a token found in a source file beside a generated tree', () => {
+    const root = tree({
+      'src/lib/env.ts': 'export const k = "CAIRN_IN_SOURCE";\n',
+      'examples/showcase/.wrangler/tmp/bundle/index.js': 'CAIRN_IN_SOURCE\n',
+    });
+    try {
+      expect(envVarInSourceTree('CAIRN_IN_SOURCE', root)).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('findUnresolvedSymbols', () => {
-  // A whole-corpus scan, and it runs about 31 seconds against the published tracks, which is over
-  // vitest's 30-second default. That default is nobody's budget for this test; racing it made the
-  // suite fail on wall-clock rather than on a finding. The scan's own gate (`npm run check:symbols`)
+  // A whole-corpus scan, and it has run past vitest's 30-second default against the published
+  // tracks. That default is nobody's budget for this test; racing it made the suite fail on
+  // wall-clock rather than on a finding. The scan's own gate (`npm run check:symbols`)
   // runs the identical function outside vitest, so the ceiling here is only about not flaking.
   it('returns no findings on the real committed corpus', () => {
     expect(findUnresolvedSymbols()).toEqual([]);

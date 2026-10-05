@@ -621,13 +621,24 @@ function pathExists(path, root = ROOT) {
 /** @type {Map<string, boolean>} */
 const ENV_VAR_HITS = new Map();
 
+// Directory names grep skips while walking for an env var: dependencies and generated output.
+const GENERATED_TREE_EXCLUDES = ['node_modules', '.wrangler', '.svelte-kit', 'test-results']
+  .map((dir) => `--exclude-dir=${dir}`)
+  .join(' ');
+
 /**
  * Whether a SCREAMING_SNAKE_CASE token appears anywhere in the source tree (excluding docs and
  * generated output), the ground truth for the environment-variable class.
+ *
+ * The walk skips `node_modules` (installed dependencies), `.wrangler` (the bundles `wrangler dev`
+ * leaves behind), `.svelte-kit` (build output), and `test-results` (Playwright artifacts). None of
+ * them is source, so a token found only there is not a declared environment variable. Excluding at
+ * the walk, rather than filtering afterward, keeps the scan from reading those trees at all, and a
+ * `.wrangler` directory grows with every local run.
  * @param {string} token
  * @param {string} root
  */
-function envVarInSourceTree(token, root = ROOT) {
+export function envVarInSourceTree(token, root = ROOT) {
   const key = `${root}\0${token}`;
   const cached = ENV_VAR_HITS.get(key);
   if (cached !== undefined) return cached;
@@ -635,7 +646,7 @@ function envVarInSourceTree(token, root = ROOT) {
   let found = false;
   try {
     const out = execSync(
-      `grep -rl -- "\\b${token}\\b" src packages migrations examples/showcase scripts .github 2>/dev/null | grep -v node_modules || true`,
+      `grep -rl ${GENERATED_TREE_EXCLUDES} -- "\\b${token}\\b" src packages migrations examples/showcase scripts .github 2>/dev/null || true`,
       { cwd: root },
     )
       .toString()

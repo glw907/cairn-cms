@@ -81,11 +81,11 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 > releasable. An S0 spike stop, including FA1 (no prerender-safe `building` form that keeps the `./sveltekit` barrel
 > free of `$app/*`), halts the pass for Geoff.
 >
-> **Approach.** Invoke `cairn-pass` to resume in the existing worktree `.claude/worktrees/sveltekit-3`. First confirm
-> the Task 0 baseline: the full gate F (plan Ledger item 3) with `E2E_PORT` unset, after `ss -ltnp 'sport = :4173'`
-> shows no listener, green, and the 20 tests missing from the last e2e summary (338 listed, 318 passed) accounted
-> for, likely in `site-visual.spec.ts`. A real red stops the pass for Geoff. Then run S1 (Tasks 2, 3, 4; its
-> pre-flight is done) through `pass-execute` by name, one invocation per segment, implementer `cairn-implementer`,
+> **Approach.** Invoke `cairn-pass` to resume in the existing worktree `.claude/worktrees/sveltekit-3`. The Task 0
+> baseline is green (plan Ledger, "Baseline result"): locally, the 20 `site-visual` home and archive-page-2
+> screenshots fail by a few pixels, which `durable-gotchas.md`'s CI-baseline rule counts as green; put that rule in
+> `pass-execute`'s `commonNotes`. Until Task 5, the local e2e runs with `E2E_PORT` unset after
+> `ss -ltnp 'sport = :4173'` shows no listener. Run S1 (Tasks 2, 3, 4; its pre-flight is done) through `pass-execute` by name, one invocation per segment, implementer `cairn-implementer`,
 > Task 11b upshifted to Opus; pre-flight each later segment at HEAD. Every dependency bump (Tasks 4 and 11b) carries
 > the `dependency-upgrade` changelog survey. The dubplate session (`dubplate-62`) shares the machine gate lock and
 > pings before its heavy gates; expect lock waits. The close's live smoke needs

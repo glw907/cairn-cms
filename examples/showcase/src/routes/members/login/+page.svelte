@@ -48,13 +48,15 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
         <fieldset class="flex flex-col gap-1">
           <legend class="text-sm font-medium">Email</legend>
           <label class="sr-only" for="member-contact">Email</label>
+          <!-- defaultValue, not value: hydration then keeps an address typed before the page's
+               script ran, where a value attribute would reset the field to the server's copy. -->
           <input
             id="member-contact"
             name="contact"
             type="email"
             class="input w-full"
             placeholder="you@showcase.test"
-            value={form && 'contact' in form ? form.contact : ''}
+            defaultValue={form && 'contact' in form ? form.contact : ''}
             required
           />
         </fieldset>

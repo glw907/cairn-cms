@@ -16,7 +16,7 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **The SvelteKit 3 upgrade is executing overnight: S0 to S2 done, S3 next** (Ledger "Checkpoint 3"; the
+- **The SvelteKit 3 upgrade is executing overnight: S0 to S3 done, S4 next** (Ledger "Checkpoint 4"; the
   unattended run hard-stops at 14.9M and before the close's live smoke, Geoff 2026-10-04). Worktree `.claude/worktrees/sveltekit-3`
   (branch `sveltekit-3`, pushed, draft PR #103, CI green); the plan's Ledger, "Checkpoint 1", carries Task 0 and the
   spike. Spec
@@ -68,13 +68,13 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Resume prompt
 
-### Next action (SvelteKit 3 upgrade, execution from S3)
+### Next action (SvelteKit 3 upgrade, execution from S4)
 
 > **Goal.** Execute the plan that moves the engine, the showcase, Waymark, `create-cairn-site`,
 > `@glw907/cairn-cms-dev`, and the Go doctor to SvelteKit 3 and adapter-cloudflare 8, so a fresh `sv create` project
 > installs cairn.
 >
-> **Scope.** S3 through S5 (Tasks 5c and 8 to 13), then the close; Tasks 0 to 7 and 5b are done (plan Ledger, "Checkpoint 3"). Out: the release (it holds until draft
+> **Scope.** S4 and S5 (Tasks 10b, 11a, 11b, 12, 13), then the close; Tasks 0 to 10, 5b, and 5c are done (plan Ledger, "Checkpoint 4"). Out: the release (it holds until draft
 > docs stage 2a lands), cairn.pub's migration (its own site pass after the cut), and draft docs task 8.
 >
 > **Settled (do not re-brainstorm):** everything in the spec's "Settled decisions" and "Rulings" and the plan's
@@ -86,7 +86,7 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 > baseline is green (plan Ledger, "Baseline result"): locally, the 20 `site-visual` home and archive-page-2
 > screenshots fail by a few pixels, which `durable-gotchas.md`'s CI-baseline rule counts as green; put that rule in
 > `pass-execute`'s `commonNotes`. Until Task 5, the local e2e runs with `E2E_PORT` unset after
-> `ss -ltnp 'sport = :4173'` shows no listener. Run each remaining segment (S3 next, its pre-flight and Task 7 already folded) through `pass-execute` by name, one invocation per segment, implementer `cairn-implementer`,
+> `ss -ltnp 'sport = :4173'` shows no listener. Run each remaining segment (S4 next, its pre-flight already folded) through `pass-execute` by name, one invocation per segment, implementer `cairn-implementer`,
 > Task 11b upshifted to Opus; pre-flight each later segment at HEAD. Every dependency bump (Tasks 4 and 11b) carries
 > the `dependency-upgrade` changelog survey. The dubplate session (`dubplate-62`) shares the machine gate lock and
 > pings before its heavy gates; expect lock waits. The close's live smoke needs

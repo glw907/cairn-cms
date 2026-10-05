@@ -49,6 +49,20 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`tooling`.** `scripts/lab/theme-fixture.mjs` defaults `THEME_FIXTURE_PORT` to 4393 (`:59`), which the
+  SvelteKit 3 pass's e2e host now pins as its `wrangler dev` inspector port (`E2E_PORT` + 1,
+  `examples/showcase/playwright.config.ts:48`), and `RESERVED_PORTS` (`:63`) lists neither 4393 nor
+  any fixture `PORT + 1` inspector port. A concurrent run fails loudly at the `listening()` check
+  rather than colliding, so the cost is a confusing refusal. Fix: move the default and reserve the
+  inspector ports. Found by the Task 6 diff review, conductor-verified, 2026-10-05 (on branch
+  `sveltekit-3` until it merges).
+- **`tooling`.** `npm run test:theme-fixture -- --arm both --build-only` exceeds the light gate
+  lane's 3G cap: two runs were SIGKILLed (exit 137) during the fixture copy's `vite build`, and it
+  passed only with `CAIRN_GATE_MEMORY_HIGH=5G CAIRN_GATE_MEMORY_MAX=6G`. It launches no browser, so
+  the lane rule puts it on light, where it cannot fit. Fix: document the override in the script's
+  header, or have it run on the heavy lane. Found by Task 6's implementer, conductor-verified
+  against `cairn-run-gate`'s caps, 2026-10-05.
+
 The draft docs harvest's close (2026-09-30) triaged the whole log and found four open entries,
 all filed by the harvest itself, each verified against the tree first. The stale `/components`
 subpath in `src/lib/islands/index.ts`'s header comment was fixed on the spot (it now names

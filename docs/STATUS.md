@@ -50,10 +50,13 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   The intro-only round ran 2026-10-04 (`9ca04531` on `draft-docs-2a`: a framing record per page, intros rewritten,
   a fact read narrowed five sentences) and is republished as version 3 of the artifact; Geoff read it on 2026-10-05:
   the intros are "drastically improved" and he is content the system now produces high-quality drafts, so the
-  intros hold. 2a's next action is task 8, after the SvelteKit 3 pass lands on `main` and 2a rebases onto it. Before
-  task 8 dispatches, `~/.claude/workflows/docs-page-chain.js` gains the framing step as its own stage (Opus at
-  `xhigh`, reading the doc set's map, deciding each page's background and framing from its reader before the
-  intro is drafted): the intro round ran it outside the chain, so the chain alone would still write thin intros. Open gap: no fact states that an auth channel's form takes anonymous
+  intros hold. 2a's next action is task 8, after the SvelteKit 3 pass lands on `main` and 2a rebases onto it. The chain is
+  ready for it (dotfiles `d1e3a3c`, `8075503`, 2026-10-05): `docs-page-chain.js` has the framing stage (after the
+  plan read, before the drafter; `claude-opus-5-5` at `xhigh`, reading the stage outline as the doc set's map,
+  writing `docs/internal/briefs/<track>/<slug>.framing.md`; the drafter writes the intro from it and the reads grade
+  the intro against it), and round 2 reads only each seat's round-1 findings and the diff since the redraft's
+  baseline, with a logged whole-page fallback. 89 tests run and pass. When 2a first runs the chain by name, `cmp`
+  the persisted script against the committed file (the stale-copy rule in `pass-gate-economy.md`). Open gap: no fact states that an auth channel's form takes anonymous
   posts (security-model brief maps it to `f:wuwk2q`, the nearest).
 - The gap sweep's 12 code defects sit in the friction log (`bd8ab1fe`, on `main`, not pushed).
 

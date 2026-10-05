@@ -43,12 +43,29 @@ const (
 var viteConfigCandidates = []string{"vite.config.js", "vite.config.ts", "vite.config.mts"}
 
 // csrfKeyPattern and trustedOriginsKeyPattern find an object-literal property named csrf or
-// trustedOrigins in comment-and-string-masked text. The terminator group says whether the
-// property has a value (":") or is a shorthand or the last in its object (",", "}").
+// trustedOrigins in the code view of a config, where the name may be bare, quoted with either
+// quote, or a computed string key in brackets. Group 1 is the key token and group 2 is the
+// terminator, which says whether the property has a value (":") or is a shorthand or the last in
+// its object (",", "}"). A match is only a property when keyMatches confirms it sits outside a
+// string and a comment.
 var (
-	csrfKeyPattern           = regexp.MustCompile(`(?:^|[{,])\s*csrf\s*([:,}])`)
-	trustedOriginsKeyPattern = regexp.MustCompile(`(?:^|[{,])\s*trustedOrigins\s*([:,}])`)
+	csrfKeyPattern           = regexp.MustCompile(`(?:^|[{,])\s*(csrf|'csrf'|"csrf"|\[\s*'csrf'\s*\]|\[\s*"csrf"\s*\])\s*([:,}])`)
+	trustedOriginsKeyPattern = regexp.MustCompile(`(?:^|[{,])\s*(trustedOrigins|'trustedOrigins'|"trustedOrigins"|\[\s*'trustedOrigins'\s*\]|\[\s*"trustedOrigins"\s*\])\s*([:,}])`)
 )
+
+// keyMatches returns the submatch indices of every property key the pattern finds in code that
+// is real syntax. A key token spelled inside a string or a comment is blanked or quote-stripped
+// in masked, so only a match whose first byte is the same in both views counts. masked and code
+// must be the same length, so a slice of both can be searched.
+func keyMatches(pattern *regexp.Regexp, masked, code string) [][]int {
+	var out [][]int
+	for _, loc := range pattern.FindAllStringSubmatchIndex(code, -1) {
+		if masked[loc[2]] == code[loc[2]] {
+			out = append(out, loc)
+		}
+	}
+	return out
+}
 
 // blankJSComments scans JavaScript or TypeScript source once and returns two views of it that
 // keep every byte offset. Comments become spaces in both. In masked the interior of every string
@@ -168,11 +185,11 @@ func literalEntries(code string) (entries []string, ok bool) {
 // literal the scan can follow, so the caller reports unchecked rather than guessing.
 func readTrustedOrigins(text string) (entries []string, readable bool) {
 	masked, code := blankJSComments(text)
-	for _, loc := range csrfKeyPattern.FindAllStringSubmatchIndex(masked, -1) {
-		if masked[loc[2]] != ':' {
+	for _, loc := range keyMatches(csrfKeyPattern, masked, code) {
+		if masked[loc[4]] != ':' {
 			return nil, false
 		}
-		open := skipSpace(masked, loc[3])
+		open := skipSpace(masked, loc[5])
 		if open >= len(masked) || masked[open] != '{' {
 			return nil, false
 		}
@@ -180,12 +197,12 @@ func readTrustedOrigins(text string) (entries []string, readable bool) {
 		if end < 0 {
 			return nil, false
 		}
-		block := masked[open : end+1]
-		for _, key := range trustedOriginsKeyPattern.FindAllStringSubmatchIndex(block, -1) {
-			if block[key[2]] != ':' {
+		block, blockCode := masked[open:end+1], code[open:end+1]
+		for _, key := range keyMatches(trustedOriginsKeyPattern, block, blockCode) {
+			if block[key[4]] != ':' {
 				return nil, false
 			}
-			start := skipSpace(block, key[3])
+			start := skipSpace(block, key[5])
 			if start >= len(block) || block[start] != '[' {
 				return nil, false
 			}
@@ -193,7 +210,7 @@ func readTrustedOrigins(text string) (entries []string, readable bool) {
 			if stop < 0 {
 				return nil, false
 			}
-			got, ok := literalEntries(code[open+start+1 : open+stop])
+			got, ok := literalEntries(blockCode[start+1 : stop])
 			if !ok {
 				return nil, false
 			}

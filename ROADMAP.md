@@ -1049,14 +1049,6 @@ the named human gates only):**
   this port, or the next pass that touches this file, either takes a free ephemeral port instead of
   the hardcoded default.
 
-- **The showcase hardcodes `PUBLIC_ORIGIN` to `http://localhost:4173`, so a port collision breaks
-  minted preview URLs (friction log, found again by theme identity pass B task 1, 2026-09-28).**
-  `examples/showcase/wrangler.jsonc:61` feeds `requireOrigin` independent of `E2E_PORT`, so with
-  another project bound to 4173 every minted preview URL 404s and `e2e/preview.spec.ts` fails 8
-  tests; CI, with no collision, passes. Fix: derive the origin from `E2E_PORT`, the way the
-  Playwright config already reads it. Trigger: the next concurrent-pass collision on this port, or
-  the pass that fixes the `rendered.test.ts` half above.
-
 - **`admin-toolkit.md`'s outline-chip contrast ratios need re-measuring (draft docs stage 1,
   2026-09-28).** The outline-chip contrast paragraph once cited two specific ratios (about 2.4:1
   against a card ground, 2.97:1 against a page ground) for the

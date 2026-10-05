@@ -1,5 +1,5 @@
 // Internal fixture endpoint: clears the channel's mutable state between e2e runs, so a locally
-// reused preview server (playwright's `reuseExistingServer`) does not accumulate hourly budgets
+// reused dev server (playwright's `reuseExistingServer`) does not accumulate hourly budgets
 // across runs until specs start answering `throttled`. The e2e calls this once, in
 // `test.beforeAll`.
 //

@@ -13,7 +13,7 @@
 //
 // The refusal lives in the body, `devDelivery`'s own precedent; see the sibling `last-otp` route
 // for why both checks (host and env) are independent of the build fold.
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { resetCapture } from '../../../members/capture-transport.js';
 
@@ -33,5 +33,5 @@ export const POST: RequestHandler = async ({ url, platform }) => {
   await db.prepare('DELETE FROM cairn_channel_session').run();
   await db.prepare('DELETE FROM cairn_channel_budget').run();
   resetCapture();
-  return json({ ok: true });
+  return Response.json({ ok: true });
 };

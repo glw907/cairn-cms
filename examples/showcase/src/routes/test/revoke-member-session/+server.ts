@@ -11,7 +11,7 @@
 //
 // The refusal lives in the body, `devDelivery`'s own precedent; see the sibling `last-otp` route
 // for why both checks (host and env) are independent of the build fold.
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { memberChannel } from '../../../members/channel.js';
 
@@ -33,5 +33,5 @@ export const POST: RequestHandler = async (event) => {
     error(404, 'Not found');
   }
   await memberChannel.revokeSessions(db, subject);
-  return json({ ok: true });
+  return Response.json({ ok: true });
 };

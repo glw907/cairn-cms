@@ -28,7 +28,7 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
 -->
 <script lang="ts">
   import { page } from '$app/state';
-  import { browser } from '$app/environment';
+  import { browser } from '$app/env';
   import { resolveTheme, toggleThemeWithTransition } from '$chassis/theme-toggle.js';
   import type { NavNode } from '@glw907/cairn-cms';
   import { isAdminHref } from './admin-link.js';

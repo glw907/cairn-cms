@@ -7,7 +7,7 @@
 //
 // The committed manifest is empty at build, so an in-flight upload's record is layered on top of
 // it for the render rather than waiting for the save to land.
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { normalizeAssets, createMediaResolver, type MediaEntry } from '@glw907/cairn-cms/media';
 import { cairn } from '$theme/cairn.config.js';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
@@ -24,7 +24,7 @@ export const POST: RequestHandler = async ({ request }) => {
       normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
     );
     const html = await cairn.rendering.render({ body, resolveMedia });
-    return json({ html });
+    return Response.json({ html });
   }
   error(404, 'Not found');
 };

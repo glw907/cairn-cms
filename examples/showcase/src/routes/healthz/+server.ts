@@ -3,7 +3,6 @@
 // there is no GITHUB_APP_PRIVATE_KEY_B64, so the check returns ok:false with a detail string. A
 // live site with the secret returns ok:true. Always returns 200 JSON so the response is safe to
 // assert in E2E and an operator can tell apart "key missing" from "server crashed".
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { loadHealth } from '@glw907/cairn-cms/sveltekit';
 import { runtime } from '$chassis/cairn.server.js';
@@ -14,9 +13,9 @@ export const prerender = false;
 
 export const GET: RequestHandler = async (event) => {
   try {
-    return json(await loadHealth(event, runtime));
+    return Response.json(await loadHealth(event, runtime));
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
-    return json({ ok: false, checks: { githubAppSigning: { ok: false, detail } } });
+    return Response.json({ ok: false, checks: { githubAppSigning: { ok: false, detail } } });
   }
 };

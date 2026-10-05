@@ -411,11 +411,11 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  let a crawler or unfurler consolidate onto a URL that is not yet live (or, for the ended page,
  *  already superseded). This is unrelated to the token, the sole credential, which lives only in
  *  the route path and never appears on the page at all.
- * @throws Error naming `export const prerender = false` when `building` (`$app/environment`) is
+ * @throws Error naming `export const prerender = false` when `building` (`$app/env`) is
  *  true, so a site that lets this route prerender gets a red build instead of a token-bearing
- *  static asset. `$app/environment` is imported dynamically, at call time, rather than at module
+ *  static asset. `$app/env` is imported dynamically, at call time, rather than at module
  *  scope: this module is reachable through the `/sveltekit` barrel, and a barrel re-export pulls
- *  in every other export's own top-level imports, so a module-scope `$app/environment` import
+ *  in every other export's own top-level imports, so a module-scope `$app/env` import
  *  here would break a consumer that bundles a single barrel export (for example
  *  `createD1AuditSink`, for a Cloudflare Cron handler) with a plain, non-Vite esbuild pass that
  *  has no SvelteKit plugin to resolve the virtual module. The dynamic import is further wrapped in
@@ -423,7 +423,7 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  static import at bundle time, and still fails the same build even without a barrel re-export in
  *  the way. A `try`/`catch` around it is esbuild's own documented escape hatch, downgrading the
  *  unresolvable specifier to a runtime concern instead of a bundle-time error. Outside a real
- *  SvelteKit build the import always rejects (there is no `$app/environment` module to resolve),
+ *  SvelteKit build the import always rejects (there is no `$app/env` module to resolve),
  *  and `building` falls back to `false`: a `/preview/[token]` route carries a token in its own
  *  path and is never prerendered, so `false`, meaning "proceed, we are not prerendering," is the
  *  correct value for every context this fallback can run in.
@@ -433,7 +433,7 @@ export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesCon
 
   let building = false;
   try {
-    ({ building } = await import('$app/environment'));
+    ({ building } = await import('$app/env'));
   } catch {
     building = false;
   }

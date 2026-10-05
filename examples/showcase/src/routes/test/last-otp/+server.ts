@@ -13,7 +13,7 @@
 // reads. `isLocalHost` is re-declared here, and in the two sibling routes, rather than imported:
 // the engine's own copy (`dev-flag.ts`) is internal, not part of the public export map, so a
 // showcase route has no seam to import it through and hand-rolls the three-line predicate instead.
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { readCapture } from '../../../members/capture-transport.js';
 
@@ -30,5 +30,5 @@ export const GET: RequestHandler = async ({ url, platform }) => {
   if (!capture) {
     error(404, 'Not found');
   }
-  return json(capture);
+  return Response.json(capture);
 };

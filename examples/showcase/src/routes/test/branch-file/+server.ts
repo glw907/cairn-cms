@@ -4,7 +4,7 @@
 // dynamic, so a default production build drops the body and the route 404s; it has no surface in a
 // real deploy. The media-slice E2E reads the `media.json` committed alongside the body (the
 // last-commit recorder captures only the `.md` entry).
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { devBackendOptIn } from '$chassis/dev-gate.js';
 import type { RequestHandler } from './$types';
 
@@ -16,7 +16,7 @@ export const GET: RequestHandler = async ({ url }) => {
     const path = url.searchParams.get('path') ?? '';
     const content = committedFile(branch, path);
     if (content === null) error(404, 'Not found');
-    return json({ branch, path, content });
+    return Response.json({ branch, path, content });
   }
   error(404, 'Not found');
 };

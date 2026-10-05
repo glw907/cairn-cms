@@ -63,8 +63,8 @@ import { beforeNavigateCallbacks } from './_app-navigation.js';
 // The same module instance EditPage receives for $app/state via the project alias.
 import { page as appPage, __setPrerenderingUrl } from './_app-state.js';
 import { COLD_START } from './_fake-spell-worker.js';
-// The same module instance EditPage receives for $app/environment via the project alias.
-import { __setBuilding } from '../_app-environment.js';
+// The same module instance EditPage receives for $app/env via the project alias.
+import { __setBuilding } from '../_app-env.js';
 // The compiled sheet's text (daisyUI's real .badge/.btn sizing), injected only for the desk band
 // phone-width tests below so their bounding-box measurements reflect production control
 // footprints, never the UA-default widths an unstyled render leaves.

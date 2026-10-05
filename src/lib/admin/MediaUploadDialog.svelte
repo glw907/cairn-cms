@@ -146,7 +146,7 @@ the new asset appears.
   // the media-scoped ?/mediaLibraryUpload action, which stores and commits in one step), send it, and
   // route the envelope. A typed failure or an expired session shows a retry card in the dialog without
   // losing the file; success closes the dialog and navigates to the flash-carrying URL so the loader
-  // re-runs and the new asset appears (invalidateAll alone would not set the flash).
+  // re-runs and the new asset appears (refreshAll alone would not set the flash).
   async function runLibraryUpload(record: CaptureRecord) {
     uploadStatus = { kind: 'working' };
     const fail = (message: string) => {
@@ -203,8 +203,8 @@ the new asset appears.
       return;
     }
 
-    // Success: navigate to the flash URL rather than plain invalidateAll, so the loader re-runs AND
-    // sets the uploaded flash (invalidateAll alone would refresh the grid but leave the flash unset).
+    // Success: navigate to the flash URL rather than plain refreshAll, so the loader re-runs AND
+    // sets the uploaded flash (refreshAll alone would refresh the grid but leave the flash unset).
     // { invalidateAll: true } is still required alongside the URL: a second upload in the same
     // session lands on the identical ?uploaded=1 URL, which goto() treats as a no-op navigation
     // without it, so the loader never re-runs and the new asset never appears.

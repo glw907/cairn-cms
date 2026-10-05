@@ -1,4 +1,4 @@
-// A stand-in for SvelteKit's $app/environment, wired in by the unit and integration projects'
+// A stand-in for SvelteKit's $app/env, wired in by the unit and integration projects'
 // vite alias (the component project has its own equivalent stubs in src/tests/component/). The
 // real module exists only inside a kit app; loadPreview's build-time guard imports it statically,
 // so the alias points here. `building` is a mutable `let`, not a `const` like the real module, so

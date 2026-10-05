@@ -56,7 +56,7 @@ async function bundleBarrel() {
 }
 
 describe('the /sveltekit barrel bundles cleanly with a plain, non-Vite esbuild pass', () => {
-  it('reproduces the real consumer failure mode: esbuild --bundle over dist/sveltekit/index.js resolves $app/environment (or fails closed)', async () => {
+  it('reproduces the real consumer failure mode: esbuild --bundle over dist/sveltekit/index.js resolves $app/env (or fails closed)', async () => {
     if (!existsSync(ENTRY)) {
       throw new Error(
         'dist/sveltekit/index.js is missing; run `npm run package` before `npm test`. This gate ' +

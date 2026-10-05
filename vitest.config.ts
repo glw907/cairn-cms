@@ -57,12 +57,12 @@ export default defineConfig({
     projects: [
       {
         resolve: {
-          // loadPreview (src/lib/sveltekit/preview.ts) imports $app/environment for its build-time
+          // loadPreview (src/lib/sveltekit/preview.ts) imports $app/env for its build-time
           // guard, the first $app import outside src/lib/admin. The real module exists only
           // inside a kit app; this alias resolves it to a stub so the unit project can import
           // preview.ts at all.
           alias: {
-            '$app/environment': path.resolve('./src/tests/_app-environment.ts'),
+            '$app/env': path.resolve('./src/tests/_app-env.ts'),
           },
         },
         test: {
@@ -126,10 +126,10 @@ export default defineConfig({
           }),
         ],
         resolve: {
-          // Matches the unit project's own alias: loadPreview's $app/environment import needs a
+          // Matches the unit project's own alias: loadPreview's $app/env import needs a
           // resolvable stub outside a real kit app.
           alias: {
-            '$app/environment': path.resolve('./src/tests/_app-environment.ts'),
+            '$app/env': path.resolve('./src/tests/_app-env.ts'),
           },
         },
         test: {
@@ -154,9 +154,9 @@ export default defineConfig({
             '$app/forms': path.resolve('./src/tests/component/_app-forms.ts'),
             // content-routes-preview.ts value-imports mintPreview from preview.ts, so any
             // component test that wires createCairnAdmin/createContentRoutes (most of them) pulls
-            // preview.ts's own $app/environment import into this project's browser graph too, not
+            // preview.ts's own $app/env import into this project's browser graph too, not
             // just the unit and integration projects.
-            '$app/environment': path.resolve('./src/tests/_app-environment.ts'),
+            '$app/env': path.resolve('./src/tests/_app-env.ts'),
           },
         },
         // Pre-declare the spellchecker's wasm loader so Vite optimizes it during warm-up. On a

@@ -12,7 +12,7 @@ export function beforeNavigate(callback: (navigation: BeforeNavigate) => void): 
 }
 
 /** Records the call. The real implementation re-runs every load function for the current page. */
-export async function invalidateAll(): Promise<void> {}
+export async function refreshAll(): Promise<void> {}
 
 /** Every URL goto() was called with, oldest first, so a test can assert a redirect-and-refresh flow. */
 export const gotoCalls: string[] = [];

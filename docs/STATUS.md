@@ -43,6 +43,8 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   reasoning, unlike the bodies: a separate framing step (Opus at `xhigh`, reading the whole doc set's map) decides
   each page's background and framing before the intro is drafted, starting from the reader: who arrives at the page
   and what they are looking for. The add-cairn case illustrates the reasoning, never a template; each page differs.
+  2a's next action (Geoff, 2026-10-04): a quick intro-only round on the six pilot pages, testing the brief's new
+  "The introduction" section (`00d7ce44`) and the drafter's intro rule, then Geoff's read, before task 8.
 - The gap sweep's 12 code defects sit in the friction log (`bd8ab1fe`, on `main`, not pushed).
 
 ## Open decisions and watches

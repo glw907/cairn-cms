@@ -5,7 +5,7 @@
 // assert in E2E and an operator can tell apart "key missing" from "server crashed".
 import type { RequestHandler } from './$types.js';
 import { loadHealth } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from '$chassis/cairn.server.js';
+import { runtime } from '#chassis/cairn.server.js';
 
 // A site that defaults to prerender=true must force this dynamic, or it gets prerendered to a
 // build-time ok:false and can 404 at runtime.

@@ -12,7 +12,7 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
 -->
 <script lang="ts">
   import { page } from '$app/state';
-  import themeCss from '$theme/theme.css?url';
+  import themeCss from '#theme/theme.css?url';
   import {
     INSECURE_TEST_CHALLENGE_FIELD,
     INSECURE_TEST_CHALLENGE_TOKEN,

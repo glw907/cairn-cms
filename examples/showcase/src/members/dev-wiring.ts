@@ -3,7 +3,7 @@
 // wrangler.jsonc and hooks.server.ts). Reachable only from inside hooks.server.ts's
 // __CAIRN_DEV_BUILD__ branch via a dynamic import(), so createChannelDb never rides into a
 // default production bundle (the e2e workflow greps `wrangler deploy --dry-run` output to prove
-// it; see $chassis/dev-gate.ts).
+// it; see #chassis/dev-gate.ts).
 import type { Handle } from '@sveltejs/kit';
 import { createChannelDb, type ChannelDb } from '@glw907/cairn-cms-dev';
 import schemaSql from '../../migrations-members/0000_channel.sql?raw';

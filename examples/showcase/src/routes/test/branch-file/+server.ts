@@ -1,11 +1,11 @@
 // Internal fixture endpoint: returns one file's content off a branch in the fake-github double's
 // in-memory repo, or 404 when the file is absent. The dev-package import sits behind
-// __CAIRN_DEV_BUILD__, the Vite define this branch reads directly ($chassis/dev-gate.ts), and is
+// __CAIRN_DEV_BUILD__, the Vite define this branch reads directly (#chassis/dev-gate.ts), and is
 // dynamic, so a default production build drops the body and the route 404s; it has no surface in a
 // real deploy. The media-slice E2E reads the `media.json` committed alongside the body (the
 // last-commit recorder captures only the `.md` entry).
 import { error } from '@sveltejs/kit';
-import { devBackendOptIn } from '$chassis/dev-gate.js';
+import { devBackendOptIn } from '#chassis/dev-gate.js';
 import type { RequestHandler } from './$types';
 
 /** Return the fake-github double's content for the requested branch and path, or 404. */

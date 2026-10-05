@@ -2,6 +2,11 @@
   "name": "cairn-showcase",
   "private": true,
   "type": "module",
+  "imports": {
+    "#chassis/*": "./src/chassis/*",
+    "#lib/*": "./src/lib/*",
+    "#theme/*": "./src/theme/*"
+  },
   "scripts": {
     "dev": "vite dev",
     "predev": "npm run build:admin-css",

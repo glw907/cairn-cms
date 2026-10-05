@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { readVocabulary } from '@glw907/cairn-cms';
-import { posts } from '$chassis/content.js';
-import { siteConfig } from '$theme/site-config.js';
-import { paginateArchive } from '$chassis/archive.js';
+import { posts } from '#chassis/content.js';
+import { siteConfig } from '#theme/site-config.js';
+import { paginateArchive } from '#chassis/archive.js';
 
 export const prerender = true;
 

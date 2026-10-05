@@ -7,8 +7,8 @@ no site skips regardless of what it looks like, and the composition primitives a
 instead of hand-rolling its own. Everything outside `src/chassis/` (the concrete adapter config,
 the chrome components, the home and article composition, the theme's color and type values) is
 the theme's own content. A theme file reaches chassis only through its exported seams: the
-`$chassis` alias in `.ts`/`.svelte` files, or a relative `@import` in `.css` (aliases do not
-resolve in CSS), always naming one of the files in the table below. `npm run
+`#chassis` subpath import in `.ts`/`.svelte` files, or a relative `@import` in `.css` (CSS
+imports stay relative), always naming one of the files in the table below. `npm run
 check:chassis-boundary` (root) enforces this: it fails on any import that resolves into
 `src/chassis/` but names a file not in this table, the same way a reach past a package's public
 exports would.
@@ -39,10 +39,10 @@ the mechanism.
 
 The SvelteKit route files that touch delivery plumbing (`feed.xml`, `feed.json`, `sitemap.xml`,
 `robots.txt`, `media/[...path]`, `healthz`, the `/admin` mount) stay in `src/routes/`, since
-SvelteKit's routing is filesystem-based; they import chassis logic through the `$chassis` alias
-(`svelte.config.js`) instead of duplicating it. The same route files reach the theme's own content
-(the adapter config, the site config) through a second alias, `$theme` (`src/theme/`), the mirror
-image of `$chassis` for everything that is not genre-free.
+SvelteKit's routing is filesystem-based; they import chassis logic through the `#chassis` subpath import
+(declared in `package.json`) instead of duplicating it. The same route files reach the theme's own content
+(the adapter config, the site config) through a second subpath import, `#theme` (`src/theme/`), the mirror
+image of `#chassis` for everything that is not genre-free.
 
 ## Class namespaces
 

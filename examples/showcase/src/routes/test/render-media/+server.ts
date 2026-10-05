@@ -2,15 +2,15 @@
 // media record overlaid into a fresh resolver, through the site's own adapter render. It proves the
 // vertical slice's render leg: a content `media:` handle rewrites to its delivery `/media/...` path,
 // the same path the delivery route serves. The body sits behind __CAIRN_DEV_BUILD__, the Vite define
-// this branch reads directly ($chassis/dev-gate.ts), so a default production build drops it and the
+// this branch reads directly (#chassis/dev-gate.ts), so a default production build drops it and the
 // route 404s; it has no surface in a real deploy.
 //
 // The committed manifest is empty at build, so an in-flight upload's record is layered on top of
 // it for the render rather than waiting for the save to land.
 import { error } from '@sveltejs/kit';
 import { normalizeAssets, createMediaResolver, type MediaEntry } from '@glw907/cairn-cms/media';
-import { cairn } from '$theme/cairn.config.js';
-import { devBackendOptIn } from '$chassis/dev-gate.js';
+import { cairn } from '#theme/cairn.config.js';
+import { devBackendOptIn } from '#chassis/dev-gate.js';
 import type { RequestHandler } from './$types';
 
 /** Render the posted body with the in-flight media record overlaid onto the resolver. */

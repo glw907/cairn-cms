@@ -100,7 +100,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/sveltekit/cairn-admin.ts:260-262,279,340` (`authedViews`/`anyView`). [verified]
 - `f:p3vmug` The showcase's admin route files differ from `admin-routes.md`'s "reproduced from the
   showcase" snippets in two ways: they import the composer through the showcase-internal
-  `$chassis` alias (not `$lib`), and `+layout.svelte` imports a compiled `.cairn/admin.css`,
+  `#chassis` subpath import (not `$lib`), and `+layout.svelte` imports a compiled `.cairn/admin.css`,
   present in both the showcase and the `create-cairn-site` scaffold template
   (`templates/waymark/src/routes/admin/+layout.svelte`). Source:
   `examples/showcase/src/routes/admin/+layout.server.ts`,

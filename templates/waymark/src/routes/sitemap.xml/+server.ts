@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { sitemapResponse, type SitemapUrl } from '@glw907/cairn-cms/delivery';
-import { site, siteMeta } from '$chassis/content.js';
+import { site, siteMeta } from '#chassis/content.js';
 
 export const prerender = true;
 

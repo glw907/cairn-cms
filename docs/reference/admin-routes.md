@@ -4,11 +4,11 @@ A cairn site mounts the whole `/admin` surface with two route pairs, the catch-a
 shell layout, plus one server composer. The engine's `createCairnAdmin` facade serves every admin view through a single `load`
 and a single `actions` record, so the site restates no route table and wires no action names by
 hand. The showcase at `examples/showcase` is the working model of this shape; copy its files, not
-a guess at them. The showcase's own `svelte.config.js` predates the current scaffold shape below;
-it is this repo's hand-maintained config, not a fresh scaffold's output, and both settings still
-work there too. The showcase also imports its composer through its own `$chassis` alias and
-imports a compiled .cairn/admin.css in its shell layout; the snippets below use the generic
-`$lib` alias and omit that stylesheet import.
+a guess at them. The showcase keeps its SvelteKit config in the `sveltekit()` call in
+`vite.config.ts`, the shape a current scaffold writes, and has no `svelte.config.js`. The showcase
+also imports its composer through its own `#chassis` subpath import, declared in its
+`package.json`, and imports a compiled .cairn/admin.css in its shell layout; the snippets below use
+the generic `$lib` alias and omit that stylesheet import.
 
 This wiring assumes the site disables SvelteKit's own origin check for form posts, `csrf: {
 checkOrigin: false }`, since cairn's guard owns CSRF for the admin through a double-submit token.

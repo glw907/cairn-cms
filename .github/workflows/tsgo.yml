@@ -26,10 +26,8 @@ name: tsgo
 # `--config ./svelte.config.js` pins the Svelte config svelte-check applies to every file it
 # finds, matching `npm run check`'s scope, in both the TS6 baseline and TS7 runs below. Without
 # it, svelte-check's `--incremental`/`--tsgo` file discovery walks the whole repo tree (not just
-# this tsconfig's `include`) and tries to load `examples/showcase` and `templates/waymark`'s own
-# `svelte.config.js` files, which import `@sveltejs/adapter-cloudflare`, a dependency this job
-# never installs. `--config` tells it there is exactly one Svelte config in scope, so those
-# directories are never loaded.
+# this tsconfig's `include`) looking for Svelte configs. `--config` tells it there is exactly one
+# Svelte config in scope, so no other directory is probed.
 
 on:
   schedule:

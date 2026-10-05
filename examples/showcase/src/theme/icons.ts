@@ -1,4 +1,4 @@
-// The theme's icon set: the concrete glyph data the render helpers (`$chassis/render.js`) and the
+// The theme's icon set: the concrete glyph data the render helpers (`#chassis/render.js`) and the
 // picker fields draw from. Kept in its own module, apart from `cairn.config.ts`, so re-skinning
 // the glyph set never touches the adapter or the component declarations that reference it.
 import type { IconSet } from '@glw907/cairn-cms';

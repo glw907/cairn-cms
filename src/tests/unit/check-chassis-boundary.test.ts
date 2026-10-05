@@ -9,7 +9,7 @@ import {
 describe('seamBaseName', () => {
   it('strips a single trailing extension, including from a dotted filename', () => {
     expect(seamBaseName('cairn.server.ts')).toBe('cairn.server');
-    expect(seamBaseName('$chassis/cairn.server.js')).toBe('cairn.server');
+    expect(seamBaseName('#chassis/cairn.server.js')).toBe('cairn.server');
     expect(seamBaseName('tokens.css')).toBe('tokens');
   });
 });
@@ -30,14 +30,14 @@ describe('parseSeams', () => {
 });
 
 describe('referencesChassis', () => {
-  it('recognizes the $chassis alias and a relative chassis/ path', () => {
-    expect(referencesChassis('$chassis/content.js')).toBe(true);
+  it('recognizes the #chassis subpath import and a relative chassis/ path', () => {
+    expect(referencesChassis('#chassis/content.js')).toBe(true);
     expect(referencesChassis('../chassis/tokens.css')).toBe(true);
     expect(referencesChassis('../../chassis/render.js')).toBe(true);
   });
 
   it('ignores an unrelated specifier', () => {
-    expect(referencesChassis('$theme/cairn.config.js')).toBe(false);
+    expect(referencesChassis('#theme/cairn.config.js')).toBe(false);
     expect(referencesChassis('svelte')).toBe(false);
   });
 });
@@ -45,8 +45,8 @@ describe('referencesChassis', () => {
 describe('reachInsInSource', () => {
   const seams = new Set(['content', 'tokens']);
 
-  it('passes a $chassis import naming a documented seam', () => {
-    const source = "import { something } from '$chassis/content.js';";
+  it('passes a #chassis import naming a documented seam', () => {
+    const source = "import { something } from '#chassis/content.js';";
     expect(reachInsInSource('good.ts', source, seams)).toEqual([]);
   });
 
@@ -55,14 +55,14 @@ describe('reachInsInSource', () => {
     expect(reachInsInSource('good.css', source, seams)).toEqual([]);
   });
 
-  it('flags a $chassis import naming an undocumented file', () => {
-    const source = "import { secret } from '$chassis/secret-helper.js';";
+  it('flags a #chassis import naming an undocumented file', () => {
+    const source = "import { secret } from '#chassis/secret-helper.js';";
     const violations = reachInsInSource('bad.ts', source, seams);
-    expect(violations).toEqual([{ file: 'bad.ts', spec: '$chassis/secret-helper.js' }]);
+    expect(violations).toEqual([{ file: 'bad.ts', spec: '#chassis/secret-helper.js' }]);
   });
 
   it('ignores an import that never touches chassis', () => {
-    const source = "import { x } from '$theme/cairn.config.js';";
+    const source = "import { x } from '#theme/cairn.config.js';";
     expect(reachInsInSource('fine.ts', source, seams)).toEqual([]);
   });
 });

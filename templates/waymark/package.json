@@ -2,6 +2,11 @@
   "name": "cairn-site",
   "private": true,
   "type": "module",
+  "imports": {
+    "#chassis/*": "./src/chassis/*",
+    "#lib/*": "./src/lib/*",
+    "#theme/*": "./src/theme/*"
+  },
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "predev": "npm run build:admin-css",

@@ -1,7 +1,7 @@
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle } from '@sveltejs/kit';
-import { devBackendOptIn } from '$chassis/dev-gate.js';
+import { devBackendOptIn } from '#chassis/dev-gate.js';
 import { access } from './access.js';
 
 // createAdminAction's own authorization refusals (see the SvelteKit reference's "Refusal channels")
@@ -10,7 +10,7 @@ import { access } from './access.js';
 // everything else, so this file declares no handleError hook of its own.
 
 // The dev backend activates only behind __CAIRN_DEV_BUILD__, the Vite define this branch reads
-// directly (see $chassis/dev-gate.ts): a default `npm run build` substitutes `false` here, so
+// directly (see #chassis/dev-gate.ts): a default `npm run build` substitutes `false` here, so
 // Rollup drops this branch and its dynamic import, keeping the dev package out of the deployable
 // Worker (the e2e workflow greps `wrangler deploy --dry-run` output to prove it). The package is a
 // devDependency, absent under `npm ci --omit=dev`, so even a forced import throws in production.

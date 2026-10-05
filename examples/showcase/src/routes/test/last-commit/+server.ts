@@ -1,11 +1,11 @@
 // Internal fixture endpoint: returns the last commit recorded by the fake-github double.
 // The dev-package import sits behind __CAIRN_DEV_BUILD__, the Vite define this branch reads
-// directly ($chassis/dev-gate.ts), and is dynamic, so a default production build drops the body and
+// directly (#chassis/dev-gate.ts), and is dynamic, so a default production build drops the body and
 // the route 404s; it has no surface in a real deploy. The E2E hits this to assert the editor is the
 // commit author and the committer is absent.
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { devBackendOptIn } from '$chassis/dev-gate.js';
+import { devBackendOptIn } from '#chassis/dev-gate.js';
 
 /** Return the last commit the fake-github double recorded. */
 export const GET: RequestHandler = async () => {

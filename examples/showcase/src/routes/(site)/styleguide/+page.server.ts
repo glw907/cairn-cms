@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { previewMarkdown } from '@glw907/cairn-cms';
-import { cairn } from '$theme/cairn.config.js';
+import { cairn } from '#theme/cairn.config.js';
 
 // The styleguide renders a representative markdown sample through the SAME adapter `render` the
 // article route calls, so the page shows the real prose output (the bespoke reading surface, the

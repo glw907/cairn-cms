@@ -18,10 +18,10 @@ no-op under its own failure condition; see the comments above `onNavigate` and
 -->
 <script lang="ts">
   import { afterNavigate, beforeNavigate, onNavigate } from '$app/navigation';
-  import themeCss from '$theme/theme.css?url';
-  import siteCss from '$theme/site.css?url';
-  import SiteHeader from '$theme/components/SiteHeader.svelte';
-  import SiteFooter from '$theme/components/SiteFooter.svelte';
+  import themeCss from '#theme/theme.css?url';
+  import siteCss from '#theme/site.css?url';
+  import SiteHeader from '#theme/components/SiteHeader.svelte';
+  import SiteFooter from '#theme/components/SiteFooter.svelte';
   let { children } = $props();
 
   // SvelteKit's documented View Transitions recipe: a plain root cross-fade (~180ms, theme.css's

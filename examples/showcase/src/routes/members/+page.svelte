@@ -8,7 +8,7 @@ would be served by the asset layer with the Worker, and therefore the guard, nev
 -->
 <script lang="ts">
   import { page } from '$app/state';
-  import themeCss from '$theme/theme.css?url';
+  import themeCss from '#theme/theme.css?url';
   import type { PageData } from './$types';
 
   interface Props {

@@ -1,17 +1,22 @@
 # Add a custom admin screen
 
-Add a screen under `/admin` that renders inside the admin shell, enforces the site's access map on its reads and writes, records each write in the audit trail, and passes `cairn-audit`.
+cairn manages a site's markdown content and the admin frame around it, and it leaves the site's other data and domain logic to the developer, whom it serves through a thin seam, not a built-in feature.
+In the admin, that seam is the custom admin screen, a SvelteKit route under `src/routes/admin/` that SvelteKit resolves ahead of the engine's `[...path]` catch-all and that can adopt the packaged admin toolkit.
+A site builds one to manage data it keeps outside its markdown content, such as rows in the Cloudflare D1 database that a scaffolded site binds as `APP_DB` for the developer's use, beside the engine's sign-in database.
+A site with another kind of markdown content declares a concept in its adapter instead of building a screen, as [Define an adapter and schema](define-an-adapter-and-schema.md) describes.
 
-A custom admin screen is a SvelteKit route under `src/routes/admin/` that renders inside [`CairnAdminShell`](../reference/admin.md#cairnadminshell), can adopt the packaged admin toolkit, and sits behind the same sign-in guard as the engine's screens.
-A site adds one to manage data it keeps outside its markdown content, such as rows in a `signups` table read through an `APP_DB` binding.
-The worked example is the signups screen over that table, which every scaffolded site carries at `src/routes/admin/signups/`, as does the repository's example site, `examples/showcase`.
-The example runs from the screen's route through its load, its actions, their audit calls, its markup, and its styles.
+The route's place under `/admin` gives the screen the [`CairnAdminShell`](../reference/admin.md#cairnadminshell) frame and the same sign-in guard as the engine's screens.
+The guard gates the `/admin` subtree as a whole and decides no route's authorization, so the screen checks the site's access map itself, on its read and on every write.
+An entry's edit history comes from git, which never sees a screen's writes to its D1 database, so the screen records those writes in the audit trail itself. Once the site wires an audit sink, each `ctx.audit` call adds one row naming the actor, the action, and the entity.
+`cairn-audit` applies the rules it runs on the engine's admin components to everything under `src/routes/admin`, a custom screen included.
+The steps that follow build a screen under `/admin` that renders inside the admin shell, enforces the site's access map on its reads and writes, records each write in the audit trail, and passes `cairn-audit`.
+
+A developer may first meet a custom screen as the signups screen, which the setup command writes into every scaffolded site at `src/routes/admin/signups/` and which the repository's example site, `examples/showcase`, also carries.
+That screen is the worked example, followed from its route through its load, its actions, their audit calls, its markup, and its styles.
 [Build the dialog form](#build-the-dialog-form) and [Load row detail on demand](#load-row-detail-on-demand) apply only to a screen with a dialog form or expanding rows.
 [Animate the screen](#animate-the-screen) applies only to a screen that animates.
-
 The steps assume familiarity with SvelteKit's form actions and server hooks and with Svelte's snippets and runes.
 
-A site that needs another kind of markdown content declares a concept in its adapter instead of building a screen, as [Define an adapter and schema](define-an-adapter-and-schema.md) describes.
 To declare the site's access map, or to change who reaches an existing screen, see [Restrict admin access](restrict-admin-access.md).
 To list the screen in the sidebar, see [Arrange the admin sidebar](arrange-the-admin-sidebar.md).
 The reasoning behind the access map, the audit's site-wide configuration, and the media upload protocol each have a separate page, listed under [See also](#see-also).

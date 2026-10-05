@@ -2,33 +2,62 @@
   "page": "docs/extend/replace-magic-links-with-cloudflare-access.md",
   "sentences": [
     {
-      "text": "Replace cairn's magic-link sign-in with your organization's identity provider by putting a Cloudflare Access application in front of the admin.",
-      "id": "f:8289h7"
-    },
-    {
-      "text": "A resolver on the guard turns the Access token into the email the guard looks up in the roster.",
+      "text": "A cairn site signs its editors in by magic link by default, so an editor enters an email address, receives a one-time link, and reaches the admin with no GitHub account and no password.",
       "id": [
-        "f:8289h7",
-        "f:emrebl"
+        "f:0ij7do",
+        "f:7oxmh4"
       ]
     },
     {
-      "text": "A site makes this switch when its editors already hold accounts in an identity provider such as Google Workspace or Microsoft Entra ID.",
+      "text": "Magic-link sign-in is the default so that a content site runs with zero config.",
+      "id": [
+        "f:zxdoaf"
+      ]
+    },
+    {
+      "text": "Under that default, cairn is itself the identity system for its editors, and its D1 store, `AUTH_DB`, holds the roster, the sessions, and the single-use sign-in tokens.",
+      "id": [
+        "f:u77pea"
+      ]
+    },
+    {
+      "text": "The guard that [`createAuthGuard`](../reference/sveltekit.md#createauthguard) returns enforces that sign-in as a SvelteKit handle in the site's server hooks, and it gates every `/admin` path except the sign-in page and its auth endpoints.",
+      "id": [
+        "f:dwc4kp",
+        "f:9xthnq"
+      ]
+    },
+    {
+      "text": "A site leaves magic links when its editors already hold accounts in an identity provider such as Google Workspace or Microsoft Entra ID and should sign in to the admin with them.",
       "id": [
         "f:gw1oas",
         "f:agif8l"
       ]
     },
     {
-      "text": "Access admits only the users who match an application's policies, and it signs them in through the identity provider the application connects to.",
-      "id": "f:agif8l"
+      "text": "Cloudflare Access brings that provider to a site on Workers, since an Access application sits in front of the site's Worker, admits only the users who match its policies, and signs them in through the identity provider it connects to.",
+      "id": [
+        "f:agif8l",
+        "f:i74t7g"
+      ]
+    },
+    {
+      "text": "The switch puts an Access application in front of the admin as its identity gate and gives the guard a resolver that turns the Access token into the email the guard looks up in the roster.",
+      "id": [
+        "f:8289h7",
+        "f:emrebl"
+      ]
+    },
+    {
+      "text": "The roster stays in cairn, so the application decides who reaches the admin and the roster decides which of those people may edit.",
+      "id": "f:k40l86"
     },
     {
       "text": "The work spans the site's server hooks and the account's Zero Trust settings, so it takes a developer who can change both.",
       "id": "no-claim"
     },
     {
-      "text": "Setting [`createAuthGuard`](../reference/sveltekit.md#createauthguard)'s `identity` option replaces the whole magic-link path, so every editor signs in through the gate or none does.",
+      "text": "Setting the guard's `identity` option replaces the whole magic-link path, so every editor signs in through the gate or none does.",
       "id": "f:v5ndhs"
     },
     {

@@ -271,66 +271,14 @@ precedent for two actions in one task heading.
 
 ## The introduction, in Google's three parts
 
-Five paragraphs under the title, no heading, then the figure. Google's three parts arrive as
-statements about the task and the reader's site, never about the page: no sentence opens on the
-page or refers to a position (the register's "page describing itself" tell, the round-2 blocking
-finding at `:12`).
+No heading. Opens on the default and why it exists, not an imperative contract. Citations live in the page's brief JSON.
 
-**Paragraph 1: what the subject covers, and when and why.** The contract is the first sentence:
-replace cairn's magic-link sign-in with your organization's identity provider by putting a
-Cloudflare Access application in front of `/admin` and giving the guard a resolver that turns the
-Access token into a roster email (f:8289h7). Then when and why: a site makes the switch when its
-editors already hold accounts in the organization's identity provider, such as Google Workspace or
-Microsoft Entra ID, and should sign in to the admin with them (f:gw1oas); Access admits only the
-users who match its application's policies and signs them in through the connected provider
-(f:agif8l). Then who: the work spans the site's server hooks and the account's Zero Trust
-settings, so it takes a developer who can change both (an anatomy sentence, `no-claim`; it carries
-no code span, so the round-2 fact-read note on its tag needs no citation, and the drafter may
-cite `[f:dwc4kp, f:agif8l]` if a code span enters it).
+1. Para 1: magic links are the default (email, one-time link, no GitHub account or password); zero-config because cairn is the identity system (D1 `AUTH_DB` holds roster, sessions, single-use tokens); the guard from `createAuthGuard` enforces it in server hooks and gates every `/admin` path except sign-in and its auth endpoints.
+2. Para 2: why switch (editors already hold accounts in an IdP such as Google Workspace or Entra ID); Cloudflare Access in front of the Worker admits by policy; the switch adds an Access application plus a guard resolver turning the Access token into an email; roster stays in cairn (Access decides who reaches the admin, roster decides who may edit); needs a developer who can change server hooks and Zero Trust settings.
+3. Para 3: costs of the switch: `identity` replaces the whole magic-link path (all editors or none; guard mints no token, sets no cookie); free Zero Trust plan user cap (link to plans page).
+4. Para 4: prior knowledge (edited hooks file, Wrangler deploy, JWT verification sample read closely enough to own it); redirects: different sign-in email stays on magic links (Customize the sign-in email); another authenticating proxy writes its own `IdentityResolver` and replaces the Cloudflare steps; second population goes to Add a second sign-in group.
 
-**Paragraph 2: whether to switch at all, the decision input (the Sanity take).** Three sentences,
-the page's "right tool for the job?" placed where the exemplar places its callout, before the
-first heading, so a reader who would rather stay on magic links learns it before any step and
-the first heading after the introduction is "Before you begin" (the third plan read's advisory).
-The first sentence: setting `createAuthGuard`'s `identity` option replaces the whole magic-link
-path, so every editor signs in through the gate or none does (f:v5ndhs; link
-`docs/reference/sveltekit.md#createauthguard`). Then the mechanism the all-or-nothing consequence
-follows from: under `identity` the guard mints no token, creates no session, and sets no session
-cookie; `identity.resolve` reads the gate's proof, and the guard looks the proven email up as it
-would a magic-link session's email (f:fhit7f). Then the reason to stay that is a decision input
-rather than a redirect: the free Cloudflare Zero Trust plan caps the number of users who
-authenticate through Access, so a larger editorial team needs a paid plan, with the cap itself
-left to Cloudflare's Zero Trust plans page, linked, no figure restated (f:4olp4u). The
-rebrand-the-email redirect is not here; it is paragraph 3's first wrong-place sentence (the first
-plan read's advisory). The committed stability-tier sentence is dropped; the reference link in
-See also names the tier (the round-2 `:58` finding, disposed by the plan).
-
-**Paragraph 3: what prior knowledge the reader has, then the wrong-place sentences.** The
-knowledge is stated about the reader, not about the page or the site: the steps assume you have
-edited a SvelteKit server hooks file, deployed a Worker with Wrangler, and can read a JWT
-verification sample closely enough to own the code it becomes (`no-claim`, no code span; the first
-plan read's advisory, which found the earlier paragraph stating the site's state in place of the
-reader's knowledge; the Wrangler clause is new with the deploy step). The site's state, a guard
-that already signs editors in by magic link, is a precondition, so the page states it once, as the
-first bullet under "Before you begin" with its link to
-`docs/extend/add-cairn-to-a-sveltekit-app.md`, and not here (the advisory's duplication note; the
-round-2 `:12` rewrite sentence moves there whole). Then the wrong-place sentences, three. A site
-that wants only a different sign-in email keeps magic links and follows
-`docs/extend/add-cairn-to-a-sveltekit-app.md#customize-the-sign-in-email` instead (`no-claim`;
-the outline's cross-link, moved here from the decision section on the first plan read's
-advisory, so every "read instead" sits in the anatomy's slot). The guard's `identity` option
-takes any `IdentityResolver`, so a site behind a different authenticating reverse proxy writes
-the same kind of resolver for that proxy's token and substitutes its own gate for the Cloudflare
-steps (f:3p8yu8; link `docs/reference/sveltekit.md#identityresolver`). A site that needs a second
-population with its own sign-in, beside editors who keep magic links, follows
-`docs/extend/add-a-second-sign-in-group.md` instead (`no-claim`).
-
-**Paragraph 4: what the subject does not cover.** Two sentences stated as subjects, each naming
-its page: the threat analysis of running the guard with `identity` is "Identity mode's threat
-surface" at `docs/extend/security-model.md#identity-modes-threat-surface`; setting up magic-link
-sign-in itself is `docs/extend/add-cairn-to-a-sveltekit-app.md`. Both `no-claim`.
-
-**Paragraph 5: the figure**, described below, with its caption.
+Superseded 2026-10-04 by Geoff's intro ruling (framing and reader-first intros, never an imperative opening); see docs/internal/briefs/extend/replace-magic-links-with-cloudflare-access.framing.md.
 
 ## The figure
 

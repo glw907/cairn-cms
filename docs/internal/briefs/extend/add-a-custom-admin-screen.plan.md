@@ -68,46 +68,14 @@ Heading slugs that other pages depend on: `docs/extend/theme-your-public-site.md
 
 ## Introduction
 
-The introduction has no heading. Its first sentence is the one-line contract (anatomy, task guide
-item 1), and the contract alone does not satisfy the anatomy. Google's three parts follow.
+No heading. No one-line imperative contract; opens on the boundary and the seam. Citations live in the page's brief JSON.
 
-First sentence (the contract): Add a screen under `/admin` that renders inside the admin shell,
-enforces the site's access map on its reads and writes, records each write in the audit trail,
-and passes `cairn-audit`. Cite `f:9xthnq` with `f:326755`.
+1. Para 1: cairn manages markdown content and the admin frame, leaves site data and domain logic to the developer; the seam in the admin is the custom admin screen (route under `src/routes/admin/` resolved ahead of the `[...path]` catch-all, can adopt the admin toolkit); use it for non-markdown data such as D1 rows (`APP_DB`); another kind of markdown content is a concept in the adapter instead (Define an adapter and schema).
+2. Para 2: what the route location gives (shell frame, same sign-in guard) and what the screen must do itself (guard gates the subtree only, so screen checks the access map on read and every write; git never sees D1 writes, so audit trail rows record them; `cairn-audit` covers `src/routes/admin`); closing sentence states what the steps build.
+3. Para 3: the signups screen (written into every scaffolded site, also in `examples/showcase`) as the worked example; dialog-form, row-detail and animation sections apply conditionally; prior knowledge (SvelteKit form actions and hooks, Svelte snippets and runes).
+4. Para 4: wrong-place routing (Restrict admin access, Arrange the admin sidebar) and pointer to See also for access-map reasoning, audit configuration, media upload protocol.
 
-What the document covers. A custom admin screen is a SvelteKit route under `src/routes/admin/`
-that renders inside `CairnAdminShell`, adopts the packaged admin toolkit, and sits behind the same
-sign-in guard as the engine's screens (`f:9xthnq`). A site adds one to manage data it keeps outside
-its markdown content. The worked example is the signups screen, which the setup command writes
-into every scaffolded site at `src/routes/admin/signups/` (`f:onqm6k`) and which the repository's
-example site carries as the same files (`f:pyt58u`); the page follows it from its route through its
-load, its actions, their audit calls, and its markup, then styles the screen, offers two optional
-recipes (a dialog form and on-demand row detail), and states the motion rules the audit enforces,
-so a reader who needs neither recipe can tell from here that they are optional. Attribute scaffold
-claims to `f:onqm6k` and
-example-site code claims to `f:pyt58u`, which disposes the round-2 fact read's note on the two sources.
-
-What prior knowledge the reader needs. SvelteKit form actions and server hooks, Svelte 5 snippets
-and `$props`, and a site that `create-cairn-site` scaffolded or that `add-cairn-to-a-sveltekit-app`
-brought to the same shape. No fact; anatomy sentences.
-
-What the document does not cover, and where a reader in the wrong place goes. Three wrong-place
-routes, one sentence each, each naming its page by title, no list cadence, and each page named
-once. A site that needs another kind of markdown content declares a concept in its adapter instead
-of building a screen (`f:6a32oy`, appended to the inventory for this routing sentence; the page to
-read is `docs/extend/define-an-adapter-and-schema.md`). A site declaring its access map, or
-changing who reaches an existing screen, reads `docs/extend/restrict-admin-access.md`. A site
-listing the screen in the sidebar reads `docs/extend/arrange-the-admin-sidebar.md`. Then one short
-closing sentence for the rest of the outline's out-of-scope list, naming no page: the reasoning
-behind the access map, the site-wide audit configuration, and the media upload protocol are other
-pages' subjects, linked under See also (`security-model`, `run-cairn-audit-on-your-site`, and
-`configure-media`, each a See also bullet; See also carries all three). The outline's sixth item,
-the audit norms' former values, is a drafting constraint rather than a place a reader could have
-meant to be: Style the screen states the current bands only, and the introduction does not mention
-`migration-notes`.
-
-The Sanity exemplar's "right tool for the job?" callout lands here as the concept-versus-screen
-sentence, in prose, never as a notice (register: a notice is rare).
+Superseded 2026-10-04 by Geoff's intro ruling (framing and reader-first intros, never an imperative opening); see docs/internal/briefs/extend/add-a-custom-admin-screen.framing.md.
 
 ## Sections, in order
 

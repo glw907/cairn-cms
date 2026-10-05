@@ -1,23 +1,32 @@
 # Theme your public site
 
-Re-skin the theme your scaffolded site ships with through its token tiers, or port your own theme
-onto the chassis beneath it, and iterate locally against real content until the three public-scope
-audit rules pass.
+cairn styles its admin in daisyUI and Tailwind and leaves a site's public pages design-agnostic,
+since each site brings the `render` function and the styles those pages use. The engine's part in
+public styling is a sheet of defaults, `cairn-public.css`, whose roles sit in `@layer theme`, the
+lowest layer Tailwind declares, so a value the site writes for any of those roles overrides the
+engine's default. In the admin, a theme reaches the editor's preview frame, which
+renders an entry through the same `render` function as the public pages but loads only the style
+sheets the site's adapter names.
 
-A site scaffolded by `create-cairn-site` ships Waymark, cairn's public reading template, wired into
-a chassis of design-neutral modules and style sheets that every scaffolded site shares. The site's
-look is a set of token values that Waymark declares over roles the engine defaults, so owning the
-design is a matter of how far the theme reaches. A re-skin keeps Waymark's layouts and changes about
-fourteen color and type values, which suits a site whose content those layouts already fit. A port
-puts a design the site already has onto the same chassis in Waymark's place. Both end at the same
-check, the three public-scope rules that `cairn-audit` ships.
+The setup command, `create-cairn-site`, gives a new site a complete starting design in Waymark,
+cairn's public reading template, wired into a chassis of design-neutral modules and style sheets
+that every scaffolded site shares. Because both arrive as files in the site's tree and the npm
+package ships neither, no engine version governs the site's chrome, page compositions, or token values; only the role defaults in `cairn-public.css` come from the package. The site's look is a set of
+token values that Waymark declares over roles the engine defaults, so owning the design is a matter
+of how far a change reaches.
 
-A site built by hand from `sv create` starts with neither Waymark nor the chassis and brings its own
-theme, so after the preconditions its work begins at
+A developer who wants a scaffolded site in a brand's colors and type, with Waymark's layouts kept,
+re-skins it by changing about fourteen color and type values, which suits a site whose content
+those layouts already fit. A developer with a design the site already has ports it onto the same
+chassis in Waymark's place. A site built by hand from `sv create`, as in
+[Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md), starts with neither Waymark nor
+the chassis and brings its own theme, so after the preconditions its work begins at
 [Theme a hand-built site](#theme-a-hand-built-site). A scaffolded site skips that section and works
 through the chassis boundary, the token tiers, the local loop, and one of the two recipes. The
 recipe leads into styling rendered markdown and the editor preview, then verifying the theme and
-resolving any audit finding.
+resolving any audit finding. Both recipes end at the same check, the three public-scope rules that
+`cairn-audit` ships, which include a check for a color or font size written as a literal and a contrast measurement of the theme's text colors against their backgrounds. A developer who arrives with a finding from
+one of those rules starts at [Resolve an audit finding](#resolve-an-audit-finding).
 
 Theming takes working knowledge of Tailwind CSS v4 theme variables and cascade layers, daisyUI
 theme blocks, and Svelte components.

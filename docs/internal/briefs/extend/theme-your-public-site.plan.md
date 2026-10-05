@@ -94,52 +94,15 @@ Heading slugs other pages depend on: `docs/extend/add-cairn-to-a-sveltekit-app.m
 
 ## Introduction
 
-The introduction has no heading. Its first sentence is the one-line contract (anatomy, task guide
-item 1), and the contract alone does not satisfy the anatomy. Google's three parts follow.
+No heading. No one-line imperative contract; the opening states the subject. Citations live in the page's brief JSON.
 
-First sentence (the contract): Re-skin the theme your scaffolded site ships with through its token
-tiers, or port your own theme onto the chassis beneath it, and iterate locally against real
-content until the three public-scope audit rules pass. Cite `f:rxj43c` with `f:xv2ien`.
+1. Para 1: cairn styles its admin in daisyUI and Tailwind; public pages are design-agnostic (site brings `render` and styles); the engine's part is the `cairn-public.css` defaults in `@layer theme`; the one place a theme reaches the admin is the editor preview frame.
+2. Para 2: the setup command ships Waymark wired into the shared chassis; both are files in the site's tree, the npm package ships neither, so no engine version governs the look; the look is token values over engine-default roles, so ownership is a matter of reach.
+3. Para 3: reader routing. Re-skin (about fourteen color and type values, Waymark layouts kept); port (existing design onto the chassis); hand-built site starts at Theme a hand-built site after preconditions; scaffolded site skips it and follows boundary, tiers, local loop, one recipe, rendered markdown and preview, verify, resolve findings; both recipes end at the three `cairn-audit` public-scope rules; audit-finding arrivals jump to Resolve an audit finding.
+4. Prior knowledge: Tailwind v4 theme variables and cascade layers, daisyUI theme blocks, Svelte components.
+5. Out-of-scope list (six pages): scaffolded-site-files, configure-rendering, build-the-public-routes, configure-media, run-cairn-audit-on-your-site, style-the-screen.
 
-What the document covers. A site scaffolded by `create-cairn-site` ships Waymark, cairn's public
-reading template, wired into a chassis of design-neutral modules and style sheets that every
-scaffolded site shares (`f:rxj43c`, `f:s4prb0`). Everything a visitor sees is a set of token values
-Waymark declares over roles the engine defaults, so owning the design is a matter of how far the
-theme reaches: a re-skin keeps Waymark's layouts and changes about fourteen color and type values,
-which suits a site whose content those layouts already fit (`f:kt0epf`); a port puts a design the
-site already has onto the same chassis in Waymark's place (`f:s4prb0`). Both end at the same
-check, the three public rules `cairn-audit` ships (`f:xv2ien`). One sentence then lists what the
-page walks through in order (for a hand-built site, the styling stack the scaffold would have
-supplied; then the chassis boundary, the token tiers, the local loop, the two recipes, rendered
-markdown, the editor preview, the verification, and the fix for each finding the audit raises), so
-the sentence predicts every body section the reader meets, in order, and a reader who needs one
-recipe can tell the other is optional (the second plan read's first advisory asked for the boundary
-and the tiers at the head of the list; the third read's first advisory asked for the hand-built
-on-ramp, scoped to its reader, and the audit-finding fixes at the end). The drafter may split the
-list into two sentences at the register's one-idea rule, the hand-built clause standing alone. The
-sentence describes the subject, never the page ("the page describing itself" tell).
-
-What prior knowledge the reader needs. Working knowledge of Tailwind CSS v4 (`@theme` and
-`@layer`), daisyUI theme blocks, CSS cascade layers, and Svelte components, in a site that
-`create-cairn-site` scaffolded or that the hand-built tutorial brought to the same shape. No fact;
-anatomy sentences.
-
-What the document does not cover, and where a reader in the wrong place goes. The structural
-edit's third blocking finding asks for every out-of-scope page, so this part names all six, each
-once, in prose with no list cadence. First the routing the two readers need: a site built by hand
-from `sv create` starts with neither Waymark nor the chassis and brings its own theme (`f:rxj43c`),
-so after the preconditions its work begins at Theme a hand-built site, and a scaffolded site
-already carries the styling stack, so it reads on from the preconditions and skips that one
-section. Both readers pass through Before you begin, whose seeded-media precondition is each
-reader's (the structural edit's round-3 advisory on the routing). Then one sentence for the pages that own the adjacent
-work: the components a theme styles are built in `docs/extend/configure-rendering.md`; the
-delivery routes the chassis feeds are wired in `docs/extend/build-the-public-routes.md`; the media
-storage seeded images come from is set up in `docs/extend/configure-media.md`; running the audit
-as a site-wide gate is `docs/extend/run-cairn-audit-on-your-site.md`. Then one sentence for the two
-remaining: `docs/extend/scaffolded-site-files.md` maps every file the setup command writes, and a
-custom admin screen's look is the Style the screen section of
-`docs/extend/add-a-custom-admin-screen.md`. Each page is named by its title and linked once here;
-See also repeats the four adjacent-work pages as its bullets, which the anatomy allows.
+Superseded 2026-10-04 by Geoff's intro ruling (framing and reader-first intros, never an imperative opening); see docs/internal/briefs/extend/theme-your-public-site.framing.md.
 
 ## Sections, in order
 

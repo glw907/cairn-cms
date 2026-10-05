@@ -104,55 +104,19 @@ since no handed fact covers it; the name choice is enough.
    creation, so both steps are no-claim procedure, with GitHub's create-a-repository page linked
    for the GitHub side (the plan step of 2026-10-03, on the structural edit's blocking finding).
 
-## The introduction, in Google's three parts
+## The introduction
 
-Google's three parts, in order. Geoff's two paragraphs land verbatim (the job-read record, "The
-two introductions for task 7b"), each claim cited.
+No heading. Opens with what cairn is, then the usual route and why this tutorial exists; no imperative opening. Citations live in the page's brief JSON.
 
-**What the page covers.** Geoff's two paragraphs:
+1. Para 1: cairn as a markdown CMS embedded in a SvelteKit site on Workers; npm package wired through site files (admin route at `/admin`, server hook guard, Vite plugin indexing content); magic-link sign-in, publish commits via the site's own GitHub App; production D1 and Email Sending binding.
+2. Para 2: the usual route is `npx create-cairn-site` (Waymark starter; also creates App, repo, bindings, deploys); much easier for a new site; Scaffolded site files link.
+3. Para 3: why by hand: existing SvelteKit app (setup command scaffolds only into missing or empty directories), cairn without Waymark (package carries no theme), or reading through to see what cairn does underneath.
+4. Para 4: running example Field Notes, ends in production with an editor signing in, editing, publishing.
+5. Para 5: prior knowledge (SvelteKit, TypeScript, terminal); existing-app readers follow the same milestones, noting skipped steps.
+6. Four-milestone numbered list; closing section line (customize the sign-in email).
+7. Five-item out-of-scope list: Architecture, Define an adapter and schema, Build the public routes, Security model, Rotate the GitHub App key.
 
-> cairn gives a SvelteKit site an admin at `/admin`, where editors sign in by email and publish
-> their markdown edits through a GitHub App you register. This tutorial adds it by hand, so you see
-> every file the engine needs and why. To start a new site without the walkthrough, the setup
-> command, `create-cairn-site`, scaffolds a complete site with its theme in one step, and
-> Scaffolded site files explains what it writes.
->
-> The tutorial carries one example throughout: Field Notes, a site with one post. By the end,
-> Field Notes runs in production, and an editor can sign in, edit the post, and publish it to the
-> deployed site.
-
-"Scaffolded site files" is a link to `docs/extend/scaffolded-site-files.md` on the page (a
-stage 2b page, counted pending). Brief citations: sentence 1 cites `[f:gyu7jc, f:2gtftn,
-f:dqjkci]` (the site's own App; sign-in by email; `/admin`), sentence 2 is no-claim, sentence 3
-cites `[f:u705t5]` (the front-door fact; a cross-arm citation the rework record allows), sentence 4
-is no-claim, sentence 5 cites `[f:m0ouh8, f:k16chc]` (the publish lands on `main`; the prerendered
-page carries it after a build and deploy, which milestone 4's check performs).
-
-**What prior knowledge the reader has.** Two sentences, both no-claim: the tutorial assumes
-working knowledge of SvelteKit, TypeScript, and a terminal; if you start from an existing app,
-you work through the same milestones, and the tutorial notes where your app skips creating the
-project or its repository
-(the notes sit in milestone 1's start state, the git step, and the lead-in to "Push the site to
-GitHub"). Accounts and tools go in "Before you begin".
-
-**The path.** Four milestones, each ending with a check, as a numbered list: deploy a bare
-SvelteKit site to its `workers.dev` address (f:9ug9mo); install the engine, mount the admin, and
-sign in on the dev backend (f:dqjkci); put content on disk and render an entry from it
-(f:gj96px); move the site to production with its own GitHub App, an auth database, and the Worker
-bindings (f:e5vm42). Then one line: a closing section customizes the sign-in email (f:2gtftn).
-
-**What the page does not cover.** A bulleted list, each item naming its page: every adapter
-option (`docs/extend/define-an-adapter-and-schema.md`); the delivery routes beyond the entry
-catch-all (`docs/extend/build-the-public-routes.md`); the reasoning behind the GitHub App's
-repository-wide write and the CSRF design (`docs/extend/security-model.md`); rotating the App's
-private key later (`docs/extend/rotate-the-github-app-key.md`). The scaffolded tree is covered by
-the Scaffolded site files link in sentence 3; media lands in Next steps. The outline's two
-remaining out-of-scope items, the retired JavaScript doctor and the removed `/components` subpath,
-are disposed by absence rather than listed: a reader new to cairn never meets either, so naming
-them would introduce two things the page then says nothing about (Google: the introduction does
-not try to cover everything). The dispositions table carries the record, f:pg2smj cut and
-f:jzb3d0's removed-subpath half kept off the page, each naming `docs/extend/upgrade-cairn.md` and
-`docs/extend/migration-notes.md` as the owners.
+Superseded 2026-10-04 by Geoff's intro ruling (framing and reader-first intros, never an imperative opening); see docs/internal/briefs/extend/add-cairn-to-a-sveltekit-app.framing.md.
 
 ## Sections, in order
 

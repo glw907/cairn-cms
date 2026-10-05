@@ -2,40 +2,61 @@
   "page": "docs/extend/theme-your-public-site.md",
   "sentences": [
     {
-      "text": "Re-skin the theme your scaffolded site ships with through its token tiers, or port your own theme onto the chassis beneath it, and iterate locally against real content until the three public-scope audit rules pass.",
+      "text": "cairn styles its admin in daisyUI and Tailwind and leaves a site's public pages design-agnostic, since each site brings the `render` function and the styles those pages use.",
       "id": [
-        "f:rxj43c",
-        "f:xv2ien"
+        "f:k6aopn",
+        "f:8n6qc8",
+        "f:l2mbcj"
       ]
     },
     {
-      "text": "A site scaffolded by `create-cairn-site` ships Waymark, cairn's public reading template, wired into a chassis of design-neutral modules and style sheets that every scaffolded site shares.",
+      "text": "The engine's part in public styling is a sheet of defaults, `cairn-public.css`, whose roles sit in `@layer theme`, the lowest layer Tailwind declares, so a value the site writes for any of those roles overrides the engine's default.",
       "id": [
+        "f:c4nnu9",
+        "f:hva8r5"
+      ]
+    },
+    {
+      "text": "In the admin, a theme reaches the editor's preview frame, which renders an entry through the same `render` function as the public pages but loads only the style sheets the site's adapter names.",
+      "id": [
+        "f:dl1trb",
+        "f:gnn3pv"
+      ]
+    },
+    {
+      "text": "The setup command, `create-cairn-site`, gives a new site a complete starting design in Waymark, cairn's public reading template, wired into a chassis of design-neutral modules and style sheets that every scaffolded site shares.",
+      "id": [
+        "f:u705t5",
         "f:rxj43c",
         "f:s4prb0"
       ]
     },
     {
-      "text": "The site's look is a set of token values that Waymark declares over roles the engine defaults, so owning the design is a matter of how far the theme reaches.",
+      "text": "Because both arrive as files in the site's tree and the npm package ships neither, no engine version governs the site's chrome, page compositions, or token values; only the role defaults in `cairn-public.css` come from the package.",
+      "id": [
+        "f:rxj43c",
+        "f:l2mbcj",
+        "f:hva8r5",
+        "f:s23sk0"
+      ]
+    },
+    {
+      "text": "The site's look is a set of token values that Waymark declares over roles the engine defaults, so owning the design is a matter of how far a change reaches.",
       "id": [
         "f:s23sk0",
         "f:hva8r5"
       ]
     },
     {
-      "text": "A re-skin keeps Waymark's layouts and changes about fourteen color and type values, which suits a site whose content those layouts already fit.",
+      "text": "A developer who wants a scaffolded site in a brand's colors and type, with Waymark's layouts kept, re-skins it by changing about fourteen color and type values, which suits a site whose content those layouts already fit.",
       "id": "f:kt0epf"
     },
     {
-      "text": "A port puts a design the site already has onto the same chassis in Waymark's place.",
+      "text": "A developer with a design the site already has ports it onto the same chassis in Waymark's place.",
       "id": "f:s4prb0"
     },
     {
-      "text": "Both end at the same check, the three public-scope rules that `cairn-audit` ships.",
-      "id": "f:xv2ien"
-    },
-    {
-      "text": "A site built by hand from `sv create` starts with neither Waymark nor the chassis and brings its own theme, so after the preconditions its work begins at [Theme a hand-built site](#theme-a-hand-built-site).",
+      "text": "A site built by hand from `sv create`, as in [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md), starts with neither Waymark nor the chassis and brings its own theme, so after the preconditions its work begins at [Theme a hand-built site](#theme-a-hand-built-site).",
       "id": "f:rxj43c"
     },
     {
@@ -44,6 +65,19 @@
     },
     {
       "text": "The recipe leads into styling rendered markdown and the editor preview, then verifying the theme and resolving any audit finding.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Both recipes end at the same check, the three public-scope rules that `cairn-audit` ships, which include a check for a color or font size written as a literal and a contrast measurement of the theme's text colors against their backgrounds.",
+      "id": [
+        "f:xv2ien",
+        "f:o4ctu5",
+        "f:lqtwdt",
+        "f:tbq6gh"
+      ]
+    },
+    {
+      "text": "A developer who arrives with a finding from one of those rules starts at [Resolve an audit finding](#resolve-an-audit-finding).",
       "id": "no-claim"
     },
     {

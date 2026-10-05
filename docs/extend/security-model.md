@@ -1,12 +1,34 @@
 # Security model
 
-cairn signs in a site's editors and commits their edits, so its security design decides who can
-change the site. It assumes the likeliest attacker holds an editor's account, through a stolen or
-phished sign-in link. An anonymous visitor reaches nothing behind `/admin` except the sign-in form.
+A site built on cairn lets people who hold no GitHub account change its published content, so a
+developer weighing the site's security starts from how cairn decides who those people are. cairn
+runs inside the site's SvelteKit app on Cloudflare Workers, and its admin is the part of that app
+under `/admin`, where editors sign in from an emailed link with no password. The emailed link serves
+a non-technical author, whom Decap CMS's GitHub backend would require to hold a GitHub
+account with push access to the content repository. Under that zero-config default, cairn is the
+identity system for a site's editors, since its D1 store, `AUTH_DB`, holds the editor roster, the
+sessions, and the single-use sign-in tokens. An editor's edits reach the repository through the
+site's GitHub App, never a personal account, with the App's private key held as a Worker secret.
 
-Each section below takes one component cairn exposes, says what cairn defends, and names the risk it
-leaves to the site. The page ends with the responsibilities that stay with the site. Read it before
-you replace cairn's sign-in or access rules, and again before you ship.
+cairn's security design assumes the likeliest attacker holds an editor's account, through a stolen
+or phished sign-in link. An anonymous visitor reaches nothing behind `/admin` except the sign-in
+form. Every `/admin` request passes through [the auth guard](#the-auth-guard), the server hook
+[`createAuthGuard`](../reference/sveltekit.md#createauthguard) builds. The isolation of the Worker
+that runs the engine belongs to Cloudflare, and [the Workers security
+model](https://developers.cloudflare.com/workers/reference/security-model/) describes it.
+
+A developer evaluating cairn before adopting it wants the whole of this design, what each defense
+covers and what it leaves to the site. A developer setting up a site may want the reasoning behind
+one choice, such as the GitHub App's repository-wide write permission. A developer about to replace
+sign-in or add a second group of users wants to know which defenses move with that change.
+
+The defaults are floors, not ceilings. A developer can replace those defaults, the owner and editor
+roles and magic-link sign-in, with their own auth framework, after which cairn mints no session and
+reads an owner or editor identity through a defined hand-off. That hand-off is the `identity` option
+on the guard, which reads the proof of identity an external gate supplies in place of cairn's
+session resolution. A site can also add an auth channel, which signs in a second group of users from
+a form any anonymous caller can post. Weighing these defenses takes working knowledge of SvelteKit
+hooks, form actions, and cookie attributes.
 
 The built-in design's defenses fall into the following groups:
 
@@ -17,10 +39,8 @@ The built-in design's defenses fall into the following groups:
 - The access map's coverage, the render pipeline's sanitizing, and the GitHub App's reach, which
   bound what a taken account reaches.
 
-A site can also replace magic links with an identity gate, or add an auth channel that signs in a
-second group of users from a form any anonymous caller can post. Each of those seams changes what
-the site must defend. Weighing these defenses takes working knowledge of SvelteKit hooks, form
-actions, and cookie attributes.
+The threat surfaces of the two seams follow the built-in design, and the responsibilities that stay
+with the site close the page.
 
 Configuring the access map belongs to [Restrict admin access](restrict-admin-access.md), and an
 identity gate to [Replace magic links with Cloudflare
@@ -28,20 +48,6 @@ Access](replace-magic-links-with-cloudflare-access.md). Building an auth channel
 second sign-in group](add-a-second-sign-in-group.md), the renderer's options to [Configure
 rendering](configure-rendering.md), and the App's private key to [Rotate the GitHub App
 key](rotate-the-github-app-key.md). The history of when the sanitize floor shipped is out of scope.
-
-Under the zero-config default, cairn is the identity system for a site's editors, since its D1
-store, `AUTH_DB`, holds the editor roster, the sessions, and the single-use sign-in tokens. Every
-`/admin` request passes through [the auth guard](#the-auth-guard), the server hook
-[`createAuthGuard`](../reference/sveltekit.md#createauthguard) builds.
-
-The defaults are floors, not ceilings. A developer can replace those defaults, the owner and editor
-roles and magic-link sign-in, with their own auth framework, after which cairn mints no session and
-reads an owner or editor identity through a defined hand-off. That hand-off is the `identity` option
-on the guard, which reads the proof of identity an external gate supplies in place of cairn's
-session resolution.
-
-The isolation of the Worker that runs the engine belongs to Cloudflare, and [the Workers security
-model](https://developers.cloudflare.com/workers/reference/security-model/) describes it.
 
 ## Magic-link sign-in
 

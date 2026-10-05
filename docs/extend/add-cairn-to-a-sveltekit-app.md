@@ -1,6 +1,10 @@
 # Add cairn to a SvelteKit app
 
-cairn gives a SvelteKit site an admin at `/admin`, where editors sign in by email and publish their markdown edits through a GitHub App you register. This tutorial adds it by hand, so you see every file the engine needs and why. To start a new site without the walkthrough, the setup command, `create-cairn-site`, scaffolds a complete site with its theme in one step, and [Scaffolded site files](scaffolded-site-files.md) explains what it writes.
+cairn is a markdown CMS embedded in a SvelteKit site that runs on Cloudflare Workers. The engine is an npm package the site installs and wires in through its own SvelteKit files. A route mounts the admin at `/admin`, a server hook guards it, and a Vite plugin indexes the markdown content at build time. In the admin, editors sign in from an emailed link, and each publish commits their edit to the site's repository through a GitHub App the site registers for itself. In production, the engine keeps its editors, sessions, and sign-in tokens in a D1 database bound to the site's Worker, and it sends sign-in mail through the Worker's Email Sending binding.
+
+The usual way to start a cairn site is the setup command, `npx create-cairn-site`, which scaffolds a complete starter site with Waymark, cairn's public reading theme, already wired in. For a new site it is the much easier route, since it also creates the GitHub App, the repository, and the Cloudflare bindings and deploys the site, all in one run. [Scaffolded site files](scaffolded-site-files.md) explains what it writes.
+
+Adding cairn by hand, as this tutorial does, serves the readers the setup command leaves out. A developer with an existing SvelteKit app needs it, because the setup command scaffolds only into a missing or empty directory and never adds cairn to an app that already exists. A developer who wants cairn without Waymark can start it from an empty project, since the npm package carries no template and a hand-built site brings its own. A developer curious about what cairn does underneath can read it through without building anything, since the tutorial shows every file the engine needs and why.
 
 The tutorial carries one example throughout: Field Notes, a site with one post. By the end, Field Notes runs in production, and an editor can sign in, edit the post, and publish it to the deployed site.
 
@@ -17,6 +21,7 @@ A closing section after the milestones customizes the sign-in email.
 
 The following pages cover what this tutorial leaves out:
 
+- [Architecture](architecture.md) sets out the engine's model, its seams, and the path an edit takes to the deploy.
 - [Define an adapter and schema](define-an-adapter-and-schema.md) covers every adapter option.
 - [Build the public routes](build-the-public-routes.md) covers the delivery routes beyond the entry catch-all.
 - The [security model](security-model.md) sets out the reasoning behind the GitHub App's repository-wide write and the CSRF design.

@@ -2,20 +2,75 @@
   "page": "docs/extend/add-cairn-to-a-sveltekit-app.md",
   "sentences": [
     {
-      "text": "cairn gives a SvelteKit site an admin at `/admin`, where editors sign in by email and publish their markdown edits through a GitHub App you register.",
+      "text": "cairn is a markdown CMS embedded in a SvelteKit site that runs on Cloudflare Workers.",
       "id": [
-        "f:gyu7jc",
-        "f:2gtftn",
-        "f:dqjkci"
+        "f:4zpvor",
+        "f:i74t7g",
+        "f:gj96px"
       ]
     },
     {
-      "text": "This tutorial adds it by hand, so you see every file the engine needs and why.",
+      "text": "The engine is an npm package the site installs and wires in through its own SvelteKit files.",
+      "id": [
+        "f:j0ut9n",
+        "f:ew4uk7"
+      ]
+    },
+    {
+      "text": "A route mounts the admin at `/admin`, a server hook guards it, and a Vite plugin indexes the markdown content at build time.",
+      "id": [
+        "f:dqe7ij",
+        "f:f21bcz",
+        "f:9xthnq",
+        "f:n0laoh"
+      ]
+    },
+    {
+      "text": "In the admin, editors sign in from an emailed link, and each publish commits their edit to the site's repository through a GitHub App the site registers for itself.",
+      "id": [
+        "f:0ij7do",
+        "f:qehbx3",
+        "f:gyu7jc"
+      ]
+    },
+    {
+      "text": "In production, the engine keeps its editors, sessions, and sign-in tokens in a D1 database bound to the site's Worker, and it sends sign-in mail through the Worker's Email Sending binding.",
+      "id": [
+        "f:u77pea",
+        "f:i74t7g"
+      ]
+    },
+    {
+      "text": "The usual way to start a cairn site is the setup command, `npx create-cairn-site`, which scaffolds a complete starter site with Waymark, cairn's public reading theme, already wired in.",
+      "id": [
+        "f:yvfzr2",
+        "f:u705t5",
+        "f:rxj43c"
+      ]
+    },
+    {
+      "text": "For a new site it is the much easier route, since it also creates the GitHub App, the repository, and the Cloudflare bindings and deploys the site, all in one run.",
+      "id": "f:kldwss"
+    },
+    {
+      "text": "[Scaffolded site files](scaffolded-site-files.md) explains what it writes.",
       "id": "no-claim"
     },
     {
-      "text": "To start a new site without the walkthrough, the setup command, `create-cairn-site`, scaffolds a complete site with its theme in one step, and [Scaffolded site files](scaffolded-site-files.md) explains what it writes.",
-      "id": "f:u705t5"
+      "text": "Adding cairn by hand, as this tutorial does, serves the readers the setup command leaves out.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A developer with an existing SvelteKit app needs it, because the setup command scaffolds only into a missing or empty directory and never adds cairn to an app that already exists.",
+      "id": "f:9slxqf"
+    },
+    {
+      "text": "A developer who wants cairn without Waymark can start it from an empty project, since the npm package carries no template and a hand-built site brings its own.",
+      "id": "f:rxj43c"
+    },
+    {
+      "text": "A developer curious about what cairn does underneath can read it through without building anything, since the tutorial shows every file the engine needs and why.",
+      "id": "no-claim"
     },
     {
       "text": "The tutorial carries one example throughout: Field Notes, a site with one post.",
@@ -62,6 +117,10 @@
     },
     {
       "text": "The following pages cover what this tutorial leaves out:",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Architecture](architecture.md) sets out the engine's model, its seams, and the path an edit takes to the deploy.",
       "id": "no-claim"
     },
     {

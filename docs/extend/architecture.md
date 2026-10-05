@@ -1,6 +1,10 @@
 # Architecture
 
+cairn is an embedded content management system for SvelteKit sites on Cloudflare. The engine ships as the npm package `@glw907/cairn-cms`, and a site's admin and public pages are route files in its SvelteKit app whose load functions and form actions come from the engine's route factories. The app builds into one Cloudflare Worker, so the engine runs inside the site's Worker, and a cairn site needs no separate server for content management. Content is markdown in the site's git repository, and an editor's publish is a commit through the site's GitHub App that triggers the site's existing deploy. A D1 database holds the sign-in rows the guard checks on each admin request, and an R2 bucket holds the bytes of uploaded media.
+
 The engine manages a site's markdown content and its admin frame, and everything else the site needs belongs to the developer. The boundary between engine and developer decides which code a site writes and which engine contracts it relies on across releases. A developer reaches the engine through a short list of seams, which form a narrow, versioned public surface across the engine's export subpaths.
+
+The usual route to a cairn site is the setup command, `create-cairn-site`, which creates the GitHub App, the repository, and the Cloudflare bindings and deploys the site in one run. A developer who takes over a site built that way finds the engine already wired into its files, and needs to know which of those files rest on an engine contract before changing them. [Scaffolded site files](scaffolded-site-files.md) maps each file the command writes. A developer weighing cairn against other content systems needs to know instead what the boundary commits a site to, from the platforms the engine builds on to the promise each export carries across versions.
 
 The engine's architecture includes the following:
 

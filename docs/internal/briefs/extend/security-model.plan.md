@@ -203,122 +203,20 @@ subsection, so the pattern is even (a round-2 non-blocking finding).
 
 ## Introduction
 
-Seven paragraphs under the title, no heading. Google's three parts arrive as statements about the
-subject, never about the page: outside Geoff's two paragraphs, no sentence opens on the page or
-refers to a position.
+No heading. Eight paragraphs, reader-first, no imperative opening and no "the page" or position references. Citations live in the page's brief JSON.
 
-**Paragraphs 1 and 2, verbatim (owner ruling).**
+1. Why the subject matters: a site built on cairn lets people with no GitHub account change published content, so security starts from how cairn identifies them. Names the Decap-style GitHub-account alternative for contrast.
+2. Where cairn runs and what it is under the zero-config default: inside the site's SvelteKit app on Workers; the admin under `/admin`; magic-link sign-in; cairn is the identity system (D1 `AUTH_DB` holds roster, sessions, single-use tokens); edits reach the repo through the site's GitHub App, key held as a Worker secret.
+3. Threat position: the likeliest attacker holds an editor's account via a stolen or phished link; anonymous visitors reach only the sign-in form; every `/admin` request passes the auth guard (`createAuthGuard`); Cloudflare owns Worker isolation (link).
+4. Reader routing by need: evaluator, setter-up weighing one choice, developer replacing sign-in or adding a second group.
+5. Defaults are floors: the `identity` option, and the auth channel; prior knowledge sentence (SvelteKit hooks, form actions, cookie attributes).
+6. Four-item list of the built-in defense groups.
+7. One sentence on what follows (seam surfaces, then site responsibilities).
+8. Out-of-scope routing: restrict-admin-access, replace-magic-links, add-a-second-sign-in-group, configure-rendering, rotate-the-github-app-key; sanitize-floor history out of scope.
 
-> cairn signs in a site's editors and commits their edits, so its security design decides who can
-> change the site. It assumes the likeliest attacker holds an editor's account, through a stolen or
-> phished sign-in link. An anonymous visitor reaches nothing behind `/admin` except the sign-in form.
->
-> Each section below takes one component cairn exposes, says what cairn defends, and names the
-> risk it leaves to the site. The page ends with the responsibilities that stay with the site. Read
-> it before you replace cairn's sign-in or access rules, and again before you ship.
+The earlier owner ruling "land as written" (2026-09-30) for paragraphs 1-2 no longer applies; those paragraphs were rewritten.
 
-Brief: sentence 1 is `no-claim`; sentences 2 and 3 cite `f:v85shm` (its key phrase, "likeliest
-attacker holds an editor's account", sits in sentence 2, so `check:provenance` requires the
-citation); paragraph 2's three sentences are anatomy sentences, `no-claim`. Paragraph 2 describes
-the page and refers to position, which the register's tell forbids; the owner's text stands over
-the tell here, and the drafter changes no word of either paragraph.
-
-**Paragraph 3: what the subject covers and what the reader brings.** Two duties, in this order.
-The structural edit of this plan found the earlier single paragraph, which also carried the
-doesn't-cover sentences, too dense for Google's "don't try to cover everything" caution, so the
-doesn't-cover sentences take paragraph 4.
-
-- *Covers.* Name the areas in page order, as the subject's two groups: the built-in design (the
-  sign-in link and its browser binding, the session cookie, CSRF and the admin response headers,
-  the dev-backend flag's refusals, the access map's coverage, the render pipeline's sanitizing, and
-  the GitHub App's reach) and then the residual surface of the two seams a site can replace or add,
-  an identity gate in place of magic links and an auth channel that signs the site's own members in
-  from an anonymous form. This answers the round-2 structural finding that the introduction never
-  named the areas, states the grouping the same finding asked for, and widens the attacker framing
-  to the channel's anonymous caller without touching Geoff's sentence. The headers are "the admin
-  response headers", never "the guard's", since the guard is defined in paragraph 5 and the
-  introduction uses no term before its definition.
-- *Prior knowledge.* Weighing these defenses takes working knowledge of SvelteKit hooks, form
-  actions, and cookie attributes.
-
-**Paragraph 4: what sits elsewhere.** Three sentences, each stating a subject and the page that
-owns it, never "see below" and never a universal: the round-2 register read blocked on
-"Configuring each defense and seam belongs to the how-to guides", since CSRF, the session cookie,
-the browser binding, and the dev-backend flag have no guide, and the sentence was a five-link
-inventory in prose that `Cairn.ProseProcedure` fires on. The first two sentences are the register
-read's rewrite, word for word, with each page name rendered as its relative link:
-
-> Configuring the access map belongs to Restrict admin access, and an identity gate to Replace
-> magic links with Cloudflare Access. Building an auth channel belongs to Add a second sign-in
-> group, the renderer's options to Configure rendering, and the App's private key to Rotate the
-> GitHub App key.
-
-The five pages: `docs/extend/restrict-admin-access.md`,
-`docs/extend/replace-magic-links-with-cloudflare-access.md`,
-`docs/extend/add-a-second-sign-in-group.md`, `docs/extend/configure-rendering.md`,
-`docs/extend/rotate-the-github-app-key.md`. The third sentence states the outline's sixth
-out-of-scope item, which the round-2 structural read blocked on finding absent, as the subject
-alone:
-
-> When the sanitize floor shipped is release history.
-
-It names no page and refers to no position. The structural edit of this plan found the earlier
-form, "and the floor is described here as it stands", pointing at the page itself, which the
-introduction rule above bars outside Geoff's two paragraphs; the clause is gone, and the floor as
-it stands is Render safety's first sentence. The sentence names no page because none records the
-date, and the plan records why. The outline's parenthetical hands the item to
-`docs/extend/migration-notes.md`, and the round-2 structural read's rewrite asked the sentence to
-name Migration notes as the record, but the round-2 fact read found that file holds no such
-record, and the plan step confirmed it: the oldest entry in `docs/extend/migration-notes.md` is
-0.86.0, the oldest in `CHANGELOG.md` is 0.22.0, and the floor shipped in v0.17.0 (`f:r0cv6e`, git
-`40d466ad`). A sentence naming either file as the record would be false. The anatomy's "and the
-pages that cover it" clause goes unmet for this one item because no published page covers it;
-the gap is filed in `docs/internal/docs-friction-log.md` as the plan's friction, and section 13
-links Migration notes nowhere: the third structural read found the Concepts entry that named it
-pointing at release history, the subject this paragraph leaves out, and a per-version record is
-not a concept page.
-
-Paragraphs 3 and 4 are anatomy sentences (`no-claim`), so they carry no code span, numeral, or
-version that `check:provenance` would read as an extractable fact.
-
-**Paragraph 5: the definition, what cairn is and where every admin request passes** (the
-anatomy's "a definition of the concept follows"). Two sentences. Under the zero-config default
-cairn is the identity system for a site's editors, since its D1 store, `AUTH_DB`, holds the
-roster, the sessions, and the single-use sign-in tokens (`f:u77pea`). Then the guard, defined
-before any section uses it: "Every `/admin` request passes through the auth guard, the server hook
-`createAuthGuard` builds." (`f:7qqhda`, whose source is that hook's `handle` function; "the auth
-guard" is rendered as a link to the heading The auth guard, and `createAuthGuard` as a link to
-`docs/reference/sveltekit.md`, "`createAuthGuard`", which states the hook and its wiring in
-`hooks.server.ts`.) The first structural edit of this plan blocked on the guard arriving as an
-undefined actor in section 3's Limits and section 4's first sentence; this sentence names the guard
-and what passes through it, and leaves the fixed order and the logged refusals to section 5, so
-that section's first sentence restates nothing. The second edit passed the introduction and found
-the one paragraph that carried the store, the guard, the replaceable defaults, and the `identity`
-hand-off dense; the split it suggested is this paragraph and the next.
-
-**Paragraph 6: the replaceable defaults and the hand-off.** Three sentences. First, the floor
-stated outright, the four words the outline's first cover item names and no earlier plan sentence
-carried: "The defaults are floors, not ceilings." (`f:y3ljm0`, whose key phrase this is; any other
-sentence on the page that uses the phrase cites `f:y3ljm0` too.) Then the original sentence the
-round-2 register read asked to restore, verbatim: "A developer can replace those defaults, the
-owner and editor roles and magic-link sign-in, with their own auth framework, after which cairn
-mints no session and reads an owner or editor identity through a defined hand-off." (`f:y3ljm0`.)
-The floor sentence states the principle and the restored sentence the mechanism and its
-consequence, so the pair is not a restatement; the drafter keeps them as two sentences, never a
-lead clause and a colon. Then the hand-off named: the `identity` option on that guard, which reads
-the proof of identity an external gate supplies in place of cairn's session resolution
-(`f:u77pea` supports the gate replacing session resolution when a site configures one; the sentence
-may also cite `f:fhit7f`, whose full statement lives in section 10; `createAuthGuard` is already
-linked in paragraph 5, so this sentence links nothing). No channel sentence here. The channel is
-the seam a site adds, not the default a site replaces, so it is not this paragraph's subject; the
-covers sentence in paragraph 3 names it as a seam, and the page first depends on it in section 6,
-The dev-backend flag's two refusals, which introduces it there. The second structural edit blocked
-on this plan's earlier claim that no section before section 11 depends on the channel; section 6
-does, and the correction is under that section.
-
-**Paragraph 7: platform isolation, linked out** (the Cloudflare take). "The isolation of the
-Worker that runs the engine belongs to Cloudflare, and the Workers security model describes it."
-Link https://developers.cloudflare.com/workers/reference/security-model/ ; `no-claim`.
+Superseded 2026-10-04 by Geoff's intro ruling (framing and reader-first intros, never an imperative opening); see docs/internal/briefs/extend/security-model.framing.md.
 
 ## Sections
 

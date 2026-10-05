@@ -167,84 +167,16 @@ figure verifier reads the result.
 
 ## Introduction
 
-Under the title, no heading, in this order: the contract paragraph; the covers list under its
-lead-in; the prior-knowledge paragraph, which also leads into the out-of-scope list; and the
-definition paragraph. Google's three parts arrive as statements about the subject, never about
-the page: no sentence opens on the page, names a section, or refers to a position.
+No heading. Reader-first; no one-line contract opening. Citations live in the page's brief JSON.
 
-**Paragraph 1: the subject, why it matters, and the one-line contract.** Three sentences. The
-first sentence is the contract, one line: cairn manages a site's markdown content and its admin
-frame, and everything else a site needs is the developer's, reached through a short list of
-seams (`f:99f221`, `f:bhyvqg`). The second is the consequence for this reader: the boundary
-between the two decides which code a site writes and which engine contracts it relies on across
-releases (`f:bhyvqg`). The third is the surface's shape: the seams form a narrow, versioned public
-surface (`f:gknz29`). Each takes its own sentence; the resolution run's drafter chained the
-three into one 50-word sentence, which the register editor flagged. Key phrases: a sentence that
-uses "not a platform" cites `f:99f221`, one that uses "thin seam, not a built-in feature" cites
-`f:bhyvqg`, and one that uses "every break is disclosed" cites `f:gknz29`. The first two phrases
-carry the contrast frame the register lists as a tell, so the drafter writes the clauses without
-them (the committed page's "stops at markdown content management and the admin frame" is the
-model) and cites the facts for the claims they carry.
+1. Para 1: what cairn is (embedded CMS for SvelteKit on Cloudflare; npm package; route files with factory load/actions; one Worker; markdown in git; publish is a GitHub App commit triggering the existing deploy; D1 for sign-in rows, R2 for media).
+2. Para 2: the charter boundary (engine owns markdown content and admin frame; rest is the developer's) and why it decides which code a site writes and which contracts it relies on; seams form a narrow versioned public surface across export subpaths.
+3. Para 3: readers. Usual route is `create-cairn-site`; a developer taking over a scaffolded site needs to know which files rest on an engine contract (Scaffolded site files links); an evaluator needs what the boundary commits a site to.
+4. Six-item list of what the architecture covers (subpaths, seams, edit path and read-back, stores, unabstracted dependencies and swappable content store contract, per-export stability promise).
+5. Prior knowledge: SvelteKit routing/load/actions and Cloudflare Worker bindings; five-item routing list to Security model, Define an adapter and schema, Content model, export reference, Upgrade cairn.
+6. Closing paragraph before first H2: one `CairnAdapter` object drives every factory, screen, and helper; engine hard-codes no concept, directory, or field.
 
-**The covers list: what the subject covers.** A complete lead-in sentence and a bulleted list of
-six items in page order. The lead-in names the list's subject plainly and claims nothing about
-it: no "parts of the boundary", no "the boundary runs from ... to ...", no spatial or structural
-figure. Round 2 flagged the first of those frames and the resolution run's register editor
-blocked the second ("The boundary between the engine and a site has the following parts"): the
-edit path, the stores, and the dependencies are not parts of a boundary, so a lead-in that says
-they are makes a false claim in a structural position. Model lead-in: "The architecture has the
-following subjects." (the register editor's plainer rewrite without its "in the order a site
-meets them" clause, which asserts an order the page never demonstrates). The items, each a noun
-phrase in one form with no code span or numeral: the export subpaths a site imports; the seams a
-site extends through; the path an edit takes from a save to the deploy, and how the admin reads
-content back; the stores that hold each kind of state; the dependencies the engine never
-abstracts, and the contract the swappable content store keeps; the promise each export carries
-across versions. The list is the plan's own form, not a drafter departure: parallel items that
-need no order form a bulleted list (`docs/internal/docs-register.md`, "Structure"), and the
-structural edit confirmed that the committed list matched the body's subjects and order, which
-is what Google's review step asks of the introduction.
-
-**The prior-knowledge paragraph and the out-of-scope list: what the reader brings, what sits
-elsewhere.** One paragraph of two sentences, then a bulleted list of five items.
-
-- *Prior knowledge*, the paragraph's first sentence. Working with the seams takes knowledge of
-  SvelteKit routing, load functions, and form actions, and of Cloudflare Worker bindings, because
-  the engine builds on both and abstracts neither (`f:djoxr9`; the external resources at the end
-  link all four subjects, which answers the round-2 note that the prior-knowledge sentence named
-  load functions the links did not cover).
-- *Doesn't cover*, the paragraph's second sentence and the list it introduces. The second
-  sentence is the list's lead-in, a complete sentence that says separate pages cover the subjects
-  that follow and never names the page itself (model: "Separate pages cover the following
-  subjects."). Then five items in one form, the subject first and its page last, each opening on
-  a capital letter: the security properties of each piece, in `docs/extend/security-model.md`;
-  the adapter, declared field by field, in `docs/extend/define-an-adapter-and-schema.md`;
-  concepts and fieldsets in depth, in `docs/extend/content-model.md`; each export's signature,
-  in `docs/reference/README.md` (link text "the export reference"); the upgrade procedure, in
-  `docs/extend/upgrade-cairn.md`. Media settings and the migration record are linked from the
-  body sections that need them (Data tiers and Stability tiers), so the introduction carries five
-  links. The earlier revision asked for these in prose because round 2 had called the committed
-  six-item list soft overlinking; the resolution run's drafter met that instruction with a
-  70-word sentence chaining five subject-and-link pairs, and the register editor blocked it as
-  list cadence in prose and asked the conductor to rule on the plan conflict. Ruled here, under
-  the conductor's dispatch: the list returns, because the guide prescribes a list for parallel
-  items (`docs/internal/docs-register.md`, "Structure", and the tell "No list cadence in prose"),
-  the covers list above already takes that form, so the introduction treats parallel items one
-  way, and the overlinking note was about the link count and the repetition in Related
-  resources, which the five-link set and the body-linked media and migration pages already
-  answer. The form changes; the five subjects and their pages do not.
-
-The lead-ins and every item in both lists are anatomy sentences (`no-claim`), and the
-prior-knowledge sentence carries its citation, so none holds a code span, numeral, or version
-that `check:provenance` would read as an extractable fact.
-
-**The definition paragraph** (the anatomy's "a definition of the concept follows"). A cairn
-site declares one adapter, a single `CairnAdapter` object, and every route factory, admin screen,
-and delivery helper reads its behavior from that object; the engine hard-codes no concept,
-directory, or field (`f:4esdoz`). This is the outline's first cover and the bird's-eye view the
-rust-analyzer take asks for: one paragraph, no list. The committed page placed it after the
-out-of-scope list and the round-2 read flagged the placement; here it is the paragraph the
-anatomy puts after the summary, and the out-of-scope list sits inside the introduction's
-scope statement, where the anatomy places what is out of scope and the pages that cover it.
+Superseded 2026-10-04 by Geoff's intro ruling (framing and reader-first intros, never an imperative opening); see docs/internal/briefs/extend/architecture.framing.md.
 
 ## Sections
 

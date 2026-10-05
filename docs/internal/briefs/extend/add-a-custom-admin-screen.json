@@ -2,7 +2,59 @@
   "page": "docs/extend/add-a-custom-admin-screen.md",
   "sentences": [
     {
-      "text": "Add a screen under `/admin` that renders inside the admin shell, enforces the site's access map on its reads and writes, records each write in the audit trail, and passes `cairn-audit`.",
+      "text": "cairn manages a site's markdown content and the admin frame around it, and it leaves the site's other data and domain logic to the developer, whom it serves through a thin seam, not a built-in feature.",
+      "id": "f:bhyvqg"
+    },
+    {
+      "text": "In the admin, that seam is the custom admin screen, a SvelteKit route under `src/routes/admin/` that SvelteKit resolves ahead of the engine's `[...path]` catch-all and that can adopt the packaged admin toolkit.",
+      "id": [
+        "f:9xthnq",
+        "f:03zj56",
+        "f:6a32oy"
+      ]
+    },
+    {
+      "text": "A site builds one to manage data it keeps outside its markdown content, such as rows in the Cloudflare D1 database that a scaffolded site binds as `APP_DB` for the developer's use, beside the engine's sign-in database.",
+      "id": [
+        "f:gcuj1j",
+        "f:onqm6k"
+      ]
+    },
+    {
+      "text": "A site with another kind of markdown content declares a concept in its adapter instead of building a screen, as [Define an adapter and schema](define-an-adapter-and-schema.md) describes.",
+      "id": "f:6a32oy"
+    },
+    {
+      "text": "The route's place under `/admin` gives the screen the [`CairnAdminShell`](../reference/admin.md#cairnadminshell) frame and the same sign-in guard as the engine's screens.",
+      "id": "f:9xthnq"
+    },
+    {
+      "text": "The guard gates the `/admin` subtree as a whole and decides no route's authorization, so the screen checks the site's access map itself, on its read and on every write.",
+      "id": [
+        "f:2sd4if",
+        "f:10ojk8"
+      ]
+    },
+    {
+      "text": "An entry's edit history comes from git, which never sees a screen's writes to its D1 database, so the screen records those writes in the audit trail itself.",
+      "id": [
+        "f:hcydfe",
+        "f:pgy0mr"
+      ]
+    },
+    {
+      "text": "Once the site wires an audit sink, each `ctx.audit` call adds one row naming the actor, the action, and the entity.",
+      "id": [
+        "f:wnvqlz",
+        "f:68h31z"
+      ]
+    },
+    {
+      "text": "`cairn-audit` applies the rules it runs on the engine's admin components to everything under `src/routes/admin`, a custom screen included.",
+      "id": "f:326755"
+    },
+    {
+      "text": "The steps that follow build a screen under `/admin` that renders inside the admin shell, enforces the site's access map on its reads and writes, records each write in the audit trail, and passes `cairn-audit`.",
       "id": [
         "f:9xthnq",
         "f:10ojk8",
@@ -11,25 +63,14 @@
       ]
     },
     {
-      "text": "A custom admin screen is a SvelteKit route under `src/routes/admin/` that renders inside [`CairnAdminShell`](../reference/admin.md#cairnadminshell), can adopt the packaged admin toolkit, and sits behind the same sign-in guard as the engine's screens.",
-      "id": [
-        "f:9xthnq",
-        "f:03zj56"
-      ]
-    },
-    {
-      "text": "A site adds one to manage data it keeps outside its markdown content, such as rows in a `signups` table read through an `APP_DB` binding.",
-      "id": "f:onqm6k"
-    },
-    {
-      "text": "The worked example is the signups screen over that table, which every scaffolded site carries at `src/routes/admin/signups/`, as does the repository's example site, `examples/showcase`.",
+      "text": "A developer may first meet a custom screen as the signups screen, which the setup command writes into every scaffolded site at `src/routes/admin/signups/` and which the repository's example site, `examples/showcase`, also carries.",
       "id": [
         "f:onqm6k",
         "f:pyt58u"
       ]
     },
     {
-      "text": "The example runs from the screen's route through its load, its actions, their audit calls, its markup, and its styles.",
+      "text": "That screen is the worked example, followed from its route through its load, its actions, their audit calls, its markup, and its styles.",
       "id": "no-claim"
     },
     {
@@ -43,10 +84,6 @@
     {
       "text": "The steps assume familiarity with SvelteKit's form actions and server hooks and with Svelte's snippets and runes.",
       "id": "no-claim"
-    },
-    {
-      "text": "A site that needs another kind of markdown content declares a concept in its adapter instead of building a screen, as [Define an adapter and schema](define-an-adapter-and-schema.md) describes.",
-      "id": "f:6a32oy"
     },
     {
       "text": "To declare the site's access map, or to change who reaches an existing screen, see [Restrict admin access](restrict-admin-access.md).",

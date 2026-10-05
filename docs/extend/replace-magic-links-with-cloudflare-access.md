@@ -1,20 +1,28 @@
 # Replace magic links with Cloudflare Access
 
-Replace cairn's magic-link sign-in with your organization's identity provider by putting a
-Cloudflare Access application in front of the admin. A resolver on the guard turns the Access token
-into the email the guard looks up in the roster. A site makes this switch when its editors already
-hold accounts in an identity provider such as Google Workspace or Microsoft Entra ID. Access admits
-only the users who match an application's policies, and it signs them in through the identity
-provider the application connects to. The work spans the site's server hooks and the account's
-Zero Trust settings, so it takes a developer who can change both.
+A cairn site signs its editors in by magic link by default, so an editor enters an email address,
+receives a one-time link, and reaches the admin with no GitHub account and no password. Magic-link sign-in is the default so that a content site runs with zero config. Under that default, cairn is itself the identity system for its editors, and its D1 store, `AUTH_DB`, holds the roster, the sessions, and the single-use sign-in tokens. The guard that
+[`createAuthGuard`](../reference/sveltekit.md#createauthguard) returns enforces that sign-in as a
+SvelteKit handle in the site's server hooks, and it gates every `/admin` path except the sign-in
+page and its auth endpoints.
 
-Setting [`createAuthGuard`](../reference/sveltekit.md#createauthguard)'s `identity` option replaces
-the whole magic-link path, so every editor signs in through the gate or none does. Under
-`identity`, the guard mints no token and sets no session cookie, since `identity.resolve` reads the
-gate's proof of identity and the guard looks the proven email up in the roster as it would a
-magic-link session's email. The free Cloudflare Zero Trust plan caps the number of users who
-authenticate through Access, so an editorial team larger than the cap on the
-[Zero Trust plans page](https://www.cloudflare.com/plans/zero-trust-services/) needs a paid plan.
+A site leaves magic links when its editors already hold accounts in an identity provider such as
+Google Workspace or Microsoft Entra ID and should sign in to the admin with them. Cloudflare
+Access brings that provider to a site on Workers, since an Access application sits in front of the
+site's Worker, admits only the users who match its policies, and signs them in through the identity
+provider it connects to. The switch puts an Access application in front of the admin as its identity gate and gives the
+guard a resolver that turns the Access token into the email the guard looks up in the roster. The
+roster stays in cairn, so the application decides who reaches the admin and the roster decides
+which of those people may edit. The work spans the site's server hooks and the account's Zero
+Trust settings, so it takes a developer who can change both.
+
+Setting the guard's `identity` option replaces the whole magic-link path, so every editor signs in
+through the gate or none does. Under `identity`, the guard mints no token and sets no session
+cookie, since `identity.resolve` reads the gate's proof of identity and the guard looks the proven
+email up in the roster as it would a magic-link session's email. The free Cloudflare Zero Trust
+plan caps the number of users who authenticate through Access, so an editorial team larger than
+the cap on the [Zero Trust plans page](https://www.cloudflare.com/plans/zero-trust-services/) needs
+a paid plan.
 
 This task assumes that you have edited a SvelteKit server hooks file, deployed a Worker with
 Wrangler, and can read a JWT verification sample closely enough to own the code it becomes. A site

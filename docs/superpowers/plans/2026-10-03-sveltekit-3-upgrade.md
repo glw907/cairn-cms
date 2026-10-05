@@ -1260,3 +1260,53 @@ Task 13 rather than the friction log. Nothing filed.
 about 3.5 hours of clock, most of it three full gates with an 11-minute e2e each, one doubled by a re-issue.
 
 **Next:** S2 (Tasks 5, 6), pre-flight first.
+
+### Checkpoint 3 (2026-10-05, end of S2)
+
+**S2 tasks, all accepted.**
+- Task 5, `63400541` (run `wf_c03dde58-74c`): the showcase e2e serves through `wrangler dev` with members on local
+  D1; eight mutation proofs fired. The reviewer escalated only because the runner's resolved gate string lacked the
+  `export E2E_PORT=4392 &&` prefix the conductor's own notes required; the conductor accepted (a runner artifact, every
+  criterion met). Later segments set `E2E_PORT` outside the string (`E2E_PORT=4392 cairn-run-gate '<string>'`). The
+  first S2 launch (`wf_1d2b3fe0-822`) was stopped before its first edit to add the light-lane rule after a dubplate
+  session reported its gates queuing 20 to 28 minutes behind cairn's browserless checks; the rule now also lives in
+  `cairn-implementer`'s definition (dotfiles `c6b1559`).
+- Task 6, `166437ad` (run `wf_c8feb056-c09`): every other built-site caller serves through `wrangler dev`, flag by
+  `--var`; flagged readiness probes require a 200 from `/admin/posts` (the old `curl -sf` loops accepted a redirect).
+- Task 5b, `80868b98` (run `wf_6bc3cf3e-a99`, Opus, added at the boundary): the boundary F went red on one
+  `admin-visual` zen test, which then failed 3 of 36 isolated runs. Root cause proven: the test pressed the zen chord
+  once the server-rendered heading showed, about 130 ms before hydration attached `EditPage`'s keydown listener; a
+  600 ms client-chunk delay made it fail 15 of 15. The test now waits for `.cm-content` (the readiness signal sibling
+  specs use), asserts focus moved into the editor, and blurs before the capture; 120 of 120 zen runs passed. Test
+  only; no product change; no baseline moved.
+
+**Consequences recorded.** Under plain `vite dev`, the showcase members routes no longer receive the dev-backend flag
+(Decision 10 retired the stamp; the e2e and `wrangler dev` paths are unaffected). `examples/showcase/wrangler.jsonc`
+gains `dev.port: 4173`, emitted into Waymark, so `npm run preview` stays flag-free and a caller's `--port` overrides
+it (wrangler rejects a duplicate `--port`). Task 5's implementer read "both body refusals" as the three members
+routes only; the dev-package routes (`last-commit`, `branch-file`, `render-media`) gate on the define and
+`devBackendOptIn()` alone, as before.
+
+**Boundary evidence.** CI on `166437ad`: `test`, `e2e`, `design`, `scaffold`, `create-site`, and the dispatched
+`norms` run `37281453512`, all green. Local F on `80868b98` (5b's gate): green under the CI-baseline rule (the 20
+`site-visual` screenshots only), snapshot diff empty. CI on `80868b98` is checked before S3's first commit lands.
+
+**Found at the boundary, fixed in S3 as Task 5c:** every `wrangler dev` run leaves a bundle in
+`examples/showcase/.wrangler/tmp` that nothing cleans, and `check-symbols`'s `envVarInSourceTree`
+(`scripts/checks/check-symbols.mjs:637`) greps that tree and `node_modules` once per token (5.9 s a token with the
+directory present, 1.4 s with `--exclude-dir=.wrangler`). After about 20 local e2e runs,
+`check-symbols.test.ts`'s corpus test passes its 120 s timeout. CI starts clean and never sees it. This pass caused it,
+so it is fixed here, not filed.
+
+**Friction filed on `main`** (`10cd0025`): the theme fixture's default port 4393 collides with the e2e inspector port,
+and `test:theme-fixture` needs the light lane's memory override (5G/6G).
+
+**S3 inputs folded:** the S3 pre-flight (`59c11065`) and Task 7's security read (`fd8c1730`, record
+`docs/superpowers/research/2026-10-03-sveltekit-3-csrf-security-read.md`): proceed with amendments, each admin view owns
+its referrer meta (Decision 11 amended), and the doctor fails `'null'` as well as `'*'`.
+
+**Split decision:** no split. Spend through S2 is about 2.4M of 12.4M (subagents: S1 0.49M, S2 runs 0.66M, pre-flights
+and boundary agents about 0.6M, plus the conductor; `/cost` at the close), far under the ceiling, so S3 to S5 run in
+this pass as planned.
+
+**Next:** S3, Tasks 5c, 8, 9, 10.

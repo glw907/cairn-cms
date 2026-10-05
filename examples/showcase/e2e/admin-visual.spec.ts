@@ -251,11 +251,17 @@ for (const width of WIDTH_BAR) {
 // this bar). The page settles on the entry heading rather than the Write tab (the plain edit page
 // pair's own settle signal): below sm the tab folds into the toolbar's own overflow menu, so it is
 // never a tab role at every width this bar sweeps. The floating "Exit zen" chip is zen's own
-// settle signal. Unmasked, unlike the plain edit page pair above: zen drops the band entirely, so
-// the manuscript's own bounding box grows to meet the fixed zen chip at a narrow width (a mask
-// paints its locator's bounding box onto the final image regardless of stacking order, which would
-// paint over the chip too); the dev seed's own static "The original body." is what a mask would
-// have hidden, not live input.
+// settle signal. The heading is server-rendered, so it shows before the page hydrates, while the
+// chord's keydown listener attaches only on the client, and a press in that gap is dropped.
+// CodeMirror mounts `.cm-content` client-side after hydration, so the press waits on it, the same
+// readiness signal golden-path.spec.ts waits on before its own keyboard input. Entering zen from
+// the keyboard moves focus into the mounted editor, which paints its keyboard focus hairline; the
+// test checks that focus landed there, then blurs the editor so the capture shows zen's layout
+// unfocused, the same no-focus convention the plain edit page pair above follows. Unmasked, unlike
+// the plain edit page pair above: zen drops the band entirely, so the manuscript's own bounding
+// box grows to meet the fixed zen chip at a narrow width (a mask paints its locator's bounding box
+// onto the final image regardless of stacking order, which would paint over the chip too); the
+// dev seed's own static "The original body." is what a mask would have hidden, not live input.
 for (const width of WIDTH_BAR) {
   test(`admin edit page zen — light — ${width}px`, async ({ page, context, baseURL }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -263,8 +269,11 @@ for (const width of WIDTH_BAR) {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/admin/posts/2026-06-hello');
     await expect(page.getByRole('heading', { level: 1, name: 'Hello' })).toBeVisible();
+    await expect(page.locator('.cm-content')).toBeVisible();
     await page.keyboard.press('ControlOrMeta+Shift+.');
     await expect(page.getByRole('button', { name: /Exit zen/ })).toBeVisible();
+    await expect(page.locator('.cm-content')).toBeFocused();
+    await page.locator('.cm-content').blur();
     await expect(page).toHaveScreenshot(`admin-edit-zen-light-${width}.png`, { fullPage: true });
   });
 
@@ -276,8 +285,11 @@ for (const width of WIDTH_BAR) {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/admin/posts/2026-06-hello');
     await expect(page.getByRole('heading', { level: 1, name: 'Hello' })).toBeVisible();
+    await expect(page.locator('.cm-content')).toBeVisible();
     await page.keyboard.press('ControlOrMeta+Shift+.');
     await expect(page.getByRole('button', { name: /Exit zen/ })).toBeVisible();
+    await expect(page.locator('.cm-content')).toBeFocused();
+    await page.locator('.cm-content').blur();
     await expect(page).toHaveScreenshot(`admin-edit-zen-dark-${width}.png`, { fullPage: true });
   });
 }

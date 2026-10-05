@@ -1020,7 +1020,7 @@ reference and `log-events.md` edits that keep the gates green.
   prerender summary), so an empty or failed log cannot pass; the scaffolded-site build is proven by
   CI's `scaffold.yml` at the S4 boundary.
 - **Registry install (Review focus 3):** the spike harness in consumer mode against this task's
-  `npm pack` tarballs passes all six conditions, the login marker included (quoted).
+  `npm pack` tarballs passes all five conditions (the harness's consumer mode emits five RESULT lines: install, wrangler-types, svelte-check, vite-build, login; 11b review), the login marker included (quoted).
 - A from-scratch showcase reinstall precedes the e2e (`realpath` quoted), and the full e2e suite is
   green under `wrangler dev`. `check:reference`, `check:reference:signatures`, and `check:surface`
   green. F green.
@@ -1040,6 +1040,22 @@ type test, whose `CairnPlatformBindings` snippet Task 13's reference page quotes
 ---
 
 ## S5: scaffold, docs, and records
+
+### Task 11c: Walk self-referencing imports in the reach test (added at the S4 boundary, 2026-10-05)
+
+**Pass class:** `engine-logic`. **Gate:** `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check && npm run test:node-projects'`.
+
+**Files:** `src/tests/unit/workers-env-reach.test.ts`.
+
+**Outcome:** the import-graph test that proves no Node-context entry reaches `src/lib/sveltekit/workers-env.ts`
+follows self-referencing bare specifiers (`@glw907/cairn-cms` and `@glw907/cairn-cms/<subpath>`) by resolving
+them through the root `package.json` `exports` map to their `dist` files, as well as relative specifiers. At
+`9ff58730` the walk follows only relative specifiers, so `dist/vite/internal.js`'s self-references
+(`@glw907/cairn-cms/delivery/data`, `@glw907/cairn-cms`) are never walked (11b review, non-blocking).
+
+**Acceptance:** a fixture or mutation proves a Node entry that reaches `workers-env` only through a self-referencing
+specifier fails the test (quoted red, then restored); the real `dist` still passes; the gate green.
+
 
 ### Task 12: `create-cairn-site` at the Kit 3 shape
 
@@ -1094,6 +1110,11 @@ and every other page the repoint grep names; `docs/internal/facts/*.md`;
   `Cross-site POST form submissions are forbidden`, with the Workers Logs invocation record as the
   diagnostic). Every page naming `svelte.config.js`, `platform.env`, `platform.ctx`,
   `PlatformContext`, `checkOrigin`, or `process.env` for the flag or `PUBLIC_ORIGIN` is repointed.
+- **The `cloudflare:workers` specifier** (11b review): 11b's grep-zero reworded the public doc comments on
+  `DeliverContext`, `createD1AuditSink`, and `types.ts` to say "the `waitUntil` the Workers runtime exports", and
+  `createD1AuditSink`'s JSDoc lost its import example. The reference pages (`sveltekit.md`, `auth-channel.md`)
+  name the specifier and quote the call form `import { env, waitUntil } from 'cloudflare:workers'`, so a consumer
+  knows where to import from.
 - **Subpath-import snippets** (S1 finding, Task 3): every published snippet that imports through
   `$lib`, `$chassis`, or `$theme` moves to the `#` form the scaffold now emits (plan time: 55 lines
   across 14 files, among them `docs/reference/{core,sveltekit,delivery-data,delivery,admin,admin-routes,islands}.md`).

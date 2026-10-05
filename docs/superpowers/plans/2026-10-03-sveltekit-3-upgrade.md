@@ -997,6 +997,12 @@ and every other page the repoint grep names; `docs/internal/facts/*.md`;
   `Cross-site POST form submissions are forbidden`, with the Workers Logs invocation record as the
   diagnostic). Every page naming `svelte.config.js`, `platform.env`, `platform.ctx`,
   `PlatformContext`, `checkOrigin`, or `process.env` for the flag or `PUBLIC_ORIGIN` is repointed.
+- **Subpath-import snippets** (S1 finding, Task 3): every published snippet that imports through
+  `$lib`, `$chassis`, or `$theme` moves to the `#` form the scaffold now emits (plan time: 55 lines
+  across 14 files, among them `docs/reference/{core,sveltekit,delivery-data,delivery,admin,admin-routes,islands}.md`).
+  A page that deliberately targets a site scaffolded before this change (Task 3's implementer named
+  `docs/extend/choose-an-ai-posture.md`) keeps its form and says which scaffold it targets.
+  Internal docs (`docs/internal/code-idioms.md`, `pre-beta-harvest.md`) are triaged, not required.
 - **Facts:** a correction to every bullet this pass falsifies, anchor bullets keeping their anchors
   and retired conditions marked retired. Plan-time candidate set (53 bullets; the docs task triages
   each to corrected, retired, or unchanged with a one-line reason in its report): admin.md
@@ -1015,7 +1021,10 @@ leaves the set to it). New bullets: the
   and public SSR pages included).
 - **CHANGELOG** `## Unreleased`: the pass's entry with the spec's ten `Consumers must:` lines plus
   Decision 13's two (`vite preview` cannot serve adapter 8 output; adapter 8 drops the worker-level
-  cache), finalized against what shipped. `migration-notes.md` and `upgrade-cairn.md` carry the same
+  cache), finalized against what shipped. The task also rules on a third candidate the S1 review
+  raised: `loadPreview` now imports `$app/env`, so a consumer test that mocks or aliases
+  `$app/environment` no longer reaches it, and the `try`/`catch` hides the miss (`building` falls
+  back to `false`); a `Consumers must:` line or a stated reason it needs none. `migration-notes.md` and `upgrade-cairn.md` carry the same
   version record, the cache change included.
 - **ROADMAP:** a watch for engine-side `/media` caching (Decision 14), triggered by a measured R2
   cost or `/media` latency problem on a production site, in the tier where it bites. Any published
@@ -1042,6 +1051,8 @@ leaves the set to it). New bullets: the
 - `git grep -nE 'svelte\.config\.js|platform\.env|platform\.ctx|PlatformContext|checkOrigin|delivery_inline|\^2\.70' -- docs/reference docs/extend/upgrade-cairn.md README.md`
   prints only lines the report names as intentional (a retired-symbol note, a version record).
 - `git grep -n "kit#15992" -- CLAUDE.md ROADMAP.md` prints no line presenting it as a live watch.
+- `git grep -nE '\$(lib|chassis|theme)/' -- docs/reference docs/extend README.md` prints only lines
+  the report names as targeting the pre-change scaffold.
 - Each of the nine `engine-rulings.md` ids carries a 2026-10 dated note (`check:rulings-format` green).
 - The facts triage report covers every id in the candidate set; `check:facts` green.
 - `git grep -n "caches.default" -- CHANGELOG.md docs/extend/migration-notes.md` shows the
@@ -1166,3 +1177,28 @@ locally. `pass-execute`'s `commonNotes` must carry this rule for the implementer
 
 **Next:** S1 (Tasks 2, 3, 4) through `pass-execute` by name, with the e2e on the default port and the baseline rule
 above in `commonNotes`. S1's pre-flight is done (item 6).
+
+### Checkpoint 2 (2026-10-05, end of S1)
+
+**Overnight run ruling (Geoff, 2026-10-04):** the run continues past the 80 percent line unattended and hard-stops
+at 14.9M (120 percent of the ceiling), writing STATUS. It stops before the close's live smoke, which needs his click.
+
+**S1, workflow `wf_7395e0cb-58c`:** all three tasks accepted, no fix rounds, every gate green under the CI-baseline
+rule (the 20 `site-visual` screenshots; one extra `styleguide-light-2560` load flake under a concurrent dubplate gate
+passed when rerun alone).
+- Task 2, `669cebf6`: the plan-time counts were wrong (3 real `$app/environment` imports, not 8); `healthz.spec.ts`
+  now pins the JSON content type.
+- Task 3, `0a5a6883`: prerender counts equal before and after on both builds (96 files, 64 pages); the dead alias
+  maps in `check-public-skill.mjs` and the root `vitest.config.ts` are removed; no fallback needed.
+- Task 4, `285b166e`: `@sveltejs/package` 3.0.0; the packed output is identical (876 files, same dist hashes); survey
+  at `docs/superpowers/research/2026-10-03-sveltekit-package-3-survey.md`, three capabilities, all "no action".
+
+**Out-of-scope findings:** the dev package's kit range (`^2.61.0`) is Task 11b's (`^3`, Global constraints); the
+`csrf-disable` fix text naming `svelte.config.js` retires in Task 10, and its fact `f:4dolfa` is in Task 13's set.
+The `$`-form reference snippets and the `$app/environment` mock change are this pass's own consequences, folded into
+Task 13 rather than the friction log. Nothing filed.
+
+**Spend:** S1 subagents 0.49M; through S1 about 1.2M of 12.4M (conductor estimate; `/cost` at the close). S1 took
+about 3.5 hours of clock, most of it three full gates with an 11-minute e2e each, one doubled by a re-issue.
+
+**Next:** S2 (Tasks 5, 6), pre-flight first.

@@ -496,15 +496,18 @@ specs and rides the `webServer` change), and `templates/waymark/**` through `npm
   body refusals (a local host, and `CAIRN_DEV_BACKEND === '1'` in env). The dev package's double set
   is unchanged.
 - Adapter 7's worker serves `caches.default` first, so a cached `immutable` 200 answers after the
-  safe-delete and `media-library.spec.ts:189` fails on this host; the post-delete probe sends
-  `Cache-Control: no-cache`, which skips the cache read, so it asserts the R2 state.
+  safe-delete and the safe-delete test at `media-library.spec.ts:189` fails on this host; its
+  post-delete probe (the `request.get(deliveryPath)` 404 assertion at `:230`) sends
+  `Cache-Control: no-cache`, which skips the cache read, so it asserts the R2 state. The pre-delete
+  200 at `:207` stays a plain request.
 - CI's e2e job runs on the same host; visual baselines are unchanged.
 
 **Acceptance:**
 - The whole existing showcase e2e suite is green on the new host under `E2E_PORT=4392` (the first
   run on that port since Task 0), with zero baseline files changed
   (`git diff --stat -- '*-snapshots/*'` empty), so a host move that shifted paint cannot pass.
-  `media-library.spec.ts:189` is green, and the report quotes its red run without the header.
+  The safe-delete test (`media-library.spec.ts:189`, probe at `:230`) is green, and the report quotes
+  its red run without the header.
 - `git grep -n "vite preview" -- examples/showcase/playwright.config.ts .github/workflows/e2e.yml`
   prints nothing, and the `preview` value in `examples/showcase/package.json` and
   `templates/waymark/package.json` names `wrangler dev` with no flag.
@@ -533,16 +536,29 @@ showcase runtime code moves; the S2 boundary runs F and CI). **Spec:** S2 (`norm
 
 **Files:** `.github/workflows/norms.yml`, `.github/workflows/design.yml` if a step changes,
 `scripts/lab/theme-fixture.mjs`, `scripts/lab/generate-norms-manifest.mjs`,
-`scripts/lab/probe-vertical-alignment.mjs`, `scripts/checks/check-interactive-contrast.mjs`,
-`scripts/checks/check-touch-targets.mjs`, `examples/showcase/scripts/capture-surfaces.mjs`,
-`examples/showcase/scripts/design-probe.mjs`, `docs/internal/design/README.md` (the serve command),
-`docs/reference/cairn-audit.md` (`:693`, the flagged serve command), and any further caller the
-pre-flight's `git grep -n "vite preview"` finds outside records.
+`scripts/lab/probe-vertical-alignment.mjs` (`:49` and the second instruction string at `:1678`),
+`examples/showcase/scripts/capture-surfaces.mjs`, `examples/showcase/scripts/design-probe.mjs`
+(a live caller: `:57` spawns `npx vite preview --port 4173` with no flag; it moves to `wrangler dev`,
+with `--var` only if the probe needs the dev session, and its comments at `:9-10`, `:50` and the error
+message at `:64` follow), `docs/internal/design/README.md` (`:21`, the serve command, which runs
+"behind the injected dev session" and so takes `-- --var CAIRN_DEV_BACKEND:1`),
+`docs/reference/cairn-audit.md` (`:693`, the flagged serve command),
+`scripts/checks/check-symbols-allowlist.mjs` (the `cli-flag:--port` comment at `:17`, plus any
+`cli-flag:--var` entry `check:surface` demands once a doc shows the flag), `ROADMAP.md:711` (if
+Task 5 has not already narrowed it), and the comment-only hits
+`src/tests/unit/media-route-platform-proxy.test.ts:2` and `src/lib/auth-channel/factory.ts:869`
+(edited, or named as survivors). `scripts/checks/check-interactive-contrast.mjs` and
+`check-touch-targets.mjs` are not callers: their comments only name `npm run preview`'s default
+port, so they change only if those comments become false (pre-flight, 2026-10-05).
 
 **Notes:** an OS env var does not reach workerd, so every caller that today prefixes
-`CAIRN_DEV_BACKEND=1` (`norms.yml:55`, `:94`; `theme-fixture.mjs:66`; the instructions in
-`generate-norms-manifest.mjs:127`, `probe-vertical-alignment.mjs:49`, `capture-surfaces.mjs:294`,
-`cairn-audit.md:693`) moves to `-- --var CAIRN_DEV_BACKEND:1`. Without the flag the guard mounts and
+`CAIRN_DEV_BACKEND=1` (`norms.yml:55`, `:94`; the instructions in `generate-norms-manifest.mjs:127`,
+`probe-vertical-alignment.mjs:49` and `:1678`, `cairn-audit.md:693`) moves to
+`-- --var CAIRN_DEV_BACKEND:1`. Two carry the flag as a live env object, not a prefix:
+`theme-fixture.mjs`'s `SITE_ENV` at `:66`, spread into both the build (`:178`) and the serve (`:152`),
+drops `CAIRN_DEV_BACKEND` from the serve env and delivers it by `--var`, or the flag silently stops
+reaching workerd; and `capture-surfaces.mjs`'s `startServer()` (`:306-312`, `env` at `:310`) does
+the same, with its comments at `:11-12`, `:21`, `:294`, and `:326` following. Without the flag the guard mounts and
 `/admin/posts` redirects to login, and `norms.yml`'s `curl -sf` readiness loop accepts the 30x, so
 the failure is silent. `wrangler dev` takes `--port` but rejects `--strictPort`
 (`theme-fixture.mjs:150`); the fixture's own `listening(PORT)` pre-check covers the strict-port
@@ -552,7 +568,10 @@ intent.
 `wrangler dev` (directly, or through the repointed `preview` script), with the flag delivered by
 `--var` wherever the dev backend is needed; each flagged readiness probe requires a 200 from
 `/admin/posts`; comments naming `vite preview` as the host are corrected; the theme fixture's
-template arm serves its installed site the same way.
+template arm serves its installed site the same way. The theme fixture's own `serve()` readiness
+check (`:156-160`, `response.ok` on `/`) keeps `/` if the fixture serves unflagged; if it serves with
+the flag, it requires a 200 from `/admin/posts` like the other flagged probes, and the report says
+which.
 
 **Acceptance:**
 - `git grep -nE "vite preview|CAIRN_DEV_BACKEND=1 [^|]*run preview"`, excluding

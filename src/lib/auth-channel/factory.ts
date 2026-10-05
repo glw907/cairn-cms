@@ -866,7 +866,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     }
 
     // Step 8: deliver, only for a known subject. .catch() is attached before the promise ever
-    // reaches waitUntil, so an emulated no-op waitUntil (vite dev, vite preview) never orphans a
+    // reaches waitUntil, so an emulated no-op waitUntil (vite dev) never orphans a
     // rejection. A delivery failure deletes the pending row via the same conditioned delete
     // consumeCode already provides (nonce hash and code hash both known here) and refunds the
     // send charge, so a provider outage costs the member nothing but a retry; only the requester

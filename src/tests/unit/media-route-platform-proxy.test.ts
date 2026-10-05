@@ -1,6 +1,6 @@
 // The getPlatformProxy media-delivery smoke (ROADMAP "Now" item, born 2026-07-08). The
-// vitest-pool-workers integration project binds R2 natively (no RPC boundary), and `vite preview`
-// carries no bindings at all, so neither one drives the media route through the same magic-proxy
+// vitest-pool-workers integration project and the showcase's `wrangler dev` e2e both bind R2
+// natively (no RPC boundary), so neither drives the media route through the same magic-proxy
 // RPC boundary a consumer's `vite dev` does. Two miniflare serialization bugs (a live Headers
 // object passed into a bucket method, and into `bucket.get`'s options) shipped past a green suite
 // this way. `getPlatformProxy` reproduces that exact boundary: it starts a real Miniflare instance

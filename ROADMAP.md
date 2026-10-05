@@ -707,9 +707,10 @@ The original decision framing, for the record:
   client stub and the Worker never started) shipped past every gate this repo runs, and the two
   gates added with its fix are both Node `--conditions` proxies for Wrangler's esbuild. If Wrangler
   changes its condition set, both stay green while every consumer breaks the same way. Nothing in
-  `examples/showcase/src` imports `/auth-crypto` or `/cloudflare`, and the showcase e2e serves
-  through `vite preview` rather than Wrangler, so closing this needs a real workerd start, not one
-  more import. The cheapest shape is a small fixture Worker that imports one subpath, built and
+  `examples/showcase/src` imports `/auth-crypto` or `/cloudflare`. The showcase e2e now starts a
+  real workerd through `wrangler dev`, but it exercises the showcase's own bindings, not these
+  subpaths, so closing this needs a server-only subpath exercised under that host, not one more
+  import. The cheapest shape is a small fixture Worker that imports one subpath, built and
   started with `wrangler dev --local`, asserting it answers rather than refusing the connection.
   Filed 2026-08-06 from the fix's own review; the defect filing is
   [`docs/internal/feedback/2026-08-05-rc1-worker-condition-defect.md`](docs/internal/feedback/2026-08-05-rc1-worker-condition-defect.md).

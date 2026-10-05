@@ -52,10 +52,15 @@ jobs:
         run: |
           # Detached, with its output redirected: a background process still holding the step's
           # stdout keeps the step from ever finishing.
-          CAIRN_DEV_BACKEND=1 nohup npm --prefix examples/showcase run preview -- --port 4173 \
+          #
+          # The dev-backend flag reaches workerd only as a `--var` on the serve command; an OS
+          # environment variable stops at wrangler's own Node process. Readiness requires a 200
+          # from /admin/posts. Without the flag the admin guard answers that path with a redirect
+          # to login, which `curl -f` would accept, so the status code is read explicitly.
+          nohup npm --prefix examples/showcase run preview -- --port 4173 --var CAIRN_DEV_BACKEND:1 \
             > /tmp/showcase-preview.log 2>&1 &
           for _ in $(seq 1 60); do
-            curl -sf -o /dev/null http://localhost:4173/admin/posts && exit 0
+            [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4173/admin/posts)" = 200 ] && exit 0
             sleep 2
           done
           echo "the showcase preview never answered at http://localhost:4173"
@@ -91,10 +96,10 @@ jobs:
         run: |
           # Detached, with its output redirected: a background process still holding the step's
           # stdout keeps the step from ever finishing.
-          CAIRN_DEV_BACKEND=1 nohup npm --prefix examples/showcase run preview -- --port 4174 \
+          nohup npm --prefix examples/showcase run preview -- --port 4174 --var CAIRN_DEV_BACKEND:1 \
             > /tmp/showcase-preview-motion.log 2>&1 &
           for _ in $(seq 1 60); do
-            curl -sf -o /dev/null http://localhost:4174/admin/posts && exit 0
+            [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4174/admin/posts)" = 200 ] && exit 0
             sleep 2
           done
           echo "the showcase preview never answered at http://localhost:4174"

@@ -47,7 +47,10 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   The intro-only round ran 2026-10-04 (`9ca04531` on `draft-docs-2a`: a framing record per page, intros rewritten,
   a fact read narrowed five sentences) and is republished as version 3 of the artifact; Geoff read it on 2026-10-05:
   the intros are "drastically improved" and he is content the system now produces high-quality drafts, so the
-  intros hold. 2a's next action is task 8, after the SvelteKit 3 pass lands on `main` and 2a rebases onto it. Open gap: no fact states that an auth channel's form takes anonymous
+  intros hold. 2a's next action is task 8, after the SvelteKit 3 pass lands on `main` and 2a rebases onto it. Before
+  task 8 dispatches, `~/.claude/workflows/docs-page-chain.js` gains the framing step as its own stage (Opus at
+  `xhigh`, reading the doc set's map, deciding each page's background and framing from its reader before the
+  intro is drafted): the intro round ran it outside the chain, so the chain alone would still write thin intros. Open gap: no fact states that an auth channel's form takes anonymous
   posts (security-model brief maps it to `f:wuwk2q`, the nearest).
 - The gap sweep's 12 code defects sit in the friction log (`bd8ab1fe`, on `main`, not pushed).
 

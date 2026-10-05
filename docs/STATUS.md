@@ -16,13 +16,9 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **PAUSED 2026-10-05 ~12:30 for Geoff's travel, mid-S4.** Tasks 10b (`761ab48b`) and 11a (`768ac8ee`) are
-  accepted. Task 11b committed `a606fbee` (the Kit 3 / adapter 8 / `cloudflare:workers` bump), `6b04e429` (toolchain
-  floors), and `1c90c4fc` (a members-login hydration fix the Kit 3 e2e surfaced), tree clean, but was stopped before
-  its gate result and its diff review. Resume: relaunch `pass-execute` with `resumeFromRunId: wf_5a66cbe8-ff3` (10b
-  and 11a replay from cache) and the same args, changing only 11b's `notes` to say its three commits landed and it
-  must verify them, finish the gate, the from-scratch showcase install, the harness consumer run, and the mutation
-  proofs, then report; re-arm `claude-wf-guard` on the `build` tier (11b's transcript reached 3.5MB).
+- **Resumed 2026-10-05 17:37** after a pause: run `wf_5a66cbe8-ff3` relaunched from cache (10b and 11a accepted);
+  Task 11b verifies its three landed commits (`a606fbee`, `6b04e429`, `1c90c4fc`), then finishes its gate, the fresh
+  install, the harness consumer run, the survey, and the mutation proofs.
 - **The SvelteKit 3 upgrade is executing: S0 to S3 done, S4 in progress** (Ledger "Checkpoint 4"; the
   unattended run hard-stops at 14.9M and before the close's live smoke, Geoff 2026-10-04). Worktree `.claude/worktrees/sveltekit-3`
   (branch `sveltekit-3`, pushed, draft PR #103, CI green); the plan's Ledger, "Checkpoint 1", carries Task 0 and the

@@ -16,15 +16,18 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Next pass: the SvelteKit 3 upgrade, planned and reviewed, ready to execute.** Spec
+- **The SvelteKit 3 upgrade is executing: S0 done (spike GO), S1 next.** Worktree `.claude/worktrees/sveltekit-3`
+  (branch `sveltekit-3`, pushed, draft PR #103, CI green); the plan's Ledger, "Checkpoint 1", carries Task 0 and the
+  spike. Spec
   `docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md`, plan
   `docs/superpowers/plans/2026-10-03-sveltekit-3-upgrade.md` (14 tasks, six segments S0 to S5, `auth-data`,
   12.4M ceiling). Both took the full `spec-plan-review` sequence (reviews, fold, and verification under
   `docs/superpowers/research/2026-10-03-sveltekit-3-*`). The pass closes unreleased: Kit 3 publishes with draft docs
   stage 2a (Geoff, 2026-10-03). cairn.pub is the only site that migrates; the other four are rebuilt on the new docs.
   Geoff's rulings: the live smoke runs on the showcase under local `wrangler dev`, `@sveltejs/package` 3 is taken, and
-  `/media` gets no engine-side Cache API caching (a ROADMAP watch instead). Port 4173 is held by a week-old dubplate
-  `sirv` server, which fails eight `preview.spec.ts` tests on this machine.
+  `/media` gets no engine-side Cache API caching (a ROADMAP watch instead). The local e2e failures once blamed on a
+  dubplate server on 4173 come from the showcase's hardcoded `PUBLIC_ORIGIN` (`:4173`) under `E2E_PORT=4392`; the
+  e2e runs on the default port until Task 5 fixes it.
 - **Draft docs stage 2a is paused** at Geoff's read of the six accepted pilot pages (worktree `draft-docs-2a`, local
   only, HEAD `04a73a86`; record `docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md`; pages at
   https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs, version 2). Before task 8, the chain's round-2 reads change to
@@ -60,13 +63,13 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Resume prompt
 
-### Next action (SvelteKit 3 upgrade, execution)
+### Next action (SvelteKit 3 upgrade, execution from S1)
 
 > **Goal.** Execute the plan that moves the engine, the showcase, Waymark, `create-cairn-site`,
 > `@glw907/cairn-cms-dev`, and the Go doctor to SvelteKit 3 and adapter-cloudflare 8, so a fresh `sv create` project
 > installs cairn.
 >
-> **Scope.** The plan's 14 tasks (S0 spike through S5 docs), then the close. Out: the release (it holds until draft
+> **Scope.** S1 through S5 (Tasks 2 to 13), then the close; Task 0 and S0 are done (plan Ledger, "Checkpoint 1"). Out: the release (it holds until draft
 > docs stage 2a lands), cairn.pub's migration (its own site pass after the cut), and draft docs task 8.
 >
 > **Settled (do not re-brainstorm):** everything in the spec's "Settled decisions" and "Rulings" and the plan's
@@ -74,10 +77,13 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 > releasable. An S0 spike stop, including FA1 (no prerender-safe `building` form that keeps the `./sveltekit` barrel
 > free of `$app/*`), halts the pass for Geoff.
 >
-> **Approach.** Invoke `cairn-pass` to start. Create the worktree `.claude/worktrees/sveltekit-3` (branch
-> `sveltekit-3`) off `main` and run the chain per the plan: `pass-execute` by name, one invocation per segment,
-> implementer `cairn-implementer`, Task 11b upshifted to Opus. Pre-flight each segment's factual claims at HEAD.
-> Every dependency bump (Tasks 4 and 11b) carries the `dependency-upgrade` changelog survey. Ask Geoff before the
-> first e2e gate whether the dubplate `sirv` server on port 4173 can be stopped. The close's live smoke needs
+> **Approach.** Invoke `cairn-pass` to resume in the existing worktree `.claude/worktrees/sveltekit-3`. First confirm
+> the Task 0 baseline: the full gate F (plan Ledger item 3) with `E2E_PORT` unset, after `ss -ltnp 'sport = :4173'`
+> shows no listener, green, and the 20 tests missing from the last e2e summary (338 listed, 318 passed) accounted
+> for, likely in `site-visual.spec.ts`. A real red stops the pass for Geoff. Then run S1 (Tasks 2, 3, 4; its
+> pre-flight is done) through `pass-execute` by name, one invocation per segment, implementer `cairn-implementer`,
+> Task 11b upshifted to Opus; pre-flight each later segment at HEAD. Every dependency bump (Tasks 4 and 11b) carries
+> the `dependency-upgrade` changelog survey. The dubplate session (`dubplate-62`) shares the machine gate lock and
+> pings before its heavy gates; expect lock waits. The close's live smoke needs
 > Geoff's magic-link click. Launch directory `~/Projects/cairn-cms`; `claude --model claude-opus-5-5` at medium
 > effort. Put scratch projects under `$HOME/.cache`.

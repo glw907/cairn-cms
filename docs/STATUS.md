@@ -34,8 +34,8 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   check round-1 fixes and changed sentences only (run 2 measured about 2.4M a page against the 1.3M budgeted).
   Carry-forward: the SvelteKit 3 pass lands on `main` first and never edits this worktree; 2a rebases onto it and
   rewrites the add-cairn tutorial's SvelteKit 2 pin against Kit 3.
-  Geoff's read (2026-10-04, three open threads on the artifact): every intro is too thin. The concept page needs two
-  or three paragraphs of framing (the general model, where SvelteKit and Cloudflare fit); the add-cairn tutorial must
+  Geoff's read (2026-10-04, three open threads on the artifact): every intro is too thin. The security-model page
+  needs two or three paragraphs of framing (the general model, where SvelteKit and Cloudflare fit); the add-cairn tutorial must
   serve both its readers (someone doing exactly this, someone curious about the nitty gritty) and tell them there the
   usual route, the setup command, is much easier; the Cloudflare Access page must say why cairn uses magic links and why a site would replace them, and must
   not open on an imperative. The bodies after the intro read strong (Geoff), so the fix is a brief and page-inputs
@@ -43,8 +43,10 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
   reasoning, unlike the bodies: a separate framing step (Opus at `xhigh`, reading the whole doc set's map) decides
   each page's background and framing before the intro is drafted, starting from the reader: who arrives at the page
   and what they are looking for. The add-cairn case illustrates the reasoning, never a template; each page differs.
-  2a's next action (Geoff, 2026-10-04): a quick intro-only round on the six pilot pages, testing the brief's new
-  "The introduction" section (`00d7ce44`) and the drafter's intro rule, then Geoff's read, before task 8.
+  The intro-only round ran 2026-10-04 (`9ca04531` on `draft-docs-2a`: a framing record per page, intros rewritten,
+  a fact read narrowed five sentences) and is republished as version 3 of the artifact; 2a's next action is Geoff's
+  read of it, then task 8 if the intros hold. Open gap: no fact states that an auth channel's form takes anonymous
+  posts (security-model brief maps it to `f:wuwk2q`, the nearest).
 - The gap sweep's 12 code defects sit in the friction log (`bd8ab1fe`, on `main`, not pushed).
 
 ## Open decisions and watches

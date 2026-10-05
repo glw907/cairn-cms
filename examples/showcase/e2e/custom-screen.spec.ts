@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 // The end-to-end proof of the custom-admin-screen seam (Plan 1). The cms-dev handle mints an owner
-// editor and supplies a fake APP_DB on platform.env, so the create-then-delete round-trips through
+// editor and supplies a fake APP_DB in the Worker env, so the create-then-delete round-trips through
 // the developer's own binding. The fake APP_DB is process-global, so a row added on one request is
 // visible on the next; a unique signup name per run keeps the assertions exact under Playwright's
 // CI retries (a retry shares the running server, so a fixed name would accumulate duplicate rows).

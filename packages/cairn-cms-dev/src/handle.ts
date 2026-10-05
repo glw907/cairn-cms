@@ -8,7 +8,8 @@
 // Two risk tiers ride here. The owner-session bypass is an authentication breach if it reaches a
 // deployed runtime; the GitHub/R2/D1 doubles only degrade to "saves do not persist." The bypass is
 // why the fence exists; never relax it by analogy to the harmless mock.
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { env, withEnv } from 'cloudflare:workers';
 import type { AccessMap, Backend, RolesDeclaration } from '@glw907/cairn-cms';
 import {
   createDevBackend,
@@ -56,9 +57,10 @@ export interface DevBackendConfig {
  * Build the dev-backend `Handle`. On call it installs the fake GitHub double, seeds the Media
  * Library fixtures, and creates one fake AUTH_DB and one fake MEDIA_BUCKET for the process lifetime
  * (so editors added through /admin/editors and assets uploaded through /admin persist across
- * requests in the dev session). The returned handle supplies the binding doubles on `platform.env`
- * for /admin and /media requests and mints an owner editor on /admin, leaving every other path
- * untouched.
+ * requests in the dev session). The returned handle runs /admin, /media, and /preview requests
+ * inside `withEnv` with the binding doubles layered over the Worker env, and mints an owner editor
+ * on /admin, leaving every other path untouched. It does nothing while the build prerenders, when
+ * no Worker env exists to layer over.
  * @param config - {@link DevBackendConfig}; `access` is the site's own declaration, attached to
  * `locals.cairnAccess` beside the minted editor, and `seedContent` is the Part B content-seeding
  * hook.
@@ -99,6 +101,9 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
   for (const key of SEED_MEDIA_KEYS) fakeR2.seedObject(key);
 
   return async ({ event, resolve }) => {
+    // While the build prerenders, every Worker env read and every withEnv call throws, and a
+    // prerendered page is static output this handle never serves again; pass it straight through.
+    if (await isBuilding()) return resolve(event);
     const path = event.url.pathname;
     const isAdmin = path === '/admin' || path.startsWith('/admin/');
     const isMedia = path === '/media' || path.startsWith('/media/');
@@ -108,44 +113,14 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
     // a minted token would never resolve) and the same in-memory repo, but never the owner
     // session bypass below, which is admin-only.
     const isPreview = path === '/preview' || path.startsWith('/preview/');
-    if (isAdmin || isMedia || isPreview) {
-      // The dev Backend rides event.locals.cairnBackend, the per-request channel the engine
-      // resolves (locals.cairnBackend ?? runtime.backend.connect(env)). It replaces the retired
-      // global-fetch patch: the engine's reads and commits hit the in-memory repo through this
-      // object.
-      (event.locals as { cairnBackend?: Backend }).cairnBackend = backend;
+    if (!isAdmin && !isMedia && !isPreview) return resolve(event);
 
-      // The binding doubles ride platform.env the way the Cloudflare adapter would supply the real
-      // ones. The template's App.Platform also declares context and caches, which the dev routes
-      // never touch, so this partial value casts through unknown; the engine reads the env
-      // structurally at runtime. AUTH_DB serves /admin and /preview (loadPreview's own binding
-      // read); MEDIA_BUCKET serves the upload action under /admin and the delivery route under
-      // /media. ANTHROPIC_API_KEY is a dummy presence flag: the tidy action refuses before
-      // building a client when it is absent, so the value is set even though the fake client
-      // (fake-anthropic.ts) never reads it. APP_DB is the developer-binding example: a custom
-      // admin screen reads and writes its own D1 binding the engine never touches, so the dev
-      // handle supplies a fake for it the same way it does AUTH_DB. Both AUTH_DB and APP_DB stay
-      // admin-only otherwise: /preview needs only AUTH_DB, never the tidy stub or the developer's
-      // own binding.
-      //
-      // Plain vars (PUBLIC_ORIGIN and any other non-binding wrangler.jsonc `vars` entry) are
-      // preserved from whatever the adapter's own platform proxy already resolved, spread first so
-      // the fakes below always win on a name collision: previewMintAction's `requireOrigin(env)`
-      // is the first admin action that ever reads a var in dev, since every earlier one either
-      // ignores it or, like the login flow, never runs at all under the owner-session bypass.
-      // Read through the same cast the write below uses: inside this package `App.Platform` is the
-      // bare kit default (no consuming site's app.d.ts is in scope), so it declares no `env`.
-      const platform = event.platform as unknown as { env?: Record<string, unknown> } | undefined;
-      const existingEnv = platform?.env ?? {};
-      event.platform = {
-        env: {
-          ...existingEnv,
-          ...(isAdmin || isPreview ? { AUTH_DB: fakeAuthDb } : {}),
-          ...(isAdmin ? { APP_DB: fakeAppDb, ANTHROPIC_API_KEY: 'sk-showcase-stub' } : {}),
-          MEDIA_BUCKET: fakeR2,
-        },
-      } as unknown as App.Platform;
-    }
+    // The dev Backend rides event.locals.cairnBackend, the per-request channel the engine
+    // resolves (locals.cairnBackend ?? runtime.backend.connect(env)). It replaces the retired
+    // global-fetch patch: the engine's reads and commits hit the in-memory repo through this
+    // object.
+    (event.locals as { cairnBackend?: Backend }).cairnBackend = backend;
+
     if (isAdmin) {
       // Editor shape: { email, displayName, role, capability }, the engine's Editor type
       // (src/lib/auth/types.ts). The dev backend always mints an owner session, so capability is
@@ -165,6 +140,40 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
         event.locals.cairnAccess = config.access;
       }
     }
-    return resolve(event);
+    // The binding doubles ride the Worker env the way the Cloudflare adapter would supply the real
+    // ones, through withEnv, so the engine's reads and a site's own `cloudflare:workers` reads see
+    // them alike for the rest of this request. AUTH_DB serves /admin and /preview (loadPreview's
+    // own binding read); MEDIA_BUCKET serves the upload action under /admin and the delivery route
+    // under /media. ANTHROPIC_API_KEY is a dummy presence flag: the tidy action refuses before
+    // building a client when it is absent, so the value is set even though the fake client
+    // (fake-anthropic.ts) never reads it. APP_DB is the developer-binding example: a custom admin
+    // screen reads and writes its own D1 binding the engine never touches, so this handle supplies
+    // a fake for it the same way it does AUTH_DB. Both AUTH_DB and APP_DB stay admin-only
+    // otherwise: /preview needs only AUTH_DB, never the tidy stub or the developer's own binding.
+    //
+    // The current env is spread first, so every var (PUBLIC_ORIGIN among them) and every binding
+    // an outer handle already layered survives, and the doubles win on a name collision. A handle
+    // sequenced after this one layers its own withEnv over this set the same way.
+    const doubles = {
+      ...(isAdmin || isPreview ? { AUTH_DB: fakeAuthDb } : {}),
+      ...(isAdmin ? { APP_DB: fakeAppDb, ANTHROPIC_API_KEY: 'sk-showcase-stub' } : {}),
+      MEDIA_BUCKET: fakeR2,
+    };
+    // workers-types declares withEnv's return as unknown; it returns the callback's own value.
+    return withEnv({ ...env, ...doubles }, () => resolve(event)) as ReturnType<typeof resolve>;
   };
+}
+
+/**
+ * Read SvelteKit's `building` flag. The import is dynamic and wrapped in `try`/`catch`, the same
+ * form the engine uses, so a bundler with no SvelteKit plugin degrades to `false` rather than
+ * failing on the virtual module.
+ */
+async function isBuilding(): Promise<boolean> {
+  try {
+    const { building } = await import('$app/env');
+    return building;
+  } catch {
+    return false;
+  }
 }

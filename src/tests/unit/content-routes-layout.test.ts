@@ -84,7 +84,6 @@ function customRoleEvent(
       cairnEditor: { email: 'inst@test', displayName: 'Inst', role, capability },
       cairnBackend: eventBackend,
     },
-    platform: { env: {} },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
     setHeaders: () => {},
   };
@@ -180,8 +179,7 @@ describe('shellLoad', () => {
         cairnEditor: { email: 'e@test', displayName: 'Ed', role: 'owner', capability: 'owner' },
         cairnBackend: quickFailBackend(),
       },
-      platform: { env: {} },
-      setHeaders: () => {},
+        setHeaders: () => {},
     };
     await expect(routes.shellLoad(noCookiesEvent as never)).rejects.toThrow(); // idioms-allow: as-never  simulates an untyped caller that omits the required cookies field
   });

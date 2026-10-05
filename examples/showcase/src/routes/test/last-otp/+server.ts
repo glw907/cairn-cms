@@ -9,20 +9,21 @@
 // checks two things independent of each other: `isLocalHost` closes the one path the build fold
 // cannot (a `VITE_CAIRN_E2E=1` build that reaches a deployed runtime with CAIRN_DEV_BACKEND=1
 // still set would otherwise expose an unauthenticated OTP oracle there), and
-// `platform.env?.CAIRN_DEV_BACKEND === '1'` mirrors the same flag every other dev-only surface
+// the Worker env's `CAIRN_DEV_BACKEND === '1'` mirrors the same flag every other dev-only surface
 // reads. `isLocalHost` is re-declared here, and in the two sibling routes, rather than imported:
 // the engine's own copy (`dev-flag.ts`) is internal, not part of the public export map, so a
 // showcase route has no seam to import it through and hand-rolls the three-line predicate instead.
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { env } from 'cloudflare:workers';
 import { readCapture } from '../../../members/capture-transport.js';
 
 function isLocalHost(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
 }
 
-export const GET: RequestHandler = async ({ url, platform }) => {
-  if (!isLocalHost(url.hostname) || platform?.env?.CAIRN_DEV_BACKEND !== '1') {
+export const GET: RequestHandler = async ({ url }) => {
+  if (!isLocalHost(url.hostname) || env.CAIRN_DEV_BACKEND !== '1') {
     error(404, 'Not found');
   }
   const contact = url.searchParams.get('contact') ?? '';

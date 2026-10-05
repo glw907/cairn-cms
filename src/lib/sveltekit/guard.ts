@@ -1,13 +1,16 @@
 // The /admin guard, plus the per-load owner/session gates. A site's hooks.server.ts sets
 // `export const handle = createAuthGuard()`. Events are typed structurally, so the engine
 // stays free of a site's App.* ambient types.
-import { redirect, error, type Handle } from '@sveltejs/kit';
+import { redirect, error } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
 import { resolveSession, findEditor } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
 import { isUnsafeFormRequest, csrfHeaderVerdict, csrfTokenVerdict, csrfSecure } from './csrf.js';
 import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION, IDENTITY_UNKNOWN_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
+import { env } from './workers-env.js';
+import { isBuilding } from './building.js';
 import { resolveCapability, DEFAULT_ROLES } from '../auth/roles.js';
 import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
 import {
@@ -181,9 +184,11 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
     const { pathname } = event.url;
 
     // Fail closed if the dev-backend flag is set in a deployed runtime. A Cloudflare Worker var
-    // lands on platform.env, the only source read. A correct production build already eliminated
+    // lands on the Worker env, the only source read. A correct production build already eliminated
     // the dev backend (the consumer gates it on a build-time define named at each call site), so a
-    // set flag signals a polluted environment; refuse loudly.
+    // set flag signals a polluted environment; refuse loudly. While the build prerenders there is
+    // no Worker env (every read throws), and a prerendered page is static output no deployed
+    // Worker serves through this handle, so the read waits for a real request.
     // This refusal is flag-set-alone, with no locality check, since the guard mounts only in a
     // production build (the dev branch replaces it entirely rather than running alongside it), so
     // there is no legitimate live-flag case for this handler to admit
@@ -192,7 +197,7 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
     // predicate, since one factory instance serves both dev and prod; both import the flag name,
     // the message, and the truthiness rule from `dev-flag.ts` so the two never drift onto
     // different wording or a different reading of the same value.
-    if (isDevBackendFlagSet(event.platform?.env?.[CAIRN_DEV_BACKEND_FLAG])) {
+    if (!(await isBuilding()) && isDevBackendFlagSet(env[CAIRN_DEV_BACKEND_FLAG])) {
       log.error('guard.refused', { reason: 'dev_backend_in_prod', path: pathname });
       return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 });
     }
@@ -219,7 +224,6 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
     // session, and a login or confirm POST would die in its action with a raw 500. That is an
     // operator fault, not a sign-in problem, so name the condition on every admin path, the
     // public ones included, instead of rendering a login form that can never succeed.
-    const env = event.platform?.env ?? {};
     if (!env.AUTH_DB) {
       log.error('guard.refused', {
         reason: 'bindings',
@@ -251,12 +255,7 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
     if (isUnsafeFormRequest(event.request)) {
       const headerSent = event.request.headers.get('x-cairn-csrf') !== null;
       const verdict = headerSent
-        ? csrfHeaderVerdict({
-            url: event.url,
-            request: event.request,
-            cookies: event.cookies,
-            platform: event.platform,
-          })
+        ? csrfHeaderVerdict(event)
         : await csrfTokenVerdict(event);
       if (!verdict.ok) {
         // Presence-only: whether the session cookie was sent, never its value or a resolved
@@ -264,9 +263,7 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
         // The name derives through csrfSecure, the same call the CSRF pair uses: a
         // coherence change here, since an http, non-local admin request never reaches this
         // point at all (the https-help-page check above already refused it).
-        const hasSession =
-          event.cookies.get(sessionCookieName(csrfSecure({ url: event.url, platform: event.platform }))) !==
-          undefined;
+        const hasSession = event.cookies.get(sessionCookieName(csrfSecure(event))) !== undefined;
         log.warn('guard.refused', {
           reason: 'csrf',
           path: pathname,
@@ -344,7 +341,7 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
       // Same csrfSecure derivation as the hasSession read above: unreachable to differ
       // from the bare protocol check on a guarded admin path, since the https-help-page check
       // above already refused every http, non-local request before this line runs.
-      const id = event.cookies.get(sessionCookieName(csrfSecure({ url: event.url, platform: event.platform })));
+      const id = event.cookies.get(sessionCookieName(csrfSecure(event)));
       const editor = id ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
       if (!editor) throw redirect(303, '/admin/login');
       // Resolve capability once per request, here, so every downstream load/action reads it off

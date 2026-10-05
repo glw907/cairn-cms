@@ -185,19 +185,14 @@ function serializeThrownError(error: unknown): string {
  * };
  * ```
  *
- * `createAdminAction` itself stays non-generic over `Env` by design, on the same
- * grounds as {@link CairnEvent}'s own default, not because it never reads
- * `event.platform`: its returned function is declared as taking `CairnEvent<CairnEnv>` (the
- * default type parameter), and a compile-only fixture (`src/tests/unit/env-genericity.test.ts`)
- * proves that assigns clean into a route's generated `Actions` under a realistic compliant
- * `App.Platform['env']`, because `CairnPlatformBindings` (`./platform-bindings.js`) shares
- * `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN` property names with `CairnEnv`, which is what keeps
- * TypeScript's weak-type detection (TS2559) from rejecting the assignment. A site whose action
- * needs its own env bindings, plus a database binding to resolve, reaches for
- * `createSectionAction` (`./section-action.js`), which is generic over `Env` for exactly that
- * reason; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
- * contract with no database binding stays on `createAdminAction` itself rather than reaching for that
- * door.
+ * `createAdminAction` itself is not generic over `Env`: its event carries no bindings, and a
+ * compile-only fixture (`src/tests/unit/env-genericity.test.ts`) proves the returned function
+ * assigns clean into a route's generated `Actions`. A handler that reads a site binding imports
+ * `env` from `cloudflare:workers` itself. A site whose action needs a database binding resolved
+ * reaches for `createSectionAction` (`./section-action.js`), whose `resolveDb` takes the site's
+ * own `Env`; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
+ * contract with no database binding stays on `createAdminAction` itself rather than reaching for
+ * that door.
  *
  * Posture: fail-closed once `deps.access` opts in. An unmapped target then refuses through
  * {@link authorizeAdminTarget} rather than falling back to `canReach`'s own permissive nav
@@ -226,16 +221,8 @@ export function createAdminAction<T>(
     // inner check the same way it already passes the guard's outer one.
     const headerSent = event.request.headers.get('x-cairn-csrf') !== null;
     const verdict = headerSent
-      ? csrfHeaderVerdict({
-          url: event.url,
-          request: event.request,
-          cookies: event.cookies,
-          platform: event.platform,
-        })
-      : csrfFieldVerdict(
-          event.cookies.get(csrfCookieName(csrfSecure({ url: event.url, platform: event.platform }))),
-          form,
-        );
+      ? csrfHeaderVerdict(event)
+      : csrfFieldVerdict(event.cookies.get(csrfCookieName(csrfSecure(event))), form);
     if (!verdict.ok) {
       // The admin guard already validates this double-submit pair on every unsafe /admin/** POST
       // before the route runs, so a mismatch reaching here is defense-in-depth catching what

@@ -27,9 +27,9 @@ Stability tier: Extension API.
 
 ```ts
 import type { Editor, AccessMap, Backend } from '@glw907/cairn-cms';
-import type { CairnEnv, CookieJar, PlatformContext, AdminActionAuditSink } from '@glw907/cairn-cms/sveltekit';
+import type { CookieJar, AdminActionAuditSink } from '@glw907/cairn-cms/sveltekit';
 
-interface CairnEvent<Env = CairnEnv> {
+interface CairnEvent {
   url: URL;
   request: Request;
   params: Record<string, string>;
@@ -43,7 +43,6 @@ interface CairnEvent<Env = CairnEnv> {
     cairnAccess?: AccessMap;
     cairnIdentity?: { label: string; logoutUrl: string };
   };
-  platform?: PlatformContext<Env>;
 }
 ```
 
@@ -68,12 +67,9 @@ map](./core.md#access-map), attached by the guard alongside `cairnEditor`), and 
 (the [identity seam](#createauthguard)'s snapshot, set on every admin path under identity mode;
 see [Per-route factories](#per-route-factories-advanced) for its shape and readers).
 
-`Env` defaults to [`CairnEnv`](#cairnenv): a compile-only fixture proves every factory on this
-page assigns clean into a site's own generated route event, under a realistic compliant
-`App.Platform['env']` (`CairnPlatformBindings & CairnMediaBindings` plus a site binding), with
-zero casts. A factory whose own binding needs are wider instantiates `CairnEvent<Env>` with its
-own unconstrained, defaulted type parameter instead ([`createSectionAction`](#createsectionaction)
-is the one example on this page).
+The event carries no Worker bindings. The engine reads them from `cloudflare:workers`, and a
+factory that hands a site binding to the site's own code names the site's `Env` on its config
+callbacks instead ([`createSectionAction`](#createsectionaction) is the one example on this page).
 
 ## Single-mount admin (recommended)
 
@@ -306,7 +302,7 @@ discriminated `AdminData` the load returns.
 Stability tier: Extension API.
 
 ```ts
-declare function requireSession(event: CairnEvent<CairnEnv>): Editor;
+declare function requireSession(event: CairnEvent): Editor;
 ```
 
 Return the session the guard already resolved, or throw a redirect to `/admin/login`. Call it at the
@@ -325,7 +321,7 @@ export const load = (event) => {
 ### `requireOwner`
 
 ```ts
-declare function requireOwner(event: CairnEvent<CairnEnv>): Editor;
+declare function requireOwner(event: CairnEvent): Editor;
 ```
 
 Return a signed-in owner, or throw a 403 for an editor. Guards the management surface, such as the
@@ -348,7 +344,7 @@ export const load = (event) => {
 Stability tier: Extension API.
 
 ```ts
-declare function requireEditor(event: CairnEvent<CairnEnv>): Editor;
+declare function requireEditor(event: CairnEvent): Editor;
 ```
 
 Return a signed-in owner- or editor-capability session, or throw a 403 for `none`. The engine's
@@ -378,7 +374,7 @@ export const load = (event) => {
 Stability tier: Extension API.
 
 ```ts
-declare function requireAccess(event: CairnEvent<CairnEnv>, target?: string): Editor;
+declare function requireAccess(event: CairnEvent, target?: string): Editor;
 ```
 
 The one-line authorization story for a site's own custom route: the session the guard already
@@ -455,7 +451,7 @@ SvelteKit's own default hook (a `console.error` of every server error) rather th
 of it. Log first, unconditionally, or the site loses all default server-error logging silently:
 
 ```ts
-import type { HandleServerError } from '@sveltejs/kit';
+import type { HandleServerError } from '@sveltejs/kit/hooks';
 
 export const handleError: HandleServerError = ({ error }) => {
   console.error(error);
@@ -703,8 +699,9 @@ without `formatTimestamp`'s locale and time-zone formatting.
 
 `createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly, not optionally: an
 optional parameter would make the shortest call the one that silently drops the insert when the
-isolate tears down before it settles, so omitting it (typically when no `event.platform.ctx` is
-reachable) has to be a decision the caller makes on purpose, with the drop risk understood.
+isolate tears down before it settles, so omitting it has to be a decision the caller makes on
+purpose, with the drop risk understood. Inside a request, pass the `waitUntil` that
+`cloudflare:workers` exports.
 
 The sink is fail-open, the same convention as a hand-rolled one:
 it returns synchronously, before the insert settles, so a persist failure never fails the audited
@@ -721,18 +718,17 @@ check order runs authorization before any database-binding resolution, so a sess
 refuses still produces an audit row before the section's own binding is ever read. Persisting that
 trail with no rate limit configured lets a refused caller cheaply fill the table.
 
-<!-- snippet-check-skip: reads App.Platform (env, ctx.waitUntil), which only the site's own app.d.ts declares -->
+<!-- snippet-check-skip: reads env.AUDIT_DB, which only the site's own generated Env declares -->
 ```ts
 // src/hooks.server.ts
+import { building } from '$app/env';
+import { env, waitUntil } from 'cloudflare:workers';
 import { createD1AuditSink } from '@glw907/cairn-cms/sveltekit';
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
 
 const wireAuditSink: Handle = ({ event, resolve }) => {
-  const db = event.platform?.env.AUDIT_DB;
-  const ctx = event.platform?.ctx;
-  // The bind is required: an unbound `ctx.waitUntil` throws "Illegal invocation" in workerd.
-  const waitUntil = ctx ? ctx.waitUntil.bind(ctx) : undefined;
-  if (db) event.locals.cairnAuditSink = createD1AuditSink(db, waitUntil);
+  // The Worker env is unreadable while the build prerenders.
+  if (!building && env.AUDIT_DB) event.locals.cairnAuditSink = createD1AuditSink(env.AUDIT_DB, waitUntil);
   return resolve(event);
 };
 
@@ -747,9 +743,9 @@ Stability tier: Extension API.
 declare function createSectionAction<Env, Db>(
   config: SectionActionConfig<Env, Db>,
 ): <T>(
-  handler: (args: { event: CairnEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>,
+  handler: (args: { event: CairnEvent; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>,
   opts: SectionActionOptions,
-) => (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
+) => (event: CairnEvent) => Promise<T | ActionFailure<{ error: string }>>;
 ```
 
 `createSectionAction` exports its return type by name as `SectionAction<Env, Db>`, a hand-declared
@@ -765,9 +761,9 @@ binding, so a section's own actions need no hand-rolled precondition. This is th
 shape for a custom section regardless of what any given site's own routes show.
 
 The config is site-fixed, called once per section: `config.resolveDb` reads the section's own
-binding off the platform env, and `config.rateLimit`, when set, names the binding and the
+binding off the Worker env, and `config.rateLimit`, when set, names the binding and the
 per-call key. `resolveDb`'s shape, `(env: Env | undefined) => Db | undefined`, is deliberate and
-stays ratified unchanged: the engine can't conjure an absent platform, so an honest `undefined`
+stays ratified unchanged: the engine can't conjure an absent binding, so an honest `undefined`
 parameter beats a callback that hides absence, and the fail-closed authorization and
 degrade-to-open rate limit split (the check order below) is the ratified reading of that absence.
 
@@ -859,7 +855,7 @@ lowercased), never the bare request path alone, and one binding backs one shared
 every action that reads it, not a budget per action; the limiter runs after `createAdminAction`'s own
 form read, so it never bounds the cost of parsing the request body.
 
-`Env` is your site's `App.Platform['env']` in a real route; the example below names the section's
+`Env` is your site's generated `Env` in a real route; the example below names the section's
 own binding shape (`SectionEnv`) standalone, so the resolver's annotation is explicit either way:
 
 ```ts
@@ -911,11 +907,11 @@ type RequestOutcome =
 declare function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes;
 
 type AuthRoutes = {
-  loginLoad: (event: CairnEvent<CairnEnv>) => LoginData;
-  requestAction: (event: CairnEvent<CairnEnv>) => Promise<RequestOutcome>;
-  confirmLoad: (event: CairnEvent<CairnEnv>) => ConfirmData;
-  confirmAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
-  logoutAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  loginLoad: (event: CairnEvent) => LoginData;
+  requestAction: (event: CairnEvent) => Promise<RequestOutcome>;
+  confirmLoad: (event: CairnEvent) => ConfirmData;
+  confirmAction: (event: CairnEvent) => Promise<never>;
+  logoutAction: (event: CairnEvent) => Promise<never>;
 };
 ```
 
@@ -1011,10 +1007,10 @@ Stability tier: Unstable API.
 declare function createEditorRoutes(config?: EditorRoutesConfig): EditorRoutes;
 
 type EditorRoutes = {
-  editorsLoad: (event: CairnEvent<CairnEnv>) => Promise<EditorsData>;
-  editorAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
-  editorRemoveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
-  editorSetRoleAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
+  editorsLoad: (event: CairnEvent) => Promise<EditorsData>;
+  editorAddAction: (event: CairnEvent) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
+  editorRemoveAction: (event: CairnEvent) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
+  editorSetRoleAction: (event: CairnEvent) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
 };
 ```
 
@@ -1054,31 +1050,31 @@ Stability tier: Unstable API.
 declare function createContentRoutes(config: ContentRoutesConfig): ContentRoutes;
 
 type ContentRoutes = {
-  shellLoad: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }>;
-  helpLoad: (event: CairnEvent<CairnEnv>) => Promise<HelpData>;
-  indexLoad: (event: CairnEvent<CairnEnv>) => { view: "welcome"; page: WelcomeData };
-  listLoad: (event: CairnEvent<CairnEnv>) => Promise<ListData>;
-  mediaLibraryLoad: (event: CairnEvent<CairnEnv>) => Promise<MediaLibraryData>;
-  settingsLoad: (event: CairnEvent<CairnEnv>) => Promise<SettingsData>;
-  settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SettingsSaveFailure>>;
-  vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyData>;
-  vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<VocabularySaveFailure>>;
-  createAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
-  editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>;
-  historyLoad: (event: CairnEvent<CairnEnv>) => Promise<HistoryData>;
-  saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
-  publishAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
-  publishAllAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
-  discardAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
-  deleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
-  listDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
-  renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
-  previewMintAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }>;
-  previewRevokeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | { count: number }>;
-  revertAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertOutcome>>;
-  uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
-  dictionaryAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult>;
-  tidyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<TidyFailure> | TidyResult>;
+  shellLoad: (event: CairnEvent) => Promise<{ shell: AdminShellData }>;
+  helpLoad: (event: CairnEvent) => Promise<HelpData>;
+  indexLoad: (event: CairnEvent) => { view: "welcome"; page: WelcomeData };
+  listLoad: (event: CairnEvent) => Promise<ListData>;
+  mediaLibraryLoad: (event: CairnEvent) => Promise<MediaLibraryData>;
+  settingsLoad: (event: CairnEvent) => Promise<SettingsData>;
+  settingsSaveAction: (event: CairnEvent) => Promise<ActionFailure<SettingsSaveFailure>>;
+  vocabularyLoad: (event: CairnEvent) => Promise<VocabularyData>;
+  vocabularySaveAction: (event: CairnEvent) => Promise<ActionFailure<VocabularySaveFailure>>;
+  createAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>>;
+  editLoad: (event: CairnEvent) => Promise<EditData>;
+  historyLoad: (event: CairnEvent) => Promise<HistoryData>;
+  saveAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>>;
+  publishAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>>;
+  publishAllAction: (event: CairnEvent) => Promise<never>;
+  discardAction: (event: CairnEvent) => Promise<never>;
+  deleteAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>>;
+  listDeleteAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>>;
+  renameAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>>;
+  previewMintAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }>;
+  previewRevokeAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | { count: number }>;
+  revertAction: (event: CairnEvent) => Promise<ActionFailure<RevertOutcome>>;
+  uploadAction: (event: CairnEvent) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
+  dictionaryAddAction: (event: CairnEvent) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult>;
+  tidyAction: (event: CairnEvent) => Promise<ActionFailure<TidyFailure> | TidyResult>;
 };
 ```
 
@@ -1341,7 +1337,7 @@ interact; they only happen to be named the same thing.
 Stability tier: Scaffold API.
 
 ```ts
-declare function loadPreview(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent<CairnEnv>): Promise<PreviewData>;
+declare function loadPreview(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData>;
 ```
 
 Serve a minted preview link. Mount it at `/preview/[token]`, **inside the same layout group as
@@ -1423,7 +1419,7 @@ export const load: PageServerLoad = (event) => loadPreview(runtime, publicRoutes
 Stability tier: Unstable API.
 
 ```ts
-declare function mintPreview(runtime: CairnRuntime, config: PreviewTokenConfig, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }): Promise<PreviewMintOutcome>;
+declare function mintPreview(runtime: CairnRuntime, config: PreviewTokenConfig, event: CairnEvent, target: { concept: string; entryId: string }): Promise<PreviewMintOutcome>;
 ```
 
 Mint a preview token for one entry's pending draft: generate a fresh 256-bit token, store only its
@@ -1464,7 +1460,7 @@ is generated.
 Stability tier: Unstable API.
 
 ```ts
-declare function revokePreview(runtime: CairnRuntime, event: CairnEvent<CairnEnv>, target: { concept: string; entryId: string }): Promise<PreviewRevokeOutcome>;
+declare function revokePreview(runtime: CairnRuntime, event: CairnEvent, target: { concept: string; entryId: string }): Promise<PreviewRevokeOutcome>;
 ```
 
 Revoke every outstanding preview link for one entry: delete every `preview_tokens` row the
@@ -1504,8 +1500,8 @@ interface NavRoutesConfig {
 }
 
 type NavRoutes = {
-  navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavData>;
-  navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<NavSaveFailure>>;
+  navLoad: (event: CairnEvent) => Promise<NavData>;
+  navSaveAction: (event: CairnEvent) => Promise<ActionFailure<NavSaveFailure>>;
 };
 ```
 
@@ -1543,7 +1539,7 @@ catch-all route.
 Stability tier: Scaffold API.
 
 ```ts
-declare function loadHealth(event: CairnEvent<CairnEnv>, runtime: CairnRuntime): Promise<HealthData>;
+declare function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<HealthData>;
 ```
 
 Run the GitHub App signing self-test against the configured App id and the Worker's key secret.
@@ -1980,7 +1976,7 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="sectionactionoptions"></a>`SectionActionOptions` | Extension API | `interface SectionActionOptions { action: string; entity: string; target?: string; ownerOnly?: boolean; deniedMessage?: string }` | Per-call-site options for one [`createSectionAction`](#createsectionaction)-wrapped handler: the audit verbs, declared once and reused on every denial and as `ctx.audit`'s own default, the optional authorization `target` override (defaults to `event.route.id`, never `event.url.pathname`), the `ownerOnly` stack, and an override for the shared 403 copy. |
 | <a id="sectionactionaudit"></a>`SectionActionAudit` | Extension API | `interface SectionActionAudit { action?: string; entity?: string; entityId?: string \| number; detail?: string }` | One audit record a [`createSectionAction`](#createsectionaction)-wrapped handler emits through `ctx.audit`: `action` and `entity` default from the call site's own `SectionActionOptions` when omitted, and either can still be overridden for a call that touches more than one entity. |
 | <a id="sectionactioncontext"></a>`SectionActionContext` | Extension API | `type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & { audit: (record: SectionActionAudit) => void; db: NonNullable<Db> }` | What a [`createSectionAction`](#createsectionaction)-wrapped handler receives: `createAdminAction`'s own context, with `audit` replaced by the defaulting [`SectionActionAudit`](#types) form, plus the resolved, non-nullable database binding, so no handler re-resolves it. |
-| <a id="sectionaction"></a>`SectionAction` | Extension API | `type SectionAction<Env, Db> = <T>(handler: (args: { event: CairnEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>, opts: SectionActionOptions) => (event: CairnEvent<Env>) => Promise<T \| ActionFailure<{ error: string }>>` | What [`createSectionAction`](#createsectionaction) returns: the per-call-site wrapper, curried over the handler's own success type `T`, hand-declared (never `ReturnType<typeof createSectionAction>`). |
+| <a id="sectionaction"></a>`SectionAction` | Extension API | `type SectionAction<Env, Db> = <T>(handler: (args: { event: CairnEvent; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>, opts: SectionActionOptions) => (event: CairnEvent) => Promise<T \| ActionFailure<{ error: string }>>` | What [`createSectionAction`](#createsectionaction) returns: the per-call-site wrapper, curried over the handler's own success type `T`, hand-declared (never `ReturnType<typeof createSectionAction>`). |
 | `AdminActionContext` | Extension API | `interface AdminActionContext { editor: Editor; audit: (record: AdminActionAudit) => void }` | What a wrapped handler receives: the verified editor and the bound `audit` emitter. |
 | `AdminActionOptions` | Extension API | `interface AdminActionOptions { isDev?: boolean; access?: { target: string; ownerOnly?: boolean } }` | Injectable dependencies for `createAdminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. `access` opts the action into the access-map authorization [`createSectionAction`](#createsectionaction) performs, against `target` (an access-map key, never a request pathname) with `ownerOnly` stacking on the map check; omitted, `createAdminAction` authorizes nothing, its behavior for every caller written before the option existed. |
 | `UnauditedActionError` | Extension API | `class UnauditedActionError extends Error { status: number }` | Thrown by `createAdminAction` for exactly one meaning: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `createAdminAction`'s own authentication refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
@@ -2016,11 +2012,10 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="identityresolver"></a>`IdentityResolver` | Unstable API | `interface IdentityResolver { resolve(event: CairnEvent): Promise<ResolvedIdentity \| IdentityRefusal>; logoutUrl: string; label?: string }` | A site's own identity gate. `resolve` proves who is making the request, or says why it could not; the guard calls it only on guarded admin paths and wraps it in a try/catch, treating a throw as a refusal. `logoutUrl` is validated once at `createAuthGuard`'s construction: a root-relative path or an absolute `https:` URL, or construction throws. `label` names the gate for the hand-off page and the doctor probe, defaulting to "your organization's sign-in." |
 | <a id="resolvedidentity"></a>`ResolvedIdentity` | Unstable API | `interface ResolvedIdentity { ok: true; email: string; displayName?: string }` | A request the gate has already authenticated. The guard normalizes `email` (trim, lowercase) before the roster lookup and the log record; `displayName` is advisory only, capped at 120 characters, and the roster row's own `displayName` wins whenever it is set. |
 | <a id="identityrefusal"></a>`IdentityRefusal` | Unstable API | `interface IdentityRefusal { ok: false; reason: string }` | A request the gate could not authenticate. `reason` is for the log only, never rendered: `'missing'`, `'invalid'`, `'audience'`, `'issuer'`, `'expired'`, `'no_email'`, `'keys'`, or a site's own word, every value snake_case. |
-| <a id="platformcontext"></a>`PlatformContext` | Extension API | `interface PlatformContext<Env> { env?: Env }` | The Cloudflare platform wrapper an event carries. The engine reads only `env`; a site's own `App.Platform` type is free to carry other members (`ctx`, and so on) alongside it, since a real SvelteKit `RequestEvent` has more than this structural subset and still satisfies it. |
-| <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string \| boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker bindings and vars the whole engine reads, all optional: the D1 session store, the canonical confirmation-link origin, the `CAIRN_DEV_BACKEND` tripwire flag the guard reads, the Email Sending binding, and the GitHub App's private-key secret. One shape serves every factory that needs platform bindings, rather than a per-layer split; every member is optional, since a test or a partial handler builds one piece at a time. A site's `app.d.ts` names {@link CairnPlatformBindings} instead, a recommended convenience preset that makes the members every site needs compile-checked (not a requirement: see that type's own row). |
+| <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string \| boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker bindings and vars the whole engine reads, all optional: the D1 session store, the canonical confirmation-link origin, the `CAIRN_DEV_BACKEND` tripwire flag the guard reads, the Email Sending binding, and the GitHub App's private-key secret. One shape serves every factory that needs Worker bindings, rather than a per-layer split; every member is optional, since a test or a partial handler builds one piece at a time. A site checks its generated `Env` against {@link CairnPlatformBindings} instead, which makes the members every site needs compile-checked (see that type's own row). |
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it structurally with no cast. |
-| <a id="cairnplatformbindings"></a>`CairnPlatformBindings` | Extension API | `interface CairnPlatformBindings { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }` | The Cloudflare bindings and vars every cairn site's Worker needs. Every member but `ANTHROPIC_API_KEY` is required (not optional), so a binding a site forgets to wire fails `app.d.ts` at compile time rather than surfacing as a runtime `config.bindings-missing` error. **A recommended convenience preset, not a requirement:** every route factory's env parameter is `CairnEnv`, structurally satisfied by a bare `wrangler types`-generated env too (`EmailSender.send` returns `Promise<unknown>`, which structurally accepts `@cloudflare/workers-types`' wider `Promise<EmailSendResult>`), so intersecting this type exists to catch a forgotten binding at compile time, not to unblock a route factory assignment. `ANTHROPIC_API_KEY` stays optional since only the opt-in tidy action reads it. The GitHub App's id and installation id aren't runtime bindings: the adapter passes them as compile-time config to `createGithubApp({ appId, installationId })`, and only the private key names a Worker secret this type carries. `/sveltekit` is the canonical home for this and the other binding-shaped types; intersect it into `App.Platform.env` (`/ambient` augments only `App.Locals`, never `App.Platform`, since a second `Platform` declaration would collide with a site's own through interface merging): `env: CairnPlatformBindings & { /* the site's own bindings */ }`. A media-enabled site also intersects `CairnMediaBindings`. |
-| <a id="cairnmediabindings"></a>`CairnMediaBindings` | Extension API | `interface CairnMediaBindings { MEDIA_BUCKET: R2Bucket }` | The R2 binding a media-enabled site adds to its `Platform.env` intersection, split from `CairnPlatformBindings` since it exists only when the adapter's [`media` member](./core.md#media-adapter-member) turns media on: `env: CairnPlatformBindings & CairnMediaBindings & { /* the site's own bindings */ }`. `MEDIA_BUCKET` is the conventional binding name this preset assumes; a site whose adapter names a different `bucketBinding` declares that name in its own env intersection instead of this preset. |
+| <a id="cairnplatformbindings"></a>`CairnPlatformBindings` | Extension API | `interface CairnPlatformBindings { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }` | The Cloudflare bindings and vars every cairn site's Worker needs, the shape a site's `wrangler types` `Env` satisfies. Every member but `ANTHROPIC_API_KEY` is required (not optional), so a binding a site forgets to wire fails a compile-time check rather than surfacing as a runtime `config.bindings-missing` error: `({}) as Env satisfies CairnPlatformBindings`, with `Env` generated by `wrangler types --env-file .dev.vars.example` so the secret names are in it (`GITHUB_APP_PRIVATE_KEY_B64` is a secret `wrangler.jsonc` never lists). `EmailSender.send` returns `Promise<unknown>`, which structurally accepts `@cloudflare/workers-types`' wider `Promise<EmailSendResult>`. `ANTHROPIC_API_KEY` stays optional since only the opt-in tidy action reads it. The GitHub App's id and installation id aren't runtime bindings: the adapter passes them as compile-time config to `createGithubApp({ appId, installationId })`, and only the private key names a Worker secret this type carries. `/sveltekit` is the canonical home for this and the other binding-shaped types. A media-enabled site also checks `CairnMediaBindings`. |
+| <a id="cairnmediabindings"></a>`CairnMediaBindings` | Extension API | `interface CairnMediaBindings { MEDIA_BUCKET: { get(key: string): Promise<unknown>; head(key: string): Promise<unknown>; put(key: string, value: ArrayBuffer): Promise<unknown>; delete(keys: string \| string[]): Promise<void> } }` | The R2 binding a media-enabled site adds, checked alongside `CairnPlatformBindings`, split from it since it exists only when the adapter's [`media` member](./core.md#media-adapter-member) turns media on: `({}) as Env satisfies CairnPlatformBindings & CairnMediaBindings`. `MEDIA_BUCKET` is typed by the bucket methods the engine calls, so the runtime's own `R2Bucket` in a generated `Env` satisfies it. `MEDIA_BUCKET` is the conventional binding name this preset assumes; a site whose adapter names a different `bucketBinding` checks that name itself instead of using this preset. |
 | `TidyClient` | Unstable API | `interface TidyClient` | The narrow, engine-owned client contract the tidy action calls: `tidy(request, options)` corrects `request.text` under `request.system` for `request.model`, returning `{ corrected, refused, tokens: { input, output } }`; an optional `models.list` probes a key's health. No `@anthropic-ai/sdk` type reaches this interface; the real SDK adapter is internal, and a test injects a stub through `ContentRoutesConfig.tidy.client`. |
 | `TidyEffort` | Unstable API | `type TidyEffort = 'low' \| 'medium' \| 'high' \| 'xhigh' \| 'max'` | `TidyClient.tidy`'s optional `effort` field: the adaptive-thinking tier a model with effort tiers (Sonnet 5 and later) runs at. The tidy action sends `'low'` only for a model `supportsEffort` recognizes, never for one without effort tiers. |
 | `MediaLibraryEntry` | Extension API | `interface MediaLibraryEntry { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number \| null; height: number \| null; bytes: number; createdAt: string }` | A re-export of [`MediaLibraryEntry`](./admin-toolkit.md#medialibraryentry): one stored asset in the picker's projected library, keyed elsewhere by the 16-hex content hash. `/admin-toolkit` is its canonical home, beside `MediaPicker`, the component whose prop signature names it; this subpath re-exports the same type so a route-factory importer can name a member of the data it already holds. |

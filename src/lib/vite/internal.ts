@@ -11,7 +11,9 @@
 // cairn-manifest bin uses to regenerate. See the design spec, locked decision 1.
 import type { Plugin, PluginOption } from 'vite';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { resolveViteRoot } from './resolve-root.js';
 import { parseManifest, formatManifest } from '../content/manifest.js';
 import type { RolesDeclaration } from '../auth/roles.js';
@@ -88,15 +90,17 @@ export const result = ${resultExpr};
 
 /**
  * Evaluate a virtual module source inside the consumer's own Vite resolution, then return the
- *  module's `result`. It reuses the consumer's loaded config (so `$lib`, the config module,
+ *  module's `result`. It reuses the consumer's loaded config (so the site's aliases, the config module,
  *  `import.meta.glob`, and `?raw` resolve exactly as the build does) and strips the cairnManifest
  *  plugin from the nested server's plugin list, so its buildStart never recurses. This runs at
  *  build time and in the bins, never in the request lifecycle.
  */
 async function evalVirtual(source: string, root: string): Promise<string> {
-  const { createServer, loadConfigFromFile } = await import('vite');
+  const { createServer, loadConfigFromFile } = (await import(
+    pathToFileURL(resolveConsumerVite(root)).href
+  )) as typeof import('vite');
   // Load the consumer's real Vite config so the nested server inherits SvelteKit's resolution
-  // (the $lib alias, the app root, the ?raw and import.meta.glob handling). Drop cairnManifest from
+  // (its import aliases, the app root, the ?raw and import.meta.glob handling). Drop cairnManifest from
   // it so the nested server's buildStart does not recurse, and add a plugin that serves only the
   // given virtual module source.
   const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, undefined, root);
@@ -115,6 +119,17 @@ async function evalVirtual(source: string, root: string): Promise<string> {
   } finally {
     await server.close();
   }
+}
+
+/**
+ * The entry file of the Vite package the site at `root` installs. The nested verify server is built
+ *  from that copy, the one the site's SvelteKit plugin imported: SvelteKit checks the server's SSR
+ *  environment with an `instanceof` against its own Vite module, so a server built from another
+ *  copy (the engine's own, when the engine is linked into the site rather than installed) fails
+ *  the check.
+ */
+export function resolveConsumerVite(root: string): string {
+  return createRequire(join(root, 'package.json')).resolve('vite');
 }
 
 /**

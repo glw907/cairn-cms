@@ -123,6 +123,6 @@ function typeOnlySectionActionContract<Env, Db>(resolveDb: (env: Env | undefined
   const roundTrip: ReturnType<typeof createSectionAction<Env, Db>> = wrap;
   void roundTrip;
   const action = wrap(async () => ({ ok: true }) as const, { action: 'test', entity: 'thing' });
-  action satisfies (event: CairnEvent<Env>) => Promise<unknown>;
+  action satisfies (event: CairnEvent) => Promise<unknown>;
 }
 void typeOnlySectionActionContract;

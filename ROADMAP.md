@@ -872,10 +872,19 @@ the named human gates only):**
 
 ## Next
 
+- **`wrangler types --check` agrees with a committed `worker-configuration.d.ts` only on a tree with
+  no build output (2026-10-05, SvelteKit 3 pass, S4; record
+  `docs/superpowers/research/2026-10-05-sveltekit-3-bump-survey.md`).** wrangler adds
+  `GlobalProps.mainModule` (an import of `.svelte-kit/cloudflare/_worker.js`) to the generated file
+  when that build output exists, so a regeneration after a build differs from the committed file.
+  The `sv` adapter-cloudflare scaffold's `build: wrangler types --check && vite build` fails a second
+  build the same way. Trigger: a site or the scaffold wiring `--check` into a script that can run
+  after a build.
+
 - **`cli-cairn-media-seed.md` says `vite dev` serves seeded media, but the scaffold's dev script
   hides it (draft docs harvest, task 6b, 2026-09-30).** The reference page (lines 4, 8, and 23)
   says `vite dev` or `wrangler dev` sees the seeded objects. The scaffold's `npm run dev` sets
-  `CAIRN_DEV_BACKEND=1` (`templates/waymark/scripts/dev.mjs:26`), which swaps `MEDIA_BUCKET` for an
+  `CAIRN_DEV_BACKEND=1` (`templates/waymark/scripts/dev.mjs:28`), which swaps `MEDIA_BUCKET` for an
   in-memory fake (`packages/cairn-cms-dev/src/handle.ts`), so seeded objects show only under bare
   `vite dev` or `wrangler dev`, not the command a scaffolded site runs. Doc bug or engine bug is
   undecided, and the reading is from code only. Fix: say so on the page, or let the dev backend

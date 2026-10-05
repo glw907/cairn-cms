@@ -4,7 +4,6 @@ import type { Editor } from '../auth/types.js';
 import type { AccessMap } from '../auth/access.js';
 import type { Backend } from '../github/backend.js';
 import type { AdminActionAuditSink } from './admin-action.js';
-import type { CairnEnv } from '../env.js';
 
 /** The options `CookieJar.set` takes: standard cookie attributes, `path` required. */
 export interface CookieSetOptions {
@@ -25,22 +24,13 @@ export interface CookieJar {
 }
 
 /**
- * The Cloudflare platform wrapper an event carries. The engine reads only `env`; a site's own
- * `App.Platform` type is free to carry `ctx` (or any other member) alongside it, since a real
- * SvelteKit `RequestEvent` has more than this structural subset and still satisfies it.
- */
-export interface PlatformContext<Env> {
-  env?: Env;
-}
-
-/**
- * The one structural event shape every engine load, action, and guard helper reads, parameterized
- * by the Worker env the surface needs: a real SvelteKit `RequestEvent` or `ServerLoadEvent`
- * carries every member here and more, and the engine never imports a site's generated `App.*`
- * ambient types, so any kit server event satisfies it with zero casts. It replaces five
- * separately-declared event shapes cairn used to carry, one per surface (the shared core, the
- * auth/editor routes, the content routes, the admin facade, and `createAdminAction`): three names for
- * one shape was the original defect, and a fourth only compounded it.
+ * The one structural event shape every engine load, action, and guard helper reads: a real
+ * SvelteKit `RequestEvent` or `ServerLoadEvent` carries every member here and more, and the engine
+ * never imports a site's generated `App.*` ambient types, so any kit server event satisfies it with
+ * zero casts. It replaces five separately-declared event shapes cairn used to carry, one per
+ * surface (the shared core, the auth/editor routes, the content routes, the admin facade, and
+ * `createAdminAction`): three names for one shape was the original defect, and a fourth only
+ * compounded it.
  *
  * `params` and `route` end the documented anti-idiom of reading route identity out of a form
  * body: a real kit event always carries both, so requiring them costs a compliant site nothing
@@ -50,20 +40,11 @@ export interface PlatformContext<Env> {
  * route id. `cookies` and `setHeaders` are required for the same reason (every kit server event
  * has both), where the shapes this type replaces required them only inconsistently.
  *
- * Deliberately defaulted to `CairnEnv`, not left unconstrained with no default: a compile-only
- * fixture
- * (`src/tests/unit/env-genericity.test.ts`) proves every engine factory built on this default
- * assigns clean into a site's own generated route event, under a realistic compliant
- * `App.Platform['env']` (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the
- * pattern `platform-bindings.ts` documents), with zero casts. `CairnPlatformBindings` shares
- * `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN`/`GITHUB_APP_PRIVATE_KEY_B64` property names with `CairnEnv`,
- * which is exactly what keeps TypeScript's weak-type detection (TS2559) from rejecting the
- * assignment; a genuinely disjoint env (sharing no property names) still fails it, so the default
- * costs a compliant site nothing. A factory that genuinely needs its own env bindings (
- * `createSectionAction`) instantiates `CairnEvent<Env>` with an unconstrained, defaulted `Env` of
- * its own rather than widening this type itself.
+ * The event carries no Worker bindings. The engine reads them from `cloudflare:workers`, the
+ * module the Cloudflare adapter provides, so a factory's own config callbacks (`resolveDb`,
+ * `deliver`, `lookup`) are where a site's `Env` type appears, never this event.
  */
-export interface CairnEvent<Env = CairnEnv> {
+export interface CairnEvent {
   url: URL;
   request: Request;
   params: Record<string, string>;
@@ -90,15 +71,9 @@ export interface CairnEvent<Env = CairnEnv> {
     cairnAccess?: AccessMap;
     cairnIdentity?: { label: string; logoutUrl: string };
   };
-  platform?: PlatformContext<Env>;
 }
 
-/**
- * The `Handle` input `createAuthGuard` returns, chained to {@link CairnEvent}'s own `CairnEnv`
- * default, so it inherits that default's reasoning unchanged: a compile-only fixture proves the
- * returned `Handle` assigns into `sequence()` under a realistic compliant `App.Platform['env']`
- * with zero casts.
- */
+/** The `Handle` input `createAuthGuard` reads: a {@link CairnEvent} and the `resolve` that renders it. */
 export interface HandleInput {
   event: CairnEvent;
   resolve(event: CairnEvent): Promise<Response> | Response;

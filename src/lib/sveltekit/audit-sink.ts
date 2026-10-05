@@ -81,10 +81,11 @@ function truncate(rawValue: unknown, max: number): string {
  * @param db - The D1 binding the packaged `audit_log` table lives in.
  * @param waitUntil - Required, and explicitly accepting `undefined`: an optional parameter would
  *   make the shortest call the one that silently drops the insert if the isolate tears down
- *   before it settles, so omitting it (passing `undefined`, typically because no
- *   `event.platform.ctx` is available) has to be a decision the caller makes on purpose, with the
- *   drop risk understood, rather than a default nobody chose. When supplied, it must already be
- *   bound to its owning `ExecutionContext` (`event.platform.ctx.waitUntil.bind(event.platform.ctx)`):
+ *   before it settles, so omitting it (passing `undefined`) has to be a decision the caller makes
+ *   on purpose, with the drop risk understood, rather than a default nobody chose. Inside a
+ *   request, pass the `waitUntil` that `cloudflare:workers` exports
+ *   (`import { env, waitUntil } from 'cloudflare:workers'`). A caller holding an `ExecutionContext`
+ *   instead (a Cron `scheduled` handler) binds it first (`ctx.waitUntil.bind(ctx)`):
  *   `ExecutionContext.waitUntil`'s structural type matches this parameter, so passing the
  *   unbound method typechecks and then throws "Illegal invocation" in workerd, a failure this
  *   sink's own try/catch absorbs but that still silently drops the insert.

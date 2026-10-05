@@ -10,6 +10,7 @@ import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { Backend } from '../../lib/github/backend.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 
 export { expectRedirect, expectHttpError } from '../_redirect-assertions.js';
 
@@ -80,10 +81,17 @@ export interface ContentEventOptions {
   editor?: { email: string; displayName: string; role: 'owner' | 'editor'; capability: 'owner' | 'editor' } | null;
   eventBackend?: Backend;
   cookies?: CookieJar;
+  /**
+   * The Worker env the request runs under, installed in the `cloudflare:workers` fake (unit and
+   * component projects). An integration test layers its env with `withTestEnv` instead.
+   */
   env?: Record<string, unknown>;
 }
 
-/** Build a route-factory event: GET by default, POST once `method`, `form`, or `body` says so. */
+/**
+ * Build a route-factory event: GET by default, POST once `method`, `form`, or `body` says so. The
+ * `env` option replaces the fake Worker env as a side effect, since the event itself carries none.
+ */
 export function contentEvent(opts: ContentEventOptions) {
   const {
     url,
@@ -97,6 +105,7 @@ export function contentEvent(opts: ContentEventOptions) {
     cookies = noopCookies(),
     env = { GITHUB_APP_PRIVATE_KEY_B64: 'x' },
   } = opts;
+  setFakeEnv({ ...env });
   const method = opts.method ?? (form !== undefined || body !== undefined ? 'POST' : 'GET');
   const init: RequestInit = { method };
   if (form !== undefined) init.body = form instanceof URLSearchParams ? form : new URLSearchParams(form);
@@ -110,7 +119,6 @@ export function contentEvent(opts: ContentEventOptions) {
     route: { id: route },
     request: new Request(url, init),
     locals: { cairnEditor: editor, cairnBackend: eventBackend },
-    platform: { env },
     cookies,
     setHeaders: () => {},
   };

@@ -28,6 +28,7 @@ import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, typ
 import { issueCsrfToken, csrfSecure } from './csrf.js';
 import { NO_PENDING_REQUEST_ERROR } from './auth-error-codes.js';
 import { log } from '../log/index.js';
+import { env } from './workers-env.js';
 import type { CairnEvent } from './types.js';
 
 export interface AuthRoutesConfig {
@@ -128,7 +129,7 @@ const PENDING_COOKIE_TTL_MULTIPLE = 6;
  * their inbox. The read and the write sit in one synchronous step with no await between them.
  */
 function mintOrReusePendingNonce(event: CairnEvent): string {
-  const secure = csrfSecure({ url: event.url, platform: event.platform });
+  const secure = csrfSecure(event);
   const pendingCookie = buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure);
   const nonce = event.cookies.get(pendingCookie) ?? generateToken();
   event.cookies.set(pendingCookie, nonce, {
@@ -174,7 +175,6 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    */
   async function requestAction(event: CairnEvent): Promise<RequestOutcome> {
     if (event.locals.cairnIdentity) throw error(404, 'Not found');
-    const env = event.platform?.env ?? {};
     const origin = requireOrigin(env);
     const db = requireDb(env);
     const form = await event.request.formData();
@@ -276,7 +276,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     return {
       siteName: config.branding.siteName,
       error: event.url.searchParams.get('error'),
-      csrf: issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform }),
+      csrf: issueCsrfToken(event),
     };
   }
 
@@ -296,7 +296,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
       token: event.url.searchParams.get('token') ?? '',
       siteName: config.branding.siteName,
       error: event.url.searchParams.get('error'),
-      csrf: issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform }),
+      csrf: issueCsrfToken(event),
     };
   }
 
@@ -332,14 +332,14 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    */
   async function confirmAction(event: CairnEvent): Promise<never> {
     if (event.locals.cairnIdentity) throw error(404, 'Not found');
-    const db = requireDb(event.platform?.env ?? {});
+    const db = requireDb(env);
     const form = await event.request.formData();
     const token = String(form.get('token') ?? '');
     if (!token) throw redirect(303, '/admin/login?error=expired');
 
     // One variable for the whole handler: this same `secure` names the pending cookie read and
     // deleted here, the session cookie set below, and the CSRF cookie rotated after it.
-    const secure = csrfSecure({ url: event.url, platform: event.platform });
+    const secure = csrfSecure(event);
     const pendingCookie = buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure);
     const nonce = event.cookies.get(pendingCookie);
 
@@ -398,7 +398,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // authentication epochs outweighs the self-healing edge, which is why this is the only place
     // it happens.
     event.cookies.delete(csrfCookieName(secure), { path: '/', secure });
-    issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform });
+    issueCsrfToken(event);
     throw redirect(303, '/admin');
   }
 
@@ -443,11 +443,11 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  gate's session.
    */
   async function logoutAction(event: CairnEvent): Promise<never> {
-    const db = requireDb(event.platform?.env ?? {});
+    const db = requireDb(env);
     // One variable, one csrfSecure call: the session cookie used to derive
     // `secure` independently from the CSRF pair's own derivation. `!secure` is this same value's
     // complement, not a second independent derivation.
-    const secure = csrfSecure({ url: event.url, platform: event.platform });
+    const secure = csrfSecure(event);
     const id =
       event.cookies.get(sessionCookieName(secure)) ?? event.cookies.get(sessionCookieName(!secure));
     event.cookies.delete(sessionCookieName(secure), { path: '/', secure });
@@ -472,7 +472,12 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
         log.error('auth.session.destroy_failed', { error: String(err) });
       }
     }
-    throw redirect(303, event.locals.cairnIdentity?.logoutUrl ?? '/admin/login');
+    const target = event.locals.cairnIdentity?.logoutUrl ?? '/admin/login';
+    // The guard admits only a root-relative path or an https URL as logoutUrl, at construction. A
+    // root-relative target stays on this site; an absolute one is allowed out to its own origin
+    // and nowhere else.
+    if (target.startsWith('/')) throw redirect(303, target);
+    throw redirect(303, target, { external: [new URL(target).origin] });
   }
 
   return { loginLoad, requestAction, confirmLoad, confirmAction, logoutAction };

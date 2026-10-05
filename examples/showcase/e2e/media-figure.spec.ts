@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 // insert flow (open the popover, upload, alt, Insert), then drives the figure control: wrap the
 // inserted image in a `:::figure{.wide}` with a caption distinct from the alt, confirm the source
 // transform left the atomic media token byte-intact, render the figure in the preview iframe, and
-// save. The fake R2 double on platform.env (hooks.server.ts) and the fake-github recorder back the
+// save. The fake R2 double in the Worker env (hooks.server.ts) and the fake-github recorder back the
 // upload, the preview resolve, and the commit, the same harness media-insert.spec.ts uses.
 //
 // Deviation from the plan's "use the seeded post" note: the fake-github recorder is module-level

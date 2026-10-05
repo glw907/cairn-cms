@@ -6,6 +6,7 @@ import { createGithubApp } from '../../lib/index.js';
 import { r2Key } from '../../lib/media/naming.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import { withTestEnv } from '../helpers/with-test-env.js';
 
 const bucket = env.MEDIA_BUCKET;
 
@@ -37,18 +38,19 @@ function runtime(resolvedAssets: ResolvedAssetConfig): CairnRuntime {
   };
 }
 
-/** Drive the handler with a constructed Request and a fake event carrying params and platform.env.
- *  The handler is typed against kit's RequestEvent; the test supplies the structural subset it reads
- *  (params.path, platform.env, request), cast through the handler signature. */
+/** Drive the handler with a constructed Request and a fake event carrying params, under the Worker
+ *  env with `bindings` layered over it (the miniflare MEDIA_BUCKET by default). The handler is
+ *  typed against kit's RequestEvent; the test supplies the structural subset it reads
+ *  (params.path, request), cast through the handler signature. */
 async function invoke(
   handler: RequestHandler,
   path: string,
   init?: RequestInit,
-  platformEnv: Record<string, unknown> = { MEDIA_BUCKET: bucket },
+  bindings: Record<string, unknown> = {},
 ): Promise<Response> {
   const request = new Request(`https://site.example/media/${path}`, init);
-  const event = { params: { path }, platform: { env: platformEnv }, request };
-  return handler(event as unknown as Parameters<RequestHandler>[0]);
+  const event = { params: { path }, request };
+  return withTestEnv(bindings, () => handler(event as unknown as Parameters<RequestHandler>[0]));
 }
 
 /** A short hex hash whose bytes we control, and the matching R2 key. */
@@ -164,7 +166,7 @@ describe('media delivery route (Task 4)', () => {
 
   it('returns 503 (not a thrown 500) when the bucket binding is missing', async () => {
     const handler = createMediaRoute({ runtime: runtime(resolvedOn) });
-    const res = await invoke(handler, SLUG_PATH, undefined, {});
+    const res = await invoke(handler, SLUG_PATH, undefined, { MEDIA_BUCKET: undefined });
     expect(res.status).toBe(503);
   });
 
@@ -175,7 +177,7 @@ describe('media delivery route (Task 4)', () => {
   });
 });
 
-/** A platform env whose MEDIA_BUCKET.get throws, so a test asserting "no R2 read" fails loudly if the
+/** A Worker env whose MEDIA_BUCKET.get throws, so a test asserting "no R2 read" fails loudly if the
  *  route reaches R2 for a path it should have rejected during validation. */
 function throwingEnv(): Record<string, unknown> {
   return {

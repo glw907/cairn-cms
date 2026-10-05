@@ -10,6 +10,7 @@ import { commitFailure } from './commit-log.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { Backend } from '../github/backend.js';
 import type { CairnEvent } from './types.js';
+import { env } from './workers-env.js';
 
 /**
  * One page option for the URL picker datalist. Module-internal (its export was retired, a
@@ -56,7 +57,7 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
    *  seam the dev double uses, so the read and commit paths run with no real token mint.
    */
   function resolveBackend(event: CairnEvent): Backend {
-    return event.locals.cairnBackend ?? runtime.backend.connect(event.platform?.env ?? {});
+    return event.locals.cairnBackend ?? runtime.backend.connect(env);
   }
 
   /** List page-like concepts (routable, not dated) for the URL picker. Best-effort per concept. */

@@ -10,6 +10,7 @@ import type { CairnEvent } from './types.js';
 // R2Bucket is named only to cast the raw binding for resolveMediaBucket. It is a type-only import
 // that never appears in an exported signature, so it does not reach the public `.d.ts`.
 import type { R2Bucket } from '@cloudflare/workers-types';
+import { env } from './workers-env.js';
 
 /** A media slug is the same lowercase-alphanumeric-with-hyphens grammar the reference token uses. */
 export const MEDIA_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -109,8 +110,7 @@ export function resolveMediaBucket(
   resolved: ResolvedAssetConfig,
 ): { bucket: R2Bucket } | { error: string } {
   if (!resolved.enabled) return { error: MEDIA_DISABLED_MESSAGE };
-  const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
-  const rawBucket = platformEnv[resolved.bucketBinding];
+  const rawBucket = env[resolved.bucketBinding];
   if (!rawBucket) return { error: 'The media bucket is not bound.' };
   return { bucket: rawBucket as R2Bucket };
 }

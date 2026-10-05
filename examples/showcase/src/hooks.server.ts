@@ -1,5 +1,5 @@
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
 import { devBackendOptIn } from '#chassis/dev-gate.js';
 import { access } from './access.js';
 

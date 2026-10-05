@@ -39,7 +39,8 @@ import {
 import { canonicalizeCode, deriveIdentity, generateCode, requesterBucket } from './identity.js';
 import type { D1Database, D1DatabaseSession } from '@cloudflare/workers-types';
 import type { RateLimitLike } from '../cloudflare/rate-limit.js';
-import type { CairnEvent, PlatformContext } from '../sveltekit/types.js';
+import type { CairnEvent } from '../sveltekit/types.js';
+import { env, siteEnv, waitUntil } from '../sveltekit/workers-env.js';
 
 /**
  * A minute and a day in milliseconds, spelled out so the Defaults table's own units read straight
@@ -70,7 +71,7 @@ const IDENTITY_ESCALATION_SCOPE = 'escalation';
  * `error()` rather than degrade the cookie or the response.
  * @throws HttpError 403 on an origin mismatch, or on plain http anywhere but a local host.
  */
-function assertOriginAndScheme<Env>(event: CairnEvent<Env>): void {
+function assertOriginAndScheme(event: CairnEvent): void {
   if (!originMatches(event)) {
     throw error(403, 'cairn auth-channel: origin mismatch');
   }
@@ -80,11 +81,9 @@ function assertOriginAndScheme<Env>(event: CairnEvent<Env>): void {
 }
 
 /**
- * The dev-backend flag's cached `platform.env` observation, one per `createAuthChannel` instance.
- * `checked` latches only on a DEFINITE observation, meaning a request that actually carried a
- * platform env to read. A runtime with no platform at all (a unit-test event, a warm-up call that
- * arrives before the adapter attaches one) leaves the cache untouched, so it cannot pin an unset
- * verdict onto every later request for the isolate's life and disarm the tripwire for good.
+ * The dev-backend flag's cached Worker env observation, one per `createAuthChannel` instance.
+ * `checked` latches on the first action's read, since a Worker isolate fixes its vars for its
+ * lifetime.
  */
 interface DevBackendFlagCache {
   checked: boolean;
@@ -100,9 +99,9 @@ interface DevBackendFlagCache {
  * `guard.ts` does, would break every legitimate dev-backend deployment. This factory instead
  * refuses only when the flag is set AND the request is deployed.
  *
- * The flag is read from `platform.env` alone, matching `guard.ts`: a Cloudflare Worker var lands
- * there. The observation is cached per factory instance, and only once a request has actually
- * carried a platform env to read, since a Worker isolate fixes its vars for its lifetime.
+ * The flag is read from the Worker env alone, matching `guard.ts`: a Cloudflare Worker var lands
+ * there. The observation is cached per factory instance, since a Worker isolate fixes its vars for
+ * its lifetime.
  *
  * The deployment witness is evaluated fresh on every call, never cached, since one isolate can
  * serve `*.workers.dev` and a custom domain interchangeably, so a cached verdict from an early
@@ -115,13 +114,12 @@ interface DevBackendFlagCache {
  * mirroring `assertOriginAndScheme`'s own contract.
  * @throws HttpError 503 when the flag is live on a deployed host.
  */
-function assertNoDevBackendLeak<Env>(event: CairnEvent<Env>, cache: DevBackendFlagCache): void {
-  const platformEnv = event.platform?.env as Record<string, unknown> | undefined;
-  if (!cache.checked && platformEnv !== undefined) {
-    cache.set = isDevBackendFlagSet(platformEnv[CAIRN_DEV_BACKEND_FLAG]);
+function assertNoDevBackendLeak(event: CairnEvent, cache: DevBackendFlagCache): void {
+  if (!cache.checked) {
+    cache.set = isDevBackendFlagSet(env[CAIRN_DEV_BACKEND_FLAG]);
     cache.checked = true;
   }
-  if (cache.set && isDeployedHost(event)) {
+  if (cache.set && isDeployedHost(event.url, env)) {
     throw error(503, CAIRN_DEV_BACKEND_MESSAGE);
   }
 }
@@ -133,7 +131,7 @@ function assertNoDevBackendLeak<Env>(event: CairnEvent<Env>, cache: DevBackendFl
  */
 async function runChallenge<Env>(
   config: AuthChannelConfig<Env>,
-  event: CairnEvent<Env>,
+  event: CairnEvent,
   form: FormData,
 ): Promise<boolean> {
   try {
@@ -141,37 +139,6 @@ async function runChallenge<Env>(
   } catch {
     return false;
   }
-}
-
-/**
- * The background-task hooks a deployed Cloudflare adapter hangs off `event.platform` beyond the
- * `env` {@link PlatformContext} publishes. `ctx` is the current member; `context` is the adapter's
- * deprecated alias.
- */
-interface PlatformWaitUntil {
-  ctx?: { waitUntil?: (promise: Promise<unknown>) => void };
-  context?: { waitUntil?: (promise: Promise<unknown>) => void };
-}
-
-/**
- * Resolve Cloudflare's background-task hook off `event.platform`, bound to its owning object
- * (an unbound `ExecutionContext.waitUntil` reference loses its receiver when called through a
- * bare variable). `ctx` is read first; `context` is the adapter's deprecated alias, tried only
- * as a fallback so a dependency bump that drops it silently does not reinstate the timing oracle
- * `waitUntil` exists to avoid (spec, Delivery).
- */
-function resolveWaitUntil<Env>(event: CairnEvent<Env>): ((promise: Promise<unknown>) => void) | undefined {
-  // The engine's shared `PlatformContext` names only `env`, deliberately: this factory is the one
-  // surface that reads the ExecutionContext, so the hooks are widened at this call rather than
-  // published on the event shape every other engine surface also uses. A real adapter's platform
-  // carries whichever member its version exposes, and both are optional here, so the widening
-  // asserts no member is present.
-  const platform = event.platform as (PlatformContext<Env> & PlatformWaitUntil) | undefined;
-  const ctx = platform?.ctx;
-  if (ctx?.waitUntil) return ctx.waitUntil.bind(ctx);
-  const legacyContext = platform?.context;
-  if (legacyContext?.waitUntil) return legacyContext.waitUntil.bind(legacyContext);
-  return undefined;
 }
 
 /**
@@ -217,20 +184,20 @@ function scrubSaltError(err: unknown): string {
  *
  * `logout` and `resolveSubject` take the bare `CairnEvent` instead, since neither derives a
  * requester bucket. The narrower parameter is what lets a site's own session helper declare
- * `(event: CairnEvent<Env>)` and still call `resolveSubject`.
+ * `(event: CairnEvent)` and still call `resolveSubject`.
  */
-type ChannelEvent<Env> = CairnEvent<Env> & { getClientAddress(): string };
+type ChannelEvent = CairnEvent & { getClientAddress(): string };
 
 /**
- * The context `deliver` receives alongside the contact and code: the resolved platform env
- * (provider credentials, or a dev-only transport's own opt-in flag) and Cloudflare's
- * background-task hook. A `deliver` implementation attaches `.catch()` before anything reaches
- * `waitUntil`, matching the factory's own delivery call (spec, Delivery).
+ * The context `deliver` receives alongside the contact and code: the Worker env (provider
+ * credentials, or a dev-only transport's own opt-in flag) and Cloudflare's background-task hook,
+ * both from `cloudflare:workers`. A `deliver` implementation attaches `.catch()` before anything
+ * reaches `waitUntil`, matching the factory's own delivery call (spec, Delivery).
  */
 export interface DeliverContext<Env> {
-  /** The resolved platform env, or undefined on a runtime with no platform (the unit-test case). */
+  /** The Worker env, typed as the site's own `Env`. */
   env: Env | undefined;
-  /** Cloudflare's background-task hook; `platform.ctx?.waitUntil` with `platform.context?.waitUntil` as the legacy fallback. */
+  /** Cloudflare's background-task hook, the `waitUntil` from `cloudflare:workers`. */
   waitUntil: (promise: Promise<unknown>) => void;
 }
 
@@ -270,7 +237,7 @@ export interface AuthChannelConfig<Env> {
    * Normalized contact to subject id, or null for an unknown contact. A throw is caught, logged as
    * `lookup_failed`, and treated as a miss.
    *
-   * `ctx` carries the resolved platform env and nothing else, mirroring {@link DeliverContext}: a
+   * `ctx` carries the Worker env and nothing else, mirroring {@link DeliverContext}: a
    * roster read needs a binding, and the binding is all it needs. This callback must not read
    * request-shaped data, which is why it is not handed the event. It decides subject-versus-decoy,
    * the whole no-roster-leak property, and the factory swallows its throw as a miss, so a lookup
@@ -289,13 +256,13 @@ export interface AuthChannelConfig<Env> {
    * Awaited before any mint on `request`, and on an escalated `confirm`; false or a throw answers
    * `challenge-required` without ever hard-failing, so a member always has a retry path.
    */
-  challenge: (event: CairnEvent<Env>, form: FormData) => Promise<boolean>;
+  challenge: (event: CairnEvent, form: FormData) => Promise<boolean>;
   /** The session cookie's base name, through `buildCookieName`; also names the `_pending` nonce cookie. A `cairn_`-prefixed base is rejected (it would collide with the engine's own admin cookies). */
   cookie: { name: string };
   /**
    * Consulted by `resolveSubject` on every resolution; false revokes on the next request.
    *
-   * `ctx` carries the resolved platform env and nothing else, for the same reason `lookup`'s does:
+   * `ctx` carries the Worker env and nothing else, for the same reason `lookup`'s does:
    * a roster read needs a binding, and this callback must not read request-shaped data. A `false`
    * here DESTROYS the session row, on every authenticated request, so a verdict that varied with
    * the request would let a crafted request revoke a member's session.
@@ -349,10 +316,10 @@ export interface AuthChannelConfig<Env> {
    * binding degrades to open.
    */
   rateLimit?: {
-    /** Resolve the Workers RateLimit binding off the platform env; absent degrades to open. */
+    /** Resolve the Workers RateLimit binding off the Worker env; absent degrades to open. */
     resolve: (env: Env | undefined) => RateLimitLike | undefined;
     /** Overrides the limiter key, which otherwise defaults to the derived requester bucket, never the identity alone. */
-    key?: (event: CairnEvent<Env>) => string;
+    key?: (event: CairnEvent) => string;
   };
 }
 
@@ -360,18 +327,18 @@ export interface AuthChannelConfig<Env> {
 export interface AuthChannel<Env> {
   actions: {
     /** POST handler for the `contact` form field; mints and delivers a code. */
-    request: (event: CairnEvent<Env> & { getClientAddress(): string }) => Promise<ChannelRequestOutcome>;
+    request: (event: CairnEvent & { getClientAddress(): string }) => Promise<ChannelRequestOutcome>;
     /** POST handler for the `code` form field; consumes the nonce-bound code and mints a session. */
-    confirm: (event: CairnEvent<Env> & { getClientAddress(): string }) => Promise<ChannelConfirmOutcome>;
+    confirm: (event: CairnEvent & { getClientAddress(): string }) => Promise<ChannelConfirmOutcome>;
     /** POST handler that deletes the current session and clears both cookies. */
-    logout: (event: CairnEvent<Env>) => Promise<{ ok: true }>;
+    logout: (event: CairnEvent) => Promise<{ ok: true }>;
   };
   /**
    * Read the session cookie and return the resolved subject, or null when absent, expired, or
    * refused by `verify`. Takes the bare event, with no `getClientAddress`, since it derives no
-   * requester bucket: a site's own session helper can declare `(event: CairnEvent<Env>)`.
+   * requester bucket: a site's own session helper can declare `(event: CairnEvent)`.
    */
-  resolveSubject: (event: CairnEvent<Env>) => Promise<string | null>;
+  resolveSubject: (event: CairnEvent) => Promise<string | null>;
   /**
    * Delete every session for a subject; the roster-removal exemplar calls this.
    *
@@ -486,7 +453,7 @@ function resolveLimits(limits: AuthChannelConfig<unknown>['limits']): ResolvedLi
  * attempts, the defect the throttle rule (deny on the requester, escalate on the identity) exists
  * to forbid.
  */
-function composeRequesterBucketKey<Env>(event: ChannelEvent<Env>, identity: string): string {
+function composeRequesterBucketKey(event: ChannelEvent, identity: string): string {
   return `${requesterBucket(event)}|${identity}`;
 }
 
@@ -528,13 +495,13 @@ async function refundGateCharge(
  */
 async function checkChannelRateLimit<Env>(
   rateLimit: AuthChannelConfig<Env>['rateLimit'],
-  event: ChannelEvent<Env>,
+  event: ChannelEvent,
   action: 'request' | 'confirm',
   defaultKey: string,
   correlationId: string,
 ): Promise<boolean> {
   if (!rateLimit) return true;
-  const limiter = rateLimit.resolve(event.platform?.env);
+  const limiter = rateLimit.resolve(siteEnv<Env>());
   if (!limiter) {
     log.warn('auth.channel.rate_limit_absent', { action, correlationId });
     return true;
@@ -565,11 +532,12 @@ async function checkChannelRateLimit<Env>(
  * restriction, and the cookie-name discipline are all checked here, before a single request is
  * ever served.
  *
- * `Env` does not infer from `resolveDb`'s parameter alone; annotate it explicitly (as in the
- * example) or it collapses to `{}` and every downstream binding read stops typechecking usefully.
+ * `Env` (a site's `wrangler types` type) does not infer from `resolveDb`'s parameter alone; annotate
+ * it explicitly (as in the example) or it collapses to `{}` and every downstream binding read stops
+ * typechecking usefully.
  *
  * ```ts
- * const channel = createAuthChannel<App.Platform['env']>({
+ * const channel = createAuthChannel<Env>({
  *   resolveDb: (env) => env?.MEMBER_DB,
  *   deliver: sendOtp,
  *   lookup: (contact, ctx) => contactToPersonId(ctx.env?.MEMBER_DB, contact),
@@ -677,7 +645,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * Every input past `challenge` writes a code row, known or decoy, so store state and timing
    * stay uniform and the response never leaks roster membership.
    */
-  async function requestAction(event: ChannelEvent<Env>): Promise<ChannelRequestOutcome> {
+  async function requestAction(event: ChannelEvent): Promise<ChannelRequestOutcome> {
     // Step 0: the dev-backend leak tripwire, ahead of everything else this action does.
     assertNoDevBackendLeak(event, devBackendFlagCache);
 
@@ -711,7 +679,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       return { outcome: 'invalid' };
     }
 
-    const session = await resolveVerifiedSession(event.platform?.env);
+    const session = await resolveVerifiedSession(siteEnv<Env>());
     if (!session) return { outcome: 'unavailable' };
 
     // Step 4: lookup, then salted identity derivation. A throwing lookup is treated as a miss
@@ -720,7 +688,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     let subject: string | null;
     let lookupFailed = false;
     try {
-      subject = await config.lookup(contact, { env: event.platform?.env });
+      subject = await config.lookup(contact, { env: siteEnv<Env>() });
     } catch {
       subject = null;
       lookupFailed = true;
@@ -840,13 +808,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // this the tables grow one row per probed contact forever, the exact defect the design
     // rejected in an earlier revision; a sweep failure is swallowed because the next mint retries
     // it.
-    const waitUntilFn = resolveWaitUntil(event);
-    const sweepPromise = sweep(session, now).catch(() => {});
-    if (waitUntilFn) {
-      waitUntilFn(sweepPromise);
-    } else {
-      await sweepPromise;
-    }
+    waitUntil(sweep(session, now).catch(() => {}));
 
     if (subject === null) {
       // One requested record per request, its outcome the request's final state: a throwing
@@ -870,8 +832,8 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // this path.
     log.info('auth.channel.requested', { outcome: 'delivered', correlationId });
     const ctx: DeliverContext<Env> = {
-      env: event.platform?.env,
-      waitUntil: waitUntilFn ?? (() => {}),
+      env: siteEnv<Env>(),
+      waitUntil,
     };
     const deliverPromise = config.deliver(contact, code, ctx).catch(async (err: unknown) => {
       log.error('auth.channel.send_failed', { correlationId, error: scrubDeliverError(err, contact) });
@@ -882,15 +844,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       await consumeCode(session, nonceHash, codeHash, now);
       await refund(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, now);
     });
-
-    if (waitUntilFn) {
-      waitUntilFn(deliverPromise);
-    } else {
-      // No platform at all: the unit-test/no-adapter runtime. Await inline rather than orphan
-      // the promise, and log so a real deployment missing its platform binding is loud.
-      log.warn('auth.channel.delivery_inline', { correlationId });
-      await deliverPromise;
-    }
+    waitUntil(deliverPromise);
 
     return { outcome: 'sent' };
   }
@@ -903,7 +857,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * same `charge` call that tests it, refunded only when the compare that follows succeeds, so a
    * failed guess accumulates toward escalation and a correct one never does.
    */
-  async function confirmAction(event: ChannelEvent<Env>): Promise<ChannelConfirmOutcome> {
+  async function confirmAction(event: ChannelEvent): Promise<ChannelConfirmOutcome> {
     // Step 0: the dev-backend leak tripwire, identical discipline to requestAction.
     assertNoDevBackendLeak(event, devBackendFlagCache);
 
@@ -931,7 +885,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       return { outcome: 'no-pending-request' };
     }
 
-    const session = await resolveVerifiedSession(event.platform?.env);
+    const session = await resolveVerifiedSession(siteEnv<Env>());
     if (!session) return { outcome: 'unavailable' };
 
     const now = Date.now();
@@ -1067,7 +1021,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * POST handler that ends the current session: origin-checked, then clears both cookies and
    * best-effort deletes the session row named by the incoming session cookie.
    */
-  async function logoutAction(event: CairnEvent<Env>): Promise<{ ok: true }> {
+  async function logoutAction(event: CairnEvent): Promise<{ ok: true }> {
     assertNoDevBackendLeak(event, devBackendFlagCache);
     assertOriginAndScheme(event);
 
@@ -1081,7 +1035,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     event.cookies.delete(pendingCookie, { path: '/', secure });
 
     if (token) {
-      const session = await resolveVerifiedSession(event.platform?.env);
+      const session = await resolveVerifiedSession(siteEnv<Env>());
       if (session) {
         const destroyed = await destroyChannelSession(session, await hashToken(token));
         // Logged only where a row was actually destroyed and was still live: a request with no
@@ -1107,13 +1061,13 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * flow, so it accepts the default consistency and any replica lag on the revocation path (spec,
    * Storage: the documented exception to the shared-session rule).
    */
-  async function resolveSubject(event: CairnEvent<Env>): Promise<string | null> {
+  async function resolveSubject(event: CairnEvent): Promise<string | null> {
     const secure = event.url.protocol === 'https:';
     const sessionCookie = buildCookieName(cookieBase, secure);
     const token = event.cookies.get(sessionCookie);
     if (!token) return null;
 
-    const database = config.resolveDb(event.platform?.env);
+    const database = config.resolveDb(siteEnv<Env>());
     if (!database) return null;
 
     const tokenHash = await hashToken(token);
@@ -1124,7 +1078,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     if (config.verify) {
       let verified: boolean | null;
       try {
-        verified = await config.verify(resolved.subject, { env: event.platform?.env });
+        verified = await config.verify(resolved.subject, { env: siteEnv<Env>() });
       } catch {
         // The hook itself faulted (a roster backend outage), which is not a roster answer:
         // refuse this resolution without destroying the row, so a transient outage never

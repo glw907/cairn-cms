@@ -96,7 +96,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
     // media actions. A failed check refuses before the session read or any GitHub call. An
     // untyped caller with no cookie jar at all throws loudly instead (convention-auth-loud-postures).
     const cookies = requireCookieJar(event);
-    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies, platform: event.platform })) {
+    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies })) {
       return fail(403, { error: 'csrf' } satisfies DictionaryAddFailure);
     }
     const editor = requireEditor(event);

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // The v2 container fields (posts.faq = array(object), posts.gallery = array(image)) end to end against
 // the running showcase behind the fake backend (the fake-github recorder plus the fake R2 double on
-// platform.env, the same harness the reference and media specs use). The container fields live behind
+// the Worker env, the same harness the reference and media specs use). The container fields live behind
 // the Details slide-over (carry-forward #4a: a field e2e must open Details before the field is in the
 // DOM), so each part opens it first.
 //

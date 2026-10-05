@@ -12,6 +12,7 @@ import { tidyClientErrorStatus, TidySdkMissingError } from './content-routes-con
 import { markKeyHealthy, markKeyUnhealthy } from './tidy-key-health.js';
 import type { ContentRoutesContext, TidyClient } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
+import { env } from './workers-env.js';
 
 /**
  * The successful tidy outcome (spec 2.1): the corrected markdown, the model that produced it, and the
@@ -113,7 +114,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     // before the session read and before any model call. An untyped caller with no cookie jar at
     // all throws loudly instead (convention-auth-loud-postures).
     const cookies = requireCookieJar(event);
-    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies, platform: event.platform })) {
+    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies })) {
       return fail(403, { error: 'csrf' } satisfies TidyFailure);
     }
     const editor = requireEditor(event);
@@ -129,7 +130,6 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     if (!tidy?.enabled) {
       return fail(503, { error: 'Tidy is not enabled for this site.' } satisfies TidyFailure);
     }
-    const env = (event.platform?.env ?? {}) as Record<string, unknown>;
     const apiKey = typeof env.ANTHROPIC_API_KEY === 'string' ? env.ANTHROPIC_API_KEY : '';
     if (!apiKey) {
       return fail(503, { error: 'Tidy is not configured: the Anthropic API key is missing.' } satisfies TidyFailure);

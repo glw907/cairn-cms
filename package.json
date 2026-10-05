@@ -79,7 +79,7 @@
     "check:dev-package": "node scripts/checks/check-dev-package.mjs",
     "check:consumers": "npm run package && node scripts/checks/check-consumers.mjs",
     "prepare": "npm run package",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p src/tests/types/tsconfig.json",
     "check:close": "npm run check && npm run check:package && npm run check:audit-pack && npm run check:reference && npm run check:reference:signatures && npm run check:surface && npm run check:self-use && npm run check:custom-surface && npm run check:chassis-boundary && npm run check:cm-internals && npm run check:idioms && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:readiness && npm run check:tool-conditions && npm run check:docs && npm run check:rulings-format && npm run check:target-stack && npm run check:arm-indexes && npm run check:editor-quotes && npm run check:facts && npm run check:provenance && npm run check:visuals && npm run check:transcripts && npm run check:symbols && npm run check:snippets && npm run check:prose && npm run check:version && npm run check:dev-package && npm run check:template && npm run check:consumers && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run format:check && npm run check:public-skill && npm run check:vale && npm run check:comments && npm run check:public-tokens",
     "test:node-projects": "vitest run --project unit --project unit-dist-spawn --project integration",
     "test": "npm run test:node-projects && npm run test:component",
@@ -217,9 +217,9 @@
   "peerDependencies": {
     "@anthropic-ai/sdk": ">=0.105.0 <1",
     "@cloudflare/workers-types": "^5",
-    "@sveltejs/kit": "^2.70",
+    "@sveltejs/kit": "^3",
     "daisyui": "^5",
-    "svelte": "^5.56.10",
+    "svelte": "^5.57.1",
     "tailwindcss": "^4"
   },
   "peerDependenciesMeta": {
@@ -278,7 +278,7 @@
     "@arethetypeswrong/cli": "^0.18.3",
     "@cloudflare/vitest-pool-workers": "^0.22.0",
     "@cloudflare/workers-types": "^5.20260930.1",
-    "@sveltejs/kit": "^2.70",
+    "@sveltejs/kit": "^3",
     "@sveltejs/package": "^3",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tailwindcss/postcss": "^4.3.2",

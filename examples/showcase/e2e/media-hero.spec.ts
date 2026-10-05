@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // The media Phase 3b frontmatter hero, end to end against the running showcase behind the fake
-// backend (the fake R2 double on platform.env and the fake-github recorder, the same harness
+// backend (the fake R2 double in the Worker env and the fake-github recorder, the same harness
 // media-insert/media-figure use). Two parts:
 //
 // Part A drives the editor's hero field interactively in a fresh, self-contained post: open the

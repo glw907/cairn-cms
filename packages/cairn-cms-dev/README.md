@@ -39,7 +39,7 @@ Then name it directly in the branch, and import the package dynamically:
 
 ```ts
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
 
 let handle: Handle;
 if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
@@ -57,8 +57,8 @@ Then start the dev server with the flag set:
 CAIRN_DEV_BACKEND=1 npm run dev
 ```
 
-Open `/admin`. The handle resolves an owner session and supplies the binding doubles on
-`platform.env`, so the admin runs with no GitHub App and no D1.
+Open `/admin`. The handle resolves an owner session and layers the binding doubles over
+the Worker env with `withEnv`, so the admin runs with no GitHub App and no D1.
 
 ## The fence
 

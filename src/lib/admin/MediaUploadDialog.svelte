@@ -205,11 +205,11 @@ the new asset appears.
 
     // Success: navigate to the flash URL rather than plain refreshAll, so the loader re-runs AND
     // sets the uploaded flash (refreshAll alone would refresh the grid but leave the flash unset).
-    // { invalidateAll: true } is still required alongside the URL: a second upload in the same
+    // { refreshAll: true } is still required alongside the URL: a second upload in the same
     // session lands on the identical ?uploaded=1 URL, which goto() treats as a no-op navigation
     // without it, so the loader never re-runs and the new asset never appears.
     closeLibraryUpload();
-    await goto('/admin/media?uploaded=1', { invalidateAll: true });
+    await goto('/admin/media?uploaded=1', { refreshAll: true });
   }
 </script>
 

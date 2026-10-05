@@ -81,11 +81,10 @@ export type CairnLogEvent =
   | 'audit.sink.call_failed'
   | 'turnstile.verify_failed'
   | 'audit.sink.write_failed'
-  // The auth-channel factory (createAuthChannel), twelve events, plus
+  // The auth-channel factory (createAuthChannel), eleven events, plus
   // auth.channel.salt_unavailable, the salt-fault diagnostic.
   | 'auth.channel.requested'
   | 'auth.channel.send_failed'
-  | 'auth.channel.delivery_inline'
   | 'auth.channel.confirmed'
   | 'auth.channel.locked'
   | 'auth.channel.escalated'

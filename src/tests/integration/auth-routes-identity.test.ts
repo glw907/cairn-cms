@@ -12,6 +12,7 @@ import { createGithubApp } from '../../lib/index.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
+import { withTestEnv } from '../helpers/with-test-env.js';
 
 const db = env.AUTH_DB;
 
@@ -54,7 +55,6 @@ function adminEvent(pathname: string, opts: { search?: string; cookies?: ReturnT
     route: { id: '/admin/[...path]' },
     cookies,
     locals: { cairnIdentity: IDENTITY },
-    platform: { env: { PUBLIC_ORIGIN: 'https://test.dev', AUTH_DB: db } },
     setHeaders: () => {},
   };
 }
@@ -74,9 +74,8 @@ describe('requestAction under identity mode', () => {
     const admin = createCairnAdmin({ runtime: runtime() });
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const cookies = makeRecordingCookies();
-    // No AUTH_DB and no PUBLIC_ORIGIN in the event's platform.env: a 404 raised after either
-    // guard would still pass this test by accident, so both are absent to prove the 404 comes
-    // first.
+    // No AUTH_DB and no PUBLIC_ORIGIN in the Worker env: a 404 raised after either guard would
+    // still pass this test by accident, so both are absent to prove the 404 comes first.
     const ev: CairnEvent = {
       url: new URL('https://test.dev/admin/login?/request'),
       request: new Request('https://test.dev/admin/login?/request', { method: 'POST', body: new URLSearchParams({ email: 'nobody@test.dev' }) }),
@@ -84,10 +83,10 @@ describe('requestAction under identity mode', () => {
       route: { id: '/admin/[...path]' },
       cookies,
       locals: { cairnIdentity: IDENTITY },
-      platform: { env: {} },
       setHeaders: () => {},
     };
-    expect((await expectHttpError(() => admin.actions.request(ev))).status).toBe(404);
+    const unbound = { AUTH_DB: undefined, PUBLIC_ORIGIN: undefined };
+    expect((await expectHttpError(() => withTestEnv(unbound, () => admin.actions.request(ev)))).status).toBe(404);
     expect(cookies.sets).toEqual([]);
     const records = infoSpy.mock.calls.map((c) => c[0] as { event?: string });
     expect(records.some((r) => r.event === 'auth.token.minted')).toBe(false);
@@ -132,6 +131,15 @@ describe('logoutAction under identity mode', () => {
     expect(deletedNames).toEqual(
       expect.arrayContaining(['cairn_session', 'cairn_csrf', '__Host-cairn_login_pending']),
     );
+  });
+
+  it('redirects to an absolute https logoutUrl, which the redirect admits for its own origin', async () => {
+    const admin = createCairnAdmin({ runtime: runtime() });
+    const logoutUrl = 'https://team.cloudflareaccess.com/cdn-cgi/access/logout';
+    const event = adminEvent('/admin');
+    event.locals.cairnIdentity = { label: 'Acme SSO', logoutUrl };
+    const result = await expectRedirect(() => admin.actions.logout(event));
+    expect(result.location).toBe(logoutUrl);
   });
 
   it('skips the session delete, emitting no auth.session.destroyed record even with a live row', async () => {

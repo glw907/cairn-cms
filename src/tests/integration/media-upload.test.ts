@@ -1,7 +1,8 @@
 // Task 5: the upload action's untrusted-input contract. The server owns every committed field and
 // trusts no client value. These tests drive the action directly through createContentRoutes against
 // the miniflare R2 bucket, with a constructed ContentEvent carrying the raw-body POST, the
-// X-Cairn-* headers, locals.cairnEditor, platform.env, and a fake cookie jar that returns the csrf cookie.
+// X-Cairn-* headers, locals.cairnEditor, and a fake cookie jar that returns the csrf cookie, under the
+// Worker env's miniflare MEDIA_BUCKET.
 import { env } from 'cloudflare:test';
 import { createGithubApp } from '../../lib/index.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -11,6 +12,7 @@ import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CairnEvent, CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
+import { withTestEnv } from '../helpers/with-test-env.js';
 
 const bucket = env.MEDIA_BUCKET;
 
@@ -62,7 +64,6 @@ interface UploadOpts {
   cookieCsrf?: string | undefined;
   contentLength?: string | null;
   hasEditor?: boolean;
-  platformEnv?: Record<string, unknown>;
 }
 
 /** Build the CairnEvent for an upload POST. The raw body is the bytes; the metadata travels in
@@ -88,7 +89,6 @@ function uploadEvent(opts: UploadOpts): CairnEvent {
     // overload, so cast through BodyInit to satisfy the constructor type.
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
     locals: { cairnEditor: opts.hasEditor === false ? null : editor },
-    platform: { env: opts.platformEnv ?? { MEDIA_BUCKET: bucket } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
     setHeaders: () => {},
   };
@@ -146,9 +146,9 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
         return typeof value === 'function' ? value.bind(target) : value;
       },
     });
-    const platformEnv = { MEDIA_BUCKET: counting };
-    const first = (await routes.uploadAction(uploadEvent({ bytes: PNG, platformEnv }))) as ActionResult;
-    const second = (await routes.uploadAction(uploadEvent({ bytes: PNG, platformEnv }))) as ActionResult;
+    const counted = { MEDIA_BUCKET: counting };
+    const first = (await withTestEnv(counted, () => routes.uploadAction(uploadEvent({ bytes: PNG })))) as ActionResult;
+    const second = (await withTestEnv(counted, () => routes.uploadAction(uploadEvent({ bytes: PNG })))) as ActionResult;
 
     expect(first.reused).toBe(false);
     expect(second.reused).toBe(true);

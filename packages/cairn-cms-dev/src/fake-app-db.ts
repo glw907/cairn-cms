@@ -2,7 +2,7 @@
 // of fake-auth-db.ts. It implements just the D1Database surface the custom route touches
 // (prepare(sql).bind() with all/run/first) over an in-memory signups array, so /admin/signups
 // reads and writes its own binding under the cms-dev handle without a real D1 binding. Installed
-// from handle.ts as platform.env.APP_DB; never part of the published engine.
+// from handle.ts as the Worker env's APP_DB; never part of the published engine.
 //
 // Dispatch is on the route's exact SQL strings, matched as normalized substrings. Unknown SQL
 // throws with the SQL in the message, deliberately: when the screen adds or rewords a statement,

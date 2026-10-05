@@ -22,6 +22,7 @@ import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js
 import { __setBuilding } from '../_app-env.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
+import { withTestEnv } from '../helpers/with-test-env.js';
 
 const db = env.AUTH_DB;
 
@@ -141,14 +142,13 @@ function countingDb(real: D1Database): { db: D1Database; count(): number } {
 }
 
 /** A driven `/preview/[token]` load event, capturing every `setHeaders` call. */
-function loadEvent(token: string, opts: { env?: Record<string, unknown> } = {}) {
+function loadEvent(token: string) {
   const headers: Record<string, string>[] = [];
   const event = {
     ...contentEvent({
       url: `${ORIGIN}/preview/${token}`,
       params: { token },
       route: '/preview/[token]',
-      env: opts.env ?? { AUTH_DB: db },
     }),
     setHeaders: (h: Record<string, string>) => headers.push(h),
   };
@@ -223,9 +223,11 @@ describe('loadPreview: the malformed-token gate', () => {
     const { db: spiedDb, count } = countingDb(db);
     const gh = freshGithub();
     gh.install();
-    const { event } = loadEvent('too-short', { env: { AUTH_DB: spiedDb } });
+    const { event } = loadEvent('too-short');
     const captured = await records(async () => {
-      await expectNotFound(() => loadPreview(runtime(), publicConfig(), event));
+      await expectNotFound(() =>
+        withTestEnv({ AUTH_DB: spiedDb }, () => loadPreview(runtime(), publicConfig(), event)),
+      );
     });
     expect(count()).toBe(0);
     expect(captured).toEqual([]);
@@ -236,10 +238,10 @@ describe('loadPreview: the missing AUTH_DB binding', () => {
   it('answers 503 after a binding-named log, headers still set', async () => {
     const gh = freshGithub();
     gh.install();
-    const { event, headers } = loadEvent('x'.repeat(43), { env: {} });
+    const { event, headers } = loadEvent('x'.repeat(43));
     const captured = await records(async () => {
       try {
-        await loadPreview(runtime(), publicConfig(), event);
+        await withTestEnv({ AUTH_DB: undefined }, () => loadPreview(runtime(), publicConfig(), event));
         throw new Error('expected an error');
       } catch (e) {
         expect(isHttpError(e) && e.status).toBe(503);

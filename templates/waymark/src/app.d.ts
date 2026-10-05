@@ -1,9 +1,11 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
-import type { D1Database, ExecutionContext } from '@cloudflare/workers-types';
-// The binding-shaped types ship from the /sveltekit subpath (since 0.51); the app.d.ts Platform
-// block intersects them rather than restating every engine binding by hand. CairnMediaBindings adds
-// MEDIA_BUCKET, present only because this site turns media on.
-import type { CairnPlatformBindings, CairnMediaBindings } from '@glw907/cairn-cms/sveltekit';
+//
+// The Worker's bindings are typed by worker-configuration.d.ts, which `wrangler types` generates from
+// wrangler.jsonc and the secret names in .dev.vars.example; `cloudflare:workers` types its `env`
+// export with that `Env`, and the workers-types reference supplies the runtime types it names.
+// Regenerate it after any wrangler.jsonc change, with the command its first lines record.
+/// <reference types="@cloudflare/workers-types" />
+/// <reference path="../worker-configuration.d.ts" />
 import type { NavNode } from '@glw907/cairn-cms';
 // App.Locals.cairnEditor (set by the engine's auth guard) ships with the engine.
 import '@glw907/cairn-cms/ambient';
@@ -27,25 +29,6 @@ declare global {
       footerNav?: NavNode[];
       siteName?: string;
       hasIslands?: boolean;
-    }
-    interface Platform {
-      env: CairnPlatformBindings &
-        CairnMediaBindings & {
-          // The developer's own D1 binding for the custom Signups admin screen (cairn never reads it).
-          APP_DB: D1Database;
-          // The optional Cloudflare Worker var mirroring CAIRN_DEV_BACKEND (also settable as an
-          // OS var; see src/chassis/dev-gate.ts and guard.ts's own platform.env read). Declared
-          // here rather than in the engine's own CairnPlatformBindings, since it is a
-          // devDependency-gated convenience a site opts into, never a required binding.
-          // Declaring it as an optional member is what lets devDelivery's and captureDeliver's
-          // own generic constraint (`{ CAIRN_DEV_BACKEND?: string | boolean }`) assign against
-          // this env without TypeScript's weak-type detection (TS2559) rejecting the call, the
-          // same property-sharing discipline platform-bindings.ts documents for
-          // CairnPlatformBindings itself.
-          CAIRN_DEV_BACKEND?: string | boolean;
-        };
-      context: ExecutionContext;
-      caches: CacheStorage & { default: Cache };
     }
   }
 }

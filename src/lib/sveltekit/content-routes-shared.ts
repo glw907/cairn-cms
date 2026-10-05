@@ -25,6 +25,7 @@ import type { CairnRuntime, ConceptDescriptor } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent, HistoryData } from './types.js';
 import type { Backend } from '../github/backend.js';
+import { env } from './workers-env.js';
 
 /**
  * What a route's single `form` export presents to a view component: whichever content action
@@ -104,7 +105,7 @@ export function isMissingTableError(err: unknown): boolean {
  */
 export async function clearPreviewTokens(event: CairnEvent, concept: ConceptDescriptor, id: string): Promise<void> {
   try {
-    const db = requireDb(event.platform?.env ?? {});
+    const db = requireDb(env);
     await deletePreviewTokens(db, concept.id, id);
   } catch (err) {
     if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') return;

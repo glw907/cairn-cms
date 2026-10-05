@@ -37,10 +37,12 @@ before serving any request.
 `Env` does not infer from `resolveDb`'s parameter alone; annotate it explicitly, as the example
 below does, or it collapses to `{}` and every downstream binding read stops typechecking usefully.
 
+<!-- snippet-check-skip: imports cloudflare:workers, which a site's own Worker types declare -->
 ```ts
 import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
 import { verifyTurnstile } from '@glw907/cairn-cms/cloudflare';
 import type { D1Database } from '@cloudflare/workers-types';
+import { env } from 'cloudflare:workers';
 
 interface Env {
   MEMBER_DB?: D1Database;
@@ -60,29 +62,27 @@ const channel = createAuthChannel<Env>({
   deliver: sendOtp,
   lookup: contactToPersonId,
   normalize: normalizeContact,
-  challenge: (event, form) =>
-    verifyTurnstile(String(form.get('cf-turnstile-response') ?? ''), event.platform?.env?.TURNSTILE_SECRET ?? ''),
+  challenge: (_event, form) =>
+    verifyTurnstile(String(form.get('cf-turnstile-response') ?? ''), env.TURNSTILE_SECRET ?? ''),
   cookie: { name: 'member_session' },
 });
 ```
 
 `config`'s fields:
 
-- **`resolveDb(env)`**: the channel's own D1 binding, read off the platform env. Never `AUTH_DB`: a
+- **`resolveDb(env)`**: the channel's own D1 binding, read off the Worker env. Never `AUTH_DB`: a
   second audience's roster and sessions live in their own database, physically separate from the
   engine's own editor store. An action whose binding resolves to `undefined`, or whose schema
   version does not match the schema the packaged migration installs (see [Storage](#storage)),
   answers `{outcome: 'unavailable'}` without touching a row.
-- **`deliver(contact, code, ctx)`**: sends the code to `contact`. `ctx` carries `{ env, waitUntil }`;
-  `waitUntil` is Cloudflare's background-task hook (`platform.ctx.waitUntil`, with the deprecated
-  `platform.context.waitUntil` as a fallback), or a no-op when neither is present, in which case
-  `request` awaits `deliver` inline and logs
-  [`auth.channel.delivery_inline`](./log-events.md). A throw is caught. The error is scrubbed
+- **`deliver(contact, code, ctx)`**: sends the code to `contact`. `ctx` carries `{ env, waitUntil }`,
+  both from `cloudflare:workers`; `request` hands the delivery to `waitUntil` and returns without
+  waiting for it. A throw is caught. The error is scrubbed
   before logging (every occurrence of `contact` redacted, the message capped at 300 characters),
   the pending code row is deleted, and the requester's send charge is refunded, so a provider
   outage costs a member nothing but a retry.
 - **`lookup(contact, ctx)`**: normalized contact to subject id, or `null` for an unknown contact.
-  `ctx` carries `{ env }`, the resolved platform env and nothing else, so a roster read reaches its
+  `ctx` carries `{ env }`, the Worker env and nothing else, so a roster read reaches its
   own binding. The returned subject must be stable and canonical per person (see [Config
   obligations](#config-obligations)). A throw is caught, logged as the distinct `lookup_failed`
   outcome on [`auth.channel.requested`](./log-events.md), and treated the same as an unknown
@@ -127,7 +127,7 @@ call). See [Types](#types) for each result union's exact shape.
 
 Two signature notes. `request` and `confirm` need `getClientAddress()` alongside the `CairnEvent`
 members, because the requester bucket keys on the client address; `logout` and `resolveSubject`
-take the bare `CairnEvent`, so your own session helper can declare `(event: CairnEvent<Env>)`.
+take the bare `CairnEvent`, so your own session helper can declare `(event: CairnEvent)`.
 `revokeSessions` takes a binding rather than an event, deliberately: it is the one member callable
 outside a request, from a roster-archive path, a cron trigger, or a queue consumer that has a `db`
 and no event to resolve one from.
@@ -137,8 +137,8 @@ set and the request reaches a deployed runtime, `request`, `confirm`, and `logou
 SvelteKit `HttpError` with status 503 before touching a row, minting a code, or calling your
 `deliver`. It's a throw rather than an `{outcome: ...}` result because no result union carries a wire
 code for a polluted environment, so SvelteKit renders your error page instead of returning to the
-form. The flag is read from `platform.env` alone. "Deployed" reads the configured
-`PUBLIC_ORIGIN` from `platform.env` first and falls back to the request's own hostname only when no `PUBLIC_ORIGIN` is
+form. The flag is read from the Worker env alone. "Deployed" reads the configured
+`PUBLIC_ORIGIN` from the Worker env first and falls back to the request's own hostname only when no `PUBLIC_ORIGIN` is
 set. Local development with the flag set is untouched, which is what lets a dev transport use the
 flag as its own enable contract.
 
@@ -229,9 +229,9 @@ the cleanup never delays a response.
 
 | Export | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
-| <a id="authchannel"></a>`AuthChannel` | Extension API | `interface AuthChannel<Env> { actions: { request: (event: CairnEvent<Env> & { getClientAddress(): string }) => Promise<ChannelRequestOutcome>; confirm: (event: CairnEvent<Env> & { getClientAddress(): string }) => Promise<ChannelConfirmOutcome>; logout: (event: CairnEvent<Env>) => Promise<{ ok: true }> }; resolveSubject: (event: CairnEvent<Env>) => Promise<string \| null>; revokeSessions: (db: D1Database, subject: string) => Promise<void> }` | What [`createAuthChannel`](#createauthchannel) returns. `request` and `confirm` need the client address for the requester bucket; `logout` and `resolveSubject` take the bare event; `revokeSessions` takes a binding, so a caller outside a request can reach it. |
-| <a id="authchannelconfig"></a>`AuthChannelConfig` | Extension API | `interface AuthChannelConfig<Env> { resolveDb: (env: Env \| undefined) => D1Database \| undefined; deliver: (contact: string, code: string, ctx: DeliverContext<Env>) => Promise<void>; lookup: (contact: string, ctx: { env: Env \| undefined }) => Promise<string \| null>; normalize: (raw: string) => string; challenge: (event: CairnEvent<Env>, form: FormData) => Promise<boolean>; cookie: { name: string }; verify?: (subject: string, ctx: { env: Env \| undefined }) => Promise<boolean>; kind?: 'code'; limits?: { code?: { length?: number; ttlMs?: number; attemptCap?: number }; throttle?: { cooldownMs?: number; requesterCap?: number; identityCeiling?: number; escalationThreshold?: number; liveRowCap?: number }; session?: { ttlMs?: number } }; rateLimit?: { resolve: (env: Env \| undefined) => RateLimitLike \| undefined; key?: (event: CairnEvent<Env>) => string } }` | Construction-time configuration for [`createAuthChannel`](#createauthchannel); see [Building a channel](#building-a-channel) for every field, and [Defaults and clamps](#defaults-and-clamps) for every `limits` field. |
-| <a id="delivercontext"></a>`DeliverContext` | Extension API | `interface DeliverContext<Env> { env: Env \| undefined; waitUntil: (promise: Promise<unknown>) => void }` | The context [`deliver`](#createauthchannel) receives alongside the contact and code: the resolved platform env and Cloudflare's background-task hook. |
+| <a id="authchannel"></a>`AuthChannel` | Extension API | `interface AuthChannel<Env> { actions: { request: (event: CairnEvent & { getClientAddress(): string }) => Promise<ChannelRequestOutcome>; confirm: (event: CairnEvent & { getClientAddress(): string }) => Promise<ChannelConfirmOutcome>; logout: (event: CairnEvent) => Promise<{ ok: true }> }; resolveSubject: (event: CairnEvent) => Promise<string \| null>; revokeSessions: (db: D1Database, subject: string) => Promise<void> }` | What [`createAuthChannel`](#createauthchannel) returns. `request` and `confirm` need the client address for the requester bucket; `logout` and `resolveSubject` take the bare event; `revokeSessions` takes a binding, so a caller outside a request can reach it. |
+| <a id="authchannelconfig"></a>`AuthChannelConfig` | Extension API | `interface AuthChannelConfig<Env> { resolveDb: (env: Env \| undefined) => D1Database \| undefined; deliver: (contact: string, code: string, ctx: DeliverContext<Env>) => Promise<void>; lookup: (contact: string, ctx: { env: Env \| undefined }) => Promise<string \| null>; normalize: (raw: string) => string; challenge: (event: CairnEvent, form: FormData) => Promise<boolean>; cookie: { name: string }; verify?: (subject: string, ctx: { env: Env \| undefined }) => Promise<boolean>; kind?: 'code'; limits?: { code?: { length?: number; ttlMs?: number; attemptCap?: number }; throttle?: { cooldownMs?: number; requesterCap?: number; identityCeiling?: number; escalationThreshold?: number; liveRowCap?: number }; session?: { ttlMs?: number } }; rateLimit?: { resolve: (env: Env \| undefined) => RateLimitLike \| undefined; key?: (event: CairnEvent) => string } }` | Construction-time configuration for [`createAuthChannel`](#createauthchannel); see [Building a channel](#building-a-channel) for every field, and [Defaults and clamps](#defaults-and-clamps) for every `limits` field. |
+| <a id="delivercontext"></a>`DeliverContext` | Extension API | `interface DeliverContext<Env> { env: Env \| undefined; waitUntil: (promise: Promise<unknown>) => void }` | The context [`deliver`](#createauthchannel) receives alongside the contact and code: the Worker env and Cloudflare's background-task hook, both from `cloudflare:workers`. |
 | <a id="channelrequestoutcome"></a>`ChannelRequestOutcome` | Extension API | `type ChannelRequestOutcome = { outcome: 'sent' \| 'invalid' \| 'throttled' \| 'challenge-required' \| 'unavailable' }` | The `request` action's result. `outcome` is `'sent'` even for an unknown contact, so the response never leaks roster membership. |
 | <a id="channelconfirmoutcome"></a>`ChannelConfirmOutcome` | Extension API | `type ChannelConfirmOutcome = { outcome: 'confirmed' \| 'bad-code' \| 'expired' \| 'locked' \| 'throttled' \| 'challenge-required' \| 'no-pending-request' \| 'unavailable' }` | The `confirm` action's result. `challenge-required` is a retry invitation, never a hard failure: the site's confirm form renders its challenge widget and the member submits again. |
 | <a id="ratelimitlike"></a>`RateLimitLike` | Extension API | `interface RateLimitLike { limit(options: { key: string }): Promise<{ success: boolean }> }` | The structural slice of a Workers `RateLimit` binding [`config.rateLimit.resolve`](#rate-limiting) returns; the same declaration [`/cloudflare`](./cloudflare.md#types) and [`/sveltekit`](./sveltekit.md#types) export. |

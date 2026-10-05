@@ -11,7 +11,7 @@ describe('testEvent', () => {
     expect(event.route).toEqual({ id: null });
     expect(event.cookies.get('anything')).toBeUndefined();
     expect(event.locals).toEqual({});
-    expect(event.platform).toEqual({ env: {} });
+    expect('platform' in event).toBe(false);
     // setHeaders is callable and a no-op.
     expect(() => event.setHeaders({ 'x-test': '1' })).not.toThrow();
   });
@@ -43,7 +43,7 @@ describe('testEvent', () => {
     expect(event.request).toBe(request);
   });
 
-  it('threads params, route, cookies, locals, and env overrides straight through', () => {
+  it('threads params, route, cookies, and locals overrides straight through', () => {
     const cookies = { get: () => 'v', set: () => {}, delete: () => {} };
     const locals = { cairnEditor: { email: 'e@t', displayName: 'E', role: 'editor', capability: 'editor' as const } };
     const event = testEvent({
@@ -51,12 +51,10 @@ describe('testEvent', () => {
       route: '/admin/[...path]',
       cookies,
       locals,
-      env: { PUBLIC_ORIGIN: 'https://site.example' },
     });
     expect(event.params).toEqual({ concept: 'posts', id: 'hi' });
     expect(event.route).toEqual({ id: '/admin/[...path]' });
     expect(event.cookies).toBe(cookies);
     expect(event.locals).toBe(locals);
-    expect(event.platform).toEqual({ env: { PUBLIC_ORIGIN: 'https://site.example' } });
   });
 });

@@ -30,6 +30,7 @@ import type { CairnEvent } from './types.js';
 // R2Bucket is named only to cast the raw binding for r2Store. It is a type-only import that never
 // appears in an exported signature, so it does not reach the public `.d.ts`.
 import type { R2Bucket } from '@cloudflare/workers-types';
+import { env } from './workers-env.js';
 
 /**
  * A refused upload: the pre-store gates (session, media-off, missing bucket, oversized or
@@ -106,7 +107,7 @@ export function createMediaIngestActions(ctx: ContentRoutesContext) {
     //    raw-body upload, since the guard runs its form-CSRF only on form content types. An untyped
     //    caller with no cookie jar at all throws loudly instead (convention-auth-loud-postures).
     const cookies = requireCookieJar(event);
-    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies, platform: event.platform })) {
+    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies })) {
       return refuse(403, 'csrf');
     }
 
@@ -150,12 +151,10 @@ export function createMediaIngestActions(ctx: ContentRoutesContext) {
     const width = clampDimension(event.request.headers.get('x-cairn-width'));
     const height = clampDimension(event.request.headers.get('x-cairn-height'));
 
-    // 7. Store put-first with R2-head dedup, commit nothing. The raw bucket binding lives on
-    //    platform.env, which the engine reads through a structural cast (the engine does not declare
-    //    App.Platform). r2Store wraps it as the narrow MediaStore seam; R2Bucket is named only for
-    //    this cast and never in an exported signature.
-    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
-    const rawBucket = platformEnv[resolved.bucketBinding];
+    // 7. Store put-first with R2-head dedup, commit nothing. The raw bucket binding is read from
+    //    the Worker env by the site's configured name. r2Store wraps it as the narrow MediaStore
+    //    seam; R2Bucket is named only for this cast and never in an exported signature.
+    const rawBucket = env[resolved.bucketBinding];
     if (!rawBucket) return refuse(503, 'binding_missing');
     const store = r2Store(rawBucket as R2Bucket);
 

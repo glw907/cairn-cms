@@ -17,6 +17,7 @@ import { commitFailure, type CommitLogFields } from './commit-log.js';
 import type { CairnEvent } from './types.js';
 import type { Editor } from '../auth/types.js';
 import type { PreviewTokenConfig } from './preview.js';
+import { env } from './workers-env.js';
 // Deliberately absent from the imports above: @anthropic-ai/sdk. It is server-only (it carries the
 // API-key path and must never reach a browser bundle), and it is an OPTIONAL peer dependency, so a
 // static import here would be a build-time resolution every consumer had to satisfy whether or not
@@ -362,7 +363,7 @@ export function createContentRoutesContext(config: ContentRoutesConfig): Content
    *  `connect`, so a per-request resolve re-signs only on a cache miss.
    */
   function resolveBackend(event: CairnEvent): Backend {
-    return event.locals.cairnBackend ?? runtime.backend.connect(event.platform?.env ?? {});
+    return event.locals.cairnBackend ?? runtime.backend.connect(env);
   }
 
   // Tests (and the packaged dev backend's deterministic stub) inject a fake through

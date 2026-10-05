@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { parse as devalueParse } from 'devalue';
 
 // The media Phase 2a vertical slice, end to end against the running showcase with the fake R2
-// double on platform.env (hooks.server.ts) and the fake-github double recording commits. It proves
+// double in the Worker env (hooks.server.ts) and the fake-github double recording commits. It proves
 // the three legs Task 10 owns:
 //
 //   1. Ingest: the upload action stores a PNG under the fake R2 bucket and returns a `media:`

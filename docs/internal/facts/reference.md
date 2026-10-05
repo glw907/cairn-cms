@@ -1019,7 +1019,7 @@ re-sourced to Go on this tree rather than to the page.
   structurally drift; `entryLoad` is lookup-then-compose over this function with no `overrides`, so
   its output is unchanged from before the function existed. Source:
   `src/lib/delivery/public-routes.ts:139` (`composeEntryData` defined), `:213-217` (`entryLoad`:
-  `composeEntryData(config, entry)`, no `overrides`), `src/lib/sveltekit/preview.ts:505,523`
+  `composeEntryData(config, entry)`, no `overrides`), `src/lib/sveltekit/preview.ts:488,506`
   (`loadPreview`: `composeEntryData(config, ..., resolvers)`). [verified]
 - `f:83gbov` `EntryData.heroImage` is undefined when no hero is set, media is off, or the frontmatter `media:`
   reference does not resolve; the canonical token itself (`entry.frontmatter.image.src`) is left
@@ -1644,7 +1644,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `UnauditedActionError(500, ...)` in dev (gated by `esm-env`'s `DEV`, overridable via
   `deps.isDev`), and logs `admin.action.unaudited` in production instead of throwing. A handler
   that returns SvelteKit's `fail()` (detected via `isActionFailure`) is exempt from this check.
-  Source: `src/lib/sveltekit/admin-action.ts:320-322` (`if (emitted === 0 &&
+  Source: `src/lib/sveltekit/admin-action.ts:307-309` (`if (emitted === 0 &&
   !isActionFailure(result)) { if (dev) throw new UnauditedActionError(...); log.error('admin.
   action.unaudited', ...); }`). [verified]
 - `f:e8r5f7` `ctx.audit`'s sink call catches both a synchronous throw and a rejecting promise from the site's

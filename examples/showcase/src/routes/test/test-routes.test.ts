@@ -8,6 +8,11 @@ import { captureDeliver, resetCapture } from '../../members/capture-transport.js
 // its check would answer 200 instead of reaching an empty-handed 404 by accident, and each route
 // has a control that proves the same setup does reach the handler when the backend is on.
 
+// The members routes read the Worker env from `cloudflare:workers`, which exists only where a
+// Worker runs; each case installs its bindings in this stand-in before calling the route.
+const workerEnv = vi.hoisted((): Record<string, unknown> => ({}));
+vi.mock('cloudflare:workers', () => ({ env: workerEnv }));
+
 const revokeSessions = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock('../../members/channel.js', () => ({
   memberChannel: { resolveSubject: async () => 'member-test', revokeSessions },
@@ -20,10 +25,12 @@ vi.mock('#theme/cairn.config.js', () => ({
   cairn: { rendering: { render: async () => '<p>rendered</p>' } },
 }));
 
-/** Build the fake event for `path` on `host`, with `env` as the worker's bindings. */
+/** Build the fake event for `path` on `host`, installing `env` as the worker's bindings. */
 function eventFor(path: string, host: string, env: Record<string, unknown>) {
+  for (const key of Object.keys(workerEnv)) delete workerEnv[key];
+  Object.assign(workerEnv, env);
   const url = new URL(`http://${host}${path}`);
-  return { url, request: new Request(url, { method: 'POST', body: '{}' }), platform: { env } };
+  return { url, request: new Request(url, { method: 'POST', body: '{}' }) };
 }
 
 /** A D1 stand-in that records each statement the route runs. */

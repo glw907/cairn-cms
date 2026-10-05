@@ -9,7 +9,7 @@ import CairnAdminShellDeskHarness from './_CairnAdminShellDeskHarness.svelte';
 // CairnAdminShell with a public payload wrapping LoginPage, the way the single mount renders login.
 import CairnAdminShellPublicLoginHarness from './_CairnAdminShellPublicLoginHarness.svelte';
 import { beforeNavigateCallbacks } from './_app-navigation.js';
-import type { BeforeNavigate } from '@sveltejs/kit';
+import type { BeforeNavigate } from '$app/navigation';
 // The compiled sheet carries the real .modal-box sizing and the utility layer (outline-hidden,
 // :focus-visible) the palette-inset and focus tests below measure against.
 import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';

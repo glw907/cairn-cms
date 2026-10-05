@@ -5,7 +5,7 @@
 // both the event parameter and the `OutputData` a load may return; each action goes into kit's own
 // `Actions` record. That is the whole claim. This file declares no generated `$app/types`, so
 // nothing here instantiates a route's real `RouteParams`, `ParentData`, or `RouteId`: it stands in
-// for a generated `PageServerLoad` on the same grounds `env-genericity.test.ts:136-141` records,
+// for a generated `PageServerLoad` on the same grounds `env-genericity.test.ts:87-92` records,
 // that with no generated app in this repo `RequestEvent['params']` already resolves to
 // `Record<string, string>` and a generated app only ever narrows it to a subtype.
 //
@@ -15,15 +15,11 @@
 // media-janitorial actions must stay absent from the rendered `/sveltekit` shape in
 // `docs/internal/api-surface.md`.
 //
-// This file imports the source module, not the package barrel, so it proves the SOURCE type. It
-// mirrors `env-genericity.test.ts`'s local platform override rather than a `declare global
-// App.Platform`, which would leak the simulated platform typing across the whole suite's compile.
+// This file imports the source module, not the package barrel, so it proves the SOURCE type.
 import { describe, it, expect } from 'vitest';
 import { createContentRoutes, type ContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { AdminShellData } from '../../lib/sveltekit/content-routes-shell.js';
-import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/platform-bindings.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { D1Database } from '@cloudflare/workers-types';
 import type { Actions, RequestEvent, ServerLoad, ServerLoadEvent } from '@sveltejs/kit';
 
 // The one runtime test in this compile-only file. Vitest fails a `.test.ts` that declares no suite
@@ -36,14 +32,11 @@ describe('content-routes hand-mount compile fixtures', () => {
   });
 });
 
-/** A compliant site's `Platform.env`, as `platform-bindings.ts` documents it, plus one site binding. */
-type SiteEnv = CairnPlatformBindings & CairnMediaBindings & { APP_DB: D1Database };
+/** A site's generated `RequestEvent`; kit's own type. */
+type SiteRequestEvent = RequestEvent;
 
-/** A site's generated `RequestEvent` once its `app.d.ts` declares `interface Platform { env: SiteEnv }`. */
-type SiteRequestEvent = Omit<RequestEvent, 'platform'> & { platform: Readonly<{ env: SiteEnv }> | undefined };
-
-/** The same local override for a generated `PageServerLoad`/`LayoutServerLoad` event. */
-type SiteServerLoadEvent = Omit<ServerLoadEvent, 'platform'> & { platform: Readonly<{ env: SiteEnv }> | undefined };
+/** A generated `PageServerLoad`/`LayoutServerLoad` event. */
+type SiteServerLoadEvent = ServerLoadEvent;
 
 // Every load in the narrow set, pinned into kit's own `ServerLoad`, which is what a site's
 // `export const load = …` assigns into. `ServerLoad` constrains the return as well as the event: a

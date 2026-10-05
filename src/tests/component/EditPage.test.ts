@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent, page } from 'vitest/browser';
-import type { BeforeNavigate } from '@sveltejs/kit';
+import type { BeforeNavigate } from '$app/navigation';
 import { stringify as devalueStringify } from 'devalue';
 import * as ingest from '../../lib/admin/client-ingest.js';
 import * as tidyValidateModule from '../../lib/admin/tidy-validate.js';

@@ -44,8 +44,8 @@ export default defineConfig({
     // src/chassis/README.md for the boundary rule); #lib is the site's own helpers (src/lib/).
     sveltekit({
       preprocess: vitePreprocess(),
-      // remoteBindings: false keeps the build-time platform proxy from connecting to Cloudflare
-      // during prerender, which has no account credentials in CI.
+      // remoteBindings: false keeps `vite dev`'s platform proxy local, so a binding marked
+      // `remote` never asks for Cloudflare account credentials during development.
       adapter: adapter({ platformProxy: { remoteBindings: false } }),
       prerender: {
         // The cairnManifest() plugin verifies the manifest in buildStart, outside the prerender

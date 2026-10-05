@@ -26,6 +26,7 @@ import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
 import type { ContentFormFailure } from '../../lib/sveltekit/content-routes.js';
 import type { D1Database } from '@cloudflare/workers-types';
+import { withTestEnv } from '../helpers/with-test-env.js';
 
 /** A minimal D1Database double whose every prepared statement's `run()` throws `message`, for
  *  proving clearPreviewTokens's two-tier catch against a non-benign D1 fault without corrupting
@@ -48,7 +49,8 @@ const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const ID = '2026-08-06-hello';
 const ENTRY_PATH = `src/content/posts/${ID}.md`;
 const BRANCH = `cairn/posts/${ID}`;
-const ORIGIN = 'https://site.example';
+// The PUBLIC_ORIGIN var wrangler.test.jsonc binds, the origin every minted link must carry.
+const ORIGIN = 'https://test.dev';
 
 function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
   return baseRuntime({
@@ -63,7 +65,7 @@ function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
   });
 }
 
-/** A driven request for `id`, with the AUTH_DB and PUBLIC_ORIGIN env every action under test needs.
+/** A driven request for `id`, under the Worker env's AUTH_DB and PUBLIC_ORIGIN.
  *  The request's own host is deliberately a different origin than PUBLIC_ORIGIN, so a test that
  *  asserts the minted URL derives from config, not the host, has a real divergence to catch. */
 function actionEvent(id: string, form: Record<string, string> = {}) {
@@ -71,7 +73,6 @@ function actionEvent(id: string, form: Record<string, string> = {}) {
     url: `https://attacker.example/admin/posts/${id}`,
     params: { concept: 'posts', id },
     form,
-    env: { AUTH_DB: db, PUBLIC_ORIGIN: ORIGIN },
   });
 }
 
@@ -121,7 +122,6 @@ describe('mintPreview', () => {
       route: { id: '/queue/share' },
       request: new Request(url, { method: 'POST' }),
       locals: { cairnEditor: { email, displayName: role, role, capability }, cairnBackend: eventBackend },
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: ORIGIN } },
       cookies: { get: () => undefined, set: () => {}, delete: () => {} },
       setHeaders: () => {},
     };
@@ -248,13 +248,9 @@ describe('revokePreview', () => {
 
   /** An event for a direct revokePreview call, mirroring mintPreview's own mintEvent: off
    *  `/admin/[concept]/[id]` and carrying no route params at all, so the target read from the
-   *  argument rather than the route is what a site's own workflow route relies on. `db` defaults
-   *  to the real harness AUTH_DB and is overridable to prove the authorization-before-delete
-   *  ordering against a DB that would throw if ever reached. */
-  function revokeEvent(
-    opts: { role?: string; capability?: 'owner' | 'editor' | 'none'; email?: string; db?: D1Database } = {},
-  ) {
-    const { role = 'editor', capability = 'editor', email = `${role}@t`, db: authDb = db } = opts;
+   *  argument rather than the route is what a site's own workflow route relies on. */
+  function revokeEvent(opts: { role?: string; capability?: 'owner' | 'editor' | 'none'; email?: string } = {}) {
+    const { role = 'editor', capability = 'editor', email = `${role}@t` } = opts;
     const url = 'https://site.example/queue/revoke';
     return {
       url: new URL(url),
@@ -262,7 +258,6 @@ describe('revokePreview', () => {
       route: { id: '/queue/revoke' },
       request: new Request(url, { method: 'POST' }),
       locals: { cairnEditor: { email, displayName: role, role, capability } },
-      platform: { env: { AUTH_DB: authDb, PUBLIC_ORIGIN: ORIGIN } },
       cookies: { get: () => undefined, set: () => {}, delete: () => {} },
       setHeaders: () => {},
     };
@@ -309,10 +304,8 @@ describe('revokePreview', () => {
     // A throwing AUTH_DB would surface as an uncaught Error, not an HttpError, if the delete ever
     // ran: the 403 alone proves requireEditor/requireEngineAccess short-circuited first.
     const refusal = await expectHttpError(() =>
-      revokePreview(
-        runtime({ access: DENY_POSTS }),
-        revokeEvent({ role: 'other-editor', db: throwingDb('boom') }),
-        TARGET,
+      withTestEnv({ AUTH_DB: throwingDb('boom') }, () =>
+        revokePreview(runtime({ access: DENY_POSTS }), revokeEvent({ role: 'other-editor' }), TARGET),
       ),
     );
     expect(refusal.status).toBe(403);
@@ -488,13 +481,12 @@ describe('clearPreviewTokens (two-tier failure handling, discardAction as the ve
   it('a missing-table error is silent: no preview.cleanup_failed record, and the action still succeeds', async () => {
     ghWithBranch().install();
     const routes = createContentRoutes({ runtime: runtime() });
-    const event = {
-      ...actionEvent(ID),
-      platform: { env: { AUTH_DB: throwingDb('no such table: preview_tokens'), PUBLIC_ORIGIN: ORIGIN } },
-    };
+    const event = actionEvent(ID);
     let location = '';
     const captured = await records(async () => {
-      const result = await expectRedirect(() => routes.discardAction(event));
+      const result = await expectRedirect(() =>
+        withTestEnv({ AUTH_DB: throwingDb('no such table: preview_tokens') }, () => routes.discardAction(event)),
+      );
       location = result.location;
     });
     expect(location).toBe('/admin/posts');
@@ -504,13 +496,12 @@ describe('clearPreviewTokens (two-tier failure handling, discardAction as the ve
   it('a non-benign D1 error logs preview.cleanup_failed, and the action still succeeds', async () => {
     ghWithBranch().install();
     const routes = createContentRoutes({ runtime: runtime() });
-    const event = {
-      ...actionEvent(ID),
-      platform: { env: { AUTH_DB: throwingDb('D1_ERROR: disk I/O error'), PUBLIC_ORIGIN: ORIGIN } },
-    };
+    const event = actionEvent(ID);
     let location = '';
     const captured = await records(async () => {
-      const result = await expectRedirect(() => routes.discardAction(event));
+      const result = await expectRedirect(() =>
+        withTestEnv({ AUTH_DB: throwingDb('D1_ERROR: disk I/O error') }, () => routes.discardAction(event)),
+      );
       location = result.location;
     });
     expect(location).toBe('/admin/posts');
@@ -537,7 +528,6 @@ describe('authorization: the view gate is not authorization (the round High)', (
       route: { id: '/admin/[...path]' },
       request: new Request(url, { method: 'POST' }),
       locals: { cairnEditor: { email: `${role}@t`, displayName: role, role, capability } },
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: ORIGIN } },
       cookies: { get: () => undefined, set: () => {}, delete: () => {} },
       setHeaders: () => {},
     };
@@ -612,7 +602,6 @@ describe('lifecycle cleanup', () => {
       url: 'https://t.example/admin/posts',
       params: { concept: 'posts' },
       form: { id: ID },
-      env: { AUTH_DB: db, PUBLIC_ORIGIN: ORIGIN },
     });
     await expectRedirect(() => routes.listDeleteAction(event));
     expect(await findPreviewToken(db, 'list-delete-hash')).toBeNull();
@@ -627,7 +616,6 @@ describe('lifecycle cleanup', () => {
       url: `https://t.example/admin/posts/${ID}`,
       params: { concept: 'posts', id: ID },
       form: { slug: 'new-slug' },
-      env: { AUTH_DB: db, PUBLIC_ORIGIN: ORIGIN },
     });
     await expectRedirect(() => routes.renameAction(event));
     expect(await findPreviewToken(db, 'rename-hash')).toBeNull();

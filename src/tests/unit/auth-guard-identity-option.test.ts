@@ -7,6 +7,7 @@ import type { D1Database } from '@cloudflare/workers-types';
 import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
 import type { IdentityResolver } from '../../lib/sveltekit/guard.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 
 // createAuthGuard is annotated `: Handle`, kit's own ambient type (the interop carve-out); the
 // cast below bridges it to the lighter CairnEvent shape this file's fakes build, mirroring
@@ -24,6 +25,9 @@ function asHandle(guard: ReturnType<typeof createAuthGuard>): (input: {
 const OK = new Response('ok');
 
 function event(pathname: string): CairnEvent {
+  // A truthy stand-in clears the guard's bindings check without a real D1Database; this file
+  // never calls resolveSession or findEditor, so the stub's shape is never read.
+  setFakeEnv({ AUTH_DB: {} as unknown as D1Database });
   const url = `https://test.dev${pathname}`;
   return {
     url: new URL(url),
@@ -36,9 +40,6 @@ function event(pathname: string): CairnEvent {
       delete: () => {},
     },
     locals: {},
-    // A truthy stand-in clears the guard's bindings check without a real D1Database; this file
-    // never calls resolveSession or findEditor, so the stub's shape is never read.
-    platform: { env: { AUTH_DB: {} as unknown as D1Database } },
     setHeaders: () => {},
   };
 }

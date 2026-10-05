@@ -25,6 +25,7 @@ import { probeTidyKey, type TidyKeyProbeResult } from './tidy-key-probe.js';
 import { cachedProbeResult } from './tidy-key-health.js';
 import type { ContentRoutesContext } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
+import { env } from './workers-env.js';
 
 /**
  * The two-tier tidy settings load (spec 2.8). The developer tier is read-only: `enabled`,
@@ -205,7 +206,6 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  that a non-empty `ANTHROPIC_API_KEY` exists and the value never leaves the server.
    */
   function keyConfigured(event: CairnEvent): boolean {
-    const env = (event.platform?.env ?? {}) as Record<string, unknown>;
     return typeof env.ANTHROPIC_API_KEY === 'string' && env.ANTHROPIC_API_KEY.length > 0;
   }
 
@@ -244,7 +244,6 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       if (cached !== null) {
         keyStatus = cached;
       } else {
-        const env = (event.platform?.env ?? {}) as Record<string, unknown>;
         const apiKey = typeof env.ANTHROPIC_API_KEY === 'string' ? env.ANTHROPIC_API_KEY : '';
         keyStatus = await probeTidyKey(ctx.anthropicClient({ apiKey }), ctx.tidyTimeoutMs);
       }

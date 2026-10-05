@@ -97,20 +97,18 @@ export type {
   CairnEvent,
   CookieJar,
   HandleInput,
-  PlatformContext,
   CookieSetOptions,
   HistoryData,
   RevertOutcome,
 } from './types.js';
-// Re-exported here, not just from root, so the app.d.ts Platform block can name it.
+// Re-exported here, not just from root, beside the event and binding types it describes.
 export type { CairnEnv } from '../env.js';
 // `AuthBranding`'s canonical home is this subpath (ruling `audit-adapter-authbranding`,
 // docs/internal/engine-rulings.md), since `AuthRoutesConfig.branding` is the one public
 // signature naming it and the root barrel no longer re-exports it. `MagicLinkMessage`,
 // `SendMagicLink`, and `EmailSender` keep canonical home `.`.
 export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from '../email.js';
-// The binding-shaped types a site's app.d.ts intersects into its own Platform.env; /sveltekit is
-// their canonical home.
+// The binding-shaped types a site's generated `Env` satisfies; /sveltekit is their canonical home.
 export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindings.js';
 
 // Every remaining type a factory or wrapper's own signature names is re-exported here so a site

@@ -18,6 +18,8 @@ import {
 import { requireEditor, requireEngineAccess } from './guard.js';
 import { isMissingTableError } from './content-routes-shared.js';
 import { requireDb } from '../env.js';
+import { env } from './workers-env.js';
+import { isBuilding } from './building.js';
 import { CairnError } from '../diagnostics/index.js';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { isValidId, filenameFromId } from '../content/ids.js';
@@ -140,7 +142,6 @@ export async function mintPreview(
   // Both config faults answer before any network read: a misconfigured TTL and a missing AUTH_DB
   // are site setup, not entry state, so neither waits on GitHub.
   const ttlMs = resolveTtlMs(config);
-  const env = event.platform?.env ?? {};
   const db = requireDb(env);
 
   // A preview shares a draft; without one there is nothing to share. Reached through the same
@@ -205,7 +206,6 @@ export async function revokePreview(
   requireEngineAccess(runtime.access, editor, concept.id);
   if (!isValidId(target.entryId)) return { outcome: 'invalid-id' };
 
-  const env = event.platform?.env ?? {};
   const db = requireDb(env);
   const count = await deletePreviewTokens(db, concept.id, target.entryId);
   log.info('preview.token.revoked', { concept: concept.id, id: target.entryId, editor: editor.email, count });
@@ -413,31 +413,15 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  the route path and never appears on the page at all.
  * @throws Error naming `export const prerender = false` when `building` (`$app/env`) is
  *  true, so a site that lets this route prerender gets a red build instead of a token-bearing
- *  static asset. `$app/env` is imported dynamically, at call time, rather than at module
- *  scope: this module is reachable through the `/sveltekit` barrel, and a barrel re-export pulls
- *  in every other export's own top-level imports, so a module-scope `$app/env` import
- *  here would break a consumer that bundles a single barrel export (for example
- *  `createD1AuditSink`, for a Cloudflare Cron handler) with a plain, non-Vite esbuild pass that
- *  has no SvelteKit plugin to resolve the virtual module. The dynamic import is further wrapped in
- *  `try`/`catch`: esbuild resolves an unwrapped `import()` literal the same way it resolves a
- *  static import at bundle time, and still fails the same build even without a barrel re-export in
- *  the way. A `try`/`catch` around it is esbuild's own documented escape hatch, downgrading the
- *  unresolvable specifier to a runtime concern instead of a bundle-time error. Outside a real
- *  SvelteKit build the import always rejects (there is no `$app/env` module to resolve),
- *  and `building` falls back to `false`: a `/preview/[token]` route carries a token in its own
- *  path and is never prerendered, so `false`, meaning "proceed, we are not prerendering," is the
- *  correct value for every context this fallback can run in.
+ *  static asset. The flag is read through {@link isBuilding}, which keeps a static `$app/env`
+ *  import out of the `/sveltekit` barrel; outside a real SvelteKit build it answers `false`, which
+ *  is correct here, since a `/preview/[token]` route carries a token in its own path and is never
+ *  prerendered.
  */
 export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData> {
   event.setHeaders(PREVIEW_HEADERS);
 
-  let building = false;
-  try {
-    ({ building } = await import('$app/env'));
-  } catch {
-    building = false;
-  }
-  if (building) {
+  if (await isBuilding()) {
     throw new Error(
       'cairn: loadPreview ran during the build. A preview link is a bearer credential; prerendering ' +
         'it would ship a token in a static asset. Add `export const prerender = false;` to this route.',
@@ -447,7 +431,6 @@ export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesCon
   const token = event.params.token ?? '';
   if (!TOKEN_SHAPE_RE.test(token)) throw error(404, NOT_FOUND_MESSAGE);
 
-  const env = event.platform?.env ?? {};
   let db: D1Database;
   try {
     db = requireDb(env);

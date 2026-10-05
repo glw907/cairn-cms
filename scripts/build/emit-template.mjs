@@ -11,8 +11,12 @@
 // Every line from the start marker through the end marker, inclusive, is dropped. The pass is
 // fail-loud by design: an unterminated start, a nested start, or an end with no start throws,
 // naming the file, because a silently dropped end marker would truncate the rest of the file.
+import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { cp, readFile, writeFile, rm, mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { walk } from '../walk-files.mjs';
 
 const EXCLUDE_START = 'cairn-template:exclude-start';
@@ -154,6 +158,28 @@ async function regenerateManifest(from, to, exclude) {
   );
 }
 
+/** The repo root's own installed wrangler, the one version every regeneration uses. */
+const WRANGLER_BIN = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../node_modules/.bin/wrangler');
+
+/** The file `wrangler types` writes the Worker `Env` into, at a site's root. */
+const WORKER_TYPES_FILE = 'worker-configuration.d.ts';
+
+/**
+ * Regenerate an emitted tree's `worker-configuration.d.ts` from the tree's own `wrangler.jsonc`,
+ * when the source shipped one. The source's file describes the source's config, and the marker
+ * strip removes bindings from the emitted config (the showcase's members fixture database), so a
+ * copied file would name a binding the emitted site never binds. Runtime types stay out of the
+ * file; the site takes them from `@cloudflare/workers-types`.
+ * @param {string} tree the emitted tree's root, after the marker strip
+ * @param {string[]} [extraArgs] further `wrangler types` arguments, such as an `--env-file` naming
+ *  the secrets a template declares
+ * @returns {Promise<void>}
+ */
+export async function regenerateWorkerTypes(tree, extraArgs = []) {
+  if (!existsSync(path.join(tree, WORKER_TYPES_FILE))) return;
+  await promisify(execFile)(WRANGLER_BIN, ['types', ...extraArgs, '--include-runtime=false'], { cwd: tree });
+}
+
 /**
  * Emit the template tree.
  * @param {{ from: string, to: string, engineSpec: string, devSpec: string, name?: string }} opts
@@ -192,6 +218,7 @@ export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cair
   await rm(path.join(to, 'package-lock.json'), { force: true });
   await stripMarkedBlocksInTree(to);
   await regenerateManifest(from, to, exclude);
+  await regenerateWorkerTypes(to);
   return to;
 }
 

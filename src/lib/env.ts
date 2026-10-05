@@ -68,7 +68,7 @@ export function requireOrigin(env: { PUBLIC_ORIGIN?: string }): string {
 /**
  * Returns the `AUTH_DB` binding, or throws a clear error when a site has not wired it.
  *
- * The handlers read D1 off `event.platform.env`; without this a misconfigured binding
+ * The handlers read D1 off the Worker env; without this a misconfigured binding
  * surfaces as a raw `TypeError` deep in a store call. This gives the failure a name.
  * @throws CairnError (`config.bindings-missing`) when `AUTH_DB` is missing.
  */

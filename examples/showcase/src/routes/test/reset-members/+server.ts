@@ -15,17 +15,18 @@
 // for why both checks (host and env) are independent of the build fold.
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { env } from 'cloudflare:workers';
 import { resetCapture } from '../../../members/capture-transport.js';
 
 function isLocalHost(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
 }
 
-export const POST: RequestHandler = async ({ url, platform }) => {
-  if (!isLocalHost(url.hostname) || platform?.env?.CAIRN_DEV_BACKEND !== '1') {
+export const POST: RequestHandler = async ({ url }) => {
+  if (!isLocalHost(url.hostname) || env.CAIRN_DEV_BACKEND !== '1') {
     error(404, 'Not found');
   }
-  const db = platform?.env?.MEMBER_DB;
+  const db = env.MEMBER_DB;
   if (!db) {
     error(404, 'Not found');
   }

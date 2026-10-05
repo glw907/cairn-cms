@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 
 // The media Phase 3c Media Library, end to end against the running showcase behind the fake backend
-// (the fake R2 double on platform.env and the fake-github recorder, the same harness the other media
+// (the fake R2 double in the Worker env and the fake-github recorder, the same harness the other media
 // specs use). It drives the real /admin/media screen over a seeded asset set:
 //
 //   - a used + described asset (mountain-pass), referenced by the seed post on main, so its

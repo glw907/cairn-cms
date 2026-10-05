@@ -6,16 +6,16 @@ import { createSession } from '../../lib/auth/store.js';
 import { sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
+import { withTestEnv } from '../helpers/with-test-env.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 
 const db = env.AUTH_DB;
 
 /**
- * createAuthGuard is annotated `: Handle`, kit's own ambient type (the interop carve-out); its
- *  real runtime parameter is the lighter, generic CairnEvent shape every fixture in this file
- *  builds, and this package's own compile unit declares no ambient App.Platform.env for kit's
- *  RequestEvent to resolve through (see env-genericity.test.ts's own note on this same gap), so
- *  every construction in this file bridges it through this one shim rather than casting per call.
+ * createAuthGuard is annotated `: Handle`, kit's own type (the interop carve-out); its real
+ *  runtime parameter is the lighter CairnEvent shape every fixture in this file builds, which
+ *  lacks most of kit's RequestEvent members, so every construction in this file bridges it
+ *  through this one shim rather than casting per call.
  */
 function asHandle(guard: ReturnType<typeof createAuthGuard>): (input: {
   event: CairnEvent;
@@ -43,7 +43,6 @@ function event(pathname: string, cookies = makeCookies()): CairnEvent {
     route: { id: '/admin/[...path]' },
     cookies,
     locals: {},
-    platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
     setHeaders: () => {},
   };
 }
@@ -57,7 +56,6 @@ function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies())
     route: { id: '/admin/[...path]' },
     cookies,
     locals: {},
-    platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: `https://${host}` } },
     setHeaders: () => {},
   };
 }
@@ -81,7 +79,6 @@ function formEvent(
     route: { id: '/admin/[...path]' },
     cookies: makeCookies(cookieMap),
     locals: {},
-    platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
     setHeaders: () => {},
   };
 }
@@ -363,7 +360,6 @@ describe('CSRF (cairn owns the admin token, the framework owns the Origin check)
       route: { id: '/admin/[concept]/[id]' },
       cookies,
       locals: {},
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
     const res = await handle({ event: ev, resolve: async () => OK });
@@ -387,7 +383,6 @@ describe('CSRF (cairn owns the admin token, the framework owns the Origin check)
       route: { id: '/admin/[concept]/[id]' },
       cookies,
       locals: {},
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
     // The header-CSRF path must NOT consume or clone the body, so a downstream action can still read
@@ -416,6 +411,11 @@ describe('CSRF (cairn owns the admin token, the framework owns the Origin check)
 });
 
 describe('missing AUTH_DB binding (operator fault)', () => {
+  /** The guard under a Worker env with no AUTH_DB binding. */
+  function handleUnbound(input: Parameters<typeof handle>[0]): Promise<Response> {
+    return withTestEnv({ AUTH_DB: undefined }, () => handle(input));
+  }
+
   function unboundEvent(pathname: string): CairnEvent {
     const url = `https://test.dev${pathname}`;
     return {
@@ -425,7 +425,6 @@ describe('missing AUTH_DB binding (operator fault)', () => {
       route: { id: '/admin/[...path]' },
       cookies: makeCookies(),
       locals: {},
-      platform: { env: { PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
   }
@@ -433,7 +432,7 @@ describe('missing AUTH_DB binding (operator fault)', () => {
   it('serves the bindings condition page for a gated request and never resolves', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     let resolved = false;
-    const res = await handle({
+    const res = await handleUnbound({
       event: unboundEvent('/admin'),
       resolve: async () => {
         resolved = true;
@@ -451,7 +450,7 @@ describe('missing AUTH_DB binding (operator fault)', () => {
 
   it('logs guard.refused at error level with reason=bindings and the condition id', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await handle({ event: unboundEvent('/admin'), resolve: async () => OK });
+    await handleUnbound({ event: unboundEvent('/admin'), resolve: async () => OK });
     const records = errorSpy.mock.calls.map(
       (c) => c[0] as { event?: string; reason?: string; conditionId?: string; path?: string },
     );
@@ -472,7 +471,7 @@ describe('missing AUTH_DB binding (operator fault)', () => {
     // mint a token into. The branded condition page is the honest answer for every admin path.
     vi.spyOn(console, 'error').mockImplementation(() => {});
     let resolved = false;
-    const res = await handle({
+    const res = await handleUnbound({
       event: unboundEvent('/admin/login'),
       resolve: async () => {
         resolved = true;
@@ -491,7 +490,12 @@ describe('missing AUTH_DB binding (operator fault)', () => {
 describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => {
   // AUTH_DB is bound so a refusal proves the tripwire fires before the bindings/session logic, not
   // because a binding is missing. The string '1' is the Worker-var form the dev backend sets.
-  function devBackendEvent(pathname: string, flag: string | boolean): CairnEvent {
+  /** The guard under a Worker env carrying the dev-backend flag. */
+  function handleFlagged(flag: string | boolean, input: Parameters<typeof handle>[0]): Promise<Response> {
+    return withTestEnv({ CAIRN_DEV_BACKEND: flag }, () => handle(input));
+  }
+
+  function devBackendEvent(pathname: string): CairnEvent {
     const url = `https://test.dev${pathname}`;
     return {
       url: new URL(url),
@@ -500,7 +504,6 @@ describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => 
       route: { id: '/admin/[...path]' },
       cookies: makeCookies(),
       locals: {},
-      platform: { env: { AUTH_DB: db, CAIRN_DEV_BACKEND: flag } },
       setHeaders: () => {},
     };
   }
@@ -508,8 +511,8 @@ describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => 
   it('refuses with 503, never resolves, and logs guard.refused reason=dev_backend_in_prod', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     let resolved = false;
-    const res = await handle({
-      event: devBackendEvent('/admin', '1'),
+    const res = await handleFlagged('1', {
+      event: devBackendEvent('/admin'),
       resolve: async () => {
         resolved = true;
         return OK;
@@ -530,7 +533,7 @@ describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => 
 
   it('trips on the boolean true form as well', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    const res = await handle({ event: devBackendEvent('/admin', true), resolve: async () => OK });
+    const res = await handleFlagged(true, { event: devBackendEvent('/admin'), resolve: async () => OK });
     expect(res.status).toBe(503);
     vi.restoreAllMocks();
   });
@@ -615,7 +618,6 @@ describe('guard.refused CSRF discriminator (Task 3): detail, witness, hasSession
       route: { id: '/admin/[...path]' },
       cookies: makeCookies({ [csrfCookieName(true)]: 'TOK' }),
       locals: {},
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
     const res = await handle({ event: ev, resolve: async () => OK });
@@ -642,7 +644,6 @@ describe('guard.refused CSRF discriminator (Task 3): detail, witness, hasSession
       route: { id: '/admin/[...path]' },
       cookies: makeCookies({ [csrfCookieName(true)]: 'TOK' }),
       locals: {},
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
     await handle({ event: ev, resolve: async () => OK });
@@ -669,7 +670,6 @@ describe('guard.refused CSRF discriminator (Task 3): detail, witness, hasSession
       route: { id: '/admin/[concept]/[id]' },
       cookies: sessionCookies,
       locals: {},
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
     await handle({ event: ev, resolve: async () => OK });

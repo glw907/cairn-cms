@@ -6,14 +6,16 @@
 // mode beside the dev server, so an edit under src/routes/admin recompiles .cairn/admin.css
 // without a manual rebuild.
 import { spawn } from 'node:child_process';
+import { platform } from 'node:os';
 
-const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+const windows = platform() === 'win32';
+const npx = windows ? 'npx.cmd' : 'npx';
 const tailwind = spawn(
   npx,
   ['--no-install', '@tailwindcss/cli', '-i', 'src/admin.css', '-o', '.cairn/admin.css', '--watch'],
   {
     stdio: 'inherit',
-    shell: process.platform === 'win32',
+    shell: windows,
   },
 );
 tailwind.on('error', (cause) => {
@@ -22,7 +24,7 @@ tailwind.on('error', (cause) => {
 
 const child = spawn(npx, ['--no-install', 'vite', 'dev', ...process.argv.slice(2)], {
   stdio: 'inherit',
-  shell: process.platform === 'win32',
+  shell: windows,
   env: { ...process.env, CAIRN_DEV_BACKEND: '1' },
 });
 child.on('error', (cause) => {

@@ -50,17 +50,17 @@ export function isLocalHost(hostname: string): boolean {
 }
 
 /**
- * Read `PUBLIC_ORIGIN` from the Worker env a request carries on `platform.env`. The read has one
- * source: a process-level `PUBLIC_ORIGIN` carries no meaning here, so the answer never depends on
- * the shell the runtime was started from. An empty string counts as absent, since a var set to
- * `''` configures nothing.
+ * Read `PUBLIC_ORIGIN` from the Worker env the caller passes, the module `env` from
+ * `cloudflare:workers`. The read has one source: a process-level `PUBLIC_ORIGIN` carries no meaning
+ * here, so the answer never depends on the shell the runtime was started from. An empty string
+ * counts as absent, since a var set to `''` configures nothing.
  *
  * Both consumers, {@link isDeployedHost} and `csrfSecure` (`sveltekit/csrf.ts`), read through this
  * one function, so the deployment witness and the cookie-name decision resolve the same origin.
  */
-export function readPublicOrigin(platformEnv: unknown): string | undefined {
-  const env = typeof platformEnv === 'object' && platformEnv !== null ? (platformEnv as Record<string, unknown>) : undefined;
-  const value = env?.PUBLIC_ORIGIN;
+export function readPublicOrigin(env: unknown): string | undefined {
+  const bindings = typeof env === 'object' && env !== null ? (env as Record<string, unknown>) : undefined;
+  const value = bindings?.PUBLIC_ORIGIN;
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
@@ -68,8 +68,8 @@ export function readPublicOrigin(platformEnv: unknown): string | undefined {
  * Decide whether this request is being served by a deployed runtime rather than local
  * development, the witness a dev-backend refusal pairs with the flag itself.
  *
- * `event.url` derives from the client `Host` header everywhere except Cloudflare, so a caller who
- * asked `isLocalHost(event.url.hostname)` alone could be talked out of refusing by a forged
+ * The request URL derives from the client `Host` header everywhere except Cloudflare, so a caller
+ * who asked `isLocalHost(url.hostname)` alone could be talked out of refusing by a forged
  * `Host: localhost`. The site's own configured `PUBLIC_ORIGIN` is not client-controlled, so it is
  * consulted first: a `PUBLIC_ORIGIN` naming a non-local host settles the question outright,
  * whatever the request claims about itself. The rule is monotonic toward refusing. A configuration
@@ -80,8 +80,8 @@ export function readPublicOrigin(platformEnv: unknown): string | undefined {
  * The residual is honest: a deployment that sets
  * no `PUBLIC_ORIGIN` still rests on the Host-derived fallback.
  */
-export function isDeployedHost(event: { url: URL; platform?: { env?: unknown } | undefined }): boolean {
-  const origin = readPublicOrigin(event.platform?.env);
+export function isDeployedHost(url: URL, env: unknown): boolean {
+  const origin = readPublicOrigin(env);
   if (origin !== undefined) {
     try {
       if (!isLocalHost(new URL(origin).hostname)) return true;
@@ -89,5 +89,5 @@ export function isDeployedHost(event: { url: URL; platform?: { env?: unknown } |
       // An unparseable PUBLIC_ORIGIN decides nothing; the request's own hostname answers below.
     }
   }
-  return !isLocalHost(event.url.hostname);
+  return !isLocalHost(url.hostname);
 }

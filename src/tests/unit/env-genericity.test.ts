@@ -1,12 +1,9 @@
 // cairn-cms: the env-genericity sweep's compile-only fixtures (pre-beta C1, Task 2). Each block
-// below proves whether one public factory's return value assigns into a site's own ambient-typed
-// route slot when App.Platform['env'] is a realistic compliant site's env: the documented
-// `CairnPlatformBindings & CairnMediaBindings` intersection (platform-bindings.ts), plus one
-// site-specific binding. This mirrors section-action.test.ts's own compile-only block (its Step 5):
-// a local type override, never a `declare global App.Platform`, which would leak the simulated
-// platform typing across the whole suite's compile. None of the functions below ever run;
-// `npm run check` is the only gate that reads them, so a fixture proves its claim by compiling, or
-// names the exact generic conversion its failure forces.
+// below proves one public factory's return value assigns into a site's own route slot: kit's real
+// `RequestEvent` or `ServerLoadEvent`, which carries no bindings, since the engine reads them from
+// `cloudflare:workers`. None of the functions below ever run; `npm run check` is the only gate that
+// reads them, so a fixture proves its claim by compiling, or names the exact generic conversion its
+// failure forces.
 import { describe, it, expect } from 'vitest';
 import { createCairnAdmin, type AdminData } from '../../lib/sveltekit/cairn-admin.js';
 import { createAuthGuard } from '../../lib/sveltekit/guard.js';
@@ -17,10 +14,8 @@ import { createEditorRoutes } from '../../lib/sveltekit/editors-routes.js';
 import { loadHealth, type HealthData } from '../../lib/sveltekit/health.js';
 import { createAdminAction } from '../../lib/sveltekit/admin-action.js';
 import { createMediaRoute } from '../../lib/sveltekit/media-route.js';
-import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/platform-bindings.js';
 import type { AdminShellData } from '../../lib/sveltekit/content-routes-shell.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { D1Database, SendEmail } from '@cloudflare/workers-types';
 import type { RequestEvent, ServerLoadEvent } from '@sveltejs/kit';
 
 // The one runtime test in this compile-only file. Vitest fails a `.test.ts` that declares no
@@ -41,50 +36,11 @@ describe('env-genericity compile fixtures', () => {
   });
 });
 
-/**
- * A realistic COMPLIANT site's Platform.env: the documented `CairnPlatformBindings &
- * CairnMediaBindings` intersection plus one site-specific binding. This proves the sweep's pins
- * assign clean for a site that follows `platform-bindings.ts`'s own documented pattern, which
- * every fixture below assumes.
- */
-type SiteEnv = CairnPlatformBindings & CairnMediaBindings & { APP_DB: D1Database };
+/** A site's generated route event; kit's own type, with the route's params already narrowed. */
+type SiteRequestEvent = RequestEvent;
 
-/**
- * A site's own generated `RequestEvent` once its `app.d.ts` declares `interface Platform { env:
- * SiteEnv }`: kit's real event type, with only `platform` overridden locally, so the simulated
- * platform typing never escapes this file. Matches section-action.test.ts's own `SiteRequestEvent`.
- */
-type SiteRequestEvent = Omit<RequestEvent, 'platform'> & { platform: Readonly<{ env: SiteEnv }> | undefined };
-
-/** The same local override for a generated `PageServerLoad`/`LayoutServerLoad`'s event. */
-type SiteServerLoadEvent = Omit<ServerLoadEvent, 'platform'> & { platform: Readonly<{ env: SiteEnv }> | undefined };
-
-/**
- * A site whose `Platform.env` is built the way `wrangler types` actually generates it, straight
- * from `@cloudflare/workers-types`, never intersected with cairn's own `CairnPlatformBindings`
- * (env-genericity finding 1, pre-beta C1 review pass, resolved by the R5 env-story ruling, C2
- * breaking-window pass). This once failed to assign: `@cloudflare/workers-types`'s `SendEmail.send`
- * overload returns `Promise<EmailSendResult>`, while `CairnPlatformBindings.EMAIL` (via `CairnEnv`,
- * `../../lib/env.ts`) declared `Promise<void>`. `CairnEnv['EMAIL']` is now typed against
- * `EmailSender` (`../../lib/email.ts`), whose `send` returns `Promise<unknown>`, which structurally
- * accepts the wider Cloudflare return type with no cast. This fixture now stands for the opposite
- * claim of its old name: a bare wrangler-generated env assigns cleanly into
- * `CairnPlatformBindings` with no intersection required, so `CairnPlatformBindings` is a
- * recommended convenience preset (catches a forgotten binding at compile time), not a requirement
- * every route factory's structural typing depends on. The `satisfies` below, with no directive,
- * is what fails this test the day a return-type narrowing on either side reopens the gap.
- */
-type BareWranglerSiteEnv = {
-  AUTH_DB: D1Database;
-  EMAIL: SendEmail;
-  PUBLIC_ORIGIN: string;
-  GITHUB_APP_PRIVATE_KEY_B64: string;
-};
-
-function typeOnlyBareWranglerEnvAssignsClean(bare: BareWranglerSiteEnv): void {
-  bare satisfies CairnPlatformBindings;
-}
-void typeOnlyBareWranglerEnvAssignsClean;
+/** A generated `PageServerLoad`/`LayoutServerLoad`'s event. */
+type SiteServerLoadEvent = ServerLoadEvent;
 
 /**
  * The tightened action-return shape (env-genericity finding 6, pre-beta C1 review pass): faithful
@@ -109,27 +65,18 @@ function typeOnlyCairnAdminAssignability(): void {
 void typeOnlyCairnAdminAssignability;
 
 // createAdminAction: the one seam the sweep ruled on with no fixture behind it (env-genericity finding
-// 2, pre-beta C1 review pass). Its returned function is typed `(event: AdminActionEvent<CairnEnv>)
-// => Promise<T>` via the default type parameter; this proves that assigns clean into a route's
-// generated `Actions`, on the same `CairnPlatformBindings` grounds as every pin above, never
-// because it "does not read event.platform" (see the corrected doc comment at admin-action.ts).
+// 2, pre-beta C1 review pass). Its returned function is typed `(event: CairnEvent) => Promise<T>`;
+// this proves that assigns clean into a route's generated `Actions`.
 function typeOnlyAdminActionAssignability(): void {
   const action = createAdminAction(async () => ({ ok: true }) as Record<string, unknown>);
   action satisfies (event: SiteRequestEvent) => SiteActionReturn;
 }
 void typeOnlyAdminActionAssignability;
 
-// createAuthGuard: annotated `: Handle`, kit's own ambient type (the conventions pass's
-// interop carve-out, `convention-interop-carve-out`), not a cairn-declared Env-parameterized
-// type the way every other factory in this sweep is. Its `resolve` parameter's own nested
-// contravariance means proving the FULL assignment into a site's own generated `Handle` needs
-// `RequestEvent`'s ambient `App.Platform` to resolve through a real ambient merge; this file
-// deliberately never declares one (a local `declare global App.Platform` would leak the
-// simulated platform typing across the whole suite's compile, per the header comment), so the
-// double-flip cannot be proven from inside this package's own bare compile unit the way a real
-// site's own ambient-merged ./$types can. This proves the half that IS provable without one: a
-// site's own generated event assigns cleanly into the `event` member `Handle` declares, the same
-// exclusion `createMediaRoute` already carries below.
+// createAuthGuard: annotated `: Handle`, kit's own type (the conventions pass's interop
+// carve-out, `convention-interop-carve-out`), not a cairn-declared type the way every other
+// factory in this sweep is. This proves a site's own generated event assigns cleanly into the
+// `event` member `Handle` declares, the same check `createMediaRoute` carries below.
 function typeOnlyAuthGuardAssignability(siteEvent: SiteRequestEvent): void {
   const handle = createAuthGuard();
   void handle;
@@ -137,7 +84,7 @@ function typeOnlyAuthGuardAssignability(siteEvent: SiteRequestEvent): void {
 }
 void typeOnlyAuthGuardAssignability;
 
-// createContentRoutes: every returned load/action reads a CairnEvent<CairnEnv>. Plain
+// createContentRoutes: every returned load/action reads a CairnEvent. Plain
 // SiteRequestEvent covers it: with no generated `$app/types` in this repo, kit's own
 // `RequestEvent['params']` already resolves to `Record<string, string>` (verified directly:
 // `RequestEvent<AppLayoutParams<'/'>>`'s default falls back to that shape here), so a
@@ -166,7 +113,7 @@ function typeOnlyNavRoutesAssignability(): void {
 }
 void typeOnlyNavRoutesAssignability;
 
-// createAuthRoutes: every handler reads a CairnEvent<CairnEnv>, the event shape a site's
+// createAuthRoutes: every handler reads a CairnEvent, the event shape a site's
 // /admin/auth/* route shims assign from their own SiteRequestEvent.
 function typeOnlyAuthRoutesAssignability(): void {
   const auth = createAuthRoutes({ branding: { siteName: 'Site', from: 'noreply@example.com' } });
@@ -195,10 +142,9 @@ function typeOnlyHealthLoadAssignability(siteEvent: SiteServerLoadEvent, runtime
 }
 void typeOnlyHealthLoadAssignability;
 
-// createMediaRoute: excluded from the sweep proper (its public signature is kit's own ambient
-// RequestHandler, not a cairn-declared Env-parameterized type), but its body still casts
-// event.platform (env-genericity finding 6, pre-beta C1 review pass), so this closes the coverage
-// gap with the same SiteHandle-style local mirror createAuthGuard's fixture uses above.
+// createMediaRoute: excluded from the sweep proper (its public signature is kit's own
+// RequestHandler, not a cairn-declared type), so this closes the coverage gap with the same
+// local mirror createAuthGuard's fixture uses above.
 type SiteRequestHandler = (event: SiteRequestEvent) => Promise<Response> | Response;
 
 function typeOnlyMediaRouteAssignability(runtime: CairnRuntime): void {

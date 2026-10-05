@@ -546,10 +546,10 @@ re-sourced to Go on this tree rather than to the page.
   directory, is a filesystem path and never a registered site id, and its shell completion offers
   directories rather than site ids. Source: `tool/cmd/cairn/doctor.go:24-37,50-53`. [verified]
 - `f:01iu5z` Everything the command reads is off disk under the resolved, symlink-free directory: the
-  wrangler config, `package.json` and a lockfile, the Svelte and Vite configs,
+  wrangler config, `package.json` and a lockfile, the Vite config (and `svelte.config.js`, only to see whether it remains),
   `src/hooks.server.ts`, `static/_headers`, the site-config YAML, the `/admin` route candidates,
   and `src/content/.cairn/site-facts.json`. Source: `tool/internal/doctor/wrangler.go:36,48`,
-  `tool/internal/doctor/check_csrf.go:72,79`, `tool/internal/doctor/check_referrer.go:191-234`,
+  `tool/internal/doctor/check_csrf.go:43,252`, `tool/internal/doctor/check_referrer.go:191-235`,
   `tool/internal/doctor/check_floors.go:328,376,384,392`, `tool/internal/doctor/facts.go:11`.
   [verified]
 - `f:q01lkt` The `/admin` mount check probes six candidate route files by name, since a Snapshot offers no
@@ -581,19 +581,19 @@ re-sourced to Go on this tree rather than to the page.
   by grep over the command and package]
 - `f:um228q` The eleven checks run in one fixed report order, the eight file-only checks followed by the
   three facts-dependent ones: `config.bindings`, `config.media-bucket`, `config.observability`,
-  `config.csrf-disable`, `config.site-config`, `config.public-origin`,
+  `config.csrf-trusted-origins`, `config.site-config`, `config.public-origin`,
   `config.no-referrer-blanket`, `admin.mount-shape`, `config.dependency-floors`,
   `auth.role-wiring`, `ai.posture-effective`. That slice is also the published check-id list the
   page tests read. Source: `tool/internal/doctor/report.go:10-31`. [verified]
 - `f:kjp61u` Each check names one engine condition id, which carries the check's severity: blocker for
   `config.bindings-missing`, `config.site-config-invalid`, `config.public-origin-invalid`, and
   `config.dependency-floors-unmet`, warning for `config.media-bucket-missing`,
-  `config.observability-off`, `config.csrf-disable-missing`, `config.no-referrer-blanket`,
+  `config.observability-off`, `config.csrf-trusted-origins-wildcard`, `config.no-referrer-blanket`,
   `admin.mount-incomplete`, `auth.role-wiring-missing`, and `ai.posture-not-effective`. Source:
   `tool/internal/doctor/check_bindings.go:31`, `check_media.go:29`, `check_observability.go:16`,
-  `check_csrf.go:70`, `check_siteconfig.go:26`, `check_origin.go:60`, `check_referrer.go:217`,
+  `check_csrf.go:249`, `check_siteconfig.go:26`, `check_origin.go:60`, `check_referrer.go:217`,
   `check_mount.go:78`, `check_floors.go:366`, `check_roles.go:105`, `check_posture.go:291`, with
-  each severity at `tool/internal/spine/conditions.json:105-118`. [verified]
+  each severity at `tool/internal/spine/conditions.json:103-110`. [verified]
 - `f:3sxgcl` `config.site-config` reports presence and parsing only; the per-concept URL policy lives on the
   adapter concepts and is not checkable from a directory preflight. Source:
   `tool/internal/doctor/check_siteconfig.go:12-13`. [verified]
@@ -632,9 +632,9 @@ re-sourced to Go on this tree rather than to the page.
   own `package.json` cannot be read. Source: `tool/internal/doctor/check_floors.go:358-401`.
   [candidate: found during the 2026-09-22 redraft's Go read, not independently re-verified by a
   second pass]
-- `f:v2isa4` `config.csrf-disable` reports `UNCHECKED` when neither `svelte.config.js` nor `vite.config.ts`
-  is found, distinct from a read error on either. Source:
-  `tool/internal/doctor/check_csrf.go:71-84`. [candidate: found during the 2026-09-22 redraft's Go
+- `f:v2isa4` `config.csrf-trusted-origins` reports `UNCHECKED` when none of `vite.config.js`,
+  `vite.config.ts`, and `vite.config.mts` is found, distinct from a read error on any of them. Source:
+  `tool/internal/doctor/check_csrf.go:252-275`. [candidate: found during the 2026-09-22 redraft's Go
   read, not independently re-verified by a second pass]
 - `f:b94uhy` `ai.posture-effective` reports `UNCHECKED` when `src/content/.cairn/site-facts.json` is absent,
   or when the `/robots.txt` fetch could not observe a result: no origin resolves, the origin does
@@ -842,7 +842,7 @@ re-sourced to Go on this tree rather than to the page.
   failing either: the tool being throttled is not the site being broken. Source:
   `tool/internal/providers/errors.go:31-36`, `tool/internal/spine/outcome.go:121-142`. [verified]
 - `f:y0ocr0` The condition ids a payload can carry are ported from the engine's own registry and are the same
-  vocabulary the engine emits. Source: `tool/internal/spine/condition.go:19-45`. [verified]
+  vocabulary the engine emits. Source: `tool/internal/spine/condition.go:19-44`. [verified]
 - `f:0typfn` On the wire a site's `checks` sort by id and `acknowledged` sorts alphabetically, so two runs of
   an unchanged site diff cleanly; the severity ranking belongs to the text bodies, not to the
   payload. Source: `tool/internal/render/json.go:232-244`. [verified]
@@ -1560,11 +1560,10 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   [verified]
 - `f:256utj` SvelteKit's `csrf.checkOrigin` is deprecated (2.61) in favor of `csrf.trustedOrigins` but not
   removed (sveltejs/kit#15992); cairn's admin CSRF ownership still depends on disabling
-  `checkOrigin`. Source: `src/lib/diagnostics/conditions.ts:103-110` (`config.csrf-disable-missing`
-  condition: `checkOrigin: false` must be set in `svelte.config.js` and cairn's guard wired into
-  `src/hooks.server.ts`, or SvelteKit's own Origin check runs ahead of cairn's) confirms the
-  cairn-specific half; the SvelteKit deprecation version and issue number are an upstream fact
-  quoted from the page, not independently checked against GitHub this pass. [verified]
+  `checkOrigin`. Source: the SvelteKit deprecation version and issue number are an upstream fact
+  quoted from the page, not independently checked against GitHub this pass. [rejected: cairn's admin
+  no longer depends on disabling `checkOrigin`; the showcase and template carry no `csrf` config,
+  and the doctor's `config.csrf-disable-missing` condition retired]
 - `f:aalmbd` The `@sveltejs/kit ^2.12` floor became an enforced peer range (rather than an advisory) in
   the `0.41.0` changelog entry, justified by the edit page reading `$app/state` (shipped in kit
   2.12.0); `0.51.0` is a separate, later entry that raises the `svelte` floor to `^5.56.3` and

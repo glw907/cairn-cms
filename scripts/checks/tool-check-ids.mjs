@@ -13,7 +13,7 @@
 export const TOOL_CHECK_IDS = [
   'config.bindings',
   'config.observability',
-  'config.csrf-disable',
+  'config.csrf-trusted-origins',
   'config.public-origin',
   'config.site-config',
   'config.no-referrer-blanket',

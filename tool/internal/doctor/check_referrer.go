@@ -31,7 +31,7 @@ var (
 
 const (
 	// noReferrerRemedy is the fix text both the fail and the skip detail carry.
-	noReferrerRemedy = "serve strict-origin-when-cross-origin (or same-origin) as the site default; no-referrer is safe only on a route protected by a double-submit CSRF token (the way /admin is), and a route guarded instead by the origin compare needs same-origin in its place"
+	noReferrerRemedy = "serve strict-origin-when-cross-origin (or same-origin) as the site default"
 	// noReferrerDocsAnchor is the skip detail's pointer to the operator runbook.
 	noReferrerDocsAnchor = "docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy"
 	// tmplNoReferrerSkip is config.no-referrer-blanket's skip detail template, filled with the
@@ -39,7 +39,7 @@ const (
 	tmplNoReferrerSkip = "neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked automatically; verify by hand that no site-wide Referrer-Policy: no-referrer is served (%s); see %s"
 	// tmplNoReferrerFail is config.no-referrer-blanket's fail detail template, filled with the
 	// source file that set the policy and the remedy.
-	tmplNoReferrerFail = "%s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; %s (heuristic text read)"
+	tmplNoReferrerFail = "%s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null), so SvelteKit's origin check refuses the site's own forms and every createAuthChannel action; %s (heuristic text read)"
 	// tmplNoReferrerPass is config.no-referrer-blanket's pass detail template, filled with the
 	// sources describeNoReferrerSources names.
 	tmplNoReferrerPass = "no site-wide Referrer-Policy: no-referrer found (%s, heuristic text read)"
@@ -209,9 +209,10 @@ func describeNoReferrerSources(hooksPath string, hooksFound, headersFileRead boo
 // ConfigNoReferrerBlanket ports checks-local.ts's configNoReferrerBlanket (checks-local.ts:
 // 638-660): the blanket no-referrer trap. Under a site-wide Referrer-Policy: no-referrer, the
 // Fetch spec strips the Origin header from a plain same-origin top-level POST, so it arrives as
-// Origin: null and cairn's strict origin guard rejects it, 403ing an otherwise legitimate
-// non-admin form. cairn's own /admin responses already scope no-referrer to the token-bearing
-// routes it protects; the trap is a site shipping the same policy as its own site-wide default.
+// Origin: null and SvelteKit's origin check refuses it, 403ing the site's own forms and every
+// createAuthChannel action. cairn's admin documents pin their own referrer policy with a header
+// and a meta tag, so the admin keeps working unless a site meta placed after %sveltekit.head%
+// overrides it; the trap is a site shipping the same policy as its own site-wide default.
 var ConfigNoReferrerBlanket = Check{
 	ID:        "config.no-referrer-blanket",
 	Condition: spine.ConditionConfigNoReferrerBlanket,

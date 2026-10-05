@@ -20,8 +20,10 @@ describe('renderConditionResponse', () => {
     expect(await res.text()).toContain('Back to sign-in');
   });
 
-  it('has no renderer for the origin refusal, which the framework serves itself', () => {
-    expect(() => renderConditionResponse('auth.csrf-origin-mismatch')).toThrow(/no runtime renderer/);
+  it('has no renderer for a condition only the doctor raises', () => {
+    expect(() => renderConditionResponse('config.csrf-trusted-origins-wildcard')).toThrow(
+      /no runtime renderer/,
+    );
   });
 
   it('renders the branded operator-fault page for the bindings condition', async () => {

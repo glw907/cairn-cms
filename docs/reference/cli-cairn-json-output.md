@@ -439,10 +439,10 @@ condition has a docs anchor.
       }
     },
     {
-      "checkId": "config.csrf-disable",
+      "checkId": "config.csrf-trusted-origins",
       "state": "pass",
-      "condition": "config.csrf-disable-missing",
-      "detail": "checkOrigin: false found (svelte.config.js or vite.config.ts) and the hooks file wires the cairn guard (heuristic text read)"
+      "condition": "config.csrf-trusted-origins-wildcard",
+      "detail": "no csrf.trustedOrigins entries in vite.config.ts, so SvelteKit's default origin check covers every route (heuristic text read)"
     },
     {
       "checkId": "config.site-config",
@@ -472,7 +472,7 @@ condition has a docs anchor.
       "checkId": "config.dependency-floors",
       "state": "pass",
       "condition": "config.dependency-floors-unmet",
-      "detail": "@sveltejs/kit 2.70.0 and svelte 5.56.10 satisfy the engine peer ranges"
+      "detail": "@sveltejs/kit 3.0.0 and svelte 5.56.10 satisfy the engine peer ranges"
     },
     {
       "checkId": "auth.role-wiring",
@@ -501,7 +501,7 @@ is major.
 - Every `cairn health` check id: `creds`, `serving`, `delegation`, `https-forced`, `email`,
   `deploy`, `publish-path`, `engine`, `errors`.
 - Every `cairn doctor` check id: `config.bindings`, `config.media-bucket`,
-  `config.observability`, `config.csrf-disable`, `config.site-config`, `config.public-origin`,
+  `config.observability`, `config.csrf-trusted-origins`, `config.site-config`, `config.public-origin`,
   `config.no-referrer-blanket`, `admin.mount-shape`, `config.dependency-floors`,
   `auth.role-wiring`, `ai.posture-effective`.
 - The verdict words: `OK`, `WARNING`, `CRITICAL`, `UNKNOWN`.

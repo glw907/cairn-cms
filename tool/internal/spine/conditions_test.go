@@ -138,21 +138,21 @@ func TestConditionTestFilesNameNoRepoRoot(t *testing.T) {
 // does not hold.
 func TestTextFor(t *testing.T) {
 	t.Run("every field", func(t *testing.T) {
-		got, ok := TextFor(ConditionAuthCSRFOriginMismatch)
+		got, ok := TextFor(ConditionAuthCSRFTokenInvalid)
 		if !ok {
-			t.Fatalf("TextFor(%q) not found", ConditionAuthCSRFOriginMismatch)
+			t.Fatalf("TextFor(%q) not found", ConditionAuthCSRFTokenInvalid)
 		}
 		want := ConditionText{
-			ID:          ConditionAuthCSRFOriginMismatch,
+			ID:          ConditionAuthCSRFTokenInvalid,
 			Severity:    CriticalFailure,
-			Title:       "Non-admin form Origin rejected",
-			Why:         "A non-admin unsafe form POST carried an Origin that did not match the site, so cairn's restored framework Origin check rejected it.",
-			Remediation: "Post the form from the same origin, or check a proxy that strips or rewrites the Origin header.",
-			DocsAnchor:  "is-it-working.md#non-admin-origin-rejected",
+			Title:       "Admin CSRF token check failed",
+			Why:         "An admin form POST carried no valid __Host-cairn_csrf double-submit token, usually a stale tab or blocked cookies.",
+			Remediation: "Open the sign-in page fresh, allow cookies for the site, and request a new link.",
+			DocsAnchor:  "is-it-working.md#admin-csrf-token-rejected",
 			LogEvent:    "guard.refused",
 		}
 		if got != want {
-			t.Errorf("TextFor(%q) = %+v, want %+v", ConditionAuthCSRFOriginMismatch, got, want)
+			t.Errorf("TextFor(%q) = %+v, want %+v", ConditionAuthCSRFTokenInvalid, got, want)
 		}
 	})
 

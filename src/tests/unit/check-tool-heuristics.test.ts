@@ -14,8 +14,8 @@ describe('findBrokenWatches against the real repo', () => {
     expect(findBrokenWatches()).toEqual([]);
   });
 
-  it('watches exactly four sites', () => {
-    expect(WATCHES).toHaveLength(4);
+  it('watches exactly three sites', () => {
+    expect(WATCHES).toHaveLength(3);
   });
 });
 

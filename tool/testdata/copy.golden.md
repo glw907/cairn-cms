@@ -328,12 +328,14 @@ Name the check that entry holds
 
 ## doctor
 
+- "*" turns the check off on every route, /admin included
+- "null" admits every POST from an opaque origin (a sandboxed iframe or a data: page can send one) on every route, /admin included
 - %s carries %d "User-agent: *" groups%s. cairn's own output writes one such group, so a second came from somewhere ahead of it, and this check cannot see what or assert why. A managed robots.txt prepending to the origin's is the common source, so the zone's robots.txt and AI Crawl Control settings are where to look first.
 - %s carries a Content-Signal directive cairn did not write, so something other than this engine is writing directives into the served file. The file carries one "User-agent: *" group, so this is not the prepend shape a managed robots.txt produces, and this check cannot see what wrote it.
 - %s resolves to %s, below the engine floor %s
 - %s resolves to %s, outside the engine peer range %s
 - %s satisfy the engine peer ranges
-- %s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; %s (heuristic text read)
+- %s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null), so SvelteKit's origin check refuses the site's own forms and every createAuthChannel action; %s (heuristic text read)
 - %s, but %s carries directives consistent with '%s'. Set aiPosture explicitly if that is deliberate.
 - %s. %s
 - %s. %s carries no AI-crawler directives, consistent with stating nothing.
@@ -343,6 +345,7 @@ Name the check that entry holds
 - %s: resolved %s is not a plain x.y.z version
 - %s: the engine range %s is not a simple caret range
 - , along with a Content-Signal directive cairn did not write
+- ; %s is plain http, so it also admits a network attacker on that origin
 - AUTH_DB (d1_databases)
 - EMAIL (send_email)
 - EMAIL and AUTH_DB are declared
@@ -353,11 +356,12 @@ Name the check that entry holds
 - adapter declares media bucket %s but no matching r2_buckets binding is in wrangler
 - aiPosture is '%s', and %s carries directives consistent with it.%s
 - aiPosture is '%s', but %s carries %s.%s
-- checkOrigin is off but no cairn guard found in src/hooks.server.ts; the site may have no CSRF protection
-- checkOrigin: false found (svelte.config.js or vite.config.ts) and the hooks file wires the cairn guard (heuristic text read)
 - could not reach the resolved origin's /robots.txt
 - createAuthGuard is passed an options object the doctor cannot read (heuristic text read); verify the guard receives the declared roles
 - createAuthGuard is passed the declared role vocabulary (heuristic text read)
+- csrf.trustedOrigins in %s bypasses SvelteKit's origin check: %s (heuristic text read)
+- csrf.trustedOrigins in %s could not be read: the value is not a literal array of strings (an identifier, a spread, a call, or an escaped entry), so the entries were not checked
+- csrf.trustedOrigins in %s lists %s; every entry widens SvelteKit's origin check on /admin too (heuristic text read)
 - directives consistent with '%s' instead
 - docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy
 - environment
@@ -365,10 +369,9 @@ Name the check that entry holds
 - missing %s
 - needs engine 0.97.0 or later, and one build
 - neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked automatically; verify by hand that no site-wide Referrer-Policy: no-referrer is served (%s); see %s
-- neither svelte.config.js nor vite.config.ts was found, so the CSRF handoff could not be checked
 - no AI posture is stated (aiPosture is unset)
-- no checkOrigin: false found in svelte.config.js or vite.config.ts (heuristic text read)
 - no createAuthGuard call found in src/hooks.server.ts (heuristic text read); the guard may be wired in another module
+- no csrf.trustedOrigins entries in %s, so SvelteKit's default origin check covers every route (heuristic text read)
 - no custom roles declared; the guard fallback owner/editor already matches the vocabulary
 - no directives consistent with it
 - no media assets configured
@@ -380,6 +383,7 @@ Name the check that entry holds
 - no wrangler.jsonc or wrangler.toml found
 - node_modules/@glw907/cairn-cms/package.json did not parse
 - node_modules/@glw907/cairn-cms/package.json not found
+- none of %s was found, so csrf.trustedOrigins could not be checked
 - none of package-lock.json, pnpm-lock.yaml, or yarn.lock was found
 - observability.enabled is not true
 - observability.enabled is true
@@ -387,8 +391,9 @@ Name the check that entry holds
 - package-lock.json did not parse
 - parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
 - pnpm-lock.yaml did not parse
-- serve strict-origin-when-cross-origin (or same-origin) as the site default; no-referrer is safe only on a route protected by a double-submit CSRF token (the way /admin is), and a route guarded instead by the origin compare needs same-origin in its place
+- serve strict-origin-when-cross-origin (or same-origin) as the site default
 - src/hooks.server.ts not found, so the guard role wiring cannot be checked
+- svelte.config.js is still present, so a csrf key in it could not be checked; move the SvelteKit config into the sveltekit() call in the Vite config and delete the file
 - the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
 - the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)
 - the resolved origin's /robots.txt did not return 200

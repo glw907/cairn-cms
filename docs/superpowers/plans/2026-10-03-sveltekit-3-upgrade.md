@@ -1113,4 +1113,49 @@ Run `pass-core`'s ritual with the cairn specifics, in order:
 
 ## Ledger
 
-(Written during execution.)
+### Checkpoint 1 (2026-10-04, end of S0; session cleared here)
+
+**Task 0, pre-flight.**
+1. No live executor: no `sveltekit-3` branch, worktree, or process; `main` clean.
+2. Worktree `.claude/worktrees/sveltekit-3` on `sveltekit-3` from `main` at `b0e2bfbb`; `npm ci`; showcase
+   reinstalled from scratch; `realpath` resolves `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` into the worktree.
+   A fresh worktree also needs `npm --prefix examples/showcase run build` (for `.svelte-kit/tsconfig.json`) and
+   `npm run prepack -w packages/create-cairn-site` (the baked template) before F's check steps pass; the first gate
+   agent did both, untracked output only.
+3. Gate strings (from `gate-tier.mjs --range HEAD~1..HEAD --pin full|engine`; an empty range errors):
+   F = `npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts && npm run check:comments && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
+   E = the same through `npm test -w packages/create-cairn-site`.
+4. Baseline: two F runs under `E2E_PORT=4392` went red only in the showcase e2e (308 passed, 30 failed, all
+   timeouts) while CI was green on the same code. Root cause: `examples/showcase/wrangler.jsonc:61` hardcodes
+   `PUBLIC_ORIGIN` to `:4173`, so minted preview links hit a dead port (8 `preview.spec.ts` failures, ECONNREFUSED
+   `::1:4173`) and their half-finished backend state cascades into 22 more (`site-visual` 20, `spellcheck`,
+   `tidy`). STATUS's earlier blame on a dubplate `sirv` server was wrong; dubplate's gate binds only ephemeral ports.
+   Fix: the Gates section now runs the e2e on the default port until Task 5, and Task 5 passes
+   `--var PUBLIC_ORIGIN:http://localhost:$E2E_PORT` (`a0bb46aa`). A default-port e2e run gave `318 passed` of 338
+   listed with no failure line; the 20 are unaccounted for (the log was truncated) and most likely sit in
+   `site-visual.spec.ts`, which lists 56 tests but reported 36 when run alone. The formal default-port F baseline
+   was in flight at the clear; its result is below or, if absent, the next session reruns it first.
+5. Draft PR #103 (`sveltekit-3` to `main`). Inherited CI on the branch head: every workflow green (`test`, `e2e`,
+   `design`, `scaffold`, `create-site`, `norms`). The branch carries 31 docs commits local `main` had not pushed.
+6. Pre-flight (S0, S1, and the plan-time facts): all facts held except three, amended in `d95c4419`: wrangler is
+   4.144.0 with the esbuild plugin at `cli.js:184154`; no component-local `$app/environment` stub exists (Task 2's
+   real touch points are listed); the chassis README lines are `:42` to `:45` plus `test.yml:28-35`.
+7. Dependency state: `@sveltejs/kit` 3.0.0, `@sveltejs/adapter-cloudflare` 8.0.0, and `@sveltejs/package` 3.0.0
+   are each the newest production release. Newer minors and patches outside this pass's scope (wrangler 4.147.0,
+   vite 8.3.2, `@lucide/svelte` 1.52.0, eslint 10.12.0, shiki 4.5.0, and others) go to a `dependency-upgrade`
+   sweep after the pass; held majors unchanged.
+8. Spend through S0: about 0.6M in subagents (pre-flight 0.12M, spike 0.2M, three gate runs and the diagnosis
+   0.19M, plus the conductor); read `/cost` at the next checkpoint for the authoritative figure.
+
+**Task 1, spike: GO** (`d95c4419`, record and harness under
+`docs/superpowers/research/2026-10-03-sveltekit-3-spike/`). Items 1 to 4 pass; consumer mode fails only at
+`GET /admin/login` (500, `config.bindings-missing`) because the probe tarball still reads `event.platform`, the
+break Task 11b fixes. Flag delivery: `npx wrangler dev --port $PORT --ip 127.0.0.1 --inspector-port $((PORT+1)) --var CAIRN_DEV_BACKEND:1`
+after `VITE_CAIRN_E2E=1 npm run build` and `npx wrangler d1 migrations apply MEMBER_DB --local`. Building gate:
+`await import('$app/env')` inside `try`/`catch`, falling back to `false`. The harness needs `HARNESS_PORT` set.
+Spike worktree `.claude/worktrees/sveltekit-3-spike` (branch `sveltekit-3-spike`, two probe commits) stays until
+the close.
+
+**Next:** confirm the default-port F baseline green (rerun if no result is recorded here), resolving the 20-test
+gap with a `--reporter=list` run of `site-visual.spec.ts` if the summary does not; then S1 (Tasks 2, 3, 4) through
+`pass-execute` by name. S1's pre-flight is done (item 6).

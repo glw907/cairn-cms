@@ -850,9 +850,10 @@ on). **Spec:** "Bindings", the `process.env` and test-fake bullets; S4. Decision
 
 **Files:** `src/lib/sveltekit/guard.ts` (the `process.env` flag read at `:197`),
 `src/lib/auth-channel/factory.ts` (`:126`), `src/lib/dev-flag.ts` (`readPublicOrigin`'s fallback at
-`:89`, the `depth` it no longer needs, the comments that name `process.env` or adapter-node),
+`:89`, the `depth` it no longer needs (`:79`, described at `:54-75`), the comments that name
+`process.env` or adapter-node, among them `guard.ts:183-184` and `factory.ts:103-107`),
 `src/lib/sveltekit/csrf.ts` (comments only), their tests, `examples/showcase/e2e/members.spec.ts`
-(the two bodyless POSTs at `:26`, `:177`), a new `src/tests/helpers/cloudflare-workers-fake.ts` with
+(the three bodyless POSTs at `:26`, `:177`, `:196`; pre-flight 2026-10-05), a new `src/tests/helpers/cloudflare-workers-fake.ts` with
 its unit test and setup file, `vitest.config.ts` (the `unit` and `component` aliases), and the minimal
 reference edits that keep the gates green.
 
@@ -860,7 +861,7 @@ reference edits that keep the gates green.
 - The guard's and the factory's dev-flag reads and `readPublicOrigin` read `platform.env` alone; the
   `process.env` reads, the adapter-node comment, and `readPublicOrigin`'s `PUBLIC_ORIGIN` fallback
   retire, and `depth: 'platform-only'` collapses.
-- The two `members.spec.ts` helpers that POST with no content type send a body.
+- The three `members.spec.ts` POSTs with no content type (`:26`, `:177`, `:196`) send a body.
 - The `cloudflare:workers` fake lands, browser-safe (no `node:async_hooks`), with a swap-and-restore
   `withEnv`, a collecting `waitUntil`, and a `beforeEach` reset; `unit` and `component` alias
   `cloudflare:workers` to it. Nothing in `src/lib` imports it yet.
@@ -902,8 +903,17 @@ committed `examples/showcase/worker-configuration.d.ts`, Waymark's counterpart
 `packages/create-cairn-site/scripts/emit-template-dir.mjs` (`composeTemplate`) and its test,
 `scripts/build/emit-template.mjs` and its test if the copy step must skip the showcase's file,
 `examples/showcase/src/hooks.server.ts`, `examples/showcase/src/chassis/**`
-where it reads `platform`, a new `src/lib/sveltekit/workers-env.ts`, every `src/lib` file with a
-`platform` read (plan time: 62 lines in 25 files), `src/lib/sveltekit/platform-bindings.ts`,
+where it reads `platform`, and every other showcase and Waymark `platform` read (pre-flight
+2026-10-05: `src/app.d.ts`, `src/theme/cairn.config.ts`, `src/routes/media/[...path]/+server.ts`,
+`src/routes/admin/signups/+page.server.ts`, `src/members/channel.ts`, and the showcase's
+`src/routes/test/{last-otp,reset-members,revoke-member-session}/+server.ts`), the
+`auth.channel.delivery_inline` entries in `src/lib/log/events.ts`, `src/lib/log/events-list.ts`,
+`docs/reference/log-events.md`, and `docs/reference/auth-channel.md` (minimal; Task 13 writes the
+prose), both `cloudflare:*` externals in `src/tests/unit/dist-sveltekit-app-import-boundary.test.ts`
+(`:54` and `:100`), a new `src/lib/sveltekit/workers-env.ts`, every `src/lib` file with a
+`platform` read (plan time: 62 lines in 25 files; at `63a773db` the full
+`event.platform|platform?.(env|ctx)` set is 109 occurrences in 26 `src/lib` files, 27 in 6 dev-package
+files, 13 in 8 showcase files, 7 in 5 Waymark files), `src/lib/sveltekit/platform-bindings.ts`,
 `src/lib/sveltekit/types.ts`, `src/lib/sveltekit/guard.ts`, `src/lib/sveltekit/csrf.ts`,
 `src/lib/dev-flag.ts`, `src/lib/auth-channel/factory.ts`, `src/lib/sveltekit/auth-routes.ts`,
 `src/lib/sveltekit/section-action.ts`, `src/lib/sveltekit/admin-action.ts`,
@@ -922,8 +932,9 @@ reference and `log-events.md` edits that keep the gates green.
   exporting `env` and `waitUntil`; every engine read of `event.platform` reads it; `csrfSecure`,
   `issueCsrfToken`, `csrfHeaderVerdict`, and `readPublicOrigin` drop their `platform` member;
   `dev-flag.ts` and `env.ts` keep taking `env` as an argument.
-- **Building:** no engine code touches `env` or `withEnv` while `building`; the guard's dev-flag
-  tripwire and `devBackendHandle` skip while building, in the gate form Task 1's item 4 recorded (the
+- **Building:** no engine code touches `env` or `withEnv` while `building`; this task adds a
+  `building` gate to the guard's dev-flag tripwire and to `devBackendHandle` (neither has one at
+  `63a773db`; `preview.ts:434-439` is the only `$app/env` site in `src/lib`), in the gate form Task 1's item 4 recorded (the
   `preview.ts:433-440` dynamic-import-in-`try`/`catch` form unless the record names another), so the
   `./sveltekit` barrel stays free of any static `$app/*` import and the existing esbuild boundary test
   stays green (with `cloudflare:*` external, as Wrangler's bundler treats it).
@@ -940,8 +951,9 @@ reference and `log-events.md` edits that keep the gates green.
   own config callbacks.
 - **The generated `Env`:** generated from a named, committed input that carries every secret name
   `CairnPlatformBindings` requires (`GITHUB_APP_PRIVATE_KEY_B64` is a secret absent from
-  `wrangler.jsonc`) and never the dev flag, such as the template's `.dev.vars.example` through
-  `--env-file`; the report names the input and the command. Waymark's `Env` carries no `MEMBER_DB`
+  `wrangler.jsonc`) and never the dev flag, such as `packages/create-cairn-site/template-repo/.dev.vars.example` (emitted at
+  `templates/waymark/.dev.vars.example`) through `--env-file`; the showcase has no
+  `.dev.vars.example`, so its input is that file or a new committed file the report names; the report names the input and the command. Waymark's `Env` carries no `MEMBER_DB`
   (the binding sits inside `cairn-template:exclude` markers that a generated file cannot carry), so
   emit never ships the showcase's file: `composeTemplate` regenerates
   `worker-configuration.d.ts` in the scratch tree, after the marker strip and the overlay, with the
@@ -965,7 +977,12 @@ reference and `log-events.md` edits that keep the gates green.
   `git grep -nE '\.platform\b|App\.Platform|PlatformContext|\$app/environment|invalidateAll|\$lib\b' -- src/lib packages/cairn-cms-dev examples/showcase/src examples/showcase/e2e templates/waymark`;
   `git grep -nE '^\s*platform\s*:' -- src/tests packages/cairn-cms-dev examples/showcase`; no `json` or
   `text` named import from `@sveltejs/kit` in those trees; `git grep -n "cloudflare:workers" -- src/lib`
-  prints exactly `src/lib/sveltekit/workers-env.ts`.
+  prints exactly `src/lib/sveltekit/workers-env.ts`. The first grep also catches comment and doc-comment
+  mentions, and every one goes (pre-flight 2026-10-05, at `63a773db`): the `App.Platform['env']`
+  generics in `members/channel.ts:56` and the signups pages (`:60-61`), and the doc comments at
+  `factory.ts:576`, `section-action.ts:153-154`, `admin-action.ts:193`, `health.ts:22`,
+  `types.ts:29,57,99`, `media-route.ts:130`, `platform-bindings.ts:1-13`, `MediaUploadDialog.svelte:208`
+  (beside the `goto` option at `:212`), and the `$lib` comments at `vite/internal.ts:91,99`.
 - **Import graph:** a test (or check script) walks the packed `dist` from each Node-context entry and
   fails if any reaches `workers-env`. Positive control: the walk from the `./sveltekit` entry must
   reach `workers-env`, and the check fails if it does not; the report quotes the reached-module count

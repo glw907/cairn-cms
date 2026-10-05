@@ -1254,7 +1254,7 @@ re-sourced to Go on this tree rather than to the page.
   `headerSent ? 'header' : 'field'`). [verified]
 - `f:v1jj2k` `admin.action.session_absent` is the only trace a `createAdminAction`-mounted route leaves for a
   session that lapsed between the guard's resolve and the action running, since the guard's own
-  `guard.refused` csrf/origin branches refuse an earlier condition. Source:
+  `guard.refused` csrf branch refuses an earlier condition. Source:
   `src/lib/sveltekit/admin-action.ts:146-153,212-216` (`if (!editor) { log.warn('admin.action.
   session_absent', ...); throw redirect(303, '/admin/login'); }`, the first check the wrapper
   runs). [verified]

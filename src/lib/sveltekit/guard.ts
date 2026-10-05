@@ -4,7 +4,7 @@
 import { redirect, error, type Handle } from '@sveltejs/kit';
 import { resolveSession, findEditor } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
-import { isUnsafeFormRequest, originMatches, csrfHeaderVerdict, csrfTokenVerdict, csrfSecure } from './csrf.js';
+import { isUnsafeFormRequest, csrfHeaderVerdict, csrfTokenVerdict, csrfSecure } from './csrf.js';
 import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION, IDENTITY_UNKNOWN_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
@@ -200,13 +200,9 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
       return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 });
     }
 
-    // Rule 2 - non-admin: restore the framework's strict Origin check the consumer disabled when
-    // they set checkOrigin: false to hand cairn the admin CSRF authority.
+    // Non-admin paths: nothing to guard. SvelteKit checks a form POST's Origin before any handle
+    // runs, on every route, so this guard adds no Origin check of its own.
     if (!isAdminPath(pathname)) {
-      if (isUnsafeFormRequest(event.request) && !originMatches(event)) {
-        log.warn('guard.refused', { reason: 'origin', path: pathname });
-        return renderConditionResponse('auth.csrf-origin-mismatch');
-      }
       return resolve(event);
     }
 
@@ -244,7 +240,7 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
       event.locals.cairnIdentity = identitySnapshot;
     }
 
-    // Rule 1 - admin: every unsafe form POST carries a valid double-submit token, else the branded
+    // Admin: every unsafe form POST carries a valid double-submit token, else the branded
     // 403 before resolve() runs. This covers the public login/auth posts too. The header witness
     // decides outright when it was SENT at all, matching or not: a valid X-Cairn-CSRF header clears
     // the request without cloning the body, which is how the raw-body media upload (a text/plain

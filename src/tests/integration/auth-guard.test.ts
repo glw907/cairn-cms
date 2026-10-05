@@ -293,10 +293,31 @@ describe('admin security headers (Unit 2)', () => {
   });
 });
 
-describe('CSRF (cairn owns it)', () => {
-  it('rejects a non-admin form POST with a mismatched Origin', async () => {
+describe('CSRF (cairn owns the admin token, the framework owns the Origin check)', () => {
+  // The framework's own check refuses a cross-origin form POST before any handle runs, so the guard
+  // never sees one in a running site; the guard's part is to not duplicate that refusal.
+  it('passes a non-admin form POST with a foreign Origin through to resolve', async () => {
     const res = await handle({ event: formEvent('/contact', { origin: 'https://evil.dev' }), resolve: async () => OK });
+    expect(res).toBe(OK);
+  });
+
+  it('serves the branded token page for an admin form POST with a matching Origin and a stale token', async () => {
+    let resolved = false;
+    const res = await handle({
+      event: formEvent('/admin/login', {
+        origin: 'https://test.dev',
+        csrfCookie: 'FRESH',
+        csrfField: 'STALE',
+      }),
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
     expect(res.status).toBe(403);
+    expect(res.headers.get('content-type')).toMatch(/text\/html/);
+    expect(await res.text()).toContain('Back to sign-in');
   });
 
   it('passes a non-admin form POST with a matching Origin', async () => {
@@ -516,13 +537,11 @@ describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => 
 });
 
 describe('guard rejection logging', () => {
-  it('logs guard.refused reason=origin for a non-admin cross-origin form POST', async () => {
+  it('logs no guard.refused for a non-admin cross-origin form POST', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await handle({ event: formEvent('/contact', { origin: 'https://evil.dev' }), resolve: async () => OK });
     const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
-    const reasons = warnSpy.mock.calls.map((c) => (c[0] as { reason?: string }).reason);
-    expect(events).toContain('guard.refused');
-    expect(reasons).toContain('origin');
+    expect(events).not.toContain('guard.refused');
     vi.restoreAllMocks();
   });
 

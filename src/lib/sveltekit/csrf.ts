@@ -1,5 +1,6 @@
-// cairn owns CSRF for the admin once a site disables SvelteKit's global checkOrigin. These helpers
-// back the guard's two rules and the loads that issue the double-submit token.
+// SvelteKit's own Origin check runs on every route ahead of any handle; cairn adds the admin's
+// double-submit token on top. These helpers back the guard's token check, the auth channel's own
+// Origin compare, and the loads that issue the token.
 import { csrfCookieName, generateCsrfToken, tokensMatch, SESSION_TTL_MS } from '../auth/crypto.js';
 import { isLocalHost, readPublicOrigin } from '../dev-flag.js';
 import type { CairnEvent, CookieJar } from './types.js';

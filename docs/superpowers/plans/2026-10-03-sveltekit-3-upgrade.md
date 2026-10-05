@@ -188,11 +188,18 @@ seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it
     `Illegal constructor` under workerd (`node:sqlite`). This departs from the spec sentence naming
     it among the `withEnv` handles; Task 11b's nesting test over `devBackendHandle` and a test-local
     second handle keeps the spec's purpose.
-11. **The admin referrer meta has one home: `CairnAdminShell`'s `<svelte:head>`.** Every `/admin/**`
-    route renders inside the shell (the documented wiring and the Waymark layout mount it), and its
-    head block sits outside the `data.public` branch (`CairnAdminShell.svelte:679`), so it reaches the
-    login and confirm documents as well as the authed views. `LoginPage` and `ConfirmPage` carry no
-    meta of their own, so no document carries two.
+11. **Each admin view owns its referrer meta (amended by Task 7, 2026-10-05).** The plan first gave
+    the meta one home in `CairnAdminShell`'s `<svelte:head>`, on the premise that every `/admin/**`
+    route renders inside the shell. Task 7 found that premise false for a documented setup:
+    `LoginPage` and `ConfirmPage` are public exports (`src/lib/admin/index.ts:15-16`), and the advanced
+    per-route mounting lets a site mount one in its own shell (`docs/reference/admin-routes.md:291-299`),
+    where a site-wide `no-referrer` would bring back the R5 lockout. So `LoginPage` and `ConfirmPage`
+    each emit the meta in their own `<svelte:head>`, and the shell emits it only for its authed views
+    (inside `{#if !data.public}` within its head; the public branch renders the route's page through
+    `children()`, `CairnAdminShell.svelte:686-687`). Every admin document still carries exactly one,
+    with no shell context flag (the leaner form of Task 7's amendment, conductor's call). Svelte hoists
+    a component's head output above its children, so a site meta from its root `+layout.svelte` lands
+    first and cairn's wins; only `app.html` after `%sveltekit.head%` can override it (Task 7, B).
 12. **Task 11 splits into 11a (Kit 2.70 prep, Sonnet) and 11b (the atomic bump, Opus)**
     (conductor decision on PM8); see Task 11a.
 13. **Two `Consumers must:` lines beyond the spec's ten**, added when Task 13 finalizes the list: serve
@@ -629,22 +636,26 @@ spec did not settle, halts S3 for Geoff.
 **Pass class:** `auth-data`. **Spec:** "CSRF", the first "After the change" bullet.
 
 **Files:** `src/lib/sveltekit/admin-response.ts`, `src/lib/sveltekit/auth-routes.ts`
-(`confirmLoad`), `src/lib/admin/CairnAdminShell.svelte` (the meta's one home, Decision 11),
-`src/lib/admin/LoginPage.svelte` and `src/lib/admin/ConfirmPage.svelte` (comments only; no meta),
+(`confirmLoad`), `src/lib/admin/CairnAdminShell.svelte` (the meta for authed views, Decision 11),
+`src/lib/admin/LoginPage.svelte` and `src/lib/admin/ConfirmPage.svelte` (each emits its own meta,
+Decision 11),
 their tests under `src/tests/` (integration and component), a showcase e2e spec for the
 document-level count, and the comments that state the old policy.
 
 **Outcome:** `applySecurityHeaders` and `confirmLoad` serve `Referrer-Policy: strict-origin`; every
 admin document (the shell's authed views, login, and confirm) carries exactly one
-`<meta name="referrer" content="strict-origin">` in its head, emitted by the shell; `/preview/[token]`
+`<meta name="referrer" content="strict-origin">` in its head, emitted by the view that owns the
+document (Decision 11); every public admin path (the set `isPublicAdminPath` admits) renders
+`LoginPage` or `ConfirmPage`, or the report names the path and how it gets its meta; `/preview/[token]`
 keeps `no-referrer`; comments state the new policy and why the meta exists.
 
 **Acceptance (test-first; each test fails on the old code):**
 - An integration test asserts `strict-origin` from `applySecurityHeaders` and from `confirmLoad`'s
   headers; on the old code both read `no-referrer`.
-- A component test renders `CairnAdminShell` with a public payload and with an authed payload and
-  asserts one referrer meta with content `strict-origin` in each head output; on the old code there is
-  none.
+- Component tests assert exactly one referrer meta with content `strict-origin` in the head output
+  of `CairnAdminShell` with an authed payload, of `LoginPage` and `ConfirmPage` rendered standalone,
+  and of `CairnAdminShell` with a public payload wrapping `LoginPage` (one, not two); on the old code
+  there is none.
 - A document-level e2e check counts `head meta[name="referrer"]` at exactly 1 on the login, confirm,
   and edit documents, so a second meta added by a child component fails.
 - A test asserts `/preview/[token]` still serves `no-referrer`, so an over-broad change fails.
@@ -746,12 +757,20 @@ heading lands this pass. Pre-flight 2026-10-05.
 
 **Outcome:**
 - `check_csrf.go` reads the `csrf` key in the Vite config and fails on a `trustedOrigins` entry of
-  `'*'`; any other entry passes with a detail that it widens `/admin` too; no `csrf` key passes. It
+  `'*'` or `'null'` (Task 7, C: Kit compares the raw Origin string, so `'null'` admits every
+  opaque-origin POST, which any attacker can produce from a sandboxed iframe; Kit 3 `csrf.js:42`, Kit
+  2.70 `respond.js:87`; it is also the obvious wrong fix for this pass's `Origin: null` 403), both
+  under `config.csrf-trusted-origins-wildcard` with a detail naming the entry; any other entry passes
+  with a detail that it widens `/admin` too, and an `http://` entry for a non-local host says it also
+  admits a network attacker on that origin; no `csrf` key passes. It
   reports as check `config.csrf-trusted-origins` under condition
-  `config.csrf-trusted-origins-wildcard` (severity `warning`, or as Task 7 amends), present in both
-  registries. The condition's `why` states the exposure plainly: `'*'` turns off SvelteKit's Origin
-  check on every route; cairn's admin keeps its token and member actions keep their own origin
-  compare; the site's own forms have no Origin check.
+  `config.csrf-trusted-origins-wildcard` (severity `warning`, accepted by Task 7 with both of
+  Decision 5's premises verified), present in both registries. The condition's `why` states the
+  exposure plainly: `'*'` turns off SvelteKit's Origin check on every route; cairn's admin keeps its
+  token and member actions keep their own origin compare; the site's own forms have no Origin check.
+  It adds: "Site actions that read a member session through `resolveSubject` are among those forms;
+  `SameSite=Lax` stops a cross-site post but not one from a sibling subdomain." Acceptance adds:
+  `['null']`, and `'null'` among other entries, fail; `['https://null.example']` passes.
 - States the check cannot read never pass silently. Today `check_csrf.go` reads only
   `vite.config.ts` and `svelte.config.js`; the new check either also reads `vite.config.js` and
   `vite.config.mts` or reports them UNCHECKED under the no-config rule, and the report says which.
@@ -1052,7 +1071,9 @@ and every other page the repoint grep names; `docs/internal/facts/*.md`;
   `f:qlgggh` `f:gwpffe` (the task re-runs the keyword grep and amends the set; the S5 pre-flight
 leaves the set to it). New bullets: the
   bodyless server-to-server POST refusal; the `custom_domain`-under-`wrangler dev` Origin mismatch;
-  `paths.origin` behind a proxy; `createChannelDb` is Node only, not under workerd; the new doctor
+  `paths.origin` behind a proxy (Task 7: on Kit 3 a site that sets `paths.origin` passes Kit's check,
+  but `createAuthChannel`'s `originMatches` still compares against `event.url.origin`, so member login
+  there keeps failing as it does today; the bullet says so, as a known limit, not a regression); `createChannelDb` is Node only, not under workerd; the new doctor
   condition and its anchor; Kit's 403 anchor in `is-it-working`; adapter 8 no longer caches worker
   responses in `caches.default` (adapter 7 did for every public `Cache-Control` response, `/media`
   and public SSR pages included).

@@ -1351,3 +1351,38 @@ and boundary agents about 0.6M, plus the conductor; `/cost` at the close), far u
 this pass as planned.
 
 **Next:** S3, Tasks 5c, 8, 9, 10.
+
+### Checkpoint 4 (2026-10-05, end of S3)
+
+**S3, run `wf_d7eed126-fda`, all four accepted.**
+- Task 5c, `c5dc0863`: `check-symbols`'s grep excludes `node_modules`, `.wrangler`, `.svelte-kit`, and `test-results`
+  at the walk; `npm run check:symbols` went from 60 s to 3 s with a populated `.wrangler`, findings identical.
+- Task 8, `40ae05e2` and `cf73dd12`: `strict-origin` on admin responses and `confirmLoad`; each admin view emits one
+  referrer meta (Decision 11 amended). The e2e build mounts `devBackendHandle` in place of the guard, so the header
+  assertion holds on the confirm document only. A GET to a non-confirm `/admin/auth/*` path (a 404) renders in the
+  shell's public branch with no meta; it has no form, so no lockout risk.
+- Task 9, `35b972da`: SvelteKit's origin check runs on every route; guard Rule 2 and `REASON_CONDITION.origin` are
+  gone; the showcase and Waymark carry no `csrf` config. `guard.refused` has no typed reason union (a free string), so
+  only the emission changed.
+- Task 10, `db91c7a3` and `63a773db` (one fix round): the doctor reads `csrf.trustedOrigins`, fails `'*'` and
+  `'null'`, and retires the three old condition ids. The fix round closed quoted and computed keys that read as "no
+  key" and passed a wildcard silently.
+
+**Boundary evidence (at `63a773db`).** T `gate exit: 0`. F green under the CI-baseline rule: 328 passed, the 20
+`site-visual` screenshots only, snapshot diff empty, tree clean. Pushed; CI checked before S4's first commit lands.
+
+**Out-of-scope triage (six findings).** Two closed by Task 10 (the `no-referrer-blanket` text and the retired
+`csrf-disable-missing`). The stale `admin-routes.md`, `supported-toolchain.md`, `cli-cairn-doctor.md`, and
+`engine-rulings.md` lines are already Task 13's; the drifted citations `f:9cztdn` and `f:6xsj29` join its fact set.
+The code leftovers (`factory.ts:66`, `guard.ts:208-209`, `admin-response.ts:32`, and the template-literal key shape
+in `check_csrf.go`) are Task 10b (`afe943dd`). Nothing to the friction log.
+
+**S4 pre-flight** (`69015d71`): three bodyless `members.spec.ts` POSTs, not two; the guard and `devBackendHandle`
+have no `building` gate yet, so 11b adds both; eight showcase and Waymark `platform` read sites and the
+`delivery_inline` docs entries join 11b's files; the showcase has no `.dev.vars.example`; the grep-zero set covers
+comment mentions too.
+
+**Spend:** S3 run 0.56M (largest segment so far, one fix round); pre-flights, the security read, and gate agents
+about 0.45M; total about 3.4M of 12.4M.
+
+**Next:** S4, Tasks 10b, 11a, 11b.

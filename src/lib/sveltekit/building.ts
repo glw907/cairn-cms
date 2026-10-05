@@ -1,5 +1,5 @@
 // cairn-cms: whether the current run is SvelteKit's build (prerendering) rather than a request.
-// The engine asks before it touches the Worker env, since every `cloudflare:workers` read throws
+// The engine asks before it touches the Worker env, since every Worker env read throws
 // while a build prerenders, and before `loadPreview` would mint a page a static file could leak.
 
 /**

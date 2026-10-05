@@ -1,8 +1,8 @@
 // The Cloudflare binding shape cairn requires of a site's Worker. A site's `Env` comes from
 // `wrangler types`, generated from its own `wrangler.jsonc` and secrets file, and the engine reads
-// the same bindings from `cloudflare:workers`; these interfaces state what that generated `Env`
-// must carry, so a site checks it at compile time. Split in two so the required-members rule still
-// fires on a text-only site: `CairnPlatformBindings` names the bindings every site needs, and
+// the same bindings from the Worker env at runtime; these interfaces state what that generated
+// `Env` must carry, so a site checks it at compile time. Split in two so the required-members rule
+// still fires on a text-only site: `CairnPlatformBindings` names the bindings every site needs, and
 // `CairnMediaBindings` adds the bucket a media-enabled site binds.
 import type { D1Database } from '@cloudflare/workers-types';
 import type { EmailSender } from '../email.js';

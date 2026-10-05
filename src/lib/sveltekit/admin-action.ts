@@ -188,7 +188,7 @@ function serializeThrownError(error: unknown): string {
  * `createAdminAction` itself is not generic over `Env`: its event carries no bindings, and a
  * compile-only fixture (`src/tests/unit/env-genericity.test.ts`) proves the returned function
  * assigns clean into a route's generated `Actions`. A handler that reads a site binding imports
- * `env` from `cloudflare:workers` itself. A site whose action needs a database binding resolved
+ * the Workers runtime's `env` itself. A site whose action needs a database binding resolved
  * reaches for `createSectionAction` (`./section-action.js`), whose `resolveDb` takes the site's
  * own `Env`; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
  * contract with no database binding stays on `createAdminAction` itself rather than reaching for

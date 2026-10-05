@@ -4,8 +4,9 @@
 // security headers never run on it; it owns its own.
 //
 // It lives on the `/sveltekit` barrel, not the node-safe `/media` subpath, because it reads the
-// Worker env from `cloudflare:workers`, which a Node process cannot load. Its public signature names only kit
-// (a peer dependency) and web globals, never an `@cloudflare/workers-types` type (decision 5).
+// Worker env through `./workers-env.js`, whose runtime module a Node process cannot load. Its
+// public signature names only kit (a peer dependency) and web globals, never an
+// `@cloudflare/workers-types` type.
 import type { RequestHandler } from '@sveltejs/kit';
 import { requireBucket } from '../env.js';
 import { CairnError } from '../diagnostics/index.js';

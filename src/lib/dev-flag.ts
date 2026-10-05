@@ -50,8 +50,8 @@ export function isLocalHost(hostname: string): boolean {
 }
 
 /**
- * Read `PUBLIC_ORIGIN` from the Worker env the caller passes, the module `env` from
- * `cloudflare:workers`. The read has one source: a process-level `PUBLIC_ORIGIN` carries no meaning
+ * Read `PUBLIC_ORIGIN` from the Worker env the caller passes, the `env` the Workers runtime
+ * exports. The read has one source: a process-level `PUBLIC_ORIGIN` carries no meaning
  * here, so the answer never depends on the shell the runtime was started from. An empty string
  * counts as absent, since a var set to `''` configures nothing.
  *

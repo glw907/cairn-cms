@@ -40,9 +40,9 @@ export interface CookieJar {
  * route id. `cookies` and `setHeaders` are required for the same reason (every kit server event
  * has both), where the shapes this type replaces required them only inconsistently.
  *
- * The event carries no Worker bindings. The engine reads them from `cloudflare:workers`, the
- * module the Cloudflare adapter provides, so a factory's own config callbacks (`resolveDb`,
- * `deliver`, `lookup`) are where a site's `Env` type appears, never this event.
+ * The event carries no Worker bindings. The engine reads them from the `env` the Workers
+ * runtime exports, which the Cloudflare adapter provides, so a factory's own config callbacks
+ * (`resolveDb`, `deliver`, `lookup`) are where a site's `Env` type appears, never this event.
  */
 export interface CairnEvent {
   url: URL;

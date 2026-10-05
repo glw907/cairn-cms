@@ -191,13 +191,13 @@ type ChannelEvent = CairnEvent & { getClientAddress(): string };
 /**
  * The context `deliver` receives alongside the contact and code: the Worker env (provider
  * credentials, or a dev-only transport's own opt-in flag) and Cloudflare's background-task hook,
- * both from `cloudflare:workers`. A `deliver` implementation attaches `.catch()` before anything
- * reaches `waitUntil`, matching the factory's own delivery call (spec, Delivery).
+ * both the Workers runtime's own exports. A `deliver` implementation attaches `.catch()` before
+ * anything reaches `waitUntil`, matching the factory's own delivery call (spec, Delivery).
  */
 export interface DeliverContext<Env> {
   /** The Worker env, typed as the site's own `Env`. */
   env: Env | undefined;
-  /** Cloudflare's background-task hook, the `waitUntil` from `cloudflare:workers`. */
+  /** Cloudflare's background-task hook, the `waitUntil` the Workers runtime exports. */
   waitUntil: (promise: Promise<unknown>) => void;
 }
 

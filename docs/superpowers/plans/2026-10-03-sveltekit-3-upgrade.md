@@ -100,8 +100,13 @@ Every gate runs through `cairn-run-gate '<string>'`; on exit 75, re-issue until 
 - **Full string (F):** the `full` tier of `scripts/checks/gate-tier.mjs`, printed by
   `node scripts/checks/gate-tier.mjs --range <base>..HEAD --pin full` and quoted in Task 0's ledger
   entry. At plan time it is the engine string plus the showcase `admin-visual.spec.ts` run,
-  `check:comments`, `check:surface`, and the whole showcase e2e. Every local showcase e2e runs with
-  `E2E_PORT=4392`, after `ss -ltnp 'sport = :4392'` shows no listener (quoted in the report).
+  `check:comments`, `check:surface`, and the whole showcase e2e. Until Task 5 lands, every local
+  showcase e2e runs on the default port with `E2E_PORT` unset, after `ss -ltnp 'sport = :4173'` shows
+  no listener (quoted in the report): `examples/showcase/wrangler.jsonc:61` hardcodes `PUBLIC_ORIGIN`
+  to `http://localhost:4173`, so under `E2E_PORT=4392` every minted preview link points at a dead
+  port, eight `preview.spec.ts` tests fail, and their half-finished state cascades into 22 more
+  (Task 0 diagnosis, 2026-10-04; ROADMAP files the defect). From Task 5 on, every local showcase e2e
+  runs with `E2E_PORT=4392`, after `ss -ltnp 'sport = :4392'` shows no listener.
 - **Engine string (E):** the `engine` tier of the same script (docs gate, `npm run check`, the node
   projects, the serialized component project, the `create-cairn-site` workspace suite).
 - **Tool (T):** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`.
@@ -480,7 +485,10 @@ specs and rides the `webServer` change), and `templates/waymark/**` through `npm
 **Outcome:**
 - The e2e `webServer` builds with `VITE_CAIRN_E2E=1`, applies `migrations-members` to the local D1
   `MEMBER_DB`, and serves the build through `wrangler dev` on `E2E_PORT` with the command-scoped
-  `--var CAIRN_DEV_BACKEND:1` Task 1 recorded. No `.dev.vars` file is written.
+  `--var CAIRN_DEV_BACKEND:1` Task 1 recorded, plus `--var PUBLIC_ORIGIN:http://localhost:$E2E_PORT`
+  so minted preview links follow the run's port (the hardcoded `:4173` origin in
+  `wrangler.jsonc:61` stays for the flag-free `preview` script). No `.dev.vars` file is written.
+  The ROADMAP entry filing the hardcoded origin is marked done or narrowed.
 - The showcase `preview` script serves the built output through `wrangler dev`, flag-free
   (Decision 3).
 - `membersDevHandle` retires (Decision 10); the members fixture and the `/test/*` routes read the
@@ -493,7 +501,8 @@ specs and rides the `webServer` change), and `templates/waymark/**` through `npm
 - CI's e2e job runs on the same host; visual baselines are unchanged.
 
 **Acceptance:**
-- The whole existing showcase e2e suite is green on the new host with zero baseline files changed
+- The whole existing showcase e2e suite is green on the new host under `E2E_PORT=4392` (the first
+  run on that port since Task 0), with zero baseline files changed
   (`git diff --stat -- '*-snapshots/*'` empty), so a host move that shifted paint cannot pass.
   `media-library.spec.ts:189` is green, and the report quotes its red run without the header.
 - `git grep -n "vite preview" -- examples/showcase/playwright.config.ts .github/workflows/e2e.yml`

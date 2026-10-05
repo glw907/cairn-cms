@@ -819,6 +819,30 @@ consumed by Task 13's reference and facts edits.
 
 ## S4: the bump
 
+### Task 10b: S3 leftovers (added at the S3 boundary, 2026-10-05)
+
+**Pass class:** `tool` for the Go change, `engine-logic` for the comments; one task, light gate.
+**Gate:** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check && npm run check && npm run check:comments'`.
+
+**Files:** `src/lib/auth-channel/factory.ts` (the `assertOriginAndScheme` doc comment, about `:66`),
+`src/lib/sveltekit/guard.ts` (the deployed-admin-over-http comment, about `:207-213`),
+`src/lib/sveltekit/admin-response.ts` (about `:32`), `tool/internal/doctor/check_csrf.go` and its test.
+
+**Outcome:** the S3 reviews' out-of-scope findings in this pass's own code are closed.
+- `factory.ts`: the comment says the action's origin check mirrors guard Rule 2, which S3 deleted; it
+  now states what the check does on its own (SvelteKit's check covers forms but not `vite dev`, Task 7 A).
+- `guard.ts`: the comment says the help page is served "before resolve() runs" the framework check;
+  SvelteKit's Origin check runs before any `handle`, so the comment states the real order (the help
+  page covers the GET a deployed-over-http editor sees; the POST would meet Kit's 403 first).
+- `admin-response.ts`: the `app.html` mention says only an `app.html` meta placed after
+  `%sveltekit.head%` overrides cairn's meta (Decision 11, amended).
+- `check_csrf.go`: a template-literal computed key (`` [`csrf`] `` or `` [`trustedOrigins`] ``) is
+  read like the quoted forms, so `'*'` behind one fails rather than passing as no key (the Task 10
+  fix-round review's non-blocking note: the same silent-pass shape that round closed).
+
+**Acceptance:** a table-driven Go case for each template-literal key shape, red on the old code;
+`git grep -n "guard.ts's admin\|before resolve()" -- src/lib` prints nothing; the gate green.
+
 ### Task 11a: Kit 2.70 prep for the bump
 
 **Pass class:** `auth-data` (it retires reads the dev-flag tripwires and `readPublicOrigin` depend
@@ -1068,7 +1092,7 @@ and every other page the repoint grep names; `docs/internal/facts/*.md`;
   `f:d2jumm` `f:e5hqn3` `f:gs1wzb` `f:gnlib7` `f:ogz5eu` `f:swjwxb` `f:iw346n` `f:l41gju` `f:sjo4cx`
   `f:gh73p5` `f:gncd64` `f:ubuj1w` `f:g22dnw` `f:tkpmxr` `f:ix10bm` `f:qbfriw` `f:3cekcy` `f:x2stjk`
   `f:72xplg` `f:zke3iw` `f:7rehzh` `f:t2t5lx` `f:n4rg1z` `f:n52h8f` `f:oh5rdd` `f:onqm6k` `f:phknca`
-  `f:qlgggh` `f:gwpffe` (the task re-runs the keyword grep and amends the set; the S5 pre-flight
+  `f:qlgggh` `f:gwpffe`, plus `f:9cztdn` and `f:6xsj29`, whose line citations S3 shifted (the task re-runs the keyword grep and amends the set; the S5 pre-flight
 leaves the set to it). New bullets: the
   bodyless server-to-server POST refusal; the `custom_domain`-under-`wrangler dev` Origin mismatch;
   `paths.origin` behind a proxy (Task 7: on Kit 3 a site that sets `paths.origin` passes Kit's check,

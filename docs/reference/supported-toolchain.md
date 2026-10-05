@@ -19,22 +19,21 @@ column only; the rest of this page is accurate as of its last edit.
 |---|---|---|---|
 | The cairn package | `0.98.0` | `package.json`, the `@glw907/cairn-cms` version | On a release whose changelog carries a `Consumers must:` line |
 | Node, on your machine | `>=24` | `engines.node` in cairn's own `package.json` | Rarely, on Node's own Active LTS calendar |
-| SvelteKit | `^2.70` | cairn's `peerDependencies` | Rarely, only when a feature needs a newer SvelteKit capability |
-| Svelte | `^5.56.10` | cairn's `peerDependencies` | Rarely, on the same cadence as SvelteKit |
+| SvelteKit | `^3` | cairn's `peerDependencies` | Rarely, only when a feature needs a newer SvelteKit capability |
+| Svelte | `^5.57.1` | cairn's `peerDependencies` | Rarely, on the same cadence as SvelteKit |
 | `@cloudflare/workers-types` | `^5` | cairn's `peerDependencies` | Rarely, on Cloudflare's own major-version cadence |
 | Wrangler | `^4.144.0` | the template's `package.json`, set once when a site is scaffolded | Whenever Cloudflare ships a new Wrangler major |
-| `@sveltejs/adapter-cloudflare` | `^7.2.9` | the template's `package.json` | Follows SvelteKit's own release line |
+| `@sveltejs/adapter-cloudflare` | `^8` | the template's `package.json` | Follows SvelteKit's own release line |
 | The Workers `compatibility_date` | `2026-08-21` | the template's `wrangler.jsonc`, set once when a site is scaffolded | Moves forward when a new template pulls in a later date; a deployed site's own date never changes on its own |
 | TypeScript | `^6` | the template's `package.json` | Held deliberately for now; see the note below |
 
-**`@sveltejs/kit` `^2.70`.** The floor tracks the version cairn develops and tests against, so
-the engine may use SvelteKit's current capabilities with no guard for an older minor. The edit
-page's `$app/state` dependency, which forced the earlier `^2.12` floor (the `0.41.0` changelog
-entry made that range an enforced consumer requirement rather than an advisory), still holds;
-`^2.70` raises the floor to the version cairn installs.
+**`@sveltejs/kit` `^3`.** The floor tracks the version cairn develops and tests against, so
+the engine may use SvelteKit's current capabilities with no guard for an older release. SvelteKit 3
+and `@sveltejs/adapter-cloudflare` 8 move the Worker's bindings from `event.platform` to the
+`cloudflare:workers` module, which the engine reads, so a SvelteKit 2 site can't run this engine.
 
-**`svelte` `^5.56.10`.** The floor is the version cairn develops and tests against, for the same
-reason. The correctness history behind the earlier `^5.56.3` floor still stands underneath it:
+**`svelte` `^5.57.1`.** The floor is the version cairn develops and tests against, for the same
+reason, and the floor SvelteKit 3 itself peers on. The correctness history behind the earlier `^5.56.3` floor still stands underneath it:
 svelte `5.56.1` miscompiles parenthesized boolean groupings, and a consumer compiles the
 package's shipped `.svelte` sources directly, so a lower floor would let a broken svelte compile
 a broken component.

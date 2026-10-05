@@ -64,9 +64,10 @@ const IDENTITY_CEILING_SCOPE = 'ceiling';
 const IDENTITY_ESCALATION_SCOPE = 'escalation';
 
 /**
- * Step 1 of every action: the unconditional origin and scheme checks, mirroring `guard.ts`'s admin
- * rule. Neither result union carries a wire code for a forged or downgraded request, so both
- * refusals throw the framework's own `error()` rather than degrade the cookie or the response.
+ * Step 1 of every action: the unconditional origin and scheme checks. SvelteKit's own origin check
+ * covers form posts but not `vite dev`, so the action keeps its own. Neither result union carries
+ * a wire code for a forged or downgraded request, so both refusals throw the framework's own
+ * `error()` rather than degrade the cookie or the response.
  * @throws HttpError 403 on an origin mismatch, or on plain http anywhere but a local host.
  */
 function assertOriginAndScheme<Env>(event: CairnEvent<Env>): void {

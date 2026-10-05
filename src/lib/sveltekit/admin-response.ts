@@ -29,8 +29,9 @@ export interface SecurityHeaderOptions {
  * SvelteKit's own origin check reads; `no-referrer` would send `Origin: null` and refuse the
  * editor's own submit. The policy still sends no path, so the magic-link token in the confirm
  * page's query string never reaches a referrer. Each admin view also emits a matching referrer
- * `meta` tag: a site's outer handle, `app.html`, or a zone rule that sets `no-referrer` site-wide
- * would otherwise lock every editor out, and the browser takes the last-processed meta.
+ * `meta` tag: a site's outer handle or a zone rule that sets `no-referrer` site-wide would
+ * otherwise lock every editor out, and the browser takes the last-processed meta. Only an
+ * `app.html` meta placed after `%sveltekit.head%` overrides cairn's.
  * Strict-Transport-Security carries `max-age` and, when `opts.includeSubDomains` is set, the
  * subdomain directive; `opts.omitHsts` drops the header entirely. The `Cache-Control` header
  * (the same `private, no-store` spelling `preview.ts` already uses) is unconditional: every

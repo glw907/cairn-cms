@@ -238,7 +238,7 @@ export function createAdminAction<T>(
         );
     if (!verdict.ok) {
       // The admin guard already validates this double-submit pair on every unsafe /admin/** POST
-      // before resolve() runs, so a mismatch reaching here is defense-in-depth catching what
+      // before the route runs, so a mismatch reaching here is defense-in-depth catching what
       // should already be impossible in production. Log the specific reason and which witness
       // produced it; the response never gets either, since it renders to a real browser through
       // the nearest +error.svelte. No hasSession field here (unlike the guard's own record): this

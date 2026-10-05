@@ -206,10 +206,11 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
       return resolve(event);
     }
 
-    // A deployed admin request over http never works: the magic-link form POST would fail the
-    // framework's CSRF guard with an opaque 403. Serve the help page instead, before resolve()
-    // runs that check. This covers the public login/auth paths too, since that is where the form
-    // posts. Local http (wrangler dev) is exempt. `isLocalHost` here is UX only: it decides
+    // A deployed admin request over http never works: the magic-link form POST would meet
+    // SvelteKit's origin check, which runs before any handle, and get an opaque 403. The help page
+    // covers the GET an editor on a deployed-over-http site sees; the POST would meet that 403
+    // first. This covers the public login/auth paths too, since that is where the form is served.
+    // Local http (wrangler dev) is exempt. `isLocalHost` here is UX only: it decides
     // whether to show the help page, never whether to grant access. The session gate below runs
     // regardless; do not repurpose this into an auth check.
     if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
@@ -241,7 +242,7 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
     }
 
     // Admin: every unsafe form POST carries a valid double-submit token, else the branded
-    // 403 before resolve() runs. This covers the public login/auth posts too. The header witness
+    // 403 before the route runs. This covers the public login/auth posts too. The header witness
     // decides outright when it was SENT at all, matching or not: a valid X-Cairn-CSRF header clears
     // the request without cloning the body, which is how the raw-body media upload (a text/plain
     // POST) passes CSRF, and a header that was sent but wrong (a stale value on a raw-body endpoint)

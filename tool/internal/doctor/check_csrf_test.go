@@ -85,6 +85,24 @@ func TestConfigCsrfTrustedOrigins(t *testing.T) {
 			wantDetailHas: []string{`"*"`},
 		},
 		{
+			name:          "fail: a template-literal computed csrf key",
+			files:         map[string]string{"vite.config.ts": viteConfigWith("[`csrf`]: { trustedOrigins: ['*'] },")},
+			wantStatus:    StatusFail,
+			wantDetailHas: []string{`"*"`},
+		},
+		{
+			name:          "fail: a template-literal computed trustedOrigins key",
+			files:         map[string]string{"vite.config.ts": viteConfigWith("csrf: { [`trustedOrigins`]: ['*'] },")},
+			wantStatus:    StatusFail,
+			wantDetailHas: []string{`"*"`},
+		},
+		{
+			name:          "fail: both keys template-literal computed",
+			files:         map[string]string{"vite.config.ts": viteConfigWith("[ `csrf` ]: { [ `trustedOrigins` ]: ['null'] },")},
+			wantStatus:    StatusFail,
+			wantDetailHas: []string{`"null"`},
+		},
+		{
 			name:          "unchecked: a quoted shorthand-looking csrf value that is not an object",
 			files:         map[string]string{"vite.config.ts": viteConfigWith("'csrf': csrfOptions,")},
 			wantStatus:    StatusUnchecked,

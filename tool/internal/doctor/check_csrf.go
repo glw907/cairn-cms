@@ -44,13 +44,14 @@ var viteConfigCandidates = []string{"vite.config.js", "vite.config.ts", "vite.co
 
 // csrfKeyPattern and trustedOriginsKeyPattern find an object-literal property named csrf or
 // trustedOrigins in the code view of a config, where the name may be bare, quoted with either
-// quote, or a computed string key in brackets. Group 1 is the key token and group 2 is the
+// quote, or a computed string key in brackets (the bracketed key may use a backtick, written
+// \x60 because the pattern is itself a raw string). Group 1 is the key token and group 2 is the
 // terminator, which says whether the property has a value (":") or is a shorthand or the last in
 // its object (",", "}"). A match is only a property when keyMatches confirms it sits outside a
 // string and a comment.
 var (
-	csrfKeyPattern           = regexp.MustCompile(`(?:^|[{,])\s*(csrf|'csrf'|"csrf"|\[\s*'csrf'\s*\]|\[\s*"csrf"\s*\])\s*([:,}])`)
-	trustedOriginsKeyPattern = regexp.MustCompile(`(?:^|[{,])\s*(trustedOrigins|'trustedOrigins'|"trustedOrigins"|\[\s*'trustedOrigins'\s*\]|\[\s*"trustedOrigins"\s*\])\s*([:,}])`)
+	csrfKeyPattern           = regexp.MustCompile(`(?:^|[{,])\s*(csrf|'csrf'|"csrf"|\[\s*'csrf'\s*\]|\[\s*"csrf"\s*\]|\[\s*\x60csrf\x60\s*\])\s*([:,}])`)
+	trustedOriginsKeyPattern = regexp.MustCompile(`(?:^|[{,])\s*(trustedOrigins|'trustedOrigins'|"trustedOrigins"|\[\s*'trustedOrigins'\s*\]|\[\s*"trustedOrigins"\s*\]|\[\s*\x60trustedOrigins\x60\s*\])\s*([:,}])`)
 )
 
 // keyMatches returns the submatch indices of every property key the pattern finds in code that

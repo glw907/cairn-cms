@@ -1047,7 +1047,8 @@ type test, whose `CairnPlatformBindings` snippet Task 13's reference page quotes
 
 **Files:** `src/tests/unit/workers-env-reach.test.ts`.
 
-**Outcome:** the import-graph test that proves no Node-context entry reaches `src/lib/sveltekit/workers-env.ts`
+**Outcome:** (the test already loads `Manifest.exports` at `:15-20`; its three specifier regexes at `:20-40` all
+require `./` or `../`) the import-graph test that proves no Node-context entry reaches `src/lib/sveltekit/workers-env.ts`
 follows self-referencing bare specifiers (`@glw907/cairn-cms` and `@glw907/cairn-cms/<subpath>`) by resolving
 them through the root `package.json` `exports` map to their `dist` files, as well as relative specifiers. At
 `9ff58730` the walk follows only relative specifiers, so `dist/vite/internal.js`'s self-references
@@ -1063,21 +1064,28 @@ specifier fails the test (quoted red, then restored); the real `dist` still pass
 changes; header Overrides). **Spec:** S5.
 
 **Files:** `packages/create-cairn-site/src/**` and `test/**` wherever they name Kit 2, adapter 7,
-`svelte.config.js`, `App.Platform`, `checkOrigin`, or `$lib` (the pre-flight lists them;
-`preflight.mjs` and `scaffold.test.mjs` among the candidates), `packages/create-cairn-site/README.md`,
+`svelte.config.js`, `App.Platform`, `checkOrigin`, or `$lib` (S5 pre-flight, 2026-10-05: grep finds nothing to
+edit in `src/` or `scripts/`; the work is a new baked-template test, the README, and the overlay),
+`packages/create-cairn-site/README.md`,
 `packages/create-cairn-site/scripts/bake-template.mjs` and its test if the bake names a removed file,
 `packages/create-cairn-site/template-repo/**` (the overlay README and `.dev.vars.example`).
 
 **Outcome:** the scaffold produces a Kit 3 / adapter 8 site identical to the emitted Waymark, with no
 `svelte.config.js`, no `csrf` block, no `App.Platform`, `#lib` imports, and a `preview` script that
-serves through `wrangler dev`; its preflight and README name the Kit 3 floors.
+serves through `wrangler dev`; the README names the generated site's toolchain floors (SvelteKit 3,
+adapter-cloudflare 8, vite `^8.0.12`, wrangler `^4.118`, Node `>=22.17`). The preflight keeps checking only the
+scaffolder's own Node (`engines.node` `>=24`): it runs before the scaffold installs vite and wrangler, so a floor
+check on them there would test nothing (conductor ruling at the S5 pre-flight).
 
 **Acceptance:**
-- A scaffold test over the baked template asserts the absence of `svelte.config.js`, any `csrf` key,
+- A scaffold test over a fresh bake asserts (it runs `scripts/bake-template.mjs --to <dir>` itself into a scratch
+  dir under `$HOME/.cache`: the in-tree `packages/create-cairn-site/template/` is gitignored and is a stale pre-Kit-3
+  bake, so a test reading it would assert on stale state) the absence of `svelte.config.js`, any `csrf` key,
   and `App.Platform`, and the presence of the `imports` field; each assertion fails on the Kit 2
   template.
 - `git grep -nE "svelte\.config|checkOrigin|App\.Platform|event\.platform|platform\.env|\\\$lib\b|\^2\.70|adapter-cloudflare.*\^7" -- packages/create-cairn-site ':!**/fixtures/**' ':!packages/create-cairn-site/scripts/emit-template-dir.test.mjs'`
-  prints nothing (the excluded test uses `svelte.config.js` as a linkcheck fixture filename, `:143`;
+  prints nothing (the excluded test uses `svelte.config.js` as a linkcheck fixture filename, `:159` and `:162`; this
+  grep cannot see the gitignored `template/`, so the fresh-bake test above is the real proof;
   `process.platform` is not a binding read and does not match).
 - S green; the CI `scaffold.yml` and `create-site.yml` runs on the task's push are green.
 
@@ -1099,11 +1107,21 @@ and every other page the repoint grep names; `docs/internal/facts/*.md`;
 (erratum at `:228`); `docs/internal/admin-smoke-test.md`; `CLAUDE.md`; `ROADMAP.md`.
 
 **Outcome:**
+- **Already landed with 11b (verify, do not redraft):** the `PlatformContext` retirement, the `delivery_inline`
+  retirement and `guard.refused` without `origin` in `log-events.md`, and the `cloudflare:workers` call form
+  (`sveltekit.md:70`, `:704`, `:725`; `auth-channel.md:45`, `:55`, `:78-79`). Starting set at `57f5c969` for the
+  first acceptance grep: 8 lines (`admin-routes.md:8,14,15`, `cli-cairn-doctor.md:34,82`,
+  `supported-toolchain.md:94-99`); `cli-cairn-json-output.md:442-445` and `:504` carry the new id, and the three
+  retired ids still need noting. The doctor anchor `keep-sveltekits-origin-check-on` is a facts bullet only: no
+  `docs/admin/is-it-working.md` exists until the admin arm is rebuilt. Beyond the 55-id candidate set, a keyword
+  grep found 17 more bullets to triage (`05q9zk 1wimos fsshp5 ot3zkq yc3ivl zhpap6` in admin.md;
+  `0gltjq 0vofop 7qqhda 8rnym5 979v0a 9ik061 diro7m keuj8l mhsere njh87y` in extend.md; `doq8s2` in reference.md),
+  some likely noise.
 - **Reference pages** state the new surface: `CairnPlatformBindings` (its snippet quoted from Task
   11b's type test, per the spec's table) and the CSRF handoff (`admin-routes.md`); `CairnEvent`, `PlatformContext`'s retirement, `resolveDb`'s rewritten rationale
-  (`sveltekit.md:768-772`, which calls itself ratified), and the `createD1AuditSink` call form
+  (`sveltekit.md:765-768`, which calls itself ratified at `:766`), and the `createD1AuditSink` call form
   `import { env, waitUntil } from 'cloudflare:workers'` (`sveltekit.md`); `DeliverContext`,
-  `waitUntil`, and the `process.env` sentence at `auth-channel.md:140`; `core.md`;
+  `waitUntil` (the `process.env` sentence at `auth-channel.md:140` is already rewritten by 11b; verify); `core.md`;
   `cli-cairn-doctor.md` and the frozen-id list in `cli-cairn-json-output.md` under the tool major;
   `supported-toolchain.md`; `log-events.md` (`guard.refused` without `origin`,
   `auth.channel.delivery_inline` retired, an anchor keyed on Kit's literal
@@ -1116,8 +1134,10 @@ and every other page the repoint grep names; `docs/internal/facts/*.md`;
   name the specifier and quote the call form `import { env, waitUntil } from 'cloudflare:workers'`, so a consumer
   knows where to import from.
 - **Subpath-import snippets** (S1 finding, Task 3): every published snippet that imports through
-  `$lib`, `$chassis`, or `$theme` moves to the `#` form the scaffold now emits (plan time: 55 lines
-  across 14 files, among them `docs/reference/{core,sveltekit,delivery-data,delivery,admin,admin-routes,islands}.md`).
+  `$lib`, `$chassis`, or `$theme` moves to the `#` form the scaffold now emits (at `57f5c969`: 44 lines
+  across 8 published files, by file `sveltekit.md` 14, `delivery-data.md` 11, `admin-routes.md` 6, `core.md` 6,
+  `admin.md` 2, `delivery.md` 2, `islands.md` 1, `extend/choose-an-ai-posture.md` 2; the plan-time 55 in 14 counted
+  internal docs, among them `docs/reference/{core,sveltekit,delivery-data,delivery,admin,admin-routes,islands}.md`).
   A page that deliberately targets a site scaffolded before this change (Task 3's implementer named
   `docs/extend/choose-an-ai-posture.md`) keeps its form and says which scaffold it targets.
   Internal docs (`docs/internal/code-idioms.md`, `pre-beta-harvest.md`) are triaged, not required.
@@ -1158,13 +1178,15 @@ leaves the set to it). New bullets: the
   `audit-log-auth-channel-delivery-inline` (retire verdict recorded),
   `audit-sveltekit-created1auditsink`, `dev-backend-flag-refusal`, `convention-auth-loud-postures`.
 - **Functional spec erratum** at `:228`: the confirm step's policy is `strict-origin` plus the meta.
-- **`admin-smoke-test.md`:** its POST steps send an `Origin` matching the Worker URL.
+- **`admin-smoke-test.md`:** its POST steps send an `Origin` matching the Worker URL (`:97-101` already say a POST
+  needs one; the curl POSTs at about `:181`, `:195`, and `:208` each gain `-H "Origin: <Worker URL>"` where they lack
+  it).
 - **kit#15992 cleanup:** `CLAUDE.md:211`'s watch line gets a replacement standing example for an
   external trigger (the remote-functions routine `trig_0193pPNoyxsTGeUhF1xx7woa`, already rewritten
   2026-10-03; the routine itself is not touched); the four ROADMAP entries (`:52`, `:402`,
-  `:1710-1716`, `:2150`) are marked done or rewritten so none presents kit#15992 as pending.
-- **ROADMAP dev-package watches:** the `APP_DB` overwrite (`:938-946`), the in-memory `MEDIA_BUCKET`
-  (`:872-882`), and the missing `cairnAccess` (`:1556-1582`) defer, each re-armed to "the next pass
+  `:1703-1718`, `:2147-2154` at `57f5c969`) are marked done or rewritten so none presents kit#15992 as pending.
+- **ROADMAP dev-package watches:** the `APP_DB` overwrite (`:948-957` at `57f5c969`), the in-memory
+  `MEDIA_BUCKET` (`:884-892`), and the missing `cairnAccess` (`:1555-1582`) defer, each re-armed to "the next pass
   that changes the dev package's double set or `DevBackendConfig`".
 
 **Acceptance:**

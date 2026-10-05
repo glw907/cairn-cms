@@ -210,9 +210,9 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `logout`) throw a SvelteKit 503 `HttpError` before touching any row, rather than returning a
   typed outcome, because no result union carries a wire code for a polluted environment.
   "Deployed" is determined by `PUBLIC_ORIGIN` first, falling back to request hostname only when
-  unset. Source: `src/lib/auth-channel/factory.ts:118-130` (`assertNoDevBackendLeak`: `throw
+  unset. Source: `src/lib/auth-channel/factory.ts:118-127` (`assertNoDevBackendLeak`: `throw
   error(503, CAIRN_DEV_BACKEND_MESSAGE)`, called from `request`/`confirm`/`logout` at
-  `:686,912,1075`), `src/lib/dev-flag.ts:108-114` (`isDeployedHost`: `PUBLIC_ORIGIN` consulted
+  `:682,908,1071`), `src/lib/dev-flag.ts:83-93` (`isDeployedHost`: `PUBLIC_ORIGIN` consulted
   first, falls back to `event.url.hostname` when unset or unparseable). [verified]
 - `f:lccuuc` The channel's own D1 schema ships as `migrations-channel/0000_channel.sql` (tables
   `cairn_channel_meta`, `cairn_channel_code`, `cairn_channel_session`, `cairn_channel_budget`) and
@@ -1622,7 +1622,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:0wvvih` `createAuthGuard`'s own `Handle` refuses at the pre-routing layer, before any route's load or
   action runs, with a raw branded `Response` for CSRF, origin, HTTPS, missing-binding, or
   dev-backend-in-production failures. The dev-backend-in-production case is a 503, triggered when
-  `CAIRN_DEV_BACKEND` is set in a deployed runtime. Source: `src/lib/sveltekit/guard.ts:193-198`
+  `CAIRN_DEV_BACKEND` is set in a deployed runtime. Source: `src/lib/sveltekit/guard.ts:195-198`
   (`CAIRN_DEV_BACKEND_FLAG` check, `log.error('guard.refused', { reason: 'dev_backend_in_prod' })`,
   `return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 })`). [verified]
 - `f:hrvhnz` The guard's pre-routing CSRF check only covers the three content types a browser can send

@@ -175,12 +175,11 @@ describe('csrfSecure', () => {
   });
 });
 
-// The Task 9 reconciliation: `csrfSecure` now consumes the shared `readPublicOrigin` reader
-// (dev-flag.ts) at platform depth only, so a `process.env.PUBLIC_ORIGIN` the runner's own shell
-// happens to export must never leak into this function's answer. Every case stubs
+// `csrfSecure` reads `PUBLIC_ORIGIN` from `platform.env` alone, so a `process.env.PUBLIC_ORIGIN`
+// the runner's own shell happens to export must never leak into its answer. Every case stubs
 // `PUBLIC_ORIGIN` on `process.env` so the suite stays deterministic regardless of the runner's
 // shell, and unstubs it afterward so the stub cannot leak into a sibling test file.
-describe('csrfSecure (platform-only depth; process.env must never leak in)', () => {
+describe('csrfSecure (platform.env only; process.env must never leak in)', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
@@ -200,9 +199,8 @@ describe('csrfSecure (platform-only depth; process.env must never leak in)', () 
       url: new URL('http://site.example/admin/login'),
       platform: { env: {} },
     };
-    // Platform depth only: with no platform-supplied origin, csrfSecure falls through to its own
-    // non-Secure default rather than consulting process.env, even though a bare `readPublicOrigin`
-    // dual read would have found the stubbed value.
+    // With no platform-supplied origin, csrfSecure falls through to its own non-Secure default
+    // rather than consulting process.env.
     expect(csrfSecure(event)).toBe(false);
   });
 

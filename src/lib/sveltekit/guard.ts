@@ -180,10 +180,10 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
 
-    // Fail closed if the dev-backend flag is set in a deployed runtime. Read both env sources: a
-    // Cloudflare Worker var lands on platform.env, an adapter-node OS var on process.env. A correct
-    // production build already eliminated the dev backend (the consumer gates it on a build-time
-    // define named at each call site), so a set flag signals a polluted environment; refuse loudly.
+    // Fail closed if the dev-backend flag is set in a deployed runtime. A Cloudflare Worker var
+    // lands on platform.env, the only source read. A correct production build already eliminated
+    // the dev backend (the consumer gates it on a build-time define named at each call site), so a
+    // set flag signals a polluted environment; refuse loudly.
     // This refusal is flag-set-alone, with no locality check, since the guard mounts only in a
     // production build (the dev branch replaces it entirely rather than running alongside it), so
     // there is no legitimate live-flag case for this handler to admit
@@ -192,10 +192,7 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
     // predicate, since one factory instance serves both dev and prod; both import the flag name,
     // the message, and the truthiness rule from `dev-flag.ts` so the two never drift onto
     // different wording or a different reading of the same value.
-    const platformFlag = event.platform?.env?.[CAIRN_DEV_BACKEND_FLAG];
-    const processFlag =
-      typeof process !== 'undefined' ? process.env?.[CAIRN_DEV_BACKEND_FLAG] : undefined;
-    if (isDevBackendFlagSet(platformFlag) || isDevBackendFlagSet(processFlag)) {
+    if (isDevBackendFlagSet(event.platform?.env?.[CAIRN_DEV_BACKEND_FLAG])) {
       log.error('guard.refused', { reason: 'dev_backend_in_prod', path: pathname });
       return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 });
     }

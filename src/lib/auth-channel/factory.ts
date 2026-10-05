@@ -100,12 +100,9 @@ interface DevBackendFlagCache {
  * `guard.ts` does, would break every legitimate dev-backend deployment. This factory instead
  * refuses only when the flag is set AND the request is deployed.
  *
- * Both env sources are read, matching `guard.ts`: a Cloudflare Worker var lands on
- * `platform.env`, an adapter-node OS var on `process.env` (the documented
- * `CAIRN_DEV_BACKEND=1 npm run dev` form). Only the `platform.env` half is cached, and only once
- * a request has actually carried a platform env to read, since that is the half a Worker isolate
- * fixes for its lifetime. `process.env` is re-read on every call, which costs nothing and keeps
- * an adapter-node deployment (where `platform` is always absent) inside the tripwire.
+ * The flag is read from `platform.env` alone, matching `guard.ts`: a Cloudflare Worker var lands
+ * there. The observation is cached per factory instance, and only once a request has actually
+ * carried a platform env to read, since a Worker isolate fixes its vars for its lifetime.
  *
  * The deployment witness is evaluated fresh on every call, never cached, since one isolate can
  * serve `*.workers.dev` and a custom domain interchangeably, so a cached verdict from an early
@@ -124,9 +121,7 @@ function assertNoDevBackendLeak<Env>(event: CairnEvent<Env>, cache: DevBackendFl
     cache.set = isDevBackendFlagSet(platformEnv[CAIRN_DEV_BACKEND_FLAG]);
     cache.checked = true;
   }
-  const fromProcess = typeof process !== 'undefined' ? process.env?.[CAIRN_DEV_BACKEND_FLAG] : undefined;
-  const live = cache.set || isDevBackendFlagSet(fromProcess);
-  if (live && isDeployedHost(event)) {
+  if (cache.set && isDeployedHost(event)) {
     throw error(503, CAIRN_DEV_BACKEND_MESSAGE);
   }
 }
@@ -613,7 +608,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   let cachedSalt: string | null = null;
 
   // The dev-backend flag's env observation, cached once per channel instance and never re-read
-  // (see assertNoDevBackendLeak's own doc comment for why only this half is cacheable).
+  // (see assertNoDevBackendLeak's own doc comment).
   const devBackendFlagCache: DevBackendFlagCache = { checked: false, set: false };
 
   /**

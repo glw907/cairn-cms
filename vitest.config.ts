@@ -11,6 +11,8 @@ import type { Plugin } from 'vite';
 // entry; there is no `/config` subpath.
 const migrations = await readD1Migrations(path.resolve('migrations'));
 
+const CLOUDFLARE_WORKERS_FAKE = path.resolve('./src/tests/helpers/cloudflare-workers-fake.ts');
+const CLOUDFLARE_WORKERS_FAKE_SETUP = path.resolve('./src/tests/helpers/cloudflare-workers-fake-setup.ts');
 const SOURCE_ADMIN_SHEET = path.resolve('src/lib/admin/cairn-admin.css');
 const COMPILED_ADMIN_SHEET = path.resolve('dist/admin/cairn-admin.css');
 
@@ -63,11 +65,15 @@ export default defineConfig({
           // preview.ts at all.
           alias: {
             '$app/env': path.resolve('./src/tests/_app-env.ts'),
+            // The real module exists only inside workerd. The unit project resolves it to a fake
+            // a setup file resets before each test; the integration project runs on the native one.
+            'cloudflare:workers': CLOUDFLARE_WORKERS_FAKE,
           },
         },
         test: {
           name: 'unit',
           unstubGlobals: true,
+          setupFiles: [CLOUDFLARE_WORKERS_FAKE_SETUP],
           include: [
             'src/tests/unit/**/*.test.ts',
             'src/tests/lab/**/*.test.ts',
@@ -157,6 +163,9 @@ export default defineConfig({
             // preview.ts's own $app/env import into this project's browser graph too, not
             // just the unit and integration projects.
             '$app/env': path.resolve('./src/tests/_app-env.ts'),
+            // The same fake the unit project aliases; a component graph that reaches a
+            // cloudflare:workers import resolves it here too.
+            'cloudflare:workers': CLOUDFLARE_WORKERS_FAKE,
           },
         },
         // Pre-declare the spellchecker's wasm loader so Vite optimizes it during warm-up. On a
@@ -170,7 +179,7 @@ export default defineConfig({
           name: 'component',
           unstubGlobals: true,
           include: ['src/tests/component/**/*.test.ts'],
-          setupFiles: ['./src/tests/component/_setup.ts'],
+          setupFiles: ['./src/tests/component/_setup.ts', CLOUDFLARE_WORKERS_FAKE_SETUP],
           // Rebuilds dist/admin/cairn-admin.css before this project's test files start, so every
           // idiom-probe render, mutation, and TDD loop reads a fresh compiled sheet rather than a stale
           // one left over from a previous package build. A project's own globalSetup runs once, in

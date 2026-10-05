@@ -23,7 +23,7 @@ test.beforeAll(async ({ request }) => {
   // `reuseExistingServer`) keeps the channel's D1 tables and the capture map across runs, and
   // this suite's per-contact budgets would otherwise accumulate hour over hour until a request
   // starts answering `throttled`.
-  const res = await request.post('/test/reset-members');
+  const res = await request.post('/test/reset-members', { data: {} });
   expect(res.ok()).toBe(true);
 });
 
@@ -174,7 +174,7 @@ test("revocation: the test route revokes the caller's own session, and the gated
   await expect(page).toHaveURL(/\/members$/);
   await expect(page.getByText('member-revocation')).toBeVisible();
 
-  const revoke = await page.request.post('/test/revoke-member-session');
+  const revoke = await page.request.post('/test/revoke-member-session', { data: {} });
   expect(revoke.ok()).toBe(true);
 
   const refusal = await page.request.get('/members', { maxRedirects: 0 });
@@ -193,7 +193,7 @@ test('reset: /test/reset-members empties the capture and the channel database, s
   await expect(page.getByRole('status')).toContainText('A code was sent.');
   expect((await readCapture(page.request, contact)).count).toBe(1);
 
-  const reset = await page.request.post('/test/reset-members');
+  const reset = await page.request.post('/test/reset-members', { data: {} });
   expect(reset.ok()).toBe(true);
 
   // The capture map is empty: the readback route answers 404 for a contact it holds nothing for.

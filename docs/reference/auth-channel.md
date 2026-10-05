@@ -137,8 +137,8 @@ set and the request reaches a deployed runtime, `request`, `confirm`, and `logou
 SvelteKit `HttpError` with status 503 before touching a row, minting a code, or calling your
 `deliver`. It's a throw rather than an `{outcome: ...}` result because no result union carries a wire
 code for a polluted environment, so SvelteKit renders your error page instead of returning to the
-form. The flag is read from both `platform.env` and `process.env`. "Deployed" reads the configured
-`PUBLIC_ORIGIN` first and falls back to the request's own hostname only when no `PUBLIC_ORIGIN` is
+form. The flag is read from `platform.env` alone. "Deployed" reads the configured
+`PUBLIC_ORIGIN` from `platform.env` first and falls back to the request's own hostname only when no `PUBLIC_ORIGIN` is
 set. Local development with the flag set is untouched, which is what lets a dev transport use the
 flag as its own enable contract.
 

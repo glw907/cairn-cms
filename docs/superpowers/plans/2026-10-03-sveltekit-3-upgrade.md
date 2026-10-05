@@ -1156,6 +1156,13 @@ after `VITE_CAIRN_E2E=1 npm run build` and `npx wrangler d1 migrations apply MEM
 Spike worktree `.claude/worktrees/sveltekit-3-spike` (branch `sveltekit-3-spike`, two probe commits) stays until
 the close.
 
-**Next:** confirm the default-port F baseline green (rerun if no result is recorded here), resolving the 20-test
-gap with a `--reporter=list` run of `site-visual.spec.ts` if the summary does not; then S1 (Tasks 2, 3, 4) through
-`pass-execute` by name. S1's pre-flight is done (item 6).
+**Baseline result (default port, 2026-10-04):** F `gate exit: 1` with every step green except the e2e's 20
+`site-visual.spec.ts` screenshots (site home and archive page 2, five viewports, light and dark; small pixel diffs,
+ratio about 0.01): 94 passed in the `admin-visual` run, 318 passed and 20 failed of 338 in the full e2e. Those are
+exactly the files `durable-gotchas.md`, "CI-canonical baselines this workstation cannot reproduce", names, so by its
+rule the baseline is **green**, and the earlier 20-test gap was these failures. Every later local gate carries the
+same rule: those 20 failures alone are green, any other visual failure is red, and no baseline is ever regenerated
+locally. `pass-execute`'s `commonNotes` must carry this rule for the implementer and the reviewer.
+
+**Next:** S1 (Tasks 2, 3, 4) through `pass-execute` by name, with the e2e on the default port and the baseline rule
+above in `commonNotes`. S1's pre-flight is done (item 6).

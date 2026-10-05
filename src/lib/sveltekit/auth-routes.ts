@@ -282,7 +282,8 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
 
   /**
    * GET /admin/auth/confirm. Renders the confirm page and consumes nothing; only the POST
-   * verifies. Sets Referrer-Policy: no-referrer so the token does not leak to a referrer, and
+   * verifies. Sets Referrer-Policy: strict-origin, which sends only the origin on a cross-origin
+   * navigation, so the token in this URL's query string never reaches a referrer, and
    * issues the CSRF token so the confirm form can render the hidden field.
    *
    * Under identity mode this 404s, raised before any cookie write: there is no magic link to
@@ -290,7 +291,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    */
   function confirmLoad(event: CairnEvent): ConfirmData {
     if (event.locals.cairnIdentity) throw error(404, 'Not found');
-    event.setHeaders({ 'Referrer-Policy': 'no-referrer' });
+    event.setHeaders({ 'Referrer-Policy': 'strict-origin' });
     return {
       token: event.url.searchParams.get('token') ?? '',
       siteName: config.branding.siteName,

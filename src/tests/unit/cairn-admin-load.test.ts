@@ -138,7 +138,7 @@ describe('public views', () => {
     expect(data.view).toBe('confirm');
     if (data.view !== 'confirm') throw new Error('narrowing');
     expect(data.page).toMatchObject({ token: 'abc', siteName: 'Test Site' });
-    expect(event._headers['Referrer-Policy']).toBe('no-referrer');
+    expect(event._headers['Referrer-Policy']).toBe('strict-origin');
   });
 });
 

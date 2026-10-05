@@ -25,6 +25,12 @@ export interface SecurityHeaderOptions {
 /**
  * Attach the baseline security headers to an admin response. No full CSP; see the auth-hardening
  * design. frame-ancestors is the modern clickjacking control and the one CSP directive included.
+ * Referrer-Policy is `strict-origin`. A same-origin form POST keeps its real `Origin` header, which
+ * SvelteKit's own origin check reads; `no-referrer` would send `Origin: null` and refuse the
+ * editor's own submit. The policy still sends no path, so the magic-link token in the confirm
+ * page's query string never reaches a referrer. Each admin view also emits a matching referrer
+ * `meta` tag: a site's outer handle, `app.html`, or a zone rule that sets `no-referrer` site-wide
+ * would otherwise lock every editor out, and the browser takes the last-processed meta.
  * Strict-Transport-Security carries `max-age` and, when `opts.includeSubDomains` is set, the
  * subdomain directive; `opts.omitHsts` drops the header entirely. The `Cache-Control` header
  * (the same `private, no-store` spelling `preview.ts` already uses) is unconditional: every
@@ -35,7 +41,7 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('X-Frame-Options', 'DENY');
   headers.set('Content-Security-Policy', "frame-ancestors 'none'");
-  headers.set('Referrer-Policy', 'no-referrer');
+  headers.set('Referrer-Policy', 'strict-origin');
   if (!opts.omitHsts) {
     headers.set(
       'Strict-Transport-Security',

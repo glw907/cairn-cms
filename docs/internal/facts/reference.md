@@ -115,7 +115,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - `f:0vgrcx` `TextInput` and `SelectInput` shipped at `0.94.0` (renamed from admin-fields'
   `TextField`/`SelectField`); `FieldRow` was added later, at `0.95.0` (commit `68d622a1`,
   2026-08-07), not alongside the 0.94.0 merge. All three retired together in the retires pass,
-  batch 1a. Source: `CHANGELOG.md:3817-3827` (0.94.0 merge entry, no FieldRow), `CHANGELOG.md:1254-1256`
+  batch 1a. Source: `CHANGELOG.md:3841-3851` (0.94.0 merge entry, no FieldRow), `CHANGELOG.md:1278-1280`
   (retirement entry), commit `68d622a1` (FieldRow's introducing commit, first tagged at
   `v0.95.0-rc.1`). [verified]
 - `f:i450hg` `ListToolbarFilter.display` is a three-way union, `'select' | 'segmented' | 'menu'`, not
@@ -196,13 +196,13 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `throttle.cooldownMs` 60000/60s (min 30000/30s), `throttle.requesterCap` 20 (5-100),
   `throttle.identityCeiling` 30 (min 10), `throttle.escalationThreshold` 20 (min 10),
   `throttle.liveRowCap` 5 (max 20), `session.ttlMs` 2592000000/30days (max 31536000000/1yr).
-  Source: `src/lib/auth-channel/factory.ts:324-480`. [verified]
+  Source: `src/lib/auth-channel/factory.ts:326-482`. [verified]
 - `f:vh76wt` A non-positive `limits` override always throws even where the table states only a ceiling
   (prevents a 0 or negative clamp value from silently passing). Source:
-  `src/lib/auth-channel/factory.ts:432-455` (`resolveLimit`). [verified]
+  `src/lib/auth-channel/factory.ts:434-457` (`resolveLimit`). [verified]
 - `f:mk0zd8` `deliver`'s throw path is fully compensating: the pending code row is deleted and the
   requester's send charge is refunded on any thrown error, so a delivery-provider outage costs a
-  member only a retry, never a lost budget slot. Source: `src/lib/auth-channel/factory.ts:269-272`
+  member only a retry, never a lost budget slot. Source: `src/lib/auth-channel/factory.ts:271-274`
   (`deliver`'s doc comment: "A throw is scrubbed, logged, deletes the pending row, and refunds the
   send charge"), `:880-887` (the `deliverPromise` catch calls `consumeCode(...)` then
   `refund(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, now)`). [verified]
@@ -248,8 +248,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   function (`csrfSecure`), so they can no longer resolve different `secure` values on the same
   request. This implies an earlier state where they could diverge. Source:
   `src/lib/auth/crypto.ts:22-26` (doc comment: "Both names now also share their `secure` INPUT:
-  `csrf.ts`'s `csrfSecure`..."), `src/lib/sveltekit/csrf.ts:72,122,164,185` (`csrfSecure`,
-  `csrfCookieName(csrfSecure(...))`), `src/lib/sveltekit/guard.ts:274,353`
+  `csrf.ts`'s `csrfSecure`..."), `src/lib/sveltekit/csrf.ts:76,132,174,195` (`csrfSecure`,
+  `csrfCookieName(csrfSecure(...))`), `src/lib/sveltekit/guard.ts:277,356`
   (`sessionCookieName(csrfSecure(...))`). [verified: the shared-function claim is confirmed; the
   earlier-divergence history is not independently re-traced to a changelog entry]
 
@@ -991,7 +991,7 @@ re-sourced to Go on this tree rather than to the page.
   `owner` is the one reserved name because the last-owner guard and bootstrap owner both anchor
   on it. Source: `src/lib/auth/roles.ts:34-49` (`validateDeclaration`), `:58-74` (`defineRoles`:
   empty-record, empty-name, missing-owner, and owner-capability throws), `:108`
-  (`resolveOwnerLevelRoles`), `src/lib/sveltekit/auth-routes.ts:44,201-202` (`bootstrapOwner`).
+  (`resolveOwnerLevelRoles`), `src/lib/sveltekit/auth-routes.ts:45,202-203` (`bootstrapOwner`).
   [verified]
 - `f:xbdb74` An `IconSet` path is filled shape data on a `0 0 256 256` box, never stroke data: `renderGlyph`
   sets the svg's `fill` to `currentColor` and sets no `stroke` anywhere, so a stroke-only path (one
@@ -1215,13 +1215,13 @@ re-sourced to Go on this tree rather than to the page.
   `src/lib/sveltekit/audit-sink.ts:122-129` (`audit.sink.write_failed` logs the record's own
   `actor` field verbatim). [verified]
 - `f:wi766c` No log record ever carries a magic-link token, a session ID, or a magic-link's contents. Source:
-  `src/lib/sveltekit/auth-routes.ts:185,235,241,363` (`auth.link.requested`/`auth.token.*` log
-  only `email`/`expiresAt`) and `src/lib/auth-channel/factory.ts:656,1051,1058`
+  `src/lib/sveltekit/auth-routes.ts:186,236,242,364` (`auth.link.requested`/`auth.token.*` log
+  only `email`/`expiresAt`) and `src/lib/auth-channel/factory.ts:658,1061,1068`
   (`auth.channel.session.*` logs only `correlationId`, never the session id or token). [verified]
 - `f:pc9vix` `auth.link.requested`'s `email` is the raw submitted address, logged before the allow-list check,
   after lowercasing, trimming, and capping at 320 characters; a flood of distinct addresses there
   signals a request flood since the endpoint has no auth. Source:
-  `src/lib/sveltekit/auth-routes.ts:178-185` (`.trim().toLowerCase()`, then
+  `src/lib/sveltekit/auth-routes.ts:179-186` (`.trim().toLowerCase()`, then
   `log.info('auth.link.requested', { email: email.slice(0, 320) })`, called before the allowlist
   lookup below it). [verified]
 - `f:mjedcx` `auth.identity.unknown`'s `email` is the identity gate's confirmed address,
@@ -1229,7 +1229,7 @@ re-sourced to Go on this tree rather than to the page.
   allow-list lookup fails, inside the `if (!row)` branch once `findEditor` has already returned
   null, not before it; every other event's `email` fires only for an allow-listed editor. Source:
   `src/lib/sveltekit/guard.ts#createAuthGuard.handle` (`const row = await findEditor(...); if (!row) { ...
-  log.warn('auth.identity.unknown', ...) }`). [verified: page fixed at `docs/reference/log-events.md:110`
+  log.warn('auth.identity.unknown', ...) }`). [verified: page fixed at `docs/reference/log-events.md:111`
   to say logged after the allow-list check fails]
 - `f:2awy1w` `preview.refused` reasons, in check order: `bindings_missing`, `table_missing`, `unknown`,
   `expired`, `row_invalid`, and then either `draft_invalid` or `branch_gone`. Source:
@@ -1249,7 +1249,7 @@ re-sourced to Go on this tree rather than to the page.
   decides outright (covers raw-body upload, media, dictionary, tidy transports); the form-field
   witness applies only when no header arrives; an empty header value still counts as "arrived" and
   is judged on its own mismatch, never falling back to the field. Source:
-  `src/lib/sveltekit/guard.ts:255-274` (`headerSent = ... !== null`; `verdict = headerSent ?
+  `src/lib/sveltekit/guard.ts:258-277` (`headerSent = ... !== null`; `verdict = headerSent ?
   csrfHeaderVerdict(...) : await csrfTokenVerdict(event)`; the log's `witness` field is
   `headerSent ? 'header' : 'field'`). [verified]
 - `f:v1jj2k` `admin.action.session_absent` is the only trace a `createAdminAction`-mounted route leaves for a
@@ -1568,8 +1568,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:aalmbd` The `@sveltejs/kit ^2.12` floor became an enforced peer range (rather than an advisory) in
   the `0.41.0` changelog entry, justified by the edit page reading `$app/state` (shipped in kit
   2.12.0); `0.51.0` is a separate, later entry that raises the `svelte` floor to `^5.56.3` and
-  mentions `^2.12` only as a side note for a site still below it. Source: `CHANGELOG.md:6820-6823`
-  (0.41.0 entry), `CHANGELOG.md:6708-6718` (0.51.0 entry). [verified]
+  mentions `^2.12` only as a side note for a site still below it. Source: `CHANGELOG.md:6844-6847`
+  (0.41.0 entry), `CHANGELOG.md:6732-6742` (0.51.0 entry). [verified]
 
 ## docs/reference/sveltekit.md
 
@@ -1578,7 +1578,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `status` discriminant (`sent`/`send_error`/`throttled`); the `0.97.0` outcome-idiom sweep
   renamed it to `RequestOutcome`, changed the discriminant key to `outcome`, and restated
   `send_error` as `send-error`, with the `sent` boolean unchanged throughout. Source:
-  `CHANGELOG.md:6884-6891` (0.38.0), `CHANGELOG.md:1748-1751` (0.97.0). [verified]
+  `CHANGELOG.md:6908-6915` (0.38.0), `CHANGELOG.md:1772-1775` (0.97.0). [verified]
 - `f:yubpho` `CairnEvent`'s `locals` carries five optional keys: `cairnEditor`, `cairnBackend`,
   `cairnAuditSink`, `cairnAccess`, and `cairnIdentity` (set under identity mode). sveltekit.md's
   event-shape code sample and prose now list all five. Source: `src/lib/sveltekit/types.ts:85-91`.
@@ -1598,7 +1598,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:r6cz7z` `fail()` is the shape for every refusal that can answer the request that raised it (form
   validation, commit conflicts, `createSectionAction`'s own authorization/rate-limit/binding
   branches); the editor's unsaved input survives in the returned payload rather than navigating
-  away. Source: `src/lib/sveltekit/section-action.ts:219,226,277,304` (`fail(403, ...)`,
+  away. Source: `src/lib/sveltekit/section-action.ts:206,213,264` (`fail(403, ...)`,
   `fail(500, ...)`, `fail(429, ...)`). [verified]
 - `f:ge9vwl` A site defining its own `handleError` replaces SvelteKit's default `console.error` of every
   server error rather than layering on top of it; log first unconditionally or default
@@ -1623,22 +1623,25 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:0wvvih` `createAuthGuard`'s own `Handle` refuses at the pre-routing layer, before any route's load or
   action runs, with a raw branded `Response` for CSRF, origin, HTTPS, missing-binding, or
   dev-backend-in-production failures. The dev-backend-in-production case is a 503, triggered when
-  `CAIRN_DEV_BACKEND` is set in a deployed runtime. Source: `src/lib/sveltekit/guard.ts:195-198`
+  `CAIRN_DEV_BACKEND` is set in a deployed runtime. Source: `src/lib/sveltekit/guard.ts:198-201`
   (`CAIRN_DEV_BACKEND_FLAG` check, `log.error('guard.refused', { reason: 'dev_backend_in_prod' })`,
   `return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 })`). [verified]
-- `f:hrvhnz` The guard's pre-routing CSRF check only covers the three content types a browser can send
-  cross-origin with no CORS preflight (`application/x-www-form-urlencoded`, `multipart/form-data`,
-  `text/plain`); a JSON POST is not screened by it, but SvelteKit itself rejects a
-  non-form-content-type action POST with a 415 before the action runs, so this is not a practical
-  gap, only license removed for hand-rolling a JSON admin endpoint outside form actions. Source:
-  page text `docs/reference/sveltekit.md:483-491`, corroborated by the guard's own witness check
-  at `src/lib/sveltekit/guard.ts:246-278` (only a form-encoded body or an `X-Cairn-CSRF` header is
-  read); the SvelteKit 415 behavior itself is corroborating platform context, not independently
-  re-checked this pass. [verified: the guard's own content-type coverage is confirmed in source]
+- `f:hrvhnz` The guard's pre-routing CSRF check screens the requests SvelteKit 3's own CSRF check
+  screens: an unsafe method with no `Content-Type` header at all, or with one of
+  `application/x-www-form-urlencoded`, `multipart/form-data`, `text/plain`, or
+  `application/x-sveltekit-formdata`. The no-header case covers a cross-origin `no-cors` fetch of an
+  untyped `Blob`, which sends no preflight and which SvelteKit passes for an origin in
+  `trustedOrigins`. A JSON POST is not screened by it, but SvelteKit itself rejects a
+  non-form-content-type action POST with a 415 before the action runs, so this is license removed
+  only for hand-rolling a JSON admin endpoint outside form actions. Source:
+  `src/lib/sveltekit/csrf.ts:13-18,83-88` (`FORM_CONTENT_TYPES`, `isUnsafeFormRequest`),
+  `node_modules/@sveltejs/kit/src/runtime/server/csrf.js` (`is_csrf_forbidden`), page text
+  `docs/reference/sveltekit.md:484-493`; the SvelteKit 415 behavior itself is corroborating
+  platform context, not independently re-checked. [verified: the guard's content-type coverage is confirmed in source]
 - `f:suk99b` `createAdminAction`'s CSRF check order: a valid `X-Cairn-CSRF` header clears the step outright
   (checked first); only with no valid header must the posted `csrf` form field match the CSRF
   cookie, constant-time, else `error(403, ...)`. A fetch-based action that sets the header and
-  posts `FormData` with no `csrf` field still passes. Source: `src/lib/sveltekit/guard.ts:256-278`
+  posts `FormData` with no `csrf` field still passes. Source: `src/lib/sveltekit/guard.ts:259-281`
   (`headerSent = ... !== null`, header checked before the field fallback) mirrored in
   `admin-action.ts` per its own doc comment at lines 158-162. [verified]
 - `f:8yb3r1` A handler that returns normally and emits zero `ctx.audit` records throws
@@ -1685,7 +1688,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   | expired | branch_gone | row_invalid | draft_invalid | table_missing`) and `:456-518` (the
   ordered `rejectPreview`/log call sites: `bindings_missing` first (503), then `table_missing`,
   `row_invalid`, `branch_gone`, `draft_invalid`). [verified]
-- `f:rgvm81` The page's claim of "seven reasons" for `preview.refused` (`docs/reference/sveltekit.md:1355`)
+- `f:rgvm81` The page's claim of "seven reasons" for `preview.refused` (`docs/reference/sveltekit.md:1356`)
   is arithmetically correct despite the 6-member `PreviewRejectedReason` union: `bindings_missing`
   is a distinct log reason emitted outside that union (a separate log call at
   `src/lib/sveltekit/preview.ts:456`), so 6 union members plus that one makes 7 distinct logged
@@ -1719,7 +1722,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   refuse every action on the documented database-less default instead of hardening it. Source:
   `src/lib/sveltekit/admin-action.ts:74-82` (`access` option doc: "Opt in to the access-map
   authorization... Omitted, `createAdminAction` authorizes nothing, its behavior for every existing
-  caller"), `src/lib/sveltekit/guard.ts:348,368` (`event.locals.cairnAccess = access ?? {}`).
+  caller"), `src/lib/sveltekit/guard.ts:351,371` (`event.locals.cairnAccess = access ?? {}`).
   [verified]
 - `f:yfg97w` `createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly rather than making the
   parameter optional, because an optional parameter would make the shortest call silently drop the
@@ -1731,13 +1734,13 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `action` to 100, `entity` to 100, `entityId` to 200, `detail` to 500, so an oversized `detail`
   cannot suppress its own audit row by failing the insert. Source: `src/lib/sveltekit/audit-sink.ts:16-20`
   (`MAX_ACTOR_LENGTH = 320`, `MAX_ACTION_LENGTH = 100`, `MAX_ENTITY_LENGTH = 100`,
-  `MAX_ENTITY_ID_LENGTH = 200`, `MAX_DETAIL_LENGTH = 500`), consistent with `docs/reference/sveltekit.md:709-712`.
+  `MAX_ENTITY_ID_LENGTH = 200`, `MAX_DETAIL_LENGTH = 500`), consistent with `docs/reference/sveltekit.md:710-713`.
   [verified]
 - `f:or9j9r` `wrangler d1 migrations apply` reads migrations from a `d1_databases` entry's own
   `migrations_dir` (default `./migrations`); every entry that leaves it unset resolves to the same
   default directory, so copying an audit migration next to the auth migrations and applying it to
   the audit database would apply the auth migrations there too. This is why the audit database
-  needs its own distinct `migrations_dir`. Source: page text `docs/reference/sveltekit.md:640-643`;
+  needs its own distinct `migrations_dir`. Source: page text `docs/reference/sveltekit.md:641-644`;
   this is documented Wrangler CLI behavior, not re-verified against Wrangler's own source this
   pass. [external: Wrangler]
 - `f:dqc8x0` The `audit_log` pruning example must compare against the same `strftime('%Y-%m-%dT%H:%M:%fZ',
@@ -1745,20 +1748,20 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   SQLite compares `TEXT` columns byte for byte, and an ISO string's `T` (`0x54`) sorts after a
   space (`0x20`) at the same position, so a `datetime()`-based comparison would silently stop
   pruning the oldest rows at the boundary day. Source: page text
-  `docs/reference/sveltekit.md:679-682`; a documented SQLite text-comparison gotcha, consistent
+  `docs/reference/sveltekit.md:680-683`; a documented SQLite text-comparison gotcha, consistent
   with SQLite's well-known collation behavior for `TEXT` affinity columns, not independently
   re-derived from a SQLite spec this pass. [external: SQLite]
 - `f:xmhbyv` A screen reading `audit_log` back right after a write can miss the row: the insert may still be
   in flight behind `waitUntil` when the response renders, and D1's own read replication can serve a
   stale replica; a screen needing its own just-made row needs first-primary bookmark routing, not a
-  plain read. Source: page text `docs/reference/sveltekit.md:684-689`, citing Cloudflare's own D1
+  plain read. Source: page text `docs/reference/sveltekit.md:685-690`, citing Cloudflare's own D1
   read-replication docs; the D1 replication mechanic itself is platform behavior, not re-verified
   against Cloudflare's docs this pass. [external: Cloudflare D1]
 - `f:gifz76` `createSectionAction` never guards a POST reaching the section through SvelteKit remote
   functions: a remote function call never dispatches through `Actions` at all, and it also bypasses
   the admin guard's own CSRF check (which runs on `Actions` dispatch specifically), so a site
   adding a remote function under `/admin` owns that verification itself. Source: page text
-  `docs/reference/sveltekit.md:849-852`; a documented SvelteKit remote-functions/`Actions`
+  `docs/reference/sveltekit.md:850-853`; a documented SvelteKit remote-functions/`Actions`
   dispatch distinction, not independently re-checked against SvelteKit's own dispatch code this
   pass. [external: SvelteKit]
 - `f:uvhweb` `historyLoad` bounds the entry's commit history to the most recent 25 publishes; the commits

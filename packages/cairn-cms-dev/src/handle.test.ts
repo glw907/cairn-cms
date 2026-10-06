@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { env, withEnv } from 'cloudflare:workers';
 import { devBackendHandle } from './handle.js';
@@ -189,4 +189,56 @@ test('neither handle attaches an access map on a non-/admin path', async () => {
 
   expect(withMapEvent.locals.cairnAccess).toBeUndefined();
   expect(withoutMapEvent.locals.cairnAccess).toBeUndefined();
+});
+
+test('with the dev flag set on a non-local host, the handle refuses with a 503 and never resolves', async () => {
+  setFakeEnv({ CAIRN_DEV_BACKEND: '1' });
+  const handle = devBackendHandle();
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    for (const path of ['/admin', '/media/x.jpg', '/about']) {
+      const event = { url: new URL(`https://club.example${path}`), locals: {} } as any;
+      let resolved = false;
+      const res = await handle({
+        event,
+        resolve: async () => {
+          resolved = true;
+          return new Response('ok');
+        },
+      });
+      expect(resolved).toBe(false);
+      expect(res.status).toBe(503);
+      expect(event.locals.cairnEditor).toBeUndefined();
+    }
+    const records = errorSpy.mock.calls.map((c) => c[0] as { event?: string; reason?: string });
+    expect(records.some((r) => r.event === 'guard.refused' && r.reason === 'dev_backend_in_prod')).toBe(true);
+  } finally {
+    errorSpy.mockRestore();
+  }
+});
+
+test('the boolean true form of the flag trips the same refusal', async () => {
+  setFakeEnv({ CAIRN_DEV_BACKEND: true });
+  const handle = devBackendHandle();
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const res = await handle({
+      event: { url: new URL('https://club.example/admin'), locals: {} } as any,
+      resolve: async () => new Response('ok'),
+    });
+    expect(res.status).toBe(503);
+  } finally {
+    errorSpy.mockRestore();
+  }
+});
+
+test('with the dev flag set on localhost, the handle still mounts the dev backend', async () => {
+  setFakeEnv({ CAIRN_DEV_BACKEND: '1' });
+  const handle = devBackendHandle();
+  const event = eventFor('/admin') as any;
+
+  const seen = await envSeenByRoute(handle, event);
+
+  expect(event.locals.cairnEditor?.capability).toBe('owner');
+  expect(seen.AUTH_DB).toBeTruthy();
 });

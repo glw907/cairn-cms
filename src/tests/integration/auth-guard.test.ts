@@ -400,6 +400,78 @@ describe('CSRF (cairn owns the admin token, the framework owns the Origin check)
     expect(seen).toEqual(new Uint8Array([0xff, 0xd8, 0xff]));
   });
 
+  /** A request to a site-authored admin endpoint, built with the given init and a CSRF cookie of TOK. */
+  function rawAdminEvent(init: RequestInit, cookies: ReturnType<typeof makeCookies>): CairnEvent {
+    const url = 'https://test.dev/admin/partner-hook';
+    return {
+      url: new URL(url),
+      request: new Request(url, init),
+      params: {},
+      route: { id: '/admin/partner-hook' },
+      cookies,
+      locals: {},
+      setHeaders: () => {},
+    };
+  }
+
+  it('refuses an untyped-body admin POST that carries no token, never resolving', async () => {
+    const cookies = await seedSession('own@x.dev');
+    cookies.jar.set(csrfCookieName(true), 'TOK');
+    const ev = rawAdminEvent(
+      { method: 'POST', headers: { origin: 'https://partner.dev' }, body: new Blob([new Uint8Array([1, 2, 3])]) },
+      cookies,
+    );
+    expect(ev.request.headers.get('content-type')).toBeNull();
+    let resolved = false;
+    const res = await handle({
+      event: ev,
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
+    expect(res.status).toBe(403);
+  });
+
+  it('refuses an admin POST in the binary remote-form content type that carries no token', async () => {
+    const cookies = await seedSession('own@x.dev');
+    cookies.jar.set(csrfCookieName(true), 'TOK');
+    const ev = rawAdminEvent(
+      { method: 'POST', headers: { 'content-type': 'application/x-sveltekit-formdata' }, body: 'x' },
+      cookies,
+    );
+    let resolved = false;
+    const res = await handle({
+      event: ev,
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
+    expect(res.status).toBe(403);
+  });
+
+  it('passes an untyped-body admin POST whose X-Cairn-CSRF header matches, body intact', async () => {
+    const cookies = await seedSession('own@x.dev');
+    cookies.jar.set(csrfCookieName(true), 'TOK');
+    const ev = rawAdminEvent(
+      { method: 'POST', headers: { 'x-cairn-csrf': 'TOK' }, body: new Blob([new Uint8Array([7, 8])]) },
+      cookies,
+    );
+    let seen: Uint8Array | null = null;
+    const res = await handle({
+      event: ev,
+      resolve: async () => {
+        seen = new Uint8Array(await ev.request.arrayBuffer());
+        return OK;
+      },
+    });
+    expect(res).toBe(OK);
+    expect(seen).toEqual(new Uint8Array([7, 8]));
+  });
+
   it('rejects an admin POST whose X-Cairn-CSRF header does not match the cookie', async () => {
     const res = await handle({
       event: formEvent('/admin/posts/p1', { csrfCookie: 'TOK', csrfHeader: 'WRONG' }),

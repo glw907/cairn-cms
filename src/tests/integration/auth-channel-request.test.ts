@@ -359,6 +359,71 @@ describe('delivery failure (step 8)', () => {
   });
 });
 
+describe('delivery failure cleanup that itself throws', () => {
+  /**
+   * Wrap the channel database so that, once `armed()` answers true, the failure cleanup's
+   * conditioned code-row delete throws. Every other statement runs against the real binding.
+   */
+  function failingCleanupDb(armed: () => boolean): D1Database {
+    const real = db;
+    const wrapSession = (session: D1DatabaseSession): D1DatabaseSession =>
+      new Proxy(session, {
+        get(target, prop, receiver) {
+          if (prop === 'prepare') {
+            return (sql: string) => {
+              if (armed() && sql.includes('DELETE FROM cairn_channel_code') && sql.includes('RETURNING subject')) {
+                throw new Error('d1 unavailable during cleanup');
+              }
+              return target.prepare(sql);
+            };
+          }
+          const value = Reflect.get(target, prop, receiver);
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+      });
+    return new Proxy(real, {
+      get(target, prop, receiver) {
+        if (prop === 'withSession') {
+          return (constraint?: string) => wrapSession(target.withSession(constraint as never));
+        }
+        const value = Reflect.get(target, prop, receiver);
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+  }
+
+  // The record is written only inside the catch that wraps the cleanup, so its presence shows the
+  // cleanup's rejection was caught there rather than left to the waitUntil promise.
+  it('logs auth.channel.send_cleanup_failed when the failure cleanup throws', async () => {
+    let deliverFailed = false;
+    const { config } = makeConfig({
+      lookup: async () => 'sub-1',
+      resolveDb: () => failingCleanupDb(() => deliverFailed),
+      deliver: async () => {
+        deliverFailed = true;
+        throw new Error('provider down');
+      },
+    });
+    const channel = createAuthChannel<ChannelTestEnv>(config);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const result = await channel.actions.request(makeEvent({ contact: 'cleanup@x.test' }));
+      expect(result).toEqual({ outcome: 'sent' });
+      const record = await vi.waitFor(() => {
+        const found = errorSpy.mock.calls
+          .map((c) => c[0] as { event?: string; error?: string; correlationId?: string })
+          .find((r) => r.event === 'auth.channel.send_cleanup_failed');
+        expect(found).toBeDefined();
+        return found;
+      });
+      expect(record?.error).toContain('d1 unavailable during cleanup');
+      expect(record?.correlationId).toBeTypeOf('string');
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+});
+
 describe('nonce cookie attributes', () => {
   it('carries Path=/, HttpOnly, SameSite=Lax, Max-Age matching the code TTL, and Secure with __Host- on https', async () => {
     const { config } = makeConfig({ lookup: async () => 'sub-1' });

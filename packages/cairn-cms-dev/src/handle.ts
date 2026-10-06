@@ -4,6 +4,8 @@
 // (a build-time flag named at each call site, the devDependency boundary, and the engine prod
 // tripwire; see this package's README for why a shared exported constant does not hold layer one);
 // the fence, not this factory, owns the dev+flag gate, so calling devBackendHandle always installs.
+// The one refusal it carries is the engine guard's tripwire, which it would otherwise displace: a
+// set flag on a non-local host answers 503.
 //
 // Two risk tiers ride here. The owner-session bypass is an authentication breach if it reaches a
 // deployed runtime; the GitHub/R2/D1 doubles only degrade to "saves do not persist." The bypass is
@@ -11,6 +13,7 @@
 import type { Handle } from '@sveltejs/kit/hooks';
 import { env, withEnv } from 'cloudflare:workers';
 import type { AccessMap, Backend, RolesDeclaration } from '@glw907/cairn-cms';
+import { createLogger, type CairnLogEvent } from '@glw907/cairn-cms/log';
 import {
   createDevBackend,
   seedMediaLibrary,
@@ -22,6 +25,32 @@ import {
 import { createFakeAuthDb } from './fake-auth-db.js';
 import { createFakeAppDb } from './fake-app-db.js';
 import { createFakeR2 } from './fake-r2.js';
+
+const log = createLogger<CairnLogEvent>();
+
+// WATCH: the flag name, its truthiness rule, the local-host list, and the refusal message mirror
+// the engine's src/lib/dev-flag.ts (CAIRN_DEV_BACKEND_FLAG, isDevBackendFlagSet, isLocalHost,
+// CAIRN_DEV_BACKEND_MESSAGE), which no public subpath exports. Change them together.
+const DEV_BACKEND_MESSAGE =
+  'cairn: the dev backend flag is set in a deployed environment. Unset CAIRN_DEV_BACKEND.';
+
+/** True when the Worker env carries the dev-backend flag in a form the engine counts as set. */
+function devFlagSet(): boolean {
+  const raw = (env as unknown as Record<string, unknown>).CAIRN_DEV_BACKEND;
+  return raw === '1' || raw === true;
+}
+
+/** True for a hostname that names a local development host. */
+function isLocalHost(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '0.0.0.0' ||
+    hostname === '::1' ||
+    hostname === '[::1]' ||
+    hostname.endsWith('.localhost')
+  );
+}
 
 /** Options for the dev-backend handle. */
 export interface DevBackendConfig {
@@ -60,7 +89,9 @@ export interface DevBackendConfig {
  * requests in the dev session). The returned handle runs /admin, /media, and /preview requests
  * inside `withEnv` with the binding doubles layered over the Worker env, and mints an owner editor
  * on /admin, leaving every other path untouched. It does nothing while the build prerenders, when
- * no Worker env exists to layer over.
+ * no Worker env exists to layer over. With `CAIRN_DEV_BACKEND` set on the Worker env and a request
+ * to a non-local host, it refuses every path with a 503 and logs `guard.refused`, the same record
+ * the engine guard writes for the same condition.
  * @param config - {@link DevBackendConfig}; `access` is the site's own declaration, attached to
  * `locals.cairnAccess` beside the minted editor, and `seedContent` is the Part B content-seeding
  * hook.
@@ -105,6 +136,16 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
     // prerendered page is static output this handle never serves again; pass it straight through.
     if (await isBuilding()) return resolve(event);
     const path = event.url.pathname;
+    // This handle replaces the engine guard, so the guard's own dev-backend tripwire never runs
+    // while it is mounted. A build that folded the dev backend in (VITE_CAIRN_E2E=1, say) and then
+    // deployed with the flag set would otherwise serve the owner-session bypass on a public host.
+    // The refusal pairs the flag with the request's hostname, read on its own: on Cloudflare the
+    // URL's host is the routed one, and PUBLIC_ORIGIN cannot witness here, since a scaffolded
+    // site's wrangler.jsonc names its deployed origin while `npm run dev` runs on localhost.
+    if (devFlagSet() && !isLocalHost(event.url.hostname)) {
+      log.error('guard.refused', { reason: 'dev_backend_in_prod', path });
+      return new Response(DEV_BACKEND_MESSAGE, { status: 503 });
+    }
     const isAdmin = path === '/admin' || path.startsWith('/admin/');
     const isMedia = path === '/media' || path.startsWith('/media/');
     // /preview/[token] is the one non-admin route the engine reaches AUTH_DB and cairnBackend
@@ -164,6 +205,8 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
   };
 }
 
+// WATCH: a copy of the engine's isBuilding (src/lib/sveltekit/building.ts), which no public
+// subpath exports. Change the two together.
 /**
  * Read SvelteKit's `building` flag. The import is dynamic and wrapped in `try`/`catch`, the same
  * form the engine uses, so a bundler with no SvelteKit plugin degrades to `false` rather than

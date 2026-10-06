@@ -26,6 +26,7 @@ import {
 } from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
 import { issueCsrfToken, csrfSecure } from './csrf.js';
+import { isSafeLogoutUrl } from './guard.js';
 import { NO_PENDING_REQUEST_ERROR } from './auth-error-codes.js';
 import { log } from '../log/index.js';
 import { env } from './workers-env.js';
@@ -472,10 +473,14 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
         log.error('auth.session.destroy_failed', { error: String(err) });
       }
     }
-    const target = event.locals.cairnIdentity?.logoutUrl ?? '/admin/login';
-    // The guard admits only a root-relative path or an https URL as logoutUrl, at construction. A
-    // root-relative target stays on this site; an absolute one is allowed out to its own origin
-    // and nowhere else.
+    // The guard admits only a root-relative path or an https URL as logoutUrl, at construction,
+    // but locals is request-scoped state any handle can write, the guard never clears it when no
+    // identity is configured, and a handle sequenced after the guard can overwrite it. So the
+    // value is re-checked here against the same rule, and a failing one falls back to the login
+    // page. A root-relative target stays on this site; an absolute one is allowed out to its own
+    // origin and nowhere else.
+    const configured = event.locals.cairnIdentity?.logoutUrl;
+    const target = typeof configured === 'string' && isSafeLogoutUrl(configured) ? configured : '/admin/login';
     if (target.startsWith('/')) throw redirect(303, target);
     throw redirect(303, target, { external: [new URL(target).origin] });
   }

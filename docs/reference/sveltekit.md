@@ -482,13 +482,14 @@ or action runs, returning a raw, branded `Response` for a CSRF-token, HTTPS, mis
 dev-backend-in-production failure (the last, a 503, refuses when `CAIRN_DEV_BACKEND` is set in a
 deployed runtime, so a build that leaked its dev fixture fails loud rather than serving it). This
 channel is why `createAdminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal
-already covers every unsafe POST under `/admin/**` whose content type is one of the three a
-browser can send cross-origin with no CORS preflight (`application/x-www-form-urlencoded`,
-`multipart/form-data`, `text/plain`), not literally every unsafe POST; a JSON POST is not
-screened by this check. That is not a gap in practice: those three are exactly the content types
-a browser can forge cross-origin without a preflight the site never answers, and SvelteKit itself
-rejects a non-form-content-type action POST with a 415 before the action ever runs. It does mean
-this section is not license to hand-roll a JSON admin endpoint under the same protection. So
+already covers every unsafe request under `/admin/**` that SvelteKit's own CSRF check screens: one
+with no `Content-Type` header, or one whose content type is `application/x-www-form-urlencoded`,
+`multipart/form-data`, `text/plain`, or `application/x-sveltekit-formdata`. A JSON POST isn't
+screened by this check. That isn't a gap in practice: a browser can't send JSON cross-origin
+without a preflight the site never answers, and SvelteKit itself rejects a non-form-content-type
+action POST with a 415 before the action ever runs. It does mean this section isn't license to
+hand-roll a JSON admin endpoint under the same protection. A same-site `fetch` to a site-authored
+`/admin` endpoint that sends no body, or an untyped one, carries the token in `X-Cairn-CSRF`. So
 `createAdminAction`'s own check is rarely the one that actually fires.
 A form POST with a null or foreign `Origin` never reaches the guard's channel, since SvelteKit's
 origin check refuses it with a plain 403 before any `handle` hook runs.

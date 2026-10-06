@@ -78,7 +78,9 @@ Three independent layers keep the bypass out of production. The bypass ships onl
    forced import throws at runtime instead of bypassing.
 3. The engine tripwire. If `CAIRN_DEV_BACKEND` reaches a deployed runtime, cairn's auth guard refuses
    the request with a 503 and logs `guard.refused` with `reason: "dev_backend_in_prod"`. A polluted
-   environment fails closed.
+   environment fails closed. A build that folded the dev backend in mounts `devBackendHandle` in
+   place of the guard, so the handle carries the same refusal: with the flag set, a request to a
+   non-local host gets the same 503 and the same log record.
 
 ## Two risk tiers
 

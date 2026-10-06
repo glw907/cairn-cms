@@ -142,6 +142,19 @@ describe('logoutAction under identity mode', () => {
     expect(result.location).toBe(logoutUrl);
   });
 
+  // locals.cairnIdentity is request-scoped state another handle can write, so the redirect re-checks
+  // the guard's own logoutUrl rule rather than trusting whatever value reached it.
+  it.each(['//evil.example', '/%2f%2fevil.example', 'http://evil.example/out', 'javascript:alert(1)', '/a b'])(
+    'redirects to /admin/login when locals carries a logoutUrl the guard would refuse: %s',
+    async (logoutUrl) => {
+      const admin = createCairnAdmin({ runtime: runtime() });
+      const event = adminEvent('/admin');
+      event.locals.cairnIdentity = { label: 'Acme SSO', logoutUrl };
+      const result = await expectRedirect(() => admin.actions.logout(event));
+      expect(result.location).toBe('/admin/login');
+    },
+  );
+
   it('skips the session delete, emitting no auth.session.destroyed record even with a live row', async () => {
     await createSession(db, 'sid', 'ed@x.dev', Date.now() + 10_000, Date.now());
     const admin = createCairnAdmin({ runtime: runtime() });

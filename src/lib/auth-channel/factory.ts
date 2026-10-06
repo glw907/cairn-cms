@@ -163,7 +163,9 @@ const HEX_RUN = /[0-9a-fA-F]{32,}/g;
 /**
  * Scrub a thrown salt-fault error for logging: redact anything salt-shaped, then apply the same
  * length cap `scrubDeliverError` uses. No contact redaction is needed here, since `resolveSalt`'s
- * own faults are D1 read/write errors rather than a delivery provider's response.
+ * own faults are D1 read/write errors rather than a delivery provider's response. The delivery
+ * failure's own cleanup reuses it for the same reason: its faults are D1 errors over hash-shaped
+ * bindings.
  *
  * The redaction is not theoretical. `provisionSalt` binds the freshly minted salt as a SQL
  * parameter, and a driver error shape that echoes its bindings would put the salt itself into a
@@ -841,8 +843,16 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       // waitUntil, so a fresh timestamp taken once the promise settles can land in a later budget
       // window than the one the send charge above actually incremented, and refund() is a no-op
       // against a window it did not charge.
-      await consumeCode(session, nonceHash, codeHash, now);
-      await refund(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, now);
+      //
+      // The cleanup is D1 work and can throw in its own right. Nothing observes the promise
+      // waitUntil holds, so a rejection escaping here would surface only as an uncaught exception;
+      // it is caught and logged instead. The row it failed to delete still expires on its TTL.
+      try {
+        await consumeCode(session, nonceHash, codeHash, now);
+        await refund(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, now);
+      } catch (cleanupErr: unknown) {
+        log.error('auth.channel.send_cleanup_failed', { correlationId, error: scrubSaltError(cleanupErr) });
+      }
     });
     waitUntil(deliverPromise);
 

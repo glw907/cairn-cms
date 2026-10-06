@@ -30,9 +30,12 @@ export const POST: RequestHandler = async ({ url }) => {
   if (!db) {
     error(404, 'Not found');
   }
-  await db.prepare('DELETE FROM cairn_channel_code').run();
-  await db.prepare('DELETE FROM cairn_channel_session').run();
-  await db.prepare('DELETE FROM cairn_channel_budget').run();
+  // One batch, so the three deletes commit together or not at all, as the channel's own sweep does.
+  await db.batch([
+    db.prepare('DELETE FROM cairn_channel_code'),
+    db.prepare('DELETE FROM cairn_channel_session'),
+    db.prepare('DELETE FROM cairn_channel_budget'),
+  ]);
   resetCapture();
   return Response.json({ ok: true });
 };

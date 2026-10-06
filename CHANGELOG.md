@@ -159,6 +159,30 @@
   Consumers must: a site scaffolded with the `cairn-extend` skill re-runs
   `npx cairn-guidance install`, so its copy of the skill drops the links to the removed pages.
 
+### Fixed
+
+- **The admin guard's token check screens the same requests SvelteKit 3's CSRF check does.** It
+  covered only the three form content types, so an unsafe `/admin` request with no `Content-Type`
+  (a cross-origin `no-cors` fetch of an untyped `Blob`, which sends no preflight) or with
+  `application/x-sveltekit-formdata` skipped it. A site that lists a partner in `trustedOrigins`
+  passes that partner's requests through SvelteKit's check, so the guard was the only screen left.
+  Both shapes now need the double-submit token, in the `X-Cairn-CSRF` header or the `csrf` field.
+
+  Consumers must: send `X-Cairn-CSRF` on any same-site `fetch` to a site-authored `/admin` endpoint
+  that posts no body or an untyped one.
+
+- **The logout redirect re-checks `locals.cairnIdentity.logoutUrl`.** The guard validates
+  `identity.logoutUrl` when it is built, but the logout action read whatever value reached
+  `locals`, so a site handle that wrote the field from request data opened a redirect. A value that
+  fails the guard's rule now redirects to `/admin/login`.
+- **`devBackendHandle` refuses a request to a deployed host.** It replaces the engine guard, so a
+  build that folded the dev backend in and deployed with `CAIRN_DEV_BACKEND` set served the
+  owner-session bypass with no tripwire. With the flag set on the Worker env, a request to a
+  non-local host now gets the guard's 503 and its `guard.refused` record.
+- **A `createAuthChannel` delivery cleanup that throws no longer escapes `waitUntil`.** When
+  `deliver` throws, the cleanup that deletes the pending row and refunds the send charge now logs
+  `auth.channel.send_cleanup_failed` if it fails in turn, instead of leaving an unobserved rejection.
+
 ## 0.98.0
 
 <!-- release-size: minor -->

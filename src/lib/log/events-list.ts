@@ -77,6 +77,7 @@ export const CAIRN_LOG_EVENTS = Object.freeze([
   'audit.sink.write_failed',
   'auth.channel.requested',
   'auth.channel.send_failed',
+  'auth.channel.send_cleanup_failed',
   'auth.channel.confirmed',
   'auth.channel.locked',
   'auth.channel.escalated',

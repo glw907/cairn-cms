@@ -7,10 +7,14 @@ import { env } from './workers-env.js';
 import type { CairnEvent, CookieJar } from './types.js';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+// SvelteKit 3's own form-content set (`is_form_content_type` in kit's utils/http.js), its binary
+// remote-form type included. Kit screens a request with no Content-Type at all as well, which
+// isUnsafeFormRequest handles before it consults this set.
 const FORM_CONTENT_TYPES = new Set([
   'application/x-www-form-urlencoded',
   'multipart/form-data',
   'text/plain',
+  'application/x-sveltekit-formdata',
 ]);
 
 // `isLocalHost` is imported, not copied. It used to be duplicated here because guard.ts imports
@@ -70,11 +74,17 @@ export function csrfSecure(event: { url: URL }): boolean {
   return false;
 }
 
-/** True for a request SvelteKit's CSRF guard screens: an unsafe method with a form content type. */
+/**
+ * True for a request SvelteKit 3's CSRF check screens: an unsafe method with a form content type
+ * or with no Content-Type header at all. The absent case matters because a cross-origin `no-cors`
+ * fetch of an untyped `Blob` body sends no Content-Type and no preflight; SvelteKit passes it
+ * when its origin is in `trustedOrigins`, so the admin token check must still see it.
+ */
 export function isUnsafeFormRequest(request: Request): boolean {
   if (!UNSAFE_METHODS.has(request.method)) return false;
-  const type = (request.headers.get('content-type') ?? '').split(';', 1)[0].trim().toLowerCase();
-  return FORM_CONTENT_TYPES.has(type);
+  const header = request.headers.get('content-type');
+  if (!header) return true;
+  return FORM_CONTENT_TYPES.has(header.split(';', 1)[0].trim().toLowerCase());
 }
 
 /** The faithful framework check: the Origin header equals the request's own origin. */

@@ -139,8 +139,11 @@ function validateLogoutUrl(logoutUrl: string): void {
   throw new Error(`cairn: identity.logoutUrl is not a safe redirect target: ${JSON.stringify(logoutUrl)}`);
 }
 
-/** The predicate {@link validateLogoutUrl} throws on, split out so every rejection is one `false`. */
-function isSafeLogoutUrl(logoutUrl: string): boolean {
+/**
+ * The predicate {@link validateLogoutUrl} throws on, split out so every rejection is one `false`.
+ * Exported for the logout redirect, which re-checks the value it reads off request locals.
+ */
+export function isSafeLogoutUrl(logoutUrl: string): boolean {
   if (LOGOUT_URL_FORBIDDEN.test(logoutUrl)) return false;
   if (LOGOUT_URL_PATTERN.test(logoutUrl)) {
     try {

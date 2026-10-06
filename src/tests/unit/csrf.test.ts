@@ -50,6 +50,22 @@ describe('isUnsafeFormRequest', () => {
     expect(isUnsafeFormRequest(multi)).toBe(true);
   });
 
+  it('flags an unsafe request with no content type, the shape an untyped Blob body sends', () => {
+    const untyped = req('https://x.dev/admin/hook', { method: 'POST', body: new Blob([new Uint8Array([1, 2])]) });
+    expect(untyped.headers.get('content-type')).toBeNull();
+    expect(isUnsafeFormRequest(untyped)).toBe(true);
+    expect(isUnsafeFormRequest(req('https://x.dev/admin/hook', { method: 'DELETE' }))).toBe(true);
+  });
+
+  it("flags SvelteKit's binary remote-form content type", () => {
+    const binary = req('https://x.dev/admin/hook', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-sveltekit-formdata' },
+      body: 'x',
+    });
+    expect(isUnsafeFormRequest(binary)).toBe(true);
+  });
+
   it('ignores a GET and a JSON POST', () => {
     expect(isUnsafeFormRequest(req('https://x.dev/admin/login'))).toBe(false);
     const json = req('https://x.dev/api', {

@@ -2,6 +2,8 @@
 // The engine asks before it touches the Worker env, since every Worker env read throws
 // while a build prerenders, and before `loadPreview` would mint a page a static file could leak.
 
+// WATCH: packages/cairn-cms-dev/src/handle.ts carries a copy of this function, since the dev
+// package reaches the engine only through its public subpaths. Change the two together.
 /**
  * Read SvelteKit's `building` flag without a static `$app/env` import.
  *

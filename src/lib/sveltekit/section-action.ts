@@ -177,7 +177,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
     }) => Promise<T>,
     opts: SectionActionOptions,
   ): (event: CairnEvent) => Promise<T | ActionFailure<{ error: string }>> {
-    const guarded = createAdminAction<T | ActionFailure<{ error: string }>>(async ({ event, form, ctx }) => {
+    return createAdminAction<T | ActionFailure<{ error: string }>>(async ({ event, form, ctx }) => {
       const path = event.url.pathname;
       // event.route.id, never url.pathname: on a catch-all route the pathname is
       // attacker-chosen and the route id is not. A matched form action never actually sees a
@@ -294,10 +294,8 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // caller's own explicit Db argument might otherwise admit, so the check order above is what
       // a handler's ctx.db can rely on, never a type argument alone.
       const resolvedDb = db as NonNullable<Db>;
-      return handler({ event: event, form, ctx: { ...ctx, audit: sectionAudit, db: resolvedDb } });
+      return handler({ event, form, ctx: { ...ctx, audit: sectionAudit, db: resolvedDb } });
     });
-
-    return guarded;
   };
 }
 

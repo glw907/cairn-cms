@@ -1838,10 +1838,16 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   cairn-manifest bin and its unit tests import by relative path"). [verified]
 - `f:mbragr` `CairnManifestOptions.manifestPath` defaults to `/src/content/.cairn/index.json`. Source:
   `src/lib/vite/internal.ts#DEFAULT_MANIFEST_PATH` (`DEFAULT_MANIFEST_PATH`). [verified]
-- `f:skkvr2` `cairnManifest()` evaluates a verify virtual module through a nested Vite SSR load in
-  `buildStart`, so a manifest drifted from the corpus fails the build. Source:
-  `src/lib/vite/internal.ts:154-173` (`buildStart` calls `verifyManifestFromVite`, which
-  `evalVirtual`s the verify-mode virtual module via `server.ssrLoadModule`). [verified]
+- `f:skkvr2` `cairnManifest()` evaluates a verify virtual module in `buildStart`, so a manifest
+  drifted from the corpus fails the build, and the start of `vite dev`. A build loads the module
+  through a nested Vite SSR server. A dev server loads it, and the site-facts check's adapter
+  module, through itself and never creates a nested server: closing one runs the site's own
+  plugins' `closeServer` hooks, and adapter-cloudflare 8's hook disposes the platform proxy the
+  running server shares, after which every `cloudflare:workers` read throws. Source:
+  `src/lib/vite/internal.ts#cairnManifest` (`configureServer` captures the dev server;
+  `buildStart` hands it to `verifyManifestFromVite` and `checkSiteFacts`),
+  `src/lib/vite/internal.ts#verifyManifestFromVite` (`loadFromDevServer` given a server,
+  `evalVirtual` otherwise), `src/tests/unit/vite-manifest-dev-server.test.ts`. [verified]
 
 ## tool/internal/spine/conditions.json
 

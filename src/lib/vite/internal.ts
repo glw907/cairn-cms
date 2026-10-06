@@ -5,11 +5,14 @@
 // from the package's `@glw907/cairn-cms/vite` subpath. It owns a virtual module that runs
 // import.meta.glob over the content dirs inside the app's own Vite graph, builds the manifest with
 // the engine builder, and verifies it against the committed file. The verify runs in the plugin's
-// buildStart hook through a nested Vite SSR module load, so a drift throws there and fails the build
-// as a hard build error, outside the prerender request lifecycle (where handleHttpError could
-// downgrade it). The same virtual module in write mode produces the serialized manifest, which the
-// cairn-manifest bin uses to regenerate. See the design spec, locked decision 1.
-import type { Plugin, PluginOption } from 'vite';
+// buildStart hook, so a drift throws there and fails the build (or the dev server's start) as a hard
+// error, outside the prerender request lifecycle (where handleHttpError could downgrade it). Under
+// `vite build` it loads through a nested Vite SSR server; under `vite dev` it loads through the dev
+// server already running, because closing a nested server runs the site's own plugins' closeServer
+// hooks, and adapter-cloudflare's disposes the platform proxy the running server shares. The same
+// virtual module in write mode produces the serialized manifest, which the cairn-manifest bin uses to
+// regenerate. See the design spec, locked decision 1.
+import type { Plugin, PluginOption, ViteDevServer } from 'vite';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -45,6 +48,10 @@ export interface CairnManifestOptions {
 
 const VIRTUAL_ID = 'virtual:cairn-manifest';
 const RESOLVED_ID = '\0' + VIRTUAL_ID;
+
+/** The virtual module the dev server loads to read the adapter facts the site-facts check compares. */
+const ADAPTER_FACTS_VIRTUAL_ID = 'virtual:cairn-manifest/adapter-facts';
+const ADAPTER_FACTS_RESOLVED_ID = '\0' + ADAPTER_FACTS_VIRTUAL_ID;
 
 /** The default committed manifest path, app-root-absolute. */
 const DEFAULT_MANIFEST_PATH = '/src/content/.cairn/index.json';
@@ -122,6 +129,16 @@ async function evalVirtual(source: string, root: string): Promise<string> {
 }
 
 /**
+ * Load a virtual module the cairnManifest plugin serves through the running dev server and return
+ *  its `result`. No second server is created or closed, so the site's own plugins (the adapter's
+ *  shared platform proxy among them) see only the one server they set up.
+ */
+async function loadFromDevServer(server: ViteDevServer, id: string): Promise<string> {
+  const mod = (await server.ssrLoadModule(id)) as { result: string };
+  return mod.result;
+}
+
+/**
  * The entry file of the Vite package the site at `root` installs. The nested verify server is built
  *  from that copy, the one the site's SvelteKit plugin imported: SvelteKit checks the server's SSR
  *  environment with an `instanceof` against its own Vite module, so a server built from another
@@ -156,10 +173,16 @@ export function stripCairnManifest(plugins: PluginOption | PluginOption[]): Plug
 
 /**
  * Verify the committed manifest against the corpus from a Vite context, throwing on drift. The bin
- *  and the plugin share this; the spike proved it runs cleanly inside the consumer's config.
+ *  and the plugin share this. Given a running dev server, it loads the verify module the plugin
+ *  serves there; otherwise it evaluates the module in a nested server.
  */
-export async function verifyManifestFromVite(opts: CairnManifestOptions, root: string): Promise<void> {
-  await evalVirtual(virtualSource(opts, 'verify'), root);
+export async function verifyManifestFromVite(
+  opts: CairnManifestOptions,
+  root: string,
+  server?: ViteDevServer,
+): Promise<void> {
+  if (server) await loadFromDevServer(server, VIRTUAL_ID);
+  else await evalVirtual(virtualSource(opts, 'verify'), root);
 }
 
 /**
@@ -176,30 +199,41 @@ function siteFactsRelPath(opts: CairnManifestOptions): string {
 }
 
 /**
- * The cairnManifest plugin. It serves the verify virtual module to the app graph and, in
- *  buildStart, evaluates it through a nested Vite SSR load so a manifest drift fails the build.
+ * The cairnManifest plugin. It serves the verify and adapter-facts virtual modules to the app graph
+ *  and evaluates them in buildStart, so a manifest or site-facts drift fails the build, or the dev
+ *  server's start.
  */
 export function cairnManifest(opts: CairnManifestOptions): Plugin {
   let root = process.cwd();
+  // Set only under `vite dev`: Vite calls configureServer for a dev server and never for a build.
+  let devServer: ViteDevServer | undefined;
   const plugin: CairnManifestPlugin = {
     name: 'cairn-manifest',
     configResolved(config) {
       // Capture the resolved app root so the nested server loads the same config the build did.
       root = config.root;
     },
+    configureServer(server) {
+      devServer = server;
+    },
     resolveId(id) {
       if (id === VIRTUAL_ID) return RESOLVED_ID;
+      if (id === ADAPTER_FACTS_VIRTUAL_ID) return ADAPTER_FACTS_RESOLVED_ID;
     },
     load(id) {
       if (id === RESOLVED_ID) return virtualSource(opts, 'verify');
+      if (id === ADAPTER_FACTS_RESOLVED_ID) return adapterFactsSource(opts);
     },
+    // Runs once per `vite build` and once per dev server start. A build verifies through a nested
+    // SSR server; a dev server verifies through itself, once every configureServer hook (the
+    // adapter's platform proxy setup among them) has finished, and never creates a nested server.
     async buildStart() {
       try {
-        await verifyManifestFromVite(opts, root);
+        await verifyManifestFromVite(opts, root, devServer);
       } catch (err) {
         this.error(err instanceof Error ? err.message : String(err));
       }
-      const siteFacts = await checkSiteFacts(opts, root);
+      const siteFacts = await checkSiteFacts(opts, root, devServer);
       if (siteFacts.status === 'absent') {
         this.warn(siteFactsAbsentWarning(siteFactsRelPath(opts)));
       } else if (siteFacts.status === 'stale') {
@@ -438,12 +472,19 @@ export function formatSiteFacts(facts: AdapterFacts): string {
 
 /**
  * Derive the current `site-facts.json` contents from the consumer's adapter, evaluated through the
- *  build's own Vite resolution. Shares `adapterFactsSource` and its validation with
- *  {@link readAdapterFacts}; never re-derives the three fields independently.
+ *  build's own Vite resolution: the running dev server when one is given, a nested server otherwise.
+ *  Shares `adapterFactsSource` and its validation with {@link readAdapterFacts}; never re-derives
+ *  the three fields independently.
  */
-export async function buildSiteFactsFromVite(opts: CairnManifestOptions, root: string): Promise<string> {
-  const facts = parseAdapterFacts(await evalVirtual(adapterFactsSource(opts), root));
-  return formatSiteFacts(facts);
+export async function buildSiteFactsFromVite(
+  opts: CairnManifestOptions,
+  root: string,
+  server?: ViteDevServer,
+): Promise<string> {
+  const raw = server
+    ? await loadFromDevServer(server, ADAPTER_FACTS_VIRTUAL_ID)
+    : await evalVirtual(adapterFactsSource(opts), root);
+  return formatSiteFacts(parseAdapterFacts(raw));
 }
 
 /**
@@ -470,13 +511,17 @@ export type SiteFactsCheck = { status: 'ok' } | { status: 'absent' } | { status:
  *  cannot load at all, so failing this specific comparison for an unrelated reason would be a false
  *  positive, not a real site-facts drift.
  */
-export async function checkSiteFacts(opts: CairnManifestOptions, root: string): Promise<SiteFactsCheck> {
+export async function checkSiteFacts(
+  opts: CairnManifestOptions,
+  root: string,
+  server?: ViteDevServer,
+): Promise<SiteFactsCheck> {
   const relPath = siteFactsRelPath(opts);
   const committed = await readFile(join(root, relPath), 'utf8').catch(() => null);
   if (committed === null) return { status: 'absent' };
   let expected: string;
   try {
-    expected = await buildSiteFactsFromVite(opts, root);
+    expected = await buildSiteFactsFromVite(opts, root, server);
   } catch {
     return { status: 'ok' };
   }

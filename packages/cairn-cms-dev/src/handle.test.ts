@@ -119,12 +119,12 @@ test('a handle sequenced before it keeps its own double, and the route and the e
   // The order `sequence(siteHandle, devHandle)` runs them in, composed by hand: kit's own
   // `sequence` needs the request store a running server provides.
   const handle: Handle = ({ event, resolve }) =>
-    siteHandle({ event, resolve: (inner) => devHandle({ event: inner, resolve }) });
+    siteHandle({ event, resolve: async (inner) => devHandle({ event: inner, resolve }) });
   let route: Record<string, unknown> = {};
   let engine: Record<string, unknown> = {};
 
   await handle({
-    event: eventFor('/admin') as Parameters<Handle>[0]['event'],
+    event: eventFor('/admin') as unknown as Parameters<Handle>[0]['event'],
     resolve: async () => {
       // Read across an await, the way a load reads after its first fetch.
       await Promise.resolve();

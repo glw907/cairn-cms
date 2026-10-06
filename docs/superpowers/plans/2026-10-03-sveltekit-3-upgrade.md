@@ -1041,6 +1041,22 @@ type test, whose `CairnPlatformBindings` snippet Task 13's reference page quotes
 
 ## S5: scaffold, docs, and records
 
+### Task 11f: The full gate tier runs every check CI runs (added at the S4 boundary, 2026-10-06)
+
+**Pass class:** `engine-logic`. **Gate:** `CAIRN_GATE_LANE=light cairn-run-gate 'npm run test:node-projects'` (the
+tier script's own tests).
+
+**Files:** `scripts/checks/gate-tier.mjs` and its test.
+
+**Outcome:** `node scripts/checks/gate-tier.mjs --pin full` prints a string that includes every check
+`.github/workflows/test.yml` runs that the local gate can run, `npm run check:dev-package` among them. At `2d8ca14b`
+the full tier omitted `check:dev-package`, so a dev-package type error under SvelteKit 3 passed every local full
+gate and failed only on CI (11e's review, out of scope). The tier's test pins the list against `test.yml`'s steps, so
+a check added to CI without the tier fails the test.
+
+**Acceptance:** the test fails on the old tier (quoted) and passes after; `--pin full` prints `check:dev-package`;
+the gate green.
+
 ### Task 11c: Walk self-referencing imports in the reach test (added at the S4 boundary, 2026-10-05)
 
 **Pass class:** `engine-logic`. **Gate:** `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check && npm run test:node-projects'`.

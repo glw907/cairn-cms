@@ -384,7 +384,7 @@ describe('delivery failure cleanup that itself throws', () => {
     return new Proxy(real, {
       get(target, prop, receiver) {
         if (prop === 'withSession') {
-          return (constraint?: string) => wrapSession(target.withSession(constraint as never));
+          return (...args: Parameters<D1Database['withSession']>) => wrapSession(target.withSession(...args));
         }
         const value = Reflect.get(target, prop, receiver);
         return typeof value === 'function' ? value.bind(target) : value;

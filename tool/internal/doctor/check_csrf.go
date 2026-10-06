@@ -42,16 +42,20 @@ const (
 // those reports unchecked rather than passing.
 var viteConfigCandidates = []string{"vite.config.js", "vite.config.ts", "vite.config.mts"}
 
-// csrfKeyPattern and trustedOriginsKeyPattern find an object-literal property named csrf or
-// trustedOrigins in the code view of a config, where the name may be bare, quoted with either
-// quote, or a computed string key in brackets (the bracketed key may use a backtick, written
-// \x60 because the pattern is itself a raw string). Group 1 is the key token and group 2 is the
-// terminator, which says whether the property has a value (":") or is a shorthand or the last in
-// its object (",", "}"). A match is only a property when keyMatches confirms it sits outside a
-// string and a comment.
+// propertyKeyPattern returns the pattern that finds an object-literal property called name in
+// the code view of a config, where the name may be bare, quoted with either quote, or a computed
+// string key in brackets (the bracketed key may use a backtick, written \x60 because the pattern
+// is itself a raw string). Group 1 is the key token and group 2 is the terminator, which says
+// whether the property has a value (":") or is a shorthand or the last in its object (",", "}").
+// A match is only a property when keyMatches confirms it sits outside a string and a comment.
+func propertyKeyPattern(name string) *regexp.Regexp {
+	n := regexp.QuoteMeta(name)
+	return regexp.MustCompile(`(?:^|[{,])\s*(` + n + `|'` + n + `'|"` + n + `"|\[\s*'` + n + `'\s*\]|\[\s*"` + n + `"\s*\]|\[\s*\x60` + n + `\x60\s*\])\s*([:,}])`)
+}
+
 var (
-	csrfKeyPattern           = regexp.MustCompile(`(?:^|[{,])\s*(csrf|'csrf'|"csrf"|\[\s*'csrf'\s*\]|\[\s*"csrf"\s*\]|\[\s*\x60csrf\x60\s*\])\s*([:,}])`)
-	trustedOriginsKeyPattern = regexp.MustCompile(`(?:^|[{,])\s*(trustedOrigins|'trustedOrigins'|"trustedOrigins"|\[\s*'trustedOrigins'\s*\]|\[\s*"trustedOrigins"\s*\]|\[\s*\x60trustedOrigins\x60\s*\])\s*([:,}])`)
+	csrfKeyPattern           = propertyKeyPattern("csrf")
+	trustedOriginsKeyPattern = propertyKeyPattern("trustedOrigins")
 )
 
 // keyMatches returns the submatch indices of every property key the pattern finds in code that
@@ -272,23 +276,26 @@ var ConfigCsrfTrustedOrigins = Check{
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
-		for _, path := range viteConfigCandidates {
-			body, found, err := s.ReadFile(path)
+		var path string
+		var entries []string
+		for _, candidate := range viteConfigCandidates {
+			body, found, err := s.ReadFile(candidate)
 			if err != nil {
 				return uncheckedResult(err.Error())
 			}
 			if !found {
 				continue
 			}
-			entries, readable := readTrustedOrigins(string(body))
+			read, readable := readTrustedOrigins(string(body))
 			if !readable {
-				return uncheckedResult(fmt.Sprintf(tmplCsrfUnreadable, path))
+				return uncheckedResult(fmt.Sprintf(tmplCsrfUnreadable, candidate))
 			}
-			return csrfVerdict(path, entries, svelteConfigFound)
+			path, entries = candidate, read
+			break
 		}
-		if svelteConfigFound {
-			return uncheckedResult(detailCsrfSvelteConfigMoved)
+		if path == "" && !svelteConfigFound {
+			return uncheckedResult(fmt.Sprintf(tmplCsrfNoViteConfig, strings.Join(viteConfigCandidates, ", ")))
 		}
-		return uncheckedResult(fmt.Sprintf(tmplCsrfNoViteConfig, strings.Join(viteConfigCandidates, ", ")))
+		return csrfVerdict(path, entries, svelteConfigFound)
 	},
 }

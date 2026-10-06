@@ -117,50 +117,15 @@ func headersFileBlanketNoReferrer(text string) bool {
 	return false
 }
 
-// stripComments ports checks-local.ts's own helper (checks-local.ts:543-572): strips // line
-// comments and /* */ block comments (including ones spanning multiple lines) from a heuristic
-// text read, line count preserved, so a comment merely warning about the policy does not itself
-// trip the blanket-write match below.
-func stripComments(text string) string {
-	var stripped []string
-	inBlockComment := false
-	for raw := range strings.SplitSeq(text, "\n") {
-		line := raw
-		if inBlockComment {
-			end := strings.Index(line, "*/")
-			if end == -1 {
-				stripped = append(stripped, "")
-				continue
-			}
-			line = line[end+2:]
-			inBlockComment = false
-		}
-		blockStart := strings.Index(line, "/*")
-		for blockStart != -1 {
-			blockEnd := strings.Index(line[blockStart+2:], "*/")
-			if blockEnd == -1 {
-				line = line[:blockStart]
-				inBlockComment = true
-				break
-			}
-			blockEnd += blockStart + 2
-			line = line[:blockStart] + line[blockEnd+2:]
-			blockStart = strings.Index(line, "/*")
-		}
-		if idx := strings.Index(line, "//"); idx != -1 {
-			line = line[:idx]
-		}
-		stripped = append(stripped, line)
-	}
-	return strings.Join(stripped, "\n")
-}
-
 // hooksSetsBlanketNoReferrer ports checks-local.ts's own helper (checks-local.ts:574-579): the
 // heuristic text read for src/hooks.server.ts. A line setting Referrer-Policy to no-referrer
 // with no route-scoping reference (pathname, route.id, or url.href) in the six lines above it
-// reads as an unconditional, site-wide write.
+// reads as an unconditional, site-wide write. Comments are blanked by blankJSComments, which
+// knows about strings, so a quoted URL never cuts its line, and which keeps every newline, so the
+// six-line window holds.
 func hooksSetsBlanketNoReferrer(text string) bool {
-	lines := strings.Split(stripComments(text), "\n")
+	_, code := blankJSComments(text)
+	lines := strings.Split(code, "\n")
 	for i, line := range lines {
 		if !referrerPolicyMentionPattern.MatchString(line) || !noReferrerMentionPattern.MatchString(line) {
 			continue

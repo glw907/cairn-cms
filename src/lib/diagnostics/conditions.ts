@@ -95,8 +95,8 @@ export const REGISTRY: Record<string, CairnCondition> = {
     id: 'config.csrf-trusted-origins-wildcard',
     severity: 'warning',
     title: "Trusted origins bypass SvelteKit's origin check",
-    why: "A csrf.trustedOrigins entry of '*' turns off SvelteKit's Origin check on every route, and an entry of 'null' admits every POST from an opaque origin, which any attacker can produce from a sandboxed iframe. cairn's admin keeps its own double-submit token and member actions keep their own origin compare, but the site's own forms have no Origin check at all. Site actions that read a member session through resolveSubject are among those forms; SameSite=Lax stops a cross-site post but not one from a sibling subdomain.",
-    remediation: "Remove the '*' and 'null' entries from csrf.trustedOrigins in the Vite config. List only the exact origins that must post to the site, since each one also widens SvelteKit's check on /admin.",
+    why: "A csrf.trustedOrigins entry of \"*\" turns off SvelteKit's Origin check on every route, and an entry of \"null\" admits every POST from an opaque origin, which any attacker can produce from a sandboxed iframe. cairn's admin keeps its own double-submit token and member actions keep their own origin compare, but the site's own forms have no Origin check at all. Site actions that read a member session through resolveSubject are among those forms; SameSite=Lax stops a cross-site post but not one from a sibling subdomain.",
+    remediation: "Remove the \"*\" and \"null\" entries from csrf.trustedOrigins in the Vite config. List only the exact origins that must post to the site, since each one also widens SvelteKit's check on /admin.",
     docsAnchor: 'is-it-working.md#keep-sveltekits-origin-check-on',
   },
   'config.public-origin-invalid': {

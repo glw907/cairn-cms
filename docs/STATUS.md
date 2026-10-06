@@ -16,9 +16,11 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **Resumed 2026-10-05 17:37** after a pause: run `wf_5a66cbe8-ff3` relaunched from cache (10b and 11a accepted);
-  Task 11b verifies its three landed commits (`a606fbee`, `6b04e429`, `1c90c4fc`), then finishes its gate, the fresh
-  install, the harness consumer run, the survey, and the mutation proofs.
+- **PAUSED 2026-10-05 evening at the S4 boundary** (Geoff powering off). S4's tasks are all accepted, through
+  11b's Kit 3 bump (`9ff58730`) and 11d's CI fix (`7722ab44`). CI on `7722ab44` still fails `test`, `e2e`, and
+  `create-site` (`scaffold`, `tool`, `tool-conditions`, `design` pass), although 11d proved each fix locally. Resume:
+  re-dispatch the read-only CI diagnosis described in the plan Ledger's "Pause 2", then a fix task, push, and CI. A
+  design question or a third red CI goes to Geoff first. Nothing is running; the tree is clean and pushed.
 - **The SvelteKit 3 upgrade is executing: S0 to S3 done, S4 in progress** (Ledger "Checkpoint 4"; the
   unattended run hard-stops at 14.9M and before the close's live smoke, Geoff 2026-10-04). Worktree `.claude/worktrees/sveltekit-3`
   (branch `sveltekit-3`, pushed, draft PR #103, CI green); the plan's Ledger, "Checkpoint 1", carries Task 0 and the

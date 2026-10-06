@@ -16,12 +16,8 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Immediate next action
 
-- **PAUSED 2026-10-06 mid-S5** (Geoff closing the laptop). S5 run `wf_3482a410-ea6`: 11g `9a29ec2e`, 11c `dc5620cc`,
-  12 `4953f2c5` accepted (11f `83509fe7` accepted earlier by conductor ruling). Task 13 (docs and records) was stopped
-  mid-draft: its 12 uncommitted files stay in the worktree and are snapshotted at `refs/wip/sveltekit-3-13`
-  (`a549437f`). Resume: relaunch the same run by `resumeFromRunId: wf_3482a410-ea6` with the same args, changing only
-  Task 13's notes to say its partial edits are in the working tree (review and keep or revise them, then finish);
-  delete the wip ref once 13 commits. Nothing is running.
+- **Resumed 2026-10-06 13:00:** S5 run `wf_3482a410-ea6` relaunched from cache; Task 13 finishes from its partial
+  edits in the worktree (snapshot `refs/wip/sveltekit-3-13`, deleted once 13 commits).
 - **The SvelteKit 3 upgrade is executing: S0 to S4 done, CI green on Kit 3 at `e1bb2650`, S5 next** (Ledger "Checkpoint 5"; the
   unattended run hard-stops at 14.9M and before the close's live smoke, Geoff 2026-10-04). Worktree `.claude/worktrees/sveltekit-3`
   (branch `sveltekit-3`, pushed, draft PR #103, CI green); the plan's Ledger, "Checkpoint 1", carries Task 0 and the

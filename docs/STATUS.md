@@ -64,6 +64,11 @@ promotions, and the dependency sweeps. Unreleased: the harvest's page removal. H
 
 ## Open decisions and watches
 
+- Watch: upstream PR sveltejs/kit#17368 (glw907's fix for adapter-cloudflare 8's shared platform proxy, closes
+  #17344; found by this pass's CI diagnosis, posted 2026-10-06 with a repro comment on #17344). Routine
+  `trig_01KPzLTU7rzLMQUp2y6bjZtm` checks every 6 hours and emails only on maintainer activity, a CI failure, a merge,
+  or a close; delete it at claude.ai/code/routines once the PR closes. cairn does not depend on it: its manifest
+  plugin no longer starts a nested Vite server under `vite dev`. Local clone: `~/.cache/kit-pr/kit`, remote `fork`.
 - The monthly drift routine (`trig_015UPQostYVisXuExTHTH2vu`) samples only `docs/reference` and
   existing extend pages until the admin and editors arms are rebuilt (re-scoped 2026-09-30, Geoff's
   go); widen it back to all four tracks at stage 4's merge.

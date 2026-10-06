@@ -1434,3 +1434,30 @@ comment mentions too.
 about 0.45M; total about 3.4M of 12.4M.
 
 **Next:** S4, Tasks 10b, 11a, 11b.
+
+### Pause 2 (2026-10-05, mid S4 boundary; Geoff powering off)
+
+**S4 tasks, run `wf_5a66cbe8-ff3` (resumed once after a travel pause), all accepted:** 10b `761ab48b`; 11a `768ac8ee`;
+11b `a606fbee`, `6b04e429`, `1c90c4fc` (members-login hydration fix the Kit 3 e2e surfaced), `9ff58730` (Opus; all
+nine mutation proofs fired; harness consumer mode passed its five checks; one lone `spellcheck.spec.ts` underline
+timeout in its gate passed 6 of 6 alone).
+
+**S4 boundary, in progress.** CI on `9ff58730` (first Kit 3 head) failed `test`, `e2e`, `scaffold`, `create-site`:
+three causes (a lost `check:self-use` call site; vitest externalizing the installed engine so Node's loader rejects
+`cloudflare:`; the dev-fold grep matching Kit 3's now-default `_worker.js.map`). Task 11d (run `wf_84314a6a-3cb`,
+resumed once after an API `ECONNRESET`) fixed all three in `7722ab44`, each proved locally (create-site reproduction
+red then green; dev-fold grep proven both ways), and its full gate on `7722ab44` stands as the boundary gate (no
+duplicate gate on an unchanged commit). Conductor ruling: keep Kit 3's sourcemap default; the dev-fold check greps
+executable code only (a Worker bundle is never served; maps upload only with `upload_source_maps`).
+
+CI on `7722ab44`: `scaffold`, `tool`, `tool-conditions`, `design` pass; **`test`, `e2e`, `create-site` still fail**,
+despite the local proofs. A read-only Opus diagnosis was stopped at the pause, having just reproduced a failure
+locally; its findings were not reported. **Resume here:** re-dispatch that diagnosis (pull `--log-failed` for the three
+runs on `7722ab44`, compare each with `9ff58730`'s failure, find why CI differs from the local reproduction, name the
+smallest fix and a CI-faithful local repro), then a fix task, push, and CI. This is the boundary's second fix attempt:
+a design question, or a third red CI, goes to Geoff before more fixing.
+
+**Also this sitting:** the docs chain gained the framing stage and narrowed round 2 (dotfiles `d1e3a3c`, `8075503`);
+Geoff signed off the 2a intros; the cairn and dubplate sessions agreed a four-rule heavy-lock protocol (dotfiles
+`406ddb4`); Task 12 holds the scaffold `satisfies`-check decision (`73c78a7c`); S5 is pre-flighted and amended
+(`bc277579`), with Task 11c added (`57f5c969`).

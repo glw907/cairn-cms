@@ -1846,14 +1846,22 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `src/lib/vite/internal.ts#DEFAULT_MANIFEST_PATH` (`DEFAULT_MANIFEST_PATH`). [verified]
 - `f:skkvr2` `cairnManifest()` evaluates a verify virtual module in `buildStart`, so a manifest
   drifted from the corpus fails the build, and the start of `vite dev`. A build loads the module
-  through a nested Vite SSR server. A dev server loads it, and the site-facts check's adapter
-  module, through itself and never creates a nested server: closing one runs the site's own
-  plugins' `closeServer` hooks, and adapter-cloudflare 8's hook disposes the platform proxy the
-  running server shares, after which every `cloudflare:workers` read throws. Source:
-  `src/lib/vite/internal.ts#cairnManifest` (`configureServer` captures the dev server;
-  `buildStart` hands it to `verifyManifestFromVite` and `checkSiteFacts`),
-  `src/lib/vite/internal.ts#verifyManifestFromVite` (`loadFromDevServer` given a server,
-  `evalVirtual` otherwise), `src/tests/unit/vite-manifest-dev-server.test.ts`. [verified]
+  through a nested Vite SSR server, once per build although `buildStart` fires for each build
+  environment, and a watch-mode change verifies afresh. The nested server drops adapter-cloudflare
+  8's `vite-plugin-sveltekit-adapter-cloudflare-virtual-workers-module`, so a build starts no
+  platform proxy (no workerd process) for the verify. A dev server loads the module, and the
+  site-facts check's adapter module, through its SSR environment's module runner
+  (`isRunnableDevEnvironment`, then `runner.import`, never the deprecated `ssrLoadModule`) and
+  never creates a nested server: closing one runs the site's own plugins' `closeServer` hooks, and
+  adapter-cloudflare 8's hook disposes the platform proxy the running server shares, after which
+  every `cloudflare:workers` read throws. Only an SSR environment that is not runnable in Node
+  falls back to the build's nested server, which SvelteKit 3's own dev server already refuses.
+  Source: `src/lib/vite/internal.ts#cairnManifest` (`configureServer` captures the dev server;
+  `buildStart` hands it to `runStartChecks`, memoized in `buildChecks` for a build; `watchChange`
+  clears it), `src/lib/vite/internal.ts#loadFromDevServer`,
+  `src/lib/vite/internal.ts#stripNestedServerPlugins`,
+  `src/tests/unit/vite-manifest-dev-server.test.ts`,
+  `src/tests/unit/vite-strip-nested-server-plugins.test.ts`. [verified]
 
 ## tool/internal/spine/conditions.json
 

@@ -177,8 +177,9 @@ Adapter-cloudflare 8 keeps one platform proxy on `globalThis.__sveltekit_cloudfl
 nested Vite server (a manifest verify step, say) and closes it runs that hook against the proxy the
 running dev server shares, after which every `cloudflare:workers` read throws and `/admin` answers
 500 on every request. Under `vite dev`, `cairnManifest()` loads its verify module through the live
-server (`configureServer`, then `ssrLoadModule`); a build keeps its nested server, since no running
-dev server shares the proxy there. Filed upstream as sveltejs/kit#17344, with the fix in #17368; cairn does not
+server (`configureServer`, then the SSR environment's `runner.import`); a build keeps its nested
+server, since no running dev server shares the proxy there, and strips the adapter's
+virtual-workers plugin from it so the verify starts no proxy at all. Filed upstream as sveltejs/kit#17344, with the fix in #17368; cairn does not
 depend on it, and a scheduled routine watches the PR.
 
 ## An installed engine needs vitest's `server.deps.inline`

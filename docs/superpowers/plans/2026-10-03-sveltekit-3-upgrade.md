@@ -1075,7 +1075,12 @@ edit in `src/` or `scripts/`; the work is a new baked-template test, the README,
 serves through `wrangler dev`; the README names the generated site's toolchain floors (SvelteKit 3,
 adapter-cloudflare 8, vite `^8.0.12`, wrangler `^4.118`, Node `>=22.17`). The preflight keeps checking only the
 scaffolder's own Node (`engines.node` `>=24`): it runs before the scaffold installs vite and wrangler, so a floor
-check on them there would test nothing (conductor ruling at the S5 pre-flight).
+check on them there would test nothing (conductor ruling at the S5 pre-flight). The showcase's `satisfies` check
+(`examples/showcase/src/lib/env-check.ts`, added by Task 11d) is excluded from the scaffold in `.cairn-template.json`,
+because the scaffold's generated `Env` carries no secret names and would fail it. Task 12 decides whether the
+scaffold can generate its `Env` from `template-repo/.dev.vars.example` through `--env-file` (as the showcase and
+Waymark do) and so carry the check; if not, the report records why, and a scaffolded developer loses nothing the
+docs do not show.
 
 **Acceptance:**
 - A scaffold test over a fresh bake asserts (it runs `scripts/bake-template.mjs --to <dir>` itself into a scratch

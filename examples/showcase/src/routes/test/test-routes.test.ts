@@ -3,7 +3,7 @@ import { captureDeliver, resetCapture } from '../../members/capture-transport.js
 
 // Every /test fixture route refuses with a 404 unless the dev backend is on. The members routes
 // check the worker's own env and the host in their bodies; the three dev-package routes check the
-// build define and the runtime opt-in. Each refusal case below keeps its collaborators armed (a
+// build define and the runtime opt-in, which reads the Worker env and then the process env. Each refusal case below keeps its collaborators armed (a
 // stored capture, a database stub, a resolved subject, a recorded commit), so a route that lost
 // its check would answer 200 instead of reaching an empty-handed 404 by accident, and each route
 // has a control that proves the same setup does reach the handler when the backend is on.
@@ -33,16 +33,20 @@ function eventFor(path: string, host: string, env: Record<string, unknown>) {
   return { url, request: new Request(url, { method: 'POST', body: '{}' }) };
 }
 
-/** A D1 stand-in that records each statement the route runs. */
+/** A D1 stand-in that records each statement the route runs, alone or in a batch. */
 function fakeDb() {
   const statements: string[] = [];
   return {
     statements,
     prepare: (sql: string) => ({
+      sql,
       run: async () => {
         statements.push(sql);
       },
     }),
+    batch: async (batch: { sql: string }[]) => {
+      for (const statement of batch) statements.push(statement.sql);
+    },
   };
 }
 
@@ -172,6 +176,7 @@ const devPackageRoutes: DevPackageRoute[] = [
 describe.each(devPackageRoutes)('/test/$name', (route) => {
   beforeEach(() => {
     vi.stubGlobal('__CAIRN_DEV_BUILD__', true);
+    for (const key of Object.keys(workerEnv)) delete workerEnv[key];
   });
 
   it('answers 404 on a local host when CAIRN_DEV_BACKEND is absent', async () => {
@@ -179,8 +184,15 @@ describe.each(devPackageRoutes)('/test/$name', (route) => {
     await expect(route.call()).rejects.toMatchObject({ status: 404 });
   });
 
-  it('answers 200 when CAIRN_DEV_BACKEND is 1', async () => {
+  it('answers 200 when CAIRN_DEV_BACKEND is 1 in the process env', async () => {
     vi.stubEnv('CAIRN_DEV_BACKEND', '1');
+    const response = await route.call();
+    expect(response.status).toBe(200);
+  });
+
+  it('answers 200 when CAIRN_DEV_BACKEND is 1 on the Worker env alone', async () => {
+    vi.stubEnv('CAIRN_DEV_BACKEND', undefined);
+    workerEnv.CAIRN_DEV_BACKEND = '1';
     const response = await route.call();
     expect(response.status).toBe(200);
   });

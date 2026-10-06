@@ -1249,7 +1249,7 @@ re-sourced to Go on this tree rather than to the page.
   decides outright (covers raw-body upload, media, dictionary, tidy transports); the form-field
   witness applies only when no header arrives; an empty header value still counts as "arrived" and
   is judged on its own mismatch, never falling back to the field. Source:
-  `src/lib/sveltekit/guard.ts:253-278` (`headerSent = ... !== null`; `verdict = headerSent ?
+  `src/lib/sveltekit/guard.ts:255-274` (`headerSent = ... !== null`; `verdict = headerSent ?
   csrfHeaderVerdict(...) : await csrfTokenVerdict(event)`; the log's `witness` field is
   `headerSent ? 'header' : 'field'`). [verified]
 - `f:v1jj2k` `admin.action.session_absent` is the only trace a `createAdminAction`-mounted route leaves for a
@@ -1536,8 +1536,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   computed expected value). [verified]
 - `f:buh7cc` `engines.node` in the package's own `package.json` is `>=24`. Source: `package.json:7`.
   [verified]
-- `f:xg1per` `svelte` peerDependency is `^5.56.10`; `@sveltejs/kit` is `^2.70`; `@cloudflare/workers-types` is
-  `^5`. Source: `package.json:197-199`. [verified]
+- `f:xg1per` `svelte` peerDependency is `^5.57.1`; `@sveltejs/kit` is `^3`; `@cloudflare/workers-types` is
+  `^5`. Source: `package.json:219-222`. [verified]
 - `f:gjyk0p` The showcase's own devDependency pins `typescript` to `^6` and `@cloudflare/workers-types` to
   `^5.20260821.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:45`,
   `package.json:258`. [verified]
@@ -1561,8 +1561,9 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:256utj` SvelteKit's `csrf.checkOrigin` is deprecated (2.61) in favor of `csrf.trustedOrigins` but not
   removed (sveltejs/kit#15992); cairn's admin CSRF ownership still depends on disabling
   `checkOrigin`. Source: the SvelteKit deprecation version and issue number are an upstream fact
-  quoted from the page, not independently checked against GitHub this pass. [rejected: cairn's admin
-  no longer depends on disabling `checkOrigin`; the showcase and template carry no `csrf` config,
+  quoted from the page, not independently checked against GitHub this pass. [rejected: SvelteKit 3
+  removed `csrf.checkOrigin`, so a config that sets it fails the build, and cairn's admin
+  no longer depends on disabling it; the showcase and template carry no `csrf` config,
   and the doctor's `config.csrf-disable-missing` condition retired]
 - `f:aalmbd` The `@sveltejs/kit ^2.12` floor became an enforced peer range (rather than an advisory) in
   the `0.41.0` changelog entry, justified by the edit page reading `$app/state` (shipped in kit
@@ -1828,6 +1829,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   Source: `src/lib/sveltekit/admin-nav.ts:73-90` (`validateEntry`: icon-allowlist throw, href-collision
   throw naming the built-in view; doc comment: "fails at server start rather than rendering a
   broken or shadowing sidebar link"). [verified]
+- `f:nv475y` The engine reads every Worker binding and `waitUntil` through one internal module, `src/lib/sveltekit/workers-env.ts`, its only `cloudflare:workers` import, which no Node-context entry (`.`, `/admin`, `/public`, `/vite`, `/cloudflare`, `/auth-crypto`, `/log`, the bins) reaches, so the module's `waitUntil` is always defined and `auth.channel.delivery_inline` retired. Source: `src/lib/sveltekit/workers-env.ts#waitUntil`, `src/tests/unit/workers-env-reach.test.ts`. [verified]
+- `f:yivujb` `isBuilding` reads SvelteKit's `building` through `await import('$app/env')` inside `try`/`catch`, falling back to `false`, so the `/sveltekit` barrel carries no static `$app/env` import and a consumer test that mocks `$app/environment` no longer reaches it; `loadPreview`'s build refusal needs `$app/env` mocked. Source: `src/lib/sveltekit/building.ts#isBuilding`, `src/lib/sveltekit/preview.ts#loadPreview`. [verified]
 
 ## docs/reference/vite.md
 

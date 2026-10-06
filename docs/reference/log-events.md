@@ -109,6 +109,22 @@ can throttle. `auth.identity.unknown`'s `email` is the second exception: an iden
 confirmed address, normalized and capped the same way, logged after the allow-list check fails.
 Every other event's `email` fires only for an allow-listed editor.
 
+## Form POSTs refused before cairn runs
+
+SvelteKit's origin check refuses a `POST`, `PUT`, `PATCH`, or `DELETE` that carries a form content
+type, or no content type at all, when its `Origin` header is absent, `null`, or differs from the
+site's own origin. The refusal is a plain 403 whose body reads `Cross-site POST form submissions
+are forbidden` (the method name changes with the method), and it happens before any `handle` hook
+runs. No cairn event records it, and `guard.refused` carries no `origin` reason, since the guard
+never sees the request. The check does not run under `vite dev`.
+
+The diagnostic is Workers Logs' invocation record for the request, which carries the method, the
+path, and the 403 status. A refused `/admin` form POST usually traces to one of three causes: a
+tab loaded before the site's `Referrer-Policy` changed, a site-wide `no-referrer` meta that follows
+`%sveltekit.head%` in `app.html`, or a proxy whose origin differs from the one the
+browser sees, which a site corrects with `paths.origin`. The branded `auth.csrf-token-invalid` page
+means a token failed instead, and `guard.refused` with `reason: "csrf"` records it.
+
 ## What cairn does with this vocabulary
 
 The `cairn` CLI carries a copy of this page's event-name list, for `--event` completion only, as

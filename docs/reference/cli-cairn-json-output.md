@@ -1,7 +1,8 @@
 # The `cairn` CLI's JSON output
 
-This page describes `cairn` 1.1.0, the current release and the one that adds the `doctor`
-payload.
+This page describes `cairn` 2.0.0, the release that accompanies the engine's move to SvelteKit 3.
+`cairn` 1.1.0, the current release, added the `doctor` payload. Version 2.0.0 is a major release
+because it removed three ids that 1.1.0 published, which the section on what freezes at 1.0 names.
 
 Six `cairn` commands accept `--json`: `cairn health`, `cairn sites list`, `cairn logs`,
 `cairn adopt list`, `cairn auth check`, and `cairn doctor`. Together they publish seven payload
@@ -511,6 +512,11 @@ is major.
 
 Every condition id is the engine's own `src/lib/diagnostics/conditions.ts` registry, mirrored in
 the command-line tool's embedded `conditions.json`.
+
+Version 2.0.0 retired three ids that 1.1.0 published: the check id `config.csrf-disable`, and the
+condition ids `config.csrf-disable-missing` and `auth.csrf-origin-mismatch`. The check
+`config.csrf-trusted-origins` and its condition `config.csrf-trusted-origins-wildcard` replace
+them, and a script that matches on a retired id needs changing.
 
 ## What does not freeze
 

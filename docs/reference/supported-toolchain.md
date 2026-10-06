@@ -49,6 +49,17 @@ to an unresolvable-import `any`, with no red `TS2307` to flag the gap.
 it. The showcase builds on Vite 8. That is a fact about the engine's own toolchain; the gate does
 not track it.
 
+**The site's own toolchain floors.** SvelteKit 3 and adapter 8 set the following floors for a
+site, and the scaffolded `package.json` pins each above its floor. The floors matter when you move
+an existing site's pins.
+
+| Tool | Floor |
+|---|---|
+| Vite | `^8.0.12` |
+| `@sveltejs/vite-plugin-svelte` | `^7` |
+| Wrangler | `^4.118` |
+| Node.js, for the site | `>=22.17` |
+
 **TypeScript is held at `^6`.** The floor a consumer's own `tsc` needs comes from `const` type
 parameters on the public surface. `defineAdapter`, `defineConcept`, `defineFieldset`, and every
 `fields.*` constructor capture their argument with a `const` type parameter, so the call site's
@@ -66,7 +77,7 @@ ships and the pin is verified.
 **`node` `>=24`.** This is a build-toolchain floor. The package runs on Cloudflare Workers, whose
 runtime is `workerd`, never Node. CI's Node 24 pin follows the same floor, which is evidence
 about the engine's own tooling rather than about a consumer. The consumer-facing floor comes from
-Vite 8 and SvelteKit 2, both of which already require a current Node to build; the `engines.node`
+Vite 8 and SvelteKit 3, both of which already require a current Node to build; the `engines.node`
 field in `package.json` gives npm something to check against. That check is a warning, not an
 install block: `npm install` on an older Node prints an `EBADENGINE` notice naming the mismatch,
 and installs anyway, unless the consumer's own `.npmrc` sets `engine-strict=true`, which turns
@@ -91,11 +102,12 @@ language plugin, and the package is ESM-only by design, so a CJS-resolution chec
 An `attw` report against the package reflects these three structural gaps, not a defect a consumer
 needs to work around.
 
-## The `checkOrigin` deprecation
+## The `checkOrigin` removal
 
-SvelteKit deprecated `csrf.checkOrigin` in 2.61, in favor of `csrf.trustedOrigins`, but has not
-removed it ([sveltejs/kit#15992](https://github.com/sveltejs/kit/issues/15992)). Read
-"deprecated" as exactly that, not "unsupported": cairn's admin CSRF ownership still depends on
-disabling `checkOrigin`,
-and the current SvelteKit range in this matrix still ships it. This table does not track the
-removal; the linked issue is where it will be announced.
+SvelteKit 3 removed `csrf.checkOrigin`, and a config that still sets it fails the build with a
+message that names `csrf.trustedOrigins` as the replacement. The engine no longer
+needs the opt-out, because SvelteKit's origin check covers every route, `/admin` included, and the
+engine's admin responses keep the `Origin` header that check reads. A site deletes its whole `csrf`
+block. It does not replace the block with `trustedOrigins: ['*']`, which turns off the check on
+every route. See [the canonical admin mount](./admin-routes.md) for how the check and the guard's
+double-submit token divide the work.

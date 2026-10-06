@@ -49,8 +49,9 @@ Readiness checklist:
   vocabulary (the `text-muted` / `text-subtle` role layer), the log event names, `/log`, and
   `/admin-toolkit`.
 - [ ] **No known breaking change is pending** on the public surface, or each is consciously deferred to the
-  first post-1.0 major. The SvelteKit `checkOrigin` removal (kit#15992) is the standing example: decide
-  whether its fallback lands before 1.0 or becomes the first 2.0 driver.
+  first post-1.0 major. The SvelteKit 3 move took the `checkOrigin` removal and the `event.platform` retirement
+  ahead of 1.0; the standing candidate is SvelteKit's remote functions, which stay experimental in Kit 3, so
+  decide at their stable release whether adopting them lands before 1.0 or becomes the first 2.0 driver.
 - [ ] **Both production sites run the latest published cairn on the v2 adapter**, with their URL policies
   transcribed onto `defineConcept` (the per-site cutover watch items), so the real surface is exercised and
   needs no engine break to serve them.
@@ -395,14 +396,6 @@ The original decision framing, for the record:
   A poll with no upper bound on decoration mount is the wrong shape for a gate; wait on a signal
   CodeMirror actually emits, or raise the timeout deliberately and say why. **Trigger: fired once
   already. The next unexplained red `main` on a media test is this.**
-
-- **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
-  2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated
-  in favour of `csrf.trustedOrigins`. It will be removed in a future version." This is the standing
-  watch item `CLAUDE.md` tracks as kit#15992, and it has moved from a future bet to an active
-  warning on every build, both here and in every consumer site. Migrating is small; leaving it means
-  every scaffolded site's build log carries a framework deprecation nobody explains, and a future
-  SvelteKit major breaks the guard outright. **Trigger: fired. Schedule it rather than watch it.**
 
 - **Two reproduction-authoring rules have no home yet.** Both surfaced at the containment pass's
   accessibility review and both bind the editors rewrite rather than the engine. Numbered marker chips
@@ -889,7 +882,9 @@ the named human gates only):**
   `vite dev` or `wrangler dev`, not the command a scaffolded site runs. Doc bug or engine bug is
   undecided, and the reading is from code only. Fix: say so on the page, or let the dev backend
   read through to a seeded bucket. Trigger: the next pass touching `media-seed` or
-  `packages/cairn-cms-dev`, or a site that seeds media and sees none.
+  `packages/cairn-cms-dev`, or a site that seeds media and sees none. The SvelteKit 3 move changed how
+  the doubles reach the Worker (`withEnv` over the Worker env) and not which exist, so this defers,
+  re-armed to the next pass that changes the dev package's double set or `DevBackendConfig`.
 
 - **`check:package-files` passes when a kept extend page is deleted outright (draft docs harvest,
   task 8 review, 2026-09-30).** `requiredDocsPaths` (`scripts/checks/check-package-files.mjs:93`)
@@ -952,8 +947,9 @@ the named human gates only):**
   option, or stop overwriting a binding the site already provides; add a line to the
   `cairn-admin-screens` skill either way, and file a fact so the extend arm's rebuilt
   custom-screen page carries it.
-  Trigger: the next pass that touches `packages/cairn-cms-dev`, and before any site is told to
-  build a D1-backed screen against the dev backend.
+  Trigger: the next pass that changes the dev package's double set or `DevBackendConfig`, and before any
+  site is told to build a D1-backed screen against the dev backend. The SvelteKit 3 move changed how the
+  doubles reach the Worker (`withEnv` over the Worker env), not which exist, so this defers.
 
 - **Promote `radius-scale` and the three retired-patch arms to error tier at `0.99.0` (theme
   identity pass B, 2026-09-29).** They ship at advisory tier in `0.98.0` and every finding names
@@ -1578,9 +1574,11 @@ the named human gates only):**
   done-gate checklist, and the scaffold-leak exclusion convention) already have owners named in
   `inference-traps-to-fix.md` inside the chassis-A/chassis-B pass series; a tandem-maintenance
   gate keeping the exemplar, the skill, and the custom-screen guide in agreement is filed there
-  too, to `ROADMAP.md`, which is this entry. **Trigger:** the next pass touching
-  `packages/cairn-cms-dev`, the showcase's `cairn-audit.config.json`, or the skill, or the extend
-  stage that outlines the custom-screen page.
+  too, to `ROADMAP.md`, which is this entry. **Trigger:** the next pass that changes the dev
+  package's double set or `DevBackendConfig`, or touches the showcase's `cairn-audit.config.json` or
+  the skill, or the extend stage that outlines the custom-screen page. Defect 1 (the missing
+  `cairnAccess`) defers with the dev package's other watches: the SvelteKit 3 move changed how the
+  doubles reach the Worker, not which exist.
 
 - **The `ec-*` -> `cairn-*` rename ships a `/render` output break the four production sites have
   not taken yet (release decision owed at the next cut, filed 2026-09-05 from internals-C's
@@ -1699,23 +1697,6 @@ the named human gates only):**
   inherits it, and the seam now publishes it through `editor/preview-tab`. The narrow fix is a
   literal; the right one threads the site's language through `ResolvedPreview` so a non-English site
   is correct too.
-
-- **The `checkOrigin` migration pass, before P (moved up from Later, Geoff 2026-08-13).** The
-  deprecation warning now prints six-plus times in every first-time owner's build (observed live in
-  T5 Task 8's e2e, in the scaffold's own output), which makes it launch polish, not just a removal
-  tripwire. The timing asymmetry decides the slot: fixed pre-P, every scaffolded site, doc, and
-  consumer ships the new spelling once; fixed post-P, the migration lands as consumer homework on
-  freshly launched sites. **Step 1 is re-verifying the recorded blocker against current kit**: as of
-  kit 2.61, `trustedOrigins` could not replace the disable (a missing-`Origin` POST is always
-  forbidden, and the check runs before the `handle` hook; reasoning in
-  `docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`), with an edge Transform Rule injecting
-  `Origin` for `/admin` POSTs as the planned fallback and upstream kit#15992 as the higher-leverage
-  path. If kit has since shipped a clean disable, the pass is the sweep: `svelte.config.js` spelling
-  in showcase and template, `cairn doctor`'s `config.csrf-disable` heuristic
-  (`tool/internal/doctor/check_csrf.go`, which needs a tool release), the diagnostics copy,
-  `csrf.ts`, the docs, and an upgrade-guide entry with its `Consumers must:` line. If kit has not
-  moved, the pass decides among the recorded options with the owner-noise cost now on the scale.
-  The scheduled kit#15992 watch routine stays armed either way until the removal actually lands.
 
 - **An admin test-send, as engine work for its own pass (split out of T4b, 2026-08-12).** The
   preflight half is `cairn health`'s `email` check (`email.sender-not-onboarded`) plus the
@@ -2144,14 +2125,6 @@ the named human gates only):**
   deploy; the full treatment rides the step-5 finalization.
 
 
-- **The `checkOrigin` pre-beta mitigation.** Adopt-now guidance rather than waiting on the upstream
-  removal: document the edge Transform Rule that injects `Origin` on `/admin` POSTs in the deploy
-  guide, and add a `cairn health` live-site check (a candidate; the retired npm doctor's
-  `--probe` never shipped it) asserting that an `Origin` header actually reaches `/admin` on the
-  live deployment, so a site that never applied the rule fails loud before an editor
-  hits it. The scheduled kit#15992 watch stays the tripwire for the eventual `checkOrigin` removal;
-  this item is the mitigation a site can adopt now, scoped pre-beta, not a 2.0 driver. See the Later
-  tracking item below for the removal itself.
 - **Admin error statuses flatten to 200 under the streamed pending count (upstream kit#12987;
   severity raised at the ASC rendered baseline, 2026-07-29).** A page-load `error(403)`/`error(404)`
   inside `/admin` renders the right error page and emits its log event, but the HTTP status reads
@@ -3227,6 +3200,20 @@ adopt, each carrying its status, the reason it was declined, and the trigger tha
 the verdict. A monthly cloud routine (`cairn Cloudflare capability review (monthly)`, created
 2026-08-22) reads this list by this exact heading and emails a report; the owner folds any
 status change in here, and an item whose trigger fires moves up to Now or Next.
+
+- **Engine-side Cache API caching for `/media`.** Status as of 2026-10-06: not adopted (Geoff,
+  2026-10-04). Adapter-cloudflare 7 put every worker response carrying a public `Cache-Control` into
+  `caches.default`, `/media` and public SSR pages included, and adapter 8 does not (its worker has no
+  `caches` use), so a `/media` read now reaches R2 unless the browser or the zone cache already holds
+  it. What cairn does today: `/media/[...path]` answers `Cache-Control: public, max-age=31536000,
+  immutable` (`src/lib/sveltekit/media-route.ts:38`) and nothing else. Why not adopted: Cloudflare's
+  Cache API page (https://developers.cloudflare.com/workers/runtime-apis/cache/) says "The Cache API
+  is available globally but the contents of the cache do not replicate outside of the originating
+  data center" and "The `cache.delete` method only purges content of the cache in the data center
+  that the Worker was invoked", so a deleted image would linger at every other edge for a year; a
+  global purge needs the zone purge API with a per-site token and zone id in config; and browsers
+  already hold the bytes for a year, with R2 reads cheap. Trigger: a measured R2 cost or `/media`
+  latency problem on a production site.
 
 - **R2 Local Uploads.** Status as of 2026-08-21: open beta since 2026-02-03
   (https://developers.cloudflare.com/changelog/post/2026-02-03-r2-local-uploads/). What cairn does

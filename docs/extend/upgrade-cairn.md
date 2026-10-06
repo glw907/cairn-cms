@@ -83,6 +83,37 @@ owns. Do these in order, after step 3:
 [Migration notes](./migration-notes.md) carries each item with its reason, and [the public
 stylesheet reference](../reference/public-css.md) lists every key and default.
 
+## When your range crosses SvelteKit 3
+
+The window that moves the engine to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8 changes how a
+site is configured, how it reads its bindings, and how a built site is served. Do these in order,
+after step 3:
+
+1. In `package.json`, set `@sveltejs/kit` to `^3`, `@sveltejs/adapter-cloudflare` to `^8`, `svelte` to
+   `^5.57.1`, and `wrangler` to `^4.118` or later. Then run `npm install` with no
+   `--legacy-peer-deps` or `--force` flag.
+2. In `vite.config`, move the contents of `svelte.config.js` into `sveltekit({ ... })`, then delete
+   `svelte.config.js`.
+3. In the same call, delete the whole `csrf` block, and don't replace it with
+   `trustedOrigins: ['*']`.
+4. In `src/app.d.ts`, delete `App.Platform`, and keep the `import '@glw907/cairn-cms/ambient';` line.
+5. Run `wrangler types --env-file .dev.vars.example`, so `worker-configuration.d.ts` carries the secret
+   names.
+6. In your server code, import `env` and `waitUntil` from `cloudflare:workers` where you read
+   `event.platform`. Wrap `resolve` in `withEnv` in a handle that wrote it.
+7. Import `Handle` from `@sveltejs/kit/hooks`, and move `$lib` to `#lib` through the `imports` field in
+   `package.json`.
+8. Run `npm run check`, and expect no errors or warnings. Add `({}) as Env satisfies
+   CairnPlatformBindings` to a server module if you want a missing binding to fail here.
+9. Run `npm run build`, and expect it to exit 0.
+10. Run `wrangler dev .svelte-kit/cloudflare/_worker.js`, because `vite preview` can't serve adapter 8
+    output.
+11. Request `/admin/login` from the running server, and expect a `200` response with the sign-in form.
+
+[Migration notes](./migration-notes.md) carries each item with its reason, and
+[`CairnPlatformBindings`](../reference/sveltekit.md#cairnplatformbindings) states what the generated
+`Env` must carry.
+
 ## You know it worked when
 
 `npm run check` (or your site's own type-check script) passes, `cairn doctor` reports every check

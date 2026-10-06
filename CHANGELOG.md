@@ -1,6 +1,152 @@
 ## Unreleased
 
+### Changed
+
+- **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
+  `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer
+  becomes `^3`. A site also needs `@sveltejs/adapter-cloudflare` `^8`, `vite` `^8.0.12`,
+  `@sveltejs/vite-plugin-svelte` `^7`, `wrangler` `^4.118`, and Node `>=22.17`. The scaffold already
+  pins every one of these, and the engine declares no `vite` peer.
+
+  Consumers must: upgrade to `@sveltejs/kit` `^3`, `@sveltejs/adapter-cloudflare` `^8`, `svelte`
+  `>=5.57.1`, and `wrangler` `>=4.118`, then take the lines below. A SvelteKit 2 site cannot run this
+  engine.
+
+- **SvelteKit 3 no longer reads `svelte.config.js`, so the SvelteKit config lives in the Vite
+  plugin.** The showcase, the Waymark template, and the scaffold put the adapter, `prerender`, and
+  every other kit option in `sveltekit({ ... })` in `vite.config.ts` and carry no `svelte.config.js`.
+  The `cairn doctor` check that read the `csrf` key now reads it from the Vite config.
+
+  Consumers must: move `svelte.config.js` into `sveltekit({ ... })` in `vite.config`, passing the kit
+  options as sibling keys, and delete the file.
+
+- **SvelteKit's origin check now covers every route, `/admin` included, and the guard no longer
+  repeats it.** SvelteKit 3 removed `csrf.checkOrigin`, so a config that sets it fails the build. The
+  site's `csrf: { checkOrigin: false }` handoff retires, and `createAuthGuard` drops its Origin check
+  for non-admin paths; it keeps the double-submit token on every unsafe `/admin` form POST. A form
+  POST whose `Origin` is missing, `null`, or foreign now gets SvelteKit's plain 403, `Cross-site POST
+  form submissions are forbidden`, before any `handle` hook runs, and no cairn event records it. The
+  diagnostic is the Workers Logs invocation record. `createAuthChannel` keeps its own origin
+  compare, so a member action still has its CSRF floor under `vite dev`, where SvelteKit skips its
+  check.
+
+  Consumers must: delete the `csrf` block entirely. Don't replace it with `trustedOrigins: ['*']`,
+  which SvelteKit's removal message suggests: it turns off SvelteKit's Origin check on every route,
+  `/admin` included, and `cairn doctor` fails it.
+
+- **Admin responses and documents serve `Referrer-Policy: strict-origin`.** `applySecurityHeaders` and
+  the confirm page send the header, and `LoginPage`, `ConfirmPage`, and `CairnAdminShell`'s authed
+  views each emit one `<meta name="referrer" content="strict-origin">` in their head. The browser
+  keeps the page's origin on an admin form POST, so SvelteKit's check passes, and the confirm link's
+  token never reaches a `Referer`. The meta holds when a site's outer handle, zone Transform Rule,
+  or an `app.html` meta ahead of `%sveltekit.head%` sets `no-referrer` site-wide. A meta placed after
+  `%sveltekit.head%` in `app.html` wins over cairn's. `/preview/[token]` keeps `no-referrer`.
+
+  Consumers must: if your site sets `Referrer-Policy: no-referrer` site-wide, serve
+  `strict-origin-when-cross-origin` or `strict-origin` instead. Your own forms and
+  `createAuthChannel` forms otherwise fail SvelteKit's check.
+
+  Consumers must: have an endpoint that receives a server-to-server POST with no `Content-Type`,
+  such as a webhook, expect SvelteKit's 403, and have the sender set a content type such as JSON.
+  SvelteKit 3 refuses a body-less POST whose `Origin` is missing, where SvelteKit 2 let it pass.
+
+- **The engine reads the Worker's bindings from `cloudflare:workers`, not `event.platform`.**
+  Adapter 8 passes no `platform`, so `env` and `waitUntil` come from the module. One internal module
+  is the engine's only `cloudflare:workers` import, and no Node-context entry reaches it. The guard,
+  the auth channel, and the admin routes read `env` there; `waitUntil` is always
+  defined, so the auth channel's inline-await branch is gone. The dev flag `CAIRN_DEV_BACKEND` and
+  `PUBLIC_ORIGIN` are read from the Worker env alone, with no `process.env` fallback, and no engine
+  code touches `env` or `withEnv` while a build prerenders. The dev backend layers its doubles with
+  `withEnv`, so they reach engine and site reads alike. `CairnPlatformBindings` and
+  `CairnMediaBindings` are now the shapes a site's `wrangler types` `Env` satisfies, and the showcase
+  checks that at compile time.
+
+  Consumers must: delete `App.Platform` from `app.d.ts`, run `wrangler types`, and type bindings from
+  its `Env`.
+
+  Consumers must: have code that read `event.platform` import `env` and `waitUntil` from
+  `cloudflare:workers`. A handle that wrote `event.platform`, as a dev-double handle does, wraps
+  `resolve` in `withEnv` instead. Pass `createD1AuditSink` the module's `waitUntil`.
+
+- **`CairnEvent` takes no type argument, and `PlatformContext` is gone.** `CairnEvent` lost its
+  `platform` member and its `Env` parameter, since `Env` reached the event only through `platform`.
+  Any SvelteKit server event still satisfies it with no cast.
+
+  Consumers must: write `CairnEvent` without a type argument, and drop any `PlatformContext` import.
+
+- **Kit 3 API moves.** The engine, the dev package, and the template `hooks.server.ts` import `Handle`
+  from `@sveltejs/kit/hooks`. The identity `logoutUrl` redirect passes `{ external: [<the validated
+  origin>] }`. `$app/environment` becomes `$app/env`, `invalidateAll` becomes `refreshAll`, and the
+  `json` and `text` helpers become `Response.json` and `new Response`. The showcase, Waymark, and the
+  scaffold replace the `$lib`, `$chassis`, and `$theme` aliases with `#lib`, `#chassis`, and `#theme`
+  subpath imports declared in `package.json`.
+
+  Consumers must: import `Handle` from `@sveltejs/kit/hooks`. Add `"imports": { "#lib": "./src/lib",
+  "#lib/*": "./src/lib/*" }` to `package.json` and replace `$lib` with `#lib`; move any custom
+  `kit.alias` to a subpath import the same way.
+
+  Consumers must: change a test of yours that mocks `$app/environment` to put `loadPreview` in a
+  build so that it mocks `$app/env`. `loadPreview` reads `building` from `$app/env`, and its
+  `try`/`catch` falls back to `false`, so a mock of the old module no longer reaches it and the build
+  refusal goes untested without an error.
+
+- **Every built-site run that needs a server moves to `wrangler dev`.** `vite preview` fails on
+  adapter 8 output with `ERR_UNSUPPORTED_ESM_URL_SCHEME` (sveltejs/kit#17271). The showcase's e2e,
+  its visual baselines, and the CI width sweep serve the build with `wrangler dev`, the members
+  tables on a local D1 database and the dev backend flag passed as `--var CAIRN_DEV_BACKEND:1` on that
+  command alone. The showcase's `preview` script runs `wrangler dev` on the build output, flag-free.
+
+  Consumers must: serve a built site with `wrangler dev .svelte-kit/cloudflare/_worker.js`, since
+  `vite preview` cannot run adapter 8 output.
+
+- **Adapter 8 no longer caches worker responses in `caches.default`.** Adapter 7's worker put every
+  response that carried a public `Cache-Control`, `/media` and public SSR pages included, into the
+  colo cache. Adapter 8's worker does not, and the engine adds no replacement: Cloudflare's Cache API
+  does not replicate across data centers, so a Cache API purge reaches one of them, while `/media`
+  answers `max-age=31536000, immutable` and a deleted image would linger at the others.
+  `ROADMAP.md` files a watch for a measured R2 cost or `/media` latency problem.
+
+  Consumers must: if your site relied on that caching, add your own, for example a zone Cache Rule
+  or a `Cache-Control` on the routes that need it.
+
+- **A test run over code that imports the engine's server modules inlines the engine.** The engine
+  imports `cloudflare:workers`, which Node's loader rejects when the engine installs into
+  `node_modules` and vitest leaves it external. The showcase's and the template's `vitest.config.ts`
+  set `test.server.deps.inline`.
+
+  Consumers must: if your vitest run covers code that imports `@glw907/cairn-cms` server modules, add
+  `test: { server: { deps: { inline: ['@glw907/cairn-cms'] } } }` to its config, so a test's
+  `vi.mock('cloudflare:workers')` reaches the engine's own import.
+
+- **`cairnManifest()` verifies through the running dev server under `vite dev`.** It loads its verify
+  and site-facts modules through the live server, where it used to start a second Vite server and
+  close it. Closing that second server ran adapter 8's `closeServer` hook, which disposes the platform
+  proxy the running server shares, so every `/admin` request answered 500 on an adapter 8 site. A
+  build keeps its own server. The plugin's options and its failure behavior, a drifted manifest failing
+  the build and the start of `vite dev`, are unchanged, so a site needs no edit.
+
+- **The scaffold writes the SvelteKit 3 shape.** `create-cairn-site` emits `vite.config.ts` with the
+  SvelteKit config inline and no `csrf` block, `#` subpath imports, a committed
+  `worker-configuration.d.ts` from `wrangler types`, and vitest set to inline the engine. Its
+  `package.json` pins the toolchain floors named above.
+
+- **The `cairn` command-line tool goes to `v2`, released with the engine.** `cairn doctor` replaces the
+  `config.csrf-disable` check with `config.csrf-trusted-origins`, which fails a `trustedOrigins` entry
+  of `'*'` or `'null'` in the Vite config. `tool/CHANGELOG.md` carries the detail.
+
+  Consumers must: upgrade the `cairn` tool to `v2`. `v1`'s doctor recommends `checkOrigin: false`,
+  which is now a build error.
+
 ### Removed
+
+- **`PlatformContext`, `CairnEvent`'s `platform` member and `Env` parameter, and the
+  `auth.channel.delivery_inline` log event.** The auth channel hands delivery and its sweep to the
+  module's `waitUntil`, which is always defined, so no deployment takes the inline branch. A site that
+  matched on `auth.channel.delivery_inline` needs changing.
+- **The guard's non-admin Origin check, the `auth.csrf-origin-mismatch` condition, and
+  `guard.refused`'s `origin` reason.** SvelteKit's own check refuses the request before the guard runs.
+  `config.csrf-disable-missing` retires with its check; the heading anchors `non-admin-origin-rejected`
+  and `wire-cairns-csrf-guard` stay on the shipped list because released binaries print them.
 
 - The admin, editors, and extend narrative arms and the front-door pages (`docs/README.md` and
   `docs/why-cairn.md`) are removed pending their rebuild. Every claim on them now lives in an

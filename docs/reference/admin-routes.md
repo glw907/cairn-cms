@@ -6,14 +6,19 @@ and a single `actions` record, so the site restates no route table and wires no 
 hand. The showcase at `examples/showcase` is the working model of this shape; copy its files, not
 a guess at them. The showcase keeps its SvelteKit config in the `sveltekit()` call in
 `vite.config.ts`, the shape a current scaffold writes, and has no `svelte.config.js`. The showcase
-also imports its composer through its own `#chassis` subpath import, declared in its
-`package.json`, and imports a compiled .cairn/admin.css in its shell layout; the snippets below use
-the generic `$lib` alias and omit that stylesheet import.
+declares its subpath imports (`#lib`, `#chassis`, and `#theme`) in its `package.json` and imports
+its composer through `#chassis`. It also imports a compiled .cairn/admin.css in its shell layout.
+The snippets below use `#lib` for the composer and omit that stylesheet import.
 
-This wiring assumes the site disables SvelteKit's own origin check for form posts, `csrf: {
-checkOrigin: false }`, since cairn's guard owns CSRF for the admin through a double-submit token.
-A current `sv create` scaffold carries no `svelte.config.js` at all: the adapter and the CSRF
-setting both go inside `vite.config.ts`'s `sveltekit({ ... })` call instead.
+This wiring carries no `csrf` setting. SvelteKit's origin check covers every route, `/admin`
+included, and it runs before any `handle` hook. A form POST whose `Origin` header is absent, `null`,
+or foreign gets SvelteKit's plain 403 (`Cross-site POST form submissions are forbidden`), and no
+cairn event records it. The engine's admin responses serve `Referrer-Policy: strict-origin`, and
+every admin document carries a matching `<meta name="referrer" content="strict-origin">`, so the
+browser keeps the page's origin on each admin form POST and the check passes. The guard also
+requires the double-submit CSRF token on every unsafe form POST under `/admin`, which SvelteKit's
+origin check does not replace. A site that widens the check with `csrf.trustedOrigins` widens it
+for `/admin` too, and `cairn doctor` flags an entry of `'*'` or `'null'`.
 
 ## The route files plus the composer
 
@@ -22,8 +27,8 @@ The catch-all route pair, reproduced from the showcase:
 ```ts
 // src/routes/admin/[...path]/+page.server.ts
 // The single-mount admin route: one catch-all serves every /admin view through the engine's
-// load and actions. The composition (runtime, deps) lives in $lib/cairn.server.
-import { admin } from '$lib/cairn.server.js';
+// load and actions. The composition (runtime, deps) lives in #lib/cairn.server.
+import { admin } from '#lib/cairn.server.js';
 
 // The admin must never be prerendered; a site that defaults to prerender=true would bake a
 // build-time snapshot of a session-gated page.
@@ -38,7 +43,7 @@ export const actions = admin.actions;
 <script lang="ts">
   import { CairnAdmin } from '@glw907/cairn-cms/admin';
   import type { AdminData } from '@glw907/cairn-cms/sveltekit';
-  import { cairn } from '$theme/cairn.config.js';
+  import { cairn } from '#theme/cairn.config.js';
   import type { ActionData } from './$types';
 
   let { data, form }: { data: AdminData; form: ActionData } = $props();
@@ -57,7 +62,7 @@ showcase:
 // src/routes/admin/+layout.server.ts
 // The shared admin shell's load: the chrome (nav, user, theme, streamed pending count) for every
 // /admin/** route, including a developer's own custom screens.
-import { admin } from '$lib/cairn.server.js';
+import { admin } from '#lib/cairn.server.js';
 
 export const load = admin.shellLoad;
 ```
@@ -85,7 +90,7 @@ The composer builds the runtime once, and every server route that needs it (the 
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin({ runtime });
@@ -269,12 +274,11 @@ session, so it cannot live under `/admin`. Mount it at the site root and call th
 
 ```ts
 // src/routes/healthz/+server.ts
-import { json } from '@sveltejs/kit';
 import { loadHealth } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from '$lib/cairn.server.js';
+import { runtime } from '#lib/cairn.server.js';
 
 export const prerender = false;  // see below
-export const GET = async (event) => json(await loadHealth(event, runtime));
+export const GET = async (event) => Response.json(await loadHealth(event, runtime));
 ```
 
 On a site that prerenders by default, the explicit `prerender = false` is required. Without it

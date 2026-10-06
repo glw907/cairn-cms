@@ -39,4 +39,5 @@ export const RETIRED_TOOL_CHECK_IDS = [
   'github.app',
   'config.tidy-key',
   'admin.login-probe',
+  'config.csrf-disable', // retired with tool v2: SvelteKit 3's origin check covers every route
 ];

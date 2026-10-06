@@ -1,7 +1,9 @@
 # The `cairn doctor` command
 
-This page describes `cairn doctor` as it ships in `cairn` 1.1.0, the current release and the one
-that introduces it.
+This page describes `cairn doctor` as it ships in `cairn` 2.0.0, the release that accompanies the
+engine's move to SvelteKit 3. `cairn` 1.1.0, the current release, introduced the command. The
+2.0.0 doctor replaces the `config.csrf-disable` check with `config.csrf-trusted-origins`, since
+SvelteKit's origin check now covers every route.
 
 `cairn doctor` checks a directory against the checked-in configuration a cairn-cms site depends
 on, running eleven checks over the wrangler config, CSRF wiring, the site config, the `/admin`

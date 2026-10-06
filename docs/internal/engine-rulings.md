@@ -334,6 +334,7 @@ open edits, not part of the shape itself.
   declare in `content-routes-media-metadata.ts` (`mediaReplacePreviewAction`,
   `mediaAltPreviewAction`) and the third, the upload action, declares in
   `content-routes-media-ingest.ts`. Verdict unchanged.
+- **Note (SvelteKit 3 upgrade, 2026-10-06):** the cookie-jar posture is unchanged. The ruling's last sentence, that the `platform` required-but-nullable convention applies uniformly across the CSRF and auth helpers, lapses: `CairnEvent` no longer carries `platform`, and the helpers read the Worker env from `cloudflare:workers`.
 
 ## convention-internal-sibling-comment: an internal sibling of a public export gets one barrel sentence naming why  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -611,6 +612,7 @@ open edits, not part of the shape itself.
 - **Note (doctor-retirement, retire-2b, 2026-09-21):** `config.no-referrer-blanket` survives under
   `cairn doctor` (`tool/v1.1.0`), one of the eight file-only checks; only the actor's name changed,
   so the reopening condition above stands unaltered.
+- **Note (SvelteKit 3 upgrade, 2026-10-06):** verdict unchanged. SvelteKit 3's origin check now runs on every route before any `handle` hook, so the guard no longer calls `originMatches`: its non-admin Origin rule is deleted. `createAuthChannel`'s first-step origin check in `assertOriginAndScheme` is the remaining caller, which keeps a member action's own CSRF floor under `vite dev` (where SvelteKit skips its check) and under a widened `csrf.trustedOrigins`. The "no second CSRF layer" premise above now rests on SvelteKit's check for those routes.
 
 ## ical-builder: iCal feed builder  (decline, 2026-08-05, ASC consumer-brief scope check)
 
@@ -2541,12 +2543,13 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 103.
 - **Any-site case:** A site unit-testing its own adminAction-wrapped handler builds a fake event; cookies is required on CairnEvent, so the fake must satisfy this interface.
 
-## audit-sveltekit-platformcontext: `PlatformContext`  (keep, 2026-08-26, any-site audit)
+## audit-sveltekit-platformcontext: `PlatformContext`  (retire, 2026-10-06, SvelteKit 3 upgrade; kept 2026-08-26, any-site audit)
 
-- **Verdict:** keep. A site building a test event, or reasoning about why its own App.Platform carrying ctx still satisfies cairn, needs this contract stated.
+- **Verdict:** retire (2026-10-06, replacing the 2026-08-26 keep). Adapter-cloudflare 8 passes no `platform` and declares no `App.Platform`, so a site's own `App.Platform` carrying `ctx` has nothing to satisfy, and `CairnEvent` carries no `platform` member. The earlier keep case read: A site building a test event, or reasoning about why its own App.Platform carrying ctx still satisfies cairn, needs this contract stated.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 104.
 - **Any-site case:** A site building a test event, or reasoning about why its own App.Platform carrying ctx still satisfies cairn, needs this contract stated.
+- **Note (SvelteKit 3 upgrade, 2026-10-06):** the reopening trigger was the case's own premise, a site's `App.Platform` carrying `ctx`, and adapter 8 removes it. `PlatformContext` is removed from `@glw907/cairn-cms/sveltekit`, and `docs/reference/sveltekit.md` carries the retirement.
 
 ## audit-sveltekit-handleinput: `HandleInput`  (keep, 2026-08-26, any-site audit)
 
@@ -2671,6 +2674,7 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 119.
 - **Any-site case:** Any Workers site wanting admin mutations persisted rather than only logged: Workers Logs expire, and answering who changed this in March needs a table.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
+- **Note (SvelteKit 3 upgrade, 2026-10-06):** verdict unchanged and the signature `createD1AuditSink(db, waitUntil)` is kept. The documented call form becomes `import { env, waitUntil } from 'cloudflare:workers'`, passing both to the sink, which takes its dependencies as arguments and stays out of the engine's own `cloudflare:workers` import graph.
 
 ## audit-sveltekit-createsectionaction: `createSectionAction`  (keep, 2026-08-26, any-site audit)
 
@@ -2754,6 +2758,7 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 129.
 - **Any-site case:** Every cairn site, one line in hooks.server.ts. It carries session resolution, the CSRF authority the site handed over by setting checkOrigin: false, capability resolution, security headers, and a dev-backend fail-closed.
+- **Note (SvelteKit 3 upgrade, 2026-10-06):** verdict unchanged. The CSRF authority this case names, handed over by `csrf: { checkOrigin: false }`, no longer exists: SvelteKit 3 removed the option and runs its origin check on every route, `/admin` included. The guard keeps the double-submit token on every unsafe `/admin` form POST, session and capability resolution, the security headers (`Referrer-Policy: strict-origin`), and the dev-backend fail-closed, and it reads the Worker env from `cloudflare:workers`.
 
 ## audit-sveltekit-cairnevent: `CairnEvent`  (keep, 2026-08-26, any-site audit)
 
@@ -2761,6 +2766,7 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 130.
 - **Any-site case:** Every other export here names it, so a site annotating any handler, helper or test double writes it. Structural by design: any kit server event satisfies it with zero casts.
+- **Note (SvelteKit 3 upgrade, 2026-10-06):** verdict unchanged, and the keep case holds. The `platform` member and the `Env` type parameter retire: `Env` reached the event only through `platform`, so `CairnEvent` takes no type argument. Any SvelteKit server event still satisfies it with zero casts, since Kit 3's `RequestEvent` keeps an optional `platform` the structural type simply omits.
 
 ## audit-admin-formatphone: `formatPhone`  (retire, 2026-08-26, any-site audit)
 
@@ -3287,6 +3293,7 @@ when the remediation pass lands.
   Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 7.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Note (SvelteKit 3 upgrade, 2026-10-06):** shape unchanged, `{ env, waitUntil }`. Both members are now sourced from `cloudflare:workers`, so `waitUntil` is always defined (a no-op in the dev stub, where the started promise still runs). `lookup` and `verify` keep their narrow `{ env }` context.
 
 ## audit-auth-channelrequestresult: `ChannelRequestResult`  (reshape, 2026-08-26, any-site audit)
 
@@ -4366,13 +4373,14 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Any-site case:** A site rendering the cairn editor in its own handbook cannot: six mounted components are unexported, two context keys internal, and containment (inert subtree, five captured document events) unreachable.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md).
 
-## audit-log-auth-channel-delivery-inline: `auth.channel.delivery_inline`  (keep, 2026-08-26, any-site audit)
+## audit-log-auth-channel-delivery-inline: `auth.channel.delivery_inline`  (retire, 2026-10-06, SvelteKit 3 upgrade; kept 2026-08-26, any-site audit)
 
-- **Verdict:** keep. factory.ts:721-726 comment: inline await runs on "the unit-test/no-adapter runtime... log so a real deployment missing its platform binding is loud". resolveWaitUntil (:114-120) returns undefined whenever platform.ctx/context is unwired, an anonymous misconfiguration. Folding into auth.channel.requested (info, every request, :705) destroys alertability-by-existence.
+- **Verdict:** retire (2026-10-06, replacing the 2026-08-26 keep). The keep case was a deployment with no `waitUntil`, which `cloudflare:workers` rules out: its `waitUntil` is always defined, so the channel's inline-await branch and this event are removed. The earlier keep case read: factory.ts:721-726 comment: inline await runs on "the unit-test/no-adapter runtime... log so a real deployment missing its platform binding is loud". resolveWaitUntil (:114-120) returns undefined whenever platform.ctx/context is unwired, an anonymous misconfiguration. Folding into auth.channel.requested (info, every request, :705) destroys alertability-by-existence.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 1.
 - **Any-site case:** Essentially none in production: doc calls it "the unit-test and edge-case runtime path", and on Cloudflare Workers (the engine's only supported runtime) waitUntil is always present, so an anonymous consumer never emits this record.
 - **Verified:** [verify-log-vocabulary.md](record/2026-08-26-any-site-audit/verify-log-vocabulary.md) (verdict overturned there).
+- **Note (SvelteKit 3 upgrade, 2026-10-06):** the reopening trigger, evidence against the any-site case, is met: no Cloudflare Workers deployment lacks `waitUntil`. `docs/reference/log-events.md` drops the row, and a site that matched on the event name needs changing.
 
 ## audit-log-auth-session-destroyed: `auth.session.destroyed`  (reshape, 2026-08-26, any-site audit)
 
@@ -5820,6 +5828,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   caches across calls within one instance) and the showcase's members e2e suite (its capture
   transport requires `CAIRN_DEV_BACKEND='1'` locally, proving the amended, AND-non-local sense
   breaks no legitimate dev-backend deployment).
+- **Note (SvelteKit 3 upgrade, 2026-10-06):** the ruling and both predicates stand. Both refusals now read the flag from the Worker env alone, `cloudflare:workers`'s `env`: the `event.platform` and `process.env` reads are gone, and the "`event.platform?.env`" probe in the Shape entry above is historical. Each read waits while the build prerenders, since no Worker env exists then.
 
 ## access-semantics-documented-divergence: engine-wide access semantics, documented divergence, no blanket harden (ruling 2)  (accept, 2026-09-03, internals pass)
 

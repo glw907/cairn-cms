@@ -225,7 +225,7 @@ export const cairn = defineAdapter({
 ```svelte
 <!-- src/routes/(site)/+layout.svelte: the same URL, linked instead of statically imported -->
 <script lang="ts">
-  import appCssUrl from '$lib/app.css?url';
+  import appCssUrl from '#lib/app.css?url';
 </script>
 
 <svelte:head>
@@ -722,7 +722,7 @@ hastscript's `h()`. The showcase composes `renderGlyph` with its own chassis-loc
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts
 // examples/showcase/src/theme/markdown-components.ts
-import { makeIconRenderer, headRow } from '$chassis/render.js';
+import { makeIconRenderer, headRow } from '#chassis/render.js';
 
 const makeIcon = makeIconRenderer(icons);
 build: (ctx) =>
@@ -754,7 +754,7 @@ permalinks cannot diverge.
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin({ runtime });
@@ -794,7 +794,7 @@ Read one named menu from a parsed config and validate it. Returns `[]` when the 
 
 ```ts
 import { readMenu } from '@glw907/cairn-cms';
-import { siteConfig } from '$theme/cairn.config.js';
+import { siteConfig } from '#theme/cairn.config.js';
 
 const primary = readMenu(siteConfig, 'primary', 2);
 ```
@@ -814,7 +814,7 @@ and edit paths read.
 
 ```ts
 import { readVocabulary } from '@glw907/cairn-cms';
-import { siteConfig } from '$theme/cairn.config.js';
+import { siteConfig } from '#theme/cairn.config.js';
 
 const vocabulary = readVocabulary(siteConfig);
 ```
@@ -1014,7 +1014,7 @@ once the runtime knows the real concept list.
 ```ts
 // src/lib/cairn.access.ts
 import { defineAccess } from '@glw907/cairn-cms';
-import { roles } from '$theme/cairn.config.js';
+import { roles } from '#theme/cairn.config.js';
 
 export const access = defineAccess(roles, {
   pages: ['webmaster'],

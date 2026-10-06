@@ -225,7 +225,10 @@ Sending (`env.EMAIL.send`). The response is identical whether or not the email w
 the endpoint does not leak membership.
 
 **Confirm.** The link points at `GET /admin/auth/confirm?token=...`, which renders a page with a single
-"Confirm sign-in" button and consumes nothing. The page sets `Referrer-Policy: no-referrer`. Clicking the
+"Confirm sign-in" button and consumes nothing. The page sets `Referrer-Policy: strict-origin` and carries a
+matching `<meta name="referrer" content="strict-origin">` (amended 2026-10-06: it was `no-referrer`, which sent
+`Origin: null` on the confirm POST and so could not pass SvelteKit's origin check, now on every route; the token
+still never reaches a `Referer`, since `strict-origin` sends the bare origin only). Clicking the
 button submits `POST /admin/auth/confirm` carrying the token. The handler hashes the token and runs one
 atomic statement, `DELETE FROM magic_token WHERE token_hash = ? AND expires_at > ? RETURNING email`. A
 returned row means the token was valid, unexpired, and is now consumed, so the link is single-use by

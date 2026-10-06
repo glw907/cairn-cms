@@ -47,9 +47,9 @@ interface CairnEvent {
 ```
 
 Every load, action, and guard helper on this subpath reads one structural event shape,
-`CairnEvent<Env = CairnEnv>`. A real SvelteKit `RequestEvent` or `ServerLoadEvent` carries every
-member here and more, and the engine never imports a site's generated `App.*` ambient types, so
-any kit server event satisfies it with zero casts. `params` and `route` end the anti-idiom of
+`CairnEvent`, which takes no type argument. A real SvelteKit `RequestEvent` or `ServerLoadEvent`
+carries every member here and more, and the engine never imports a site's generated `App.*`
+ambient types, so any kit server event satisfies it with zero casts. `params` and `route` end the anti-idiom of
 reading route identity out of a form body: a real kit event always carries both, and a seam like
 [`createSectionAction`](#createsectionaction)'s `SectionActionOptions.target` derives from
 `event.route.id`. `route.id` is nullable because kit's own is: [`createAuthGuard`](#createauthguard)'s
@@ -128,7 +128,7 @@ would not carry.
 // src/hooks.server.ts
 import { sequence } from '@sveltejs/kit/hooks';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import { roles } from '$theme/cairn.config.js';
+import { roles } from '#theme/cairn.config.js';
 import { theme } from './theme-handle.js';
 
 export const handle = sequence(theme, createAuthGuard({ roles }));
@@ -280,7 +280,7 @@ or a cast recovers the ten. `createCairnAdmin` is the only public seam that moun
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin({ runtime });
@@ -288,7 +288,7 @@ export const admin = createCairnAdmin({ runtime });
 
 ```ts
 // src/routes/admin/[...path]/+page.server.ts
-import { admin } from '$lib/cairn.server.js';
+import { admin } from '#lib/cairn.server.js';
 export const prerender = false;
 export const load = admin.load;
 export const actions = admin.actions;
@@ -478,7 +478,7 @@ engine-authored sentence shows or doesn't, never the query value itself.
 
 One further channel exists inside the engine and is never written by a site directly:
 [`createAuthGuard`](#createauthguard) itself refuses at the `Handle`, before any route's own load
-or action runs, returning a raw, branded `Response` for a CSRF, origin, HTTPS, missing-binding, or
+or action runs, returning a raw, branded `Response` for a CSRF-token, HTTPS, missing-binding, or
 dev-backend-in-production failure (the last, a 503, refuses when `CAIRN_DEV_BACKEND` is set in a
 deployed runtime, so a build that leaked its dev fixture fails loud rather than serving it). This
 channel is why `createAdminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal
@@ -490,6 +490,8 @@ a browser can forge cross-origin without a preflight the site never answers, and
 rejects a non-form-content-type action POST with a 415 before the action ever runs. It does mean
 this section is not license to hand-roll a JSON admin endpoint under the same protection. So
 `createAdminAction`'s own check is rarely the one that actually fires.
+A form POST with a null or foreign `Origin` never reaches the guard's channel, since SvelteKit's
+origin check refuses it with a plain 403 before any `handle` hook runs.
 
 ### `createAdminAction`
 
@@ -589,7 +591,7 @@ at the point `ctx.audit` invokes it.
 ```ts
 // src/routes/admin/club/events/[id]/+page.server.ts
 import { createAdminAction } from '@glw907/cairn-cms/sveltekit';
-import { db } from '$lib/club/db.js';
+import { db } from '#lib/club/db.js';
 
 export const actions = {
   approve: createAdminAction(async ({ form, ctx }) => {
@@ -762,10 +764,12 @@ shape for a custom section regardless of what any given site's own routes show.
 
 The config is site-fixed, called once per section: `config.resolveDb` reads the section's own
 binding off the Worker env, and `config.rateLimit`, when set, names the binding and the
-per-call key. `resolveDb`'s shape, `(env: Env | undefined) => Db | undefined`, is deliberate and
-stays ratified unchanged: the engine can't conjure an absent binding, so an honest `undefined`
-parameter beats a callback that hides absence, and the fail-closed authorization and
-degrade-to-open rate limit split (the check order below) is the ratified reading of that absence.
+per-call key. `resolveDb`'s shape, `(env: Env | undefined) => Db | undefined`, is unchanged by
+SvelteKit 3, which does not require the parameter narrowed. The engine passes the Worker env it
+reads from `cloudflare:workers`, the object the site's generated `Env` describes. The engine can't
+conjure an absent binding, so an honest `undefined` return beats a callback that hides absence, and
+the fail-closed authorization and degrade-to-open rate limit split (the check order below) is the
+ratified reading of that absence.
 
 The returned wrapper takes the call-site's own
 `opts: { action, entity, target?, ownerOnly?, deniedMessage? }`. `action` and `entity` are
@@ -1030,7 +1034,7 @@ against the default owner/editor pair.
 ```ts
 // src/routes/admin/(app)/editors/+page.server.ts (per-route mounting)
 import { createEditorRoutes } from '@glw907/cairn-cms/sveltekit';
-import { roles } from '$theme/cairn.config.js';
+import { roles } from '#theme/cairn.config.js';
 
 const editors = createEditorRoutes({ roles });
 
@@ -1259,7 +1263,7 @@ since only the fields the last-refused action actually sets are present.
 
 ```ts
 // src/routes/admin/(app)/[concept]/+page.server.ts (per-route mounting)
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createContentRoutes } from '@glw907/cairn-cms/sveltekit';
 
@@ -1311,7 +1315,7 @@ matching every other route factory's convention.
 // src/routes/media/[...path]/+server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
 
 export const GET = createMediaRoute({ runtime: composeRuntime({ adapter: cairn, siteConfig }) });
 ```
@@ -1374,7 +1378,7 @@ reason `branch_gone`.
 including both refusal classes: `/preview` sits outside `/admin`, so the admin guard's own header
 layer never reaches it. It reads no cookie, sets none, and never touches
 `locals.cairnEditor`/`locals.cairnAccess`; the token alone is the credential. It throws a
-descriptive build-time error when `building` (`$app/environment`, read through a dynamic import at
+descriptive build-time error when `building` (`$app/env`, read through a dynamic import at
 call time rather than a module-scope import, so importing any other `/sveltekit` barrel export
 never pulls in this virtual module) is true, so a site that lets this route prerender gets a red
 build naming the fix (`export const prerender = false;`) instead of a token-bearing static asset.
@@ -1390,8 +1394,8 @@ path and never appears on the page.
 // src/routes/(site)/preview/[token]/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { loadPreview } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from '$lib/cairn.server.js';
-import { publicRoutesConfig } from '$lib/public-routes.js';
+import { runtime } from '#lib/cairn.server.js';
+import { publicRoutesConfig } from '#lib/public-routes.js';
 
 // REQUIRED: a preview link is a bearer credential. Prerendering this route would bake a token
 // into a static asset every build ships.
@@ -1405,7 +1409,7 @@ export const load: PageServerLoad = (event) => loadPreview(runtime, publicRoutes
 <script lang="ts">
   import type { PageData } from './$types';
   import { PreviewBanner } from '@glw907/cairn-cms/public';
-  import ArticleView from '$lib/components/ArticleView.svelte';
+  import ArticleView from '#lib/components/ArticleView.svelte';
 
   let { data }: { data: PageData } = $props();
 </script>
@@ -1520,7 +1524,7 @@ under `save`.
 // src/routes/admin/(app)/nav/+page.server.ts (per-route mounting)
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createNavRoutes } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
 
 const nav = createNavRoutes({ runtime: composeRuntime({ adapter: cairn, siteConfig }) });
 
@@ -1549,13 +1553,12 @@ check. The event comes first, the runtime second. On a site that prerenders by d
 
 ```ts
 // src/routes/healthz/+server.ts
-import { json } from '@sveltejs/kit';
 import { loadHealth } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from '$lib/cairn.server.js';
+import { runtime } from '#lib/cairn.server.js';
 
 export const prerender = false;
 
-export const GET = async (event) => json(await loadHealth(event, runtime));
+export const GET = async (event) => Response.json(await loadHealth(event, runtime));
 ```
 
 ---
@@ -1871,8 +1874,8 @@ where `cairn.server.ts` composes the runtime, not declared on the adapter beside
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
-import { attention } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
+import { attention } from '#theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin({ runtime, attention });

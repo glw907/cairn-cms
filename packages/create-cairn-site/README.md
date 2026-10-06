@@ -36,6 +36,28 @@ so answering the prompt (or the flag) is the only step: your `robots.txt` reflec
 build with no route edit. See `docs/extend/choose-an-ai-posture.md` in the engine package for the
 full wiring this scaffold gives you.
 
+## What the generated site requires
+
+The site this command writes runs SvelteKit 3 with `@sveltejs/adapter-cloudflare` 8. It has no
+separate SvelteKit config file: the whole SvelteKit configuration lives in `vite.config.ts`. `npm run preview`
+serves the production build through `wrangler dev`, because adapter 8 emits a Worker that
+`vite preview` cannot run.
+
+Those two majors set the floors for the site's own toolchain:
+
+| Tool | Floor |
+| --- | --- |
+| SvelteKit | `^3` |
+| `@sveltejs/adapter-cloudflare` | `^8` |
+| Vite | `^8.0.12` |
+| Wrangler | `^4.118` |
+| Node.js, for the site | `>=22.17` |
+
+The scaffolded `package.json` already pins versions above each floor, so a new site needs no
+action. The floors matter when you move an existing site's pins. This command's own Node floor,
+24 or later, is higher than the site's, and it is the only one the command checks before it
+starts.
+
 ## The GitHub chapter
 
 Right after the site is scaffolded, the command walks you through publishing it to GitHub. This

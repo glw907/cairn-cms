@@ -1,0 +1,18 @@
+{
+  "name": "kit2-shaped-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": { "@glw907/cairn-cms": "^0.97.0" },
+  "devDependencies": {
+    "@sveltejs/adapter-cloudflare": "^7.0.0",
+    "@sveltejs/kit": "^2.70.0",
+    "vite": "^7.1.0",
+    "vitest": "^4.1",
+    "wrangler": "^4.100.0"
+  }
+}

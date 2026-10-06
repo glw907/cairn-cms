@@ -330,16 +330,32 @@ const CI_NOT_LOCAL: Record<string, string> = {
 };
 
 /**
- * Every `run:` step of the CI `test` job: a one-line `run: <cmd>` as the command, a block
- * `run: |` as `name:<step name>` (the block body is shell, not one command).
- * @returns {string[]}
+ * Every `run:` step of the CI `test` job in a workflow file's text: a one-line `run: <cmd>` as
+ * the command, a block `run: |` as `name:<step name>` (the block body is shell, not one command).
+ * Steps of any other job are not read, and a step's name never carries over to the next step.
+ * @param text - The workflow file's contents.
+ * @returns The `test` job's run steps, in file order.
  */
-function ciSteps(): string[] {
-  const lines = readFileSync(resolve(process.cwd(), '.github/workflows/test.yml'), 'utf8').split('\n');
+function ciStepsOf(text: string): string[] {
   const steps: string[] = [];
+  let inTestJob = false;
+  let stepIndent: number | null = null;
   let name = '';
-  for (const line of lines) {
-    const named = line.match(/^\s*- name:\s*(.+?)\s*$/);
+  for (const line of text.split('\n')) {
+    const job = line.match(/^ {2}([A-Za-z0-9_-]+):\s*$/);
+    if (job) {
+      inTestJob = job[1] === 'test';
+      stepIndent = null;
+      name = '';
+      continue;
+    }
+    if (!inTestJob) continue;
+    const item = line.match(/^(\s*)- /);
+    if (item) {
+      stepIndent ??= item[1].length;
+      if (item[1].length === stepIndent) name = '';
+    }
+    const named = line.match(/^\s*(?:- )?name:\s*(.+?)\s*$/);
     if (named) name = named[1];
     const run = line.match(/^\s*(?:- )?run:\s*(.+?)\s*$/);
     if (!run) continue;
@@ -347,6 +363,40 @@ function ciSteps(): string[] {
   }
   return steps;
 }
+
+/**
+ * Every `run:` step of the CI `test` job.
+ * @returns The `test` job's run steps of `.github/workflows/test.yml`.
+ */
+function ciSteps(): string[] {
+  return ciStepsOf(readFileSync(resolve(process.cwd(), '.github/workflows/test.yml'), 'utf8'));
+}
+
+describe('the CI step parser', () => {
+  const workflow = [
+    'name: test',
+    'jobs:',
+    '  test:',
+    '    steps:',
+    '      - name: Named block',
+    '        run: |',
+    '          echo one',
+    '      - run: |',
+    '          echo unnamed',
+    '      - run: npm run check',
+    '  later:',
+    '    steps:',
+    '      - run: npm run only-in-later-job',
+  ].join('\n');
+
+  it('reads only the test job, so a second job adds no step', () => {
+    expect(ciStepsOf(workflow)).not.toContain('npm run only-in-later-job');
+  });
+
+  it('keys an unnamed block step by an empty name, never the previous step\'s name', () => {
+    expect(ciStepsOf(workflow)).toEqual(['name:Named block', 'name:', 'npm run check']);
+  });
+});
 
 describe('the full tier against CI', () => {
   const gateCommands = new Set(TIER_GATES.full.split(' && '));

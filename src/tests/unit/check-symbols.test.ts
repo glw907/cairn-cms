@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { execSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve, dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import {
   codeVoiceSegments,
   extractCliFlags,
@@ -28,23 +26,6 @@ import {
 } from '../../../scripts/checks/check-symbols.mjs';
 import { ALLOWLIST } from '../../../scripts/checks/check-symbols-allowlist.mjs';
 import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-
-// Mirrors extractEnvVars' own ground truth (an unexported helper inside check-symbols.mjs): a
-// SCREAMING_SNAKE_CASE token resolves against the environment-variable class when it appears
-// anywhere in the source tree. There is no parseable registry for this class, unlike the other
-// four, so this is the only way to prove the env-var half of the both-halves requirement without
-// reaching into a private function.
-function foundInSourceTree(token: string): boolean {
-  const out = execSync(
-    `grep -rl -- "\\b${token}\\b" src packages migrations examples/showcase scripts .github 2>/dev/null | grep -v node_modules || true`,
-    { cwd: ROOT },
-  )
-    .toString()
-    .trim();
-  return out.length > 0;
-}
 
 describe('codeVoiceSegments', () => {
   it('extracts an inline span with its 1-based line number', () => {
@@ -298,7 +279,7 @@ describe('cairnCommandFlags guards an empty or absent input', () => {
 describe('extractEnvVars', () => {
   it('extracts a real and a fake env var, both halves', () => {
     // The fake token is assembled at runtime, not written as one contiguous literal here: this
-    // file itself is inside foundInSourceTree's search tree, and a literal fake token would
+    // file itself is inside envVarInSourceTree's search tree, and a literal fake token would
     // match its own occurrence in this assertion, defeating the negative half of the test.
     const fakeEnvVar = ['NOT_A', 'REAL_ENV', 'VAR_TOKEN'].join('_');
     const segments = codeVoiceSegments(`inline \`PUBLIC_ORIGIN\` and \`${fakeEnvVar}\` here`);
@@ -307,8 +288,8 @@ describe('extractEnvVars', () => {
     expect(tokens).toContain('PUBLIC_ORIGIN');
     expect(tokens).toContain(fakeEnvVar);
 
-    expect(foundInSourceTree('PUBLIC_ORIGIN')).toBe(true);
-    expect(foundInSourceTree(fakeEnvVar)).toBe(false);
+    expect(envVarInSourceTree('PUBLIC_ORIGIN')).toBe(true);
+    expect(envVarInSourceTree(fakeEnvVar)).toBe(false);
   });
 });
 

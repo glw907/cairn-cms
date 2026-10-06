@@ -49,6 +49,34 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`go`.** `tool/internal/doctor` (graded "workmanlike" by the SvelteKit 3 pass's close `go-architecture-reader`,
+  2026-10-06) carries pre-existing debt the pass did not cause: eleven exported check values plus `Snapshot.ReadFile`,
+  the `RobotsAbsent*` constants, and `doctor.Results` have no caller outside the package (unexport them; `Verdicts`
+  can take `[]CheckedResult`); `check_origin.go`'s `isLocal` and `check_csrf.go`'s `isLocalOrigin` disagree on `::1`;
+  `labelFor`, `severityFor`, and `conditionText` triplicate one lookup; `resultFromFloorsVerdict` rebuilds `failResult`;
+  three loops each read the first existing file; `siteConfigOutcome.Path` and `Snapshot.At` are test-only; about 55
+  comment lines cite deleted TypeScript files by line range (`checks-local.ts` and siblings). Also `spine.Conditions()`
+  is test-only behind a "2.0 seam" comment. A tool cleanup pass, not a SvelteKit concern.
+- **`extend`.** SvelteKit 3 remote functions (`/_app/remote/...`) are not `/admin` paths, so a site-built admin
+  remote command gets no guard session, no Rule 1 token check, and no security headers (Kit's `is_remote_forbidden`
+  gives same-origin protection only). The extend arm should say a site-built admin remote function resolves the
+  session itself. Close `web-auth-security-reviewer`, 2026-10-06.
+- **`engine`.** Kit 3 loads `node:async_hooks` only under the `nodejs_als` compatibility flag, so without it
+  `getRequestEvent` works only synchronously. Nothing in cairn, the showcase, or Waymark calls it today, so the
+  configs deliberately carry no flag (no flag for an unused feature); revisit with the remote-functions watch
+  (`trig_0193pPNoyxsTGeUhF1xx7woa`). Close `cloudflare-workers-reviewer`, 2026-10-06.
+- **`admin`.** Error documents on public admin paths (a thrown 404 on `/admin/auth/<unknown>`, a failed admin layout
+  load) render the root `+error.svelte` outside the shell, so they carry no referrer meta; the guard's header covers
+  production but not the dev-backend handle. No form, so no lockout risk. Optional fix: an `admin/+error.svelte` that
+  emits the meta. Close `svelte-reviewer`, 2026-10-06.
+- **`chassis`.** `examples/showcase/src/theme/components/SiteHeader.svelte:66` starts `$state(browser ?
+  resolveTheme(...) : light)`, so server and client start from different values (a hydration-mismatch risk for the
+  theme toggle's icon and label); start from `light` and resolve in `onMount`. And `members/login/+page.svelte:48-50`
+  names its field twice (a `<legend>` and an sr-only `<label>`). Close `svelte-reviewer`, 2026-10-06.
+- **`engine`.** `createAuthChannel`'s dev-backend tripwire no longer sees a flag set only in the shell (it reads the
+  Worker env), so under `vite dev --host` a LAN request with a shell-only `CAIRN_DEV_BACKEND=1` no longer trips the
+  member-action refusal; dev-only, and `captureDeliver` still refuses. Close `web-auth-security-reviewer`, 2026-10-06.
+
 - **`tooling`.** Two showcase e2e specs time out on a slow CI runner while waiting on an admin list link, the same
   slow-runner pattern as the known `spellcheck.spec.ts:20` flake: `e2e/tidy.spec.ts:20` (line 24, waiting for the
   seeded `a[href="/admin/posts/2026-06-copyedit"]`) and `e2e/preview.spec.ts:371` (line 398, waiting for the "Delete

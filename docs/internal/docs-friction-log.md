@@ -49,6 +49,13 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`tooling`.** Two showcase e2e specs time out on a slow CI runner while waiting on an admin list link, the same
+  slow-runner pattern as the known `spellcheck.spec.ts:20` flake: `e2e/tidy.spec.ts:20` (line 24, waiting for the
+  seeded `a[href="/admin/posts/2026-06-copyedit"]`) and `e2e/preview.spec.ts:371` (line 398, waiting for the "Delete
+  Broken link sibling" button). Both failed every attempt in CI run e2e on `7722ab44` (11.6 minutes against 5.7 on the
+  passing rerun of the next commit). Candidates for the same readiness-signal fix the zen test took (wait on a real
+  ready signal, never a longer timeout). Found by the SvelteKit 3 pass's CI diagnosis, 2026-10-06.
+
 - **`tooling`.** `scripts/lab/theme-fixture.mjs` defaults `THEME_FIXTURE_PORT` to 4393 (`:59`), which the
   SvelteKit 3 pass's e2e host now pins as its `wrangler dev` inspector port (`E2E_PORT` + 1,
   `examples/showcase/playwright.config.ts:48`), and `RESERVED_PORTS` (`:63`) lists neither 4393 nor

@@ -61,7 +61,35 @@ const DOCS_GATE = 'npm run check:docs-gate';
 // workspace member.
 const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
-const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:surface && npm --prefix examples/showcase run test:e2e`;
+// The CI `test` job's remaining steps, in test.yml's own order, so the full tier proves everything
+// CI would. The steps already in a lower tier (`npm run check`, the test projects, the docs gate,
+// the create-cairn-site suite) and the install and bake steps a local gate cannot run are not
+// repeated; the gate-tier test pins this list against test.yml.
+const CI_CHECKS = [
+  'npm run test:emit',
+  'npm run check:package',
+  'npm run check:audit-pack',
+  'npm run check:self-use',
+  'npm run check:custom-surface',
+  'npm run check:chassis-boundary',
+  'npm run check:cm-internals',
+  'npm run check:idioms',
+  'npm run check:invisible-craft',
+  'npm run check:admin-css-classes',
+  'npm run check:rulings-format',
+  'npm run check:prose',
+  'npm run check:version',
+  'npm run check:dev-package',
+  'npm run check:template',
+  'npm run check:consumers',
+  'npm --prefix examples/showcase run check',
+  'npm --prefix examples/showcase run check:cairn',
+  'npm --prefix examples/showcase run test:unit',
+  'npm --prefix examples/showcase run format:check',
+  'npm run check:public-skill',
+  'npm run check:tool-heuristics',
+].join(' && ');
+const FULL_GATE = `${ADMIN_VISUAL_GATE} && npm run check:comments && npm run check:surface && ${CI_CHECKS} && npm --prefix examples/showcase run test:e2e`;
 const TOOL_GATE = 'make -C tool check';
 
 /**

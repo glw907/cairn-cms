@@ -1477,3 +1477,36 @@ a design question, or a third red CI, goes to Geoff before more fixing.
 Geoff signed off the 2a intros; the cairn and dubplate sessions agreed a four-rule heavy-lock protocol (dotfiles
 `406ddb4`); Task 12 holds the scaffold `satisfies`-check decision (`73c78a7c`); S5 is pre-flighted and amended
 (`bc277579`), with Task 11c added (`57f5c969`).
+
+### Checkpoint 5 (2026-10-06, end of S4)
+
+**S4 closed: CI green on all seven workflows at `e1bb2650`** (test, e2e, scaffold, create-site, design, tool,
+tool-conditions). The boundary took three CI rounds after the bump:
+- `9ff58730`: four red, three causes, fixed by Task 11d (`7722ab44`): a showcase `satisfies` call site for the binding
+  types (`examples/showcase/src/lib/env-check.ts`, excluded from the scaffold); vitest `test.server.deps.inline:
+  ['@glw907/cairn-cms']` so an installed engine's `cloudflare:workers` import can be mocked; the dev-fold grep checks
+  executable code only (Kit 3 emits server sourcemaps by default; conductor ruling to keep them).
+- `7722ab44` / `2d8ca14b`: `e2e` was a slow-runner flake (filed on `main`, `e6b31cf9`); `test` and `create-site` were
+  new errors the first fixes uncovered, fixed by Task 11e (`e1bb2650`, Opus): the dev package's test typing under Kit
+  3, and the real defect: under `vite dev`, cairn's manifest plugin started a nested Vite server whose close made
+  adapter-cloudflare 8 dispose the main server's shared platform proxy, so every `/admin` request 500ed on any
+  adapter-8 site. Conductor ruling (method): keep the dev-time verify, run it through the live dev server
+  (`configureServer` plus `ssrLoadModule`), never a nested one. Accepted on combined gate runs after 11e's fix round
+  died on a connection error (the only finding was the gate-string mismatch).
+- Local gates missed both `check:dev-package` and the `vite dev` path; Task 11f makes the full tier run every CI
+  check, and the create-site workflow stays the only `vite dev` proof.
+
+**Upstream:** the adapter bug is filed as sveltejs/kit PR #17368 (fork `glw907/kit`, closes #17344, two adversarial
+style reviews, the second CONFORMS) plus a verified-repro comment on #17344; routine `trig_01KPzLTU7rzLMQUp2y6bjZtm`
+watches it. cairn does not depend on it.
+
+**Pauses:** two (travel; power-off) and one API connection drop; each resumed from cache with no work lost.
+
+**Also this segment:** the docs chain gained the framing stage and narrowed round 2 (dotfiles `d1e3a3c`, `8075503`);
+the cairn and dubplate sessions agreed the heavy-lock protocol (dotfiles `406ddb4`); Geoff signed off the 2a intros.
+
+**Spend:** S4 runs about 3.1M (11b on Opus the largest), CI diagnoses and boundary agents about 0.6M, the upstream PR
+work about 0.8M; total about 8.5M of 12.4M by subagent count (conductor share excluded; `/cost` at the close).
+Daytime mode: at 9.9M the plan's 80 percent question goes to Geoff.
+
+**Next:** S5, Tasks 11f, 11c, 12, 13 (light gates), then the close.

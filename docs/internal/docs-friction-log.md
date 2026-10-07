@@ -114,6 +114,12 @@ New findings start below this line, one per finding, with its perspective and a 
   the lane rule puts it on light, where it cannot fit. Fix: document the override in the script's
   header, or have it run on the heavy lane. Found by Task 6's implementer, conductor-verified
   against `cairn-run-gate`'s caps, 2026-10-05.
+- **`tooling`.** `examples/showcase/e2e/spellcheck.spec.ts:20` (the worker-lint test, "the worker lints the seeded
+  misspellings, a suggestion applies, and an added word clears its underline") times out on a slow CI runner: the
+  worker streams the 1.5MB en-US dictionary into wasm on first lint, and the test already raises its ceiling to 90s
+  (`test.setTimeout`, line 26) without removing the race. It is the slow-runner pattern that the zen-toggle and
+  preview-delete flakes shared. Fix: wait on a real readiness signal from the worker (the dictionary loaded), never a
+  longer timeout. Found by the SvelteKit 3 pass's CI diagnosis, 2026-10-06.
 
 The draft docs harvest's close (2026-09-30) triaged the whole log and found four open entries,
 all filed by the harvest itself, each verified against the tree first. The stale `/components`

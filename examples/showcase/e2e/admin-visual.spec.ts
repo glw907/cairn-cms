@@ -472,9 +472,10 @@ for (const width of WIDTH_BAR) {
 }
 
 // The zen toggle's frame offset, the pass's only real proof that the persistent-frame margin
-// actually animates rather than merely carrying the right CSS on paper. Both tests sample
-// `.drawer-content`'s computed margin-left over the toggle window at a fixed cadence; the count of
-// distinct values seen is the signal, not any particular frame interval. Neither test screenshots:
+// actually animates rather than merely carrying the right CSS on paper. The animating test seeks
+// the paused transition rather than sampling; only the reduced-motion test uses this helper, which
+// reads `.drawer-content`'s computed margin-left over the toggle window at a fixed cadence and
+// counts the distinct values seen, not any particular frame interval. Neither test screenshots:
 // a resting frame either side of the toggle proves nothing about the travel between them.
 async function sampleDrawerMarginLeft(page: import('@playwright/test').Page, windowMs: number) {
   const drawerContent = page.locator('.drawer-content');

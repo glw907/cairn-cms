@@ -49,6 +49,25 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`package`.** `@glw907/cairn-cms-dev` ships `.ts` source, and a consumer's `svelte-check` type-checks it through
+  the dynamic import (`skipLibCheck` covers only `.d.ts`): on a fresh SvelteKit 3 scaffold it reports `Cannot find
+  module 'cloudflare:workers'` at `src/handle.ts:14`, plus `node:sqlite` in `channel-db.ts` until `@types/node` loads.
+  Found by the 2a unattended run's add-cairn re-test (R4, conductor, 2026-10-07). Ship `.d.ts` or `.js` plus types.
+- **`engine`.** The stale-manifest build error tells the reader to run `npm run cairn:manifest`, a script a site that
+  follows `add-cairn-to-a-sveltekit-app` does not have; the page uses `npx cairn-manifest`. Name the bin in the
+  message. Found by the R4 re-test (conductor, 2026-10-07).
+- **`tooling`.** `npm run link:consumer` refuses a site whose `package.json` declares neither engine package ("is it a
+  cairn consumer?"), so a fresh site following the add-cairn page must hand-add both before it can take unreleased
+  engine work. Found by the R4 re-test (conductor, 2026-10-07).
+- **`docs-gate`.** The add-cairn hooks snippet's `snippet-check-skip` (for the `__CAIRN_DEV_BUILD__` global) also hid a
+  `Handle` import from `@sveltejs/kit` that SvelteKit 3 no longer exports, and `check:snippets` typechecks against the
+  repo's own types, so a `process.env` read that fails on a fresh scaffold (no `@types/node`) passes. A
+  fresh-scaffold snippet typecheck would catch both. Found by the R4 re-test (conductor, 2026-10-07).
+- **`facts`.** `main`'s fact `Source:` lines drifted in range when SvelteKit 3 shrank engine files (`f:j254i8`'s
+  `factory.ts`, `f:cvv6to`'s `content-routes-settings.ts`, others in `guard.ts` and `factory.ts`); `check:facts`
+  catches only out-of-range lines and missing paths, so in-range drift goes unseen until a reader checks. Found by the
+  2a run's R2 merge review (conductor, 2026-10-07).
+
 - **`tooling`.** `examples/showcase/e2e/admin-visual.spec.ts:490` ("zen toggle: the frame offset animates through more
   than two margin-left values") asserts more than two distinct samples inside a 400 ms window. It failed once in a
   full local gate (received 2) and passed 3 of 3 alone (SvelteKit 3 pass, close Task C4, 2026-10-06): timing-sensitive

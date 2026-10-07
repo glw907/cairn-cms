@@ -25,6 +25,12 @@ rulings (Geoff, 2026-10-07): 2a ceiling 25M, stop at 20M; lanes 5M shared, stop 
 close unattended; merge on a green close; no release. After the run: Geoff reads the five task 8 pages, then
 the release (Kit 3 and the rebuilt extend docs), then cairn.pub's migration as a site pass.
 
+**Run in flight (checkpoint 1, 2026-10-07):** R1 accepted (dotfiles `5cbf9c0`, `9eff4a6`; nothing in this run uses
+it). R2 accepted (merge `214b4856`, fix `e5ebb049`). R3 accepted (`9f8f218e`). R4 accepted through `140ab482`, record
+`d102143a`; whole-tree docs gate, `check:facts`, and `check:provenance` green on `draft-docs-2a` (unpushed). Spend
+through R4 is about 2.4M in agents plus the conductor (plan estimate 2.8M). Next: R5 (`docs-page-chain`, five pages).
+Open carry: `gateMatches`' doc comment in dotfiles still says a placeholder "matches any non-empty text".
+
 ## Open decisions and watches
 - Watch: sveltejs/kit#17368 (adapter-cloudflare 8's shared platform proxy, closes #17344). Routine
   `trig_01KPzLTU7rzLMQUp2y6bjZtm` emails on activity, CI failure, merge, or close; delete it once the PR

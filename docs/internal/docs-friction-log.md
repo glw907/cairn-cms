@@ -49,6 +49,12 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`tooling`.** `examples/showcase/e2e/admin-visual.spec.ts:490` ("zen toggle: the frame offset animates through more
+  than two margin-left values") asserts more than two distinct samples inside a 400 ms window. It failed once in a
+  full local gate (received 2) and passed 3 of 3 alone (SvelteKit 3 pass, close Task C4, 2026-10-06): timing-sensitive
+  under load. Fix with a readiness or sampling approach that does not depend on frame timing (sample until the
+  animation reports finished, or assert start and end values), never a longer window.
+
 - **`go`.** `tool/internal/doctor` (graded "workmanlike" by the SvelteKit 3 pass's close `go-architecture-reader`,
   2026-10-06) carries pre-existing debt the pass did not cause: eleven exported check values plus `Snapshot.ReadFile`,
   the `RobotsAbsent*` constants, and `doctor.Results` have no caller outside the package (unexport them; `Verdicts`

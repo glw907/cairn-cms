@@ -423,8 +423,8 @@
       "file": "docs/reference/admin-routes.md",
       "context": "setting both go inside `vite.config.ts`'s `sveltekit({ ... })` call instead.",
       "oldTarget": "docs/extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff",
-      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "done": "Moot on SvelteKit 3: the sentence this link served is gone from the page (the wiring carries no csrf setting), so nothing restores. Permanent.",
+      "stage": null
     },
     {
       "file": "docs/reference/admin-routes.md",
@@ -570,8 +570,8 @@
       "file": "docs/reference/supported-toolchain.md",
       "context": "disabling `checkOrigin`,\nand the current",
       "oldTarget": "docs/extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff",
-      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "done": "Moot on SvelteKit 3: the checkOrigin paragraph was rewritten as the checkOrigin-removal section, which carries no pointer to the dev-backend walkthrough, so nothing restores. Permanent.",
+      "stage": null
     },
     {
       "file": "docs/reference/sveltekit.md",
@@ -899,8 +899,8 @@
       "file": "examples/showcase/svelte.config.js",
       "context": "hand the authority over.\n    // WATCH:",
       "oldTarget": "docs/extend/build-a-site-by-hand.md",
-      "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "done": "Closed on SvelteKit 3: examples/showcase/svelte.config.js is deleted (the Kit config sits inline in vite.config.ts) and its WATCH, which tracked kit#15992, ended when SvelteKit 3 removed csrf.checkOrigin. No file holds a successor WATCH, so no pointer is restored. Permanent.",
+      "stage": null
     },
     {
       "file": "examples/showcase/README.md",

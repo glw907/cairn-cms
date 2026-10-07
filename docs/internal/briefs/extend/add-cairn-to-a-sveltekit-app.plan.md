@@ -182,8 +182,10 @@ sample (f:87hc1y).
   (the scaffold's call already carries `compilerOptions`; the samples keep it as a comment and
   say nothing about runes), f:ghzx9c (`sv create` scaffolds SvelteKit 3 since 2026-10-01, with a
   `tsconfig.json` that extends `$app/tsconfig`), f:skeche (the engine's `@sveltejs/kit` peer
-  range `^2.70` rejects SvelteKit 3), f:jzm5ef (the pin to `@sveltejs/kit@^2.70` and
-  `@sveltejs/adapter-cloudflare@^7`), f:g48ytv (the SvelteKit 2 `tsconfig.json`).
+  range `^3` admits SvelteKit 3 and rejects a project still on `^2`), f:jzm5ef (the scaffold's
+  `adapter-auto` swaps for `@sveltejs/adapter-cloudflare@^8`, whose peers are `@sveltejs/kit`
+  `^3.0.0-next.0` and `wrangler`; no version pin is needed), f:g48ytv (the SvelteKit 3
+  `tsconfig.json` extends `$app/tsconfig` and the scaffold's file needs no replacement).
 - Steps: `npx sv create --template minimal --types ts --no-add-ons field-notes`; initialize a
   git repository with `main` as its branch and commit the scaffold (no-claim procedure; the
   branch is the one `createGithubApp` names in milestone 4, f:0w7jar, and the one the production
@@ -926,10 +928,10 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | f:vrue1g | carried | Index the content and commit its manifest (cited only by a sentence that names the `cairn-manifest` bin; a cross-arm citation the plan adds) |
 | f:1dhk1a | carried | Before you begin (the `cairn` CLI install; a cross-arm citation the plan adds) |
 | f:txgoyy | carried | Add the Email Sending binding and name the origin (`observability.enabled: true`; a cross-arm citation the plan adds) |
-| f:skeche | carried | Create the project on the Cloudflare adapter (the peer range that rejects SvelteKit 3) |
+| f:skeche | carried | Create the project on the Cloudflare adapter (the `^3` peer range, which a project on SvelteKit 2 fails with `ERESOLVE`) |
 | f:ghzx9c | carried | Create the project on the Cloudflare adapter (the SvelteKit 3 scaffold and its `tsconfig.json`) |
-| f:jzm5ef | carried | Create the project on the Cloudflare adapter (the SvelteKit 2 pin) |
-| f:g48ytv | carried | Create the project on the Cloudflare adapter (the SvelteKit 2 `tsconfig.json`) |
+| f:jzm5ef | carried | Create the project on the Cloudflare adapter (the adapter 8 swap and its peers) |
+| f:g48ytv | carried | Create the project on the Cloudflare adapter (the SvelteKit 3 `tsconfig.json`, which extends `$app/tsconfig`) |
 | f:ibis7z | carried | Deploy a change (the home page's path) |
 | f:thgmpz | carried | Add the Email Sending binding and name the origin (the `routes` Custom Domain entry) |
 | f:n52h8f | carried | Wire the dev backend and the CSRF handoff (the `src/app.d.ts` declaration step, with f:72mctx; a cross-arm citation the plan adds on the fact read's round-2 finding) |

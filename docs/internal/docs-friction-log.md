@@ -675,16 +675,6 @@ resolution redraft (draft docs stage 2a, task 7b).
   short one commit. A fix either adds the dictionary commit to `f:0gihxq` with its caller retry, or
   drops the caller retry so the commit keeps the one shared rule.
 
-- **`extender`.** Found by the add-cairn final reader read on 2026-10-03 (`f:skeche`, `f:ghzx9c`,
-  `f:jzm5ef`, `docs/extend/add-cairn-to-a-sveltekit-app.md`, Create the project on the Cloudflare
-  adapter; engine 0.98.0). SvelteKit 3.0.0 and `@sveltejs/adapter-cloudflare` 8.0.0 have been npm
-  `latest` since 2026-10-01, and the engine's `@sveltejs/kit` peer range `^2.70` (`package.json:221`)
-  rejects them, so `npm install @glw907/cairn-cms` in a fresh `sv create` project stops with
-  `ERESOLVE`. Kit 3 also removes `csrf.checkOrigin` (`@sveltejs/kit` 3.0.0
-  `src/core/config/options.js:94`, the kit#15992 watch item), which the admin's CSRF handoff sets.
-  The tutorial pins the project to `@sveltejs/kit@^2.70` and `@sveltejs/adapter-cloudflare@^7` and
-  gives the SvelteKit 2 `tsconfig.json` as a stopgap; an engine pass must take the major.
-
 - **`extender`.** Found by the add-cairn final reader re-test on 2026-10-03
   (`docs/extend/add-cairn-to-a-sveltekit-app.md`, Add a second post; engine 0.98.0). The
   manifest-drift build error, thrown by `verifyManifest` (`src/lib/content/manifest.ts:373-377`),

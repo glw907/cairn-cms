@@ -271,7 +271,7 @@
     {
       "from": "add-cairn-to-a-sveltekit-app",
       "to": "security-model",
-      "why": "Why the GitHub App's write is repository-wide and why checkOrigin is off."
+      "why": "Why the GitHub App's write is repository-wide and how SvelteKit's origin check and the guard's double-submit token divide CSRF."
     },
     {
       "from": "add-cairn-to-a-sveltekit-app",
@@ -884,15 +884,6 @@
       "batch": "pilot"
     },
     {
-      "relinkIndex": 54,
-      "file": "docs/reference/admin-routes.md",
-      "context": "setting both go inside `vite.config.ts`'s `sveltekit({ ... })` call instead.",
-      "oldTarget": "docs/extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff",
-      "action": "Restore the pointer at docs/extend/add-cairn-to-a-sveltekit-app.md (the old page was absorbed); pick the matching new heading.",
-      "restoredBy": "add-cairn-to-a-sveltekit-app",
-      "batch": "pilot"
-    },
-    {
       "relinkIndex": 55,
       "file": "docs/reference/admin-routes.md",
       "context": "renders inside this same shell.",
@@ -1053,15 +1044,6 @@
       "action": "Restore the pointer at docs/extend/configure-rendering.md.",
       "restoredBy": "configure-rendering",
       "batch": "2b"
-    },
-    {
-      "relinkIndex": 75,
-      "file": "docs/reference/supported-toolchain.md",
-      "context": "disabling `checkOrigin`, and the current",
-      "oldTarget": "docs/extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff",
-      "action": "Restore the pointer at docs/extend/add-cairn-to-a-sveltekit-app.md (the old page was absorbed); pick the matching new heading.",
-      "restoredBy": "add-cairn-to-a-sveltekit-app",
-      "batch": "pilot"
     },
     {
       "relinkIndex": 76,
@@ -1359,15 +1341,6 @@
       "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
       "restoredBy": "add-a-second-sign-in-group",
       "batch": "2a"
-    },
-    {
-      "relinkIndex": 122,
-      "file": "examples/showcase/svelte.config.js",
-      "context": "hand the authority over.     // WATCH:",
-      "oldTarget": "docs/extend/build-a-site-by-hand.md",
-      "action": "Restore the pointer at docs/extend/add-cairn-to-a-sveltekit-app.md (the old page was absorbed); pick the matching new heading.",
-      "restoredBy": "add-cairn-to-a-sveltekit-app",
-      "batch": "pilot"
     },
     {
       "relinkIndex": 123,
@@ -1911,7 +1884,7 @@
         "f:c8efq5",
         "f:72mctx",
         "f:f2vudv",
-        "f:d2jumm",
+        "f:3cekcy",
         "f:7bch04",
         "f:jzb3d0",
         "f:7e1t0j",
@@ -1924,7 +1897,7 @@
         "f:dqjkci",
         "f:dujlzg",
         "f:dzmj90",
-        "f:e5hqn3",
+        "f:7rehzh",
         "f:e8dr5r",
         "f:em69ru",
         "f:ew4uk7",
@@ -1943,7 +1916,7 @@
         "Milestone 1, a bare SvelteKit site deployed: sv create flags, inline kit config in vite.config.ts, adapter-cloudflare named explicitly, minimal wrangler.jsonc, wrangler login and deploy; check: the site answers at its workers.dev address.",
         "Milestone 2, install and wire the engine: the package and its @cloudflare/workers-types peer, ssr.noExternal, the ambient import in app.d.ts, the admin catch-all and layout pair with prerender = false, createCairnAdmin and bootstrapOwner.",
         "Milestone 3, content on disk: the content directories, a minimal adapter, parseSiteConfig, createSiteIndexes and the cairnManifest plugin with their two failure modes (full adapter detail links to define-an-adapter-and-schema); the rendered entry stays unstyled until the site adds Tailwind, daisyUI, and cairn-public.css (link theme-your-public-site).",
-        "The dev-backend and CSRF handoff section (suggested heading \"Wire the dev backend and the CSRF handoff\", so the restored reference links reuse the old slug): devBackendHandle, the __CAIRN_DEV_BUILD__ define named at every call site, the hooks if-branch, csrf.checkOrigin false and why, and the Windows one-off env var forms; check: sign in at /admin on the dev backend.",
+        "The dev-backend section (suggested heading \"Wire the dev backend\"; no reference link reads the old CSRF-handoff slug now): devBackendHandle, the __CAIRN_DEV_BUILD__ define named at every call site, the hooks if-branch, and the Windows one-off env var forms; the site sets no csrf key, because SvelteKit 3 removed checkOrigin and its origin check covers every route beside the guard's double-submit token; check: sign in at /admin on the dev backend.",
         "Milestone 4, production: register the GitHub App (one permission, webhook off, private key PEM, App and Installation IDs as non-secret identity), createGithubApp, the base64 single-line key secret, the auth D1 database and the migrations every site applies versus the opt-in ones, the optional audit database, the Email Sending binding and domain onboarding, a custom sender through auth.send, the three edits that move a dev-backend site to production; check: cairn doctor's config.bindings check passes, and a build with no AUTH_DB and no dev backend returns the branded 500.",
         "Customize the sign-in email (a closing section after the milestones, not a milestone): which parts are engine copy, where the site name and sender come from, auth.branding replacing all three, and a custom auth.send's MagicLinkMessage and the log scrubbing of what it throws."
       ],
@@ -1958,11 +1931,8 @@
       ],
       "pinned": [],
       "rearms": [
-        54,
-        75,
         80,
         87,
-        122,
         123,
         188,
         190,
@@ -2052,7 +2022,7 @@
       "covers": [
         "What the scaffold is: Waymark on the chassis, baked from the same tree cairn tests itself against, with Topo planned but not shipped.",
         "The annotated root: .github/workflows/check.yml (Node 24, the continue-on-error guidance check), .dev.vars.example, cairn-audit.config.json, CLAUDE.md, the gitignore rename, and .claude/ with its four skills, the extension reviewer agent, and the VERSION stamp.",
-        "Config files: package.json scripts (dev, check:cairn, check:cairn:rendered and its missing Playwright), vite.config.ts (cairnManifest, the dev-build define), svelte.config.js (adapter options, csrf handoff, handleUnseenRoutes), app.d.ts, wrangler.jsonc bindings (AUTH_DB, APP_DB, EMAIL, MEDIA_BUCKET, observability).",
+        "Config files: package.json scripts (dev, check:cairn, check:cairn:rendered and its missing Playwright), vite.config.ts (cairnManifest, the dev-build define, and the inline sveltekit() call: adapter options, handleHttpError, handleUnseenRoutes, no csrf key since SvelteKit 3 removed checkOrigin), app.d.ts, wrangler.jsonc bindings (AUTH_DB, APP_DB, EMAIL, MEDIA_BUCKET, observability).",
         "migrations/ versus migrations-app/ and why the app schema sits in its own directory.",
         "src/routes/: the admin catch-all and layout pair, the signups example screen, the (site) group with the public catch-all and markdown twin, archive, preview, media route, feeds, robots, and /healthz outside the guard.",
         "src/theme/ and src/content/: cairn.config.ts with its navLayout, the registry and chrome, the content directories, and the committed manifests under src/content/.cairn/.",
@@ -3380,7 +3350,7 @@
         "f:diro7m",
         "f:7qqhda",
         "f:gh73p5",
-        "f:gncd64",
+        "f:7rehzh",
         "f:vqh4a9",
         "f:4q8kin",
         "f:ubuj1w",
@@ -3430,7 +3400,7 @@
         "Magic-link sign-in: token and session lifetimes, hashing at rest, non-enumerating answers and the throttled relaxation.",
         "Sign-in binds to the browser that asked (suggested heading, so restored links reuse the old slug #sign-in-binds-to-the-browser-that-asked): the pending cookie, NULL-bound rows, last-requester-wins rebind and the forwarded-token residual.",
         "The session cookie (suggested heading, so the restored link reuses the old slug #the-session-cookie): __Host-, Secure derivation, logout.",
-        "CSRF: the double-submit token, why the site disables checkOrigin, Origin null under no-referrer, rotation.",
+        "CSRF: the double-submit token, how SvelteKit's origin check (every route, no site csrf key, checkOrigin removed in SvelteKit 3) and the token divide the work, Origin null when a site-wide referrer policy strips the header, rotation.",
         "The guard's request order and admin response headers; no CSP on /admin by design.",
         "What the dev backend flag's two refusals leave open (suggested heading, so the restored link reuses the old slug it).",
         "An access map is not a whitelist (suggested heading, so restored links reuse the old slug #an-access-map-is-not-a-whitelist): canReach, fail-closed gates, unmapped targets, publish-all and tidy exceptions, config.access_unmapped; end the section with a \"Recovering whitelist semantics\" subsection (the heading the 0.97.0 migration note links): the exhaustive-map rule in two sentences, linking restrict-admin-access for the steps.",

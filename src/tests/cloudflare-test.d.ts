@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
-/// <reference types="@cloudflare/vitest-pool-workers/types" />
+/// <reference types="@cloudflare/vitest-plugin/types" />
 
-import type { D1Migration } from '@cloudflare/vitest-pool-workers';
+import type { D1Migration } from '@cloudflare/vitest-plugin';
 
 // Test-only bindings the integration harness relies on. `AUTH_DB` is the
 // miniflare D1 database declared in wrangler.test.jsonc; `TEST_MIGRATIONS`

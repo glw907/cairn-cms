@@ -3215,6 +3215,12 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
   already hold the bytes for a year, with R2 reads cheap. Trigger: a measured R2 cost or `/media`
   latency problem on a production site.
 
+- **Upstream fix for adapter-cloudflare 8's shared platform proxy (sveltejs/kit#17368, closes
+  #17344).** Status as of 2026-10-07: open, filed by glw907 (fork `glw907/kit`) with a verified-repro
+  comment on #17344. cairn does not depend on it: its manifest plugin no longer starts a nested Vite
+  server under `vite dev`. Trigger: a merge or close. Routine `trig_01KPzLTU7rzLMQUp2y6bjZtm` emails on
+  maintainer activity, a CI failure, a merge, or a close; delete it once the PR closes.
+
 - **R2 Local Uploads.** Status as of 2026-08-21: open beta since 2026-02-03
   (https://developers.cloudflare.com/changelog/post/2026-02-03-r2-local-uploads/). What cairn does
   today: `MEDIA_BUCKET` uses the default upload path, a plain `bucket.put()` call

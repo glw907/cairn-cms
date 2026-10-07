@@ -1510,3 +1510,73 @@ work about 0.8M; total about 8.5M of 12.4M by subagent count (conductor share ex
 Daytime mode: at 9.9M the plan's 80 percent question goes to Geoff.
 
 **Next:** S5, Tasks 11f, 11c, 12, 13 (light gates), then the close.
+
+### Checkpoint 6 (2026-10-06 to 07, end of S5)
+
+**S5 tasks, all accepted.** Task 11f made the full gate tier mirror `test.yml`, so the local gate now runs every check
+CI runs. Task 11g sped up the `check-symbols` test. Task 11c made the reach test follow self-referencing imports.
+Task 12 moved the `create-cairn-site` scaffold to the Kit 3 shape. Task 13 landed the docs and records, and filed
+the `/media` caching watch (Decision 14) in the ROADMAP. Task 14 wrote the new `Consumers must:` lines. The
+`pass-execute` runs raised three false escalations on the gate-string check (a superset command, or `E2E_PORT` set
+outside the string); each was accepted by the conductor.
+
+**Next:** the close.
+
+### Close (2026-10-07)
+
+1. **Simplify:** `code-simplifier` ran once over the pass's changed TypeScript, JavaScript, Svelte, and Go
+   (`7c1aff8f`).
+2. **Reviews:** `web-auth-security-reviewer`, `svelte-reviewer`, `cloudflare-workers-reviewer`, and
+   `go-architecture-reader` found no blocker. The fix chain ran as five tasks:
+   - C1: Rule 1 widened to Kit 3's request set; the logout redirect re-validated; `devBackendHandle` refuses a
+     non-local host when the dev flag is set (a pre-existing gap the security seat rated high); delivery cleanup
+     logs `auth.channel.send_cleanup_failed`; the dev gate reads the Worker env.
+   - C2: the manifest verify runs through Vite 8's environment runner, once per build, with no adapter proxies in
+     the nested build server.
+   - C3: the Go doctor has one key-pattern builder, one comment stripper, one verdict precedence, and one quote
+     style.
+   - C4: the Go event vocabulary mirrors the new event; the template declares `CAIRN_DEV_BACKEND` on
+     `Cloudflare.Env`; the guard clears `locals.cairnIdentity` when no identity is configured, so logout always
+     deletes the session row.
+   - C5: the e2e fixtures are hydration-safe (`fillTitleWhenHydrated`), the seed uses a direct `goto`, and
+     `deleteFromList` is strict. Root cause: a CI-only race where hydration doubled typed titles, and a leaked
+     post pushed the seed off list page 1.
+3. **Gates:** CI green on all seven workflows at `fbac121f`; `check:close` ran to the end (35 checks);
+   `make -C tool check` green; the consumer proof passed all five harness checks from fresh tarballs.
+4. **Live smoke (Geoff, 2026-10-07, local `wrangler dev`, dev backend off):** login POST and magic-link confirm
+   POST passed Kit's CSRF check and cairn's token (`auth.link.requested`, `auth.token.minted`,
+   `auth.token.confirmed`, `auth.session.created`; confirm 303). Admin documents serve `Referrer-Policy:
+   strict-origin` and exactly one referrer meta. A Save (`POST /admin/posts`, create) passed both CSRF layers and
+   reached the create action, which failed on the missing GitHub key (`admin.action.failed`,
+   "GITHUB_APP_PRIVATE_KEY_B64 is not configured"), one step earlier than the plan's expected `commit.failed`. No 403,
+   `guard.refused`, or `auth.csrf-token-invalid` in the session. Over http the `__Host-` prefix and a real commit
+   stay unexercised until cairn.pub's migration (Ruling 1's accepted cost).
+5. **Merge:** PR #103 merged to `main` on 2026-10-07 as `04116a3b`. No version bump, no `tool/v2.0.0` tag, no
+   publish; the release holds until draft docs stage 2a lands (Geoff, 2026-10-03).
+
+## Post-mortem
+
+**Token budget.** The plan's ceiling was 12.4M. Geoff raised it to 13.5M (2026-10-06) and then to 15M
+(2026-10-06 to 07). Subagent spend by the conductor's count is about 14.7M, inside the final ceiling and about 2.3M
+over the original; the conductor's own share is excluded. `/cost` was not read by the conductor; Geoff can read it.
+The close's fix chain cost about 1.95M against about 1.45M budgeted for the whole close. Two overnight runs ran with
+the guards armed, plus a ruling allowing 120% of the overnight limit.
+
+**Planning misses (attended time).**
+- The plan's counts and anchors drifted repeatedly; every segment's pre-flight amended it.
+- The plan did not foresee the adapter-8 nested-server proxy defect (found at the S4 CI boundary, Task 11e).
+- It did not foresee the CI-only e2e races, which surfaced as flakes on slow runners and were root-caused only at
+  the close (C5).
+- It did not foresee that local full gates omitted checks `test.yml` runs (`check:dev-package`, the `vite dev`
+  path); Task 11f fixed that after the S4 boundary took three CI rounds.
+- The gate-string check in `pass-execute` raised three false escalations.
+
+**Execution sittings and pauses.** The pass ran across attended sittings plus two overnight unattended runs. Three
+pauses (travel, power-off, laptop close) and three API connection drops each resumed from cache with no work lost.
+
+**Refused fold findings.** None of the `spec-plan-review` fold's refused findings turned out to be a real defect
+during execution.
+
+**Tooling landed (dotfiles):** the light-lane rule in `cairn-implementer` (`c6b1559`); the docs chain's framing
+stage and narrowed round 2 (`d1e3a3c`, `8075503`); the cross-session heavy-lock protocol with dubplate (`406ddb4`);
+the unattended-run planning rule in `pass-core` (`8c4b594`).

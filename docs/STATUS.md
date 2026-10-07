@@ -5,104 +5,66 @@ Present tense only; past tense lives in [`docs/HISTORY.md`](HISTORY.md), durable
 
 ## Current state
 
-Published: **`0.98.0`** (npm `latest`, release commit `a84a6853`, release `v0.98.0`;
-`@glw907/cairn-cms-dev` `0.98.0` beside it); the Go tool is `tool/v1.1.0`. `0.98.0` carries theme
-identity passes A, B, and C, draft docs pass 0+1, the `viewport-overflow` fix (#100), the audit
-promotions, and the dependency sweeps. Unreleased: the harvest's page removal. Held majors:
-`devalue` 6, TypeScript 7, Vitest 5, `@types/node` 26. CI is green. cairn.pub pins `0.94.0-rc.1`
-(un-pinnable since `0.95.0`); its ceiling is `0.98.0` until the narrative arms are rebuilt
-([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)). Live contracts:
+Published: **`0.98.0`** (npm `latest`, release commit `a84a6853`; `@glw907/cairn-cms-dev` `0.98.0`
+beside it); the Go tool is `tool/v1.1.0`. Unreleased on `main`: the SvelteKit 3 upgrade (Kit 3.0.0,
+adapter-cloudflare 8.0.0; `04116a3b`, PR #103; tool major under `tool/CHANGELOG.md` `## Unreleased`,
+untagged) and the harvest's page removal. The release holds until draft docs stage 2a lands. Held
+majors: `devalue` 6, TypeScript 7, Vitest 5, `@types/node` 26. CI is green on all seven workflows.
+cairn.pub pins `0.94.0-rc.1` (un-pinnable since `0.95.0`); its ceiling is `0.98.0` until the narrative
+arms are rebuilt ([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)), and it is the only
+site that migrates to Kit 3, as a site pass after the cut. Live contracts:
 `tool/internal/{spine/conditions,doctor/site-config-path}.json` and `.cairn/site-facts.json`.
 
 ## Immediate next action
 
-- **Resumed 2026-10-06 13:00:** S5 run `wf_3482a410-ea6` relaunched from cache; Task 13 finishes from its partial
-  edits in the worktree (snapshot `refs/wip/sveltekit-3-13`, deleted once 13 commits).
-- **The SvelteKit 3 upgrade is executing: S0 to S4 done, CI green on Kit 3 at `e1bb2650`, S5 next** (Ledger "Checkpoint 5"; the
-  unattended run hard-stops at 14.9M and before the close's live smoke, Geoff 2026-10-04). Worktree `.claude/worktrees/sveltekit-3`
-  (branch `sveltekit-3`, pushed, draft PR #103, CI green); the plan's Ledger, "Checkpoint 1", carries Task 0 and the
-  spike. Spec
-  `docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md`, plan
-  `docs/superpowers/plans/2026-10-03-sveltekit-3-upgrade.md` (14 tasks, six segments S0 to S5, `auth-data`,
-  12.4M ceiling). Both took the full `spec-plan-review` sequence (reviews, fold, and verification under
-  `docs/superpowers/research/2026-10-03-sveltekit-3-*`). The pass closes unreleased: Kit 3 publishes with draft docs
-  stage 2a (Geoff, 2026-10-03). cairn.pub is the only site that migrates; the other four are rebuilt on the new docs.
-  Geoff's rulings: the live smoke runs on the showcase under local `wrangler dev`, `@sveltejs/package` 3 is taken, and
-  `/media` gets no engine-side Cache API caching (a ROADMAP watch instead). The local e2e failures once blamed on a
-  dubplate server on 4173 come from the showcase's hardcoded `PUBLIC_ORIGIN` (`:4173`) under `E2E_PORT=4392`; the
-  e2e runs on the default port until Task 5 fixes it.
-- **Draft docs stage 2a is paused** at Geoff's read of the six accepted pilot pages (worktree `draft-docs-2a`, local
-  only, HEAD `04a73a86`; record `docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md`; pages at
-  https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs, version 2). Before task 8, the chain's round-2 reads change to
-  check round-1 fixes and changed sentences only (run 2 measured about 2.4M a page against the 1.3M budgeted).
-  Carry-forward: the SvelteKit 3 pass lands on `main` first and never edits this worktree; 2a rebases onto it and
-  rewrites the add-cairn tutorial's SvelteKit 2 pin against Kit 3.
-  Geoff's read (2026-10-04, three open threads on the artifact): every intro is too thin. The security-model page
-  needs two or three paragraphs of framing (the general model, where SvelteKit and Cloudflare fit); the add-cairn tutorial must
-  serve both its readers (someone doing exactly this, someone curious about the nitty gritty) and tell them there the
-  usual route, the setup command, is much easier; the Cloudflare Access page must say why cairn uses magic links and why a site would replace them, and must
-  not open on an imperative. The bodies after the intro read strong (Geoff), so the fix is a brief and page-inputs
-  intro-framing rule, then a scoped redraft of each page's intro only, bodies kept. Intros take high-level
-  reasoning, unlike the bodies: a separate framing step (Opus at `xhigh`, reading the whole doc set's map) decides
-  each page's background and framing before the intro is drafted, starting from the reader: who arrives at the page
-  and what they are looking for. The add-cairn case illustrates the reasoning, never a template; each page differs.
-  The intro-only round ran 2026-10-04 (`9ca04531` on `draft-docs-2a`: a framing record per page, intros rewritten,
-  a fact read narrowed five sentences) and is republished as version 3 of the artifact; Geoff read it on 2026-10-05:
-  the intros are "drastically improved" and he is content the system now produces high-quality drafts, so the
-  intros hold. 2a's next action is task 8, after the SvelteKit 3 pass lands on `main` and 2a rebases onto it. The chain is
-  ready for it (dotfiles `d1e3a3c`, `8075503`, 2026-10-05): `docs-page-chain.js` has the framing stage (after the
-  plan read, before the drafter; `claude-opus-5-5` at `xhigh`, reading the stage outline as the doc set's map,
-  writing `docs/internal/briefs/<track>/<slug>.framing.md`; the drafter writes the intro from it and the reads grade
-  the intro against it), and round 2 reads only each seat's round-1 findings and the diff since the redraft's
-  baseline, with a logged whole-page fallback. 89 tests run and pass. When 2a first runs the chain by name, `cmp`
-  the persisted script against the committed file (the stale-copy rule in `pass-gate-economy.md`). Open gap: no fact states that an auth channel's form takes anonymous
-  posts (security-model brief maps it to `f:wuwk2q`, the nearest).
-- The gap sweep's 12 code defects sit in the friction log (`bd8ab1fe`, on `main`, not pushed).
+Draft docs stage 2a, planned in a fresh brainstorm session, then run unattended for 10+ hours (Geoff,
+2026-10-07; `pass-core`: a pass meant to run unattended plans out every stop). After 2a: the release
+(Kit 3 and the rebuilt extend docs together), then cairn.pub's migration as a site pass.
+
+- Worktree `draft-docs-2a` (local, HEAD `9ca04531`): merge `main` in, never rebase, per
+  `docs/superpowers/research/2026-10-06-draft-docs-2a-kit3-merge-map.md`; re-run the conflict listing first.
+- The six pilot pages carry Kit 3 drift (the add-cairn tutorial's SvelteKit 2 pin, `f:skeche`, `f:ghzx9c`,
+  `facts/extend.md:144`'s `^2.70`). Then task 8's five pages, task 9, and the close.
+- Geoff signed off the 2a intros (2026-10-05). The docs chain has the framing stage; `cmp` the persisted
+  script against the committed file on first run.
+- Prerequisite: fix `pass-execute`'s gate-string check (a superset command, or `E2E_PORT` set outside the
+  string, must count as a match; it raised three false escalations last pass).
+- Side lanes to weigh: the pre-release dependency sweep (wrangler 4.147, vite 8.3, other minors); a small
+  engineering lane (the Go doctor cleanup, the filed e2e timing flakes).
+- Settle a hard token ceiling: 2a's run 2 measured about 2.4M a page before the narrowed round 2.
 
 ## Open decisions and watches
 
-- Watch: upstream PR sveltejs/kit#17368 (glw907's fix for adapter-cloudflare 8's shared platform proxy, closes
-  #17344; found by this pass's CI diagnosis, posted 2026-10-06 with a repro comment on #17344). Routine
-  `trig_01KPzLTU7rzLMQUp2y6bjZtm` checks every 6 hours and emails only on maintainer activity, a CI failure, a merge,
-  or a close; delete it at claude.ai/code/routines once the PR closes. cairn does not depend on it: its manifest
-  plugin no longer starts a nested Vite server under `vite dev`. Local clone: `~/.cache/kit-pr/kit`, remote `fork`.
-- The monthly drift routine (`trig_015UPQostYVisXuExTHTH2vu`) samples only `docs/reference` and
-  existing extend pages until the admin and editors arms are rebuilt (re-scoped 2026-09-30, Geoff's
-  go); widen it back to all four tracks at stage 4's merge.
-- Watch: `cairn-docs-outline`'s lock (dotfiles) was built past need; simplify it in a separate
-  dotfiles change with a `diff-reviewer` read (the spec records it as an instance of S2).
+- Watch: sveltejs/kit#17368 (adapter-cloudflare 8's shared platform proxy, closes #17344). Routine
+  `trig_01KPzLTU7rzLMQUp2y6bjZtm` emails on activity, CI failure, merge, or close; delete it once the PR
+  closes. cairn does not depend on it.
+- The monthly drift routine (`trig_015UPQostYVisXuExTHTH2vu`) samples only `docs/reference` and existing
+  extend pages; widen it to all four tracks at stage 4's merge.
+- Watch: `cairn-docs-outline`'s lock (dotfiles) was built past need; simplify it in a separate dotfiles change.
 - Watch: the kept per-version records' paths are hardcoded in `cairn-pass`, `CLAUDE.md`, and
   `docs/internal/facts/README.md`; a pass that moves either record updates all three.
-- The kit#15992 routine (`trig_0193pPNoyxsTGeUhF1xx7woa`) now watches for SvelteKit remote functions
-  reaching stable, opening a GitHub issue to evaluate them (Geoff, 2026-10-03). Node 26 is the beta floor only if Active LTS by then; TypeScript 7 waits on
-  `tsgo.yml`. `radius-scale` and the retired-patch arms promote at `0.99.0`.
-- `cairn-release` gap: the `0.98.0` prep ran no `check:dev-package`; the skill's pre-commit gate
-  names it next. Monthly routines email only on a mismatch. `CAIRN_GH_READ_TOKEN` expires
-  2026-10-19 (`cairn-tripwire` warns daily). `npm pkg fix` is owed for the four `./` `bin` entries.
+- The remote-functions routine (`trig_0193pPNoyxsTGeUhF1xx7woa`) opens an issue when they reach stable.
+  Node 26 is the beta floor only if Active LTS by then; TypeScript 7 waits on `tsgo.yml`. `radius-scale`
+  and the retired-patch arms promote at `0.99.0`.
+- `cairn-release` gap: the `0.98.0` prep ran no `check:dev-package`. `CAIRN_GATE_READ_TOKEN` expires
+  2026-10-19. `npm pkg fix` is owed for the four `./` `bin` entries.
 
 ## Resume prompt
 
-### Next action (SvelteKit 3 upgrade, execution from S5)
-
-> **Goal.** Execute the plan that moves the engine, the showcase, Waymark, `create-cairn-site`,
-> `@glw907/cairn-cms-dev`, and the Go doctor to SvelteKit 3 and adapter-cloudflare 8, so a fresh `sv create` project
-> installs cairn.
+> **Goal.** Plan draft docs stage 2a as a 10+ hour unattended run on the SvelteKit 3 `main`, ending with
+> the pages drafted, gated, and read, ready for the release.
 >
-> **Scope.** S5 (Tasks 11f, 11c, 12, 13), then the close; Tasks 0 to 11b and 5b to 11e are done (plan Ledger, "Checkpoint 5"). Out: the release (it holds until draft
-> docs stage 2a lands), cairn.pub's migration (its own site pass after the cut), and draft docs task 8.
+> **Scope.** In: merging `main` into `draft-docs-2a`, the pilot pages' Kit 3 drift, task 8's five pages,
+> task 9, the close, the `pass-execute` gate-string fix, and the side lanes to weigh. Out: the release and
+> cairn.pub's migration, stages 2b and later.
 >
-> **Settled (do not re-brainstorm):** everything in the spec's "Settled decisions" and "Rulings" and the plan's
-> "Decisions". The split rule: if the pass splits, the cut falls after S2, never after S3, so `main` stays
-> releasable. An S0 spike stop, including FA1 (no prerender-safe `building` form that keeps the `./sveltekit` barrel
-> free of `$app/*`), halts the pass for Geoff.
+> **Settled:** the 2a intros; the framing stage and narrowed round 2; merge, not rebase; the release holds
+> for 2a.
 >
-> **Approach.** Invoke `cairn-pass` to resume in the existing worktree `.claude/worktrees/sveltekit-3`. The Task 0
-> baseline is green (plan Ledger, "Baseline result"): locally, the 20 `site-visual` home and archive-page-2
-> screenshots fail by a few pixels, which `durable-gotchas.md`'s CI-baseline rule counts as green; put that rule in
-> `pass-execute`'s `commonNotes`. Until Task 5, the local e2e runs with `E2E_PORT` unset after
-> `ss -ltnp 'sport = :4173'` shows no listener. Run each remaining segment (S5 next, its pre-flight already folded) through `pass-execute` by name, one invocation per segment, implementer `cairn-implementer`,
-> Task 11b upshifted to Opus; pre-flight each later segment at HEAD. Every dependency bump (Tasks 4 and 11b) carries
-> the `dependency-upgrade` changelog survey. The dubplate session (`dubplate-62`) shares the machine gate lock and
-> pings before its heavy gates; expect lock waits. The close's live smoke needs
-> Geoff's magic-link click. Launch directory `~/Projects/cairn-cms`; `claude --model claude-opus-5-5` at medium
-> effort. Put scratch projects under `$HOME/.cache`.
+> **Still open:** the hard token ceiling; which side lanes ride along; the unattended stops and guards
+> (`unattended-work-guards.md`).
+>
+> **Approach.** Fresh session, `claude --model claude-opus-5-5` at high effort, from `~/Projects/cairn-cms`.
+> Read `docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md`, the merge map, and the
+> 2a plan; re-run the conflict listing first. Pre-flight the plan so no stop remains, commit it, and point
+> this STATUS at it.

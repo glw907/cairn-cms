@@ -19,9 +19,10 @@ verdicts, never a page, a diff, or a gate log. Every task but R5 runs per task t
 
 ## Owner rulings (Geoff, 2026-10-07)
 
-- **Ceilings.** 2a has a 20M hard ceiling and stops at 16M. The two lanes have a separate 4M ceiling and stop at
-  3.2M (see Rulings for Geoff, 1). The whole run is capped at 24M. At 80 percent of a ceiling, the conductor
-  finishes the task in flight, writes STATUS, and stops that track.
+- **Ceilings.** 2a has a 25M hard ceiling and stops at 20M. The two lanes share one 5M ceiling and stop at 4M. The
+  whole run is capped at 30M. At 2a's stop, the conductor finishes the 2a task in flight, writes STATUS, and stops
+  2a. At the lane stop, each lane task in flight finishes, and no new task starts in either lane; both lanes then
+  halt.
 - **Side lanes.** The dependency sweep and the engineering lane both ride. Both start at R5's post-run commit or at
   a 2a stop, whichever comes first, so neither delays the docs pages.
 - **Escalation.** A task 8 page that ends the chain still escalated at the round cap is closed unattended by the
@@ -35,7 +36,9 @@ verdicts, never a page, a diff, or a gate log. Every task but R5 runs per task t
 the rerun rule in `docs/internal/durable-gotchas.md`; an ENOSPC or quota failure inside a gate (an environment
 artifact: clear scratch, rerun); a `fix` verdict's single re-dispatch; a second `fix` on any non-chain task,
 settled by one upshifted round (`model: opus`); a register or fact-read finding resolved by applying the
-reviewer's own proposed rewrite; and a merge hunk covered by the standing merge rules below.
+reviewer's own proposed rewrite; a merge hunk covered by the standing merge rules below; and a reader re-test
+finding caused only by the unreleased engine missing from npm (the registry serves 0.98.0, Kit 2). That finding is
+disposed "unexercised: unreleased engine" in the page's record and on the review page, never redrafted.
 
 **Stops are per track.** 2a and each lane are tracks. A track stops on: its ceiling's 80 percent mark; a task still
 `fix` after its upshifted round; a page still blocked after its targeted round or its one R4 redraft; a merge hunk
@@ -48,25 +51,34 @@ named in STATUS. A red `main` after any merge stops every track.
 **`main` and merges.** `origin/main` is the source of truth. Each checkpoint runs `git fetch`, `git merge --ff-only
 origin/main`, commits STATUS, and pushes; a push that is not a fast-forward stops the run. Each lane branches from
 `origin/main` after a fetch. Every PR merge (each lane, then 2a) follows one procedure: all workflows on the PR are
-green (`gh pr checks --watch`; `main` has no branch protection, so the conductor's check is the gate); the PR's
-`baseRefOid` equals the current `origin/main`, or `origin/main` is merged into the branch, pushed, and re-checked;
-after the merge, `main`'s push CI is watched to green before the next merge or R7's own.
+green (`gh pr checks --watch`, run only after the PR's checks have registered; `main` has no branch protection,
+so the conductor's check is the gate); after `git fetch`, `git merge-base --is-ancestor origin/main
+origin/<branch>` passes, or `origin/main` is merged into the branch, pushed, and its checks re-registered and
+watched (`baseRefOid` is not the test: PR #103's named `5c47a6e3` while `main` stood at `481b811d` at its merge).
+After the merge, `main`'s push CI is watched to green before the next merge or R7's own.
 
 **Standing merge rules** (every merge in this run, after R2's file rules): STATUS takes `main`'s. HISTORY,
 `CHANGELOG.md` and `tool/CHANGELOG.md` `## Unreleased`, ROADMAP, and the friction log keep both sides' entries, and a
 deletion on one side wins over an untouched copy on the other. Fact bullets with distinct ids keep both; a drifted
-`Source:` is retargeted under the facts README. `package.json` takes `main`'s versions and 2a's scripts;
-`package-lock.json` takes `main`'s, followed by `npm ci`. Any other hunk stops the track.
+`Source:` is retargeted under the facts README; a bullet edited on both sides takes `main`'s `Source:` line and the
+branch's text, and the task's scoped fact read and `check:facts` judge it. `package.json` takes each version from
+the side that bumped it and the union of both sides' scripts; `package-lock.json` takes `main`'s, followed by
+`npm ci`. Any other hunk stops the track.
 
 **Guards at launch** (`~/.claude/docs/unattended-work-guards.md`): the fallback `/loop` wake-up, the lid-switch hold
 with a duration at least the run's length, the battery stand-down, and `claude-wf-guard` on every workflow run (tier
 `writer` for the page chain, `implementer` otherwise). Before each heavy gate expected to run past 15 minutes, check
 `ListAgents` and send any live session sharing the lock a one-line heads-up (`~/.claude/docs/pass-gate-economy.md`).
-Every dispatch puts scratch and `TMPDIR` under `$HOME/.cache`, never `/tmp`; the conductor reads `quota -s` at each
-checkpoint and clears its scratch above 4.5G. Gates run only in worktrees after `npm ci` (root and showcase).
+The session launches with `TMPDIR` under `$HOME/.cache`, so workflow agents inherit it, and every dispatch puts
+scratch there, never `/tmp`. The conductor reads `quota -s`'s `/tmp` row at each checkpoint and clears its scratch
+above 4.5G. The quota is per user and shared with other sessions: if usage is still above 4.5G after that, the
+conductor starts no new heavy gate, and the track stops. Gates run only in worktrees after `npm ci` (root and
+showcase).
 
 **Counting:** 2a's position is `/cost` plus the 1.0M planning share, minus the lanes' spend, which is the sum of
-their own agents' usage blocks. R5 launches with a turn-level token target equal to its headroom to 20M.
+their own agents' usage blocks. The backstop is the conductor's `/cost` read at each task boundary and before each
+targeted close, plus `claude-wf-guard` on every workflow run. R5 launches near 4.2M, so its 12.5M estimate leaves
+about 8M of headroom to the 25M hard ceiling.
 
 ## Budget
 
@@ -84,8 +96,12 @@ their own agents' usage blocks. R5 launches with a turn-level token target equal
 | L1 dependency sweep | 1.5M |
 | L2 engineering lane | 2.5M |
 
-The projection crosses 2a's 16M stop inside R6: 2a stops at a task boundary, the lanes start if they have not, and
-the next session resumes from STATUS. Nothing is cut to fit.
+The 21.3M projection fits the 25M ceiling. With the conductor's share spread across tasks, 2a sits near 19.2M when
+R7 starts, so R7 runs as the task in flight past the 20M stop and closes. If task 8 overruns by more than about
+0.8M, the stop falls inside R6: R6 finishes, 2a stops before R7, and the next session resumes from STATUS. An
+overrun past about 2.3M puts the stop inside R5, which finishes with its targeted closes and post-run commit before
+2a stops. The lanes' 4.0M estimate meets their 4M stop only as their last task ends. The whole run projects to
+25.3M against the 30M cap. Nothing is cut to fit.
 
 ## Tasks
 
@@ -101,7 +117,9 @@ only by (a) leading assignments inside the `cairn-run-gate` quotes, or (b) extra
 steps, or extra leading steps that are each an assignment (`VAR=value` or `export VAR=value`). Every accepted
 assignment names an allowlisted variable (`CAIRN_GATE_LANE`, `CI`, `E2E_PORT`). Any other extra leading step
 (`cd`, `pushd`, any command) mismatches, as does a non-allowlisted assignment, a different command, or one that
-drops a gate step. The outside-quotes `VAR=value` prefix already matches today; its case is a regression pin.
+drops a gate step. These rules apply to the steps inside the `cairn-run-gate` quotes, or to an unwrapped command.
+Everything before `cairn-run-gate` stays discarded as today (the runner tells implementers to `cd` first, so
+`cd <repo> && cairn-run-gate '...'` must keep matching); a test pins that prefix discard, `cd` included.
 Both runner copies keep the block byte-identical (the existing parity test).
 
 **Acceptance:** test-first cases cover each accepted form and each rejection named above. The dotfiles suite and
@@ -213,8 +231,8 @@ rows pending), `add-a-second-sign-in-group` (27, 19 pending), `rotate-the-github
 fixes only that page's final-round blocking findings. Scoped register and fact reads cover the changed sentences. The
 final reader read comes last, and its fix gets one scoped redraft and one re-test.
 
-**After the run:** the governing plan's post-run record and commit, with the targeted-close rulings listed for
-Geoff. **Checkpoint 2.**
+**After the run:** the targeted closes land first, then the governing plan's post-run record and commit, with the
+targeted-close rulings listed for Geoff. **Checkpoint 2.**
 
 ### R6: task 9, consistency read and relink
 
@@ -223,7 +241,9 @@ As the governing plan's task 9. `<base>` is R5's post-run commit. **Checkpoint 3
 ### L1: dependency sweep (lane)
 
 **Pass class:** per the `dependency-upgrade` skill, which governs. **Worktree:** a new `deps-2026-10` off
-`origin/main`.
+`origin/main`. The implementer has no Skill or schedule tool: its dispatch hands the skill by path
+(`~/.dotfiles/claude/.claude/skills/dependency-upgrade/SKILL.md`) and returns each held major's tripwire
+condition, and the conductor creates the tripwires.
 
 Take every minor and patch across the root, `examples/showcase`, `packages/*`, and the Go module, including wrangler
 4.148, Vite 8.3.3, and Svelte 5.57.2. `templates/waymark` is bumped at its source and re-emitted with `npm run
@@ -238,8 +258,9 @@ push), and one `diff-reviewer` read. Merged by the merge procedure.
 
 ### L2: engineering lane
 
-**Worktree:** a new `eng-cleanup` off `origin/main`, beside L1. Its two tasks touch disjoint files and run serially,
-L2b first (the flakes cost CI time every pass).
+**Worktrees:** beside L1, its two tasks run serially on separate branches, L2b first (the flakes cost CI time every
+pass). L2b branches from `origin/main` and merges its own PR by the merge procedure before L2a starts. L2a then
+branches from `origin/main` after a fetch, so a halted L2a never holds L2b back.
 
 - **L2b, the e2e timing flakes.** Pass class `engine-logic` gate, test-only. The zen-toggle test
   (`examples/showcase/e2e/admin-visual.spec.ts:490`) samples until the animation settles, or checks an intermediate
@@ -268,19 +289,12 @@ Each lane merges by the merge procedure. **Checkpoint 4** comes when each lane i
 As the governing plan's task 10, with these changes. It starts when each lane is merged or halted, then fetches and
 merges `origin/main` under the standing rules; `git merge-base --is-ancestor` shows every merged lane in HEAD before
 the close gate. One scoped fact read then covers each 2a-branch fact whose `Source:` names a file the lanes changed
-(`git diff --name-only <R2 merge>..origin/main`), and the sentences citing it. The release stays held. R7 publishes
-the review page as a private artifact: the five task 8 pages, each marked "targeted close" or "chain accept" with its
-rulings and plan. STATUS links it; its next action is Geoff's read, then the release with Kit 3 and the rebuilt
+(`git diff --name-only <R2 merge>...origin/main`), and the sentences citing it. The release stays held. R7's fold
+agent writes the review page file: the five task 8 pages, each marked "targeted close" or "chain accept" with its
+rulings and plan. The conductor publishes it as a private artifact; if publishing raises a permission prompt, it
+becomes an owner-attended step and STATUS records the file path. STATUS links it; its next action is Geoff's read, then the release with Kit 3 and the rebuilt
 extend docs, then cairn.pub's migration as a site pass. HISTORY scores both budgets per track and names any halted
 lane's open branch.
-
-## Rulings for Geoff
-
-1. **Raise the lane ceiling to 5M (stop at 4M, whole-run cap 25M)?** L1's 1.5M plus L2's 2.5M is 4.0M, the current
-   hard ceiling, so on its own estimate the lanes hit the 3.2M stop before both finish. **Recommendation: yes.**
-   *Yes* builds both lanes to their merges in this run on the estimate, at up to 1M more spend. *No* keeps the 4M
-   ceiling: L2b runs first, L1 and L2b likely land, L2a likely halts at the stop with its branch open, and the next
-   session resumes it.
 
 ## Ledger
 

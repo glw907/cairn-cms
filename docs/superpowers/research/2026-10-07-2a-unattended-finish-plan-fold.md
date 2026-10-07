@@ -119,3 +119,53 @@ No owed errata: every departure from the governing plan is stated in this plan, 
 - **Target line count:** 231 before, 289 after (+25.1%).
 - **Ceiling change:** none in the plan. 2a's estimate rose from 18.4M to 21.3M against the unchanged 20M ceiling
   (stop now projected inside R6). The lane ceiling is Ruling 1, pending Geoff.
+
+## Second fold (2026-10-07)
+
+A narrow fold of `2026-10-07-2a-unattended-finish-fold-verification.md` (0 blocker, 6 major, 7 minor) and the owner
+rulings recorded below. Each finding was checked against the source before folding.
+
+### Owner rulings (Geoff, 2026-10-07)
+
+Recorded in the plan's Owner rulings section; the "Rulings for Geoff" section is deleted. 2a's ceiling is 25M with
+the stop at 20M. The lanes share a 5M ceiling with the stop at 4M; at the lane stop each lane task in flight
+finishes and no new task starts in either lane. The whole run is capped at 30M. The Budget paragraph now places the
+20M stop: inside R7 on the estimate (R7 finishes), inside R6 on a task 8 overrun past about 0.8M, inside R5 past
+about 2.3M.
+
+### Majors
+
+- **M1, folded.** Verified: `gh pr view 103` gives `baseRefOid` `5c47a6e3`; merge `04116a3b`'s first parent is
+  `481b811d`. The merge procedure now tests `git merge-base --is-ancestor origin/main origin/<branch>` after a fetch
+  and runs `gh pr checks --watch` only after checks register.
+- **M2, folded.** Verified: `docs-page-chain.js:282-284` calls `spent` output tokens, "never a count against a pass
+  ceiling". The turn-level target is deleted; the backstop named is the `/cost` read at each task boundary and
+  before each targeted close, plus `claude-wf-guard`.
+- **M3, folded.** Verified: `gateCore`'s unanchored `/cairn-run-gate\s+'([^']+)'/` drops the prefix, and
+  `pass-execute.js:365`, `:459`, `:546` tell implementers to `cd` first. R1 now applies the allowlist and the `cd`
+  rejection only inside the quotes or to an unwrapped command; the outside prefix stays discarded, test-pinned.
+- **M4, folded.** Verified: the reader prompt (`docs-page-chain.js` near L1705) names a scratch directory and no
+  install rule. Added the conductor ruling "unexercised: unreleased engine" and a session-level `TMPDIR` under
+  `$HOME/.cache`.
+- **M5, folded.** L2b opens and merges its own PR before L2a starts; L2a branches from `origin/main` after it.
+- **M6, folded.** A fact bullet edited on both sides takes `main`'s `Source:` line and the branch's text, judged by
+  the task's scoped fact read and `check:facts`. No new read.
+
+### Minors
+
+- **m1, folded.** R7's file list uses `<R2 merge>...origin/main`.
+- **m2, folded** with the lane-ceiling ruling (both lanes halt at the shared stop).
+- **m3, folded.** `package.json` takes each version from the side that bumped it and the union of scripts.
+- **m4, folded.** R5's targeted closes land before the post-run record and commit.
+- **m5, folded.** The `/tmp` row is named; if clearing the conductor's own scratch leaves usage above 4.5G, no new
+  heavy gate starts and the track stops with STATUS.
+- **m6, folded.** The L1 dispatch hands the skill by path; the conductor creates the tripwires from the implementer's
+  returned conditions.
+- **m7, folded.** The fold agent writes the review page file; the conductor publishes it, or, on a permission prompt,
+  it becomes an owner-attended step with the path in STATUS.
+- **Owed:** none. Every minor in the verification met the fold bar (an unplanned mid-run stop or a wrong result).
+
+### Measures
+
+- **New mechanism added:** 0. Each change narrows or corrects a rule already in the plan.
+- **Target line count:** 289 before, 303 after (+4.8%).

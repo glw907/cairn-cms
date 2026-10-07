@@ -77,7 +77,25 @@ New findings start below this line, one per finding, with its perspective and a 
   the IPv6 loopback (RFC 4291 section 2.5.3), so a `PUBLIC_ORIGIN` of `http://[::1]:5173` throws
   `config.public-origin-invalid`. An engine pass decides whether to add `::1` to its local test; the doctor's
   `isLoopbackHost` (`tool/internal/doctor/check_origin.go`) mirrors the engine's set and follows the decision.
-  Found by the `tool/internal/doctor` cleanup lane, 2026-10-07.
+  The engine already disagrees with itself here: `csrfSecure` reads `isLocalHost` (`src/lib/dev-flag.ts`), which
+  counts `::1` as local (`f:g22dnw`), so an `http://[::1]` dev server gets bare cookie names from `csrfSecure` and a
+  throw from `requireOrigin`. Found by the `tool/internal/doctor` cleanup lane, 2026-10-07.
+- **`go`.** The package grade of `tool/internal/doctor` after its cleanup lane (2026-10-07) named four findings the
+  lane's one fix round left, since each reaches past the lane's changed code or is optional. First, the command's
+  `resolvePublicOrigin` (`tool/cmd/cairn/doctor.go:136`) applies the vars-over-environment precedence the doctor
+  package owns (`OriginSource`), so `ReadWranglerConfig` and `WranglerFacts` stay exported for it alone; a
+  `doctor.ResolvePublicOrigin(s, envOrigin)` in `snapshot.go` would unexport both. Second, three checks restate the
+  facts-file preamble (`check_media.go:31`, `check_roles.go:105`, `check_posture.go:286`) and three the wrangler
+  preamble (`check_bindings.go:31`, `check_observability.go:18`, `check_media.go:41`); a helper returning
+  `(siteFacts, *Result)` is optional. Third, `siteconfigpath.go` (49 lines, one reader) could merge into
+  `siteconfig.go`, and `IsCairnSite` (`fileread.go:85`) sits more naturally beside `NewSnapshot` in `snapshot.go`.
+  Fourth, the comment at `json.go:82-84` restates the empty-array choice that `checkPayload`'s doc and the schema
+  carry. Found by the lane's package grade (2026-10-07).
+- **`facts`.** `check:facts` never checks a Go `Source:` pointer: `POINTER_RE`
+  (`scripts/checks/check-facts.mjs:350-351`) lists no `go` extension, so a `.go` `path:line` is neither resolved nor
+  range-checked. The doctor cleanup lane's diff review found four doctor cites past the end of `check_referrer.go`
+  that the gate passed. Adding `go` to the extension list brings Go pointers under the existing path and range
+  checks. Found by the `tool/internal/doctor` cleanup lane's review, 2026-10-07.
 - **`extend`.** SvelteKit 3 remote functions (`/_app/remote/...`) are not `/admin` paths, so a site-built admin
   remote command gets no guard session, no Rule 1 token check, and no security headers (Kit's `is_remote_forbidden`
   gives same-origin protection only). The extend arm should say a site-built admin remote function resolves the

@@ -124,8 +124,8 @@ describe('condition registry', () => {
     const c = condition('config.csrf-trusted-origins-wildcard');
     expect(c.severity).toBe('warning');
     expect(c.title).toBe("Trusted origins bypass SvelteKit's origin check");
-    expect(c.why).toMatch(/'\*'/);
-    expect(c.why).toMatch(/'null'/);
+    expect(c.why).toMatch(/"\*"/);
+    expect(c.why).toMatch(/"null"/);
     expect(c.why).toMatch(/every route/);
     expect(c.why).toMatch(/resolveSubject/);
     expect(c.why).toMatch(/sibling subdomain/);

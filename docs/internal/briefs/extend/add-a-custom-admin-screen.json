@@ -340,6 +340,10 @@
       ]
     },
     {
+      "text": "A form action wrapped this way is a section action.",
+      "id": "f:lblh3u"
+    },
+    {
       "text": "The call's `Env` type parameter describes the site's platform bindings, since the engine ships no `Env` type, and `resolveDb` receives `Env | undefined`.",
       "id": "f:esp93u"
     },
@@ -419,6 +423,14 @@
         "f:rurhey",
         "f:6quvqm"
       ]
+    },
+    {
+      "text": "The excerpt shows the scaffold's production branch, and the dev branch keeps `devBackendHandle({ access })`.",
+      "id": "f:u78zg6"
+    },
+    {
+      "text": "A scaffolded site's hooks file already imports some of these names, so the excerpt's imports merge into its existing ones.",
+      "id": "f:u78zg6"
     },
     {
       "text": "The snippet's `access` import is the access map that [Restrict admin access](restrict-admin-access.md) describes.",

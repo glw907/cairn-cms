@@ -77,8 +77,9 @@ export function readPublicOrigin(env: unknown): string | undefined {
  * local host (or is absent, or does not parse) leaves the request's own hostname to decide, the
  * behavior a site with no `PUBLIC_ORIGIN` at all keeps.
  *
- * The residual is honest: a deployment that sets
- * no `PUBLIC_ORIGIN` still rests on the Host-derived fallback.
+ * The residual is honest and documented (docs/extend/security-model.md, "The dev-backend flag's
+ * two refusals"): a deployment that sets no `PUBLIC_ORIGIN` still rests on the Host-derived
+ * fallback.
  */
 export function isDeployedHost(url: URL, env: unknown): boolean {
   const origin = readPublicOrigin(env);

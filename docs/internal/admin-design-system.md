@@ -1536,8 +1536,10 @@ investigate.
 
 ## Motion
 
-**This section is canonical.** A public docs page that touches motion cites it by heading rather
-than restating its rules; where the two would say the same thing twice, this section is the source.
+**This section is canonical.** The published motion guidance, "Animate the screen" in
+`docs/extend/add-a-custom-admin-screen.md`, carries only what a site author acts on (the token
+names and the audit's motion rules) and links the `cairn-audit` reference, never this internal
+page; where the two would say the same thing twice, this section is the source.
 
 ### Tokens
 

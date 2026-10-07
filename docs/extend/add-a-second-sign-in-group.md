@@ -94,6 +94,8 @@ To declare the role, follow these steps:
    });
    ```
 
+   A site that already declares `roles`, as [Restrict admin access](restrict-admin-access.md) does in `src/access.ts`, adds the instructor entry to that vocabulary instead.
+
 2. In `src/hooks.server.ts`, pass the same vocabulary to `createAuthGuard` and `devBackendHandle` as their `roles` option.
    Keep any option either handle already receives, such as the scaffold's `access`, beside `roles`.
 
@@ -348,10 +350,17 @@ To write the module, follow these steps:
    TURNSTILE_SECRET=<your Turnstile secret key>
    ```
 
-5. In the project directory, run `npx wrangler types`, so the generated `Env` that `cloudflare:workers` exports carries the secret's name.
+5. In `.dev.vars.example`, add the same name with an empty value.
+
+   ```text
+   TURNSTILE_SECRET = ""
+   ```
+
+6. In the project directory, run the command that `worker-configuration.d.ts` records on its first lines, so the generated `Env` carries the secret's name.
+   A scaffolded site's file records the following command:
 
    ```bash
-   npx wrangler types
+   npx wrangler types --env-file=.dev.vars.example --include-runtime=false
    ```
 
 `wrangler dev` reads secrets from `.dev.vars` and never from a deployed Worker secret, so the production copy waits for [Deploy the channel](#deploy-the-channel).
@@ -664,7 +673,7 @@ The following checks cover the common failures, the role's on `/admin/editors` a
    Under `wrangler dev` the Worker reads the secret from `.dev.vars`, and on the deployed site from a Worker secret.
 6. If the secret is set and requests still answer `challenge-required`, check the token field your `challenge` reads.
    Because `verifyTurnstile` returns `false` on every failure and never throws, a missing secret and a missing token both answer `challenge-required`.
-7. Otherwise, work through [Debug your site](debug-your-site.md).
+7. Otherwise, read the auth channel's rows in the [log events](../reference/log-events.md) reference.
 
 ## See also
 

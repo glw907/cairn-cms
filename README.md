@@ -51,9 +51,10 @@ extend it in.
 already wired in, built to be restyled or replaced rather than started from a blank page. A second,
 documentation-focused template, Topo, is planned but not shipped yet.
 
-Already have a SvelteKit app and want to add cairn to it instead? Start from
-`npm install @glw907/cairn-cms`, and read [the reference](./docs/reference/README.md) for each
-export subpath.
+Already have a SvelteKit app and want to add cairn to it instead?
+[Add cairn to a SvelteKit app](./docs/extend/add-cairn-to-a-sveltekit-app.md) walks the install,
+from `npm install @glw907/cairn-cms` to a production deploy, and [the
+reference](./docs/reference/README.md) covers each export subpath.
 
 ## Where cairn stands
 

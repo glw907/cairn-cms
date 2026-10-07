@@ -77,7 +77,7 @@ A site adds a concept, a role, or an admin screen through a seam, and none of th
 
 ## Write path
 
-An edit reaches the live site through a save onto a holding branch, a publish that copies the branch onto the default branch, and the deploy that the publish commit triggers. The path crosses three stores. Git holds the edit and the two manifests, committed JSON indexes in which the content manifest carries a metadata row for each entry and the media manifest describes each uploaded file. D1 holds the session the guard checks on each admin request, and R2 holds the media bytes.
+An edit reaches the live site through a save onto a holding branch, a publish that copies the branch onto the default branch, and the deploy that the publish commit triggers. The path crosses three data tiers. Git holds the edit and the two manifests, committed JSON indexes in which the content manifest carries a metadata row for each entry and the media manifest describes each uploaded file. D1 holds the session the guard checks on each admin request, and R2 holds the media bytes.
 
 ```mermaid
 flowchart LR
@@ -133,7 +133,7 @@ The publish commit triggers the site's existing deploy, and the build rebuilds t
 
 ## Read path
 
-The admin reads one entry from a concurrent batch of reads through the `Backend` and reads the whole corpus from the committed content manifest. An entry's edit and history loads batch the file itself, its pending branch head, the committed manifest, and the media manifest. The concept list's published entries, inbound links, reference and media usage, and the link check on save all read the manifest on the default branch instead of crawling the entry files. That manifest is one kind of state the engine keeps in git, and git is one of three stores the engine chooses by what reads the state.
+The admin reads one entry from a concurrent batch of reads through the `Backend` and reads the whole corpus from the committed content manifest. An entry's edit and history loads batch the file itself, its holding branch head, the committed manifest, and the media manifest. The concept list's published entries, inbound links, reference and media usage, and the link check on save all read the manifest on the default branch instead of crawling the entry files. That manifest is one kind of state the engine keeps in git, and git is one of three data tiers the engine chooses by what reads the state.
 
 ## Data tiers
 

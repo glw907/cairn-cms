@@ -146,6 +146,7 @@ The signups screen writes through `APP_DB`, so the remaining steps use `createSe
 ## Wrap the actions
 
 One `createSectionAction` call builds the section's wrapper, and each form action passes its handler and its audited `action` and `entity` to that wrapper.
+A form action wrapped this way is a section action.
 The call's `Env` type parameter describes the site's platform bindings, since the engine ships no `Env` type, and `resolveDb` receives `Env | undefined`.
 The type parameter does not infer from an unannotated `resolveDb` parameter, so the site annotates that parameter or passes explicit type arguments.
 The example site passes the `Env` that `wrangler types` generates in `worker-configuration.d.ts`.
@@ -211,9 +212,9 @@ To wire the sink, follow these steps:
 1. In `hooks.server.ts`, add a handle that sets `event.locals.cairnAuditSink`.
 2. In the same file, compose that handle after `createAuthGuard` through `sequence`.
 
-<!-- snippet-check-skip: reads env.AUDIT_DB, which only the site's own generated Env declares -->
+<!-- snippet-check-skip: excerpt; the production branch of the scaffold's hooks file, whose handle is declared above it, reading env.AUDIT_DB, which only the site's own generated Env declares -->
 ```ts
-// src/hooks.server.ts
+// src/hooks.server.ts (excerpt)
 import { building } from '$app/env';
 import { env, waitUntil } from 'cloudflare:workers';
 import { createAuthGuard, createD1AuditSink } from '@glw907/cairn-cms/sveltekit';
@@ -228,8 +229,12 @@ const wireAuditSink: Handle = ({ event, resolve }) => {
   return resolve(event);
 };
 
-export const handle = sequence(createAuthGuard({ access }), wireAuditSink);
+// ...
+handle = sequence(createAuthGuard({ access }), wireAuditSink);
 ```
+
+The excerpt shows the scaffold's production branch, and the dev branch keeps `devBackendHandle({ access })`.
+A scaffolded site's hooks file already imports some of these names, so the excerpt's imports merge into its existing ones.
 
 The snippet's `access` import is the access map that [Restrict admin access](restrict-admin-access.md) describes.
 A scaffolded site declares it with `defineAccess` in `access.ts`, beside `hooks.server.ts`.

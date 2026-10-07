@@ -342,7 +342,7 @@ To write both files, follow these steps:
 
 ### Compose the runtime and the admin
 
-[`composeRuntime`](../reference/core.md#composeruntime) folds the adapter and the site config into the runtime, and [`createCairnAdmin`](../reference/sveltekit.md#createcairnadmin) turns the runtime into the `load`, `actions`, and `shellLoad` the admin routes export. The `bootstrapOwner` pair names the site's first owner. When that email requests a sign-in while the `editor` table is empty, the engine inserts the owner row before the allowlist lookup. A non-matching email or a non-empty table grants nothing. `bootstrapOwner` acts on the first real sign-in, in the production milestone, and does nothing while the dev backend is active.
+[`composeRuntime`](../reference/core.md#composeruntime) folds the adapter and the site config into the runtime, and [`createCairnAdmin`](../reference/sveltekit.md#createcairnadmin) turns the runtime into the `load`, `actions`, and `shellLoad` the admin routes export. The `bootstrapOwner` pair names the site's first owner. When that email requests a sign-in while the `editor` table is empty, the engine inserts the owner row before the roster lookup. A non-matching email or a non-empty table grants nothing. `bootstrapOwner` acts on the first real sign-in, in the production milestone, and does nothing while the dev backend is active.
 
 - In `src/lib`, create the server module, with your email and name in `bootstrapOwner`:
 
@@ -537,6 +537,9 @@ To wire the dev backend, follow these steps:
    export { handle };
    ```
 
+When the site later declares an access map, as [Restrict admin access](restrict-admin-access.md) does, the hooks module passes it to both `devBackendHandle({ access })` and `createAuthGuard({ access })`.
+A dev backend given no `access` leaves the map unattached, so every section action answers `fail(500)` and logs [`admin.action.misconfigured`](debug-your-site.md#adminactionmisconfigured).
+
 ### Verify the dev sign-in
 
 With `CAIRN_DEV_BACKEND` set to `1`, the dev server opens `/admin` signed in as an owner, with no sign-in email.
@@ -558,8 +561,6 @@ When the admin does not open signed in, check the following in order:
 
 1. Check that the dev server started with `CAIRN_DEV_BACKEND` set to `1`.
 2. Check that the hooks module names `__CAIRN_DEV_BUILD__` itself, with no imported constant in its place.
-
-[Debug your site](debug-your-site.md) covers the dev backend's other failures.
 
 ### Rename the site
 
@@ -789,8 +790,6 @@ The content wiring fails in three ways, and only the first two stop the build:
 - A committed manifest that has drifted from the markdown on disk fails the build, until you write the manifest again and commit it.
 - A concept missing from the plugin's `content` option produces zero manifest rows for that concept, with no error, until you add its glob to `content`.
 
-[Debug your site](debug-your-site.md) covers the recovery from each content failure.
-
 ### Push the site to GitHub
 
 The production milestone registers a GitHub App that commits to the site's repository, so the repository exists on GitHub first. The App's one installation covers that repository, and the adapter names it as `owner` and `repo`. An app already on GitHub skips this section, and the production milestone writes that repository and its default branch into `createGithubApp`.
@@ -866,7 +865,7 @@ You register the App, create the database, and set one Worker secret, and the si
 - `wrangler.jsonc` gains the `EMAIL`, `AUTH_DB`, and `PUBLIC_ORIGIN` entries.
 - The content module's `origin` names the deployed origin.
 
-The hooks module needs no edit, because `__CAIRN_DEV_BUILD__` is `false` in a build and the build drops the dev-backend import. Each section of this milestone makes its edit once the value it needs exists. The App yields the App ID, the Installation ID, and the private key, and the database's create output carries the id the `AUTH_DB` entry needs.
+The hooks module needs no edit, because `__CAIRN_DEV_BUILD__` is `false` in a build and the build drops the dev-backend import. Each section of this milestone makes its edit once the value it needs exists. The App yields the App ID, the installation ID, and the private key, and the database's create output carries the id the `AUTH_DB` entry needs.
 
 ### Deploy the production build and read the refusal
 
@@ -902,13 +901,13 @@ To register and install the App, follow these steps:
 8. On the same page, generate a private key and download its `.pem` file, following [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps).
 9. On the same page, install the App on the account that owns the repository, following [Installing your own GitHub App](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app).
 10. In the installation form, grant the App access to the site's repository only.
-11. In the installation settings address that GitHub opens after the install, note the trailing number, which is the Installation ID.
+11. In the installation settings address that GitHub opens after the install, note the trailing number, which is the installation ID.
 
 The **Contents** permission is repository-wide, and only engine code confines writes to the declared content directories, so the App's token can also write the site's code in the repository this tutorial builds. The [security model](security-model.md) sets out the reasoning.
 
 ### Store the App's credentials
 
-The App ID and Installation ID identify the App and grant nothing, so they pass directly into `createGithubApp` in the adapter source. The private key signs the App's requests for installation tokens, so it lives only as the Worker secret `GITHUB_APP_PRIVATE_KEY_B64`, never in a tracked file.
+The App ID and installation ID identify the App and grant nothing, so they pass directly into `createGithubApp` in the adapter source. The private key signs the App's requests for installation tokens, so it lives only as the Worker secret `GITHUB_APP_PRIVATE_KEY_B64`, never in a tracked file.
 
 To store the credentials, follow these steps:
 
@@ -1103,8 +1102,6 @@ Each of the following failures points at a setting this milestone made:
 - A store error that names `0004_login_nonce.sql` points at a database without that migration.
 - A failed publish points at an App without **Contents** at **Read and write**, or at one not installed on the site's repository.
 
-[Debug your site](debug-your-site.md) covers the recovery for each failure.
-
 ### Apply an opt-in migration locally
 
 Apply `0003_preview.sql` to the local development database beside the two that every site applies, and find it in the apply output.
@@ -1211,7 +1208,7 @@ To confirm either change, follow these steps:
 2. On the deployed origin, request a sign-in to the admin.
 3. In the sign-in email, confirm that the message carries the values the site set.
 
-When the message does not arrive or still carries the engine's defaults, see [Debug your site](debug-your-site.md).
+When the message does not arrive, look for an `auth.link.send_failed` record, whose fields the [log events](../reference/log-events.md) reference lists.
 
 ## The finished site
 

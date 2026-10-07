@@ -284,9 +284,12 @@ coverage](#access-map-coverage) decides which screens that editor reaches.
 
 An access map narrows only the targets it names, so a screen or concept the map never mentions stays
 reachable to any editor-capability session.
-[`canReach`](../reference/core.md#canreach-hasaccessrule) is the one function that decides both
-route enforcement and nav visibility, so the two cannot drift apart, and the `editors` roster screen
-stays owner-only whatever the map says. Each engine write action gates through the map against one
+[`canReach`](../reference/core.md#canreach-hasaccessrule) is the one function that the guard's
+route checks, the engine's screens, and the sidebar call to decide reach, yet the sidebar and the
+routes can still disagree. A `navLayout` site entry whose href no key matches stays visible while its
+route refuses. The sidebar reads the adapter's map and `requireAccess` reads the guard's, so a map
+given to only one of them gates only that one. The `editors` roster screen stays owner-only whatever the
+map says. Each engine write action gates through the map against one
 target, the concept id or one of the fixed screens `media`, `nav`, `settings`, or `vocabulary`,
 with the exceptions that [Limits of access map coverage](#limits-of-access-map-coverage) names.
 
@@ -488,6 +491,7 @@ how the site configures it, so the following responsibilities stay with the site
 - Keeping dev transports and the `CAIRN_DEV_BACKEND` flag out of a deployed Worker, with a refusal
   inside any dev-shaped transport.
 - Making an access map exhaustive when the site intends an allowlist.
+- Passing the same access map to the adapter and the guard.
 - Mounting the tidy and dictionary actions on a route that carries a `concept` parameter.
 - Starting every `sanitizeSchema` callback from the schema it receives and only adding to it.
 - Leaving `unsafeDisableSanitize` unset.

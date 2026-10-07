@@ -42,7 +42,7 @@
       ]
     },
     {
-      "text": "The switch puts an Access application in front of the admin as its identity gate and gives the guard a resolver that turns the Access token into the email the guard looks up in the roster.",
+      "text": "The switch puts an Access application in front of the admin as its identity gate and gives the guard an identity resolver that turns the Access token into the email the guard looks up in the roster.",
       "id": [
         "f:8289h7",
         "f:emrebl"
@@ -381,15 +381,15 @@
       "id": "f:ojr3qm"
     },
     {
-      "text": "`createAuthGuard` returns a plain SvelteKit `Handle` whether or not `identity` is set, so the guard composes through `sequence` as it did under magic links.",
-      "id": "f:dwc4kp"
+      "text": "`createAuthGuard` returns a plain SvelteKit `Handle` whether or not `identity` is set, so the hooks module's production branch keeps its shape and the guard takes the resolver as one more option.",
+      "id": [
+        "f:dwc4kp",
+        "f:gun084"
+      ]
     },
     {
-      "text": "The resolver goes in as one option, and a deploy puts it into effect.",
-      "id": [
-        "f:gun084",
-        "f:9ug9mo"
-      ]
+      "text": "A deploy puts it into effect.",
+      "id": "f:9ug9mo"
     },
     {
       "text": "To turn on identity mode, follow these steps:",
@@ -615,8 +615,11 @@
       "id": "f:fu4uis"
     },
     {
-      "text": "If the refusal persists, work through [Debug your site](debug-your-site.md).",
-      "id": "no-claim"
+      "text": "If the refusal persists, read the `guard.refused` and `auth.identity.unknown` rows of the [log events](../reference/log-events.md) reference.",
+      "id": [
+        "f:fu4uis",
+        "f:7qqhda"
+      ]
     },
     {
       "text": "The following pages cover the seams and limits around identity mode:",

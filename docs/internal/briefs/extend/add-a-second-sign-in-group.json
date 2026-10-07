@@ -320,6 +320,16 @@
       ]
     },
     {
+      "text": "A site that already declares `roles`, as [Restrict admin access](restrict-admin-access.md) does in `src/access.ts`, adds the instructor entry to that vocabulary instead.",
+      "id": [
+        "f:3z1uxv",
+        "f:zjglk8",
+        "f:dbaklx",
+        "f:2zytgf",
+        "f:4xrx5f"
+      ]
+    },
+    {
       "text": "In `src/hooks.server.ts`, pass the same vocabulary to `createAuthGuard` and `devBackendHandle` as their `roles` option.",
       "id": [
         "f:4xrx5f",
@@ -687,8 +697,19 @@
       "id": "f:86h9o6"
     },
     {
-      "text": "In the project directory, run `npx wrangler types`, so the generated `Env` that `cloudflare:workers` exports carries the secret's name.",
-      "id": "f:pe4vuc"
+      "text": "In `.dev.vars.example`, add the same name with an empty value.",
+      "id": "f:3ccbez"
+    },
+    {
+      "text": "In the project directory, run the command that `worker-configuration.d.ts` records on its first lines, so the generated `Env` carries the secret's name.",
+      "id": [
+        "f:pe4vuc",
+        "f:3ccbez"
+      ]
+    },
+    {
+      "text": "A scaffolded site's file records the following command:",
+      "id": "f:3ccbez"
     },
     {
       "text": "`wrangler dev` reads secrets from `.dev.vars` and never from a deployed Worker secret, so the production copy waits for [Deploy the channel](#deploy-the-channel).",
@@ -1171,7 +1192,7 @@
       ]
     },
     {
-      "text": "Otherwise, work through [Debug your site](debug-your-site.md).",
+      "text": "Otherwise, read the auth channel's rows in the [log events](../reference/log-events.md) reference.",
       "id": "no-claim"
     },
     {

@@ -304,8 +304,11 @@
       "id": "f:cvzb8z"
     },
     {
-      "text": "The scaffold passes its map only to `createAuthGuard`, so a scaffolded site's engine screens stay open until the adapter carries the map too.",
-      "id": "f:cvzb8z"
+      "text": "The scaffold passes its map to the two hook handles and not to the adapter, so a scaffolded site's engine screens stay open until the adapter carries the map too.",
+      "id": [
+        "f:cvzb8z",
+        "f:u78zg6"
+      ]
     },
     {
       "text": "The guard, `createAuthGuard` in `src/hooks.server.ts`, gates every `/admin` path except the sign-in page and its auth endpoints.",
@@ -600,6 +603,28 @@
       "id": "f:dqjkci"
     },
     {
+      "text": "The site's auth database still limits the roster to owner and editor, so the migration that lifts that limit runs before the deploy.",
+      "id": [
+        "f:xkkt1o",
+        "f:rn62i1"
+      ]
+    },
+    {
+      "text": "To apply the migration, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, copy `0001_roles.sql` from the package's `migrations` directory into the site's `migrations` directory.",
+      "id": [
+        "f:xxtooz",
+        "f:rn62i1"
+      ]
+    },
+    {
+      "text": "In the project directory, apply the migration to the remote database with `wrangler d1 migrations apply` and the `--remote` flag.",
+      "id": "f:xxtooz"
+    },
+    {
       "text": "To deploy the changes, take the path that matches the site:",
       "id": "no-claim"
     },
@@ -789,10 +814,11 @@
       ]
     },
     {
-      "text": "It can also trace to a reader never given `roles` or `access`.",
+      "text": "It can also trace to a reader never given `roles` or `access`, or to an auth database without the roles migration.",
       "id": [
         "f:cvzb8z",
-        "f:hwffph"
+        "f:hwffph",
+        "f:rn62i1"
       ]
     },
     {
@@ -835,6 +861,21 @@
     },
     {
       "text": "The same section holds the fix.",
+      "id": "no-claim"
+    },
+    {
+      "text": "If adding the test editor with the webmaster role fails on `/admin/editors`, check whether `0001_roles.sql` was applied to the remote database.",
+      "id": [
+        "f:rn62i1",
+        "f:nj0nfm"
+      ]
+    },
+    {
+      "text": "Until it runs, the roster holds only owner and editor.",
+      "id": "f:rn62i1"
+    },
+    {
+      "text": "[Deploy the changes](#deploy-the-changes) holds the fix.",
       "id": "no-claim"
     },
     {

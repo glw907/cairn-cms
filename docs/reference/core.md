@@ -294,7 +294,9 @@ Transformations on the zone.
 Content references a stored asset by a logical handle, `media:<slug>.<hash>` (or the bare
 `media:<hash>`), the same shape as the `cairn:` link scheme. The hash is the content identity and the
 slug is cosmetic, so a rename never breaks a reference. At render, the handle rewrites to a delivery
-URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that path. This grew from a
+URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that path. [Data
+tiers](../extend/architecture.md#data-tiers) covers where the media manifest and the stored bytes
+live. This grew from a
 reserved seam, so it is additive: a site that declares no `media` is unchanged, and the author-facing
 upload surface lands in a later phase on this substrate.
 
@@ -990,6 +992,7 @@ A role vocabulary says who has which name; the access map says what each name ma
 enforcement and visibility point reads: the guard's [`requireAccess`](./sveltekit.md#requireaccess)
 helper, the engine's own route gates, and the nav resolver. Capability is always the floor, and
 the map only narrows it, never widens it, so a site that declares no map sees no behavior change.
+See [Restrict admin access](../extend/restrict-admin-access.md) for the worked guide.
 
 #### `defineAccess`
 

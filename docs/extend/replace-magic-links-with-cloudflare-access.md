@@ -11,7 +11,7 @@ Google Workspace or Microsoft Entra ID and should sign in to the admin with them
 Access brings that provider to a site on Workers, since an Access application sits in front of the
 site's Worker, admits only the users who match its policies, and signs them in through the identity
 provider it connects to. The switch puts an Access application in front of the admin as its identity gate and gives the
-guard a resolver that turns the Access token into the email the guard looks up in the roster. The
+guard an identity resolver that turns the Access token into the email the guard looks up in the roster. The
 roster stays in cairn, so the application decides who reaches the admin and the roster decides
 which of those people may edit. The work spans the site's server hooks and the account's Zero
 Trust settings, so it takes a developer who can change both.
@@ -275,23 +275,20 @@ pages, and it defaults to `your organization's sign-in`.
 
 ## Wire the resolver and deploy the Worker
 
-`createAuthGuard` returns a plain SvelteKit `Handle` whether or not `identity` is set, so the guard
-composes through `sequence` as it did under magic links. The resolver goes in as one option, and a
+`createAuthGuard` returns a plain SvelteKit `Handle` whether or not `identity` is set, so the hooks
+module's production branch keeps its shape and the guard takes the resolver as one more option. A
 deploy puts it into effect.
 
 To turn on identity mode, follow these steps:
 
 1. In the site's server hooks file, pass the resolver as the guard's `identity` option.
 
+   <!-- snippet-check-skip: excerpt; the production branch of the scaffold's hooks file, whose handle is declared above it -->
    ```ts
-   // src/hooks.server.ts
-   import { sequence } from '@sveltejs/kit/hooks';
-   import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+   // src/hooks.server.ts (excerpt)
    import { accessIdentity } from '#lib/access-identity.js';
-   import { access } from './access.js';
-   import { theme } from './theme-handle.js';
 
-   export const handle = sequence(theme, createAuthGuard({ access, identity: accessIdentity }));
+   handle = createAuthGuard({ access, identity: accessIdentity });
    ```
 
 2. In the project directory, build the site with `npm run build`.
@@ -397,7 +394,7 @@ To find why an editor was refused, follow these steps:
     The sample returns no `error` reason and rethrows any failure its mapping doesn't name, so
     under the sample `error` means that the resolver threw.
 
-11. If the refusal persists, work through [Debug your site](debug-your-site.md).
+11. If the refusal persists, read the `guard.refused` and `auth.identity.unknown` rows of the [log events](../reference/log-events.md) reference.
 
 ## See also
 

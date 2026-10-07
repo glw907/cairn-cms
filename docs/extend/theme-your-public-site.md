@@ -496,7 +496,7 @@ To resolve a public-rule finding, work through the following checks in order:
    The rule's row in [The static rules](../reference/cairn-audit.md#the-static-rules) states how it
    resolves a custom property reference.
 
-4. If a finding persists, work through [Debug your site](debug-your-site.md).
+4. If a finding persists, see [Run cairn-audit on your site](run-cairn-audit-on-your-site.md).
 
 ## See also
 

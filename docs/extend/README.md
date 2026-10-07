@@ -1,6 +1,6 @@
 # Extend
 
-The extend track is being rebuilt, so this index lists only the pages that are in place. Each heading below is a group of the rebuilt track, and the pages join their group as they land.
+The extend track is being rebuilt, so this index lists only the pages in place so far, each under its group.
 
 ## Start
 
@@ -8,11 +8,9 @@ The extend track is being rebuilt, so this index lists only the pages that are i
 - [Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md)
 - [Scaffolded site files](./scaffolded-site-files.md)
 
-## Model content
-
 ## Public site
 
-- [Choose an AI posture](choose-an-ai-posture.md): set the robots posture for AI crawlers.
+- [Choose an AI posture](./choose-an-ai-posture.md)
 - [Theme your public site](./theme-your-public-site.md)
 
 ## Extend the admin
@@ -28,7 +26,7 @@ The extend track is being rebuilt, so this index lists only the pages that are i
 
 ## Operate
 
-- [Upgrade cairn](upgrade-cairn.md): move a site onto a newer engine version.
-- [Migration notes](migration-notes.md): the per-version record of what a consumer must do.
+- [Upgrade cairn](./upgrade-cairn.md)
+- [Migration notes](./migration-notes.md)
 - [Debug your site](./debug-your-site.md)
 - [Rotate the GitHub App key](./rotate-the-github-app-key.md)

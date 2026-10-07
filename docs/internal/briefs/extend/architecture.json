@@ -414,7 +414,7 @@
       ]
     },
     {
-      "text": "The path crosses three stores.",
+      "text": "The path crosses three data tiers.",
       "id": "f:pgy0mr"
     },
     {
@@ -546,7 +546,7 @@
       "id": "f:cng7dr"
     },
     {
-      "text": "An entry's edit and history loads batch the file itself, its pending branch head, the committed manifest, and the media manifest.",
+      "text": "An entry's edit and history loads batch the file itself, its holding branch head, the committed manifest, and the media manifest.",
       "id": "f:cng7dr"
     },
     {
@@ -554,7 +554,7 @@
       "id": "f:cng7dr"
     },
     {
-      "text": "That manifest is one kind of state the engine keeps in git, and git is one of three stores the engine chooses by what reads the state.",
+      "text": "That manifest is one kind of state the engine keeps in git, and git is one of three data tiers the engine chooses by what reads the state.",
       "id": "f:pgy0mr"
     },
     {

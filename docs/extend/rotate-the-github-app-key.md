@@ -130,7 +130,7 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
    The error page from opening or publishing an entry comes from that refusal. Roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
 
-After the 55-minute wait, a publish that fails while `/healthz` reports `ok: true` and no shell record appears is not a key failure. [Debug your site](debug-your-site.md) covers that failure and reading the logs in general.
+After the 55-minute wait, a publish that fails while `/healthz` reports `ok: true` and no shell record appears is not a key failure. [Debug your site](debug-your-site.md#read-the-structured-logs) covers reading the logs.
 
 ### Roll back to the old key
 

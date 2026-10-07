@@ -1,5 +1,5 @@
 // The showcase's members login channel, the worked exemplar for
-// a second audience. Two named divergences from the documented shape, stated here so
+// docs/extend/add-a-second-sign-in-group.md. Two named divergences from that page, stated here so
 // "living exemplar" does not overclaim: the module lives under src/members/ rather than
 // src/lib/server/, grouped with the rest of the members feature instead of a generic server
 // folder, and `challenge` is `insecureTestChallenge`

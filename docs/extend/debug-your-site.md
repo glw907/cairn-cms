@@ -55,7 +55,8 @@ A developer reads the records through the following surfaces:
 - `npx wrangler tail` streams the Worker's logs live while the developer reproduces the problem, as
   the [Wrangler commands reference](https://developers.cloudflare.com/workers/wrangler/commands/#tail)
   describes.
-- `cairn logs <site>` reads the site's records from Workers Observability.
+- `cairn logs <site>` reads the site's records from Workers Observability, where `<site>` is the
+  site id that `cairn sites list` prints.
 - `cairn health` fails its `errors` check when the engine's error-level records within the `--since`
   window, `24h` by default, exceed `--error-threshold`, `5` by default.
 
@@ -73,7 +74,7 @@ output](../reference/cli-cairn-json-output.md) references are its published form
 The engine writes every record through one internal module, which names each event
 `area[.subject].verb_phrase`, the vocabulary the [log events](../reference/log-events.md) reference
 documents. An engine record takes the same redaction a site's records take through `/log`. No record
-carries a magic-link token, a session ID, or a magic link's contents.
+carries a sign-in token, a session id, or a sign-in link's contents.
 
 Redaction walks three levels deep into plain objects and arrays, and it leaves a key at level four
 or deeper as written. A repeated reference appears as `'<repeated>'`. A getter that throws inside a
@@ -154,6 +155,15 @@ sign-in page. The record is a warning whose `path` names the action's route, as 
 events](../reference/log-events.md) reference lists. This record is the only trace of the lapse,
 since the guard's CSRF refusal covers an earlier condition. The row needs no code change, and the
 editor signs in again.
+
+### `admin.action.csrf_refused`
+
+A wrapped action logs `admin.action.csrf_refused` and answers SvelteKit's `error(403, ...)` when
+the post fails the CSRF check. The record is a warning whose fields the [log
+events](../reference/log-events.md) reference lists. `devBackendHandle` runs no CSRF check, so under
+the dev backend this record is the first trace of a form that posts without a token. Behind the
+guard, the same post stops earlier at `guard.refused` with reason `csrf`. The fix is a code change
+that mounts `CsrfField` from `@glw907/cairn-cms/admin` in each form that posts to the action.
 
 ### `admin.action.rate_limit_absent`
 
@@ -264,7 +274,7 @@ only, so it can report fewer records than sign-outs.
 
 ### `auth.channel.session.destroyed`
 
-A sign-in channel logs `auth.channel.session.destroyed` on three paths, only for a live row, and the
+An auth channel logs `auth.channel.session.destroyed` on three paths, only for a live row, and the
 record carries a `correlationId` in place of the roster subject. The record fires on the following
 paths:
 
@@ -336,8 +346,9 @@ the reader and the variable, in order:
    Worker env, never through `Date.now()` in a rendered component.
 2. In `.dev.vars`, set `CAIRN_FIXED_TODAY` to an explicit instant, never in the Wrangler config's
    `vars`, which deploy with the Worker.
-3. In `.dev.vars.example`, add `CAIRN_FIXED_TODAY = ""`, then run
-   `npx wrangler types --env-file .dev.vars.example` so the generated `Env` declares it.
+3. In `.dev.vars.example`, add `CAIRN_FIXED_TODAY = ""`, then regenerate `worker-configuration.d.ts`
+   with the command its first lines record, so the generated `Env` declares it. A scaffolded site
+   records `npx wrangler types --env-file=.dev.vars.example --include-runtime=false`.
 
 Cloudflare's [local development environment
 variables](https://developers.cloudflare.com/workers/local-development/environment-variables/) page
@@ -402,5 +413,5 @@ The following pages cover the seams and tasks this page's events come from:
 - [Architecture](architecture.md#seams) describes the seams whose events the rows name.
 - [Add a custom admin screen](add-a-custom-admin-screen.md) describes how to build a wrapped action
   and wire its audit sink.
-- [Add a second sign-in group](add-a-second-sign-in-group.md) describes the sign-in channel whose
+- [Add a second sign-in group](add-a-second-sign-in-group.md) describes the auth channel whose
   session record this page reads.

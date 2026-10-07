@@ -337,8 +337,8 @@ src/
 
 The hook picks `devBackendHandle` or `createAuthGuard` in one `if` and exports the result as
 `handle`. Its test reads the build-time `__CAIRN_DEV_BUILD__` define first and the runtime opt-in
-`CAIRN_DEV_BACKEND === '1'` second. Under `vite dev`, the opt-in falls back to `process.env`. The
-guard receives `{ access }`, the `defineAccess` map in `src/access.ts`, which
+`CAIRN_DEV_BACKEND === '1'` second. Under `vite dev`, the opt-in falls back to `process.env`. Both
+handles receive `{ access }`, the `defineAccess` map in `src/access.ts`, which
 [Restrict admin access](restrict-admin-access.md) configures.
 
 ### `src/routes/admin/`

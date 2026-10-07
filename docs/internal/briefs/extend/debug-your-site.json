@@ -123,8 +123,11 @@
       "id": "f:gzs6b8"
     },
     {
-      "text": "`cairn logs <site>` reads the site's records from Workers Observability.",
-      "id": "f:q9ylqa"
+      "text": "`cairn logs <site>` reads the site's records from Workers Observability, where `<site>` is the site id that `cairn sites list` prints.",
+      "id": [
+        "f:q9ylqa",
+        "f:22fod0"
+      ]
     },
     {
       "text": "`cairn health` fails its `errors` check when the engine's error-level records within the `--since` window, `24h` by default, exceed `--error-threshold`, `5` by default.",
@@ -166,7 +169,7 @@
       "id": "f:mreycz"
     },
     {
-      "text": "No record carries a magic-link token, a session ID, or a magic link's contents.",
+      "text": "No record carries a sign-in token, a session id, or a sign-in link's contents.",
       "id": "f:wi766c"
     },
     {
@@ -360,6 +363,32 @@
     {
       "text": "The row needs no code change, and the editor signs in again.",
       "id": "no-claim"
+    },
+    {
+      "text": "A wrapped action logs `admin.action.csrf_refused` and answers SvelteKit's `error(403, ...)` when the post fails the CSRF check.",
+      "id": [
+        "f:m4ihla",
+        "f:yi9vag"
+      ]
+    },
+    {
+      "text": "The record is a warning whose fields the [log events](../reference/log-events.md) reference lists.",
+      "id": [
+        "f:m4ihla",
+        "f:yi9vag"
+      ]
+    },
+    {
+      "text": "`devBackendHandle` runs no CSRF check, so under the dev backend this record is the first trace of a form that posts without a token.",
+      "id": "f:m4ihla"
+    },
+    {
+      "text": "Behind the guard, the same post stops earlier at `guard.refused` with reason `csrf`.",
+      "id": "f:m4ihla"
+    },
+    {
+      "text": "The fix is a code change that mounts `CsrfField` from `@glw907/cairn-cms/admin` in each form that posts to the action.",
+      "id": "f:fers77"
     },
     {
       "text": "`createSectionAction` logs `admin.action.rate_limit_absent` and runs the action with no limit when `config.rateLimit.resolve` returns no limiter.",
@@ -608,7 +637,7 @@
       "id": "f:vih1k1"
     },
     {
-      "text": "A sign-in channel logs `auth.channel.session.destroyed` on three paths, only for a live row, and the record carries a `correlationId` in place of the roster subject.",
+      "text": "An auth channel logs `auth.channel.session.destroyed` on three paths, only for a live row, and the record carries a `correlationId` in place of the roster subject.",
       "id": "f:vq634h"
     },
     {
@@ -753,8 +782,15 @@
       ]
     },
     {
-      "text": "In `.dev.vars.example`, add `CAIRN_FIXED_TODAY = \"\"`, then run `npx wrangler types --env-file .dev.vars.example` so the generated `Env` declares it.",
-      "id": "f:pe4vuc"
+      "text": "In `.dev.vars.example`, add `CAIRN_FIXED_TODAY = \"\"`, then regenerate `worker-configuration.d.ts` with the command its first lines record, so the generated `Env` declares it.",
+      "id": [
+        "f:pe4vuc",
+        "f:3ccbez"
+      ]
+    },
+    {
+      "text": "A scaffolded site records `npx wrangler types --env-file=.dev.vars.example --include-runtime=false`.",
+      "id": "f:3ccbez"
     },
     {
       "text": "Cloudflare's [local development environment variables](https://developers.cloudflare.com/workers/local-development/environment-variables/) page describes `.dev.vars`.",
@@ -858,7 +894,7 @@
       "id": "no-claim"
     },
     {
-      "text": "[Add a second sign-in group](add-a-second-sign-in-group.md) describes the sign-in channel whose session record this page reads.",
+      "text": "[Add a second sign-in group](add-a-second-sign-in-group.md) describes the auth channel whose session record this page reads.",
       "id": "no-claim"
     }
   ],

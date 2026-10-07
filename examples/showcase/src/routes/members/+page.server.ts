@@ -1,7 +1,6 @@
-// The showcase's gated members page. Folds the documented `+layout.server.ts` guard,
-// which reads the signed-in subject, into this
-// single page's load, since the fixture has exactly one member-facing view.
-// Sign-out lives here too, as the page's own named action.
+// The showcase's gated members page, the shape "Gate the member area" in
+// docs/extend/add-a-second-sign-in-group.md builds: its load resolves the signed-in subject and
+// redirects a visitor without one, and sign-out lives here as the page's own named action.
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { memberChannel } from '../../members/channel.js';

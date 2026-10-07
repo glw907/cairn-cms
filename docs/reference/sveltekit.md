@@ -576,7 +576,8 @@ seam's fail-open promise at its own call site, not merely by the sink's own disc
 holds it against both failure shapes: a sink that throws synchronously, and a sink that returns a
 rejecting promise. The rejecting case is reachable in practice, not theoretical: the seam's
 `(record) => void` type admits an async function through void-return bivariance, the same pressure
-that writes a sink following the `waitUntil` advice. `ctx.audit` catches the
+that writes a sink following the `waitUntil` advice in [Wire the audit
+sink](../extend/add-a-custom-admin-screen.md#wire-the-audit-sink). `ctx.audit` catches the
 synchronous throw directly and attaches a fire-and-forget rejection handler to a promise-returning
 result, so the handler's own result still returns exactly as if the sink had succeeded either way,
 and the failure logs `audit.sink.call_failed` (see [log events](./log-events.md)) rather
@@ -706,7 +707,8 @@ isolate tears down before it settles, so omitting it has to be a decision the ca
 purpose, with the drop risk understood. Inside a request, pass the `waitUntil` that
 `cloudflare:workers` exports.
 
-The sink is fail-open, the same convention as a hand-rolled one:
+The sink is fail-open, the same convention as [a hand-rolled
+one](../extend/add-a-custom-admin-screen.md#wire-the-audit-sink):
 it returns synchronously, before the insert settles, so a persist failure never fails the audited
 action, and a rejected insert logs `audit.sink.write_failed` (see [log events](./log-events.md))
 carrying the whole truncated record plus the error, since the audited action already completed and
@@ -761,7 +763,8 @@ actions. `createSectionAction` composes [`createAdminAction`](#createadminaction
 the single form read, the audit contract) with the same access-map check
 [`requireAccess`](#requireaccess) runs, an optional rate limit, and the section's own database
 binding, so a section's own actions need no hand-rolled precondition. This is the sanctioned
-shape for a custom section regardless of what any given site's own routes show.
+shape for a custom section regardless of what any given site's own routes show. See [Gate
+it](../extend/add-a-custom-admin-screen.md#gate-it) in Add a custom admin screen.
 
 The config is site-fixed, called once per section: `config.resolveDb` reads the section's own
 binding off the Worker env, and `config.rateLimit`, when set, names the binding and the
@@ -803,8 +806,8 @@ the derived default only. `createSectionAction` matches a `target` you declare v
 declared target carrying a group segment needs a map key in that exact form.
 
 `Env` does not infer from `resolveDb`'s parameter alone; annotate it, as the snippet below
-does, or pass explicit type arguments, else it collapses to `{}` and every downstream binding
-read stops typechecking usefully.
+does, or pass explicit type arguments, else `Env` infers as `unknown` and a binding read such as
+`env?.MEMBER_DB` fails to typecheck.
 
 Check order, refusals returned as SvelteKit `fail(...)`, fail-closed at every step but the rate
 limit, which deliberately degrades to open. Authorization runs before the database-binding
@@ -822,9 +825,11 @@ is deployed:
    returns `fail(429)`. This branch calls no `ctx.audit`: a limiter denial is back-pressure, not
    a domain-state change.
 3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
-   `admin.action.misconfigured`, and returns `fail(500)`: the guard never ran on this route.
-   Only [`createAuthGuard`](#createauthguard) may write `locals.cairnEditor` and `locals.cairnAccess`,
-   and it must be the last handle in the sequence to set them. This check runs before
+   `admin.action.misconfigured`, and returns `fail(500)`. The cause is a hook that set
+   `locals.cairnEditor` without the map, as `devBackendHandle` does when given no `access`.
+   [`createAuthGuard`](#createauthguard) attaches the map right after it sets the editor, so behind
+   the guard this check never refuses. The fix passes the same map to
+   `devBackendHandle({ access })`. This check runs before
    authorization out of necessity (a route cannot authorize against a map that was never
    attached) and leaks nothing per-editor: it is identical for every session.
 4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
@@ -948,7 +953,8 @@ to the browser that asked for it. `loginLoad` sets it on the GET, so a browser h
 posts anything, and `requestAction` reuses that value rather than rotating it. On the throttled
 branch, where the send cooldown suppresses a second email, `requestAction` also rebinds the live
 token to the requesting browser when the two disagree, which is what keeps repeated requests from
-locking an editor out of their own link.
+locking an editor out of their own link. See [the security
+model](../extend/security-model.md#browser-binding-for-sign-in) for the full behavior.
 
 `requestAction` awaits the send, so its `RequestOutcome` reflects the outcome. The awaited-send
 behavior dates to `0.38.0`, under the type's earlier name `RequestResult` and a `status`
@@ -964,8 +970,10 @@ a manual `wrangler d1 execute` insert. On a request whose normalized email match
 `editor` table is still empty, `requestAction` inserts the owner atomically (a single
 `INSERT ... WHERE NOT EXISTS` statement) before the normal magic-link flow proceeds, and logs
 `editor.bootstrapped`. Once any row exists the config grants nothing, and a non-matching email on
-an empty table behaves exactly as an unknown email. The hand-run `wrangler d1 execute` insert still works and stays documented
-as the fallback for a site that prefers it.
+an empty table behaves exactly as an unknown email. The hand-run `wrangler d1 execute` insert still
+works as the fallback for a site that prefers it. The tutorial step [Compose the runtime and the
+admin](../extend/add-cairn-to-a-sveltekit-app.md#compose-the-runtime-and-the-admin) sets
+`bootstrapOwner` for a new site.
 
 ```ts
 // src/routes/admin/login/+page.server.ts (per-route mounting)
@@ -1205,8 +1213,9 @@ branch unioned with every open `cairn/*` branch), and the in-use-but-unlisted ta
 `{}` and `unlisted` to `[]` while the committed `vocabulary` stays visible, since the strict gate lives
 on the save, not the load. `vocabularySaveAction` validates the posted vocabulary JSON, gates a delete on
 that strict cross-branch usage (an in-use value cannot be removed, failing closed), then
-read-modify-commits the `vocabulary` key into the same committed `src/lib/site.config.yaml` the tidy
-settings write, head-guarded and bouncing a stale-head conflict back to the screen.
+read-modify-commits the `vocabulary` key into the committed site-config YAML that the tidy settings
+write, at the path `editor.nav.configPath` names or at `src/lib/site.config.yaml` when the adapter
+declares no nav menu. The commit is head-guarded, and a stale-head conflict bounces back to the screen.
 `VocabularySaveFailure`, shown in the preceding signature, carries no export row of its own: a
 consumer reaches it as `Awaited<ReturnType<ContentRoutes['vocabularySaveAction']>>['data']`.
 

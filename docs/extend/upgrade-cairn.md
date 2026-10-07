@@ -5,6 +5,7 @@ Move your site onto a newer `@glw907/cairn-cms` version, and confirm nothing bro
 ## Precondition
 
 A `0.x` minor can break a documented seam, so an upgrade is never a blind bump.
+[Stability tiers](./architecture.md#stability-tiers) defines what each tier promises.
 
 ## Steps
 
@@ -97,8 +98,10 @@ after step 3:
 3. In the same call, delete the whole `csrf` block, and don't replace it with
    `trustedOrigins: ['*']`.
 4. In `src/app.d.ts`, delete `App.Platform`, and keep the `import '@glw907/cairn-cms/ambient';` line.
-5. Run `wrangler types --env-file .dev.vars.example`, so `worker-configuration.d.ts` carries the secret
-   names.
+5. Run `npx wrangler types --env-file=.dev.vars.example`, so `worker-configuration.d.ts` carries
+   the secret names. If `src/app.d.ts` references `@cloudflare/workers-types`, as a scaffolded
+   site's does, add `--include-runtime=false`, the command a scaffolded site's
+   `worker-configuration.d.ts` records on its first line.
 6. In your server code, import `env` and `waitUntil` from `cloudflare:workers` where you read
    `event.platform`. Wrap `resolve` in `withEnv` in a handle that wrote it.
 7. Import `Handle` from `@sveltejs/kit/hooks`, and move `$lib` to `#lib` through the `imports` field in
@@ -123,4 +126,5 @@ passed or skipped, and the admin loads and saves an entry without a new error.
 
 A doctor failure names its own condition and remedy. A type error after the bump usually traces
 directly to a `Consumers must:` line you haven't applied yet; re-read the changelog section for the
-version the error's import or field name last appeared in.
+version the error's import or field name last appeared in. See [Debug your site](./debug-your-site.md)
+for a runtime symptom that only shows up after deploy.

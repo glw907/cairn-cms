@@ -460,7 +460,7 @@
       ]
     },
     {
-      "text": "[Debug your site](debug-your-site.md) covers that failure and reading the logs in general.",
+      "text": "[Debug your site](debug-your-site.md#read-the-structured-logs) covers reading the logs.",
       "id": "no-claim"
     },
     {

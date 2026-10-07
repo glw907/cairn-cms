@@ -266,7 +266,7 @@ Filed 2026-09-30 from the extend arm's code-first gap sweep (finder: the sweep, 
 - **`scripter`.** Found by the 2026-09-30 extend gap sweep. Severity minor. `cairn-media-seed` downloads from the fixed path `<from>/media/<slug>.<hash>.<ext>` (`src/lib/media-seed/assemble.ts:117-123`) and reads a fixed `src/content/.cairn/media.json` (`src/lib/media-seed/bin.ts:135`), ignoring `assets.publicBase`, so a site that mounted its media route elsewhere cannot seed and the tool has no flag for it. A fix adds a base-path flag, or reads `assets.publicBase` from the config.
 - **`contributor`.** Found by the 2026-09-30 extend gap sweep. Severity minor. Comments at `src/lib/sveltekit/health.ts:1,9` and `src/lib/github/signing.ts:126` name `GET /admin/healthz`, but `parseAdminPath` resolves no such engine view; the scaffold mounts `/healthz` at the site root. A fix rewords the comments to name the site-mounted route.
 - **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor. `docs/reference/sveltekit.md:1207` says `vocabularySaveAction` writes "the same committed `src/lib/site.config.yaml`" the tidy settings write, but it writes `editor.nav.configPath` when declared (`src/lib/sveltekit/content-routes-settings.ts:198-199`), and the scaffold's file is `src/theme/site.config.yaml`. A fix rewords the sentence to name the configured path.
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor. `docs/reference/sveltekit.md:805` and `src/lib/sveltekit/section-action.ts:147-149` say an uninferred `Env` "collapses to `{}`", but tsc 6.0.3 under `--strict` infers `unknown`; the same wording sits at `docs/reference/auth-channel.md:38` and `src/lib/auth-channel/factory.ts:573` (same mechanism, not separately probed). A fix corrects all four to `unknown` after probing the second pair.
+- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor. `src/lib/sveltekit/section-action.ts:147-149` and `src/lib/auth-channel/factory.ts:537-539` say an uninferred `Env` "collapses to `{}`", but tsc 6.0.3 under `--strict` infers `unknown` for both factories; `{}` is only the type a narrowed `env?.X` read reports. R6 (2a unattended run, 2026-10-07) probed both pairs and fixed the two reference sentences (`docs/reference/sveltekit.md`, `createSectionAction`; `docs/reference/auth-channel.md`, `createAuthChannel`). An engine pass corrects the two code comments to `unknown`.
 - **`contributor`.** Found by the 2026-09-30 extend gap sweep. Severity minor (stale comment). The `setMenu` doc comment at `src/lib/nav/site-config.ts:354-356` says "YAML comments are not preserved", but a probe with the repo's `yaml` package showed comments outside the replaced block survive and only those inside it are lost. A fix narrows the comment to the replaced block.
 - **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor (misleading scaffold comment). The comment at `templates/waymark/src/theme/markdown-components.ts:124-129` says `resolveMedia` shares the throwing "build-backstop posture" with `resolveLinks`, but `createMediaResolver` returns `undefined` on a miss and the build succeeds. A fix drops `resolveMedia` from the comment's list.
 - **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor (misleading doc example). The `createSiteIndexes` doc example at `src/lib/delivery/site-indexes.ts:33` writes `import.meta.glob('...?raw', { eager: true })`, omitting `import: 'default'`, the form that makes the index build throw. A fix adds `import: 'default'` to the example.
@@ -903,7 +903,13 @@ resolution redraft (draft docs stage 2a, task 7b).
   pairs a declared vocabulary with the migration. The page puts the migration beside the add step
   and gives the failure a check without naming its shape. A fix catches the constraint failure
   and answers `fail(400)` naming the migration, or adds a `cairn doctor` condition beside
-  `auth.role-wiring-missing`.
+  `auth.role-wiring-missing`. R6 (2a unattended run, 2026-10-07) found the same gap on the
+  scaffold: `templates/waymark/migrations/` ships only `0000`, `0003`, and `0004`, while the
+  scaffold's `src/access.ts` invites a role vocabulary, so the first roster add of a declared role
+  hits `templates/waymark/migrations/0000_auth.sql:5`. `restrict-admin-access` now carries the
+  copy-and-apply step. A further fix ships `0001_roles.sql` in the scaffold, since role validity
+  already lives in the app layer, or makes the roster add name the missing migration, as
+  `src/lib/auth/store.ts:20-31` does for `0004`.
 - **`extender`.** Found by the add-a-second-sign-in-group page plan's revision on 2026-10-07
   (`f:69xbyh`, `f:vo4m61`, `f:86h9o6`). A channel whose Turnstile secret is unset answers every
   code request `challenge-required`, and nothing names the missing secret. The reference's worked
@@ -1212,15 +1218,42 @@ against the tree at `bd78ad83` plus the R5 closes.
   it. A fix renders the refusal inside the dialog, or closes the dialog on any result.
 - **`extender`.** Found by `docs/extend/debug-your-site.md` and
   `docs/extend/add-a-second-sign-in-group.md` re-tests (the 2a unattended run, R5, 2026-10-07;
-  `f:pe4vuc`). The scaffold records its type generation as `wrangler types
+  `f:pe4vuc`, `f:3ccbez`). The scaffold records its type generation as `wrangler types
   --env-file=.dev.vars.example --include-runtime=false`
   (`templates/waymark/worker-configuration.d.ts:2`), but no `package.json` script runs it
-  (`templates/waymark/package.json`), so each page restates a command. The second-sign-in page says
-  `npx wrangler types` (`docs/extend/add-a-second-sign-in-group.md:351-354`), which reads
-  `.dev.vars` and writes runtime types into a file of about 616 KB. The debug page adds `--env-file
-  .dev.vars.example` without `--include-runtime=false` (`docs/extend/debug-your-site.md:340`). A
-  variable set only in `.dev.vars` is typed only when `--env-file` names a file that carries it. A
-  fix adds a `types` script to the scaffold, and both pages run it (an R6 carry).
+  (`templates/waymark/package.json:10-26`), so each page restates the command. R6 (2a unattended
+  run, 2026-10-07) pointed `debug-your-site`, `add-a-second-sign-in-group`, and `upgrade-cairn` at
+  the command `worker-configuration.d.ts` records. `--include-runtime=false` is safe only where
+  `src/app.d.ts` references `@cloudflare/workers-types`, as the scaffold's does; a consumer whose
+  `app.d.ts` takes `ExecutionContext` and `D1Database` from the generated file's runtime section
+  loses them under that flag, so `upgrade-cairn` and `debug-your-site` state the flag as the
+  scaffold's case only. A hand-built site from `docs/extend/add-cairn-to-a-sveltekit-app.md`
+  has neither `.dev.vars.example` nor `worker-configuration.d.ts`: the tutorial names `wrangler
+  types` (`:208`) but never runs it, so no single instruction serves both audiences. A fix ships a
+  `cf-typegen` script in the scaffold (Cloudflare's own C3 convention) and gives the hand-built
+  tutorial the step.
+- **`extender`.** Found by R6 (2a unattended run, 2026-10-07). `docs/reference/` has no command
+  page for `cairn logs`, `cairn health`, or `cairn sites`. Only
+  `docs/reference/cli-cairn-json-output.md:30-36` names them, each by its JSON payload, so
+  `docs/extend/debug-your-site.md` names `cairn logs <site>` and the site id that `cairn sites list`
+  prints (`f:22fod0`) with no command reference to link. A fix adds the three command pages beside
+  `cli-cairn-doctor.md`, each with its arguments, flags, and exit codes.
+- **`extender`.** Found by R6 (2a unattended run, 2026-10-07). The reference arm calls the editor
+  roster an allowlist, while the rebuilt extend arm keeps "allowlist" for an exhaustive access map
+  and says "roster" for the editor table. The roster sense appears 16 times:
+  `docs/reference/log-events.md:19,59,60,107,111,112`, `docs/reference/auth-store.md:4,80,90,110,111,154,216`,
+  `docs/reference/admin.md:447-448`, and `docs/reference/sveltekit.md:963`. R6 changed only
+  `docs/extend/add-cairn-to-a-sveltekit-app.md`'s "allowlist lookup" to "roster lookup". A fix renames
+  the reference's roster sense in one sweep and repoints every inbound link to `auth-store.md`'s
+  "Reading the allowlist" heading, whose anchor the rename changes.
+- **`extender`.** Found by R6's scoped fact read (2a unattended run, 2026-10-07). The rebuilt
+  `docs/extend/security-model.md` carries no residual-risk line for the auth channel's resend
+  cooldown: "Limits of the auth channel" covers only the dev transport's roster oracle, and the
+  page names a cooldown only in its magic-link sections. `docs/reference/auth-channel.md`'s
+  `throttle.cooldownMs` row calls the cooldown "UX only", and its link for the reason pointed
+  there, so the relink had no 2a home and R6 dropped the link (`relink.json` index 59). A fix adds
+  the cooldown's residual risk to the security model's auth-channel limits, and the reference row
+  links it again.
 - **`extender`.** Found by `docs/extend/scaffolded-site-files.md`'s final reader (the 2a unattended
   run, R5, 2026-10-07). The scaffold's `src/lib/log.ts` still describes itself as the showcase's
   logger (`:1,7,10`) and declares `members.login.requested` (`:8`), an event from the members

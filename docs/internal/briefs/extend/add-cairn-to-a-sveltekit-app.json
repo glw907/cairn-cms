@@ -531,7 +531,7 @@
       "id": "f:g81luc"
     },
     {
-      "text": "When that email requests a sign-in while the `editor` table is empty, the engine inserts the owner row before the allowlist lookup.",
+      "text": "When that email requests a sign-in while the `editor` table is empty, the engine inserts the owner row before the roster lookup.",
       "id": "f:g81luc"
     },
     {
@@ -703,6 +703,20 @@
       ]
     },
     {
+      "text": "When the site later declares an access map, as [Restrict admin access](restrict-admin-access.md) does, the hooks module passes it to both `devBackendHandle({ access })` and `createAuthGuard({ access })`.",
+      "id": [
+        "f:u78zg6",
+        "f:7cv105"
+      ]
+    },
+    {
+      "text": "A dev backend given no `access` leaves the map unattached, so every section action answers `fail(500)` and logs [`admin.action.misconfigured`](debug-your-site.md#adminactionmisconfigured).",
+      "id": [
+        "f:u78zg6",
+        "f:1b3ye3"
+      ]
+    },
+    {
       "text": "With `CAIRN_DEV_BACKEND` set to `1`, the dev server opens `/admin` signed in as an owner, with no sign-in email.",
       "id": [
         "f:dqjkci",
@@ -758,10 +772,6 @@
     {
       "text": "Check that the hooks module names `__CAIRN_DEV_BUILD__` itself, with no imported constant in its place.",
       "id": "f:72mctx"
-    },
-    {
-      "text": "[Debug your site](debug-your-site.md) covers the dev backend's other failures.",
-      "id": "no-claim"
     },
     {
       "text": "Change `siteName` in the site config, confirm that the admin shell shows the new name, and then change it back.",
@@ -1005,10 +1015,6 @@
       "id": "f:n0laoh"
     },
     {
-      "text": "[Debug your site](debug-your-site.md) covers the recovery from each content failure.",
-      "id": "no-claim"
-    },
-    {
       "text": "The production milestone registers a GitHub App that commits to the site's repository, so the repository exists on GitHub first.",
       "id": "f:rp65d2"
     },
@@ -1156,7 +1162,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The App yields the App ID, the Installation ID, and the private key, and the database's create output carries the id the `AUTH_DB` entry needs.",
+      "text": "The App yields the App ID, the installation ID, and the private key, and the database's create output carries the id the `AUTH_DB` entry needs.",
       "id": "f:e5vm42"
     },
     {
@@ -1250,7 +1256,7 @@
       "id": "f:rp65d2"
     },
     {
-      "text": "In the installation settings address that GitHub opens after the install, note the trailing number, which is the Installation ID.",
+      "text": "In the installation settings address that GitHub opens after the install, note the trailing number, which is the installation ID.",
       "id": "f:nbnq9c"
     },
     {
@@ -1265,7 +1271,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The App ID and Installation ID identify the App and grant nothing, so they pass directly into `createGithubApp` in the adapter source.",
+      "text": "The App ID and installation ID identify the App and grant nothing, so they pass directly into `createGithubApp` in the adapter source.",
       "id": [
         "f:zcwf5i",
         "f:gyu7jc"
@@ -1541,10 +1547,6 @@
       ]
     },
     {
-      "text": "[Debug your site](debug-your-site.md) covers the recovery for each failure.",
-      "id": "no-claim"
-    },
-    {
       "text": "Apply `0003_preview.sql` to the local development database beside the two that every site applies, and find it in the apply output.",
       "id": [
         "f:rn62i1",
@@ -1663,8 +1665,11 @@
       "id": "no-claim"
     },
     {
-      "text": "When the message does not arrive or still carries the engine's defaults, see [Debug your site](debug-your-site.md).",
-      "id": "no-claim"
+      "text": "When the message does not arrive, look for an `auth.link.send_failed` record, whose fields the [log events](../reference/log-events.md) reference lists.",
+      "id": [
+        "f:4tmw56",
+        "f:ug1ekb"
+      ]
     },
     {
       "text": "You wired the engine into a SvelteKit app by hand, from the kit config through the admin routes.",

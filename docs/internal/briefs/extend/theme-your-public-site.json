@@ -899,7 +899,7 @@
       "id": "no-claim"
     },
     {
-      "text": "If a finding persists, work through [Debug your site](debug-your-site.md).",
+      "text": "If a finding persists, see [Run cairn-audit on your site](run-cairn-audit-on-your-site.md).",
       "id": "no-claim"
     },
     {

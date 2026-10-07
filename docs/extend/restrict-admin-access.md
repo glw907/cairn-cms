@@ -105,7 +105,7 @@ The adapter's `access` gates the engine's screens and the sidebar, and the guard
 
 The adapter in `src/theme/cairn.config.ts` takes `roles` and `access` as optional members.
 The engine's screens, their write actions, and the sidebar read the adapter's `access`, and while it is unset they stay open to every editor-capability session.
-The scaffold passes its map only to `createAuthGuard`, so a scaffolded site's engine screens stay open until the adapter carries the map too.
+The scaffold passes its map to the two hook handles and not to the adapter, so a scaffolded site's engine screens stay open until the adapter carries the map too.
 
 The guard, `createAuthGuard` in `src/hooks.server.ts`, gates every `/admin` path except the sign-in page and its auth endpoints.
 It runs on every guarded request and attaches the map to `locals.cairnAccess`, which is why `requireAccess` takes no map argument.
@@ -225,6 +225,21 @@ A new screen's entry therefore shows before its route has a key, and every sessi
 ## Deploy the changes
 
 The roster and the per-role checks run on the deployed site, so the new roles and the map must reach it first.
+The site's auth database still limits the roster to owner and editor, so the migration that lifts that limit runs before the deploy.
+
+To apply the migration, follow these steps:
+
+1. In the project directory, copy `0001_roles.sql` from the package's `migrations` directory into the site's `migrations` directory.
+
+   ```bash
+   cp node_modules/@glw907/cairn-cms/migrations/0001_roles.sql migrations/
+   ```
+
+2. In the project directory, apply the migration to the remote database with `wrangler d1 migrations apply` and the `--remote` flag.
+
+   ```bash
+   npx wrangler d1 migrations apply <auth-database-name> --remote
+   ```
 
 To deploy the changes, take the path that matches the site:
 
@@ -298,7 +313,7 @@ To verify the map, run these checks in order:
 ## Resolve a refusal
 
 A refusal, or an open screen the map should close, traces to a missing key or `target`.
-It can also trace to a reader never given `roles` or `access`.
+It can also trace to a reader never given `roles` or `access`, or to an auth database without the roles migration.
 
 To find the cause, run these checks in order:
 
@@ -315,6 +330,11 @@ To find the cause, run these checks in order:
 3. If an engine screen admits a role the map excludes, check whether the adapter was given `access`.
 
    The same section holds the fix.
+
+4. If adding the test editor with the webmaster role fails on `/admin/editors`, check whether `0001_roles.sql` was applied to the remote database.
+
+   Until it runs, the roster holds only owner and editor.
+   [Deploy the changes](#deploy-the-changes) holds the fix.
 
 [Debug your site](debug-your-site.md) covers reading the logs and the admin's other events.
 

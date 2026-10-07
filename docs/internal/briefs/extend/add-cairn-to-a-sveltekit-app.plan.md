@@ -342,7 +342,7 @@ sample (f:87hc1y).
   (the site's config sets no `csrf` option, so SvelteKit's origin check runs ahead of every handle
   on every route, `/admin` included, and the guard adds its double-submit token on top), f:ytwrgp
   (a `'*'` entry in `csrf.trustedOrigins` turns the check off on every route, and the doctor's
-  `config.csrf-trusted-origins` check fails on it; the page never writes a `trustedOrigins`
+  `config.csrf-trusted-origins` check warns on it; the page never writes a `trustedOrigins`
   block), f:n52h8f (the scaffold's `src/app.d.ts`
   declares the `__CAIRN_DEV_BUILD__` boolean global; the fact that backs step 3, a cross-arm
   citation the plan adds on the fact read's round-2 blocking finding at `:493`, which found the
@@ -873,6 +873,7 @@ is superseded. The correction changed only the sentences these items touch:
   adds them.
 - Further R4 fixes: the `App.Platform` clause leads with the adapter fact; the doctor clause names `cairn doctor` (f:ytwrgp amended to match); the existing-app notes sit together in the opening, with f:skeche's `ERESOLVE` sentence moved there and told to upgrade; `adapter` is "a key", not "a sibling key"; the refusal sentence reads "the Worker env" (f:ntdafg amended, f:swjwxb added to its cite); one sentence says SvelteKit skips the origin check under `vite dev` (f:3cekcy); f:pgeeq3 filed for the `#lib` imports.
 - R4 re-test fix (svelte-check on a fresh SvelteKit 3 scaffold): the hooks sample imports `Handle` from `@sveltejs/kit/hooks` (f:hk3hdl), and its `process.env` read, which `vite dev` needs (f:f21bcz), typechecks through a `/// <reference types="node" />` line and an `@types/node` install in step 1, the package the template also carries. One sentence after the `if` sentence says why the flag test reads `process.env` (f:f21bcz).
+- R4 final fix: f:4lcto0 (filed `[verified]`) backs the Node types install and the reference line, cited with f:g48ytv (the `types` array that turns off automatic `@types` inclusion) on step 1 and step 4, so f:g48ytv moves from cut to carried. The doctor clause reads "warns on it" (f:ytwrgp is a warning-severity check; `security-model.md` says warns).
 
 ## Dispositions, every fact id
 
@@ -931,7 +932,7 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | f:4ckvnm | carried | Deploy a bare SvelteKit site (the opening's existing-app `svelte.config.js` sentences: the file fails the build, and the app moves its kit options into `sveltekit()` and deletes it) |
 | f:7rehzh | carried | Wire the dev backend (no `csrf` option; SvelteKit's origin check on every route, `/admin` included; the guard's double-submit token on top) |
 | f:3cekcy | carried | Wire the dev backend (the origin check is one global setting on every route, cited beside f:7rehzh) |
-| f:ytwrgp | carried | Wire the dev backend (a `'*'` `trustedOrigins` entry turns the check off; the doctor's `config.csrf-trusted-origins` check fails on it) |
+| f:ytwrgp | carried | Wire the dev backend (a `'*'` `trustedOrigins` entry turns the check off; the doctor's `config.csrf-trusted-origins` check warns on it) |
 | f:pgeeq3 | carried | Deploy a bare SvelteKit site (the `#lib` imports in the admin and entry route samples; the fact backs the code blocks, no page sentence cites it) |
 | f:9ug9mo | carried | Describe the Worker and deploy it; Verify the deployed site; the exercise; the introduction's milestone 1 line |
 | f:jbt2hh | carried | Deploy the production build and read the refusal; Install and wire the engine (the opening's reason for the dev backend); Resolve a production failure |
@@ -968,7 +969,8 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | f:skeche | carried | Create the project on the Cloudflare adapter (the `^3` peer range; one sentence for an existing app still on `^2`, which stops with `ERESOLVE`) |
 | f:ghzx9c | carried | Create the project on the Cloudflare adapter (the SvelteKit 3 scaffold since October 1, 2026) |
 | f:jzm5ef | carried | Create the project on the Cloudflare adapter (the adapter 8 swap and its peers) |
-| f:g48ytv | cut | The SvelteKit 3 scaffold's `tsconfig.json` already extends `$app/tsconfig` and needs no replacement, so no step names the file; the SvelteKit 2 `tsconfig.json` step it backed is deleted. |
+| f:g48ytv | carried (reinstated in the R4 final fix) | Wire the dev backend (step 1's Node types install and step 4's hooks module, cited with f:4lcto0; no step names the `tsconfig.json` file) |
+| f:4lcto0 | carried (added in the R4 final fix; `[verified]`) | Wire the dev backend (step 1's `@types/node` install; step 4's `/// <reference types="node" />` line) |
 | f:hk3hdl | carried (added in the R4 re-test fix; code only) | Wire the dev backend (the hooks sample's `Handle` import) |
 | f:ibis7z | carried | Deploy a change (the home page's path) |
 | f:thgmpz | carried | Add the Email Sending binding and name the origin (the `routes` Custom Domain entry) |

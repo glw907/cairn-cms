@@ -661,7 +661,7 @@
       "id": "f:7rehzh"
     },
     {
-      "text": "A `'*'` entry in `csrf.trustedOrigins` turns the origin check off on every route, and the `config.csrf-trusted-origins` check of `cairn doctor` fails on it.",
+      "text": "A `'*'` entry in `csrf.trustedOrigins` turns the origin check off on every route, and the `config.csrf-trusted-origins` check of `cairn doctor` warns on it.",
       "id": "f:ytwrgp"
     },
     {
@@ -674,7 +674,11 @@
     },
     {
       "text": "In the project directory, install the dev package and Node's type definitions as development dependencies:",
-      "id": "f:9mx680"
+      "id": [
+        "f:9mx680",
+        "f:g48ytv",
+        "f:4lcto0"
+      ]
     },
     {
       "text": "In `vite.config.ts`, add the define plugin:",
@@ -692,7 +696,11 @@
     },
     {
       "text": "In the `src` directory, create `hooks.server.ts`:",
-      "id": "f:f21bcz"
+      "id": [
+        "f:f21bcz",
+        "f:g48ytv",
+        "f:4lcto0"
+      ]
     },
     {
       "text": "With `CAIRN_DEV_BACKEND` set to `1`, the dev server opens `/admin` signed in as an owner, with no sign-in email.",
@@ -1729,10 +1737,6 @@
     {
       "id": "f:tkpmxr",
       "reason": "Subordinated to docs/reference/log-events.md, the guard.refused row (re-verified: reason dev_backend_in_prod, a 503 when CAIRN_DEV_BACKEND is set in a deployed runtime); the page names the fence's third layer in one clause from f:9mx680."
-    },
-    {
-      "id": "f:g48ytv",
-      "reason": "The SvelteKit 3 scaffold's tsconfig.json already extends $app/tsconfig and needs no replacement, so no step names the file; the SvelteKit 2 tsconfig step it backed is deleted (R4 Kit 3 correction, 2026-10-07)."
     },
     {
       "id": "f:d2jumm",

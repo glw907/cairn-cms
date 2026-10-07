@@ -287,7 +287,7 @@ To turn on identity mode, follow these steps:
    // src/hooks.server.ts
    import { sequence } from '@sveltejs/kit/hooks';
    import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-   import { accessIdentity } from '$lib/access-identity.js';
+   import { accessIdentity } from '#lib/access-identity.js';
    import { access } from './access.js';
    import { theme } from './theme-handle.js';
 

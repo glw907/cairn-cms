@@ -92,9 +92,9 @@ func TestConfigPublicOrigin(t *testing.T) {
 }
 
 // TestLoopbackHostAgreement pins that config.public-origin and config.csrf-trusted-origins
-// draw the loopback line in the same place: localhost, 127.0.0.1, and the IPv6 loopback ::1
-// (RFC 4291 section 2.5.3) are local to both, and a lookalike or routable host is local to
-// neither.
+// draw the loopback line in the same place, and that it is the engine's: requireOrigin
+// (src/lib/env.ts) treats only localhost and 127.0.0.1 as local, so the IPv6 loopback, a
+// lookalike, and a routable host are local to neither check.
 func TestLoopbackHostAgreement(t *testing.T) {
 	tests := []struct {
 		host      string
@@ -102,7 +102,7 @@ func TestLoopbackHostAgreement(t *testing.T) {
 	}{
 		{"localhost", true},
 		{"127.0.0.1", true},
-		{"[::1]", true},
+		{"[::1]", false},
 		{"localhost.example.com", false},
 		{"[2001:db8::1]", false},
 		{"192.168.1.5", false},

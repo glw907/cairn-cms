@@ -73,12 +73,11 @@ New findings start below this line, one per finding, with its perspective and a 
 - **`extender`.** Found by the cairn-themes Survey S1 viewport grade (visual-verifier, 2026-10-07; verified by the conductor against daisyUI 5.7.47). daisyUI 5 has no theme variable for a form field's ground: `.input` and `.select` paint on `--color-base-100`, so a theme whose fields sit on their own ground (Survey's white light fields and sunken dark fields) must add a component override, and `cairn-public.css` offers no `--cairn-*` role for it. `theme-contrast` therefore never measures field text on the real field ground. The same holds for a field's resting border: daisyUI draws input, select, and textarea borders in `base-200` and the checkbox and radio ring in a 20% `base-content` mix, all under the 3:1 that WCAG 1.4.11 asks of a control boundary (Survey measured 1.36:1 and 1.48:1; its close-time a11y review caught both, and no `cairn-audit` rule did). `border-contrast` would, but `--rendered` drives a running admin, so a public theme's controls are never measured. A fix adds field-ground and field-border roles to the public theme contract, mapped onto `.input`, `.select`, `.textarea`, `.checkbox`, and `.radio` in `cairn-public.css`, plus `theme-contrast` pairs for field text on the field ground and the field border against `base-100` at 3:1.
 - **`extender`.** Found by the cairn-themes Survey S1 viewport grades, rounds 1 and 2 (visual-verifier, 2026-10-07; verified by the conductor in `daisyui/components/*.css` 5.7.47). daisyUI 5 ignores `--color-base-300` for most component borders: `card-border`, `input`, `select`, and `textarea` hard-wire `--color-base-200`, and `.list-row` draws its divider in `color-mix(in oklab, var(--color-base-content) 5%, transparent)`. A theme whose border role is `base-300` gets frames that nearly vanish on `base-100`, and finds them one grader round at a time (Survey needed two). A fix maps these component borders onto one border role in `cairn-public.css`, or at least lists the components and the override recipe in the re-skin docs, so each theme stops rediscovering them.
 
-- **`engine`.** `requireOrigin` (`src/lib/env.ts`) lets http through only for `localhost` and `127.0.0.1`,
-  but `cairn doctor`'s `config.public-origin` check now also treats the IPv6 loopback `::1` as local (RFC 4291
-  section 2.5.3, matching its `csrf.trustedOrigins` note). A `PUBLIC_ORIGIN` of `http://[::1]:5173` passes the
-  doctor and throws `config.public-origin-invalid` at runtime. Fix: add `::1` to `requireOrigin`'s local test
-  (the engine side of a one-line pair), or take it back out of the doctor's `isLoopbackHost`. Found by the
-  `tool/internal/doctor` cleanup lane, 2026-10-07.
+- **`engine`.** `requireOrigin` (`src/lib/env.ts`) treats `localhost` and `127.0.0.1` as local but not `::1`,
+  the IPv6 loopback (RFC 4291 section 2.5.3), so a `PUBLIC_ORIGIN` of `http://[::1]:5173` throws
+  `config.public-origin-invalid`. An engine pass decides whether to add `::1` to its local test; the doctor's
+  `isLoopbackHost` (`tool/internal/doctor/check_origin.go`) mirrors the engine's set and follows the decision.
+  Found by the `tool/internal/doctor` cleanup lane, 2026-10-07.
 - **`extend`.** SvelteKit 3 remote functions (`/_app/remote/...`) are not `/admin` paths, so a site-built admin
   remote command gets no guard session, no Rule 1 token check, and no security headers (Kit's `is_remote_forbidden`
   gives same-origin protection only). The extend arm should say a site-built admin remote function resolves the

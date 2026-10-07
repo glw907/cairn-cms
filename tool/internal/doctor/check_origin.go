@@ -30,12 +30,14 @@ const (
 	sourceEnvironment  = "environment"
 )
 
-// isLoopbackHost reports whether hostname, as url.URL.Hostname returns it, names the local machine:
-// localhost, 127.0.0.1, or the IPv6 loopback ::1 (RFC 4291 section 2.5.3). The match is exact, so a
-// lookalike host like localhost.example.com is not loopback. Plain http is safe only there, for
-// config.public-origin and for a config.csrf-trusted-origins entry alike.
+// isLoopbackHost reports whether hostname, as url.URL.Hostname returns it, is a host the engine
+// treats as local: exactly localhost or 127.0.0.1, the set requireOrigin in src/lib/env.ts is the
+// source of truth for. The IPv6 loopback ::1 is not in it, so the doctor never passes a
+// config.public-origin the engine rejects. The match is exact, so a lookalike host like
+// localhost.example.com is not local. config.public-origin and the config.csrf-trusted-origins
+// plain-http note both use it, so they agree.
 func isLoopbackHost(hostname string) bool {
-	return hostname == "localhost" || hostname == "127.0.0.1" || hostname == "::1"
+	return hostname == "localhost" || hostname == "127.0.0.1"
 }
 
 // validatePublicOrigin applies the engine's requireOrigin rules (src/lib/env.ts) to an

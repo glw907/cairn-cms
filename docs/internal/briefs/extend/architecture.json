@@ -269,7 +269,7 @@
       "id": "f:5uhx5o"
     },
     {
-      "text": "A `/sveltekit` export bundled with plain esbuild outside Vite, such as `createD1AuditSink` in a Cron Worker, needs no alias for `$app/environment`, because [`loadPreview`](../reference/sveltekit.md#loadpreview) on the same subpath imports that module dynamically at call time.",
+      "text": "A `/sveltekit` export bundled with plain esbuild outside Vite, such as `createD1AuditSink` in a Cron Worker, needs no alias for `$app/env`, because [`loadPreview`](../reference/sveltekit.md#loadpreview) on the same subpath imports that module dynamically at call time.",
       "id": "f:ppqu4v"
     },
     {

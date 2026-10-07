@@ -58,7 +58,7 @@ The map follows three placement rules.
 - Nothing on `/sveltekit` is a `.svelte` file.
 - Admin Svelte components live on `/admin`, built-in public components live on `/public`, and no `/components` subpath exists.
 
-The root barrel carries no server route, no Svelte component, and no per-request framework binding, so a build script can import it outside any request, as the [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin does inside the app's Vite graph. A `/sveltekit` export bundled with plain esbuild outside Vite, such as `createD1AuditSink` in a Cron Worker, needs no alias for `$app/environment`, because [`loadPreview`](../reference/sveltekit.md#loadpreview) on the same subpath imports that module dynamically at call time. Beside the map's placement rules, a short list of seams fixes where a site hands the engine code or data.
+The root barrel carries no server route, no Svelte component, and no per-request framework binding, so a build script can import it outside any request, as the [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin does inside the app's Vite graph. A `/sveltekit` export bundled with plain esbuild outside Vite, such as `createD1AuditSink` in a Cron Worker, needs no alias for `$app/env`, because [`loadPreview`](../reference/sveltekit.md#loadpreview) on the same subpath imports that module dynamically at call time. Beside the map's placement rules, a short list of seams fixes where a site hands the engine code or data.
 
 ## Seams
 

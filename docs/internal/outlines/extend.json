@@ -1781,7 +1781,7 @@
       ],
       "covers": [
         "The one-paragraph premise: a site declares one adapter, and every route factory, admin screen, and delivery helper reads its behavior from it.",
-        "The export map as six functional groups plus the subpaths outside them (delivery/head, delivery/data, reproductions, log), and the placement rules: nothing on the root barrel imports SvelteKit, nothing on /sveltekit is a .svelte file, no /components subpath; a /sveltekit export bundled outside Vite (a Cron Worker using the audit sink) needs no $app/environment alias.",
+        "The export map as six functional groups plus the subpaths outside them (delivery/head, delivery/data, reproductions, log), and the placement rules: nothing on the root barrel imports SvelteKit, nothing on /sveltekit is a .svelte file, no /components subpath; a /sveltekit export bundled outside Vite (a Cron Worker using the audit sink) needs no $app/env alias.",
         "The three places a site touches the engine (adapter via the root barrel, the SvelteKit layer, the admin mount) and what is engine-internal behind them.",
         "The named seams a site extends through (content map, render, access map and roles, identity, custom admin routes, navLayout, BackendProvider) with one line each and a link to the page that uses it; BackendProvider links its reference entry, since no page builds a second backend.",
         "The write path: save to holding branch, pending entry as branch existence, Publish to main with the editor as author and no committer, the deploy, and the manifest rebuilt and verified at build.",

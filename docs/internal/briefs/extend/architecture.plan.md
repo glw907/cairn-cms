@@ -230,7 +230,7 @@ hand-offs, and the structural edit asked for them back as closing sentences.
   any request, as the `cairnManifest` plugin does inside the app's Vite graph (`f:5uhx5o`; link
   the `cairnManifest` entry in `docs/reference/vite.md`); a `/sveltekit` export bundled with
   plain esbuild outside Vite, such as `createD1AuditSink` in a Cron Worker, needs no alias for
-  `$app/environment`, because `loadPreview` on the same subpath imports that module dynamically
+  `$app/env`, because `loadPreview` on the same subpath imports that module dynamically
   at call time (`f:ppqu4v`; link the `loadPreview` entry in `docs/reference/sveltekit.md`, which
   states the dynamic import).
 - **Hand-off:** The map says where each export lives, and the seams say which of them a site

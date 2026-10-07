@@ -71,10 +71,17 @@ New findings start below this line, one per finding, with its perspective and a 
   `getRequestEvent` works only synchronously. Nothing in cairn, the showcase, or Waymark calls it today, so the
   configs deliberately carry no flag (no flag for an unused feature); revisit with the remote-functions watch
   (`trig_0193pPNoyxsTGeUhF1xx7woa`). Close `cloudflare-workers-reviewer`, 2026-10-06.
-- **`admin`.** Error documents on public admin paths (a thrown 404 on `/admin/auth/<unknown>`, a failed admin layout
-  load) render the root `+error.svelte` outside the shell, so they carry no referrer meta; the guard's header covers
-  production but not the dev-backend handle. No form, so no lockout risk. Optional fix: an `admin/+error.svelte` that
-  emits the meta. Close `svelte-reviewer`, 2026-10-06.
+- **`admin`.** Error documents on public admin paths (a thrown 404 on `/admin/auth/<unknown>`, a
+  failed admin layout load) render the root `+error.svelte` outside the shell, so they carry no
+  referrer meta; the guard's header covers production but not the dev-backend handle. No form, so no
+  lockout risk. Optional fix: an `admin/+error.svelte` that emits the meta. Close `svelte-reviewer`,
+  2026-10-06. Extended by `docs/extend/restrict-admin-access.md` (the 2a unattended run, R5,
+  2026-10-07, the page's final reader): the same missing `admin/+error.svelte` sends every admin
+  403, from `requireAccess` or an engine screen's `requireEngineAccess`
+  (`src/lib/sveltekit/guard.ts:442-446`), to the root `templates/waymark/src/routes/+error.svelte`,
+  which rebuilds the public chrome (`SiteHeader`, `SiteFooter`, `:16-17,27,48`), so a refused editor
+  leaves the admin shell for a public-site error page. One `admin/+error.svelte` inside the shell
+  fixes both.
 - **`chassis`.** `examples/showcase/src/theme/components/SiteHeader.svelte:66` starts `$state(browser ?
   resolveTheme(...) : light)`, so server and client start from different values (a hydration-mismatch risk for the
   theme toggle's icon and label); start from `light` and resolve in `onMount`. And `members/login/+page.svelte:48-50`
@@ -715,8 +722,8 @@ resolution redraft (draft docs stage 2a, task 7b).
   gate's window check catches the next shift.
 
 - **`extender`.** Found by the restrict-admin-access page inputs on 2026-10-07 (`f:cvzb8z`,
-  `f:iwf4nu`). One access map has two wiring points that nothing checks agree: the engine's
-  screens, write actions, and sidebar read the adapter's `access` (`src/lib/content/compose.ts:41`,
+  `f:iwf4nu`). One access map has two wiring points that nothing checks agree: the engine's screens,
+  write actions, and sidebar read the adapter's `access` (`src/lib/content/compose.ts:41`,
   `src/lib/sveltekit/content-routes-media-library.ts:67`), while `requireAccess` and
   `createSectionAction` read the guard's `locals.cairnAccess` (`src/lib/sveltekit/guard.ts:479`,
   `src/lib/sveltekit/section-action.ts:275`). The scaffold passes its map only to the guard
@@ -725,7 +732,15 @@ resolution redraft (draft docs stage 2a, task 7b).
   on the media screen, with no error and no warning. Roles have the matching check
   (`auth.role-wiring-missing`, `src/lib/diagnostics/conditions.ts:168-176`); the access map has
   none. A fix has the guard read the adapter's map, or adds an `auth.access-wiring-missing`
-  condition beside the roles one.
+  condition beside the roles one. Extended by `docs/extend/restrict-admin-access.md` (the 2a
+  unattended run, R5, 2026-10-07, the page's round-2 fact read): the stock scaffold already ships
+  the split. Its adapter's `navLayout` lists Signups
+  (`templates/waymark/src/theme/cairn.config.ts:214`), and the sidebar resolves that entry against
+  the adapter's map (`src/lib/sveltekit/content-routes-shell.ts:187`), which the scaffold never
+  sets, so every editor sees Signups. The route admits only owners through the guard's map
+  (`templates/waymark/src/hooks.server.ts:20,22`, `templates/waymark/src/access.ts:22-24`). The
+  `src/access.ts` comment (`:3-5`) names both hook branches and never the adapter. Promote with this
+  entry to `ROADMAP.md`.
 
 - **`extender`.** Found by the add-a-second-sign-in-group page inputs on 2026-10-07 (`f:fcqs22`,
   `f:tnvu0a`, `f:l2xruc`, `f:0l7si2`). `createChannelDb` is the documented double for a site's
@@ -781,16 +796,6 @@ resolution redraft (draft docs stage 2a, task 7b).
   `requireAccess` call, but the separate entry is optional, and a deeper literal key under the
   screen's key would instead make a dynamic sibling route refuse every session (`f:8anql1`). A fix
   narrows `f:lmtfkt` to the `requireAccess` call and rewords that step.
-- **`contributor`.** Found by the restrict-admin-access page plan on 2026-10-07 (two
-  facts-container holes). First, `f:8ciz2s` says `config.access_unmapped` fires when a map covers
-  "some, but not all" of the concepts and fixed screens, but `validateAccessComposition` warns
-  whenever any one is unmapped, a map of route keys alone included, since only screen-id keys
-  count (`src/lib/sveltekit/admin-nav.ts:323-329`); the `docs/reference/log-events.md` row states it
-  correctly. Second, no fact names the media library's address, `/admin/media`, or states that an
-  engine screen refuses with `error(403, 'Access denied')` and logs `auth.access.refused`
-  (`requireEngineAccess`, `src/lib/sveltekit/guard.ts:442`). The page's per-role check on the media
-  screen therefore names the refusal without its status or path. A fix rewords `f:8ciz2s` and adds
-  the engine-screen refusal fact.
 - **`extender`.** Found by the restrict-admin-access page plan on 2026-10-07 (`f:8anql1`,
   `f:uhoyun`). Adding a deeper route key turns a route with a dynamic or rest parameter under the
   shallower key into a refusal for every session, owner included (`src/lib/auth/access.ts:107-130`,
@@ -1111,28 +1116,22 @@ resolution redraft (draft docs stage 2a, task 7b).
   does read, the page must hedge that this one is the site's own name. Either give it a site-owned
   name in the recipe or ship the fixed-today reader as a narrow seam.
 
-- **`contributor`.** Found by the debug-your-site page inputs on 2026-10-07. Two outline facts
-  drifted from the code. `f:i1dayf` says a throwing `key()` logs `admin.action.rate_limit_absent`,
-  but `src/lib/sveltekit/section-action.ts:229-240` logs `admin.action.rate_limit_failed` for it
-  (its own `Source:` text says so); `f:cp0tek` restates it correctly. `f:eywrq8` says the logger is
-  exported from no package subpath, but `/log` exports `createLogger` (`src/lib/log/public.ts:4`);
-  `f:mreycz` restates it. `f:vs9g9e` (`internal.ts:445-468`) and `f:v1jj2k`
-  (`admin-action.ts:146-153,212-216`) carry stale line pointers. The independent fact read should
-  correct or retag the two drifted bullets.
-
-- **`extender`.** Found by the debug-your-site page plan on 2026-10-07 (`f:nup3og`, `f:v1jj2k`,
-  `f:1b3ye3`). `admin.action.misconfigured` with `reason: 'access_map_not_attached'` is the
-  documented signal that the admin guard never ran on a route, but the guard sets
-  `locals.cairnEditor` and `locals.cairnAccess` together (`src/lib/sveltekit/guard.ts:342-348,363-368`)
-  and returns early on a non-admin path (`guard.ts:210-211`). A `createSectionAction` route the
-  guard never handles therefore fails `createAdminAction`'s session check first, logging
-  `admin.action.session_absent` and redirecting to `/admin/login`
-  (`src/lib/sveltekit/admin-action.ts:207-211`), which reads as a lapsed session. The
-  `access_map_not_attached` branch, and the comment at `guard.ts:364-367` that promises it, run
-  only when site code sets `cairnEditor` without `cairnAccess`. The page states each reason as the
-  code sets it and names neither event as the signal for a route outside the guard. A fix lets
-  the wrapper tell a missing guard from a lapsed session, or files a verified fact that names
-  `session_absent` as that signal.
+- **`extender`.** Found by the debug-your-site page plan on 2026-10-07 and corrected by
+  `docs/extend/debug-your-site.md`'s fact read (the 2a unattended run, R5, 2026-10-07; `f:nup3og`,
+  `f:u78zg6`). `admin.action.misconfigured` with `reason: 'access_map_not_attached'` is documented
+  as "the guard never ran on this route": `docs/reference/sveltekit.md:825-827`,
+  `docs/reference/log-events.md:80`, and the code comments at `src/lib/sveltekit/guard.ts:364-367`
+  and `src/lib/sveltekit/section-action.ts:129-130`. `sveltekit.md:826` adds that only
+  `createAuthGuard` may write `locals.cairnEditor` and `locals.cairnAccess`. Behind the guard the
+  reason cannot fire: the guard sets both together (`guard.ts:363-368`), and a request with no
+  editor stops at `createAdminAction`'s session check first
+  (`src/lib/sveltekit/admin-action.ts:207-211`). It fires under `devBackendHandle` called without
+  `access`, which mints `cairnEditor` and leaves `cairnAccess` undefined on purpose
+  (`packages/cairn-cms-dev/src/handle.ts:64-75`). A fix rewords both reference rows and both
+  comments to name a hook that sets the editor without the map, `devBackendHandle` without `access`
+  first, with `devBackendHandle({ access })` as the fix. A route the guard never handles logs
+  `admin.action.session_absent` and redirects to `/admin/login` instead, which reads as a lapsed
+  session; a second fix lets the wrapper tell a missing guard from a lapsed session.
 
 - **`extender`.** Found by the debug-your-site page plan on 2026-10-07 (`f:rkj7tn`, `f:mreycz`).
   The page has to tell a developer where a record appears under `vite dev` and `wrangler dev`,
@@ -1178,12 +1177,116 @@ resolution redraft (draft docs stage 2a, task 7b).
   record before pasting it. Records carry an editor's email, so the tool and the reference are
   right. A fix narrows the `CLAUDE.md` sentence to what `f:wi766c` states.
 
-- **`contributor`.** Found by the debug-your-site page plan on 2026-10-07. `f:iwf4nu` says the
-  guard attaches the access map to `locals.cairnAccess` on every request, but the guard returns
-  before it on any non-admin path (`src/lib/sveltekit/guard.ts:210-211`) and attaches the map only
-  on admin paths (`:348`, `:368`). The plan routes the `access_map_not_attached` fix through the
-  `createAuthGuard` reference entry instead. The fact read should narrow the bullet to admin
-  paths.
+Filed 2026-10-07 by stage 2a's R5 post-run step (the 2a unattended run, R5), each verified
+against the tree at `bd78ad83` plus the R5 closes.
+
+- **`extender`.** Found by `docs/extend/debug-your-site.md`'s fact read (the 2a unattended run, R5,
+  2026-10-07). The add-cairn tutorial wires the dev backend as `handle = devBackendHandle();` with
+  no `access` (`docs/extend/add-cairn-to-a-sveltekit-app.md:532`), so under the dev backend every
+  `createSectionAction` call returns `fail(500)` with `access_map_not_attached`
+  (`packages/cairn-cms-dev/src/handle.ts:64-75`). The scaffold passes `devBackendHandle({ access })`
+  (`templates/waymark/src/hooks.server.ts:20`). The page belongs to stage 2a, and R6 carries the
+  fix.
+- **`contributor`.** Found by `docs/extend/restrict-admin-access.md`'s round-2 fact read (the 2a
+  unattended run, R5, 2026-10-07). Two code comments say route enforcement and sidebar visibility
+  cannot drift apart: `src/lib/auth/access.ts:3-4` and `src/lib/index.ts:21-23`.
+  `docs/extend/security-model.md:288` says the same. They can: an unkeyed `navLayout` href stays
+  visible while `requireAccess` refuses its route (`src/lib/sveltekit/admin-nav.ts:477-480`), and a
+  map given to one reader gates only that one (see the two-wiring-points entry). R5 rewrote
+  `f:vqh4a9` and `f:altcjp` to match. A fix narrows both comments; the security-model sentence is an
+  R6 carry.
+- **`editor`.** Found by `docs/extend/rotate-the-github-app-key.md`'s final reader (the 2a
+  unattended run, R5, 2026-10-07; `f:ogokfy`). The admin's action wrapper turns an unexpected throw
+  into `fail(500)` with a calm message that says the writing is kept
+  (`src/lib/sveltekit/cairn-admin.ts:199-200,236-251`), but the edit form posts full-page with no
+  `use:enhance` (`src/lib/admin/EditPage.svelte:199`). SvelteKit then reruns the page's load to
+  render the failure, and when that load throws the same error (a refused GitHub App key), the
+  editor gets a bare 500 error page and never sees the message. A fix enhances the edit form or
+  catches the load's GitHub reads.
+- **`extender`.** Found by `docs/extend/restrict-admin-access.md`'s final reader (the 2a unattended
+  run, R5, 2026-10-07; `f:thnbyp`). The scaffold's signups screen renders its outcome region,
+  `role="status"`, outside the remove dialog
+  (`templates/waymark/src/routes/admin/signups/+page.svelte:92`), and the dialog opens modal
+  (`:132-137`, `aria-modal="true"`). A refused remove leaves the dialog open, so the denial text
+  lands behind the modal, where a screen reader may not announce it and a sighted editor cannot see
+  it. A fix renders the refusal inside the dialog, or closes the dialog on any result.
+- **`extender`.** Found by `docs/extend/debug-your-site.md` and
+  `docs/extend/add-a-second-sign-in-group.md` re-tests (the 2a unattended run, R5, 2026-10-07;
+  `f:pe4vuc`). The scaffold records its type generation as `wrangler types
+  --env-file=.dev.vars.example --include-runtime=false`
+  (`templates/waymark/worker-configuration.d.ts:2`), but no `package.json` script runs it
+  (`templates/waymark/package.json`), so each page restates a command. The second-sign-in page says
+  `npx wrangler types` (`docs/extend/add-a-second-sign-in-group.md:351-354`), which reads
+  `.dev.vars` and writes runtime types into a file of about 616 KB. The debug page adds `--env-file
+  .dev.vars.example` without `--include-runtime=false` (`docs/extend/debug-your-site.md:340`). A
+  variable set only in `.dev.vars` is typed only when `--env-file` names a file that carries it. A
+  fix adds a `types` script to the scaffold, and both pages run it (an R6 carry).
+- **`extender`.** Found by `docs/extend/scaffolded-site-files.md`'s final reader (the 2a unattended
+  run, R5, 2026-10-07). The scaffold's `src/lib/log.ts` still describes itself as the showcase's
+  logger (`:1,7,10`) and declares `members.login.requested` (`:8`), an event from the members
+  fixture the bake prunes (no `members` route under `templates/waymark/src/routes/`). A fix rewrites
+  the comments for the scaffold in the bake and drops the event.
+- **`extender`.** Found by `docs/extend/add-a-second-sign-in-group.md`'s close (the 2a unattended
+  run, R5, 2026-10-07). The scaffold's admin catch-all exports `prerender = false` with the reason,
+  that a site defaulting to prerender would bake a session-gated page
+  (`templates/waymark/src/routes/admin/[...path]/+page.server.ts:5-7`), but its custom signups
+  screen exports nothing (`templates/waymark/src/routes/admin/signups/+page.server.ts`), and
+  `docs/extend/add-a-custom-admin-screen.md` never says whether a custom screen needs it. The
+  second-sign-in page tells its member routes to export it. An open question for the custom-screen
+  recipe: export it on every custom screen, or state why a screen needs none.
+- **`extender`.** Found by `docs/extend/add-a-second-sign-in-group.md`'s plan and draft (the 2a
+  unattended run, R5, 2026-10-07), three holes in `docs/internal/facts/`. No fact records that a
+  channel action answers `unavailable` when `resolveDb` returns no binding or the schema check fails
+  (`src/lib/auth-channel/factory.ts:231,624-640,685`), the likeliest first-run failure. No fact
+  records that the example site's `challenge` is the CI stand-in `insecureTestChallenge`
+  (`examples/showcase/src/members/channel.ts:31-41`). No fact states that a blank Turnstile secret
+  logs `turnstile.verify_failed` with `reason: 'invalid_input'`, the same reason as a blank token
+  (`src/lib/cloudflare/turnstile.ts:92-105`). The page's failure section omits all three. A fix
+  files the three `[verified]` facts.
+- **`contributor`.** Found across the R5 closes (the 2a unattended run, R5, 2026-10-07; rotate's
+  `crossRegression`, restrict's round-2 seats). The register's sentence cap reads as a whole-item
+  cap: `docs/internal/docs-register.md:90` says "A step, a list item, and each sentence in a task
+  section stay under 26 words", and the overlay row at `:1041` says steps, list items, and task
+  sections stay under 26 words. Google's rule is per sentence, and the R5 conductor ruled it so,
+  with introduction and explanation sentences exempt. Page plans wrote 40-word Before-you-begin
+  items, a structural rewrite on rotate ignored the cap and regressed it, and a dispatch that stated
+  the cap too broadly drew three false blocking findings on restrict. A fix states "per sentence"
+  and the exemption in both places and in the chain's plan and structural prompts.
+- **`contributor`.** Found by `docs/extend/scaffolded-site-files.md`'s chain run (the 2a unattended
+  run, R5, 2026-10-07). Section hand-offs have three owners who disagree. The page plan requires
+  each hand-off as the last sentence of a section's final paragraph, "never a paragraph of its own"
+  (`docs/internal/briefs/extend/scaffolded-site-files.plan.md:158-160`). The round-1 register seat
+  blocked every section-closing bridge as a tell, and the drafter deleted all nine. The round-2
+  structural seat blocked their loss and asked for standalone closing paragraphs. The final reader's
+  advisory 5 asked to move them under the next heading. The run hit its round cap, and three plan
+  hand-offs also overclaimed their facts (`scaffolded-site-files.plan.md:228,266,411`). A fix gives
+  hand-offs one owner, the plan, and tells the register seat a planned hand-off is not a tell.
+- **`contributor`.** Found by `docs/extend/add-a-second-sign-in-group.md`'s re-test (the 2a
+  unattended run, R5, 2026-10-07; `f:pgeeq3`). `check:snippets` rewrites every SvelteKit alias
+  import, `$lib` included, to an untyped stand-in (`scripts/checks/check-snippets.mjs:21-23,69-70`),
+  so a snippet that imports from `$lib` passes, though SvelteKit 3 refuses the alias. The page's
+  first draft carried three such imports, and only the reader's hands-on compile caught them. A fix
+  fails a `$lib` specifier outright.
+- **`contributor`.** Found by `docs/extend/add-a-second-sign-in-group.md` and
+  `docs/extend/restrict-admin-access.md` (the 2a unattended run, R5, 2026-10-07). `check:provenance`
+  reads every path-shaped or identifier-shaped code span as a fact to cite
+  (`scripts/checks/check-provenance.mjs:46-55`), so a page cannot name in prose a file or identifier
+  the reader creates: no fact can cite a path the repo does not hold. The second-sign-in close named
+  `src/lib/server/members.ts` in a code block's first line instead, with a `check:symbols` allowlist
+  entry, and restrict moved an invented identifier out of code font. A fix lets a brief declare its
+  page-local names, which the extractor skips and the fact read reviews.
+- **`contributor`.** Found by `docs/extend/add-a-second-sign-in-group.md`'s targeted close (the 2a
+  unattended run, R5, 2026-10-07). The chain's plan step marks a sentence `no-claim` though its
+  wording names a token the extractor reads: the plan's Before-you-begin precondition names
+  `AUTH_DB` and is marked `no-claim`
+  (`docs/internal/briefs/extend/add-a-second-sign-in-group.plan.md:224-226`), and `check:provenance`
+  fails any extractable fact in a `no-claim` sentence (`scripts/checks/check-provenance.mjs:38-39`).
+  The close spent a fix on it. A fix has the plan step run the extractor over its planned wording.
+- **`contributor`.** Workstation-tool finding, not a cairn defect. Found by the R5 conductor (the 2a
+  unattended run, R5, 2026-10-07). Re-issuing `cairn-run-gate` while a run was live returned "gate
+  vanished" (exit 75) instead of attaching. The vanish path
+  (`~/.local/bin/cairn-run-gate:13-18,124-129`) fires only when the tracked pid is gone with no
+  status file, so the re-issue misread a live run. Observed once, not reproduced.
 
 ## Clearings
 

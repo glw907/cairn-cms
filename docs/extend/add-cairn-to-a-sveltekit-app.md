@@ -51,17 +51,17 @@ This milestone ends with a plain SvelteKit site, with no cairn code yet, answeri
 - Name the Cloudflare adapter in the kit config.
 - Describe the Worker to Wrangler and deploy it.
 
-The milestone starts from an empty directory. An existing app skips the project step, and an app that keeps its kit config in `svelte.config.js` makes each kit edit on this page in that file instead.
+The milestone starts from an empty directory, and an existing app skips the project step. On SvelteKit 3, a project that still has a `svelte.config.js` fails the build, so an existing app that has one moves its kit options into the `sveltekit()` call in `vite.config.ts` and deletes the file. An existing app whose `package.json` still requires `@sveltejs/kit` `^2` stops the engine install with `ERESOLVE`, so it upgrades to SvelteKit 3 before it installs the engine.
 
 ### Create the project on the Cloudflare adapter
 
 A self-deployed site names `@sveltejs/adapter-cloudflare` explicitly, because the scaffold's `adapter-auto` guesses the deploy target at build time.
 
-Since October 1, 2026, `sv create` scaffolds SvelteKit 3, which the engine's `@sveltejs/kit` peer range of `^2.70` does not admit. The project therefore pins SvelteKit 2 and the matching major version of the Cloudflare adapter before the engine installs.
+Since October 1, 2026, `sv create` scaffolds SvelteKit 3, which the engine's `@sveltejs/kit` peer range of `^3` admits. Version 8 of the Cloudflare adapter declares SvelteKit 3 as its peer, so neither package needs a version pin.
 
-The scaffold has no `svelte.config.js`, so the kit config sits inline in the `sveltekit()` call in `vite.config.ts`. That call takes `adapter` and `csrf` as sibling keys, beside the `compilerOptions` the scaffold already passes. Each `vite.config.ts` sample on this page keeps that `compilerOptions` setting as a comment.
+The scaffold has no `svelte.config.js`, so the kit config sits inline in the `sveltekit()` call in `vite.config.ts`. That call takes `adapter` as a key beside the `compilerOptions` the scaffold already passes. Each `vite.config.ts` sample on this page keeps that `compilerOptions` setting as a comment.
 
-To create the project, pin SvelteKit 2, and swap its adapter, follow these steps:
+To create the project and swap its adapter, follow these steps:
 
 1. In a terminal, create a minimal TypeScript project with no add-ons:
 
@@ -80,35 +80,14 @@ To create the project, pin SvelteKit 2, and swap its adapter, follow these steps
 
    The production milestone names this branch in the adapter and reads the publish commit from it. An app that is already a repository skips this step.
 
-3. In the project directory, replace the scaffold's adapter with the Cloudflare one and pin SvelteKit 2:
+3. In the project directory, replace the scaffold's adapter with the Cloudflare one:
 
    ```bash
    npm uninstall @sveltejs/adapter-auto
-   npm install -D @sveltejs/kit@^2.70 @sveltejs/adapter-cloudflare@^7
+   npm install -D @sveltejs/adapter-cloudflare
    ```
 
-4. In `tsconfig.json`, replace the contents with the SvelteKit 2 form:
-
-   ```json
-   {
-     "extends": "./.svelte-kit/tsconfig.json",
-     "compilerOptions": {
-       "allowJs": true,
-       "checkJs": true,
-       "esModuleInterop": true,
-       "forceConsistentCasingInFileNames": true,
-       "resolveJsonModule": true,
-       "skipLibCheck": true,
-       "sourceMap": true,
-       "strict": true,
-       "moduleResolution": "bundler"
-     }
-   }
-   ```
-
-   The scaffold's version extends `$app/tsconfig`, which does not resolve on SvelteKit 2.
-
-5. In `vite.config.ts`, import the Cloudflare adapter and pass it as the `adapter` option:
+4. In `vite.config.ts`, import the Cloudflare adapter and pass it as the `adapter` option:
 
    ```text
    field-notes/
@@ -222,11 +201,11 @@ In this milestone, you do the following:
 - Install the engine and let Vite compile it.
 - Give the engine a site config, a minimal adapter, and a runtime.
 - Mount the admin as one catch-all route and a layout.
-- Wire the dev backend and hand the admin's CSRF check to the engine's guard.
+- Wire the dev backend.
 
 ### Install the engine and let Vite compile it
 
-Before any route exists, the engine needs its package with the `@cloudflare/workers-types` peer, an `ssr` entry that lists it under `noExternal`, and an ambient import that types `App.Locals`. The engine's shipped `.d.ts` files import `D1Database` and `R2Bucket` from `@cloudflare/workers-types`, which makes that package a required peer at `^5`. The package ships its `.svelte` files as source under its `svelte` export condition, so the site's Svelte plugin must compile them. Without the `noExternal` entry, the admin components fail to build. The ambient import augments `App.Locals` with the five fields the engine reads and writes on every admin request, which the [ambient types reference](../reference/ambient.md) names. A custom route that reads `event.platform.env` needs `App.Platform` declared separately.
+Before any route exists, the engine needs its package with the `@cloudflare/workers-types` peer, an `ssr` entry that lists it under `noExternal`, and an ambient import that types `App.Locals`. The engine's shipped `.d.ts` files import `D1Database` and `R2Bucket` from `@cloudflare/workers-types`, which makes that package a required peer at `^5`. The package ships its `.svelte` files as source under its `svelte` export condition, so the site's Svelte plugin must compile them. Without the `noExternal` entry, the admin components fail to build. The ambient import augments `App.Locals` with the five fields the engine reads and writes on every admin request, which the [ambient types reference](../reference/ambient.md) names. Version 8 of the Cloudflare adapter declares no `App.Platform`, so a custom route reads Worker bindings from `cloudflare:workers`, typed by the `Env` that `wrangler types` generates.
 
 To install the engine, follow these steps:
 
@@ -414,7 +393,7 @@ To mount the admin, follow these steps:
 
    ```ts
    // src/routes/admin/[...path]/+page.server.ts
-   import { admin } from '$lib/cairn.server.js';
+   import { admin } from '#lib/cairn.server.js';
 
    export const prerender = false;
 
@@ -429,7 +408,7 @@ To mount the admin, follow these steps:
    <script lang="ts">
      import { CairnAdmin } from '@glw907/cairn-cms/admin';
      import type { AdminData } from '@glw907/cairn-cms/sveltekit';
-     import { cairn } from '$lib/cairn.config.js';
+     import { cairn } from '#lib/cairn.config.js';
      import type { ActionData } from './$types';
 
      let { data, form }: { data: AdminData; form: ActionData } = $props();
@@ -442,7 +421,7 @@ To mount the admin, follow these steps:
 
    ```ts
    // src/routes/admin/+layout.server.ts
-   import { admin } from '$lib/cairn.server.js';
+   import { admin } from '#lib/cairn.server.js';
 
    export const load = admin.shellLoad;
    ```
@@ -464,7 +443,7 @@ To mount the admin, follow these steps:
 
 No `AUTH_DB` binding exists yet, and the dev backend supplies a fake one.
 
-### Wire the dev backend and the CSRF handoff
+### Wire the dev backend
 
 The dev backend, `devBackendHandle` from `@glw907/cairn-cms-dev`, replaces the GitHub backend, the auth database, and the media bucket with in-memory fakes and signs you in as an owner, so the admin runs before any credential exists. Its state lasts as long as the server process, so no save or publish leaves the machine. Three layers keep the dev package out of a deployed site:
 
@@ -472,19 +451,19 @@ The dev backend, `devBackendHandle` from `@glw907/cairn-cms-dev`, replaces the G
 - `@glw907/cairn-cms-dev` installs as a `devDependency`.
 - The guard refuses to serve a production build that has `CAIRN_DEV_BACKEND` set, and the [log events reference](../reference/log-events.md) records that refusal.
 
-Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly. A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker. The hooks module is that call site, and it picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if` that reads the define first and `CAIRN_DEV_BACKEND === '1'` second. It imports `devBackendHandle` dynamically, so a default build never carries it. The `if`'s other branch calls `createAuthGuard()` with no options, which the guard accepts.
+Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly. A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker. The hooks module is that call site, and it picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if` that reads the define first and `CAIRN_DEV_BACKEND === '1'` second. The flag test reads `process.env`, because `vite dev` runs the hooks in Node, where the Worker env never carries the shell variable that `npm run dev` sets. It imports `devBackendHandle` dynamically, so a default build never carries it. The `if`'s other branch calls `createAuthGuard()` with no options, which the guard accepts.
 
-SvelteKit's origin check runs ahead of any handle and would reject a JavaScript-free form POST that arrives without an `Origin` header. The guard's double-submit token tolerates the missing header, so the site sets `csrf: { checkOrigin: false }` to hand the admin's CSRF authority to the guard. The setting turns the check off for every route, and the guard restores an equivalent strict `Origin` check on every route outside `/admin`. `checkOrigin` is deprecated as of SvelteKit 2.61 and stays supported across cairn's tested range, and the [`checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-removal) section tracks its status. For the reasoning behind the CSRF design, see the [security model](security-model.md).
+The site's config sets no `csrf` option, so SvelteKit's origin check runs ahead of every handle on every route, `/admin` included. SvelteKit skips that check under `vite dev`. The guard adds its double-submit token on top of that check. A `'*'` entry in `csrf.trustedOrigins` turns the origin check off on every route, and the `config.csrf-trusted-origins` check of `cairn doctor` fails on it. For the reasoning behind the CSRF design, see the [security model](security-model.md).
 
 To wire the dev backend, follow these steps:
 
-1. In the project directory, install the dev package as a development dependency:
+1. In the project directory, install the dev package and Node's type definitions as development dependencies:
 
    ```bash
-   npm install -D @glw907/cairn-cms-dev
+   npm install -D @glw907/cairn-cms-dev @types/node
    ```
 
-2. In `vite.config.ts`, add the define plugin and the CSRF handoff:
+2. In `vite.config.ts`, add the define plugin:
 
    ```ts
    // vite.config.ts
@@ -508,8 +487,6 @@ To wire the dev backend, follow these steps:
        sveltekit({
          // compilerOptions stays as sv create wrote it.
          adapter: adapter(),
-         // The engine's guard owns CSRF for the admin.
-         csrf: { checkOrigin: false },
        }),
      ],
      ssr: { noExternal: ['@glw907/cairn-cms'] },
@@ -545,7 +522,8 @@ To wire the dev backend, follow these steps:
    <!-- snippet-check-skip: reads the __CAIRN_DEV_BUILD__ global that the site declares in its ambient types file -->
    ```ts
    // src/hooks.server.ts
-   import type { Handle } from '@sveltejs/kit';
+   /// <reference types="node" />
+   import type { Handle } from '@sveltejs/kit/hooks';
    import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 
    let handle: Handle;
@@ -705,8 +683,6 @@ To index the content and commit the manifest, follow these steps:
        sveltekit({
          // compilerOptions stays as sv create wrote it.
          adapter: adapter(),
-         // The engine's guard owns CSRF for the admin.
-         csrf: { checkOrigin: false },
        }),
        cairnManifest({
          configModule: '/src/lib/cairn.config.ts',
@@ -756,8 +732,8 @@ To render the entry, follow these steps:
    // src/routes/[...path]/+page.server.ts
    import type { EntryGenerator, PageServerLoad } from './$types';
    import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
-   import { cairn, siteConfig } from '$lib/cairn.config.js';
-   import { origin, site } from '$lib/content.js';
+   import { cairn, siteConfig } from '#lib/cairn.config.js';
+   import { origin, site } from '#lib/content.js';
 
    export const prerender = true;
 
@@ -894,7 +870,7 @@ The hooks module needs no edit, because `__CAIRN_DEV_BUILD__` is `false` in a bu
 
 ### Deploy the production build and read the refusal
 
-A production build with no dev backend and no `AUTH_DB` binding runs the real guard, which answers every `/admin` path, the sign-in path included, with a branded 500 page headed **Wrangler bindings are missing**. The engine reads `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, and `GITHUB_APP_PRIVATE_KEY_B64` from the platform env, and a missing `AUTH_DB` throws `config.bindings-missing`, the condition behind that page.
+A production build with no dev backend and no `AUTH_DB` binding runs the real guard, which answers every `/admin` path, the sign-in path included, with a branded 500 page headed **Wrangler bindings are missing**. The engine reads `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, and `GITHUB_APP_PRIVATE_KEY_B64` from the Worker env, and a missing `AUTH_DB` throws `config.bindings-missing`, the condition behind that page.
 
 This deploy is the first to carry the admin, so it needs the Workers Paid plan.
 

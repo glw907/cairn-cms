@@ -5,7 +5,9 @@ chain (stage 2a, task 7c) for the task 7b resolution run, revised once the same 
 structural edit's findings (the repository step; "Structural edit findings on the plan, disposed"
 below), and revised again the same day for resolution run 2, on the round-2 BLOCKING findings of
 `docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md` alone ("Resolution
-run 2 findings, disposed" below; nothing else changed). The drafter drafts from this plan: it
+run 2 findings, disposed" below; nothing else changed). Corrected on 2026-10-07 for SvelteKit 3
+(R4 of the 2a unattended finish, a scoped correction under the parent spec's "Edits after the
+chain" rule; "Kit 3 correction (R4), disposed" below). The drafter drafts from this plan: it
 is the source of the page's order, each section's claim, and each fact's placement. The
 structural edit seat reads it before any prose exists. Method: Google Technical Writing Two,
 "Organizing large documents" (https://developers.google.com/tech-writing/two/large-docs), the
@@ -66,8 +68,9 @@ since no handed fact covers it; the name choice is enough.
    exist. Google's lesson places them where the admin needs them. Milestone 3 keeps the content
    directory, `createSiteIndexes`, the manifest plugin, and the render.
 2. **The dev-backend section sits inside milestone 2, as its last build step**, under the
-   outline's suggested heading so the old slug `#wire-the-dev-backend-and-the-csrf-handoff`
-   survives. The milestone's check, sign in at `/admin`, is impossible without the dev backend
+   heading `### Wire the dev backend`. The Kit 3 correction renamed it from "Wire the dev backend
+   and the CSRF handoff" when the handoff left the page; no current doc links the old slug
+   `#wire-the-dev-backend-and-the-csrf-handoff`. The milestone's check, sign in at `/admin`, is impossible without the dev backend
    (f:jbt2hh), and the pilot's job read found milestone 2 ending unverified when the section sat
    between milestones 3 and 4.
 3. **The branded-500 check opens milestone 4.** The outline lists it as the milestone's check, yet
@@ -167,9 +170,10 @@ sample (f:87hc1y).
 - Opening (objectives and start state): this milestone ends with a plain SvelteKit site, no cairn
   code yet, answering at its `workers.dev` address. Objectives as a short list: create the
   project under version control, name the Cloudflare adapter, describe the Worker to Wrangler and
-  deploy. It starts from an empty directory; an existing app skips the project step, and one that
-  keeps its kit config in `svelte.config.js` makes each kit edit on this page there instead
-  (f:ifuvcl).
+  deploy. It starts from an empty directory; an existing app skips the project step (no-claim).
+  On SvelteKit 3 a project that still has a `svelte.config.js` fails the build, so an existing app
+  that has one moves its kit options into the `sveltekit()` call and deletes the file (f:4ckvnm;
+  "fails the build", never "ignored").
 
 #### Create the project on the Cloudflare adapter
 
@@ -178,21 +182,22 @@ sample (f:87hc1y).
   scaffold's `adapter-auto` guesses the deploy target at build time.
 - Facts: f:7e1t0j (the `sv create` flags; `adapter-auto` as the scaffold's adapter), f:mhsere
   (why the explicit adapter), f:ifuvcl (no `svelte.config.js`; the kit config sits inline in the
-  `sveltekit()` call), f:979v0a (`adapter` and `csrf` are sibling keys in that one call), f:87hc1y
+  `sveltekit()` call), f:979v0a (`adapter` is a sibling key in that one call), f:87hc1y
   (the scaffold's call already carries `compilerOptions`; the samples keep it as a comment and
   say nothing about runes), f:ghzx9c (`sv create` scaffolds SvelteKit 3 since 2026-10-01, with a
   `tsconfig.json` that extends `$app/tsconfig`), f:skeche (the engine's `@sveltejs/kit` peer
-  range `^3` admits SvelteKit 3 and rejects a project still on `^2`), f:jzm5ef (the scaffold's
-  `adapter-auto` swaps for `@sveltejs/adapter-cloudflare@^8`, whose peers are `@sveltejs/kit`
-  `^3.0.0-next.0` and `wrangler`; no version pin is needed), f:g48ytv (the SvelteKit 3
-  `tsconfig.json` extends `$app/tsconfig` and the scaffold's file needs no replacement).
+  range `^3` admits SvelteKit 3; an existing app still on `^2` stops the install with `ERESOLVE`,
+  one sentence), f:jzm5ef (the scaffold's `adapter-auto` swaps for `@sveltejs/adapter-cloudflare`
+  at `^8`, whose peers are `@sveltejs/kit` `^3.0.0-next.0` and `wrangler`; no version pin is
+  needed). f:g48ytv is cut: the scaffold's `tsconfig.json` already extends `$app/tsconfig` and
+  needs no step.
 - Steps: `npx sv create --template minimal --types ts --no-add-ons field-notes`; initialize a
   git repository with `main` as its branch and commit the scaffold (no-claim procedure; the
   branch is the one `createGithubApp` names in milestone 4, f:0w7jar, and the one the production
   check reads, f:m0ouh8, so the page never has the reader rename it later); uninstall
-  `adapter-auto` and install `@sveltejs/kit@^2.70` and `@sveltejs/adapter-cloudflare@^7`; replace
-  `tsconfig.json` with the SvelteKit 2 form (whole file); edit `vite.config.ts` (tree, then the
-  whole file). An existing app that is already a repository skips the git step.
+  `adapter-auto` and install `@sveltejs/adapter-cloudflare` with no version argument; edit
+  `vite.config.ts` (tree, then the whole file). Four steps; no `tsconfig.json` step. An existing
+  app that is already a repository skips the git step.
 - Hand-off: Wrangler needs to know where the adapter's build lands.
 
 #### Describe the Worker and deploy it
@@ -241,7 +246,7 @@ sample (f:87hc1y).
   admin answers only once the dev backend or real bindings exist (f:jbt2hh), so the milestone
   wires the dev backend before its check. Objectives as a short list: install the engine and let
   Vite compile it; give it a site config, a minimal adapter, and a runtime; mount the admin as one
-  catch-all and a layout; wire the dev backend and hand admin CSRF to the engine's guard. The
+  catch-all and a layout; wire the dev backend. The
   objectives do not promise a save or publish check (the register editor's `:187-191` finding);
   the dev backend's keep-it-local property is stated in its own section as a property.
 
@@ -255,7 +260,8 @@ sample (f:87hc1y).
   `D1Database` and `R2Bucket` from it), f:c8efq5 (`.svelte` files ship as source under the
   `svelte` export condition; without `noExternal` the admin components fail to build), f:vvgpr5
   (the import augments `App.Locals`; the five field names go to `docs/reference/ambient.md`, linked,
-  and the `App.Platform` note stays as one clause).
+  and one clause says a custom route reads Worker bindings from `cloudflare:workers`, typed by the
+  `Env` that `wrangler types` generates, since adapter-cloudflare 8 declares no `App.Platform`).
 - Steps: `npm install @glw907/cairn-cms` and `npm install -D @cloudflare/workers-types`; add the
   `ssr` block to `vite.config.ts` (whole file); add the import to `src/app.d.ts` (tree, file).
 - Hand-off: the admin reads a runtime, and the runtime reads an adapter and a site config.
@@ -312,10 +318,10 @@ sample (f:87hc1y).
 - Hand-off: nothing answers at `/admin` yet, since no `AUTH_DB` exists; the dev backend supplies
   one.
 
-#### Wire the dev backend and the CSRF handoff
+#### Wire the dev backend
 
-- Heading: `### Wire the dev backend and the CSRF handoff` (the outline's suggested heading; the
-  slug the restored reference links use).
+- Heading: `### Wire the dev backend` (the outline's suggested heading since the Kit 3 correction;
+  no current doc links the old `-and-the-csrf-handoff` slug).
 - Sentence: The dev backend, `devBackendHandle` from `@glw907/cairn-cms-dev`, replaces the GitHub
   backend, the auth database, and the media bucket with in-memory fakes and signs you in as an
   owner, so the admin runs before any credential exists.
@@ -328,23 +334,24 @@ sample (f:87hc1y).
   and an imported constant ships the dev import in the deployed Worker), f:f21bcz and f:eiaqkh
   (the hooks module picks between `devBackendHandle` and `createAuthGuard` in one `if`, reading
   the define first and `CAIRN_DEV_BACKEND === '1'` second, with the dev import dynamic so a
-  default build never carries it; a bare `createAuthGuard()` is valid), f:e5hqn3 (SvelteKit's
-  origin check runs ahead of any handle and would reject a JavaScript-free form POST that arrives
-  without an `Origin` header; the guard's double-submit token tolerates the missing header, so
-  the site hands the authority over), f:d2jumm (the guard needs double-submit CSRF, so kit's own
-  check is disabled with `csrf: { checkOrigin: false }`; the deprecation in SvelteKit 2.61 is
-  linked at `docs/reference/supported-toolchain.md#the-checkorigin-removal`, which answers the
-  fact read's note that the page sets a deprecated option without saying so), f:gncd64 (the
-  setting turns the check off for every route, and the guard restores an equivalent strict
-  `Origin` check on every route outside `/admin`), f:n52h8f (the scaffold's `src/app.d.ts`
+  default build never carries it; a bare `createAuthGuard()` is valid; the flag test reads
+  `process.env`, because `vite dev` runs the hooks in Node, where the Worker env never carries the
+  shell variable `npm run dev` sets, so step 1 installs `@types/node` beside the dev package and
+  the hooks sample references Node's types), f:hk3hdl (the hooks sample imports `Handle` from
+  `@sveltejs/kit/hooks`; code only), f:7rehzh and f:3cekcy
+  (the site's config sets no `csrf` option, so SvelteKit's origin check runs ahead of every handle
+  on every route, `/admin` included, and the guard adds its double-submit token on top), f:ytwrgp
+  (a `'*'` entry in `csrf.trustedOrigins` turns the check off on every route, and the doctor's
+  `config.csrf-trusted-origins` check fails on it; the page never writes a `trustedOrigins`
+  block), f:n52h8f (the scaffold's `src/app.d.ts`
   declares the `__CAIRN_DEV_BUILD__` boolean global; the fact that backs step 3, a cross-arm
   citation the plan adds on the fact read's round-2 blocking finding at `:493`, which found the
   step cited f:vvgpr5 alone, a fact that says nothing about the declaration).
 - Shape: three short lead-in paragraphs (what the dev backend is and the fence; the define named at
-  every call site; the CSRF handoff, linking the deprecation section and
-  `docs/extend/security-model.md` for the design), then one numbered procedure of four steps:
-  `npm install -D @glw907/cairn-cms-dev`; add the define plugin and `csrf: { checkOrigin: false }`
-  to `vite.config.ts` (whole file); declare `const __CAIRN_DEV_BUILD__: boolean` in `src/app.d.ts`
+  every call site; the origin check the site leaves on, linking `docs/extend/security-model.md`
+  for the design), then one numbered procedure of four steps:
+  `npm install -D @glw907/cairn-cms-dev`; add the define plugin to `vite.config.ts` (whole file,
+  with no `csrf` key); declare `const __CAIRN_DEV_BUILD__: boolean` in `src/app.d.ts`
   (file; the step's sentence cites f:n52h8f and f:72mctx, never f:vvgpr5, whose claim is the
   ambient import two sections earlier); create `src/hooks.server.ts` (tree, file, with the
   snippet-check skip comment the committed page carries).
@@ -824,7 +831,8 @@ heading findings traced to this plan's Heading lines, so the plan changed there 
   knowledge line above matches the page. The final reader read's scoped redraft then restored
   the second person ("If you start from an existing app, you work through the same milestones,
   and the tutorial notes where your app skips creating the project or its repository").
-- [BLOCKING] final reader read, `:53, :60, :206`: `sv create` scaffolds SvelteKit 3 since
+- [BLOCKING, superseded by "Kit 3 correction (R4), disposed" below] final reader read,
+  `:53, :60, :206`: `sv create` scaffolds SvelteKit 3 since
   2026-10-01, and `npm install @glw907/cairn-cms` stops with `ERESOLVE` against the engine's
   `^2.70` peer range. Milestone 1 now pins `@sveltejs/kit@^2.70` and
   `@sveltejs/adapter-cloudflare@^7` and replaces `tsconfig.json` with the SvelteKit 2 form
@@ -841,6 +849,30 @@ heading findings traced to this plan's Heading lines, so the plan changed there 
   the whole-file `wrangler.jsonc` and replaces the separate serve-on-the-domain step (f:thgmpz);
   the exercise names `src/routes/+page.svelte` (f:ibis7z); the `d1_databases` step says the entry
   sits at the top level.
+
+## Kit 3 correction (R4), disposed
+
+On 2026-10-07 the engine's `@sveltejs/kit` peer moved to `^3`, so the SvelteKit 2 workaround above
+is superseded. The correction changed only the sentences these items touch:
+
+- The version-pin paragraph states SvelteKit 3 and adapter-cloudflare 8 with no pin (f:ghzx9c,
+  f:skeche, f:jzm5ef), plus one sentence for an existing app still on `^2` (f:skeche). The step
+  lead-ins and the install command drop the pin.
+- The `tsconfig.json` step is deleted, and the `vite.config.ts` step renumbers from 5 to 4. f:g48ytv
+  is cut.
+- The existing-app `svelte.config.js` clause becomes f:4ckvnm's two sentences: the file fails the
+  build on SvelteKit 3, and an existing app moves its kit options into `sveltekit()` and deletes it.
+- Both `csrf: { checkOrigin: false }` blocks and their comment are deleted from the
+  `vite.config.ts` samples, with no `trustedOrigins` replacement. The handoff paragraph becomes the
+  origin-check paragraph on f:7rehzh, f:3cekcy, and f:ytwrgp. The section heading, the milestone
+  objective, and the define-plugin step lose the handoff. f:d2jumm, f:e5hqn3, and f:gncd64 are
+  [rejected] and move to cut.
+- The `App.Platform` clause becomes the `cloudflare:workers` and `Env` clause (f:vvgpr5).
+- Every `$lib` import in the admin and entry route samples becomes `#lib`, since SvelteKit 3
+  removes `$lib`; the SvelteKit 3 scaffold already carries the `#lib` subpath imports, so no step
+  adds them.
+- Further R4 fixes: the `App.Platform` clause leads with the adapter fact; the doctor clause names `cairn doctor` (f:ytwrgp amended to match); the existing-app notes sit together in the opening, with f:skeche's `ERESOLVE` sentence moved there and told to upgrade; `adapter` is "a key", not "a sibling key"; the refusal sentence reads "the Worker env" (f:ntdafg amended, f:swjwxb added to its cite); one sentence says SvelteKit skips the origin check under `vite dev` (f:3cekcy); f:pgeeq3 filed for the `#lib` imports.
+- R4 re-test fix (svelte-check on a fresh SvelteKit 3 scaffold): the hooks sample imports `Handle` from `@sveltejs/kit/hooks` (f:hk3hdl), and its `process.env` read, which `vite dev` needs (f:f21bcz), typechecks through a `/// <reference types="node" />` line and an `@types/node` install in step 1, the package the template also carries. One sentence after the `if` sentence says why the flag test reads `process.env` (f:f21bcz).
 
 ## Dispositions, every fact id
 
@@ -882,35 +914,40 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | f:ifuvcl | carried | Deploy a bare SvelteKit site (the opening's existing-app line); Create the project on the Cloudflare adapter |
 | f:mhsere | carried | Create the project on the Cloudflare adapter; Verify the deployed site |
 | f:q13lck | carried | Describe the Worker and deploy it; Verify the deployed site |
-| f:9mx680 | carried | Wire the dev backend and the CSRF handoff (the fence, one sentence per layer) |
-| f:vvgpr5 | carried | Install the engine and let Vite compile it (the augmentation and the `App.Platform` clause; the five names at `docs/reference/ambient.md`) |
+| f:9mx680 | carried | Wire the dev backend (the fence, one sentence per layer) |
+| f:vvgpr5 | carried | Install the engine and let Vite compile it (the augmentation and the `cloudflare:workers` and `Env` clause; the five names at `docs/reference/ambient.md`) |
 | f:pdgkex | carried | Index the content and commit its manifest; Resolve a content build failure |
 | f:n0laoh | carried | Index the content and commit its manifest; Resolve a content build failure; the exercise |
 | f:6ebew3 | carried | Verify the rendered entry; the exercise |
 | f:c8efq5 | carried | Install the engine and let Vite compile it |
-| f:72mctx | carried | Wire the dev backend and the CSRF handoff; Verify the dev sign-in (failure check); the checklist's one "say why" |
+| f:72mctx | carried | Wire the dev backend; Verify the dev sign-in (failure check); the checklist's one "say why" |
 | f:f2vudv | carried | Compose the runtime and the admin; Verify the dev sign-in; Verify the production site |
-| f:d2jumm | carried | Wire the dev backend and the CSRF handoff (the why; the deprecation at `docs/reference/supported-toolchain.md#the-checkorigin-removal`) |
+| f:d2jumm | cut | [rejected]: the `checkOrigin` handoff is gone; SvelteKit 3 removed `csrf.checkOrigin`, and Wire the dev backend cites f:7rehzh and f:3cekcy instead. |
 | f:7bch04 | carried | Move the site to production (the opening map); Add the Email Sending binding and name the origin |
 | f:jzb3d0 | carried | Mount the admin routes (the `/admin` import half; the removed subpath stays off the page, `docs/extend/migration-notes.md`'s subject) |
 | f:7e1t0j | carried | Create the project on the Cloudflare adapter |
 | f:87hc1y | carried | Create the project on the Cloudflare adapter (the `compilerOptions` comment in every sample; nothing on runes) |
-| f:979v0a | carried | Create the project on the Cloudflare adapter |
+| f:979v0a | carried | Create the project on the Cloudflare adapter (`adapter` as a sibling key in the `sveltekit()` call) |
+| f:4ckvnm | carried | Deploy a bare SvelteKit site (the opening's existing-app `svelte.config.js` sentences: the file fails the build, and the app moves its kit options into `sveltekit()` and deletes it) |
+| f:7rehzh | carried | Wire the dev backend (no `csrf` option; SvelteKit's origin check on every route, `/admin` included; the guard's double-submit token on top) |
+| f:3cekcy | carried | Wire the dev backend (the origin check is one global setting on every route, cited beside f:7rehzh) |
+| f:ytwrgp | carried | Wire the dev backend (a `'*'` `trustedOrigins` entry turns the check off; the doctor's `config.csrf-trusted-origins` check fails on it) |
+| f:pgeeq3 | carried | Deploy a bare SvelteKit site (the `#lib` imports in the admin and entry route samples; the fact backs the code blocks, no page sentence cites it) |
 | f:9ug9mo | carried | Describe the Worker and deploy it; Verify the deployed site; the exercise; the introduction's milestone 1 line |
 | f:jbt2hh | carried | Deploy the production build and read the refusal; Install and wire the engine (the opening's reason for the dev backend); Resolve a production failure |
 | f:d0sp1t | carried | Write the site config and a minimal adapter; Compose the runtime and the admin |
 | f:dqe7ij | carried | Compose the runtime and the admin; Mount the admin routes; the introduction's sentence 1 |
-| f:dqjkci | carried | Wire the dev backend and the CSRF handoff; Verify the dev sign-in; the introduction's sentence 1 and milestone 2 line |
+| f:dqjkci | carried | Wire the dev backend; Verify the dev sign-in; the introduction's sentence 1 and milestone 2 line |
 | f:dujlzg | carried | Write the site config and a minimal adapter |
-| f:e5hqn3 | carried | Wire the dev backend and the CSRF handoff |
+| f:e5hqn3 | cut | [rejected]: the `vite.config` comment it described is gone, and the config carries no `csrf` key; Wire the dev backend cites f:7rehzh instead. |
 | f:e8dr5r | carried | Verify the dev sign-in (the three forms inside step 1) |
 | f:em69ru | carried | Write the site config and a minimal adapter (rejects unknown keys; the key set at `docs/reference/core.md#parsesiteconfig`; no doctor path stated) |
 | f:ew4uk7 | carried | Install the engine and let Vite compile it |
 | f:exxsvk | carried | Mount the admin routes |
-| f:f21bcz | carried | Wire the dev backend and the CSRF handoff; Verify the dev sign-in |
+| f:f21bcz | carried | Wire the dev backend; Verify the dev sign-in |
 | f:fj28xs | carried | Index the content and commit its manifest (the two required options; the defaults at `docs/reference/vite.md#cairnmanifestoptions`) |
 | f:gj96px | carried | Add the first entry (the shape half); the introduction's milestone 3 line; the exercise |
-| f:eiaqkh | carried | Wire the dev backend and the CSRF handoff (the dynamic import) |
+| f:eiaqkh | carried | Wire the dev backend (the dynamic import) |
 | f:lbetsq | carried | Customize the sign-in email, Edit the message in a custom sender; the Email Sending section's hand-off sentence |
 | f:1b54g7 | carried | Customize the sign-in email, Edit the message in a custom sender |
 | f:2gtftn | carried | Customize the sign-in email (lead paragraph); the introduction's sentence 1 and closing-section line |
@@ -918,7 +955,7 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | f:ebx4pv | carried | Write the site config and a minimal adapter; Rename the site; Customize the sign-in email |
 | f:g81luc | carried | Compose the runtime and the admin |
 | f:tkpmxr | subordinated | `docs/reference/log-events.md`, the `guard.refused` row (`reason: "dev_backend_in_prod"`, a 503 when `CAIRN_DEV_BACKEND` is set in a deployed runtime); the page names the fence's third layer in one clause from f:9mx680 and leaves the two refusal sites and their terms to the reference. |
-| f:gncd64 | carried | Wire the dev backend and the CSRF handoff |
+| f:gncd64 | cut | [rejected]: retired with SvelteKit 3's removal of `csrf.checkOrigin`; the guard restores no Origin check, and Wire the dev backend cites f:7rehzh instead. |
 | f:fvi8rk | carried | Render the entry (the load data; `CairnHead` in one clause, at `docs/reference/delivery.md#cairnhead`) |
 | f:k16chc | carried | Index the content and commit its manifest (the local `origin`); Render the entry; Add the Email Sending binding and name the origin; Verify the production site; the introduction's sentence 5 |
 | f:v72g9z | carried | Customize the sign-in email, Rebrand the email |
@@ -928,13 +965,14 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | f:vrue1g | carried | Index the content and commit its manifest (cited only by a sentence that names the `cairn-manifest` bin; a cross-arm citation the plan adds) |
 | f:1dhk1a | carried | Before you begin (the `cairn` CLI install; a cross-arm citation the plan adds) |
 | f:txgoyy | carried | Add the Email Sending binding and name the origin (`observability.enabled: true`; a cross-arm citation the plan adds) |
-| f:skeche | carried | Create the project on the Cloudflare adapter (the `^3` peer range, which a project on SvelteKit 2 fails with `ERESOLVE`) |
-| f:ghzx9c | carried | Create the project on the Cloudflare adapter (the SvelteKit 3 scaffold and its `tsconfig.json`) |
+| f:skeche | carried | Create the project on the Cloudflare adapter (the `^3` peer range; one sentence for an existing app still on `^2`, which stops with `ERESOLVE`) |
+| f:ghzx9c | carried | Create the project on the Cloudflare adapter (the SvelteKit 3 scaffold since October 1, 2026) |
 | f:jzm5ef | carried | Create the project on the Cloudflare adapter (the adapter 8 swap and its peers) |
-| f:g48ytv | carried | Create the project on the Cloudflare adapter (the SvelteKit 3 `tsconfig.json`, which extends `$app/tsconfig`) |
+| f:g48ytv | cut | The SvelteKit 3 scaffold's `tsconfig.json` already extends `$app/tsconfig` and needs no replacement, so no step names the file; the SvelteKit 2 `tsconfig.json` step it backed is deleted. |
+| f:hk3hdl | carried (added in the R4 re-test fix; code only) | Wire the dev backend (the hooks sample's `Handle` import) |
 | f:ibis7z | carried | Deploy a change (the home page's path) |
 | f:thgmpz | carried | Add the Email Sending binding and name the origin (the `routes` Custom Domain entry) |
-| f:n52h8f | carried | Wire the dev backend and the CSRF handoff (the `src/app.d.ts` declaration step, with f:72mctx; a cross-arm citation the plan adds on the fact read's round-2 finding) |
+| f:n52h8f | carried | Wire the dev backend (the `src/app.d.ts` declaration step, with f:72mctx; a cross-arm citation the plan adds on the fact read's round-2 finding) |
 
 ## Drafting constraints
 

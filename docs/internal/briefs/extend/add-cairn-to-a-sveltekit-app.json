@@ -205,15 +205,16 @@
       "id": "no-claim"
     },
     {
-      "text": "The milestone starts from an empty directory.",
+      "text": "The milestone starts from an empty directory, and an existing app skips the project step.",
       "id": "no-claim"
     },
     {
-      "text": "An existing app skips the project step, and an app that keeps its kit config in `svelte.config.js` makes each kit edit on this page in that file instead.",
-      "id": [
-        "f:ifuvcl",
-        "f:e5hqn3"
-      ]
+      "text": "On SvelteKit 3, a project that still has a `svelte.config.js` fails the build, so an existing app that has one moves its kit options into the `sveltekit()` call in `vite.config.ts` and deletes the file.",
+      "id": "f:4ckvnm"
+    },
+    {
+      "text": "An existing app whose `package.json` still requires `@sveltejs/kit` `^2` stops the engine install with `ERESOLVE`, so it upgrades to SvelteKit 3 before it installs the engine.",
+      "id": "f:skeche"
     },
     {
       "text": "A self-deployed site names `@sveltejs/adapter-cloudflare` explicitly, because the scaffold's `adapter-auto` guesses the deploy target at build time.",
@@ -223,14 +224,14 @@
       ]
     },
     {
-      "text": "Since October 1, 2026, `sv create` scaffolds SvelteKit 3, which the engine's `@sveltejs/kit` peer range of `^2.70` does not admit.",
+      "text": "Since October 1, 2026, `sv create` scaffolds SvelteKit 3, which the engine's `@sveltejs/kit` peer range of `^3` admits.",
       "id": [
         "f:ghzx9c",
         "f:skeche"
       ]
     },
     {
-      "text": "The project therefore pins SvelteKit 2 and the matching major version of the Cloudflare adapter before the engine installs.",
+      "text": "Version 8 of the Cloudflare adapter declares SvelteKit 3 as its peer, so neither package needs a version pin.",
       "id": "f:jzm5ef"
     },
     {
@@ -238,7 +239,7 @@
       "id": "f:ifuvcl"
     },
     {
-      "text": "That call takes `adapter` and `csrf` as sibling keys, beside the `compilerOptions` the scaffold already passes.",
+      "text": "That call takes `adapter` as a key beside the `compilerOptions` the scaffold already passes.",
       "id": [
         "f:979v0a",
         "f:87hc1y"
@@ -249,7 +250,7 @@
       "id": "f:87hc1y"
     },
     {
-      "text": "To create the project, pin SvelteKit 2, and swap its adapter, follow these steps:",
+      "text": "To create the project and swap its adapter, follow these steps:",
       "id": "f:jzm5ef"
     },
     {
@@ -272,21 +273,10 @@
       "id": "no-claim"
     },
     {
-      "text": "In the project directory, replace the scaffold's adapter with the Cloudflare one and pin SvelteKit 2:",
+      "text": "In the project directory, replace the scaffold's adapter with the Cloudflare one:",
       "id": [
         "f:7e1t0j",
         "f:jzm5ef"
-      ]
-    },
-    {
-      "text": "In `tsconfig.json`, replace the contents with the SvelteKit 2 form:",
-      "id": "f:g48ytv"
-    },
-    {
-      "text": "The scaffold's version extends `$app/tsconfig`, which does not resolve on SvelteKit 2.",
-      "id": [
-        "f:ghzx9c",
-        "f:g48ytv"
       ]
     },
     {
@@ -423,7 +413,7 @@
       "id": "no-claim"
     },
     {
-      "text": "Wire the dev backend and hand the admin's CSRF check to the engine's guard.",
+      "text": "Wire the dev backend.",
       "id": "no-claim"
     },
     {
@@ -451,7 +441,7 @@
       "id": "f:vvgpr5"
     },
     {
-      "text": "A custom route that reads `event.platform.env` needs `App.Platform` declared separately.",
+      "text": "Version 8 of the Cloudflare adapter declares no `App.Platform`, so a custom route reads Worker bindings from `cloudflare:workers`, typed by the `Env` that `wrangler types` generates.",
       "id": "f:vvgpr5"
     },
     {
@@ -644,6 +634,10 @@
       "id": "f:f21bcz"
     },
     {
+      "text": "The flag test reads `process.env`, because `vite dev` runs the hooks in Node, where the Worker env never carries the shell variable that `npm run dev` sets.",
+      "id": "f:f21bcz"
+    },
+    {
       "text": "It imports `devBackendHandle` dynamically, so a default build never carries it.",
       "id": "f:eiaqkh"
     },
@@ -652,23 +646,23 @@
       "id": "f:f21bcz"
     },
     {
-      "text": "SvelteKit's origin check runs ahead of any handle and would reject a JavaScript-free form POST that arrives without an `Origin` header.",
-      "id": "f:e5hqn3"
-    },
-    {
-      "text": "The guard's double-submit token tolerates the missing header, so the site sets `csrf: { checkOrigin: false }` to hand the admin's CSRF authority to the guard.",
+      "text": "The site's config sets no `csrf` option, so SvelteKit's origin check runs ahead of every handle on every route, `/admin` included.",
       "id": [
-        "f:e5hqn3",
-        "f:d2jumm"
+        "f:7rehzh",
+        "f:3cekcy"
       ]
     },
     {
-      "text": "The setting turns the check off for every route, and the guard restores an equivalent strict `Origin` check on every route outside `/admin`.",
-      "id": "f:gncd64"
+      "text": "SvelteKit skips that check under `vite dev`.",
+      "id": "f:3cekcy"
     },
     {
-      "text": "`checkOrigin` is deprecated as of SvelteKit 2.61 and stays supported across cairn's tested range, and the [`checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-deprecation) section tracks its status.",
-      "id": "f:d2jumm"
+      "text": "The guard adds its double-submit token on top of that check.",
+      "id": "f:7rehzh"
+    },
+    {
+      "text": "A `'*'` entry in `csrf.trustedOrigins` turns the origin check off on every route, and the `config.csrf-trusted-origins` check of `cairn doctor` fails on it.",
+      "id": "f:ytwrgp"
     },
     {
       "text": "For the reasoning behind the CSRF design, see the [security model](security-model.md).",
@@ -679,11 +673,11 @@
       "id": "no-claim"
     },
     {
-      "text": "In the project directory, install the dev package as a development dependency:",
+      "text": "In the project directory, install the dev package and Node's type definitions as development dependencies:",
       "id": "f:9mx680"
     },
     {
-      "text": "In `vite.config.ts`, add the define plugin and the CSRF handoff:",
+      "text": "In `vite.config.ts`, add the define plugin:",
       "id": [
         "f:ifuvcl",
         "f:72mctx"
@@ -1162,9 +1156,10 @@
       "id": "f:jbt2hh"
     },
     {
-      "text": "The engine reads `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, and `GITHUB_APP_PRIVATE_KEY_B64` from the platform env, and a missing `AUTH_DB` throws `config.bindings-missing`, the condition behind that page.",
+      "text": "The engine reads `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, and `GITHUB_APP_PRIVATE_KEY_B64` from the Worker env, and a missing `AUTH_DB` throws `config.bindings-missing`, the condition behind that page.",
       "id": [
         "f:ntdafg",
+        "f:swjwxb",
         "f:jbt2hh"
       ]
     },
@@ -1734,6 +1729,22 @@
     {
       "id": "f:tkpmxr",
       "reason": "Subordinated to docs/reference/log-events.md, the guard.refused row (re-verified: reason dev_backend_in_prod, a 503 when CAIRN_DEV_BACKEND is set in a deployed runtime); the page names the fence's third layer in one clause from f:9mx680."
+    },
+    {
+      "id": "f:g48ytv",
+      "reason": "The SvelteKit 3 scaffold's tsconfig.json already extends $app/tsconfig and needs no replacement, so no step names the file; the SvelteKit 2 tsconfig step it backed is deleted (R4 Kit 3 correction, 2026-10-07)."
+    },
+    {
+      "id": "f:d2jumm",
+      "reason": "Rejected: the checkOrigin handoff is gone. SvelteKit 3 removed csrf.checkOrigin, the site carries no csrf config, and the Wire the dev backend section states the origin check from f:7rehzh and f:3cekcy instead."
+    },
+    {
+      "id": "f:e5hqn3",
+      "reason": "Rejected: the vite.config comment it described is gone, and the config carries no csrf key; the Wire the dev backend section cites f:7rehzh instead."
+    },
+    {
+      "id": "f:gncd64",
+      "reason": "Rejected: retired with SvelteKit 3's removal of csrf.checkOrigin; the guard restores no Origin check, and the Wire the dev backend section cites f:7rehzh instead."
     }
   ]
 }

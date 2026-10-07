@@ -73,12 +73,6 @@ New findings start below this line, one per finding, with its perspective and a 
 - **`extender`.** Found by the cairn-themes Survey S1 viewport grade (visual-verifier, 2026-10-07; verified by the conductor against daisyUI 5.7.47). daisyUI 5 has no theme variable for a form field's ground: `.input` and `.select` paint on `--color-base-100`, so a theme whose fields sit on their own ground (Survey's white light fields and sunken dark fields) must add a component override, and `cairn-public.css` offers no `--cairn-*` role for it. `theme-contrast` therefore never measures field text on the real field ground. The same holds for a field's resting border: daisyUI draws input, select, and textarea borders in `base-200` and the checkbox and radio ring in a 20% `base-content` mix, all under the 3:1 that WCAG 1.4.11 asks of a control boundary (Survey measured 1.36:1 and 1.48:1; its close-time a11y review caught both, and no `cairn-audit` rule did). `border-contrast` would, but `--rendered` drives a running admin, so a public theme's controls are never measured. A fix adds field-ground and field-border roles to the public theme contract, mapped onto `.input`, `.select`, `.textarea`, `.checkbox`, and `.radio` in `cairn-public.css`, plus `theme-contrast` pairs for field text on the field ground and the field border against `base-100` at 3:1.
 - **`extender`.** Found by the cairn-themes Survey S1 viewport grades, rounds 1 and 2 (visual-verifier, 2026-10-07; verified by the conductor in `daisyui/components/*.css` 5.7.47). daisyUI 5 ignores `--color-base-300` for most component borders: `card-border`, `input`, `select`, and `textarea` hard-wire `--color-base-200`, and `.list-row` draws its divider in `color-mix(in oklab, var(--color-base-content) 5%, transparent)`. A theme whose border role is `base-300` gets frames that nearly vanish on `base-100`, and finds them one grader round at a time (Survey needed two). A fix maps these component borders onto one border role in `cairn-public.css`, or at least lists the components and the override recipe in the re-skin docs, so each theme stops rediscovering them.
 
-- **`tooling`.** `examples/showcase/e2e/admin-visual.spec.ts:490` ("zen toggle: the frame offset animates through more
-  than two margin-left values") asserts more than two distinct samples inside a 400 ms window. It failed once in a
-  full local gate (received 2) and passed 3 of 3 alone (SvelteKit 3 pass, close Task C4, 2026-10-06): timing-sensitive
-  under load. Fix with a readiness or sampling approach that does not depend on frame timing (sample until the
-  animation reports finished, or assert start and end values), never a longer window.
-
 - **`go`.** `tool/internal/doctor` (graded "workmanlike" by the SvelteKit 3 pass's close `go-architecture-reader`,
   2026-10-06) carries pre-existing debt the pass did not cause: eleven exported check values plus `Snapshot.ReadFile`,
   the `RobotsAbsent*` constants, and `doctor.Results` have no caller outside the package (unexport them; `Verdicts`
@@ -106,13 +100,6 @@ New findings start below this line, one per finding, with its perspective and a 
 - **`engine`.** `createAuthChannel`'s dev-backend tripwire no longer sees a flag set only in the shell (it reads the
   Worker env), so under `vite dev --host` a LAN request with a shell-only `CAIRN_DEV_BACKEND=1` no longer trips the
   member-action refusal; dev-only, and `captureDeliver` still refuses. Close `web-auth-security-reviewer`, 2026-10-06.
-
-- **`tooling`.** Two showcase e2e specs time out on a slow CI runner while waiting on an admin list link, the same
-  slow-runner pattern as the known `spellcheck.spec.ts:20` flake: `e2e/tidy.spec.ts:20` (line 24, waiting for the
-  seeded `a[href="/admin/posts/2026-06-copyedit"]`) and `e2e/preview.spec.ts:371` (line 398, waiting for the "Delete
-  Broken link sibling" button). Both failed every attempt in CI run e2e on `7722ab44` (11.6 minutes against 5.7 on the
-  passing rerun of the next commit). Candidates for the same readiness-signal fix the zen test took (wait on a real
-  ready signal, never a longer timeout). Found by the SvelteKit 3 pass's CI diagnosis, 2026-10-06.
 
 - **`tooling`.** `scripts/lab/theme-fixture.mjs` defaults `THEME_FIXTURE_PORT` to 4393 (`:59`), which the
   SvelteKit 3 pass's e2e host now pins as its `wrangler dev` inspector port (`E2E_PORT` + 1,

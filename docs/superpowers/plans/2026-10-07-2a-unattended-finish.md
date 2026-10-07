@@ -301,6 +301,6 @@ lane's open branch.
 | Task | Commit | Verdict | Tokens |
 | --- | --- | --- | --- |
 | Planning (this plan, pre-flights, review) | | | |
-| R5 rotate-the-github-app-key: scoped-read fixes (L18, L21, L69 sentences; f:vg42j3 amended) | uncommitted | targeted close | |
-| R5 reader re-test: one blocker resolved by the reader's own rewrite (L141); conductor ruling, pilot precedent, no further round | uncommitted | | |
-| R5 debug-your-site: round-2 advisory rewrites (check order and check 4, access_map_not_attached fix scoped to devBackendHandle, Record contents referent, site-facts paragraph, L20-21 split, L36, L203, L293 re-wrap, f:twqb0s cite) | uncommitted | | |
+| R5 rotate-the-github-app-key: scoped-read fixes (L18, L21, L69 sentences; f:vg42j3 amended) | 9f0b8add | targeted close | |
+| R5 reader re-test: one blocker resolved by the reader's own rewrite (L141); conductor ruling, pilot precedent, no further round | 9f0b8add | | |
+| R5 debug-your-site: round-2 advisory rewrites (check order and check 4, access_map_not_attached fix scoped to devBackendHandle, Record contents referent, site-facts paragraph, L20-21 split, L36, L203, L293 re-wrap, f:twqb0s cite) | 9f0b8add | | |

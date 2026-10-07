@@ -174,6 +174,7 @@ Dropped, with reason:
   allowlist entry, `gate exit: 0`, `check:docs-gate: OK (17 check(s))`, `check:options: OK (264 option
   paths)`.
 - `npm run check:facts`: OK. `npm run check:provenance`: OK. `npm run check:options`: OK (264 option paths).
+- Allowlist accounting: the WIP chain commit `bd78ad83` added six `check-symbols-allowlist.mjs` entries before this close: `file-path:src/theme/site.css` and `file-path:src/access.ts` (scaffolded-site-files), `file-path:src/lib/server/member-channel.ts`, `file-path:src/lib/server/member-channel.test.ts`, `file-path:migrations-members/0000_channel.sql`, and `export:createChannelDb` (all four for add-a-second-sign-in-group). The close commit `9f0b8add` added a seventh, `file-path:src/lib/server/members.ts`.
 
 ## Conductor rulings for Geoff
 

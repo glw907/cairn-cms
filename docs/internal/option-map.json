@@ -122,7 +122,7 @@
     "DatetimeField.max": "pending content-model",
     "DatetimeField.min": "pending content-model",
     "DatetimeField.type": "exclude the fields.* builder sets this discriminant tag; a developer never writes it",
-    "EditorRoutesConfig.roles": "exclude the admin mount builds the editor routes from the adapter's roles (cairn-admin.ts:118); a site declares its vocabulary once on the adapter and never calls createEditorRoutes",
+    "EditorRoutesConfig.roles": "f:mbx6q1",
     "EmailField.type": "exclude the fields.* builder sets this discriminant tag; a developer never writes it",
     "FieldBase.default": "pending content-model",
     "FieldBase.help": "pending content-model",

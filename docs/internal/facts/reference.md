@@ -549,7 +549,7 @@ re-sourced to Go on this tree rather than to the page.
   wrangler config, `package.json` and a lockfile, the Vite config (and `svelte.config.js`, only to see whether it remains),
   `src/hooks.server.ts`, `static/_headers`, the site-config YAML, the `/admin` route candidates,
   and `src/content/.cairn/site-facts.json`. Source: `tool/internal/doctor/wrangler.go:36,48`,
-  `tool/internal/doctor/check_csrf.go:43,252`, `tool/internal/doctor/check_referrer.go:191-235`,
+  `tool/internal/doctor/check_csrf.go:43,271`, `tool/internal/doctor/check_referrer.go:191-235`,
   `tool/internal/doctor/check_floors.go:328,376,384,392`, `tool/internal/doctor/facts.go:11`.
   [verified]
 - `f:q01lkt` The `/admin` mount check probes six candidate route files by name, since a Snapshot offers no
@@ -634,7 +634,7 @@ re-sourced to Go on this tree rather than to the page.
   second pass]
 - `f:v2isa4` `config.csrf-trusted-origins` reports `UNCHECKED` when none of `vite.config.js`,
   `vite.config.ts`, and `vite.config.mts` is found, distinct from a read error on any of them. Source:
-  `tool/internal/doctor/check_csrf.go:252-275`. [candidate: found during the 2026-09-22 redraft's Go
+  `tool/internal/doctor/check_csrf.go:271-301`. [candidate: found during the 2026-09-22 redraft's Go
   read, not independently re-verified by a second pass]
 - `f:b94uhy` `ai.posture-effective` reports `UNCHECKED` when `src/content/.cairn/site-facts.json` is absent,
   or when the `/robots.txt` fetch could not observe a result: no origin resolves, the origin does

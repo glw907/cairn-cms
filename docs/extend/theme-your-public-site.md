@@ -279,7 +279,7 @@ theme's, and keeps `src/chassis/`. The port reaches the chassis through its expo
 edits or deletes a chassis file only where a step or a convention names the edit. A design the
 site already has takes this recipe in place of the re-skin, whose steps assume Waymark's layouts.
 
-A theme file imports from the chassis only through the `$chassis` alias in TypeScript and Svelte,
+A theme file imports from the chassis only through the `#chassis` subpath import in TypeScript and Svelte,
 or through a relative `@import` in CSS. The cairn repository gates that boundary on its example
 site with `check:chassis-boundary`, and a scaffolded site inherits it as a convention with no gate.
 

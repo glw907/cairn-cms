@@ -499,7 +499,7 @@
       "id": "f:kt0epf"
     },
     {
-      "text": "A theme file imports from the chassis only through the `$chassis` alias in TypeScript and Svelte, or through a relative `@import` in CSS.",
+      "text": "A theme file imports from the chassis only through the `#chassis` subpath import in TypeScript and Svelte, or through a relative `@import` in CSS.",
       "id": "f:lwrqfd"
     },
     {

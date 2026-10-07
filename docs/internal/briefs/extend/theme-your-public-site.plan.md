@@ -199,7 +199,7 @@ ships neither, so an engine upgrade leaves these files unchanged (`f:rxj43c`, `f
 committed page's "no engine version governs how the site looks" paragraph is not drafted, the
 clause carries the claim). Then one sentence: those files still read the engine's roles from
 `cairn-public.css`, which the chassis imports right after Tailwind (`f:s23sk0`), and the next
-section states which declaration of a role wins. The `$chassis` seam and the dependents rule are
+section states which declaration of a role wins. The `#chassis` seam and the dependents rule are
 port-time concerns and sit in Port your own theme onto the chassis, not here; the daisyUI
 component limit (`f:l2mbcj`'s second clause) is stated once, as a port step's reason, with
 `f:h5e8d4`.
@@ -351,7 +351,7 @@ place of the re-skin, since the re-skin keeps Waymark's layouts and a port keeps
 (`f:kt0epf` and `f:s4prb0`, both cited again; no new fact). Then two paragraphs of the chassis
 rules before the steps, moved here from the committed page's The chassis boundary because only a
 port touches them. The seam: a theme file imports from
-the chassis only through the `$chassis` alias in TypeScript and Svelte or a relative `@import` in
+the chassis only through the `#chassis` subpath import in TypeScript and Svelte or a relative `@import` in
 CSS; the cairn repository gates that boundary on its example site with `check:chassis-boundary`,
 and a scaffolded site inherits it as a convention with no gate of its own (`f:lwrqfd`; friction
 filed, see below). The dependents rule, the Shopify take of the caution beside the irreversible
@@ -811,7 +811,7 @@ outline cross-links in See also, the numbered checks with observable results, th
 - The preview frame's `<html>` carries no `data-theme`, so the frame follows the OS scheme while
   the public site follows the visitor's cookie and `data-theme` (`f:faofr4`, `f:i9pgd2`). The
   page states it as the code's behavior. Filed as design friction.
-- The `$chassis` seam is a convention with no gate in a scaffolded site (`f:lwrqfd`). The page
+- The `#chassis` seam is a convention with no gate in a scaffolded site (`f:lwrqfd`). The page
   states it as a convention. Filed as design friction.
 - Three caveats this page also carries were filed 2026-09-30 and are not refiled: the preview
   ground's wording in `docs/reference/core.md` against the code (`f:faofr4`, `f:blhd7f`), the
@@ -822,7 +822,7 @@ outline cross-links in See also, the numbered checks with observable results, th
   against the scaffold's dev backend (`f:j2qzct`) is on `ROADMAP.md`'s Next tier and is not
   refiled.
 - The three entries this plan filed on its first run (the media-seed reference's missing
-  `assets.publicBase` sentence, the preview frame's OS-only scheme, and the ungated `$chassis`
+  `assets.publicBase` sentence, the preview frame's OS-only scheme, and the ungated `#chassis`
   seam) sit in `docs/internal/docs-friction-log.md` under "Filed 2026-10-03 by the page plan of
   `docs/extend/theme-your-public-site.md`" and are not refiled. Resolution run 2 filed no new
   entry: the flourish default and the port's route through the preview section are the code and

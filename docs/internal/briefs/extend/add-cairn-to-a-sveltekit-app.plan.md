@@ -331,7 +331,7 @@ sample (f:87hc1y).
   without an `Origin` header; the guard's double-submit token tolerates the missing header, so
   the site hands the authority over), f:d2jumm (the guard needs double-submit CSRF, so kit's own
   check is disabled with `csrf: { checkOrigin: false }`; the deprecation in SvelteKit 2.61 is
-  linked at `docs/reference/supported-toolchain.md#the-checkorigin-deprecation`, which answers the
+  linked at `docs/reference/supported-toolchain.md#the-checkorigin-removal`, which answers the
   fact read's note that the page sets a deprecated option without saying so), f:gncd64 (the
   setting turns the check off for every route, and the guard restores an equivalent strict
   `Origin` check on every route outside `/admin`), f:n52h8f (the scaffold's `src/app.d.ts`
@@ -888,7 +888,7 @@ brief records it as a cut whose reason names the link. `cut` gives the reason.
 | f:c8efq5 | carried | Install the engine and let Vite compile it |
 | f:72mctx | carried | Wire the dev backend and the CSRF handoff; Verify the dev sign-in (failure check); the checklist's one "say why" |
 | f:f2vudv | carried | Compose the runtime and the admin; Verify the dev sign-in; Verify the production site |
-| f:d2jumm | carried | Wire the dev backend and the CSRF handoff (the why; the deprecation at `docs/reference/supported-toolchain.md#the-checkorigin-deprecation`) |
+| f:d2jumm | carried | Wire the dev backend and the CSRF handoff (the why; the deprecation at `docs/reference/supported-toolchain.md#the-checkorigin-removal`) |
 | f:7bch04 | carried | Move the site to production (the opening map); Add the Email Sending binding and name the origin |
 | f:jzb3d0 | carried | Mount the admin routes (the `/admin` import half; the removed subpath stays off the page, `docs/extend/migration-notes.md`'s subject) |
 | f:7e1t0j | carried | Create the project on the Cloudflare adapter |

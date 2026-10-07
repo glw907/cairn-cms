@@ -716,8 +716,8 @@ type adds what its template asks of the opening, as the following anatomies stat
 
   1. An introduction that states the task, when and why the reader would do it, and who the page
      is for, and that names the page to read instead where a reader could be in the wrong place.
-     A one-line contract naming what the reader accomplishes stays as its first sentence, and
-     the contract alone does not meet the introduction requirement ([Good Docs how-to
+     The one-line contract naming what the reader accomplishes sits inside the framing, per "The
+     introduction", and the contract alone does not meet the introduction requirement ([Good Docs how-to
      template](https://gitlab.com/tgdp/templates/-/blob/main/how-to/template_how-to.md) and its
      guide, templates v1.6.0).
   2. Preconditions, each stated with a link to whatever produces it.

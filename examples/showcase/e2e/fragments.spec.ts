@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillTitleWhenHydrated } from './editor-helpers.js';
 
 // Task 8: the fragments (reusable-content) feature, proven end to end against the real showcase
 // build. The public half and the editor half exercise two separate content universes on purpose:
@@ -72,7 +73,7 @@ test.describe('fragments: reusable content included across entries', () => {
     const fragmentId = new URL(page.url()).pathname.split('/').pop() ?? '';
     expect(fragmentId).toContain(fragmentSlug);
 
-    await page.locator('input[name="title"]').fill(fragmentTitle);
+    await fillTitleWhenHydrated(page, fragmentTitle);
     const fragmentEditor = page.locator('.cm-content');
     await fragmentEditor.click();
     await page.keyboard.type(fragmentBody);

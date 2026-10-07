@@ -14,7 +14,8 @@ export const ALLOWLIST = new Set([
   'cli-flag:--local', // wrangler d1's own flag
   'cli-flag:--remote', // wrangler d1's own flag
   'cli-flag:--command', // wrangler d1 execute's own flag
-  'cli-flag:--port', // vite preview's own flag, shown after `npm run preview --`
+  'cli-flag:--port', // wrangler dev's own flag, shown after `npm run preview --`
+  'cli-flag:--var', // wrangler dev's own flag, shown after `npm run preview --`
   'cli-flag:--rendered', // cairn-audit's own flag, not create-cairn-site's
   'cli-flag:--rule', // cairn-audit's own flag, not create-cairn-site's
   'cli-flag:--from', // cairn-media-seed's own flag, not create-cairn-site's
@@ -35,6 +36,7 @@ export const ALLOWLIST = new Set([
   'env-var:SOME_UNSET_VAR', // docs/reference/cloudflare.md's illustrative name for an omitted config key
   'env-var:CLUB_DB', // docs/extend/add-a-custom-admin-screen.md's illustrative section D1 binding
   'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
+  'env-var:ERR_UNSUPPORTED_ESM_URL_SCHEME', // docs/extend/migration-notes.md, Node's own error code for `vite preview` serving adapter 8 output (sveltejs/kit#17271), never a cairn variable
 
   // The Go `cairn` CLI's own credential environment variables, defined in
   // tool/cmd/cairn/env.go, a separate module this gate's source-tree grep does not scan.
@@ -86,6 +88,9 @@ export const ALLOWLIST = new Set([
   'log-event:tidy.client', // docs/reference/sveltekit.md, ContentRoutesOptions' `tidy.client` field
   'log-event:tidy.conventions', // docs/extend/enable-tidy.md, the site config's `tidy.conventions` field
   'log-event:tidy.model', // docs/extend/enable-tidy.md, migration-notes.md, and log-events.md, the site config's `tidy.model` field
+  'log-event:config.csrf-disable-missing', // docs/extend/migration-notes.md and docs/reference/cli-cairn-json-output.md, a retired condition id the tool v2 record must still name to say what changed
+  'log-event:auth.csrf-origin-mismatch', // docs/extend/migration-notes.md and docs/reference/cli-cairn-json-output.md, a retired condition id the tool v2 record must still name to say what changed
+  'log-event:auth.channel.delivery_inline', // docs/extend/migration-notes.md, the retired log event name a removal entry must still name to say what changed
   'log-event:taxonomy.unmarked_field', // docs/extend/migration-notes.md, the retired name a rename entry must still name to say what changed
   'log-event:publish.address_collision', // docs/extend/migration-notes.md, the retired name a rename entry must still name to say what changed
   'log-event:config.refine', // docs/reference/core.md, FieldsetConfig's `refine` field

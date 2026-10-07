@@ -20,11 +20,10 @@ describe('renderConditionResponse', () => {
     expect(await res.text()).toContain('Back to sign-in');
   });
 
-  it('renders the plain-text 403 for the origin condition', async () => {
-    const res = renderConditionResponse('auth.csrf-origin-mismatch');
-    expect(res.status).toBe(403);
-    expect(res.headers.get('content-type')).toMatch(/text\/plain/);
-    expect(await res.text()).toBe('Cross-site POST form submissions are forbidden');
+  it('has no renderer for a condition only the doctor raises', () => {
+    expect(() => renderConditionResponse('config.csrf-trusted-origins-wildcard')).toThrow(
+      /no runtime renderer/,
+    );
   });
 
   it('renders the branded operator-fault page for the bindings condition', async () => {

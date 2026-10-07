@@ -6,16 +6,16 @@ import { createSession } from '../../lib/auth/store.js';
 import { sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
+import { withTestEnv } from '../helpers/with-test-env.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 
 const db = env.AUTH_DB;
 
 /**
- * createAuthGuard is annotated `: Handle`, kit's own ambient type (the interop carve-out); its
- *  real runtime parameter is the lighter, generic CairnEvent shape every fixture in this file
- *  builds, and this package's own compile unit declares no ambient App.Platform.env for kit's
- *  RequestEvent to resolve through (see env-genericity.test.ts's own note on this same gap), so
- *  every construction in this file bridges it through this one shim rather than casting per call.
+ * createAuthGuard is annotated `: Handle`, kit's own type (the interop carve-out); its real
+ *  runtime parameter is the lighter CairnEvent shape every fixture in this file builds, which
+ *  lacks most of kit's RequestEvent members, so every construction in this file bridges it
+ *  through this one shim rather than casting per call.
  */
 function asHandle(guard: ReturnType<typeof createAuthGuard>): (input: {
   event: CairnEvent;
@@ -43,7 +43,6 @@ function event(pathname: string, cookies = makeCookies()): CairnEvent {
     route: { id: '/admin/[...path]' },
     cookies,
     locals: {},
-    platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
     setHeaders: () => {},
   };
 }
@@ -57,7 +56,6 @@ function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies())
     route: { id: '/admin/[...path]' },
     cookies,
     locals: {},
-    platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: `https://${host}` } },
     setHeaders: () => {},
   };
 }
@@ -81,7 +79,6 @@ function formEvent(
     route: { id: '/admin/[...path]' },
     cookies: makeCookies(cookieMap),
     locals: {},
-    platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
     setHeaders: () => {},
   };
 }
@@ -269,7 +266,7 @@ describe('admin security headers (Unit 2)', () => {
     expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
     expect(res.headers.get('X-Frame-Options')).toBe('DENY');
     expect(res.headers.get('Content-Security-Policy')).toBe("frame-ancestors 'none'");
-    expect(res.headers.get('Referrer-Policy')).toBe('no-referrer');
+    expect(res.headers.get('Referrer-Policy')).toBe('strict-origin');
     expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=63072000');
     expect(res.headers.get('Permissions-Policy')).toBe('camera=(), microphone=(), geolocation=()');
     expect(res.headers.get('Cache-Control')).toBe('private, no-store');
@@ -293,10 +290,31 @@ describe('admin security headers (Unit 2)', () => {
   });
 });
 
-describe('CSRF (cairn owns it)', () => {
-  it('rejects a non-admin form POST with a mismatched Origin', async () => {
+describe('CSRF (cairn owns the admin token, the framework owns the Origin check)', () => {
+  // The framework's own check refuses a cross-origin form POST before any handle runs, so the guard
+  // never sees one in a running site; the guard's part is to not duplicate that refusal.
+  it('passes a non-admin form POST with a foreign Origin through to resolve', async () => {
     const res = await handle({ event: formEvent('/contact', { origin: 'https://evil.dev' }), resolve: async () => OK });
+    expect(res).toBe(OK);
+  });
+
+  it('serves the branded token page for an admin form POST with a matching Origin and a stale token', async () => {
+    let resolved = false;
+    const res = await handle({
+      event: formEvent('/admin/login', {
+        origin: 'https://test.dev',
+        csrfCookie: 'FRESH',
+        csrfField: 'STALE',
+      }),
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
     expect(res.status).toBe(403);
+    expect(res.headers.get('content-type')).toMatch(/text\/html/);
+    expect(await res.text()).toContain('Back to sign-in');
   });
 
   it('passes a non-admin form POST with a matching Origin', async () => {
@@ -342,7 +360,6 @@ describe('CSRF (cairn owns it)', () => {
       route: { id: '/admin/[concept]/[id]' },
       cookies,
       locals: {},
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
     const res = await handle({ event: ev, resolve: async () => OK });
@@ -366,7 +383,6 @@ describe('CSRF (cairn owns it)', () => {
       route: { id: '/admin/[concept]/[id]' },
       cookies,
       locals: {},
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
     // The header-CSRF path must NOT consume or clone the body, so a downstream action can still read
@@ -384,6 +400,78 @@ describe('CSRF (cairn owns it)', () => {
     expect(seen).toEqual(new Uint8Array([0xff, 0xd8, 0xff]));
   });
 
+  /** A request to a site-authored admin endpoint, built with the given init and a CSRF cookie of TOK. */
+  function rawAdminEvent(init: RequestInit, cookies: ReturnType<typeof makeCookies>): CairnEvent {
+    const url = 'https://test.dev/admin/partner-hook';
+    return {
+      url: new URL(url),
+      request: new Request(url, init),
+      params: {},
+      route: { id: '/admin/partner-hook' },
+      cookies,
+      locals: {},
+      setHeaders: () => {},
+    };
+  }
+
+  it('refuses an untyped-body admin POST that carries no token, never resolving', async () => {
+    const cookies = await seedSession('own@x.dev');
+    cookies.jar.set(csrfCookieName(true), 'TOK');
+    const ev = rawAdminEvent(
+      { method: 'POST', headers: { origin: 'https://partner.dev' }, body: new Blob([new Uint8Array([1, 2, 3])]) },
+      cookies,
+    );
+    expect(ev.request.headers.get('content-type')).toBeNull();
+    let resolved = false;
+    const res = await handle({
+      event: ev,
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
+    expect(res.status).toBe(403);
+  });
+
+  it('refuses an admin POST in the binary remote-form content type that carries no token', async () => {
+    const cookies = await seedSession('own@x.dev');
+    cookies.jar.set(csrfCookieName(true), 'TOK');
+    const ev = rawAdminEvent(
+      { method: 'POST', headers: { 'content-type': 'application/x-sveltekit-formdata' }, body: 'x' },
+      cookies,
+    );
+    let resolved = false;
+    const res = await handle({
+      event: ev,
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
+    expect(res.status).toBe(403);
+  });
+
+  it('passes an untyped-body admin POST whose X-Cairn-CSRF header matches, body intact', async () => {
+    const cookies = await seedSession('own@x.dev');
+    cookies.jar.set(csrfCookieName(true), 'TOK');
+    const ev = rawAdminEvent(
+      { method: 'POST', headers: { 'x-cairn-csrf': 'TOK' }, body: new Blob([new Uint8Array([7, 8])]) },
+      cookies,
+    );
+    let seen: Uint8Array | null = null;
+    const res = await handle({
+      event: ev,
+      resolve: async () => {
+        seen = new Uint8Array(await ev.request.arrayBuffer());
+        return OK;
+      },
+    });
+    expect(res).toBe(OK);
+    expect(seen).toEqual(new Uint8Array([7, 8]));
+  });
+
   it('rejects an admin POST whose X-Cairn-CSRF header does not match the cookie', async () => {
     const res = await handle({
       event: formEvent('/admin/posts/p1', { csrfCookie: 'TOK', csrfHeader: 'WRONG' }),
@@ -395,6 +483,11 @@ describe('CSRF (cairn owns it)', () => {
 });
 
 describe('missing AUTH_DB binding (operator fault)', () => {
+  /** The guard under a Worker env with no AUTH_DB binding. */
+  function handleUnbound(input: Parameters<typeof handle>[0]): Promise<Response> {
+    return withTestEnv({ AUTH_DB: undefined }, () => handle(input));
+  }
+
   function unboundEvent(pathname: string): CairnEvent {
     const url = `https://test.dev${pathname}`;
     return {
@@ -404,7 +497,6 @@ describe('missing AUTH_DB binding (operator fault)', () => {
       route: { id: '/admin/[...path]' },
       cookies: makeCookies(),
       locals: {},
-      platform: { env: { PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
   }
@@ -412,7 +504,7 @@ describe('missing AUTH_DB binding (operator fault)', () => {
   it('serves the bindings condition page for a gated request and never resolves', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     let resolved = false;
-    const res = await handle({
+    const res = await handleUnbound({
       event: unboundEvent('/admin'),
       resolve: async () => {
         resolved = true;
@@ -430,7 +522,7 @@ describe('missing AUTH_DB binding (operator fault)', () => {
 
   it('logs guard.refused at error level with reason=bindings and the condition id', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await handle({ event: unboundEvent('/admin'), resolve: async () => OK });
+    await handleUnbound({ event: unboundEvent('/admin'), resolve: async () => OK });
     const records = errorSpy.mock.calls.map(
       (c) => c[0] as { event?: string; reason?: string; conditionId?: string; path?: string },
     );
@@ -451,7 +543,7 @@ describe('missing AUTH_DB binding (operator fault)', () => {
     // mint a token into. The branded condition page is the honest answer for every admin path.
     vi.spyOn(console, 'error').mockImplementation(() => {});
     let resolved = false;
-    const res = await handle({
+    const res = await handleUnbound({
       event: unboundEvent('/admin/login'),
       resolve: async () => {
         resolved = true;
@@ -470,7 +562,12 @@ describe('missing AUTH_DB binding (operator fault)', () => {
 describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => {
   // AUTH_DB is bound so a refusal proves the tripwire fires before the bindings/session logic, not
   // because a binding is missing. The string '1' is the Worker-var form the dev backend sets.
-  function devBackendEvent(pathname: string, flag: string | boolean): CairnEvent {
+  /** The guard under a Worker env carrying the dev-backend flag. */
+  function handleFlagged(flag: string | boolean, input: Parameters<typeof handle>[0]): Promise<Response> {
+    return withTestEnv({ CAIRN_DEV_BACKEND: flag }, () => handle(input));
+  }
+
+  function devBackendEvent(pathname: string): CairnEvent {
     const url = `https://test.dev${pathname}`;
     return {
       url: new URL(url),
@@ -479,7 +576,6 @@ describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => 
       route: { id: '/admin/[...path]' },
       cookies: makeCookies(),
       locals: {},
-      platform: { env: { AUTH_DB: db, CAIRN_DEV_BACKEND: flag } },
       setHeaders: () => {},
     };
   }
@@ -487,8 +583,8 @@ describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => 
   it('refuses with 503, never resolves, and logs guard.refused reason=dev_backend_in_prod', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     let resolved = false;
-    const res = await handle({
-      event: devBackendEvent('/admin', '1'),
+    const res = await handleFlagged('1', {
+      event: devBackendEvent('/admin'),
       resolve: async () => {
         resolved = true;
         return OK;
@@ -509,20 +605,18 @@ describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => 
 
   it('trips on the boolean true form as well', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    const res = await handle({ event: devBackendEvent('/admin', true), resolve: async () => OK });
+    const res = await handleFlagged(true, { event: devBackendEvent('/admin'), resolve: async () => OK });
     expect(res.status).toBe(503);
     vi.restoreAllMocks();
   });
 });
 
 describe('guard rejection logging', () => {
-  it('logs guard.refused reason=origin for a non-admin cross-origin form POST', async () => {
+  it('logs no guard.refused for a non-admin cross-origin form POST', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await handle({ event: formEvent('/contact', { origin: 'https://evil.dev' }), resolve: async () => OK });
     const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
-    const reasons = warnSpy.mock.calls.map((c) => (c[0] as { reason?: string }).reason);
-    expect(events).toContain('guard.refused');
-    expect(reasons).toContain('origin');
+    expect(events).not.toContain('guard.refused');
     vi.restoreAllMocks();
   });
 
@@ -596,7 +690,6 @@ describe('guard.refused CSRF discriminator (Task 3): detail, witness, hasSession
       route: { id: '/admin/[...path]' },
       cookies: makeCookies({ [csrfCookieName(true)]: 'TOK' }),
       locals: {},
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
     const res = await handle({ event: ev, resolve: async () => OK });
@@ -623,7 +716,6 @@ describe('guard.refused CSRF discriminator (Task 3): detail, witness, hasSession
       route: { id: '/admin/[...path]' },
       cookies: makeCookies({ [csrfCookieName(true)]: 'TOK' }),
       locals: {},
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
     await handle({ event: ev, resolve: async () => OK });
@@ -650,7 +742,6 @@ describe('guard.refused CSRF discriminator (Task 3): detail, witness, hasSession
       route: { id: '/admin/[concept]/[id]' },
       cookies: sessionCookies,
       locals: {},
-      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
     await handle({ event: ev, resolve: async () => OK });

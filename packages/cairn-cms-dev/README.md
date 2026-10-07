@@ -39,7 +39,7 @@ Then name it directly in the branch, and import the package dynamically:
 
 ```ts
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
 
 let handle: Handle;
 if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
@@ -57,8 +57,8 @@ Then start the dev server with the flag set:
 CAIRN_DEV_BACKEND=1 npm run dev
 ```
 
-Open `/admin`. The handle resolves an owner session and supplies the binding doubles on
-`platform.env`, so the admin runs with no GitHub App and no D1.
+Open `/admin`. The handle resolves an owner session and layers the binding doubles over
+the Worker env with `withEnv`, so the admin runs with no GitHub App and no D1.
 
 ## The fence
 
@@ -78,7 +78,9 @@ Three independent layers keep the bypass out of production. The bypass ships onl
    forced import throws at runtime instead of bypassing.
 3. The engine tripwire. If `CAIRN_DEV_BACKEND` reaches a deployed runtime, cairn's auth guard refuses
    the request with a 503 and logs `guard.refused` with `reason: "dev_backend_in_prod"`. A polluted
-   environment fails closed.
+   environment fails closed. A build that folded the dev backend in mounts `devBackendHandle` in
+   place of the guard, so the handle carries the same refusal: with the flag set, a request to a
+   non-local host gets the same 503 and the same log record.
 
 ## Two risk tiers
 

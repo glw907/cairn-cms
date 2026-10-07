@@ -35,7 +35,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     id: 'edge.https-not-forced',
     severity: 'blocker',
     title: 'Always Use HTTPS is off',
-    why: 'The JS-free admin sign-in posts a form, and the framework CSRF guard rejects a form POST whose origin scheme does not match, so an admin reached over http hits an opaque 403.',
+    why: 'The JS-free admin sign-in posts a form, and cairn refuses to serve the admin over plain http outside localhost: its guard answers with a help page, and a member action throws a 403. So an admin reached over http cannot sign in.',
     remediation: 'Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates, and keep HSTS on.',
     docsAnchor: 'is-it-working.md#force-https-at-the-edge',
     logEvent: 'guard.refused',
@@ -47,15 +47,6 @@ export const REGISTRY: Record<string, CairnCondition> = {
     why: 'An admin form POST carried no valid __Host-cairn_csrf double-submit token, usually a stale tab or blocked cookies.',
     remediation: 'Open the sign-in page fresh, allow cookies for the site, and request a new link.',
     docsAnchor: 'is-it-working.md#admin-csrf-token-rejected',
-    logEvent: 'guard.refused',
-  },
-  'auth.csrf-origin-mismatch': {
-    id: 'auth.csrf-origin-mismatch',
-    severity: 'blocker',
-    title: 'Non-admin form Origin rejected',
-    why: "A non-admin unsafe form POST carried an Origin that did not match the site, so cairn's restored framework Origin check rejected it.",
-    remediation: 'Post the form from the same origin, or check a proxy that strips or rewrites the Origin header.',
-    docsAnchor: 'is-it-working.md#non-admin-origin-rejected',
     logEvent: 'guard.refused',
   },
   'email.sender-not-onboarded': {
@@ -100,16 +91,13 @@ export const REGISTRY: Record<string, CairnCondition> = {
     remediation: 'Set observability.enabled to true in wrangler.jsonc, then re-deploy.',
     docsAnchor: 'is-it-working.md#turn-on-observability',
   },
-  // WATCH: check:tool-heuristics greps the checkOrigin: false literal below (twice, in why and
-  // remediation) for the Go tool's config.csrf-disable heuristic, which has no engine symbol of
-  // its own to watch and instead relies on the engine telling every site to write this string.
-  'config.csrf-disable-missing': {
-    id: 'config.csrf-disable-missing',
+  'config.csrf-trusted-origins-wildcard': {
+    id: 'config.csrf-trusted-origins-wildcard',
     severity: 'warning',
-    title: 'Framework CSRF check is not handed off',
-    why: "The CSRF authority is not handed to cairn cleanly. Either svelte.config.js does not carry csrf: { checkOrigin: false }, so SvelteKit's own Origin check runs ahead of cairn's guard and rejects an admin form POST that arrives without an Origin header, or the disable is present with no cairn guard wired in src/hooks.server.ts, which leaves the site with no CSRF protection at all.",
-    remediation: "Set csrf: { checkOrigin: false } in svelte.config.js and wire createAuthGuard into src/hooks.server.ts; cairn's guard owns the Origin and double-submit token checks.",
-    docsAnchor: 'is-it-working.md#wire-cairns-csrf-guard',
+    title: "Trusted origins bypass SvelteKit's origin check",
+    why: "A csrf.trustedOrigins entry of \"*\" turns off SvelteKit's Origin check on every route, and an entry of \"null\" admits every POST from an opaque origin, which any attacker can produce from a sandboxed iframe. cairn's admin keeps its own double-submit token and member actions keep their own origin compare, but the site's own forms have no Origin check at all. Site actions that read a member session through resolveSubject are among those forms; SameSite=Lax stops a cross-site post but not one from a sibling subdomain.",
+    remediation: "Remove the \"*\" and \"null\" entries from csrf.trustedOrigins in the Vite config. List only the exact origins that must post to the site, since each one also widens SvelteKit's check on /admin.",
+    docsAnchor: 'is-it-working.md#keep-sveltekits-origin-check-on',
   },
   'config.public-origin-invalid': {
     id: 'config.public-origin-invalid',
@@ -190,8 +178,8 @@ export const REGISTRY: Record<string, CairnCondition> = {
     id: 'config.no-referrer-blanket',
     severity: 'warning',
     title: 'Site-wide Referrer-Policy: no-referrer',
-    why: "A site-wide Referrer-Policy: no-referrer header strips the Origin from every same-origin top-level form POST under the Fetch spec, so it arrives as Origin: null. cairn's guard restores SvelteKit's strict Origin check outside /admin (originMatches, a deliberately strict compare with no loosening), so a non-admin form on the site 403s even though the visitor never left the site. cairn's own /admin responses already scope no-referrer to the token-bearing routes it protects; the trap is a site shipping that same policy as its own site-wide default.",
-    remediation: "Serve strict-origin-when-cross-origin (or same-origin) as the site's default Referrer-Policy. no-referrer is safe only on a route whose CSRF protection is a double-submit token, the way cairn's own /admin responses are; any route guarded instead by the origin compare (every createAuthChannel action, and any other non-admin form) needs same-origin in its place, since same-origin still carries a real Origin on a same-origin POST while stripping it cross-origin.",
+    why: "A site-wide Referrer-Policy: no-referrer header strips the Origin from every same-origin top-level form POST under the Fetch spec, so it arrives as Origin: null. SvelteKit's origin check refuses a null Origin, so the site's own forms 403 even though the visitor never left the site, and so does every createAuthChannel action. cairn's admin documents pin their own referrer policy with a header and a meta tag, so the admin keeps working unless a site meta placed after %sveltekit.head% overrides it; the trap is a site shipping no-referrer as its own site-wide default.",
+    remediation: "Serve strict-origin-when-cross-origin (or same-origin) as the site's default Referrer-Policy. Either one carries a real Origin on a same-origin POST, which SvelteKit's origin check and every createAuthChannel action need.",
     docsAnchor: 'is-it-working.md#scope-a-site-wide-no-referrer-policy',
   },
   'auth.email-not-normalized': {

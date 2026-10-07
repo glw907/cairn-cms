@@ -124,7 +124,7 @@ async function resolveBaseUrl() {
   const baseUrl = process.env.BASE_URL || DEFAULT_BASE_URL;
   if (!(await isReachable(baseUrl))) {
     throw new Error(
-      `no server answering at ${baseUrl}; start examples/showcase's preview (VITE_CAIRN_E2E=1 npm run build && CAIRN_DEV_BACKEND=1 npm run preview -- --port 4173) or set BASE_URL, then re-run`
+      `no server answering at ${baseUrl}; start examples/showcase's preview (VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port 4173 --var CAIRN_DEV_BACKEND:1) or set BASE_URL, then re-run`
     );
   }
   return baseUrl;

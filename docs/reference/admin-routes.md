@@ -4,16 +4,21 @@ A cairn site mounts the whole `/admin` surface with two route pairs, the catch-a
 shell layout, plus one server composer. The engine's `createCairnAdmin` facade serves every admin view through a single `load`
 and a single `actions` record, so the site restates no route table and wires no action names by
 hand. The showcase at `examples/showcase` is the working model of this shape; copy its files, not
-a guess at them. The showcase's own `svelte.config.js` predates the current scaffold shape below;
-it is this repo's hand-maintained config, not a fresh scaffold's output, and both settings still
-work there too. The showcase also imports its composer through its own `$chassis` alias and
-imports a compiled .cairn/admin.css in its shell layout; the snippets below use the generic
-`$lib` alias and omit that stylesheet import.
+a guess at them. The showcase keeps its SvelteKit config in the `sveltekit()` call in
+`vite.config.ts`, the shape a current scaffold writes, and has no `svelte.config.js`. The showcase
+declares its subpath imports (`#lib`, `#chassis`, and `#theme`) in its `package.json` and imports
+its composer through `#chassis`. It also imports a compiled .cairn/admin.css in its shell layout.
+The snippets below use `#lib` for the composer and omit that stylesheet import.
 
-This wiring assumes the site disables SvelteKit's own origin check for form posts, `csrf: {
-checkOrigin: false }`, since cairn's guard owns CSRF for the admin through a double-submit token.
-A current `sv create` scaffold carries no `svelte.config.js` at all: the adapter and the CSRF
-setting both go inside `vite.config.ts`'s `sveltekit({ ... })` call instead.
+This wiring carries no `csrf` setting. SvelteKit's origin check covers every route, `/admin`
+included, and it runs before any `handle` hook. A form POST whose `Origin` header is absent, `null`,
+or foreign gets SvelteKit's plain 403 (`Cross-site POST form submissions are forbidden`), and no
+cairn event records it. The engine's admin responses serve `Referrer-Policy: strict-origin`, and
+every admin document carries a matching `<meta name="referrer" content="strict-origin">`, so the
+browser keeps the page's origin on each admin form POST and the check passes. The guard also
+requires the double-submit CSRF token on every unsafe form POST under `/admin`, which SvelteKit's
+origin check does not replace. A site that widens the check with `csrf.trustedOrigins` widens it
+for `/admin` too, and `cairn doctor` flags an entry of `'*'` or `'null'`.
 
 ## The route files plus the composer
 
@@ -22,8 +27,8 @@ The catch-all route pair, reproduced from the showcase:
 ```ts
 // src/routes/admin/[...path]/+page.server.ts
 // The single-mount admin route: one catch-all serves every /admin view through the engine's
-// load and actions. The composition (runtime, deps) lives in $lib/cairn.server.
-import { admin } from '$lib/cairn.server.js';
+// load and actions. The composition (runtime, deps) lives in #lib/cairn.server.
+import { admin } from '#lib/cairn.server.js';
 
 // The admin must never be prerendered; a site that defaults to prerender=true would bake a
 // build-time snapshot of a session-gated page.
@@ -38,7 +43,7 @@ export const actions = admin.actions;
 <script lang="ts">
   import { CairnAdmin } from '@glw907/cairn-cms/admin';
   import type { AdminData } from '@glw907/cairn-cms/sveltekit';
-  import { cairn } from '$theme/cairn.config.js';
+  import { cairn } from '#theme/cairn.config.js';
   import type { ActionData } from './$types';
 
   let { data, form }: { data: AdminData; form: ActionData } = $props();
@@ -57,7 +62,7 @@ showcase:
 // src/routes/admin/+layout.server.ts
 // The shared admin shell's load: the chrome (nav, user, theme, streamed pending count) for every
 // /admin/** route, including a developer's own custom screens.
-import { admin } from '$lib/cairn.server.js';
+import { admin } from '#lib/cairn.server.js';
 
 export const load = admin.shellLoad;
 ```
@@ -85,7 +90,7 @@ The composer builds the runtime once, and every server route that needs it (the 
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin({ runtime });
@@ -187,28 +192,22 @@ The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates 
 it. The guard sets `event.locals.cairnEditor`, and one line in `src/app.d.ts` types it:
 `import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)). The guard
 and the mount also read a set of Cloudflare bindings (the auth store, the email sender, the GitHub
-App credentials); intersecting
-[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) into `App.Platform.env` is a
-recommended convenience preset, not a requirement. Every route factory's env parameter is
-structurally satisfied by a bare `wrangler types`-generated `Env` too, so the type exists to catch
-a forgotten binding at compile time, not to unblock `export const actions = admin.actions` below.
-See [`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) for the full type:
+App credentials) from `cloudflare:workers`. The site's `Env`, generated by `wrangler types` into
+`worker-configuration.d.ts`, types them, and `src/app.d.ts` brings that file into the program:
 
+<!-- snippet-check-skip: references the site's generated worker-configuration.d.ts, which only a site has -->
 ```ts
 // src/app.d.ts
-import type { CairnPlatformBindings } from '@glw907/cairn-cms/sveltekit';
+/// <reference types="@cloudflare/workers-types" />
+/// <reference path="../worker-configuration.d.ts" />
 import '@glw907/cairn-cms/ambient';
-
-declare global {
-  namespace App {
-    interface Platform {
-      env: CairnPlatformBindings & { /* the site's own bindings */ };
-    }
-  }
-}
 ```
 
-A media-enabled site also intersects
+Checking that `Env` against [`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) in any
+server module (`({}) as Env satisfies CairnPlatformBindings;`) catches a forgotten binding at
+compile time.
+
+A media-enabled site also checks
 [`CairnMediaBindings`](./sveltekit.md#cairnmediabindings), since `MEDIA_BUCKET` exists only when
 the adapter turns media on.
 
@@ -275,12 +274,11 @@ session, so it cannot live under `/admin`. Mount it at the site root and call th
 
 ```ts
 // src/routes/healthz/+server.ts
-import { json } from '@sveltejs/kit';
 import { loadHealth } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from '$lib/cairn.server.js';
+import { runtime } from '#lib/cairn.server.js';
 
 export const prerender = false;  // see below
-export const GET = async (event) => json(await loadHealth(event, runtime));
+export const GET = async (event) => Response.json(await loadHealth(event, runtime));
 ```
 
 On a site that prerenders by default, the explicit `prerender = false` is required. Without it

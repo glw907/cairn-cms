@@ -6,6 +6,8 @@ import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import { testEvent } from '../helpers/test-event.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
+
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
@@ -38,6 +40,7 @@ function eventFor(
   } = {},
 ) {
   const headers: Record<string, string> = {};
+  setFakeEnv({ GITHUB_APP_PRIVATE_KEY_B64: 'x' });
   return {
     ...testEvent({
       url: `https://t.example${pathname}`,
@@ -48,7 +51,6 @@ function eventFor(
             : opts.editor,
         cairnBackend: backend,
       },
-      env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' },
     }),
     setHeaders: (h: Record<string, string>) => Object.assign(headers, h),
     _headers: headers,

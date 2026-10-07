@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillTitleWhenHydrated } from './editor-helpers.js';
 
 // The seeded post is 2026-06-hello in src/content/posts/.
 // hooks.server.ts injects: { email: 'editor@showcase.test', displayName: 'Demo Editor', role: 'owner' }
@@ -191,7 +192,7 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
 
   // First save: fill the required title, type a body, save. The commit lands on the entry's
   // pending branch, not main.
-  await page.locator('input[name="title"]').fill('Race Report');
+  await fillTitleWhenHydrated(page, 'Race Report');
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('The first body.');
@@ -300,7 +301,7 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   const id = new URL(page.url()).pathname.split('/').pop() ?? '';
 
   // Save a body so the entry's pending row derives a summary, and the save lands the branch.
-  await page.locator('input[name="title"]').fill('Triage Draft');
+  await fillTitleWhenHydrated(page, 'Triage Draft');
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('A pending draft body for the triage.');
@@ -563,7 +564,7 @@ test('an entry opens with its component blocks folded, and the safety invariant 
   await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
   const id = new URL(page.url()).pathname.split('/').pop() ?? '';
 
-  await page.locator('input[name="title"]').fill('Fold On Open');
+  await fillTitleWhenHydrated(page, 'Fold On Open');
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('Intro line.\n\n:::note\nHidden detail one.\nHidden detail two.\n:::');
@@ -619,7 +620,7 @@ test('the v2 status select round-trips: set it, save, reload, the value persists
   await expect(statusSelect).toHaveValue('draft');
 
   // Required title plus a body so the save validates and commits the branch.
-  await page.locator('input[name="title"]').fill('Status Roundtrip');
+  await fillTitleWhenHydrated(page, 'Status Roundtrip');
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('A body for the status round-trip.');
@@ -668,7 +669,7 @@ test('reference fields round-trip through the editor, commit their edges, and re
   const id = new URL(page.url()).pathname.split('/').pop() ?? '';
 
   // Required title plus a body so the save validates and commits the branch.
-  await page.locator('input[name="title"]').fill('References');
+  await fillTitleWhenHydrated(page, 'References');
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('A body for the reference round-trip.');

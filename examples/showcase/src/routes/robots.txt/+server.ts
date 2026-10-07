@@ -1,8 +1,8 @@
 import type { RequestHandler } from './$types';
 import { robotsResponse } from '@glw907/cairn-cms/delivery';
 import type { CairnAdapter } from '@glw907/cairn-cms';
-import { siteMeta } from '$chassis/content.js';
-import { cairn } from '$theme/cairn.config.js';
+import { siteMeta } from '#chassis/content.js';
+import { cairn } from '#theme/cairn.config.js';
 
 export const prerender = true;
 

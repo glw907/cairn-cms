@@ -9,11 +9,12 @@
 // access check on each form action resolve against the same site access map, so a denied POST's
 // page render exposes nothing the load would already have refused; the ownerOnly nav flag is
 // cosmetic only.
-import type { PageServerLoad, Actions, RequestEvent } from './$types';
+import type { PageServerLoad, Actions } from './$types';
+import { env } from 'cloudflare:workers';
 import { createSectionAction, requireAccess } from '@glw907/cairn-cms/sveltekit';
 import { error, fail } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
-import { log } from '$lib/log.js';
+import { log } from '#lib/log.js';
 
 /** A signup row, the developer's own table shape, read from APP_DB. */
 interface SignupRow {
@@ -22,14 +23,14 @@ interface SignupRow {
   email: string;
 }
 
-// A deployed Worker always carries platform.env (wrangler.jsonc binds APP_DB); its absence is a
+// A deployed Worker always carries APP_DB (wrangler.jsonc binds it); its absence is a
 // deployment misconfiguration, not a request-shaped failure, so it logs with the engine's own
 // area.subject.verb_phrase grammar (section-action.ts's admin.action.misconfigured) and fails
 // closed with a generic 500 rather than leaking binding detail to the client. The load resolves
 // the binding this way because createSectionAction wraps form actions only; requireAccess and
 // requireOwner are the documented gates for a load.
-function requireAppDb(event: RequestEvent): D1Database {
-  const db = event.platform?.env.APP_DB;
+function requireAppDb(): D1Database {
+  const db: D1Database | undefined = env.APP_DB;
   if (!db) {
     log.error('admin.signups.misconfigured', { reason: 'db_not_bound' });
     error(500, 'This screen is not configured.');
@@ -39,7 +40,7 @@ function requireAppDb(event: RequestEvent): D1Database {
 
 export const load: PageServerLoad = async (event) => {
   requireAccess(event);
-  const db = requireAppDb(event);
+  const db = requireAppDb();
   const { results } = await db
     .prepare('SELECT id, name, email FROM signups ORDER BY id DESC')
     .all<SignupRow>();
@@ -57,8 +58,8 @@ export const load: PageServerLoad = async (event) => {
 // action refuses with a 403 it never explains to the browser, and an access map the guard never
 // attached refuses with a 500. ownerOnly stacks on top of that map check for the destructive
 // action, never in place of it.
-const sectionAction = createSectionAction<App.Platform['env'], D1Database>({
-  resolveDb: (env: App.Platform['env'] | undefined) => env?.APP_DB,
+const sectionAction = createSectionAction<Env, D1Database>({
+  resolveDb: (workerEnv: Env | undefined) => workerEnv?.APP_DB,
 });
 
 export const actions: Actions = {

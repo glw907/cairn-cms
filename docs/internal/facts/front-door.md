@@ -100,7 +100,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   (`email.sending.error.email.sending_disabled`) and `10204`
   (`email.sending.error.email.sender_not_configured`), both HTTP 403, and elapsed time since
   onboarding is the only discriminator between "never onboarded" and "still propagating". Source:
-  `src/lib/email.ts:80-102`; `src/lib/diagnostics/conditions.ts:65`;
+  `src/lib/email.ts:80-102`; `src/lib/diagnostics/conditions.ts:56`;
   `docs/internal/record/2026-08-11-t4b-email-spike.md:33,44,147-148,214,275,281`. [verified]
 - `f:2rzcvv` `npm run link:consumer -- <site-dir>` builds, packs, installs, and content-hashes every installed
   file against the pack, because `npm pack` reuses the tarball filename across versions and a plain

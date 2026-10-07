@@ -1,12 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { actions, load } from './+page.server.js';
 
+// `cloudflare:workers` exists only where a Worker runs, so this Node test stands in a Worker env
+// that carries no APP_DB binding, for the route and the engine alike.
+vi.mock('cloudflare:workers', () => ({ env: {} }));
+
 const CSRF_TOKEN = 'showcase-csrf-token';
 
 /**
  * Build the one event shape these actions read: an editor session, a cookie jar carrying the
  * double-submit token, a matching `csrf` form field, and the site's access declaration. The
- * platform env carries no `APP_DB`, which is safe here because every authorization check runs
+ * Worker env carries no `APP_DB`, which is safe here because every authorization check runs
  * before the binding resolves. A non-owner session is the interesting case, since
  * `/admin/signups` is declared owner-only.
  */
@@ -33,7 +37,6 @@ function signupsEvent(options: {
       },
       cairnAccess: { '/admin/signups': ['owner'] },
     },
-    platform: { env: { APP_DB: undefined } },
   };
   return event as unknown as Parameters<(typeof actions)['remove']>[0];
 }
@@ -72,7 +75,6 @@ describe('the signups screen load, a missing APP_DB binding', () => {
         },
         cairnAccess: { '/admin/signups': ['owner'] },
       },
-      platform: { env: {} },
     };
     await expect(load(event as unknown as Parameters<typeof load>[0])).rejects.toThrow();
 

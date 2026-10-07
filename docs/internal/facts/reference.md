@@ -100,7 +100,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/sveltekit/cairn-admin.ts:260-262,279,340` (`authedViews`/`anyView`). [verified]
 - `f:p3vmug` The showcase's admin route files differ from `admin-routes.md`'s "reproduced from the
   showcase" snippets in two ways: they import the composer through the showcase-internal
-  `$chassis` alias (not `$lib`), and `+layout.svelte` imports a compiled `.cairn/admin.css`,
+  `#chassis` subpath import (not `$lib`), and `+layout.svelte` imports a compiled `.cairn/admin.css`,
   present in both the showcase and the `create-cairn-site` scaffold template
   (`templates/waymark/src/routes/admin/+layout.svelte`). Source:
   `examples/showcase/src/routes/admin/+layout.server.ts`,
@@ -115,7 +115,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - `f:0vgrcx` `TextInput` and `SelectInput` shipped at `0.94.0` (renamed from admin-fields'
   `TextField`/`SelectField`); `FieldRow` was added later, at `0.95.0` (commit `68d622a1`,
   2026-08-07), not alongside the 0.94.0 merge. All three retired together in the retires pass,
-  batch 1a. Source: `CHANGELOG.md:3817-3827` (0.94.0 merge entry, no FieldRow), `CHANGELOG.md:1254-1256`
+  batch 1a. Source: `CHANGELOG.md:3841-3851` (0.94.0 merge entry, no FieldRow), `CHANGELOG.md:1278-1280`
   (retirement entry), commit `68d622a1` (FieldRow's introducing commit, first tagged at
   `v0.95.0-rc.1`). [verified]
 - `f:i450hg` `ListToolbarFilter.display` is a three-way union, `'select' | 'segmented' | 'menu'`, not
@@ -196,13 +196,13 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `throttle.cooldownMs` 60000/60s (min 30000/30s), `throttle.requesterCap` 20 (5-100),
   `throttle.identityCeiling` 30 (min 10), `throttle.escalationThreshold` 20 (min 10),
   `throttle.liveRowCap` 5 (max 20), `session.ttlMs` 2592000000/30days (max 31536000000/1yr).
-  Source: `src/lib/auth-channel/factory.ts:324-480`. [verified]
+  Source: `src/lib/auth-channel/factory.ts:326-482`. [verified]
 - `f:vh76wt` A non-positive `limits` override always throws even where the table states only a ceiling
   (prevents a 0 or negative clamp value from silently passing). Source:
-  `src/lib/auth-channel/factory.ts:432-455` (`resolveLimit`). [verified]
+  `src/lib/auth-channel/factory.ts:434-457` (`resolveLimit`). [verified]
 - `f:mk0zd8` `deliver`'s throw path is fully compensating: the pending code row is deleted and the
   requester's send charge is refunded on any thrown error, so a delivery-provider outage costs a
-  member only a retry, never a lost budget slot. Source: `src/lib/auth-channel/factory.ts:269-272`
+  member only a retry, never a lost budget slot. Source: `src/lib/auth-channel/factory.ts:271-274`
   (`deliver`'s doc comment: "A throw is scrubbed, logged, deletes the pending row, and refunds the
   send charge"), `:880-887` (the `deliverPromise` catch calls `consumeCode(...)` then
   `refund(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, now)`). [verified]
@@ -210,9 +210,9 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `logout`) throw a SvelteKit 503 `HttpError` before touching any row, rather than returning a
   typed outcome, because no result union carries a wire code for a polluted environment.
   "Deployed" is determined by `PUBLIC_ORIGIN` first, falling back to request hostname only when
-  unset. Source: `src/lib/auth-channel/factory.ts:118-130` (`assertNoDevBackendLeak`: `throw
+  unset. Source: `src/lib/auth-channel/factory.ts:118-127` (`assertNoDevBackendLeak`: `throw
   error(503, CAIRN_DEV_BACKEND_MESSAGE)`, called from `request`/`confirm`/`logout` at
-  `:686,912,1075`), `src/lib/dev-flag.ts:108-114` (`isDeployedHost`: `PUBLIC_ORIGIN` consulted
+  `:682,908,1071`), `src/lib/dev-flag.ts:83-93` (`isDeployedHost`: `PUBLIC_ORIGIN` consulted
   first, falls back to `event.url.hostname` when unset or unparseable). [verified]
 - `f:lccuuc` The channel's own D1 schema ships as `migrations-channel/0000_channel.sql` (tables
   `cairn_channel_meta`, `cairn_channel_code`, `cairn_channel_session`, `cairn_channel_budget`) and
@@ -248,8 +248,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   function (`csrfSecure`), so they can no longer resolve different `secure` values on the same
   request. This implies an earlier state where they could diverge. Source:
   `src/lib/auth/crypto.ts:22-26` (doc comment: "Both names now also share their `secure` INPUT:
-  `csrf.ts`'s `csrfSecure`..."), `src/lib/sveltekit/csrf.ts:72,122,164,185` (`csrfSecure`,
-  `csrfCookieName(csrfSecure(...))`), `src/lib/sveltekit/guard.ts:274,353`
+  `csrf.ts`'s `csrfSecure`..."), `src/lib/sveltekit/csrf.ts:76,132,174,195` (`csrfSecure`,
+  `csrfCookieName(csrfSecure(...))`), `src/lib/sveltekit/guard.ts:283,362`
   (`sessionCookieName(csrfSecure(...))`). [verified: the shared-function claim is confirmed; the
   earlier-divergence history is not independently re-traced to a changelog entry]
 
@@ -546,10 +546,10 @@ re-sourced to Go on this tree rather than to the page.
   directory, is a filesystem path and never a registered site id, and its shell completion offers
   directories rather than site ids. Source: `tool/cmd/cairn/doctor.go:24-37,50-53`. [verified]
 - `f:01iu5z` Everything the command reads is off disk under the resolved, symlink-free directory: the
-  wrangler config, `package.json` and a lockfile, the Svelte and Vite configs,
+  wrangler config, `package.json` and a lockfile, the Vite config (and `svelte.config.js`, only to see whether it remains),
   `src/hooks.server.ts`, `static/_headers`, the site-config YAML, the `/admin` route candidates,
   and `src/content/.cairn/site-facts.json`. Source: `tool/internal/doctor/wrangler.go:36,48`,
-  `tool/internal/doctor/check_csrf.go:72,79`, `tool/internal/doctor/check_referrer.go:191-234`,
+  `tool/internal/doctor/check_csrf.go:43,271`, `tool/internal/doctor/check_referrer.go:191-235`,
   `tool/internal/doctor/check_floors.go:328,376,384,392`, `tool/internal/doctor/facts.go:11`.
   [verified]
 - `f:q01lkt` The `/admin` mount check probes six candidate route files by name, since a Snapshot offers no
@@ -581,19 +581,19 @@ re-sourced to Go on this tree rather than to the page.
   by grep over the command and package]
 - `f:um228q` The eleven checks run in one fixed report order, the eight file-only checks followed by the
   three facts-dependent ones: `config.bindings`, `config.media-bucket`, `config.observability`,
-  `config.csrf-disable`, `config.site-config`, `config.public-origin`,
+  `config.csrf-trusted-origins`, `config.site-config`, `config.public-origin`,
   `config.no-referrer-blanket`, `admin.mount-shape`, `config.dependency-floors`,
   `auth.role-wiring`, `ai.posture-effective`. That slice is also the published check-id list the
   page tests read. Source: `tool/internal/doctor/report.go:10-31`. [verified]
 - `f:kjp61u` Each check names one engine condition id, which carries the check's severity: blocker for
   `config.bindings-missing`, `config.site-config-invalid`, `config.public-origin-invalid`, and
   `config.dependency-floors-unmet`, warning for `config.media-bucket-missing`,
-  `config.observability-off`, `config.csrf-disable-missing`, `config.no-referrer-blanket`,
+  `config.observability-off`, `config.csrf-trusted-origins-wildcard`, `config.no-referrer-blanket`,
   `admin.mount-incomplete`, `auth.role-wiring-missing`, and `ai.posture-not-effective`. Source:
   `tool/internal/doctor/check_bindings.go:31`, `check_media.go:29`, `check_observability.go:16`,
-  `check_csrf.go:70`, `check_siteconfig.go:26`, `check_origin.go:60`, `check_referrer.go:217`,
+  `check_csrf.go:249`, `check_siteconfig.go:26`, `check_origin.go:60`, `check_referrer.go:217`,
   `check_mount.go:78`, `check_floors.go:366`, `check_roles.go:105`, `check_posture.go:291`, with
-  each severity at `tool/internal/spine/conditions.json:105-118`. [verified]
+  each severity at `tool/internal/spine/conditions.json:103-110`. [verified]
 - `f:3sxgcl` `config.site-config` reports presence and parsing only; the per-concept URL policy lives on the
   adapter concepts and is not checkable from a directory preflight. Source:
   `tool/internal/doctor/check_siteconfig.go:12-13`. [verified]
@@ -632,9 +632,9 @@ re-sourced to Go on this tree rather than to the page.
   own `package.json` cannot be read. Source: `tool/internal/doctor/check_floors.go:358-401`.
   [candidate: found during the 2026-09-22 redraft's Go read, not independently re-verified by a
   second pass]
-- `f:v2isa4` `config.csrf-disable` reports `UNCHECKED` when neither `svelte.config.js` nor `vite.config.ts`
-  is found, distinct from a read error on either. Source:
-  `tool/internal/doctor/check_csrf.go:71-84`. [candidate: found during the 2026-09-22 redraft's Go
+- `f:v2isa4` `config.csrf-trusted-origins` reports `UNCHECKED` when none of `vite.config.js`,
+  `vite.config.ts`, and `vite.config.mts` is found, distinct from a read error on any of them. Source:
+  `tool/internal/doctor/check_csrf.go:271-301`. [candidate: found during the 2026-09-22 redraft's Go
   read, not independently re-verified by a second pass]
 - `f:b94uhy` `ai.posture-effective` reports `UNCHECKED` when `src/content/.cairn/site-facts.json` is absent,
   or when the `/robots.txt` fetch could not observe a result: no origin resolves, the origin does
@@ -842,7 +842,7 @@ re-sourced to Go on this tree rather than to the page.
   failing either: the tool being throttled is not the site being broken. Source:
   `tool/internal/providers/errors.go:31-36`, `tool/internal/spine/outcome.go:121-142`. [verified]
 - `f:y0ocr0` The condition ids a payload can carry are ported from the engine's own registry and are the same
-  vocabulary the engine emits. Source: `tool/internal/spine/condition.go:19-45`. [verified]
+  vocabulary the engine emits. Source: `tool/internal/spine/condition.go:19-44`. [verified]
 - `f:0typfn` On the wire a site's `checks` sort by id and `acknowledged` sorts alphabetically, so two runs of
   an unchanged site diff cleanly; the severity ranking belongs to the text bodies, not to the
   payload. Source: `tool/internal/render/json.go:232-244`. [verified]
@@ -991,7 +991,7 @@ re-sourced to Go on this tree rather than to the page.
   `owner` is the one reserved name because the last-owner guard and bootstrap owner both anchor
   on it. Source: `src/lib/auth/roles.ts:34-49` (`validateDeclaration`), `:58-74` (`defineRoles`:
   empty-record, empty-name, missing-owner, and owner-capability throws), `:108`
-  (`resolveOwnerLevelRoles`), `src/lib/sveltekit/auth-routes.ts:44,201-202` (`bootstrapOwner`).
+  (`resolveOwnerLevelRoles`), `src/lib/sveltekit/auth-routes.ts:45,202-203` (`bootstrapOwner`).
   [verified]
 - `f:xbdb74` An `IconSet` path is filled shape data on a `0 0 256 256` box, never stroke data: `renderGlyph`
   sets the svg's `fill` to `currentColor` and sets no `stroke` anywhere, so a stroke-only path (one
@@ -1019,7 +1019,7 @@ re-sourced to Go on this tree rather than to the page.
   structurally drift; `entryLoad` is lookup-then-compose over this function with no `overrides`, so
   its output is unchanged from before the function existed. Source:
   `src/lib/delivery/public-routes.ts:139` (`composeEntryData` defined), `:213-217` (`entryLoad`:
-  `composeEntryData(config, entry)`, no `overrides`), `src/lib/sveltekit/preview.ts:505,523`
+  `composeEntryData(config, entry)`, no `overrides`), `src/lib/sveltekit/preview.ts:488,506`
   (`loadPreview`: `composeEntryData(config, ..., resolvers)`). [verified]
 - `f:83gbov` `EntryData.heroImage` is undefined when no hero is set, media is off, or the frontmatter `media:`
   reference does not resolve; the canonical token itself (`entry.frontmatter.image.src`) is left
@@ -1215,13 +1215,13 @@ re-sourced to Go on this tree rather than to the page.
   `src/lib/sveltekit/audit-sink.ts:122-129` (`audit.sink.write_failed` logs the record's own
   `actor` field verbatim). [verified]
 - `f:wi766c` No log record ever carries a magic-link token, a session ID, or a magic-link's contents. Source:
-  `src/lib/sveltekit/auth-routes.ts:185,235,241,363` (`auth.link.requested`/`auth.token.*` log
-  only `email`/`expiresAt`) and `src/lib/auth-channel/factory.ts:656,1051,1058`
+  `src/lib/sveltekit/auth-routes.ts:186,236,242,364` (`auth.link.requested`/`auth.token.*` log
+  only `email`/`expiresAt`) and `src/lib/auth-channel/factory.ts:658,1061,1068`
   (`auth.channel.session.*` logs only `correlationId`, never the session id or token). [verified]
 - `f:pc9vix` `auth.link.requested`'s `email` is the raw submitted address, logged before the allow-list check,
   after lowercasing, trimming, and capping at 320 characters; a flood of distinct addresses there
   signals a request flood since the endpoint has no auth. Source:
-  `src/lib/sveltekit/auth-routes.ts:178-185` (`.trim().toLowerCase()`, then
+  `src/lib/sveltekit/auth-routes.ts:179-186` (`.trim().toLowerCase()`, then
   `log.info('auth.link.requested', { email: email.slice(0, 320) })`, called before the allowlist
   lookup below it). [verified]
 - `f:mjedcx` `auth.identity.unknown`'s `email` is the identity gate's confirmed address,
@@ -1229,7 +1229,7 @@ re-sourced to Go on this tree rather than to the page.
   allow-list lookup fails, inside the `if (!row)` branch once `findEditor` has already returned
   null, not before it; every other event's `email` fires only for an allow-listed editor. Source:
   `src/lib/sveltekit/guard.ts#createAuthGuard.handle` (`const row = await findEditor(...); if (!row) { ...
-  log.warn('auth.identity.unknown', ...) }`). [verified: page fixed at `docs/reference/log-events.md:110`
+  log.warn('auth.identity.unknown', ...) }`). [verified: page fixed at `docs/reference/log-events.md:111`
   to say logged after the allow-list check fails]
 - `f:2awy1w` `preview.refused` reasons, in check order: `bindings_missing`, `table_missing`, `unknown`,
   `expired`, `row_invalid`, and then either `draft_invalid` or `branch_gone`. Source:
@@ -1249,12 +1249,12 @@ re-sourced to Go on this tree rather than to the page.
   decides outright (covers raw-body upload, media, dictionary, tidy transports); the form-field
   witness applies only when no header arrives; an empty header value still counts as "arrived" and
   is judged on its own mismatch, never falling back to the field. Source:
-  `src/lib/sveltekit/guard.ts:253-278` (`headerSent = ... !== null`; `verdict = headerSent ?
+  `src/lib/sveltekit/guard.ts:264-283` (`headerSent = ... !== null`; `verdict = headerSent ?
   csrfHeaderVerdict(...) : await csrfTokenVerdict(event)`; the log's `witness` field is
   `headerSent ? 'header' : 'field'`). [verified]
 - `f:v1jj2k` `admin.action.session_absent` is the only trace a `createAdminAction`-mounted route leaves for a
   session that lapsed between the guard's resolve and the action running, since the guard's own
-  `guard.refused` csrf/origin branches refuse an earlier condition. Source:
+  `guard.refused` csrf branch refuses an earlier condition. Source:
   `src/lib/sveltekit/admin-action.ts:146-153,212-216` (`if (!editor) { log.warn('admin.action.
   session_absent', ...); throw redirect(303, '/admin/login'); }`, the first check the wrapper
   runs). [verified]
@@ -1536,8 +1536,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   computed expected value). [verified]
 - `f:buh7cc` `engines.node` in the package's own `package.json` is `>=24`. Source: `package.json:7`.
   [verified]
-- `f:xg1per` `svelte` peerDependency is `^5.56.10`; `@sveltejs/kit` is `^2.70`; `@cloudflare/workers-types` is
-  `^5`. Source: `package.json:220-223`. [verified]
+- `f:xg1per` `svelte` peerDependency is `^5.57.1`; `@sveltejs/kit` is `^3`; `@cloudflare/workers-types` is
+  `^5`. Source: `package.json:219-222`. [verified]
 - `f:gjyk0p` The showcase's own devDependency pins `typescript` to `^6` and `@cloudflare/workers-types` to
   `^5.20260821.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:45`,
   `package.json:258`. [verified]
@@ -1560,16 +1560,16 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   [verified]
 - `f:256utj` SvelteKit's `csrf.checkOrigin` is deprecated (2.61) in favor of `csrf.trustedOrigins` but not
   removed (sveltejs/kit#15992); cairn's admin CSRF ownership still depends on disabling
-  `checkOrigin`. Source: `src/lib/diagnostics/conditions.ts:103-110` (`config.csrf-disable-missing`
-  condition: `checkOrigin: false` must be set in `svelte.config.js` and cairn's guard wired into
-  `src/hooks.server.ts`, or SvelteKit's own Origin check runs ahead of cairn's) confirms the
-  cairn-specific half; the SvelteKit deprecation version and issue number are an upstream fact
-  quoted from the page, not independently checked against GitHub this pass. [verified]
+  `checkOrigin`. Source: the SvelteKit deprecation version and issue number are an upstream fact
+  quoted from the page, not independently checked against GitHub this pass. [rejected: SvelteKit 3
+  removed `csrf.checkOrigin`, so a config that sets it fails the build, and cairn's admin
+  no longer depends on disabling it; the showcase and template carry no `csrf` config,
+  and the doctor's `config.csrf-disable-missing` condition retired]
 - `f:aalmbd` The `@sveltejs/kit ^2.12` floor became an enforced peer range (rather than an advisory) in
   the `0.41.0` changelog entry, justified by the edit page reading `$app/state` (shipped in kit
   2.12.0); `0.51.0` is a separate, later entry that raises the `svelte` floor to `^5.56.3` and
-  mentions `^2.12` only as a side note for a site still below it. Source: `CHANGELOG.md:6820-6823`
-  (0.41.0 entry), `CHANGELOG.md:6708-6718` (0.51.0 entry). [verified]
+  mentions `^2.12` only as a side note for a site still below it. Source: `CHANGELOG.md:6844-6847`
+  (0.41.0 entry), `CHANGELOG.md:6732-6742` (0.51.0 entry). [verified]
 
 ## docs/reference/sveltekit.md
 
@@ -1578,7 +1578,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `status` discriminant (`sent`/`send_error`/`throttled`); the `0.97.0` outcome-idiom sweep
   renamed it to `RequestOutcome`, changed the discriminant key to `outcome`, and restated
   `send_error` as `send-error`, with the `sent` boolean unchanged throughout. Source:
-  `CHANGELOG.md:6884-6891` (0.38.0), `CHANGELOG.md:1748-1751` (0.97.0). [verified]
+  `CHANGELOG.md:6908-6915` (0.38.0), `CHANGELOG.md:1772-1775` (0.97.0). [verified]
 - `f:yubpho` `CairnEvent`'s `locals` carries five optional keys: `cairnEditor`, `cairnBackend`,
   `cairnAuditSink`, `cairnAccess`, and `cairnIdentity` (set under identity mode). sveltekit.md's
   event-shape code sample and prose now list all five. Source: `src/lib/sveltekit/types.ts:85-91`.
@@ -1598,7 +1598,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:r6cz7z` `fail()` is the shape for every refusal that can answer the request that raised it (form
   validation, commit conflicts, `createSectionAction`'s own authorization/rate-limit/binding
   branches); the editor's unsaved input survives in the returned payload rather than navigating
-  away. Source: `src/lib/sveltekit/section-action.ts:219,226,277,304` (`fail(403, ...)`,
+  away. Source: `src/lib/sveltekit/section-action.ts:206,213,264` (`fail(403, ...)`,
   `fail(500, ...)`, `fail(429, ...)`). [verified]
 - `f:ge9vwl` A site defining its own `handleError` replaces SvelteKit's default `console.error` of every
   server error rather than layering on top of it; log first unconditionally or default
@@ -1623,29 +1623,32 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:0wvvih` `createAuthGuard`'s own `Handle` refuses at the pre-routing layer, before any route's load or
   action runs, with a raw branded `Response` for CSRF, origin, HTTPS, missing-binding, or
   dev-backend-in-production failures. The dev-backend-in-production case is a 503, triggered when
-  `CAIRN_DEV_BACKEND` is set in a deployed runtime. Source: `src/lib/sveltekit/guard.ts:193-198`
+  `CAIRN_DEV_BACKEND` is set in a deployed runtime. Source: `src/lib/sveltekit/guard.ts:198-201`
   (`CAIRN_DEV_BACKEND_FLAG` check, `log.error('guard.refused', { reason: 'dev_backend_in_prod' })`,
   `return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 })`). [verified]
-- `f:hrvhnz` The guard's pre-routing CSRF check only covers the three content types a browser can send
-  cross-origin with no CORS preflight (`application/x-www-form-urlencoded`, `multipart/form-data`,
-  `text/plain`); a JSON POST is not screened by it, but SvelteKit itself rejects a
-  non-form-content-type action POST with a 415 before the action runs, so this is not a practical
-  gap, only license removed for hand-rolling a JSON admin endpoint outside form actions. Source:
-  page text `docs/reference/sveltekit.md:483-491`, corroborated by the guard's own witness check
-  at `src/lib/sveltekit/guard.ts:246-278` (only a form-encoded body or an `X-Cairn-CSRF` header is
-  read); the SvelteKit 415 behavior itself is corroborating platform context, not independently
-  re-checked this pass. [verified: the guard's own content-type coverage is confirmed in source]
+- `f:hrvhnz` The guard's pre-routing CSRF check screens the requests SvelteKit 3's own CSRF check
+  screens: an unsafe method with no `Content-Type` header at all, or with one of
+  `application/x-www-form-urlencoded`, `multipart/form-data`, `text/plain`, or
+  `application/x-sveltekit-formdata`. The no-header case covers a cross-origin `no-cors` fetch of an
+  untyped `Blob`, which sends no preflight and which SvelteKit passes for an origin in
+  `trustedOrigins`. A JSON POST is not screened by it, but SvelteKit itself rejects a
+  non-form-content-type action POST with a 415 before the action runs, so this is license removed
+  only for hand-rolling a JSON admin endpoint outside form actions. Source:
+  `src/lib/sveltekit/csrf.ts:13-18,83-88` (`FORM_CONTENT_TYPES`, `isUnsafeFormRequest`),
+  `node_modules/@sveltejs/kit/src/runtime/server/csrf.js` (`is_csrf_forbidden`), page text
+  `docs/reference/sveltekit.md:484-493`; the SvelteKit 415 behavior itself is corroborating
+  platform context, not independently re-checked. [verified: the guard's content-type coverage is confirmed in source]
 - `f:suk99b` `createAdminAction`'s CSRF check order: a valid `X-Cairn-CSRF` header clears the step outright
   (checked first); only with no valid header must the posted `csrf` form field match the CSRF
   cookie, constant-time, else `error(403, ...)`. A fetch-based action that sets the header and
-  posts `FormData` with no `csrf` field still passes. Source: `src/lib/sveltekit/guard.ts:256-278`
+  posts `FormData` with no `csrf` field still passes. Source: `src/lib/sveltekit/guard.ts:265-287`
   (`headerSent = ... !== null`, header checked before the field fallback) mirrored in
   `admin-action.ts` per its own doc comment at lines 158-162. [verified]
 - `f:8yb3r1` A handler that returns normally and emits zero `ctx.audit` records throws
   `UnauditedActionError(500, ...)` in dev (gated by `esm-env`'s `DEV`, overridable via
   `deps.isDev`), and logs `admin.action.unaudited` in production instead of throwing. A handler
   that returns SvelteKit's `fail()` (detected via `isActionFailure`) is exempt from this check.
-  Source: `src/lib/sveltekit/admin-action.ts:320-322` (`if (emitted === 0 &&
+  Source: `src/lib/sveltekit/admin-action.ts:307-309` (`if (emitted === 0 &&
   !isActionFailure(result)) { if (dev) throw new UnauditedActionError(...); log.error('admin.
   action.unaudited', ...); }`). [verified]
 - `f:e8r5f7` `ctx.audit`'s sink call catches both a synchronous throw and a rejecting promise from the site's
@@ -1685,7 +1688,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   | expired | branch_gone | row_invalid | draft_invalid | table_missing`) and `:456-518` (the
   ordered `rejectPreview`/log call sites: `bindings_missing` first (503), then `table_missing`,
   `row_invalid`, `branch_gone`, `draft_invalid`). [verified]
-- `f:rgvm81` The page's claim of "seven reasons" for `preview.refused` (`docs/reference/sveltekit.md:1355`)
+- `f:rgvm81` The page's claim of "seven reasons" for `preview.refused` (`docs/reference/sveltekit.md:1356`)
   is arithmetically correct despite the 6-member `PreviewRejectedReason` union: `bindings_missing`
   is a distinct log reason emitted outside that union (a separate log call at
   `src/lib/sveltekit/preview.ts:456`), so 6 union members plus that one makes 7 distinct logged
@@ -1719,7 +1722,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   refuse every action on the documented database-less default instead of hardening it. Source:
   `src/lib/sveltekit/admin-action.ts:74-82` (`access` option doc: "Opt in to the access-map
   authorization... Omitted, `createAdminAction` authorizes nothing, its behavior for every existing
-  caller"), `src/lib/sveltekit/guard.ts:348,368` (`event.locals.cairnAccess = access ?? {}`).
+  caller"), `src/lib/sveltekit/guard.ts:357,377` (`event.locals.cairnAccess = access ?? {}`).
   [verified]
 - `f:yfg97w` `createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly rather than making the
   parameter optional, because an optional parameter would make the shortest call silently drop the
@@ -1731,13 +1734,13 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `action` to 100, `entity` to 100, `entityId` to 200, `detail` to 500, so an oversized `detail`
   cannot suppress its own audit row by failing the insert. Source: `src/lib/sveltekit/audit-sink.ts:16-20`
   (`MAX_ACTOR_LENGTH = 320`, `MAX_ACTION_LENGTH = 100`, `MAX_ENTITY_LENGTH = 100`,
-  `MAX_ENTITY_ID_LENGTH = 200`, `MAX_DETAIL_LENGTH = 500`), consistent with `docs/reference/sveltekit.md:709-712`.
+  `MAX_ENTITY_ID_LENGTH = 200`, `MAX_DETAIL_LENGTH = 500`), consistent with `docs/reference/sveltekit.md:710-713`.
   [verified]
 - `f:or9j9r` `wrangler d1 migrations apply` reads migrations from a `d1_databases` entry's own
   `migrations_dir` (default `./migrations`); every entry that leaves it unset resolves to the same
   default directory, so copying an audit migration next to the auth migrations and applying it to
   the audit database would apply the auth migrations there too. This is why the audit database
-  needs its own distinct `migrations_dir`. Source: page text `docs/reference/sveltekit.md:640-643`;
+  needs its own distinct `migrations_dir`. Source: page text `docs/reference/sveltekit.md:641-644`;
   this is documented Wrangler CLI behavior, not re-verified against Wrangler's own source this
   pass. [external: Wrangler]
 - `f:dqc8x0` The `audit_log` pruning example must compare against the same `strftime('%Y-%m-%dT%H:%M:%fZ',
@@ -1745,20 +1748,20 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   SQLite compares `TEXT` columns byte for byte, and an ISO string's `T` (`0x54`) sorts after a
   space (`0x20`) at the same position, so a `datetime()`-based comparison would silently stop
   pruning the oldest rows at the boundary day. Source: page text
-  `docs/reference/sveltekit.md:679-682`; a documented SQLite text-comparison gotcha, consistent
+  `docs/reference/sveltekit.md:680-683`; a documented SQLite text-comparison gotcha, consistent
   with SQLite's well-known collation behavior for `TEXT` affinity columns, not independently
   re-derived from a SQLite spec this pass. [external: SQLite]
 - `f:xmhbyv` A screen reading `audit_log` back right after a write can miss the row: the insert may still be
   in flight behind `waitUntil` when the response renders, and D1's own read replication can serve a
   stale replica; a screen needing its own just-made row needs first-primary bookmark routing, not a
-  plain read. Source: page text `docs/reference/sveltekit.md:684-689`, citing Cloudflare's own D1
+  plain read. Source: page text `docs/reference/sveltekit.md:685-690`, citing Cloudflare's own D1
   read-replication docs; the D1 replication mechanic itself is platform behavior, not re-verified
   against Cloudflare's docs this pass. [external: Cloudflare D1]
 - `f:gifz76` `createSectionAction` never guards a POST reaching the section through SvelteKit remote
   functions: a remote function call never dispatches through `Actions` at all, and it also bypasses
   the admin guard's own CSRF check (which runs on `Actions` dispatch specifically), so a site
   adding a remote function under `/admin` owns that verification itself. Source: page text
-  `docs/reference/sveltekit.md:849-852`; a documented SvelteKit remote-functions/`Actions`
+  `docs/reference/sveltekit.md:850-853`; a documented SvelteKit remote-functions/`Actions`
   dispatch distinction, not independently re-checked against SvelteKit's own dispatch code this
   pass. [external: SvelteKit]
 - `f:uvhweb` `historyLoad` bounds the entry's commit history to the most recent 25 publishes; the commits
@@ -1829,6 +1832,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   Source: `src/lib/sveltekit/admin-nav.ts:73-90` (`validateEntry`: icon-allowlist throw, href-collision
   throw naming the built-in view; doc comment: "fails at server start rather than rendering a
   broken or shadowing sidebar link"). [verified]
+- `f:nv475y` The engine reads every Worker binding and `waitUntil` through one internal module, `src/lib/sveltekit/workers-env.ts`, its only `cloudflare:workers` import, which no Node-context entry (`.`, `/admin`, `/public`, `/vite`, `/cloudflare`, `/auth-crypto`, `/log`, the bins) reaches, so the module's `waitUntil` is always defined and `auth.channel.delivery_inline` retired. Source: `src/lib/sveltekit/workers-env.ts#waitUntil`, `src/tests/unit/workers-env-reach.test.ts`. [verified]
+- `f:yivujb` `isBuilding` reads SvelteKit's `building` through `await import('$app/env')` inside `try`/`catch`, falling back to `false`, so the `/sveltekit` barrel carries no static `$app/env` import and a consumer test that mocks `$app/environment` no longer reaches it; `loadPreview`'s build refusal needs `$app/env` mocked. Source: `src/lib/sveltekit/building.ts#isBuilding`, `src/lib/sveltekit/preview.ts#loadPreview`. [verified]
 
 ## docs/reference/vite.md
 
@@ -1839,10 +1844,24 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   cairn-manifest bin and its unit tests import by relative path"). [verified]
 - `f:mbragr` `CairnManifestOptions.manifestPath` defaults to `/src/content/.cairn/index.json`. Source:
   `src/lib/vite/internal.ts#DEFAULT_MANIFEST_PATH` (`DEFAULT_MANIFEST_PATH`). [verified]
-- `f:skkvr2` `cairnManifest()` evaluates a verify virtual module through a nested Vite SSR load in
-  `buildStart`, so a manifest drifted from the corpus fails the build. Source:
-  `src/lib/vite/internal.ts:154-173` (`buildStart` calls `verifyManifestFromVite`, which
-  `evalVirtual`s the verify-mode virtual module via `server.ssrLoadModule`). [verified]
+- `f:skkvr2` `cairnManifest()` evaluates a verify virtual module in `buildStart`, so a manifest
+  drifted from the corpus fails the build, and the start of `vite dev`. A build loads the module
+  through a nested Vite SSR server, once per build although `buildStart` fires for each build
+  environment, and a watch-mode change verifies afresh. The nested server drops adapter-cloudflare
+  8's `vite-plugin-sveltekit-adapter-cloudflare-virtual-workers-module`, so a build starts no
+  platform proxy (no workerd process) for the verify. A dev server loads the module, and the
+  site-facts check's adapter module, through its SSR environment's module runner
+  (`isRunnableDevEnvironment`, then `runner.import`, never the deprecated `ssrLoadModule`) and
+  never creates a nested server: closing one runs the site's own plugins' `closeServer` hooks, and
+  adapter-cloudflare 8's hook disposes the platform proxy the running server shares, after which
+  every `cloudflare:workers` read throws. Only an SSR environment that is not runnable in Node
+  falls back to the build's nested server, which SvelteKit 3's own dev server already refuses.
+  Source: `src/lib/vite/internal.ts#cairnManifest` (`configureServer` captures the dev server;
+  `buildStart` hands it to `runStartChecks`, memoized in `buildChecks` for a build; `watchChange`
+  clears it), `src/lib/vite/internal.ts#loadFromDevServer`,
+  `src/lib/vite/internal.ts#stripNestedServerPlugins`,
+  `src/tests/unit/vite-manifest-dev-server.test.ts`,
+  `src/tests/unit/vite-strip-nested-server-plugins.test.ts`. [verified]
 
 ## tool/internal/spine/conditions.json
 

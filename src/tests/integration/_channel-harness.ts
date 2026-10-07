@@ -17,7 +17,7 @@ import type { AuthChannelConfig } from '../../lib/auth-channel/index.js';
 import { buildCookieName, hashToken } from '../../lib/auth/crypto.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 
-/** The platform env a channel suite's events carry: the channel's own binding, never AUTH_DB. */
+/** The Worker env a channel suite's config reads: the channel's own binding, never AUTH_DB. */
 export type ChannelTestEnv = { CHANNEL_DB: D1Database };
 
 const db = env.CHANNEL_DB;
@@ -102,14 +102,14 @@ export interface ChannelEventInput {
   code?: string;
   challengeToken?: string;
   cookies?: RecordingCookieJar;
-  waitUntil?: (promise: Promise<unknown>) => void;
 }
 
 /**
  * Build an event for any of the three actions. Origin defaults to the URL's own so ordinary tests
  * never trip the unconditional origin check; pass `origin: null` or a mismatched value to test it.
  * Only the form fields a test names are set, so an action's own absent-field handling stays
- * provable, and `platform.ctx` appears only when a test supplies a `waitUntil`.
+ * provable. The channel reads its binding and `waitUntil` from the Worker env (`cloudflare:workers`),
+ * never from the event.
  *
  * The shape is `CairnEvent` plus `getClientAddress`, the exact constraint the channel's actions
  * declare, so `params`/`route`/`setHeaders`/`locals` are present here for the same reason a real
@@ -133,10 +133,6 @@ export function makeEvent(input: ChannelEventInput = {}) {
     setHeaders: () => {},
     locals: {},
     getClientAddress: () => input.address ?? '203.0.113.1',
-    platform: {
-      env: { CHANNEL_DB: db },
-      ...(input.waitUntil ? { ctx: { waitUntil: input.waitUntil } } : {}),
-    },
   };
 }
 

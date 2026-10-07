@@ -6,9 +6,9 @@
 // public pages by editing one copy and forgetting the other.
 import type { PageServerLoad } from './$types';
 import { loadPreview } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from '$chassis/cairn.server.js';
-import { publicRoutesConfig } from '$chassis/public-routes.js';
-import { withReferences } from '$chassis/entry-data.js';
+import { runtime } from '#chassis/cairn.server.js';
+import { publicRoutesConfig } from '#chassis/public-routes.js';
+import { withReferences } from '#chassis/entry-data.js';
 
 // REQUIRED: a preview link is a bearer credential (whoever holds the URL can read the draft with no
 // session). Prerendering this route would bake a token into a static asset every build ships;

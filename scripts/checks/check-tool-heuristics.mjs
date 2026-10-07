@@ -28,10 +28,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
  */
 
 /**
- * The four literals the Go tool's heuristics key on. Three are real engine symbols
- * (`CairnAdminShell`, `.shellLoad`, `createAuthGuard`); the fourth, `checkOrigin: false`, is a
- * SvelteKit config key the engine never exports, so the watch instead pins the literal the engine
- * tells every site to write, inside `config.csrf-disable`'s own `why`/`remediation` text.
+ * The three engine symbols the Go tool's heuristics key on: `CairnAdminShell`, `.shellLoad`, and
+ * `createAuthGuard`.
  * @type {HeuristicWatch[]}
  */
 export const WATCHES = [
@@ -52,14 +50,6 @@ export const WATCHES = [
     heuristic: 'auth.role-wiring',
     description: "the createAuthGuard export, whose argument shape the role-wiring heuristic reads",
     pattern: /export function createAuthGuard\(config: AuthGuardConfig = \{\}\): Handle \{/,
-  },
-  {
-    file: 'src/lib/diagnostics/conditions.ts',
-    heuristic: 'config.csrf-disable',
-    description:
-      "the checkOrigin: false literal in config.csrf-disable's why and remediation text, the engine telling every site to write the exact string the heuristic greps for",
-    pattern: /checkOrigin: false/g,
-    minCount: 2,
   },
 ];
 

@@ -6,11 +6,12 @@
 // scoped to any one pass; a future page or component keeps running through it.
 //
 // Targets BASE_URL if set (point it at a running dev server or a deployed environment); with no
-// BASE_URL it spawns `vite preview` against the already-built `.svelte-kit` output and tears it
-// down on exit. `npm run build` must have already run. `vite preview` carries no Cloudflare
-// platform bindings, so any content that depends on a platform binding can render as an empty
-// state or a broken image there; the checks below treat a broken image (zero natural size) as
-// unverifiable rather than a violation, so that known gap never produces a false failure.
+// BASE_URL it spawns the showcase's `preview` script (`wrangler dev`) against the already-built
+// `.svelte-kit` output and tears it down on exit. `npm run build` must have already run. The
+// serve is unflagged, so the dev backend is off: the probed pages are public ones that need no
+// editor session, and content that depends on a binding with no local data can still render as
+// an empty state or a broken image; the checks below treat a broken image (zero natural size) as
+// unverifiable rather than a violation, so that gap never produces a false failure.
 import { createRequire } from 'module';
 import { spawn } from 'node:child_process';
 
@@ -47,23 +48,35 @@ async function waitForServer(url, timeoutMs = 30_000) {
   return false;
 }
 
-/** Start `vite preview` on the default port and resolve once it answers, or null if BASE_URL was
- *  already reachable (nothing to tear down). */
+/** Start the showcase's `preview` script on the default port and resolve once it answers, or null
+ *  if BASE_URL was already reachable (nothing to tear down). The child leads its own process
+ *  group so `stopServer` reaches wrangler and the workerd it started, not only npm. */
 async function ensureServer() {
   if (await waitForServer(BASE_URL, 1000)) return null;
   if (process.env.BASE_URL) {
     throw new Error(`BASE_URL=${BASE_URL} is not reachable; start that server first.`);
   }
-  const child = spawn('npx', ['vite', 'preview', '--port', '4173'], {
+  const child = spawn('npm', ['run', 'preview'], {
     cwd: new URL('..', import.meta.url).pathname,
+    detached: true,
     stdio: 'ignore',
   });
-  const up = await waitForServer(BASE_URL, 30_000);
+  const up = await waitForServer(BASE_URL, 60_000);
   if (!up) {
-    child.kill();
-    throw new Error('vite preview did not come up within 30s; run `npm run build` first.');
+    stopServer(child);
+    throw new Error('wrangler dev did not come up within 60s; run `npm run build` first.');
   }
   return child;
+}
+
+/** Kill the server's whole process group. */
+function stopServer(child) {
+  if (!child.pid) return;
+  try {
+    process.kill(-child.pid, 'SIGTERM');
+  } catch {
+    // Already exited.
+  }
 }
 
 /** A page navigation shared by every check below. 'load', not 'networkidle': an external widget
@@ -215,7 +228,7 @@ async function main() {
     }
   } finally {
     await browser.close();
-    if (server) server.kill();
+    if (server) stopServer(server);
   }
 
   if (warnings.length > 0) {

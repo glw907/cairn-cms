@@ -13,6 +13,7 @@ import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CairnEvent, CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
+import { withTestEnv } from '../helpers/with-test-env.js';
 
 afterEach(() => resetKeyHealthForTest());
 
@@ -50,7 +51,6 @@ interface TidyOpts {
   csrf?: string | undefined;
   cookieCsrf?: string | undefined;
   hasEditor?: boolean;
-  platformEnv?: Record<string, unknown>;
   rawBody?: string;
 }
 
@@ -68,10 +68,21 @@ function tidyEvent(opts: TidyOpts = {}): CairnEvent {
     route: { id: '/admin/[concept]/[id]' },
     request: new Request(url, { method: 'POST', body, headers }),
     locals: { cairnEditor: opts.hasEditor === false ? null : editor },
-    platform: { env: opts.platformEnv ?? { ANTHROPIC_API_KEY: 'sk-test-key' } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
     setHeaders: () => {},
   };
+}
+
+/** The Worker env every tidy request here runs under: the Anthropic key present. */
+const WITH_KEY = { ANTHROPIC_API_KEY: 'sk-test-key' };
+
+/** Run the tidy action on `event` with `bindings` layered over the Worker env. */
+function runTidy(
+  routes: ReturnType<typeof createContentRoutes>,
+  event: CairnEvent,
+  bindings: Record<string, unknown> = WITH_KEY,
+): ReturnType<ReturnType<typeof createContentRoutes>['tidyAction']> {
+  return withTestEnv(bindings, () => routes.tidyAction(event));
 }
 
 /** A fake TidyClient whose `tidy` method runs the supplied stub. The action calls the injected
@@ -114,7 +125,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
   it('returns { corrected, model, tokens } on a stubbed success and commits nothing', async () => {
     const tidy = vi.fn<TidyClient['tidy']>(async () => cannedResult('the cat'));
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidy) } });
-    const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent({ text: 'teh cat' }))) as TidyResult;
 
     expect(res.corrected).toBe('the cat');
     expect(res.model).toBe('claude-sonnet-5');
@@ -133,7 +144,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
       runtime: runtime({ tidy: { enabled: true, model: 'claude-haiku-4-5', conventions: {} } }),
       tidy: { client: strictAnthropic(() => 'the cat') },
     });
-    const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent({ text: 'teh cat' }))) as TidyResult;
 
     // The strict fake would throw a 400 here if the action sent an effort tier anyway, so a clean
     // result proves the call site is actually guarded, not just the predicate in isolation.
@@ -147,7 +158,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
       runtime: runtime({ tidy: { enabled: true, model: 'claude-sonnet-5', conventions: {} } }),
       tidy: { client: fakeAnthropic(tidy) },
     });
-    await routes.tidyAction(tidyEvent({ text: 'teh cat' }));
+    await runTidy(routes, tidyEvent({ text: 'teh cat' }));
 
     expect(tidy.mock.calls[0]![0].effort).toBe('low');
   });
@@ -155,7 +166,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
   it('refuses fail(403) on a bad CSRF header, before the session read and any model call', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
-    const res = (await routes.tidyAction(tidyEvent({ csrf: 'wrong' }))) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent({ csrf: 'wrong' }))) as TidyResult;
 
     expect(res.status).toBe(403);
     expect(tidyFn).not.toHaveBeenCalled();
@@ -175,14 +186,14 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     // requireSession throws a redirect; the action does not catch it (the manual-redirect 303 the
     // client reads as status-0). Assert it throws and the model was never called.
-    await expect(routes.tidyAction(tidyEvent({ hasEditor: false }))).rejects.toMatchObject({ status: 303 });
+    await expect(runTidy(routes, tidyEvent({ hasEditor: false }))).rejects.toMatchObject({ status: 303 });
     expect(tidyFn).not.toHaveBeenCalled();
   });
 
   it('refuses fail(503) when tidy is disabled, before any model call', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
     const routes = createContentRoutes({ runtime: runtime({ tidy: { enabled: false } }), tidy: { client: fakeAnthropic(tidyFn) } });
-    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(503);
     expect(tidyFn).not.toHaveBeenCalled();
@@ -191,7 +202,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
   it('refuses fail(503) when the API key is missing, before any model call', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
-    const res = (await routes.tidyAction(tidyEvent({ platformEnv: {} }))) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent(), { ANTHROPIC_API_KEY: undefined })) as TidyResult;
 
     expect(res.status).toBe(503);
     expect(tidyFn).not.toHaveBeenCalled();
@@ -201,7 +212,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const huge = 'a '.repeat(20000); // well past the cap
-    const res = (await routes.tidyAction(tidyEvent({ text: huge }))) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent({ text: huge }))) as TidyResult;
 
     expect(res.status).toBe(413);
     expect(tidyFn).not.toHaveBeenCalled();
@@ -224,7 +235,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     }) as unknown as TidyClient['tidy'];
     // A short deadline so the test does not wait the real 30s.
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn), timeoutMs: 20 } });
-    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
 
     // The action reached the call with a real signal in the options argument, and the deadline mapped
     // the abort to the retryable failure rather than hanging.
@@ -237,7 +248,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
       throw new Error('overloaded');
     }) as unknown as TidyClient['tidy'];
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
-    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(502);
   });
@@ -249,7 +260,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
       tokens: { input: 5, output: 0 },
     }));
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
-    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(422);
   });
@@ -257,7 +268,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
   it('refuses fail(400) on a malformed body, before the model call', async () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
-    const res = (await routes.tidyAction(tidyEvent({ rawBody: 'not json' }))) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent({ rawBody: 'not json' }))) as TidyResult;
 
     expect(res.status).toBe(400);
     expect(tidyFn).not.toHaveBeenCalled();
@@ -271,7 +282,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     }) as unknown as TidyClient['tidy'];
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const warn = vi.spyOn(log, 'warn');
-    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(503);
     expect(res.data?.error).toBe(
@@ -286,7 +297,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
       throw Object.assign(new Error('forbidden'), { status: 403 });
     }) as unknown as TidyClient['tidy'];
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
-    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(503);
   });
@@ -303,7 +314,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     }) as unknown as TidyClient['tidy'];
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn), timeoutMs: 20 } });
     const warn = vi.spyOn(log, 'warn');
-    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(502);
     expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'timeout' }));
@@ -318,7 +329,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
       tidy: { client: fakeAnthropic(tidyFn) },
     });
     const warn = vi.spyOn(log, 'warn');
-    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(503);
     expect(res.data?.error).toContain('claude-haiku-4-5');
@@ -334,7 +345,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     }) as unknown as TidyClient['tidy'];
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
     const warn = vi.spyOn(log, 'warn');
-    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(502);
     expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'model' }));
@@ -369,7 +380,7 @@ describe('tidy action: the optional @anthropic-ai/sdk peer (cleanup pass, Task 3
     // The short deadline bounds the call regardless of how the resolution fails.
     const routes = createContentRoutes({ runtime: runtime(), tidy: { timeoutMs: 200 } });
     const warn = vi.spyOn(log, 'warn');
-    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(503);
     expect(res.data?.error).toContain('@anthropic-ai/sdk');
@@ -382,7 +393,7 @@ describe('tidy action: the optional @anthropic-ai/sdk peer (cleanup pass, Task 3
   it('never marks the key unhealthy when the SDK is absent (the key was never tried)', async () => {
     sdkAbsent();
     const routes = createContentRoutes({ runtime: runtime(), tidy: { timeoutMs: 200 } });
-    await routes.tidyAction(tidyEvent());
+    await runTidy(routes, tidyEvent());
 
     expect(keyKnownUnhealthy()).toBe(false);
   });
@@ -391,7 +402,7 @@ describe('tidy action: the optional @anthropic-ai/sdk peer (cleanup pass, Task 3
     sdkAbsent();
     const tidyFn = vi.fn<TidyClient['tidy']>(async () => cannedResult('the cat'));
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
-    const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
+    const res = (await runTidy(routes, tidyEvent({ text: 'teh cat' }))) as TidyResult;
 
     expect(res.corrected).toBe('the cat');
     expect(tidyFn).toHaveBeenCalledTimes(1);
@@ -404,7 +415,7 @@ describe('tidy action: key health cache (save-500-honest-errors, Task 5)', () =>
       throw Object.assign(new Error('invalid x-api-key'), { status: 401 });
     }) as unknown as TidyClient['tidy'];
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
-    await routes.tidyAction(tidyEvent());
+    await runTidy(routes, tidyEvent());
     expect(keyKnownUnhealthy()).toBe(true);
   });
 
@@ -413,7 +424,7 @@ describe('tidy action: key health cache (save-500-honest-errors, Task 5)', () =>
       throw Object.assign(new Error('forbidden'), { status: 403 });
     }) as unknown as TidyClient['tidy'];
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
-    await routes.tidyAction(tidyEvent());
+    await runTidy(routes, tidyEvent());
     expect(keyKnownUnhealthy()).toBe(true);
   });
 
@@ -422,7 +433,7 @@ describe('tidy action: key health cache (save-500-honest-errors, Task 5)', () =>
       throw new Error('overloaded');
     }) as unknown as TidyClient['tidy'];
     const routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(tidyFn) } });
-    await routes.tidyAction(tidyEvent());
+    await runTidy(routes, tidyEvent());
     expect(keyKnownUnhealthy()).toBe(false);
   });
 
@@ -431,12 +442,12 @@ describe('tidy action: key health cache (save-500-honest-errors, Task 5)', () =>
       throw Object.assign(new Error('invalid x-api-key'), { status: 401 });
     }) as unknown as TidyClient['tidy'];
     let routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(failingFn) } });
-    await routes.tidyAction(tidyEvent());
+    await runTidy(routes, tidyEvent());
     expect(keyKnownUnhealthy()).toBe(true);
 
     const succeedingFn = vi.fn(async () => cannedResult('fixed'));
     routes = createContentRoutes({ runtime: runtime(), tidy: { client: fakeAnthropic(succeedingFn) } });
-    await routes.tidyAction(tidyEvent());
+    await runTidy(routes, tidyEvent());
     expect(keyKnownUnhealthy()).toBe(false);
   });
 });

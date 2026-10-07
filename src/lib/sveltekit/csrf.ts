@@ -1,14 +1,20 @@
-// cairn owns CSRF for the admin once a site disables SvelteKit's global checkOrigin. These helpers
-// back the guard's two rules and the loads that issue the double-submit token.
+// SvelteKit's own Origin check runs on every route ahead of any handle; cairn adds the admin's
+// double-submit token on top. These helpers back the guard's token check, the auth channel's own
+// Origin compare, and the loads that issue the token.
 import { csrfCookieName, generateCsrfToken, tokensMatch, SESSION_TTL_MS } from '../auth/crypto.js';
 import { isLocalHost, readPublicOrigin } from '../dev-flag.js';
+import { env } from './workers-env.js';
 import type { CairnEvent, CookieJar } from './types.js';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+// SvelteKit 3's own form-content set (`is_form_content_type` in kit's utils/http.js), its binary
+// remote-form type included. Kit screens a request with no Content-Type at all as well, which
+// isUnsafeFormRequest handles before it consults this set.
 const FORM_CONTENT_TYPES = new Set([
   'application/x-www-form-urlencoded',
   'multipart/form-data',
   'text/plain',
+  'application/x-sveltekit-formdata',
 ]);
 
 // `isLocalHost` is imported, not copied. It used to be duplicated here because guard.ts imports
@@ -23,14 +29,6 @@ const FORM_CONTENT_TYPES = new Set([
 // bare name over the PUBLIC_ORIGIN answer, but that is not attacker-reachable through a victim's
 // own browser, which derives Host from the URL it is actually visiting. That is why this stays on
 // the bare hostname predicate rather than `isDeployedHost`.
-
-/**
- * The platform slice every CSRF cookie decision reads, declared once so the four helpers below
- * cannot drift apart on it. Required but nullable at each call site: a caller must write the
- * property even when the value is `undefined`, since an omitted property compiled fine and let a
- * writer and a reader resolve two different cookie names for the same request.
- */
-type CsrfPlatform = { env?: { PUBLIC_ORIGIN?: string } } | undefined;
 
 /**
  * Decide the Secure bit for one request's cairn-owned cookies, the single source every writer and
@@ -55,24 +53,17 @@ type CsrfPlatform = { env?: { PUBLIC_ORIGIN?: string } } | undefined;
  * actually expects. With no usable `PUBLIC_ORIGIN` (absent, as in a bare unit-test event, or
  * unparseable) the request is http and non-local, so the answer is false.
  *
- * `PUBLIC_ORIGIN` is read through the shared {@link readPublicOrigin} (`dev-flag.ts`) at its
- * `platform-only` depth, deliberately shallower than that reader's default dual read: consulting
- * `process.env` here would break an external login probe's cross-check on a deployed site (the
- * `admin.login-probe-failed` condition, currently unraised, whose expected cookie name must
- * derive from the probed origin alone, never a separately-resolved process value), make the csrf
- * unit suite's outcome depend on the runner's own shell, mint an unusable Secure cookie for a LAN
- * http host whenever a deployed process value happened to be exported, and (since
- * {@link issueCsrfToken}'s `secure` input also names the session cookie) invalidate a live
- * session on a TLS-terminated deploy the moment that value changed. The divergence from
- * `isDeployedHost`'s dual-depth read is consultation depth only, never direction: an https
- * request short-circuits Secure above before either depth is consulted, so no fallback could
- * ever downgrade it. This divergence persists by design; see {@link readPublicOrigin}'s own doc
- * comment for the retirement trigger that would reopen it.
+ * `PUBLIC_ORIGIN` is read through the shared {@link readPublicOrigin} (`dev-flag.ts`), from the
+ * Worker env alone, so the answer never depends on the shell the runtime was started from. The
+ * `secure` input also names the session cookie ({@link issueCsrfToken}), so a TLS-terminated
+ * deploy's origin must come from the one configured source for the cookie to stay stable. An
+ * https request short-circuits Secure above, so the origin can only turn a plain-http request
+ * Secure, never a Secure request plain.
  */
-export function csrfSecure(event: { url: URL; platform: CsrfPlatform }): boolean {
+export function csrfSecure(event: { url: URL }): boolean {
   if (event.url.protocol === 'https:') return true;
   if (isLocalHost(event.url.hostname)) return false;
-  const origin = readPublicOrigin(event.platform?.env, { depth: 'platform-only' });
+  const origin = readPublicOrigin(env);
   if (origin) {
     try {
       return new URL(origin).protocol === 'https:';
@@ -83,11 +74,17 @@ export function csrfSecure(event: { url: URL; platform: CsrfPlatform }): boolean
   return false;
 }
 
-/** True for a request SvelteKit's CSRF guard screens: an unsafe method with a form content type. */
+/**
+ * True for a request SvelteKit 3's CSRF check screens: an unsafe method with a form content type
+ * or with no Content-Type header at all. The absent case matters because a cross-origin `no-cors`
+ * fetch of an untyped `Blob` body sends no Content-Type and no preflight; SvelteKit passes it
+ * when its origin is in `trustedOrigins`, so the admin token check must still see it.
+ */
 export function isUnsafeFormRequest(request: Request): boolean {
   if (!UNSAFE_METHODS.has(request.method)) return false;
-  const type = (request.headers.get('content-type') ?? '').split(';', 1)[0].trim().toLowerCase();
-  return FORM_CONTENT_TYPES.has(type);
+  const header = request.headers.get('content-type');
+  if (!header) return true;
+  return FORM_CONTENT_TYPES.has(header.split(';', 1)[0].trim().toLowerCase());
 }
 
 /** The faithful framework check: the Origin header equals the request's own origin. */
@@ -114,11 +111,7 @@ export function originMatches(event: Pick<CairnEvent, 'url' | 'request'>): boole
  * tab's already-rendered form field. Re-setting the identical value with a fresh `Max-Age` keeps
  * every tab in sync while still letting the cookie outlive a single page load.
  */
-export function issueCsrfToken(event: {
-  url: URL;
-  cookies: CookieJar;
-  platform: CsrfPlatform;
-}): string {
+export function issueCsrfToken(event: { url: URL; cookies: CookieJar }): string {
   const secure = csrfSecure(event);
   const name = csrfCookieName(secure);
   const maxAge = Math.floor(SESSION_TTL_MS / 1000);
@@ -155,12 +148,7 @@ function verdictFromWitness(cookie: string | undefined, submitted: string | unde
  * double-submit compare, plus {@link CsrfRejectionDetail} naming why a failure failed. See
  * `validateCsrfHeader`'s own docstring for the header's security rationale.
  */
-export function csrfHeaderVerdict(event: {
-  url: URL;
-  request: Request;
-  cookies: CookieJar;
-  platform: CsrfPlatform;
-}): CsrfVerdict {
+export function csrfHeaderVerdict(event: { url: URL; request: Request; cookies: CookieJar }): CsrfVerdict {
   const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
   const header = event.request.headers.get('x-cairn-csrf');
   return verdictFromWitness(cookie, header ?? undefined);
@@ -181,9 +169,7 @@ export function csrfFieldVerdict(cookie: string | undefined, form: FormData): Cs
  * clone. See `validateCsrfToken`'s own docstring for why a clone, not a direct read.
  */
 export async function csrfTokenVerdict(event: CairnEvent): Promise<CsrfVerdict> {
-  const cookie = event.cookies.get(
-    csrfCookieName(csrfSecure({ url: event.url, platform: event.platform })),
-  );
+  const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
   if (!cookie) return { ok: false, detail: 'no-cookie' };
   let form: FormData;
   try {
@@ -207,12 +193,7 @@ export async function csrfTokenVerdict(event: CairnEvent): Promise<CsrfVerdict> 
  * never add a permissive `Access-Control-Allow-Headers: x-cairn-csrf` (or an allow-origin) for
  * `/admin` or `/media`, or this header witness collapses.
  */
-export function validateCsrfHeader(event: {
-  url: URL;
-  request: Request;
-  cookies: CookieJar;
-  platform: CsrfPlatform;
-}): boolean {
+export function validateCsrfHeader(event: { url: URL; request: Request; cookies: CookieJar }): boolean {
   return csrfHeaderVerdict(event).ok;
 }
 

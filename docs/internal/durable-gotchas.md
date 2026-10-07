@@ -117,3 +117,91 @@ audit falls back to the packaged sheet, which reports two false `no-uncompiled-c
 that the clean template does not. Pass B's first probe was invalid for this reason (2026-09-28).
 Build a probe site the way `.github/workflows/create-site.yml` does: bake, pack the CLI, run
 `create-cairn-site --yes`, then point the site's engine specs at the fresh tarballs.
+
+## `cloudflare:workers` in the engine
+
+The engine reads its bindings and `waitUntil` from `cloudflare:workers` through one module,
+`src/lib/sveltekit/workers-env.ts`, and nothing reachable from a Node-context entry may import it
+(`src/tests/unit/workers-env-reach.test.ts` walks the packed `dist`). The spike record
+(`docs/superpowers/research/2026-10-03-sveltekit-3-spike/record.md`) proved the following, against a
+packed engine installed into a fresh `sv create` project on Kit 3 and adapter-cloudflare 8.
+
+- The import resolves under `vite dev`, `vite build`, and `wrangler dev` with no `ssr.noExternal`, no
+  `file:` link, and no `npm link`. `env.X` returns the `wrangler.jsonc` `vars` value in all of them.
+- Adapter 8's worker passes no `platform`, so a Kit 2-era engine reading `event.platform.env` answers
+  `/admin/login` with a 500 (`guard.refused`, `config.bindings-missing`).
+- `withEnv({ ...env, X }, () => resolve(event))` in a handle makes `X` visible to engine code and site
+  code alike, across awaits, inside a `ReadableStream` `pull`, and in a promise a `load` returns.
+  Spreading the current `env` is what lets two such handles nest.
+- Wrangler's plain esbuild pass treats `cloudflare:*` as external, so a boundary test that bundles the
+  packed engine needs `cloudflare:*` in its external list.
+
+## Any `env` read while prerendering fails the build
+
+While a build prerenders, every `env` trap and `withEnv` throws `Cannot access cloudflare:workers in
+a prerenderable route`, because no Worker exists then. A handle that sits in front of prerendered
+routes (the showcase prerenders its `(site)` routes behind the guard) must not touch `env` or
+`withEnv` while `building` is true. The engine's gate is `await import('$app/env')` inside a
+`try`/`catch` that falls back to `false`; a static `import { building } from '$app/env'` in a module
+the `/sveltekit` barrel reaches fails the dist boundary test, since a plain bundler cannot resolve
+`$app/env`. `$app/environment` is Kit 2's name for the same module.
+
+## `vite preview` cannot serve adapter 8 output
+
+Under adapter-cloudflare 8, `vite preview` fails with `ERR_UNSUPPORTED_ESM_URL_SCHEME`
+(sveltejs/kit#17271, open). Serve a built site with `wrangler dev .svelte-kit/cloudflare/_worker.js`,
+which also serves the assets. A run that needs the dev backend appends `-- --var CAIRN_DEV_BACKEND:1`
+to that command. The flag never goes in `wrangler.jsonc` `vars` (it would ship), in an OS variable
+(it reaches `vite preview`'s Node process, never workerd), or in a `.dev.vars` file left behind (a
+lingering one turns every later default-build serve into the guard's 503).
+
+## `node:sqlite` throws under workerd
+
+In workerd at the showcase's flags, `await import('node:sqlite')` resolves, but `new
+DatabaseSync(':memory:')` throws `Illegal constructor`. A check for "the module is absent" therefore
+passes and the failure arrives at the first call. `createChannelDb` in `@glw907/cairn-cms-dev` is
+Node only: it serves a vitest run or `vite dev` on Node, never a Worker, and the showcase's former
+`membersDevHandle` called it, so it would have thrown this error under `wrangler dev`.
+
+## Kit 3 emits server sourcemaps by default
+
+A grep over a build for a dev-only identifier must skip `*.map`: Kit 3 writes a `.map` beside each
+server chunk, and a map holds the authored source, so it matches every identifier the source names.
+The dev-fold checks grep the executable bundle only. A Worker bundle is never served, and maps upload
+only when `upload_source_maps` is set.
+
+## A plugin must never start and close a nested Vite server under `vite dev`
+
+Adapter-cloudflare 8 keeps one platform proxy on `globalThis.__sveltekit_cloudflare_platform`, and its
+`closeServer` hook disposes it when any server closes with reason `close`. A plugin that creates a
+nested Vite server (a manifest verify step, say) and closes it runs that hook against the proxy the
+running dev server shares, after which every `cloudflare:workers` read throws and `/admin` answers
+500 on every request. Under `vite dev`, `cairnManifest()` loads its verify module through the live
+server (`configureServer`, then the SSR environment's `runner.import`); a build keeps its nested
+server, since no running dev server shares the proxy there, and strips the adapter's
+virtual-workers plugin from it so the verify starts no proxy at all. Filed upstream as sveltejs/kit#17344, with the fix in #17368; cairn does not
+depend on it, and a scheduled routine watches the PR.
+
+## An installed engine needs vitest's `server.deps.inline`
+
+A vitest run over code that imports the engine's server modules, with the engine installed from a
+registry or a tarball into `node_modules`, leaves the engine external, and Node's loader meets the
+`cloudflare:` scheme directly and rejects it. Set `test.server.deps.inline: ['@glw907/cairn-cms']` so
+vitest transforms the engine and a test's `vi.mock('cloudflare:workers')` applies to the engine's own
+import. The first Kit 3 CI run, which installs the engine from a tarball, was where this surfaced.
+
+## An e2e key press waits for hydration, not for server-rendered markup
+
+A Playwright test that presses a keyboard shortcut must first wait on `.cm-content`, which CodeMirror
+mounts client-side after hydration. The server-rendered heading shows about 130 ms before hydration
+attaches `EditPage`'s window `keydown` listener, so a press in that gap is dropped (the zen-mode
+tests failed 3 of 36 isolated runs until they waited, and failed 15 of 15 under a 600 ms chunk delay).
+
+## The full gate tier mirrors `test.yml`, and a tree-grepping helper skips generated directories
+
+`scripts/checks/gate-tier.mjs` pins its `full` tier against the steps of `test.yml`'s test job, so the
+local full gate runs every check CI runs, `check:dev-package` included. A test helper that greps the
+tree must exclude `node_modules`, `.wrangler`, `.svelte-kit`, and `test-results` at the walk itself:
+every `wrangler dev` run leaves a bundle under `examples/showcase/.wrangler/tmp`, and a corpus test
+that greps one token at a time passed its timeout after about twenty local e2e runs while a clean CI
+checkout never saw it (`check-symbols`'s `envVarInSourceTree` went from 60 s to 3 s).

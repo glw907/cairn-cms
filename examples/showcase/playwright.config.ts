@@ -19,7 +19,7 @@ export default defineConfig({
   expect: { toHaveScreenshot: { maxDiffPixels: 120 } },
   testDir: 'e2e',
   // The dev backend (the fake-github recorder, the fake R2 bucket) is module-level singleton state
-  // on the one preview server, and several specs commit to the same seed post on the same branch. A
+  // on the one served worker, and several specs commit to the same seed post on the same branch. A
   // parallel run lets one spec's save overwrite /test/last-commit between another spec's save and its
   // read. Run the e2e suite on one worker so each spec reads back its own commit deterministically.
   workers: 1,
@@ -29,14 +29,27 @@ export default defineConfig({
   // without weakening any assertion. Locally (reuseExistingServer) retries stay off for fast feedback.
   retries: process.env.CI ? 2 : 0,
   // Run a production build with VITE_CAIRN_E2E=1 so the build-foldable e2e gate includes the dev
-  // backend, then serve it with `preview`. A default build (no flag) folds the backend out; this
-  // flagged build keeps it in for the specs, which exercise the real production output path.
+  // backend, then serve it through `wrangler dev`, the host the adapter's output targets. A default
+  // build (no flag) folds the backend out; this flagged build keeps it in for the specs, which
+  // exercise the real production output path.
+  //
+  // Three things reach workerd only by this command. The members fixture's D1 is the local
+  // `MEMBER_DB` the migration step creates, so the specs read the same binding a deployment would.
+  // `--var CAIRN_DEV_BACKEND:1` is the dev-backend opt-in; an OS environment variable never reaches
+  // the worker, and the flag stays out of wrangler.jsonc and any .dev.vars file so no later
+  // unflagged serve inherits it. `--var PUBLIC_ORIGIN` overrides wrangler.jsonc's origin so minted
+  // preview links follow E2E_PORT, since the file's own origin belongs to the flag-free `preview`
+  // script. The inspector port is pinned beside the serve port so two runs never fight over
+  // wrangler's default.
   webServer: {
-    command: `VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port ${E2E_PORT}`,
+    command: [
+      'VITE_CAIRN_E2E=1 npm run build',
+      'npx wrangler d1 migrations apply MEMBER_DB --local',
+      `npx wrangler dev --port ${E2E_PORT} --inspector-port ${Number(E2E_PORT) + 1} --var CAIRN_DEV_BACKEND:1 --var PUBLIC_ORIGIN:http://localhost:${E2E_PORT}`,
+    ].join(' && '),
     port: Number(E2E_PORT),
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { CAIRN_DEV_BACKEND: '1' },
   },
   use: { baseURL: `http://localhost:${E2E_PORT}` },
 });

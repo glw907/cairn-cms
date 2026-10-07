@@ -8,6 +8,7 @@ import { mintPreview, revokePreview, type PreviewMintOutcome, type PreviewRevoke
 import { isMissingTableError, type ContentFormFailure } from './content-routes-shared.js';
 import type { ContentRoutesContext } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
+import { env } from './workers-env.js';
 
 /**
  * A refused preview mint or revoke: `fail(400)` when a mint's entry carries no pending draft to
@@ -53,7 +54,6 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
    *  table, naming the migration to apply rather than surfacing a raw D1 error.
    */
   async function previewMintAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }> {
-    const env = event.platform?.env ?? {};
     const conceptId = event.params.concept ?? '';
     const id = event.params.id ?? '';
 

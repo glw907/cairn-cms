@@ -46,7 +46,7 @@
 // From the repo root:
 //   npm run package
 //   cd examples/showcase && VITE_CAIRN_E2E=1 npm run build
-//   CAIRN_DEV_BACKEND=1 npm run preview -- --port 4173
+//   npm run preview -- --port 4173 --var CAIRN_DEV_BACKEND:1
 //   npx tsx scripts/lab/probe-vertical-alignment.mjs
 // The measurement module lives at src/tests/lab/vertical-metrics.ts, outside src/lib, so plain
 // `node` cannot import it without a build step; `tsx` (a devDependency) resolves the NodeNext
@@ -1675,8 +1675,8 @@ async function main() {
   if (!(await isReachable(BASE_URL))) {
     throw new Error(
       `no server answering at ${BASE_URL}. This probe starts nothing: build and preview the ` +
-        'showcase (VITE_CAIRN_E2E=1 npm run build, then CAIRN_DEV_BACKEND=1 npm run preview -- ' +
-        '--port 4173), or set BASE_URL, then re-run.'
+        'showcase (VITE_CAIRN_E2E=1 npm run build, then npm run preview -- ' +
+        '--port 4173 --var CAIRN_DEV_BACKEND:1), or set BASE_URL, then re-run.'
     );
   }
   const corpora = { admin: adminCorpus(), public: PUBLIC_SCREENS };

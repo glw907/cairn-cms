@@ -49,6 +49,61 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`tooling`.** `examples/showcase/e2e/admin-visual.spec.ts:490` ("zen toggle: the frame offset animates through more
+  than two margin-left values") asserts more than two distinct samples inside a 400 ms window. It failed once in a
+  full local gate (received 2) and passed 3 of 3 alone (SvelteKit 3 pass, close Task C4, 2026-10-06): timing-sensitive
+  under load. Fix with a readiness or sampling approach that does not depend on frame timing (sample until the
+  animation reports finished, or assert start and end values), never a longer window.
+
+- **`go`.** `tool/internal/doctor` (graded "workmanlike" by the SvelteKit 3 pass's close `go-architecture-reader`,
+  2026-10-06) carries pre-existing debt the pass did not cause: eleven exported check values plus `Snapshot.ReadFile`,
+  the `RobotsAbsent*` constants, and `doctor.Results` have no caller outside the package (unexport them; `Verdicts`
+  can take `[]CheckedResult`); `check_origin.go`'s `isLocal` and `check_csrf.go`'s `isLocalOrigin` disagree on `::1`;
+  `labelFor`, `severityFor`, and `conditionText` triplicate one lookup; `resultFromFloorsVerdict` rebuilds `failResult`;
+  three loops each read the first existing file; `siteConfigOutcome.Path` and `Snapshot.At` are test-only; about 55
+  comment lines cite deleted TypeScript files by line range (`checks-local.ts` and siblings). Also `spine.Conditions()`
+  is test-only behind a "2.0 seam" comment. A tool cleanup pass, not a SvelteKit concern.
+- **`extend`.** SvelteKit 3 remote functions (`/_app/remote/...`) are not `/admin` paths, so a site-built admin
+  remote command gets no guard session, no Rule 1 token check, and no security headers (Kit's `is_remote_forbidden`
+  gives same-origin protection only). The extend arm should say a site-built admin remote function resolves the
+  session itself. Close `web-auth-security-reviewer`, 2026-10-06.
+- **`engine`.** Kit 3 loads `node:async_hooks` only under the `nodejs_als` compatibility flag, so without it
+  `getRequestEvent` works only synchronously. Nothing in cairn, the showcase, or Waymark calls it today, so the
+  configs deliberately carry no flag (no flag for an unused feature); revisit with the remote-functions watch
+  (`trig_0193pPNoyxsTGeUhF1xx7woa`). Close `cloudflare-workers-reviewer`, 2026-10-06.
+- **`admin`.** Error documents on public admin paths (a thrown 404 on `/admin/auth/<unknown>`, a failed admin layout
+  load) render the root `+error.svelte` outside the shell, so they carry no referrer meta; the guard's header covers
+  production but not the dev-backend handle. No form, so no lockout risk. Optional fix: an `admin/+error.svelte` that
+  emits the meta. Close `svelte-reviewer`, 2026-10-06.
+- **`chassis`.** `examples/showcase/src/theme/components/SiteHeader.svelte:66` starts `$state(browser ?
+  resolveTheme(...) : light)`, so server and client start from different values (a hydration-mismatch risk for the
+  theme toggle's icon and label); start from `light` and resolve in `onMount`. And `members/login/+page.svelte:48-50`
+  names its field twice (a `<legend>` and an sr-only `<label>`). Close `svelte-reviewer`, 2026-10-06.
+- **`engine`.** `createAuthChannel`'s dev-backend tripwire no longer sees a flag set only in the shell (it reads the
+  Worker env), so under `vite dev --host` a LAN request with a shell-only `CAIRN_DEV_BACKEND=1` no longer trips the
+  member-action refusal; dev-only, and `captureDeliver` still refuses. Close `web-auth-security-reviewer`, 2026-10-06.
+
+- **`tooling`.** Two showcase e2e specs time out on a slow CI runner while waiting on an admin list link, the same
+  slow-runner pattern as the known `spellcheck.spec.ts:20` flake: `e2e/tidy.spec.ts:20` (line 24, waiting for the
+  seeded `a[href="/admin/posts/2026-06-copyedit"]`) and `e2e/preview.spec.ts:371` (line 398, waiting for the "Delete
+  Broken link sibling" button). Both failed every attempt in CI run e2e on `7722ab44` (11.6 minutes against 5.7 on the
+  passing rerun of the next commit). Candidates for the same readiness-signal fix the zen test took (wait on a real
+  ready signal, never a longer timeout). Found by the SvelteKit 3 pass's CI diagnosis, 2026-10-06.
+
+- **`tooling`.** `scripts/lab/theme-fixture.mjs` defaults `THEME_FIXTURE_PORT` to 4393 (`:59`), which the
+  SvelteKit 3 pass's e2e host now pins as its `wrangler dev` inspector port (`E2E_PORT` + 1,
+  `examples/showcase/playwright.config.ts:48`), and `RESERVED_PORTS` (`:63`) lists neither 4393 nor
+  any fixture `PORT + 1` inspector port. A concurrent run fails loudly at the `listening()` check
+  rather than colliding, so the cost is a confusing refusal. Fix: move the default and reserve the
+  inspector ports. Found by the Task 6 diff review, conductor-verified, 2026-10-05 (on branch
+  `sveltekit-3` until it merges).
+- **`tooling`.** `npm run test:theme-fixture -- --arm both --build-only` exceeds the light gate
+  lane's 3G cap: two runs were SIGKILLed (exit 137) during the fixture copy's `vite build`, and it
+  passed only with `CAIRN_GATE_MEMORY_HIGH=5G CAIRN_GATE_MEMORY_MAX=6G`. It launches no browser, so
+  the lane rule puts it on light, where it cannot fit. Fix: document the override in the script's
+  header, or have it run on the heavy lane. Found by Task 6's implementer, conductor-verified
+  against `cairn-run-gate`'s caps, 2026-10-05.
+
 The draft docs harvest's close (2026-09-30) triaged the whole log and found four open entries,
 all filed by the harvest itself, each verified against the tree first. The stale `/components`
 subpath in `src/lib/islands/index.ts`'s header comment was fixed on the spot (it now names

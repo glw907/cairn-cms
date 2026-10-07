@@ -1,65 +1,50 @@
 # cairn-cms status
 
-Present tense only; past tense lives in [`docs/HISTORY.md`](HISTORY.md), durable orientation in
-`CLAUDE.md`. `cairn-pass` rewrites this at each pass-end.
+Present tense only; the past lives in [`docs/HISTORY.md`](HISTORY.md), orientation in `CLAUDE.md`.
 
 ## Current state
 
-Published: **`0.98.0`** (npm `latest`, release commit `a84a6853`, release `v0.98.0`;
-`@glw907/cairn-cms-dev` `0.98.0` beside it); the Go tool is `tool/v1.1.0`. `0.98.0` carries theme
-identity passes A, B, and C, draft docs pass 0+1, the `viewport-overflow` fix (#100), the audit
-promotions, and the dependency sweeps. Unreleased: the harvest's page removal. Held majors:
-`devalue` 6, TypeScript 7, Vitest 5, `@types/node` 26. CI is green. cairn.pub pins `0.94.0-rc.1`
-(un-pinnable since `0.95.0`); its ceiling is `0.98.0` until the narrative arms are rebuilt
-([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)). Live contracts:
+Published: **`0.98.0`** (npm `latest`, release commit `a84a6853`; `@glw907/cairn-cms-dev` `0.98.0`
+beside it); the Go tool is `tool/v1.1.0`. Unreleased on `main`: the SvelteKit 3 upgrade (Kit 3.0.0,
+adapter-cloudflare 8.0.0; `04116a3b`, PR #103; tool major under `tool/CHANGELOG.md` `## Unreleased`,
+untagged) and the harvest's page removal. The release holds until draft docs stage 2a lands. Held
+majors: `devalue` 6, TypeScript 7, Vitest 5, `@types/node` 26. CI is green on all seven workflows.
+cairn.pub pins `0.94.0-rc.1` (un-pinnable since `0.95.0`); its ceiling is `0.98.0` until the narrative
+arms are rebuilt ([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)), and it is the only
+site that migrates to Kit 3, as a site pass after the cut. Live contracts:
 `tool/internal/{spine/conditions,doctor/site-config-path}.json` and `.cairn/site-facts.json`.
 
 ## Immediate next action
 
-- **Draft docs stage 2a is planned and waiting on Geoff's outline approval.** Branch and worktree
-  `draft-docs-2a` (`.claude/worktrees/draft-docs-2a`, local only, not pushed). Plan:
-  `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md`; spec:
-  `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md` (approved, S1 to S9), amending the
-  parent draft docs spec. Ceiling 25M, flag 20M. Task 1 (the page chain's outline read and the
-  kept-page fix) is done and accepted; tasks 2 onward wait for Geoff's R10 approval of the extend
-  outline at https://claude.ai/artifact/NCSX7CjAdvCJ5cwQK78kds (25 pages with titles he approved
-  2026-09-30 and slugs that match them; he keeps or cuts the two the code sweep added,
-  `configure-media` and `run-cairn-audit-on-your-site`). Resume prompt below.
-- The planning phase ran a code-first gap sweep (131 facts filed, 4 wrong facts corrected; record
-  `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and filed its 12 code defects in the
-  friction log (`bd8ab1fe`, on `main`, not pushed).
-- Theme identity is done; cairn-pub's pin bump takes its migration and link checks first.
+Execute the planned, reviewed unattended run:
+[`docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`](superpowers/plans/2026-10-07-2a-unattended-finish.md)
+(review, fold, verification, and second fold committed through `159693c0`). It finishes draft docs stage 2a
+(R1 matcher fix, R2 merge `main` into `draft-docs-2a`, R3 infra drift, R4 pilot pages on Kit 3, R5 task 8,
+R6 task 9, R7 close and merge) with two side lanes (L1 dependency sweep, L2 engineering cleanup). Owner
+rulings (Geoff, 2026-10-07): 2a ceiling 25M, stop at 20M; lanes 5M shared, stop at 4M; run cap 30M; targeted
+close unattended; merge on a green close; no release. After the run: Geoff reads the five task 8 pages, then
+the release (Kit 3 and the rebuilt extend docs), then cairn.pub's migration as a site pass.
 
 ## Open decisions and watches
-
-- **Geoff's call:** approve (and edit) the extend outline on the R10 page above.
-- Watch: `cairn-docs-outline`'s lock (dotfiles) was built past need; simplify it in a separate
-  dotfiles change with a `diff-reviewer` read (the spec records it as an instance of S2).
-- Watch: the kept per-version records' paths are hardcoded in `cairn-pass`, `CLAUDE.md`, and
-  `docs/internal/facts/README.md`; a pass that moves either record updates all three.
-- `checkOrigin` to `csrf.trustedOrigins` is a small `auth-data` pass, run when Geoff can make the
-  magic-link click. Node 26 is the beta floor only if Active LTS by then; TypeScript 7 waits on
-  `tsgo.yml`. `radius-scale` and the retired-patch arms promote at `0.99.0`.
-- `cairn-release` gap: the `0.98.0` prep ran no `check:dev-package`; the skill's pre-commit gate
-  names it next. Monthly routines email only on a mismatch. `CAIRN_GH_READ_TOKEN` expires
-  2026-10-19 (`cairn-tripwire` warns daily). `npm pkg fix` is owed for the four `./` `bin` entries.
+- Watch: sveltejs/kit#17368 (adapter-cloudflare 8's shared platform proxy, closes #17344). Routine
+  `trig_01KPzLTU7rzLMQUp2y6bjZtm` emails on activity, CI failure, merge, or close; delete it once the PR
+  closes. cairn does not depend on it.
+- The monthly drift routine (`trig_015UPQostYVisXuExTHTH2vu`) samples `docs/reference` and extend pages
+  only; widen it to all four tracks at stage 4's merge.
+- Watch: `cairn-docs-outline`'s lock (dotfiles) was built past need; simplify it separately.
+- Watch: the per-version records' paths are hardcoded in `cairn-pass`, `CLAUDE.md`, and
+  `docs/internal/facts/README.md`; a pass that moves a record updates all three.
+- The remote-functions routine (`trig_0193pPNoyxsTGeUhF1xx7woa`) opens an issue when they reach stable.
+  Node 26 is the beta floor only if Active LTS by then; TypeScript 7 waits on `tsgo.yml`. `radius-scale`
+  and the retired-patch arms promote at `0.99.0`.
+- `cairn-release` gap: the `0.98.0` prep ran no `check:dev-package`. `CAIRN_GATE_READ_TOKEN` expires
+  2026-10-19. `npm pkg fix` is owed for the four `./` `bin` entries.
 
 ## Resume prompt
-
-### Next action (draft docs stage 2a, execute)
-
-> **Goal.** Execute stage 2a: the option-coverage and friction mechanisms, the re-arm, the
-> six-page pilot and its checkpoint, the rest of 2a, and the close.
->
-> **Scope.** The plan's tasks 2 to 10 on `draft-docs-2a`. Task 1 is done. Stage 2b's pages are out.
->
-> **Settled (do not re-brainstorm):** the spec (`docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`,
-> S1 to S9), the plan and its review record, the outline (after Geoff's R10 fold), the 25M ceiling.
->
-> **Entry condition.** Geoff has approved the outline on its R10 page. Before task 2, the conductor
-> reads back his saved version (Artifact `read` on the URL above), folds its diff into
-> `docs/internal/outlines/extend.json`, and commits; the plan cites that commit.
->
-> **Approach.** Invoke `cairn-pass` to start; the plan's Execution mode governs (Agent-tool chains,
-> then `docs-page-chain` for the pilot). Launch directory `~/Projects/cairn-cms`;
-> `claude --model claude-opus-5-5` at medium effort.
+> **Goal.** Run the 2a unattended finish to its merged close, with both side lanes merged.
+> **Scope.** In: everything in `docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`. Out: the release,
+> cairn.pub's migration, stage 2b.
+> **Settled:** every ruling in the plan's Owner rulings section; no open forks.
+> **Approach.** Fresh session, `TMPDIR=$HOME/.cache/claude-tmp claude --model claude-opus-5-5` at medium
+> effort, from `~/Projects/cairn-cms`. Invoke `cairn-pass`, read the plan and its governing 2a plan, arm the
+> guards the plan names, and start at R1.

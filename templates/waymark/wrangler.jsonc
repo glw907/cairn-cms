@@ -44,6 +44,9 @@
   ],
   // R2 bucket backing the media library; the /media route streams content-addressed bytes from here.
   "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "cairn-showcase-media" }],
+  // `wrangler dev` (the `preview` script) serves on the port PUBLIC_ORIGIN names below, so a magic
+  // link minted there points back at the running server. A --port flag overrides it.
+  "dev": { "port": 4173 },
   "vars": {
     // Canonical origin for magic-link confirmation links, never read from a request header.
     "PUBLIC_ORIGIN": "http://localhost:4173"

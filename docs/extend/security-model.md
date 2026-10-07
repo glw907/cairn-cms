@@ -164,7 +164,7 @@ it with the branded `auth.csrf-origin-mismatch` page. [SvelteKit's default
 check](https://svelte.dev/docs/kit/configuration#csrf) compares the same header, and since it is one
 global setting with no per-route exception, a site hands the admin's CSRF authority to the guard by
 turning it off everywhere. SvelteKit has deprecated that setting in favor of `csrf.trustedOrigins`,
-and [the `checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-deprecation)
+and [the `checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-removal)
 records what the deprecation means for the engine.
 
 On an unsafe `/admin` form request, an `X-Cairn-CSRF` header decides outright whenever one is sent,

@@ -40,7 +40,6 @@ function event(pathname: string, cookies = makeCookies()): CairnEvent {
     route: { id: '/admin/[...path]' },
     cookies,
     locals: {},
-    platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
     setHeaders: () => {},
   };
 }

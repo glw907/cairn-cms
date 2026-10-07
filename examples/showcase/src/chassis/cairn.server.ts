@@ -4,7 +4,7 @@
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import type { ContentRoutesConfig } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
 import { devBackendOptIn } from './dev-gate.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
@@ -18,7 +18,7 @@ export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 // build the real Anthropic client from ANTHROPIC_API_KEY, and the engine connects the real GitHub
 // backend via its provider.
 // /admin/editors runs against the in-memory AUTH_DB double in fake-auth-db.ts, which
-// hooks.server.ts injects as platform.env.
+// hooks.server.ts layers into the Worker env.
 let client: NonNullable<ContentRoutesConfig['tidy']>['client'] | undefined;
 if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
   const { createFakeAnthropic } = await import('@glw907/cairn-cms-dev');

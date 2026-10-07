@@ -389,7 +389,7 @@ function styleBlockClasses(files) {
 
 /**
  * Load the showcase registry's component list, through a Vite server that resolves the showcase's
- * own aliases, and the engine's `previewMarkdown`.
+ * own subpath imports from its package.json, and the engine's `previewMarkdown`.
  * @param {string} root
  * @returns {Promise<DirectiveDef[]>}
  */
@@ -406,13 +406,6 @@ async function loadRegistry(root) {
     cacheDir,
     server: { middlewareMode: true, hmr: false, watch: null },
     optimizeDeps: { noDiscovery: true, include: [] },
-    resolve: {
-      alias: {
-        $chassis: join(showcase, 'src/chassis'),
-        $theme: join(showcase, 'src/theme'),
-        $lib: join(showcase, 'src/lib'),
-      },
-    },
   });
   try {
     const list = await server.ssrLoadModule('/src/theme/markdown-components.ts');

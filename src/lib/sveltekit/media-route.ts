@@ -3,9 +3,10 @@
 // the load-bearing XSS control for served media. The route sits outside `/admin`, so the admin
 // security headers never run on it; it owns its own.
 //
-// It lives on the `/sveltekit` barrel, not the node-safe `/media` subpath, because it reads
-// `platform.env`, which pulls `@sveltejs/kit` into its graph. Its public signature names only kit
-// (a peer dependency) and web globals, never an `@cloudflare/workers-types` type (decision 5).
+// It lives on the `/sveltekit` barrel, not the node-safe `/media` subpath, because it reads the
+// Worker env through `./workers-env.js`, whose runtime module a Node process cannot load. Its
+// public signature names only kit (a peer dependency) and web globals, never an
+// `@cloudflare/workers-types` type.
 import type { RequestHandler } from '@sveltejs/kit';
 import { requireBucket } from '../env.js';
 import { CairnError } from '../diagnostics/index.js';
@@ -14,6 +15,7 @@ import { log } from '../log/index.js';
 import type { DeliveryObject, DeliveryObjectBody } from '../media/delivery-bucket.js';
 import type { CairnRuntime } from '../content/types.js';
 import { deriveOnlyIf, deriveRange } from './media-conditional.js';
+import { env } from './workers-env.js';
 
 /** A 16-character lowercase hex content-hash prefix, validated before any R2 lookup. */
 const HASH_RE = /^[0-9a-f]{16}$/;
@@ -127,10 +129,7 @@ export function createMediaRoute(config: MediaRouteConfig): RequestHandler {
     // Resolve the bucket. A missing binding is a drained 503 with a log, never a thrown 500.
     let bucket;
     try {
-      // `event.platform` is `App.Platform`, which the engine does not declare (a site does, with an
-      // `env`), so read it through a structural cast rather than naming the site's ambient type.
-      const platform = event.platform as { env?: Record<string, unknown> } | undefined;
-      bucket = requireBucket(platform?.env ?? {}, resolved.bucketBinding);
+      bucket = requireBucket(env, resolved.bucketBinding);
     } catch (err) {
       if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') {
         log.warn('media.delivery_failed', {

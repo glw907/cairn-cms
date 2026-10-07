@@ -215,7 +215,7 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     // upload action. A failed check refuses before the session read or any GitHub call. An untyped
     // caller with no cookie jar at all throws loudly instead (convention-auth-loud-postures).
     const cookies = requireCookieJar(event);
-    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies, platform: event.platform })) {
+    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies })) {
       return fail(403, { error: 'csrf', hash: '', usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
     }
     const editor = requireEditor(event);
@@ -417,7 +417,7 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     // replace-preview actions. A failed check refuses before the session read or any GitHub call. An
     // untyped caller with no cookie jar at all throws loudly instead (convention-auth-loud-postures).
     const cookies = requireCookieJar(event);
-    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies, platform: event.platform })) {
+    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies })) {
       return fail(403, { error: 'csrf' } satisfies MediaAltPropagateFailure);
     }
     const editor = requireEditor(event);

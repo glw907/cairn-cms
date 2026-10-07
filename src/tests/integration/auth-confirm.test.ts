@@ -5,6 +5,7 @@ import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { generateToken, hashToken, sessionCookieName, csrfCookieName, buildCookieName } from '../../lib/auth/crypto.js';
 import { issueToken, createSession } from '../../lib/auth/store.js';
 import { testEvent } from '../helpers/test-event.js';
+import { withTestEnv } from '../helpers/with-test-env.js';
 
 const db = env.AUTH_DB;
 const routes = createAuthRoutes({ branding: { siteName: 'Test', from: 'noreply@test.dev' }, send: async () => {} });
@@ -362,9 +363,8 @@ describe('confirm and logout logging', () => {
       route: '/admin/auth/[...path]',
       cookies,
       locals: { cairnEditor: null },
-      env: { AUTH_DB: env.AUTH_DB },
     });
-    await expectRedirect(() => routes.logoutAction(logoutEvent));
+    await expectRedirect(() => withTestEnv({ PUBLIC_ORIGIN: undefined }, () => routes.logoutAction(logoutEvent)));
     expect(cookies.get(sessionCookieName(true))).toBeUndefined();
     expect(cookies.get(sessionCookieName(false))).toBeUndefined();
     expect(await countRows('session')).toBe(0);
@@ -394,10 +394,9 @@ describe('confirm and logout logging', () => {
       route: '/admin/auth/[...path]',
       cookies,
       locals: { cairnEditor: null },
-      env: { AUTH_DB: brokenDb, PUBLIC_ORIGIN: 'https://test.dev' },
     });
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await expectRedirect(() => routes.logoutAction(logoutEvent));
+    await expectRedirect(() => withTestEnv({ AUTH_DB: brokenDb }, () => routes.logoutAction(logoutEvent)));
     // The cookie is gone from the jar regardless of the D1 fault.
     expect(cookies.get('__Host-cairn_session')).toBeUndefined();
     // The fault is logged, not swallowed silently.

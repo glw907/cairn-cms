@@ -9,12 +9,12 @@ import (
 
 // enginePackageJSONFixture is a minimal installed @glw907/cairn-cms/package.json, its peer
 // ranges matching the real ones asserted in src/tests/unit/doctor-check-floors.test.ts's
-// readEnginePeers suite: svelte ^5.56.10, @sveltejs/kit ^2.70, and @anthropic-ai/sdk marked
+// readEnginePeers suite: svelte ^5.56.10, @sveltejs/kit ^3, and @anthropic-ai/sdk marked
 // optional in peerDependenciesMeta (finding 6).
 const enginePackageJSONFixture = `{
   "peerDependencies": {
     "@anthropic-ai/sdk": ">=0.105.0 <1",
-    "@sveltejs/kit": "^2.70",
+    "@sveltejs/kit": "^3",
     "svelte": "^5.56.10"
   },
   "peerDependenciesMeta": {
@@ -69,7 +69,7 @@ func yarnLockFixture(versions map[string]string) string {
 // version (fail), an absent node_modules/@glw907/cairn-cms/package.json (unchecked), and no
 // lockfile at all (unchecked).
 func TestConfigDependencyFloors(t *testing.T) {
-	realPeerVersions := map[string]string{"svelte": "5.56.10", "@sveltejs/kit": "2.70.0"}
+	realPeerVersions := map[string]string{"svelte": "5.56.10", "@sveltejs/kit": "3.0.0"}
 
 	tests := []struct {
 		name          string
@@ -90,7 +90,7 @@ func TestConfigDependencyFloors(t *testing.T) {
 			name: "fail on package-lock.json: a below-floor svelte",
 			files: map[string]string{
 				enginePackageJSONPath: enginePackageJSONFixture,
-				"package-lock.json":   npmLockFixture(map[string]string{"svelte": "5.56.0", "@sveltejs/kit": "2.70.0"}),
+				"package-lock.json":   npmLockFixture(map[string]string{"svelte": "5.56.0", "@sveltejs/kit": "3.0.0"}),
 			},
 			wantStatus:    StatusFail,
 			wantDetailHas: "svelte resolves to 5.56.0, below the engine floor ^5.56.10",
@@ -108,7 +108,7 @@ func TestConfigDependencyFloors(t *testing.T) {
 			name: "fail on pnpm-lock.yaml: an outside-major svelte",
 			files: map[string]string{
 				enginePackageJSONPath: enginePackageJSONFixture,
-				"pnpm-lock.yaml":      pnpmLockFixture(map[string]string{"svelte": "6.0.0", "@sveltejs/kit": "2.70.0"}),
+				"pnpm-lock.yaml":      pnpmLockFixture(map[string]string{"svelte": "6.0.0", "@sveltejs/kit": "3.0.0"}),
 			},
 			wantStatus:    StatusFail,
 			wantDetailHas: "svelte resolves to 6.0.0, outside the engine peer range ^5.56.10",
@@ -126,16 +126,16 @@ func TestConfigDependencyFloors(t *testing.T) {
 			name: "fail on yarn.lock: a below-floor kit",
 			files: map[string]string{
 				enginePackageJSONPath: enginePackageJSONFixture,
-				"yarn.lock":           yarnLockFixture(map[string]string{"svelte": "5.56.10", "@sveltejs/kit": "2.11.9"}),
+				"yarn.lock":           yarnLockFixture(map[string]string{"svelte": "5.56.10", "@sveltejs/kit": "2.70.0"}),
 			},
 			wantStatus:    StatusFail,
-			wantDetailHas: "@sveltejs/kit resolves to 2.11.9, below the engine floor ^2.70",
+			wantDetailHas: "@sveltejs/kit resolves to 2.70.0, below the engine floor ^3",
 		},
 		{
 			name: "skip: a prerelease resolved version",
 			files: map[string]string{
 				enginePackageJSONPath: enginePackageJSONFixture,
-				"package-lock.json":   npmLockFixture(map[string]string{"svelte": "5.57.0-next.2", "@sveltejs/kit": "2.70.0"}),
+				"package-lock.json":   npmLockFixture(map[string]string{"svelte": "5.57.0-next.2", "@sveltejs/kit": "3.0.0"}),
 			},
 			wantStatus:    StatusSkip,
 			wantDetailHas: "5.57.0-next.2",
@@ -160,7 +160,7 @@ func TestConfigDependencyFloors(t *testing.T) {
 			name: "prefers package-lock.json when more than one lockfile exists",
 			files: map[string]string{
 				enginePackageJSONPath: enginePackageJSONFixture,
-				"package-lock.json":   npmLockFixture(map[string]string{"svelte": "5.56.0", "@sveltejs/kit": "2.70.0"}),
+				"package-lock.json":   npmLockFixture(map[string]string{"svelte": "5.56.0", "@sveltejs/kit": "3.0.0"}),
 				"pnpm-lock.yaml":      pnpmLockFixture(realPeerVersions),
 			},
 			wantStatus:    StatusFail,
@@ -245,15 +245,15 @@ func TestReadEnginePeersFiltersOptionalPeer(t *testing.T) {
 	if peers["svelte"] != "^5.56.10" {
 		t.Errorf(`peers["svelte"] = %q, want "^5.56.10"`, peers["svelte"])
 	}
-	if peers["@sveltejs/kit"] != "^2.70" {
-		t.Errorf(`peers["@sveltejs/kit"] = %q, want "^2.70"`, peers["@sveltejs/kit"])
+	if peers["@sveltejs/kit"] != "^3" {
+		t.Errorf(`peers["@sveltejs/kit"] = %q, want "^3"`, peers["@sveltejs/kit"])
 	}
 
 	// A lockfile carrying no entry for the optional peer must not turn the run into a skip:
 	// the two real peers alone must still pass.
 	result := ConfigDependencyFloors.Run(snapshotWithFiles(t, map[string]string{
 		enginePackageJSONPath: enginePackageJSONFixture,
-		"package-lock.json":   npmLockFixture(map[string]string{"svelte": "5.56.10", "@sveltejs/kit": "2.70.0"}),
+		"package-lock.json":   npmLockFixture(map[string]string{"svelte": "5.56.10", "@sveltejs/kit": "3.0.0"}),
 	}))
 	if result.Status != StatusPass {
 		t.Errorf("Status = %v, want StatusPass; the optional peer's absence must not read as a skip (detail %q)", result.Status, result.Detail)

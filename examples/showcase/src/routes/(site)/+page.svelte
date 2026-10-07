@@ -1,14 +1,14 @@
 <!-- @component The showcase home: a masthead over a composed front page, the newest entry given a lead
      treatment above a year-grouped, paginated archive index. Archive page one; deeper pages live at
-     /archive/[page], sharing this page's markup shape and the $chassis/archive pagination helper. It
+     /archive/[page], sharing this page's markup shape and the #chassis/archive pagination helper. It
      is token-backed throughout: DaisyUI role utilities and cairn-token arbitrary-value utilities for
      the markup, a scoped `<style>` only for the lead card, the index grid, and the hairlines a utility
      cannot express. No hard-coded color or px font-size. -->
 <script lang="ts">
   import { page } from '$app/state';
   import type { PageData } from './$types';
-  import { formatDate } from '$chassis/date.js';
-  import EntryRow from '$theme/components/EntryRow.svelte';
+  import { formatDate } from '#chassis/date.js';
+  import EntryRow from '#theme/components/EntryRow.svelte';
 
   let { data }: { data: PageData } = $props();
 

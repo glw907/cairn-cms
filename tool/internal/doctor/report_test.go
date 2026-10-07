@@ -26,14 +26,14 @@ const cleanWranglerJSONC = `{
 }`
 
 // cleanSiteFiles is the file set a passing site carries for every check this pass ports: valid
-// wrangler bindings, the CSRF disable paired with a wired guard, a valid site.config.yaml at its
+// wrangler bindings, a Vite config that sets no csrf key, a valid site.config.yaml at its
 // canonical path, a wired /admin mount, an installed engine satisfying its own peer floors, and a
 // site-facts.json declaring no media bucket and no custom roles (so both facts-dependent checks
 // that read it settle as a clean skip rather than a pass needing more fixture).
 func cleanSiteFiles() map[string]string {
 	return map[string]string{
 		"wrangler.jsonc":                              cleanWranglerJSONC,
-		"svelte.config.js":                            "export default { kit: { csrf: { checkOrigin: false } } };\n",
+		"vite.config.ts":                              viteConfigNoCsrf,
 		"src/hooks.server.ts":                         "import { createAuthGuard } from '@glw907/cairn-cms';\nexport const handle = createAuthGuard();\n",
 		"src/theme/site.config.yaml":                  "siteName: Test Site\n",
 		"src/routes/admin/+layout.svelte":             "<!-- CairnAdminShell --><script>runtime.shellLoad()</script>",
@@ -41,7 +41,7 @@ func cleanSiteFiles() map[string]string {
 		"node_modules/@glw907/cairn-cms/package.json": enginePackageJSONFixture,
 		"package-lock.json": npmLockFixture(map[string]string{
 			"svelte":        "5.56.10",
-			"@sveltejs/kit": "2.70.0",
+			"@sveltejs/kit": "3.0.0",
 		}),
 	}
 }
@@ -135,13 +135,12 @@ func goldenReportCases() []goldenReportCase {
 			robots: cleanRobots(),
 		},
 		{
-			// config.csrf-disable-missing is a warning: the disable is still present in
-			// svelte.config.js, but the hooks file no longer wires the cairn guard, so only
-			// config.csrf-disable fails (config.no-referrer-blanket still passes: the file
-			// carries no Referrer-Policy line at all).
+			// config.csrf-trusted-origins-wildcard is a warning: a trustedOrigins wildcard in the
+			// Vite config fails only config.csrf-trusted-origins (config.no-referrer-blanket
+			// still passes: the hooks file carries no Referrer-Policy line at all).
 			name: "one-warning-failure",
-			files: withFile(cleanSiteFiles(), "src/hooks.server.ts",
-				"export const handle = async ({ event, resolve }) => resolve(event);\n"),
+			files: withFile(cleanSiteFiles(), "vite.config.ts",
+				viteConfigWith("csrf: { trustedOrigins: ['*'] },")),
 			origin: cleanOrigin(),
 			robots: cleanRobots(),
 		},

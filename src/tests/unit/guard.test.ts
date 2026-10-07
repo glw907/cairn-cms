@@ -43,9 +43,10 @@ describe('requireOwner', () => {
     expect(requireOwner(event({ cairnEditor: owner }))).toBe(owner);
   });
   it('requireOwner rejects a non-owner with 403', () => {
-    // error() throws an HttpError object (status + body.message), not an Error instance.
+    // error() throws an HttpError object (status + body.message), not an Error instance; the
+    // body also echoes the status.
     expect(() => requireOwner(event({ cairnEditor: editor }))).toThrowError(
-      expect.objectContaining({ status: 403, body: { message: 'Owner access required' } }),
+      expect.objectContaining({ status: 403, body: expect.objectContaining({ message: 'Owner access required' }) }),
     );
   });
   it('requireOwner redirects when no editor', () => {
@@ -67,7 +68,7 @@ describe('requireEditor', () => {
   });
   it('rejects a none-capability editor with 403', () => {
     expect(() => requireEditor(event({ cairnEditor: noneCapability }))).toThrowError(
-      expect.objectContaining({ status: 403, body: { message: 'Editor access required' } }),
+      expect.objectContaining({ status: 403, body: expect.objectContaining({ message: 'Editor access required' }) }),
     );
   });
   it('rejects an unknown-role editor resolved to none with 403', () => {

@@ -70,6 +70,9 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
   <title>{title}</title>
   <link rel="icon" href={cairnFaviconHref} />
   <meta name="robots" content="noindex, nofollow" />
+  <!-- The view owns its document's referrer policy, so a site that mounts it in its own shell still
+       sends the real Origin on the sign-in POST. -->
+  <meta name="referrer" content="strict-origin" />
 </svelte:head>
 
 <!-- The brand mark renders in both states; the parent container sets its alignment (left for the

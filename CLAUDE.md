@@ -209,7 +209,8 @@ weakest form and the fallback, never the default. Match the mechanism to the tri
   the gold standard, since it cannot be forgotten.
 - An **external or time trigger** (an upstream deprecation, a dependency major) becomes a scheduled
   cloud agent through the `schedule` skill, pinging only when the condition trips. Standing
-  example: the SvelteKit `checkOrigin` removal (kit#15992).
+  example: the routine that watches SvelteKit's remote functions reach stable and opens an issue to
+  evaluate them.
 - A **next-time-you-touch-X** note becomes a co-located `// WATCH:` comment, so the next editor
   sees it in context; mirror it to a memory only when it must survive a file move.
 - A **trend tied to a milestone** becomes a ROADMAP entry in the tier where it bites, not floating

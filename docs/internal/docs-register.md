@@ -225,6 +225,92 @@ its block editor confusing." It is concrete, unhurried, and true, and its first 
 author's evidence about why cairn exists, which is why a task, concept, or reference page never
 borrows that first person.
 
+### The introduction
+
+A page's introduction is reasoned fresh for each page, from that page's readers, and this section
+supplies the questions a drafter answers before writing one, never a template to fill. Every
+prompt in it rests on a published source linked beside it, except the two house rulings it marks
+as such. The sources were read on 2026-10-04, and the survey behind them is
+`docs/superpowers/research/2026-10-04-docs-introductions-survey.md`.
+
+The first question is who arrives at the page and what they already know. Google's technical
+writing course says to "Begin by identifying your audience's role(s)" and measures what a
+document owes its reader as the gap between what the task needs and what the audience already
+knows ([Defining your audience](https://developers.google.com/tech-writing/one/audience)). It
+also asks of every reader, "Why are they reading this document?"
+([Documents](https://developers.google.com/tech-writing/one/documents)). A page's purpose "is
+based on serving the reader's purpose, but is not necessarily identical with it"
+([Every Page is Page One](https://everypageispageone.com/the-book/)), so the introduction starts
+from what the reader came for, and the page's own scope follows from that. The reader's state
+shapes what the opening owes them. A tutorial "serves the needs of the user who is at study," and
+a how-to guide "serves the needs of the user who is at work"
+([Tutorials and how-to guides](https://diataxis.fr/tutorials-how-to/)), so a learner needs "to
+form an idea of what they will achieve right from the start"
+([Tutorials](https://diataxis.fr/tutorials/)), while a worker needs the problem or task named
+clearly ([How-to guides](https://diataxis.fr/how-to-guides/)). A reader may also arrive from a
+search or a link with no earlier page behind them: "Because a reader can arrive at an Every Page
+is Page One topic from anywhere, the topic must establish its context"
+([Every Page is Page One](https://everypageispageone.com/the-book/)).
+
+**A page may serve several readers** (house ruling, Geoff, 2026-10-04; the survey found no
+published source that covers one page serving readers with different reasons). A page can serve
+more than one reader, each arriving for a different reason, and the introduction names each
+reason so every reader learns early whether the page answers it. The add-cairn tutorial serves a
+reader who wants exactly that install and a reader curious about what cairn does underneath, and
+its introduction is the place to say that the usual route, the setup command, is much easier.
+That example shows the reasoning and is never a pattern to copy, since each page's readers and
+their reasons differ with no fixed shape, so a drafter works them out for each page before
+writing its opening.
+
+**An introduction frames the page from above** (house ruling, Geoff, 2026-10-04, after every
+pilot introduction read thin while the bodies read strong). An introduction carries the
+high-level reasoning a body leaves out. It gives the general model the page sits in, where
+SvelteKit and Cloudflare fit when the page touches them, and why the thing the page covers exists
+(why cairn uses magic links, before a page that replaces them). It starts from the reader, who
+arrives and what they are looking for. It may run two or three paragraphs when the framing needs
+them, and it opens on a statement, never an imperative, which the imperatives rule in "Voice"
+already requires. On a task guide, the anatomy's one-line contract is the sentence in the
+introduction that names what the reader accomplishes, and the framing surrounds it.
+
+The published sources support the framing that ruling asks for. The guidance on explanation reads
+"Provide background and context in your explanation: explain why things are so"
+([Explanation](https://diataxis.fr/explanation/)). A concept introduction can set the stage by
+"explaining the concept's relevance and importance"
+([Concept template](https://www.thegooddocsproject.dev/template/concept)), and it answers "What
+is this?" and "Why would you use it?"
+([GitLab concept topic type](https://docs.gitlab.com/development/documentation/topic_types/concept/)).
+Google's course relates a new thing to one the reader already knows, as when it compares an
+unfamiliar API with a familiar one
+([Documents](https://developers.google.com/tech-writing/one/documents)).
+
+An introduction also sets the page's bounds. Google's course has it state "What the document
+covers," "What prior knowledge you expect readers to have," and "What the document doesn't
+cover," and it warns "don't try to cover everything in the introduction"
+([Large documents](https://developers.google.com/tech-writing/two/large-docs)). Developers bring
+a fundamental grasp of programming, so the introduction skips basic knowledge and keeps to what
+is specific to the product
+([Developer content](https://learn.microsoft.com/en-us/style-guide/developer-content/)). A
+reference entry keeps its lede to the anatomy's sentence or two, because "Neutral description is
+the key imperative" there ([Reference](https://diataxis.fr/reference/)).
+
+The sources split on self-reference. Google's course writes its sample introduction as "This
+document explains how to publish Markdown files"
+([Large documents](https://developers.google.com/tech-writing/two/large-docs)). GitLab rejects
+"This page shows" because "These phrases slow the user down"
+([GitLab documentation style guide](https://docs.gitlab.com/development/documentation/styleguide/)),
+and Red Hat forbids "self-referential language"
+([Red Hat supplementary style guide](https://redhat-documentation.github.io/supplementary-style-guide/)).
+The register takes the GitLab and Red Hat side for the opening sentence, which states the subject
+or the reader's situation and never the page, since "No prose about the docs' writing" in "Tells"
+already keeps the docs from describing themselves. A later sentence that bounds the page's scope
+may name the page, as Google's samples do, because what a page leaves out has no subject-first
+form. The Google style guide states no rule on introductions, so this choice tightens the base
+and needs no deviation row.
+
+After the page is drafted, the introduction is reread against what the page delivers, using
+Google's check, "Does your introduction provide an accurate overview of the topics you cover?"
+([Large documents](https://developers.google.com/tech-writing/two/large-docs)).
+
 ### Exemplars
 
 A drafter reads each exemplar whole and takes its anatomy and detail per step, never its wording.
@@ -615,12 +701,8 @@ anatomy it follows by following it, not by naming it; the shapes below exist so 
 reviewer can check a page against a checklist rather than a feeling.
 
 Every page type opens with an introduction and ends with a closing section for its type (Geoff,
-2026-10-01). The introduction follows Google's three parts: what the document covers, what prior
-knowledge the reader needs, and what it does not cover ([Organizing large
-documents](https://developers.google.com/tech-writing/two/large-docs)). It states the page's
-subject and never describes the page itself, the "page describing itself" tell
-(`docs/superpowers/specs/2026-09-08-docs-standard-design.md`, the voice tells). Each type adds
-what its template asks of the opening, as the following anatomies state.
+2026-10-01). The introduction is reasoned per page, as "The introduction" above sets out. Each
+type adds what its template asks of the opening, as the following anatomies state.
 
 - **Concept page** (the extend track's concept pages). It opens with the introduction, a summary paragraph that introduces the concept,
   explains its importance or relevance, and gives an overview of the content the page covers,
@@ -656,7 +738,8 @@ what its template asks of the opening, as the following anatomies state.
   needs to choose or verify, and each such section opens with a sentence tying it to the task,
   so the page never turns from instruction to exposition without a lead-in. Anything more (a
   full output listing, the behavior's limits, its rationale) belongs on the reference entry or
-  a separate page, linked from the step that needs it.
+  a separate page, linked from the step that needs it. The introduction is the one exception:
+  it may say why the thing the guide covers exists, as "The introduction" above allows.
 - **Tutorial** (a page of milestones, the extend track's deep path). It opens with an overview
   that says what the tutorial teaches the reader to do, who it is intended for, the knowledge it
   assumes, and what the reader can do by the end, written in second person (Google's voice,
@@ -1026,6 +1109,19 @@ date.
 - [Writing for all abilities](https://learn.microsoft.com/en-us/style-guide/accessibility/writing-all-abilities)
 - [Top 10 tips for Microsoft style and voice](https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice)
 - [Writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)
+
+The introduction section cites the following pages, read on 2026-10-04; the source survey is
+`docs/superpowers/research/2026-10-04-docs-introductions-survey.md`.
+
+- [Google Technical Writing One: Defining your audience](https://developers.google.com/tech-writing/one/audience)
+- [Google Technical Writing One: Documents](https://developers.google.com/tech-writing/one/documents)
+- [Google Technical Writing Two: Large documents](https://developers.google.com/tech-writing/two/large-docs)
+- [Every Page is Page One](https://everypageispageone.com/the-book/)
+- [Diátaxis](https://diataxis.fr/): tutorials, how-to guides, explanation, reference, and the tutorials and how-to distinction
+- [The Good Docs Project concept template](https://www.thegooddocsproject.dev/template/concept)
+- [GitLab concept topic type](https://docs.gitlab.com/development/documentation/topic_types/concept/) and [style guide](https://docs.gitlab.com/development/documentation/styleguide/)
+- [Red Hat supplementary style guide](https://redhat-documentation.github.io/supplementary-style-guide/)
+- [Microsoft Writing Style Guide: Developer content](https://learn.microsoft.com/en-us/style-guide/developer-content/)
 
 The page plan rule in both briefs cites one page of Google's Technical Writing Two course, read on
 2026-10-03.

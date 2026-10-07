@@ -75,6 +75,22 @@ test('a composed tree carries the overlay files the deploy flow reads', async (t
   assert.equal(pkg.dependencies['@glw907/cairn-cms'], PUBLISHED_SPECS.engineSpec);
 });
 
+test('a composed tree regenerates the Worker Env from its own config and secret names', async (t) => {
+  const composed = await composeTemplate(PUBLISHED_SPECS);
+  t.after(() => rm(composed, { recursive: true, force: true }));
+
+  // The showcase's own generated Env carries its members fixture binding, which the marker strip
+  // removes from the template's wrangler.jsonc, so a copied file would describe a binding the
+  // template never binds. The composed file is generated from the composed tree instead.
+  const env = await readFile(path.join(composed, 'worker-configuration.d.ts'), 'utf8');
+  assert.match(env, /--env-file=\.dev\.vars\.example --include-runtime=false/);
+  assert.doesNotMatch(env, /MEMBER_DB/);
+  assert.match(env, /AUTH_DB: D1Database;/);
+  // A secret wrangler.jsonc never lists, present only because the overlay's .dev.vars.example names it.
+  assert.match(env, /GITHUB_APP_PRIVATE_KEY_B64: string;/);
+  assert.doesNotMatch(env, /CAIRN_DEV_BACKEND/);
+});
+
 test('diffTrees reports a changed, a missing, and an extra file', async (t) => {
   const fresh = await tempDir(t);
   const committed = await tempDir(t);

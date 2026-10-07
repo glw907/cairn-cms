@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { execSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve, dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import {
   codeVoiceSegments,
   extractCliFlags,
@@ -24,26 +22,10 @@ import {
   parseApiSurface,
   findUnresolvedSymbols,
   filesInScope,
+  envVarInSourceTree,
 } from '../../../scripts/checks/check-symbols.mjs';
 import { ALLOWLIST } from '../../../scripts/checks/check-symbols-allowlist.mjs';
 import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-
-// Mirrors extractEnvVars' own ground truth (an unexported helper inside check-symbols.mjs): a
-// SCREAMING_SNAKE_CASE token resolves against the environment-variable class when it appears
-// anywhere in the source tree. There is no parseable registry for this class, unlike the other
-// four, so this is the only way to prove the env-var half of the both-halves requirement without
-// reaching into a private function.
-function foundInSourceTree(token: string): boolean {
-  const out = execSync(
-    `grep -rl -- "\\b${token}\\b" src packages migrations examples/showcase scripts .github 2>/dev/null | grep -v node_modules || true`,
-    { cwd: ROOT },
-  )
-    .toString()
-    .trim();
-  return out.length > 0;
-}
 
 describe('codeVoiceSegments', () => {
   it('extracts an inline span with its 1-based line number', () => {
@@ -297,7 +279,7 @@ describe('cairnCommandFlags guards an empty or absent input', () => {
 describe('extractEnvVars', () => {
   it('extracts a real and a fake env var, both halves', () => {
     // The fake token is assembled at runtime, not written as one contiguous literal here: this
-    // file itself is inside foundInSourceTree's search tree, and a literal fake token would
+    // file itself is inside envVarInSourceTree's search tree, and a literal fake token would
     // match its own occurrence in this assertion, defeating the negative half of the test.
     const fakeEnvVar = ['NOT_A', 'REAL_ENV', 'VAR_TOKEN'].join('_');
     const segments = codeVoiceSegments(`inline \`PUBLIC_ORIGIN\` and \`${fakeEnvVar}\` here`);
@@ -306,8 +288,8 @@ describe('extractEnvVars', () => {
     expect(tokens).toContain('PUBLIC_ORIGIN');
     expect(tokens).toContain(fakeEnvVar);
 
-    expect(foundInSourceTree('PUBLIC_ORIGIN')).toBe(true);
-    expect(foundInSourceTree(fakeEnvVar)).toBe(false);
+    expect(envVarInSourceTree('PUBLIC_ORIGIN')).toBe(true);
+    expect(envVarInSourceTree(fakeEnvVar)).toBe(false);
   });
 });
 
@@ -552,10 +534,49 @@ describe('cairnLineFindings', () => {
   });
 });
 
+// The env-var ground truth counts source files only: generated output and installed dependencies
+// are excluded at the grep walk, so a token that lives only in one of them is absent.
+describe('envVarInSourceTree, generated and dependency trees', () => {
+  function tree(files: Record<string, string>): string {
+    const root = mkdtempSync(join(tmpdir(), 'cairn-symbols-env-'));
+    for (const [path, content] of Object.entries(files)) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(join(root, path), content);
+    }
+    return root;
+  }
+
+  it.each([
+    'examples/showcase/node_modules/dep/index.js',
+    'examples/showcase/.wrangler/tmp/bundle/index.js',
+    'examples/showcase/.svelte-kit/output/server/index.js',
+    'examples/showcase/test-results/run/trace.txt',
+  ])('does not count a token found only in %s', (path) => {
+    const root = tree({ [path]: 'const k = "CAIRN_ONLY_GENERATED";\n' });
+    try {
+      expect(envVarInSourceTree('CAIRN_ONLY_GENERATED', root)).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('counts a token found in a source file beside a generated tree', () => {
+    const root = tree({
+      'src/lib/env.ts': 'export const k = "CAIRN_IN_SOURCE";\n',
+      'examples/showcase/.wrangler/tmp/bundle/index.js': 'CAIRN_IN_SOURCE\n',
+    });
+    try {
+      expect(envVarInSourceTree('CAIRN_IN_SOURCE', root)).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('findUnresolvedSymbols', () => {
-  // A whole-corpus scan, and it runs about 31 seconds against the published tracks, which is over
-  // vitest's 30-second default. That default is nobody's budget for this test; racing it made the
-  // suite fail on wall-clock rather than on a finding. The scan's own gate (`npm run check:symbols`)
+  // A whole-corpus scan, and it has run past vitest's 30-second default against the published
+  // tracks. That default is nobody's budget for this test; racing it made the suite fail on
+  // wall-clock rather than on a finding. The scan's own gate (`npm run check:symbols`)
   // runs the identical function outside vitest, so the ceiling here is only about not flaking.
   it('returns no findings on the real committed corpus', () => {
     expect(findUnresolvedSymbols()).toEqual([]);

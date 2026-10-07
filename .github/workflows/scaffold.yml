@@ -42,11 +42,15 @@ jobs:
         # imports ../output/server/index.js by relative path, so the server code wrangler actually
         # bundles and deploys is invisible to a grep over .svelte-kit/cloudflare. `wrangler deploy
         # --dry-run` produces the artifact Cloudflare receives without needing credentials; grep that.
+        # The grep covers the executable bundle only (--exclude='*.map'): SvelteKit 3 emits server
+        # sourcemaps by default, and a map's sourcesContent holds authored source, including the
+        # import lines the fold removes from the code. A Worker bundle is never served publicly, and
+        # wrangler uploads a map only with upload_source_maps, so a map is not a deployed artifact.
         working-directory: /tmp/cairn-emitted
         run: |
           rm -rf /tmp/dev-fold-default
           npx wrangler deploy --dry-run --outdir=/tmp/dev-fold-default
-          if grep -rlF -f "$GITHUB_WORKSPACE/scripts/checks/dev-fold-markers.txt" /tmp/dev-fold-default 2>/dev/null; then
+          if grep -rlF --exclude='*.map' -f "$GITHUB_WORKSPACE/scripts/checks/dev-fold-markers.txt" /tmp/dev-fold-default 2>/dev/null; then
             echo "FAIL: dev-backend artifact in the emitted Worker"; exit 1
           fi
           echo "OK: no dev-backend artifact in the emitted Worker"
@@ -55,12 +59,13 @@ jobs:
         # stopped bundling and the old grep target (.svelte-kit/cloudflare) held no server code, so
         # the negative check above passed vacuously on every build, flagged or not. This positive
         # control proves the grep still finds real matches when the dev backend is actually present.
+        # It keeps the same --exclude='*.map', so the match has to come from the executable bundle.
         working-directory: /tmp/cairn-emitted
         run: |
           rm -rf /tmp/dev-fold-flagged
           VITE_CAIRN_E2E=1 npm run build
           npx wrangler deploy --dry-run --outdir=/tmp/dev-fold-flagged
-          if ! grep -rlF -f "$GITHUB_WORKSPACE/scripts/checks/dev-fold-markers.txt" /tmp/dev-fold-flagged 2>/dev/null; then
+          if ! grep -rlF --exclude='*.map' -f "$GITHUB_WORKSPACE/scripts/checks/dev-fold-markers.txt" /tmp/dev-fold-flagged 2>/dev/null; then
             echo "FAIL: gate self-test: no dev-fold marker matched a flagged emitted build's deployable bundle"; exit 1
           fi
           echo "OK: gate self-test: markers present in the flagged emitted build's deployable bundle"

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   classifyPath,
@@ -301,6 +302,127 @@ describe('TIER_ORDER and TIER_GATES', () => {
     const scripts = [...TIER_GATES.full.matchAll(/npm run (check:[a-z:-]+)/g)].map((m) => m[1]);
     expect(scripts.length).toBeGreaterThan(0);
     expect(new Set(scripts).size).toBe(scripts.length);
+  });
+});
+
+// The full tier runs every check the CI `test` job runs that a local gate can run. The list is
+// pinned against test.yml's own steps: a `run:` step added to CI that the full gate neither runs
+// nor names below fails this test.
+//
+// A CI command the full gate runs under another spelling names its stand-in tokens here; each
+// stand-in must be a whole `&&`-separated command of the full gate.
+const CI_EQUIVALENTS: Record<string, string[]> = {
+  // `npm test` is the node projects plus the component project; the gate serializes the component run.
+  'npm test': ['npm run test:node-projects', 'npm run test:component -- --no-file-parallelism'],
+  // The same suite, reached by workspace flag instead of `--prefix`.
+  'npm --prefix packages/create-cairn-site test': ['npm test -w packages/create-cairn-site'],
+};
+
+// A CI step with no local gate command, each with the reason it stays out of the tier.
+const CI_NOT_LOCAL: Record<string, string> = {
+  'npm ci': 'installs dependencies; the worktree already has them',
+  'npm ci --prefix examples/showcase': 'installs the showcase dependencies; the showcase gates need them installed',
+  'npx playwright install --with-deps chromium firefox': 'installs browsers on the CI runner',
+  'npm run package': 'builds dist; every check script that needs dist builds it itself',
+  'name:Install Vale 3.23.0': 'installs Vale on the CI runner; the docs gate runs the workstation Vale',
+  'name:Bake the create-cairn-site template':
+    'bakes the gitignored template with an engine spec only CI can substitute; the workspace suite reads the baked copy on disk',
+};
+
+/**
+ * Every `run:` step of the CI `test` job in a workflow file's text: a one-line `run: <cmd>` as
+ * the command, a block `run: |` as `name:<step name>` (the block body is shell, not one command).
+ * Steps of any other job are not read, and a step's name never carries over to the next step.
+ * @param text - The workflow file's contents.
+ * @returns The `test` job's run steps, in file order.
+ */
+function ciStepsOf(text: string): string[] {
+  const steps: string[] = [];
+  let inTestJob = false;
+  let stepIndent: number | null = null;
+  let name = '';
+  for (const line of text.split('\n')) {
+    const job = line.match(/^ {2}([A-Za-z0-9_-]+):\s*$/);
+    if (job) {
+      inTestJob = job[1] === 'test';
+      stepIndent = null;
+      name = '';
+      continue;
+    }
+    if (!inTestJob) continue;
+    const item = line.match(/^(\s*)- /);
+    if (item) {
+      stepIndent ??= item[1].length;
+      if (item[1].length === stepIndent) name = '';
+    }
+    const named = line.match(/^\s*(?:- )?name:\s*(.+?)\s*$/);
+    if (named) name = named[1];
+    const run = line.match(/^\s*(?:- )?run:\s*(.+?)\s*$/);
+    if (!run) continue;
+    steps.push(run[1] === '|' ? `name:${name}` : run[1]);
+  }
+  return steps;
+}
+
+/**
+ * Every `run:` step of the CI `test` job.
+ * @returns The `test` job's run steps of `.github/workflows/test.yml`.
+ */
+function ciSteps(): string[] {
+  return ciStepsOf(readFileSync(resolve(process.cwd(), '.github/workflows/test.yml'), 'utf8'));
+}
+
+describe('the CI step parser', () => {
+  const workflow = [
+    'name: test',
+    'jobs:',
+    '  test:',
+    '    steps:',
+    '      - name: Named block',
+    '        run: |',
+    '          echo one',
+    '      - run: |',
+    '          echo unnamed',
+    '      - run: npm run check',
+    '  later:',
+    '    steps:',
+    '      - run: npm run only-in-later-job',
+  ].join('\n');
+
+  it('reads only the test job, so a second job adds no step', () => {
+    expect(ciStepsOf(workflow)).not.toContain('npm run only-in-later-job');
+  });
+
+  it('keys an unnamed block step by an empty name, never the previous step\'s name', () => {
+    expect(ciStepsOf(workflow)).toEqual(['name:Named block', 'name:', 'npm run check']);
+  });
+});
+
+describe('the full tier against CI', () => {
+  const gateCommands = new Set(TIER_GATES.full.split(' && '));
+
+  it('reads a non-trivial set of steps from test.yml', () => {
+    expect(ciSteps().length).toBeGreaterThan(20);
+  });
+
+  it('runs every check the CI test job runs, or names why a local gate cannot', () => {
+    const missing = ciSteps().filter((step) => {
+      if (gateCommands.has(step) || step in CI_NOT_LOCAL) return false;
+      const stand = CI_EQUIVALENTS[step];
+      return !(stand && stand.every((cmd) => gateCommands.has(cmd)));
+    });
+    expect(missing).toEqual([]);
+  });
+
+  it('names no CI step that test.yml has dropped', () => {
+    const steps = new Set(ciSteps());
+    for (const key of [...Object.keys(CI_EQUIVALENTS), ...Object.keys(CI_NOT_LOCAL)]) {
+      expect(steps.has(key), key).toBe(true);
+    }
+  });
+
+  it('runs check:dev-package', () => {
+    expect(gateCommands.has('npm run check:dev-package')).toBe(true);
   });
 });
 

@@ -1,5 +1,5 @@
 // Internal fixture endpoint: clears the channel's mutable state between e2e runs, so a locally
-// reused preview server (playwright's `reuseExistingServer`) does not accumulate hourly budgets
+// reused dev server (playwright's `reuseExistingServer`) does not accumulate hourly budgets
 // across runs until specs start answering `throttled`. The e2e calls this once, in
 // `test.beforeAll`.
 //
@@ -13,25 +13,29 @@
 //
 // The refusal lives in the body, `devDelivery`'s own precedent; see the sibling `last-otp` route
 // for why both checks (host and env) are independent of the build fold.
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { env } from 'cloudflare:workers';
 import { resetCapture } from '../../../members/capture-transport.js';
 
 function isLocalHost(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
 }
 
-export const POST: RequestHandler = async ({ url, platform }) => {
-  if (!isLocalHost(url.hostname) || platform?.env?.CAIRN_DEV_BACKEND !== '1') {
+export const POST: RequestHandler = async ({ url }) => {
+  if (!isLocalHost(url.hostname) || env.CAIRN_DEV_BACKEND !== '1') {
     error(404, 'Not found');
   }
-  const db = platform?.env?.MEMBER_DB;
+  const db = env.MEMBER_DB;
   if (!db) {
     error(404, 'Not found');
   }
-  await db.prepare('DELETE FROM cairn_channel_code').run();
-  await db.prepare('DELETE FROM cairn_channel_session').run();
-  await db.prepare('DELETE FROM cairn_channel_budget').run();
+  // One batch, so the three deletes commit together or not at all, as the channel's own sweep does.
+  await db.batch([
+    db.prepare('DELETE FROM cairn_channel_code'),
+    db.prepare('DELETE FROM cairn_channel_session'),
+    db.prepare('DELETE FROM cairn_channel_budget'),
+  ]);
   resetCapture();
-  return json({ ok: true });
+  return Response.json({ ok: true });
 };

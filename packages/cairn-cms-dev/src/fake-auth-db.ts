@@ -2,8 +2,8 @@
 // implements just the D1Database surface src/lib/auth/store.ts and src/lib/auth/preview-store.ts
 // touch (prepare(sql).bind() with first/run/all, plus batch) over in-memory editor and
 // preview-token maps, so /admin/editors and the preview mint/revoke/load chain work under
-// CAIRN_DEV_BACKEND=1 without a real D1 binding. Installed from hooks.server.ts as
-// platform.env.AUTH_DB (the admin routes AND, since the preview pass, /preview/[token] too, the
+// CAIRN_DEV_BACKEND=1 without a real D1 binding. Installed by handle.ts as
+// the Worker env's AUTH_DB (the admin routes AND, since the preview pass, /preview/[token] too, the
 // only non-admin path this fixture reaches: loadPreview reads the same rows previewMintAction
 // wrote, and both must share this one instance); never part of the published engine.
 //

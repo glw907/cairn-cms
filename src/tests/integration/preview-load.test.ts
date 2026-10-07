@@ -19,9 +19,10 @@ import type { MediaEntry } from '../../lib/media/manifest.js';
 import { serializeMediaManifest } from '../../lib/media/manifest.js';
 import { runtime as baseRuntime, postsConcept as basePostsConcept, contentEvent } from '../unit/_content-harness.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
-import { __setBuilding } from '../_app-environment.js';
+import { __setBuilding } from '../_app-env.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
+import { withTestEnv } from '../helpers/with-test-env.js';
 
 const db = env.AUTH_DB;
 
@@ -141,14 +142,13 @@ function countingDb(real: D1Database): { db: D1Database; count(): number } {
 }
 
 /** A driven `/preview/[token]` load event, capturing every `setHeaders` call. */
-function loadEvent(token: string, opts: { env?: Record<string, unknown> } = {}) {
+function loadEvent(token: string) {
   const headers: Record<string, string>[] = [];
   const event = {
     ...contentEvent({
       url: `${ORIGIN}/preview/${token}`,
       params: { token },
       route: '/preview/[token]',
-      env: opts.env ?? { AUTH_DB: db },
     }),
     setHeaders: (h: Record<string, string>) => headers.push(h),
   };
@@ -195,16 +195,16 @@ describe('loadPreview: the build-time guard', () => {
     await expect(loadPreview(runtime(), publicConfig(), event)).rejects.toThrow(/prerender = false/);
   });
 
-  // The build-time guard's dynamic `import('$app/environment')` is wrapped in try/catch so a
+  // The build-time guard's dynamic `import('$app/env')` is wrapped in try/catch so a
   // consumer bundling the /sveltekit barrel with a plain, non-Vite esbuild pass (no SvelteKit
   // plugin to resolve the virtual module) gets a bundle-time-clean build rather than a resolve
   // error. This models that absence directly, rather than only through the esbuild reproduction
-  // in dist-sveltekit-app-import-boundary.test.ts, by making the aliased `$app/environment` throw
+  // in dist-sveltekit-app-import-boundary.test.ts, by making the aliased `$app/env` throw
   // on its next import: loadPreview must fall back to `building = false` and proceed to its
   // ordinary token gate instead of surfacing the "not building" branch's own error.
-  it('falls back to building = false and proceeds when $app/environment cannot be imported', async () => {
-    vi.doMock('$app/environment', () => {
-      throw new Error("Cannot find module '$app/environment'");
+  it('falls back to building = false and proceeds when $app/env cannot be imported', async () => {
+    vi.doMock('$app/env', () => {
+      throw new Error("Cannot find module '$app/env'");
     });
     try {
       const { event } = loadEvent('too-short');
@@ -213,7 +213,7 @@ describe('loadPreview: the build-time guard', () => {
       const result = await expectNotFound(() => loadPreview(runtime(), publicConfig(), event));
       expect(result.status).toBe(404);
     } finally {
-      vi.doUnmock('$app/environment');
+      vi.doUnmock('$app/env');
     }
   });
 });
@@ -223,9 +223,11 @@ describe('loadPreview: the malformed-token gate', () => {
     const { db: spiedDb, count } = countingDb(db);
     const gh = freshGithub();
     gh.install();
-    const { event } = loadEvent('too-short', { env: { AUTH_DB: spiedDb } });
+    const { event } = loadEvent('too-short');
     const captured = await records(async () => {
-      await expectNotFound(() => loadPreview(runtime(), publicConfig(), event));
+      await expectNotFound(() =>
+        withTestEnv({ AUTH_DB: spiedDb }, () => loadPreview(runtime(), publicConfig(), event)),
+      );
     });
     expect(count()).toBe(0);
     expect(captured).toEqual([]);
@@ -236,10 +238,10 @@ describe('loadPreview: the missing AUTH_DB binding', () => {
   it('answers 503 after a binding-named log, headers still set', async () => {
     const gh = freshGithub();
     gh.install();
-    const { event, headers } = loadEvent('x'.repeat(43), { env: {} });
+    const { event, headers } = loadEvent('x'.repeat(43));
     const captured = await records(async () => {
       try {
-        await loadPreview(runtime(), publicConfig(), event);
+        await withTestEnv({ AUTH_DB: undefined }, () => loadPreview(runtime(), publicConfig(), event));
         throw new Error('expected an error');
       } catch (e) {
         expect(isHttpError(e) && e.status).toBe(503);

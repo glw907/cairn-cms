@@ -5,6 +5,7 @@
     "src/routes/admin/theme-kit",
     "src/routes/(site)/+layout.server.ts",
     "src/members",
+    "src/lib/env-check.ts",
     "src/routes/members",
     "migrations-members",
     ".cairn",

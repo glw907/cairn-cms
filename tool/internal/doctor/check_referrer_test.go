@@ -247,6 +247,45 @@ func TestHooksSetsBlanketNoReferrerGapCase(t *testing.T) {
 	}
 }
 
+// TestHooksSetsBlanketNoReferrerKeepsQuotedURLs proves a quoted URL holding two slashes is not
+// read as a line comment: the setting that follows the URL on the same line, and the setting on
+// the next line, are both still seen, while a real comment naming the policy stays ignored.
+func TestHooksSetsBlanketNoReferrerKeepsQuotedURLs(t *testing.T) {
+	tests := []struct {
+		name string
+		hook string
+		want bool
+	}{
+		{
+			name: "setting follows a quoted URL on the same line",
+			hook: "const home = 'https://example.com'; event.setHeaders({ 'Referrer-Policy': 'no-referrer' });\n",
+			want: true,
+		},
+		{
+			name: "setting on the line after a quoted URL",
+			hook: "const home = 'https://example.com';\nevent.setHeaders({ 'Referrer-Policy': 'no-referrer' });\n",
+			want: true,
+		},
+		{
+			name: "setting named only in a line comment",
+			hook: "const home = 'https://example.com'; // 'Referrer-Policy': 'no-referrer'\n",
+			want: false,
+		},
+		{
+			name: "setting named only in a block comment spanning lines",
+			hook: "/* the 'Referrer-Policy'\n  is 'no-referrer' */\nconst home = 'https://example.com';\n",
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := hooksSetsBlanketNoReferrer(tt.hook); got != tt.want {
+				t.Errorf("hooksSetsBlanketNoReferrer(%q) = %v, want %v", tt.hook, got, tt.want)
+			}
+		})
+	}
+}
+
 // TestParseHeadersFileGapCase is the named gap case: a comment line interleaved inside a
 // _headers block must not split it. Proven directly against the parser, which fails without the
 // comment-skip: a naive line scan reads the # line as a new path line and starts a second,

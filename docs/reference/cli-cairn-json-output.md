@@ -1,7 +1,8 @@
 # The `cairn` CLI's JSON output
 
-This page describes `cairn` 1.1.0, the current release and the one that adds the `doctor`
-payload.
+This page describes `cairn` 2.0.0, the release that accompanies the engine's move to SvelteKit 3.
+`cairn` 1.1.0, the current release, added the `doctor` payload. Version 2.0.0 is a major release
+because it removed three ids that 1.1.0 published, which the section on what freezes at 1.0 names.
 
 Six `cairn` commands accept `--json`: `cairn health`, `cairn sites list`, `cairn logs`,
 `cairn adopt list`, `cairn auth check`, and `cairn doctor`. Together they publish seven payload
@@ -439,10 +440,10 @@ condition has a docs anchor.
       }
     },
     {
-      "checkId": "config.csrf-disable",
+      "checkId": "config.csrf-trusted-origins",
       "state": "pass",
-      "condition": "config.csrf-disable-missing",
-      "detail": "checkOrigin: false found (svelte.config.js or vite.config.ts) and the hooks file wires the cairn guard (heuristic text read)"
+      "condition": "config.csrf-trusted-origins-wildcard",
+      "detail": "no csrf.trustedOrigins entries in vite.config.ts, so SvelteKit's default origin check covers every route (heuristic text read)"
     },
     {
       "checkId": "config.site-config",
@@ -472,7 +473,7 @@ condition has a docs anchor.
       "checkId": "config.dependency-floors",
       "state": "pass",
       "condition": "config.dependency-floors-unmet",
-      "detail": "@sveltejs/kit 2.70.0 and svelte 5.56.10 satisfy the engine peer ranges"
+      "detail": "@sveltejs/kit 3.0.0 and svelte 5.56.10 satisfy the engine peer ranges"
     },
     {
       "checkId": "auth.role-wiring",
@@ -501,7 +502,7 @@ is major.
 - Every `cairn health` check id: `creds`, `serving`, `delegation`, `https-forced`, `email`,
   `deploy`, `publish-path`, `engine`, `errors`.
 - Every `cairn doctor` check id: `config.bindings`, `config.media-bucket`,
-  `config.observability`, `config.csrf-disable`, `config.site-config`, `config.public-origin`,
+  `config.observability`, `config.csrf-trusted-origins`, `config.site-config`, `config.public-origin`,
   `config.no-referrer-blanket`, `admin.mount-shape`, `config.dependency-floors`,
   `auth.role-wiring`, `ai.posture-effective`.
 - The verdict words: `OK`, `WARNING`, `CRITICAL`, `UNKNOWN`.
@@ -511,6 +512,11 @@ is major.
 
 Every condition id is the engine's own `src/lib/diagnostics/conditions.ts` registry, mirrored in
 the command-line tool's embedded `conditions.json`.
+
+Version 2.0.0 retired three ids that 1.1.0 published: the check id `config.csrf-disable`, and the
+condition ids `config.csrf-disable-missing` and `auth.csrf-origin-mismatch`. The check
+`config.csrf-trusted-origins` and its condition `config.csrf-trusted-origins-wildcard` replace
+them, and a script that matches on a retired id needs changing.
 
 ## What does not freeze
 

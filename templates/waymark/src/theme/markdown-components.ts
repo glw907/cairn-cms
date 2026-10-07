@@ -2,12 +2,12 @@
 // adapter's registry lists, plus the two private helpers (`makeIcon`, `parseVideoUrl`) they share.
 // Kept apart from `cairn.config.ts`, so the adapter file stays the concepts, backend, and
 // navLayout, not the component grammar. Not named `components.ts`: that specifier would collide
-// with the `$theme/components` directory six other files already import through.
+// with the `#theme/components` directory six other files already import through.
 import { defineComponent, fields } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import { isBannerExpired } from './islands/banner-expiry.js';
-import { makeIconRenderer, headRow } from '$chassis/render.js';
+import { makeIconRenderer, headRow } from '#chassis/render.js';
 import { icons } from './icons.js';
 
 // The chassis wires the icon set into the render helpers; this theme owns only the glyph data

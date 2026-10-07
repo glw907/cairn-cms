@@ -9,7 +9,7 @@
 //   2. The two `@plugin "daisyui/theme"` blocks in `theme.css`, whose `name:` values are the
 //      strings `data-theme` selects.
 // `theme-names.test.ts` fails when either touchpoint drifts from this file.
-import type { ThemeToggleConfig } from '$chassis/theme-toggle.js';
+import type { ThemeToggleConfig } from '#chassis/theme-toggle.js';
 
 /** The two explicit theme choices; `theme.css` defines both as named daisyUI themes. */
 export type Theme = 'cairn' | 'cairn-dark';

@@ -62,8 +62,12 @@ const PACKAGE = '@glw907/cairn-cms';
 /** Ports other tooling owns: the showcase's default e2e, its preview, and its local e2e. */
 const RESERVED_PORTS = [4173, 4391, 4392];
 
-/** The environment the showcase's own Playwright config gives its build and its server. */
-const SITE_ENV = { ...process.env, VITE_CAIRN_E2E: '1', CAIRN_DEV_BACKEND: '1' };
+/**
+ * The environment the showcase's own Playwright config gives its build. The runtime half of the
+ * dev-backend gate is not here: an OS variable never reaches workerd, so `serve` passes it as a
+ * `--var` on the wrangler command.
+ */
+const SITE_ENV = { ...process.env, VITE_CAIRN_E2E: '1' };
 
 /**
  * The planted sentinel: a utility over `--color-card-border`, a color only `cairn-public.css`
@@ -140,19 +144,21 @@ function listening(port) {
 }
 
 /**
- * Serve a built site with `vite preview` on the harness port and wait until it answers.
+ * Serve a built site through its `preview` script (`wrangler dev`) on the harness port, with the
+ * dev backend on, and wait until the admin answers. `wrangler dev` rejects `--strictPort`, so the
+ * listener pre-check below is what keeps a taken port from silently hosting another server. The
+ * readiness probe wants a 200 from `/admin/posts` without following a redirect: a serve that lost
+ * the flag answers that path with a redirect to login, which a followed fetch would count as up.
  * @param {string} cwd
  * @returns {Promise<import('node:child_process').ChildProcess>}
  */
 async function serve(cwd) {
-  if (await listening(PORT)) throw new HarnessFailure(`port ${PORT} already has a listener; stop it or set THEME_FIXTURE_PORT`);
+  for (const port of [PORT, PORT + 1]) {
+    if (await listening(port)) throw new HarnessFailure(`port ${port} already has a listener; stop it or set THEME_FIXTURE_PORT`);
+  }
   const log = openSync(join(cwd, 'preview.log'), 'w');
-  const server = spawn('npm', ['run', 'preview', '--', '--port', String(PORT), '--strictPort'], {
-    cwd,
-    env: SITE_ENV,
-    detached: true,
-    stdio: ['ignore', log, log],
-  });
+  const args = ['run', 'preview', '--', '--port', String(PORT), '--inspector-port', String(PORT + 1), '--var', 'CAIRN_DEV_BACKEND:1'];
+  const server = spawn('npm', args, { cwd, detached: true, stdio: ['ignore', log, log] });
   servers.add(server);
   const deadline = Date.now() + 90_000;
   while (Date.now() < deadline) {
@@ -160,14 +166,14 @@ async function serve(cwd) {
       throw new HarnessFailure(`the preview server exited early (${server.exitCode}):\n${readFileSync(join(cwd, 'preview.log'), 'utf8')}`);
     }
     try {
-      const response = await fetch(`http://localhost:${PORT}/`);
-      if (response.ok) return server;
+      const response = await fetch(`http://localhost:${PORT}/admin/posts`, { redirect: 'manual' });
+      if (response.status === 200) return server;
     } catch {
       // Not listening yet.
     }
     await new Promise((done) => setTimeout(done, 500));
   }
-  throw new HarnessFailure(`the preview server did not answer on port ${PORT} within 90s`);
+  throw new HarnessFailure(`the preview server did not answer 200 at /admin/posts on port ${PORT} within 90s`);
 }
 
 /**

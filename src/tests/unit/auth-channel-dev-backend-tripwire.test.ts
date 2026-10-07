@@ -6,32 +6,29 @@
 // can answer undefined throughout and the action still either throws (the tripwire) or falls
 // through to its own `{ outcome: 'unavailable' }` no-binding branch.
 //
-// Three axes are pinned here, each a converged review finding from fix round A: the cache latches
-// only a definite observation (the fail-OPEN direction, beside the sticky-true case that was
-// already covered), the flag is read from both env sources, and the deployment witness prefers the
-// configured PUBLIC_ORIGIN over the client-controlled Host header.
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// Three axes are pinned here: the flag is read once per channel instance (the sticky-true case),
+// the flag and PUBLIC_ORIGIN are read from the Worker env (`cloudflare:workers`, the unit
+// project's settable fake) alone, and the deployment witness prefers the configured PUBLIC_ORIGIN
+// over the client-controlled Host header.
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { isHttpError } from '@sveltejs/kit';
 import { createAuthChannel } from '../../lib/auth-channel/index.js';
 import type { AuthChannelConfig } from '../../lib/auth-channel/index.js';
 import { CAIRN_DEV_BACKEND_MESSAGE } from '../../lib/dev-flag.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 
 type TestEnv = { CAIRN_DEV_BACKEND?: string | boolean; PUBLIC_ORIGIN?: string };
 
 const NONLOCAL_URL = 'https://member.example.test/login';
 const LOCAL_URL = 'https://localhost/login';
 
-/** A minimal event satisfying every channel action's structural constraint, with no D1 binding. */
-function makeEvent(url: string, env: TestEnv, contact?: string) {
-  return withPlatform(url, { env }, contact);
-}
-
 /**
- * The same event with the platform slot supplied directly, so a test can build the two shapes
- * `makeEvent` cannot: a runtime that carries no platform at all (adapter-node, or a warm-up call
- * before the adapter attaches one) and a platform whose `env` is itself absent.
+ * A minimal event satisfying every channel action's structural constraint, with no D1 binding.
+ * `env` becomes the Worker env the action reads; the fake keeps the object itself, so a test that
+ * mutates it later changes what a later read sees.
  */
-function withPlatform(url: string, platform: { env?: TestEnv } | undefined, contact?: string) {
+function makeEvent(url: string, env: TestEnv, contact?: string) {
+  setFakeEnv(env);
   const u = new URL(url);
   const body = new URLSearchParams();
   if (contact !== undefined) body.set('contact', contact);
@@ -44,7 +41,6 @@ function withPlatform(url: string, platform: { env?: TestEnv } | undefined, cont
     setHeaders: () => {},
     locals: {},
     getClientAddress: () => '203.0.113.1',
-    platform,
   };
 }
 
@@ -71,20 +67,15 @@ function validConfig(overrides: Partial<AuthChannelConfig<TestEnv>> = {}): AuthC
 }
 
 describe('createAuthChannel dev-backend leak tripwire', () => {
-  // Both process.env names the tripwire reads are cleared for every case and restored after, so a
-  // developer's own shell (or another suite) cannot decide this file's verdicts.
-  const savedEnv: Record<string, string | undefined> = {};
+  // Both names are stubbed empty for every case, so a developer's own shell (or another suite)
+  // cannot decide this file's verdicts; a case that sets one in process.env restores through
+  // vi.unstubAllEnvs.
   beforeEach(() => {
-    for (const name of ['CAIRN_DEV_BACKEND', 'PUBLIC_ORIGIN']) {
-      savedEnv[name] = process.env[name];
-      delete process.env[name];
-    }
+    vi.stubEnv('CAIRN_DEV_BACKEND', '');
+    vi.stubEnv('PUBLIC_ORIGIN', '');
   });
   afterEach(() => {
-    for (const [name, value] of Object.entries(savedEnv)) {
-      if (value === undefined) delete process.env[name];
-      else process.env[name] = value;
-    }
+    vi.unstubAllEnvs();
   });
 
   it('refuses request, confirm, and logout with a hard throw when the flag is set on a non-local host', async () => {
@@ -162,35 +153,19 @@ describe('createAuthChannel dev-backend leak tripwire', () => {
     expect(isHttpError(secondCaught)).toBe(true);
   });
 
-  it('does not latch on a request that carried no platform env, so an early env-less call cannot disarm it', async () => {
-    // The fail-OPEN direction, the opposite of the sticky-true case above. One request arriving
-    // with no platform at all (a warm-up call before the adapter attaches one) used to latch
-    // `set: false` for the isolate's whole life, silently retiring the tripwire.
+  it('ignores a flag set only in process.env', async () => {
+    vi.stubEnv('CAIRN_DEV_BACKEND', '1');
     const channel = createAuthChannel<TestEnv>(validConfig());
-    expect(await thrownBy(() => channel.actions.logout(withPlatform(NONLOCAL_URL, undefined)))).toBeUndefined();
-    // A platform object whose `env` is absent is the same non-observation and must not latch either.
-    expect(await thrownBy(() => channel.actions.logout(withPlatform(NONLOCAL_URL, {})))).toBeUndefined();
+    expect(await thrownBy(() => channel.actions.logout(makeEvent(NONLOCAL_URL, {})))).toBeUndefined();
+  });
 
+  it('refuses when the same flag is carried by the Worker env, on a fresh channel', async () => {
+    vi.stubEnv('CAIRN_DEV_BACKEND', '');
+    const channel = createAuthChannel<TestEnv>(validConfig());
     const caught = await thrownBy(() =>
       channel.actions.logout(makeEvent(NONLOCAL_URL, { CAIRN_DEV_BACKEND: '1' })),
     );
     expect(isHttpError(caught)).toBe(true);
-  });
-
-  it('reads the flag from process.env too, the adapter-node shape where platform.env never carries it', async () => {
-    const channel = createAuthChannel<TestEnv>(validConfig());
-    process.env.CAIRN_DEV_BACKEND = '1';
-    // The platform env is present and empty, so the cache latches `set: false` on it; the
-    // process.env read is what must still trip the refusal.
-    const caught = await thrownBy(() => channel.actions.logout(makeEvent(NONLOCAL_URL, {})));
-    expect(isHttpError(caught)).toBe(true);
-
-    // And on a runtime with no platform at all, the true adapter-node deploy shape.
-    const nodeChannel = createAuthChannel<TestEnv>(validConfig());
-    const nodeCaught = await thrownBy(() =>
-      nodeChannel.actions.logout(withPlatform(NONLOCAL_URL, undefined)),
-    );
-    expect(isHttpError(nodeCaught)).toBe(true);
   });
 
   it('accepts only the documented flag forms, so a near-miss value never counts as set', async () => {
@@ -213,15 +188,15 @@ describe('createAuthChannel dev-backend leak tripwire', () => {
       ),
     );
     expect(isHttpError(caught)).toBe(true);
+  });
 
-    // Same witness from the adapter-node source, where both names live in process.env.
-    const nodeChannel = createAuthChannel<TestEnv>(validConfig());
-    process.env.CAIRN_DEV_BACKEND = '1';
-    process.env.PUBLIC_ORIGIN = 'https://member.example.test';
-    const nodeCaught = await thrownBy(() =>
-      nodeChannel.actions.logout(withPlatform(LOCAL_URL, undefined)),
+  it('does not take a deployed verdict from a PUBLIC_ORIGIN set only in process.env', async () => {
+    vi.stubEnv('PUBLIC_ORIGIN', 'https://member.example.test');
+    const channel = createAuthChannel<TestEnv>(validConfig());
+    const result = await channel.actions.request(
+      makeEvent(LOCAL_URL, { CAIRN_DEV_BACKEND: '1' }, 'member@x.test'),
     );
-    expect(isHttpError(nodeCaught)).toBe(true);
+    expect(result).toEqual({ outcome: 'unavailable' });
   });
 
   it('still runs the local dev flow when PUBLIC_ORIGIN names a local host, or does not parse', async () => {

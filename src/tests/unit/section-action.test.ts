@@ -13,6 +13,7 @@ import type { CairnEvent, CookieJar, CookieSetOptions } from '../../lib/svelteki
 import type { AccessMap } from '../../lib/auth/access.js';
 import type { Editor } from '../../lib/auth/types.js';
 import type { Action, ActionFailure, RequestEvent } from '@sveltejs/kit';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -21,7 +22,7 @@ afterEach(() => {
 const owner: Editor = { email: 'owner@x.test', displayName: 'Owner', role: 'owner', capability: 'owner' };
 const staff: Editor = { email: 'staff@x.test', displayName: 'Staff', role: 'editor', capability: 'editor' };
 
-/** The synthetic platform env every test event carries; a fixed shape for a fixed factory. */
+/** The synthetic Worker env a test installs in the fake; a fixed shape for a fixed factory. */
 interface TestEnv {
   SECTION_DB?: FakeDb;
 }
@@ -47,13 +48,15 @@ function makeEvent(opts: {
   csrfField?: string;
   editor?: Editor | null;
   cairnAccess?: AccessMap;
+  /** Installed as the fake Worker env when given, the bindings `resolveDb` reads. */
   env?: TestEnv;
   auditSink?: (record: AdminActionAuditRecord) => void;
   /** The concrete request path; defaults to the shared '/admin/club/events' fixture path. */
   pathname?: string;
   /** The route id kit reports; defaults to `pathname` (the static-route case, where they match). */
   routeId?: string | null;
-}): CairnEvent<TestEnv> {
+}): CairnEvent {
+  if (opts.env !== undefined) setFakeEnv({ ...opts.env });
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
   const pathname = opts.pathname ?? '/admin/club/events';
@@ -73,7 +76,6 @@ function makeEvent(opts: {
       cairnAccess: opts.cairnAccess,
       cairnAuditSink: opts.auditSink,
     },
-    platform: opts.env === undefined ? undefined : { env: opts.env },
     setHeaders: () => {},
   };
 }
@@ -82,7 +84,7 @@ const mappedTarget = '/admin/club/events';
 const mappedAccess: AccessMap = { [mappedTarget]: ['editor'] };
 
 /** A ready-to-admit event: a verified CSRF pair, an editor-capability session, and a mapped path. */
-function readyEvent(overrides: Parameters<typeof makeEvent>[0] = {}): CairnEvent<TestEnv> {
+function readyEvent(overrides: Parameters<typeof makeEvent>[0] = {}): CairnEvent {
   return makeEvent({
     cookie: 'MATCH',
     csrfField: 'MATCH',
@@ -110,7 +112,7 @@ function okHandler() {
   });
 }
 
-/** The everything-wired config: the section's binding off the platform env, no rate limit. */
+/** The everything-wired config: the section's binding off the Worker env, no rate limit. */
 const boundDb: SectionActionConfig<TestEnv, FakeDb> = { resolveDb: (env) => env?.SECTION_DB };
 
 /**
@@ -558,21 +560,9 @@ describe('createSectionAction: happy path', () => {
 
 // Step 5: a compile-only type test (review note N1: the runtime fakes above cannot prove route
 // assignability, and check:snippets rewrites `./$types` imports to `any`). This block never runs;
-// it exists so `npm run check` proves the generic Env parameter actually threads through to a
-// site's own generated route Actions, with no cast anywhere in this block.
-//
-// It builds its own local stand-in for the platform typing instead of a `declare global` block
-// (review finding: a `declare global App.Platform` augmentation inside a runtime test file leaks
-// a project-wide ambient type into every other file's compile, this repo's own included, rather
-// than staying scoped to this one type-only check).
+// it exists so `npm run check` proves an action built over a site's own Env assigns into a site's
+// generated route Actions, with no cast anywhere in this block.
 type SiteEnv = { SECTION_DB: { marker: true } };
-
-/**
- * A structural stand-in for what a real site's own generated `RequestEvent` looks like once its
- * `app.d.ts` declares `interface Platform { env: SiteEnv }`: kit's real event type, with only
- * `platform` overridden locally, so the simulated platform typing never escapes this file.
- */
-type SiteRequestEvent = Omit<RequestEvent, 'platform'> & { platform: Readonly<{ env: SiteEnv }> | undefined };
 
 function typeOnlyRouteActionsAssignability(): void {
   const sectionAction = createSectionAction<SiteEnv, SiteEnv['SECTION_DB']>({
@@ -595,10 +585,8 @@ function typeOnlyRouteActionsAssignability(): void {
   approve satisfies Action<Record<string, string>, Record<string, any> | void, string>;
 
   // The direct assignability check against a real generated route's Actions record, matching how
-  // a site's own `export const actions: Actions = { approve }` assigns this factory's output, but
-  // against SiteRequestEvent (the site's own real platform typing) rather than kit's ambient
-  // default, which carries no platform shape until a site's own app.d.ts declares one.
-  const actions = { approve } satisfies Record<string, (event: SiteRequestEvent) => unknown>;
+  // a site's own `export const actions: Actions = { approve }` assigns this factory's output.
+  const actions = { approve } satisfies Record<string, (event: RequestEvent) => unknown>;
   void actions;
 }
 void typeOnlyRouteActionsAssignability;

@@ -18,7 +18,7 @@ To see and capture the bar, build the showcase and drive the real admin behind t
 ```bash
 npm run package                                  # build the engine the showcase consumes
 npm --prefix examples/showcase run build
-npm --prefix examples/showcase run preview        # serve the showcase
+npm --prefix examples/showcase run preview -- --var CAIRN_DEV_BACKEND:1   # serve the showcase
 # the admin mounts at /admin/* behind the injected dev session; screenshot the office list,
 # the edit page, the settings screens, and the media library as the reference states.
 ```

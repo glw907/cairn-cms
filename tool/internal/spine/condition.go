@@ -17,44 +17,42 @@ const ConditionNone Condition = ""
 
 // The condition ids ported from src/lib/diagnostics/conditions.ts's REGISTRY.
 const (
-	ConditionEdgeHTTPSNotForced          Condition = "edge.https-not-forced"
-	ConditionAuthCSRFTokenInvalid        Condition = "auth.csrf-token-invalid"
-	ConditionAuthCSRFOriginMismatch      Condition = "auth.csrf-origin-mismatch"
-	ConditionEmailSenderNotOnboarded     Condition = "email.sender-not-onboarded"
-	ConditionEmailSendFailed             Condition = "email.send-failed"
-	ConditionConfigBindingsMissing       Condition = "config.bindings-missing"
-	ConditionConfigMediaBucketMissing    Condition = "config.media-bucket-missing"
-	ConditionConfigObservabilityOff      Condition = "config.observability-off"
-	ConditionConfigCSRFDisableMissing    Condition = "config.csrf-disable-missing"
-	ConditionConfigPublicOriginInvalid   Condition = "config.public-origin-invalid"
-	ConditionConfigSiteConfigInvalid     Condition = "config.site-config-invalid"
-	ConditionConfigDependencyFloorsUnmet Condition = "config.dependency-floors-unmet"
-	ConditionConfigTidyKeyMissing        Condition = "config.tidy-key-missing"
-	ConditionAIPostureNotEffective       Condition = "ai.posture-not-effective"
-	ConditionAuthStoreUnreachable        Condition = "auth.store-unreachable"
-	ConditionAuthStoreUnmigrated         Condition = "auth.store-unmigrated"
-	ConditionAuthUnknownRole             Condition = "auth.unknown-role"
-	ConditionAuthRoleWiringMissing       Condition = "auth.role-wiring-missing"
-	ConditionConfigNoReferrerBlanket     Condition = "config.no-referrer-blanket"
-	ConditionAuthEmailNotNormalized      Condition = "auth.email-not-normalized"
-	ConditionGitHubAppUnreachable        Condition = "github.app-unreachable"
-	ConditionAdminMountIncomplete        Condition = "admin.mount-incomplete"
-	ConditionAuthIdentityUnresolved      Condition = "auth.identity-unresolved"
-	ConditionAuthIdentityUnknown         Condition = "auth.identity-unknown"
-	ConditionAdminLoginProbeFailed       Condition = "admin.login-probe-failed"
+	ConditionEdgeHTTPSNotForced               Condition = "edge.https-not-forced"
+	ConditionAuthCSRFTokenInvalid             Condition = "auth.csrf-token-invalid"
+	ConditionEmailSenderNotOnboarded          Condition = "email.sender-not-onboarded"
+	ConditionEmailSendFailed                  Condition = "email.send-failed"
+	ConditionConfigBindingsMissing            Condition = "config.bindings-missing"
+	ConditionConfigMediaBucketMissing         Condition = "config.media-bucket-missing"
+	ConditionConfigObservabilityOff           Condition = "config.observability-off"
+	ConditionConfigCSRFTrustedOriginsWildcard Condition = "config.csrf-trusted-origins-wildcard"
+	ConditionConfigPublicOriginInvalid        Condition = "config.public-origin-invalid"
+	ConditionConfigSiteConfigInvalid          Condition = "config.site-config-invalid"
+	ConditionConfigDependencyFloorsUnmet      Condition = "config.dependency-floors-unmet"
+	ConditionConfigTidyKeyMissing             Condition = "config.tidy-key-missing"
+	ConditionAIPostureNotEffective            Condition = "ai.posture-not-effective"
+	ConditionAuthStoreUnreachable             Condition = "auth.store-unreachable"
+	ConditionAuthStoreUnmigrated              Condition = "auth.store-unmigrated"
+	ConditionAuthUnknownRole                  Condition = "auth.unknown-role"
+	ConditionAuthRoleWiringMissing            Condition = "auth.role-wiring-missing"
+	ConditionConfigNoReferrerBlanket          Condition = "config.no-referrer-blanket"
+	ConditionAuthEmailNotNormalized           Condition = "auth.email-not-normalized"
+	ConditionGitHubAppUnreachable             Condition = "github.app-unreachable"
+	ConditionAdminMountIncomplete             Condition = "admin.mount-incomplete"
+	ConditionAuthIdentityUnresolved           Condition = "auth.identity-unresolved"
+	ConditionAuthIdentityUnknown              Condition = "auth.identity-unknown"
+	ConditionAdminLoginProbeFailed            Condition = "admin.login-probe-failed"
 )
 
 // conditions backs Conditions, ported from src/lib/diagnostics/conditions.ts's REGISTRY.
 var conditions = []Condition{
 	ConditionEdgeHTTPSNotForced,
 	ConditionAuthCSRFTokenInvalid,
-	ConditionAuthCSRFOriginMismatch,
 	ConditionEmailSenderNotOnboarded,
 	ConditionEmailSendFailed,
 	ConditionConfigBindingsMissing,
 	ConditionConfigMediaBucketMissing,
 	ConditionConfigObservabilityOff,
-	ConditionConfigCSRFDisableMissing,
+	ConditionConfigCSRFTrustedOriginsWildcard,
 	ConditionConfigPublicOriginInvalid,
 	ConditionConfigSiteConfigInvalid,
 	ConditionConfigDependencyFloorsUnmet,

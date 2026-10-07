@@ -690,7 +690,7 @@ admin's rendered appearance.
 
 ```bash
 VITE_CAIRN_E2E=1 npm --prefix examples/showcase run build
-CAIRN_DEV_BACKEND=1 npm --prefix examples/showcase run preview -- --port 4173
+npm --prefix examples/showcase run preview -- --port 4173 --var CAIRN_DEV_BACKEND:1
 npm run norms:generate
 ```
 

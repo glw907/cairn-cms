@@ -8,7 +8,7 @@
   import { CsrfField } from '@glw907/cairn-cms/admin';
   import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
   import type { PageData, ActionData } from './$types';
-  import type { SubmitFunction } from '@sveltejs/kit';
+  import type { SubmitFunction } from '$app/forms';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
 

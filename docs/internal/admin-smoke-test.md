@@ -94,7 +94,9 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
    the live-role read in action, change the editor's role with an `UPDATE editor SET role = ...`
    and rerun an authed check; the new role applies on that next request without a new cookie.
 
-   A same-origin form POST needs the `Origin` header or SvelteKit returns 403 (its CSRF guard).
+   A same-origin form POST needs an `Origin` header matching the Worker URL, or SvelteKit's origin
+   check returns 403 before cairn's guard runs (a missing `Origin` fails it too, and curl sends
+   none), so every curl POST below carries `-H "Origin: http://localhost:8787"`.
    With `Accept: text/html` a form action returns a real 303; with curl's default `*/*` it
    returns 200 with the action result serialized in the body (both are correct). The deployed
    site has the same dependency, which is why a consuming site must force HTTPS so the magic-link
@@ -179,7 +181,7 @@ delete. Never point the purge at a real asset.
    field (the component itself posts an empty `FormData`, which curl cannot construct directly):
    ```bash
    curl -s -X POST "http://localhost:8787/admin/media?/mediaOrphanScan" \
-     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" \
+     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" -H "Origin: http://localhost:8787" \
      -F "x=1"
    ```
    Decode the response (see the next step) and confirm `orphanedBytes` lists
@@ -193,7 +195,7 @@ delete. Never point the purge at a real asset.
    of `@sveltejs/kit` in any site, so it resolves even unlisted):
    ```bash
    curl -s -X POST "http://localhost:8787/admin/media?/mediaOrphanScan" \
-     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" -F "x=1" | node -e '
+     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" -H "Origin: http://localhost:8787" -F "x=1" | node -e '
    const { parse } = require("devalue");
    const envelope = JSON.parse(require("fs").readFileSync(0, "utf8"));
    console.log(envelope.type, envelope.status, JSON.stringify(parse(envelope.data), null, 2));
@@ -206,7 +208,7 @@ delete. Never point the purge at a real asset.
    on any mismatch or empty selection (`confirm !== String(keys.length)`):
    ```bash
    curl -s -X POST "http://localhost:8787/admin/media?/mediaOrphanPurge" \
-     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" \
+     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" -H "Origin: http://localhost:8787" \
      -F "key=media/de/deadbeef00000001.bin" \
      -F "confirm=1"
    ```
@@ -224,7 +226,7 @@ delete. Never point the purge at a real asset.
    content hash from the Library screen, then:
    ```bash
    curl -s -X POST "http://localhost:8787/admin/media?/mediaBulkDelete" \
-     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" \
+     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" -H "Origin: http://localhost:8787" \
      -F "hash=<16-hex content hash>"
    ```
    Repeat `-F "hash=..."` once per asset for a real multi-select. A successful call answers

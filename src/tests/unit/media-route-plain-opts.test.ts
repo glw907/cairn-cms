@@ -5,6 +5,7 @@ import { createGithubApp } from '../../lib/index.js';
 import { r2Key } from '../../lib/media/naming.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 
 /** A resolved media config; only `resolvedAssets` matters to the route factory. */
 const resolvedOn: ResolvedAssetConfig = {
@@ -43,7 +44,8 @@ async function invoke(
   bucket: { get(key: string, opts?: unknown): Promise<unknown> },
 ): Promise<unknown> {
   const request = new Request(`https://site.example/media/${path}`, init);
-  const event = { params: { path }, platform: { env: { MEDIA_BUCKET: bucket } }, request };
+  setFakeEnv({ MEDIA_BUCKET: bucket });
+  const event = { params: { path }, request };
   await handler(event as unknown as Parameters<RequestHandler>[0]);
   return undefined;
 }
@@ -102,7 +104,8 @@ describe('media delivery route: plain option objects (media-route local-dev-safe
       const request = new Request(`https://site.example/media/${SLUG_PATH}`, {
         headers: { Range: header },
       });
-      const event = { params: { path: SLUG_PATH }, platform: { env: { MEDIA_BUCKET: bucket } }, request };
+      setFakeEnv({ MEDIA_BUCKET: bucket });
+      const event = { params: { path: SLUG_PATH }, request };
       const res = (await handler(event as unknown as Parameters<RequestHandler>[0])) as Response;
       expect(res.status).toBe(206);
       expect(res.headers.get('Content-Range')).toBe(contentRange);

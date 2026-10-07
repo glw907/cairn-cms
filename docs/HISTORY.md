@@ -7,6 +7,83 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## SvelteKit 3 upgrade, 2026-10-03 to 07
+
+Branch `sveltekit-3`, merged to `main` 2026-10-07 as `04116a3b` (PR #103). Plan, ledger, and
+post-mortem: `docs/superpowers/plans/2026-10-03-sveltekit-3-upgrade.md`. Spec:
+`docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md`. Closed unreleased: no version
+bump, no publish; the release holds until draft docs stage 2a lands, so Kit 3 and the rebuilt extend
+docs ship together (Geoff, 2026-10-03). `0.98.0` stays the published version.
+
+**What landed:**
+
+- **The move.** The engine, showcase, Waymark, `create-cairn-site`, the dev package, and the Go
+  doctor run on SvelteKit 3.0.0 and adapter-cloudflare 8.0.0. Bindings come through
+  `cloudflare:workers` via `src/lib/sveltekit/workers-env.ts`. The spike (S0) went GO; S1 took the
+  4.0 deprecations, config into the Vite plugin, subpath imports, and `@sveltejs/package` 3; S2
+  moved every built-site caller to `wrangler dev`; S3 prepared CSRF on Kit 2.70; S4 made the bump.
+- **CSRF.** Kit's own check replaced guard Rule 2. Admin responses send `Referrer-Policy:
+  strict-origin` plus exactly one referrer meta per admin view. The doctor's
+  `csrf.trustedOrigins` check fails `'*'` and `'null'`. The tool major is disclosed under
+  `tool/CHANGELOG.md` `## Unreleased`, with no tag.
+- **Gate and scaffold.** The full local gate tier mirrors `test.yml` (11f), `check-symbols` is fast
+  (5c, 11g), the reach test follows self-referencing imports (11c), and the scaffold has the Kit 3
+  shape (12). Task 13 wrote the docs and records; Task 14 wrote the new `Consumers must:` lines.
+- **Close fixes.** The close reviews led to five fix tasks: Rule 1 widened to Kit 3's request set,
+  the logout redirect re-validated, `devBackendHandle` refusing a non-local host when the dev flag
+  is set, delivery cleanup logging `auth.channel.send_cleanup_failed`; a manifest verify that runs
+  through Vite 8's environment runner once per build; a Go doctor with one key-pattern builder, one
+  comment stripper, one verdict precedence, and one quote style; the guard clearing
+  `locals.cairnIdentity` so logout always deletes the session row; and hydration-safe e2e fixtures.
+- **Upstream.** The adapter bug found at the S4 boundary is filed as sveltejs/kit PR #17368 (fork
+  `glw907/kit`, closes #17344) with a verified-repro comment on #17344. Routine
+  `trig_01KPzLTU7rzLMQUp2y6bjZtm` watches it. cairn does not depend on the fix.
+
+**What the gates caught:**
+
+- **The CI boundary took three rounds after the bump.** Round 1 (four red, three causes, Task 11d):
+  a showcase call site for the binding types, vitest unable to mock `cloudflare:workers` from an
+  installed engine, and the dev-fold grep matching Kit 3's server sourcemaps. Round 2 (Task 11e):
+  the dev package's test typing, and the real defect below. Round 3: an `e2e` slow-runner flake,
+  filed.
+- **The adapter 8 proxy defect.** Under `vite dev`, cairn's manifest plugin started a nested Vite
+  server. Closing it made adapter-cloudflare 8 dispose the main server's shared platform proxy, so
+  every `/admin` request returned 500 on any adapter-8 site. The fix verifies through the live dev
+  server (`configureServer` plus `ssrLoadModule`), later through the environment runner (C2).
+- **Local gates missed it.** They omitted `check:dev-package` and the `vite dev` path, which CI
+  runs. Task 11f closed the gap.
+- **The close reviews.** Four seats (web-auth-security, svelte, cloudflare-workers,
+  go-architecture-reader) found no blocker. The security seat rated one pre-existing gap high:
+  `devBackendHandle` honored the dev flag on a non-local host.
+- **CI-only e2e races.** Hydration doubled typed titles on a slow runner, and a leaked post pushed
+  the seed off list page 1. Local runs hid both. The fix waits on hydration before typing and
+  deletes strictly.
+- **Live smoke (Geoff, 2026-10-07).** Login and confirm passed both CSRF layers with no 403 or
+  `guard.refused`; one referrer meta per admin view; a Save reached the create action and failed
+  at the missing GitHub key.
+- **Refused fold findings.** None of the spec-plan-review fold's refused findings turned real.
+
+**What a later pass would be wrong to rediscover:**
+
+- **Kit 3 emits server sourcemaps by default.** A grep over built server output must exclude
+  `*.map`, or the dev-fold check matches comments and sourcemap text. The conductor ruled to keep
+  the maps.
+- **Never start a nested Vite server under `vite dev` on adapter 8.** Its close disposes the shared
+  platform proxy. Verify through the live dev server's environment runner.
+- **An installed engine needs vitest `server.deps.inline: ['@glw907/cairn-cms']`** so its
+  `cloudflare:workers` import can be mocked.
+- **Local full gates now mirror `test.yml`.** A check that passes locally and fails in CI means the
+  tier list drifted; fix the list.
+- **E2E create flows must wait on hydration before typing** (`fillTitleWhenHydrated`), and the seed
+  navigates with a direct `goto`; typing into an unhydrated form doubles the value on slow runners.
+- **The live-smoke Save fails at the GitHub key before the commit** on a placeholder App
+  (`admin.action.failed`, not `commit.failed`). Over http the `__Host-` prefix and a real commit
+  stay unexercised until cairn.pub's migration (Ruling 1's accepted cost).
+- **`pass-execute`'s gate-string check** counts a superset command or an `E2E_PORT` set outside the
+  string as a mismatch; it raised three false escalations. Fix it before an unattended run.
+- **Budget:** about 14.7M of a 15M ceiling (raised from 12.4M twice); the close fix chain cost
+  about 1.95M against 1.45M for the whole close.
+
 ## Draft docs harvest, then delete, 2026-09-29 to 30
 
 Branch `draft-docs-harvest`, its PR merging under Geoff's R4 once the close gate and reviews are

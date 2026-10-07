@@ -20,10 +20,10 @@ identically) depends on everything else staying byte-for-byte the same. -->
 <script lang="ts">
   import type { EntryData, ResolvedReference } from '@glw907/cairn-cms/delivery';
   import { CairnHead } from '@glw907/cairn-cms/delivery/head';
-  import { formatDate } from '$chassis/date.js';
+  import { formatDate } from '#chassis/date.js';
 
   interface Props {
-    /** The composed entry data, plus the reference-edge resolution `$chassis/entry-data.js` layers on. */
+    /** The composed entry data, plus the reference-edge resolution `#chassis/entry-data.js` layers on. */
     data: EntryData & { references: Record<string, ResolvedReference | ResolvedReference[]> };
     /** True on the preview route: suppresses canonical, og:url, and the `.md` twin link. Defaults to false (the public route). */
     preview?: boolean;

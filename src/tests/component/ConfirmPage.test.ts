@@ -4,6 +4,13 @@ import ConfirmPage from '../../lib/admin/ConfirmPage.svelte';
 import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-error-codes.js';
 
 describe('ConfirmPage', () => {
+  it('emits exactly one strict-origin referrer meta in the head, so a site mounting it in its own shell still gets it', async () => {
+    await render(ConfirmPage, { data: { token: 'tok123', siteName: 'Test Site', error: null, csrf: 'csrf-tok' } });
+    const metas = document.head.querySelectorAll('meta[name="referrer"]');
+    expect(metas).toHaveLength(1);
+    expect(metas[0]).toHaveAttribute('content', 'strict-origin');
+  });
+
   it('renders a POST confirm form carrying the token and a CSRF field', async () => {
     const screen = await render(ConfirmPage, { data: { token: 'tok123', siteName: 'Test Site', error: null, csrf: 'csrf-tok' } });
     await expect.element(screen.getByRole('button', { name: /confirm/i })).toBeInTheDocument();

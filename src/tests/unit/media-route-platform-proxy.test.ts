@@ -1,10 +1,11 @@
 // The getPlatformProxy media-delivery smoke (ROADMAP "Now" item, born 2026-07-08). The
-// vitest-pool-workers integration project binds R2 natively (no RPC boundary), and `vite preview`
-// carries no bindings at all, so neither one drives the media route through the same magic-proxy
+// vitest-pool-workers integration project and the showcase's `wrangler dev` e2e both bind R2
+// natively (no RPC boundary), so neither drives the media route through the same magic-proxy
 // RPC boundary a consumer's `vite dev` does. Two miniflare serialization bugs (a live Headers
 // object passed into a bucket method, and into `bucket.get`'s options) shipped past a green suite
 // this way. `getPlatformProxy` reproduces that exact boundary: it starts a real Miniflare instance
-// from Node and returns bindings as RPC stubs, the same shape `platform.env` has under `vite dev`.
+// from Node and returns bindings as RPC stubs, the same shape the Worker env has under `vite dev`,
+// where the adapter's `cloudflare:workers` stand-in reads them from this same proxy.
 // It runs in this file's own Node process, never inside workerd, so it belongs in the `unit`
 // project (environment: 'node'), not `integration` (which itself already runs inside workerd).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -15,6 +16,7 @@ import { createGithubApp } from '../../lib/index.js';
 import { r2Key } from '../../lib/media/naming.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 
 const HASH = 'f1e2d3c4b5a69788';
 const EXT = 'png';
@@ -70,7 +72,8 @@ describe('media route under getPlatformProxy (Task T3)', () => {
   it('serves the seeded object 200 with the stored Content-Type through the RPC-proxy binding', async () => {
     const handler: RequestHandler = createMediaRoute({ runtime: runtime(resolvedOn) });
     const request = new Request(`https://site.example/media/${SLUG_PATH}`);
-    const event = { params: { path: SLUG_PATH }, platform: { env: platformEnv }, request };
+    setFakeEnv(platformEnv);
+    const event = { params: { path: SLUG_PATH }, request };
 
     const res = await handler(event as unknown as Parameters<RequestHandler>[0]);
 

@@ -24,8 +24,9 @@ test('the worker lints the seeded misspellings, a suggestion applies, and an add
   // runner than Playwright's default 30s test budget allows. Raise the whole-test ceiling so the
   // dictionary load plus the suggestion and add-to-dictionary steps all fit.
   test.setTimeout(90_000);
-  await page.goto('/admin');
-  await page.locator(`a[href="/admin/posts/${SEED}"]`).click();
+  // Open the seed by URL: the list is newest-first at ten per page, so a link to this June-dated
+  // entry can sit on page 2 once ten newer posts exist.
+  await page.goto(`/admin/posts/${SEED}`);
   await expect(page).toHaveURL(new RegExp(`/admin/posts/${SEED}$`));
 
   // The editor is on the Write surface by default. The worker streams the dictionary on first lint,

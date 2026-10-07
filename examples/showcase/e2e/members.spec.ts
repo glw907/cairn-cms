@@ -19,11 +19,11 @@ import { test, expect, type APIRequestContext } from '@playwright/test';
 // tables directly: the fixture proves the same surface a consumer's own e2e would exercise.
 
 test.beforeAll(async ({ request }) => {
-  // Reset once for the whole file. A locally reused preview server (playwright's
+  // Reset once for the whole file. A locally reused wrangler dev server (playwright's
   // `reuseExistingServer`) keeps the channel's D1 tables and the capture map across runs, and
   // this suite's per-contact budgets would otherwise accumulate hour over hour until a request
   // starts answering `throttled`.
-  const res = await request.post('/test/reset-members');
+  const res = await request.post('/test/reset-members', { data: {} });
   expect(res.ok()).toBe(true);
 });
 
@@ -174,10 +174,38 @@ test("revocation: the test route revokes the caller's own session, and the gated
   await expect(page).toHaveURL(/\/members$/);
   await expect(page.getByText('member-revocation')).toBeVisible();
 
-  const revoke = await page.request.post('/test/revoke-member-session');
+  const revoke = await page.request.post('/test/revoke-member-session', { data: {} });
   expect(revoke.ok()).toBe(true);
 
   const refusal = await page.request.get('/members', { maxRedirects: 0 });
   expect(refusal.status()).toBe(303);
   expect(refusal.headers().location).toContain('/members/login');
+});
+
+test('reset: /test/reset-members empties the capture and the channel database, so the same contact delivers a fresh code', async ({
+  page,
+}) => {
+  const contact = 'spare@showcase.test';
+
+  await page.goto('/members/login');
+  await page.locator('#member-contact').fill(contact);
+  await page.getByRole('button', { name: 'Send code' }).click();
+  await expect(page.getByRole('status')).toContainText('A code was sent.');
+  expect((await readCapture(page.request, contact)).count).toBe(1);
+
+  const reset = await page.request.post('/test/reset-members', { data: {} });
+  expect(reset.ok()).toBe(true);
+
+  // The capture map is empty: the readback route answers 404 for a contact it holds nothing for.
+  const emptied = await page.request.get(`/test/last-otp?contact=${encodeURIComponent(contact)}`);
+  expect(emptied.status()).toBe(404);
+
+  // The channel database is empty too. A pending code row inside the 60-second resend cooldown
+  // would make this request answer `sent` without delivering, so a delivery that arrives with
+  // count 1 proves the code row, and the budget beside it, were cleared in D1.
+  await page.goto('/members/login');
+  await page.locator('#member-contact').fill(contact);
+  await page.getByRole('button', { name: 'Send code' }).click();
+  await expect(page.getByRole('status')).toContainText('A code was sent.');
+  expect((await readCapture(page.request, contact)).count).toBe(1);
 });

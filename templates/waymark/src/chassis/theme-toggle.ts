@@ -3,7 +3,7 @@
 // survives a reload. The mechanism knows nothing about which two DaisyUI theme names a theme
 // declares; every call site passes its own ThemeToggleConfig, so a differently-named theme (or a
 // second theme entirely) reuses this module unchanged. Every function here assumes it runs in the
-// browser (guard with `$app/environment`'s `browser` at the call site); none of it is SSR-safe.
+// browser (guard with `$app/env`'s `browser` at the call site); none of it is SSR-safe.
 
 /** A theme's own light/dark DaisyUI theme names and the cookie that persists the visitor's choice. */
 export interface ThemeToggleConfig<T extends string> {

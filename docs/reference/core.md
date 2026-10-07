@@ -225,7 +225,7 @@ export const cairn = defineAdapter({
 ```svelte
 <!-- src/routes/(site)/+layout.svelte: the same URL, linked instead of statically imported -->
 <script lang="ts">
-  import appCssUrl from '$lib/app.css?url';
+  import appCssUrl from '#lib/app.css?url';
 </script>
 
 <svelte:head>
@@ -722,7 +722,7 @@ hastscript's `h()`. The showcase composes `renderGlyph` with its own chassis-loc
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts
 // examples/showcase/src/theme/markdown-components.ts
-import { makeIconRenderer, headRow } from '$chassis/render.js';
+import { makeIconRenderer, headRow } from '#chassis/render.js';
 
 const makeIcon = makeIconRenderer(icons);
 build: (ctx) =>
@@ -754,7 +754,7 @@ permalinks cannot diverge.
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin({ runtime });
@@ -794,7 +794,7 @@ Read one named menu from a parsed config and validate it. Returns `[]` when the 
 
 ```ts
 import { readMenu } from '@glw907/cairn-cms';
-import { siteConfig } from '$theme/cairn.config.js';
+import { siteConfig } from '#theme/cairn.config.js';
 
 const primary = readMenu(siteConfig, 'primary', 2);
 ```
@@ -814,7 +814,7 @@ and edit paths read.
 
 ```ts
 import { readVocabulary } from '@glw907/cairn-cms';
-import { siteConfig } from '$theme/cairn.config.js';
+import { siteConfig } from '#theme/cairn.config.js';
 
 const vocabulary = readVocabulary(siteConfig);
 ```
@@ -1014,7 +1014,7 @@ once the runtime knows the real concept list.
 ```ts
 // src/lib/cairn.access.ts
 import { defineAccess } from '@glw907/cairn-cms';
-import { roles } from '$theme/cairn.config.js';
+import { roles } from '#theme/cairn.config.js';
 
 export const access = defineAccess(roles, {
   pages: ['webmaster'],
@@ -1110,7 +1110,7 @@ function signatures above reference these.
 | `RolesDeclaration` | Extension API | `type RolesDeclaration` | A site's whole role vocabulary: role name to `RoleDeclaration`, the shape `defineRoles` validates and returns. |
 | <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, an open `role` (`string`; any site-declared name), and its resolved `capability`. `locals.cairnEditor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`/`requireEditor`), and the ambient declaration that types `locals.cairnEditor` ships from the [`./ambient`](./ambient.md) subpath. Email is always trimmed and lowercased, an invariant held at every write and lookup path; no command checks this invariant yet. |
 | `AccessMap` | Extension API | `type AccessMap = Record<string, string[]>` | A site's whole access declaration: a target (an engine screen id or an `/admin`-prefixed route path) to the role names admitted to it. A target absent from the map keeps today's behavior. See [Access map](#access-map). |
-| <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv` | The Worker bindings and vars the whole engine reads, all optional: `AUTH_DB`, `PUBLIC_ORIGIN`, `CAIRN_DEV_BACKEND`, `EMAIL`, `GITHUB_APP_PRIVATE_KEY_B64`. One shape for every factory that needs platform bindings; a site's `app.d.ts` names {@link CairnPlatformBindings} instead, a recommended convenience preset that makes the required subset compile-checked. |
+| <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv` | The Worker bindings and vars the whole engine reads, all optional: `AUTH_DB`, `PUBLIC_ORIGIN`, `CAIRN_DEV_BACKEND`, `EMAIL`, `GITHUB_APP_PRIVATE_KEY_B64`. One shape for every factory that needs Worker bindings; a site checks its generated `Env` against {@link CairnPlatformBindings} instead, which makes the required subset compile-checked. |
 | `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API: a bare address, or an address with a display name. |
 | `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it with no cast. |

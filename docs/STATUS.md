@@ -1,7 +1,6 @@
 # cairn-cms status
 
-Present tense only; past tense lives in [`docs/HISTORY.md`](HISTORY.md), durable orientation in
-`CLAUDE.md`. `cairn-pass` rewrites this at each pass-end.
+Present tense only; the past lives in [`docs/HISTORY.md`](HISTORY.md), orientation in `CLAUDE.md`.
 
 ## Current state
 
@@ -29,20 +28,19 @@ Draft docs stage 2a, planned in a fresh brainstorm session, then run unattended 
   script against the committed file on first run.
 - Prerequisite: fix `pass-execute`'s gate-string check (a superset command, or `E2E_PORT` set outside the
   string, must count as a match; it raised three false escalations last pass).
-- Side lanes to weigh: the pre-release dependency sweep (wrangler 4.147, vite 8.3, other minors); a small
-  engineering lane (the Go doctor cleanup, the filed e2e timing flakes).
-- Settle a hard token ceiling: 2a's run 2 measured about 2.4M a page before the narrowed round 2.
+- Side lanes to weigh: the dependency sweep (wrangler 4.147, vite 8.3, other minors); an engineering lane
+  (the Go doctor cleanup, the filed e2e timing flakes). Settle a hard token ceiling: 2a's run 2 measured
+  about 2.4M a page before the narrowed round 2.
 
 ## Open decisions and watches
-
 - Watch: sveltejs/kit#17368 (adapter-cloudflare 8's shared platform proxy, closes #17344). Routine
   `trig_01KPzLTU7rzLMQUp2y6bjZtm` emails on activity, CI failure, merge, or close; delete it once the PR
   closes. cairn does not depend on it.
-- The monthly drift routine (`trig_015UPQostYVisXuExTHTH2vu`) samples only `docs/reference` and existing
-  extend pages; widen it to all four tracks at stage 4's merge.
-- Watch: `cairn-docs-outline`'s lock (dotfiles) was built past need; simplify it in a separate dotfiles change.
-- Watch: the kept per-version records' paths are hardcoded in `cairn-pass`, `CLAUDE.md`, and
-  `docs/internal/facts/README.md`; a pass that moves either record updates all three.
+- The monthly drift routine (`trig_015UPQostYVisXuExTHTH2vu`) samples `docs/reference` and extend pages
+  only; widen it to all four tracks at stage 4's merge.
+- Watch: `cairn-docs-outline`'s lock (dotfiles) was built past need; simplify it separately.
+- Watch: the per-version records' paths are hardcoded in `cairn-pass`, `CLAUDE.md`, and
+  `docs/internal/facts/README.md`; a pass that moves a record updates all three.
 - The remote-functions routine (`trig_0193pPNoyxsTGeUhF1xx7woa`) opens an issue when they reach stable.
   Node 26 is the beta floor only if Active LTS by then; TypeScript 7 waits on `tsgo.yml`. `radius-scale`
   and the retired-patch arms promote at `0.99.0`.
@@ -50,20 +48,12 @@ Draft docs stage 2a, planned in a fresh brainstorm session, then run unattended 
   2026-10-19. `npm pkg fix` is owed for the four `./` `bin` entries.
 
 ## Resume prompt
-
 > **Goal.** Plan draft docs stage 2a as a 10+ hour unattended run on the SvelteKit 3 `main`, ending with
 > the pages drafted, gated, and read, ready for the release.
->
-> **Scope.** In: merging `main` into `draft-docs-2a`, the pilot pages' Kit 3 drift, task 8's five pages,
-> task 9, the close, the `pass-execute` gate-string fix, and the side lanes to weigh. Out: the release and
-> cairn.pub's migration, stages 2b and later.
->
-> **Settled:** the 2a intros; the framing stage and narrowed round 2; merge, not rebase; the release holds
-> for 2a.
->
-> **Still open:** the hard token ceiling; which side lanes ride along; the unattended stops and guards
-> (`unattended-work-guards.md`).
->
+> **Scope.** In: merging `main` into `draft-docs-2a`, the pilot pages' Kit 3 drift, task 8, task 9, the
+> close, the `pass-execute` fix, and the side lanes to weigh. Out: the release, cairn.pub's migration, 2b.
+> **Settled:** the 2a intros; the framing stage and narrowed round 2; merge, not rebase.
+> **Still open:** the hard token ceiling; which side lanes ride along; the unattended stops and guards.
 > **Approach.** Fresh session, `claude --model claude-opus-5-5` at high effort, from `~/Projects/cairn-cms`.
 > Read `docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md`, the merge map, and the
 > 2a plan; re-run the conflict listing first. Pre-flight the plan so no stop remains, commit it, and point

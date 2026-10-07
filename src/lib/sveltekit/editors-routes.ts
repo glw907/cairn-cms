@@ -12,6 +12,7 @@ import { resolveCapability, resolveOwnerLevelRoles, DEFAULT_ROLES } from '../aut
 import type { Capability, RolesDeclaration } from '../auth/roles.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
+import { env } from './workers-env.js';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -65,7 +66,7 @@ export function createEditorRoutes(config: EditorRoutesConfig = {}): EditorRoute
    */
   async function ownerAction(event: CairnEvent): Promise<{ db: D1Database; form: FormData; email: string; owner: string }> {
     const owner = requireOwner(event);
-    const db = requireDb(event.platform?.env ?? {});
+    const db = requireDb(env);
     const form = await event.request.formData();
     const email = String(form.get('email') ?? '').trim().toLowerCase();
     return { db, form, email, owner: owner.email };
@@ -79,7 +80,7 @@ export function createEditorRoutes(config: EditorRoutesConfig = {}): EditorRoute
    */
   async function editorsLoad(event: CairnEvent): Promise<EditorsData> {
     const owner = requireOwner(event);
-    const rows = await listEditors(requireDb(event.platform?.env ?? {}));
+    const rows = await listEditors(requireDb(env));
     const editors = rows.map((row) => ({ ...row, capability: resolveCapability(vocabulary, row.role) }));
     const vocabularyList = Object.keys(vocabulary).map((role) => ({
       role,

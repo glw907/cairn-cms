@@ -1,0 +1,17 @@
+{
+  // A site-shaped program for the compile-only Env checks: a DOM lib, the runtime types from
+  // @cloudflare/workers-types, and a site's generated worker-configuration.d.ts, kept apart from the
+  // root program so the generated file's global Env and process.env typing never reach the engine's
+  // own sources. `npm run check` runs it after svelte-check.
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["@cloudflare/workers-types"],
+    "skipLibCheck": true
+  },
+  "files": ["generated-env-satisfies.ts"]
+}

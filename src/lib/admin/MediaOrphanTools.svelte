@@ -15,7 +15,7 @@ restores there on close.
 -->
 <script lang="ts">
   import { getContext, tick } from 'svelte';
-  import { invalidateAll } from '$app/navigation';
+  import { refreshAll } from '$app/navigation';
   import type { MediaOrphanScanResult } from '../media/orphan-scan.js';
   import type { MediaOrphanPurgeResult, MediaBulkFailure } from '../sveltekit/content-routes-media-delete.js';
   import { confirmGateMatches } from './typed-confirm.js';
@@ -123,9 +123,9 @@ restores there on close.
     closeOrphanScan();
   }
   // The Done action after a purge: the bytes are gone, so re-read the load (the broken-refs readout is
-  // untouched), then close. invalidateAll re-runs the media load behind the dialog.
+  // untouched), then close. refreshAll re-runs the media load behind the dialog.
   async function finishOrphanPurge() {
-    await invalidateAll();
+    await refreshAll();
     closeOrphanScan();
   }
 

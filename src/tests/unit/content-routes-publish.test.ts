@@ -13,6 +13,7 @@ import type { CairnRuntime } from '../../lib/content/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 import { runtime as baseRuntime, postsConcept, contentEvent, backend as sharedBackend } from './_content-harness.js';
 import { testEvent } from '../helpers/test-event.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const ENTRY_PATH = 'src/content/posts/2026-05-01-hi.md';
@@ -57,12 +58,12 @@ function restrictedMultiRuntime(): CairnRuntime {
 /** A publishAllAction request driven by a named custom role rather than the harness's default editor. */
 function roleActionEvent(role: 'webmaster' | 'publisher') {
   const url = 'https://t.example/admin/posts';
+  setFakeEnv({ GITHUB_APP_PRIVATE_KEY_B64: 'x' });
   return testEvent({
     url,
     params: { concept: 'posts' },
     request: new Request(url, { method: 'POST' }),
     locals: { cairnEditor: { email: `${role}@t`, displayName: role, role, capability: 'editor' as const }, cairnBackend: sharedBackend },
-    env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' },
   });
 }
 

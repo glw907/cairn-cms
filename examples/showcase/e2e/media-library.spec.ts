@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 
 // The media Phase 3c Media Library, end to end against the running showcase behind the fake backend
-// (the fake R2 double on platform.env and the fake-github recorder, the same harness the other media
+// (the fake R2 double in the Worker env and the fake-github recorder, the same harness the other media
 // specs use). It drives the real /admin/media screen over a seeded asset set:
 //
 //   - a used + described asset (mountain-pass), referenced by the seed post on main, so its
@@ -225,9 +225,13 @@ test('safe-delete the orphan: the calm face confirms, the row leaves main, and t
   }).toPass({ timeout: 15_000 });
 
   // Effect 2: the R2 object is gone, so the delivery path 404s. The commit-then-delete order is
-  // unit-proven in Task 5; asserting both effects here is sufficient.
+  // unit-proven in Task 5; asserting both effects here is sufficient. The probe sends
+  // `Cache-Control: no-cache` so the worker's colo-cache layer, which answers the earlier
+  // immutable 200 from `caches.default` without reading R2, is skipped and the assertion reads
+  // the bucket itself.
   await expect(async () => {
-    expect((await request.get(deliveryPath)).status()).toBe(404);
+    const gone = await request.get(deliveryPath, { headers: { 'Cache-Control': 'no-cache' } });
+    expect(gone.status()).toBe(404);
   }).toPass({ timeout: 15_000 });
 });
 

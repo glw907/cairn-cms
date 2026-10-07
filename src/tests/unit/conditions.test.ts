@@ -9,7 +9,6 @@ import {
 const PASS_3_IDS = [
   'config.bindings-missing',
   'config.observability-off',
-  'config.csrf-disable-missing',
   'config.site-config-invalid',
   'auth.store-unreachable',
   'github.app-unreachable',
@@ -19,7 +18,7 @@ describe('condition registry', () => {
   it('resolves each guard condition by id', () => {
     expect(condition('edge.https-not-forced').severity).toBe('blocker');
     expect(condition('auth.csrf-token-invalid').title).toMatch(/csrf/i);
-    expect(condition('auth.csrf-origin-mismatch').logEvent).toBe('guard.refused');
+    expect(condition('auth.csrf-token-invalid').logEvent).toBe('guard.refused');
   });
 
   it('resolves the two email conditions', () => {
@@ -51,7 +50,6 @@ describe('condition registry', () => {
   it('resolves the Pass 3 doctor conditions with their severities', () => {
     expect(condition('config.bindings-missing').severity).toBe('blocker');
     expect(condition('config.observability-off').severity).toBe('warning');
-    expect(condition('config.csrf-disable-missing').severity).toBe('warning');
     expect(condition('config.site-config-invalid').severity).toBe('blocker');
     expect(condition('auth.store-unreachable').severity).toBe('blocker');
     expect(condition('github.app-unreachable').severity).toBe('blocker');
@@ -104,7 +102,7 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at twenty-five entries', () => {
+  it('pins the registry at twenty-four entries', () => {
     // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
     // auth.email-not-normalized for the extensible-roles doctor checks, plus
     // auth.role-wiring-missing for the double-wiring doctor check, plus
@@ -115,8 +113,36 @@ describe('condition registry', () => {
     // seam, minus the retired skill-freshness condition (its install moved to cairn-guidance,
     // which carries no condition of its own), plus config.media-bucket-missing (its own condition
     // id, no longer borrowing config.bindings-missing, so the media-bucket check can print its
-    // own remediation). Grow this count only with a registry change.
-    expect(allConditions()).toHaveLength(25);
+    // own remediation), minus auth.csrf-origin-mismatch and config.csrf-disable-missing (the
+    // framework's own Origin check now covers every route, so neither has a cairn-side failure
+    // to name), plus config.csrf-trusted-origins-wildcard for the doctor's trustedOrigins check.
+    // Grow this count only with a registry change.
+    expect(allConditions()).toHaveLength(24);
+  });
+
+  it('resolves the trusted-origins condition with its exposure text and anchor', () => {
+    const c = condition('config.csrf-trusted-origins-wildcard');
+    expect(c.severity).toBe('warning');
+    expect(c.title).toBe("Trusted origins bypass SvelteKit's origin check");
+    expect(c.why).toMatch(/"\*"/);
+    expect(c.why).toMatch(/"null"/);
+    expect(c.why).toMatch(/every route/);
+    expect(c.why).toMatch(/resolveSubject/);
+    expect(c.why).toMatch(/sibling subdomain/);
+    expect(c.remediation).toMatch(/csrf\.trustedOrigins/);
+    expect(c.docsAnchor).toBe('is-it-working.md#keep-sveltekits-origin-check-on');
+    expect(c.logEvent).toBeUndefined();
+  });
+
+  it('no longer registers the three retired CSRF conditions', () => {
+    const ids = allConditions().map((c) => c.id);
+    for (const id of [
+      'config.csrf-disable-missing',
+      'auth.csrf-origin-mismatch',
+      'config.csrf-disable',
+    ]) {
+      expect(ids, id).not.toContain(id);
+    }
   });
 
   it('resolves the media-bucket condition (its own id, no longer borrowing config.bindings-missing)', () => {
@@ -165,9 +191,10 @@ describe('condition registry', () => {
     const c = condition('config.no-referrer-blanket');
     expect(c.severity).toBe('warning');
     expect(c.why).toMatch(/Origin: null/);
-    expect(c.why).toMatch(/originMatches/);
+    expect(c.why).toMatch(/createAuthChannel/);
+    expect(c.why).toMatch(/%sveltekit\.head%/);
     expect(c.remediation).toMatch(/strict-origin-when-cross-origin/);
-    expect(c.remediation).toMatch(/no-referrer/);
+    expect(c.remediation).not.toMatch(/safe only/);
     expect(c.docsAnchor).toBe('is-it-working.md#scope-a-site-wide-no-referrer-policy');
     expect(c.logEvent).toBeUndefined();
   });
@@ -177,7 +204,7 @@ describe('condition registry', () => {
     for (const id of [
       'config.bindings-missing',
       'config.observability-off',
-      'config.csrf-disable-missing',
+      'config.csrf-trusted-origins-wildcard',
       'config.site-config-invalid',
       'config.public-origin-invalid',
       'config.dependency-floors-unmet',

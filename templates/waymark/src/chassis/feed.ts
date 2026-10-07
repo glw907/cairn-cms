@@ -3,7 +3,7 @@
 // excerpts, and rendered bodies and can never drift from each other.
 import { createLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
 import { site, siteMeta } from './content.js';
-import { cairn } from '$theme/cairn.config.js';
+import { cairn } from '#theme/cairn.config.js';
 
 /** Build this site's post feed items, shared by the RSS and JSON Feed routes. */
 export async function buildFeedItems(): Promise<FeedItem[]> {

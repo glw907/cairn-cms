@@ -6,8 +6,10 @@ import CairnAdminShell from '../../lib/admin/CairnAdminShell.svelte';
 import { resolveNavLayout, type NavLayout } from '../../lib/sveltekit/admin-nav.js';
 // CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
 import CairnAdminShellDeskHarness from './_CairnAdminShellDeskHarness.svelte';
+// CairnAdminShell with a public payload wrapping LoginPage, the way the single mount renders login.
+import CairnAdminShellPublicLoginHarness from './_CairnAdminShellPublicLoginHarness.svelte';
 import { beforeNavigateCallbacks } from './_app-navigation.js';
-import type { BeforeNavigate } from '@sveltejs/kit';
+import type { BeforeNavigate } from '$app/navigation';
 // The compiled sheet carries the real .modal-box sizing and the utility layer (outline-hidden,
 // :focus-visible) the palette-inset and focus tests below measure against.
 import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
@@ -1158,6 +1160,28 @@ describe('CairnAdminShell', () => {
     // from a non-owner), so an editor payload simply carries no such entry and the link is absent.
     const screen = await render(CairnAdminShell, { data: data(false), children: child });
     expect(screen.container.querySelector('a[href="/admin/signups"]')).toBeNull();
+  });
+
+  it('emits exactly one strict-origin referrer meta in the head for an authed payload', async () => {
+    await render(CairnAdminShell, { data: data(true), children: child });
+    const metas = document.head.querySelectorAll('meta[name="referrer"]');
+    expect(metas).toHaveLength(1);
+    expect(metas[0]).toHaveAttribute('content', 'strict-origin');
+  });
+
+  it('adds no referrer meta of its own for a public payload, so LoginPage inside it leaves exactly one', async () => {
+    await render(CairnAdminShell, {
+      data: { public: true as const, siteName: 'Test Site', theme: 'cairn-admin' as const },
+      children: child,
+    });
+    expect(document.head.querySelectorAll('meta[name="referrer"]')).toHaveLength(0);
+  });
+
+  it('leaves exactly one strict-origin referrer meta when a public payload wraps LoginPage', async () => {
+    await render(CairnAdminShellPublicLoginHarness);
+    const metas = document.head.querySelectorAll('meta[name="referrer"]');
+    expect(metas).toHaveLength(1);
+    expect(metas[0]).toHaveAttribute('content', 'strict-origin');
   });
 
   it('renders only the children bare for a public payload, with no chrome', async () => {

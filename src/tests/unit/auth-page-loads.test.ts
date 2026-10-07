@@ -36,6 +36,6 @@ describe('auth page loads', () => {
     const data = await confirmLoad(ev);
     expect(data).toMatchObject({ token: 'abc', siteName: 'Test Site', error: null });
     expect(data.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
-    expect(ev._headers['Referrer-Policy']).toBe('no-referrer');
+    expect(ev._headers['Referrer-Policy']).toBe('strict-origin');
   });
 });

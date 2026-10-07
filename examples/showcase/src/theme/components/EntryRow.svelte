@@ -11,7 +11,7 @@ copy.
 -->
 <script lang="ts">
   import type { ContentSummary } from '@glw907/cairn-cms/delivery';
-  import { formatDate } from '$chassis/date.js';
+  import { formatDate } from '#chassis/date.js';
 
   interface Props {
     /** The archive entry this row renders: its date, title, permalink, and optional excerpt. */

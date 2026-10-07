@@ -84,8 +84,8 @@ article view rather than rendering the entry inline.
 ```ts
 import type { PageServerLoad, EntryGenerator } from './$types';
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
-import { publicRoutesConfig } from '$chassis/public-routes.js';
-import { withReferences } from '$chassis/entry-data.js';
+import { publicRoutesConfig } from '#chassis/public-routes.js';
+import { withReferences } from '#chassis/entry-data.js';
 
 export const prerender = true;
 

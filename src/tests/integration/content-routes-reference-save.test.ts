@@ -73,7 +73,6 @@ function saveEvent(author: string) {
     body: new URLSearchParams({ title: 'My Post', author, body: 'Body text.' }),
     params: { concept: 'posts', id: 'my-post' },
     locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const }, cairnBackend: backend },
-    env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' },
   });
 }
 

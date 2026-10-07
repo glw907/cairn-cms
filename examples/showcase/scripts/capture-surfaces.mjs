@@ -4,12 +4,12 @@
 // tool (`git show 274374f2^:examples/showcase/scripts/reference-capture.mjs`), which already
 // solved the preview-server recipe and the admin theme cookie; this tool generalizes that shape
 // into a surface/width/scheme matrix instead of a fixed screen list. It starts its own preview
-// server (the exact `playwright.config.ts` webServer recipe) and tears it down on exit, rather
-// than connecting to a server the caller happens to have running, so a capture always proves the
-// current build.
+// server (the `playwright.config.ts` webServer recipe without its members migration) and tears
+// it down on exit, rather than connecting to a server the caller happens to have running, so a
+// capture always proves the current build.
 //
-// AVAILABILITY UNDER `vite preview` (checked 2026-09-08 against a `VITE_CAIRN_E2E=1 npm run
-// build` + `npm run preview -- --port 4173` server with `CAIRN_DEV_BACKEND=1`):
+// AVAILABILITY UNDER `wrangler dev` (checked 2026-10-05 against a `VITE_CAIRN_E2E=1 npm run
+// build` + `npm run preview -- --port 4173 --var CAIRN_DEV_BACKEND:1` server):
 //   - home, article, styleguide: render normally (200).
 //   - signups (`/admin/signups`): renders normally (200); the dev backend mints an owner editor
 //     on every `/admin` request, so no session cookie or login flow is needed, only the
@@ -18,7 +18,7 @@
 //     (`src/chassis/archive.ts`) crosses the showcase's own corpus, producing a real page two.
 //     It carries its own page-level `h1` (the "Archive" eyebrow), so it waits on
 //     `waitForHeading` like every other public surface.
-//   - error404 (an unmatched path): the root `+error.svelte` DOES render under `vite preview`
+//   - error404 (an unmatched path): the root `+error.svelte` DOES render under `wrangler dev`
 //     for a genuinely unmatched route, full SSR, status 404, with the site's own nav and footer.
 //     Unlike archive2, this surface's whole point is to capture that rendered error page, so a
 //     404 status here is captured as content rather than written as `.missing`.
@@ -33,7 +33,7 @@ const run = promisify(execFile);
 const SHOWCASE_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const PORT = 4173;
 const BASE = `http://localhost:${PORT}`;
-// Matches playwright.config.ts's webServer timeout exactly, since this tool runs the identical
+// Matches playwright.config.ts's webServer timeout exactly, since this tool runs the same
 // build-then-preview recipe and a slower machine needs the same budget the e2e suite gets.
 const SERVER_TIMEOUT_MS = 120_000;
 const WIDTHS = [320, 390, 768, 1440, 2560];
@@ -263,14 +263,15 @@ async function captureOne(browser, outDir, surface, width, scheme, focusSelector
   }
 }
 
-/** Poll `url` until it answers (any status short of a connection failure counts as up), or
- *  throw once `timeoutMs` elapses. */
+/** Poll `url` until it answers 200 without following a redirect, or throw once `timeoutMs`
+ *  elapses. A server started without the dev-backend flag answers the admin path with a redirect
+ *  to login, so only a 200 proves the flagged serve is the one listening. */
 async function waitForServer(url, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     try {
-      await fetch(url);
-      return;
+      const response = await fetch(url, { redirect: 'manual' });
+      if (response.status === 200) return;
     } catch {
       // Not up yet; keep polling.
     }
@@ -290,10 +291,11 @@ async function isServerUp(url) {
   }
 }
 
-/** Starts the showcase preview server with the exact `playwright.config.ts` webServer recipe
- *  (`VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port 4173`, `CAIRN_DEV_BACKEND=1`),
+/** Starts the showcase preview server with the `playwright.config.ts` webServer recipe, minus
+ *  its members migration
+ *  (`VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port 4173 --var CAIRN_DEV_BACKEND:1`),
  *  detached into its own process group so the whole group can be killed on teardown, and waits
- *  for it to answer within the config's 120s budget. Refuses to run if port 4173 already has a
+ *  for /admin/posts to answer 200 within the config's 120s budget. Refuses to run if port 4173 already has a
  *  listener, since capturing against a server this tool did not start is a silent-wrong-build
  *  hazard. */
 async function startServer() {
@@ -305,16 +307,20 @@ async function startServer() {
   }
   const child = spawn(
     'sh',
-    ['-c', `VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port ${PORT}`],
+    [
+      '-c',
+      // The flag rides the serve command as a `--var`: an OS environment variable reaches
+      // wrangler's Node process but never the worker.
+      `VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port ${PORT} --var CAIRN_DEV_BACKEND:1`,
+    ],
     {
       cwd: SHOWCASE_DIR,
-      env: { ...process.env, CAIRN_DEV_BACKEND: '1' },
       detached: true,
       stdio: 'ignore',
     },
   );
   try {
-    await waitForServer(BASE, SERVER_TIMEOUT_MS);
+    await waitForServer(`${BASE}/admin/posts`, SERVER_TIMEOUT_MS);
   } catch (error) {
     stopServer(child);
     throw error;

@@ -5,6 +5,7 @@ import { signingSelfTest } from '../github/signing.js';
 import { isGithubApp } from '../github/backend.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { CairnEvent } from './types.js';
+import { env } from './workers-env.js';
 
 /** The `/admin/healthz` payload. */
 export interface HealthData {
@@ -17,16 +18,11 @@ export interface HealthData {
  * is GitHub-specific, so it narrows the provider on `kind === 'github-app'` for the App id; a
  * non-GitHub backend skips the signing check.
  *
- * Takes {@link CairnEvent}, deliberately defaulted to `CairnEnv` rather than generic over a site's
- * own `Env`: a compile-only fixture proving this call
- * against a site's own generated route event, under a realistic compliant `App.Platform['env']`
- * (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the pattern
- * `platform-bindings.ts` documents), assigns clean with zero casts. `CairnPlatformBindings` shares
- * the `GITHUB_APP_PRIVATE_KEY_B64` property name with `CairnEnv`, which is exactly what keeps
- * TypeScript's weak-type detection (TS2559) from rejecting the assignment.
+ * Takes the {@link CairnEvent} the health route serves; the key itself is read from the Worker env,
+ * so the event carries nothing this check reads today.
  */
 export async function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<HealthData> {
-  const key = event.platform?.env?.GITHUB_APP_PRIVATE_KEY_B64;
+  const key = env.GITHUB_APP_PRIVATE_KEY_B64;
   const provider = runtime.backend;
   const githubAppSigning =
     isGithubApp(provider) && key

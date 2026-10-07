@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 
 // The media Pass B bulk-rewrite round-trips, end to end against the running showcase behind the fake
-// backend (the fake R2 double on platform.env and the fake-github recorder, the same harness the other
+// backend (the fake R2 double in the Worker env and the fake-github recorder, the same harness the other
 // media specs use). It proves the two cross-corpus operations the Library's Replace and Push-alt
 // dialogs (Tasks 7/8) drive, each as a real browser round-trip that commits to main and is read back
 // from the committed markdown:

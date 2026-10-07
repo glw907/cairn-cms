@@ -44,7 +44,7 @@ func doctorCleanWranglerJSONC(origin string) string {
 func doctorCleanSiteFiles(origin string) map[string]string {
 	return map[string]string{
 		"wrangler.jsonc":                              doctorCleanWranglerJSONC(origin),
-		"svelte.config.js":                            "export default { kit: { csrf: { checkOrigin: false } } };\n",
+		"vite.config.ts":                              "import { sveltekit } from '@sveltejs/kit/vite';\nexport default { plugins: [sveltekit({})] };\n",
 		"src/hooks.server.ts":                         "import { createAuthGuard } from '@glw907/cairn-cms';\nexport const handle = createAuthGuard();\n",
 		"src/theme/site.config.yaml":                  "siteName: Test Site\n",
 		"src/routes/admin/+layout.svelte":             "<!-- CairnAdminShell --><script>runtime.shellLoad()</script>",

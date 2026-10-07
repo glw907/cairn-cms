@@ -16,6 +16,7 @@ import { createAuthChannel } from '../../lib/auth-channel/index.js';
 import type { AuthChannel, CairnEvent, DeliverContext } from '../../lib/auth-channel/index.js';
 import type { D1Database } from '@cloudflare/workers-types';
 import type { RequestEvent } from '@sveltejs/kit';
+import { env } from 'cloudflare:workers';
 
 // The one runtime assertion, since vitest fails a `.test.ts` that declares no suite. The
 // assignability claims are the compile-only declarations below it.
@@ -26,14 +27,18 @@ describe('the auth-channel consumer fixture', () => {
   });
 });
 
-/** The consumer's own platform env: its member database plus its challenge secret. */
+/** The consumer's own Worker env: its member database plus its challenge secret. */
 interface SiteEnv {
   PLATFORM_DB?: D1Database;
   TURNSTILE_SECRET?: string;
 }
 
-/** The consumer's generated route event once its `app.d.ts` declares `Platform['env']: SiteEnv`. */
-type SiteRequestEvent = Omit<RequestEvent, 'platform'> & { platform: Readonly<{ env: SiteEnv }> | undefined };
+/**
+ * The Worker env as the consumer reads it from `cloudflare:workers`. Its own `wrangler types` output
+ * types that module's `env` as its `Env`; this package's tests declare a different one, so the
+ * fixture stands its `SiteEnv` in with one cast.
+ */
+const workerEnv = env as unknown as SiteEnv;
 
 const NINETY_DAYS = 90 * 24 * 60 * 60 * 1000;
 
@@ -69,8 +74,8 @@ const memberChannel: AuthChannel<SiteEnv> = createAuthChannel<SiteEnv>({
     return personIdForContact(db, contact);
   },
   normalize: normalizeContact,
-  challenge: async (event, form) =>
-    verifyTurnstile(String(form.get('cf-turnstile-response') ?? ''), event.platform?.env?.TURNSTILE_SECRET ?? ''),
+  challenge: async (_event, form) =>
+    verifyTurnstile(String(form.get('cf-turnstile-response') ?? ''), workerEnv.TURNSTILE_SECRET ?? ''),
   verify: async (subject, ctx) => {
     const db = ctx.env?.PLATFORM_DB;
     if (!db) throw new Error('membership check ran with no binding');
@@ -87,7 +92,7 @@ const memberChannel: AuthChannel<SiteEnv> = createAuthChannel<SiteEnv>({
  * shape that made the `AuthChannelEvent` retirement a breaking change: the name is imported, and
  * structural compatibility does not save a named import.
  */
-export async function sessionPerson(event: CairnEvent<SiteEnv>): Promise<string | null> {
+export async function sessionPerson(event: CairnEvent): Promise<string | null> {
   return memberChannel.resolveSubject(event);
 }
 
@@ -102,7 +107,7 @@ export async function revokeMemberSessions(db: D1Database, personId: string): Pr
 
 /** The consumer's login route actions, passing its real kit event straight through, uncast. */
 export const loginActions = {
-  request: (event: SiteRequestEvent) => memberChannel.actions.request(event),
-  confirm: (event: SiteRequestEvent) => memberChannel.actions.confirm(event),
-  logout: (event: SiteRequestEvent) => memberChannel.actions.logout(event),
+  request: (event: RequestEvent) => memberChannel.actions.request(event),
+  confirm: (event: RequestEvent) => memberChannel.actions.confirm(event),
+  logout: (event: RequestEvent) => memberChannel.actions.logout(event),
 };

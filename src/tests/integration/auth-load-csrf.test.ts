@@ -5,11 +5,12 @@ import { makeRecordingCookies } from './_auth-harness.js';
 import { csrfCookieName } from '../../lib/auth/crypto.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
 import { testEvent } from '../helpers/test-event.js';
+import { withTestEnv } from '../helpers/with-test-env.js';
 
 const routes = createAuthRoutes({ branding: { siteName: 'Test', from: 'a@b.c' } });
 
-function loadEvent(url: string, cookies: CookieJar, env: Record<string, string> = {}) {
-  return testEvent({ url, cookies, env });
+function loadEvent(url: string, cookies: CookieJar) {
+  return testEvent({ url, cookies });
 }
 
 describe('auth loads issue a CSRF token', () => {
@@ -29,16 +30,16 @@ describe('auth loads issue a CSRF token', () => {
     expect(data.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
   });
 
-  it('with no PUBLIC_ORIGIN configured (platform: { env: {} }), falls back to the request protocol', () => {
+  it('with no PUBLIC_ORIGIN configured, falls back to the request protocol', () => {
     const cookies = makeRecordingCookies();
-    routes.loginLoad(loadEvent('https://test.dev/admin/login', cookies, {}));
+    withTestEnv({ PUBLIC_ORIGIN: undefined }, () => routes.loginLoad(loadEvent('https://test.dev/admin/login', cookies)));
     expect(cookies.sets.find((s) => s.name === csrfCookieName(true))).toBeDefined();
   });
 
   it('a configured PUBLIC_ORIGIN wins over the request protocol on a non-local host', () => {
     const cookies = makeRecordingCookies();
-    routes.loginLoad(
-      loadEvent('http://test.dev/admin/login', cookies, { PUBLIC_ORIGIN: 'https://test.dev' }),
+    withTestEnv({ PUBLIC_ORIGIN: 'https://test.dev' }, () =>
+      routes.loginLoad(loadEvent('http://test.dev/admin/login', cookies)),
     );
     expect(cookies.sets.find((s) => s.name === csrfCookieName(true))).toBeDefined();
   });

@@ -1,7 +1,9 @@
 # The `cairn doctor` command
 
-This page describes `cairn doctor` as it ships in `cairn` 1.1.0, the current release and the one
-that introduces it.
+This page describes `cairn doctor` as it ships in `cairn` 2.0.0, the release that accompanies the
+engine's move to SvelteKit 3. `cairn` 1.1.0, the current release, introduced the command. The
+2.0.0 doctor replaces the `config.csrf-disable` check with `config.csrf-trusted-origins`, since
+SvelteKit's origin check now covers every route.
 
 `cairn doctor` checks a directory against the checked-in configuration a cairn-cms site depends
 on, running eleven checks over the wrangler config, CSRF wiring, the site config, the `/admin`
@@ -31,7 +33,7 @@ and refused where they would resolve outside it:
 
 - the wrangler config (`wrangler.jsonc` or `wrangler.toml`)
 - `package.json` and whichever lockfile exists
-- the Svelte and Vite configs (`svelte.config.js`, `vite.config.ts`)
+- the Vite config (`vite.config.js`, `vite.config.ts`, or `vite.config.mts`), and `svelte.config.js` only to see whether it remains
 - `src/hooks.server.ts`
 - `static/_headers`
 - the site config YAML (`site.config.yaml`), tried at four candidate paths: the canonical path,
@@ -79,10 +81,10 @@ error.
 | `config.bindings` | `config.bindings-missing` | blocker | The wrangler config declares both the `EMAIL` and `AUTH_DB` bindings. | No wrangler config is found | A read error only |
 | `config.media-bucket` | `config.media-bucket-missing` | warning | The adapter's declared media bucket binding has a matching `r2_buckets` entry in the wrangler config. | The adapter declares no media assets, or no wrangler config is found | `src/content/.cairn/site-facts.json` is absent |
 | `config.observability` | `config.observability-off` | warning | `observability.enabled` is `true` in the wrangler config. | No wrangler config is found | A read error only |
-| `config.csrf-disable` | `config.csrf-disable-missing` | warning | A `checkOrigin: false` CSRF disable is paired with `createAuthGuard` wired into `src/hooks.server.ts`, so an admin form POST stays protected once the framework's own check steps aside. | Never | Neither `svelte.config.js` nor `vite.config.ts` is found |
+| `config.csrf-trusted-origins` | `config.csrf-trusted-origins-wildcard` | warning | The Vite config's `csrf.trustedOrigins` has no `'*'` or `'null'` entry. A `'*'` entry turns off SvelteKit's origin check on every route, and a `'null'` entry admits every POST from an opaque origin. Any other entry passes with a note that it widens the check on `/admin` too, and an `http://` entry for a non-local host adds that it also admits a network attacker on that origin. A `csrf` key without `trustedOrigins` passes. | Never | None of `vite.config.js`, `vite.config.ts`, and `vite.config.mts` is found; a `trustedOrigins` value is not a literal array of strings; or a `svelte.config.js` remains, since the SvelteKit config now lives in the `sveltekit()` call in the Vite config |
 | `config.site-config` | `config.site-config-invalid` | blocker | The site config YAML parses: valid YAML, a mapping root, and a non-empty `siteName`. This checks presence and parsing only; the per-concept URL policy lives on the adapter concepts and is not checkable from a directory alone. | Never | No file is found at any of the four candidate paths |
 | `config.public-origin` | `config.public-origin-invalid` | blocker | `PUBLIC_ORIGIN` resolves to a valid value, from the wrangler config's vars or from the environment. | No wrangler config is found and `PUBLIC_ORIGIN` is not in the environment; a wrangler config that exists but declares no origin fails instead | A read error only |
-| `config.no-referrer-blanket` | `config.no-referrer-blanket` | warning | Neither `src/hooks.server.ts` nor `static/_headers` sets a site-wide `Referrer-Policy: no-referrer`, which strips the `Origin` header from a same-origin form POST and trips cairn's own origin guard. | Neither `src/hooks.server.ts` nor `static/_headers` is found | A read error only |
+| `config.no-referrer-blanket` | `config.no-referrer-blanket` | warning | Neither `src/hooks.server.ts` nor `static/_headers` sets a site-wide `Referrer-Policy: no-referrer`, which strips the `Origin` header from a same-origin form POST, so SvelteKit's origin check refuses the site's own forms. | Neither `src/hooks.server.ts` nor `static/_headers` is found | A read error only |
 | `admin.mount-shape` | `admin.mount-incomplete` | None; never fails | The `/admin` mount calls `createCairnAdmin(...).shellLoad` and renders `CairnAdminShell`. An unreadable or partial mount reports `INFO`, because the read is a heuristic text match rather than proof of a working mount. | Never | A read error only |
 | `config.dependency-floors` | `config.dependency-floors-unmet` | blocker | The resolved `svelte` and `@sveltejs/kit` versions in the lockfile meet the installed engine's own declared peer ranges. | The engine's own declared peer range is not a simple caret range, the lockfile carries no entry for a peer, or a resolved version does not parse as a plain `x.y.z` | No lockfile is found, or the installed engine's `package.json` cannot be read |
 | `auth.role-wiring` | `auth.role-wiring-missing` | warning | A site that declares custom roles passes the same role vocabulary to `createAuthGuard`. | The site declares no custom roles | `src/content/.cairn/site-facts.json` is absent |

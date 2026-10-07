@@ -32,6 +32,10 @@ const RETIRED_CORE_ARMS = ['SaveFailure', 'DeleteFailure', 'RenameFailure', 'Cre
 // these: it is the flattened carrier that survives, not a retire.
 const RETIRED_TIER1 = ['MediaDeleteFailure', 'MediaUpdateFailure', 'MediaReplaceFailure', 'MediaAltPropagateFailure', 'MediaBulkFailure', 'UploadResult'];
 
+// Retired when the engine moved every binding read to `cloudflare:workers`: no event carries a
+// platform wrapper for this type to describe.
+const RETIRED_PLATFORM = ['PlatformContext'];
+
 // The keep list for the /sveltekit subpath, from the audit verdicts doc's `## ./sveltekit`
 // section (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`), minus the
 // four demotions above and the six retired leaks above.
@@ -64,7 +68,6 @@ const KEPT = [
   'CairnEvent',
   'CookieJar',
   'HandleInput',
-  'PlatformContext',
   'CairnEnv',
   'EmailSender',
 ];
@@ -99,6 +102,12 @@ describe('sveltekit barrel prune', () => {
   it('no longer resolves the Tier 1 conformance-pass retired names from the /sveltekit subpath', () => {
     const names = new Set(enumerateExports(DTS));
     const stillPresent = RETIRED_TIER1.filter((name) => names.has(name));
+    expect(stillPresent).toEqual([]);
+  });
+
+  it('no longer resolves the retired platform wrapper from the /sveltekit subpath', () => {
+    const names = new Set(enumerateExports(DTS));
+    const stillPresent = RETIRED_PLATFORM.filter((name) => names.has(name));
     expect(stillPresent).toEqual([]);
   });
 

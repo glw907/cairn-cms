@@ -11,10 +11,10 @@
      mechanism and why. -->
 <script lang="ts">
   import { page } from '$app/state';
-  import themeCss from '$theme/theme.css?url';
-  import siteCss from '$theme/site.css?url';
-  import SiteHeader from '$theme/components/SiteHeader.svelte';
-  import SiteFooter from '$theme/components/SiteFooter.svelte';
+  import themeCss from '#theme/theme.css?url';
+  import siteCss from '#theme/site.css?url';
+  import SiteHeader from '#theme/components/SiteHeader.svelte';
+  import SiteFooter from '#theme/components/SiteFooter.svelte';
 </script>
 
 <svelte:head>

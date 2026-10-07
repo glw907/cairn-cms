@@ -2,8 +2,41 @@
 
 ## Unreleased
 
+This is a major release: it removes three ids that `docs/reference/cli-cairn-json-output.md`
+published, and it ships at `v2.0.0` with the engine cut that moves SvelteKit's origin check onto
+every route. No `tool/v2.0.0` tag exists yet.
+
+### Added
+
+- **The `config.csrf-trusted-origins` check** reads the `csrf` key in `vite.config.js`,
+  `vite.config.ts`, or `vite.config.mts` and fails, under the new condition
+  `config.csrf-trusted-origins-wildcard` (a warning), on a `trustedOrigins` entry of `'*'` or
+  `'null'`. Any other entry passes with a detail that it widens `/admin` too, and an `http://`
+  entry for a non-local host adds that it admits a network attacker on that origin. A
+  `trustedOrigins` value the check cannot read as a literal array of strings, no Vite config, and
+  a remaining `svelte.config.js` each report `UNCHECKED` with a detail. Its docs anchor,
+  `is-it-working.md#keep-sveltekits-origin-check-on`, joins the shipped-anchor list.
+
+### Removed
+
+- **The `config.csrf-disable` check id, and the `config.csrf-disable-missing` and
+  `auth.csrf-origin-mismatch` condition ids.** SvelteKit's own origin check now covers every route,
+  admin included, so cairn no longer asks a site to turn it off and its guard no longer repeats it.
+  The anchors `non-admin-origin-rejected` and `wire-cairns-csrf-guard` stay on the shipped list,
+  since released binaries print them. A `checkOrigin` line left in a config is ignored.
+
+  `Consumers must:` upgrade to `v2` before running `cairn doctor` against a site that dropped
+  `csrf: { checkOrigin: false }`, because `v1.1.0`'s doctor reports that site as failing and
+  recommends the line back. A reader that matches on the three removed ids needs changing.
+
 ### Changed
 
+- **`config.no-referrer-blanket`'s text names SvelteKit's origin check** as what a site-wide
+  `Referrer-Policy: no-referrer` trips, and drops the advice that `no-referrer` is safe on a
+  route guarded by a token. `edge.https-not-forced`'s text no longer says the framework's CSRF
+  guard rejects the post.
+- **The doctor's floor expectations show the SvelteKit 3 peer shape** in its fixtures and goldens;
+  the check still reads the peer ranges from the installed engine at run time.
 - **`cairn doctor --help`'s first sentence is split in two.** The text still names every clause
   the original did (the checked-in configuration, that it is read straight off the directory,
   and what it covers), reworded so the sentence carries at most one comma.

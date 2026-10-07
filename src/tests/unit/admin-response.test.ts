@@ -38,7 +38,7 @@ describe('admin-response helpers', () => {
     applySecurityHeaders(headers, { omitHsts: true });
     expect(headers.get('Strict-Transport-Security')).toBeNull();
     expect(headers.get('X-Frame-Options')).toBe('DENY');
-    expect(headers.get('Referrer-Policy')).toBe('no-referrer');
+    expect(headers.get('Referrer-Policy')).toBe('strict-origin');
   });
 
   it('builds a branded html response, private/no-store and hardened', () => {

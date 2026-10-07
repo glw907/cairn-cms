@@ -33,7 +33,7 @@ and its references cite live in the cairn-cms source repository
 | A second audience's own login channel | `createAuthChannel` (the exemplar's own `memberChannel`) | `/auth-channel`'s factory, on its own D1 binding, never `AUTH_DB` | `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md` |
 
 **A custom admin screen over your own data.** `createSectionAction<Env, Db>({ resolveDb })`
-builds a reusable per-section action wrapper that resolves the site's own `App.Platform['env']`
+builds a reusable per-section action wrapper that resolves a binding from the site's own `Env`
 binding; it and `requireAccess` in the route's `load` share one fail-closed predicate, so a
 session the access map does not admit is refused on both the read and the write. A matched
 SvelteKit form action dispatches directly and never re-runs an ancestor `load`, so a page that

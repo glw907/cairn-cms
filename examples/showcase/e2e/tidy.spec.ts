@@ -20,8 +20,9 @@ const CORRECTED = 'Please receive this draft. It has the same idea.';
 test('tidy returns the stubbed correction, the review opens, and accepting applies it to the buffer', async ({
   page,
 }) => {
-  await page.goto('/admin');
-  await page.locator(`a[href="/admin/posts/${SEED}"]`).click();
+  // Open the seed by URL: the list is newest-first at ten per page, so a link to this June-dated
+  // entry can sit on page 2 once ten newer posts exist.
+  await page.goto(`/admin/posts/${SEED}`);
   await expect(page).toHaveURL(new RegExp(`/admin/posts/${SEED}$`));
 
   // The editor is on the Write surface by default; the Tidy control sits in the toolbar.

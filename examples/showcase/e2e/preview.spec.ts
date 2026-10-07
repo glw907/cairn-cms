@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { resolve, relative, join } from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
+import { fillTitleWhenHydrated } from './editor-helpers.js';
 
 // The preview pass's e2e proof (spec part 3, "Public preview for a non-editor"): the whole chain,
 // end to end, against the real mintPreview/revokePreview admin actions and the real loadPreview
@@ -124,17 +125,23 @@ async function revokeAll(page: Page): Promise<void> {
 }
 
 /**
- * Delete a post from the list by its exact title, tolerating the row already being gone (a
- * never-published entry's own discard already removes it). Every disposable post this file creates
- * is deleted at the end of its test: the showcase's admin list is a single shared, unbounded corpus
- * across the whole e2e run (`reuseExistingServer`, one in-memory backend for the process lifetime),
- * and a spec that runs alphabetically after this one (spellcheck.spec.ts, tidy.spec.ts) assumes its
- * own seeded entry stays within the list's first page.
+ * Delete a post from the list by its exact title and assert the row went. A missing row fails by
+ * default, so a mis-titled post cannot slip through uncleaned; pass `allowGone` only for a call
+ * site whose entry may already have been removed (a never-published entry's own discard removes it).
+ * Every disposable post this file creates is deleted at the end of its test: the showcase's admin
+ * list is a single shared, unbounded corpus across the whole e2e run (`reuseExistingServer`, one
+ * in-memory backend for the process lifetime), and a leaked post can push a seeded entry off the
+ * list's first page.
  */
-async function deleteFromList(page: Page, title: string): Promise<void> {
+async function deleteFromList(
+  page: Page,
+  title: string,
+  opts: { allowGone?: boolean } = {},
+): Promise<void> {
   await page.goto('/admin/posts');
   const button = page.getByRole('button', { name: `Delete ${title}`, exact: true });
-  if ((await button.count()) === 0) return;
+  if (opts.allowGone && (await button.count()) === 0) return;
+  await expect(button).toHaveCount(1);
   await button.click();
   await expect(page.getByRole('link', { name: title, exact: true })).toHaveCount(0);
 }
@@ -156,7 +163,7 @@ async function createDraftPost(
   await createDialog.getByRole('button', { name: 'Create' }).click();
   await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
   const id = new URL(page.url()).pathname.split('/').pop() ?? '';
-  await page.locator('input[name="title"]').fill(opts.title);
+  await fillTitleWhenHydrated(page, opts.title);
   await setBody(page, opts.body);
   await save(page);
   return id;

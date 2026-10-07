@@ -11,6 +11,63 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Upgrade to SvelteKit 3, `@sveltejs/adapter-cloudflare` 8, Svelte 5.57.1, and Wrangler 4.118.**
+  The engine's peer ranges become `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and a SvelteKit 2 site
+  can't run it. The site also needs Vite `^8.0.12`, `@sveltejs/vite-plugin-svelte` `^7`, and Node
+  `>=22.17`, which the scaffold already pins. See [Upgrade cairn](./upgrade-cairn.md#when-your-range-crosses-sveltekit-3)
+  for the steps in order.
+- **Move `svelte.config.js` into `sveltekit({ ... })` in `vite.config`, and delete the file.**
+  SvelteKit 3 no longer supports `svelte.config.js`. Pass the adapter, `prerender`, and every other
+  kit option as sibling keys of the plugin call.
+- **Delete the `csrf` block, and don't replace it with `trustedOrigins: ['*']`.** SvelteKit 3 removed
+  `csrf.checkOrigin`, so a config that sets it fails the build, and its removal message suggests
+  `'*'`. That value turns off SvelteKit's Origin check on every route, `/admin` included, and `cairn
+  doctor` fails it. The check now covers every route on its own, so cairn's guard no longer repeats
+  it outside `/admin`.
+- **Delete `App.Platform` from `app.d.ts`, run `wrangler types`, and type bindings from its `Env`.**
+  Adapter 8 passes no `platform`, so the type has nothing to describe.
+  [`CairnPlatformBindings`](../reference/sveltekit.md#cairnplatformbindings) states what the
+  generated `Env` must carry, and `({}) as Env satisfies CairnPlatformBindings` checks it at
+  compile time.
+- **Read `event.platform` from `cloudflare:workers` instead.** Import `env` and `waitUntil` from the
+  module. A handle that wrote `event.platform`, as a dev-double handle does, wraps `resolve` in
+  `withEnv({ ...env, ...doubles }, () => resolve(event))` instead. Pass `createD1AuditSink` the
+  module's `waitUntil`.
+- **Write `CairnEvent` without a type argument, and drop `PlatformContext`.** The `platform` member
+  and the `Env` parameter retired together, since `Env` reached the event only through `platform`.
+- **Import `Handle` from `@sveltejs/kit/hooks`, and move `$lib` to `#lib`.** Add `"imports": { "#lib":
+  "./src/lib", "#lib/*": "./src/lib/*" }` to `package.json`. Move any custom `kit.alias` to a
+  subpath import the same way.
+- **Mock `$app/env`, not `$app/environment`, in a test that puts `loadPreview` in a build.**
+  `loadPreview` reads `building` from `$app/env`. A mock of the old module no longer reaches it, and
+  its `try`/`catch` falls back to `false`, so the build refusal goes untested without an error.
+- **Serve a built site with `wrangler dev`, not `vite preview`.** `vite preview` fails on adapter 8
+  output with `ERR_UNSUPPORTED_ESM_URL_SCHEME` (sveltejs/kit#17271). Run
+  `wrangler dev .svelte-kit/cloudflare/_worker.js`.
+- **Add your own caching if you relied on adapter 7's.** Adapter 7's worker put every response that
+  carried a public `Cache-Control` into `caches.default`, `/media` and public SSR pages included.
+  Adapter 8's worker does not, and the engine adds no replacement. `/media` answers `max-age=31536000,
+  immutable`, so browsers still hold the bytes. A site that needs edge caching adds it, for example
+  as a zone Cache Rule.
+- **Inline the engine in your vitest config if a test covers its server modules.** Add
+  `test: { server: { deps: { inline: ['@glw907/cairn-cms'] } } }`. The engine imports
+  `cloudflare:workers`, which Node's loader rejects when vitest leaves the installed engine
+  external.
+- **Serve `strict-origin-when-cross-origin` or `strict-origin` if your site sets `no-referrer`
+  site-wide.** Under `no-referrer` a browser sends `Origin: null` on a form POST, and SvelteKit's
+  check refuses your own forms and `createAuthChannel` forms. cairn's admin documents pin
+  `strict-origin` with a header and a meta tag, so the admin keeps working unless a meta placed
+  after `%sveltekit.head%` in `app.html` overrides it.
+- **Have a server-to-server POST carry a `Content-Type`.** SvelteKit 3 refuses a POST with no
+  `Content-Type` and a missing or foreign `Origin`, where SvelteKit 2 let it through. Have the
+  sender set a content type such as JSON.
+- **Upgrade the `cairn` tool to `v2`.** `v1`'s doctor recommends `csrf: { checkOrigin: false }`,
+  which is now a build error. `v2` replaces the `config.csrf-disable` check with
+  `config.csrf-trusted-origins` and retires three ids, so a script that matches on them needs changing:
+  `config.csrf-disable`, `config.csrf-disable-missing`, and `auth.csrf-origin-mismatch`.
+- **Stop matching on `auth.channel.delivery_inline`.** The event retired, since the module's
+  `waitUntil` is always defined. `guard.refused` also carries no `origin` reason, because
+  SvelteKit's check refuses a cross-origin form POST before the guard runs.
 - **Re-run `npx cairn-guidance install` if your site uses the `cairn-extend` skill.** This release
   drops cairn's narrative guides and its two front-door pages until each set is rebuilt, so the
   shipped skill now points its recipe table at the [reference pages](../reference/README.md)

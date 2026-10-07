@@ -3,11 +3,11 @@
 // put/head (through the narrow MediaStore seam) and the delivery route's conditional, optionally
 // ranged get (through the DeliveryBucket seam). Bytes live in an in-memory Map keyed by the object
 // key, one instance per server lifetime, so an asset uploaded through /admin streams back from
-// /media in the same dev session. Installed from hooks.server.ts as platform.env.MEDIA_BUCKET;
+// /media in the same dev session. Installed by handle.ts as the Worker env's MEDIA_BUCKET;
 // never part of the published engine.
 //
 // The shapes here are a structural subset of the real R2 surface, the same way the engine's
-// DeliveryBucket and MediaStore seams are. The engine reads platform.env structurally, so this
+// DeliveryBucket and MediaStore seams are. The engine reads the Worker env structurally, so this
 // double needs no @cloudflare/workers-types name.
 
 /** One stored object: the bytes plus the HTTP metadata a put recorded. */

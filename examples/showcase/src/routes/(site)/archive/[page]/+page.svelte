@@ -2,12 +2,12 @@
      the first ARCHIVE_PAGE_SIZE entries. No lead treatment and no tag filter here; both are page-one
      compositions (the newest-entry spotlight, and a narrowing control scoped to the entries visible
      on the page you are viewing), not a shape a deeper page repeats. Shares its markup and token
-     vocabulary with the home page's index; see $chassis/archive for the pagination shape both build
+     vocabulary with the home page's index; see #chassis/archive for the pagination shape both build
      from. -->
 <script lang="ts">
   import { page } from '$app/state';
   import type { PageData } from './$types';
-  import EntryRow from '$theme/components/EntryRow.svelte';
+  import EntryRow from '#theme/components/EntryRow.svelte';
 
   let { data }: { data: PageData } = $props();
 

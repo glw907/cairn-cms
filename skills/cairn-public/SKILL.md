@@ -124,7 +124,7 @@ applies, and the page falls back to the system scheme.
 ### What a theme directory holds
 
 On the chassis, `src/theme/` is the theme and `src/chassis/` is the plumbing under it. The routes and
-the chassis import these files by the `$theme` alias, so a theme built from scratch supplies each of
+the chassis import these files by the `#theme` subpath import, so a theme built from scratch supplies each of
 them: `theme.css`, `site.css`, `cairn.config.ts`, `site-config.ts`, `islands/registry.ts`, and the four
 components `SiteHeader.svelte`, `SiteFooter.svelte`, `ArticleView.svelte`, and `EntryRow.svelte`.
 `vite.config.ts` also reads `src/theme/cairn.config.ts` by path. `references/theme-directory.md` lists

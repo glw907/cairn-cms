@@ -68,7 +68,6 @@ interface UploadOpts {
   csrf?: string | undefined;
   cookieCsrf?: string | undefined;
   hasEditor?: boolean;
-  platformEnv?: Record<string, unknown>;
 }
 
 /** Build the CairnEvent for an upload POST. The raw body is the bytes; the filename travels in a
@@ -87,7 +86,6 @@ function uploadEvent(opts: UploadOpts & { backend?: Backend }): CairnEvent {
     route: { id: '/admin/media' },
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
     locals: { cairnEditor: opts.hasEditor === false ? null : editor, cairnBackend: opts.backend ?? backend },
-    platform: { env: opts.platformEnv ?? { MEDIA_BUCKET: bucket } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
     setHeaders: () => {},
   };

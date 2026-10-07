@@ -14,7 +14,6 @@ import { condition, type CairnCondition } from '../diagnostics/index.js';
 export const REASON_CONDITION = {
   https: 'edge.https-not-forced',
   csrf: 'auth.csrf-token-invalid',
-  origin: 'auth.csrf-origin-mismatch',
   bindings: 'config.bindings-missing',
   identity: 'auth.identity-unresolved',
 } as const;
@@ -62,11 +61,6 @@ export function renderConditionResponse(
     }
     case REASON_CONDITION.csrf:
       return brandedAdminPage(403, csrfRequiredPage());
-    case REASON_CONDITION.origin:
-      return new Response('Cross-site POST form submissions are forbidden', {
-        status: 403,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
     case REASON_CONDITION.bindings:
       // An operator fault, not a request fault: the Worker deployed without its bindings.
       return brandedAdminPage(500, conditionFaultPage(condition(id)));

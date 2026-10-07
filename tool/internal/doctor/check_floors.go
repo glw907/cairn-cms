@@ -65,7 +65,7 @@ func parseVersion(text string) (semver, bool) {
 var caretRangePattern = regexp.MustCompile(`^\^(\d+)(?:\.(\d+))?(?:\.(\d+))?$`)
 
 // caretFloor ports check-floors.ts's caretFloor (:31-35): the caret forms only. A missing minor
-// or patch segment reads as 0, the same short-form the kit peer (^2.70) relies on.
+// or patch segment reads as 0, the same short form the kit peer (^3) relies on.
 func caretFloor(rng string) (semver, bool) {
 	m := caretRangePattern.FindStringSubmatch(rng)
 	if m == nil {

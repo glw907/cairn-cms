@@ -1,35 +1,32 @@
-// The Cloudflare binding shape a site's `app.d.ts` declares for `App.Platform.env`. `/ambient`
-// augments `App.Locals`, never `App.Platform`, since a second `interface Platform` declaration
-// would collide with a site's own through TypeScript's interface merging; a site instead
-// intersects this type into its own `env` block. Split in two so the required-members rule
-// still fires on a text-only site: `CairnPlatformBindings` names the bindings every site needs,
-// and `CairnMediaBindings` is a second intersection member a media-enabled site adds.
-import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
+// The Cloudflare binding shape cairn requires of a site's Worker. A site's `Env` comes from
+// `wrangler types`, generated from its own `wrangler.jsonc` and secrets file, and the engine reads
+// the same bindings from the Worker env at runtime; these interfaces state what that generated
+// `Env` must carry, so a site checks it at compile time. Split in two so the required-members rule
+// still fires on a text-only site: `CairnPlatformBindings` names the bindings every site needs, and
+// `CairnMediaBindings` adds the bucket a media-enabled site binds.
+import type { D1Database } from '@cloudflare/workers-types';
 import type { EmailSender } from '../email.js';
 
 /**
  * The Cloudflare bindings and vars every cairn site's Worker needs, required (not optional) so a
- *  binding a site forgets to wire fails `app.d.ts` at compile time rather than surfacing as a
- *  runtime `config.bindings-missing` error. Intersect it into `App.Platform.env`:
+ *  binding a site forgets to wire fails its type check rather than surfacing as a runtime
+ *  `config.bindings-missing` error. A site's `wrangler types` `Env` satisfies it:
  *
  * ```ts
- * // src/app.d.ts
- * import type { CairnPlatformBindings } from '@glw907/cairn-cms/sveltekit';
+ * import type { CairnPlatformBindings, CairnMediaBindings } from '@glw907/cairn-cms/sveltekit';
  *
- * interface Platform {
- *   env: CairnPlatformBindings & { APP_DB: D1Database };
- * }
+ * // A compile error here names the binding wrangler.jsonc or the secrets file is missing.
+ * ({}) as Env satisfies CairnPlatformBindings & CairnMediaBindings;
  * ```
  *
- * A recommended convenience preset, not a requirement: every route factory's env parameter is
- *  structurally satisfied by a bare `wrangler types`-generated env too, so this type exists to
- *  catch a forgotten binding at compile time, not to unblock the factory assignments themselves.
+ * Generate `Env` with the secret names included (`wrangler types --env-file .dev.vars.example`),
+ *  since `GITHUB_APP_PRIVATE_KEY_B64` is a secret `wrangler.jsonc` never lists.
  *
- * A media-enabled site also intersects {@link CairnMediaBindings}, since `MEDIA_BUCKET` exists only
+ * A media-enabled site also checks {@link CairnMediaBindings}, since `MEDIA_BUCKET` exists only
  *  on a site that turns media on. The GitHub App's id and installation id are not runtime bindings:
  *  they name which App the commit signer authenticates as, so the adapter passes them as compile-time
- *  config to `createGithubApp({ appId, installationId })`, constructed at module scope before
- *  `platform.env` exists. Only the private key is a Worker secret the engine reads at runtime.
+ *  config to `createGithubApp({ appId, installationId })`, constructed at module scope before any
+ *  request runs. Only the private key is a Worker secret the engine reads at runtime.
  */
 export interface CairnPlatformBindings {
   /** The self-owned magic-link auth store: the allowlist, sessions, and single-use tokens. */
@@ -48,10 +45,21 @@ export interface CairnPlatformBindings {
 }
 
 /**
- * The R2 binding a media-enabled site adds, intersected alongside {@link CairnPlatformBindings}. A
+ * The R2 binding a media-enabled site adds, checked alongside {@link CairnPlatformBindings}. A
  *  text-only site (no `assets` block on its adapter) omits it.
  */
 export interface CairnMediaBindings {
-  /** The bucket the `/media` route and the upload action read and write; the adapter names the binding. */
-  MEDIA_BUCKET: R2Bucket;
+  /**
+   * The bucket the `/media` route and the upload action read and write; the adapter names the
+   *  binding. Typed by the methods the engine calls on it rather than as workers-types' `R2Bucket`:
+   *  a generated `Env` names the runtime's global `R2Bucket`, whose `Headers`-typed members differ
+   *  from the package's own declaration of them under a DOM lib, so the two declarations of one
+   *  binding are not assignable to each other.
+   */
+  MEDIA_BUCKET: {
+    get(key: string): Promise<unknown>;
+    head(key: string): Promise<unknown>;
+    put(key: string, value: ArrayBuffer): Promise<unknown>;
+    delete(keys: string | string[]): Promise<void>;
+  };
 }

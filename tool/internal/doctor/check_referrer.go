@@ -31,7 +31,7 @@ var (
 
 const (
 	// noReferrerRemedy is the fix text both the fail and the skip detail carry.
-	noReferrerRemedy = "serve strict-origin-when-cross-origin (or same-origin) as the site default; no-referrer is safe only on a route protected by a double-submit CSRF token (the way /admin is), and a route guarded instead by the origin compare needs same-origin in its place"
+	noReferrerRemedy = "serve strict-origin-when-cross-origin (or same-origin) as the site default"
 	// noReferrerDocsAnchor is the skip detail's pointer to the operator runbook.
 	noReferrerDocsAnchor = "docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy"
 	// tmplNoReferrerSkip is config.no-referrer-blanket's skip detail template, filled with the
@@ -39,7 +39,7 @@ const (
 	tmplNoReferrerSkip = "neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked automatically; verify by hand that no site-wide Referrer-Policy: no-referrer is served (%s); see %s"
 	// tmplNoReferrerFail is config.no-referrer-blanket's fail detail template, filled with the
 	// source file that set the policy and the remedy.
-	tmplNoReferrerFail = "%s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; %s (heuristic text read)"
+	tmplNoReferrerFail = "%s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null), so SvelteKit's origin check refuses the site's own forms and every createAuthChannel action; %s (heuristic text read)"
 	// tmplNoReferrerPass is config.no-referrer-blanket's pass detail template, filled with the
 	// sources describeNoReferrerSources names.
 	tmplNoReferrerPass = "no site-wide Referrer-Policy: no-referrer found (%s, heuristic text read)"
@@ -117,50 +117,15 @@ func headersFileBlanketNoReferrer(text string) bool {
 	return false
 }
 
-// stripComments ports checks-local.ts's own helper (checks-local.ts:543-572): strips // line
-// comments and /* */ block comments (including ones spanning multiple lines) from a heuristic
-// text read, line count preserved, so a comment merely warning about the policy does not itself
-// trip the blanket-write match below.
-func stripComments(text string) string {
-	var stripped []string
-	inBlockComment := false
-	for raw := range strings.SplitSeq(text, "\n") {
-		line := raw
-		if inBlockComment {
-			end := strings.Index(line, "*/")
-			if end == -1 {
-				stripped = append(stripped, "")
-				continue
-			}
-			line = line[end+2:]
-			inBlockComment = false
-		}
-		blockStart := strings.Index(line, "/*")
-		for blockStart != -1 {
-			blockEnd := strings.Index(line[blockStart+2:], "*/")
-			if blockEnd == -1 {
-				line = line[:blockStart]
-				inBlockComment = true
-				break
-			}
-			blockEnd += blockStart + 2
-			line = line[:blockStart] + line[blockEnd+2:]
-			blockStart = strings.Index(line, "/*")
-		}
-		if idx := strings.Index(line, "//"); idx != -1 {
-			line = line[:idx]
-		}
-		stripped = append(stripped, line)
-	}
-	return strings.Join(stripped, "\n")
-}
-
 // hooksSetsBlanketNoReferrer ports checks-local.ts's own helper (checks-local.ts:574-579): the
 // heuristic text read for src/hooks.server.ts. A line setting Referrer-Policy to no-referrer
 // with no route-scoping reference (pathname, route.id, or url.href) in the six lines above it
-// reads as an unconditional, site-wide write.
+// reads as an unconditional, site-wide write. Comments are blanked by blankJSComments, which
+// knows about strings, so a quoted URL never cuts its line, and which keeps every newline, so the
+// six-line window holds.
 func hooksSetsBlanketNoReferrer(text string) bool {
-	lines := strings.Split(stripComments(text), "\n")
+	_, code := blankJSComments(text)
+	lines := strings.Split(code, "\n")
 	for i, line := range lines {
 		if !referrerPolicyMentionPattern.MatchString(line) || !noReferrerMentionPattern.MatchString(line) {
 			continue
@@ -209,9 +174,10 @@ func describeNoReferrerSources(hooksPath string, hooksFound, headersFileRead boo
 // ConfigNoReferrerBlanket ports checks-local.ts's configNoReferrerBlanket (checks-local.ts:
 // 638-660): the blanket no-referrer trap. Under a site-wide Referrer-Policy: no-referrer, the
 // Fetch spec strips the Origin header from a plain same-origin top-level POST, so it arrives as
-// Origin: null and cairn's strict origin guard rejects it, 403ing an otherwise legitimate
-// non-admin form. cairn's own /admin responses already scope no-referrer to the token-bearing
-// routes it protects; the trap is a site shipping the same policy as its own site-wide default.
+// Origin: null and SvelteKit's origin check refuses it, 403ing the site's own forms and every
+// createAuthChannel action. cairn's admin documents pin their own referrer policy with a header
+// and a meta tag, so the admin keeps working unless a site meta placed after %sveltekit.head%
+// overrides it; the trap is a site shipping the same policy as its own site-wide default.
 var ConfigNoReferrerBlanket = Check{
 	ID:        "config.no-referrer-blanket",
 	Condition: spine.ConditionConfigNoReferrerBlanket,

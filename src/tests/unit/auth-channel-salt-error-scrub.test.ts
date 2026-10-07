@@ -71,7 +71,6 @@ function logoutEvent() {
     cookies: { get: () => SESSION_TOKEN, set: () => {}, delete: () => {} },
     setHeaders: () => {},
     locals: {},
-    platform: { env: {} as TestEnv },
   };
 }
 

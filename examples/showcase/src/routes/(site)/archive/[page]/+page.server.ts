@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad, EntryGenerator } from './$types';
-import { posts } from '$chassis/content.js';
-import { paginateArchive } from '$chassis/archive.js';
+import { posts } from '#chassis/content.js';
+import { paginateArchive } from '#chassis/archive.js';
 
 export const prerender = true;
 

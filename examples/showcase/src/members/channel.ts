@@ -35,10 +35,7 @@ export const MEMBER_ROSTER: ReadonlyMap<string, string> = new Map([
  * this same `challenge` field instead (docs/reference/auth-channel.md); this function exists only
  * so the fixture satisfies the required `challenge` config field.
  */
-export async function insecureTestChallenge<Env>(
-  _event: CairnEvent<Env>,
-  form: FormData,
-): Promise<boolean> {
+export async function insecureTestChallenge(_event: CairnEvent, form: FormData): Promise<boolean> {
   return form.get(INSECURE_TEST_CHALLENGE_FIELD) === INSECURE_TEST_CHALLENGE_TOKEN;
 }
 
@@ -52,8 +49,12 @@ async function lookupContact(contact: string): Promise<string | null> {
   return MEMBER_ROSTER.get(contact) ?? null;
 }
 
-/** The showcase's second-audience login channel: the guide's worked exemplar, live. */
-export const memberChannel = createAuthChannel<App.Platform['env']>({
+/**
+ * The showcase's second-audience login channel: the guide's worked exemplar, live. Typed over
+ * `Cloudflare.Env`, the type `cloudflare:workers` gives the Worker env, which app.d.ts widens with
+ * the optional dev-backend flag `captureDeliver` reads.
+ */
+export const memberChannel = createAuthChannel<Cloudflare.Env>({
   resolveDb: (env) => env?.MEMBER_DB,
   deliver: captureDeliver,
   lookup: lookupContact,

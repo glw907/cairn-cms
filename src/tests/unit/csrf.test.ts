@@ -12,6 +12,7 @@ import {
 } from '../../lib/sveltekit/csrf.js';
 import { SESSION_TTL_MS } from '../../lib/auth/crypto.js';
 import { testEvent } from '../helpers/test-event.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 
 function jar(initial: Record<string, string> = {}) {
@@ -49,6 +50,22 @@ describe('isUnsafeFormRequest', () => {
     expect(isUnsafeFormRequest(multi)).toBe(true);
   });
 
+  it('flags an unsafe request with no content type, the shape an untyped Blob body sends', () => {
+    const untyped = req('https://x.dev/admin/hook', { method: 'POST', body: new Blob([new Uint8Array([1, 2])]) });
+    expect(untyped.headers.get('content-type')).toBeNull();
+    expect(isUnsafeFormRequest(untyped)).toBe(true);
+    expect(isUnsafeFormRequest(req('https://x.dev/admin/hook', { method: 'DELETE' }))).toBe(true);
+  });
+
+  it("flags SvelteKit's binary remote-form content type", () => {
+    const binary = req('https://x.dev/admin/hook', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-sveltekit-formdata' },
+      body: 'x',
+    });
+    expect(isUnsafeFormRequest(binary)).toBe(true);
+  });
+
   it('ignores a GET and a JSON POST', () => {
     expect(isUnsafeFormRequest(req('https://x.dev/admin/login'))).toBe(false);
     const json = req('https://x.dev/api', {
@@ -78,7 +95,7 @@ const SESSION_MAX_AGE = Math.floor(SESSION_TTL_MS / 1000);
 describe('issueCsrfToken', () => {
   it('mints and sets a __Host- cookie when absent, SameSite=Lax explicit with the session maxAge', () => {
     const cookies = jar();
-    const token = issueCsrfToken({ url: new URL('https://x.dev/admin/login'), cookies, platform: undefined });
+    const token = issueCsrfToken({ url: new URL('https://x.dev/admin/login'), cookies });
     expect(token).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(cookies.sets[0].name).toBe('__Host-cairn_csrf');
     expect(cookies.sets[0].opts).toMatchObject({ path: '/', httpOnly: true, secure: true, sameSite: 'lax' });
@@ -87,7 +104,7 @@ describe('issueCsrfToken', () => {
 
   it('re-anchors a present cookie with a fresh maxAge and the unchanged value (no rotate-on-confirm)', () => {
     const cookies = jar({ '__Host-cairn_csrf': 'EXISTING' });
-    const token = issueCsrfToken({ url: new URL('https://x.dev/admin/login'), cookies, platform: undefined });
+    const token = issueCsrfToken({ url: new URL('https://x.dev/admin/login'), cookies });
     expect(token).toBe('EXISTING');
     expect(cookies.sets).toHaveLength(1);
     expect(cookies.sets[0].value).toBe('EXISTING');
@@ -97,7 +114,7 @@ describe('issueCsrfToken', () => {
 
   it('drops the prefix and Secure on http', () => {
     const cookies = jar();
-    issueCsrfToken({ url: new URL('http://localhost/admin/login'), cookies, platform: undefined });
+    issueCsrfToken({ url: new URL('http://localhost/admin/login'), cookies });
     expect(cookies.sets[0].name).toBe('cairn_csrf');
     expect(cookies.sets[0].opts.secure).toBe(false);
   });
@@ -105,42 +122,33 @@ describe('issueCsrfToken', () => {
 
 describe('csrfSecure', () => {
   it('derives from the request protocol on a local host, ignoring PUBLIC_ORIGIN', () => {
-    const event = {
-      url: new URL('http://localhost:8788/admin/login'),
-      platform: { env: { PUBLIC_ORIGIN: 'https://site.example' } },
-    };
+    setFakeEnv({ PUBLIC_ORIGIN: 'https://site.example' });
+    const event = { url: new URL('http://localhost:8788/admin/login') };
     expect(csrfSecure(event)).toBe(false);
   });
 
   it('derives from PUBLIC_ORIGIN on a non-local host when it parses', () => {
-    const event = {
-      url: new URL('http://site.example/admin/login'),
-      platform: { env: { PUBLIC_ORIGIN: 'https://site.example' } },
-    };
+    setFakeEnv({ PUBLIC_ORIGIN: 'https://site.example' });
+    const event = { url: new URL('http://site.example/admin/login') };
     expect(csrfSecure(event)).toBe(true);
   });
 
   it('resolves Secure on an https request with no PUBLIC_ORIGIN configured', () => {
-    const event = { url: new URL('https://site.example/admin/login'), platform: { env: {} } };
+    const event = { url: new URL('https://site.example/admin/login') };
     expect(csrfSecure(event)).toBe(true);
   });
 
   it('resolves Secure on an https request whose PUBLIC_ORIGIN does not parse', () => {
-    const event = {
-      url: new URL('https://site.example/admin/login'),
-      platform: { env: { PUBLIC_ORIGIN: 'not a url' } },
-    };
+    setFakeEnv({ PUBLIC_ORIGIN: 'not a url' });
+    const event = { url: new URL('https://site.example/admin/login') };
     expect(csrfSecure(event)).toBe(true);
   });
 
   it('falls back to non-Secure for an http non-local request with no usable PUBLIC_ORIGIN', () => {
-    const absent = { url: new URL('http://site.example/admin/login'), platform: { env: {} } };
-    const unparseable = {
-      url: new URL('http://site.example/admin/login'),
-      platform: { env: { PUBLIC_ORIGIN: 'not a url' } },
-    };
-    expect(csrfSecure(absent)).toBe(false);
-    expect(csrfSecure(unparseable)).toBe(false);
+    const event = { url: new URL('http://site.example/admin/login') };
+    expect(csrfSecure(event)).toBe(false);
+    setFakeEnv({ PUBLIC_ORIGIN: 'not a url' });
+    expect(csrfSecure(event)).toBe(false);
   });
 
   // The monotonic rule: a real https request is Secure whatever PUBLIC_ORIGIN says. A leftover
@@ -148,102 +156,72 @@ describe('csrfSecure', () => {
   // mint a bare, non-Secure, thirty-day cairn_csrf on production https, which a sibling
   // subdomain can then overwrite and defeat the double-submit compare.
   it('never downgrades an https request when PUBLIC_ORIGIN carries a leftover http dev value', () => {
-    const event = {
-      url: new URL('https://site.example/admin/login'),
-      platform: { env: { PUBLIC_ORIGIN: 'http://localhost:8788' } },
-    };
+    setFakeEnv({ PUBLIC_ORIGIN: 'http://localhost:8788' });
+    const event = { url: new URL('https://site.example/admin/login') };
     expect(csrfSecure(event)).toBe(true);
   });
 
   it('mints the __Host- Secure cookie on an https request under an http PUBLIC_ORIGIN', () => {
     const cookies = jar();
-    issueCsrfToken({
-      url: new URL('https://site.example/admin/login'),
-      cookies,
-      platform: { env: { PUBLIC_ORIGIN: 'http://localhost:8788' } },
-    });
+    setFakeEnv({ PUBLIC_ORIGIN: 'http://localhost:8788' });
+    issueCsrfToken({ url: new URL('https://site.example/admin/login'), cookies });
     expect(cookies.sets[0].name).toBe('__Host-cairn_csrf');
     expect(cookies.sets[0].opts.secure).toBe(true);
   });
 
   it('keeps the bare dev cookie for a local http request, PUBLIC_ORIGIN notwithstanding', () => {
-    const event = {
-      url: new URL('http://127.0.0.1:8788/admin/login'),
-      platform: { env: { PUBLIC_ORIGIN: 'https://site.example' } },
-    };
+    setFakeEnv({ PUBLIC_ORIGIN: 'https://site.example' });
+    const event = { url: new URL('http://127.0.0.1:8788/admin/login') };
     expect(csrfSecure(event)).toBe(false);
   });
 });
 
-// The Task 9 reconciliation: `csrfSecure` now consumes the shared `readPublicOrigin` reader
-// (dev-flag.ts) at platform depth only, so a `process.env.PUBLIC_ORIGIN` the runner's own shell
-// happens to export must never leak into this function's answer. Every case stubs
+// `csrfSecure` reads `PUBLIC_ORIGIN` from the Worker env alone, so a `process.env.PUBLIC_ORIGIN`
+// the runner's own shell happens to export must never leak into its answer. Every case stubs
 // `PUBLIC_ORIGIN` on `process.env` so the suite stays deterministic regardless of the runner's
 // shell, and unstubs it afterward so the stub cannot leak into a sibling test file.
-describe('csrfSecure (platform-only depth; process.env must never leak in)', () => {
+describe('csrfSecure (Worker env only; process.env must never leak in)', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it('platform-set PUBLIC_ORIGIN still decides, unchanged, with process.env also set', () => {
+  it('a Worker-env PUBLIC_ORIGIN still decides, unchanged, with process.env also set', () => {
     vi.stubEnv('PUBLIC_ORIGIN', 'http://process-should-be-ignored.example');
-    const event = {
-      url: new URL('http://site.example/admin/login'),
-      platform: { env: { PUBLIC_ORIGIN: 'https://site.example' } },
-    };
+    setFakeEnv({ PUBLIC_ORIGIN: 'https://site.example' });
+    const event = { url: new URL('http://site.example/admin/login') };
     expect(csrfSecure(event)).toBe(true);
   });
 
-  it('a process.env-only PUBLIC_ORIGIN (no platform value) does not flip csrfSecure', () => {
+  it('a process.env-only PUBLIC_ORIGIN (no Worker-env value) does not flip csrfSecure', () => {
     vi.stubEnv('PUBLIC_ORIGIN', 'https://site.example');
-    const event = {
-      url: new URL('http://site.example/admin/login'),
-      platform: { env: {} },
-    };
-    // Platform depth only: with no platform-supplied origin, csrfSecure falls through to its own
-    // non-Secure default rather than consulting process.env, even though a bare `readPublicOrigin`
-    // dual read would have found the stubbed value.
+    const event = { url: new URL('http://site.example/admin/login') };
+    // With no Worker-env origin, csrfSecure falls through to its own non-Secure default rather
+    // than consulting process.env.
     expect(csrfSecure(event)).toBe(false);
   });
 
   it('the https short-circuit is unchanged with process.env set to an http origin', () => {
     vi.stubEnv('PUBLIC_ORIGIN', 'http://process-should-be-ignored.example');
-    const event = {
-      url: new URL('https://site.example/admin/login'),
-      platform: { env: {} },
-    };
+    const event = { url: new URL('https://site.example/admin/login') };
     expect(csrfSecure(event)).toBe(true);
   });
 });
 
 describe('CSRF cookie round trip under PUBLIC_ORIGIN', () => {
-  // The permanent-403 class this pass closes: a writer and a reader must resolve the same
-  // cookie name for the same request, which only holds when both are handed `platform`.
-  const platform = { env: { PUBLIC_ORIGIN: 'https://site.example' } };
+  // A writer and a reader must resolve the same cookie name for the same request; both read
+  // PUBLIC_ORIGIN from the one Worker env, so they cannot disagree.
   const url = new URL('http://site.example/admin/media/upload');
 
-  it('a header check finds the cookie a load minted when both are handed platform', () => {
+  it('a header check finds the cookie a load minted', () => {
+    setFakeEnv({ PUBLIC_ORIGIN: 'https://site.example' });
     const cookies = jar();
-    const token = issueCsrfToken({ url, cookies, platform });
+    const token = issueCsrfToken({ url, cookies });
+    expect(cookies.sets[0].name).toBe('__Host-cairn_csrf');
     const request = req('http://site.example/admin/media/upload', {
       method: 'POST',
       headers: { 'x-cairn-csrf': token },
     });
-    expect(validateCsrfHeader({ url, request, cookies, platform })).toBe(true);
-  });
-
-  it('a reader passing platform: undefined resolves the fallback name, not the writer\'s', () => {
-    const cookies = jar();
-    const token = issueCsrfToken({ url, cookies, platform });
-    const request = req('http://site.example/admin/media/upload', {
-      method: 'POST',
-      headers: { 'x-cairn-csrf': token },
-    });
-    // `platform` is required but nullable, so a call site can no longer OMIT it (that is a compile
-    // error now, which is what closes the silent divergence). Explicit `undefined` stays legal and
-    // pins the fallback rule: with no PUBLIC_ORIGIN to read, this http request resolves the bare
-    // cookie name and never sees the __Host-prefixed cookie the writer set.
-    expect(validateCsrfHeader({ url, request, cookies, platform: undefined })).toBe(false);
+    expect(validateCsrfHeader({ url, request, cookies })).toBe(true);
   });
 });
 
@@ -292,7 +270,6 @@ describe('csrfHeaderVerdict', () => {
         method: 'POST',
         headers: header !== undefined ? { 'x-cairn-csrf': header } : {},
       }),
-      platform: undefined,
     });
 
   it('passes when the header matches the cookie', () => {

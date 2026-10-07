@@ -10,6 +10,7 @@ test('healthz returns 200 JSON with an ok field; key absent in dev so ok is fals
 }) => {
   const res = await request.get('/healthz');
   expect(res.status()).toBe(200);
+  expect(res.headers()['content-type']).toMatch(/^application\/json/);
   const body = await res.json();
   expect(body).toHaveProperty('ok');
   expect(body.ok).toBe(false);

@@ -55,10 +55,15 @@ func Catalogue() []string {
 		tmplNpmMissingEntry,
 		tmplPnpmMissingEntry,
 		tmplYarnMissingEntry,
-		uncheckedCsrfDetail,
-		failCsrfNoDisable,
-		failCsrfNoGuard,
-		passCsrfWired,
+		tmplCsrfNoViteConfig,
+		detailCsrfSvelteConfigMoved,
+		tmplCsrfUnreadable,
+		tmplCsrfFail,
+		tmplCsrfPassNoKey,
+		tmplCsrfPassEntries,
+		tmplCsrfPlainHTTP,
+		clauseCsrfWildcard,
+		clauseCsrfNull,
 		noReferrerRemedy,
 		noReferrerDocsAnchor,
 		tmplNoReferrerSkip,
@@ -156,8 +161,8 @@ var hooksCandidatePaths = []string{"src/hooks.server.ts", "src/hooks.server.js"}
 
 // readHooksSource reads the site's hooks module under either spelling, .ts preferred, returning
 // the path it read from alongside the text so a failure can name the file. found is false when
-// neither candidate exists. Three checks read the same file: config.csrf-disable,
-// auth.role-wiring, and config.no-referrer-blanket.
+// neither candidate exists. Two checks read the same file: auth.role-wiring and
+// config.no-referrer-blanket.
 func readHooksSource(s Snapshot) (text, path string, found bool, err error) {
 	for _, candidate := range hooksCandidatePaths {
 		body, ok, readErr := s.ReadFile(candidate)

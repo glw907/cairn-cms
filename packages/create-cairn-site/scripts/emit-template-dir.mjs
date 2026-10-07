@@ -18,6 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { bake } from './bake-template.mjs';
+import { regenerateWorkerTypes } from '../../../scripts/build/emit-template.mjs';
 import { walk } from '../../../scripts/walk-files.mjs';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -67,7 +68,14 @@ export async function applyOverlay(sourceDir, overlayDir) {
 }
 
 /**
- * Compose the template tree (bake plus overlay) into a scratch directory.
+ * The secret names the template's Worker `Env` carries: the overlay's `.dev.vars.example`, since a
+ * secret never appears in `wrangler.jsonc`. The bake's own regeneration has no such file to read.
+ */
+const SECRET_NAMES_ARGS = ['--env-file=.dev.vars.example'];
+
+/**
+ * Compose the template tree (bake plus overlay) into a scratch directory, then regenerate its
+ * Worker `Env` from the composed config.
  * @param {{ engineSpec: string, devSpec: string, overlayDir?: string }} options
  * @returns {Promise<string>} the scratch directory holding the composed tree
  */
@@ -75,6 +83,7 @@ export async function composeTemplate({ engineSpec, devSpec, overlayDir = OVERLA
   const scratch = await mkdtemp(path.join(tmpdir(), 'cairn-waymark-'));
   await bake({ to: scratch, engineSpec, devSpec });
   await applyOverlay(scratch, overlayDir);
+  await regenerateWorkerTypes(scratch, SECRET_NAMES_ARGS);
   return scratch;
 }
 

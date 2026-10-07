@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 
 // The media Pass C cross-corpus operations, end to end against the running showcase behind the fake
-// backend (the fake R2 double on platform.env and the fake-github recorder, the same harness the
+// backend (the fake R2 double in the Worker env and the fake-github recorder, the same harness the
 // other media specs use). It proves the two destructive flows the Library drives, each a real browser
 // round-trip:
 //

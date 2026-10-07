@@ -11,7 +11,7 @@ export const siteConfig = parseSiteConfig(siteYaml);
 
 /**
  * The site's name, read once here so the root layout server load (nav, footer nav, this) and
- * `$chassis/content.js`'s `siteMeta.title` (feeds, robots, sitemap, SEO) agree without either one
+ * `#chassis/content.js`'s `siteMeta.title` (feeds, robots, sitemap, SEO) agree without either one
  * reading `siteConfig.siteName` a second time.
  */
 export const siteName = siteConfig.siteName;

@@ -4,6 +4,13 @@ import LoginPage from '../../lib/admin/LoginPage.svelte';
 import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-error-codes.js';
 
 describe('LoginPage', () => {
+  it('emits exactly one strict-origin referrer meta in the head, so a site mounting it in its own shell still gets it', async () => {
+    await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: null });
+    const metas = document.head.querySelectorAll('meta[name="referrer"]');
+    expect(metas).toHaveLength(1);
+    expect(metas[0]).toHaveAttribute('content', 'strict-origin');
+  });
+
   it('renders an email form posting to the request action with a CSRF field', async () => {
     const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: null });
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();

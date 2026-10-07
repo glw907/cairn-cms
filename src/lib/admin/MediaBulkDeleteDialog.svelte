@@ -15,7 +15,7 @@ moment so a background re-render never shifts the dry-run.
 -->
 <script lang="ts">
   import { getContext, tick } from 'svelte';
-  import { invalidateAll } from '$app/navigation';
+  import { refreshAll } from '$app/navigation';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
   import type { MediaUsageInfo } from '../sveltekit/content-routes-media-library.js';
   import type { MediaBulkDeleteResult, MediaBulkFailure } from '../sveltekit/content-routes-media-delete.js';
@@ -126,10 +126,10 @@ moment so a background re-render never shifts the dry-run.
     closeBulkDialog();
   }
   // The Done action after a summary: re-read the load so the deleted rows leave the list, tell the
-  // host to clear its selection, then close and reset. invalidateAll re-runs the media load behind
+  // host to clear its selection, then close and reset. refreshAll re-runs the media load behind
   // the dialog.
   async function finishBulkDelete() {
-    await invalidateAll();
+    await refreshAll();
     onfinished();
     closeBulkDialog();
   }

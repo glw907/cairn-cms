@@ -24,5 +24,11 @@
       "binding": "MEDIA_BUCKET",
       "bucket_name": "cairn-test-media"
     }
-  ]
+  ],
+  // The engine reads PUBLIC_ORIGIN from the Worker env (`cloudflare:workers`), so the fixtures'
+  // shared origin is a var here; a test that needs another origin, or none, layers it with
+  // `withTestEnv` (src/tests/helpers/with-test-env.ts).
+  "vars": {
+    "PUBLIC_ORIGIN": "https://test.dev"
+  }
 }

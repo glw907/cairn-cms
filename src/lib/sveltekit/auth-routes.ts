@@ -26,8 +26,10 @@ import {
 } from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
 import { issueCsrfToken, csrfSecure } from './csrf.js';
+import { isSafeLogoutUrl } from './guard.js';
 import { NO_PENDING_REQUEST_ERROR } from './auth-error-codes.js';
 import { log } from '../log/index.js';
+import { env } from './workers-env.js';
 import type { CairnEvent } from './types.js';
 
 export interface AuthRoutesConfig {
@@ -128,7 +130,7 @@ const PENDING_COOKIE_TTL_MULTIPLE = 6;
  * their inbox. The read and the write sit in one synchronous step with no await between them.
  */
 function mintOrReusePendingNonce(event: CairnEvent): string {
-  const secure = csrfSecure({ url: event.url, platform: event.platform });
+  const secure = csrfSecure(event);
   const pendingCookie = buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure);
   const nonce = event.cookies.get(pendingCookie) ?? generateToken();
   event.cookies.set(pendingCookie, nonce, {
@@ -174,7 +176,6 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    */
   async function requestAction(event: CairnEvent): Promise<RequestOutcome> {
     if (event.locals.cairnIdentity) throw error(404, 'Not found');
-    const env = event.platform?.env ?? {};
     const origin = requireOrigin(env);
     const db = requireDb(env);
     const form = await event.request.formData();
@@ -276,13 +277,14 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     return {
       siteName: config.branding.siteName,
       error: event.url.searchParams.get('error'),
-      csrf: issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform }),
+      csrf: issueCsrfToken(event),
     };
   }
 
   /**
    * GET /admin/auth/confirm. Renders the confirm page and consumes nothing; only the POST
-   * verifies. Sets Referrer-Policy: no-referrer so the token does not leak to a referrer, and
+   * verifies. Sets Referrer-Policy: strict-origin, which sends only the origin on a cross-origin
+   * navigation, so the token in this URL's query string never reaches a referrer, and
    * issues the CSRF token so the confirm form can render the hidden field.
    *
    * Under identity mode this 404s, raised before any cookie write: there is no magic link to
@@ -290,12 +292,12 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    */
   function confirmLoad(event: CairnEvent): ConfirmData {
     if (event.locals.cairnIdentity) throw error(404, 'Not found');
-    event.setHeaders({ 'Referrer-Policy': 'no-referrer' });
+    event.setHeaders({ 'Referrer-Policy': 'strict-origin' });
     return {
       token: event.url.searchParams.get('token') ?? '',
       siteName: config.branding.siteName,
       error: event.url.searchParams.get('error'),
-      csrf: issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform }),
+      csrf: issueCsrfToken(event),
     };
   }
 
@@ -331,14 +333,14 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    */
   async function confirmAction(event: CairnEvent): Promise<never> {
     if (event.locals.cairnIdentity) throw error(404, 'Not found');
-    const db = requireDb(event.platform?.env ?? {});
+    const db = requireDb(env);
     const form = await event.request.formData();
     const token = String(form.get('token') ?? '');
     if (!token) throw redirect(303, '/admin/login?error=expired');
 
     // One variable for the whole handler: this same `secure` names the pending cookie read and
     // deleted here, the session cookie set below, and the CSRF cookie rotated after it.
-    const secure = csrfSecure({ url: event.url, platform: event.platform });
+    const secure = csrfSecure(event);
     const pendingCookie = buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure);
     const nonce = event.cookies.get(pendingCookie);
 
@@ -397,7 +399,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // authentication epochs outweighs the self-healing edge, which is why this is the only place
     // it happens.
     event.cookies.delete(csrfCookieName(secure), { path: '/', secure });
-    issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform });
+    issueCsrfToken(event);
     throw redirect(303, '/admin');
   }
 
@@ -442,11 +444,11 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  gate's session.
    */
   async function logoutAction(event: CairnEvent): Promise<never> {
-    const db = requireDb(event.platform?.env ?? {});
+    const db = requireDb(env);
     // One variable, one csrfSecure call: the session cookie used to derive
     // `secure` independently from the CSRF pair's own derivation. `!secure` is this same value's
     // complement, not a second independent derivation.
-    const secure = csrfSecure({ url: event.url, platform: event.platform });
+    const secure = csrfSecure(event);
     const id =
       event.cookies.get(sessionCookieName(secure)) ?? event.cookies.get(sessionCookieName(!secure));
     event.cookies.delete(sessionCookieName(secure), { path: '/', secure });
@@ -471,7 +473,15 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
         log.error('auth.session.destroy_failed', { error: String(err) });
       }
     }
-    throw redirect(303, event.locals.cairnIdentity?.logoutUrl ?? '/admin/login');
+    // The guard admits only a root-relative path or an https URL as logoutUrl, at construction,
+    // but locals is request-scoped state any handle can write, and a handle sequenced after the
+    // guard can overwrite it. So the value is re-checked here against the same rule, and a
+    // failing one falls back to the login page. A root-relative target stays on this site; an
+    // absolute one is allowed out to its own origin and nowhere else.
+    const configured = event.locals.cairnIdentity?.logoutUrl;
+    const target = typeof configured === 'string' && isSafeLogoutUrl(configured) ? configured : '/admin/login';
+    if (target.startsWith('/')) throw redirect(303, target);
+    throw redirect(303, target, { external: [new URL(target).origin] });
   }
 
   return { loginLoad, requestAction, confirmLoad, confirmAction, logoutAction };

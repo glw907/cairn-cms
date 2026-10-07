@@ -29,6 +29,9 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
   <title>Confirm sign-in · Cairn</title>
   <link rel="icon" href={cairnFaviconHref} />
   <meta name="robots" content="noindex, nofollow" />
+  <!-- The view owns its document's referrer policy, so a site that mounts it in its own shell still
+       sends the real Origin on the confirm POST and never sends the token's path in a Referer. -->
+  <meta name="referrer" content="strict-origin" />
 </svelte:head>
 
 <!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one

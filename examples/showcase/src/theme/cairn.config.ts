@@ -19,7 +19,7 @@ import {
   readCommittedManifest,
 } from '@glw907/cairn-cms/media';
 import { siteIslands } from './islands/registry.js';
-import { proseTypography } from '$chassis/render.js';
+import { proseTypography } from '#chassis/render.js';
 import { icons } from './icons.js';
 import { components } from './markdown-components.js';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
@@ -152,7 +152,7 @@ export const cairn = defineAdapter({
   // URL host is exactly what E_SENDER_NOT_VERIFIED punishes on send.
   email: { from: 'cms@showcase.test' },
   // The media R2 binding (hoisted above so this and normalizeAssets share one literal). The fake
-  // R2 double rides platform.env in dev; a real site binds it in wrangler.jsonc and mounts the
+  // R2 double rides the Worker env in dev; a real site binds it in wrangler.jsonc and mounts the
   // /media delivery route.
   media,
   // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the

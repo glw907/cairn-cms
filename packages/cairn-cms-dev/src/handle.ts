@@ -4,12 +4,16 @@
 // (a build-time flag named at each call site, the devDependency boundary, and the engine prod
 // tripwire; see this package's README for why a shared exported constant does not hold layer one);
 // the fence, not this factory, owns the dev+flag gate, so calling devBackendHandle always installs.
+// The one refusal it carries is the engine guard's tripwire, which it would otherwise displace: a
+// set flag on a non-local host answers 503.
 //
 // Two risk tiers ride here. The owner-session bypass is an authentication breach if it reaches a
 // deployed runtime; the GitHub/R2/D1 doubles only degrade to "saves do not persist." The bypass is
 // why the fence exists; never relax it by analogy to the harmless mock.
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { env, withEnv } from 'cloudflare:workers';
 import type { AccessMap, Backend, RolesDeclaration } from '@glw907/cairn-cms';
+import { createLogger, type CairnLogEvent } from '@glw907/cairn-cms/log';
 import {
   createDevBackend,
   seedMediaLibrary,
@@ -21,6 +25,32 @@ import {
 import { createFakeAuthDb } from './fake-auth-db.js';
 import { createFakeAppDb } from './fake-app-db.js';
 import { createFakeR2 } from './fake-r2.js';
+
+const log = createLogger<CairnLogEvent>();
+
+// WATCH: the flag name, its truthiness rule, the local-host list, and the refusal message mirror
+// the engine's src/lib/dev-flag.ts (CAIRN_DEV_BACKEND_FLAG, isDevBackendFlagSet, isLocalHost,
+// CAIRN_DEV_BACKEND_MESSAGE), which no public subpath exports. Change them together.
+const DEV_BACKEND_MESSAGE =
+  'cairn: the dev backend flag is set in a deployed environment. Unset CAIRN_DEV_BACKEND.';
+
+/** True when the Worker env carries the dev-backend flag in a form the engine counts as set. */
+function devFlagSet(): boolean {
+  const raw = (env as unknown as Record<string, unknown>).CAIRN_DEV_BACKEND;
+  return raw === '1' || raw === true;
+}
+
+/** True for a hostname that names a local development host. */
+function isLocalHost(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '0.0.0.0' ||
+    hostname === '::1' ||
+    hostname === '[::1]' ||
+    hostname.endsWith('.localhost')
+  );
+}
 
 /** Options for the dev-backend handle. */
 export interface DevBackendConfig {
@@ -56,9 +86,12 @@ export interface DevBackendConfig {
  * Build the dev-backend `Handle`. On call it installs the fake GitHub double, seeds the Media
  * Library fixtures, and creates one fake AUTH_DB and one fake MEDIA_BUCKET for the process lifetime
  * (so editors added through /admin/editors and assets uploaded through /admin persist across
- * requests in the dev session). The returned handle supplies the binding doubles on `platform.env`
- * for /admin and /media requests and mints an owner editor on /admin, leaving every other path
- * untouched.
+ * requests in the dev session). The returned handle runs /admin, /media, and /preview requests
+ * inside `withEnv` with the binding doubles layered over the Worker env, and mints an owner editor
+ * on /admin, leaving every other path untouched. It does nothing while the build prerenders, when
+ * no Worker env exists to layer over. With `CAIRN_DEV_BACKEND` set on the Worker env and a request
+ * to a non-local host, it refuses every path with a 503 and logs `guard.refused`, the same record
+ * the engine guard writes for the same condition.
  * @param config - {@link DevBackendConfig}; `access` is the site's own declaration, attached to
  * `locals.cairnAccess` beside the minted editor, and `seedContent` is the Part B content-seeding
  * hook.
@@ -99,7 +132,20 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
   for (const key of SEED_MEDIA_KEYS) fakeR2.seedObject(key);
 
   return async ({ event, resolve }) => {
+    // While the build prerenders, every Worker env read and every withEnv call throws, and a
+    // prerendered page is static output this handle never serves again; pass it straight through.
+    if (await isBuilding()) return resolve(event);
     const path = event.url.pathname;
+    // This handle replaces the engine guard, so the guard's own dev-backend tripwire never runs
+    // while it is mounted. A build that folded the dev backend in (VITE_CAIRN_E2E=1, say) and then
+    // deployed with the flag set would otherwise serve the owner-session bypass on a public host.
+    // The refusal pairs the flag with the request's hostname, read on its own: on Cloudflare the
+    // URL's host is the routed one, and PUBLIC_ORIGIN cannot witness here, since a scaffolded
+    // site's wrangler.jsonc names its deployed origin while `npm run dev` runs on localhost.
+    if (devFlagSet() && !isLocalHost(event.url.hostname)) {
+      log.error('guard.refused', { reason: 'dev_backend_in_prod', path });
+      return new Response(DEV_BACKEND_MESSAGE, { status: 503 });
+    }
     const isAdmin = path === '/admin' || path.startsWith('/admin/');
     const isMedia = path === '/media' || path.startsWith('/media/');
     // /preview/[token] is the one non-admin route the engine reaches AUTH_DB and cairnBackend
@@ -108,44 +154,14 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
     // a minted token would never resolve) and the same in-memory repo, but never the owner
     // session bypass below, which is admin-only.
     const isPreview = path === '/preview' || path.startsWith('/preview/');
-    if (isAdmin || isMedia || isPreview) {
-      // The dev Backend rides event.locals.cairnBackend, the per-request channel the engine
-      // resolves (locals.cairnBackend ?? runtime.backend.connect(env)). It replaces the retired
-      // global-fetch patch: the engine's reads and commits hit the in-memory repo through this
-      // object.
-      (event.locals as { cairnBackend?: Backend }).cairnBackend = backend;
+    if (!isAdmin && !isMedia && !isPreview) return resolve(event);
 
-      // The binding doubles ride platform.env the way the Cloudflare adapter would supply the real
-      // ones. The template's App.Platform also declares context and caches, which the dev routes
-      // never touch, so this partial value casts through unknown; the engine reads the env
-      // structurally at runtime. AUTH_DB serves /admin and /preview (loadPreview's own binding
-      // read); MEDIA_BUCKET serves the upload action under /admin and the delivery route under
-      // /media. ANTHROPIC_API_KEY is a dummy presence flag: the tidy action refuses before
-      // building a client when it is absent, so the value is set even though the fake client
-      // (fake-anthropic.ts) never reads it. APP_DB is the developer-binding example: a custom
-      // admin screen reads and writes its own D1 binding the engine never touches, so the dev
-      // handle supplies a fake for it the same way it does AUTH_DB. Both AUTH_DB and APP_DB stay
-      // admin-only otherwise: /preview needs only AUTH_DB, never the tidy stub or the developer's
-      // own binding.
-      //
-      // Plain vars (PUBLIC_ORIGIN and any other non-binding wrangler.jsonc `vars` entry) are
-      // preserved from whatever the adapter's own platform proxy already resolved, spread first so
-      // the fakes below always win on a name collision: previewMintAction's `requireOrigin(env)`
-      // is the first admin action that ever reads a var in dev, since every earlier one either
-      // ignores it or, like the login flow, never runs at all under the owner-session bypass.
-      // Read through the same cast the write below uses: inside this package `App.Platform` is the
-      // bare kit default (no consuming site's app.d.ts is in scope), so it declares no `env`.
-      const platform = event.platform as unknown as { env?: Record<string, unknown> } | undefined;
-      const existingEnv = platform?.env ?? {};
-      event.platform = {
-        env: {
-          ...existingEnv,
-          ...(isAdmin || isPreview ? { AUTH_DB: fakeAuthDb } : {}),
-          ...(isAdmin ? { APP_DB: fakeAppDb, ANTHROPIC_API_KEY: 'sk-showcase-stub' } : {}),
-          MEDIA_BUCKET: fakeR2,
-        },
-      } as unknown as App.Platform;
-    }
+    // The dev Backend rides event.locals.cairnBackend, the per-request channel the engine
+    // resolves (locals.cairnBackend ?? runtime.backend.connect(env)). It replaces the retired
+    // global-fetch patch: the engine's reads and commits hit the in-memory repo through this
+    // object.
+    (event.locals as { cairnBackend?: Backend }).cairnBackend = backend;
+
     if (isAdmin) {
       // Editor shape: { email, displayName, role, capability }, the engine's Editor type
       // (src/lib/auth/types.ts). The dev backend always mints an owner session, so capability is
@@ -165,6 +181,42 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
         event.locals.cairnAccess = config.access;
       }
     }
-    return resolve(event);
+    // The binding doubles ride the Worker env the way the Cloudflare adapter would supply the real
+    // ones, through withEnv, so the engine's reads and a site's own `cloudflare:workers` reads see
+    // them alike for the rest of this request. AUTH_DB serves /admin and /preview (loadPreview's
+    // own binding read); MEDIA_BUCKET serves the upload action under /admin and the delivery route
+    // under /media. ANTHROPIC_API_KEY is a dummy presence flag: the tidy action refuses before
+    // building a client when it is absent, so the value is set even though the fake client
+    // (fake-anthropic.ts) never reads it. APP_DB is the developer-binding example: a custom admin
+    // screen reads and writes its own D1 binding the engine never touches, so this handle supplies
+    // a fake for it the same way it does AUTH_DB. Both AUTH_DB and APP_DB stay admin-only
+    // otherwise: /preview needs only AUTH_DB, never the tidy stub or the developer's own binding.
+    //
+    // The current env is spread first, so every var (PUBLIC_ORIGIN among them) and every binding
+    // an outer handle already layered survives, and the doubles win on a name collision. A handle
+    // sequenced after this one layers its own withEnv over this set the same way.
+    const doubles = {
+      ...(isAdmin || isPreview ? { AUTH_DB: fakeAuthDb } : {}),
+      ...(isAdmin ? { APP_DB: fakeAppDb, ANTHROPIC_API_KEY: 'sk-showcase-stub' } : {}),
+      MEDIA_BUCKET: fakeR2,
+    };
+    // workers-types declares withEnv's return as unknown; it returns the callback's own value.
+    return withEnv({ ...env, ...doubles }, () => resolve(event)) as ReturnType<typeof resolve>;
   };
+}
+
+// WATCH: a copy of the engine's isBuilding (src/lib/sveltekit/building.ts), which no public
+// subpath exports. Change the two together.
+/**
+ * Read SvelteKit's `building` flag. The import is dynamic and wrapped in `try`/`catch`, the same
+ * form the engine uses, so a bundler with no SvelteKit plugin degrades to `false` rather than
+ * failing on the virtual module.
+ */
+async function isBuilding(): Promise<boolean> {
+  try {
+    const { building } = await import('$app/env');
+    return building;
+  } catch {
+    return false;
+  }
 }

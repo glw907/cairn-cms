@@ -11,8 +11,9 @@
 //
 // The refusal lives in the body, `devDelivery`'s own precedent; see the sibling `last-otp` route
 // for why both checks (host and env) are independent of the build fold.
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { env } from 'cloudflare:workers';
 import { memberChannel } from '../../../members/channel.js';
 
 function isLocalHost(hostname: string): boolean {
@@ -20,18 +21,17 @@ function isLocalHost(hostname: string): boolean {
 }
 
 export const POST: RequestHandler = async (event) => {
-  const { url, platform } = event;
-  if (!isLocalHost(url.hostname) || platform?.env?.CAIRN_DEV_BACKEND !== '1') {
+  if (!isLocalHost(event.url.hostname) || env.CAIRN_DEV_BACKEND !== '1') {
     error(404, 'Not found');
   }
   const subject = await memberChannel.resolveSubject(event);
   if (!subject) {
     error(404, 'Not found');
   }
-  const db = platform?.env?.MEMBER_DB;
+  const db = env.MEMBER_DB;
   if (!db) {
     error(404, 'Not found');
   }
   await memberChannel.revokeSessions(db, subject);
-  return json({ ok: true });
+  return Response.json({ ok: true });
 };

@@ -7,7 +7,7 @@
 // one copy and forgetting the others.
 import type { PublicRoutesConfig } from '@glw907/cairn-cms/delivery';
 import { site, siteMeta } from './content.js';
-import { cairn, publicMediaResolver, mediaEnabled } from '$theme/cairn.config.js';
+import { cairn, publicMediaResolver, mediaEnabled } from '#theme/cairn.config.js';
 
 export const publicRoutesConfig: PublicRoutesConfig = {
   site,

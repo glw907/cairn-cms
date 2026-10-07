@@ -134,7 +134,6 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
       route: event.route,
       request: event.request,
       locals: event.locals,
-      platform: event.platform,
       cookies: event.cookies,
       setHeaders: event.setHeaders,
     };

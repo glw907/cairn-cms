@@ -20,7 +20,7 @@ func TestFiveConfigCheckLabelsMatchRegistryTitle(t *testing.T) {
 		ConfigPublicOrigin,
 		ConfigSiteConfig,
 		ConfigDependencyFloors,
-		ConfigCsrfDisable,
+		ConfigCsrfTrustedOrigins,
 		ConfigNoReferrerBlanket,
 		AdminMountShape,
 	}

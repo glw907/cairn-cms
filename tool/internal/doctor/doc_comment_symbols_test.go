@@ -8,13 +8,12 @@ import (
 	"testing"
 )
 
-// TestFourEngineSymbolsAppearInDocComments proves the package's doc comments name the four
+// TestEngineSymbolsAppearInDocComments proves the package's doc comments name the three
 // engine symbols the check:tool-heuristics tripwire scans for: CairnAdminShell and .shellLoad
-// from admin.mount-shape's heuristic, createAuthGuard and checkOrigin: false from
-// config.csrf-disable's. Reads every non-test .go file's comments directly with go/parser,
+// from admin.mount-shape's heuristic, and createAuthGuard from auth.role-wiring's. Reads every non-test .go file's comments directly with go/parser,
 // rather than trusting a single hand-picked doc comment, so the assertion survives a symbol
 // moving to a different file's comment.
-func TestFourEngineSymbolsAppearInDocComments(t *testing.T) {
+func TestEngineSymbolsAppearInDocComments(t *testing.T) {
 	files, err := filepath.Glob("*.go")
 	if err != nil {
 		t.Fatalf("glob *.go: %v", err)
@@ -36,7 +35,7 @@ func TestFourEngineSymbolsAppearInDocComments(t *testing.T) {
 	}
 	text := allComments.String()
 
-	symbols := []string{"CairnAdminShell", ".shellLoad", "createAuthGuard", "checkOrigin: false"}
+	symbols := []string{"CairnAdminShell", ".shellLoad", "createAuthGuard"}
 	for _, symbol := range symbols {
 		if !strings.Contains(text, symbol) {
 			t.Errorf("package doc comments do not mention %q, want check:tool-heuristics to find it here", symbol)

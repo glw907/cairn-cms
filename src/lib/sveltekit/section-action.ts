@@ -27,6 +27,7 @@ import { log } from '../log/index.js';
 import { resolveRateLimit } from '../cloudflare/rate-limit.js';
 import type { AdminActionContext } from './admin-action.js';
 import type { CairnEvent } from './types.js';
+import { siteEnv } from './workers-env.js';
 import type { AccessMap } from '../auth/access.js';
 import type { ActionFailure } from '@sveltejs/kit';
 import type { RateLimitLike } from '../cloudflare/rate-limit.js';
@@ -35,7 +36,7 @@ export type { RateLimitLike };
 
 /** Site-fixed configuration for one `createSectionAction` factory: only what the engine cannot know. */
 export interface SectionActionConfig<Env, Db> {
-  /** Resolve the section's database binding off the platform env; undefined or null fails the action closed (500). */
+  /** Resolve the section's database binding off the Worker env; undefined or null fails the action closed (500). */
   resolveDb: (env: Env | undefined) => Db | undefined;
   /** Optional per-action rate limit, degrade-to-open: an unresolved binding never blocks. */
   rateLimit?: {
@@ -101,12 +102,12 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
  */
 export type SectionAction<Env, Db> = <T>(
   handler: (args: {
-    event: CairnEvent<Env>;
+    event: CairnEvent;
     form: FormData;
     ctx: SectionActionContext<Db>;
   }) => Promise<T>,
   opts: SectionActionOptions,
-) => (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
+) => (event: CairnEvent) => Promise<T | ActionFailure<{ error: string }>>;
 
 /**
  * Build a section's form-action wrapper. The returned function takes `(handler, opts)` per call
@@ -150,8 +151,8 @@ export type SectionAction<Env, Db> = <T>(
  *
  * ```ts
  * // src/routes/admin/club/events/[id]/+page.server.ts
- * const sectionAction = createSectionAction<App.Platform['env'], D1Database>({
- *   resolveDb: (env: App.Platform['env'] | undefined) => env?.SECTION_DB,
+ * const sectionAction = createSectionAction<Env, D1Database>({
+ *   resolveDb: (env: Env | undefined) => env?.SECTION_DB,
  * });
  * export const actions = {
  *   approve: sectionAction(async ({ form, ctx }) => {
@@ -170,28 +171,14 @@ export type SectionAction<Env, Db> = <T>(
 export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>): SectionAction<Env, Db> {
   return function wrap<T>(
     handler: (args: {
-      event: CairnEvent<Env>;
+      event: CairnEvent;
       form: FormData;
       ctx: SectionActionContext<Db>;
     }) => Promise<T>,
     opts: SectionActionOptions,
-  ): (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>> {
-    const guarded = createAdminAction<T | ActionFailure<{ error: string }>>(async ({ event, form, ctx }) => {
-      // createAdminAction's own declared event type is pinned to CairnEnv; it never reads
-      // event.platform, so relabeling to this factory's own Env here is a type-level
-      // correction, never a runtime behavior change (the underlying object is exactly what
-      // this wrapper's caller passed in). A direct `as` assertion suffices, with no `unknown`
-      // bridge: TypeScript's comparability check for an `as` cast treats the unconstrained
-      // `Env` permissively regardless of which concrete env it is relabeled from. An earlier
-      // version of this cast carried an `as unknown as` double hop here, on the stated grounds
-      // that AuthEnv and Env shared no property names and would trip TypeScript's weak-type
-      // check; that reasoning did not hold up on re-verification (dropping the `unknown` bridge
-      // still compiles clean under the renamed CairnEnv), so the bridge came out as unneeded
-      // ceremony. The cast itself stays: removing it entirely reproduces a real TS2345 (`Env`
-      // is a fully unconstrained generic type parameter, so `CairnEnv` is not assignable to it
-      // in either direction).
-      const siteEvent = event as CairnEvent<Env>;
-      const path = siteEvent.url.pathname;
+  ): (event: CairnEvent) => Promise<T | ActionFailure<{ error: string }>> {
+    return createAdminAction<T | ActionFailure<{ error: string }>>(async ({ event, form, ctx }) => {
+      const path = event.url.pathname;
       // event.route.id, never url.pathname: on a catch-all route the pathname is
       // attacker-chosen and the route id is not. A matched form action never actually sees a
       // null route id (only an unmatched request, an unreachable case here, does), but the
@@ -200,7 +187,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // The derived id drops its route-group segments (targetFromRouteId), the one place a route
       // id and its URL disagree on a correctly configured site; an explicit opts.target is the
       // caller's own exact string and is never normalized.
-      const target = opts.target ?? targetFromRouteId(siteEvent.route.id);
+      const target = opts.target ?? targetFromRouteId(event.route.id);
 
       /** Seeds `action`/`entity` from `opts` unless the caller overrides either. */
       function sectionAudit(record: SectionActionAudit): void {
@@ -227,7 +214,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       }
 
       if (config.rateLimit) {
-        const limiter = config.rateLimit.resolve(siteEvent.platform?.env);
+        const limiter = config.rateLimit.resolve(siteEnv<Env>());
         if (!limiter) {
           log.warn('admin.action.rate_limit_absent', { path, action: opts.action, entity: opts.entity });
         } else {
@@ -285,7 +272,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
 
       // The access map's absence is checked before authorization, out of necessity (nothing can
       // authorize against a map that was never attached), never before the rate limit above.
-      const access: AccessMap | undefined = siteEvent.locals.cairnAccess;
+      const access: AccessMap | undefined = event.locals.cairnAccess;
       if (access === undefined) {
         return misconfigured('rejected: access map not attached', 'access_map_not_attached');
       }
@@ -300,21 +287,15 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // resolveDb runs last, after every authorization check, so a session the access map
       // refuses learns nothing about whether the section's binding is deployed: its refusal
       // audits as a denial, never a config fault.
-      const db = config.resolveDb(siteEvent.platform?.env);
+      const db = config.resolveDb(siteEnv<Env>());
       if (db == null) return misconfigured('rejected: database not bound', 'db_not_bound');
 
       // db excludes null and undefined by the check above; NonNullable<Db> also strips a null a
       // caller's own explicit Db argument might otherwise admit, so the check order above is what
       // a handler's ctx.db can rely on, never a type argument alone.
       const resolvedDb = db as NonNullable<Db>;
-      return handler({ event: siteEvent, form, ctx: { ...ctx, audit: sectionAudit, db: resolvedDb } });
+      return handler({ event, form, ctx: { ...ctx, audit: sectionAudit, db: resolvedDb } });
     });
-
-    // The same relabeling as the `siteEvent` cast above, applied on the way out: createAdminAction
-    // hands back an action typed against its own CairnEnv-pinned event, while this wrapper's
-    // contract is the site's Env. Type-level only; see that cast's comment for why a direct
-    // assertion, with no `unknown` bridge, is now enough.
-    return guarded as (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
   };
 }
 

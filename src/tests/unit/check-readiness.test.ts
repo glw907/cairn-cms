@@ -125,10 +125,10 @@ describe('checkShippedAnchors', () => {
 });
 
 describe('loadShippedAnchors', () => {
-  it('reads the committed list through the script\'s own loader and finds 20 entries', () => {
+  it('reads the committed list through the script\'s own loader and finds 21 entries', () => {
     const { anchors, defects } = loadShippedAnchors(join(ROOT, 'scripts/checks/shipped-anchors.json'), ROOT);
     expect(defects).toEqual([]);
-    expect(anchors).toHaveLength(20);
+    expect(anchors).toHaveLength(21);
   });
 
   it('fails loud on an absent list', () => {

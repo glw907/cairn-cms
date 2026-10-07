@@ -7,7 +7,7 @@ import {
   type ResolvedReference,
 } from '@glw907/cairn-cms/delivery';
 import { site } from './content.js';
-import { cairn, siteConfig } from '$theme/cairn.config.js';
+import { cairn, siteConfig } from '#theme/cairn.config.js';
 
 // The concept descriptors, by id, so withReferences can hand resolveReferences the right field
 // schema for the entry it resolved. buildSiteDescriptors derives them from the same adapter the indexes

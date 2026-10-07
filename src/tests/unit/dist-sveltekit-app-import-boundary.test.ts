@@ -38,25 +38,23 @@ interface ExportsTarget {
  * pass bundles a Worker. `$app/*` and `$env/*` are deliberately never in the external list: they
  * are the exact specifiers a raw esbuild pass cannot resolve (no SvelteKit Vite plugin to supply
  * the virtual module), so marking them external would hide the very regression this test exists to
- * catch. Every other external is a real Node builtin or workers-only npm package the barrel's
- * dependency graph reaches for reasons unrelated to `$app`/`$env` (`gray-matter`'s `fs` read,
- * `@anthropic-ai/sdk`'s `node:*` credential-chain probes and its `standardwebhooks` dependency),
- * each one resolvable in a real Wrangler/workerd bundle (`node:*` through `nodejs_compat`,
- * `standardwebhooks` through `node_modules`) but irrelevant to the question this test asks.
+ * catch. Every other external is a real Node builtin, a workerd built-in module, or a
+ * workers-only npm package the barrel's dependency graph reaches for reasons unrelated to
+ * `$app`/`$env` (`gray-matter`'s `fs` read, `@anthropic-ai/sdk`'s `node:*` credential-chain probes
+ * and its `standardwebhooks` dependency, the engine's own `cloudflare:workers` read), each one
+ * resolvable in a real Wrangler/workerd bundle (`node:*` through `nodejs_compat`, `cloudflare:*` as
+ * a runtime built-in Wrangler's bundler leaves external, `standardwebhooks` through
+ * `node_modules`) but irrelevant to the question this test asks.
  */
+const BUNDLE_OPTIONS = { bundle: true, platform: 'neutral', write: false, logLevel: 'silent' } as const;
+const EXTERNAL = ['node:*', 'fs', 'standardwebhooks', 'cloudflare:*'];
+
 async function bundleBarrel() {
-  return build({
-    entryPoints: [ENTRY],
-    bundle: true,
-    platform: 'neutral',
-    write: false,
-    logLevel: 'silent',
-    external: ['node:*', 'fs', 'standardwebhooks'],
-  });
+  return build({ ...BUNDLE_OPTIONS, entryPoints: [ENTRY], external: EXTERNAL });
 }
 
 describe('the /sveltekit barrel bundles cleanly with a plain, non-Vite esbuild pass', () => {
-  it('reproduces the real consumer failure mode: esbuild --bundle over dist/sveltekit/index.js resolves $app/environment (or fails closed)', async () => {
+  it('reproduces the real consumer failure mode: esbuild --bundle over dist/sveltekit/index.js resolves $app/env (or fails closed)', async () => {
     if (!existsSync(ENTRY)) {
       throw new Error(
         'dist/sveltekit/index.js is missing; run `npm run package` before `npm test`. This gate ' +
@@ -91,14 +89,7 @@ describe('the other exported subpaths (informational only, not gated)', () => {
       const entryPath = resolve(ROOT, jsEntry);
       if (!existsSync(entryPath)) continue;
       try {
-        await build({
-          entryPoints: [entryPath],
-          bundle: true,
-          platform: 'neutral',
-          write: false,
-          logLevel: 'silent',
-          external: ['node:*', 'fs', 'standardwebhooks'],
-        });
+        await build({ ...BUNDLE_OPTIONS, entryPoints: [entryPath], external: EXTERNAL });
       } catch (e) {
         const errors = (e as { errors?: { text: string }[] }).errors ?? [];
         const offenders = errors.filter((m) => /Could not resolve "(\$app|\$env)\//.test(m.text)).map((m) => m.text);

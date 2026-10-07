@@ -32,22 +32,17 @@ export interface TestEventOverrides {
   setHeaders?: (headers: Record<string, string>) => void;
   /** `event.locals`, typed exactly as {@link CairnEvent} declares it. Defaults to empty. */
   locals?: CairnEvent['locals'];
-  /**
-   * The Worker env bindings under `event.platform.env`. A bag, not `CairnEnv` itself, since a
-   * real site's env is `CairnEnv` intersected with its own bindings (media, tidy's Anthropic
-   * key), and a test fixture routinely carries one of those extra keys.
-   */
-  env?: Record<string, unknown>;
 }
 
 /**
  * Builds a real, structurally valid {@link CairnEvent} for a test, with typed partial overrides
- * for the members a test usually varies (`params`, `locals`, `platform.env`, `request`,
- * `cookies`).
+ * for the members a test usually varies (`params`, `locals`, `request`, `cookies`). The event
+ * carries no Worker bindings; a test sets those with `withTestEnv` or, in the unit and component
+ * projects, the fake's `setFakeEnv`.
  *
  * It replaces the bottom-type casts route-factory and action tests reached for previously: a
  * hand-built event literal that omits a required member (`params`, `route`) or narrows a field's
- * type (a bare `Record<string, unknown>` env bag, say) fails the structural check against
+ * type (a bare `Record<string, unknown>` cookie bag, say) fails the structural check against
  * `CairnEvent`, and casting the whole literal through TypeScript's `never` erased that failure,
  * since `never` is assignable to and from anything. A test built that way can drift out of sync
  * with `CairnEvent`'s real shape with no compiler signal at all. `testEvent` fills every required
@@ -74,6 +69,5 @@ export function testEvent(overrides: TestEventOverrides = {}): CairnEvent {
     cookies: overrides.cookies ?? noopCookies(),
     setHeaders: overrides.setHeaders ?? (() => {}),
     locals: overrides.locals ?? {},
-    platform: { env: overrides.env ?? {} },
   };
 }

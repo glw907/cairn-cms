@@ -22,7 +22,7 @@ persistent "?" carries Markdown help).
   import { flushSync, untrack, getContext } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
   import { page } from '$app/state';
-  import { building } from '$app/environment';
+  import { building } from '$app/env';
   import BlocksIcon from '@lucide/svelte/icons/blocks';
   import SquarePenIcon from '@lucide/svelte/icons/square-pen';
   import LinkIcon from '@lucide/svelte/icons/link';

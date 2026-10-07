@@ -75,7 +75,6 @@ function renameEvent(id: string, slug: string) {
     body: new URLSearchParams({ slug }),
     params: { concept: 'posts', id },
     locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const }, cairnBackend: backend },
-    env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' },
   });
 }
 

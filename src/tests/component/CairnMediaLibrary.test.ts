@@ -1013,9 +1013,9 @@ describe('CairnMediaLibrary direct upload', () => {
     expect(vi.mocked(ingest.sendUpload).mock.calls[0][0]).toBe('?/mediaLibraryUpload');
     await expect.poll(() => gotoCalls.length).toBe(gotoCallsBefore + 1);
     expect(gotoCalls[gotoCalls.length - 1]).toBe('/admin/media?uploaded=1');
-    // invalidateAll: true rides alongside the flash URL, so a second upload landing on the
+    // refreshAll: true rides alongside the flash URL, so a second upload landing on the
     // identical ?uploaded=1 URL still forces the loader to re-run rather than a no-op navigation.
-    expect(gotoOptsCalls[gotoOptsCalls.length - 1]).toEqual({ invalidateAll: true });
+    expect(gotoOptsCalls[gotoOptsCalls.length - 1]).toEqual({ refreshAll: true });
   });
 
   it('accepts a dropped file on the page dropzone', async () => {

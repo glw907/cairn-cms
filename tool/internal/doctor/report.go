@@ -20,7 +20,7 @@ var checks = []Check{
 	ConfigBindings,
 	ConfigMediaBucket,
 	ConfigObservability,
-	ConfigCsrfDisable,
+	ConfigCsrfTrustedOrigins,
 	ConfigSiteConfig,
 	ConfigPublicOrigin,
 	ConfigNoReferrerBlanket,

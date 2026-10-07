@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { fillTitleWhenHydrated } from './editor-helpers.js';
 
 // The media Phase 3a inline figure, end to end against the running showcase. It builds on the 2b
 // insert flow (open the popover, upload, alt, Insert), then drives the figure control: wrap the
 // inserted image in a `:::figure{.wide}` with a caption distinct from the alt, confirm the source
 // transform left the atomic media token byte-intact, render the figure in the preview iframe, and
-// save. The fake R2 double on platform.env (hooks.server.ts) and the fake-github recorder back the
+// save. The fake R2 double in the Worker env (hooks.server.ts) and the fake-github recorder back the
 // upload, the preview resolve, and the commit, the same harness media-insert.spec.ts uses.
 //
 // Deviation from the plan's "use the seeded post" note: the fake-github recorder is module-level
@@ -47,7 +48,7 @@ test('the figure flow: wrap an inserted image in a wide figure, render the figca
   await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
   const id = new URL(page.url()).pathname.split('/').pop() ?? '';
   expect(id).toContain(slug);
-  await page.locator('input[name="title"]').fill('Figure Post');
+  await fillTitleWhenHydrated(page, 'Figure Post');
 
   // 1. The 2b insert flow, mirrored from media-insert.spec.ts: open the popover, upload the PNG,
   //    write the alt, Insert. The optimistic placeholder resolves to a committed media: reference.

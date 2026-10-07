@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { fillTitleWhenHydrated } from './editor-helpers.js';
 
 // The preview surfaces read the site's theme tokens, in every scheme Waymark ships. Two surfaces:
 //
@@ -142,7 +143,7 @@ test.describe('preview surfaces read the theme tokens', () => {
     await createDialog.locator('input[name="slug"]').fill(slug);
     await createDialog.getByRole('button', { name: 'Create' }).click();
     await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
-    await page.locator('input[name="title"]').fill(title);
+    await fillTitleWhenHydrated(page, title);
     const editor = page.locator('.cm-content');
     await expect(editor).toBeVisible();
     await editor.click();

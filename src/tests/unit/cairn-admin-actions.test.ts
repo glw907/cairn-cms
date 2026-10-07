@@ -10,6 +10,7 @@ import { defineFieldset } from '../../lib/content/fieldset.js';
 import { expectRedirect as expectRedirectAssertion } from '../_redirect-assertions.js';
 import { log } from '../../lib/log/index.js';
 import { testEvent } from '../helpers/test-event.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
@@ -84,6 +85,8 @@ function actionEvent(
 ) {
   const cookieSets: { name: string; value: string }[] = [];
   const cookieDeletes: string[] = [];
+  // The Worker env the action runs under; the event itself carries none.
+  setFakeEnv({ GITHUB_APP_PRIVATE_KEY_B64: 'x', ...opts.env });
   const event = testEvent({
     url: `https://t.example${pathname}`,
     route: '/admin/[...path]',
@@ -95,7 +98,6 @@ function actionEvent(
           : opts.editor,
       cairnBackend: backend,
     },
-    env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', ...opts.env },
     cookies: {
       get: (name: string) => opts.cookies?.[name],
       set: (name: string, value: string) => cookieSets.push({ name, value }),
@@ -302,7 +304,7 @@ describe('content actions', () => {
 
   // Gap closer (Task 16, reshaped by surface-pruning Task 6): createCairnAdmin must forward
   // `deps.tidy` to the content routes so the tidy action calls the injected client, not the real
-  // SDK. The tidy action reads the CSRF header, the ANTHROPIC_API_KEY from platform.env, and
+  // SDK. The tidy action reads the CSRF header, the ANTHROPIC_API_KEY from the Worker env, and
   // `runtime.tidy.enabled`, so a forwarded factory that is invoked proves the dep crossed the
   // composition boundary.
   it('forwards deps.tidy.client to the tidy action', async () => {
@@ -317,13 +319,13 @@ describe('content actions', () => {
 
     // A CSRF-valid raw POST: the token rides the X-Cairn-CSRF header and the __Host-cairn_csrf cookie.
     const csrf = 'csrf-token-value-0123456789abcdef';
+    setFakeEnv({ ANTHROPIC_API_KEY: 'sk-test-key' });
     const event = testEvent({
       url: 'https://t.example/admin/posts/2026-05-01-hi',
       route: '/admin/[...path]',
       body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
       headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor', capability: 'editor' } },
-      env: { ANTHROPIC_API_KEY: 'sk-test-key' },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
         set: () => {},
@@ -357,13 +359,13 @@ describe('content actions', () => {
     const admin = createCairnAdmin({ runtime: tidyRuntime, ...deps, tidy: { client: anthropic, timeoutMs: 20 } });
 
     const csrf = 'csrf-token-value-0123456789abcdef';
+    setFakeEnv({ ANTHROPIC_API_KEY: 'sk-test-key' });
     const event = testEvent({
       url: 'https://t.example/admin/posts/2026-05-01-hi',
       route: '/admin/[...path]',
       body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
       headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor', capability: 'editor' } },
-      env: { ANTHROPIC_API_KEY: 'sk-test-key' },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
         set: () => {},
@@ -723,13 +725,13 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
       tidy: { enabled: true, model: 'claude-test', conventions: null as unknown as Record<string, unknown> },
     } as CairnRuntime;
     const admin = createCairnAdmin({ runtime: tidyRuntime, ...deps });
+    setFakeEnv({ ANTHROPIC_API_KEY: 'sk-test-key' });
     const event = testEvent({
       url: 'https://t.example/admin/posts/2026-05-01-hi',
       route: '/admin/[...path]',
       body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
       headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor', capability: 'editor' } },
-      env: { ANTHROPIC_API_KEY: 'sk-test-key' },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
         set: () => {},

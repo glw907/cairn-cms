@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// The media Phase 2b insert UI, end to end against the running showcase with the fake R2 double on
-// platform.env (hooks.server.ts) and the fake-github double recording commits. Unlike media-slice
+// The media Phase 2b insert UI, end to end against the running showcase with the fake R2 double in
+// the Worker env (hooks.server.ts) and the fake-github double recording commits. Unlike media-slice
 // (which posts bytes by direct fetch to prove the backend legs), this drives the actual UI: the
 // toolbar control, the popover chooser, the capture card, the optimistic loop, the source chip, and
 // the preview thumbnail. The backend legs it leans on (the upload action, the save, media.json) are

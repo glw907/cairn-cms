@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createGithubApp } from '../../lib/index.js';
 import { loadHealth } from '../../lib/sveltekit/health.js';
 import { testEvent } from '../helpers/test-event.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 
 function runtime(): CairnRuntime {
@@ -18,8 +19,10 @@ function runtime(): CairnRuntime {
   };
 }
 
+/** A request event, with `env` installed as the Worker env the health check reads. */
 function event(env: Record<string, unknown>) {
-  return testEvent({ env });
+  setFakeEnv(env);
+  return testEvent();
 }
 
 describe('loadHealth', () => {

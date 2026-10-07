@@ -109,22 +109,25 @@ describe('housekeeping rides the mint', () => {
 
     const { config } = makeConfig({ lookup: async () => 'sub-sweep' });
     const channel = createAuthChannel<ChannelTestEnv>(config);
-    // No platform on the test event, so the sweep awaits inline and is deterministic here.
     const result = await channel.actions.request(makeEvent({ contact: 'sweep@x.test' }));
     expect(result).toEqual({ outcome: 'sent' });
 
-    const staleCode = await db
-      .prepare("SELECT COUNT(*) AS n FROM cairn_channel_code WHERE nonce_hash = 'stale-nonce'")
-      .first<{ n: number }>();
-    const staleSession = await db
-      .prepare("SELECT COUNT(*) AS n FROM cairn_channel_session WHERE token_hash = 'stale-session'")
-      .first<{ n: number }>();
-    const staleBudget = await db
-      .prepare("SELECT COUNT(*) AS n FROM cairn_channel_budget WHERE bucket = 'stale:budget'")
-      .first<{ n: number }>();
-    expect(staleCode?.n ?? -1).toBe(0);
-    expect(staleSession?.n ?? -1).toBe(0);
-    expect(staleBudget?.n ?? -1).toBe(0);
+    // The sweep runs through waitUntil, after the response, so the rows clear shortly after the
+    // action returns rather than before it.
+    await vi.waitFor(async () => {
+      const staleCode = await db
+        .prepare("SELECT COUNT(*) AS n FROM cairn_channel_code WHERE nonce_hash = 'stale-nonce'")
+        .first<{ n: number }>();
+      const staleSession = await db
+        .prepare("SELECT COUNT(*) AS n FROM cairn_channel_session WHERE token_hash = 'stale-session'")
+        .first<{ n: number }>();
+      const staleBudget = await db
+        .prepare("SELECT COUNT(*) AS n FROM cairn_channel_budget WHERE bucket = 'stale:budget'")
+        .first<{ n: number }>();
+      expect(staleCode?.n ?? -1).toBe(0);
+      expect(staleSession?.n ?? -1).toBe(0);
+      expect(staleBudget?.n ?? -1).toBe(0);
+    });
   });
 });
 
@@ -318,8 +321,11 @@ describe('delivery failure (step 8)', () => {
     const first = await channel.actions.request(makeEvent({ contact: 'fail@x.test', cookies: jar }));
     expect(first).toEqual({ outcome: 'sent' });
     expect(calls).toBe(1);
-    expect(await codeRowCount()).toBe(0);
-    expect(await budgetSum('send')).toBe(0);
+    // Delivery and its failure cleanup run through waitUntil, after the response.
+    await vi.waitFor(async () => {
+      expect(await codeRowCount()).toBe(0);
+      expect(await budgetSum('send')).toBe(0);
+    });
 
     const second = await channel.actions.request(makeEvent({ contact: 'fail@x.test', cookies: jar }));
     expect(second).toEqual({ outcome: 'sent' });
@@ -338,30 +344,83 @@ describe('delivery failure (step 8)', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     try {
       await channel.actions.request(makeEvent({ contact }));
-      const record = errorSpy.mock.calls
-        .map((c) => c[0] as { event?: string; error?: string })
-        .find((r) => r.event === 'auth.channel.send_failed');
-      expect(record).toBeDefined();
+      const record = await vi.waitFor(() => {
+        const found = errorSpy.mock.calls
+          .map((c) => c[0] as { event?: string; error?: string })
+          .find((r) => r.event === 'auth.channel.send_failed');
+        expect(found).toBeDefined();
+        return found;
+      });
       expect(record?.error).toBeDefined();
       expect(record?.error).not.toContain(contact);
     } finally {
       vi.restoreAllMocks();
     }
   });
+});
 
-  it('backgrounds delivery through waitUntil when a platform is present, with .catch already attached', async () => {
-    const scheduled: Promise<unknown>[] = [];
-    const { config, sent } = makeConfig({ lookup: async () => 'sub-1' });
+describe('delivery failure cleanup that itself throws', () => {
+  /**
+   * Wrap the channel database so that, once `armed()` answers true, the failure cleanup's
+   * conditioned code-row delete throws. Every other statement runs against the real binding.
+   */
+  function failingCleanupDb(armed: () => boolean): D1Database {
+    const real = db;
+    const wrapSession = (session: D1DatabaseSession): D1DatabaseSession =>
+      new Proxy(session, {
+        get(target, prop, receiver) {
+          if (prop === 'prepare') {
+            return (sql: string) => {
+              if (armed() && sql.includes('DELETE FROM cairn_channel_code') && sql.includes('RETURNING subject')) {
+                throw new Error('d1 unavailable during cleanup');
+              }
+              return target.prepare(sql);
+            };
+          }
+          const value = Reflect.get(target, prop, receiver);
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+      });
+    return new Proxy(real, {
+      get(target, prop, receiver) {
+        if (prop === 'withSession') {
+          return (...args: Parameters<D1Database['withSession']>) => wrapSession(target.withSession(...args));
+        }
+        const value = Reflect.get(target, prop, receiver);
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+  }
+
+  // The record is written only inside the catch that wraps the cleanup, so its presence shows the
+  // cleanup's rejection was caught there rather than left to the waitUntil promise.
+  it('logs auth.channel.send_cleanup_failed when the failure cleanup throws', async () => {
+    let deliverFailed = false;
+    const { config } = makeConfig({
+      lookup: async () => 'sub-1',
+      resolveDb: () => failingCleanupDb(() => deliverFailed),
+      deliver: async () => {
+        deliverFailed = true;
+        throw new Error('provider down');
+      },
+    });
     const channel = createAuthChannel<ChannelTestEnv>(config);
-    const result = await channel.actions.request(
-      makeEvent({ contact: 'bg@x.test', waitUntil: (p) => void scheduled.push(p) }),
-    );
-    expect(result).toEqual({ outcome: 'sent' });
-    // Two backgrounded promises: the housekeeping sweep that rides every fresh mint, then the
-    // delivery itself. Neither runs on the response path.
-    expect(scheduled).toHaveLength(2);
-    await Promise.all(scheduled);
-    expect(sent).toHaveLength(1);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const result = await channel.actions.request(makeEvent({ contact: 'cleanup@x.test' }));
+      expect(result).toEqual({ outcome: 'sent' });
+      const record = await vi.waitFor(() => {
+        const found = errorSpy.mock.calls
+          .map((c) => c[0] as { event?: string; error?: string; correlationId?: string })
+          .find((r) => r.event === 'auth.channel.send_cleanup_failed');
+        expect(found).toBeDefined();
+        return found;
+      });
+      expect(record?.error).toContain('d1 unavailable during cleanup');
+      expect(record?.correlationId).toBeTypeOf('string');
+    } finally {
+      vi.restoreAllMocks();
+    }
   });
 });
 

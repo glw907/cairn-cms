@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ComponentRegistry } from '@glw907/cairn-cms';
 
-// `$theme/cairn.config.js` pulls in the full adapter, including a Svelte island this standalone
+// `#theme/cairn.config.js` pulls in the full adapter, including a Svelte island this standalone
 // vitest config cannot parse. The mock keeps the adapter's two members the load reads: the
 // registry and a `render` that returns its input, so the test sees exactly the markdown the load
 // hands to the renderer.
@@ -13,7 +13,7 @@ const mockCairn = vi.hoisted(() => ({
     },
   },
 }));
-vi.mock('$theme/cairn.config.js', () => mockCairn);
+vi.mock('#theme/cairn.config.js', () => mockCairn);
 
 const build = () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] });
 

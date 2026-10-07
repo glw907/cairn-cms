@@ -2,8 +2,8 @@
 // theme-ports-1-3 harvest). A theme file (anything under an examples/*/src that is not itself
 // inside its own src/chassis) may reach chassis machinery only through one of the seams the
 // canonical src/chassis/README.md (examples/showcase) documents in its "What lives here" table:
-// the $chassis alias in a .ts/.svelte import, or a relative @import in a .css file (aliases do not
-// resolve in CSS). This script parses that table for the canonical seam list once, then walks
+// the #chassis subpath import in a .ts/.svelte import, or a relative @import in a .css file (CSS
+// imports stay relative). This script parses that table for the canonical seam list once, then walks
 // EVERY examples/*/src that carries its own chassis/ copy (each site's own verbatim copy, per the
 // "one chassis, N themes" ontology), failing on any import that resolves into that theme's own
 // chassis/ but names a file the canonical table does not list, the same way a reach past a
@@ -44,7 +44,7 @@ const IMPORT_SPEC =
 
 /**
  * The basename of an import specifier or a table filename, with its extension stripped once. Both
- * sides of the comparison run through this, so `$chassis/cairn.server.js` (the NodeNext import
+ * sides of the comparison run through this, so `#chassis/cairn.server.js` (the NodeNext import
  * form) and `cairn.server.ts` (the README's own filename) normalize to the same `cairn.server`.
  * @param {string} spec
  * @returns {string}
@@ -67,13 +67,13 @@ export function parseSeams(readmeText) {
 }
 
 /**
- * Whether an import specifier resolves into src/chassis/: the `$chassis` alias, or a relative path
+ * Whether an import specifier resolves into src/chassis/: the `#chassis` subpath import, or a relative path
  * with a `chassis/` path segment.
  * @param {string} spec
  * @returns {boolean}
  */
 export function referencesChassis(spec) {
-  return spec.startsWith('$chassis/') || /(^|\/)chassis\//.test(spec);
+  return spec.startsWith('#chassis/') || /(^|\/)chassis\//.test(spec);
 }
 
 /**

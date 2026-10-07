@@ -158,10 +158,10 @@ login flow needs the surrounding discipline the engine's own magic-link guard fo
 - Send a token in a POST body, never in a URL: a URL lands in server access logs, browser
   history, and the `Referer` header of any outbound link the landing page renders.
 - Set `Referrer-Policy: same-origin` on the landing page that consumes the token, not
-  `no-referrer`. The engine's own `/admin` responses can afford `no-referrer` because
-  `/admin`'s CSRF protection is a double-submit token; a second audience's own routes, guarded
-  by an origin compare instead (see `originMatches` in the engine's own guard), need `Origin` to
-  survive a same-origin POST, and `same-origin` still keeps it out of a cross-origin `Referer`.
+  `no-referrer`. The engine's own `/admin` responses use `strict-origin`, which keeps `Origin`
+  on a same-origin POST and sends no path in a `Referer`. SvelteKit's origin check covers a
+  second audience's own routes, so they need `Origin` to survive a same-origin POST, and
+  `same-origin` still keeps it out of a cross-origin `Referer`.
   The engine's own admin guard applies a fuller security-header set, but only under `/admin`; a
   second audience's own routes are the site's responsibility to head the same way.
 - Pair `generateToken` with `tokensMatch` for double-submit CSRF protection on the second

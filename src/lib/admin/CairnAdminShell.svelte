@@ -679,6 +679,11 @@ discriminant, not the fields, gates the chrome).
 <svelte:head>
   <title>{pageTitle} · {data.siteName}</title>
   <link rel="icon" href={cairnFaviconHref} />
+  {#if !data.public}
+    <!-- The authed views' referrer policy. A public payload renders LoginPage or ConfirmPage, which
+         emit their own, so exactly one lands in every admin document. -->
+    <meta name="referrer" content="strict-origin" />
+  {/if}
 </svelte:head>
 
 <svelte:window onkeydown={onKeydown} onkeydowncapture={onDrawerOverlayKeydownCapture} />

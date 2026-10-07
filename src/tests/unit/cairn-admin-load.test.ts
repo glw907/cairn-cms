@@ -8,6 +8,8 @@ import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
 import type { MagicLinkLoginData } from '../../lib/sveltekit/auth-routes.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
+import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
+
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
@@ -48,6 +50,7 @@ function adminEvent(
   } = {},
 ) {
   const headers: Record<string, string> = {};
+  setFakeEnv({ GITHUB_APP_PRIVATE_KEY_B64: 'x', AUTH_DB: opts.db });
   return {
     ...testEvent({
       url: `https://t.example${pathname}${opts.search ?? ''}`,
@@ -59,7 +62,6 @@ function adminEvent(
             : opts.editor,
         cairnBackend: opts.backend ?? backend,
       },
-      env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', AUTH_DB: opts.db },
     }),
     setHeaders: (h: Record<string, string>) => Object.assign(headers, h),
     _headers: headers,
@@ -138,7 +140,7 @@ describe('public views', () => {
     expect(data.view).toBe('confirm');
     if (data.view !== 'confirm') throw new Error('narrowing');
     expect(data.page).toMatchObject({ token: 'abc', siteName: 'Test Site' });
-    expect(event._headers['Referrer-Policy']).toBe('no-referrer');
+    expect(event._headers['Referrer-Policy']).toBe('strict-origin');
   });
 });
 

@@ -97,6 +97,22 @@ describe('createAuthGuard: locals.cairnIdentity', () => {
     expect(ev.locals.cairnIdentity).toBeUndefined();
   });
 
+  it('removes a locals.cairnIdentity an earlier handle set, before the route runs, when no identity option is configured', async () => {
+    const handle = asHandle(createAuthGuard());
+    const ev = event('/admin/login');
+    ev.locals.cairnIdentity = { label: 'planted', logoutUrl: '/planted' };
+    let seenByRoute: unknown = 'unset';
+    await handle({
+      event: ev,
+      resolve: async (e) => {
+        seenByRoute = e.locals.cairnIdentity;
+        return OK;
+      },
+    });
+    expect(seenByRoute).toBeUndefined();
+    expect('cairnIdentity' in ev.locals).toBe(false);
+  });
+
   it('sets locals.cairnIdentity on a public admin path and calls resolve zero times', async () => {
     const resolve = vi.fn<IdentityResolver['resolve']>(async () => ({ ok: false, reason: 'missing' }));
     const handle = asHandle(

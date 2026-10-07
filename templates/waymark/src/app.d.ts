@@ -31,6 +31,15 @@ declare global {
       hasIslands?: boolean;
     }
   }
+  namespace Cloudflare {
+    interface Env {
+      // The dev-backend opt-in src/chassis/dev-gate.ts reads. Optional because it is a dev-only
+      // flag, absent from a deployed Worker, and `wrangler types` never generates it: it reaches
+      // a worker only through `wrangler dev --var CAIRN_DEV_BACKEND:1`, never wrangler.jsonc.
+      // The declaration only types the reads; it does not make the flag production configuration.
+      CAIRN_DEV_BACKEND?: string;
+    }
+  }
 }
 
 export {};

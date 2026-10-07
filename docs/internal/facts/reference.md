@@ -249,7 +249,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   request. This implies an earlier state where they could diverge. Source:
   `src/lib/auth/crypto.ts:22-26` (doc comment: "Both names now also share their `secure` INPUT:
   `csrf.ts`'s `csrfSecure`..."), `src/lib/sveltekit/csrf.ts:76,132,174,195` (`csrfSecure`,
-  `csrfCookieName(csrfSecure(...))`), `src/lib/sveltekit/guard.ts:277,356`
+  `csrfCookieName(csrfSecure(...))`), `src/lib/sveltekit/guard.ts:283,362`
   (`sessionCookieName(csrfSecure(...))`). [verified: the shared-function claim is confirmed; the
   earlier-divergence history is not independently re-traced to a changelog entry]
 
@@ -1249,7 +1249,7 @@ re-sourced to Go on this tree rather than to the page.
   decides outright (covers raw-body upload, media, dictionary, tidy transports); the form-field
   witness applies only when no header arrives; an empty header value still counts as "arrived" and
   is judged on its own mismatch, never falling back to the field. Source:
-  `src/lib/sveltekit/guard.ts:258-277` (`headerSent = ... !== null`; `verdict = headerSent ?
+  `src/lib/sveltekit/guard.ts:264-283` (`headerSent = ... !== null`; `verdict = headerSent ?
   csrfHeaderVerdict(...) : await csrfTokenVerdict(event)`; the log's `witness` field is
   `headerSent ? 'header' : 'field'`). [verified]
 - `f:v1jj2k` `admin.action.session_absent` is the only trace a `createAdminAction`-mounted route leaves for a
@@ -1641,7 +1641,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:suk99b` `createAdminAction`'s CSRF check order: a valid `X-Cairn-CSRF` header clears the step outright
   (checked first); only with no valid header must the posted `csrf` form field match the CSRF
   cookie, constant-time, else `error(403, ...)`. A fetch-based action that sets the header and
-  posts `FormData` with no `csrf` field still passes. Source: `src/lib/sveltekit/guard.ts:259-281`
+  posts `FormData` with no `csrf` field still passes. Source: `src/lib/sveltekit/guard.ts:265-287`
   (`headerSent = ... !== null`, header checked before the field fallback) mirrored in
   `admin-action.ts` per its own doc comment at lines 158-162. [verified]
 - `f:8yb3r1` A handler that returns normally and emits zero `ctx.audit` records throws
@@ -1722,7 +1722,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   refuse every action on the documented database-less default instead of hardening it. Source:
   `src/lib/sveltekit/admin-action.ts:74-82` (`access` option doc: "Opt in to the access-map
   authorization... Omitted, `createAdminAction` authorizes nothing, its behavior for every existing
-  caller"), `src/lib/sveltekit/guard.ts:351,371` (`event.locals.cairnAccess = access ?? {}`).
+  caller"), `src/lib/sveltekit/guard.ts:357,377` (`event.locals.cairnAccess = access ?? {}`).
   [verified]
 - `f:yfg97w` `createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly rather than making the
   parameter optional, because an optional parameter would make the shortest call silently drop the

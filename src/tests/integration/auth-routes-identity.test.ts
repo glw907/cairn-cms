@@ -6,6 +6,7 @@ import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeEvent, makeRecordingCookies, countRows, expectRedirect, expectHttpError } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
+import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import { createSession } from '../../lib/auth/store.js';
 import { createGithubApp } from '../../lib/index.js';
@@ -194,5 +195,47 @@ describe('the five handlers, unchanged without locals.cairnIdentity', () => {
       routes.logoutAction(makeEvent({ url: 'https://test.dev/admin', cookies: makeRecordingCookies() })),
     );
     expect(logoutResult.location).toBe('/admin/login');
+  });
+});
+
+// The guard owns locals.cairnIdentity: a value a handle sequenced before it left there must not
+// decide which mode the logout runs in. The event passes through the real guard on a public admin
+// path, and the logout runs from the guard's own resolve callback, as a route would.
+describe('logoutAction behind the guard, with locals.cairnIdentity pre-set by an earlier handle', () => {
+  type Handle = (input: { event: CairnEvent; resolve: (event: CairnEvent) => Promise<Response> }) => Promise<Response>;
+
+  /** Run `logout` through `guard` on /admin/login, the planted identity already on locals. */
+  async function logoutThrough(guard: Handle, cookies: ReturnType<typeof makeRecordingCookies>) {
+    const event: CairnEvent = { ...adminEvent('/admin/login', { cookies }), locals: { cairnIdentity: { label: 'planted', logoutUrl: '/planted' } } };
+    const admin = createCairnAdmin({ runtime: runtime() });
+    let result: Awaited<ReturnType<typeof expectRedirect>> | undefined;
+    await guard({
+      event,
+      resolve: async (ev) => {
+        result = await expectRedirect(() => admin.actions.logout(ev));
+        return new Response('ok');
+      },
+    });
+    return result!;
+  }
+
+  it('with no identity configured, deletes the session row and redirects to /admin/login', async () => {
+    await createSession(db, 'sid', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    const guard = createAuthGuard() as unknown as Handle;
+    const cookies = makeRecordingCookies({ cairn_session: 'sid', cairn_csrf: 'csrf-tok' });
+    const result = await logoutThrough(guard, cookies);
+    expect(result.location).toBe('/admin/login');
+    expect(await countRows('session')).toBe(0);
+  });
+
+  it('with an identity configured, still skips the row delete and redirects to the validated logoutUrl', async () => {
+    await createSession(db, 'sid', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    const guard = createAuthGuard({
+      identity: { resolve: async () => ({ ok: false, reason: 'missing' }), logoutUrl: '/goodbye' },
+    }) as unknown as Handle;
+    const cookies = makeRecordingCookies({ cairn_session: 'sid', cairn_csrf: 'csrf-tok' });
+    const result = await logoutThrough(guard, cookies);
+    expect(result.location).toBe('/goodbye');
+    expect(await countRows('session')).toBe(1);
   });
 });

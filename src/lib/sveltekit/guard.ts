@@ -241,8 +241,14 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
     // identity mode by this field alone. The value is the snapshot validated at construction;
     // the guard is the only writer. identity.resolve itself is called only below, on guarded
     // paths, never here.
+    //
+    // With no identity configured the field is cleared instead: locals is request-scoped state
+    // a handle sequenced before the guard can write, and the magic-link handlers read this field
+    // to pick their mode, so a value the guard did not set must not reach them.
     if (identitySnapshot) {
       event.locals.cairnIdentity = identitySnapshot;
+    } else {
+      delete event.locals.cairnIdentity;
     }
 
     // Admin: every unsafe form POST carries a valid double-submit token, else the branded

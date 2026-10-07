@@ -25,10 +25,11 @@ rulings (Geoff, 2026-10-07): 2a ceiling 25M, stop at 20M; lanes 5M shared, stop 
 close unattended; merge on a green close; no release. After the run: Geoff reads the five task 8 pages, then
 the release (Kit 3 and the rebuilt extend docs), then cairn.pub's migration as a site pass.
 
-**Run in flight (checkpoint 1, 2026-10-07):** R1 accepted (dotfiles `5cbf9c0`, `9eff4a6`; nothing in this run uses
-it). R2 accepted (merge `214b4856`, fix `e5ebb049`). R3 accepted (`9f8f218e`). R4 accepted through `140ab482`, record
-`d102143a`; whole-tree docs gate, `check:facts`, and `check:provenance` green on `draft-docs-2a` (unpushed). Spend
-through R4 is about 2.4M in agents plus the conductor (plan estimate 2.8M). Next: R5 (`docs-page-chain`, five pages).
+**Run in flight (checkpoint 2, 2026-10-07):** R1 to R4 accepted (record `d102143a`). R5 closed all five task 8 pages
+on `draft-docs-2a` (pushed): chain run `wf_27395374-42e` escalated all five (7.2M), then targeted closes and two
+hand-run chains for the plan-read escalations; close `9f0b8add`, record and 14 friction entries `c882e4b2`
+(`docs/superpowers/research/2026-10-07-draft-docs-2a-r5-task8-record.md`, with five conductor rulings for Geoff).
+Whole-tree docs gate green. 2a spend is about 16.4M against the 20M stop. Next: R6 (task 9) beside lanes L1 and L2.
 Open carry: `gateMatches`' doc comment in dotfiles still says a placeholder "matches any non-empty text".
 
 ## Open decisions and watches

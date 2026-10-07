@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillTitleWhenHydrated } from './editor-helpers.js';
 
 // The media Phase 3b frontmatter hero, end to end against the running showcase behind the fake
 // backend (the fake R2 double in the Worker env and the fake-github recorder, the same harness
@@ -53,7 +54,7 @@ test('Part A: set a hero through the field, the hidden inputs carry the structur
   await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
   const id = new URL(page.url()).pathname.split('/').pop() ?? '';
   expect(id).toContain(slug);
-  await page.locator('input[name="title"]').fill('Hero Post');
+  await fillTitleWhenHydrated(page, 'Hero Post');
 
   // 1. Open the Details slide-over: the hero field lives in the details field stack. The band's
   //    Details trigger toggles the panel (aria-label "Details").

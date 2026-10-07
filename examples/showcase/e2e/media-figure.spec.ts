@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillTitleWhenHydrated } from './editor-helpers.js';
 
 // The media Phase 3a inline figure, end to end against the running showcase. It builds on the 2b
 // insert flow (open the popover, upload, alt, Insert), then drives the figure control: wrap the
@@ -47,7 +48,7 @@ test('the figure flow: wrap an inserted image in a wide figure, render the figca
   await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
   const id = new URL(page.url()).pathname.split('/').pop() ?? '';
   expect(id).toContain(slug);
-  await page.locator('input[name="title"]').fill('Figure Post');
+  await fillTitleWhenHydrated(page, 'Figure Post');
 
   // 1. The 2b insert flow, mirrored from media-insert.spec.ts: open the popover, upload the PNG,
   //    write the alt, Insert. The optimistic placeholder resolves to a committed media: reference.

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillTitleWhenHydrated } from './editor-helpers.js';
 
 // The v2 container fields (posts.faq = array(object), posts.gallery = array(image)) end to end against
 // the running showcase behind the fake backend (the fake-github recorder plus the fake R2 double on
@@ -45,7 +46,7 @@ test('the FAQ array(object) round-trips: add two rows, reorder, remove one, save
   const id = new URL(page.url()).pathname.split('/').pop() ?? '';
 
   // Required title plus a body so the save validates and commits the branch.
-  await page.locator('input[name="title"]').fill('FAQ Roundtrip');
+  await fillTitleWhenHydrated(page, 'FAQ Roundtrip');
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('A body for the FAQ round-trip.');
@@ -114,7 +115,7 @@ test('the gallery array(image) round-trips: add an image row, save, reload, the 
   await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
   const id = new URL(page.url()).pathname.split('/').pop() ?? '';
 
-  await page.locator('input[name="title"]').fill('Gallery Roundtrip');
+  await fillTitleWhenHydrated(page, 'Gallery Roundtrip');
   const editor = page.locator('.cm-content');
   await editor.click();
   await page.keyboard.type('A body for the gallery round-trip.');

@@ -348,8 +348,11 @@
       "id": "f:pmmtdv"
     },
     {
-      "text": "The example site passes `App.Platform['env']`.",
-      "id": "f:esp93u"
+      "text": "The example site passes the `Env` that `wrangler types` generates in `worker-configuration.d.ts`.",
+      "id": [
+        "f:esp93u",
+        "f:n52h8f"
+      ]
     },
     {
       "text": "To wrap the actions, follow these steps:",
@@ -426,7 +429,19 @@
       "id": "f:qlgggh"
     },
     {
-      "text": "The handle binds `waitUntil` to its `ExecutionContext`, because the unbound method typechecks and then throws `Illegal invocation` in workerd, after which the row can be lost.",
+      "text": "The handle checks `building` from `$app/env` before it reads `env.AUDIT_DB`, because every read of the `env` from `cloudflare:workers` throws while the build prerenders.",
+      "id": "f:i8pbhc"
+    },
+    {
+      "text": "The handle passes the `waitUntil` that `cloudflare:workers` exports, which needs no bind.",
+      "id": "f:ph6kjg"
+    },
+    {
+      "text": "A caller that holds an `ExecutionContext`, such as a Cron `scheduled` handler, passes `ctx.waitUntil.bind(ctx)` instead.",
+      "id": "f:ph6kjg"
+    },
+    {
+      "text": "The unbound method typechecks and then throws `Illegal invocation` in workerd, after which the row can be lost.",
       "id": "f:ph6kjg"
     },
     {
@@ -668,7 +683,7 @@
       "id": "f:9fwsz5"
     },
     {
-      "text": "On `'success'`, close the dialog before awaiting `update()`, so it never sits open through `invalidateAll()`.",
+      "text": "On `'success'`, close the dialog before awaiting `update()`, so it never sits open through `refreshAll()`.",
       "id": "f:jra92k"
     },
     {

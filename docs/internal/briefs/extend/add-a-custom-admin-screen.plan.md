@@ -150,7 +150,8 @@ without re-running `load`, and a hand-rolled action that skips it admits any sig
 records nothing (`f:chsstm`). The procedure is one step, so it is a single bulleted item (anatomy
 item 3): in the screen's `+page.server.ts`, call `requireAccess` in `load` before it reads
 anything. The signups `load` snippet follows (the example site's file, its `load` and
-`requireAppDb`, with the fail-closed 500 on an absent binding, `f:onqm6k`). After the snippet, the
+`requireAppDb`, which reads `env.APP_DB` from `cloudflare:workers` and fails closed with a 500 on
+an absent binding, `f:onqm6k`). After the snippet, the
 nested-route fact as
 one sentence of explanation, never a step, since the reader has no nested route yet: a route
 nested under the screen inherits the guard and never the page's own rule, so a detail endpoint
@@ -191,17 +192,18 @@ Hand-off: the next section builds the wrapper.
 First sentence: One `createSectionAction` call builds the section's wrapper, and each form action
 passes its handler and its audited `action` and `entity` to that wrapper.
 
-Facts: `f:3j02dk`, `f:esp93u`, `f:pmmtdv`, `f:lblh3u`, `f:pyt58u`.
+Facts: `f:3j02dk`, `f:esp93u`, `f:n52h8f`, `f:pmmtdv`, `f:lblh3u`, `f:pyt58u`.
 
 Content. The `Env` paragraph before the steps, since the snippet depends on it: `Env` is a type
 parameter for the site's platform bindings, the engine ships no `Env` type, `resolveDb` receives
-`Env | undefined`, and the example passes `App.Platform['env']` (`f:esp93u`); `Env` does not infer
+`Env | undefined`, and the example passes the `Env` that `wrangler types` generates in
+`worker-configuration.d.ts` (`f:esp93u`, `f:n52h8f`); `Env` does not infer
 from an unannotated `resolveDb` parameter, so the site annotates it or passes explicit type
 arguments (`f:pmmtdv`). Steps: (1) in the screen's server file, build one wrapper with
 `createSectionAction`, passing a `resolveDb` that reads the section's binding (`f:3j02dk`); (2) in
 the exported actions, wrap each handler in that wrapper, passing its `action` and `entity`; (3) on
 the destructive action, add `ownerOnly: true`. The example site's `actions` snippet (with its
-`snippet-check-skip` comment for `App.Platform['env']`). After it, the handler shape in one
+`snippet-check-skip` comment for the generated `Env`). After it, the handler shape in one
 sentence: each handler receives `{ form, ctx }`, writes through `ctx.db`, and calls `ctx.audit`
 with a `detail` or an `entityId` (`f:pyt58u`); and the layering in one: the wrapper runs
 `createAdminAction`'s editor, CSRF, and single form-read work underneath, so a section never calls
@@ -216,7 +218,7 @@ Hand-off: `ctx.audit` persists nothing until a sink is wired.
 First sentence: `ctx.audit` persists a record only when `hooks.server.ts` sets an audit sink on
 `event.locals.cairnAuditSink`, composed with the auth guard through `sequence`.
 
-Facts: `f:68h31z`, `f:rurhey`, `f:6quvqm`, `f:ph6kjg`, `f:ff3l1u`, `f:da6d2z`. Subordinated from
+Facts: `f:68h31z`, `f:rurhey`, `f:6quvqm`, `f:i8pbhc`, `f:ph6kjg`, `f:ff3l1u`, `f:da6d2z`. Subordinated from
 here: `f:hafpqf` (the `rateLimit` option's members and degrade-to-open) to
 `docs/reference/sveltekit.md`, `createSectionAction` check order item 2 and the
 `SectionActionConfig` type row.
@@ -227,10 +229,13 @@ guard through `sequence()`, and because it only sets a `locals` field the route 
 placed after `createAuthGuard` (`f:rurhey`, `f:6quvqm`). Steps: (1) in `hooks.server.ts`, add a
 handle that sets `event.locals.cairnAuditSink`; (2) in the same file, compose it after
 `createAuthGuard` through `sequence`. The `hooks.server.ts` snippet (the committed one, with
-`snippet-check-skip`). Then the two behaviors the snippet encodes: the handle binds `waitUntil` to
-its `ExecutionContext`, because the unbound method typechecks and throws `Illegal invocation` in
-workerd, after which the row can be lost (`f:ph6kjg`); the sink returns before the insert settles
-and logs a rejected insert, so a failed insert never fails the audited action (`f:ff3l1u`). Close
+`snippet-check-skip`). Then the behaviors the snippet encodes: the handle checks `building` from
+`$app/env` before it reads `env.AUDIT_DB`, because every `cloudflare:workers` `env` read throws
+while the build prerenders (`f:i8pbhc`); the handle passes the `waitUntil` that
+`cloudflare:workers` exports and binds nothing, while a caller holding an `ExecutionContext` (a
+Cron `scheduled` handler) binds `ctx.waitUntil` first, because the unbound method typechecks and
+throws `Illegal invocation` in workerd, after which the row can be lost (`f:ph6kjg`); the sink
+returns before the insert settles and logs a rejected insert, so a failed insert never fails the audited action (`f:ff3l1u`). Close
 on the rate-limit hand-off: the wrapper records every refusal it makes except the 429, and the
 session and CSRF refusals underneath leave none, so a refused caller fills a persisted table
 cheaply unless the section sets `rateLimit` (`f:da6d2z`), whose members and degrade-to-open
@@ -330,7 +335,8 @@ Hand-off: two optional recipes follow, then motion.
 First sentence: A form inside a native `<dialog>` survives every `enhance` result only when its
 callback handles each of the four result types itself.
 
-Facts: `f:jra92k`, `f:xgy3iu`, `f:9fwsz5`, `f:ho6dxa`, `f:tskfz1`, `f:tkqoia`, `f:5vn194`. Cut
+Facts: `f:jra92k`, `f:xgy3iu`, `f:9fwsz5`, `f:ho6dxa`, `f:tskfz1`, `f:tkqoia`, `f:5vn194`,
+`f:wd78d2`. Cut
 from here: `f:cdllbv` (vendor specific; see Dispositions).
 
 Content. Open on the condition ("When a screen collects input in a native `<dialog>` submitted
@@ -355,7 +361,7 @@ constrains (anatomy: explanation stays subordinate to the steps; the second plan
    failure only updates `form` and the page status; on `'error'`, report it in the dialog without
    `update()`, because `update()` would call `applyAction`, which renders the nearest `+error`
    page and destroys the dialog (`f:9fwsz5`); on `'success'`, close the dialog before awaiting
-   `update()`, so it never sits open through `invalidateAll()`; on `'redirect'`, hand the result
+   `update()`, so it never sits open through `refreshAll()`; on `'redirect'`, hand the result
    to `update()`.
 5. In the form, mount an empty `role="alert"` paragraph for the failure message. Under it: a live
    region inserted with its text already present is announced unreliably, so the paragraph is
@@ -376,7 +382,8 @@ dialog, not the example site's remove confirm, carries the snippet because steps
 input and a pending submit, which a confirm dialog with one hidden field has no element for; the
 running example supplies the action the form posts to and the `missing` token its handler returns.
 `CsrfField` is in the code only; no fact in the inventory states it, so the page makes no prose
-claim about it (friction filed 2026-10-03, see below). No attribute list follows the snippet; each
+claim about it (friction filed 2026-10-03, see below). The snippet imports `SubmitFunction` from
+`$app/forms` (`f:wd78d2`), in the code only. No attribute list follows the snippet; each
 rule now hangs under its step.
 
 Hand-off: the second recipe.
@@ -583,12 +590,14 @@ each reason verbatim under `cuts`.
 | `f:bcybve` | carried | Choose the action wrapper |
 | `f:3j02dk` | carried | Wrap the actions |
 | `f:esp93u` | carried | Wrap the actions |
+| `f:n52h8f` | carried (added in the Kit 3 correction) | Wrap the actions |
 | `f:pmmtdv` | carried | Wrap the actions |
 | `f:lblh3u` | carried | Wrap the actions |
 | `f:pyt58u` | carried | Wrap the actions |
 | `f:68h31z` | carried | Wire the AuditSink |
 | `f:rurhey` | carried | Wire the AuditSink |
 | `f:6quvqm` | carried | Wire the AuditSink |
+| `f:i8pbhc` | carried (added in the Kit 3 correction) | Wire the AuditSink |
 | `f:ph6kjg` | carried | Wire the AuditSink |
 | `f:ff3l1u` | carried | Wire the AuditSink |
 | `f:da6d2z` | carried | Wire the AuditSink |
@@ -624,6 +633,8 @@ each reason verbatim under `cuts`.
 | `f:tskfz1` | carried | Build the dialog form |
 | `f:tkqoia` | carried | Build the dialog form |
 | `f:5vn194` | carried | Build the dialog form |
+| `f:wd78d2` | carried (added in the Kit 3 correction; code only) | Build the dialog form |
+| `f:hk3hdl` | carried (added in the R4 polish; code only) | Wire the AuditSink |
 | `f:cdllbv` | cut | Vendor specific the register links rather than copies: SvelteKit's form actions page, linked from Build the dialog form, states that `reset` applies on `'success'` only, and `f:jra92k` carries the recipe's consequence |
 | `f:uy7vyc` | carried | Load row detail on demand |
 | `f:b5mcea` | carried | Load row detail on demand |
@@ -791,3 +802,4 @@ departures from covers items 9, 10, 11, and 14; those stand as written. Its two 
   story is `toolkit/custom-screen`, already logged 2026-09-30. The plan keeps that story.
 - Covers item 9 asks the motion section to cite `admin-design-system` by heading; that document is
   internal, so the page cites the cairn-audit reference headings, per the conductor's ruling.
+- R4 polish: the `waitUntil` and `building` sentences reworded, the ExecutionContext caller split into two sentences with `ctx.waitUntil.bind(ctx)`, and `f:hk3hdl` (`Handle` from `@sveltejs/kit/hooks`) filed for the snippet's import.

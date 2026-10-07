@@ -88,9 +88,11 @@ To gate the screen's read, follow this step:
 
 The signups `load` calls `requireAccess` before it reads the `signups` table through `APP_DB`, and it fails closed with a 500 when the binding is absent.
 
+<!-- snippet-check-skip: imports cloudflare:workers, which a site's own Worker types declare -->
 ```ts
 // src/routes/admin/signups/+page.server.ts
-import type { PageServerLoad, RequestEvent } from './$types';
+import type { PageServerLoad } from './$types';
+import { env } from 'cloudflare:workers';
 import { requireAccess } from '@glw907/cairn-cms/sveltekit';
 import { error } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
@@ -101,15 +103,15 @@ interface SignupRow {
   email: string;
 }
 
-function requireAppDb(event: RequestEvent): D1Database {
-  const db = event.platform?.env.APP_DB;
+function requireAppDb(): D1Database {
+  const db = env.APP_DB;
   if (!db) error(500, 'This screen is not configured.');
   return db;
 }
 
 export const load: PageServerLoad = async (event) => {
   requireAccess(event);
-  const db = requireAppDb(event);
+  const db = requireAppDb();
   const { results } = await db
     .prepare('SELECT id, name, email FROM signups ORDER BY id DESC')
     .all<SignupRow>();
@@ -146,7 +148,7 @@ The signups screen writes through `APP_DB`, so the remaining steps use `createSe
 One `createSectionAction` call builds the section's wrapper, and each form action passes its handler and its audited `action` and `entity` to that wrapper.
 The call's `Env` type parameter describes the site's platform bindings, since the engine ships no `Env` type, and `resolveDb` receives `Env | undefined`.
 The type parameter does not infer from an unannotated `resolveDb` parameter, so the site annotates that parameter or passes explicit type arguments.
-The example site passes `App.Platform['env']`.
+The example site passes the `Env` that `wrangler types` generates in `worker-configuration.d.ts`.
 
 To wrap the actions, follow these steps:
 
@@ -154,15 +156,15 @@ To wrap the actions, follow these steps:
 2. In the exported form actions, wrap each handler in that wrapper, passing its `action` and `entity`.
 3. On the destructive action, add `ownerOnly: true` to the options.
 
-<!-- snippet-check-skip: reads App.Platform['env'], which only the site's app.d.ts declares -->
+<!-- snippet-check-skip: reads Env, which only the site's generated worker-configuration.d.ts declares -->
 ```ts
 // src/routes/admin/signups/+page.server.ts, continued
 import type { Actions } from './$types';
 import { createSectionAction } from '@glw907/cairn-cms/sveltekit';
 import { fail } from '@sveltejs/kit';
 
-const sectionAction = createSectionAction<App.Platform['env'], D1Database>({
-  resolveDb: (env: App.Platform['env'] | undefined) => env?.APP_DB,
+const sectionAction = createSectionAction<Env, D1Database>({
+  resolveDb: (workerEnv: Env | undefined) => workerEnv?.APP_DB,
 });
 
 export const actions: Actions = {
@@ -209,19 +211,20 @@ To wire the sink, follow these steps:
 1. In `hooks.server.ts`, add a handle that sets `event.locals.cairnAuditSink`.
 2. In the same file, compose that handle after `createAuthGuard` through `sequence`.
 
-<!-- snippet-check-skip: reads App.Platform (env, ctx.waitUntil), which only the site's app.d.ts declares -->
+<!-- snippet-check-skip: reads env.AUDIT_DB, which only the site's own generated Env declares -->
 ```ts
 // src/hooks.server.ts
+import { building } from '$app/env';
+import { env, waitUntil } from 'cloudflare:workers';
 import { createAuthGuard, createD1AuditSink } from '@glw907/cairn-cms/sveltekit';
 import { sequence } from '@sveltejs/kit/hooks';
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
 import { access } from './access.js';
 
 const wireAuditSink: Handle = ({ event, resolve }) => {
-  const db = event.platform?.env.AUDIT_DB;
-  const ctx = event.platform?.ctx;
-  const waitUntil = ctx ? ctx.waitUntil.bind(ctx) : undefined;
-  if (db) event.locals.cairnAuditSink = createD1AuditSink(db, waitUntil);
+  if (!building && env.AUDIT_DB) {
+    event.locals.cairnAuditSink = createD1AuditSink(env.AUDIT_DB, waitUntil);
+  }
   return resolve(event);
 };
 
@@ -231,7 +234,10 @@ export const handle = sequence(createAuthGuard({ access }), wireAuditSink);
 The snippet's `access` import is the access map that [Restrict admin access](restrict-admin-access.md) describes.
 A scaffolded site declares it with `defineAccess` in `access.ts`, beside `hooks.server.ts`.
 
-The handle binds `waitUntil` to its `ExecutionContext`, because the unbound method typechecks and then throws `Illegal invocation` in workerd, after which the row can be lost.
+The handle checks `building` from `$app/env` before it reads `env.AUDIT_DB`, because every read of the `env` from `cloudflare:workers` throws while the build prerenders.
+The handle passes the `waitUntil` that `cloudflare:workers` exports, which needs no bind.
+A caller that holds an `ExecutionContext`, such as a Cron `scheduled` handler, passes `ctx.waitUntil.bind(ctx)` instead.
+The unbound method typechecks and then throws `Illegal invocation` in workerd, after which the row can be lost.
 The sink returns before the insert settles and logs a rejected insert, so a failed insert never fails the audited action.
 
 The wrapper writes an audit row for every refusal its own checks make, so a refused caller can fill a persisted audit table cheaply.
@@ -354,7 +360,7 @@ To build the dialog form, follow these steps:
 
    - On `'failure'`, show the message in the dialog, then call `update()`, which for a same-page failure only updates `form` and the page status.
    - On `'error'`, report the error in the dialog without calling `update()`, because `update()` calls `applyAction`, which renders the nearest `+error` page and destroys the dialog.
-   - On `'success'`, close the dialog before awaiting `update()`, so it never sits open through `invalidateAll()`.
+   - On `'success'`, close the dialog before awaiting `update()`, so it never sits open through `refreshAll()`.
    - On `'redirect'`, hand the result to `update()`.
 
 5. In the form, mount an empty `role="alert"` paragraph for the failure message.
@@ -373,7 +379,7 @@ The following dialog adds a signup through the signups screen's create action.
 ```svelte
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import type { SubmitFunction } from '@sveltejs/kit';
+  import type { SubmitFunction } from '$app/forms';
   import { CsrfField } from '@glw907/cairn-cms/admin';
 
   let dialog = $state<HTMLDialogElement | null>(null);

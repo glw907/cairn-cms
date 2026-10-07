@@ -122,8 +122,8 @@ path to the next component.
    taken account by a step: screens, then visitors, then the repository.
 4. **What changes when you replace a seam** (sections 10 and 11). Identity mode and the auth
    channel, grouped after the defaults they modify, so each refers back: identity mode moves the
-   session lifetime and stops the CSRF rotation the earlier sections describe; the channel mirrors
-   the guard's origin check on routes the guard never covers. The introduction states this two-part
+   session lifetime and stops the CSRF rotation the earlier sections describe; the channel keeps an
+   origin check of its own on the member routes, since the guard adds none on any route. The introduction states this two-part
    grouping, the alternative the structural read offered to the outline's inventory order, and the
    hand-off that closes section 9 marks the boundary in the body.
 5. **The site's responsibilities** (section 12), opening on the "In short" verdict, then **Related
@@ -303,18 +303,25 @@ with any subordination or cut the section carries.
 ### 4. CSRF protection
 
 - **Takes:** A forged form post would act with the editor's session, so every unsafe admin form
-  post needs a CSRF check, and cairn runs that check in the guard in place of SvelteKit's.
-  (`f:gncd64`; the round-2 register rewrite)
-- **Draws on:** `f:gncd64` (the site sets `csrf: { checkOrigin: false }` in `svelte.config.js`;
-  the guard enforces an Origin-independent double-submit check on every unsafe `/admin` form post
-  and restores an equivalent strict Origin check on every other route). The why, in this order:
-  `f:x2stjk` (under the Fetch Standard a non-`cors` request whose method is not `GET` or `HEAD`
-  sends `Origin: null` under `no-referrer`, the policy every admin response sets; link
-  https://fetch.spec.whatwg.org/), `f:ix10bm` (the guard's origin check is a strict equality, so
-  `Origin: null` fails it with the branded `auth.csrf-origin-mismatch` page; `no-referrer` is set on
-  `/admin` responses only), `f:3cekcy` (SvelteKit's default check compares the same header and is
-  one global setting with no per-route exception, so the site hands the admin's CSRF authority to
-  the guard by turning it off everywhere; link https://svelte.dev/docs/kit/configuration#csrf).
+  post needs a CSRF check. SvelteKit's origin check and the guard's double-submit token both
+  answer it. (`f:7rehzh`; the R4 SvelteKit 3 correction, 2026-10-07, replacing the
+  rejected `f:gncd64`)
+- **Draws on:** `f:7rehzh` with `f:keuj8l` (the scaffold's Vite config carries no `csrf` key, so
+  SvelteKit's check runs ahead of every handle on every route, `/admin` included, and the guard adds
+  its token check on every unsafe `/admin` form post; the page states it as two sentences). The why, in this order: `f:3cekcy`
+  (SvelteKit's default check compares a form post's `Origin` with the app's origin, refuses a
+  mismatch or an absent header, and is one global setting with no per-route exception, so the
+  admin's form posts must carry a real `Origin`; link
+  https://svelte.dev/docs/kit/configuration#csrf), `f:x2stjk` with `f:ix10bm` (under the Fetch
+  Standard a non-`cors` request whose method is not `GET` or `HEAD` sends `Origin: null` under
+  `no-referrer`, and SvelteKit's check refuses it; link https://fetch.spec.whatwg.org/), `f:ubuj1w`
+  (every admin response sets `Referrer-Policy: strict-origin`, and each admin view repeats it in a
+  referrer meta tag), `f:3cekcy` (SvelteKit 3 removed `csrf.checkOrigin`, leaving
+  `csrf.trustedOrigins` as the only setting; link `docs/reference/supported-toolchain.md`, "The
+  `checkOrigin` removal"; R4 places it directly after the one-global-setting sentence, so the Fetch
+  Standard sentence is the last premise). `f:hl5asm` states that `strict-origin` keeps a same-origin
+  `Origin`, so the page now says "therefore" and adds the meta-tag sentence for a site-wide
+  `no-referrer`.
   The mechanism: `f:keuj8l` (an `X-Cairn-CSRF` header, when sent, decides outright, so a wrong
   header rejects instead of falling through; only a header-less request has its hidden field read;
   the header path is how a raw-body upload passes; the compare runs through `tokensMatch`, a
@@ -323,16 +330,19 @@ with any subordination or cut the section carries.
   `SameSite=Lax`, `Path=/`, a `Max-Age` matching the session's 30 days; the value rotates at a
   successful login and a logout) with `f:0vofop` (every other issue re-sets the identical value with
   a fresh `Max-Age`, so it never rotates by itself).
-- **Limits of CSRF protection:** `f:ix10bm` and `f:qbfriw`: the Origin check the guard restores
-  outside `/admin` refuses a form post the policy reduces to `Origin: null`, so the site keeps
-  `no-referrer` off its site-wide default, and `cairn doctor` warns through
-  `config.no-referrer-blanket` when it finds one (link `docs/reference/cli-cairn-doctor.md`).
+- **Limits of CSRF protection:** `f:ix10bm`, `f:x2stjk`, and `f:qbfriw`: the guard sets
+  `strict-origin` on `/admin` responses only, so a site-wide `no-referrer` reduces every other
+  same-origin form post to `Origin: null`, which SvelteKit's check refuses on the site's own forms
+  and every auth channel action; the site keeps `no-referrer` off its site-wide default, and
+  `cairn doctor` warns through `config.no-referrer-blanket` when it finds one (link
+  `docs/reference/cli-cairn-doctor.md`). Then `f:3cekcy` with `f:ytwrgp`: an origin listed in
+  `csrf.trustedOrigins` passes SvelteKit's check on `/admin` as well as every other route, and the
+  doctor's `config.csrf-trusted-origins` check warns on a `'*'` or a `'null'` entry.
 - **Hand-off:** "The CSRF check is one step in The auth guard's fixed order." (`no-claim`; the
   register read's wording.) Subordinated: `f:doq8s2` (the header-versus-field witness
   discrimination on the log record, stated in full on the `guard.refused` row of
-  `docs/reference/log-events.md`), `f:d2jumm` (the `checkOrigin` deprecation since SvelteKit 2.61
-  and its tracking; stated in `docs/reference/supported-toolchain.md`, "The `checkOrigin`
-  deprecation", which the page links from the `checkOrigin` sentence). Cut: `f:9exogy`
+  `docs/reference/log-events.md`). Cut: `f:d2jumm` and `f:gncd64`, both rejected in the container
+  once SvelteKit 3 removed `csrf.checkOrigin` (reasons in the fact table). Cut: `f:9exogy`
   (re-authenticating in one tab rotates the value under another open tab's form, one 403 a reload
   clears: a usability consequence of the rotation with no security residual, and moot under
   `identity`, where the rotation never runs).
@@ -341,22 +351,23 @@ with any subordination or cut the section carries.
 
 - **Takes:** The guard handles every admin request in a fixed order, and every refusing step before
   the session resolve logs a named `guard.refused` reason. (`f:7qqhda`)
-- **Draws on:** `f:7qqhda` (the six steps as a numbered list, each with its reason:
-  `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`, then the session or identity
-  resolve); `f:n3k03a` (an `/admin` request over plain http on a non-local host gets the
+- **Draws on:** `f:7qqhda` (the five steps as a numbered list, each with its reason:
+  `dev_backend_in_prod`, `https`, `bindings`, `csrf`, then the session or identity resolve; the
+  guard has no origin step); `f:n3k03a` (an `/admin` request over plain http on a non-local host gets the
   `edge.https-not-forced` help page before the CSRF check, public login paths included; a missing
   `AUTH_DB` binding fails every admin path, public ones included, with the named `bindings`
   condition instead of a raw 500; on a guarded path a missing or invalid magic-link session
   redirects with a 303 to `/admin/login` and writes no log record); `f:ubuj1w` (the headers every
   admin response carries, as a bulleted list: `nosniff`, `X-Frame-Options: DENY`,
-  `frame-ancestors 'none'`, `Referrer-Policy: no-referrer` scoped to `/admin`, the
+  `frame-ancestors 'none'`, `Referrer-Policy: strict-origin` scoped to `/admin`, the
   `Permissions-Policy` denials, `Strict-Transport-Security` with subdomain pinning as an opt-in,
   `Cache-Control: private, no-store`).
 - **Limits of the admin headers:** `f:yzbvk4` (the admin sends no full Content-Security-Policy by
   design, since the defense against script in author markup is the sanitize floor Render safety
   describes; the heading is rendered as a link, never a section number, per the hand-off form
-  rule), `f:72xplg` (a site that wants a CSP configures `kit.csp` in `svelte.config.js`, where
-  SvelteKit adds a nonce or a hash to the inline scripts and styles it generates; link
+  rule), `f:72xplg` (a site that wants a CSP sets SvelteKit's `csp` option in the `sveltekit()` call in
+  its Vite config, and SvelteKit adds a nonce or a hash to the inline scripts and styles it
+  generates; link
   https://svelte.dev/docs/kit/configuration#csp), `f:horkxq` (the guard applies the headers,
   `Cache-Control: private, no-store` included, only to an `/admin` path, so a token issued from
   `loginLoad`, `confirmLoad`, or the shell load mounted elsewhere travels without them).
@@ -379,7 +390,7 @@ with any subordination or cut the section carries.
   clause, and closes on the deployed-detection rule (`f:i2udr5`). The Limits subsection follows the
   list. The list holds the channel's introduction to one item, so the section's densest stretch
   reads as two cases, and no sentence is reordered or reworded for it.
-- **Draws on:** `f:tkpmxr` (both refusals read the flag from `platform.env` and `process.env`;
+- **Draws on:** `f:tkpmxr` (both refusals read the flag from the Worker env alone;
   `createAuthGuard` refuses with a 503 on the flag alone and logs `guard.refused` with reason
   `dev_backend_in_prod`, because it mounts only in a production build and a site's dev branch
   replaces it). Then the auth channel, introduced here because this is the first sentence on the
@@ -388,8 +399,10 @@ with any subordination or cut the section carries.
   site adds for a second sign-in audience on routes the guard never covers. `createAuthChannel`
   builds a channel from functions the site supplies, among them `lookup`, which resolves a contact
   against the channel's own roster, and `deliver`, which carries a code to the contact." The first
-  sentence cites `f:tkpmxr`, whose "second-audience" names the audience, and `f:8u4iiv`, whose
-  clause that the guard's admin-path handling never covers a site's member routes it draws on,
+  sentence cites `f:tkpmxr`, whose "second-audience" names the audience, and `f:2sd4if`, whose
+  statement that the guard gates the `/admin` subtree supports the clause that the guard's
+  admin-path handling never covers a site's member routes (R4, 2026-10-07: the rewritten
+  `f:8u4iiv` no longer carries that clause),
   with "an auth channel" rendered as a link to the heading The auth channel's threat surface. The
   second cites `f:irs7fg`, which names `deliver`, `lookup`, and the rest of the config as opaque
   site functions, and `f:fslodf`, whose "roster lookup resolved a stable subject" is what `lookup`
@@ -585,9 +598,9 @@ Heading fixed by inbound links (see Heading policy).
   operator). The origin check: `f:wu8x70` (every action asserts the request's `Origin` matches the
   site's origin and the connection is https, except on a local development host, before any code,
   budget, or session logic runs, and either failure throws a plain 403 with no wire result) with
-  `f:8u4iiv` (the check mirrors the guard's rule because the guard's admin-path handling never
-  covers a site's member routes, where it restores only the framework's origin check for unsafe
-  form posts). Hashing: `f:fslodf` (identity correlates through a salted hash of the subject,
+  `f:8u4iiv` (the channel keeps its own check because SvelteKit's origin check does not run under
+  `vite dev` and admits any origin listed in `csrf.trustedOrigins`, and the guard adds no `Origin`
+  check of its own on any route). Hashing: `f:fslodf` (identity correlates through a salted hash of the subject,
   prefixed `s:`, when a roster lookup resolved one, or of the contact, prefixed `c:`, otherwise,
   and the logs carry only the first 16 hex characters, never the raw contact) with `f:dipwmx` (the
   prefixes keep a subject-derived identity from colliding with a contact-derived one, and the
@@ -632,9 +645,10 @@ section.
   reconcile the plan); they are in place below, so the list and the rule agree: the setup command's
   first sign-in link and any hand-seeded recovery row treated as unbound (`f:an087n`); every route
   served over https, so a `__Host-` cookie minted outside `/admin` is not discarded (`f:g22dnw`);
-  `csrf: { checkOrigin: false }` plus the mounted guard (`f:gncd64`); `Referrer-Policy: no-referrer`
-  off the site-wide default (`f:ix10bm`); `kit.csp` when the site wants a Content-Security-Policy
-  (`f:72xplg`); `loginLoad`, `confirmLoad`, and the admin shell load mounted under `/admin`, where
+  the mounted guard, which adds the double-submit token on every unsafe `/admin` form post
+  (`f:7rehzh`); `'*'` and `'null'` kept out of `csrf.trustedOrigins` (`f:ytwrgp`, `f:3cekcy`);
+  `Referrer-Policy: no-referrer` off the site-wide default (`f:ix10bm`); SvelteKit's `csp` option
+  when the site wants a Content-Security-Policy (`f:72xplg`); `loginLoad`, `confirmLoad`, and the admin shell load mounted under `/admin`, where
   the guard's headers apply (`f:horkxq`); dev transports and the `CAIRN_DEV_BACKEND` flag out of a
   deployed Worker, with a refusal inside any dev-shaped transport (`f:irs7fg`); an exhaustive map
   when the site intends an allowlist (`f:ji8xa0`, `f:8ciz2s`); the tidy and dictionary actions on a
@@ -711,20 +725,23 @@ fact; each named entry was opened and read before it was named, and re-read at t
 | `f:g22dnw` | placed | The session cookie (body and its Limits; re-cited in The site's responsibilities) |
 | `f:8xxe3b` | placed | The session cookie (the magic-link logout; its `identity` clause is cited again from Identity mode's threat surface) |
 | `f:njh87y` | subordinated | `docs/reference/auth-crypto.md`, "`buildCookieName`": "The engine's own two cookies derive `secure` the same way"; the logout half is on the page through `f:8xxe3b` |
-| `f:gncd64` | placed | CSRF protection |
+| `f:gncd64` | cut | Rejected in the container: SvelteKit 3 removed `csrf.checkOrigin`, so a site sets no `csrf` config and the guard restores no Origin check; f:7rehzh and f:3cekcy state the current division of the CSRF work |
+| `f:7rehzh` | placed | CSRF protection (re-cited in The site's responsibilities) |
 | `f:x2stjk` | placed | CSRF protection |
 | `f:ix10bm` | placed | CSRF protection (body and its Limits) |
-| `f:3cekcy` | placed | CSRF protection |
+| `f:3cekcy` | placed | CSRF protection (body and its Limits; re-cited in The site's responsibilities) |
+| `f:ytwrgp` | placed | CSRF protection (Limits; re-cited in The site's responsibilities) |
 | `f:keuj8l` | placed | CSRF protection |
 | `f:9ik061` | placed | CSRF protection |
 | `f:0vofop` | placed | CSRF protection |
 | `f:qbfriw` | placed | CSRF protection (Limits) |
 | `f:doq8s2` | subordinated | `docs/reference/log-events.md`, the `guard.refused` row: states the header-versus-field witness rule, the empty-header case, and the `detail` values in full |
-| `f:d2jumm` | subordinated | `docs/reference/supported-toolchain.md`, "The `checkOrigin` deprecation": states the 2.61 deprecation in favor of `trustedOrigins`, that it is not removed, and that cairn's admin CSRF ownership depends on disabling it |
+| `f:d2jumm` | cut | Rejected in the container: SvelteKit 3 removed `csrf.checkOrigin`, so the handoff it describes is gone; the page states the removal through f:3cekcy and links docs/reference/supported-toolchain.md, The `checkOrigin` removal |
 | `f:9exogy` | cut | A re-authentication in one tab rotating the CSRF value under another tab's form is a usability consequence (one 403 a reload clears) with no security residual, and moot under `identity` |
 | `f:7qqhda` | placed | The auth guard (also cited by the introduction's definition sentence that names the guard, paragraph 5) |
 | `f:n3k03a` | placed | The auth guard (its identity half is cited again from Identity mode's threat surface, and its https-help-page condition from The session cookie's Limits) |
-| `f:ubuj1w` | placed | The auth guard |
+| `f:ubuj1w` | placed | The auth guard (also cited in CSRF protection's body for the admin's `strict-origin` policy and its meta tag) |
+| `f:hl5asm` | placed | CSRF protection (why `strict-origin` on admin responses, and the per-view meta tag against a site-wide `no-referrer`) |
 | `f:yzbvk4` | placed | The auth guard (Limits) |
 | `f:72xplg` | placed | The auth guard (Limits; re-cited in The site's responsibilities) |
 | `f:horkxq` | placed | The auth guard (Limits; re-cited in The site's responsibilities) |
@@ -766,7 +783,8 @@ fact; each named entry was opened and read before it was named, and re-read at t
 | `f:k6u4g2` | placed | The auth channel's threat surface (the three-instances list) |
 | `f:e0imm6` | placed | The auth channel's threat surface (the three-instances list) |
 | `f:wu8x70` | placed | The auth channel's threat surface (the origin check) |
-| `f:8u4iiv` | placed | The auth channel's threat surface (the origin check; its never-covers clause is cited again from The dev-backend flag's two refusals, where the channel is introduced) |
+| `f:8u4iiv` | placed | The auth channel's threat surface (the origin check) |
+| `f:2sd4if` | placed | The dev-backend flag's two refusals (the channel's introduction: the guard gates the `/admin` subtree, so its admin-path handling never covers a site's member routes) |
 | `f:fslodf` | placed | The auth channel's threat surface (hashing; its roster-lookup clause is cited again from The dev-backend flag's two refusals, where the channel is introduced) |
 | `f:dipwmx` | placed | The auth channel's threat surface (hashing) |
 | `f:plcf5v` | placed | The auth channel's threat surface (code generation) |
@@ -868,6 +886,20 @@ names the plan change that answers it; the plan changes nothing else.
 | Advisory, `:453`: section 6 carries the guard's refusal, the channel's two introducing sentences, the channel's refusal, the dev-transport definition, the deployed-detection rule, and a three-case Limits in one stretch | Taken, as the read suggested. The two refusals are a two-item list under the first sentence, the channel's introduction and refusal in the second item with the deployed-detection rule as its last sentence; no sentence is reordered or reworded |
 | Advisory, `:721`: the Concepts group lists `docs/extend/migration-notes.md` for release history, the subject the introduction's paragraph 4 leaves out, and a per-version record is not a concept page | Taken. Migration notes leaves the Concepts group, which holds `docs/extend/architecture.md` alone under the register's ceiling; the introduction's paragraph 4 entry and the round-2 tables record the drop |
 
+## R4 fix round (2026-10-07)
+
+- Fact `f:x2stjk` retext: adds `strict-origin` to the https-to-http downgrade clause, read 2026-10-07.
+- Fact `f:hl5asm` filed (`[verified]`): why `strict-origin` on admin responses and the per-view meta.
+- Section 4: opening sentence split in two; the SvelteKit-check/token-check sentence split in two.
+- Section 4: the `checkOrigin` removal sentence moved ahead of the Fetch Standard sentence.
+- Section 4: the `strict-origin` sentence pair replaced by two sentences citing `f:hl5asm`.
+- Section 4 Limits: the `strict-origin` sentence split in two, citing `f:3cekcy` as well; the
+  `trustedOrigins` warning sentence names `cairn doctor` and SvelteKit's check (`f:ytwrgp`).
+- Section 5 Limits: the CSP sentence says "passes ... to the `sveltekit()` call" (`f:72xplg`).
+- Section 6: "only from the Worker env" (`f:tkpmxr`); the second-refusal sentence also cites `f:q7fj6p`;
+  the channel's own-check sentence reads "and because the guard adds no `Origin` check".
+- Section 12: the `trustedOrigins` item reads "since every listed origin passes SvelteKit's check".
+
 ## Notes for the drafter
 
 - A sentence that synthesizes two facts cites both ids; the brief accepts an array. The sentences
@@ -881,7 +913,7 @@ names the plan change that answers it; the plan changes nothing else.
   dropped; one that reads as restating is reported, never deleted.
 - A fact placed in one section may be cited again from another sentence that needs it (`f:n3k03a`
   and `f:8xxe3b` from section 10; `f:7qqhda` from paragraph 5 and, optionally, `f:fhit7f` from
-  paragraph 6; `f:8u4iiv`, `f:fslodf`, and `f:wuwk2q` from section 6's channel introduction;
+  paragraph 6; `f:fslodf` and `f:wuwk2q` from section 6's channel introduction;
   `f:n3k03a` from section 3's Limits gloss; the Limits facts from the responsibilities list).
 - Section 6's two channel sentences and its dev-transport clause are fixed text, like each
   section's first sentence and hand-off: the drafter changes only the link syntax. They are the

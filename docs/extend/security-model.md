@@ -150,22 +150,23 @@ to send, and [CSRF protection](#csrf-protection) answers that post.
 ## CSRF protection
 
 A forged form post would act with the editor's session, so every unsafe admin form post needs a CSRF
-check, and cairn runs that check in the guard in place of SvelteKit's. A site sets
-`csrf: { checkOrigin: false }` in `svelte.config.js`, and the guard enforces an Origin-independent
-double-submit check on every unsafe `/admin` form post, restoring an equivalent strict Origin check
-on every other route.
+check. SvelteKit's origin check and the guard's double-submit token both answer it.
+SvelteKit's check runs ahead of every handle on every route, `/admin` included, and the scaffold's
+Vite config carries no `csrf` key to widen it. The guard adds its token check on every unsafe
+`/admin` form post.
 
-The admin needs a check that does not read the `Origin` header, because of the referrer policy it
-serves. Under the [Fetch Standard](https://fetch.spec.whatwg.org/), a non-`cors` request whose
-method is not `GET` or `HEAD` sends `Origin: null` when its referrer policy is `no-referrer`, which
-is the policy every admin response sets. The guard's origin check is a strict equality of the
-request's `Origin` header and the URL's origin, so a request that arrives with `Origin: null` fails
-it with the branded `auth.csrf-origin-mismatch` page. [SvelteKit's default
-check](https://svelte.dev/docs/kit/configuration#csrf) compares the same header, and since it is one
-global setting with no per-route exception, a site hands the admin's CSRF authority to the guard by
-turning it off everywhere. SvelteKit has deprecated that setting in favor of `csrf.trustedOrigins`,
-and [the `checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-removal)
-records what the deprecation means for the engine.
+[SvelteKit's default check](https://svelte.dev/docs/kit/configuration#csrf) compares a form post's
+`Origin` header with the app's origin and refuses a mismatch or an absent header, and since it is
+one global setting with no per-route exception, the admin's form posts must carry a real `Origin`.
+SvelteKit 3 removed the `csrf.checkOrigin` setting, which leaves `csrf.trustedOrigins` as the check's
+only setting, and [the `checkOrigin` removal](../reference/supported-toolchain.md#the-checkorigin-removal)
+records what the removal means for the engine. Under the [Fetch Standard](https://fetch.spec.whatwg.org/), a non-`cors` request whose method is not
+`GET` or `HEAD` sends `Origin: null` when its referrer policy is `no-referrer`, and SvelteKit's check
+refuses that request. Every admin response the guard's resolve path returns therefore sets
+`Referrer-Policy: strict-origin`, which keeps the real `Origin` on a same-origin post and sends no
+path, so the magic-link token never reaches a referrer. Each admin view repeats the policy in a
+`<meta name="referrer" content="strict-origin">` tag, so a site-wide `no-referrer` set by an outer
+handle or a zone rule cannot lock an editor out.
 
 On an unsafe `/admin` form request, an `X-Cairn-CSRF` header decides outright whenever one is sent,
 so a wrong header rejects instead of falling through, and only a request with no header has its
@@ -181,12 +182,17 @@ succeeds or a logout runs, and every other issue re-sets the identical value wit
 
 ### Limits of CSRF protection
 
-The guard sets `no-referrer` on `/admin` responses only, since the Origin check it restores outside
-`/admin` refuses a form post that the policy reduces to `Origin: null`. A site therefore keeps
-`no-referrer` off its site-wide default, and [`cairn doctor`](../reference/cli-cairn-doctor.md)
-warns through its `config.no-referrer-blanket` check when it finds a site-wide `no-referrer`. The
-check's remediation is to serve `strict-origin-when-cross-origin` or `same-origin` as the site-wide
-default.
+The guard sets `strict-origin` on `/admin` responses only, so a site-wide `no-referrer` still reduces
+every other same-origin form post to `Origin: null`. SvelteKit's check refuses that post on the
+site's own forms, and every auth channel action refuses it through its own `Origin` check. A site therefore keeps `no-referrer` off its site-wide
+default, and [`cairn doctor`](../reference/cli-cairn-doctor.md) warns through its
+`config.no-referrer-blanket` check when it finds a site-wide `no-referrer`. The check's remediation
+is to serve `strict-origin-when-cross-origin` or `same-origin` as the site-wide default.
+
+An origin a site lists in `csrf.trustedOrigins` passes SvelteKit's check on `/admin` as well as on
+every other route. The `config.csrf-trusted-origins` check of `cairn doctor` warns on an entry of
+`'*'`, which turns SvelteKit's check off on every route, or `'null'`, which admits every post from an
+opaque origin.
 
 The CSRF check is one step in [The auth guard](#the-auth-guard)'s fixed order.
 
@@ -197,11 +203,10 @@ logs a named `guard.refused` reason. The steps run in the following order:
 
 1. The [dev-backend tripwire](#the-dev-backend-flags-two-refusals), with reason
    `dev_backend_in_prod`.
-2. The origin check for non-admin routes, with reason `origin`.
-3. The https help page, with reason `https`.
-4. The bindings check, with reason `bindings`.
-5. The CSRF check, with reason `csrf`.
-6. The session resolve, or the identity resolve under `identity`.
+2. The https help page, with reason `https`.
+3. The bindings check, with reason `bindings`.
+4. The CSRF check, with reason `csrf`.
+5. The session resolve, or the identity resolve under `identity`.
 
 An `/admin` request over plain http on a non-local host gets the `edge.https-not-forced` help page
 before the CSRF check, public login paths included. A missing `AUTH_DB` binding fails every admin
@@ -214,7 +219,7 @@ Every admin response the guard's resolve path returns carries the following head
 - `X-Content-Type-Options: nosniff`.
 - `X-Frame-Options: DENY`.
 - `Content-Security-Policy: frame-ancestors 'none'`.
-- `Referrer-Policy: no-referrer`, scoped to `/admin` and never set site-wide.
+- `Referrer-Policy: strict-origin`, scoped to `/admin` and never set site-wide.
 - `Permissions-Policy`, denying the camera, the microphone, and geolocation.
 - `Strict-Transport-Security`, with subdomain pinning as an opt-in on the guard.
 - `Cache-Control: private, no-store`.
@@ -227,9 +232,9 @@ A rejection page carries the same headers less `Strict-Transport-Security`, for 
 
 The admin sends no full Content-Security-Policy by design, since the engine's defense against script
 in author-written markup is the sanitize floor that [Render safety](#render-safety) describes. A
-site that wants a CSP configures [`kit.csp`](https://svelte.dev/docs/kit/configuration#csp) in
-`svelte.config.js`, where SvelteKit adds a nonce or a hash to the inline scripts and styles it
-generates.
+site that wants a CSP passes [SvelteKit's `csp` option](https://svelte.dev/docs/kit/configuration#csp)
+to the `sveltekit()` call in its Vite config, and SvelteKit then adds a nonce or a hash to the
+inline scripts and styles it generates.
 
 The loads that issue a CSRF token are `loginLoad`, `confirmLoad`, and the admin shell load. The
 guard applies its headers, `Cache-Control: private, no-store` included, only to an `/admin` path, so
@@ -242,7 +247,7 @@ each refusal catches and what it leaves open.
 ## The dev-backend flag's two refusals
 
 A deployed Worker must never carry the `CAIRN_DEV_BACKEND` flag, so the engine refuses the flag in
-two places, on different terms. Both refusals read the flag from `platform.env` and `process.env`.
+two places, on different terms. Both refusals read the flag only from the Worker env.
 
 The first refusal belongs to the guard, which answers with a 503 on the flag alone and logs
 `guard.refused` with reason `dev_backend_in_prod`. The guard can refuse on the flag alone because it
@@ -438,9 +443,9 @@ sign-in:
 
 Every channel action asserts that the request's `Origin` matches the site's origin and that the
 connection is https, except on a local development host, before any code, budget, or session logic
-runs, and either failure throws a plain 403 with no wire result. The check mirrors the guard's rule
-because the guard's admin-path handling never covers a site's member routes, where the guard
-restores only the framework's origin check for unsafe form posts.
+runs, and either failure throws a plain 403 with no wire result. The channel keeps its own check
+because SvelteKit's origin check does not run under `vite dev` and admits any origin a site lists in
+`csrf.trustedOrigins`, and because the guard adds no `Origin` check of its own on any route.
 
 The channel correlates identity through a salted hash of the subject, prefixed `'s:'`, when a roster
 lookup resolved one, or of the contact, prefixed `'c:'`, otherwise, and its logs carry only the
@@ -473,10 +478,11 @@ how the site configures it, so the following responsibilities stay with the site
 - Treating the setup command's first sign-in link and any recovery row seeded by hand as unbound,
   since neither carries the browser binding's protection.
 - Serving every route over https, so a `__Host-` cookie minted outside `/admin` is not discarded.
-- Setting `csrf: { checkOrigin: false }` in `svelte.config.js` and mounting the guard, which then
-  owns CSRF for the admin.
+- Mounting the guard, which adds the double-submit token on every unsafe `/admin` form post.
+- Keeping `'*'` and `'null'` out of `csrf.trustedOrigins`, since every listed origin passes
+  SvelteKit's check on `/admin` too.
 - Keeping `Referrer-Policy: no-referrer` off the site-wide default.
-- Configuring `kit.csp` when the site wants a Content-Security-Policy.
+- Configuring SvelteKit's `csp` option when the site wants a Content-Security-Policy.
 - Mounting `loginLoad`, `confirmLoad`, and the admin shell load under `/admin`, where the guard's
   headers apply.
 - Keeping dev transports and the `CAIRN_DEV_BACKEND` flag out of a deployed Worker, with a refusal

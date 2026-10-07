@@ -302,38 +302,56 @@
       "id": "no-claim"
     },
     {
-      "text": "A forged form post would act with the editor's session, so every unsafe admin form post needs a CSRF check, and cairn runs that check in the guard in place of SvelteKit's.",
-      "id": "f:gncd64"
+      "text": "A forged form post would act with the editor's session, so every unsafe admin form post needs a CSRF check.",
+      "id": "f:7rehzh"
     },
     {
-      "text": "A site sets `csrf: { checkOrigin: false }` in `svelte.config.js`, and the guard enforces an Origin-independent double-submit check on every unsafe `/admin` form post, restoring an equivalent strict Origin check on every other route.",
-      "id": "f:gncd64"
+      "text": "SvelteKit's origin check and the guard's double-submit token both answer it.",
+      "id": "f:7rehzh"
     },
     {
-      "text": "The admin needs a check that does not read the `Origin` header, because of the referrer policy it serves.",
+      "text": "SvelteKit's check runs ahead of every handle on every route, `/admin` included, and the scaffold's Vite config carries no `csrf` key to widen it.",
+      "id": [
+        "f:7rehzh",
+        "f:keuj8l"
+      ]
+    },
+    {
+      "text": "The guard adds its token check on every unsafe `/admin` form post.",
+      "id": [
+        "f:7rehzh",
+        "f:keuj8l"
+      ]
+    },
+    {
+      "text": "[SvelteKit's default check](https://svelte.dev/docs/kit/configuration#csrf) compares a form post's `Origin` header with the app's origin and refuses a mismatch or an absent header, and since it is one global setting with no per-route exception, the admin's form posts must carry a real `Origin`.",
+      "id": "f:3cekcy"
+    },
+    {
+      "text": "SvelteKit 3 removed the `csrf.checkOrigin` setting, which leaves `csrf.trustedOrigins` as the check's only setting, and [the `checkOrigin` removal](../reference/supported-toolchain.md#the-checkorigin-removal) records what the removal means for the engine.",
+      "id": "f:3cekcy"
+    },
+    {
+      "text": "Under the [Fetch Standard](https://fetch.spec.whatwg.org/), a non-`cors` request whose method is not `GET` or `HEAD` sends `Origin: null` when its referrer policy is `no-referrer`, and SvelteKit's check refuses that request.",
       "id": [
         "f:x2stjk",
         "f:ix10bm"
       ]
     },
     {
-      "text": "Under the [Fetch Standard](https://fetch.spec.whatwg.org/), a non-`cors` request whose method is not `GET` or `HEAD` sends `Origin: null` when its referrer policy is `no-referrer`, which is the policy every admin response sets.",
+      "text": "Every admin response the guard's resolve path returns therefore sets `Referrer-Policy: strict-origin`, which keeps the real `Origin` on a same-origin post and sends no path, so the magic-link token never reaches a referrer.",
       "id": [
+        "f:ubuj1w",
         "f:x2stjk",
-        "f:ubuj1w"
+        "f:hl5asm"
       ]
     },
     {
-      "text": "The guard's origin check is a strict equality of the request's `Origin` header and the URL's origin, so a request that arrives with `Origin: null` fails it with the branded `auth.csrf-origin-mismatch` page.",
-      "id": "f:ix10bm"
-    },
-    {
-      "text": "[SvelteKit's default check](https://svelte.dev/docs/kit/configuration#csrf) compares the same header, and since it is one global setting with no per-route exception, a site hands the admin's CSRF authority to the guard by turning it off everywhere.",
-      "id": "f:3cekcy"
-    },
-    {
-      "text": "SvelteKit has deprecated that setting in favor of `csrf.trustedOrigins`, and [the `checkOrigin` deprecation](../reference/supported-toolchain.md#the-checkorigin-deprecation) records what the deprecation means for the engine.",
-      "id": "f:3cekcy"
+      "text": "Each admin view repeats the policy in a `<meta name=\"referrer\" content=\"strict-origin\">` tag, so a site-wide `no-referrer` set by an outer handle or a zone rule cannot lock an editor out.",
+      "id": [
+        "f:ubuj1w",
+        "f:hl5asm"
+      ]
     },
     {
       "text": "On an unsafe `/admin` form request, an `X-Cairn-CSRF` header decides outright whenever one is sent, so a wrong header rejects instead of falling through, and only a request with no header has its hidden form field read.",
@@ -359,8 +377,22 @@
       ]
     },
     {
-      "text": "The guard sets `no-referrer` on `/admin` responses only, since the Origin check it restores outside `/admin` refuses a form post that the policy reduces to `Origin: null`.",
-      "id": "f:ix10bm"
+      "text": "The guard sets `strict-origin` on `/admin` responses only, so a site-wide `no-referrer` still reduces every other same-origin form post to `Origin: null`.",
+      "id": [
+        "f:ix10bm",
+        "f:x2stjk",
+        "f:qbfriw",
+        "f:3cekcy"
+      ]
+    },
+    {
+      "text": "SvelteKit's check refuses that post on the site's own forms, and every auth channel action refuses it through its own `Origin` check.",
+      "id": [
+        "f:ix10bm",
+        "f:x2stjk",
+        "f:qbfriw",
+        "f:3cekcy"
+      ]
     },
     {
       "text": "A site therefore keeps `no-referrer` off its site-wide default, and [`cairn doctor`](../reference/cli-cairn-doctor.md) warns through its `config.no-referrer-blanket` check when it finds a site-wide `no-referrer`.",
@@ -369,6 +401,17 @@
     {
       "text": "The check's remediation is to serve `strict-origin-when-cross-origin` or `same-origin` as the site-wide default.",
       "id": "f:qbfriw"
+    },
+    {
+      "text": "An origin a site lists in `csrf.trustedOrigins` passes SvelteKit's check on `/admin` as well as on every other route.",
+      "id": [
+        "f:3cekcy",
+        "f:ytwrgp"
+      ]
+    },
+    {
+      "text": "The `config.csrf-trusted-origins` check of `cairn doctor` warns on an entry of `'*'`, which turns SvelteKit's check off on every route, or `'null'`, which admits every post from an opaque origin.",
+      "id": "f:ytwrgp"
     },
     {
       "text": "The CSRF check is one step in [The auth guard](#the-auth-guard)'s fixed order.",
@@ -384,10 +427,6 @@
     },
     {
       "text": "The [dev-backend tripwire](#the-dev-backend-flags-two-refusals), with reason `dev_backend_in_prod`.",
-      "id": "f:7qqhda"
-    },
-    {
-      "text": "The origin check for non-admin routes, with reason `origin`.",
       "id": "f:7qqhda"
     },
     {
@@ -435,7 +474,7 @@
       "id": "f:ubuj1w"
     },
     {
-      "text": "`Referrer-Policy: no-referrer`, scoped to `/admin` and never set site-wide.",
+      "text": "`Referrer-Policy: strict-origin`, scoped to `/admin` and never set site-wide.",
       "id": "f:ubuj1w"
     },
     {
@@ -463,7 +502,7 @@
       "id": "f:yzbvk4"
     },
     {
-      "text": "A site that wants a CSP configures [`kit.csp`](https://svelte.dev/docs/kit/configuration#csp) in `svelte.config.js`, where SvelteKit adds a nonce or a hash to the inline scripts and styles it generates.",
+      "text": "A site that wants a CSP passes [SvelteKit's `csp` option](https://svelte.dev/docs/kit/configuration#csp) to the `sveltekit()` call in its Vite config, and SvelteKit then adds a nonce or a hash to the inline scripts and styles it generates.",
       "id": "f:72xplg"
     },
     {
@@ -486,7 +525,7 @@
       "id": "f:tkpmxr"
     },
     {
-      "text": "Both refusals read the flag from `platform.env` and `process.env`.",
+      "text": "Both refusals read the flag only from the Worker env.",
       "id": "f:tkpmxr"
     },
     {
@@ -501,7 +540,8 @@
       "text": "The second refusal belongs to an [auth channel](#the-auth-channels-threat-surface), the seam a site adds for a second sign-in audience on the site's member routes, which the guard's admin-path handling never covers.",
       "id": [
         "f:tkpmxr",
-        "f:8u4iiv"
+        "f:q7fj6p",
+        "f:2sd4if"
       ]
     },
     {
@@ -834,7 +874,7 @@
       "id": "f:wu8x70"
     },
     {
-      "text": "The check mirrors the guard's rule because the guard's admin-path handling never covers a site's member routes, where the guard restores only the framework's origin check for unsafe form posts.",
+      "text": "The channel keeps its own check because SvelteKit's origin check does not run under `vite dev` and admits any origin a site lists in `csrf.trustedOrigins`, and because the guard adds no `Origin` check of its own on any route.",
       "id": "f:8u4iiv"
     },
     {
@@ -882,15 +922,22 @@
       "id": "f:g22dnw"
     },
     {
-      "text": "Setting `csrf: { checkOrigin: false }` in `svelte.config.js` and mounting the guard, which then owns CSRF for the admin.",
-      "id": "f:gncd64"
+      "text": "Mounting the guard, which adds the double-submit token on every unsafe `/admin` form post.",
+      "id": "f:7rehzh"
+    },
+    {
+      "text": "Keeping `'*'` and `'null'` out of `csrf.trustedOrigins`, since every listed origin passes SvelteKit's check on `/admin` too.",
+      "id": [
+        "f:ytwrgp",
+        "f:3cekcy"
+      ]
     },
     {
       "text": "Keeping `Referrer-Policy: no-referrer` off the site-wide default.",
       "id": "f:ix10bm"
     },
     {
-      "text": "Configuring `kit.csp` when the site wants a Content-Security-Policy.",
+      "text": "Configuring SvelteKit's `csp` option when the site wants a Content-Security-Policy.",
       "id": "f:72xplg"
     },
     {
@@ -1064,7 +1111,11 @@
     },
     {
       "id": "f:d2jumm",
-      "reason": "Subordinated to docs/reference/supported-toolchain.md, The checkOrigin deprecation, which states the deprecation in favor of trustedOrigins, that it is not removed, and that cairn's admin CSRF ownership depends on disabling it"
+      "reason": "Rejected in the container: SvelteKit 3 removed `csrf.checkOrigin`, so the handoff it describes is gone; the page states the removal through f:3cekcy and links docs/reference/supported-toolchain.md, The `checkOrigin` removal"
+    },
+    {
+      "id": "f:gncd64",
+      "reason": "Rejected in the container: SvelteKit 3 removed `csrf.checkOrigin`, so a site sets no `csrf` config and the guard restores no Origin check; f:7rehzh and f:3cekcy state the current division of the CSRF work"
     }
   ]
 }

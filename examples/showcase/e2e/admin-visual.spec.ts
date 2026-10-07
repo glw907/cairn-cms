@@ -472,9 +472,10 @@ for (const width of WIDTH_BAR) {
 }
 
 // The zen toggle's frame offset, the pass's only real proof that the persistent-frame margin
-// actually animates rather than merely carrying the right CSS on paper. Both tests sample
-// `.drawer-content`'s computed margin-left over the toggle window at a fixed cadence; the count of
-// distinct values seen is the signal, not any particular frame interval. Neither test screenshots:
+// actually animates rather than merely carrying the right CSS on paper. The animating test seeks
+// the paused transition rather than sampling; only the reduced-motion test uses this helper, which
+// reads `.drawer-content`'s computed margin-left over the toggle window at a fixed cadence and
+// counts the distinct values seen, not any particular frame interval. Neither test screenshots:
 // a resting frame either side of the toggle proves nothing about the travel between them.
 async function sampleDrawerMarginLeft(page: import('@playwright/test').Page, windowMs: number) {
   const drawerContent = page.locator('.drawer-content');
@@ -498,9 +499,46 @@ test('admin edit page zen toggle — the frame offset animates through more than
   await page.goto('/admin/posts/2026-06-hello');
   const zenToggle = page.getByRole('button', { name: 'Zen' });
   await expect(zenToggle).toBeVisible();
+
+  // Wall-clock sampling depends on how many frames a loaded runner paints inside a fixed window.
+  // The readiness signal is the transition itself: `transitionrun` fires when the browser starts
+  // the margin-left transition, and the handler pauses it at time zero so the check below seeks the
+  // timeline instead of racing it. `data-cairn-frame-ready` is the shell's marker that a toggle now
+  // transitions rather than snaps, so the toggle waits for it.
+  const drawerContent = page.locator('.drawer-content');
+  await expect(drawerContent).toHaveAttribute('data-cairn-frame-ready', 'true');
+  await drawerContent.evaluate((el) => {
+    el.addEventListener('transitionrun', (event) => {
+      if ((event as TransitionEvent).propertyName !== 'margin-left') return;
+      const transition = el
+        .getAnimations()
+        .find((a) => a instanceof CSSTransition && a.transitionProperty === 'margin-left');
+      if (!transition) return;
+      transition.pause();
+      transition.currentTime = 0;
+      (window as unknown as { __zenTransition?: Animation }).__zenTransition = transition;
+    });
+  });
   await zenToggle.click();
-  const samples = await sampleDrawerMarginLeft(page, 400);
-  expect(samples.size).toBeGreaterThan(2);
+  await page.waitForFunction(
+    () => (window as unknown as { __zenTransition?: Animation }).__zenTransition,
+  );
+
+  // Seek the paused transition to its start, midpoint, and end and read the computed margin at
+  // each: an interpolating transition lands strictly between the two resting values.
+  const margins = await drawerContent.evaluate((el) => {
+    const transition = (window as unknown as { __zenTransition: Animation }).__zenTransition;
+    const duration = Number(transition.effect!.getComputedTiming().duration);
+    const read = (at: number) => {
+      transition.currentTime = at;
+      return parseFloat(getComputedStyle(el).marginLeft);
+    };
+    return { duration, start: read(0), mid: read(duration / 2), end: read(duration) };
+  });
+  expect(margins.duration).toBeGreaterThan(0);
+  expect(margins.start).not.toBe(margins.end);
+  expect(margins.mid).toBeGreaterThan(Math.min(margins.start, margins.end));
+  expect(margins.mid).toBeLessThan(Math.max(margins.start, margins.end));
 });
 
 test('admin edit page zen toggle — reduced motion samples at most two margin-left values', async ({

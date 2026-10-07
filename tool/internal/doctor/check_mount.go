@@ -9,8 +9,7 @@ import (
 
 // adminMountPaths are the candidate files of the four-file /admin mount. There is no directory
 // listing on Snapshot, so the check reads these known paths; a route file can be .ts or .js, so
-// both spellings are probed. Ported from checks-local.ts's ADMIN_MOUNT_PATHS (checks-local.ts:
-// 334-341).
+// both spellings are probed.
 var adminMountPaths = []string{
 	"src/routes/admin/+layout.server.ts",
 	"src/routes/admin/+layout.server.js",
@@ -38,12 +37,10 @@ var (
 	shellLoadCallPattern          = regexp.MustCompile(`\.\s*shellLoad\b`)
 )
 
-// wiresAdminShell ports checks-local.ts's own helper (checks-local.ts:351-353).
 func wiresAdminShell(text string) bool {
 	return cairnAdminShellMentionPattern.MatchString(text)
 }
 
-// callsShellLoad ports checks-local.ts's own helper (checks-local.ts:355-357).
 func callsShellLoad(text string) bool {
 	return shellLoadCallPattern.MatchString(text)
 }
@@ -54,7 +51,7 @@ func callsShellLoad(text string) bool {
 func readAdminMountText(s Snapshot) (text string, found bool, err error) {
 	var bodies []string
 	for _, path := range adminMountPaths {
-		body, ok, readErr := s.ReadFile(path)
+		body, ok, readErr := s.readFile(path)
 		if readErr != nil {
 			return "", false, readErr
 		}
@@ -68,12 +65,12 @@ func readAdminMountText(s Snapshot) (text string, found bool, err error) {
 	return strings.Join(bodies, "\n"), true, nil
 }
 
-// AdminMountShape ports checks-local.ts's adminMountShape (checks-local.ts:376-388): a
-// best-effort, non-blocking nudge over the /admin mount that calls createCairnAdmin's
-// .shellLoad and renders CairnAdminShell. It never returns a fail: a fail is a hard deploy gate,
-// and a warning-severity heuristic that could not see an unconventionally wired site must never
-// go falsely red, so an unreadable or partial mount reports info with guidance instead.
-var AdminMountShape = Check{
+// adminMountShape is a best-effort, non-blocking nudge over the /admin mount that calls
+// createCairnAdmin's .shellLoad and renders CairnAdminShell. It never returns a fail: a fail is a
+// hard deploy gate, and a warning-severity heuristic that could not see an unconventionally wired
+// site must never go falsely red, so an unreadable or partial mount reports info with guidance
+// instead.
+var adminMountShape = Check{
 	ID:        "admin.mount-shape",
 	Condition: spine.ConditionAdminMountIncomplete,
 	Run: func(s Snapshot) Result {

@@ -48,7 +48,7 @@ type semver struct {
 // does not match, so parseVersion reports it unparseable rather than guessing an order for it.
 var plainVersionPattern = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
 
-// parseVersion ports check-floors.ts's parseVersion (:22-26): plain x.y.z only.
+// parseVersion reads a plain x.y.z version only.
 func parseVersion(text string) (semver, bool) {
 	m := plainVersionPattern.FindStringSubmatch(text)
 	if m == nil {
@@ -64,8 +64,8 @@ func parseVersion(text string) (semver, bool) {
 // shape (>=, a bare version, a tilde range) does not match.
 var caretRangePattern = regexp.MustCompile(`^\^(\d+)(?:\.(\d+))?(?:\.(\d+))?$`)
 
-// caretFloor ports check-floors.ts's caretFloor (:31-35): the caret forms only. A missing minor
-// or patch segment reads as 0, the same short form the kit peer (^3) relies on.
+// caretFloor reads the caret forms only. A missing minor or patch segment reads as 0, the same
+// short form the kit peer (^3) relies on.
 func caretFloor(rng string) (semver, bool) {
 	m := caretRangePattern.FindStringSubmatch(rng)
 	if m == nil {
@@ -82,8 +82,8 @@ func caretFloor(rng string) (semver, bool) {
 	return semver{major, minor, patch}, true
 }
 
-// compareVersions ports check-floors.ts's compareVersions (:37-39): negative when a is lower,
-// positive when a is higher, zero when equal, comparing major then minor then patch.
+// compareVersions returns negative when a is lower, positive when a is higher, zero when equal,
+// comparing major then minor then patch.
 func compareVersions(a, b semver) int {
 	if d := a.major - b.major; d != 0 {
 		return d
@@ -101,12 +101,11 @@ type floorsVerdict struct {
 	detail string
 }
 
-// judgePeers ports check-floors.ts's judgePeers (:58-95): it judges every peer in a fixed,
-// sorted order (peers is a Go map, unlike the TypeScript object's own insertion order, so
-// sorting by dependency name keeps the joined detail deterministic) against resolve, which looks
-// up one dependency's resolved version in whichever lockfile is in play. missingEntry names the
-// per-dependency message for a lockfile that carries no entry for it, since each format's
-// message names its own file.
+// judgePeers judges every peer in a fixed, sorted order (peers is a Go map, so sorting by
+// dependency name keeps the joined detail deterministic) against resolve, which looks up one
+// dependency's resolved version in whichever lockfile is in play. missingEntry names the
+// per-dependency message for a lockfile that carries no entry for it, since each format's message
+// names its own file.
 func judgePeers(resolve func(dep string) (string, bool), peers map[string]string, missingEntry func(dep string) string) floorsVerdict {
 	var failures, skips, passes []string
 	for _, dep := range slices.Sorted(maps.Keys(peers)) {
@@ -146,7 +145,7 @@ func judgePeers(resolve func(dep string) (string, bool), peers map[string]string
 }
 
 // npmLockedVersion reads dep's resolved version out of a package-lock.json's already-parsed
-// packages map, ported from check-floors.ts's lockedVersion (:46-49).
+// packages map.
 func npmLockedVersion(packages map[string]any, dep string) (string, bool) {
 	entry, ok := packages["node_modules/"+dep]
 	if !ok {
@@ -160,9 +159,8 @@ func npmLockedVersion(packages map[string]any, dep string) (string, bool) {
 	return version, ok
 }
 
-// npmDependencyFloors ports check-floors.ts's dependencyFloorsResult (:103-125) minus its
-// null-lockfile case, which the caller (configDependencyFloors's Run) already resolved by
-// choosing to read package-lock.json at all.
+// npmDependencyFloors judges a package-lock.json. The no-lockfile case is not handled here: the
+// caller (configDependencyFloors's Run) resolved it by choosing to read package-lock.json at all.
 func npmDependencyFloors(lockText string, peers map[string]string) floorsVerdict {
 	var root map[string]any
 	if err := json.Unmarshal([]byte(lockText), &root); err != nil {
@@ -180,10 +178,9 @@ func npmDependencyFloors(lockText string, peers map[string]string) floorsVerdict
 	)
 }
 
-// pnpmDepVersion reads one pnpm lockfile entry's resolved version, ported from
-// check-floors.ts's pnpmDepVersion (:130-140): the entry is either a bare version string or a
-// mapping carrying its own "version" key, and either shape can carry a peer-dependency suffix in
-// parentheses (e.g. "5.56.10(vite@6.0.0)"), stripped before returning.
+// pnpmDepVersion reads one pnpm lockfile entry's resolved version. The entry is either a bare
+// version string or a mapping carrying its own "version" key, and either shape can carry a
+// peer-dependency suffix in parentheses (e.g. "5.56.10(vite@6.0.0)"), stripped before returning.
 func pnpmDepVersion(entry any) (string, bool) {
 	var raw string
 	switch v := entry.(type) {
@@ -202,9 +199,8 @@ func pnpmDepVersion(entry any) (string, bool) {
 }
 
 // pnpmResolveVersion reads dep's resolved version out of a pnpm-lock.yaml's already-parsed
-// document, ported from check-floors.ts's pnpmResolve (:148-156): the root importer's
-// dependencies then devDependencies first (lockfileVersion 9), falling back to the legacy
-// top-level maps (lockfileVersion 5 and 6).
+// document: the root importer's dependencies then devDependencies first (lockfileVersion 9),
+// falling back to the legacy top-level maps (lockfileVersion 5 and 6).
 func pnpmResolveVersion(lock map[string]any, dep string) (string, bool) {
 	if importers, ok := lock["importers"].(map[string]any); ok {
 		if root, ok := importers["."].(map[string]any); ok {
@@ -231,7 +227,7 @@ func pnpmResolveVersion(lock map[string]any, dep string) (string, bool) {
 	return "", false
 }
 
-// pnpmDependencyFloors ports check-floors.ts's pnpmDependencyFloorsResult (:173-185).
+// pnpmDependencyFloors judges a pnpm-lock.yaml.
 func pnpmDependencyFloors(lockText string, peers map[string]string) floorsVerdict {
 	var root any
 	if err := yaml.Unmarshal([]byte(lockText), &root); err != nil {
@@ -249,11 +245,10 @@ func pnpmDependencyFloors(lockText string, peers map[string]string) floorsVerdic
 // classic's `version "x.y.z"` or Berry's `version: x.y.z`.
 var yarnVersionLinePattern = regexp.MustCompile(`^\s+version:?\s+"?([^"\s]+)"?`)
 
-// yarnLockedVersion ports check-floors.ts's yarnLockedVersion (:195-215): a heuristic text read
-// over yarn.lock, classic (v1) or Berry, never a grammar. A block opens with one or more
-// comma-separated specifiers ending its header line in ":"; the block matching dep is the one
-// whose specifier list names it, and the version is read off the first indented "version" line
-// that follows.
+// yarnLockedVersion is a heuristic text read over yarn.lock, classic (v1) or Berry, never a
+// grammar. A block opens with one or more comma-separated specifiers ending its header line in ":";
+// the block matching dep is the one whose specifier list names it, and the version is read off the
+// first indented "version" line that follows.
 func yarnLockedVersion(lockText, dep string) (string, bool) {
 	lines := strings.Split(lockText, "\n")
 	for i := range len(lines) {
@@ -296,8 +291,8 @@ func startsWithSpace(line string) bool {
 	return len(line) > 0 && (line[0] == ' ' || line[0] == '\t')
 }
 
-// yarnDependencyFloors ports check-floors.ts's yarnDependencyFloorsResult (:222-228): yarn.lock
-// is not JSON or YAML, so there is no parse-failure branch.
+// yarnDependencyFloors judges a yarn.lock, which is not JSON or YAML, so there is no parse-failure
+// branch.
 func yarnDependencyFloors(lockText string, peers map[string]string) floorsVerdict {
 	return judgePeers(
 		func(dep string) (string, bool) { return yarnLockedVersion(lockText, dep) },
@@ -315,17 +310,16 @@ type enginePackageJSON struct {
 	} `json:"peerDependenciesMeta"`
 }
 
-// readEnginePeers ports check-floors.ts's readEnginePeers (:238-248), reading
-// node_modules/@glw907/cairn-cms/package.json as a plain file under s, rather than through
-// Node's module resolution, which would need a Node runtime this tool does not assume. found is
-// false when the file does not exist; err is non-nil for a containment refusal (a symlinked
-// node_modules escaping s.Dir) or a parse failure, both of which the caller reports as unchecked
-// rather than a crash. A peer marked optional in peerDependenciesMeta is filtered out: a site
-// that never uses the feature behind one (@anthropic-ai/sdk, the tidy action) legitimately does
-// not install it, and counting it would read as a skip that masks the framework verdict this
+// readEnginePeers reads node_modules/@glw907/cairn-cms/package.json as a plain file under s, rather
+// than through Node's module resolution, which would need a Node runtime this tool does not assume.
+// found is false when the file does not exist; err is non-nil for a containment refusal (a
+// symlinked node_modules escaping s.Dir) or a parse failure, both of which the caller reports as
+// unchecked rather than a crash. A peer marked optional in peerDependenciesMeta is filtered out: a
+// site that never uses the feature behind one (@anthropic-ai/sdk, the tidy action) legitimately
+// does not install it, and counting it would read as a skip that masks the framework verdict this
 // check exists to give.
 func readEnginePeers(s Snapshot) (peers map[string]string, found bool, err error) {
-	body, ok, err := s.ReadFile(enginePackageJSONPath)
+	body, ok, err := s.readFile(enginePackageJSONPath)
 	if err != nil {
 		return nil, false, err
 	}
@@ -346,22 +340,19 @@ func readEnginePeers(s Snapshot) (peers map[string]string, found bool, err error
 	return out, true, nil
 }
 
-// resultFromFloorsVerdict wraps a floorsVerdict into config.dependency-floors's Result,
-// resolving Severity from the registry only when the verdict is a fail.
+// resultFromFloorsVerdict wraps a floorsVerdict into config.dependency-floors's Result.
 func resultFromFloorsVerdict(v floorsVerdict) Result {
-	r := Result{Status: v.status, Detail: v.detail}
 	if v.status == StatusFail {
-		r.Condition = spine.ConditionConfigDependencyFloorsUnmet
-		r.Severity = severityFor(spine.ConditionConfigDependencyFloorsUnmet)
+		return failResult(spine.ConditionConfigDependencyFloorsUnmet, v.detail)
 	}
-	return r
+	return Result{Status: v.status, Detail: v.detail}
 }
 
-// ConfigDependencyFloors ports checks-local.ts's configDependencyFloors (check-floors.ts
-// :250-267): the resolved svelte and @sveltejs/kit versions in whichever lockfile exists,
-// judged against the installed engine's own declared peer ranges. package-lock.json, then
-// pnpm-lock.yaml, then yarn.lock: the first recognized lockfile that exists is the one judged.
-var ConfigDependencyFloors = Check{
+// configDependencyFloors checks the resolved svelte and @sveltejs/kit versions in whichever
+// lockfile exists, judged against the installed engine's own declared peer ranges.
+// package-lock.json, then pnpm-lock.yaml, then yarn.lock: the first recognized lockfile that exists
+// is the one judged.
+var configDependencyFloors = Check{
 	ID:        "config.dependency-floors",
 	Condition: spine.ConditionConfigDependencyFloorsUnmet,
 	Run: func(s Snapshot) Result {
@@ -373,7 +364,7 @@ var ConfigDependencyFloors = Check{
 			return uncheckedResult(detailEnginePackageJSONNotFound)
 		}
 
-		npmLock, ok, err := s.ReadFile("package-lock.json")
+		npmLock, ok, err := s.readFile("package-lock.json")
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
@@ -381,7 +372,7 @@ var ConfigDependencyFloors = Check{
 			return resultFromFloorsVerdict(npmDependencyFloors(string(npmLock), peers))
 		}
 
-		pnpmLock, ok, err := s.ReadFile("pnpm-lock.yaml")
+		pnpmLock, ok, err := s.readFile("pnpm-lock.yaml")
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
@@ -389,7 +380,7 @@ var ConfigDependencyFloors = Check{
 			return resultFromFloorsVerdict(pnpmDependencyFloors(string(pnpmLock), peers))
 		}
 
-		yarnLock, ok, err := s.ReadFile("yarn.lock")
+		yarnLock, ok, err := s.readFile("yarn.lock")
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}

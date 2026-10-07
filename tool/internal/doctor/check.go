@@ -99,31 +99,21 @@ func Catalogue() []string {
 	}
 }
 
-// labelFor returns id's registry title from the embedded condition mirror. A missing registry
-// entry for a condition this package raises is a build-time defect, so it panics rather than
-// returning an empty label a report would print silently.
-func labelFor(id spine.Condition) string {
+// conditionText returns id's registry text from the embedded condition mirror. A missing entry for
+// a condition this package raises is a build-time defect, so it panics rather than letting a report
+// print an empty label or a zero severity.
+func conditionText(id spine.Condition) spine.ConditionText {
 	text, ok := spine.TextFor(id)
 	if !ok {
 		panic(fmt.Sprintf("doctor: no registry entry for condition %q", id))
 	}
-	return text.Title
-}
-
-// severityFor returns id's registry severity, converted to spine's FailSeverity. Same
-// build-time-defect stance as labelFor.
-func severityFor(id spine.Condition) spine.FailSeverity {
-	text, ok := spine.TextFor(id)
-	if !ok {
-		panic(fmt.Sprintf("doctor: no registry entry for condition %q", id))
-	}
-	return text.Severity
+	return text
 }
 
 // Label returns c's registry-sourced label: its condition's title in the embedded mirror. A
 // check with no condition (Condition: spine.ConditionNone) has no label of its own.
 func (c Check) Label() string {
-	return labelFor(c.Condition)
+	return conditionText(c.Condition).Title
 }
 
 // The five Result constructors below leave ID unset: Run stamps every Result with its own
@@ -137,7 +127,7 @@ func passResult(detail string) Result {
 // failResult builds a StatusFail Result, reading its severity from the registry rather than a
 // literal so a check can never disagree with its own condition's declared severity.
 func failResult(condition spine.Condition, detail string) Result {
-	return Result{Condition: condition, Status: StatusFail, Severity: severityFor(condition), Detail: detail}
+	return Result{Condition: condition, Status: StatusFail, Severity: conditionText(condition).Severity, Detail: detail}
 }
 
 // skipResult builds a StatusSkip Result.
@@ -164,14 +154,6 @@ var hooksCandidatePaths = []string{"src/hooks.server.ts", "src/hooks.server.js"}
 // neither candidate exists. Two checks read the same file: auth.role-wiring and
 // config.no-referrer-blanket.
 func readHooksSource(s Snapshot) (text, path string, found bool, err error) {
-	for _, candidate := range hooksCandidatePaths {
-		body, ok, readErr := s.ReadFile(candidate)
-		if readErr != nil {
-			return "", "", false, readErr
-		}
-		if ok {
-			return string(body), candidate, true, nil
-		}
-	}
-	return "", "", false, nil
+	body, path, found, err := s.readFirst(hooksCandidatePaths)
+	return string(body), path, found, err
 }

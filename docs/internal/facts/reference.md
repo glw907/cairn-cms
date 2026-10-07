@@ -548,15 +548,15 @@ re-sourced to Go on this tree rather than to the page.
 - `f:01iu5z` Everything the command reads is off disk under the resolved, symlink-free directory: the
   wrangler config, `package.json` and a lockfile, the Vite config (and `svelte.config.js`, only to see whether it remains),
   `src/hooks.server.ts`, `static/_headers`, the site-config YAML, the `/admin` route candidates,
-  and `src/content/.cairn/site-facts.json`. Source: `tool/internal/doctor/wrangler.go:36,48`,
-  `tool/internal/doctor/check_csrf.go:43,271`, `tool/internal/doctor/check_referrer.go:191-235`,
-  `tool/internal/doctor/check_floors.go:328,376,384,392`, `tool/internal/doctor/facts.go:11`.
+  and `src/content/.cairn/site-facts.json`. Source: `tool/internal/doctor/wrangler.go:34,46`,
+  `tool/internal/doctor/check_csrf.go:43,264`, `tool/internal/doctor/check_referrer.go:186-230`,
+  `tool/internal/doctor/check_floors.go:322,367,375,383`, `tool/internal/doctor/facts.go:11`.
   [verified]
 - `f:q01lkt` The `/admin` mount check probes six candidate route files by name, since a Snapshot offers no
   directory listing and a route file can be `.ts` or `.js`. Source:
-  `tool/internal/doctor/check_mount.go:14-21`. [verified]
+  `tool/internal/doctor/check_mount.go:13-20`. [verified]
 - `f:dg0xqg` A path resolving outside the run's directory, even through a symlink, is refused rather than
-  followed. Source: `tool/internal/doctor/snapshot.go:75-87`. [verified]
+  followed. Source: `tool/internal/doctor/snapshot.go:72-84`. [verified]
 - `f:8fhjud` The whole command makes one network request, a credential-free `GET` of the declared origin's
   `/robots.txt` for `ai.posture-effective`, and nothing else touches the network. Source:
   `tool/internal/doctor/fetchrobots.go:28-35`. [verified]
@@ -568,7 +568,7 @@ re-sourced to Go on this tree rather than to the page.
   [docs-drift: the retired page said the one request "is bounded at 15 seconds inside it"]
 - `f:plng3z` A directory with neither a wrangler config nor a `@glw907/cairn-cms` dependency or
   devDependency in `package.json` is not a cairn-cms site: the run prints one line, exits 3, and
-  settles no check. Source: `tool/internal/doctor/fileread.go:89-104`,
+  settles no check. Source: `tool/internal/doctor/fileread.go:88-103`,
   `tool/cmd/cairn/doctor.go:60-61,112-128`, `tool/cmd/cairn/messages.go:320-328`. [verified]
 - `f:ee48yi` `--json` is the command's own flag and writes the payload instead of the report; it beats
   `--quiet`, so the payload always prints under `--json`. Source:
@@ -584,15 +584,15 @@ re-sourced to Go on this tree rather than to the page.
   `config.csrf-trusted-origins`, `config.site-config`, `config.public-origin`,
   `config.no-referrer-blanket`, `admin.mount-shape`, `config.dependency-floors`,
   `auth.role-wiring`, `ai.posture-effective`. That slice is also the published check-id list the
-  page tests read. Source: `tool/internal/doctor/report.go:10-31`. [verified]
+  page tests read. Source: `tool/internal/doctor/report.go:8-29`. [verified]
 - `f:kjp61u` Each check names one engine condition id, which carries the check's severity: blocker for
   `config.bindings-missing`, `config.site-config-invalid`, `config.public-origin-invalid`, and
   `config.dependency-floors-unmet`, warning for `config.media-bucket-missing`,
   `config.observability-off`, `config.csrf-trusted-origins-wildcard`, `config.no-referrer-blanket`,
   `admin.mount-incomplete`, `auth.role-wiring-missing`, and `ai.posture-not-effective`. Source:
-  `tool/internal/doctor/check_bindings.go:31`, `check_media.go:29`, `check_observability.go:16`,
-  `check_csrf.go:249`, `check_siteconfig.go:26`, `check_origin.go:60`, `check_referrer.go:217`,
-  `check_mount.go:78`, `check_floors.go:366`, `check_roles.go:105`, `check_posture.go:291`, with
+  `tool/internal/doctor/check_bindings.go:29`, `check_media.go:29`, `check_observability.go:16`,
+  `check_csrf.go:242`, `check_siteconfig.go:26`, `check_origin.go:63`, `check_referrer.go:212`,
+  `check_mount.go:75`, `check_floors.go:357`, `check_roles.go:103`, `check_posture.go:285`, with
   each severity at `tool/internal/spine/conditions.json:103-110`. [verified]
 - `f:3sxgcl` `config.site-config` reports presence and parsing only; the per-concept URL policy lives on the
   adapter concepts and is not checkable from a directory preflight. Source:
@@ -606,7 +606,7 @@ re-sourced to Go on this tree rather than to the page.
   `deploy`, `publish-path`, and `errors`. Source:
   `tool/internal/health/check_serving.go:25`, `check_delegation.go:20`, `check_https.go:45`,
   `check_email.go:32`, `check_deploy.go:132`, `check_publish.go:59`, `check_errors.go:26`, against
-  the doctor's own list at `tool/internal/doctor/report.go:19-31`. [verified]
+  the doctor's own list at `tool/internal/doctor/report.go:17-29`. [verified]
 - `f:re7sn7` The run's exit code is the worst severity among failing checks, 0 when every check passed,
   skipped, or reported info, and 3 when an unchecked result is the only non-passing one. Source:
   `tool/internal/doctor/status.go:58-82` folding through `tool/internal/spine/exit.go:133-167`;
@@ -620,26 +620,26 @@ re-sourced to Go on this tree rather than to the page.
   `tool/cmd/cairn/doctor_json_test.go:26-55`, `tool/cmd/cairn/doctor.go:88-97`. [verified]
 - `f:svxuiv` Each failing check's report block and its payload `fix.url` resolve against
   `https://cairn.pub/docs/admin/`, built from the condition's own `docsAnchor` with the `.md`
-  removed. Source: `tool/internal/doctor/report.go:66-80`. [verified]
+  removed. Source: `tool/internal/doctor/report.go:53-67`. [verified]
 - `f:xejl4n` The site config YAML is tried at four candidate paths in lookup order: the canonical path, then
   `site.config.yaml`, `src/lib/site.config.yaml`, and `src/site.config.yaml`; `config.site-config`
   reports `UNCHECKED` (never `FAIL`) when no file is found at any of the four. Source:
-  `tool/internal/doctor/siteconfig.go:40-46`, `tool/internal/doctor/check_siteconfig.go:23-38`.
+  `tool/internal/doctor/siteconfig.go:37-43`, `tool/internal/doctor/check_siteconfig.go:23-38`.
   [candidate: found during the 2026-09-22 redraft's Go read, not independently re-verified by a
   second pass]
 - `f:a71nbo` `config.dependency-floors` reports `UNCHECKED` when no recognized lockfile
   (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`) is found, or when the installed engine's
-  own `package.json` cannot be read. Source: `tool/internal/doctor/check_floors.go:358-401`.
+  own `package.json` cannot be read. Source: `tool/internal/doctor/check_floors.go:349-392`.
   [candidate: found during the 2026-09-22 redraft's Go read, not independently re-verified by a
   second pass]
 - `f:v2isa4` `config.csrf-trusted-origins` reports `UNCHECKED` when none of `vite.config.js`,
   `vite.config.ts`, and `vite.config.mts` is found, distinct from a read error on any of them. Source:
-  `tool/internal/doctor/check_csrf.go:271-301`. [candidate: found during the 2026-09-22 redraft's Go
+  `tool/internal/doctor/check_csrf.go:264-289`. [candidate: found during the 2026-09-22 redraft's Go
   read, not independently re-verified by a second pass]
 - `f:b94uhy` `ai.posture-effective` reports `UNCHECKED` when `src/content/.cairn/site-facts.json` is absent,
   or when the `/robots.txt` fetch could not observe a result: no origin resolves, the origin does
   not parse, the fetch fails, or the response is non-200. Source:
-  `tool/internal/doctor/check_posture.go:292-305`, `tool/internal/doctor/fetchrobots.go:35-62`.
+  `tool/internal/doctor/check_posture.go:286-299`, `tool/internal/doctor/fetchrobots.go:35-62`.
   [candidate: found during the 2026-09-22 redraft's Go read, not independently re-verified by a
   second pass]
 - `f:gilykt` Under `--json`, a check's five printed status words collapse to four wire states: `PASS` and
@@ -654,7 +654,7 @@ re-sourced to Go on this tree rather than to the page.
   call's argument is a bare identifier the check cannot read into; none of these is treated as a
   high-confidence `FAIL`. The page's checks table names only this check's `PASS`/`FAIL` condition,
   `SKIP`, and `UNCHECKED` cases, not its `INFO` settlements. Source:
-  `tool/internal/doctor/check_roles.go:118-131`, `tool/internal/doctor/check_roles_test.go:31,40,49`.
+  `tool/internal/doctor/check_roles.go:116-129`, `tool/internal/doctor/check_roles_test.go:31,40,49`.
   [verified]
 
 ## docs/reference/cli-cairn-exit-codes.md

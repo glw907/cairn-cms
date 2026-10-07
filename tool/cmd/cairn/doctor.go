@@ -66,10 +66,9 @@ func runDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, args []
 
 	snap.PublicOrigin = resolvePublicOrigin(d, snap)
 	snap.Robots = doctor.FetchRobots(ctx, snap.PublicOrigin)
-	snap.At = d.now()
 
 	checked := doctor.Run(snap)
-	verdict := spine.ExitCode([]spine.SiteVerdicts{doctor.Verdicts(doctor.Results(checked))}, nil, 0)
+	verdict := spine.ExitCode([]spine.SiteVerdicts{doctor.Verdicts(checked)}, nil, 0)
 
 	if err := writeDoctor(cmd, d, rf, f, snap, checked, verdict); err != nil {
 		return err

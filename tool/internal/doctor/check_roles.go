@@ -31,15 +31,14 @@ const (
 	passRoleWiringWired = "createAuthGuard is passed the declared role vocabulary (heuristic text read)"
 )
 
-// defaultRoleNames are DEFAULT_ROLES (src/lib/auth/roles.ts:24), the implicit pair every guard
+// defaultRoleNames are DEFAULT_ROLES (src/lib/auth/roles.ts), the implicit pair every guard
 // falls back to, filtered out of a site's declared vocabulary before deciding whether wiring
 // matters: a role in this set resolves the same whether or not the guard receives it.
 var defaultRoleNames = map[string]struct{}{"owner": {}, "editor": {}}
 
-// customRoleNames ports checks-local.ts's own helper (:409-412): the roles a site declares
-// beyond the implicit owner/editor pair, exactly the roles a guard on the default fallback would
-// resolve to none. Sorted for a deterministic message, since the JSON roles map this reads from
-// carries no ordering of its own.
+// customRoleNames returns the roles a site declares beyond the implicit owner/editor pair,
+// exactly the roles a guard on the default fallback would resolve to none. Sorted for a
+// deterministic message, since the JSON roles map this reads from carries no ordering of its own.
 func customRoleNames(roles []string) []string {
 	var custom []string
 	for _, name := range roles {
@@ -52,8 +51,7 @@ func customRoleNames(roles []string) []string {
 }
 
 // createAuthGuardCallPattern captures createAuthGuard's own argument list, non-greedy so a
-// second call later in the file does not widen the capture. Ported from
-// checks-local.ts's guardRoleWiring (:421-428).
+// second call later in the file does not widen the capture.
 var createAuthGuardCallPattern = regexp.MustCompile(`createAuthGuard\s*\(([\s\S]*?)\)`)
 
 // rolesWordPattern matches a bare `roles` word in createAuthGuard's argument list, the wiring
@@ -63,7 +61,7 @@ var rolesWordPattern = regexp.MustCompile(`\broles\b`)
 // guardWiring is guardRoleWiring's own four-value result.
 type guardWiring int
 
-// The four outcomes checks-local.ts's guardRoleWiring distinguishes.
+// The four outcomes guardRoleWiring distinguishes.
 const (
 	// guardWiringAbsent means no createAuthGuard call was found in the text at all.
 	guardWiringAbsent guardWiring = iota
@@ -77,10 +75,10 @@ const (
 	guardWiringWired
 )
 
-// guardRoleWiring ports checks-local.ts's own helper (:421-428): read the createAuthGuard call
-// in text and report whether it is passed a roles argument. absent and indirect are both
-// reported as info rather than fail, since a wrapped or dynamically built guard reading either
-// way is not a high-confidence positive: a positive fail should never be a false red.
+// guardRoleWiring reads the createAuthGuard call in text and reports whether it is passed a roles
+// argument. absent and indirect are both reported as info rather than fail, since a wrapped or
+// dynamically built guard reading either way is not a high-confidence positive: a positive fail
+// should never be a false red.
 func guardRoleWiring(text string) guardWiring {
 	match := createAuthGuardCallPattern.FindStringSubmatch(text)
 	if match == nil {
@@ -96,11 +94,11 @@ func guardRoleWiring(text string) guardWiring {
 	return guardWiringUnwired
 }
 
-// AuthRoleWiring ports checks-local.ts's roleWiring (:430-462): a site declaring custom roles
-// must pass createAuthGuard the same vocabulary, or every editor whose role sits outside the
-// implicit owner/editor pair resolves to none capability. It reads siteFacts for the declared
-// vocabulary, so it reports unchecked with factsAbsentDetail when site-facts.json is absent.
-var AuthRoleWiring = Check{
+// authRoleWiring checks that a site declaring custom roles passes createAuthGuard the same
+// vocabulary, or every editor whose role sits outside the implicit owner/editor pair resolves to
+// none capability. It reads siteFacts for the declared vocabulary, so it reports unchecked with
+// factsAbsentDetail when site-facts.json is absent.
+var authRoleWiring = Check{
 	ID:        "auth.role-wiring",
 	Condition: spine.ConditionAuthRoleWiringMissing,
 	Run: func(s Snapshot) Result {

@@ -3,8 +3,6 @@ package doctor
 import (
 	"fmt"
 	"strings"
-
-	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
 // checks is the complete doctor check set cairn doctor runs, in report order: the eight
@@ -17,23 +15,22 @@ import (
 // docs/reference/cli-cairn-json-output.md and docs/reference/cli-cairn-doctor.md to every id
 // read it here rather than retyping the eleven.
 var checks = []Check{
-	ConfigBindings,
-	ConfigMediaBucket,
-	ConfigObservability,
-	ConfigCsrfTrustedOrigins,
-	ConfigSiteConfig,
-	ConfigPublicOrigin,
-	ConfigNoReferrerBlanket,
-	AdminMountShape,
-	ConfigDependencyFloors,
-	AuthRoleWiring,
-	AIPostureEffective,
+	configBindings,
+	configMediaBucket,
+	configObservability,
+	configCsrfTrustedOrigins,
+	configSiteConfig,
+	configPublicOrigin,
+	configNoReferrerBlanket,
+	adminMountShape,
+	configDependencyFloors,
+	authRoleWiring,
+	aiPostureEffective,
 }
 
-// CheckedResult pairs one Check with the Result its Run produced. A report's per-check line and
-// its failure block both need the check's own Label, which lives on Check (its Condition) and
-// not on every Result, so the pair travels together the way report.ts's own
-// { check, result }[] does.
+// CheckedResult pairs one Check with the Result its Run produced. A report's per-check line and its
+// failure block both need the check's own Label, which lives on Check (its Condition) and not on
+// every Result, so the pair travels together.
 type CheckedResult struct {
 	// Check is the check that ran.
 	Check Check
@@ -49,16 +46,6 @@ func Run(s Snapshot) []CheckedResult {
 		result := c.Run(s)
 		result.ID = c.ID
 		out[i] = CheckedResult{Check: c, Result: result}
-	}
-	return out
-}
-
-// Results returns the Result half of each pair in checked, in order, for doctor.Verdicts to
-// fold into the run's exit code.
-func Results(checked []CheckedResult) []Result {
-	out := make([]Result, len(checked))
-	for i, c := range checked {
-		out[i] = c.Result
 	}
 	return out
 }
@@ -80,22 +67,9 @@ func docsURL(anchor string) string {
 	return docsBaseAdmin + strings.Replace(anchor, ".md", "", 1)
 }
 
-// conditionText returns id's registry text, panicking on a missing entry the same way
-// check_bindings.go's own labelFor does: a check raising a condition the embedded mirror does
-// not carry is a build-time defect a report must not paper over.
-func conditionText(id spine.Condition) spine.ConditionText {
-	text, ok := spine.TextFor(id)
-	if !ok {
-		panic(fmt.Sprintf("doctor: no registry entry for condition %q", id))
-	}
-	return text
-}
-
-// Format renders checked as cairn doctor's plain-text report, the shape report.ts:22-40
-// produces: one "STATUS  Label: detail" line per check, keyed to its own condition's registry
-// title, then a why/fix/docs block per failure, then a count summary. No ANSI, so a terminal and
-// a CI log read the same. The docs line is this port's own addition; report.ts carries no
-// equivalent.
+// Format renders checked as cairn doctor's plain-text report: one "STATUS  Label: detail" line per
+// check, keyed to its own condition's registry title, then a why/fix/docs block per failure, then a
+// count summary. No ANSI, so a terminal and a CI log read the same.
 func Format(checked []CheckedResult) string {
 	lines := make([]string, 0, len(checked)+8)
 	for _, cr := range checked {

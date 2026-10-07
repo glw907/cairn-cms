@@ -12,8 +12,7 @@ import (
 const noWranglerFoundDetail = "no wrangler.jsonc or wrangler.toml found"
 
 const (
-	// bindingEmailMissing names the send_email binding config.bindings looks for, ported
-	// verbatim from checks-local.ts's own missing-list entry.
+	// bindingEmailMissing names the send_email binding config.bindings looks for.
 	bindingEmailMissing = "EMAIL (send_email)"
 	// bindingAuthDBMissing names the d1_databases binding config.bindings looks for.
 	bindingAuthDBMissing = "AUTH_DB (d1_databases)"
@@ -24,9 +23,8 @@ const (
 	tmplBindingsMissing = "missing %s"
 )
 
-// ConfigBindings ports checks-local.ts's configBindings (:23-36): the wrangler EMAIL and
-// AUTH_DB bindings both declared.
-var ConfigBindings = Check{
+// configBindings checks that the wrangler config declares both the EMAIL and AUTH_DB bindings.
+var configBindings = Check{
 	ID:        "config.bindings",
 	Condition: spine.ConditionConfigBindingsMissing,
 	Run: func(s Snapshot) Result {

@@ -47,7 +47,7 @@ func marshalGoldenPayload(t *testing.T) []byte {
 	data, err := Marshal(JSONInput{
 		Dir:     jsonGoldenDir,
 		Checked: checked,
-		Verdict: spine.ExitCode([]spine.SiteVerdicts{Verdicts(Results(checked))}, nil, 0),
+		Verdict: spine.ExitCode([]spine.SiteVerdicts{Verdicts(checked)}, nil, 0),
 		Now:     jsonGoldenNow,
 	})
 	if err != nil {

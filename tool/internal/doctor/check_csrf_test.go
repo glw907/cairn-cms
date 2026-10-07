@@ -320,7 +320,7 @@ func TestConfigCsrfTrustedOrigins(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := ConfigCsrfTrustedOrigins.Run(s)
+			result := configCsrfTrustedOrigins.Run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
@@ -335,11 +335,11 @@ func TestConfigCsrfTrustedOrigins(t *testing.T) {
 				}
 			}
 			if tt.wantStatus == StatusFail {
-				if result.Condition != ConfigCsrfTrustedOrigins.Condition {
-					t.Errorf("Condition = %q, want %q", result.Condition, ConfigCsrfTrustedOrigins.Condition)
+				if result.Condition != configCsrfTrustedOrigins.Condition {
+					t.Errorf("Condition = %q, want %q", result.Condition, configCsrfTrustedOrigins.Condition)
 				}
-				if result.Severity != severityFor(ConfigCsrfTrustedOrigins.Condition) {
-					t.Errorf("Severity = %v, want the registry severity for %s", result.Severity, ConfigCsrfTrustedOrigins.Condition)
+				if result.Severity != conditionText(configCsrfTrustedOrigins.Condition).Severity {
+					t.Errorf("Severity = %v, want the registry severity for %s", result.Severity, configCsrfTrustedOrigins.Condition)
 				}
 			}
 		})
@@ -347,13 +347,13 @@ func TestConfigCsrfTrustedOrigins(t *testing.T) {
 }
 
 func TestConfigCsrfTrustedOriginsIdentity(t *testing.T) {
-	if ConfigCsrfTrustedOrigins.ID != "config.csrf-trusted-origins" {
-		t.Errorf("ID = %q, want config.csrf-trusted-origins", ConfigCsrfTrustedOrigins.ID)
+	if configCsrfTrustedOrigins.ID != "config.csrf-trusted-origins" {
+		t.Errorf("ID = %q, want config.csrf-trusted-origins", configCsrfTrustedOrigins.ID)
 	}
-	if string(ConfigCsrfTrustedOrigins.Condition) != "config.csrf-trusted-origins-wildcard" {
-		t.Errorf("Condition = %q, want config.csrf-trusted-origins-wildcard", ConfigCsrfTrustedOrigins.Condition)
+	if string(configCsrfTrustedOrigins.Condition) != "config.csrf-trusted-origins-wildcard" {
+		t.Errorf("Condition = %q, want config.csrf-trusted-origins-wildcard", configCsrfTrustedOrigins.Condition)
 	}
-	if got := severityFor(ConfigCsrfTrustedOrigins.Condition); got != spine.WarningFailure {
+	if got := conditionText(configCsrfTrustedOrigins.Condition).Severity; got != spine.WarningFailure {
 		t.Errorf("registry severity = %v, want spine.WarningFailure", got)
 	}
 }

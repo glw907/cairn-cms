@@ -50,14 +50,14 @@ func TestConfigSiteConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := ConfigSiteConfig.Run(s)
+			result := configSiteConfig.Run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			switch tt.wantStatus {
 			case StatusFail:
-				if result.Condition != ConfigSiteConfig.Condition {
-					t.Errorf("Condition = %v, want %v", result.Condition, ConfigSiteConfig.Condition)
+				if result.Condition != configSiteConfig.Condition {
+					t.Errorf("Condition = %v, want %v", result.Condition, configSiteConfig.Condition)
 				}
 				if result.Detail == "" {
 					t.Error("Detail is empty for a fail, want the parse or shape error")

@@ -15,8 +15,8 @@ import (
 // `go test ./internal/doctor -run TestGolden -update` and read the diff instead.
 var updateGolden = flag.Bool("update", false, "rewrite the golden text reports from this package's checks")
 
-// cleanWranglerJSONC is a wrangler.jsonc every config check this pass ports reads cleanly: both
-// bindings declared, observability on, and a PUBLIC_ORIGIN the command layer would resolve into
+// cleanWranglerJSONC is a wrangler.jsonc every config check reads cleanly: both bindings declared,
+// observability on, and a PUBLIC_ORIGIN the command layer would resolve into
 // Snapshot.PublicOrigin's OriginFromVars.
 const cleanWranglerJSONC = `{
   "send_email": [{"name": "EMAIL"}],
@@ -25,11 +25,11 @@ const cleanWranglerJSONC = `{
   "vars": {"PUBLIC_ORIGIN": "https://example.com"}
 }`
 
-// cleanSiteFiles is the file set a passing site carries for every check this pass ports: valid
-// wrangler bindings, a Vite config that sets no csrf key, a valid site.config.yaml at its
-// canonical path, a wired /admin mount, an installed engine satisfying its own peer floors, and a
-// site-facts.json declaring no media bucket and no custom roles (so both facts-dependent checks
-// that read it settle as a clean skip rather than a pass needing more fixture).
+// cleanSiteFiles is the file set a passing site carries for every check: valid wrangler bindings, a
+// Vite config that sets no csrf key, a valid site.config.yaml at its canonical path, a wired /admin
+// mount, an installed engine satisfying its own peer floors, and a site-facts.json declaring no
+// media bucket and no custom roles (so both facts-dependent checks that read it settle as a clean
+// skip rather than a pass needing more fixture).
 func cleanSiteFiles() map[string]string {
 	return map[string]string{
 		"wrangler.jsonc":                              cleanWranglerJSONC,
@@ -150,7 +150,7 @@ func goldenReportCases() []goldenReportCase {
 			name:   "unchecked-result",
 			files:  cleanSiteFiles(),
 			origin: cleanOrigin(),
-			robots: Robots{Present: false, Reason: RobotsAbsentTransportFailure},
+			robots: Robots{Present: false, Reason: robotsAbsentTransportFailure},
 		},
 		{
 			// Every one of the five doctor statuses in one run: config.observability fails
@@ -165,7 +165,7 @@ func goldenReportCases() []goldenReportCase {
   "vars": {"PUBLIC_ORIGIN": "https://example.com"}
 }`), "src/routes/admin/+layout.svelte"),
 			origin: cleanOrigin(),
-			robots: Robots{Present: false, Reason: RobotsAbsentTransportFailure},
+			robots: Robots{Present: false, Reason: robotsAbsentTransportFailure},
 		},
 	}
 }
@@ -254,7 +254,7 @@ func TestRunStampsResultIDFromCheck(t *testing.T) {
 		}
 	}
 
-	verdicts := Verdicts(Results(checked))
+	verdicts := Verdicts(checked)
 	if len(verdicts) != len(checked) {
 		t.Fatalf("Verdicts returned %d entries, want %d", len(verdicts), len(checked))
 	}

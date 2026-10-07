@@ -1,6 +1,9 @@
 package doctor
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // TestConfigPublicOrigin is table-driven over requireOrigin's three rules (unset, unparseable,
 // and non-https off localhost or 127.0.0.1), proven case by case, plus the pass and skip arms.
@@ -77,12 +80,48 @@ func TestConfigPublicOrigin(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
 			s.PublicOrigin = tt.origin
-			result := ConfigPublicOrigin.Run(s)
+			result := configPublicOrigin.Run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			if result.Detail != tt.wantDetail {
 				t.Errorf("Detail = %q, want %q", result.Detail, tt.wantDetail)
+			}
+		})
+	}
+}
+
+// TestLoopbackHostAgreement pins that config.public-origin and config.csrf-trusted-origins
+// draw the loopback line in the same place: localhost, 127.0.0.1, and the IPv6 loopback ::1
+// (RFC 4291 section 2.5.3) are local to both, and a lookalike or routable host is local to
+// neither.
+func TestLoopbackHostAgreement(t *testing.T) {
+	tests := []struct {
+		host      string
+		wantLocal bool
+	}{
+		{"localhost", true},
+		{"127.0.0.1", true},
+		{"[::1]", true},
+		{"localhost.example.com", false},
+		{"[2001:db8::1]", false},
+		{"192.168.1.5", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.host, func(t *testing.T) {
+			origin := "http://" + tt.host + ":5173"
+
+			_, publicOriginOK := validatePublicOrigin(origin)
+			if publicOriginOK != tt.wantLocal {
+				t.Errorf("validatePublicOrigin(%q) ok = %v, want %v", origin, publicOriginOK, tt.wantLocal)
+			}
+
+			csrf := csrfVerdict("vite.config.ts", []string{origin}, false)
+			if csrf.Status != StatusPass {
+				t.Fatalf("csrfVerdict Status = %v, want StatusPass", csrf.Status)
+			}
+			if flagged := strings.Contains(csrf.Detail, "network attacker"); flagged == tt.wantLocal {
+				t.Errorf("csrfVerdict(%q) names the network attacker = %v, want %v", origin, flagged, !tt.wantLocal)
 			}
 		})
 	}

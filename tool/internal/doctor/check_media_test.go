@@ -57,7 +57,7 @@ func TestConfigMediaBucket(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := ConfigMediaBucket.Run(s)
+			result := configMediaBucket.Run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
@@ -68,17 +68,16 @@ func TestConfigMediaBucket(t *testing.T) {
 	}
 }
 
-// TestConfigMediaBucketOwnRemediation asserts config.media-bucket's fail raises its own
-// condition, config.media-bucket-missing, and that its registry remediation differs from
-// config.bindings-missing's: the defect checks-local.ts:288-291 records, that this check must
-// not reproduce.
+// TestConfigMediaBucketOwnRemediation asserts config.media-bucket's fail raises its own condition,
+// config.media-bucket-missing, and that its registry remediation differs from
+// config.bindings-missing's, so the check never borrows that condition's fix text.
 func TestConfigMediaBucketOwnRemediation(t *testing.T) {
 	s := snapshotWithFiles(t, map[string]string{
 		"src/content/.cairn/site-facts.json": `{"version": 1, "mediaBucketBinding": "MEDIA_BUCKET"}`,
 		"wrangler.jsonc":                     `{"r2_buckets": []}`,
 	})
 
-	result := ConfigMediaBucket.Run(s)
+	result := configMediaBucket.Run(s)
 	if result.Status != StatusFail {
 		t.Fatalf("Status = %v, want StatusFail", result.Status)
 	}

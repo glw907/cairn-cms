@@ -7,11 +7,10 @@ import (
 	"strings"
 )
 
-// stripJsonc removes // and /* */ comments outside string literals, character by character so a
-// URL inside a string (https://...) survives, then removes a trailing comma before a closing }
-// or ]. Ported whole from stripJsonc (src/lib/doctor/wrangler-config.ts:139-176), accepted gap
-// included: a string containing ",}" is mangled by the trailing-comma pass, since that pass runs
-// after string boundaries are gone.
+// stripJsonc removes // and /* */ comments outside string literals, character by character so a URL
+// inside a string (https://...) survives, then removes a trailing comma before a closing } or ].
+// Accepted gap: a string containing ",}" is mangled by the trailing-comma pass, since that pass
+// runs after string boundaries are gone.
 func stripJsonc(text string) string {
 	var out strings.Builder
 	inString := false
@@ -90,7 +89,6 @@ func indexString(runes []rune, target string, from int) int {
 
 // errWranglerJsoncParse is the clean message a present-but-unparseable wrangler.jsonc reports,
 // never the parser's own snippet (which would land the file's content verbatim in the report).
-// Mirrors parseJsonc's catch (src/lib/doctor/wrangler-config.ts:81-90).
 var errWranglerJsoncParse = errors.New("wrangler.jsonc did not parse")
 
 // factsFromJsonc strips comments and trailing commas, then decodes into map[string]any (never a
@@ -105,9 +103,9 @@ func factsFromJsonc(body []byte) (WranglerFacts, error) {
 	return factsFromConfig(config), nil
 }
 
-// factsFromConfig extracts the ported WranglerFacts fields from a decoded jsonc config. Every
-// lookup is an exact-case map index, which is what makes a mis-cased key (e.g. "Observability")
-// read as absent, the same verdict JSON.parse's exact-case field access gives the engine.
+// factsFromConfig extracts the WranglerFacts fields from a decoded jsonc config. Every lookup is an
+// exact-case map index, which is what makes a mis-cased key (e.g. "Observability") read as absent,
+// the same verdict JSON.parse's exact-case field access gives the engine.
 func factsFromConfig(config map[string]any) WranglerFacts {
 	facts := WranglerFacts{}
 
@@ -146,8 +144,8 @@ func factsFromConfig(config map[string]any) WranglerFacts {
 }
 
 // asObjectSlice returns v as a slice of object entries, skipping any element that is not a JSON
-// object, or nil when v is not a JSON array. Mirrors the engine's repeated
-// `Array.isArray(x) ? x : []` guard (wrangler-config.ts:180,184,190).
+// object, or nil when v is not a JSON array. A wrangler key of the wrong type reads as absent
+// rather than failing the parse.
 func asObjectSlice(v any) []map[string]any {
 	arr, ok := v.([]any)
 	if !ok {

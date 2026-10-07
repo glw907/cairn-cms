@@ -45,11 +45,10 @@ const (
 	tmplNoReferrerPass = "no site-wide Referrer-Policy: no-referrer found (%s, heuristic text read)"
 )
 
-// parseHeadersFile ports checks-local.ts's own helper (checks-local.ts:487-505): Cloudflare's
-// _headers grammar, a path line starting at column 0 and every indented line below it one of
-// that path's headers, until a blank line (or a new path line) ends the block. A line whose
-// trimmed text starts with # is a comment: it neither starts nor ends a block, so one interleaved
-// between a path line and its headers cannot split the block in two.
+// parseHeadersFile reads Cloudflare's _headers grammar: a path line starting at column 0 and every
+// indented line below it one of that path's headers, until a blank line (or a new path line) ends
+// the block. A line whose trimmed text starts with # is a comment: it neither starts nor ends a
+// block, so one interleaved between a path line and its headers cannot split the block in two.
 func parseHeadersFile(text string) []headersBlock {
 	var blocks []headersBlock
 	var current *headersBlock
@@ -74,13 +73,10 @@ func parseHeadersFile(text string) []headersBlock {
 	return blocks
 }
 
-// isCatchAllHeadersPath ports checks-local.ts's own helper (checks-local.ts:509-517): a
-// _headers path line is Cloudflare's catch-all glob either written bare (/*) or as the pathname
-// of an absolute URL (https://example.com/*, which Cloudflare also accepts as a path). The
-// TypeScript source sniffs the scheme with a regex before parsing the URL; net/url.Parse is the
-// idiomatic Go spelling of the same scheme-and-host check and reaches the same verdicts on the
-// corpus, so this drops the regex pre-check and parses directly: url.Parse rejects anything that
-// is not an absolute URL just as reliably.
+// isCatchAllHeadersPath reports whether a _headers path line is Cloudflare's catch-all glob, either
+// written bare (/*) or as the pathname of an absolute URL (https://example.com/*, which Cloudflare
+// also accepts as a path). url.Parse rejects anything that is not an absolute URL, so no scheme
+// sniff precedes it.
 func isCatchAllHeadersPath(path string) bool {
 	if path == "/*" {
 		return true
@@ -92,7 +88,7 @@ func isCatchAllHeadersPath(path string) bool {
 	return u.Path == "/*"
 }
 
-// isBlanketNoReferrerHeaderLine ports checks-local.ts's own helper (checks-local.ts:519-523): a
+// isBlanketNoReferrerHeaderLine reports whether header sets a blanket no-referrer. A
 // Referrer-Policy value can be a comma-separated fallback list, judged on its last token
 // unconditionally, so no-referrer earlier in the list does not count while no-referrer last does.
 func isBlanketNoReferrerHeaderLine(header string) bool {
@@ -105,9 +101,9 @@ func isBlanketNoReferrerHeaderLine(header string) bool {
 	return last == "no-referrer"
 }
 
-// headersFileBlanketNoReferrer ports checks-local.ts's own helper (checks-local.ts:534-538): a
-// blanket match needs both the catch-all path and a no-referrer value on that block; a path
-// scoped to a specific route (/admin/*) never matches here even when it sets the same header.
+// headersFileBlanketNoReferrer reports whether a _headers file sets a blanket no-referrer. A
+// blanket match needs both the catch-all path and a no-referrer value on that block; a path scoped
+// to a specific route (/admin/*) never matches here even when it sets the same header.
 func headersFileBlanketNoReferrer(text string) bool {
 	for _, block := range parseHeadersFile(text) {
 		if isCatchAllHeadersPath(block.path) && slices.ContainsFunc(block.headers, isBlanketNoReferrerHeaderLine) {
@@ -117,12 +113,11 @@ func headersFileBlanketNoReferrer(text string) bool {
 	return false
 }
 
-// hooksSetsBlanketNoReferrer ports checks-local.ts's own helper (checks-local.ts:574-579): the
-// heuristic text read for src/hooks.server.ts. A line setting Referrer-Policy to no-referrer
-// with no route-scoping reference (pathname, route.id, or url.href) in the six lines above it
-// reads as an unconditional, site-wide write. Comments are blanked by blankJSComments, which
-// knows about strings, so a quoted URL never cuts its line, and which keeps every newline, so the
-// six-line window holds.
+// hooksSetsBlanketNoReferrer is the heuristic text read for src/hooks.server.ts. A line setting
+// Referrer-Policy to no-referrer with no route-scoping reference (pathname, route.id, or url.href)
+// in the six lines above it reads as an unconditional, site-wide write. Comments are blanked by
+// blankJSComments, which knows about strings, so a quoted URL never cuts its line, and which keeps
+// every newline, so the six-line window holds.
 func hooksSetsBlanketNoReferrer(text string) bool {
 	_, code := blankJSComments(text)
 	lines := strings.Split(code, "\n")
@@ -171,14 +166,14 @@ func describeNoReferrerSources(hooksPath string, hooksFound, headersFileRead boo
 	return readPart + missingPart
 }
 
-// ConfigNoReferrerBlanket ports checks-local.ts's configNoReferrerBlanket (checks-local.ts:
-// 638-660): the blanket no-referrer trap. Under a site-wide Referrer-Policy: no-referrer, the
-// Fetch spec strips the Origin header from a plain same-origin top-level POST, so it arrives as
-// Origin: null and SvelteKit's origin check refuses it, 403ing the site's own forms and every
-// createAuthChannel action. cairn's admin documents pin their own referrer policy with a header
-// and a meta tag, so the admin keeps working unless a site meta placed after %sveltekit.head%
-// overrides it; the trap is a site shipping the same policy as its own site-wide default.
-var ConfigNoReferrerBlanket = Check{
+// configNoReferrerBlanket checks for the blanket no-referrer trap. Under a site-wide
+// Referrer-Policy: no-referrer, the Fetch spec strips the Origin header from a plain same-origin
+// top-level POST, so it arrives as Origin: null and SvelteKit's origin check refuses it, 403ing the
+// site's own forms and every createAuthChannel action. cairn's admin documents pin their own
+// referrer policy with a header and a meta tag, so the admin keeps working unless a site meta
+// placed after %sveltekit.head% overrides it; the trap is a site shipping the same policy as its
+// own site-wide default.
+var configNoReferrerBlanket = Check{
 	ID:        "config.no-referrer-blanket",
 	Condition: spine.ConditionConfigNoReferrerBlanket,
 	Run: func(s Snapshot) Result {
@@ -186,7 +181,7 @@ var ConfigNoReferrerBlanket = Check{
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
-		headersBody, headersFound, err := s.ReadFile("static/_headers")
+		headersBody, headersFound, err := s.readFile("static/_headers")
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}

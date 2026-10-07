@@ -6,9 +6,8 @@ import (
 )
 
 // WranglerFacts is the wrangler-config facts the local checks need, read from wrangler.jsonc
-// (preferred) or wrangler.toml. Ported from WranglerFacts (src/lib/doctor/wrangler-config.ts:6-37);
-// authDbId, accountId, name, and workersDev are not ported since no ported check reads them
-// (spec :60-64).
+// (preferred) or wrangler.toml. The auth database id, account id, worker name, and workers.dev flag
+// are not carried, since no check reads them.
 type WranglerFacts struct {
 	// HasEmailBinding reports whether a send_email binding named EMAIL is declared.
 	HasEmailBinding bool
@@ -27,13 +26,12 @@ type WranglerFacts struct {
 	R2Buckets []string
 }
 
-// ReadWranglerConfig reads the doctor's wrangler-config facts from wrangler.jsonc (preferred
-// when both exist) or wrangler.toml under s.Dir. found is false when neither file exists, which
-// the checks report as a skip rather than a failure. err is non-nil only when a present
-// wrangler.jsonc fails to parse. Mirrors readWranglerConfig
-// (src/lib/doctor/wrangler-config.ts:56-64).
+// ReadWranglerConfig reads the doctor's wrangler-config facts from wrangler.jsonc (preferred when
+// both exist) or wrangler.toml under s.Dir. found is false when neither file exists, which the
+// checks report as a skip rather than a failure. err is non-nil only when a present wrangler.jsonc
+// fails to parse.
 func ReadWranglerConfig(s Snapshot) (facts WranglerFacts, found bool, err error) {
-	jsonc, ok, err := s.ReadFile("wrangler.jsonc")
+	jsonc, ok, err := s.readFile("wrangler.jsonc")
 	if err != nil {
 		return WranglerFacts{}, false, err
 	}
@@ -45,7 +43,7 @@ func ReadWranglerConfig(s Snapshot) (facts WranglerFacts, found bool, err error)
 		return facts, true, nil
 	}
 
-	toml, ok, err := s.ReadFile("wrangler.toml")
+	toml, ok, err := s.readFile("wrangler.toml")
 	if err != nil {
 		return WranglerFacts{}, false, err
 	}
@@ -58,8 +56,7 @@ func ReadWranglerConfig(s Snapshot) (facts WranglerFacts, found bool, err error)
 
 // tomlHeaderPattern matches a table header line, optionally followed by an inline comment.
 // tomlKeyValuePattern matches a "key = value" line. tomlQuotedPattern extracts a quoted value's
-// body. All three are the exact regexes factsFromToml (src/lib/doctor/wrangler-config.ts:217-282)
-// and its sibling r2EntriesFromToml already use.
+// body. All three are the regexes factsFromToml and its sibling r2EntriesFromToml use.
 var (
 	tomlHeaderPattern   = regexp.MustCompile(`^\s*(\[\[?[\w.]+\]?\])\s*(?:#.*)?$`)
 	tomlKeyValuePattern = regexp.MustCompile(`^\s*(\w+)\s*=\s*(.+?)\s*$`)
@@ -67,18 +64,17 @@ var (
 )
 
 // factsFromToml is a shallow, line-anchored read, not a TOML parser: a table header opens a
-// section, and the relevant key lines are matched within it. Ported whole from factsFromToml
-// (src/lib/doctor/wrangler-config.ts:213-282). A real TOML parser would accept files this
-// reader rejects and reject files it accepts, so the two surfaces would disagree on real sites;
-// matching the engine's own verdicts matters more here than parsing TOML correctly.
+// section, and the relevant key lines are matched within it. A real TOML parser would accept files
+// this reader rejects and reject files it accepts, so the two surfaces would disagree on real
+// sites; matching the engine's own verdicts matters more here than parsing TOML correctly.
 func factsFromToml(text string) WranglerFacts {
 	facts := WranglerFacts{}
 	section := ""
 	var d1Binding *string
 	var r2Binding *string
 
-	// flushD1 mirrors the engine's own flush, minus tracking database_id: authDbId is not a
-	// ported fact (no ported check reads it), so this reader tracks only the binding name.
+	// flushD1 tracks only the binding name: the database id is not a carried fact, since no check
+	// reads it.
 	flushD1 := func() {
 		if d1Binding != nil && *d1Binding == "AUTH_DB" {
 			facts.HasAuthDB = true

@@ -34,29 +34,29 @@ var robotsClient = &http.Client{
 // deadline, the root command's --timeout, and nothing else bounds the request.
 func FetchRobots(ctx context.Context, origin PublicOrigin) Robots {
 	if origin.Source == OriginAbsent {
-		return Robots{Present: false, Reason: RobotsAbsentNoOrigin}
+		return Robots{Present: false, Reason: robotsAbsentNoOrigin}
 	}
 	target, ok := robotsURL(origin.Value)
 	if !ok {
-		return Robots{Present: false, Reason: RobotsAbsentUnparsedOrigin}
+		return Robots{Present: false, Reason: robotsAbsentUnparsedOrigin}
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
 	if err != nil {
-		return Robots{Present: false, Reason: RobotsAbsentUnparsedOrigin}
+		return Robots{Present: false, Reason: robotsAbsentUnparsedOrigin}
 	}
 	res, err := robotsClient.Do(req)
 	if err != nil {
-		return Robots{Present: false, Reason: RobotsAbsentTransportFailure}
+		return Robots{Present: false, Reason: robotsAbsentTransportFailure}
 	}
 	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
-		return Robots{Present: false, Reason: RobotsAbsentNonOK}
+		return Robots{Present: false, Reason: robotsAbsentNonOK}
 	}
 
 	body, err := io.ReadAll(io.LimitReader(res.Body, robotsBodyCap))
 	if err != nil {
-		return Robots{Present: false, Reason: RobotsAbsentTransportFailure}
+		return Robots{Present: false, Reason: robotsAbsentTransportFailure}
 	}
 	return Robots{Present: true, Body: string(body)}
 }

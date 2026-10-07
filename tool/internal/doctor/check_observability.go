@@ -9,9 +9,9 @@ const (
 	detailObservabilityOn = "observability.enabled is true"
 )
 
-// ConfigObservability ports checks-local.ts's configObservability (:60-72): observability.enabled
-// is true in wrangler.jsonc or wrangler.toml.
-var ConfigObservability = Check{
+// configObservability checks that observability.enabled is true in wrangler.jsonc or
+// wrangler.toml.
+var configObservability = Check{
 	ID:        "config.observability",
 	Condition: spine.ConditionConfigObservabilityOff,
 	Run: func(s Snapshot) Result {

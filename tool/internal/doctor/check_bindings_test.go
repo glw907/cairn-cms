@@ -50,15 +50,15 @@ func TestConfigBindings(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := ConfigBindings.Run(s)
+			result := configBindings.Run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			if result.Detail != tt.wantDetail {
 				t.Errorf("Detail = %q, want %q", result.Detail, tt.wantDetail)
 			}
-			if tt.wantStatus == StatusFail && result.Severity != severityFor(ConfigBindings.Condition) {
-				t.Errorf("Severity = %v, want the registry severity for %s", result.Severity, ConfigBindings.Condition)
+			if tt.wantStatus == StatusFail && result.Severity != conditionText(configBindings.Condition).Severity {
+				t.Errorf("Severity = %v, want the registry severity for %s", result.Severity, configBindings.Condition)
 			}
 		})
 	}

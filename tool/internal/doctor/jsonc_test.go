@@ -2,13 +2,11 @@ package doctor
 
 import "testing"
 
-// TestStripJsoncBlockCommentSpansLines proves the fourth stripper case the acceptance criteria
-// name that the committed corpus does not exercise: a /* */ comment whose body spans multiple
-// lines is removed in full. The corpus's jsonc cases only ever carry a single-line block
-// comment, so this reaches the multiline branch of stripJsonc's own indexString/'\n' scan
-// directly; there is no isolated TypeScript test for this shape, since stripJsonc is not
-// exported from wrangler-config.ts, so this is a plain Go unit test on the ported algorithm
-// itself rather than a corpus case with a file:line citation.
+// TestStripJsoncBlockCommentSpansLines proves the fourth stripper case the acceptance criteria name
+// that the committed corpus does not exercise: a /* */ comment whose body spans multiple lines is
+// removed in full. The corpus's jsonc cases only ever carry a single-line block comment, so this
+// reaches the multiline branch of stripJsonc's own indexString/'\n' scan directly, as a plain Go
+// unit test on the algorithm rather than a corpus case.
 func TestStripJsoncBlockCommentSpansLines(t *testing.T) {
 	input := "{\n  /* this comment\n     spans several\n     lines */\n  \"name\": \"site\"\n}"
 	got := stripJsonc(input)

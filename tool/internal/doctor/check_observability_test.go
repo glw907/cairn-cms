@@ -39,15 +39,15 @@ func TestConfigObservability(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := ConfigObservability.Run(s)
+			result := configObservability.Run(s)
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			if result.Detail != tt.wantDetail {
 				t.Errorf("Detail = %q, want %q", result.Detail, tt.wantDetail)
 			}
-			if tt.wantStatus == StatusFail && result.Condition != ConfigObservability.Condition {
-				t.Errorf("Condition = %v, want %v", result.Condition, ConfigObservability.Condition)
+			if tt.wantStatus == StatusFail && result.Condition != configObservability.Condition {
+				t.Errorf("Condition = %v, want %v", result.Condition, configObservability.Condition)
 			}
 		})
 	}

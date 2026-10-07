@@ -225,13 +225,6 @@ func readTrustedOrigins(text string) (entries []string, readable bool) {
 	return entries, true
 }
 
-// isLocalOrigin reports whether an origin entry names a loopback host, the one place plain http
-// stays safe.
-func isLocalOrigin(u *url.URL) bool {
-	host := u.Hostname()
-	return host == "localhost" || host == "127.0.0.1" || host == "::1"
-}
-
 // csrfVerdict turns a config's entries into the check's Result.
 func csrfVerdict(path string, entries []string, svelteConfigFound bool) Result {
 	var failing []string
@@ -254,46 +247,41 @@ func csrfVerdict(path string, entries []string, svelteConfigFound bool) Result {
 	var detail strings.Builder
 	fmt.Fprintf(&detail, tmplCsrfPassEntries, path, strings.Join(entries, ", "))
 	for _, entry := range entries {
-		if u, err := url.Parse(entry); err == nil && u.Scheme == "http" && !isLocalOrigin(u) {
+		if u, err := url.Parse(entry); err == nil && u.Scheme == "http" && !isLoopbackHost(u.Hostname()) {
 			fmt.Fprintf(&detail, tmplCsrfPlainHTTP, entry)
 		}
 	}
 	return passResult(detail.String())
 }
 
-// ConfigCsrfTrustedOrigins reads the csrf key in the site's Vite config and fails on a
+// configCsrfTrustedOrigins reads the csrf key in the site's Vite config and fails on a
 // trustedOrigins entry of "*" or "null". SvelteKit compares the raw Origin string against each
 // entry, so "*" turns the check off on every route and "null" admits every opaque-origin POST,
 // which a sandboxed iframe sends. Any other entry passes with a note that it widens /admin too.
 //
 // A state the text read cannot see never passes: no Vite config, a value that is not a literal,
 // and a leftover svelte.config.js all report unchecked. A definite failure outranks unchecked.
-var ConfigCsrfTrustedOrigins = Check{
+var configCsrfTrustedOrigins = Check{
 	ID:        "config.csrf-trusted-origins",
 	Condition: spine.ConditionConfigCSRFTrustedOriginsWildcard,
 	Run: func(s Snapshot) Result {
-		_, svelteConfigFound, err := s.ReadFile("svelte.config.js")
+		_, svelteConfigFound, err := s.readFile("svelte.config.js")
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
-		var path string
+		body, path, found, err := s.readFirst(viteConfigCandidates)
+		if err != nil {
+			return uncheckedResult(err.Error())
+		}
 		var entries []string
-		for _, candidate := range viteConfigCandidates {
-			body, found, err := s.ReadFile(candidate)
-			if err != nil {
-				return uncheckedResult(err.Error())
-			}
-			if !found {
-				continue
-			}
+		if found {
 			read, readable := readTrustedOrigins(string(body))
 			if !readable {
-				return uncheckedResult(fmt.Sprintf(tmplCsrfUnreadable, candidate))
+				return uncheckedResult(fmt.Sprintf(tmplCsrfUnreadable, path))
 			}
-			path, entries = candidate, read
-			break
+			entries = read
 		}
-		if path == "" && !svelteConfigFound {
+		if !found && !svelteConfigFound {
 			return uncheckedResult(fmt.Sprintf(tmplCsrfNoViteConfig, strings.Join(viteConfigCandidates, ", ")))
 		}
 		return csrfVerdict(path, entries, svelteConfigFound)

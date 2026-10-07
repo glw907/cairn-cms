@@ -8,7 +8,7 @@ import (
 )
 
 // TestNewSnapshotResolvesSymlinks asserts NewSnapshot's Dir is the target's real path even when
-// the directory passed in is itself a symlink, the boundary every ReadFile call measures against.
+// the directory passed in is itself a symlink, the boundary every readFile call measures against.
 func TestNewSnapshotResolvesSymlinks(t *testing.T) {
 	root := resolvedTempDir(t)
 	real := filepath.Join(root, "real")

@@ -70,13 +70,13 @@ func (r Result) checkVerdict() spine.CheckVerdict {
 	}
 }
 
-// Verdicts converts a run's settled results into the spine.SiteVerdicts its exit code
-// arithmetic folds. A zero-length results folds to spine.VerdictUnknown through
-// spine.SiteVerdicts.Verdict's own empty-slice rule, the outside-a-cairn-site case.
-func Verdicts(results []Result) spine.SiteVerdicts {
-	out := make(spine.SiteVerdicts, len(results))
-	for i, r := range results {
-		out[i] = r.checkVerdict()
+// Verdicts converts a run's settled results into the spine.SiteVerdicts its exit code arithmetic
+// folds. A zero-length checked folds to spine.VerdictUnknown through spine.SiteVerdicts.Verdict's
+// own empty-slice rule, the outside-a-cairn-site case.
+func Verdicts(checked []CheckedResult) spine.SiteVerdicts {
+	out := make(spine.SiteVerdicts, len(checked))
+	for i, c := range checked {
+		out[i] = c.Result.checkVerdict()
 	}
 	return out
 }

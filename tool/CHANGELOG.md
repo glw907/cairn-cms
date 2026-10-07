@@ -40,6 +40,9 @@ every route. No `tool/v2.0.0` tag exists yet.
 - **`cairn doctor --help`'s first sentence is split in two.** The text still names every clause
   the original did (the checked-in configuration, that it is read straight off the directory,
   and what it covers), reworded so the sentence carries at most one comma.
+- **`config.public-origin` treats the IPv6 loopback `::1` as a local host**, the way it already
+  treats `localhost` and `127.0.0.1`, so a `PUBLIC_ORIGIN` of `http://[::1]:5173` no longer fails
+  the https requirement. The `csrf.trustedOrigins` plain-http note already used the same set.
 
 ## 1.1.0
 

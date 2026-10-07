@@ -492,3 +492,18 @@ none blocking the page:
   its action and holds one action, a conditional step states its condition first, and a procedure
   of one step is a single bulleted item. A reference names its target by heading, never by
   position.
+
+## Ledger
+
+- 2026-10-07, R5 scoped redraft after the final reader read's `fix` (two blocking findings). The
+  first Drafting constraint's ban on saying what the editor sees when the token mint fails is
+  lifted for one claim: `f:ogokfy` (filed `[verified]` this redraft from the edit load, the
+  publish action's save step, `viewAction`, and SvelteKit's re-render after a full-page action)
+  states that opening or publishing an entry ends on an error page with status 500. "Recover from
+  a failed key" now opens on rollback-needs-both and third-key-otherwise, names that error page,
+  maps it to the signals (step 3 for a refused key), and adds that a failed publish with neither
+  signal after the wait is not a key failure, linking `debug-your-site.md`. "Generate a third
+  key" now covers the case before the deletion and gains a step 5 that deletes the old key if it
+  is still on the App. Advisories taken: "if you have it" on the PEM prerequisite, the `event`
+  field in Verify's step 6, and where `github.app-unreachable` surfaces in Recover's step 1. The
+  duplicated warm-isolate clause in `f:vg42j3` was cut to one.

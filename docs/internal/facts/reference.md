@@ -1204,6 +1204,12 @@ re-sourced to Go on this tree rather than to the page.
 
 ## docs/reference/log-events.md
 
+- `f:pfy9cw` `content.field_unmarked` carries `concept` (the concept id) and `field` (the unmarked
+  multiselect's name); `admin.action.session_absent` carries `path`; `admin.action.unaudited`
+  carries `path` and `editor`; `admin.action.misconfigured` carries `path` and `reason`;
+  `config.access_unmapped` carries `unmapped`, the sorted concept ids and fixed screens with no
+  rule. Source: `src/lib/delivery/content-index.ts:101`, `src/lib/sveltekit/admin-action.ts:209,309`,
+  `src/lib/sveltekit/section-action.ts:212`, `src/lib/sveltekit/admin-nav.ts:326-328`. [verified]
 - `f:rkj7tn` Every log record carries an envelope of `level`, `event`, `timestamp`, plus event-specific
   fields; renaming an `event` name is a breaking change. Source: `src/lib/log/create.ts:10-12`
   (`LogRecord` type), `src/lib/log/events.ts:1-3` (comment: "it is public-observable API: renaming
@@ -1255,7 +1261,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:v1jj2k` `admin.action.session_absent` is the only trace a `createAdminAction`-mounted route leaves for a
   session that lapsed between the guard's resolve and the action running, since the guard's own
   `guard.refused` csrf branch refuses an earlier condition. Source:
-  `src/lib/sveltekit/admin-action.ts:146-153,212-216` (`if (!editor) { log.warn('admin.action.
+  `src/lib/sveltekit/admin-action.ts:146-153,207-211` (`if (!editor) { log.warn('admin.action.
   session_absent', ...); throw redirect(303, '/admin/login'); }`, the first check the wrapper
   runs). [verified]
 - `f:yauo4m` `audit.sink.call_failed` omits `record.detail` to avoid duplication (the full record already
@@ -1509,8 +1515,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 
 - `f:ve30i2` `site-facts.json` carries exactly `version`, `mediaBucketBinding`, `roles`, and `aiPosture`;
   `owner`, `repo`, and `from` are never written, even when the adapter declares them.
-  Source: `src/lib/vite/internal.ts:416-433` (`formatSiteFacts` accepts only
-  `Pick<AdapterFacts, 'mediaBucketBinding' | 'roles' | 'aiPosture'>`; `buildSiteFactsFromVite`
+  Source: `src/lib/vite/internal.ts:525-533,541-551` (`formatSiteFacts` writes only `version`,
+  `mediaBucketBinding`, `roles`, and `aiPosture`; `buildSiteFactsFromVite`
   passes it the result of the shared `parseAdapterFacts` validation, never the raw parsed object).
   [verified]
 - `f:vpk81e` An absent `site-facts.json` is not drift: `checkSiteFacts` returns `{ status: 'absent' }` and the
@@ -1526,6 +1532,11 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:yio35u` The `cairn-manifest` CLI writes `site-facts.json` in the same run that writes the content
   manifest. Source: `src/lib/vite/bin.ts:28-29` (`main` calls `writeManifest` then
   `writeSiteFacts`). [verified]
+- `f:z61ibp` `cairn-manifest`, the package's `bin`, uses the current working directory as the
+  project root, so it runs from the directory holding `vite.config.ts`; the build's
+  stale-`site-facts.json` error names the fix as ``Run `npx cairn-manifest` and commit the
+  result.`` Source: `package.json:198-199`, `src/lib/vite/bin.ts:28-29`,
+  `src/lib/vite/internal.ts:319-324,592-597`. [verified]
 
 ## docs/reference/supported-toolchain.md
 
@@ -1644,6 +1655,12 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   posts `FormData` with no `csrf` field still passes. Source: `src/lib/sveltekit/guard.ts:265-287`
   (`headerSent = ... !== null`, header checked before the field fallback) mirrored in
   `admin-action.ts` per its own doc comment at lines 158-162. [verified]
+- `f:yi9vag` `createAdminAction` runs its CSRF check right after its session check, and a request
+  that fails it logs `admin.action.csrf_refused` as a warning and gets SvelteKit's own
+  `error(403, ...)`; `createSectionAction` composes onto `createAdminAction`, so its actions take
+  the same check first. Source: `src/lib/sveltekit/admin-action.ts:207-240` (`log.warn(
+  'admin.action.csrf_refused', ...); throw error(403, ...)`), `src/lib/sveltekit/section-action.ts:116-119,180`.
+  [verified]
 - `f:8yb3r1` A handler that returns normally and emits zero `ctx.audit` records throws
   `UnauditedActionError(500, ...)` in dev (gated by `esm-env`'s `DEV`, overridable via
   `deps.isDev`), and logs `admin.action.unaudited` in production instead of throwing. A handler
@@ -1655,9 +1672,17 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   own `AdminActionAuditSink`, so the handler's result returns exactly as if the sink succeeded
   either way; the failure logs `audit.sink.call_failed`. A thrown `redirect()`/`error()` from
   inside a hand-rolled sink is rethrown untouched rather than logged, since both are plain classes
-  rather than `Error` instances. Source: `src/lib/sveltekit/admin-action.ts:286-293`
+  rather than `Error` instances. Source: `src/lib/sveltekit/admin-action.ts:266-282`
   (`Promise.resolve(outcome).catch(logSinkFailure)`; `catch (error) { if (isRedirect(error) ||
   isHttpError(error)) throw error; ... }`). [verified]
+- `f:5ba9q8` `ctx.audit` calls the site's `event.locals.cairnAuditSink` synchronously inside the
+  `ctx.audit` call and never awaits a promise the sink returns; it attaches only a rejection
+  handler, so an async sink's later work is fire-and-forget. A site handler's audit therefore starts
+  the sink while the handler runs. The one call outside the handler is the wrapper's own `deny`
+  audit on a `deps.access` refusal, before the handler. Only the unaudited check runs after the
+  handler returns. Source: `src/lib/sveltekit/admin-action.ts:245-283` (`audit(record) { ... const
+  outcome = event.locals.cairnAuditSink?.(full); ... }`), `:296` (`ctx.audit({ action: 'deny', ...
+  })`), `:302-310` (`const result = await handler(...)`, then the `emitted === 0` check). [verified]
 - `f:1b3ye3` `createSectionAction`'s full check order, fail-closed at every step except the rate limit
   (which degrades to open): (1) `createAdminAction`'s own authentication (throws, not `fail()`);
   (2) rate limit, when configured, an unresolved binding or a throwing `key()`/`limit()` call

@@ -139,6 +139,7 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/today.ts', // docs/extend/debug-your-site.md's illustrative fixed-today helper module
   'file-path:src/lib/members/channel.ts', // docs/extend/add-a-second-audience.md's illustrative auth-channel module
   'file-path:src/lib/server/member-channel.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative auth-channel module
+  'file-path:src/lib/server/members.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative roster-lookup and code-delivery module
   'file-path:src/lib/server/member-channel.test.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative channel test
   'file-path:migrations-members/0000_channel.sql', // a site's copy of the packaged channel migration, the directory docs/extend/add-a-second-sign-in-group.md creates (examples/showcase/migrations-members/ carries the same file)
   // `@glw907/cairn-cms-dev` is a separate package, but the export extractor's specifier regex

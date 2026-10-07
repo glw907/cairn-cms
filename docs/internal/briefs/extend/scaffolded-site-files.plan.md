@@ -225,8 +225,8 @@ an entry restates it only where a contract limits it.
 
   `CLAUDE.md` carries no marker: `cairn-guidance check` reads it, but that check never fails the CI
   run (`f:4ax489`, `f:jd54ph`). Every other entry is unmarked.
-- **Hand-off:** The root holds the CI workflow that checks every push. (The CI run never builds, so
-  the hand-off claims no more than `f:guiavc` states.)
+- **Hand-off:** Cut (scoped register read 2026-10-07: the next section's opening already carries the hand-off).
+  (Was: The root holds the CI workflow that checks every push.)
 
 ### 3. Root files
 
@@ -263,8 +263,8 @@ an entry restates it only where a contract limits it.
     `worker-configuration.d.ts` is the generated `wrangler types` output that `src/app.d.ts`
     references (`f:n52h8f`, cited again); `scripts/` holds the `dev.mjs` the `dev` script runs
     (`f:o47i0q`, cited again). The two migrations directories have their own section.
-- **Hand-off:** Every command the CI workflow runs is a `package.json` script, and the build those
-  scripts start reads its settings from the configuration files.
+- **Hand-off:** The `check` and `check:cairn` commands the CI workflow runs are scripts in
+  `package.json`, the first of the site's configuration files (`f:guiavc`, `f:n4rg1z` for `package.json`).
 
 ### 4. Configuration files
 
@@ -449,8 +449,9 @@ an entry restates it only where a contract limits it.
     written by `cairn-manifest`. `npm run cairn:manifest` runs that command (`f:690k0p`, cited
     again). Link the `cairnManifest` section of `docs/reference/vite.md` and
     `docs/reference/site-facts.md`. The root-barrel functions named in the fact stay off the page.
-- **Hand-off:** Waymark's look comes from two style sheets in `src/theme/`, and the admin compiles a
-  separate one from `src/admin.css`.
+- **Hand-off:** Cut (scoped register read 2026-10-07: the next section's opening already carries the hand-off).
+  (Was: Waymark's look comes from two style sheets in `src/theme/`, and the admin compiles a separate
+  one from `src/admin.css`.)
 
 ### 8. Style sheets
 
@@ -472,8 +473,8 @@ an entry restates it only where a contract limits it.
     (`f:s23sk0`). One paragraph; link the "Token tiers and cascade order" section of
     `docs/extend/theme-your-public-site.md` (`#token-tiers-and-cascade-order`) for which
     declaration wins.
-- **Hand-off:** Two settings outside the style sheets shape what a new site's home page and footer
-  show.
+- **Hand-off:** Cut (scoped register read 2026-10-07: the next section's opening already carries the hand-off).
+  (Was: Two settings outside the style sheets shape what a new site's home page and footer show.)
 
 ### 9. Settings outside the admin
 
@@ -489,8 +490,8 @@ an entry restates it only where a contract limits it.
     constant (the plan's friction entry of 2026-10-07).
   - `f:2s8u70`: `/admin/nav` edits only `menus.primary`; `menus.footer` is a flat menu edited by
     hand in `src/theme/site.config.yaml`, read through `readMenu(siteConfig, 'footer', 1)`.
-- **Hand-off:** The archive route the page size governs is also the one route the build's crawl
-  check exempts.
+- **Hand-off:** The archive route the page size governs is also the one route the build's
+  unseen-route check exempts.
 
 ### 10. Crawl rules
 
@@ -511,8 +512,8 @@ an entry restates it only where a contract limits it.
   - One external link at most, to SvelteKit's `@sveltejs/kit/vite` page for the two options
     (https://svelte.dev/docs/kit/@sveltejs-kit-vite); the page copies none of SvelteKit's option
     reference.
-- **Hand-off:** The crawl settles what the build emits, and a path no build emitted reaches the
-  Worker at request time.
+- **Hand-off:** A path the build never emitted is answered at request time, and the scaffold's
+  `wrangler.jsonc` passes it to the Worker so the themed 404 page can render (`f:2qnqkm`).
 
 ### 11. Themed 404 page
 
@@ -529,8 +530,8 @@ an entry restates it only where a contract limits it.
     Cloudflare's own semantics sit behind a link to its Worker script routing page
     (https://developers.cloudflare.com/workers/static-assets/routing/worker-script/), never a copy.
   - The section closes on what each half alone would do, stated only as the fact states it.
-- **Hand-off:** One directory in the tree, `.claude/`, serves the coding agents that work on the
-  site rather than the site itself.
+- **Hand-off:** The `.claude/` directory holds what the site's coding agents read, the guidance
+  cairn installs with the scaffold (`f:0ygumq`).
 
 ### 12. The guidance tree
 
@@ -570,8 +571,8 @@ an entry restates it only where a contract limits it.
     `npm run check:cairn --if-present` is a snippet in the package, `claude/snippets/settings-hook.json`,
     pasted in deliberately (`f:4nccq6`). Link the "`install`" section of
     `docs/reference/guidance.md` for how `install` treats a file the site edited.
-- **Hand-off:** Every file the setup command wrote lives in the repository, and the command also
-  left state outside it.
+- **Hand-off:** The setup command also saved a record of its run outside the repository, in the home
+  directory of whoever ran it (`f:3m0oxs`).
 
 ### 13. Setup state outside the tree
 
@@ -735,3 +736,8 @@ draw, the token's deletion at the end of a setup run, and the showcase-era comme
 each headed "Found by the scaffolded-site-files page plan": the guidance check's false Tailwind
 exclusion line; the two `VERSION` stamps; `f:3m0oxs`'s missing token deletion; `f:jd54ph`'s causal
 clause; the further showcase-era comments; and `/healthz` answering 200 on failure.
+
+## Ledger
+
+- 2026-10-07, scoped register read: three hand-offs cut (sections 2, 7, 8) and five reworded (sections 3, 9, 10, 11, 12); the page and brief carry the same text, and the brief lost the three cut sentences (262 to 259 entries).
+- 2026-10-07, R5 scoped redraft after the final reader read's `fix`: the `CLAUDE.md` no-marker reason now matches the `[engine]` legend (`f:6ro1n9`, `f:4ax489`, `f:jd54ph`, `f:0ygumq`); four new facts back the advisories taken, the root `.cairn/` build output (`f:xi5uwl`), `src/lib/log.ts` (`f:wnsv5x`), the checks an `src/admin.css` compile failure fails (`f:gxaxvh`), and the Workers Builds API token setting a new owner replaces (`f:skp1jv`); hand-off placement and the resumed-run wording were left as they stand (259 to 265 entries).

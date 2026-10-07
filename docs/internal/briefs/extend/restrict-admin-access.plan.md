@@ -7,7 +7,10 @@ page's order, each section's claim, and each fact's placement. The plan is Googl
 down (Google Technical Writing Two, "Organizing large documents",
 https://developers.google.com/tech-writing/two/large-docs). Revised 2026-10-07 on the structural
 edit's findings: a deploy step between the last edit and the roster, a lighter introduction, and a
-signup that the owner-only check can remove.
+signup that the owner-only check can remove. Revised again 2026-10-07 on the second plan read's
+findings (conductor ruling at the R5 escalation): a map-key step first in "Enforce the map on your
+routes", an add-and-sign-in step pair opening "Assign the roles", and a Verify check that a plain
+editor still reaches Posts. The ledger is "Plan read, round 2", below.
 
 Inputs read: the outline entry in `docs/internal/outlines/extend.json` (slug `restrict-admin-access`,
 its job, covers, out-of-scope list, glossary terms, and inbound links); "The page anatomies" and the
@@ -178,8 +181,9 @@ Four bulleted preconditions, each with a link to what produces it (anatomy item 
 - A custom admin screen whose `load` calls `requireAccess` and whose form actions are
   `createSectionAction` wrappers. The scaffold's signups screen, `src/routes/admin/signups/`, is
   one (`f:onqm6k`); `docs/extend/add-a-custom-admin-screen.md` builds another.
-- A deployed site, and an email address for a test editor besides the owner's. A scaffolded site
-  is deployed by the setup command (`f:kldwss`); link
+- A deployed site, and an email address for a test editor besides the owner's, with a second
+  browser to sign in as that editor; "Assign the roles" adds the editor to the roster and signs
+  them in, so this precondition asks only for the address. A scaffolded site is deployed by the setup command (`f:kldwss`); link
   `docs/extend/add-cairn-to-a-sveltekit-app.md#move-the-site-to-production` for a hand-built site.
   Local development cannot show a role refusal, because the dev backend signs every `/admin`
   session in as an owner (`f:dqjkci`).
@@ -304,13 +308,14 @@ adapter call's `roles, access` members and the guard line. The guard's other opt
 and a `createSectionAction` wrapper around each form action.
 
 **Facts:** `f:54d3ui`, `f:8anql1`, `f:5pyozi`, `f:smbsa6`, `f:3s23un` (scoped to its target default
-and its check before the handler), `f:pyt58u`. Cited again: `f:onqm6k`.
+and its check before the handler). Cited again: `f:onqm6k` (with `ownerOnly` on `remove`, re-pointed from `f:pyt58u` at round 1), `f:zo034s` (step 1's
+refuse-all clause), `f:0qb73i` (step 1's route key).
 
 Content:
 
 - The running example needs no edit here: the scaffold's signups screen already calls
   `requireAccess` in its `load` and wraps its actions in `createSectionAction` (`f:onqm6k`), with
-  `ownerOnly: true` on the destructive `remove` (`f:pyt58u`). The steps below are for a route of
+  `ownerOnly: true` on the destructive `remove` (`f:onqm6k`, re-pointed from `f:pyt58u` at round 1). The steps below are for a route of
   your own.
 - `requireAccess` (`f:54d3ui`, `f:8anql1`): it checks `event.route.id`, never the request URL,
   since a parameterized route's URL is chosen by whoever sends the request; it returns the
@@ -327,12 +332,18 @@ Content:
   of it; in the running example a `'webmaster'` session adds a signup and only an owner removes
   one.
 
-Steps, a numbered list of three:
+Steps, a numbered list of four, the map key first (the second plan read's blocking finding: a
+reader who follows the steps on a new route must not lock everyone out before learning why):
 
-1. In the route's `+page.server.ts`, call `requireAccess(event)` at the top of `load`, before it
+1. In `src/access.ts`, add a key for the route, listing the roles that reach it (`f:0qb73i`). One
+   clause beside the step states the consequence of skipping it: a route that calls `requireAccess`
+   with no key refuses every session, owner included (`f:zo034s`). One forward pointer by heading to
+   "Decide what the map leaves open", which compares this with an engine screen and names
+   `requireEditor` for a route meant for every editor.
+2. In the route's `+page.server.ts`, call `requireAccess(event)` at the top of `load`, before it
    reads anything.
-2. In the same file, wrap each form action in the section's `createSectionAction` wrapper.
-3. On an action only an owner may run, set `ownerOnly: true` in the wrapper's options.
+3. In the same file, wrap each form action in the section's `createSectionAction` wrapper.
+4. On an action only an owner may run, set `ownerOnly: true` in the wrapper's options.
 
 **Hand-off:** each enforcement point treats a target the map never names differently.
 
@@ -345,8 +356,9 @@ unnamed route that calls `requireAccess` refuses every session, owner included.
 
 Content:
 
-- The route half (`f:zo034s`, `f:8anql1`): a route that opted into the map and finds no key is a
-  misconfiguration made loud, so the refusal reaches owners too; a route meant for every
+- The route half (`f:zo034s`, `f:8anql1`), already introduced at step 1 of "Enforce the map on
+  your routes", so stated here as the comparison only: a route that opted into the map and finds no
+  key is a misconfiguration made loud, so the refusal reaches owners too; a route meant for every
   editor-capability role calls `requireEditor` instead, which does not consult the map.
 - The engine-screen half (`f:zo034s`, `f:8ciz2s`): an unnamed screen keeps the zero-config default,
   and at composition `config.access_unmapped` warns, naming each concept and fixed screen the map
@@ -454,12 +466,18 @@ change applies on the editor's next request, with no new sign-in.
 
 **Facts:** `f:udg87q`, `f:pwb0wr`, `f:hcjb3o`, `f:uotol3`.
 
-One step, a single bulleted item: in `/admin/editors` on the deployed site, signed in as an owner,
-choose `'webmaster'` in the role control beside the editor's row (`f:udg87q`, `f:pwb0wr`). Then
-two sentences: a role beyond the default pair is assigned on the same roster screen
-(`f:hcjb3o`); a change applies on the editor's next request because the session reads the
-editor's row on every request (`f:uotol3`), so a demotion takes effect at once and one test
-editor can cycle through the roles.
+Steps, a numbered list of two (the second plan read's blocking finding: no earlier step put the
+test editor on the roster or signed them in, yet Verify drives their row and their browser):
+
+1. In `/admin/editors` on the deployed site, signed in as an owner, add the test editor with the
+   Add editor form, choosing `'webmaster'` in its Role select (`f:udg87q`, `f:pwb0wr`).
+2. In a second browser, sign in as the test editor.
+
+Then the sentences the section keeps: for an editor already on the roster, an owner chooses the role
+in the role control beside the editor's row (`f:udg87q`); a role beyond the default pair is
+assigned on the same roster screen (`f:hcjb3o`); a change applies on the editor's next request
+because the session reads the editor's row on every request (`f:uotol3`), so a demotion takes
+effect at once and one test editor can cycle through the roles.
 
 **Hand-off:** one test editor in each role proves the map.
 
@@ -468,8 +486,9 @@ editor can cycle through the roles.
 **First sentence:** On the deployed site, the composition warning names the targets the map leaves
 open, and each role meets a refusal wherever the map excludes it.
 
-**Facts:** `f:mou1li`, `f:xbjxit`. Cited again: `f:8ciz2s`, `f:dqjkci`, `f:udg87q`, `f:uotol3`,
-`f:altcjp`, `f:8anql1`, `f:smbsa6`, `f:cvv6to`, `f:pyt58u`, `f:onqm6k`.
+**Facts:** `f:mou1li`, `f:xbjxit`, `f:5eum60` (added by the second revision: the scaffold declares
+a posts concept, for check 4). Cited again: `f:8ciz2s`, `f:dqjkci`, `f:udg87q`, `f:uotol3`,
+`f:altcjp`, `f:8anql1`, `f:smbsa6`, `f:cvv6to`, `f:onqm6k`, `f:zo034s` (check 4). Added at round 1: `f:tycp7k` (checks 3 and 8), `f:joo5f2` (check 6).
 
 A numbered list of ordered checks, each a step with its observable result beneath it:
 
@@ -480,18 +499,21 @@ A numbered list of ordered checks, each a step with its observable result beneat
 2. On `/admin/editors`, set the test editor's role to `editor` (`f:udg87q`).
 3. In the test editor's browser, check the sidebar: neither the media library nor Signups appears
    (`f:altcjp`).
-4. In the same browser, open `/admin/signups`. The route refuses with a 403 and logs
+4. In the same browser, open Posts. It opens, since the map names no posts key and an unnamed
+   engine screen stays open to editor capability (`f:5eum60`, `f:zo034s`): the map narrowed the
+   editor's reach and left their other screens alone (the second plan read's advisory finding).
+5. In the same browser, open `/admin/signups`. The route refuses with a 403 and logs
    `auth.access.refused` with the role and the target (`f:8anql1`).
-5. In the same browser, open the media library by its address. The screen refuses the session
+6. In the same browser, open the media library by its address. The screen refuses the session
    (`f:cvv6to`, the media library's own gate). See Drafting constraints for the path and status.
-6. On `/admin/editors`, set the test editor's role to `'webmaster'`.
-7. In the test editor's browser, reload the admin: the media library and Signups appear and both
+7. On `/admin/editors`, set the test editor's role to `'webmaster'`.
+8. In the test editor's browser, reload the admin: the media library and Signups appear and both
    open, with no new sign-in (`f:uotol3`, `f:altcjp`).
-8. On the signups screen, add a signup. The screen saves it and lists it, since the map admits
-   `'webmaster'` and only `remove` carries the owner gate (`f:pyt58u`; the list is the table the
-   `load` reads, `f:onqm6k`). This check exercises the admitted action and gives check 9 a
+9. On the signups screen, add a signup. The screen saves it and lists it, since the map admits
+   `'webmaster'` and only `remove` carries the owner gate (`f:onqm6k`, re-pointed from `f:pyt58u` at round 1; the list is the table the
+   `load` reads, `f:onqm6k`). This check exercises the admitted action and gives check 10 a
    signup to act on.
-9. On the signups screen, remove the signup that check 8 added. The action fails with a 403 and
+10. On the signups screen, remove the signup that check 9 added. The action fails with a 403 and
    logs `auth.access.refused`, since `remove` is owner-only (`f:xbjxit`, `f:smbsa6`).
 
 The third precondition's reason (`f:dqjkci`) is not repeated; check 1's sentence may say "the
@@ -547,19 +569,21 @@ sentence, then a bulleted list, each item's link text naming its destination:
 `carried` names the section that holds the fact's primary placement. A subordinated fact is
 recorded as a cut whose reason names the reference entry that states it; the entry was opened and
 read before it was named. The outline's 25 fact ids: 24 carried, 1 subordinated. Added by this plan:
-17 carried, each named where it lands (13 by the first plan, 4 by the revision's deploy step).
+18 carried, each named where it lands (13 by the first plan, 4 by the revision's deploy step, 1 by
+the second revision's Verify check). The round-1 redraft cut one of those, `f:pyt58u`, and added two,
+`f:tycp7k` and `f:joo5f2` (ledger: "Chain round 1, redraft").
 
 | Fact | Disposition | Section, or reference and reason |
 | --- | --- | --- |
 | f:p1xmp5 | carried | Introduction (item 1); cited again in Declare the roles |
-| f:grxpu5 | carried | Declare the access map (validation) |
+| f:grxpu5 | carried | Declare the access map (validation); cited again in Declare the roles (the implicit pair when no vocabulary is declared) |
 | f:0qb73i | carried | Declare the access map (keys and values, the owner rule); also Introduction, Decide what the map leaves open |
 | f:iwf4nu | carried | Pass the map to the adapter and the guard (the guard paragraph) |
 | f:54d3ui | carried | Enforce the map on your routes |
-| f:zo034s | carried | Decide what the map leaves open (first sentence); cited again in Resolve a refusal |
+| f:zo034s | carried | Decide what the map leaves open (first sentence); cited again in Enforce the map on your routes (step 1), Verify each role's reach (check 4), and Resolve a refusal |
 | f:5pyozi | carried | Enforce the map on your routes (the trap beside the `load` call) |
 | f:iewhzh | carried | Declare the access map (the trap beside the `media` key) |
-| f:smbsa6 | carried | Enforce the map on your routes; cited again in Verify each role's reach (check 9) |
+| f:smbsa6 | carried | Enforce the map on your routes; cited again in Verify each role's reach (check 10) |
 | f:8anql1 | carried | Enforce the map on your routes; cited again in Decide what the map leaves open, Key nested and parameterized routes, Verify each role's reach, Resolve a refusal |
 | f:gun084 | subordinated (cut) | `docs/reference/sveltekit.md#createauthguard` states all four options (`roles`, `access`, `includeSubDomains`, `identity`) and that the guard attaches the map to `locals.cairnAccess`. The page needs only `roles` and `access`, which `f:4xrx5f` and `f:iwf4nu` carry; the other two belong to other tasks |
 | f:3s23un | carried | Enforce the map on your routes (scoped: the target default and the checks before the handler); cited again in Key nested and parameterized routes. The options in full stay with `docs/extend/add-a-custom-admin-screen.md` (out of scope) |
@@ -579,19 +603,23 @@ read before it was named. The outline's 25 fact ids: 24 carried, 1 subordinated.
 | f:dbaklx | carried (added) | Declare the roles (the reserved `owner` name) |
 | f:qlgggh | carried (added) | Before you begin (the scaffold's `src/access.ts`); cited again in Declare the access map |
 | f:4esdoz | carried (added) | Pass the map to the adapter and the guard (the adapter's file); cited again in Introduction |
-| f:onqm6k | carried (added) | Before you begin (the scaffold's signups screen); cited again in Enforce the map on your routes and Verify each role's reach (check 8's list) |
-| f:pyt58u | carried (added) | Enforce the map on your routes (`ownerOnly` on `remove`); cited again in Verify each role's reach (check 8, the add action without the owner gate) |
-| f:udg87q | carried (added) | Assign the roles (the roster's role control); cited again in Verify each role's reach |
+| f:onqm6k | carried (added) | Before you begin (the scaffold's signups screen); cited again in Enforce the map on your routes (`ownerOnly` on `remove`, re-pointed here from `f:pyt58u` at round 1) and Verify each role's reach (checks 9 and 10) |
+| f:pyt58u | cut | the showcase's screen; the page's example is the scaffold's, carried by f:onqm6k |
+| f:udg87q | carried (added) | Assign the roles (the Add editor form with its Role select, step 1, and the roster's role control); cited again in Verify each role's reach |
 | f:pwb0wr | carried (added) | Assign the roles (an owner changes roles) |
 | f:4673n6 | carried (added) | Declare the roles (what `none` capability means, beside the link to the second-audience page) |
 | f:9xthnq | carried (added) | Pass the map to the adapter and the guard (the guard paragraph, what the guard gates) |
-| f:hcjb3o | carried (added) | Assign the roles (a larger vocabulary is assigned on the same screen); cited again in Deploy the changes (the deployed role select lists the declared vocabulary) |
+| f:hcjb3o | carried (added) | Deploy the changes (the deployed role select lists the declared vocabulary); its Assign the roles sentence was cut at round 1 as a restatement |
 | f:dqjkci | carried (added) | Before you begin (the dev backend signs in as an owner) |
 | f:4bazhe | carried (added) | Resolve a refusal (check 2's log signal) |
-| f:xbjxit | carried (added) | Verify each role's reach (check 9's 403) |
+| f:xbjxit | carried (added) | Verify each role's reach (check 10's 403) |
 | f:kldwss | carried (added) | Before you begin (a scaffolded site is deployed by the setup command) |
 | f:qca0t0 | carried (added) | Before you begin (the Workers Builds redeploy path and the `--connect` command); cited again in Deploy the changes |
 | f:9ug9mo | carried (added) | Deploy the changes (the Wrangler path, `npx wrangler deploy`); cited again in Before you begin (`npx wrangler login`) |
+| f:5eum60 | carried (added, second revision) | Verify each role's reach (check 4: the scaffold declares a posts concept, which the map leaves unnamed) |
+| f:6a32oy | carried (added at draft) | Sidebar entries (a custom screen shows in the sidebar through a `navLayout` site entry), beside `f:tycp7k` |
+| f:tycp7k | carried (added at round 1) | Sidebar entries (the scaffold's Signups `navLayout` entry); cited again in Verify each role's reach (checks 3 and 8) |
+| f:joo5f2 | carried (added at round 1) | Verify each role's reach (check 6: the media library at `/admin/media` refuses with a 403 and logs `auth.access.refused`) |
 | f:jtl15v | carried (added) | Deploy the changes (scoped: the Workers Builds trigger runs `npm run build` and `npx wrangler deploy`, so both paths run the same commands); its engine-upgrade claim stays off this page |
 
 The page-inputs claim inventory carried three more rows, disposed as it recorded them: the absent
@@ -599,6 +627,85 @@ prior page (no claims), `RoleDeclaration.home` re-pointed to
 `docs/extend/add-a-second-sign-in-group.md` (linked from Declare the roles), and
 `EditorRoutesConfig.roles` excluded (a site never calls `createEditorRoutes`; the page says nothing
 about it).
+
+## Plan read, round 2 (2026-10-07), disposed by this revision
+
+The chain's second plan read returned `fix` and the run escalated; the conductor ruled that the
+read's blocking rewrites apply to the plan as written and the page drafts from the corrected plan.
+The read passed the introduction's three parts, the recorded departures, the anatomy, and the one
+explanation section; those stand.
+
+- Blocking, `:330` (no step keys the reader's own route, and the refuse-all consequence,
+  `f:zo034s`, arrives two sections later): "Enforce the map on your routes" now opens its steps on
+  "In `src/access.ts`, add a key for the route", with the refuse-all clause beside it and a forward
+  pointer by heading to "Decide what the map leaves open", which keeps its comparison claim and
+  treats the route half as introduced. The steps are four.
+- Blocking, `:181` (the test editor is only an email address, yet Assign and Verify act on their
+  row and browser): of the read's two rewrites, "Assign the roles" takes the second, a two-step
+  numbered list, add the test editor with the Add editor form choosing `'webmaster'` in its Role
+  select (`f:udg87q`), then sign in as the test editor in a second browser. It won over the
+  precondition rewrite because the role select lists `'webmaster'` only after "Deploy the changes"
+  (`f:hcjb3o`), and because no published page yet produces a roster entry for the precondition to
+  link. The precondition now names the second browser, and the role-control sentence stays for an
+  editor already on the roster.
+- Advisory, `:474` (Verify never shows a plain editor still reaching posts): taken as check 4, open
+  Posts in the `editor` session, citing `f:5eum60` (the scaffold declares a posts concept) and
+  `f:zo034s` (an unnamed engine screen stays open). Checks 4 to 9 renumber to 5 to 10.
+- At draft, two placements the plan left open were settled: the sidebar sentence and Verify
+  check 3 cite `f:6a32oy` beside `f:altcjp` for the signups screen's sidebar entry, and the
+  `createAuthGuard` link sentence cites `f:4xrx5f`, never the subordinated `f:gun084`. "Deploy the
+  changes" offers its two redeploy paths as a two-item bulleted list of alternatives, each with its
+  condition first, since the plan's one item held two actions.
+
+## Chain round 1, redraft (2026-10-07)
+
+The round-1 reads returned structure accept (five advisories), register fix, and fact fix. The
+redraft resolved every blocking finding and departs from this plan where the findings required:
+
+- One action per step: "Pass the map to the adapter and the guard" has three steps (the `roles`
+  import split from the `createAuthGuard` call), and "Declare the roles" names one export.
+- "Sidebar entries" opens on the register's rewrite, scoping the shared check to an engine screen's
+  entry and a keyed site entry, since an unmatched href stays visible while its route refuses.
+  The "cannot drift apart" clause and the linking sentence to the sidebar page are gone (the
+  introduction and See also carry that link).
+- "Assign the roles" opens on the role-assignment claim alone; the next-request rule stays in the
+  section's later sentences. Its step 1 names the owner who acts. The "same roster screen"
+  sentence (`f:hcjb3o`) was cut as a restatement.
+- The fact read corrected `f:8ciz2s` (the trigger, as the code warns) and `f:onqm6k` (the two
+  actions and `ownerOnly` on `remove`), filed `f:tycp7k` (the scaffold's Signups entry) and
+  `f:joo5f2` (the media library's address and 403), and retargeted `f:pyt58u`'s Source. Check 6
+  now opens `/admin/media` and states the 403, which supersedes the drafting constraint on its
+  address, and closes friction entry 3.
+- The role name: prose writes the plain word webmaster, outside code font and quotes, since no
+  fact carries the invented name and `check:provenance` reads a bare identifier code span as a
+  fact. The code block keeps the code form.
+- Restatements cut or rewritten: the duplicate composition throw, the key-shape sentence on the
+  bracket form, the `target` wording on parameterized routes, and the "Resolve a refusal" lead.
+- Refused: the register's rewrite of the contract sentence, since it removed the task guide's
+  one-line contract; the redraft keeps the contract and adds a sentence naming which reader reads
+  the map from where.
+
+## Chain round 2, redraft (2026-10-07)
+
+The round-2 reads returned structure accept, register fix (three sentences over the 26-word cap), and
+fact fix (`f:vqh4a9` and `f:altcjp` overclaimed that sidebar and route cannot drift). Applied: both
+facts rewritten to the fact seat's text; the sidebar lead cut to its first clause (the keyed-entry
+rule lives once in the paragraphs beneath); the contract sentence and the second-sign-in pointer
+split or made active; the `createSectionAction` pointer made active; the refusal lead names a
+reader never given `roles` or `access`. Skipped: bold role values in the three parallel steps,
+since the roster's role select labels a role whose name differs from its capability as
+`webmaster (editor)`, so the bare name is not what the select shows.
+
+## Final reader read, redraft (2026-10-07)
+
+The final reader read returned `fix`; the one scoped redraft took its four blocking rewrites and
+both advisories, changing only the cited spots. Six `[verified]` facts were filed first, each
+traced in code: `f:dfxxwb` (the roster row's select plus a separate **Change** button), `f:2dgbff`
+(option labels `name (capability)`, both selects), `f:b0kf86` (the signups screen's two-step
+delete), `f:thnbyp` (a refused remove keeps the dialog open and reports the denial),
+`f:7ji7x0` (the signups add form), and `f:a9zcj9` (a 403 from an admin load renders the
+scaffold's root error page). Placements: Assign step 1 and its roster sentence, Verify checks 2,
+5, 6, 7, 9, and 10, and the "Resolve a refusal" lead, now split in two.
 
 ## Friction filed
 
@@ -634,9 +741,9 @@ the sibling page is in a closed stage and is not edited from here (friction entr
   bare identifier code span, since no fact bullet carries the invented name and the provenance gate
   sets a quoted literal aside. Inside the fenced code block it is written as code requires.
 - The matching illustration in "Key nested and parameterized routes" uses `f:uhoyun`'s own
-  `/admin/money` paths. `/admin/signups` is vouched by `f:pyt58u`'s source path and `f:onqm6k`.
+  `/admin/money` paths. `/admin/signups` is vouched by `f:onqm6k` and `f:tycp7k`.
 - The media library's address and an engine screen's 403 status have no fact yet (friction entry
-  3). Check 5 names the screen and says it refuses the session; it spells `/admin/media` or the
+  3). Check 6 names the screen and says it refuses the session; it spells `/admin/media` or the
   status only if a fact lands before drafting, and otherwise links the route table in
   `docs/reference/admin-routes.md` for the address.
 - Describe the scaffold's current `src/access.ts` only as `f:qlgggh` does (the map the hooks file

@@ -614,8 +614,9 @@ carries. A sentence citing several ids synthesizes them; the brief records it as
 
 - Heading: `## Resolve a failed setup`
 - **Takes:** A role's setup fails on `/admin/editors` or at the home screen, and a channel's at
-  construction or at the challenge, so check the symptoms in that order. (`no-claim`, the
-  anatomy's lead-in to ordered checks)
+  construction or at the challenge, so check the symptoms in that order. (f:nj0nfm, f:rn62i1,
+  f:7n28wc, f:vo4m61; the anatomy's lead-in to ordered checks, cited because it names
+  `/admin/editors`)
 - **Steps,** one numbered list of ordered checks, a conditional step stating its condition first:
   1. If adding a person with the new role fails on `/admin/editors`, apply `0001_roles.sql` to
      `AUTH_DB` as "Add the role's people" does: until that migration runs, the roster holds only
@@ -799,3 +800,14 @@ consumer test and the two Node floors).
   nowhere on the page.
 - Files are named in code spans in this plan; on the page they are links where the anatomy wants
   a link.
+- R5 scoped-read close (2026-10-07): the troubleshooting lead-in, the construction-error sentence (now "missing" cookie name and "non-positive" limit, both stated by `f:4cw5dk` and `f:kl716k`), and the member-area gate lead-in were reworded; the gate lead-in is two sentences, both citing `f:q7fj6p`.
+- R5 final-read redraft (2026-10-07): the final reader's four blocking findings are folded. Every
+  site import is `#lib/<file>.js` (`f:pgeeq3`); "Write the channel module" now opens with the
+  `findMemberId` and `sendCodeEmail` steps (`f:dbh3aj`) and adds an `npx wrangler types` step
+  (`f:pe4vuc`); "Gate the member area" adds the `+page.svelte` sign-out step and component
+  (`f:k0cryh`). Advisories folded: both hooks handles take `{ roles }` and keep `access`
+  (`f:7cv105`, `f:f21bcz`), `cairn doctor` runs after a build (`f:6oopkt`), both member routes
+  export `prerender = false` (`f:k0cryh`; the custom `/admin/classes` screen takes none, since no
+  fact or example screen sets it), the Turnstile address is optional (`f:yd9ytp`), and the
+  Vitest inline step adds the entry if missing. The page's code blocks typecheck clean and its
+  test passes in the reader's scratch showcase.

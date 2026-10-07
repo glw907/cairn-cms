@@ -52,8 +52,12 @@ no record names, ordered by how much the reader can see of each.
 
 1. **Read the structured logs** comes first (cover 1, its reading half). Every event row depends
    on it, and the reader needs to know where records land, and that an empty query proves nothing
-   until observability is on, before any row helps. It keeps only what a reader sees in a record,
-   the redaction outcomes included; cover 1's writing half moves (item 6).
+   until observability is on, before any row helps. Its lead holds only the envelope and the
+   stable-contract point; its first H3, "Find the records", opens on the `observability.enabled`
+   precondition, so reaching the records comes before reading them. A short H3 after it, "What a
+   record carries", holds the chokepoint and naming pattern, what no record carries, and the
+   redaction outcomes, detail no row needs before the reader can reach a record. Cover 1's
+   writing half moves (item 6).
 2. **The `cairn` CLI moves up into "Find the records"** (cover 7). `cairn health`'s errors check is
    the alarm that most directly sends a reader here, and `cairn logs` is a reading surface, so both
    belong with the other surfaces. Left at the end, as the outline's covers order has it, they
@@ -72,7 +76,7 @@ no record names, ordered by how much the reader can see of each.
    doubles as a triage order, the Cloudflare exemplar's other take.
 5. **Session and commit records close the event groups** (cover 6). They report no fault; they
    matter to a reader building a query or an alert, and they follow every row that does report one.
-6. **"Log site events with `createLogger`" follows the session and commit records** (cover 1, its
+6. **"Site records with `createLogger`" follows the session and commit records** (cover 1, its
    writing half). It is a task about writing records, not reading them, and no row depends on it.
    Under "Read the structured logs" it would put the `/log` exports and the `redactKeys` option
    between a reader with a symptom and the first row. Beside the session and commit records it
@@ -93,8 +97,9 @@ no record names, ordered by how much the reader can see of each.
 ### Departures from the outline's covers order, with the reason for each
 
 - Cover 1 splits. The envelope, the chokepoint, and the redaction outcomes a reader sees in a
-  record stay first, in "Read the structured logs"; the `/log` exports and the `redactKeys`
-  option move to "Log site events with `createLogger`", after the session and commit records, as
+  record stay first, in "Read the structured logs" (the envelope in its lead, the rest in its H3
+  "What a record carries", after "Find the records"); the `/log` exports and the `redactKeys`
+  option move to "Site records with `createLogger`", after the session and commit records, as
   item 6 argues.
 - Cover 5 (upgrade link) moves into the introduction's scope paragraph, as item 8 argues.
 - Cover 7 (the CLI) moves into "Find the records", as item 2 argues.
@@ -120,8 +125,9 @@ no record names, ordered by how much the reader can see of each.
 
 ### Heading policy
 
-Group headings are noun phrases; "Read the structured logs", its H3 "Find the records", and the
-H2 "Log site events with `createLogger`" are task headings with a bare infinitive; each symptom
+Group headings are noun phrases, "Site records with `createLogger`" and the H3 "What a record
+carries" included; "Read the structured logs" and its H3 "Find the records" are task headings with
+a bare infinitive; each symptom
 heading is the literal event string or what the reader sees,
 per the exemplars. No heading is a question, and none uses "trap" or another figure (Tells, "No
 figurative language"). No page links an anchor on this page today: every inbound link targets the
@@ -153,7 +159,9 @@ reasons the final wording. Content items, in order:
 2. **Who and why, with the contract.** The reader is the developer building an organization's site
    on cairn's seams, arriving for one of three reasons: a site that misbehaves under the
    development server or in production, a failed check on a task guide whose failure names one of
-   the events or failures this page covers, or a query or alert they are building on the records.
+   the events or failures this page covers, or a query, an alert, or records of their own on the
+   same shape. The third reason sets up "Site records with `createLogger`", so the introduction's
+   overview matches every H2 the reader meets.
    Name each reason so each reader learns early that the page answers it (house ruling, "A page
    may serve several readers"). The second reason is bounded on purpose: task guides also route
    here failures that have no row on this page (friction entry 4), so the reason promises only
@@ -182,6 +190,9 @@ reasons the final wording. Content items, in order:
      not arrive: no fact on this page's list ties a missing email to that record. The sibling
      routes for the dev backend, the content build, and the other production failures get no
      line here; the bounded reason 2 promises none of them, and friction entry 4 records them.
+     In the drafted introduction this bullet collapses to one clause with no event strings, such
+     as "sign-in and access refusals, and a sign-in email the engine could not send, have rows in
+     the full event table"; the link carries the event names.
    - Symptoms a site's operator resolves without changing code. State the bound with no link and
      no page name: the outline routes these to `docs/admin/troubleshooting.md`, which no committed
      outline plans, so `check:docs` refuses the link (friction entry 4). The checked-in
@@ -208,29 +219,15 @@ change says that instead.
 **First sentence:** Each engine record is one JSON object with a `level`, `event`, and `timestamp`
 envelope, and each symptom below names the `event` to find.
 
-**Facts:** `f:rkj7tn`, `f:eywrq8` (scoped), `f:wi766c`, `f:avc1a2` (scoped: the redaction
-outcomes). Cited again: `f:gy2h7p`, `f:mreycz` (the engine's records and a site's share one
-redaction).
+**Facts:** `f:rkj7tn`. Cited again: `f:gy2h7p`.
 
 Content:
 
 - The envelope and the contract (`f:rkj7tn`): every record carries the envelope plus the event's
   own fields, and renaming an `event` is a breaking change, so a query or alert keyed on an event
   name rests on a stable contract.
-- The chokepoint (`f:eywrq8`, scoped): the engine writes its records through one internal module,
-  and event names follow `area[.subject].verb_phrase`, documented in
-  `docs/reference/log-events.md`. Never state the bullet's clause that the logger is exported from
-  no package subpath; "Log site events with `createLogger`" states what `/log` exports.
-- What no record carries (`f:wi766c`): a magic-link token, a session ID, or a magic link's
-  contents. Say nothing about whether a record is safe to paste (Drafting constraints).
-- What redaction leaves in a record (`f:avc1a2`, scoped; `f:mreycz` for the engine's records and
-  a site's sharing one redaction): it walks three levels deep into plain objects and arrays and
-  leaves a deeper key as written; a repeated reference reads `'<repeated>'`; a throwing getter in
-  a call's fields never throws out of the log call, and the record carries
-  `fields: '<unserializable>'` instead. State these as what the reader finds in a record. The
-  normalization rule, the frozen arrays, and the default key list stay behind
-  `docs/reference/log.md#createlogger` (opened and confirmed: the page states normalization,
-  depth, the union, and the key list). No `/log` export and no `redactKeys` here.
+- Nothing else here: the chokepoint, what no record carries, and the redaction outcomes move to
+  "What a record carries", after "Find the records" (plan-read revision, 2026-10-07).
 
 **Hand-off:** the records are useful only once the reader can reach them.
 
@@ -269,6 +266,32 @@ Content:
   `docs/reference/cli-cairn-json-output.md` as the published forms of that contract.
 - Say nothing about where a record appears under `vite dev` or `wrangler dev` (Drafting
   constraints; friction entry 2).
+
+**Hand-off:** once a record is reachable, what it carries.
+
+#### What a record carries
+
+**First sentence:** The engine writes every record through one internal module, which names each
+event `area[.subject].verb_phrase` and redacts its fields before writing.
+
+**Facts:** `f:eywrq8` (scoped), `f:wi766c`, `f:avc1a2` (scoped: the redaction outcomes). Cited
+again: `f:mreycz` (the engine's records and a site's share one redaction).
+
+Content, short, stated as what the reader finds in a record:
+
+- The chokepoint (`f:eywrq8`, scoped): the engine writes its records through one internal module,
+  and event names follow `area[.subject].verb_phrase`, documented in
+  `docs/reference/log-events.md`. Never state the bullet's clause that the logger is exported from
+  no package subpath; "Site records with `createLogger`" states what `/log` exports.
+- What no record carries (`f:wi766c`): a magic-link token, a session ID, or a magic link's
+  contents. Say nothing about whether a record is safe to paste (Drafting constraints).
+- What redaction leaves in a record (`f:avc1a2`, scoped; `f:mreycz` for the engine's records and
+  a site's sharing one redaction): it walks three levels deep into plain objects and arrays and
+  leaves a deeper key as written; a repeated reference reads `'<repeated>'`; a throwing getter in
+  a call's fields never throws out of the log call, and the record carries
+  `fields: '<unserializable>'` instead. The normalization rule, the frozen arrays, and the default
+  key list stay behind `docs/reference/log.md#createlogger` (opened and confirmed: the page states
+  normalization, depth, the union, and the key list). No `/log` export and no `redactKeys` here.
 
 **Hand-off:** into the event groups, which begin with the first seam the track builds.
 
@@ -592,7 +615,7 @@ settings, vocabulary, or media commit, never both.
 
 **Hand-off:** a site's own events can take the same record shape.
 
-### Log site events with `createLogger`
+### Site records with `createLogger`
 
 **First sentence:** The `/log` subpath exports `createLogger`, so a site's own events share the
 engine's record shape and redaction.
@@ -605,7 +628,7 @@ Content:
 - What `/log` exports (`f:mreycz`): `createLogger`, `REDACTED_LOG_KEYS`, `CAIRN_LOG_EVENTS`, and
   the `CairnLogEvent` type; the engine's own `log` instance stays internal.
 - One sentence on the option (`f:avc1a2`): `redactKeys` unions the site's names with the defaults
-  and cannot narrow them. A site's records take the redaction "Read the structured logs" states;
+  and cannot narrow them. A site's records take the redaction "What a record carries" states;
   name that section by its heading and restate none of it.
 - Link `docs/reference/log.md#createlogger` for the signature, the normalization rule, and the
   default key list (opened and confirmed above).
@@ -791,10 +814,10 @@ where it lands. Two ids are cut: one drifted, one subordinated.
 | f:mou1li | carried | `config.access_unmapped`; cited again in Site config events |
 | f:yauo4m | carried | `audit.sink.call_failed` (the omitted `detail`, and `write_failed`'s whole record) |
 | f:k085q0 | carried | `audit.sink.call_failed` (the packaged sink's `actor`) |
-| f:rkj7tn | carried | Read the structured logs; cited again in Introduction and in Log site events with `createLogger` |
-| f:eywrq8 | carried (scoped) | Read the structured logs (chokepoint and vocabulary only); cited again in Introduction. Its clause that the logger is exported from no subpath is never stated; `f:mreycz` states `/log` |
-| f:mreycz | carried | Log site events with `createLogger`; cited again in Read the structured logs (the engine's records and a site's share one redaction) |
-| f:avc1a2 | carried (scoped) | Read the structured logs (depth, `'<repeated>'`, `'<unserializable>'`, as a reader finds them in a record); its `redactKeys` union cited again in Log site events with `createLogger`. Normalization, the frozen arrays, and the key list stay behind `docs/reference/log.md#createlogger`, which states them |
+| f:rkj7tn | carried | Read the structured logs (its lead); cited again in Introduction and in Site records with `createLogger` |
+| f:eywrq8 | carried (scoped) | What a record carries, under Read the structured logs (chokepoint and vocabulary only); cited again in Introduction. Its clause that the logger is exported from no subpath is never stated; `f:mreycz` states `/log` |
+| f:mreycz | carried | Site records with `createLogger`; cited again in What a record carries (the engine's records and a site's share one redaction) |
+| f:avc1a2 | carried (scoped) | What a record carries, under Read the structured logs (depth, `'<repeated>'`, `'<unserializable>'`, as a reader finds them in a record); its `redactKeys` union cited again in Site records with `createLogger`. Normalization, the frozen arrays, and the key list stay behind `docs/reference/log.md#createlogger`, which states them |
 | f:ogz5eu | carried | A visual baseline changes every day |
 | f:yomgrm | carried | `CAIRN_FIXED_TODAY` yields `Invalid Date` (malformed value, explicit instant); its date-only clause cited again in A date differs between machines |
 | f:2r6juw | carried | A date differs between machines |
@@ -810,7 +833,7 @@ where it lands. Two ids are cut: one drifted, one subordinated.
 | f:eqlssz | carried | A stale `site-facts.json` passes the build (the normal failing check the exception is stated against) |
 | f:yio35u | carried | A stale `site-facts.json` passes the build (the fix: `npx cairn-manifest` writes the file) |
 | f:vpk81e | cut | Subordinated to `docs/reference/site-facts.md` "Who writes it and who verifies it", which states that an absent file is not drift and the build warns once naming `npx cairn-manifest` (opened and confirmed); the warning's own message names its fix, so the page needs no row for it |
-| f:wi766c | carried | Read the structured logs |
+| f:wi766c | carried | What a record carries, under Read the structured logs |
 | f:gzs6b8 | carried | Find the records |
 | f:q9ylqa | carried | Find the records |
 | f:txgoyy | carried | Find the records |
@@ -824,6 +847,104 @@ edit's revision added no fact id: the introduction's routed-failures bullet is a
 `docs/reference/log-events.md`, opened and confirmed, and its one descriptive clause (a sign-in
 email the engine could not send) restates that reference's `auth.link.send_failed` row. The rejected facts `f:f7tkkw`, `f:iw346n`, and `f:99x86q` stay off
 the page through the drafting constraints below.
+
+## Plan read (2a unattended finish, R5), disposed by this revision
+
+The chain's plan read returned `fix` twice and escalated; the conductor ruled that the read's
+blocking rewrites apply to the plan as written and the page drafts from the corrected plan.
+Findings: `$HOME/.cache/claude-tmp/2a-run/r5-findings/debug-your-site.md`. No fact changes its
+disposition; `f:eywrq8`, `f:wi766c`, `f:avc1a2`, and `f:mreycz`'s second citation move with their
+content into the new H3.
+
+- Blocking, the introduction never set up the `createLogger` section (`:143-162` of the version
+  read; Block 2, "What the document covers"): intro item 2's third reason now reads "a query, an
+  alert, or records of their own on the same shape", the read's first form, so the overview
+  matches every H2.
+- Blocking, record anatomy ahead of "Find the records" (`:206-246`; Block 1, logical order and
+  pace): the lead of Read the structured logs keeps only the envelope and the stable-contract
+  point; "Find the records" follows, opening on the `observability.enabled` precondition; a new
+  short H3, "What a record carries", after it holds the chokepoint and naming pattern, what no
+  record carries, and the redaction outcomes. Order item 1, the cover 1 departure, the heading
+  policy, the hand-offs (the lead hands to Find the records, Find the records to What a record
+  carries, What a record carries into the event groups), and the dispositions table follow.
+- Advisory, the task heading on a symptom-row page (`:595-614`): the H2 is now the noun phrase
+  "Site records with `createLogger`", renamed everywhere in this plan; its content is unchanged.
+- Advisory, the heavy doesn't-cover list (`:166-189`): the routed sign-in and access failures
+  collapse to one clause in the drafted introduction, with no event strings; the link carries
+  them.
+
+## Round 1 page reads (2a unattended finish, R5), disposed by the round-2 redraft
+
+All three seats returned `fix`. Findings: `$HOME/.cache/claude-tmp/2a-run/r5-findings/`
+(`debug-your-site.r1-structure.md`, `.r1-register.md`, `.r1-facts.md`). Round-1 baseline blob:
+`edfc95f483e08d84f7bf170579264cd4470cd028`. Where this ledger and an earlier section of this plan
+differ, this ledger wins.
+
+- Fact, blocking: the `access_map_not_attached` fix is `devBackendHandle({ access })`, never
+  wiring the guard. `createAuthGuard` sets the editor and the map together on every admin path it
+  signs an editor in on, so behind the guard the reason does not occur; it fires under
+  `devBackendHandle` called without `access`. New fact `f:u78zg6` (extend.md, beside `f:nup3og`);
+  `f:nup3og`'s parenthetical corrected; `f:iwf4nu` narrowed to admin paths. The row now states
+  the cause, the guard's behavior, the dev handle's, and the fix, and links the guard entry and
+  Restrict admin access. The plan's `createAuthGuard` fix under `admin.action.misconfigured` is
+  superseded.
+- Fact, blocking: `media.resolver_absent` fires only when the site passes `assetsEnabled: true`
+  with no `resolveMedia`. `f:twqb0s` corrected; the row cites `f:bnt2wh` and `f:pkt8i6`, names
+  `createPublicRoutes` in the group lead and the row, and states that without the flag the
+  tokens appear with no record.
+- Register, blocking: list items and task-section sentences held under 26 words (the
+  `cairn logs` item, the two `reason` items, the envelope sentence, the `cairn help agents`
+  sentence, the redaction getter sentence); the H3 is now "Record contents" (in-page link
+  updated); the introduction's universals now match the rows (a fault, when an event reports one;
+  the contract allows a row's no-change note; the operator-scope bound excepts those rows; "most
+  rows" link a seam entry; `cairn-audit` named by name).
+- Structure, blocking: `CAIRN_FIXED_TODAY` is named, as the site's own variable, before the steps
+  that read and set it.
+- Restored specifics (fact seat's weakened claims): `auth.access.refused` in check 4
+  (`f:xbjxit`); `createPublicRoutes`; `npx cairn-manifest` run from the directory holding
+  `vite.config.ts` (new fact `f:z61ibp`, reference.md); the record field names (new fact
+  `f:pfy9cw`, reference.md); the site-facts trigger as the media bucket binding, `roles`, or
+  `aiPosture` (`f:ve30i2`); the Site config lead naming an access map that leaves a target
+  without a rule (`f:8ciz2s`, corrected to fire on any unmapped target).
+- Restatement cuts taken from the register and structural seats in `rate_limit_absent`,
+  `rate_limit_failed`, `misconfigured`, `unaudited`, `call_failed`, `config.invalid`,
+  `event.platform`, the build-time read, the baseline row, `Invalid Date`, and the site-facts
+  section; the repeated standalone log-events sentence folded into each row's fields clause.
+- Advisories refused: the register's "own" cut at `call_failed`'s first sentence (this plan keeps
+  "own" there to mark the site's sink against the packaged one); the register's `session_absent`
+  CSRF rewrite (the structural seat's form stays closer to `f:v1jj2k`); retitling the two task
+  headings (the sentences now fit the cap, so the plan's headings stand). `f:eywrq8`'s narrowing
+  is in `front-door.md`, outside this round's edit scope, and is reported for the conductor.
+- Other fact upkeep: `f:i1dayf` rewritten to the code's behavior and retagged `[docs-drift]`
+  (still cut); `f:vs9g9e`, `f:v1jj2k`, and `f:ve30i2` source pointers moved to the current lines.
+
+## Final reader read (2a unattended finish, R5), disposed by the scoped redraft
+
+The final reader read returned `fix` with six blocking findings. Findings:
+`$HOME/.cache/claude-tmp/2a-run/r5-findings/debug-your-site.reader.md`. Where this ledger and an
+earlier section of this plan differ, this ledger wins.
+
+- Blocking, the fixed-today steps never regenerated `Env`: step 3 now adds `CAIRN_FIXED_TODAY`
+  to `.dev.vars.example` and runs `npx wrangler types --env-file .dev.vars.example`
+  (`f:pe4vuc`, existing). Re-tested in the reader's scratch `templates/waymark` copy:
+  `svelte-check` 1 error before the step, 0 after.
+- Blocking, five fix sentences over the 26-word cap (`content.field_behavior_failed`,
+  `admin.action.rate_limit_absent`, `admin.action.misconfigured`, `config.access_unmapped`, and
+  the time-zone row): each takes the reader's rewrite, split into two sentences where it gave two.
+- Advisories taken, each on a code-verified fact: check 1 names the CSRF check and
+  `admin.action.csrf_refused` (new `f:yi9vag`, reference.md); the audit sink runs inside the
+  `ctx.audit` call during the handler, so the Admin action events lead and the
+  `audit.sink.call_failed` row no longer place it after the handler (new `f:5ba9q8`,
+  reference.md); the `admin.action.unaudited` row states the `fail()` exemption (`f:8yb3r1`,
+  existing); `media.resolver_absent` defines its condition as content carrying `media:` tokens
+  (`f:twqb0s`); the `building` paragraph re-wrapped.
+- Advisories not taken: the `cairn logs <site>` operand and the Workers Logs and Workers
+  Observability naming (outside the blocking scope; no fact on this page's list names the
+  operand); how a CI job sets the pin (Drafting constraints forbid it, friction entry 3).
+- Carry for the owner read: the reader's shape advisory, that neither the headings nor the
+  introduction offer a symptom-first index and most rows name no way to verify the fix. That is a
+  plan-level change to the heading policy and the row anatomy, so this scoped redraft leaves it
+  for the owner read to rule on.
 
 ## Friction filed
 

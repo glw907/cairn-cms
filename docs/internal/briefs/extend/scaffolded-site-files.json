@@ -235,11 +235,18 @@
       "id": "no-claim"
     },
     {
-      "text": "`CLAUDE.md` carries no marker, because `cairn-guidance check` reads it and never fails the CI run.",
+      "text": "`CLAUDE.md` carries no marker, since `cairn-guidance check` reads it only to report whether it holds the import line, a report that never fails the CI run, and `cairn-guidance install` never rewrites it.",
       "id": [
         "f:6ro1n9",
         "f:4ax489",
         "f:jd54ph"
+      ]
+    },
+    {
+      "text": "The `[engine]` marker on `.claude/` marks the tree that `cairn-guidance install` writes.",
+      "id": [
+        "f:0ygumq",
+        "f:6ro1n9"
       ]
     },
     {
@@ -282,6 +289,10 @@
       "id": "f:guiavc"
     },
     {
+      "text": "The site's sheet is a gitignored build output in a `.cairn/` directory at the project root, separate from the committed `src/content/.cairn/`.",
+      "id": "f:xi5uwl"
+    },
+    {
       "text": "[Run cairn-audit on your site](run-cairn-audit-on-your-site.md) covers the config in depth.",
       "id": "no-claim"
     },
@@ -321,8 +332,19 @@
       "id": "f:o47i0q"
     },
     {
+      "text": "The `src/lib/` directory, imported through `#lib`, holds `log.ts`, the site's own [`createLogger`](../reference/log.md#createlogger) instance over the site's own event names.",
+      "id": "f:wnsv5x"
+    },
+    {
       "text": "The two migration directories are covered under [Database migrations](#database-migrations).",
       "id": "no-claim"
+    },
+    {
+      "text": "The `check` and `check:cairn` commands the CI workflow runs are scripts in `package.json`, the first of the site's configuration files.",
+      "id": [
+        "f:guiavc",
+        "f:n4rg1z"
+      ]
     },
     {
       "text": "The site builds and deploys from three configuration files, `package.json`, `vite.config.ts`, and `wrangler.jsonc`, and `src/app.d.ts` types what they provide.",
@@ -684,6 +706,13 @@
       "id": "no-claim"
     },
     {
+      "text": "The menus and the site name the root layout returns come from `src/theme/`, the directory that also holds the adapter.",
+      "id": [
+        "f:ofex2m",
+        "f:qnf469"
+      ]
+    },
+    {
       "text": "The `src/theme/` directory holds the adapter and Waymark's design, `src/chassis/` holds the plumbing every scaffolded site shares, and `src/content/` holds the markdown and its committed manifests.",
       "id": [
         "f:qnf469",
@@ -820,15 +849,20 @@
       "id": "f:vs6k2k"
     },
     {
-      "text": "The pre-scripts compile it into the gitignored `.cairn/admin.css`, one of the two sheets `cairn-audit.config.json` names.",
+      "text": "The pre-scripts compile it into the gitignored `.cairn/admin.css` at the project root, one of the two sheets `cairn-audit.config.json` names.",
       "id": [
         "f:666eg6",
-        "f:guiavc"
+        "f:guiavc",
+        "f:xi5uwl"
       ]
     },
     {
       "text": "The config's other entry, the engine's precompiled `dist` sheet, is a different artifact, the compile the audit's `no-uncompiled-class` rule checks against, which the sources import does not replace.",
       "id": "f:vs6k2k"
+    },
+    {
+      "text": "A compile failure in this file fails `npm run check`, `npm run build`, and `npm run check:cairn`, since each compiles it first.",
+      "id": "f:gxaxvh"
     },
     {
       "text": "These hold the theme's tokens and page styling, layered over the engine's `cairn-public.css` roles and the chassis's design-scale defaults.",
@@ -867,6 +901,13 @@
     {
       "text": "The footer menu, `menus.footer`, is a flat menu the developer edits by hand in `site.config.yaml`, read through `readMenu(siteConfig, 'footer', 1)`.",
       "id": "f:2s8u70"
+    },
+    {
+      "text": "The archive route the page size governs is also the one route the build's unseen-route check exempts.",
+      "id": [
+        "f:38pjqy",
+        "f:2zl3qz"
+      ]
     },
     {
       "text": "The prerender crawl fails the build on an unseen route or an HTTP error, and the scaffold keeps its build passing with one route exemption and one link attribute.",
@@ -915,6 +956,10 @@
       "id": "f:34rsss"
     },
     {
+      "text": "A path the build never emitted is answered at request time, and the scaffold's `wrangler.jsonc` passes it to the Worker so the themed 404 page can render.",
+      "id": "f:2qnqkm"
+    },
+    {
       "text": "A scaffolded site serves a themed 404 page through two pieces that need each other, the root `src/routes/+error.svelte` and the `assets.not_found_handling` setting of `\"none\"` in `wrangler.jsonc`.",
       "id": "f:2qnqkm"
     },
@@ -945,6 +990,10 @@
     {
       "text": "With `\"404-page\"`, the error page never runs, and without the root error page, no layout rebuilds the chrome for an unmatched path.",
       "id": "f:2qnqkm"
+    },
+    {
+      "text": "The `.claude/` directory holds what the site's coding agents read, the guidance cairn installs with the scaffold.",
+      "id": "f:0ygumq"
     },
     {
       "text": "A scaffolded site starts with cairn's agent-facing guidance installed under `.claude/`, and `npx cairn-guidance install` refreshes it after an engine upgrade.",
@@ -1033,6 +1082,10 @@
       "id": "f:4h9fz4"
     },
     {
+      "text": "The setup command also saved a record of its run outside the repository, in the home directory of whoever ran it.",
+      "id": "f:3m0oxs"
+    },
+    {
       "text": "The setup command kept its record of the run on the machine that ran it.",
       "id": "f:3m0oxs"
     },
@@ -1081,6 +1134,14 @@
     {
       "text": "The next commit still triggers a build, and the build fails.",
       "id": "f:3bbeia"
+    },
+    {
+      "text": "The API token setting in the Worker's Workers Builds build configuration holds the token its builds authenticate with.",
+      "id": "f:skp1jv"
+    },
+    {
+      "text": "A new owner can create an API token of their own and select it there, as Cloudflare's [build configuration page](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token) describes.",
+      "id": "f:skp1jv"
     },
     {
       "text": "The following guides cover changing or rebuilding parts of the tree.",

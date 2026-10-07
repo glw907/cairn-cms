@@ -15,12 +15,12 @@ The rotation needs the following site, access, signals, and file:
 - A deployed site whose Worker holds the App's key as `GITHUB_APP_PRIVATE_KEY_B64`, from the setup command or from [Store the App's credentials](add-cairn-to-a-sveltekit-app.md#store-the-apps-credentials).
 - A GitHub account that can edit the App's settings, which hold its private keys, as GitHub's [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps) describes.
 - Wrangler signed in through `npx wrangler login` to the Cloudflare account that holds the site's Worker, and a terminal in the site's directory.
-- A sign-in to the deployed site's admin as an editor who can publish an entry, as [Verify the production site](add-cairn-to-a-sveltekit-app.md#verify-the-production-site) shows for a hand-built site.
+- A sign-in to the admin as an editor who can publish, since the verification publishes an entry and queries the logs an admin visit writes.
 - Workers Logs active through `observability.enabled` set to `true` in `wrangler.jsonc`, which the scaffold sets and [Add the Email Sending binding and name the origin](add-cairn-to-a-sveltekit-app.md#add-the-email-sending-binding-and-name-the-origin) adds.
 - A `/healthz` route at the site root, which the scaffold ships and the [`loadHealth`](../reference/sveltekit.md#loadhealth) entry shows for a hand-built site.
-- A copy of the current key's PEM file for the rollback, since a scaffolded site holds the key only in the Worker's secret store.
+- The current key's PEM file, if you have it, for the rollback. A scaffolded site keeps no copy outside the Worker, so recovery there takes a third key.
 
-The setup command creates the App and deploys the site in one run. It also writes its runner's owner row and opens a sign-in link to the admin.
+The setup command creates the App and deploys the site in one run. It also writes its runner's owner row and opens a sign-in link to the admin. On a hand-built site, [Verify the production site](add-cairn-to-a-sveltekit-app.md#verify-the-production-site) shows the sign-in.
 
 ## Generate a new key
 
@@ -66,7 +66,7 @@ The adapter's `createGithubApp` call keeps the same App ID and installation ID, 
 
 The `/healthz` check proves at once that the new key signs, and a publish after the token cache expires proves that GitHub accepts it.
 
-The publish waits because the Worker caches each installation token per isolate for 55 minutes and mints a new one only on a miss. A warm isolate keeps a token minted with the old key until its entry expires, and a cold isolate mints from the current secret. A publish in the first 55 minutes after the push can therefore succeed without the new key reaching GitHub.
+The publish waits because the Worker caches each installation token per isolate for 55 minutes and mints a new one only on a miss. A warm isolate keeps a token minted with the old key until its entry expires, and a cold isolate mints from the current secret. A publish in the first 55 minutes after the push can therefore succeed without the new key reaching GitHub. The old key keeps working throughout, so the wait delays the proof without interrupting publishing.
 
 To confirm the new key, follow these steps:
 
@@ -98,7 +98,7 @@ To confirm the new key, follow these steps:
 
    The note reads "Published. The live site is rebuilding." That completed publish from the deployed Worker confirms the new key. If the publish does not complete, go to [Recover from a failed key](#recover-from-a-failed-key).
 
-6. In [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/), query `github.unreachable` records since the push.
+6. In [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/), query records whose `event` field is `github.unreachable`, over the time since the push.
 
    No `scope: 'shell'` record after the admin visit means that the shell read used a token the new key minted and GitHub accepted. An empty result proves this only with observability on, since without it Workers Logs records nothing.
 
@@ -114,11 +114,13 @@ From here on, a failure of the new key is recovered with a third key, as [Genera
 
 ## Recover from a failed key
 
-Which recovery applies depends on whether the old key still exists on GitHub, since only an undeleted key can be rolled back to. To read the signals from [Verify the new key](#verify-the-new-key), follow these steps:
+A rollback needs the old key still on GitHub and its PEM file at hand. Without both, a third key recovers from the failure whether or not the old key remains on GitHub.
+
+Once the cached tokens expire, a failed key ends each attempt to open or publish an entry on an error page with status 500. The signals from [Verify the new key](#verify-the-new-key) name the failure behind that page. To read them, follow these steps:
 
 1. If `/healthz` reports the detail `GITHUB_APP_PRIVATE_KEY_B64 is not configured`, the Worker holds no key.
 
-   A missing key also throws a `github.app-unreachable` error on first token use. In the site's directory, run the push from [Push the new key to the Worker](#push-the-new-key-to-the-worker) again.
+   The missing key also throws cairn's `github.app-unreachable` error on first token use, which the shell logs as a `github.unreachable` record. In the site's directory, run the push from [Push the new key to the Worker](#push-the-new-key-to-the-worker) again.
 
 2. If `/healthz` reports `key import or sign failed` or `malformed JWT`, the secret is not a usable private key.
 
@@ -126,9 +128,9 @@ Which recovery applies depends on whether the old key still exists on GitHub, si
 
 3. If `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `Error: GitHub installation token failed: <status>`, GitHub refused the signed JWT.
 
-   Roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
+   The error page from opening or publishing an entry comes from that refusal. Roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
 
-For reading the logs in general, see [Debug your site](debug-your-site.md).
+After the 55-minute wait, a publish that fails while `/healthz` reports `ok: true` and no shell record appears is not a key failure. [Debug your site](debug-your-site.md) covers that failure and reading the logs in general.
 
 ### Roll back to the old key
 
@@ -136,16 +138,17 @@ Until the old key is deleted, pushing its base64 with the same command restores 
 
 - In the site's directory, run the push command for your platform from [Push the new key to the Worker](#push-the-new-key-to-the-worker) with the old key's PEM file.
 
-The push deploys at once, so the site publishes on the old key while the new key is diagnosed separately. Without the old key's file, [Generate a third key](#generate-a-third-key) applies.
+The push deploys at once, so the site publishes on the old key while the new key is diagnosed separately. To finish the rotation, delete the failed key on GitHub and start again at [Generate a new key](#generate-a-new-key). Without the old key's file, [Generate a third key](#generate-a-third-key) applies.
 
 ### Generate a third key
 
-After the deletion, a failed key is replaced with a third key, generated and verified the way the second one was. To replace the failed key, follow these steps:
+A third key replaces a failed key after the deletion, or before it when no copy of the old key's PEM file exists. To replace the failed key, follow these steps:
 
 1. Generate another key, as [Generate a new key](#generate-a-new-key) describes.
 2. Push it, as [Push the new key to the Worker](#push-the-new-key-to-the-worker) describes.
 3. Run the checks in [Verify the new key](#verify-the-new-key).
 4. On the App's settings page on GitHub, delete the key that failed.
+5. If the old key is still on the App, delete it as [Delete the old key](#delete-the-old-key) describes.
 
 ## See also
 

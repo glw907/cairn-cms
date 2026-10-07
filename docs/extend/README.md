@@ -22,6 +22,7 @@ The extend track is being rebuilt, so this index lists only the pages that are i
 ## Auth and access
 
 - [Security model](./security-model.md)
+- [Restrict admin access](./restrict-admin-access.md)
 - [Replace magic links with Cloudflare Access](./replace-magic-links-with-cloudflare-access.md)
 - [Add a second sign-in group](./add-a-second-sign-in-group.md)
 
@@ -29,4 +30,5 @@ The extend track is being rebuilt, so this index lists only the pages that are i
 
 - [Upgrade cairn](upgrade-cairn.md): move a site onto a newer engine version.
 - [Migration notes](migration-notes.md): the per-version record of what a consumer must do.
+- [Debug your site](./debug-your-site.md)
 - [Rotate the GitHub App key](./rotate-the-github-app-key.md)

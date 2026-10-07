@@ -94,7 +94,8 @@ To declare the role, follow these steps:
    });
    ```
 
-2. In `src/hooks.server.ts`, pass the same vocabulary to `createAuthGuard` as its `roles` option.
+2. In `src/hooks.server.ts`, pass the same vocabulary to `createAuthGuard` and `devBackendHandle` as their `roles` option.
+   Keep any option either handle already receives, such as the scaffold's `access`, beside `roles`.
 
    <!-- snippet-check-skip: reads the __CAIRN_DEV_BUILD__ global that the site declares in its ambient types file -->
    ```ts
@@ -102,18 +103,20 @@ To declare the role, follow these steps:
    /// <reference types="node" />
    import type { Handle } from '@sveltejs/kit/hooks';
    import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-   import { roles } from '$lib/cairn.config';
+   import { roles } from '#lib/cairn.config.js';
 
    let handle: Handle;
    if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
      const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
-     handle = devBackendHandle();
+     handle = devBackendHandle({ roles });
    } else {
      handle = createAuthGuard({ roles });
    }
 
    export { handle };
    ```
+
+The import uses `#lib`, which the `imports` field of `package.json` maps to `src/lib`, since SvelteKit 3 refuses a `$lib` import.
 
 The vocabulary keeps `owner` and `editor` for two reasons.
 `defineRoles` throws without an `owner` key mapped to owner capability, and a roster row whose role the vocabulary omits resolves to `none`, so dropping `editor` would close the content screens to every existing editor.
@@ -212,7 +215,8 @@ The role is ready to verify.
 A working role signs its people in by the magic link onto the home screen, with the screen's link in the sidebar and the engine's content screens closed to them.
 To confirm that the role works, follow these steps:
 
-1. In the project directory, run [`cairn doctor`](../reference/cli-cairn-doctor.md) and confirm that it reports no `auth.role-wiring-missing` warning. That warning means the guard never received the vocabulary.
+1. After a build, in the project directory, run [`cairn doctor`](../reference/cli-cairn-doctor.md) and confirm that it reports no `auth.role-wiring-missing` warning. That warning means the guard never received the vocabulary.
+   The check reads the site facts that a build writes.
 2. As one of the role's people, open `/admin` on the deployed site and sign in with the emailed link.
 3. Confirm that `/admin` lands on `/admin/classes`.
 4. In the sidebar, confirm that the **Classes** link shows.
@@ -283,7 +287,31 @@ A channel is one `createAuthChannel` call in a server-only module.
 The call takes four functions the site writes, plus the channel's binding and a cookie name.
 To write the module, follow these steps:
 
-1. In a new module under SvelteKit's [server-only module directory](https://svelte.dev/docs/kit/server-only-modules), create the channel with its six required members, typed over the Worker env.
+1. In the file that the following code block names, export `findMemberId(contact, { env })`, which resolves to the member's subject or `null`.
+   The file sits in SvelteKit's [server-only module directory](https://svelte.dev/docs/kit/server-only-modules).
+
+   ```ts
+   // src/lib/server/members.ts
+   export async function findMemberId(
+     contact: string,
+     { env }: { env: unknown },
+   ): Promise<string | null> {
+     // Look up the contact in your roster, reading the roster's binding from env.
+     return null;
+   }
+   ```
+
+2. In the same file, export `sendCodeEmail(contact, code)`, which sends the code over your transport and returns a promise.
+   The [channel reference](../reference/auth-channel.md#createauthchannel) types `lookup`'s context as `{ env }` and `deliver` as `(contact, code, ctx) => Promise<void>`.
+
+   ```ts
+   // src/lib/server/members.ts
+   export async function sendCodeEmail(contact: string, code: string): Promise<void> {
+     // Send the code to the contact over your transport.
+   }
+   ```
+
+3. In the file that the following code block names, create the channel with its six required members, typed over the Worker env.
 
    <!-- snippet-check-skip: imports cloudflare:workers, which a site's own Worker types declare -->
    ```ts
@@ -314,14 +342,21 @@ To write the module, follow these steps:
    });
    ```
 
-2. In `.dev.vars` beside the Wrangler config, creating the file if needed, add the Turnstile secret key under the name the module reads.
+4. In `.dev.vars` beside the Wrangler config, creating the file if needed, add the Turnstile secret key under the name the module reads.
 
    ```text
    TURNSTILE_SECRET=<your Turnstile secret key>
    ```
 
+5. In the project directory, run `npx wrangler types`, so the generated `Env` that `cloudflare:workers` exports carries the secret's name.
+
+   ```bash
+   npx wrangler types
+   ```
+
 `wrangler dev` reads secrets from `.dev.vars` and never from a deployed Worker secret, so the production copy waits for [Deploy the channel](#deploy-the-channel).
 The scaffold's `.gitignore` keeps `.dev.vars` out of git.
+The module's own `Env` types only what the factory hands its functions, while the `env` imported from `cloudflare:workers` reads the generated type.
 
 Each required member is a decision the site makes:
 
@@ -329,7 +364,7 @@ Each required member is a decision the site makes:
 - `deliver` sends the code over your transport, in place of the example site's development-only capture transport.
 - `lookup` returns the stable subject for a normalized contact, or `null`, and that answer decides membership.
 - `normalize` puts a contact in its canonical form before the lookup and the rate budgets use it.
-- `challenge` wraps `verifyTurnstile`, which returns `false` on every failure and never throws. The [Turnstile reference](../reference/cloudflare.md#verifyturnstile) states which client address to pass.
+- `challenge` wraps `verifyTurnstile`, which returns `false` on every failure and never throws. Passing the client address is optional, and the [Turnstile reference](../reference/cloudflare.md#verifyturnstile) states where one must come from.
 - `cookie.name` is the base name of the session cookie and of its `_pending` nonce cookie, and a `cairn_` prefix belongs to the engine and throws.
 
 `lookup` takes `{ env }` so it reaches the roster's binding, and it never reads request data.
@@ -352,9 +387,10 @@ To build the login route, follow these steps:
 1. In `src/routes/members/login/+page.server.ts`, add a load function that redirects a visitor who already has a session to `/members`.
 2. In the same file, add a `request` action that passes the event to `actions.request` and answers `fail(400, ...)` on any outcome but `sent`.
 3. In the same file, add a `confirm` action that passes the event to `actions.confirm`, redirects to `/members` on `confirmed`, and answers `fail(400, ...)` otherwise.
-4. In the route's page component, add a request form that posts a `contact` field to the `request` action.
-5. In the request form, add the Turnstile widget as Cloudflare's [Embed the widget](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/) guide describes, so the form posts the token your `challenge` reads.
-6. In the same component, add a confirm form that posts a `code` field to the `confirm` action.
+4. In the same file, export `prerender = false`, so a site that prerenders by default still serves the route from the Worker.
+5. In the route's page component, add a request form that posts a `contact` field to the `request` action.
+6. In the request form, add the Turnstile widget as Cloudflare's [Embed the widget](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/) guide describes, so the form posts the token your `challenge` reads.
+7. In the same component, add a confirm form that posts a `code` field to the `confirm` action.
 
 The following server file holds the load function and both actions:
 
@@ -362,7 +398,9 @@ The following server file holds the load function and both actions:
 // src/routes/members/login/+page.server.ts
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { memberChannel } from '$lib/server/member-channel';
+import { memberChannel } from '#lib/server/member-channel.js';
+
+export const prerender = false;
 
 export const load: PageServerLoad = async (event) => {
   if (await memberChannel.resolveSubject(event)) redirect(303, '/members');
@@ -413,11 +451,14 @@ A confirmed code lands the member on `/members`, which needs a gate.
 
 ### Gate the member area
 
-The member area is a set of the site's routes outside `/admin`, each resolving the subject with `resolveSubject` in its load function.
+A channel session never populates `locals.cairnEditor`, so the member area lives in the site's own routes outside `/admin`.
+Each route resolves the subject with `resolveSubject` in its load function.
 To gate the member area, follow these steps:
 
 1. In `src/routes/members/+page.server.ts`, add a load function that calls `resolveSubject` and redirects to `/members/login` when it returns `null`.
 2. In the same file, add a `logout` action that calls `actions.logout` and redirects to the login page.
+3. In the same file, export `prerender = false`, so the gate runs on every request even on a site that prerenders by default.
+4. In `src/routes/members/+page.svelte`, render the member's area and add a sign-out form that posts to the `logout` action.
 
 The following server file holds the load function and the logout action:
 
@@ -425,7 +466,9 @@ The following server file holds the load function and the logout action:
 // src/routes/members/+page.server.ts
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { memberChannel } from '$lib/server/member-channel';
+import { memberChannel } from '#lib/server/member-channel.js';
+
+export const prerender = false;
 
 export const load: PageServerLoad = async (event) => {
   const subject = await memberChannel.resolveSubject(event);
@@ -440,6 +483,25 @@ export const actions: Actions = {
   },
 };
 ```
+
+The following page component holds the sign-out form:
+
+```svelte
+<!-- src/routes/members/+page.svelte -->
+<script lang="ts">
+  import type { PageData } from './$types';
+
+  let { data }: { data: PageData } = $props();
+</script>
+
+<h1>Members</h1>
+<p>You are signed in as {data.subject}.</p>
+<form method="POST" action="?/logout">
+  <button>Sign out</button>
+</form>
+```
+
+The asset layer serves a prerendered page without running the Worker, so a prerendered gated page would never run its gate.
 
 The subject is the string `lookup` returned, so the page loads the member's records by it from the site's store.
 Logout deletes the session cookie and that one session's row, and it leaves the member's other sessions alone.
@@ -464,7 +526,7 @@ A Vitest run on Node can prove the channel before it deploys.
 `createChannelDb`, exported from `@glw907/cairn-cms-dev`, applies the channel's migration to an in-memory SQLite database and returns a D1-shaped double, so a Vitest run on Node can drive the channel's actions with no Worker.
 To test the channel, follow these steps:
 
-1. In `vitest.config.ts`, confirm that `test.server.deps.inline` lists `@glw907/cairn-cms`, as the scaffold's config does.
+1. In `vitest.config.ts`, confirm that `test.server.deps.inline` lists `@glw907/cairn-cms`, as the scaffold's config does, and add it if it's missing.
 2. In a test file beside the channel module, write a test that drives the channel's request action against the double.
 
    ```ts
@@ -589,21 +651,20 @@ If a check fails, see [Resolve a failed setup](#resolve-a-failed-setup).
 
 ## Resolve a failed setup
 
-The following checks cover the common failures, the role's first and then the channel's:
+The following checks cover the common failures, the role's on `/admin/editors` and at its home screen, then the channel's at construction and at the challenge:
 
 1. If adding a person with the new role fails on `/admin/editors`, apply `0001_roles.sql` to the auth database as [Add the role's people](#add-the-roles-people) does.
+   Until `0001_roles.sql` runs, the roster holds only owner and editor.
 2. If the person lands on the welcome screen and not the home screen, check that the deployed vocabulary gives the role a `home`.
+   A role the vocabulary omits resolves to `none`, and a `none` role with no `home` gets the welcome screen.
 3. If the home screen answers 403 to the role, replace `requireAccess` in its load function with the role check from [Build the role's home screen](#build-the-roles-home-screen).
 4. If the channel module throws when it first loads, read the construction error.
-5. If every code request answers `challenge-required`, check that the running Worker can read the Turnstile secret.
-6. If the secret is readable and requests still answer `challenge-required`, check the token field your `challenge` reads.
+   The factory throws on a missing required function, a missing, empty, or `cairn_`-prefixed cookie name, or a non-integer, non-positive, or out-of-range limit.
+5. If every code request answers `challenge-required`, check that the Turnstile secret is set where the running Worker reads it.
+   Under `wrangler dev` the Worker reads the secret from `.dev.vars`, and on the deployed site from a Worker secret.
+6. If the secret is set and requests still answer `challenge-required`, check the token field your `challenge` reads.
+   Because `verifyTurnstile` returns `false` on every failure and never throws, a missing secret and a missing token both answer `challenge-required`.
 7. Otherwise, work through [Debug your site](debug-your-site.md).
-
-Until `0001_roles.sql` runs, the roster holds only owner and editor.
-A role the vocabulary omits resolves to `none`, and a `none` role with no `home` gets the welcome screen.
-The factory throws on a missing required function, on an empty or `cairn_`-prefixed cookie name, and on an out-of-range or non-integer limit.
-Under `wrangler dev` the Worker reads the secret from `.dev.vars`, and on the deployed site from a Worker secret.
-Because `verifyTurnstile` returns `false` on every failure and never throws, a missing secret and a missing token both answer `challenge-required`.
 
 ## See also
 

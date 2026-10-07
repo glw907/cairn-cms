@@ -1,0 +1,875 @@
+{
+  "page": "docs/extend/debug-your-site.md",
+  "sentences": [
+    {
+      "text": "A cairn site is a SvelteKit app running as a Cloudflare Worker, and the engine inside it writes every operationally meaningful event as one JSON record through one internal chokepoint.",
+      "id": [
+        "f:eywrq8",
+        "f:swjwxb"
+      ]
+    },
+    {
+      "text": "The events a developer meets most often fire from engine code running inside the site's extension points, such as a concept's fieldset, a wrapped admin action, or a public route factory.",
+      "id": "f:gy2h7p"
+    },
+    {
+      "text": "Some come instead from the engine's checks on the site's committed config.",
+      "id": [
+        "f:gy2h7p",
+        "f:8fyoha"
+      ]
+    },
+    {
+      "text": "When such an event reports a fault, the fault is site code that broke the seam's contract, never an engine bug, so its record names the seam and the place the fix goes.",
+      "id": "f:gy2h7p"
+    },
+    {
+      "text": "Other failures leave no record, and a developer finds them by what the site shows instead.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Those include an error from a Worker env read, a test whose result changes with no source change, and a build check that passes without comparing.",
+      "id": [
+        "f:i8pbhc",
+        "f:ogz5eu",
+        "f:vs9g9e"
+      ]
+    },
+    {
+      "text": "A developer building an organization's site on cairn's seams arrives at this page for one of the following reasons:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The site misbehaves under the development server or in production.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A check in an extend guide failed, and the failure names an event or failure this page covers.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The developer is building a query, an alert, or records of their own on the same record shape.",
+      "id": "no-claim"
+    },
+    {
+      "text": "For each symptom, a developer matches the record it leaves, or the error or test result it shows, to the change that fixes it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A row that needs no change says so.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The rows assume working knowledge of SvelteKit server code, including hooks, loads, and form actions, along with the site's Wrangler config and whichever seams the site uses.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Most rows link the reference entry for the seam their fix changes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The [log events](../reference/log-events.md) reference lists every event with its fields, and it holds the rows for sign-in and access refusals and for a sign-in email the engine could not send, which this page leaves out.",
+      "id": "no-claim"
+    },
+    {
+      "text": "An error that began with an engine upgrade belongs to [Upgrade cairn](upgrade-cairn.md) and the [migration notes](migration-notes.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "Configuring cairn-audit for a whole site belongs to [Run cairn-audit on your site](run-cairn-audit-on-your-site.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "Apart from the records whose rows say no change is needed, a symptom that a site's operator can resolve without changing code is outside this page's scope.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Each engine record is one JSON object with a `level`, `event`, and `timestamp` envelope, and each symptom on this page names the `event` to find.",
+      "id": "f:rkj7tn"
+    },
+    {
+      "text": "The event's fields follow the envelope.",
+      "id": "f:rkj7tn"
+    },
+    {
+      "text": "A query or an alert keyed on an event name rests on a stable contract, since renaming an `event` is a breaking change.",
+      "id": "f:rkj7tn"
+    },
+    {
+      "text": "A deployed Worker's records reach Workers Logs only when its Wrangler config sets `observability.enabled` to `true`.",
+      "id": [
+        "f:txgoyy",
+        "f:gzs6b8"
+      ]
+    },
+    {
+      "text": "With the setting absent or not `true`, the records go nowhere and a runtime failure leaves nothing to read.",
+      "id": "f:txgoyy"
+    },
+    {
+      "text": "Setting it to `true` in `wrangler.jsonc` and redeploying fixes that, and [`cairn doctor`](../reference/cli-cairn-doctor.md#the-checks) reports the missing setting as `config.observability-off`.",
+      "id": "f:txgoyy"
+    },
+    {
+      "text": "A developer reads the records through the following surfaces:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Workers Logs shows the Worker's structured logs in the Cloudflare dashboard, as [Cloudflare's Workers Logs documentation](https://developers.cloudflare.com/workers/observability/logs/workers-logs/) describes.",
+      "id": "f:gzs6b8"
+    },
+    {
+      "text": "`npx wrangler tail` streams the Worker's logs live while the developer reproduces the problem, as the [Wrangler commands reference](https://developers.cloudflare.com/workers/wrangler/commands/#tail) describes.",
+      "id": "f:gzs6b8"
+    },
+    {
+      "text": "`cairn logs <site>` reads the site's records from Workers Observability.",
+      "id": "f:q9ylqa"
+    },
+    {
+      "text": "`cairn health` fails its `errors` check when the engine's error-level records within the `--since` window, `24h` by default, exceed `--error-threshold`, `5` by default.",
+      "id": "f:vg5zt8"
+    },
+    {
+      "text": "A Worker with observability off answers `cairn logs` with zero entries and no error, so an empty result is no proof the site is quiet.",
+      "id": "f:q9ylqa"
+    },
+    {
+      "text": "A failed `errors` check is the cue to read those records with `cairn logs` and match each one to its row on this page.",
+      "id": [
+        "f:vg5zt8",
+        "f:q9ylqa"
+      ]
+    },
+    {
+      "text": "A script or an agent that runs these commands reads their contract from `cairn help agents`.",
+      "id": "f:vi9xh0"
+    },
+    {
+      "text": "The `cairn` CLI prints that contract itself, because `go install` installs no docs tree.",
+      "id": "f:vi9xh0"
+    },
+    {
+      "text": "That contract covers the exit codes and their precedence, stdout for payload with stderr for diagnostics, skip versus unknown, and the schema URLs.",
+      "id": "f:vi9xh0"
+    },
+    {
+      "text": "The [exit codes](../reference/cli-cairn-exit-codes.md) and [JSON output](../reference/cli-cairn-json-output.md) references are its published form.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The engine writes every record through one internal module, which names each event `area[.subject].verb_phrase`, the vocabulary the [log events](../reference/log-events.md) reference documents.",
+      "id": "f:eywrq8"
+    },
+    {
+      "text": "An engine record takes the same redaction a site's records take through `/log`.",
+      "id": "f:mreycz"
+    },
+    {
+      "text": "No record carries a magic-link token, a session ID, or a magic link's contents.",
+      "id": "f:wi766c"
+    },
+    {
+      "text": "Redaction walks three levels deep into plain objects and arrays, and it leaves a key at level four or deeper as written.",
+      "id": "f:avc1a2"
+    },
+    {
+      "text": "A repeated reference appears as `'<repeated>'`.",
+      "id": "f:avc1a2"
+    },
+    {
+      "text": "A getter that throws inside a call's fields never throws out of the log call.",
+      "id": "f:avc1a2"
+    },
+    {
+      "text": "The record then carries `fields: '<unserializable>'` in place of the event's fields.",
+      "id": "f:avc1a2"
+    },
+    {
+      "text": "The [`createLogger`](../reference/log.md#createlogger) entry gives the key-matching rule and the default key list.",
+      "id": "f:avc1a2"
+    },
+    {
+      "text": "A concept's fieldset logs these events while the engine builds the tag index or validates a save, and each one points at a single field declaration.",
+      "id": [
+        "f:gy2h7p",
+        "f:lbeeak",
+        "f:qdfs37"
+      ]
+    },
+    {
+      "text": "A concept that declares a multiselect named `tags`, `freetags`, or `categories` but marks no field `taxonomy: true` gets an empty tag index, and the engine logs `content.field_unmarked` as a warning.",
+      "id": "f:lbeeak"
+    },
+    {
+      "text": "The record's `concept` names the concept and its `field` the unmarked multiselect, as the [log events](../reference/log-events.md) reference lists.",
+      "id": "f:pfy9cw"
+    },
+    {
+      "text": "The tag index reads only the field marked `taxonomy: true`, and no field name stands in as a default.",
+      "id": "f:lbeeak"
+    },
+    {
+      "text": "The fix is a code change that adds `taxonomy: true` to the concept's tag field, as the [concept fields reference](../reference/core.md#fields-1) describes.",
+      "id": "f:lbeeak"
+    },
+    {
+      "text": "The engine catches a field's `behavior.validate()` that throws during a save, treats the field as valid, and saves the value it should have refused.",
+      "id": "f:qdfs37"
+    },
+    {
+      "text": "The engine logs `content.field_behavior_failed` as a warning, with the fields the [log events](../reference/log-events.md) reference lists.",
+      "id": "f:qdfs37"
+    },
+    {
+      "text": "Its `field` names the field, `owner` the schema it belongs to, and `error` the exception's message.",
+      "id": "f:qdfs37"
+    },
+    {
+      "text": "The engine fails open on a throwing validator so that one bug does not fail the whole save.",
+      "id": "f:qdfs37"
+    },
+    {
+      "text": "The fix is a code change that stops the named field's `behavior.validate()` from throwing the error in `error`.",
+      "id": "f:qdfs37"
+    },
+    {
+      "text": "The [field types](../reference/core.md#field-types) reference documents a field's behavior.",
+      "id": "no-claim"
+    },
+    {
+      "text": "`createPublicRoutes` checks its wiring once, when it is built, so its one event appears once and not on each request.",
+      "id": [
+        "f:twqb0s",
+        "f:pkt8i6",
+        "f:gy2h7p"
+      ]
+    },
+    {
+      "text": "Public images render as literal `media:` tokens when the site's content carries `media:` tokens but the site passes no `resolveMedia` to `createPublicRoutes`.",
+      "id": [
+        "f:twqb0s",
+        "f:bnt2wh",
+        "f:pkt8i6"
+      ]
+    },
+    {
+      "text": "When the site also passes `assetsEnabled: true`, the engine logs `media.resolver_absent` as a warning once, when the factory is built, as the [log events](../reference/log-events.md) reference lists.",
+      "id": [
+        "f:twqb0s",
+        "f:bnt2wh"
+      ]
+    },
+    {
+      "text": "Without that flag, the tokens appear with no record.",
+      "id": [
+        "f:bnt2wh",
+        "f:twqb0s"
+      ]
+    },
+    {
+      "text": "The fix is a code change that passes the site's `resolveMedia` to `createPublicRoutes`, as the [`PublicRoutesConfig`](../reference/delivery.md#publicroutesconfig) entry describes.",
+      "id": [
+        "f:twqb0s",
+        "f:pkt8i6",
+        "f:bnt2wh"
+      ]
+    },
+    {
+      "text": "The wrappers around a custom screen's form actions, `createAdminAction` and `createSectionAction`, log these events at the check that stopped or degraded the action.",
+      "id": [
+        "f:1b3ye3",
+        "f:gy2h7p"
+      ]
+    },
+    {
+      "text": "`createSectionAction` runs the following checks before its handler, in this order:",
+      "id": "f:1b3ye3"
+    },
+    {
+      "text": "The session and CSRF checks that `createAdminAction` runs, which log `admin.action.session_absent` or `admin.action.csrf_refused`.",
+      "id": [
+        "f:1b3ye3",
+        "f:v1jj2k",
+        "f:yi9vag"
+      ]
+    },
+    {
+      "text": "The rate limit, when one is configured, which degrades to open and logs `admin.action.rate_limit_absent` or `admin.action.rate_limit_failed`.",
+      "id": [
+        "f:1b3ye3",
+        "f:cp0tek"
+      ]
+    },
+    {
+      "text": "The access map, which must be attached, or the action answers `fail(500)` and logs `admin.action.misconfigured`.",
+      "id": "f:1b3ye3"
+    },
+    {
+      "text": "The authorization against the map that [Restrict admin access](restrict-admin-access.md) describes, which answers `fail(403)` and logs [`auth.access.refused`](../reference/log-events.md).",
+      "id": [
+        "f:1b3ye3",
+        "f:xbjxit"
+      ]
+    },
+    {
+      "text": "The database binding, which must resolve, or the action answers `fail(500)` and logs `admin.action.misconfigured`.",
+      "id": "f:1b3ye3"
+    },
+    {
+      "text": "The handler must call `ctx.audit` before it returns, and the site's audit sink runs inside that call.",
+      "id": [
+        "f:07efts",
+        "f:5ba9q8"
+      ]
+    },
+    {
+      "text": "Each event in this list places the request at the check that logged it.",
+      "id": "f:1b3ye3"
+    },
+    {
+      "text": "For `admin.action.misconfigured`, the record's `reason` tells check 3 from check 5.",
+      "id": [
+        "f:1b3ye3",
+        "f:nup3og"
+      ]
+    },
+    {
+      "text": "The [`createSectionAction`](../reference/sveltekit.md#createsectionaction) entry states the full contract.",
+      "id": "f:1b3ye3"
+    },
+    {
+      "text": "A wrapped action logs `admin.action.session_absent` and redirects to `/admin/login` when the editor's session lapsed after the guard resolved it.",
+      "id": "f:v1jj2k"
+    },
+    {
+      "text": "The editor sees a form submission land on the sign-in page.",
+      "id": "f:v1jj2k"
+    },
+    {
+      "text": "The record is a warning whose `path` names the action's route, as the [log events](../reference/log-events.md) reference lists.",
+      "id": [
+        "f:v1jj2k",
+        "f:pfy9cw"
+      ]
+    },
+    {
+      "text": "This record is the only trace of the lapse, since the guard's CSRF refusal covers an earlier condition.",
+      "id": "f:v1jj2k"
+    },
+    {
+      "text": "The row needs no code change, and the editor signs in again.",
+      "id": "no-claim"
+    },
+    {
+      "text": "`createSectionAction` logs `admin.action.rate_limit_absent` and runs the action with no limit when `config.rateLimit.resolve` returns no limiter.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "The record is a warning whose fields the [log events](../reference/log-events.md) reference lists.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "The check degrades to open on purpose.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "The fix is a code or config change that makes `resolve` return the rate-limit binding.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "The site's Wrangler config declares that binding under the name `resolve` reads.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "The [`createSectionAction`](../reference/sveltekit.md#createsectionaction) entry lists the `rateLimit` members.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "`createSectionAction` logs `admin.action.rate_limit_failed` and runs the action with no limit when the site's `key()` or the limiter's `limit()` throws.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "The record is a warning whose `error` carries the throw, with its other fields in the [log events](../reference/log-events.md) reference.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "The check degrades to open, except that a SvelteKit `redirect()` or `error()` thrown from either call is rethrown untouched, so a deliberate redirect or error still takes effect.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "The fix is a code change to `key()` or to the limiter, wherever the throw in `error` began.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "An over-limit call logs `admin.action.rate_limited` and answers `fail(429)`, which is the limit working and not a fault.",
+      "id": "f:cp0tek"
+    },
+    {
+      "text": "`createSectionAction` answers `fail(500)` and logs `admin.action.misconfigured` when the action's access map or its database binding is missing.",
+      "id": [
+        "f:nup3og",
+        "f:1b3ye3"
+      ]
+    },
+    {
+      "text": "The record is an error carrying `path` and `reason`, as the [log events](../reference/log-events.md) reference lists.",
+      "id": [
+        "f:nup3og",
+        "f:pfy9cw"
+      ]
+    },
+    {
+      "text": "Each `reason` value names the missing piece:",
+      "id": "f:nup3og"
+    },
+    {
+      "text": "`access_map_not_attached` means `event.locals.cairnAccess` was not set when the action ran.",
+      "id": "f:nup3og"
+    },
+    {
+      "text": "`db_not_bound` means `resolveDb` returned `null` or `undefined` from the Worker env the engine takes from `cloudflare:workers`.",
+      "id": [
+        "f:nup3og",
+        "f:3j02dk"
+      ]
+    },
+    {
+      "text": "For `access_map_not_attached`, the cause is a hook that set the editor without attaching the map.",
+      "id": "f:nup3og"
+    },
+    {
+      "text": "[`createAuthGuard`](../reference/sveltekit.md#createauthguard) attaches the map on every admin path where it signs an editor in, so behind the guard this reason does not occur.",
+      "id": [
+        "f:u78zg6",
+        "f:iwf4nu"
+      ]
+    },
+    {
+      "text": "The dev backend's `devBackendHandle` attaches the map only when its config carries `access`.",
+      "id": "f:u78zg6"
+    },
+    {
+      "text": "The fix is a code change in the site's server hooks that passes the guard's map as `devBackendHandle({ access })`.",
+      "id": [
+        "f:nup3og",
+        "f:u78zg6"
+      ]
+    },
+    {
+      "text": "[Restrict admin access](restrict-admin-access.md) describes the map.",
+      "id": "no-claim"
+    },
+    {
+      "text": "For `db_not_bound`, the binding that `resolveDb` names is missing from that env.",
+      "id": [
+        "f:nup3og",
+        "f:3j02dk"
+      ]
+    },
+    {
+      "text": "The fix is a config change that declares the D1 binding in the Wrangler config under the name `resolveDb` reads.",
+      "id": "f:3j02dk"
+    },
+    {
+      "text": "A `createAdminAction` route that returns without calling `ctx.audit`, other than through SvelteKit's `fail()`, throws `UnauditedActionError` in development and logs `admin.action.unaudited` in production.",
+      "id": [
+        "f:07efts",
+        "f:8yb3r1"
+      ]
+    },
+    {
+      "text": "The production record is an error carrying `editor` and `path`, as the [log events](../reference/log-events.md) reference lists, and the action leaves no audit record.",
+      "id": [
+        "f:07efts",
+        "f:pfy9cw"
+      ]
+    },
+    {
+      "text": "Production logs instead of throwing, since an error response mid-request would be worse than a gap in the audit trail.",
+      "id": "f:07efts"
+    },
+    {
+      "text": "The fix is a code change in the handler that calls `ctx.audit` on every successful path before it returns, as the [`createAdminAction`](../reference/sveltekit.md#createadminaction) entry describes.",
+      "id": "f:07efts"
+    },
+    {
+      "text": "The site's `event.locals.cairnAuditSink` threw or rejected after the action's change completed, so the action's result stands and only its audit record was lost.",
+      "id": [
+        "f:r3l7eq",
+        "f:5ba9q8"
+      ]
+    },
+    {
+      "text": "The engine logs `audit.sink.call_failed` as an error whose `error` carries the sink's failure, with its other fields in the [log events](../reference/log-events.md) reference.",
+      "id": [
+        "f:r3l7eq",
+        "f:yauo4m"
+      ]
+    },
+    {
+      "text": "The record omits the audit record's `detail`, because the `admin.action.audited` record logged before it carries the full audit record.",
+      "id": "f:yauo4m"
+    },
+    {
+      "text": "The fix is a code change to the site's sink, at the failure that `error` names.",
+      "id": "f:r3l7eq"
+    },
+    {
+      "text": "A site that wires [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) reads `audit.sink.write_failed` instead, since that sink catches its own failures before `audit.sink.call_failed` can fire.",
+      "id": "f:r3l7eq"
+    },
+    {
+      "text": "That record carries the audit record itself, truncated, because it is the only surviving trace of a row the packaged sink failed to write.",
+      "id": "f:yauo4m"
+    },
+    {
+      "text": "Its `actor` need not be an editor's email when site code calls the sink directly with the site's domain events, so a query filtered on editor addresses can miss those records.",
+      "id": "f:k085q0"
+    },
+    {
+      "text": "The engine logs these events when the site's committed config fails to parse or validate, and when a declared access map leaves a concept or a fixed engine screen without a rule.",
+      "id": [
+        "f:8fyoha",
+        "f:8ciz2s",
+        "f:gy2h7p"
+      ]
+    },
+    {
+      "text": "When the committed site config fails to parse or validate, the record's `error` carries the parser's real message while the admin shows an empty list or generic copy.",
+      "id": "f:8fyoha"
+    },
+    {
+      "text": "The engine logs `config.invalid` as an error carrying `scope` and `error`, and the [log events](../reference/log-events.md) reference lists its fields.",
+      "id": "f:8fyoha"
+    },
+    {
+      "text": "The two loads, with `scope` set to `nav` or `vocabulary`, leave the nav editor or the tag-vocabulary screen empty.",
+      "id": "f:8fyoha"
+    },
+    {
+      "text": "The two saves, with `scope` set to `settings` or `vocabulary`, answer `fail(500)` with generic copy.",
+      "id": "f:8fyoha"
+    },
+    {
+      "text": "The fix is a code change that corrects the committed config the record's `scope` names, using the message in `error`, and commits it.",
+      "id": "f:8fyoha"
+    },
+    {
+      "text": "The engine checks the access map once, when the site composes, so `config.access_unmapped` appears at most once per isolate, on a cold start.",
+      "id": "f:mou1li"
+    },
+    {
+      "text": "A Workers Logs query scoped to a live request window can miss the warning entirely, so finding it takes a wider window.",
+      "id": "f:mou1li"
+    },
+    {
+      "text": "The record's `unmapped` field lists the targets with no rule, as the [log events](../reference/log-events.md) reference describes.",
+      "id": "f:pfy9cw"
+    },
+    {
+      "text": "The [Security model](security-model.md#allowlist-semantics-from-an-exhaustive-map) page sets out what the warning reports and when a map is meant to be exhaustive.",
+      "id": "no-claim"
+    },
+    {
+      "text": "For a map meant to be exhaustive, the fix is a code change that adds a rule for each target the warning names.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Restrict admin access](restrict-admin-access.md) describes the rules.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A map that is not meant to be exhaustive needs no change.",
+      "id": "no-claim"
+    },
+    {
+      "text": "These records report no fault, yet a query built on them miscounts unless it allows for when each one fires and which field it carries.",
+      "id": [
+        "f:vih1k1",
+        "f:vq634h",
+        "f:vq8cta"
+      ]
+    },
+    {
+      "text": "No row in this group needs a code change.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Sign-out logs `auth.session.destroyed` only when the deleted session row was still live, so a stale cookie or an expired row leaves no record.",
+      "id": "f:vih1k1"
+    },
+    {
+      "text": "The record carries the row's `email`, as the [log events](../reference/log-events.md) reference lists.",
+      "id": "f:vih1k1"
+    },
+    {
+      "text": "An alert built on it counts live sign-outs only, so it can report fewer records than sign-outs.",
+      "id": "f:vih1k1"
+    },
+    {
+      "text": "A sign-in channel logs `auth.channel.session.destroyed` on three paths, only for a live row, and the record carries a `correlationId` in place of the roster subject.",
+      "id": "f:vq634h"
+    },
+    {
+      "text": "The record fires on the following paths:",
+      "id": "f:vq634h"
+    },
+    {
+      "text": "The channel's logout action.",
+      "id": "f:vq634h"
+    },
+    {
+      "text": "A confirm that clears the session row an incoming cookie named.",
+      "id": "f:vq634h"
+    },
+    {
+      "text": "A revocation by `resolveSubject` of a session the site's `verify` hook refused.",
+      "id": "f:vq634h"
+    },
+    {
+      "text": "On all three paths, an expired row is deleted with no record.",
+      "id": "f:vq634h"
+    },
+    {
+      "text": "A query correlates these records by `correlationId`, and the event's row in the [log events](../reference/log-events.md) reference explains how that pseudonym is derived on each path.",
+      "id": "f:vq634h"
+    },
+    {
+      "text": "A commit record carries `concept` for an entry commit and `scope` for a nav, settings, vocabulary, or media commit, never both.",
+      "id": "f:vq8cta"
+    },
+    {
+      "text": "A commit record with no `concept` is therefore a commit to one of those surfaces, and the [log events](../reference/log-events.md) reference lists both events' fields.",
+      "id": "f:vq8cta"
+    },
+    {
+      "text": "Because of that split, a site concept named `media` or `nav` cannot be confused with those surfaces.",
+      "id": "f:vq8cta"
+    },
+    {
+      "text": "A query filters entry commits on `concept` and the other surfaces on `scope`.",
+      "id": "f:vq8cta"
+    },
+    {
+      "text": "The `/log` subpath exports `createLogger`, so a site's own events share the engine's record shape and redaction.",
+      "id": "f:mreycz"
+    },
+    {
+      "text": "It also exports `REDACTED_LOG_KEYS`, `CAIRN_LOG_EVENTS`, and the `CairnLogEvent` type, while the engine's `log` instance stays internal.",
+      "id": "f:mreycz"
+    },
+    {
+      "text": "The `redactKeys` option unions a site's field names with the default keys and cannot narrow them.",
+      "id": "f:avc1a2"
+    },
+    {
+      "text": "A site's records take the redaction that [Record contents](#record-contents) describes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The [`createLogger`](../reference/log.md#createlogger) entry gives the signature, the key-matching rule, the default key list, and a worked example.",
+      "id": "f:mreycz"
+    },
+    {
+      "text": "A site on `@sveltejs/adapter-cloudflare` 8 reads its Worker env from `cloudflare:workers`, because the adapter passes no `platform` to a request.",
+      "id": [
+        "f:swjwxb",
+        "f:i8pbhc",
+        "f:xyizai"
+      ]
+    },
+    {
+      "text": "These failures surface as a thrown error or an absent value, never as an engine record.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Under `@sveltejs/adapter-cloudflare` 8, `event.platform` is undefined in every environment, `vite dev`, `wrangler dev`, and production alike, so code that reads the env through `event.platform` finds no bindings.",
+      "id": [
+        "f:swjwxb",
+        "f:xyizai"
+      ]
+    },
+    {
+      "text": "The fix is a code change that reads the env through `import { env } from 'cloudflare:workers'`.",
+      "id": "f:swjwxb"
+    },
+    {
+      "text": "That import returns the Wrangler config's `vars` under `vite dev` and `wrangler dev` alike, so the site needs no `process.env` fallback.",
+      "id": "f:swjwxb"
+    },
+    {
+      "text": "A value meant only for local development goes in `.dev.vars`, which both development servers read and which never deploys.",
+      "id": "f:o7mr6f"
+    },
+    {
+      "text": "Every `cloudflare:workers` `env` read throws while the build prerenders, so a read in a hook or at module scope fails the build.",
+      "id": "f:i8pbhc"
+    },
+    {
+      "text": "Code that can run then checks `building` from `$app/env` first.",
+      "id": "f:i8pbhc"
+    },
+    {
+      "text": "`building` is SvelteKit 3's flag, and `$app/environment` survives only as a deprecated alias.",
+      "id": "f:i8pbhc"
+    },
+    {
+      "text": "The engine's paths ask the same question through an internal helper that a site does not call.",
+      "id": "f:i8pbhc"
+    },
+    {
+      "text": "The fix is a code change that guards the read, as the audit-sink hook in the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry does with `if (!building && env.AUDIT_DB)`.",
+      "id": "f:i8pbhc"
+    },
+    {
+      "text": "Output that reads the clock or the host's time zone can change between days and between machines with no change to the source.",
+      "id": [
+        "f:ogz5eu",
+        "f:2r6juw"
+      ]
+    },
+    {
+      "text": "A baseline that renders a component reading `Date.now()` fails each day although the source has not changed, because the component reads the live clock.",
+      "id": "f:ogz5eu"
+    },
+    {
+      "text": "The fix is a reader and a `CAIRN_FIXED_TODAY` variable that the site owns, since no engine code reads that variable.",
+      "id": "f:ogz5eu"
+    },
+    {
+      "text": "The following steps set up the reader and the variable, in order:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a site module, read today through a fixed-today reader that takes `CAIRN_FIXED_TODAY` from the Worker env, never through `Date.now()` in a rendered component.",
+      "id": "f:ogz5eu"
+    },
+    {
+      "text": "In `.dev.vars`, set `CAIRN_FIXED_TODAY` to an explicit instant, never in the Wrangler config's `vars`, which deploy with the Worker.",
+      "id": [
+        "f:o7mr6f",
+        "f:yomgrm"
+      ]
+    },
+    {
+      "text": "In `.dev.vars.example`, add `CAIRN_FIXED_TODAY = \"\"`, then run `npx wrangler types --env-file .dev.vars.example` so the generated `Env` declares it.",
+      "id": "f:pe4vuc"
+    },
+    {
+      "text": "Cloudflare's [local development environment variables](https://developers.cloudflare.com/workers/local-development/environment-variables/) page describes `.dev.vars`.",
+      "id": "f:o7mr6f"
+    },
+    {
+      "text": "The following reader is illustrative:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The `building` check keeps the reader off the env while the build prerenders, as [A Worker env read throws during the build](#a-worker-env-read-throws-during-the-build) explains.",
+      "id": "f:i8pbhc"
+    },
+    {
+      "text": "`new Date(env.CAIRN_FIXED_TODAY)` returns `Invalid Date` without throwing when the value is malformed.",
+      "id": "f:yomgrm"
+    },
+    {
+      "text": "The site shows `Invalid Date` where the pinned date belongs.",
+      "id": "f:yomgrm"
+    },
+    {
+      "text": "The fix is a config change that writes the value as an explicit instant, such as `2026-08-29T00:00:00Z`.",
+      "id": "f:yomgrm"
+    },
+    {
+      "text": "Formatting without a `timeZone` option uses the host's time zone, so one instant can format as different days on different machines.",
+      "id": "f:2r6juw"
+    },
+    {
+      "text": "A baseline or a test passes on one machine and fails on another, a day apart.",
+      "id": "f:2r6juw"
+    },
+    {
+      "text": "`Date`'s local-time accessors and `toLocale*String` without `timeZone` read the host's zone.",
+      "id": "f:2r6juw"
+    },
+    {
+      "text": "A date-only pin parses as UTC midnight and formats as the previous local day on a machine west of UTC.",
+      "id": "f:yomgrm"
+    },
+    {
+      "text": "The fix is a code change that formats in UTC or in one fixed zone and keeps the pin an explicit instant.",
+      "id": [
+        "f:2r6juw",
+        "f:yomgrm"
+      ]
+    },
+    {
+      "text": "MDN's [`toLocaleDateString()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString) page describes the `timeZone` option.",
+      "id": "f:2r6juw"
+    },
+    {
+      "text": "The build fails when the committed `site-facts.json` no longer matches the adapter, but when the build cannot derive the facts from the adapter, it reports the file current.",
+      "id": [
+        "f:eqlssz",
+        "f:vs9g9e"
+      ]
+    },
+    {
+      "text": "In the normal case, the build error names the file and the fix.",
+      "id": "f:eqlssz"
+    },
+    {
+      "text": "The [`site-facts.json` contract](../reference/site-facts.md#who-writes-it-and-who-verifies-it) describes what the file carries and the warning for an absent file.",
+      "id": "f:eqlssz"
+    },
+    {
+      "text": "When the adapter throws for an unrelated reason, the build cannot derive the facts and reports the file current with no signal, so a passing build does not show that the file matches.",
+      "id": "f:vs9g9e"
+    },
+    {
+      "text": "After a change to the adapter's media bucket binding, its `roles`, or its `aiPosture`, the following steps bring the file current:",
+      "id": "f:ve30i2"
+    },
+    {
+      "text": "In the directory that holds the site's `vite.config.ts`, run `npx cairn-manifest`, which writes `site-facts.json` in the same run as the content manifest.",
+      "id": [
+        "f:z61ibp",
+        "f:yio35u"
+      ]
+    },
+    {
+      "text": "In the site's repository, commit the regenerated `site-facts.json`.",
+      "id": "f:yio35u"
+    },
+    {
+      "text": "The [`cairn-manifest`](../reference/cli-cairn-manifest.md) reference describes the command.",
+      "id": "f:yio35u"
+    },
+    {
+      "text": "The following pages cover the seams and tasks this page's events come from:",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Architecture](architecture.md#seams) describes the seams whose events the rows name.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Add a custom admin screen](add-a-custom-admin-screen.md) describes how to build a wrapped action and wire its audit sink.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Add a second sign-in group](add-a-second-sign-in-group.md) describes the sign-in channel whose session record this page reads.",
+      "id": "no-claim"
+    }
+  ],
+  "cuts": [
+    {
+      "id": "f:i1dayf",
+      "reason": "Drifted from code (`src/lib/sveltekit/section-action.ts:229-240` logs `rate_limit_failed` for a throwing `key()`); `f:cp0tek` carries the corrected claim, and the page-inputs friction entry records the drift"
+    },
+    {
+      "id": "f:vpk81e",
+      "reason": "Subordinated to `docs/reference/site-facts.md` \"Who writes it and who verifies it\", which states that an absent file is not drift and the build warns once naming `npx cairn-manifest` (opened and confirmed); the warning's own message names its fix, so the page needs no row for it"
+    }
+  ]
+}

@@ -320,11 +320,23 @@
       ]
     },
     {
-      "text": "In `src/hooks.server.ts`, pass the same vocabulary to `createAuthGuard` as its `roles` option.",
+      "text": "In `src/hooks.server.ts`, pass the same vocabulary to `createAuthGuard` and `devBackendHandle` as their `roles` option.",
       "id": [
         "f:4xrx5f",
-        "f:hwffph"
+        "f:hwffph",
+        "f:7cv105"
       ]
+    },
+    {
+      "text": "Keep any option either handle already receives, such as the scaffold's `access`, beside `roles`.",
+      "id": [
+        "f:f21bcz",
+        "f:7cv105"
+      ]
+    },
+    {
+      "text": "The import uses `#lib`, which the `imports` field of `package.json` maps to `src/lib`, since SvelteKit 3 refuses a `$lib` import.",
+      "id": "f:pgeeq3"
     },
     {
       "text": "The vocabulary keeps `owner` and `editor` for two reasons.",
@@ -514,12 +526,19 @@
       "id": "no-claim"
     },
     {
-      "text": "In the project directory, run [`cairn doctor`](../reference/cli-cairn-doctor.md) and confirm that it reports no `auth.role-wiring-missing` warning.",
-      "id": "f:hwffph"
+      "text": "After a build, in the project directory, run [`cairn doctor`](../reference/cli-cairn-doctor.md) and confirm that it reports no `auth.role-wiring-missing` warning.",
+      "id": [
+        "f:hwffph",
+        "f:6oopkt"
+      ]
     },
     {
       "text": "That warning means the guard never received the vocabulary.",
       "id": "f:hwffph"
+    },
+    {
+      "text": "The check reads the site facts that a build writes.",
+      "id": "f:6oopkt"
     },
     {
       "text": "As one of the role's people, open `/admin` on the deployed site and sign in with the emailed link.",
@@ -640,12 +659,36 @@
       "id": "no-claim"
     },
     {
-      "text": "In a new module under SvelteKit's [server-only module directory](https://svelte.dev/docs/kit/server-only-modules), create the channel with its six required members, typed over the Worker env.",
+      "text": "In the file that the following code block names, export `findMemberId(contact, { env })`, which resolves to the member's subject or `null`.",
+      "id": [
+        "f:dbh3aj",
+        "f:dtz8oa",
+        "f:ffskeq"
+      ]
+    },
+    {
+      "text": "The file sits in SvelteKit's [server-only module directory](https://svelte.dev/docs/kit/server-only-modules).",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the same file, export `sendCodeEmail(contact, code)`, which sends the code over your transport and returns a promise.",
+      "id": "f:dbh3aj"
+    },
+    {
+      "text": "The [channel reference](../reference/auth-channel.md#createauthchannel) types `lookup`'s context as `{ env }` and `deliver` as `(contact, code, ctx) => Promise<void>`.",
+      "id": "f:dbh3aj"
+    },
+    {
+      "text": "In the file that the following code block names, create the channel with its six required members, typed over the Worker env.",
       "id": "f:41kl6q"
     },
     {
       "text": "In `.dev.vars` beside the Wrangler config, creating the file if needed, add the Turnstile secret key under the name the module reads.",
       "id": "f:86h9o6"
+    },
+    {
+      "text": "In the project directory, run `npx wrangler types`, so the generated `Env` that `cloudflare:workers` exports carries the secret's name.",
+      "id": "f:pe4vuc"
     },
     {
       "text": "`wrangler dev` reads secrets from `.dev.vars` and never from a deployed Worker secret, so the production copy waits for [Deploy the channel](#deploy-the-channel).",
@@ -654,6 +697,13 @@
     {
       "text": "The scaffold's `.gitignore` keeps `.dev.vars` out of git.",
       "id": "f:nls26c"
+    },
+    {
+      "text": "The module's own `Env` types only what the factory hands its functions, while the `env` imported from `cloudflare:workers` reads the generated type.",
+      "id": [
+        "f:pe4vuc",
+        "f:dbh3aj"
+      ]
     },
     {
       "text": "Each required member is a decision the site makes:",
@@ -690,8 +740,11 @@
       ]
     },
     {
-      "text": "The [Turnstile reference](../reference/cloudflare.md#verifyturnstile) states which client address to pass.",
-      "id": "no-claim"
+      "text": "Passing the client address is optional, and the [Turnstile reference](../reference/cloudflare.md#verifyturnstile) states where one must come from.",
+      "id": [
+        "f:yd9ytp",
+        "f:69xbyh"
+      ]
     },
     {
       "text": "`cookie.name` is the base name of the session cookie and of its `_pending` nonce cookie, and a `cairn_` prefix belongs to the engine and throws.",
@@ -763,6 +816,10 @@
       "id": "f:265s4t"
     },
     {
+      "text": "In the same file, export `prerender = false`, so a site that prerenders by default still serves the route from the Worker.",
+      "id": "f:k0cryh"
+    },
+    {
       "text": "In the route's page component, add a request form that posts a `contact` field to the `request` action.",
       "id": "f:265s4t"
     },
@@ -802,7 +859,11 @@
       "id": "f:265s4t"
     },
     {
-      "text": "The member area is a set of the site's routes outside `/admin`, each resolving the subject with `resolveSubject` in its load function.",
+      "text": "A channel session never populates `locals.cairnEditor`, so the member area lives in the site's own routes outside `/admin`.",
+      "id": "f:q7fj6p"
+    },
+    {
+      "text": "Each route resolves the subject with `resolveSubject` in its load function.",
       "id": "f:q7fj6p"
     },
     {
@@ -818,8 +879,27 @@
       "id": "f:265s4t"
     },
     {
+      "text": "In the same file, export `prerender = false`, so the gate runs on every request even on a site that prerenders by default.",
+      "id": "f:k0cryh"
+    },
+    {
+      "text": "In `src/routes/members/+page.svelte`, render the member's area and add a sign-out form that posts to the `logout` action.",
+      "id": [
+        "f:k0cryh",
+        "f:265s4t"
+      ]
+    },
+    {
       "text": "The following server file holds the load function and the logout action:",
       "id": "no-claim"
+    },
+    {
+      "text": "The following page component holds the sign-out form:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The asset layer serves a prerendered page without running the Worker, so a prerendered gated page would never run its gate.",
+      "id": "f:k0cryh"
     },
     {
       "text": "The subject is the string `lookup` returned, so the page loads the member's records by it from the site's store.",
@@ -884,7 +964,7 @@
       "id": "no-claim"
     },
     {
-      "text": "In `vitest.config.ts`, confirm that `test.server.deps.inline` lists `@glw907/cairn-cms`, as the scaffold's config does.",
+      "text": "In `vitest.config.ts`, confirm that `test.server.deps.inline` lists `@glw907/cairn-cms`, as the scaffold's config does, and add it if it's missing.",
       "id": "f:1stlyv"
     },
     {
@@ -1015,8 +1095,13 @@
       "id": "no-claim"
     },
     {
-      "text": "The following checks cover the common failures, the role's first and then the channel's:",
-      "id": "no-claim"
+      "text": "The following checks cover the common failures, the role's on `/admin/editors` and at its home screen, then the channel's at construction and at the challenge:",
+      "id": [
+        "f:nj0nfm",
+        "f:rn62i1",
+        "f:7n28wc",
+        "f:vo4m61"
+      ]
     },
     {
       "text": "If adding a person with the new role fails on `/admin/editors`, apply `0001_roles.sql` to the auth database as [Add the role's people](#add-the-roles-people) does.",
@@ -1026,8 +1111,19 @@
       ]
     },
     {
+      "text": "Until `0001_roles.sql` runs, the roster holds only owner and editor.",
+      "id": "f:rn62i1"
+    },
+    {
       "text": "If the person lands on the welcome screen and not the home screen, check that the deployed vocabulary gives the role a `home`.",
       "id": "f:7n28wc"
+    },
+    {
+      "text": "A role the vocabulary omits resolves to `none`, and a `none` role with no `home` gets the welcome screen.",
+      "id": [
+        "f:zjglk8",
+        "f:7n28wc"
+      ]
     },
     {
       "text": "If the home screen answers 403 to the role, replace `requireAccess` in its load function with the role check from [Build the role's home screen](#build-the-roles-home-screen).",
@@ -1041,37 +1137,7 @@
       "id": "f:vo4m61"
     },
     {
-      "text": "If every code request answers `challenge-required`, check that the running Worker can read the Turnstile secret.",
-      "id": [
-        "f:86h9o6",
-        "f:vo4m61"
-      ]
-    },
-    {
-      "text": "If the secret is readable and requests still answer `challenge-required`, check the token field your `challenge` reads.",
-      "id": [
-        "f:69xbyh",
-        "f:vo4m61",
-        "f:ez788q"
-      ]
-    },
-    {
-      "text": "Otherwise, work through [Debug your site](debug-your-site.md).",
-      "id": "no-claim"
-    },
-    {
-      "text": "Until `0001_roles.sql` runs, the roster holds only owner and editor.",
-      "id": "f:rn62i1"
-    },
-    {
-      "text": "A role the vocabulary omits resolves to `none`, and a `none` role with no `home` gets the welcome screen.",
-      "id": [
-        "f:zjglk8",
-        "f:7n28wc"
-      ]
-    },
-    {
-      "text": "The factory throws on a missing required function, on an empty or `cairn_`-prefixed cookie name, and on an out-of-range or non-integer limit.",
+      "text": "The factory throws on a missing required function, a missing, empty, or `cairn_`-prefixed cookie name, or a non-integer, non-positive, or out-of-range limit.",
       "id": [
         "f:vo4m61",
         "f:4cw5dk",
@@ -1079,8 +1145,23 @@
       ]
     },
     {
+      "text": "If every code request answers `challenge-required`, check that the Turnstile secret is set where the running Worker reads it.",
+      "id": [
+        "f:86h9o6",
+        "f:vo4m61"
+      ]
+    },
+    {
       "text": "Under `wrangler dev` the Worker reads the secret from `.dev.vars`, and on the deployed site from a Worker secret.",
       "id": "f:86h9o6"
+    },
+    {
+      "text": "If the secret is set and requests still answer `challenge-required`, check the token field your `challenge` reads.",
+      "id": [
+        "f:69xbyh",
+        "f:vo4m61",
+        "f:ez788q"
+      ]
     },
     {
       "text": "Because `verifyTurnstile` returns `false` on every failure and never throws, a missing secret and a missing token both answer `challenge-required`.",
@@ -1088,6 +1169,10 @@
         "f:69xbyh",
         "f:vo4m61"
       ]
+    },
+    {
+      "text": "Otherwise, work through [Debug your site](debug-your-site.md).",
+      "id": "no-claim"
     },
     {
       "text": "The following pages cover the seams and limits around a second group:",

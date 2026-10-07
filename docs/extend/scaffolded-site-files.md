@@ -144,7 +144,9 @@ writes, and `[gate]` marks a file a check reads that can fail the build or the C
 ```
 
 The tree shows the entries the following sections cover and leaves out files no section discusses.
-`CLAUDE.md` carries no marker, because `cairn-guidance check` reads it and never fails the CI run.
+`CLAUDE.md` carries no marker, since `cairn-guidance check` reads it only to report whether it holds
+the import line, a report that never fails the CI run, and `cairn-guidance install` never rewrites
+it. The `[engine]` marker on `.claude/` marks the tree that `cairn-guidance install` writes.
 
 ## Root files
 
@@ -171,8 +173,9 @@ carries an empty `ANTHROPIC_API_KEY`, read only when tidy is enabled in `site.co
 
 The audit's config names both compiled admin sheets, the engine's
 `node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css` and the site's `.cairn/admin.css`, so
-the static audit sees every class the site's admin routes write.
-[Run cairn-audit on your site](run-cairn-audit-on-your-site.md) covers the config in depth.
+the static audit sees every class the site's admin routes write. The site's sheet is a gitignored
+build output in a `.cairn/` directory at the project root, separate from the committed
+`src/content/.cairn/`. [Run cairn-audit on your site](run-cairn-audit-on-your-site.md) covers the config in depth.
 
 ### `CLAUDE.md` and `.claude/`
 
@@ -192,8 +195,13 @@ the local `.dev.vars` and the compiled `.cairn/admin.css`, which the pre-scripts
 The files `LICENSE`, `README.md`, `.prettierignore`, `.prettierrc`, `tsconfig.json`, and
 `vitest.config.ts` are a plain project's files. The `worker-configuration.d.ts` file is the
 generated `wrangler types` output that `src/app.d.ts` references. The `scripts/` directory holds the
-`dev.mjs` that the `dev` script runs. The two migration directories are covered under
+`dev.mjs` that the `dev` script runs. The `src/lib/` directory, imported through `#lib`, holds
+`log.ts`, the site's own [`createLogger`](../reference/log.md#createlogger) instance over the site's
+own event names. The two migration directories are covered under
 [Database migrations](#database-migrations).
+
+The `check` and `check:cairn` commands the CI workflow runs are scripts in `package.json`, the first
+of the site's configuration files.
 
 ## Configuration files
 
@@ -380,7 +388,8 @@ that runs on every non-prerendered request never imports the adapter. The `SiteH
 the root `+error.svelte` read that data through `page.data`. The error page is the site's themed 404
 and error page, which [Themed 404 page](#themed-404-page) explains. The admin mount reference covers
 the root layout's limits in [The root layout must be
-chrome-free](../reference/admin-routes.md#the-root-layout-must-be-chrome-free).
+chrome-free](../reference/admin-routes.md#the-root-layout-must-be-chrome-free). The menus and the
+site name the root layout returns come from `src/theme/`, the directory that also holds the adapter.
 
 ## Theme, chassis, and content
 
@@ -446,10 +455,11 @@ site's from `theme.css` and `site.css`.
 
 Its last line imports `@glw907/cairn-cms/admin-sources.css`, an engine-owned file that holds only
 the `@source` directives for the engine's shipped admin markup, resolved from the file's installed
-location. The pre-scripts compile it into the gitignored `.cairn/admin.css`, one of the two sheets
-`cairn-audit.config.json` names. The config's other entry, the engine's precompiled `dist` sheet, is
-a different artifact, the compile the audit's `no-uncompiled-class` rule checks against, which the
-sources import does not replace.
+location. The pre-scripts compile it into the gitignored `.cairn/admin.css` at the project root,
+one of the two sheets `cairn-audit.config.json` names. The config's other entry, the engine's
+precompiled `dist` sheet, is a different artifact, the compile the audit's `no-uncompiled-class`
+rule checks against, which the sources import does not replace. A compile failure in this file
+fails `npm run check`, `npm run build`, and `npm run check:cairn`, since each compiles it first.
 
 ### `src/theme/theme.css` and `src/theme/site.css`
 
@@ -471,6 +481,9 @@ newest one, which the home page shows as its lead, so a new site with its 14 see
 The `/admin/nav` screen edits only `menus.primary`. The footer menu, `menus.footer`, is a flat menu
 the developer edits by hand in `site.config.yaml`, read through `readMenu(siteConfig, 'footer', 1)`.
 
+The archive route the page size governs is also the one route the build's unseen-route check
+exempts.
+
 ## Crawl rules
 
 The prerender crawl fails the build on an unseen route or an HTTP error, and the scaffold keeps its
@@ -490,6 +503,9 @@ requests it. Every `/admin` route answers a build-time crawl with an error, and 
 shared `isAdminHref` predicate in `admin-link.ts` under `src/theme/components/`. A new `/admin` link
 in public markup needs the same attribute.
 
+A path the build never emitted is answered at request time, and the scaffold's `wrangler.jsonc`
+passes it to the Worker so the themed 404 page can render.
+
 ## Themed 404 page
 
 A scaffolded site serves a themed 404 page through two pieces that need each other, the root
@@ -506,6 +522,9 @@ Cloudflare's
 [Worker script routing page](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/)
 documents both values. With `"404-page"`, the error page never runs, and without the root error
 page, no layout rebuilds the chrome for an unmatched path.
+
+The `.claude/` directory holds what the site's coding agents read, the guidance cairn installs with
+the scaffold.
 
 ## The guidance tree
 
@@ -550,6 +569,9 @@ The `cairn-guidance install` command behaves in the following ways:
 The [`install`](../reference/guidance.md#install) section of the guidance reference covers how
 `install` treats a file the site edited.
 
+The setup command also saved a record of its run outside the repository, in the home directory of
+whoever ran it.
+
 ## Setup state outside the tree
 
 The setup command kept its record of the run on the machine that ran it. When the run connected
@@ -571,7 +593,11 @@ other shape fails.
 The build token is named `cairn create-cairn-site build token`, and the Workers Builds step reuses
 an existing build token that wraps the same token id. Revoking or rolling that token at Cloudflare
 breaks automatic deploys with no prior warning. The next commit still triggers a build, and the
-build fails.
+build fails. The API token setting in the Worker's Workers Builds build configuration holds the
+token its builds authenticate with. A new owner can create an API token of their own and select it
+there, as Cloudflare's
+[build configuration page](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token)
+describes.
 
 ## Related resources
 

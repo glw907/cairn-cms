@@ -16,21 +16,14 @@ site that migrates to Kit 3, as a site pass after the cut. Live contracts:
 
 ## Immediate next action
 
-Draft docs stage 2a, planned in a fresh brainstorm session, then run unattended for 10+ hours (Geoff,
-2026-10-07; `pass-core`: a pass meant to run unattended plans out every stop). After 2a: the release
-(Kit 3 and the rebuilt extend docs together), then cairn.pub's migration as a site pass.
-
-- Worktree `draft-docs-2a` (local, HEAD `9ca04531`): merge `main` in, never rebase, per
-  `docs/superpowers/research/2026-10-06-draft-docs-2a-kit3-merge-map.md`; re-run the conflict listing first.
-- The six pilot pages carry Kit 3 drift (the add-cairn tutorial's SvelteKit 2 pin, `f:skeche`, `f:ghzx9c`,
-  `facts/extend.md:144`'s `^2.70`). Then task 8's five pages, task 9, and the close.
-- Geoff signed off the 2a intros (2026-10-05). The docs chain has the framing stage; `cmp` the persisted
-  script against the committed file on first run.
-- Prerequisite: fix `pass-execute`'s gate-string check (a superset command, or `E2E_PORT` set outside the
-  string, must count as a match; it raised three false escalations last pass).
-- Side lanes to weigh: the dependency sweep (wrangler 4.147, vite 8.3, other minors); an engineering lane
-  (the Go doctor cleanup, the filed e2e timing flakes). Settle a hard token ceiling: 2a's run 2 measured
-  about 2.4M a page before the narrowed round 2.
+Execute the planned, reviewed unattended run:
+[`docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`](superpowers/plans/2026-10-07-2a-unattended-finish.md)
+(review, fold, verification, and second fold committed through `159693c0`). It finishes draft docs stage 2a
+(R1 matcher fix, R2 merge `main` into `draft-docs-2a`, R3 infra drift, R4 pilot pages on Kit 3, R5 task 8,
+R6 task 9, R7 close and merge) with two side lanes (L1 dependency sweep, L2 engineering cleanup). Owner
+rulings (Geoff, 2026-10-07): 2a ceiling 25M, stop at 20M; lanes 5M shared, stop at 4M; run cap 30M; targeted
+close unattended; merge on a green close; no release. After the run: Geoff reads the five task 8 pages, then
+the release (Kit 3 and the rebuilt extend docs), then cairn.pub's migration as a site pass.
 
 ## Open decisions and watches
 - Watch: sveltejs/kit#17368 (adapter-cloudflare 8's shared platform proxy, closes #17344). Routine
@@ -48,13 +41,10 @@ Draft docs stage 2a, planned in a fresh brainstorm session, then run unattended 
   2026-10-19. `npm pkg fix` is owed for the four `./` `bin` entries.
 
 ## Resume prompt
-> **Goal.** Plan draft docs stage 2a as a 10+ hour unattended run on the SvelteKit 3 `main`, ending with
-> the pages drafted, gated, and read, ready for the release.
-> **Scope.** In: merging `main` into `draft-docs-2a`, the pilot pages' Kit 3 drift, task 8, task 9, the
-> close, the `pass-execute` fix, and the side lanes to weigh. Out: the release, cairn.pub's migration, 2b.
-> **Settled:** the 2a intros; the framing stage and narrowed round 2; merge, not rebase.
-> **Still open:** the hard token ceiling; which side lanes ride along; the unattended stops and guards.
-> **Approach.** Fresh session, `claude --model claude-opus-5-5` at high effort, from `~/Projects/cairn-cms`.
-> Read `docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md`, the merge map, and the
-> 2a plan; re-run the conflict listing first. Pre-flight the plan so no stop remains, commit it, and point
-> this STATUS at it.
+> **Goal.** Run the 2a unattended finish to its merged close, with both side lanes merged.
+> **Scope.** In: everything in `docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`. Out: the release,
+> cairn.pub's migration, stage 2b.
+> **Settled:** every ruling in the plan's Owner rulings section; no open forks.
+> **Approach.** Fresh session, `TMPDIR=$HOME/.cache/claude-tmp claude --model claude-opus-5-5` at medium
+> effort, from `~/Projects/cairn-cms`. Invoke `cairn-pass`, read the plan and its governing 2a plan, arm the
+> guards the plan names, and start at R1.

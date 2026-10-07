@@ -3,6 +3,8 @@ package doctor
 import (
 	"strings"
 	"testing"
+
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
 // The fixtures below are the config.no-referrer-blanket corpus.
@@ -175,7 +177,7 @@ func TestConfigNoReferrerBlanket(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := configNoReferrerBlanket.Run(s)
+			result := runCheck(configNoReferrerBlanket, s).Result
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
@@ -184,8 +186,8 @@ func TestConfigNoReferrerBlanket(t *testing.T) {
 					t.Errorf("Detail = %q, want it to contain %q", result.Detail, want)
 				}
 			}
-			if tt.wantStatus == StatusFail && result.Severity != conditionText(configNoReferrerBlanket.Condition).Severity {
-				t.Errorf("Severity = %v, want the registry severity for %s", result.Severity, configNoReferrerBlanket.Condition)
+			if tt.wantStatus == StatusFail && result.Severity != spine.WarningFailure {
+				t.Errorf("Severity = %v, want spine.WarningFailure", result.Severity)
 			}
 		})
 	}

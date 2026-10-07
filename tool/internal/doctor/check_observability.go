@@ -23,7 +23,7 @@ var configObservability = Check{
 			return skipResult(noWranglerFoundDetail)
 		}
 		if !facts.ObservabilityEnabled {
-			return failResult(spine.ConditionConfigObservabilityOff, detailObservabilityOff)
+			return failResult(detailObservabilityOff)
 		}
 		return passResult(detailObservabilityOn)
 	},

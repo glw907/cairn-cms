@@ -43,16 +43,44 @@ type Result struct {
 	// ID is the check's own stable identifier, stamped by Run from the Check that produced this
 	// Result. A Result taken straight from Check.Run carries none.
 	ID string
-	// Condition is the cairn-doctor condition id a Fail status raises.
-	Condition spine.Condition
 	// Status is the check's settled verdict.
 	Status Status
-	// Severity is read only when Status is StatusFail: the condition's own severity, converted
-	// to spine's two-value vocabulary.
+	// Severity is read only when Status is StatusFail: the severity the producing Check's
+	// condition declares in the registry, stamped by Run. A Result taken straight from Check.Run
+	// carries none.
 	Severity spine.FailSeverity
 	// Detail is the check's own note: a why/fix line for a fail, or the note an info status
 	// prints. Empty for pass, skip, and unchecked.
 	Detail string
+}
+
+// The five Result constructors below leave ID and Severity unset: Run stamps both from the
+// Result's own Check, so a check body never restates what its Check already declares.
+
+// passResult builds a StatusPass Result, the common case every check's own pass path shares.
+func passResult(detail string) Result {
+	return Result{Status: StatusPass, Detail: detail}
+}
+
+// failResult builds a StatusFail Result.
+func failResult(detail string) Result {
+	return Result{Status: StatusFail, Detail: detail}
+}
+
+// skipResult builds a StatusSkip Result.
+func skipResult(detail string) Result {
+	return Result{Status: StatusSkip, Detail: detail}
+}
+
+// infoResult builds a StatusInfo Result: a passing check carrying a note, never a failure.
+func infoResult(detail string) Result {
+	return Result{Status: StatusInfo, Detail: detail}
+}
+
+// uncheckedResult builds a StatusUnchecked Result: the check's precondition was not observable,
+// a containment refusal or an absent required input among the causes.
+func uncheckedResult(detail string) Result {
+	return Result{Status: StatusUnchecked, Detail: detail}
 }
 
 // checkVerdict converts r to the spine.CheckVerdict its exit code arithmetic reads. Pass, skip,

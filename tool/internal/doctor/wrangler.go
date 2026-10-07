@@ -56,7 +56,7 @@ func ReadWranglerConfig(s Snapshot) (facts WranglerFacts, found bool, err error)
 
 // tomlHeaderPattern matches a table header line, optionally followed by an inline comment.
 // tomlKeyValuePattern matches a "key = value" line. tomlQuotedPattern extracts a quoted value's
-// body. All three are the regexes factsFromToml and its sibling r2EntriesFromToml use.
+// body. All three are the regexes factsFromToml uses.
 var (
 	tomlHeaderPattern   = regexp.MustCompile(`^\s*(\[\[?[\w.]+\]?\])\s*(?:#.*)?$`)
 	tomlKeyValuePattern = regexp.MustCompile(`^\s*(\w+)\s*=\s*(.+?)\s*$`)

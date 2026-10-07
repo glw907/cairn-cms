@@ -22,11 +22,11 @@ const enginePackageJSONPath = "node_modules/@glw907/cairn-cms/package.json"
 const (
 	detailEnginePackageJSONNotFound = "node_modules/@glw907/cairn-cms/package.json not found"
 	detailEnginePackageJSONInvalid  = "node_modules/@glw907/cairn-cms/package.json did not parse"
-	detailNoLockfileFound           = "none of package-lock.json, pnpm-lock.yaml, or yarn.lock was found"
 	detailNpmLockParseFailed        = "package-lock.json did not parse"
 	detailNpmLockNoPackagesMap      = "package-lock.json carries no packages map (lockfile v1; reinstall with a current npm)"
 	detailPnpmLockParseFailed       = "pnpm-lock.yaml did not parse"
 
+	tmplNoLockfileFound  = "none of %s was found"
 	tmplCaretRangeSkip   = "%s: the engine range %s is not a simple caret range"
 	tmplPrereleaseSkip   = "%s: resolved %s is not a plain x.y.z version"
 	tmplBelowFloorFail   = "%s resolves to %s, below the engine floor %s"
@@ -94,19 +94,12 @@ func compareVersions(a, b semver) int {
 	return a.patch - b.patch
 }
 
-// floorsVerdict is judgePeers's own settled outcome, carrying no check ID or condition: the
-// caller (configDependencyFloors's Run) attaches both when it wraps a verdict into a Result.
-type floorsVerdict struct {
-	status Status
-	detail string
-}
-
 // judgePeers judges every peer in a fixed, sorted order (peers is a Go map, so sorting by
 // dependency name keeps the joined detail deterministic) against resolve, which looks up one
 // dependency's resolved version in whichever lockfile is in play. missingEntry names the
 // per-dependency message for a lockfile that carries no entry for it, since each format's message
 // names its own file.
-func judgePeers(resolve func(dep string) (string, bool), peers map[string]string, missingEntry func(dep string) string) floorsVerdict {
+func judgePeers(resolve func(dep string) (string, bool), peers map[string]string, missingEntry func(dep string) string) Result {
 	var failures, skips, passes []string
 	for _, dep := range slices.Sorted(maps.Keys(peers)) {
 		rng := peers[dep]
@@ -136,11 +129,11 @@ func judgePeers(resolve func(dep string) (string, bool), peers map[string]string
 	}
 	switch {
 	case len(failures) > 0:
-		return floorsVerdict{StatusFail, strings.Join(failures, "; ")}
+		return failResult(strings.Join(failures, "; "))
 	case len(skips) > 0:
-		return floorsVerdict{StatusSkip, strings.Join(skips, "; ")}
+		return skipResult(strings.Join(skips, "; "))
 	default:
-		return floorsVerdict{StatusPass, fmt.Sprintf(tmplPassSatisfied, strings.Join(passes, " and "))}
+		return passResult(fmt.Sprintf(tmplPassSatisfied, strings.Join(passes, " and ")))
 	}
 }
 
@@ -161,14 +154,14 @@ func npmLockedVersion(packages map[string]any, dep string) (string, bool) {
 
 // npmDependencyFloors judges a package-lock.json. The no-lockfile case is not handled here: the
 // caller (configDependencyFloors's Run) resolved it by choosing to read package-lock.json at all.
-func npmDependencyFloors(lockText string, peers map[string]string) floorsVerdict {
+func npmDependencyFloors(lockText string, peers map[string]string) Result {
 	var root map[string]any
 	if err := json.Unmarshal([]byte(lockText), &root); err != nil {
-		return floorsVerdict{StatusFail, detailNpmLockParseFailed}
+		return failResult(detailNpmLockParseFailed)
 	}
 	packagesRaw, ok := root["packages"]
 	if !ok {
-		return floorsVerdict{StatusSkip, detailNpmLockNoPackagesMap}
+		return skipResult(detailNpmLockNoPackagesMap)
 	}
 	packages, _ := packagesRaw.(map[string]any)
 	return judgePeers(
@@ -204,19 +197,18 @@ func pnpmDepVersion(entry any) (string, bool) {
 func pnpmResolveVersion(lock map[string]any, dep string) (string, bool) {
 	if importers, ok := lock["importers"].(map[string]any); ok {
 		if root, ok := importers["."].(map[string]any); ok {
-			for _, section := range []string{"dependencies", "devDependencies"} {
-				if deps, ok := root[section].(map[string]any); ok {
-					if entry, ok := deps[dep]; ok {
-						if version, ok := pnpmDepVersion(entry); ok {
-							return version, true
-						}
-					}
-				}
+			if version, ok := pnpmLookup(root, dep); ok {
+				return version, true
 			}
 		}
 	}
+	return pnpmLookup(lock, dep)
+}
+
+// pnpmLookup reads dep's resolved version from m's dependencies map, then its devDependencies map.
+func pnpmLookup(m map[string]any, dep string) (string, bool) {
 	for _, section := range []string{"dependencies", "devDependencies"} {
-		if deps, ok := lock[section].(map[string]any); ok {
+		if deps, ok := m[section].(map[string]any); ok {
 			if entry, ok := deps[dep]; ok {
 				if version, ok := pnpmDepVersion(entry); ok {
 					return version, true
@@ -228,10 +220,10 @@ func pnpmResolveVersion(lock map[string]any, dep string) (string, bool) {
 }
 
 // pnpmDependencyFloors judges a pnpm-lock.yaml.
-func pnpmDependencyFloors(lockText string, peers map[string]string) floorsVerdict {
+func pnpmDependencyFloors(lockText string, peers map[string]string) Result {
 	var root any
 	if err := yaml.Unmarshal([]byte(lockText), &root); err != nil {
-		return floorsVerdict{StatusFail, detailPnpmLockParseFailed}
+		return failResult(detailPnpmLockParseFailed)
 	}
 	lock, _ := root.(map[string]any)
 	return judgePeers(
@@ -293,7 +285,7 @@ func startsWithSpace(line string) bool {
 
 // yarnDependencyFloors judges a yarn.lock, which is not JSON or YAML, so there is no parse-failure
 // branch.
-func yarnDependencyFloors(lockText string, peers map[string]string) floorsVerdict {
+func yarnDependencyFloors(lockText string, peers map[string]string) Result {
 	return judgePeers(
 		func(dep string) (string, bool) { return yarnLockedVersion(lockText, dep) },
 		peers,
@@ -340,18 +332,12 @@ func readEnginePeers(s Snapshot) (peers map[string]string, found bool, err error
 	return out, true, nil
 }
 
-// resultFromFloorsVerdict wraps a floorsVerdict into config.dependency-floors's Result.
-func resultFromFloorsVerdict(v floorsVerdict) Result {
-	if v.status == StatusFail {
-		return failResult(spine.ConditionConfigDependencyFloorsUnmet, v.detail)
-	}
-	return Result{Status: v.status, Detail: v.detail}
-}
+// lockfiles are the lockfile names config.dependency-floors recognizes, in the order it probes them.
+var lockfiles = []string{"package-lock.json", "pnpm-lock.yaml", "yarn.lock"}
 
 // configDependencyFloors checks the resolved svelte and @sveltejs/kit versions in whichever
-// lockfile exists, judged against the installed engine's own declared peer ranges.
-// package-lock.json, then pnpm-lock.yaml, then yarn.lock: the first recognized lockfile that exists
-// is the one judged.
+// lockfile exists, judged against the installed engine's own declared peer ranges. The first of
+// lockfiles that exists is the one judged.
 var configDependencyFloors = Check{
 	ID:        "config.dependency-floors",
 	Condition: spine.ConditionConfigDependencyFloorsUnmet,
@@ -364,30 +350,20 @@ var configDependencyFloors = Check{
 			return uncheckedResult(detailEnginePackageJSONNotFound)
 		}
 
-		npmLock, ok, err := s.readFile("package-lock.json")
+		body, path, found, err := s.readFirst(lockfiles)
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
-		if ok {
-			return resultFromFloorsVerdict(npmDependencyFloors(string(npmLock), peers))
+		if !found {
+			return uncheckedResult(fmt.Sprintf(tmplNoLockfileFound, strings.Join(lockfiles, ", ")))
 		}
-
-		pnpmLock, ok, err := s.readFile("pnpm-lock.yaml")
-		if err != nil {
-			return uncheckedResult(err.Error())
+		switch path {
+		case "package-lock.json":
+			return npmDependencyFloors(string(body), peers)
+		case "pnpm-lock.yaml":
+			return pnpmDependencyFloors(string(body), peers)
+		default:
+			return yarnDependencyFloors(string(body), peers)
 		}
-		if ok {
-			return resultFromFloorsVerdict(pnpmDependencyFloors(string(pnpmLock), peers))
-		}
-
-		yarnLock, ok, err := s.readFile("yarn.lock")
-		if err != nil {
-			return uncheckedResult(err.Error())
-		}
-		if ok {
-			return resultFromFloorsVerdict(yarnDependencyFloors(string(yarnLock), peers))
-		}
-
-		return uncheckedResult(detailNoLockfileFound)
 	},
 }

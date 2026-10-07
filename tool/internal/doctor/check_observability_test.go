@@ -1,6 +1,10 @@
 package doctor
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/glw907/cairn-cms/tool/internal/spine"
+)
 
 // TestConfigObservability is table-driven over config.observability's three reachable statuses:
 // pass, fail, and skip.
@@ -39,15 +43,15 @@ func TestConfigObservability(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := configObservability.Run(s)
+			result := runCheck(configObservability, s).Result
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			if result.Detail != tt.wantDetail {
 				t.Errorf("Detail = %q, want %q", result.Detail, tt.wantDetail)
 			}
-			if tt.wantStatus == StatusFail && result.Condition != configObservability.Condition {
-				t.Errorf("Condition = %v, want %v", result.Condition, configObservability.Condition)
+			if tt.wantStatus == StatusFail && result.Severity != spine.WarningFailure {
+				t.Errorf("Severity = %v, want spine.WarningFailure", result.Severity)
 			}
 		})
 	}

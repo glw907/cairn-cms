@@ -5,51 +5,6 @@ import (
 	"strings"
 )
 
-// checks is the complete doctor check set cairn doctor runs, in report order: the eight
-// file-only checks followed by the three facts-dependent checks, the same relative order the
-// engine's own doctor registers them in, with the checks this port does not carry (the
-// Cloudflare and GitHub App chain) left out. It is a literal slice, never populated by init(),
-// the same shape health.All uses.
-//
-// It is also the published check-id list: the tests that hold
-// docs/reference/cli-cairn-json-output.md and docs/reference/cli-cairn-doctor.md to every id
-// read it here rather than retyping the eleven.
-var checks = []Check{
-	configBindings,
-	configMediaBucket,
-	configObservability,
-	configCsrfTrustedOrigins,
-	configSiteConfig,
-	configPublicOrigin,
-	configNoReferrerBlanket,
-	adminMountShape,
-	configDependencyFloors,
-	authRoleWiring,
-	aiPostureEffective,
-}
-
-// CheckedResult pairs one Check with the Result its Run produced. A report's per-check line and its
-// failure block both need the check's own Label, which lives on Check (its Condition) and not on
-// every Result, so the pair travels together.
-type CheckedResult struct {
-	// Check is the check that ran.
-	Check Check
-	// Result is the settled outcome Check.Run produced against the run's Snapshot.
-	Result Result
-}
-
-// Run executes every check in checks against s, in report order, stamps each Result with its
-// own check's ID, and pairs the two.
-func Run(s Snapshot) []CheckedResult {
-	out := make([]CheckedResult, len(checks))
-	for i, c := range checks {
-		result := c.Run(s)
-		result.ID = c.ID
-		out[i] = CheckedResult{Check: c, Result: result}
-	}
-	return out
-}
-
 // docsBaseAdmin is the admin docs directory a failure's docs URL resolves against, the same
 // shape internal/render/layout.go's own fixAnchorBase carries for the health report. It is not
 // shared with render: a doctor-to-render import would invert render's own dependency direction
@@ -73,7 +28,7 @@ func docsURL(anchor string) string {
 func Format(checked []CheckedResult) string {
 	lines := make([]string, 0, len(checked)+8)
 	for _, cr := range checked {
-		lines = append(lines, fmt.Sprintf("%s  %s: %s", cr.Result.Status, cr.Check.Label(), cr.Result.Detail))
+		lines = append(lines, fmt.Sprintf("%s  %s: %s", cr.Result.Status, cr.Check.label(), cr.Result.Detail))
 	}
 
 	for _, cr := range checked {
@@ -81,7 +36,7 @@ func Format(checked []CheckedResult) string {
 			continue
 		}
 		text := conditionText(cr.Check.Condition)
-		lines = append(lines, "", fmt.Sprintf("%s failed.", cr.Check.Label()),
+		lines = append(lines, "", fmt.Sprintf("%s failed.", cr.Check.label()),
 			"  Why: "+text.Why, "  Fix: "+text.Remediation)
 		if url := docsURL(text.DocsAnchor); url != "" {
 			lines = append(lines, "  Docs: "+url)

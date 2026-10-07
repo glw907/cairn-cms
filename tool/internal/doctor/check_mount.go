@@ -27,8 +27,8 @@ const adminMountGuidance = "no wired /admin mount detected; mount the shared /ad
 // files (a heuristic text read, not proof of a working mount).
 const passAdminMountWired = "the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)"
 
-// cairnAdminShellMentionPattern and shellLoadCallPattern back the mount-shape heuristic, loose
-// like wiresCairnGuard so a renamed or wrapped composer still reads as wired. A .shellLoad
+// cairnAdminShellMentionPattern and shellLoadCallPattern back the mount-shape heuristic, loose so a
+// renamed or wrapped composer still reads as wired. A .shellLoad
 // member-access on any identifier (not a literal admin.shellLoad) proves the layout calls the
 // composer's load; a CairnAdminShell mention anywhere under /admin proves the shared chrome
 // renders.

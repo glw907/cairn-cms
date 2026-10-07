@@ -43,7 +43,7 @@ func Catalogue() []string {
 		tmplSiteConfigNotFound,
 		detailEnginePackageJSONNotFound,
 		detailEnginePackageJSONInvalid,
-		detailNoLockfileFound,
+		tmplNoLockfileFound,
 		detailNpmLockParseFailed,
 		detailNpmLockNoPackagesMap,
 		detailPnpmLockParseFailed,
@@ -110,50 +110,55 @@ func conditionText(id spine.Condition) spine.ConditionText {
 	return text
 }
 
-// Label returns c's registry-sourced label: its condition's title in the embedded mirror. A
+// label returns c's registry-sourced label: its condition's title in the embedded mirror. A
 // check with no condition (Condition: spine.ConditionNone) has no label of its own.
-func (c Check) Label() string {
+func (c Check) label() string {
 	return conditionText(c.Condition).Title
 }
 
-// The five Result constructors below leave ID unset: Run stamps every Result with its own
-// Check's ID, so a check body never restates the id its Check already declares.
-
-// passResult builds a StatusPass Result, the common case every check's own pass path shares.
-func passResult(detail string) Result {
-	return Result{Status: StatusPass, Detail: detail}
+// checks is the complete doctor check set cairn doctor runs, in report order: the eight
+// file-only checks followed by the three facts-dependent checks.
+var checks = []Check{
+	configBindings,
+	configMediaBucket,
+	configObservability,
+	configCsrfTrustedOrigins,
+	configSiteConfig,
+	configPublicOrigin,
+	configNoReferrerBlanket,
+	adminMountShape,
+	configDependencyFloors,
+	authRoleWiring,
+	aiPostureEffective,
 }
 
-// failResult builds a StatusFail Result, reading its severity from the registry rather than a
-// literal so a check can never disagree with its own condition's declared severity.
-func failResult(condition spine.Condition, detail string) Result {
-	return Result{Condition: condition, Status: StatusFail, Severity: conditionText(condition).Severity, Detail: detail}
+// CheckedResult pairs one Check with the Result its Run produced. A report's per-check line and its
+// failure block both need the check's own label, which lives on Check (its Condition) and not on
+// every Result, so the pair travels together.
+type CheckedResult struct {
+	// Check is the check that ran.
+	Check Check
+	// Result is the settled outcome Check.Run produced against the run's Snapshot.
+	Result Result
 }
 
-// skipResult builds a StatusSkip Result.
-func skipResult(detail string) Result {
-	return Result{Status: StatusSkip, Detail: detail}
+// Run executes every check in checks against s, in report order, and pairs each with its stamped
+// Result.
+func Run(s Snapshot) []CheckedResult {
+	out := make([]CheckedResult, len(checks))
+	for i, c := range checks {
+		out[i] = runCheck(c, s)
+	}
+	return out
 }
 
-// infoResult builds a StatusInfo Result: a passing check carrying a note, never a failure.
-func infoResult(detail string) Result {
-	return Result{Status: StatusInfo, Detail: detail}
-}
-
-// uncheckedResult builds a StatusUnchecked Result: the check's precondition was not observable,
-// a containment refusal or an absent required input among the causes.
-func uncheckedResult(detail string) Result {
-	return Result{Status: StatusUnchecked, Detail: detail}
-}
-
-// hooksCandidatePaths are the two spellings a site's hooks module might use, .ts checked first.
-var hooksCandidatePaths = []string{"src/hooks.server.ts", "src/hooks.server.js"}
-
-// readHooksSource reads the site's hooks module under either spelling, .ts preferred, returning
-// the path it read from alongside the text so a failure can name the file. found is false when
-// neither candidate exists. Two checks read the same file: auth.role-wiring and
-// config.no-referrer-blanket.
-func readHooksSource(s Snapshot) (text, path string, found bool, err error) {
-	body, path, found, err := s.readFirst(hooksCandidatePaths)
-	return string(body), path, found, err
+// runCheck runs c against s and stamps the Result with c's ID and, on a fail, the severity c's
+// condition declares in the registry, so a check can never disagree with its own condition.
+func runCheck(c Check, s Snapshot) CheckedResult {
+	result := c.Run(s)
+	result.ID = c.ID
+	if result.Status == StatusFail {
+		result.Severity = conditionText(c.Condition).Severity
+	}
+	return CheckedResult{Check: c, Result: result}
 }

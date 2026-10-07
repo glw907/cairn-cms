@@ -4,88 +4,20 @@ import (
 	"encoding/json"
 	"errors"
 	"regexp"
-	"strings"
 )
 
-// stripJsonc removes // and /* */ comments outside string literals, character by character so a URL
-// inside a string (https://...) survives, then removes a trailing comma before a closing } or ].
-// Accepted gap: a string containing ",}" is mangled by the trailing-comma pass, since that pass
-// runs after string boundaries are gone.
+// stripJsonc blanks // and /* */ comments outside string literals, so a URL inside a string
+// (https://...) survives, then removes a trailing comma before a closing } or ]. Accepted gap: a
+// string containing ",}" is mangled by the trailing-comma pass, since that pass does not know
+// string boundaries.
 func stripJsonc(text string) string {
-	var out strings.Builder
-	inString := false
-	runes := []rune(text)
-	for i := 0; i < len(runes); i++ {
-		ch := runes[i]
-		if inString {
-			out.WriteRune(ch)
-			if ch == '\\' && i+1 < len(runes) {
-				out.WriteRune(runes[i+1])
-				i++
-				continue
-			}
-			if ch == '"' {
-				inString = false
-			}
-			continue
-		}
-		if ch == '"' {
-			inString = true
-			out.WriteRune(ch)
-			continue
-		}
-		if ch == '/' && i+1 < len(runes) && runes[i+1] == '/' {
-			end := indexRune(runes, '\n', i)
-			if end == -1 {
-				break
-			}
-			i = end - 1
-			continue
-		}
-		if ch == '/' && i+1 < len(runes) && runes[i+1] == '*' {
-			end := indexString(runes, "*/", i+2)
-			if end == -1 {
-				break
-			}
-			i = end + 1
-			continue
-		}
-		out.WriteRune(ch)
-	}
-	return trailingCommaPattern.ReplaceAllString(out.String(), "$1")
+	_, code := blankJSComments(text)
+	return trailingCommaPattern.ReplaceAllString(code, "$1")
 }
 
 // trailingCommaPattern matches a comma followed by optional whitespace and a closing } or ],
-// the regex stripJsonc's trailing-comma pass applies after comments are removed.
+// the regex stripJsonc's trailing-comma pass applies after comments are blanked.
 var trailingCommaPattern = regexp.MustCompile(`,(\s*[}\]])`)
-
-// indexRune returns the index of target in runes at or after from, or -1.
-func indexRune(runes []rune, target rune, from int) int {
-	for i := from; i < len(runes); i++ {
-		if runes[i] == target {
-			return i
-		}
-	}
-	return -1
-}
-
-// indexString returns the index where target starts in runes at or after from, or -1.
-func indexString(runes []rune, target string, from int) int {
-	t := []rune(target)
-	for i := from; i+len(t) <= len(runes); i++ {
-		match := true
-		for j := range t {
-			if runes[i+j] != t[j] {
-				match = false
-				break
-			}
-		}
-		if match {
-			return i
-		}
-	}
-	return -1
-}
 
 // errWranglerJsoncParse is the clean message a present-but-unparseable wrangler.jsonc reports,
 // never the parser's own snippet (which would land the file's content verbatim in the report).

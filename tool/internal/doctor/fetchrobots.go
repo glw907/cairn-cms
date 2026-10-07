@@ -27,11 +27,8 @@ var robotsClient = &http.Client{
 
 // FetchRobots performs ai.posture-effective's one network request, the single GET this whole
 // command makes: a credential-free fetch of origin's /robots.txt, filling the Snapshot.Robots
-// field the command layer stamps before any check runs. It is deliberately isolated in its own
-// file, never inside a Check.Run: TestNoCheckFunctionReadsClockOrHoldsClient (snapshot_test.go)
-// allowlists this one file by name for net/http, so the exception stays narrow and every other
-// non-test file in this package keeps proving it holds no client. ctx carries the run's own
-// deadline, the root command's --timeout, and nothing else bounds the request.
+// field the command layer stamps before any check runs. ctx carries the run's own deadline, the
+// root command's --timeout, and nothing else bounds the request.
 func FetchRobots(ctx context.Context, origin PublicOrigin) Robots {
 	if origin.Source == OriginAbsent {
 		return Robots{Present: false, Reason: robotsAbsentNoOrigin}

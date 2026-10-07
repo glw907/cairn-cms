@@ -3,6 +3,8 @@ package doctor
 import (
 	"strings"
 	"testing"
+
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
 // TestConfigSiteConfig proves config.site-config's status arms over Task 4's parser
@@ -50,14 +52,14 @@ func TestConfigSiteConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := configSiteConfig.Run(s)
+			result := runCheck(configSiteConfig, s).Result
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			switch tt.wantStatus {
 			case StatusFail:
-				if result.Condition != configSiteConfig.Condition {
-					t.Errorf("Condition = %v, want %v", result.Condition, configSiteConfig.Condition)
+				if result.Severity != spine.CriticalFailure {
+					t.Errorf("Severity = %v, want spine.CriticalFailure", result.Severity)
 				}
 				if result.Detail == "" {
 					t.Error("Detail is empty for a fail, want the parse or shape error")

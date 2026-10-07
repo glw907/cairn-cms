@@ -46,8 +46,7 @@ var configMediaBucket = Check{
 			return skipResult(noWranglerFoundDetail)
 		}
 		if !slices.Contains(wrangler.R2Buckets, facts.MediaBucketBinding) {
-			return failResult(spine.ConditionConfigMediaBucketMissing,
-				fmt.Sprintf(tmplConfigMediaBucketFail, facts.MediaBucketBinding))
+			return failResult(fmt.Sprintf(tmplConfigMediaBucketFail, facts.MediaBucketBinding))
 		}
 		return passResult(fmt.Sprintf(tmplConfigMediaBucketPass, facts.MediaBucketBinding))
 	},

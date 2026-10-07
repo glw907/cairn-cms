@@ -102,3 +102,15 @@ func (s Snapshot) readFirst(paths []string) (body []byte, path string, found boo
 	}
 	return nil, "", false, nil
 }
+
+// hooksCandidatePaths are the two spellings a site's hooks module might use, .ts checked first.
+var hooksCandidatePaths = []string{"src/hooks.server.ts", "src/hooks.server.js"}
+
+// readHooksSource reads the site's hooks module under either spelling, .ts preferred, returning
+// the path it read from alongside the text so a failure can name the file. found is false when
+// neither candidate exists. Two checks read the same file: auth.role-wiring and
+// config.no-referrer-blanket.
+func readHooksSource(s Snapshot) (text, path string, found bool, err error) {
+	body, path, found, err := s.readFirst(hooksCandidatePaths)
+	return string(body), path, found, err
+}

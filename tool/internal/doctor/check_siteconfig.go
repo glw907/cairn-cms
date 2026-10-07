@@ -16,11 +16,10 @@ const (
 	tmplSiteConfigNotFound = "no site.config.yaml found (looked in %s)"
 )
 
-// configSiteConfig maps siteConfig's outcome onto the check's status words. The parse itself is
-// siteconfig.go's siteConfig, which owns the file read and the predicate, so this file holds
-// nothing but the status arms. A found, parsing config with a non-empty siteName passes; a found
-// file that fails the parse predicate fails; no file at any of the four candidate paths is
-// unchecked, never a fail, since there was nothing to judge.
+// configSiteConfig maps siteConfig's outcome onto the check's status words. A found, parsing
+// config with a non-empty siteName passes; a found file that fails the parse predicate fails; no
+// file at any of the four candidate paths is unchecked, never a fail, since there was nothing to
+// judge.
 var configSiteConfig = Check{
 	ID:        "config.site-config",
 	Condition: spine.ConditionConfigSiteConfigInvalid,
@@ -33,7 +32,7 @@ var configSiteConfig = Check{
 		case siteConfigValid:
 			return passResult(detailSiteConfigPass)
 		case siteConfigInvalid:
-			return failResult(spine.ConditionConfigSiteConfigInvalid, outcome.Reason)
+			return failResult(outcome.Reason)
 		default: // siteConfigNotFound
 			return uncheckedResult(fmt.Sprintf(tmplSiteConfigNotFound, strings.Join(siteConfigPaths(), ", ")))
 		}

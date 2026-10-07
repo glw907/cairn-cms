@@ -383,8 +383,8 @@ Name the check that entry holds
 - no wrangler.jsonc or wrangler.toml found
 - node_modules/@glw907/cairn-cms/package.json did not parse
 - node_modules/@glw907/cairn-cms/package.json not found
+- none of %s was found
 - none of %s was found, so csrf.trustedOrigins could not be checked
-- none of package-lock.json, pnpm-lock.yaml, or yarn.lock was found
 - observability.enabled is not true
 - observability.enabled is true
 - package-lock.json carries no packages map (lockfile v1; reinstall with a current npm)

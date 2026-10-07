@@ -43,8 +43,7 @@ var configBindings = Check{
 			missing = append(missing, bindingAuthDBMissing)
 		}
 		if len(missing) > 0 {
-			return failResult(spine.ConditionConfigBindingsMissing,
-				fmt.Sprintf(tmplBindingsMissing, strings.Join(missing, " and ")))
+			return failResult(fmt.Sprintf(tmplBindingsMissing, strings.Join(missing, " and ")))
 		}
 		return passResult(detailBindingsPresent)
 	},

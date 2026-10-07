@@ -77,12 +77,15 @@ func TestConfigMediaBucketOwnRemediation(t *testing.T) {
 		"wrangler.jsonc":                     `{"r2_buckets": []}`,
 	})
 
-	result := configMediaBucket.Run(s)
-	if result.Status != StatusFail {
-		t.Fatalf("Status = %v, want StatusFail", result.Status)
+	cr := runCheck(configMediaBucket, s)
+	if cr.Result.Status != StatusFail {
+		t.Fatalf("Status = %v, want StatusFail", cr.Result.Status)
 	}
-	if result.Condition != spine.ConditionConfigMediaBucketMissing {
-		t.Fatalf("Condition = %q, want %q", result.Condition, spine.ConditionConfigMediaBucketMissing)
+	if cr.Check.Condition != spine.ConditionConfigMediaBucketMissing {
+		t.Fatalf("Condition = %q, want %q", cr.Check.Condition, spine.ConditionConfigMediaBucketMissing)
+	}
+	if cr.Result.Severity != spine.WarningFailure {
+		t.Errorf("Severity = %v, want spine.WarningFailure", cr.Result.Severity)
 	}
 
 	mediaText, ok := spine.TextFor(spine.ConditionConfigMediaBucketMissing)

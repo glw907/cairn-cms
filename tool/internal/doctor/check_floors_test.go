@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
 // enginePackageJSONFixture is a minimal installed @glw907/cairn-cms/package.json, its peer ranges
@@ -151,7 +153,7 @@ func TestConfigDependencyFloors(t *testing.T) {
 				enginePackageJSONPath: enginePackageJSONFixture,
 			},
 			wantStatus:    StatusUnchecked,
-			wantDetailHas: detailNoLockfileFound,
+			wantDetailHas: "none of package-lock.json, pnpm-lock.yaml, yarn.lock was found",
 		},
 		{
 			name: "prefers package-lock.json when more than one lockfile exists",
@@ -167,15 +169,15 @@ func TestConfigDependencyFloors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := configDependencyFloors.Run(s)
+			result := runCheck(configDependencyFloors, s).Result
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			if !strings.Contains(result.Detail, tt.wantDetailHas) {
 				t.Errorf("Detail = %q, want it to contain %q", result.Detail, tt.wantDetailHas)
 			}
-			if tt.wantStatus == StatusFail && result.Condition != configDependencyFloors.Condition {
-				t.Errorf("Condition = %v, want %v", result.Condition, configDependencyFloors.Condition)
+			if tt.wantStatus == StatusFail && result.Severity != spine.CriticalFailure {
+				t.Errorf("Severity = %v, want spine.CriticalFailure", result.Severity)
 			}
 		})
 	}
@@ -186,15 +188,15 @@ func TestConfigDependencyFloors(t *testing.T) {
 // real caret ranges: judgePeers skips rather than guesses when the engine's own declared range
 // is not a simple caret form.
 func TestConfigDependencyFloorsNonCaretEngineRangeSkips(t *testing.T) {
-	verdict := npmDependencyFloors(
+	result := npmDependencyFloors(
 		npmLockFixture(map[string]string{"svelte": "5.56.10"}),
 		map[string]string{"svelte": ">=5.56.10"},
 	)
-	if verdict.status != StatusSkip {
-		t.Fatalf("status = %v, want StatusSkip (detail %q)", verdict.status, verdict.detail)
+	if result.Status != StatusSkip {
+		t.Fatalf("Status = %v, want StatusSkip (detail %q)", result.Status, result.Detail)
 	}
-	if !strings.Contains(verdict.detail, "not a simple caret range") {
-		t.Errorf("detail = %q, want it to name the non-caret range", verdict.detail)
+	if !strings.Contains(result.Detail, "not a simple caret range") {
+		t.Errorf("Detail = %q, want it to name the non-caret range", result.Detail)
 	}
 }
 

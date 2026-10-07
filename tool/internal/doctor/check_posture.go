@@ -220,8 +220,7 @@ func evaluatePosture(hasDeclared bool, declared, body string, target *url.URL) R
 		if hasObserved {
 			carries = fmt.Sprintf(tmplPostureObservedInstead, observed)
 		}
-		return failResult(spine.ConditionAIPostureNotEffective,
-			fmt.Sprintf(tmplPostureDeclaredMismatch, declared, target, carries, suffix))
+		return failResult(fmt.Sprintf(tmplPostureDeclaredMismatch, declared, target, carries, suffix))
 	}
 
 	if hasOutside {

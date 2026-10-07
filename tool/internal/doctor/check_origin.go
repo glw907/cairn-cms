@@ -73,10 +73,10 @@ var configPublicOrigin = Check{
 			return skipResult(detailPublicOriginSkip)
 		}
 		if origin.Value == "" {
-			return failResult(spine.ConditionConfigPublicOriginInvalid, detailPublicOriginUnconfigured)
+			return failResult(detailPublicOriginUnconfigured)
 		}
 		if detail, ok := validatePublicOrigin(origin.Value); !ok {
-			return failResult(spine.ConditionConfigPublicOriginInvalid, detail)
+			return failResult(detail)
 		}
 		source := sourceEnvironment
 		if origin.Source == OriginFromVars {

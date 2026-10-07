@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
 // snapshotForPosture builds a Snapshot carrying factsJSON at site-facts.json (when non-empty)
@@ -47,12 +49,12 @@ func TestAIPostureEffectiveDeclaredDoesNotMatchServed(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1, "aiPosture": "invite"}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := aiPostureEffective.Run(s)
+	result := runCheck(aiPostureEffective, s).Result
 	if result.Status != StatusFail {
 		t.Fatalf("Status = %v, want StatusFail (detail %q)", result.Status, result.Detail)
 	}
-	if result.Condition != aiPostureEffective.Condition {
-		t.Errorf("Condition = %q, want %q", result.Condition, aiPostureEffective.Condition)
+	if result.Severity != spine.WarningFailure {
+		t.Errorf("Severity = %v, want spine.WarningFailure", result.Severity)
 	}
 }
 

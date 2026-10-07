@@ -189,10 +189,10 @@ var configNoReferrerBlanket = Check{
 			return skipResult(fmt.Sprintf(tmplNoReferrerSkip, noReferrerRemedy, noReferrerDocsAnchor))
 		}
 		if hooksFound && hooksSetsBlanketNoReferrer(hooksText) {
-			return failResult(spine.ConditionConfigNoReferrerBlanket, blanketNoReferrerFailDetail(hooksPath))
+			return failResult(blanketNoReferrerFailDetail(hooksPath))
 		}
 		if headersFound && headersFileBlanketNoReferrer(string(headersBody)) {
-			return failResult(spine.ConditionConfigNoReferrerBlanket, blanketNoReferrerFailDetail("static/_headers"))
+			return failResult(blanketNoReferrerFailDetail("static/_headers"))
 		}
 		return passResult(fmt.Sprintf(tmplNoReferrerPass, describeNoReferrerSources(hooksPath, hooksFound, headersFound)))
 	},

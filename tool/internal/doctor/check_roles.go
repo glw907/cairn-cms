@@ -126,8 +126,7 @@ var authRoleWiring = Check{
 		case guardWiringIndirect:
 			return infoResult(infoRoleWiringIndirect)
 		case guardWiringUnwired:
-			return failResult(spine.ConditionAuthRoleWiringMissing,
-				fmt.Sprintf(tmplRoleWiringUnwired, strings.Join(custom, ", ")))
+			return failResult(fmt.Sprintf(tmplRoleWiringUnwired, strings.Join(custom, ", ")))
 		default:
 			return passResult(passRoleWiringWired)
 		}

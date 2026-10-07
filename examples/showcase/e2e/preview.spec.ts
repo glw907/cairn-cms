@@ -401,9 +401,7 @@ test.describe('public preview for a non-editor', () => {
     });
     const { url } = await mintPreview(page);
 
-    await page.goto('/admin/posts');
-    await page.getByRole('button', { name: 'Delete Broken link sibling', exact: true }).click();
-    await expect(page.getByRole('link', { name: 'Broken link sibling' })).toHaveCount(0);
+    await deleteFromList(page, 'Broken link sibling');
 
     const res = await request.get(url);
     expect(res.status()).toBe(200);

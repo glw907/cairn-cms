@@ -125,6 +125,8 @@ export const ALLOWLIST = new Set([
   'file-path:docs/extend/security-model.md',
   'file-path:src/theme/cairn.config.ts', // docs/reference/vite.md's illustrative adapter location
   'file-path:src/theme/theme.css', // docs/extend/design-your-site.md's own convention path, the reader's re-skin file
+  'file-path:src/theme/site.css', // docs/extend/scaffolded-site-files.md's scaffolded site's page styles (templates/waymark/src/theme/site.css)
+  'file-path:src/access.ts', // docs/extend/scaffolded-site-files.md's scaffolded site's access map (templates/waymark/src/access.ts)
   'file-path:src/chassis/tokens.css', // docs/reference/cairn-audit.md's default theme-root file, a site's own chassis token file
   'file-path:src/content/.cairn/index.json', // a site's own generated manifest, by convention
   'file-path:src/content/.cairn/media.json', // a site's own generated media manifest, by convention
@@ -136,6 +138,13 @@ export const ALLOWLIST = new Set([
   'file-path:src/routes/admin/club/events/ApproveDialog.svelte', // docs/extend/add-a-custom-admin-screen.md's illustrative dialog-form recipe component
   'file-path:src/lib/today.ts', // docs/extend/debug-your-site.md's illustrative fixed-today helper module
   'file-path:src/lib/members/channel.ts', // docs/extend/add-a-second-audience.md's illustrative auth-channel module
+  'file-path:src/lib/server/member-channel.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative auth-channel module
+  'file-path:src/lib/server/member-channel.test.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative channel test
+  'file-path:migrations-members/0000_channel.sql', // a site's copy of the packaged channel migration, the directory docs/extend/add-a-second-sign-in-group.md creates (examples/showcase/migrations-members/ carries the same file)
+  // `@glw907/cairn-cms-dev` is a separate package, but the export extractor's specifier regex
+  // reads its name as a `-dev` subpath of the engine and finds no such subpath in the API
+  // surface snapshot. The dev package's own `src/index.ts` exports it.
+  'export:createChannelDb', // docs/extend/add-a-second-sign-in-group.md's channel test imports it from @glw907/cairn-cms-dev
   'file-path:src/lib/content.ts', // docs/extend/build-a-site-by-hand.md and wire-the-delivery-surface.md's illustrative content-index module, by convention
   'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
   'file-path:src/content/posts/2026-08-14-hello.md', // docs/extend/build-a-site-by-hand.md's illustrative sample entry

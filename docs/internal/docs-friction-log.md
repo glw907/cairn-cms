@@ -692,6 +692,499 @@ resolution redraft (draft docs stage 2a, task 7b).
   `examples/showcase`: reword the comment to say the engine repo's gate checks the shipped theme, or
   drop the claim from the scaffold.
 
+- **`extender`.** Found by the scaffolded-site-files page inputs on 2026-10-07
+  (`docs/extend/scaffolded-site-files.md`; engine 0.98.0). The baked scaffold keeps showcase-only
+  config the template's exclude list does not reach (`f:n2skkz`): `templates/waymark/vite.config.ts:91-95`
+  explains `resolve.dedupe` and `server.fs.allow: ['..', '../..']` as serving "the showcase['s]
+  file:../.. dist symlink", which a registry-installed site has no use for; `:65-72` says "This
+  showcase's own corpus"; `:26-29` reads `VITE_CAIRN_E2E` for an e2e run the bake pruned; and
+  `templates/waymark/package.json:23-24` globs `e2e/**/*.ts` in `format` and `format:check` with no
+  `e2e/` in the tree. A page that annotates `vite.config.ts` for a new owner has to hedge which of
+  its lines belong to the site. A fix strips or rewrites those lines at bake time
+  (`packages/create-cairn-site/scripts/bake-template.mjs`), or reframes the comments so they hold in
+  both trees.
+
+- **`contributor`.** Found by the scaffolded-site-files page inputs on 2026-10-07 (a facts-container
+  hole). Five verified scaffold facts cite stale pointers the gate does not catch: `f:mrv24k`
+  (`templates/waymark/package.json:16`, now line 21), `f:666eg6` (`:7,10,15`, now 12, 15, 20), and
+  `f:690k0p` (`:12,18-20`, now 17, 23-25) predate the `imports` field that shifted the scripts block,
+  and `f:j7fha2` and `f:jd54ph` cite `packages/create-cairn-site/template/`, a directory that no
+  longer exists (the baked tree is `templates/waymark/`), which `check:facts` skips as a dropped
+  directory. The claims still hold against `templates/waymark/`. A fix repoints the five sources,
+  and an unanchored `path:line` pointer into `package.json` could carry a quoted anchor so the
+  gate's window check catches the next shift.
+
+- **`extender`.** Found by the restrict-admin-access page inputs on 2026-10-07 (`f:cvzb8z`,
+  `f:iwf4nu`). One access map has two wiring points that nothing checks agree: the engine's
+  screens, write actions, and sidebar read the adapter's `access` (`src/lib/content/compose.ts:41`,
+  `src/lib/sveltekit/content-routes-media-library.ts:67`), while `requireAccess` and
+  `createSectionAction` read the guard's `locals.cairnAccess` (`src/lib/sveltekit/guard.ts:479`,
+  `src/lib/sveltekit/section-action.ts:275`). The scaffold passes its map only to the guard
+  (`templates/waymark/src/hooks.server.ts:22`) and its `src/access.ts` comment calls that map the
+  site's whole access declaration, so a developer who adds `media: ['owner']` there sees no effect
+  on the media screen, with no error and no warning. Roles have the matching check
+  (`auth.role-wiring-missing`, `src/lib/diagnostics/conditions.ts:168-176`); the access map has
+  none. A fix has the guard read the adapter's map, or adds an `auth.access-wiring-missing`
+  condition beside the roles one.
+
+- **`extender`.** Found by the add-a-second-sign-in-group page inputs on 2026-10-07 (`f:fcqs22`,
+  `f:tnvu0a`, `f:l2xruc`, `f:0l7si2`). `createChannelDb` is the documented double for a site's
+  channel tests, but nothing in the tree wires it into `createAuthChannel`: the factory resolves
+  its binding as `config.resolveDb(siteEnv())`, read from `cloudflare:workers`
+  (`src/lib/sveltekit/workers-env.ts:12,35-37`), a module a plain Node vitest run does not provide,
+  and the engine's own channel tests run on miniflare D1 through `cloudflare:test`
+  (`src/tests/integration/auth-channel-session.test.ts:4`). Since the showcase moved to local D1 the
+  double has no in-repo consumer (`docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md:130`),
+  so the page can state its contract and its Node-only limit but cannot show a verified recipe
+  that drives a channel action against it. The Node floor also needs a hedge: the dev package
+  declares `engines.node` `>=24` (`packages/cairn-cms-dev/package.json:12-14`) while `node:sqlite`
+  works from 22.13, and neither floor is enforced at runtime. A fix ships a tested exemplar
+  (a channel test under vitest on Node that stubs `cloudflare:workers` and resolves `createChannelDb`
+  through `resolveDb`), or retires the double in favor of miniflare D1 and says so.
+- **`extender`.** Found by the add-a-second-sign-in-group page inputs on 2026-10-07 (`f:ybg62t`,
+  `f:hafpqf`). Two public configs share the option name `rateLimit` with different shapes:
+  `AuthChannelConfig.rateLimit.key` is optional, takes a `CairnEvent`, and defaults to the requester
+  bucket (`src/lib/auth-channel/factory.ts:320-325`), while `SectionActionConfig.rateLimit.key` is
+  required and takes an `AdminActionContext`, beside a `message` member the channel lacks
+  (`src/lib/sveltekit/section-action.ts:42-46`). A developer who wires both on one site meets the
+  same name with two contracts, and each page has to state its own shape rather than point at one.
+  A fix aligns the two (an optional `key` with a documented default in both), or the reference
+  names the difference beside each entry.
+- **`extender`.** Found by the add-a-second-sign-in-group page inputs on 2026-10-07 (`f:mfmmof`,
+  `f:lncjdr`). A channel's member area lives outside `/admin`, and no admin-toolkit component reads
+  an editor session, so the toolkit looks reusable there, but its daisyUI classes compile into
+  `cairn-admin.css`, scoped under the admin `data-theme` root, and only `CairnAdminShell` imports
+  that sheet (`src/lib/admin/CairnAdminShell.svelte:43`, `scripts/build/admin-css.input.css:1-3`).
+  Outside the shell the components render unstyled unless the site's own stylesheet supplies the
+  classes. The page can only hedge on building the member area from the toolkit. A fix either
+  documents the toolkit as admin-shell-only or ships a stylesheet a site can import for it.
+- **`extender`.** Found by the restrict-admin-access page plan on 2026-10-07 (`f:iwf4nu`,
+  `f:2zytgf`). The reference snippets that declare the role vocabulary import `roles` from the
+  adapter module: `docs/reference/core.md:1015-1017` (the `defineAccess` example's
+  `src/lib/cairn.access.ts` imports it from `#theme/cairn.config.js`) and
+  `docs/reference/sveltekit.md:131` (the `createAuthGuard` example). The same `defineAccess` entry
+  then says to pass the map to the adapter's `access` member (`docs/reference/core.md:1026`). An
+  adapter module that imports the map from a module that imports the adapter forms an import
+  cycle, which throws at module evaluation (`Cannot access 'roles' before initialization`,
+  reproduced with two plain ES modules under Node). The scaffold avoids it only because its
+  adapter carries no map (`templates/waymark/src/theme/cairn.config.ts`). The page plan declares
+  both in `src/access.ts`, which the adapter and the hooks both import. A fix moves the reference
+  snippets to that layout, or has the engine read one declaration (see the two-wiring-points entry
+  above).
+- **`contributor`.** Found by the restrict-admin-access page plan on 2026-10-07 (a facts-container
+  conflict, `f:lmtfkt`, `f:uhoyun`). `f:lmtfkt` says a detail endpoint nested under a gated
+  `/admin` page needs "its own access-map entry", while `f:uhoyun` says a route key governs every
+  path beneath it by deepest path-segment prefix. The code bears out `f:uhoyun`: `matchHrefKey`
+  (`src/lib/auth/access.ts:107`) matches the route id `/admin/signups/[id]` against a key
+  `/admin/signups` unless the map holds a deeper key. `docs/extend/add-a-custom-admin-screen.md:447`
+  carries `f:lmtfkt`'s wording as a required step. The nested route does need its own
+  `requireAccess` call, but the separate entry is optional, and a deeper literal key under the
+  screen's key would instead make a dynamic sibling route refuse every session (`f:8anql1`). A fix
+  narrows `f:lmtfkt` to the `requireAccess` call and rewords that step.
+- **`contributor`.** Found by the restrict-admin-access page plan on 2026-10-07 (two
+  facts-container holes). First, `f:8ciz2s` says `config.access_unmapped` fires when a map covers
+  "some, but not all" of the concepts and fixed screens, but `validateAccessComposition` warns
+  whenever any one is unmapped, a map of route keys alone included, since only screen-id keys
+  count (`src/lib/sveltekit/admin-nav.ts:323-329`); the `docs/reference/log-events.md` row states it
+  correctly. Second, no fact names the media library's address, `/admin/media`, or states that an
+  engine screen refuses with `error(403, 'Access denied')` and logs `auth.access.refused`
+  (`requireEngineAccess`, `src/lib/sveltekit/guard.ts:442`). The page's per-role check on the media
+  screen therefore names the refusal without its status or path. A fix rewords `f:8ciz2s` and adds
+  the engine-screen refusal fact.
+- **`extender`.** Found by the restrict-admin-access page plan on 2026-10-07 (`f:8anql1`,
+  `f:uhoyun`). Adding a deeper route key turns a route with a dynamic or rest parameter under the
+  shallower key into a refusal for every session, owner included (`src/lib/auth/access.ts:107-130`,
+  `matchHrefKey`). The site sees the change only as 403s at request time, since composition never
+  sees the site's route ids. The reference entries a developer reads for keys omit the case:
+  `docs/reference/sveltekit.md:388` says a parameterized route id resolves verbatim "so a map keyed
+  by its prefix still matches", and `docs/reference/core.md:1048` describes deepest-prefix matching
+  without the refusal. Only the `createSectionAction` entry asks a rest-parameter route to declare
+  `target`. The page has to carry the caveat itself. A fix adds the refusal to both entries.
+- **`extender`.** Found by the restrict-admin-access page plan's revision on 2026-10-07 (a
+  facts-container hole, `f:qca0t0`, `f:9ug9mo`, `f:jtl15v`). An extend page whose checks run on the
+  deployed site needs a step that redeploys a scaffolded site, and neither the extend track nor the
+  facts container gives one. The Workers Builds connection is optional at setup
+  (`packages/create-cairn-site/src/cloudflare/catalogue.mjs:706-715`, the declined path), so a
+  scaffolded site redeploys either by a push to the default branch (`f:qca0t0`) or by `npm run
+  build` and `npx wrangler deploy` from the site's directory, the same two commands the trigger
+  runs (`packages/create-cairn-site/src/cloudflare/chapter3.mjs:88-91`). The page has to hedge
+  between the two. It assembles them from an admin-track fact, a vendor fact (`f:9ug9mo`), and the
+  hand-built tutorial's "Deploy a change" exercise
+  (`docs/extend/add-cairn-to-a-sveltekit-app.md:169-186`). A fix adds a fact for a scaffolded
+  site's two redeploy paths and gives the extend track one linkable redeploy section.
+- **`extender`.** Found by the scaffolded-site-files page plan on 2026-10-07 (`f:4ax489`,
+  `f:jd54ph`). A fresh scaffold's `npx cairn-guidance check` prints `.claude/ is not excluded from
+  the Tailwind build; add @source not "./.claude";`, and the scaffold's CI workflow prints the same
+  line on every push (run against `templates/waymark/` at engine 0.98.0). The line is a false
+  positive. `judgeSourceExclusion` reads only `src/admin.css` or `src/theme/admin.css` and matches
+  the literal `@source not "./.claude";` (`src/lib/guidance/check.ts:21,26,73-88`), while the
+  scaffold's `src/admin.css` imports Tailwind's utilities with `source(none)` and names its sources
+  explicitly (`templates/waymark/src/admin.css:3-5`), and the public build already excludes the
+  tree with `@source not "../../.claude"` (`templates/waymark/src/chassis/tokens.css:55`). The
+  suggested line would also resolve to `src/.claude` inside `src/admin.css`. No fact states the
+  false positive, so the page cannot tell a new owner the line is safe to ignore. A fix teaches the
+  check to accept `source(none)` or a sheet-relative path, or has the bake write a line the check
+  accepts.
+- **`extender`.** Found by the scaffolded-site-files page plan on 2026-10-07 (`f:dy5cfj`,
+  `f:4ax489`). Two writers stamp `.claude/cairn/VERSION` differently: the bake writes the
+  caret-stripped engine spec (`packages/create-cairn-site/scripts/bake-template.mjs:213`), and
+  `cairn-guidance install` writes the installed package's version
+  (`src/lib/guidance/install.ts:52,208`). `cairn-guidance check` judges freshness by one hash over
+  the whole flattened tree, `VERSION` included (`src/lib/guidance/install.ts:191-210`,
+  `src/lib/guidance/check.ts:49-56`), so a scaffold whose `npm install` resolves the caret range
+  above its floor reads as stale on its first check even when no skill file changed, and `--strict`
+  would fail it. `docs/reference/guidance.md:28` says `VERSION` is "stamped from the installed
+  package's own version", which a baked tree's stamp is not. A fix hashes the tree without
+  `VERSION`, or leaves the stamp to the first install.
+- **`contributor`.** Found by the scaffolded-site-files page plan on 2026-10-07 (`f:3m0oxs`), a
+  hole in `docs/internal/facts/`. `f:3m0oxs` says the setup command saves its progress, the pasted
+  Cloudflare token included, in `~/.config/cairn/sites/<id>.json`, but the command deletes the
+  saved token at each terminal outcome: chapter 2 at its terminal steps
+  (`packages/create-cairn-site/src/cloudflare/chapter2.mjs:21-26,131-151`), chapter 3 at
+  `builds-live`, `builds-connect-declined`, and the `--yes` reconcile park
+  (`packages/create-cairn-site/src/cloudflare/chapter3.mjs:17-29`), and `retireSite` scrubs it from
+  a retired record (`packages/create-cairn-site/src/state.mjs:162-191`). A page that states the
+  fact alone implies a finished run leaves a live token on disk, so the plan has the page make no
+  claim about how long the token stays. A fix extends `f:3m0oxs` with the deletion, so the page can
+  say a completed run leaves no token in the file.
+- **`contributor`.** Found by the scaffolded-site-files page plan on 2026-10-07 (`f:jd54ph`,
+  `f:4ax489`). `f:jd54ph` gives the workflow's `continue-on-error: true` as the reason a stale or
+  missing guidance tree surfaces without failing the build, but `cairn-guidance check` already
+  exits 0 on a stale or missing tree without `--strict` (`f:4ax489`), and the workflow's own comment
+  says `continue-on-error` covers only a crash or a resolution failure
+  (`templates/waymark/.github/workflows/check.yml:23-24`). The plan has the page give the default
+  exit code as the reason. A fix rewords the fact's causal clause, together with the stale source
+  the page-inputs entry above names.
+- **`extender`.** Found by the scaffolded-site-files page plan on 2026-10-07 (`f:n2skkz`,
+  `f:38pjqy`, `f:gj96px`, `f:paotzb`). Beyond the `vite.config.ts` and `package.json` lines the
+  page-inputs entry above names, more scaffold comments describe the showcase the bake pruned.
+  `templates/waymark/src/chassis/archive.ts:7-9` says the page size is set so "this site's own
+  corpus crosses one page boundary", but the scaffold seeds 14 posts, a lead plus one full page of
+  13, so a new site has no `/archive/2`. `templates/waymark/src/routes/+layout.server.ts:3-5,13-14`
+  names `/members/**` routes the scaffold lacks. `templates/waymark/src/hooks.server.ts:14` cites an
+  e2e workflow and `templates/waymark/src/routes/healthz/+server.ts:4-5` an E2E assertion, and
+  neither ships. `templates/waymark/.gitignore:10-11` ignores Playwright output. A new owner reading
+  these files meets claims the page cannot confirm or correct without a fact for each. A fix extends
+  the page-inputs entry's bake-time strip or reframe to these files.
+- **`extender`.** Found by the scaffolded-site-files page plan on 2026-10-07 (`f:paotzb`). The
+  scaffold's `/healthz` answers 200 whether its check passes or fails
+  (`templates/waymark/src/routes/healthz/+server.ts:4-5,14-20`), so an uptime monitor that reads
+  only the status code reports a site with a broken App key as healthy; only the body's `ok` field
+  carries the verdict. The route's comment justifies the 200 by an E2E assertion the scaffold does
+  not ship. The page states that `ok` carries the verdict. A fix answers 503 when `ok` is false and
+  keeps the JSON body, which still tells an operator a missing key from a crash.
+- **`extender`.** Found by the add-a-second-sign-in-group page plan on 2026-10-07 (`f:p1xmp5`,
+  `f:8anql1`, `f:xbjxit`, `f:altcjp`, `f:bvfs3e`, `f:pvs115`, `f:16paho`). A `none`-capability
+  role's own screen cannot use the access map, the gate `docs/extend/add-a-custom-admin-screen.md`
+  teaches for every custom screen: `canReach` refuses every `none` session before it reads the map
+  (`src/lib/auth/access.ts:157-159`), so `requireAccess` (`src/lib/sveltekit/guard.ts:476-485`) and
+  `createSectionAction` 403 the role the screen exists for, and a map rule for the screen's href
+  hides its sidebar link from that role (`src/lib/sveltekit/admin-nav.ts:477-480`). Meanwhile
+  `RoleDeclaration.home` sends the role there and a `navLayout` entry's `roles` admits it. Two
+  seams admit the role and the documented gate refuses it, and `f:bvfs3e`'s "denied via the access
+  map" cannot hold for a `none` role. The page has the screen call `requireSession` and check the
+  role by hand, use `createAdminAction` with no `access` option, and keep the href out of the map.
+  A fix lets an access-map rule admit a named `none` role on a site route, or documents the
+  hand-rolled role check as the `none` role's gate on the reference entries for `requireAccess` and
+  `defineAccess`.
+- **`extender`.** Found by the add-a-second-sign-in-group page plan on 2026-10-07 (`f:rn62i1`,
+  `f:hwffph`, `f:hcjb3o`). A role vocabulary beyond owner and editor depends on `0001_roles.sql`,
+  and nothing checks it. On a database without the migration, `/admin/editors` offers the declared
+  role, `editorAddAction` validates it against the vocabulary
+  (`src/lib/sveltekit/editors-routes.ts:93-108`), and `insertEditor`
+  (`src/lib/auth/store.ts:263-273`) meets `0000_auth.sql`'s `CHECK (role IN ('owner', 'editor'))`
+  (`migrations/0000_auth.sql:5`) as an unhandled D1 error, with no condition id and no named
+  remedy. `auth.role-wiring-missing` checks that the guard received the vocabulary, but no check
+  pairs a declared vocabulary with the migration. The page puts the migration beside the add step
+  and gives the failure a check without naming its shape. A fix catches the constraint failure
+  and answers `fail(400)` naming the migration, or adds a `cairn doctor` condition beside
+  `auth.role-wiring-missing`.
+- **`extender`.** Found by the add-a-second-sign-in-group page plan's revision on 2026-10-07
+  (`f:69xbyh`, `f:vo4m61`, `f:86h9o6`). A channel whose Turnstile secret is unset answers every
+  code request `challenge-required`, and nothing names the missing secret. The reference's worked
+  `challenge` passes `env.TURNSTILE_SECRET ?? ''` (`docs/reference/auth-channel.md:66`),
+  construction checks only that `challenge` is a function (`src/lib/auth-channel/factory.ts:560`),
+  and no `cairn doctor` condition reads a channel's secret. The one record is
+  `turnstile.verify_failed` with `reason: 'invalid_input'` and the token's length, the reason a
+  blank token also logs (`src/lib/cloudflare/turnstile.ts:92-104`), so a missing secret reads like
+  a form that never posted the widget's token. The factory's own TSDoc example adds a third shape,
+  `challenge: verifyTurnstile` (`src/lib/auth-channel/factory.ts:547`), whose `(token, secret)`
+  parameters cannot take the `(event, form)` a `challenge` receives. The page's failure check has
+  to name both the secret and the token field, and its two secret steps (`.dev.vars` for
+  `wrangler dev`, a Worker secret for the deployed site) rest on a name only the sample fixes. A
+  fix gives the blank-secret refusal its own reason, such as `missing_secret`, and corrects the
+  TSDoc example to wrap `verifyTurnstile` the way the reference does.
+- **`extender`.** Found by the rotate-the-github-app-key page inputs on 2026-10-07 (`f:5dwnh1`,
+  `f:jjava3`, `f:vg42j3`, `f:ejuoh6`, `f:bffsa9`). No single signal confirms that GitHub accepts a
+  rotated key before the old one is deleted. `/healthz`'s signing self-test makes no network call
+  (`src/lib/github/signing.ts:130-138`), so a parseable key from the wrong App, or a key already
+  deleted on GitHub, reports `ok: true`. A real publish, the runbook's confirm step, can succeed
+  on an installation token a warm isolate minted before the swap and cached for 55 minutes
+  (`src/lib/github/signing.ts:105-121`). A refused mint on the save path is an unhandled error
+  rather than a `commit.failed` record (`f:bffsa9`'s rejection); the one named record is
+  `github.unreachable` with `scope: 'shell'` from the admin shell's best-effort read
+  (`src/lib/sveltekit/content-routes-shell.ts:158-176`). The page states what each signal proves
+  and has the reader wait out the cache window before deleting the old key. A fix gives `/healthz` an opt-in live check that mints an installation
+  token from the current secret without caching it.
+- **`extender`.** Found by the rotate-the-github-app-key page plan on 2026-10-07 (`f:olofdb`,
+  `f:z97ilc`, `f:dbue4k`, `f:97fxdx`). Putting a `.pem` into `GITHUB_APP_PRIVATE_KEY_B64` takes a
+  platform matrix. The page carries a Node form for Linux and macOS, `base64 -w 0` for Linux only
+  (BSD `base64` on a Mac rejects `-w`, per `f:97fxdx`'s rejection), and `[Convert]::ToBase64String`
+  for PowerShell, whose `Out-File` route writes UTF-16LE under Windows PowerShell 5.1.
+  `docs/extend/add-cairn-to-a-sveltekit-app.md:934` uses a fourth form,
+  `base64 < <file> | tr -d '\n'`. No fact verifies the Windows leg end to end: `f:dbue4k` covers
+  only `Out-File`'s default encoding, so the page's PowerShell pipe into `npx wrangler secret put`
+  rests on no fact. The setup command already owns a tested encode-and-push,
+  `movePemToWorkerSecret` (`packages/create-cairn-site/src/cloudflare/secret.mjs:23-48`), but it
+  reads the key only from its own state. A fix exposes that step as a command that takes a `.pem`
+  path, so both pages give one cross-platform command; short of that, a verified Windows run
+  lands in the facts container as a bullet.
+- **`extender`.** Found by the rotate-the-github-app-key page plan on 2026-10-07 (`f:sszb7b`,
+  `f:72yc97`, `f:ejuoh6`). The rollback before deletion re-pushes the old key's base64, which only
+  a developer who kept the old `.pem` holds. A site the setup command created never had a key file
+  on disk: the App manifest flow returns the PEM into the setup command's state
+  (`packages/create-cairn-site/src/github/manifest.mjs:213`), `movePemToWorkerSecret` clears that
+  copy once the secret is written (`packages/create-cairn-site/src/cloudflare/secret.mjs:42`), and
+  Cloudflare hides a secret's value after it is set
+  (https://developers.cloudflare.com/workers/configuration/secrets/). On such a site the rollback
+  is unavailable and the recovery is a third key, so the page states the rollback as conditional
+  on a kept copy. The same step's closing message tells the developer to regenerate a lost key
+  and "re-run this step" (`secret.mjs:43-46`), but with no PEM in state the step logs that the key
+  is already a Worker secret and returns (`secret.mjs:25-28`), so a re-run cannot take a
+  regenerated key. A fix points the message at the rotation page, or gives the step a `.pem` input
+  (the entry above).
+- **`extender`.** Found by the rotate-the-github-app-key page plan on 2026-10-07 (`f:9xqudi`,
+  `f:nls26c`). The App id and the installation id have two names. The engine reads both only from
+  the adapter's `createGithubApp({ appId, installationId })` (`src/lib/github/backend.ts:162`), but
+  the `github.app-unreachable` remediation says to check `GITHUB_APP_ID` and
+  `GITHUB_APP_INSTALLATION_ID` (`src/lib/diagnostics/conditions.ts:198`), and the scaffold's
+  `templates/waymark/.dev.vars.example:7-8` declares them as variables. No engine or scaffold code
+  reads either name, so a developer following the remediation after a failed rotation checks two
+  values that change nothing. A fix drops both names from the remediation and the example file and
+  names the adapter's `createGithubApp` values instead.
+- **`extender`.** Found by the rotate-the-github-app-key page plan on 2026-10-07 (`f:5dwnh1`,
+  `f:paotzb`, `f:ixr3ny`). No signal says which key the Worker holds. `/healthz` signs with
+  whatever key `GITHUB_APP_PRIVATE_KEY_B64` carries (`src/lib/sveltekit/health.ts:24-31`), and the
+  old key keeps signing until it is deleted, so a push that reached a different Worker leaves every
+  check on the page passing on the old key; deleting the old key then stops publishing with no
+  rollback left. The page can only have the reader push from the site's directory. A fix has the
+  signing self-test report a fingerprint of the configured key's public half, which discloses
+  nothing secret, for the reader to compare with the key list on GitHub (confirm that GitHub shows
+  a fingerprint per key before building on it).
+- **`extender`.** Found by the rotate-the-github-app-key page plan's structural-edit revision on
+  2026-10-07 (`f:ejuoh6`, `f:9sk0at`, `f:7u49xs`). The rotation's confirming publish has to ship a
+  content edit. Publish acts only on an unsaved edit, a held draft branch, or a new entry
+  (`src/lib/admin/EditPage.svelte:198`, `publishActionable`), so on a site with nothing pending
+  the reader changes a line of real content and publishes it, a commit on the default branch, to
+  test a credential. The reads that reach GitHub with no content change are the admin's
+  best-effort reads, and they prove acceptance only by the absence of a `github.unreachable`
+  record (`src/lib/sveltekit/content-routes-shell.ts:158-176`). The facts container has no bullet
+  for the Publish guard, so the page can tell the reader to make the edit but not why. A fix is
+  the opt-in live check the page-inputs entry above proposes, which makes the publish
+  unnecessary; short of it, a container bullet for `publishActionable` lets the page give the
+  reason.
+- **`extender`.** Found by the scaffolded-site-files framing step on 2026-10-07 (`f:kouawx`,
+  `f:0ygumq`). Nothing the setup command prints or writes points a new owner at the page that maps
+  its tree. The hand-over text names `.github/workflows/check.yml`, `.claude/`, and
+  `npx cairn-guidance check` and links no documentation page
+  (`packages/create-cairn-site/src/scaffold.mjs:230-264`). The baked `README.md` links only the
+  engine's GitHub repository (`packages/create-cairn-site/scripts/bake-template.mjs:31-34`). The
+  guidance fragment's "Where the docs are" names only the reference index
+  (`templates/waymark/.claude/cairn/CLAUDE.md:79-81`), though the package's `files` list ships the
+  extend arm (`package.json:204,216`). A developer who ran the command, or who took over its site,
+  reaches the file map only by search or by browsing the docs, so the page's framing cannot count
+  the command's output as an arrival path. A fix adds one line to the baked README and the
+  hand-over naming the page, at its installed path
+  `node_modules/@glw907/cairn-cms/docs/extend/scaffolded-site-files.md` or its cairn.pub URL, and
+  can ride the hand-over rewrite `ROADMAP.md` already carries (first-run defect 4).
+- **`contributor`.** Found by the scaffolded-site-files page draft on 2026-10-07 (a facts-container
+  hole; `f:qlgggh`, `f:qnf469`, `f:n7t4bn`). Three scaffold entries a new owner meets have a fact
+  that names them and none that states their role: `src/theme/theme-names.ts` (named in `f:qnf469`
+  and `f:qlgggh`), `src/lib/log.ts` (named in `f:qlgggh`), and the `PUBLIC_ORIGIN` variable in
+  `wrangler.jsonc` (named in `f:n7t4bn`, whose source shows the template value
+  `http://localhost:4173`, with no fact on what reads it or whether the setup command rewrites it).
+  The page lists `theme-names.ts` bare, collapses `src/lib/` to one tree line, and calls
+  `PUBLIC_ORIGIN` only "a plain variable". A fix files one verified fact per entry, traced to its
+  readers in `templates/waymark/` and to `packages/create-cairn-site/src/substitute.mjs` for the
+  origin, so the page can say what each does and whether the owner changes it.
+- **`extender`.** Found by the add-a-second-sign-in-group framing step on 2026-10-07 (`f:qqy4uq`,
+  `f:nz890r`, `f:b3l3t0`). The people a channel signs in carry three names. The engine's TSDoc
+  (`src/lib/auth-channel/factory.ts:1,531`, `src/lib/auth-crypto/index.ts:2`), the reference
+  (`docs/reference/auth-channel.md:3,10,31,74`, `docs/reference/README.md:52-53`,
+  `docs/reference/auth-crypto.md:15,18`), the scaffold's guidance
+  (`templates/waymark/.claude/cairn/CLAUDE.md:26`,
+  `templates/waymark/.claude/skills/cairn-extend/SKILL.md:33,43`), and the extend outline's
+  glossary entry for "auth channel" say "second audience". The extend page for the task is titled
+  "Add a second sign-in group", `docs/extend/replace-magic-links-with-cloudflare-access.md:34` says
+  "a second population", and `docs/extend/security-model.md:257` says "a second sign-in audience".
+  The terms also differ in reach: the reference's "second audience" means a channel's people only,
+  while the restrict-admin-access page plan uses it for a `none`-capability role
+  (`docs/internal/briefs/extend/restrict-admin-access.plan.md:206-207`). A reader who follows a
+  reference link to the page meets a new name for the same people, and the page's introduction has
+  to pick one. A fix sanctions one term in the "Names" section of `docs/internal/docs-register.md`
+  and brings the reference ledes, the TSDoc, and the guidance to it.
+- **`extender`.** Found by the add-a-second-sign-in-group framing step on 2026-10-07 (`f:b3l3t0`,
+  `f:4673n6`, `f:p1xmp5`). The scaffold's guidance offers a second group only the channel. The
+  `cairn-extend` skill's router (`templates/waymark/.claude/skills/cairn-extend/SKILL.md:29-33`)
+  has a row for "A second audience's own login channel" and none for a declared `none`-capability
+  role with a `home`, and its custom-screen row prescribes `createSectionAction` and
+  `requireAccess`, which refuse every `none` session (the gate mismatch an earlier entry from this
+  page's plan records). That row, the channel row, and the guidance fragment's channel line
+  (`templates/waymark/.claude/cairn/CLAUDE.md:26-27`) all point at reference pages, so a scaffolded
+  site's developer and its agent reach `createAuthChannel` without meeting the choice between the
+  two mechanisms, and the page's framing cannot count the guidance as an arrival path. A fix adds a
+  router row for a role that signs in to its own `/admin` screen and points both second-group rows
+  at `node_modules/@glw907/cairn-cms/docs/extend/add-a-second-sign-in-group.md`, which the
+  package's `files` list ships (`package.json:216`), once the page lands.
+- **`extender`.** Found by the rotate-the-github-app-key framing step on 2026-10-07 (`f:s90j7l`,
+  `f:ixr3ny`, `f:ejuoh6`, `f:vg42j3`, `f:72yc97`). A rotation after a suspected compromise keeps
+  the exposed key valid for at least 55 minutes. GitHub names a compromise as the occasion for the
+  two-key order (`f:s90j7l`), and the old key signs for anyone who holds it until it is deleted
+  (`f:ixr3ny`). The page deletes it only after a publish confirms the new key (`f:ejuoh6`), and
+  that publish proves nothing until the per-isolate token cache has turned over
+  (`src/lib/github/signing.ts:105-121`). A reader rotating an exposed key therefore leaves it live
+  through the cache window and the checks, and the page offers no shorter order, since deleting
+  first risks an outage with no rollback; on a site the setup command created the rollback is
+  already gone (`f:72yc97`). The introduction can only name the trade. A fix is the opt-in live
+  check the page-inputs entry above proposes, which confirms GitHub's acceptance at once and lets
+  the old key go minutes after the push.
+- **`extender`.** Found by the rotate-the-github-app-key redraft on 2026-10-07 (`f:vg42j3`,
+  `f:86h9o6`). The container cannot say whether a warm isolate survives `wrangler secret put`.
+  The token cache is module-global per isolate (`src/lib/github/signing.ts:105-121`), and the
+  secret write deploys a new Worker version (`f:86h9o6`), which normally runs in fresh isolates
+  with an empty cache. No fact states whether an isolate of the old version keeps serving after
+  the deploy, or for how long. The page's 55-minute wait and its "at least 55 minutes" exposure
+  cost rest on `f:vg42j3` alone, as the plan's drafting constraints require, so they may
+  overstate the window. A fix files a verified fact on isolate turnover at a version deploy, from
+  Cloudflare's documentation or a recorded run, and the page restates the wait as that bound.
+- **`contributor`.** Found by the add-a-second-sign-in-group draft on 2026-10-07. `check:snippets`
+  never typechecks a fenced block nested under a list item. `FENCE_OPEN_RE` and `SKIP_RE` in
+  `scripts/checks/check-snippets.mjs:58-60` anchor at column zero, and `extractBlocks`
+  (`:218-235`) matches the raw line, so a step's indented ```` ```ts ```` fence, and the
+  `snippet-check-skip` comment above it, are invisible to the gate. Every snippet a task guide puts
+  inside a numbered step escapes the check that the extend track's success criterion rests on
+  ("every documented snippet typechecks against the built package"); `docs/extend/add-cairn-to-a-sveltekit-app.md`'s
+  step snippets are in the same state. The draft proved its five checked blocks by a temporary
+  dedent, which passed. A fix trims the leading indentation before both matches and dedents the
+  body by the fence's own indent.
+- **`contributor`.** Found by the add-a-second-sign-in-group draft on 2026-10-07 (`f:0l7si2`).
+  `check:symbols` reads `@glw907/cairn-cms-dev` as a `-dev` subpath of the engine. The import
+  regex in `extractImportedIdentifiers` (`scripts/checks/check-symbols.mjs:290-292`) captures
+  everything after `@glw907/cairn-cms` as the subpath, so `import { createChannelDb } from
+  '@glw907/cairn-cms-dev'` resolves against a `-dev` entry the API surface snapshot never has and
+  fails, though the dev package's `src/index.ts:8` exports the name. The draft allowlisted
+  `export:createChannelDb` with the reason; the tutorial's `devBackendHandle` escapes only because
+  it is a dynamic import. A fix requires the suffix to start with `/` and resolves a dev-package
+  import against `packages/cairn-cms-dev/src/index.ts`.
+- **`extender`.** Found by the add-a-second-sign-in-group draft on 2026-10-07 (`f:69xbyh`,
+  `f:86h9o6`). No fact names the Turnstile secret's variable. The reference's worked example
+  (`docs/reference/auth-channel.md`, `createAuthChannel`) reads `env.TURNSTILE_SECRET`, and the page
+  stores and reads that name in three places, but no container bullet carries it, so the page's
+  prose says "the name the module reads" and the name itself appears only inside code fences. A
+  fix files a reference-tier fact for the worked example's `Env` (its `MEMBER_DB` and
+  `TURNSTILE_SECRET` members) so a page can name the secret in prose.
+- **`extender`.** Found by the add-a-second-sign-in-group fact read on 2026-10-07 (`f:0l7si2`).
+  `createChannelDb` returns a `ChannelDb` that declares only `prepare` and `withSession`
+  (`packages/cairn-cms-dev/src/channel-db.ts:26-29`), while `createAuthChannel`'s `resolveDb` must
+  return a `D1Database` (`src/lib/auth-channel/factory.ts:232`). The double is the documented test
+  stand-in for that exact binding, yet its type is not assignable to it, so the page's channel
+  test puts it on the mocked env through `as unknown as D1Database`, a cast every site's test
+  repeats. A fix types the double's return as a `D1Database`-compatible shape (or exports a typed
+  helper that returns one), so the test needs no double cast.
+
+- **`extender`.** Found by the debug-your-site page inputs on 2026-10-07 (`f:qdfs37`,
+  `src/lib/content/fieldset.ts:458-471`). A field's `behavior.validate()` that throws is caught,
+  logged as `content.field_behavior_failed`, and the field is treated as valid, so the save lands
+  the very value the validator existed to refuse. The page has to warn that a buggy validator
+  fails open. A fix fails the field (or the save) closed on a throw, keeping the warn record.
+
+- **`extender`.** Found by the debug-your-site page inputs on 2026-10-07 (`f:vs9g9e`,
+  `src/lib/vite/internal.ts#checkSiteFacts`). When the adapter throws while the build derives the
+  site facts, `checkSiteFacts` returns `ok` with no record, so a stale `site-facts.json` passes
+  silently and the page cannot name any signal a developer would see. The doc comment argues the
+  manifest verify already gates an adapter that cannot load; a fix still emits one build-log
+  warning on this degrade so the skipped comparison is visible.
+
+- **`extender`.** Found by the debug-your-site page inputs on 2026-10-07 (`f:ogz5eu`,
+  `f:swjwxb`, `f:o7mr6f`). `CAIRN_FIXED_TODAY` carries the engine's `CAIRN_` prefix, yet no engine
+  code reads it: it is a site-authored testing recipe. Beside `CAIRN_DEV_BACKEND`, which the engine
+  does read, the page must hedge that this one is the site's own name. Either give it a site-owned
+  name in the recipe or ship the fixed-today reader as a narrow seam.
+
+- **`contributor`.** Found by the debug-your-site page inputs on 2026-10-07. Two outline facts
+  drifted from the code. `f:i1dayf` says a throwing `key()` logs `admin.action.rate_limit_absent`,
+  but `src/lib/sveltekit/section-action.ts:229-240` logs `admin.action.rate_limit_failed` for it
+  (its own `Source:` text says so); `f:cp0tek` restates it correctly. `f:eywrq8` says the logger is
+  exported from no package subpath, but `/log` exports `createLogger` (`src/lib/log/public.ts:4`);
+  `f:mreycz` restates it. `f:vs9g9e` (`internal.ts:445-468`) and `f:v1jj2k`
+  (`admin-action.ts:146-153,212-216`) carry stale line pointers. The independent fact read should
+  correct or retag the two drifted bullets.
+
+- **`extender`.** Found by the debug-your-site page plan on 2026-10-07 (`f:nup3og`, `f:v1jj2k`,
+  `f:1b3ye3`). `admin.action.misconfigured` with `reason: 'access_map_not_attached'` is the
+  documented signal that the admin guard never ran on a route, but the guard sets
+  `locals.cairnEditor` and `locals.cairnAccess` together (`src/lib/sveltekit/guard.ts:342-348,363-368`)
+  and returns early on a non-admin path (`guard.ts:210-211`). A `createSectionAction` route the
+  guard never handles therefore fails `createAdminAction`'s session check first, logging
+  `admin.action.session_absent` and redirecting to `/admin/login`
+  (`src/lib/sveltekit/admin-action.ts:207-211`), which reads as a lapsed session. The
+  `access_map_not_attached` branch, and the comment at `guard.ts:364-367` that promises it, run
+  only when site code sets `cairnEditor` without `cairnAccess`. The page states each reason as the
+  code sets it and names neither event as the signal for a route outside the guard. A fix lets
+  the wrapper tell a missing guard from a lapsed session, or files a verified fact that names
+  `session_absent` as that signal.
+
+- **`extender`.** Found by the debug-your-site page plan on 2026-10-07 (`f:rkj7tn`, `f:mreycz`).
+  The page has to tell a developer where a record appears under `vite dev` and `wrangler dev`,
+  and it cannot. No container fact states it, and `docs/reference/log.md:14-15` says the sink a
+  record reaches (`console` today) is not promised and may change. The page names only the
+  deployed surfaces (Workers Logs, `wrangler tail`, `cairn logs`), so the development half of its
+  job has no reading surface. A fix promises a local sink, or files a fact on where records
+  surface in each development server and states the promise it rests on.
+
+- **`extender`.** Found by the debug-your-site page plan on 2026-10-07 (`f:ogz5eu`, `f:o7mr6f`,
+  `f:i8pbhc`, `f:f7tkkw`). The fixed-today recipe has two legs no fact verifies. `.dev.vars` is
+  the local home for the pin (`f:o7mr6f`), but no fact states how a CI job hands
+  `CAIRN_FIXED_TODAY` to the Worker env that `cloudflare:workers` reads; `f:f7tkkw`'s rejection
+  names "the CI job's own environment" with no verified route into that env. A prerendered route
+  that reads the pin also meets the `env` read that throws while the build prerenders
+  (`f:i8pbhc`), so the reader must check `building` and fall back to the clock, and prerendered
+  output stays unpinned. The page states the local home and the guard and says nothing about CI.
+  A fix files a verified CI route, or ships the fixed-today reader as the narrow seam the entry
+  above proposes, settling both legs in one place.
+
+- **`extender`.** Found by the debug-your-site page plan on 2026-10-07. Sibling extend pages
+  route recoveries to this page that its outline does not cover:
+  `docs/extend/add-cairn-to-a-sveltekit-app.md:562` (the dev backend's other failures), `:792`
+  (each content build failure), `:1106` (each production failure), and `:1214` (a sign-in email
+  that does not arrive or keeps the engine's defaults), and
+  `docs/extend/replace-magic-links-with-cloudflare-access.md:400` (a persisting `guard.refused`).
+  The outline's own route for operator-facing symptoms, `docs/admin/troubleshooting.md`, sits in
+  no committed outline, so `check:docs` (`scripts/checks/docs-links.mjs:14-16`) refuses a link to
+  it. The `auth.access.refused` entry above is the same gap for one event. A fix rules, promise
+  by promise, whether this page gains a row backed by facts or the sibling routes elsewhere, and
+  links the admin troubleshooting page once its outline lands.
+
+- **`contributor`.** Found by the debug-your-site page plan on 2026-10-07. The symptom-row
+  anatomy in `docs/internal/docs-register.md` ("The page anatomies") names no closing section,
+  though the same section's 2026-10-01 ruling says every page type ends with one for its type.
+  The plan borrowed the task guide's see-also section, the nearest anatomy and the one whose
+  failure paths route to this page. A fix names the symptom row's ending in the anatomy.
+
+- **`contributor`.** Found by the debug-your-site page plan on 2026-10-07 (`f:wi766c`). The
+  repo's `CLAUDE.md:271-272` says a log record "is safe to read and paste", while `cairn logs` prints
+  "this output carries identifiers and is not safe to paste in public"
+  (`tool/cmd/cairn/messages.go:155`) and `docs/reference/log.md` tells a reader to read any
+  record before pasting it. Records carry an editor's email, so the tool and the reference are
+  right. A fix narrows the `CLAUDE.md` sentence to what `f:wi766c` states.
+
+- **`contributor`.** Found by the debug-your-site page plan on 2026-10-07. `f:iwf4nu` says the
+  guard attaches the access map to `locals.cairnAccess` on every request, but the guard returns
+  before it on any non-admin path (`src/lib/sveltekit/guard.ts:210-211`) and attaches the map only
+  on admin paths (`:348`, `:368`). The plan routes the `access_map_not_attached` fix through the
+  `createAuthGuard` reference entry instead. The fact read should narrow the bullet to admin
+  paths.
+
 ## Clearings
 
 The detail of a cleared finding lives in the pass post-mortem that cleared it and in

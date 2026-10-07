@@ -6,6 +6,7 @@ The extend track is being rebuilt, so this index lists only the pages that are i
 
 - [Architecture](./architecture.md)
 - [Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md)
+- [Scaffolded site files](./scaffolded-site-files.md)
 
 ## Model content
 
@@ -22,8 +23,10 @@ The extend track is being rebuilt, so this index lists only the pages that are i
 
 - [Security model](./security-model.md)
 - [Replace magic links with Cloudflare Access](./replace-magic-links-with-cloudflare-access.md)
+- [Add a second sign-in group](./add-a-second-sign-in-group.md)
 
 ## Operate
 
 - [Upgrade cairn](upgrade-cairn.md): move a site onto a newer engine version.
 - [Migration notes](migration-notes.md): the per-version record of what a consumer must do.
+- [Rotate the GitHub App key](./rotate-the-github-app-key.md)

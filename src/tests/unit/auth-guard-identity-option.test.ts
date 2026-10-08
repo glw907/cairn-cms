@@ -63,7 +63,7 @@ describe('createAuthGuard: identity option, construction-time validation', () =>
   for (const logoutUrl of ACCEPTED_LOGOUT_URLS) {
     it(`accepts logoutUrl ${JSON.stringify(logoutUrl)}`, () => {
       expect(() =>
-        createAuthGuard({ identity: { resolve: async () => ({ ok: false, reason: 'missing' }), logoutUrl } }),
+        createAuthGuard({ runtime: {}, identity: { resolve: async () => ({ ok: false, reason: 'missing' }), logoutUrl } }),
       ).not.toThrow();
     });
   }
@@ -71,7 +71,7 @@ describe('createAuthGuard: identity option, construction-time validation', () =>
   for (const logoutUrl of REJECTED_LOGOUT_URLS) {
     it(`rejects logoutUrl ${JSON.stringify(logoutUrl)}`, () => {
       expect(() =>
-        createAuthGuard({ identity: { resolve: async () => ({ ok: false, reason: 'missing' }), logoutUrl } }),
+        createAuthGuard({ runtime: {}, identity: { resolve: async () => ({ ok: false, reason: 'missing' }), logoutUrl } }),
       ).toThrow();
     });
   }
@@ -82,7 +82,7 @@ describe('createAuthGuard: identity refusal reason coercion', () => {
     // A resolver outside the type system (plain JS, a mistyped ambient) can hand back a reason
     // that is not a string at all; the cast simulates exactly that runtime shape.
     const resolve = (async () => ({ ok: false, reason: null })) as unknown as IdentityResolver['resolve'];
-    const handle = asHandle(createAuthGuard({ identity: { resolve, logoutUrl: '/goodbye' } }));
+    const handle = asHandle(createAuthGuard({ runtime: {}, identity: { resolve, logoutUrl: '/goodbye' } }));
     const ev = event('/admin');
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res.status).toBe(403);
@@ -91,14 +91,14 @@ describe('createAuthGuard: identity refusal reason coercion', () => {
 
 describe('createAuthGuard: locals.cairnIdentity', () => {
   it('sets no locals.cairnIdentity when no identity option is configured', async () => {
-    const handle = asHandle(createAuthGuard());
+    const handle = asHandle(createAuthGuard({ runtime: {} }));
     const ev = event('/admin/login');
     await handle({ event: ev, resolve: async () => OK });
     expect(ev.locals.cairnIdentity).toBeUndefined();
   });
 
   it('removes a locals.cairnIdentity an earlier handle set, before the route runs, when no identity option is configured', async () => {
-    const handle = asHandle(createAuthGuard());
+    const handle = asHandle(createAuthGuard({ runtime: {} }));
     const ev = event('/admin/login');
     ev.locals.cairnIdentity = { label: 'planted', logoutUrl: '/planted' };
     let seenByRoute: unknown = 'unset';
@@ -116,7 +116,7 @@ describe('createAuthGuard: locals.cairnIdentity', () => {
   it('sets locals.cairnIdentity on a public admin path and calls resolve zero times', async () => {
     const resolve = vi.fn<IdentityResolver['resolve']>(async () => ({ ok: false, reason: 'missing' }));
     const handle = asHandle(
-      createAuthGuard({ identity: { resolve, logoutUrl: '/goodbye', label: 'Acme SSO' } }),
+      createAuthGuard({ runtime: {}, identity: { resolve, logoutUrl: '/goodbye', label: 'Acme SSO' } }),
     );
     const ev = event('/admin/login');
     await handle({ event: ev, resolve: async () => OK });
@@ -127,6 +127,7 @@ describe('createAuthGuard: locals.cairnIdentity', () => {
   it('publishes a frozen locals.cairnIdentity, so a downstream write throws rather than poisoning the shared snapshot', async () => {
     const handle = asHandle(
       createAuthGuard({
+        runtime: {},
         identity: { resolve: async () => ({ ok: false, reason: 'missing' }), logoutUrl: '/goodbye', label: 'Acme SSO' },
       }),
     );

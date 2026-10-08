@@ -447,7 +447,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; transformations?: boolean }
 - `AttentionItem`: { href: string; count: number; label?: string }
 - `AuthBranding`: { siteName: string; from: string; replyTo?: string }
-- `AuthGuardConfig`: { roles?: RolesDeclaration; access?: AccessMap; includeSubDomains?: boolean; identity?: IdentityResolver }
+- `AuthGuardConfig`: { runtime: { roles?: RolesDeclaration; access?: AccessMap }; includeSubDomains?: boolean; identity?: IdentityResolver }
 - `AuthRoutes`: { loginLoad: (event: CairnEvent) => LoginData; requestAction: (event: CairnEvent) => Promise<RequestOutcome>; confirmLoad: (event: CairnEvent) => ConfirmData; confirmAction: (event: CairnEvent) => Promise<never>; logoutAction: (event: CairnEvent) => Promise<never> }
 - `AuthRoutesConfig`: { branding: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }
 - `Backend`: { defaultBranch: string; readFile: (path: string, ref: string) => Promise<string | null>; readEntries: (dir: string, ref: string) => Promise<RepoFile[]>; branchHead: (branch: string) => Promise<string | null>; listBranches: (prefix: string) => Promise<string[]>; commit: (branch: string, changes: FileChange[], author: CommitAuthor, message: string, expectedHead?: string) => Promise<string>; listCommits: (path: string, ref: string, limit: number) => Promise<BackendCommit[]>; createBranch: (name: string, fromBranch: string) => Promise<string>; deleteBranch: (name: string) => Promise<void> }
@@ -474,12 +474,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `CookieJar`: { get: (name: string) => string | undefined; set: (name: string, value: string, opts: CookieSetOptions) => void; delete: (name: string, opts: { path: string; secure?: boolean }) => void }
 - `CookieSetOptions`: { path: string; httpOnly?: boolean; secure?: boolean; sameSite?: "none" | "lax" | "strict"; maxAge?: number }
 - `createAdminAction`: <T>(handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionOptions) => (event: CairnEvent) => Promise<T>
-- `createAuthGuard`: (config?: AuthGuardConfig) => Handle
+- `createAuthGuard`: (config: AuthGuardConfig) => Handle
 - `createAuthRoutes`: (config: AuthRoutesConfig) => AuthRoutes
 - `createCairnAdmin`: (config: CairnAdminConfig) => CairnAdminRoutes
 - `createContentRoutes`: (config: ContentRoutesConfig) => ContentRoutes
 - `createD1AuditSink`: (db: D1Database, waitUntil: ((promise: Promise<unknown>) => void) | undefined) => AdminActionAuditSink
-- `createEditorRoutes`: (config?: EditorRoutesConfig) => EditorRoutes
+- `createEditorRoutes`: (config: EditorRoutesConfig) => EditorRoutes
 - `createMediaRoute`: (config: MediaRouteConfig) => RequestHandler
 - `createNavRoutes`: (config: NavRoutesConfig) => NavRoutes
 - `createSectionAction`: <Env, Db>(config: SectionActionConfig<Env, Db>) => SectionAction<Env, Db>
@@ -488,7 +488,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `EditData`: { conceptId: string; id: string; label: string; singular: string; fields: NamedField[]; frontmatter: { [x: string]: unknown }; body: string; title: string; isNew: boolean; saved: boolean; renamed: boolean; slug: string; linkTargets: LinkTarget[]; fragmentTargets: FragmentTarget[] | null; routable: boolean; mediaTargets: { [x: string]: { slug: string; ext: string; contentType: string } }; mediaLibrary: { [x: string]: MediaLibraryEntry }; inboundLinks: InboundLink[]; pending: boolean; published: boolean; publishedFlash: boolean; publishActions: PublishActionLink[]; discardedFlash: boolean; preview: ResolvedPreview | null; spellcheckDictionary: string; siteDictionary: string[]; tidy: { enabled: boolean; model: string; conventions: TidyConventions }; advisories: AdvisoryNotice[]; orphanTags: string[] }
 - `Editor`: { email: string; displayName: string; role: string; capability: "owner" | "editor" | "none" }
 - `EditorRoutes`: { editorsLoad: (event: CairnEvent) => Promise<EditorsData>; editorAddAction: (event: CairnEvent) => Promise<{ ok: true } | ActionFailure<EditorActionFailure>>; editorRemoveAction: (event: CairnEvent) => Promise<ActionFailure<EditorActionFailure> | { ok: true }>; editorSetRoleAction: (event: CairnEvent) => Promise<ActionFailure<EditorActionFailure> | { ok: true }> }
-- `EditorRoutesConfig`: { roles?: RolesDeclaration }
+- `EditorRoutesConfig`: { runtime: { roles?: RolesDeclaration } }
 - `EmailAttachment`: { content: string | ArrayBuffer | ArrayBufferView<ArrayBufferLike>; filename: string; type: string; disposition: "inline" | "attachment" }
 - `EmailField`: { type: "email"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `EmailRecipient`: string | { email: string; name?: string }

@@ -93,7 +93,7 @@ void typeOnlyAuthRoutesContract;
 
 // createEditorRoutes: EditorRoutes replaces the retired `ReturnType<typeof createEditorRoutes>`.
 function typeOnlyEditorRoutesContract(): void {
-  const editors: EditorRoutes = createEditorRoutes();
+  const editors: EditorRoutes = createEditorRoutes({ runtime: {} });
   const roundTrip: ReturnType<typeof createEditorRoutes> = editors;
   void roundTrip;
 }

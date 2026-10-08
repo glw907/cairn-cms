@@ -1014,21 +1014,27 @@ site that declares no vocabulary of its own. A screen-id key's existence against
 concepts, and an href key's collision with a built-in admin route, validate later, at composition,
 once the runtime knows the real concept list.
 
+<!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the first worked example above) to focus on the access member -->
 ```ts
-// src/lib/cairn.access.ts
-import { defineAccess } from '@glw907/cairn-cms';
-import { roles } from '#theme/cairn.config.js';
+// src/theme/cairn.config.ts
+import { defineAdapter, defineAccess, defineRoles } from '@glw907/cairn-cms';
 
-export const access = defineAccess(roles, {
-  pages: ['webmaster'],
-  media: ['webmaster', 'publisher'],
-  '/admin/money': ['webmaster'],
+const roles = defineRoles({ owner: 'owner', webmaster: 'editor', publisher: 'editor' });
+
+export const cairn = defineAdapter({
+  roles,
+  access: defineAccess(roles, {
+    pages: ['webmaster'],
+    media: ['webmaster', 'publisher'],
+    '/admin/money': ['webmaster'],
+  }),
+  // content, backend, email, and rendering as usual
 });
 ```
 
-Pass the same map to [`createAuthGuard`](./sveltekit.md#createauthguard)'s `access` option and to
-the adapter's `access` member: declaring it once and importing it twice is the pattern `roles`
-already follows.
+Declare the map on the adapter's `access` member and nowhere else. `composeRuntime` carries it onto
+the runtime, and [`createAuthGuard`](./sveltekit.md#createauthguard) reads it from the `runtime` it
+is handed, so every reader sees the one declaration.
 
 #### `canReach`, `hasAccessRule`
 

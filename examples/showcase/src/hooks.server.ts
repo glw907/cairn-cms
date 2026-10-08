@@ -1,7 +1,7 @@
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { devBackendOptIn } from '#chassis/dev-gate.js';
-import { access } from './access.js';
+import { runtime } from '#chassis/cairn.server.js';
 
 // createAdminAction's own authorization refusals (see the SvelteKit reference's "Refusal channels")
 // throw SvelteKit's own redirect()/error(), which SvelteKit renders correctly with no site
@@ -17,9 +17,9 @@ import { access } from './access.js';
 let handle: Handle;
 if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
   const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
-  handle = devBackendHandle({ access });
+  handle = devBackendHandle({ runtime });
 } else {
-  handle = createAuthGuard({ access });
+  handle = createAuthGuard({ runtime });
 }
 
 export { handle };

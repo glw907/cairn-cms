@@ -51,7 +51,7 @@ function guardWith(
   return asHandle(
     createAuthGuard({
       identity: { resolve, logoutUrl: '/goodbye', label: 'Acme SSO' },
-      roles: extra.roles ? defineRoles(extra.roles) : undefined,
+      runtime: { roles: extra.roles ? defineRoles(extra.roles) : undefined },
     }),
   );
 }
@@ -240,7 +240,7 @@ describe('guard identity branch: locals.cairnIdentity and public paths', () => {
   it('carries locals.cairnIdentity and calls resolve zero times on /admin/login and /admin/auth/confirm', async () => {
     const resolve = vi.fn<IdentityResolver['resolve']>(async () => resolved('owner@x.dev'));
     const guard = asHandle(
-      createAuthGuard({ identity: { resolve, logoutUrl: '/goodbye', label: 'Acme SSO' } }),
+      createAuthGuard({ runtime: {}, identity: { resolve, logoutUrl: '/goodbye', label: 'Acme SSO' } }),
     );
     const loginEv = event('/admin/login');
     await guard({ event: loginEv, resolve: async () => OK });

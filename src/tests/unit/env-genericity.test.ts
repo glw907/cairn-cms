@@ -78,7 +78,7 @@ void typeOnlyAdminActionAssignability;
 // factory in this sweep is. This proves a site's own generated event assigns cleanly into the
 // `event` member `Handle` declares, the same check `createMediaRoute` carries below.
 function typeOnlyAuthGuardAssignability(siteEvent: SiteRequestEvent): void {
-  const handle = createAuthGuard();
+  const handle = createAuthGuard({ runtime: {} });
   void handle;
   siteEvent satisfies Parameters<typeof handle>[0]['event'];
 }
@@ -127,7 +127,7 @@ void typeOnlyAuthRoutesAssignability;
 
 // createEditorRoutes: every handler reads the same CairnEvent slot as auth-routes.
 function typeOnlyEditorRoutesAssignability(): void {
-  const editors = createEditorRoutes();
+  const editors = createEditorRoutes({ runtime: {} });
   editors.editorsLoad satisfies (event: SiteRequestEvent) => unknown;
   editors.editorAddAction satisfies (event: SiteRequestEvent) => unknown;
   editors.editorRemoveAction satisfies (event: SiteRequestEvent) => unknown;

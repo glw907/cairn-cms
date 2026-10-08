@@ -80,21 +80,24 @@ The facade and its two guard helpers: the one path most sites wire.
 Stability tier: Scaffold API.
 
 ```ts
-declare function createAuthGuard(config?: AuthGuardConfig): Handle;
+declare function createAuthGuard(config: AuthGuardConfig): Handle;
 ```
 
 Build the SvelteKit `Handle` that gates every `/admin/**` path and hardens the admin response
 headers. Wire it in `hooks.server.ts`. A site with its own hook keeps it by sequencing the guard
 last, so the site hook sees every request and the guard owns admin gating.
 
-`config.roles` is the site's declared [role vocabulary](./core.md#roles) (`defineRoles`, a [core](./core.md)
-export); omitted, the guard resolves every session against the implicit owner/editor pair, so a
-zero-config site sees no behavior change. The guard resolves capability once per request and
-attaches it to `locals.cairnEditor.capability`, so every downstream load and action reads it with
-no re-derivation.
+`config.runtime` is required, with no default: the runtime `composeRuntime` returned for the
+site's adapter. The guard reads two members off it, so a site declares each once, on the adapter.
 
-`config.access` is the site's declared [access map](./core.md#access-map) (`defineAccess`, a
-[core](./core.md) export). Omitted, the engine's own screens and a site's own
+`runtime.roles` is the site's declared [role vocabulary](./core.md#roles) (`defineRoles`, a
+[core](./core.md) export); omitted on the adapter, the guard resolves every session against the
+implicit owner/editor pair, so a zero-config site sees no behavior change. The guard resolves
+capability once per request and attaches it to `locals.cairnEditor.capability`, so every
+downstream load and action reads it with no re-derivation.
+
+`runtime.access` is the site's declared [access map](./core.md#access-map) (`defineAccess`, a
+[core](./core.md) export). Omitted on the adapter, the engine's own screens and a site's own
 [`requireAccess`](#requireaccess) calls read differently. The engine's own screens (gated through
 `requireEngineAccess`'s `canReach` check) stay open to any editor-capability session, so a
 zero-config site sees no behavior change there. A `requireAccess` call on a site's own route reads
@@ -128,10 +131,10 @@ would not carry.
 // src/hooks.server.ts
 import { sequence } from '@sveltejs/kit/hooks';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import { roles } from '#theme/cairn.config.js';
+import { runtime } from '#chassis/cairn.server.js';
 import { theme } from './theme-handle.js';
 
-export const handle = sequence(theme, createAuthGuard({ roles }));
+export const handle = sequence(theme, createAuthGuard({ runtime }));
 ```
 
 ### `createCairnAdmin`
@@ -825,11 +828,11 @@ is deployed:
    returns `fail(429)`. This branch calls no `ctx.audit`: a limiter denial is back-pressure, not
    a domain-state change.
 3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
-   `admin.action.misconfigured`, and returns `fail(500)`. The cause is a hook that set
-   `locals.cairnEditor` without the map, as `devBackendHandle` does when given no `access`.
-   [`createAuthGuard`](#createauthguard) attaches the map right after it sets the editor, so behind
-   the guard this check never refuses. The fix passes the same map to
-   `devBackendHandle({ access })`. This check runs before
+   `admin.action.misconfigured`, and returns `fail(500)`. The cause is a route outside every
+   hook's coverage: both
+   [`createAuthGuard`](#createauthguard) and `devBackendHandle` attach the map (an empty one for a
+   zero-config site) right after they set the editor on every admin path they cover, so behind
+   either this check never refuses. This check runs before
    authorization out of necessity (a route cannot authorize against a map that was never
    attached) and leaks nothing per-editor: it is identical for every session.
 4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
@@ -1017,7 +1020,7 @@ function signInMessage(error: string | null): string {
 Stability tier: Unstable API.
 
 ```ts
-declare function createEditorRoutes(config?: EditorRoutesConfig): EditorRoutes;
+declare function createEditorRoutes(config: EditorRoutesConfig): EditorRoutes;
 
 type EditorRoutes = {
   editorsLoad: (event: CairnEvent) => Promise<EditorsData>;
@@ -1036,16 +1039,17 @@ the editors, names the current user, and returns `vocabulary`. `vocabulary` hold
 roles with their resolved capability, and [`ManageEditors`](./admin.md#manageeditors) renders it.
 The three actions add an editor, remove one, and change a role, each validating the posted role
 against the vocabulary (rejecting an unknown one as a form error, no more silent coercion to
-`'editor'`) and returning a typed `ActionFailure` on a guard or validation error. The `roles` member
-of `config` is the same declared vocabulary [`createAuthGuard`](#createauthguard) takes; omitted,
-both resolve against the default owner/editor pair.
+`'editor'`) and returning a typed `ActionFailure` on a guard or validation error. The `runtime`
+member of `config` is required, the same composed runtime [`createAuthGuard`](#createauthguard)
+takes, and its `roles` is the vocabulary both read; omitted on the adapter, both resolve against
+the default owner/editor pair.
 
 ```ts
 // src/routes/admin/(app)/editors/+page.server.ts (per-route mounting)
 import { createEditorRoutes } from '@glw907/cairn-cms/sveltekit';
-import { roles } from '#theme/cairn.config.js';
+import { runtime } from '#chassis/cairn.server.js';
 
-const editors = createEditorRoutes({ roles });
+const editors = createEditorRoutes({ runtime });
 
 export const load = editors.editorsLoad;
 export const actions = {
@@ -2009,7 +2013,7 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="previewdata"></a>`PreviewData` | Extension API | `interface PreviewData extends EntryData { preview: { state: 'draft' \| 'published'; expiresAt: string; published: { permalink: string } \| null } }` | [`loadPreview`](#loadpreview)'s data: a public entry page's own [`EntryData`](./delivery.md#entrydata), the exact shape `entryLoad` returns, plus `preview`, the metadata [`PreviewBanner`](./public.md#previewbanner) (or a site's own banner) reads. `preview.state` is `'draft'` while the shared branch is still open and `'published'` once it's gone; `preview.published` names the live permalink only in the `'published'` state, when the entry's file exists on the default branch, and is `null` otherwise (a discarded, never-published entry's branch-gone case never reaches this shape at all, since it answers a 404 instead). A compile-time assertion in the engine's own test suite proves this type adds no key beyond `preview`, so a future `EntryData` field breaks the engine's own build rather than a consuming site's. |
 | `RevertOutcome` | Unstable API | `type RevertOutcome = { outcome: 'draft-exists'; draftEditor: string; draftLastSavedAt: string } \| { outcome: 'ref-unknown' } \| { outcome: 'history-stale' }` | A refused revert (`ActionFailure<RevertOutcome>`), fail-closed with no force path: `draft-exists` (`fail(409, ...)`, the blocking draft's own editor and last-saved moment) when a pending branch already exists for the entry, from `revertAction`'s own pre-check or `Backend.createBranch`'s typed `BranchExistsError` under a race; `ref-unknown` (`fail(404, ...)`) when the posted ref isn't a member of a fresh `listCommits` read, the 25-row window's own boundary; `history-stale` (`fail(409, ...)`) when the default branch moved since the history page rendered. There is no fourth outcome for invalid old content: a retired field or vocabulary tag in the reverted version rides forward as an advisory on the edit screen instead, and never refuses the revert. |
 | `ContentFormFailure` | Unstable API | `interface ContentFormFailure { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; inboundKind?: 'link' \| 'include'; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. `brokenLinks`/`body` come from a blocked save or publish; `inboundLinks`/`inboundKind`/`id` from a refused delete; `hash`/`usage`/`foundIn` from a refused media delete or replace, and `hash` alone from a refused media update or alt-propagation. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. `UsageEntry`, named in `usage`, carries no export row of its own: a consumer reaches it as `NonNullable<ContentFormFailure['usage']>[number]`. |
-| `EditorRoutesConfig` | Unstable API | `interface EditorRoutesConfig { roles?: RolesDeclaration }` | Configuration for `createEditorRoutes`: the site's declared role vocabulary; omitted, the routes validate and resolve against the implicit owner/editor pair. |
+| `EditorRoutesConfig` | Unstable API | `interface EditorRoutesConfig { runtime: Pick<CairnRuntime, 'roles'> }` | Configuration for `createEditorRoutes`: the composed runtime, whose `roles` is the site's declared role vocabulary; omitted on the adapter, the routes validate and resolve against the implicit owner/editor pair. |
 | `EditorRoutes` | Unstable API | `type EditorRoutes` | What `createEditorRoutes` returns: the owner-gated editor-management load and actions, shown expanded in [`createEditorRoutes`](#createeditorroutes). |
 | <a id="navroutesconfig"></a>`NavRoutesConfig` | Unstable API | `interface NavRoutesConfig { runtime: CairnRuntime }` | The one config bag `createNavRoutes` takes: the composed runtime, mirroring every other route factory's shape. |
 | `NavData` | Extension API | `interface NavData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. `NavPageOption`, named in `pages`, carries no export row of its own: a consumer reaches it as `Extract<AdminData, { view: 'nav' }>['page']['pages'][number]`. |
@@ -2021,7 +2025,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
 | `HandleInput` | Extension API | `interface HandleInput { event: CairnEvent; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input; `event` is [`CairnEvent`](#the-event-shape). |
-| `AuthGuardConfig` | Scaffold API | `interface AuthGuardConfig { roles?: RolesDeclaration; access?: AccessMap; includeSubDomains?: boolean; identity?: IdentityResolver }` | Configuration for `createAuthGuard`: the site's declared role vocabulary and access map, whether the admin `Strict-Transport-Security` header pins sibling subdomains, and an optional identity gate replacing session-cookie resolution; each omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). `identity` and the types it names are Unstable API inside this otherwise Scaffold-tier interface (see [`createAuthGuard`](#createauthguard)'s tier note). |
+| `AuthGuardConfig` | Scaffold API | `interface AuthGuardConfig { runtime: Pick<CairnRuntime, 'roles' \| 'access'>; includeSubDomains?: boolean; identity?: IdentityResolver }` | Configuration for `createAuthGuard`: the composed runtime (the site's declared role vocabulary and access map ride on it), whether the admin `Strict-Transport-Security` header pins sibling subdomains, and an optional identity gate replacing session-cookie resolution; each optional member omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). `identity` and the types it names are Unstable API inside this otherwise Scaffold-tier interface (see [`createAuthGuard`](#createauthguard)'s tier note). |
 | <a id="identityresolver"></a>`IdentityResolver` | Unstable API | `interface IdentityResolver { resolve(event: CairnEvent): Promise<ResolvedIdentity \| IdentityRefusal>; logoutUrl: string; label?: string }` | A site's own identity gate. `resolve` proves who is making the request, or says why it could not; the guard calls it only on guarded admin paths and wraps it in a try/catch, treating a throw as a refusal. `logoutUrl` is validated once at `createAuthGuard`'s construction: a root-relative path or an absolute `https:` URL, or construction throws. `label` names the gate for the hand-off page and the doctor probe, defaulting to "your organization's sign-in." |
 | <a id="resolvedidentity"></a>`ResolvedIdentity` | Unstable API | `interface ResolvedIdentity { ok: true; email: string; displayName?: string }` | A request the gate has already authenticated. The guard normalizes `email` (trim, lowercase) before the roster lookup and the log record; `displayName` is advisory only, capped at 120 characters, and the roster row's own `displayName` wins whenever it is set. |
 | <a id="identityrefusal"></a>`IdentityRefusal` | Unstable API | `interface IdentityRefusal { ok: false; reason: string }` | A request the gate could not authenticate. `reason` is for the log only, never rendered: `'missing'`, `'invalid'`, `'audience'`, `'issuer'`, `'expired'`, `'no_email'`, `'keys'`, or a site's own word, every value snake_case. |

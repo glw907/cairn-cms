@@ -1,7 +1,9 @@
 // cairn-cms: the access map, the single per-site declaration that gates its own admin screens and
-// custom routes by role. defineAccess validates shape and role vocabulary at construction time;
-// canReach is the one authority function the guard, the engine routes, and the nav resolver all
-// read, so route enforcement and sidebar visibility can never drift apart. Concept-id existence and
+// custom routes by role. A site declares it once, on the adapter; composeRuntime carries it onto
+// the runtime, and the guard, the dev backend's handle, and the nav resolver all read that one
+// declaration. defineAccess validates shape and role vocabulary at construction time; canReach is
+// the one authority function every reader applies, so route enforcement and sidebar visibility
+// can never drift apart. Concept-id existence and
 // engine-route collision are not checked here: they need the real concept list and engine-route
 // table, which only composition (createCairnAdmin) has, so that check lands with the composition
 // task. hasAccessRule backs requireAccess's fail-closed contract: a target the map has no key for

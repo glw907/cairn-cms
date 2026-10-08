@@ -115,7 +115,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
     attention: config.attention,
     preview: config.preview,
   });
-  const editors = createEditorRoutes({ roles: runtime.roles });
+  const editors = createEditorRoutes({ runtime });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
   const nav = runtime.navMenu ? createNavRoutes({ runtime }) : null;
 

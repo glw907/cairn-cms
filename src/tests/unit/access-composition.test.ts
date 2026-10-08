@@ -85,12 +85,20 @@ describe('validateAccessComposition: the unmapped-screen warning (Task 10)', () 
     warnSpy.mockRestore();
   });
 
-  it('does not count an href key toward coverage', () => {
+  it('stays silent for a map of href keys alone, which declares nothing about the engine screens', () => {
     const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
     const access: AccessMap = { '/admin/money': ['owner'] };
     validateAccessComposition(access, { conceptIds: CONCEPT_IDS });
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('does not count an href key toward coverage once a screen key makes the map partial', () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const access: AccessMap = { '/admin/money': ['owner'], posts: ['owner'] };
+    validateAccessComposition(access, { conceptIds: CONCEPT_IDS });
     expect(warnSpy).toHaveBeenCalledWith('config.access_unmapped', {
-      unmapped: ['media', 'nav', 'pages', 'posts', 'settings', 'vocabulary'],
+      unmapped: ['media', 'nav', 'pages', 'settings', 'vocabulary'],
     });
     warnSpy.mockRestore();
   });

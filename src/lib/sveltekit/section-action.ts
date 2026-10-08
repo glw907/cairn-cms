@@ -127,10 +127,11 @@ export type SectionAction<Env, Db> = <T>(
  *    limit logs `admin.action.rate_limited` and returns `fail(429)`. No `ctx.audit` on this
  *    branch: a limiter denial is back-pressure, not a domain-state change.
  * 3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
- *    `admin.action.misconfigured`, and returns `fail(500)`: the guard never ran on this route (a
- *    zero-config site attaches an empty map instead, per the guard's own contract). This check
- *    runs before authorization out of necessity, since a map cannot authorize against itself; it
- *    leaks nothing per-editor, since it is identical for every session.
+ *    `admin.action.misconfigured`, and returns `fail(500)`: no hook that attaches the map covered
+ *    this route (the guard and the dev backend's handle each attach one on every admin path they
+ *    cover, an empty map for a zero-config site). This check runs before authorization out of
+ *    necessity, since a map cannot authorize against itself; it leaks nothing per-editor, since it
+ *    is identical for every session.
  * 4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
  *    `requireAccess` exactly, owner included: a POST must never be admitted where the load fails
  *    closed. Steps 4 and 5 run through `authorizeAdminTarget` (`./admin-action.js`), the one

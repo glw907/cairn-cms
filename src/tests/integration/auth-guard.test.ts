@@ -27,7 +27,7 @@ function asHandle(guard: ReturnType<typeof createAuthGuard>): (input: {
   }) => Promise<Response>;
 }
 
-const handle = asHandle(createAuthGuard());
+const handle = asHandle(createAuthGuard({ runtime: {} }));
 const OK = new Response('ok');
 
 beforeEach(async () => {
@@ -122,7 +122,7 @@ describe('capability resolution (a site-declared vocabulary)', () => {
     'webmaster': 'editor',
     staff: { capability: 'none', home: '/admin/staff' },
   });
-  const guard = asHandle(createAuthGuard({ roles: ROLES }));
+  const guard = asHandle(createAuthGuard({ runtime: { roles: ROLES } }));
 
   it('resolves a declared non-canonical role to its mapped capability', async () => {
     await db
@@ -171,13 +171,12 @@ describe('capability resolution (a site-declared vocabulary)', () => {
   });
 });
 
-describe('double-wiring: a custom role against a guard that was never handed the vocabulary', () => {
-  // The failure the ASC harvest reported as "every row resolves owner". The code disproves that:
-  // a guard constructed with no `roles` falls back to DEFAULT_ROLES (owner/editor), and a custom
-  // role name absent from that pair resolves to `none`, not owner. The editor authenticates but the
-  // engine refuses every content and admin-mutation route. This test pins the real semantics so the
+describe('a runtime that carries no vocabulary, against an editor whose role is custom', () => {
+  // A guard built over a runtime with no `roles` falls back to DEFAULT_ROLES (owner/editor), and a
+  // custom role name absent from that pair resolves to `none`, not owner: the editor authenticates
+  // but the engine refuses every content and admin-mutation route. This pins those semantics so the
   // doctor check and its report rest on verified behavior.
-  const unwiredGuard = asHandle(createAuthGuard()); // the double-wiring bug: defineRoles declared, guard not told
+  const unwiredGuard = asHandle(createAuthGuard({ runtime: {} })); // a runtime that carries no vocabulary, as when the adapter declared none
 
   it('resolves a custom role to none (never owner) and warns auth.role.unknown', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -200,7 +199,7 @@ describe('double-wiring: a custom role against a guard that was never handed the
 describe('the access map (Task 2)', () => {
   it('attaches the declared map to locals.cairnAccess alongside locals.cairnEditor', async () => {
     const access: AccessMap = { '/admin/money': ['webmaster'] };
-    const guard = asHandle(createAuthGuard({ access }));
+    const guard = asHandle(createAuthGuard({ runtime: { access } }));
     const cookies = await seedSession('own@x.dev');
     const ev = event('/admin', cookies);
     const res = await guard({ event: ev, resolve: async () => OK });
@@ -283,7 +282,7 @@ describe('admin security headers (Unit 2)', () => {
   });
 
   it('restores includeSubDomains when the site opts in on createAuthGuard', async () => {
-    const guard = asHandle(createAuthGuard({ includeSubDomains: true }));
+    const guard = asHandle(createAuthGuard({ runtime: {}, includeSubDomains: true }));
     const cookies = await seedSession('own2@x.dev');
     const res = await guard({ event: event('/admin', cookies), resolve: async () => new Response('ok') });
     expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=63072000; includeSubDomains');

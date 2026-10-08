@@ -1,5 +1,5 @@
 // The /admin guard, plus the per-load owner/session gates. A site's hooks.server.ts sets
-// `export const handle = createAuthGuard()`. Events are typed structurally, so the engine
+// `export const handle = createAuthGuard({ runtime })`. Events are typed structurally, so the engine
 // stays free of a site's App.* ambient types.
 import { redirect, error } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
@@ -21,6 +21,7 @@ import {
 } from '../dev-flag.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessMap } from '../auth/access.js';
+import type { CairnRuntime } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent, CookieJar, HandleInput } from './types.js';
 
@@ -33,22 +34,23 @@ function isAdminPath(pathname: string): boolean {
   return pathname === '/admin' || pathname.startsWith('/admin/');
 }
 
-/** Configuration for `createAuthGuard`: the site's declared role vocabulary and access map. */
+/** Configuration for `createAuthGuard`: the composed runtime, plus the guard's own response and identity options. */
 export interface AuthGuardConfig {
   /**
-   * The site's declared role vocabulary (see `defineRoles`); omitted, the guard resolves every
-   *  session against the implicit owner/editor pair, so a zero-config site sees no behavior change.
+   * The runtime `composeRuntime` returned for the site's adapter. The guard reads two members off
+   *  it: `roles`, the declared role vocabulary (see `defineRoles`), and `access`, the declared
+   *  access map (see `defineAccess`), so the one declaration on the adapter reaches every reader.
+   *  Required with no default, so a guard cannot be built without the site's vocabulary and map.
+   *
+   * With no `roles` declared, the guard resolves every session against the implicit owner/editor
+   *  pair. With no `access` declared, it attaches an empty map to `locals.cairnAccess`; the
+   *  engine's own screens, gated through {@link requireEngineAccess}'s `canReach` check, then stay
+   *  open to any editor-capability session, so a zero-config site sees no behavior change there. A
+   *  {@link requireAccess} call on a site's own route reads the opposite way: with no rule for its
+   *  target it refuses every session, owner included, since that helper's contract is a route that
+   *  opted in but found nothing.
    */
-  roles?: RolesDeclaration;
-  /**
-   * The site's declared access map (see `defineAccess`); omitted, the two enforcement points read
-   *  it differently. The engine's own screens, gated through {@link requireEngineAccess}'s
-   *  `canReach` check, stay open to any editor-capability session, so a zero-config site sees no
-   *  behavior change there. A `requireAccess` call on a site's own route reads the opposite way:
-   *  with no map at all, it has no opinion on any target and refuses every session, owner
-   *  included, since that helper's contract is a route that opted in but found nothing.
-   */
-  access?: AccessMap;
+  runtime: Pick<CairnRuntime, 'roles' | 'access'>;
   /**
    * Pin every sibling subdomain to HTTPS along with the admin host itself, on the
    * Strict-Transport-Security header the guard attaches to each admin response it returns.
@@ -169,9 +171,10 @@ export function isSafeLogoutUrl(logoutUrl: string): boolean {
  */
 // WATCH: check:tool-heuristics greps this exact signature for the Go tool's auth.role-wiring
 // heuristic, which reads a site's own createAuthGuard call for its argument shape.
-export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
-  const { access, includeSubDomains, identity } = config;
-  const vocabulary: RolesDeclaration = config.roles ?? DEFAULT_ROLES;
+export function createAuthGuard(config: AuthGuardConfig): Handle {
+  const { runtime, includeSubDomains, identity } = config;
+  const vocabulary: RolesDeclaration = runtime.roles ?? DEFAULT_ROLES;
+  const access: AccessMap | undefined = runtime.access;
   // Validated once, at construction, not per request: an invalid logoutUrl is a site
   // misconfiguration, and failing fast here beats admitting an open redirect at request time.
   // The published snapshot below is what every admin path reads; identity.logoutUrl is never
@@ -364,7 +367,8 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
       // access ?? {}, not access: canReach and hasAccessRule agree on undefined and {} in every
       // branch (both fail closed on an unmapped target the same way), so this is behavior-
       // identical for a zero-config site. It buys section-action.ts a real signal: an absent
-      // locals.cairnAccess then only ever means the guard never ran on this route.
+      // locals.cairnAccess then only ever means a route outside every hook's coverage, since the
+      // guard and the dev backend's handle both attach a map on every admin path they cover.
       event.locals.cairnAccess = access ?? {};
     }
     const response = await resolve(event);

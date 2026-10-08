@@ -12,7 +12,7 @@
 // why the fence exists; never relax it by analogy to the harmless mock.
 import type { Handle } from '@sveltejs/kit/hooks';
 import { env, withEnv } from 'cloudflare:workers';
-import type { AccessMap, Backend, RolesDeclaration } from '@glw907/cairn-cms';
+import type { Backend, CairnRuntime } from '@glw907/cairn-cms';
 import { createLogger, type CairnLogEvent } from '@glw907/cairn-cms/log';
 import {
   createDevBackend,
@@ -62,24 +62,14 @@ export interface DevBackendConfig {
    */
   seedContent?: boolean;
   /**
-   * The site's own access declaration, the same object it hands `createAuthGuard`, attached to
-   * `event.locals.cairnAccess` on every /admin request this handle mints an editor for. Omitted,
-   * `locals.cairnAccess` stays undefined rather than the `access ?? {}` the engine guard attaches.
-   * That divergence is deliberate: undefined and `{}` are behavior-identical to `canReach` and
-   * `hasAccessRule`, which both fail closed on an unmapped target, but `createSectionAction` reads
-   * an absent map as a misconfigured route and refuses with `fail(500)`. This handle REPLACES the
-   * guard rather than running beside it, so that refusal is the one signal telling a developer the
-   * access wiring is missing; defaulting to an empty map would make it permanently unreachable in
-   * the environment the developer builds in.
+   * The runtime `composeRuntime` returned for the site's adapter, the same one the production
+   * guard takes. Its `access` is attached to `event.locals.cairnAccess` on every /admin request
+   * this handle mints an editor for, and `{}` when the adapter declares none, exactly as the
+   * engine guard does, so the access helpers behave the same under either hook branch. Its `roles`
+   * resolves no capability here: this handle mints the literal owner capability rather than
+   * reading a role declaration, so the vocabulary changes no authorization decision.
    */
-  access?: AccessMap;
-  /**
-   * The site's role vocabulary, carried so the single declaration object a site hands
-   * `createAuthGuard` can be handed here without reshaping. It resolves no capability in this
-   * handle, which mints the literal owner capability rather than reading a role declaration, so
-   * setting it changes no authorization decision here.
-   */
-  roles?: RolesDeclaration;
+  runtime: Pick<CairnRuntime, 'roles' | 'access'>;
 }
 
 /**
@@ -92,12 +82,12 @@ export interface DevBackendConfig {
  * no Worker env exists to layer over. With `CAIRN_DEV_BACKEND` set on the Worker env and a request
  * to a non-local host, it refuses every path with a 503 and logs `guard.refused`, the same record
  * the engine guard writes for the same condition.
- * @param config - {@link DevBackendConfig}; `access` is the site's own declaration, attached to
+ * @param config - {@link DevBackendConfig}; `runtime` carries the site's access map, attached to
  * `locals.cairnAccess` beside the minted editor, and `seedContent` is the Part B content-seeding
  * hook.
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
  */
-export function devBackendHandle(config?: DevBackendConfig): Handle {
+export function devBackendHandle(config: DevBackendConfig): Handle {
   // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.
   seedMediaLibrary();
 
@@ -172,14 +162,11 @@ export function devBackendHandle(config?: DevBackendConfig): Handle {
         role: 'owner',
         capability: 'owner',
       };
-      if (config?.access !== undefined) {
-        // Mirrors the guard, which sets locals.cairnAccess immediately after minting
-        // locals.cairnEditor on a guarded admin path, so a site's own route gates and section
-        // actions read the same declaration under either hook branch. The guard defaults an absent
-        // declaration to {}; this attaches only a supplied one, for the reason DevBackendConfig
-        // records.
-        event.locals.cairnAccess = config.access;
-      }
+      // Mirrors the guard, which sets locals.cairnAccess immediately after minting
+      // locals.cairnEditor on a guarded admin path, and defaults an absent declaration to {} the
+      // same way, so a site's own route gates and section actions read the same declaration under
+      // either hook branch.
+      event.locals.cairnAccess = config.runtime.access ?? {};
     }
     // The binding doubles ride the Worker env the way the Cloudflare adapter would supply the real
     // ones, through withEnv, so the engine's reads and a site's own `cloudflare:workers` reads see

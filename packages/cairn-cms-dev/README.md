@@ -40,13 +40,14 @@ Then name it directly in the branch, and import the package dynamically:
 ```ts
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 import type { Handle } from '@sveltejs/kit/hooks';
+import { runtime } from '#chassis/cairn.server.js';
 
 let handle: Handle;
 if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
   const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
-  handle = devBackendHandle();
+  handle = devBackendHandle({ runtime });
 } else {
-  handle = createAuthGuard();
+  handle = createAuthGuard({ runtime });
 }
 export { handle };
 ```

@@ -49,7 +49,7 @@ export const WATCHES = [
     file: 'src/lib/sveltekit/guard.ts',
     heuristic: 'auth.role-wiring',
     description: "the createAuthGuard export, whose argument shape the role-wiring heuristic reads",
-    pattern: /export function createAuthGuard\(config: AuthGuardConfig = \{\}\): Handle \{/,
+    pattern: /export function createAuthGuard\(config: AuthGuardConfig\): Handle \{/,
   },
 ];
 

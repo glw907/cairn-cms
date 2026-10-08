@@ -188,7 +188,7 @@ cast.
 
 ## The guard and the ambient type
 
-The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates the whole
+The engine's auth guard (`createAuthGuard({ runtime })`, wired in `hooks.server.ts`) gates the whole
 `/admin/*` subtree before any load runs. The mount itself does no access control; the guard owns
 it. The guard sets `event.locals.cairnEditor`, and one line in `src/app.d.ts` types it:
 `import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)). The guard
@@ -219,9 +219,10 @@ A site that already has a `handle` hook (for example, injecting a saved theme in
 // src/hooks.server.ts
 import { sequence } from '@sveltejs/kit/hooks';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { runtime } from '#chassis/cairn.server.js';
 import { theme } from './theme-handle.js';
 
-export const handle = sequence(theme, createAuthGuard());
+export const handle = sequence(theme, createAuthGuard({ runtime }));
 ```
 
 The guard owns `/admin` gating and runs last; the site's hook runs first and sees every request.

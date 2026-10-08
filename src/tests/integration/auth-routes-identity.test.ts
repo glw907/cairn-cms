@@ -221,7 +221,7 @@ describe('logoutAction behind the guard, with locals.cairnIdentity pre-set by an
 
   it('with no identity configured, deletes the session row and redirects to /admin/login', async () => {
     await createSession(db, 'sid', 'ed@x.dev', Date.now() + 10_000, Date.now());
-    const guard = createAuthGuard() as unknown as Handle;
+    const guard = createAuthGuard({ runtime: {} }) as unknown as Handle;
     const cookies = makeRecordingCookies({ cairn_session: 'sid', cairn_csrf: 'csrf-tok' });
     const result = await logoutThrough(guard, cookies);
     expect(result.location).toBe('/admin/login');
@@ -231,6 +231,7 @@ describe('logoutAction behind the guard, with locals.cairnIdentity pre-set by an
   it('with an identity configured, still skips the row delete and redirects to the validated logoutUrl', async () => {
     await createSession(db, 'sid', 'ed@x.dev', Date.now() + 10_000, Date.now());
     const guard = createAuthGuard({
+      runtime: {},
       identity: { resolve: async () => ({ ok: false, reason: 'missing' }), logoutUrl: '/goodbye' },
     }) as unknown as Handle;
     const cookies = makeRecordingCookies({ cairn_session: 'sid', cairn_csrf: 'csrf-tok' });

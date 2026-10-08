@@ -1,8 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import {
   profileFor,
   scanText,
@@ -78,6 +79,36 @@ describe('profileFor', () => {
     expect(profileFor('docs/internal/record/x.md')).toBeNull();
     expect(profileFor('skills/node_modules/x/README.md')).toBeNull();
     expect(profileFor('templates/waymark/static/logo.png')).toBeNull();
+  });
+});
+
+describe('shipped roots', () => {
+  const repoRoot = resolve(__dirname, '../../..');
+
+  it('scans the migrations at T2 with every class', () => {
+    for (const path of ['migrations/0002_audit.sql', 'migrations-channel/0000_channel.sql']) {
+      expect(profileFor(path), path).toEqual({ tier: 'T2', classes: ['C1', 'C2', 'C3', 'C4'], mode: 'whole' });
+    }
+  });
+
+  it('maps every tracked file under a package.json "files" root to a scanned tier', () => {
+    const pkg = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8')) as { files: string[] };
+    // `dist` is built from src/lib, whose doc comments are scanned as `tsdoc`. An arm with no
+    // tracked page yet lists nothing, and `.gitkeep` is empty.
+    const exceptions = new Set(['dist']);
+    const unscanned: string[] = [];
+    let checked = 0;
+    for (const entry of pkg.files) {
+      if (exceptions.has(entry)) continue;
+      const tracked = execFileSync('git', ['ls-files', '--', entry], { cwd: repoRoot, encoding: 'utf8' })
+        .split('\n')
+        .filter((file) => file && !file.endsWith('/.gitkeep'));
+      checked += tracked.length;
+      for (const file of tracked) if (!profileFor(file)) unscanned.push(file);
+    }
+    expect(checked).toBeGreaterThan(0);
+    expect(unscanned).toEqual([]);
+    expect(profileFor('src/lib/admin/Thing.svelte')?.mode).toBe('tsdoc');
   });
 });
 

@@ -27,7 +27,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   no longer exist, and `package.json` carries no `./components` key. The source folder is
   `src/lib/admin/`, and `docs/reference/admin.md` replaced `components.md`. A consumer changes
   every `@glw907/cairn-cms/components` import to `/admin` and any config or script path from
-  `dist/components/` to `dist/admin/`. Source: `package.json:106-110` (the `./admin` export),
+  `dist/components/` to `dist/admin/`. Source: `package.json:109-113` (the `./admin` export),
   `src/lib/audit/config.ts#DEFAULT_SHEET_CANDIDATES` (the sheet path), `src/tests/unit/admin-barrel-prune.test.ts`
   (the assertion that `./components` is gone). [verified]
 - `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
@@ -115,7 +115,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - `f:0vgrcx` `TextInput` and `SelectInput` shipped at `0.94.0` (renamed from admin-fields'
   `TextField`/`SelectField`); `FieldRow` was added later, at `0.95.0` (commit `68d622a1`,
   2026-08-07), not alongside the 0.94.0 merge. All three retired together in the retires pass,
-  batch 1a. Source: `CHANGELOG.md:3841-3851` (0.94.0 merge entry, no FieldRow), `CHANGELOG.md:1278-1280`
+  batch 1a. Source: `CHANGELOG.md:4404-4413` (0.94.0 merge entry, no FieldRow), `CHANGELOG.md:1836-1839`
   (retirement entry), commit `68d622a1` (FieldRow's introducing commit, first tagged at
   `v0.95.0-rc.1`). [verified]
 - `f:i450hg` `ListToolbarFilter.display` is a three-way union, `'select' | 'segmented' | 'menu'`, not
@@ -228,7 +228,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 - `f:exqnwj` The subpath enforces server-only isolation via export conditions: a named import from the
   browser stub fails at build time (no such export), while a bare side-effect import passes the
-  build and throws only at runtime when executed in a browser. Source: `package.json:158-169`
+  build and throws only at runtime when executed in a browser. Source: `package.json:170-181`
   (`./auth-crypto` and `./cloudflare` export conditions each declare `worker`/`browser`/`default`),
   `src/lib/auth-crypto/browser.ts:1-4`, `src/lib/cloudflare/browser.ts:1-4` (both files are a bare
   module-level `throw new Error(...)` with no named export). [verified]
@@ -1135,8 +1135,8 @@ re-sourced to Go on this tree rather than to the page.
 - `f:h2wtin` The package ships exactly 4 bins total (`cairn-manifest`, `cairn-media-seed`, `cairn-audit`,
   `cairn-guidance`) plus a separate `./vite` export (the Vite plugin, `dist/vite/index.js`,
   distinct from the `cairn-manifest` bin at `dist/vite/bin.js`); relative to `cairn-guidance`
-  itself, that is three other bins. Source: `package.json:188-193` (`bin` field),
-  `package.json:173-175` (`./vite` export). [verified]
+  itself, that is three other bins. Source: `package.json:198-203` (`bin` field),
+  `package.json:182-185` (`./vite` export). [verified]
 - `f:hiif6u` `cairn-guidance install` ships a fourth skill, `cairn-public`, for the public side of a site: a router `SKILL.md` within the 3,500-token packaged budget, and `references/` holding one catalogue page per public piece (each registry directive plus the built-in `figure` and `include`, each island, `CairnHead`, `PreviewBanner`, each `cairn-*` class the chassis `composition.css` defines, and six prose pages). `npm run check:public-skill` fails a source with no page, a snippet class absent from the showcase's compiled public sheet and the emitted-class registry, a named token that resolves nowhere, and a parser that matches nothing. Source: `skills/cairn-public/SKILL.md:1`, `scripts/checks/check-public-skill.mjs:1`. [verified]
 - `f:qzsspl` The chassis `tokens.css` excludes the project-root `.claude/` from Tailwind's automatic source detection with `@source not "../../.claude"`. Tailwind resolves that path against the stylesheet that carries it, so the earlier `./.claude` excluded only a directory beside `src/chassis/`, and a utility used only in an installed skill's files reached a scaffolded site's compiled CSS. `check:public-skill` compiles a standalone copy to prove the exclusion. Source: `examples/showcase/src/chassis/tokens.css:55`, `scripts/checks/check-public-skill.mjs:1`. [verified]
 
@@ -1378,7 +1378,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 ## docs/reference/public-css.md
 
 - `f:q8atv6` `.cairn-focus-ring:focus-visible` is a rule in `@layer components`, so it takes no variants and sits below utilities: a utility that sets `outline-*` on the same element wins, and so does a daisyUI component class that sets an outline, since daisyUI's own rules sit in a later layer. A copied `prose.css` whose links read the ring's keys (`--cairn-focus-ring-outline`, `--cairn-focus-ring-offset`) draws a visible outline once the sheet declares them; those keys were undeclared for a site that did not copy the ring, and the outline computed to nothing. Source: `src/lib/public/cairn-public.css:99-106`, `examples/showcase/src/chassis/prose.css:154-155`. [verified]
-- `f:c4nnu9` The engine ships its public defaults as one CSS asset, `@glw907/cairn-cms/cairn-public.css`, built from `src/lib/public/cairn-public.css` and packed at `dist/public/cairn-public.css`. It holds four things: the roles in `@layer theme` on `:root, [data-theme]` (18 keys), two `@theme` colors (`--color-muted`, `--color-card-border`), `@layer components` rules with no design choice (`pre.shiki`, the six `.cairn-tok-*` classes, `.table-scroll`'s structural pair, `.cairn-focus-ring:focus-visible`), and one `@source` line over the public component directory. The subpath has no `.d.ts`, so `check:reference` excludes it (`SUBPATH_EXCLUSIONS`) and `src/tests/unit/cairn-public-surface.test.ts` holds `docs/reference/public-css.md` to the file: every key with its default, and no cairn key the file lacks. Source: `package.json:193` (`"./cairn-public.css": "./dist/public/cairn-public.css"`), `src/lib/public/cairn-public.css:21-111`, `scripts/checks/reference-coverage.mjs:536`. [verified]
+- `f:c4nnu9` The engine ships its public defaults as one CSS asset, `@glw907/cairn-cms/cairn-public.css`, built from `src/lib/public/cairn-public.css` and packed at `dist/public/cairn-public.css`. It holds four things: the roles in `@layer theme` on `:root, [data-theme]` (18 keys), two `@theme` colors (`--color-muted`, `--color-card-border`), `@layer components` rules with no design choice (`pre.shiki`, the six `.cairn-tok-*` classes, `.table-scroll`'s structural pair, `.cairn-focus-ring:focus-visible`), and one `@source` line over the public component directory. The subpath has no `.d.ts`, so `check:reference` excludes it (`SUBPATH_EXCLUSIONS`) and `src/tests/unit/cairn-public-surface.test.ts` holds `docs/reference/public-css.md` to the file: every key with its default, and no cairn key the file lacks. Source: `package.json:195` (`"./cairn-public.css": "./dist/public/cairn-public.css"`), `src/lib/public/cairn-public.css:21-111`, `scripts/checks/reference-coverage.mjs:536`. [verified]
 - `f:w6pqic` The public sheet's derived defaults differ from the values a copied pre-export `tokens.css` carried. Each status ink is `color-mix(in oklab, var(--color-<status>) 50%, var(--color-base-content))` where it was the fill itself. `--color-muted` is `color-mix(in oklab, var(--color-base-content) 80%, var(--color-base-100))`, an opaque mix, where it was a 60 percent mix of `--color-base-content` with `transparent`. `--cairn-shadow` keeps its geometry (a 6 percent and a 12 percent layer) but mixes `black`, where it mixed `--color-base-content`. The 50 and 80 come from a Chromium measurement over the 35 stock daisyUI themes, Waymark, and the fixture theme, recorded with each theme's result. A theme that needs a fixed value sets the key itself, and Waymark does. Source: `src/lib/public/cairn-public.css:38-52,61`, `docs/superpowers/research/2026-09-29-theme-pass-c-ink-derivation.md` (the Result table). [verified]
 - `f:7653l0` The two `@theme` colors do not recompute inside a nested `data-theme` region: Tailwind resolves them at `:root` and the region inherits the computed value. The roles do recompute, because the sheet declares them on `[data-theme]` as well as `:root`, so a derived ink inside a nested region mixes that region's own fill. A theme that nests a region sets `--color-muted` and `--color-card-border` in the nested block. A comma-bearing value such as `--cairn-shadow` does not survive daisyUI's option parser and goes in that scheme's `:root` block. `theme-contrast` measures the root element only, so it does not measure a nested region. Source: `src/lib/public/cairn-public.css:21-23,60-63` (`:root, [data-theme]` in `@layer theme`; `@theme` colors), `docs/reference/cairn-audit.md#what-theme-contrast-doesnt-cover` (the root-only bullet). [verified]
 
@@ -1396,7 +1396,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   never on `/admin`; a loader or a type belongs on `/sveltekit` or another data-only subpath; and
   `CairnHead` stays at `./delivery/head` because it renders only document-head tags. The compiled
   admin sheet's input scans `src/lib/admin` and `src/lib/admin-toolkit` but not `src/lib/public`, since the banner writes no utility class of its own.
-  Source: `package.json:111-115` (the `./public` export), `src/lib/public/index.ts:1-6` (the
+  Source: `package.json:114-118` (the `./public` export), `src/lib/public/index.ts:1-6` (the
   membership rule and the one export), `scripts/build/admin-css.input.css:14,22` (the `@source` roots, `src/lib/admin` and `src/lib/admin-toolkit`).
   [verified]
 
@@ -1550,10 +1550,10 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:buh7cc` `engines.node` in the package's own `package.json` is `>=24`. Source: `package.json:7`.
   [verified]
 - `f:xg1per` `svelte` peerDependency is `^5.57.1`; `@sveltejs/kit` is `^3`; `@cloudflare/workers-types` is
-  `^5`. Source: `package.json:219-222`. [verified]
+  `^5`. Source: `package.json:220-223`. [verified]
 - `f:gjyk0p` The showcase's own devDependency pins `typescript` to `^6` and `@cloudflare/workers-types` to
-  `^5.20260821.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:45`,
-  `package.json:258`. [verified]
+  `^5.20261007.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:37,57`.
+  [verified]
 - `f:isd7vq` TypeScript floor for a consumer's own `tsc` is `5.0`, driven by `const` type parameters on
   `defineAdapter`/`defineConcept`/`defineFieldset`/`fields.*`; the package's own code and shipped
   `.d.ts` are TypeScript 7-clean, but the scaffolded template still installs `^6` because
@@ -1563,7 +1563,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `fields.ts:147-180`, `fieldset.ts:423`, `concepts.ts:49` (`<const ...>` type params confirm the
   5.0 floor); `node_modules/svelte-check` and `.../svelte2tsx` peerDependencies cap at `^6.0.0`,
   `@typescript-eslint/typescript-estree` (pulled in by `eslint-plugin-tsdoc`) caps at `<6.1.0` (a
-  nested copy caps at `<6.0.0`, none reach 7); CHANGELOG.md:2068-2073 and :2104 ("TypeScript 7 is
+  nested copy caps at `<6.0.0`, none reach 7); CHANGELOG.md:3201-3207 and :3238 ("TypeScript 7 is
   held; `svelte-check` cannot run on the Go compiler until 7.1's compiler API") and ROADMAP.md
   ("TypeScript 7 is held on the toolchain") corroborate the hold and its trigger. [verified]
 - `f:5c9bwx` `attw --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error` is run in
@@ -1581,8 +1581,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:aalmbd` The `@sveltejs/kit ^2.12` floor became an enforced peer range (rather than an advisory) in
   the `0.41.0` changelog entry, justified by the edit page reading `$app/state` (shipped in kit
   2.12.0); `0.51.0` is a separate, later entry that raises the `svelte` floor to `^5.56.3` and
-  mentions `^2.12` only as a side note for a site still below it. Source: `CHANGELOG.md:6844-6847`
-  (0.41.0 entry), `CHANGELOG.md:6732-6742` (0.51.0 entry). [verified]
+  mentions `^2.12` only as a side note for a site still below it. Source: `CHANGELOG.md:7402-7405`
+  (0.41.0 entry), `CHANGELOG.md:7291-7300` (0.51.0 entry). [verified]
 
 ## docs/reference/sveltekit.md
 
@@ -1591,7 +1591,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `status` discriminant (`sent`/`send_error`/`throttled`); the `0.97.0` outcome-idiom sweep
   renamed it to `RequestOutcome`, changed the discriminant key to `outcome`, and restated
   `send_error` as `send-error`, with the `sent` boolean unchanged throughout. Source:
-  `CHANGELOG.md:6908-6915` (0.38.0), `CHANGELOG.md:1772-1775` (0.97.0). [verified]
+  `CHANGELOG.md:7467-7475` (0.38.0), `CHANGELOG.md:2330-2334` (0.97.0). [verified]
 - `f:yubpho` `CairnEvent`'s `locals` carries five optional keys: `cairnEditor`, `cairnBackend`,
   `cairnAuditSink`, `cairnAccess`, and `cairnIdentity` (set under identity mode). sveltekit.md's
   event-shape code sample and prose now list all five. Source: `src/lib/sveltekit/types.ts:85-91`.

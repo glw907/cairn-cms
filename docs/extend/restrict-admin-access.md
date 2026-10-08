@@ -7,7 +7,8 @@ Whatever the map says, a role with `none` capability stays out and an owner reac
 
 An organization's site needs that narrowing when, for example, volunteers write posts while one webmaster manages the media library and the signups list.
 Inside the site's SvelteKit app the map has two readers, since the engine checks its own screens and the site's own routes under `/admin` check themselves.
-The engine reads the map from the adapter, and the site's routes read it from the guard, the `createAuthGuard` hook in `src/hooks.server.ts`.
+The engine reads the map from the adapter, and the site's routes read it from the hook handle in `src/hooks.server.ts`.
+That handle is the guard, `createAuthGuard`, in a build and `devBackendHandle` under `npm run dev`.
 The steps that follow declare a role vocabulary and an access map and give the map to both readers.
 They then enforce the map on your own screens' reads and writes and verify each role's reach.
 A single example runs through every step, a webmaster role that, with owners, alone reaches the media library and the scaffold's signups screen.

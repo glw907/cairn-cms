@@ -41,11 +41,19 @@
       ]
     },
     {
-      "text": "The engine reads the map from the adapter, and the site's routes read it from the guard, the `createAuthGuard` hook in `src/hooks.server.ts`.",
+      "text": "The engine reads the map from the adapter, and the site's routes read it from the hook handle in `src/hooks.server.ts`.",
       "id": [
         "f:cvzb8z",
         "f:iwf4nu",
         "f:hwffph"
+      ]
+    },
+    {
+      "text": "That handle is the guard, `createAuthGuard`, in a build and `devBackendHandle` under `npm run dev`.",
+      "id": [
+        "f:cvzb8z",
+        "f:7cv105",
+        "f:o47i0q"
       ]
     },
     {

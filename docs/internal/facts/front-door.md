@@ -22,8 +22,8 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   [verified]
 - `f:9xthnq` The admin is also a toolkit: a developer's own route under `/admin` renders as a child of `CairnAdminShell` like the engine's own screens, can adopt the packaged admin-toolkit components, and sits behind the same `/admin` sign-in guard, since every `/admin` path except the login page and the auth endpoints is gated. Source: `examples/showcase/src/routes/admin/+layout.svelte:3-5`, "every /admin/** route renders inside CairnAdminShell"; `examples/showcase/src/routes/admin/signups/+page.svelte:1-4`, "a developer's own route rendered in CairnAdminShell"; `src/lib/sveltekit/guard.ts:24`, "everything else under /admin is gated". [verified]
 - `f:i74t7g` A cairn site is built to run on Cloudflare Workers: the engine's environment contract is Cloudflare Worker bindings (the `AUTH_DB` D1 database, the Email Sending binding), so a production site built on cairn is hosted on Cloudflare. Source: `src/lib/env.ts:5,17-33`, the `CairnEnv` interface and its `D1Database` import from `@cloudflare/workers-types`. [verified: the code fixes Cloudflare as the runtime platform; where a given site is deployed is the operator's fact and is not separately confirmed]
-- `f:hk24xs` cairn has no host abstraction layer: the engine's environment contract is typed to Cloudflare bindings, so swapping Cloudflare for another host is not a seam. The one swappable seam is the content store: a developer can implement `BackendProvider` against a store other than GitHub, and `createGithubApp` is the only implementation cairn ships. Source: `src/lib/env.ts:5,19`, `AUTH_DB?: D1Database`; `src/lib/github/backend.ts:78,88,162` (`BackendProvider`, `createGithubApp` the sole factory). [verified]
-- `f:h0xykj` cairn is pre-1.0 (package version `0.97.0`) and its Extension API tier has broken across minors: the nav fields on `AdminShellData` and `navFilter`'s types changed at `0.86.0`, the version `navLayout` shipped, and `navLayout`'s own types were renamed at `0.94.0` (`AdminNavEntry` became `NavLayoutEntry`). Until 1.0 a break is disclosed, through the changelog's `Consumers must:` line and the migration notes, the per-version record, and never prevented. Key phrase: "two Extension-tier breaks have shipped inside 0.x minors". Source: `docs/internal/what-cairn-is-and-is-not.md:77-79`; `docs/extend/migration-notes.md:559-569,516-521`; `docs/reference/core.md:1130-1131`, `NavLayout` and `NavLayoutEntry` marked Extension API; `package.json:3`. [verified]
+- `f:hk24xs` cairn has no host abstraction layer: the engine's environment contract is typed to Cloudflare bindings, so swapping Cloudflare for another host is not a seam. The one swappable storage seam is the content store (the `identity` option on `createAuthGuard` replaces the sign-in path, not a store): a developer can implement `BackendProvider` against a store other than GitHub, and `createGithubApp` is the only implementation cairn ships. Source: `src/lib/env.ts:5,19`, `AUTH_DB?: D1Database`; `src/lib/github/backend.ts:78,88,162` (`BackendProvider`, `createGithubApp` the sole factory), `src/lib/sveltekit/guard.ts:67-71` (`identity`). [verified]
+- `f:h0xykj` cairn is pre-1.0 (package version `0.98.0`) and its Extension API tier has broken across minors: the nav fields on `AdminShellData` and `navFilter`'s types changed at `0.86.0`, the version `navLayout` shipped, and `navLayout`'s own types were renamed at `0.94.0` (`AdminNavEntry` became `NavLayoutEntry`). Until 1.0 a break is disclosed, through the changelog's `Consumers must:` line and the migration notes, the per-version record, and never prevented. Key phrase: "two Extension-tier breaks have shipped inside 0.x minors". Source: `docs/internal/what-cairn-is-and-is-not.md:77-79`; `docs/extend/migration-notes.md:559-569,516-521`; `docs/reference/core.md:1130-1131`, `NavLayout` and `NavLayoutEntry` marked Extension API; `package.json:3`. [verified]
 - `f:zzc2m5` The zero-config identity model has exactly two roles: owner and editor. Key phrase:
   "only ever knows owner/editor". Source: `docs/internal/what-cairn-is-and-is-not.md:34,69`, "A
   small default identity, owner/editor, on magic-link" and "it only ever knows owner/editor."
@@ -70,7 +70,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   [candidate: excluded, the pre-1.0 half traces to `package.json:3` but "runs in production on
   ecxc.ski and 907.life today" is an operational deployment claim this repo's code cannot confirm]
 - `f:3utth1` The published version, unpublished window, and next action live in `docs/STATUS.md`. Source:
-  `docs/STATUS.md:8`, "Published: **`0.97.0`**..."; `docs/STATUS.md:19`, "## Immediate next
+  `docs/STATUS.md:7`, "Published: **`0.98.0`**..."; `docs/STATUS.md:21`, "## Immediate next
   action". [verified]
 
 ## docs/README.md
@@ -82,7 +82,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:vrt55t` `check:package` checks the package entry points (publint, attw, package-file and skill-budget
   checks). Source: `package.json:37`. [verified]
 - `f:yvfzr2` The setup command is invoked as `npx create-cairn-site`: the package is named `create-cairn-site` and exposes a bin of the same name. Source: `packages/create-cairn-site/package.json:2,8`. [verified]
-- `f:am80o6` `docs/internal/` holds cairn's maintainer-facing planning and design records, none of them part of the adopter docs, and the npm package's `files` list ships the doc arms, `docs/README.md`, and `docs/why-cairn.md`, never `docs/internal/`. Source: `docs/internal/README.md:1-4`, `package.json:194-207`. [verified]
+- `f:am80o6` `docs/internal/` holds cairn's maintainer-facing planning and design records, none of them part of the adopter docs, and the npm package's `files` list ships the doc arms, `docs/README.md`, and `docs/why-cairn.md`, never `docs/internal/`. Source: `docs/internal/README.md:1-4`, `package.json:204-217`. [verified]
 
 ## CLAUDE.md
 - `f:psrfdx` A publish commit is authored by the editor and sets no committer, so GitHub records the App's bot identity as the committer: `<app name>[bot]`, which is `cairn-cms[bot]` for an App named cairn-cms. The scaffold names a site's App `cairn-<site slug>` by default, and that name is the App's, not a commit field the engine sets. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`, `packages/create-cairn-site/src/github/chapter.mjs:161`. [verified: the engine omits the committer; observed on `glw907/907-life` commit `18644a55` (2026-05-30, an "Update posts" publish): author Geoff Wright, committer `cairn-cms[bot]`]
@@ -105,14 +105,14 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:2rzcvv` `npm run link:consumer -- <site-dir>` builds, packs, installs, and content-hashes every installed
   file against the pack, because `npm pack` reuses the tarball filename across versions and a plain
   `npm install` can silently serve a stale cached build; `--restore` un-pins the site back to
-  `^<version>` from the registry. Source: `package.json:85`, `"link:consumer": "node
+  `^<version>` from the registry. Source: `package.json:96`, `"link:consumer": "node
   scripts/lab/link-consumer.mjs"`; CLAUDE.md, "Pointing a consumer at unreleased engine work".
   [verified]
 - `f:h6ca98` In a feature worktree, `examples/showcase/node_modules` symlinks back to the main checkout, so
   the showcase's e2e suite silently proves main's engine build rather than the worktree's, unless
   the worktree's showcase gets a from-scratch `npm install`; the stale-`dist` half of this trap is
   closed structurally by the showcase's `pretest:e2e` repackage hook. Source:
-  `examples/showcase/package.json:13`, `"pretest:e2e": "npm --prefix ../.. run package"`.
+  `examples/showcase/package.json:25`, `"pretest:e2e": "npm --prefix ../.. run package"`.
   [verified]
 - `f:mf00hq` Visual e2e baselines are CI-canonical, regenerated by `e2e.yml`'s `update_snapshots` job; this workstation's local Chromium renders a few surfaces a few pixels differently than the CI runner's, so a local gate is green only when its visual failures are exactly the files the latest regen commit rewrote. Source: `.github/workflows/e2e.yml:11`, the `update_snapshots` workflow_dispatch input; `.github/workflows/e2e.yml:121-130`, "baselines are CI-canonical and a workstation render is never an acceptable substitute" and the `--update-snapshots` regen run; `docs/internal/durable-gotchas.md:44` (chassis-B2 example: 20 files from commit `4de378ec`). [verified: the CI-canonical regen traces to e2e.yml; the workstation's pixel difference and the local-green rule are an operational observation recorded in durable-gotchas.md, not code]
 - `f:t4aj07` Vite 8 / Rolldown parses shipped `.svelte` `<script lang="ts">` as plain JavaScript before the
@@ -131,10 +131,10 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   [verified]
 - `f:w379wu` Every publish is a commit with the editor as author and no committer set, so GitHub attributes
   the commit to the App. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`. [verified]
-- `f:ab9kzr` The current published version is `0.97.0`. Source: `package.json:3`. [verified]
+- `f:ab9kzr` The current published version is `0.98.0`. Source: `package.json:3`. [verified]
 - `f:0xsi67` `check:surface` runs a public-surface snapshot gate (`check-surface.mjs`) plus a leak check
-  (`check-surface-leaks.mjs`). Source: `package.json:41`. [verified]
-- `f:usjir5` `check:version` is a standalone gate script. Source: `package.json:54`. [verified]
+  (`check-surface-leaks.mjs`). Source: `package.json:42`. [verified]
+- `f:usjir5` `check:version` is a standalone gate script. Source: `package.json:61`. [verified]
 
 ## docs/internal/what-cairn-is-and-is-not.md (owner brief, source for stance claims)
 - `f:bhyvqg` The governing boundary: cairn owns markdown content management and the editor/admin
@@ -157,7 +157,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   public-surface snapshot gate plus gated Extension-API/Scaffold-API stability tiers; until 1.0 the
   gate detects and discloses a break rather than preventing one. Key phrase: "every break is disclosed". Source: same file, "The contract
   is stable, and every break is disclosed," cross-referenced with `check:surface`
-  (`package.json:41`). [verified]
+  (`package.json:42`). [verified]
 - `f:k27p36` The Go `cairn` tool is a separate operator cockpit over every cairn site a machine
   knows; it replicates admin operations as a second front over the same contracts and never adds to
   the engine's public surface or models a domain actor. Key phrase: "operator's cockpit". Source:

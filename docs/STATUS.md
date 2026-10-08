@@ -22,12 +22,12 @@ Stage 2a is closed and merged (PR #107; post-mortem in
 release holds until the docs are complete, per `ROADMAP.md`'s boundary-test entry.
 
 The engine pass before stage 2b is next, warranted by the boundary test; its scope is the spec
-[`superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`](superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md)
-(Geoff's ruling 1: an item earns its place only by improving the product), with the rulings at
+[`superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`](superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md), rulings at
 [`superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md`](superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md).
-The overnight pipeline is in flight: spec review, fold, verification, plan, plan review. Execution
-waits for Geoff's spec read and his answers to the spec's "Rulings for Geoff". The spec splits the
-work into pass A (access, auth, and the commit path) and pass B (scaffold, dev, and schema).
+The spec and both plans are reviewed, folded, and verified: pass A
+[`superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md`](superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)
+(11.1M), then pass B (`...-pre-2b-b.md`). Execution waits for Geoff's spec read and three forks:
+dev-save landing (pass B Task 10), anonymous `/healthz?live=1` (pass A Task 6), pass B's ceiling.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
@@ -51,10 +51,10 @@ work into pass A (access, auth, and the commit path) and pass B (scaffold, dev, 
 > **Settled:** the spec's rulings file; `ROADMAP.md`'s 2026-10-07 boundary-test rulings (one release
 > after stage 5; engine passes never release; no site migrates first).
 >
-> **Still open:** Geoff's answers to the spec's "Rulings for Geoff", and his spec read, which gate
-> execution; the overnight pipeline's plan and plan review, if unfinished.
+> **Still open:** Geoff's spec read and his answers to forks 1 to 3 (the plans' "Rulings for
+> Geoff" sections), which gate execution.
 >
 > **Approach.** Fresh `claude --model claude-opus-5-5` session at medium effort from
-> `~/Projects/cairn-cms`; invoke `cairn-pass`, read the spec, rulings, and plan, then execute pass A
-> after Geoff's answers. Keep `tool/internal/{spine/conditions,doctor/site-config-path}.json` and
+> `~/Projects/cairn-cms`; invoke `cairn-pass`, read the spec, rulings, and pass A's plan, then execute
+> pass A after Geoff's answers. Keep `tool/internal/{spine/conditions,doctor/site-config-path}.json` and
 > `.cairn/site-facts.json`.

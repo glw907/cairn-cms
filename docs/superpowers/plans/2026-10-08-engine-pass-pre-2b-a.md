@@ -18,7 +18,7 @@ on Geoff's fork 2), and the pass's docs and records.
 4, D1 (`AUTH_DB`), vitest (node, workerd integration, and component projects), Playwright for the
 showcase e2e, Go (`tool/`).
 
-**Spec:** `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md` at `0c476887` (reviewed,
+**Spec:** `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md` at `27df5088` (reviewed,
 folded, and verified). Its "Pass A" list is this plan's task list, numbered the same. Owner rulings:
 `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md`. Fold record and owed errata:
 `docs/superpowers/research/2026-10-07-engine-pass-pre-2b-spec-fold.md`. The spec's line numbers are
@@ -45,16 +45,17 @@ split, and before any question to Geoff.
 
 | Segment | Tasks | Boundary proof |
 |---|---|---|
-| S1, one declaration and the access edges | 1, 2, 3 | F and T green on the segment head |
+| S1, one declaration and the access edges | 1, 2, 3 | F and T green on the segment head (Task 3's pinned F stands if HEAD has not moved) |
 | S2, the auth store, the channel, and the health status | 4, 5, 7 | F green |
 | S3, the edit page and the commit path to `main` | 8, 9, 10 | F green; branch pushed; CI green |
-| S4, nested media, the live check, and the records | 11, 6, 12 | F, T, and D green; `check:close` green |
+| S4, nested media, the live check, and the records | 11, 6, 12 | D green (Task 12 is docs-only); close step 2 is the pass's final F, `check:close`, and T |
 
 **Independence and the Files seams.** Tasks 2 and 3 have disjoint Files and both consume only
-Task 1. Task 5 is disjoint from Tasks 4 and 7; Tasks 4 and 7 share the condition registry
-(`conditions.ts` and its generated mirror), so they stay ordered. Task 9 is disjoint from Task 8;
-Task 10 consumes both. Tasks 11 and 6 are disjoint. Every task still runs in sequence in the one
-worktree: one index, one gate key, and one emitted template.
+Task 1. Tasks 4 and 7 share the condition registry (`conditions.ts` and its generated mirror), and
+Tasks 5 and 7 both edit `docs/reference/sveltekit.md`, so no S2 pair is disjoint. Task 9 is
+disjoint from Task 8; Task 10 consumes both. Tasks 11 and 6 share
+`docs/internal/api-surface.md`. Every task runs in sequence in the one worktree, and no relaunch
+marks any pair `parallel`: one index, one gate key, and one emitted template.
 
 **Split rule:** if the ceiling forces a split, cut at the S2 or the S3 boundary, never inside S1.
 S1 is atomic because Task 1 alone makes the doctor false-fail every updated site, and Task 1 alone
@@ -75,7 +76,7 @@ unset). Args:
 ```
 {
   repo: "<absolute worktree path>",
-  gate: "<F, printed by Task 0>",
+  gate: "export E2E_PORT=4392 && <F, printed by Task 0>",
   implementer: "cairn-implementer",
   reviewer: "diff-reviewer",
   passClass: "auth-data",
@@ -83,21 +84,28 @@ unset). Args:
   stopOnEscalate: true,
   classifier: true,
   commonNotes: "<Global constraints below, plus the pre-flight checklist from ~/.claude/docs/pass-gate-economy.md>",
-  tasks: [{ id, title, criteria, files, notes, passClass?, gate?, gateTier?, gateLane? }]
+  tasks: [{ id, title, criteria, files, notes, passClass?, gate?, gateTier?, gateLane?, model? }]
 }
 ```
 
-Each task's `criteria` is its Acceptance block verbatim, `files` its Files line, and `notes` its
-Notes plus its mutation list. A task's own `passClass`, `gateTier`, and `gateLane` are set where
-this plan sets one. `auth-data` fix rounds run the full gate (the runner reduces only a comment-only
-round under `auth-data`). Task 0 and the close are conductor-led dispatches outside the runner.
+The implementer and the reviewer never read this plan, and the runner's review prompt shows
+`criteria` but never `notes` (`~/.claude/workflows/pass-execute.js`, `reviewPrompt`). So a task's
+`criteria` is, verbatim and in order: its **Outcome**, its **Acceptance**, its **Mutations**, and
+its **Decisions carried** block, which holds the full text of every Decision the task cites (never
+a bare "Decision N"). Its `files` is its Files line, and its `notes` is its own Notes only. A
+task's own `passClass`, `gateTier`, `gateLane`, and `model` are set where this plan sets one.
+`auth-data` fix rounds run the full gate (the runner reduces only a comment-only round under
+`auth-data`). Task 0 and the close are conductor-led dispatches outside the runner.
 
-**Models:** implementers `sonnet` (the agent's pin); `diff-reviewer` on `claude-opus-5-5` at
-`medium`; the close's `web-auth-security-reviewer` at `high`. No task is upshifted at plan time:
-the spec specifies each mechanism, the live check's slot included. **Upshift candidates:** Task 6
-(the single-flight slot under workerd cancellation) and Task 8 (kit 3's `use:enhance` location
-rule). If either's first verdict is `fix` with a finding in that mechanism, the conductor re-dispatches
-the fix on `model: opus` without stopping.
+**Models:** implementers `sonnet` (the agent's pin), except Task 6, which carries `model: "opus"`
+in args (the single-flight slot under workerd cancellation; the runner's own fix round then runs on
+Opus too, so the `auth-data` stop rule never fires before an Opus attempt). `diff-reviewer` on
+`claude-opus-5-5` at `medium`; the close's `web-auth-security-reviewer` at `high`. **Upshift
+candidate:** Task 8 (kit 3's `use:enhance` location rule). The runner has no mid-run conductor
+hook, so a Task 8 mechanism defect standing after the runner's Sonnet fix round reaches the
+conductor as a stopped task. The conductor then hand-dispatches one chain per `pass-core` on
+`model: opus`, naming the task's original base SHA and the standing findings, so the reviewer sees
+the whole task.
 
 **Pre-flight (every segment):** before each segment's first dispatch, one `haiku` pre-flight lists
 every factual claim that segment's tasks make about existing code at the worktree's HEAD (paths,
@@ -111,22 +119,29 @@ exit:`, never poll a log. `CAIRN_GATE_LANE=light` only for a gate that launches 
 engine's root `npm test` and the component project drive Chromium and are never light.
 
 - **Full (F):** the `full` tier of `scripts/checks/gate-tier.mjs`, printed by `node
-  scripts/checks/gate-tier.mjs --range <base>..HEAD --pin full` and quoted in Task 0's Ledger entry.
-  It runs the docs gate, `npm run check`, the node projects, the serialized component project, the
-  `create-cairn-site` suite, the admin visual spec, `check:comments`, `check:surface`, CI's check
-  list (`check:template`, `check:tool-heuristics`, `check:rulings-format` among them), and the whole
-  showcase e2e. Every local showcase e2e runs with `E2E_PORT=4392` after `ss -ltnp 'sport =
-  :4392'` shows no listener (quoted in the report).
-- **Engine (E):** the `engine` tier of the same script.
+  scripts/checks/gate-tier.mjs --range HEAD~1..HEAD --pin full` and quoted in Task 0's Ledger
+  entry (under a pin the range only needs to be non-empty). It runs the docs gate, `npm run check`,
+  the node projects and the serialized component project (`npm run test:node-projects && npm run
+  test:component -- --no-file-parallelism`, never stock `npm test`), the `create-cairn-site` suite,
+  the admin visual spec, `check:comments`, `check:surface`, CI's check list (`check:template`,
+  `check:tool-heuristics`, `check:rulings-format` among them), and the whole showcase e2e.
+- **Engine (E):** the `engine` tier of the same script, printed with `--pin engine`.
 - **Tool (T):** `CAIRN_GATE_LANE=light cairn-run-gate 'make -C tool check'`.
 - **Docs (D):** `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:docs-gate && npm run
-  check:surface && npm run check:reference && npm run check:reference:signatures && npm run
-  check:rulings-format && npm run check:facts'`.
+  check:surface && npm run check:rulings-format'`. The docs gate already runs `check:reference`,
+  `check:reference:signatures`, and `check:facts`.
 
 **Per-task gate.** The runner's classifier sizes each task's gate from its committed diff, with F
-as the fallback. Tasks whose acceptance carries a showcase e2e pin `gateTier: "full"` (Tasks 1, 7,
-8, and 10). Task 2's diff spans `tool/` and `src/lib/diagnostics/`, so the classifier runs the npm
-tier and T together on the heavy lane. Task 12 runs D.
+as the fallback. Tasks whose acceptance carries a showcase e2e, or whose change is the sign-in
+path, pin `gateTier: "full"` (Tasks 1, 3, 7, 8, and 10). Task 2's diff spans `tool/` and
+`src/lib/diagnostics/`, so the classifier runs the npm tier and T together; Task 2 sets `gateLane:
+"heavy"`, because that tier runs the component project in Chromium and the `tool` class defaults to
+the light lane. Task 12 sets `gateLane: "light"`, and its implementer appends `&& npm run
+check:surface && npm run check:rulings-format` to the classifier's docs string (`gateMatches`
+accepts trailing steps). Every other task (4, 5, 6, 9, 11) runs the computed gate, and its
+acceptance says "the computed gate green": per `~/.claude/docs/pass-gate-economy.md`, a
+paint-neutral task keeps the showcase e2e at the boundary, and each segment's boundary F (or the
+close's) covers it.
 
 A lone unrelated test-file failure, or a component run printing `Cannot connect to the server in
 60 seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it counts as red.
@@ -140,10 +155,15 @@ A lone unrelated test-file failure, or a component run printing `Cannot connect 
 - `createAuthRoutes` is unchanged: it reads neither roles nor access.
 - The template is generated: every task that edits an emitted showcase file runs `npm run
   emit:template` in the same task, and `check:template` stays green at every commit.
-- Every commit leaves `check:reference`, `check:reference:signatures`, and `check:surface` green.
-  A task that changes a typed export or removes a documented symbol makes the minimal reference
-  edit and regenerates `docs/internal/api-surface.md` with `npm run check:surface -- --update` in
-  the same task. Task 12 writes the prose.
+- Every commit leaves `check:reference`, `check:reference:signatures`, `check:surface`,
+  `check:options`, `check:facts` (pointer grammar), and `check:snippets` green. A task that changes
+  a typed export or removes a documented symbol makes the minimal reference edit, updates
+  `docs/internal/option-map.json` for any added or removed option path, repairs any fact pointer
+  that names a moved or deleted file, and regenerates `docs/internal/api-surface.md` with `npm run
+  check:surface -- --update`, all in the same task. Task 12 writes the prose and the claim
+  corrections.
+- Every local showcase e2e runs with `E2E_PORT=4392` after `ss -ltnp 'sport = :4392'` shows no
+  listener (quoted in the report); the runner's `gate` string exports it.
 - Every edit to `src/lib/diagnostics/conditions.ts` regenerates its mirror with `node
   scripts/build/emit-tool-conditions.mjs` and commits `tool/internal/spine/conditions.json` in the
   same task, so `check:tool-conditions` stays green.
@@ -171,15 +191,20 @@ A lone unrelated test-file failure, or a component run printing `Cannot connect 
 
 1. **Task 7 runs before Task 6**, so only Task 6 waits on fork 2. Task 7 lands the 503 and the
    non-applicable signing report with `ok` as the signing check alone. Task 6 then extends `ok` to
-   `githubAppSigning.ok && (githubAppToken?.ok ?? true)`, the spec's composition. The 503 test from
-   Task 7 covers both shapes.
+   `githubAppSigning.ok && (githubAppToken?.ok ?? true)`, the spec's composition. Task 7's route
+   test stubs `loadHealth`, so it covers the route's status mapping only; Task 6's own rows cover
+   the composition inside `loadHealth`.
 2. **The access map moves inline onto the adapter.** The showcase and the template declare
    `access` (and `roles`, where a site has its own) as members of the adapter in
-   `src/theme/cairn.config.ts`, and `src/access.ts` is deleted from both. The showcase-only
-   `theme-kit` rule keeps its `cairn-template:exclude-start/-end` markers inside the adapter. Pass
-   B then removes the scaffold's `/admin/signups` rule with markers alone, and the scaffold reaches
-   the zero-config floor with no `access` member. This is the spec's "on the adapter" form; its
-   "or in a module the adapter imports" stays the documented alternative for a site.
+   `src/theme/cairn.config.ts`, and `src/access.ts` is deleted from both. **One marker block per
+   member:** the `access` member, its doc comment included, carries exactly one
+   `cairn-template:exclude-start/-end` block, which wraps the showcase-only `theme-kit` rule and the
+   `//` lines explaining it. The member's doc comment above it carries no marker block (today's
+   `access.ts` has a second block inside its JSDoc; that paragraph moves into the rule's block).
+   Pass B replaces the inner `theme-kit` block with one block around the whole member, so markers
+   never nest (the emitter throws on a nested start), and the scaffold reaches the zero-config
+   floor with no `access` member. This is the spec's "on the adapter" form; its "or in a module the adapter imports" stays
+   the documented alternative for a site.
 3. **A3's named condition is `auth.store-roles-unmigrated`**, severity `warning` (sign-in and
    publishing still work; only a custom-role write fails), with `docsAnchor`
    `is-it-working.md#provision-the-auth-store`, the anchor `auth.store-unmigrated` already uses.
@@ -194,10 +219,12 @@ A lone unrelated test-file failure, or a component run printing `Cannot connect 
    directory's rule is "a fixture is never edited", and only a live re-capture changes it. A unit
    test over the step's log output carries the acceptance instead. The fixture's staleness is
    filed in the friction log for the next capture.
-6. **B9 regenerates the generated env types.** Both `worker-configuration.d.ts` files (showcase and
-   Waymark) are generated by `wrangler types --env-file=...template-repo/.dev.vars.example`, so
-   they declare `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID`. Task 7 reruns the command each
-   file records on its line 2 after dropping the two lines, and the grep post-condition covers them.
+6. **B9 regenerates the generated env types.** The showcase's `worker-configuration.d.ts` is
+   generated from `template-repo/.dev.vars.example`, so it declares `GITHUB_APP_ID` and
+   `GITHUB_APP_INSTALLATION_ID`. Task 7 drops the two lines from the example env file, reruns the
+   command the showcase's file records on its line 2, and lets `npm run emit:template` regenerate
+   the template's copy (`emit-template.mjs`'s `regenerateWorkerTypes`); no hand `wrangler types`
+   runs in `templates/waymark`. The grep post-condition covers both files.
 7. **The lead's build-fail criterion is evidence, not a committed test.** That the prerender's
    hooks import fails `vite build` on a composition throw is SvelteKit's behavior, not engine code.
    Task 1 proves it with a scratch build (a showcase copy whose adapter throws at composition) and
@@ -208,9 +235,9 @@ A lone unrelated test-file failure, or a component run printing `Cannot connect 
 9. **ROADMAP.** Task 12 narrows the "Engine pass before stage 2b" Now entry to pass B's remaining
    scope rather than removing it; pass B removes it. Every other ROADMAP change the spec lists
    lands here.
-10. **The relink re-arm list is pass B's** (the spec puts it in pass B's docs task). Task 12 writes
-    the affected 2a pages and the fact ids each task changed into STATUS's carry-forwards, so pass
-    B's task has one flat input.
+10. **The relink re-arm list is pass B's** (the spec puts it in pass B's docs task). Task 12's report
+    lists the affected 2a pages and the fact ids each task changed, and close step 9 writes them
+    into STATUS's carry-forwards, so pass B's task has one flat input.
 11. **Friction triage split.** This pass's close clears every friction entry for a pass A fix, and
     every entry the spec declines or batches (each to its ledger entry or its ROADMAP row). Entries
     for pass B's fixes stay until pass B's close.
@@ -227,15 +254,24 @@ A lone unrelated test-file failure, or a component run printing `Cannot connect 
     `kind` is not `github-app`, the live branch makes no network call and leaves `githubAppToken`
     out, so `ok` reads the signing check alone. The spec is silent on this case; a reported
     "unreachable" would blame GitHub for a missing secret the signing check already names.
+16. **D1's delete gate fails closed on a manifest with no reference data.** The spec accepted a
+    residual: a site whose only image references are nested commits no `mediaRefs` key, so its
+    stale manifest reads as pre-field and builds green while the deployed delete gate still sees
+    every gallery asset as unused. That residual is the data loss D1 exists to fix, so the gate
+    takes the conventional fail-closed default (the strict branch read's posture). When no
+    committed manifest entry carries a `mediaRefs` key and any concept declares a nested image
+    shape, a single delete of an asset the index reads as unused, and a bulk delete whose selection
+    holds one, answer a 409 naming `npx cairn-manifest` before any commit (Task 11). Known cost, disclosed in the message and the
+    changelog: a regenerated site whose content references no image at all also reads this way and
+    refuses until an entry references one.
 
 ## Rulings for Geoff
 
 1. **Fork 2: may an anonymous `/healthz?live=1` mint a token?** Open. It governs Task 6 alone,
    which is built on the spec's recommendation (yes, with the coalesced per-isolate cache and the
    per-caller timeout) and is **BLOCKED until Geoff rules**. Task 6's section states what changes
-   under "no". Fork 1 (the dev-save notice) belongs to pass B.
-2. **The charter phrase (Decision 12).** Not a fork: one phrase for Geoff's read, batched with the
-   merge go.
+   under "no", and the close's key probe drops its concurrency check under "no". Fork 1 (the
+   dev-save notice) belongs to pass B.
 
 ## Running unattended
 
@@ -249,9 +285,11 @@ The pass is planned to run 10 or more hours without Geoff. Every stop is settled
 - A flake under the rerun rule in `docs/internal/durable-gotchas.md`: one rerun of the named test
   file or the serialized component run; a second red is a real failure.
 - A second `fix` verdict on a non-`auth-data` task (Tasks 2, 5, 7, 8, 12): one more fix round, an
-  upshift to `model: opus`, or a split of the task, whichever the findings point at. The decision
-  and its reason go in the next Ledger entry.
-- An upshift on Task 6 or Task 8 per "Models".
+  upshift to `model: opus`, or a split of the task, whichever the findings point at. The runner
+  stops on `needs-decision`, and a relaunch would re-record `baseSha` at the new HEAD, so the extra
+  round is a hand-dispatched chain per `pass-core` that names the task's original base SHA and the
+  standing findings. The decision and its reason go in the next Ledger entry.
+- The Task 8 upshift per "Models".
 - A pre-flight finding that moves a path, a line, or a count without changing a task's outcome:
   amend the plan and commit the amendment.
 - A finding outside a task's scope: verify it against the code, then file it in
@@ -266,6 +304,9 @@ The pass is planned to run 10 or more hours without Geoff. Every stop is settled
   10, 11).
 - An `auth-data` coverage gap the reviewer still marks blocking after the fix round, such as a
   mutation the task names that no test kills.
+- A Task 8 behavior defect (a failed save reading as saved, or the writing lost) still standing
+  after the hand-dispatched Opus chain. Task 8's acceptance rows are blocking for coverage, as on
+  an `auth-data` task.
 - An escalate verdict that names an architectural fork the spec did not settle.
 - A pre-flight finding that changes a task's outcome (a claim the spec rests on is false).
 - The ceiling at 80 percent, at the next segment boundary.
@@ -306,8 +347,8 @@ The inputs most likely to bite a real site that per-task tests would not exercis
    failure. Task 8's e2e starts there.
 5. **A publish carrying a pending dictionary word.** Task 8 sequences the word's commit before the
    publish POST, and Task 10's head guard must not refuse that publish.
-6. **A stale manifest that still builds.** Task 11's verify narrowing and the nested-only residual
-   the regenerate line covers.
+6. **A stale manifest that still builds.** Task 11's verify narrowing, the nested-only residual,
+   and the delete gate that fails closed on it (Decision 16).
 
 ---
 
@@ -319,18 +360,22 @@ The inputs most likely to bite a real site that per-task tests would not exercis
    a pattern in the command's own text); no `engine-pre-2b-a` branch or worktree exists; the `main`
    checkout's `git status --porcelain` shows no warm edits this pass would collide with.
 2. **Start state:** PR #107 is merged; `main` carries this plan and the spec at or after
-   `0c476887`; STATUS points at this plan.
+   `27df5088`; STATUS points at this plan. STATUS today says execution waits for Geoff's spec read,
+   so repointing it at this plan is a named pre-execution step on `main` (the pre-bake), done
+   before Task 0 starts, after Geoff's spec read.
 3. **Worktree:** create `.claude/worktrees/engine-pre-2b-a` on `engine-pre-2b-a` from `main`; `npm
    ci`; a from-scratch showcase install (`rm -rf examples/showcase/node_modules` then `npm ci
    --prefix examples/showcase`); `realpath` confirms the engine and the dev package resolve into the
    worktree.
-4. **Gate strings:** print F and E with `gate-tier.mjs --pin full` and `--pin engine` and record
-   both.
+4. **Gate strings:** print F and E with `gate-tier.mjs --range HEAD~1..HEAD --pin full` and
+   `--pin engine` (the `<base>..HEAD` range is empty at Task 0, and the script refuses it) and
+   record both.
 5. **Baseline:** one `haiku` gate agent runs F, then T, in the worktree and returns each `gate
    exit:` line and tail. The conductor quotes them to Task 1's reviewer as Task 0's gate evidence. A
    red stops the pass with one message to Geoff.
-6. **Draft PR:** push `engine-pre-2b-a`, open a draft PR against `main` so CI runs on every later
-   push, and record that SHA's CI result.
+6. **Draft PR:** after the branch's first commit (the Task 0 Ledger entry, or the item 7 or 8
+   amendment), push `engine-pre-2b-a` and open a draft PR against `main` so CI runs on every later
+   push, and record that SHA's CI result. GitHub refuses a pull request with no commits.
 7. **S1 pre-flight** per "Pre-flight claims, S1".
 8. **Fork 2's state:** record whether Geoff has ruled. If he has, amend Task 6 to the ruled answer
    (strike its BLOCKED line or apply its "Under no" changes) and commit.
@@ -397,6 +442,14 @@ HEAD.
   (`ConfirmPage.svelte:79`), and logout `/admin?/logout` (`CairnAdminShell.svelte:1189`), so no
   engine form posts to a path under `/admin/auth/` other than the confirm page.
 - No route under `examples/showcase/src/routes/admin/auth/` or `templates/waymark/src/routes/admin/auth/`.
+- The fact bullets whose Source cites `src/access.ts` (`f:3z1uxv` in `docs/internal/facts/extend.md`
+  and any other the grep finds); the `docs/internal/option-map.json` rows for
+  `AuthGuardConfig.access`, `AuthGuardConfig.roles`, and `EditorRoutesConfig.roles` (`:45,48,125`)
+  and the `CairnAdminConfig.runtime` row whose shape the new rows copy; and every unskipped
+  reference snippet calling one of the three factories (`docs/reference/admin-routes.md:218` calls
+  a bare `createAuthGuard()`; `sveltekit.md:127,1043`).
+- `examples/showcase/src/access.ts` carries two marker blocks, one inside its JSDoc and one around
+  the `theme-kit` rule; `templates/waymark/src/access.ts` holds only the `/admin/signups` rule.
 
 ---
 
@@ -417,8 +470,12 @@ comments only), `src/lib/auth/access.ts` and `src/lib/index.ts` (the comments on
 `examples/showcase/src/theme/cairn.config.ts`, `examples/showcase/src/access.ts` (deleted, Decision
 2), every other caller of the three factories under `src/`, `packages/`, `examples/showcase/src/`
 and their tests (the pre-flight counts them), `docs/reference/sveltekit.md`, `docs/reference/core.md`,
-`docs/reference/log-events.md` (the rows named below only), `docs/internal/api-surface.md`, and
-`templates/waymark/**` through `npm run emit:template`.
+`docs/reference/log-events.md` (the rows named below only), `docs/reference/admin-routes.md` (the
+snippet at `:218` only), `docs/internal/option-map.json` (the three removed options out, the
+`AuthGuardConfig.runtime` and `EditorRoutesConfig.runtime` rows in, each with a fact id),
+`docs/internal/facts/*.md` (pointer repairs only, for each bullet whose Source cites a deleted
+`src/access.ts`), `docs/internal/api-surface.md`, and `templates/waymark/**` through `npm run
+emit:template`.
 
 **Outcome:**
 - `createAuthGuard`, `devBackendHandle`, and `createEditorRoutes` each take one bag parameter with a
@@ -447,37 +504,66 @@ and their tests (the pre-flight counts them), `docs/reference/sveltekit.md`, `do
 - **Required runtime:** `// @ts-expect-error` on `createAuthGuard()`, `createAuthGuard({ access })`,
   `devBackendHandle()`, and `createEditorRoutes()`, in a file `npm run check` type-checks. Fails
   today: all four compile.
-- **One map, five readers:** a fixture adapter with `access: { media: ['owner'], '/admin/x':
-  ['owner'] }` and a declared editor-capability role, composed through `composeRuntime`. Running
-  `createAuthGuard({ runtime })`'s handle over a real event with no locals set, an editor session is
-  refused by the media screen (`requireEngineAccess`), the nav resolver, `requireAccess`,
-  `createSectionAction`, and `createAdminAction` with `access`. Fails today: the guard has no
-  `runtime` input, so only a hand-seeded `locals.cairnAccess` reaches the last three.
+- **One map, five readers:** a fixture adapter declaring a custom role `steward` (absent from
+  `DEFAULT_ROLES`, editor capability) and `access: { media: ['owner'], '/admin/x': ['owner'],
+  '/admin/y': ['steward'] }`, composed through `composeRuntime`. Run `createAuthGuard({ runtime
+  })`'s handle over a real event with no locals set, then:
+  - **Identity:** `event.locals.cairnAccess` is `runtime.access` by identity (`toBe`).
+  - **Refuse half:** a `steward` session is refused by the media screen (`requireEngineAccess`),
+    the nav resolver, and, on `/admin/x`, by `requireAccess`, `createSectionAction`, and
+    `createAdminAction` with `access`.
+  - **Admit half:** an owner session is admitted on `/admin/x`, and a `steward` session on
+    `/admin/y`, by `requireAccess`, `createSectionAction`, and `createAdminAction`.
+
+  Fails today: the guard ignores the unknown `runtime` member and attaches `{}`, so every mapped
+  admit is refused as `no_rule` and the identity assertion fails. (The refuse half alone passes
+  today, because the three `locals` readers fail closed on `{}`.)
 - **The dev handle attaches the adapter's map:** through `devBackendHandle({ runtime })`,
-  `locals.cairnAccess` is `runtime.access`, and `{}` when the adapter declares none. Fails today:
-  no map unless handed `access`.
-- **Roles from the adapter alone:** a declared role's capability resolves the same in the guard and
-  the roster screen. Fails today: the guard reads `DEFAULT_ROLES` unless handed `roles`.
+  `locals.cairnAccess` is `runtime.access` by identity, and `{}` when the adapter declares none.
+  Fails today: no map unless handed `access`.
+- **Roles from the adapter alone:** the fixture's `steward` role resolves to editor capability in
+  both the guard and the roster screen. Fails today: the guard reads `DEFAULT_ROLES` unless handed
+  `roles`, so `steward` resolves to `none`.
 - **The narrowed warning:** `config.access_unmapped` is silent for an href-only map and fires for a
   partial screen map. Fails today: it fires for the href-only map. The test that asserted an href
   key "never counts toward coverage" is rewritten to the new rule, and the report names it (Task
   12 annotates the ledger's `Verified:` line).
-- **Build-fail evidence (Decision 7):** a scratch showcase copy whose adapter throws at composition
-  fails `vite build`; the report quotes the exit code and the throw.
-- `npm run check:tool-heuristics` green; `check:template` and `test:emit` green; the showcase e2e
-  green (the dev handle path).
-- `git grep -nE "createAuthGuard\(\{ ?(access|roles)|devBackendHandle\(\{ ?(access|roles)|createEditorRoutes\(\{ ?roles" -- src packages examples templates docs/reference`
-  prints nothing.
+- **Build-fail evidence (Decision 7):** a scratch showcase copy under `$HOME/.cache/engine-pre-2b-a/`
+  whose adapter throws at composition fails `vite build`; the copy's two `file:` dependencies are
+  rewritten to the worktree's absolute paths before its install. The report quotes the exit code
+  and the throw.
+- **Markers (Decision 2):** the showcase adapter's `access` member, doc comment included, carries
+  exactly one `cairn-template:exclude-start` line, and the emitted template's adapter holds only
+  the `/admin/signups` rule.
+- `npm run check:tool-heuristics` green; `check:template`, `test:emit`, `check:options`,
+  `check:facts`, and `check:snippets` green; the showcase e2e green (the dev handle path).
+- `rg -nU "(createAuthGuard|devBackendHandle)\(\s*\{\s*(access|roles)\b|createEditorRoutes\(\s*\{\s*roles\b|createAuthGuard\(\s*\)" src packages examples templates docs/reference`
+  prints nothing outside the `@ts-expect-error` file (multi-line calls included).
+- `rg -n "from ['\"].*cairn\.config" docs/reference` finds no access-module snippet importing
+  `roles` from the adapter.
 - F green.
 
 **Mutations (each must turn a named test red; the report's mutation ledger quotes it):** the guard
-reading `access` from anywhere but `runtime`; the dev handle attaching `undefined` when the adapter
-declares no map; the guard falling back to `DEFAULT_ROLES` beside a declared vocabulary;
-`config.access_unmapped` counting href keys toward coverage.
+attaching `{}` whatever the runtime declares; the guard reading `access` from anywhere but
+`runtime`; the dev handle attaching `undefined` when the adapter declares no map; the guard falling
+back to `DEFAULT_ROLES` beside a declared vocabulary; `config.access_unmapped` counting href keys
+toward coverage.
 
 **Notes:** a breaking change; the report drafts the `Consumers must:` line for Task 12 from the
 spec's draft. The report lists every 2a extend page the change affects and every fact id it
 falsifies (`grep` over `docs/internal/facts/`).
+
+**Decisions carried:**
+- **Decision 2:** the access map moves inline onto the adapter. The showcase and the template
+  declare `access` (and `roles`, where a site has its own) as members of the adapter in
+  `src/theme/cairn.config.ts`, and `src/access.ts` is deleted from both. The `access` member, its
+  doc comment included, carries exactly one `cairn-template:exclude-start/-end` block, which wraps
+  the showcase-only `theme-kit` rule and the `//` lines explaining it; the doc comment carries no
+  marker block. Pass B replaces the inner `theme-kit` block with one block around the whole member.
+- **Decision 7:** the build-fail criterion is evidence, not a committed test. That the prerender's
+  hooks import fails `vite build` on a composition throw is SvelteKit's behavior, not engine code.
+  Prove it with a scratch build and quote the exit code and the throw; the reviewer reads it as
+  evidence, not a coverage gap.
 
 **Interfaces produced:** the `{ runtime }` bag on the three factories, consumed by Tasks 2 and 3 and
 by pass B; the adapter-declared map in the showcase and the template, consumed by pass B's ruling 2
@@ -502,20 +588,27 @@ bare-call and `{ roles }` branches stay for a site on an older engine. `tmplRole
 }` on an older one. The tool changelog records the change.
 
 **Acceptance:**
-- A table-driven Go test: `createAuthGuard({ runtime })`, `createAuthGuard({ runtime: cairn })`, and
-  `createAuthGuard({ runtime, identity })` pass; a bare `createAuthGuard()` with custom roles
-  declared still fails. Fails today: each `{ runtime }` form reads as unwired (a `{` with no `roles`
-  word).
+- A table-driven Go test, every row run with custom roles declared (or calling `guardRoleWiring`
+  directly), since the check returns `skip` when a site declares none (`skipNoCustomRoles`):
+  `createAuthGuard({ runtime })`, `createAuthGuard({ runtime: cairn })`, and `createAuthGuard({
+  runtime, identity })` pass; a bare `createAuthGuard()` still fails. Fails today: each `{ runtime
+  }` form reads as unwired (a `{` with no `roles` word).
 - `npm run check:tool-conditions` green (the mirror regenerated).
 - T green, plus the npm tier the classifier computes for the `conditions.ts` edit.
 
 **Notes:** `go-conventions` governs. No tool version bump or tag.
 
-**Gate:** the classifier's npm tier plus T, heavy lane.
+**Decisions carried:**
+- **Decision 13:** the doctor's changelog lands with the doctor (this task) under
+  `tool/CHANGELOG.md` `## Unreleased`. No tool tag.
+
+**Gate:** the classifier's npm tier plus T; `gateLane: "heavy"` in args (the npm tier runs the
+component project in Chromium).
 
 ### Task 3: The access edges: A1, A2, C1, C7
 
-**Pass class:** `auth-data`. **Independent** of Task 2. **Consumes:** Task 1. **Spec:** "Access and
+**Pass class:** `auth-data`. **gateTier:** `full` (C7 is the sign-in path, and the acceptance
+carries the showcase e2e). **Independent** of Task 2. **Consumes:** Task 1. **Spec:** "Access and
 auth", items A1, A2, C1, and C7.
 
 **Files:** `src/lib/auth/access.ts`, `src/lib/sveltekit/guard.ts`,
@@ -540,12 +633,15 @@ row), `docs/internal/api-surface.md` if a typed export moved.
 
 **Acceptance:**
 - **A1:** table-driven `canReach` tests over a screen id, a mapped href, an unmapped href, and a
-  dynamic route, plus one row each through `requireAccess` and `createSectionAction`: a `none`
-  session on a mapped href naming its role is admitted, and on `editors` is refused. Fails today:
-  refused before the map is read.
+  dynamic route, including a row where a screen-id rule names the `none` role (still refused), plus
+  one row each through `requireAccess` and `createSectionAction`: a `none` session on a mapped href
+  naming its role is admitted, and on `editors` is refused. Fails today: refused before the map is
+  read.
 - **A2:** a map with `/admin/x` and `/admin/x/y/z` and a request to `/admin/x/[id]` logs `reason:
-  'shadowed'`; each of the five emitters is covered by a test asserting a `reason`. Fails today: no
-  `reason` field.
+  'shadowed'`. The mapping is fixed: no matching rule gives `no_rule`; a shadowed match gives
+  `shadowed`; every other refusal (role not listed, the `editors` floor, a `none` capability,
+  `ownerOnly`, `authorizeAdminTarget`'s `not-owner`) gives `role`. Each of the five emitters has a
+  test asserting the exact value its refusal maps to. Fails today: no `reason` field.
 - **C1:** both actions called with no `concept` param by an editor the map denies answer 404. Fails
   today: the action runs.
 - **C7:** a table over `isPublicAdminPath` is true for `/admin/login` and `/admin/auth/confirm` only,
@@ -555,16 +651,18 @@ row), `docs/internal/api-surface.md` if a typed export moved.
 - The showcase e2e sign-in specs stay green (the confirm page is still public).
 - F green.
 
-**Mutations:** restore `canReach`'s early `none` return; admit `none` on an unmapped href; report
-`'no_rule'` for a shadowed match; restore the `startsWith` prefix; restore the
-`if (event.params.concept)` guard on either action.
+**Mutations:** restore `canReach`'s early `none` return; admit `none` on an unmapped href; admit
+`none` on a screen-id rule naming its role; report `'no_rule'` for a shadowed match; restore the
+`startsWith` prefix; restore the `if (event.params.concept)` guard on either action.
 
 **Notes:** A1 is a loosening and C1 and C7 are breaking for a hand-mount or a site route under
-`/admin/auth/`; the report drafts their `Consumers must:` lines and names the affected 2a pages
-(security-model, restrict-admin-access, add-a-second-sign-in-group, debug-your-site) and fact ids.
-The charter phrase and the functional spec's amendments are Task 12's.
+`/admin/auth/`; the report drafts their `Consumers must:` lines (A1's included: review any access
+rule naming a `none`-capability role, since `canReach`, `requireAccess`, and `createSectionAction`
+now admit it) and names the affected 2a pages (security-model, restrict-admin-access,
+add-a-second-sign-in-group, debug-your-site) and fact ids. The charter phrase and the functional
+spec's amendments are Task 12's.
 
-**Gate:** F (computed; `auth-data`).
+**Gate:** F (pinned).
 
 **S1 boundary:** F and T green on the segment head; STATUS and a Ledger entry written; S2's
 pre-flight dispatched.
@@ -579,35 +677,51 @@ pre-flight dispatched.
 
 **Files:** `examples/showcase/migrations/0001_roles.sql` (new, byte-identical to the package's
 `migrations/0001_roles.sql`), `src/lib/auth/store.ts`, `src/lib/diagnostics/conditions.ts`,
-`tool/internal/spine/conditions.json` (regenerated), `src/tests/unit/emit-template-tree.test.ts`,
-the store's tests, `templates/waymark/migrations/` through `npm run emit:template`, and any
-reference page that lists the condition registry.
+`tool/internal/spine/conditions.json` (regenerated), `tool/internal/spine/condition.go` (the new
+id's typed constant and its `Conditions()` entry, which `TestConditionsMatchEmbeddedMirror`
+requires), `tool/CHANGELOG.md` (`## Unreleased`, the new public condition id),
+`src/tests/unit/emit-template-tree.test.ts`, the store's tests, `templates/waymark/migrations/`
+through `npm run emit:template`, and any reference page that lists the condition registry.
 
 **Outcome:** the scaffold carries migrations {0000, 0001, 0003, 0004} and not the opt-in 0002.
-Every role-writing statement (the inserts at `store.ts:271` and `:468`, the updates at `:506-509`
-and `:544`) routes a role `CHECK` constraint failure through a named condition,
-`auth.store-roles-unmigrated` (Decision 3), the way `rethrowStoreFailure` names 0004. The message
-names `0001_roles.sql` and says it rebuilds `editor` with the engine's four columns only. Any other
-failure rethrows untouched.
+Every reachable role-writing statement (`insertEditor` at `store.ts:271`, `setEditorRole`'s two
+branches at `:506` and `:509`, and `demoteOwnerIfNotLast` at `:544`) routes a role `CHECK`
+constraint failure through a named condition, `auth.store-roles-unmigrated` (Decision 3), the way
+`rethrowStoreFailure` names 0004. `insertOwnerIfEmpty` (`:468`) stays unrouted, with a one-line
+comment: it writes only `'owner'`, which every schema's CHECK admits. The message names
+`0001_roles.sql` and says it rebuilds `editor` with the engine's four columns only. Any other
+failure, a primary-key violation included, rethrows untouched.
 
 **Acceptance:**
+- **Pre-flight evidence:** the report quotes local D1's real error text for a role CHECK failure
+  and for a primary-key failure on `editor.email`, and the match keys on the CHECK text only.
 - `emit-template-tree.test.ts` asserts the scaffold's migration set is exactly {0000, 0001, 0003,
   0004}. Fails today: 0001 absent.
-- Against a D1 on `0000_auth.sql` alone, adding an editor with a custom role and changing a role to
-  a custom one each throw `auth.store-roles-unmigrated`, one test per statement. Fails today: a raw
-  500 from the constraint.
-- After 0001 the same writes succeed, and applying 0001 after 0004 leaves `magic_token` intact.
-- `check:tool-conditions`, `check:template`, and `test:emit` green.
-- F green.
+- Against a D1 on the scaffold's pre-pass set {0000, 0003, 0004}, one row per routed statement
+  throws `auth.store-roles-unmigrated`: an add with a custom role; `setEditorRole` to a custom role
+  with `ownerRoles` empty, and with it non-empty; `demoteOwnerIfNotLast` to a custom role. Fails
+  today: a raw 500 from the constraint.
+- A duplicate-email add rethrows the primary-key failure untouched.
+- After 0001 the same writes succeed.
+- `check:tool-conditions`, `check:template`, and `test:emit` green; T green (the Go mirror test).
+- The computed gate green (`full+tool` for this diff).
 
-**Mutations:** drop the routing on each of the four statements in turn; widen the match so a
-non-constraint error is renamed.
+**Mutations:** drop the routing on each of the four routed statements in turn; widen the match so a
+non-constraint error (the primary-key failure) is renamed.
 
-**Notes:** `Consumers may:` apply `0001_roles.sql` when declaring custom roles; safe after 0004.
-Affected 2a pages: restrict-admin-access, add-a-second-sign-in-group, scaffolded-site-files. The
-recorded transcript fixtures stay unedited (they predate the file).
+**Notes:** `go-conventions` governs the Go edit. `Consumers may:` apply `0001_roles.sql` when
+declaring custom roles; safe after 0004. Affected 2a pages: restrict-admin-access,
+add-a-second-sign-in-group, scaffolded-site-files. The recorded transcript fixtures stay unedited
+(they predate the file). The `is-it-working.md#provision-the-auth-store` anchor is dead since the
+docs rebuild (the existing `auth.store-unmigrated` carries the same anchor); the report files it in
+the friction log for the admin arm's stage.
 
-**Gate:** F (computed; `auth-data`).
+**Decisions carried:**
+- **Decision 3:** A3's named condition is `auth.store-roles-unmigrated`, severity `warning`
+  (sign-in and publishing still work; only a custom-role write fails), with `docsAnchor`
+  `is-it-working.md#provision-the-auth-store`, the anchor `auth.store-unmigrated` already uses.
+
+**Gate:** computed (`auth-data`; this diff resolves to `full+tool`).
 
 ### Task 5: Turnstile, the channel database type, and partial branding (A7, A8, A10)
 
@@ -636,9 +750,9 @@ Turnstile row), `docs/internal/api-surface.md`.
 - **A8:** a test file that `npm run check` type-checks passes `createChannelDb()`'s result to
   `resolveDb` with no cast, and a real `D1Database` still assigns. Fails today: not assignable. The
   report quotes the red type error before the change.
-- **A10:** `auth.branding: { siteName }` alone sends mail that keeps the runtime's reply-to. Fails
-  today: dropped.
-- F green (computed).
+- **A10:** with a runtime whose `sender.replyTo` is set, `auth.branding: { siteName }` alone sends
+  mail that keeps that reply-to. Fails today: dropped.
+- The computed gate green.
 
 **Notes:** not breaking. Alerting keyed on `invalid_input` for a missing secret now matches
 `missing_secret` (a `Consumers must:` line). Affected 2a pages: add-a-second-sign-in-group,
@@ -663,7 +777,8 @@ through `npm run emit:template`.
 
 **Outcome:**
 - **B5:** the site-owned health route answers 503 when `ok` is false and 200 when true, its catch
-  branch included, and its "always returns 200" comment states the new contract. `ok` is the
+  branch included, and its "always returns 200" comment states the new contract. The catch branch
+  returns a fixed detail and never echoes `err.message` to the anonymous caller. `ok` is the
   signing check alone until Task 6. A provider whose `kind` is not `github-app` reports
   `githubAppSigning: { ok: true, detail: 'not-applicable' }`; a GitHub provider with no key still
   reports `ok: false`.
@@ -675,7 +790,8 @@ through `npm run emit:template`.
 
 **Acceptance:**
 - The route answers 503 on `ok: false` and 200 on `ok: true` (a route-level test with
-  `loadHealth` stubbed, both branches and the catch). The showcase's `healthz.spec.ts` expects the
+  `loadHealth` stubbed, both branches and the catch; the catch's body carries none of the thrown
+  error's message). The showcase's `healthz.spec.ts` expects the
   503 its keyless env produces. A non-GitHub provider reads `ok: true`. Fails today: always 200;
   the non-GitHub provider reads `ok: false`.
 - `git grep -nE 'GITHUB_APP_ID|GITHUB_APP_INSTALLATION_ID' -- src/lib/diagnostics/conditions.ts tool/internal/spine/conditions.json packages/create-cairn-site/template-repo/.dev.vars.example templates/waymark/.dev.vars.example examples/showcase/worker-configuration.d.ts templates/waymark/worker-configuration.d.ts`
@@ -688,6 +804,24 @@ through `npm run emit:template`.
 **Notes:** `Consumers may:` answer 503 when `loadHealth(...).ok` is false. The friction log gets
 the stale transcript fixture (Decision 5). Affected 2a pages: rotate-the-github-app-key,
 scaffolded-site-files.
+
+**Decisions carried:**
+- **Decision 1:** Task 7 runs before Task 6, so only Task 6 waits on fork 2. Task 7 lands the 503
+  and the non-applicable signing report with `ok` as the signing check alone. Task 6 then extends
+  `ok` to `githubAppSigning.ok && (githubAppToken?.ok ?? true)`. This task's route test stubs
+  `loadHealth`, so it covers the route's status mapping only.
+- **Decision 5:** B11a points at `https://cairn.pub/docs/extend/rotate-the-github-app-key`. Confirm
+  the URL shape against cairn-pub's `/docs/[...path]` route (read-only). The recorded transcript
+  fixture that carries the old line
+  (`packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt`) is not edited: that
+  directory's rule is "a fixture is never edited", and only a live re-capture changes it. A unit
+  test over the step's log output carries the acceptance instead. File the fixture's staleness in
+  the friction log for the next capture.
+- **Decision 6:** the showcase's `worker-configuration.d.ts` is generated from
+  `template-repo/.dev.vars.example`, so it declares `GITHUB_APP_ID` and
+  `GITHUB_APP_INSTALLATION_ID`. Drop the two lines from the example env file, rerun the command the
+  showcase's file records on its line 2, and let `npm run emit:template` regenerate the template's
+  copy; run no hand `wrangler types` in `templates/waymark`.
 
 **Gate:** F.
 
@@ -712,25 +846,39 @@ scaffolded-site-files.
   the await never blocks the save or publish.
 - Every result clears `saving` and `publishing`. A `failure` goes through `applyAction(result)`,
   which runs no load. A `redirect` does `location.assign(result.location)`, keeping today's
-  document reload, `{#key}` remount, and dirty reset.
+  document reload, `{#key}` remount, and dirty reset. An `error` result (a network failure, an
+  action that throws, or a non-JSON answer such as the guard's login redirect or CSRF page) never
+  reaches `applyAction`: it sets the in-place failure flag, keeps the editor's text, and shows the
+  calm message.
 - A local flag set on an in-place failure suppresses the `data.saved` flash and `saveState`'s
   "Saved". The dirty baseline for an in-place failure is the loaded `data.body`, so a refusal that
   echoes `body` still reads as unsaved and the leave guard still prompts.
 
-**Acceptance (a showcase e2e from `?saved=1`):**
+**Acceptance (a showcase e2e from `?saved=1`; every row is blocking for coverage):**
 - Type text; `page.route` answers `?/save` with a 500 failure and fails any following
   `__data.json`. The calm message shows, no "Saved" text shows, the text is intact, Save is
   enabled, a retry succeeds, and the leave guard prompts.
 - The same forge with a 409 failure echoing `body`: "Unsaved changes" shows, no "Saved" text
   shows, and the leave guard prompts.
+- `page.route` aborts `?/save` (a network failure, the `error` result): the text is intact, no
+  "Saved" text shows, Save is enabled, and the leave guard prompts.
+- A publish answered with a 500 failure leaves Publish enabled and the text intact.
+- With a pending dictionary word, `page.route` holds the `?/dictionaryAdd` response: no `?/save`
+  or `?/publish` request is sent until the test releases it. Fails today: the call is
+  fire-and-forget.
 - A successful save ends in a document load reading "Saved".
 - Fails today: a bare 500 replaces the page and the text. The report quotes the red run.
 - The admin visual spec's baselines are unchanged.
 - F green.
 
+**Mutations:** drop the in-place failure flag, so "Saved" shows; use the echoed `form.body` as the
+dirty baseline; pass an `error` result to `applyAction`; fire `commitPendingDictionary` without
+awaiting it.
+
 **Notes:** no public surface change. Affected 2a page: rotate-the-github-app-key. Kit 3.0.x's
-behavior the spec cites (`actions.js:170,186-191`, `client.js:88-109,147-155,182,2980-3005`) is
-re-read from the installed kit before relying on it; a difference stops the task with a report.
+behavior the spec cites (`actions.js:170,186-191`, `client.js:88-109,147-155,182,2980-3005`, and
+`forms.js`'s catch that turns a thrown fetch into `{ type: 'error' }`) is re-read from the
+installed kit before relying on it; a difference stops the task with a report.
 
 **Interfaces produced:** the awaited dictionary commit before the action POST, consumed by Task 10.
 
@@ -751,18 +899,26 @@ retry at `:133-149`), and their tests.
 content manifest, or any entry file, and passes it to the commit as `expectedHead`. A conflict
 answers with the path's existing message: `MANIFEST_CONFLICT_MESSAGE` for delete and metadata
 update, `CONTENT_CONFLICT_MESSAGE` for replace and alt, and the dictionary's own re-merge retry,
-which now fires because a head is passed. The delete docstring's stale-read note states the guard.
+which now fires because a head is passed. A null head on the default branch refuses with the
+path's conflict answer instead of committing unguarded (no `head ?? undefined`). The delete
+docstring's stale-read note states the guard.
 
-**Acceptance (a race test per path, committing between the head read and the commit):**
-- A deleted row stays deleted (single and bulk delete).
+**Acceptance (a race test per path; the concurrent commit is injected after the path's first read
+of `media.json`, the content manifest, or the entry file, and before its commit, so a head read
+moved after that read sees the injected commit and the stale file commits cleanly):**
+- A deleted row stays deleted (single and bulk delete). On each delete race the response is
+  `MANIFEST_CONFLICT_MESSAGE`, the R2 object still exists, and no `media.deleted` is logged.
+- A single delete whose in-window commit is a publish referencing the asset under delete conflicts,
+  and the bytes survive.
 - An upload's row survives a metadata update.
 - A publish's prose survives a replace and an alt propagation.
 - Two concurrent dictionary adds both land.
+- A null head refuses without a commit.
 - Fails today: each path's retry re-parents the stale file. The report quotes each red run.
-- F green (computed).
+- The computed gate green.
 
 **Mutations:** drop `expectedHead` from each path in turn; read the head after the manifest read
-instead of before.
+instead of before; commit unguarded on a null head.
 
 **Notes:** surface: none beyond the conflict messages each path already returns.
 
@@ -780,23 +936,25 @@ for the pending-word publish.
 **Outcome:** publish and publish-all read the default branch's head before reading the
 `media.json` and `index.json` snapshots they commit, and pass it as `expectedHead`. A conflict
 answers with the calm conflict; the entry stays held on its branch, so a retry is one click. No
-merge happens inside the retry.
+merge happens inside the retry. A null head refuses as Task 9's paths do.
 
 **Acceptance:**
-- A race test committing between publish's head read and its commit: a Library delete inside the
-  window stays deleted, and the publish answers the calm conflict with the entry still held. Fails
-  today: the retry re-parents the stale snapshot.
+- A race test whose concurrent commit is injected after publish's first snapshot read and before
+  its commit: a Library delete inside the window stays deleted, and the publish answers the calm
+  conflict with the entry still held. Fails today: the retry re-parents the stale snapshot.
 - The same for publish-all.
+- A null head refuses both without a commit.
 - A showcase e2e: a publish submitted through Task 8's submit with a pending dictionary word lands
   without a conflict, and the word commits. This holds today; it guards the new head read against
   the page's own commit.
 - F green.
 
 **Mutations:** drop `expectedHead` from publish and from publish-all in turn; move the head read
-after the snapshot read.
+after the snapshot read; commit unguarded on a null head.
 
-**Notes:** surface: a publish can now answer a conflict. Task 12 amends the 2a media design's
-decision 1. The 2b configure-media page drops its caveat (pass B's hand-off).
+**Notes:** surface: a publish can now answer a conflict; the report drafts its changelog line for
+Task 12. Task 12 amends the 2a media design's decision 1. The 2b configure-media page drops its
+caveat (pass B's hand-off).
 
 **Gate:** F.
 
@@ -814,10 +972,14 @@ path and media", D1.
 
 **Files:** `src/lib/content/media-refs.ts` (`:45-52`), `src/lib/content/media-rewrite.ts` (the
 `src:` locator at `:132`, `imageFieldKeys` at `:164-171`, replace's single-occurrence edit, alt
-propagation's placement report), `src/lib/content/manifest.ts` (`verifyManifest`, `:325-328`),
-`src/lib/sveltekit/content-routes-media-metadata.ts` only where replace or alt read a placement,
-their tests, `examples/showcase/src/content/.cairn/index.json` and the template's copy
-(regenerated if they change), and `docs/internal/api-surface.md` if a typed export moved.
+propagation's placement report), `src/lib/content/manifest.ts` (`verifyManifest`, `:325-328`, and
+one exported-or-internal predicate for "no committed entry carries `mediaRefs`" that the verify and
+the delete gate share), `src/lib/sveltekit/content-routes-media-delete.ts` (the single and bulk
+safe-delete gate, Decision 16), `src/lib/sveltekit/content-routes-media-metadata.ts` only where
+replace or alt read a placement, `src/lib/log/events.ts` and `docs/reference/log-events.md` (the
+refusal's `reason`), their tests, `examples/showcase/src/content/.cairn/index.json` and the
+template's copy (regenerated if they change), and `docs/internal/api-surface.md` if a typed export
+moved.
 
 **Outcome:**
 - `extractMediaRefs` and `imageFieldKeys` walk all four shapes `checkContainerNesting` admits:
@@ -827,25 +989,51 @@ their tests, `examples/showcase/src/content/.cairn/index.json` and the template'
 - Alt propagation reports a nested placement and never splices it.
 - `verifyManifest` drops a built `mediaRefs` only for a manifest that predates the field (no
   committed entry carries the key). A post-field manifest compares exactly, and a stale one fails
-  the build with the regenerate message. The nested-only residual (a site whose only references
-  are nested commits no `mediaRefs` key and reads as pre-field) is stated in a comment and covered
-  by the `Consumers must:` regenerate line.
+  the build with the regenerate message.
+- **The delete gate fails closed on the residual (Decision 16).** When no committed manifest entry
+  carries a `mediaRefs` key and any concept declares a nested image shape, `mediaDeleteAction`
+  refuses an asset the index reads as unused, and `mediaBulkDeleteAction` refuses the whole batch
+  when any selected asset reads as unused, each with a 409 and one message naming `npx
+  cairn-manifest`, before any commit or R2 call. The refusal logs `media.delete_refused` with a
+  `reason` value typed in `events.ts`. An asset the index reads as in use keeps today's typed-slug
+  path. With a post-field manifest, or no nested shape declared, delete behaves as today.
+- A comment at the verify and at the gate states the residual and both its consequences: until the
+  site regenerates, the delete gate refuses (this rule), and the first publish that writes a
+  `mediaRefs` key makes the next build fail on every other stale entry.
 
 **Acceptance:**
 - Where-used, safe delete, bulk delete, and replace run over each of the four shapes, including a
-  `- src:` line and an asset twice in one array. Fails today: each nested asset reads as unused.
+  `- src:` line and an asset twice in one array, against a post-field manifest. Fails today: each
+  nested asset reads as unused.
 - Alt propagation over a sequence-form entry leaves it byte-identical and reports the placement.
-- A committed manifest whose gallery-only entry lacks `mediaRefs` fails `verifyManifest`. Fails
-  today: it passes.
+- **Fail row:** a committed manifest in which a second entry carries `mediaRefs` (a hero image) and
+  the gallery-only entry lacks the key fails `verifyManifest`. Fails today: it passes.
+- **Pass row:** a manifest in which no entry carries `mediaRefs`, over a corpus with gallery refs,
+  still verifies.
+- **Gate rows:** with a manifest in which no entry carries `mediaRefs` and a concept declaring
+  `array(image)`, a single delete of an unreferenced-looking asset answers the 409 and the R2
+  object and the `media.json` row survive; a bulk delete over it commits nothing. The same deletes
+  succeed once one entry carries `mediaRefs`, and when no concept declares a nested shape. Fails
+  today: the delete removes the asset.
 - The showcase and template manifests are regenerated if they changed, and `check:template` is
   green.
-- F green (computed).
+- The computed gate green.
 
 **Mutations:** walk top-level fields only; drop the `- ` prefix from the locator; replace only the
-first occurrence; restore the unconditional `mediaRefs` drop.
+first occurrence; restore the unconditional `mediaRefs` drop; never drop (always compare exactly),
+which the pass row kills; skip the delete gate's residual check.
 
 **Notes:** **breaking:** `Consumers must:` regenerate the content manifest (`npx cairn-manifest`)
-and commit it. The stale-manifest message's script name (B2) is pass B's; leave it.
+and commit it; the report drafts the line with both residual consequences and the gate's refusal.
+The stale-manifest message's script name (B2) is pass B's; leave it.
+
+**Decisions carried:**
+- **Decision 16:** D1's delete gate fails closed on a manifest with no reference data. A site whose
+  only image references are nested commits no `mediaRefs` key, so its stale manifest reads as
+  pre-field and builds green while the delete gate still sees every gallery asset as unused. That
+  residual is the data loss D1 exists to fix, so the gate takes the conventional fail-closed
+  default. Known cost, disclosed in the message and the changelog: a regenerated site whose content
+  references no image at all also reads this way and refuses until an entry references one.
 
 **Gate:** computed (`auth-data`).
 
@@ -854,8 +1042,8 @@ and commit it. The stale-manifest message's script name (B2) is pass B's; leave 
 **BLOCKED until Geoff rules fork 2.** Built on the recommendation ("yes"). If fork 2 is still open
 when S4 reaches this task, the run stops after Task 11 (see "Running unattended").
 
-**Pass class:** `auth-data` (signing). **Upshift candidate** (see "Models"). **Spec:** "Ruling 3:
-the opt-in live key check", every paragraph but the 503's.
+**Pass class:** `auth-data` (signing). **model:** `"opus"` in args (see "Models"). **Spec:**
+"Ruling 3: the opt-in live key check", every paragraph but the 503's.
 
 **Files:** `src/lib/sveltekit/health.ts`, `src/lib/github/signing.ts`
 (`installationToken` at `:66-79`, `signingSelfTest` at `:130`), `src/lib/log/events.ts`, their
@@ -883,7 +1071,10 @@ events.md` (the `github.unreachable` row), `docs/internal/api-surface.md`.
   caller that finds the slot at or past the timeout treats it as empty and starts a fresh mint; the
   starter hands the slot's promise to the engine's `waitUntil` (`workers-env.ts:43`).
 - `signingSelfTest` reports `fingerprint: 'SHA256:<base64>'`, the SHA-256 of the public key's DER,
-  computed with Web Crypto and no network call.
+  computed with Web Crypto and no network call. The fingerprint is derived from public material
+  only (`n` and `e`, or an SPKI export), no exported private key object outlives the call, and the
+  signing import in `appJwt` stays `extractable: false`. A fingerprint failure omits `fingerprint`
+  and carries no message.
 - `ok` becomes `githubAppSigning.ok && (githubAppToken?.ok ?? true)` (Decision 1).
 
 **Acceptance:**
@@ -900,15 +1091,18 @@ events.md` (the `github.unreachable` row), `docs/internal/api-surface.md`.
   rsa -in KEY -pubout -outform DER | openssl sha256 -binary | openssl base64` prints for it; the
   report quotes the command and its output, and the test commits the expected value.
 - A failed live mint logs `github.unreachable` with `scope: 'health'` and the class as `reason`.
+- **The composition:** with signing ok and a stubbed 401, `ok` is false; with `live=1` skipped (no
+  key, or a non-GitHub provider), `ok` equals the signing check.
+- The serialized `HealthData` contains no substring of the fixture key's base64.
 - `live=1` with no key, and with a non-GitHub provider, makes no `fetch` and reports no
   `githubAppToken`.
 - The plain call makes no `fetch`. This holds today; it guards the new branch and proves nothing.
 - Fails today (all but the last): no live branch, fingerprint, or classifier exists.
-- F green (computed).
+- The computed gate green.
 
 **Mutations:** clear the slot only in the starter's continuation; skip the per-caller timer; write
 the verdict on an unsettled mint; route the mint through `cachedInstallationToken`; map 403 to a
-refused key; log the minted token's length or prefix.
+refused key; log the minted token's length or prefix; `ok` reads the signing check alone.
 
 **Under "no" (fork 2 answered no), the task changes as follows:**
 - `live=1` is honored only for a signed-in owner (`locals.cairnEditor.capability === 'owner'`);
@@ -928,7 +1122,22 @@ refused key; log the minted token's length or prefix.
 **Notes:** `HealthData` gains optional members; not breaking. Affected 2a page:
 rotate-the-github-app-key (its confirming publish and 55-minute wait give way to the fingerprint and
 the check). The residual, one mint per isolate per minute summed over the fleet, is Task 12's
-sentence on the reference page.
+sentence on the reference page. The report quotes GitHub's documented status codes for `POST
+/app/installations/{installation_id}/access_tokens` and the Web Crypto export step the fingerprint
+uses, from their published pages.
+
+**Decisions carried:**
+- **Decision 1:** Task 7 (already landed) made the route answer 503 with `ok` as the signing check
+  alone. This task extends `ok` to `githubAppSigning.ok && (githubAppToken?.ok ?? true)`. Task 7's
+  route test stubs `loadHealth`, so this task's composition rows are the only proof of it.
+- **Decision 4:** the 5-second timeout reaches only the check's mint. `installationToken` takes an
+  optional abort signal; the live check passes `AbortSignal.timeout(5000)`, and the publishing
+  path's mint is unchanged. A timeout on the commit path would be a behavior change the spec never
+  weighed.
+- **Decision 15:** `live=1` with nothing to mint with skips the mint. With no key secret, or a
+  provider whose `kind` is not `github-app`, the live branch makes no network call and leaves
+  `githubAppToken` out, so `ok` reads the signing check alone. A reported "unreachable" would blame
+  GitHub for a missing secret the signing check already names.
 
 **Gate:** computed (`auth-data`).
 
@@ -955,9 +1164,12 @@ ingest-delivery-design.md` (decision 1, `:162-168`); `ROADMAP.md`; `docs/interna
   falsified, gated by `check:facts`.
 - **Per-version records:** `CHANGELOG.md` under `## Unreleased` carries pass A's `Consumers must:`
   lines (the `{ runtime }` and adapter declaration with its reconcile clause; the manifest
-  regenerate; routes under `/admin/auth/`; the concept-less tidy and dictionary mount; Turnstile's
-  `missing_secret`) and `Consumers may:` lines (the 503; `0001_roles.sql`). `migration-notes.md` and
-  `upgrade-cairn.md` carry the same actions.
+  regenerate, with both residual consequences and the delete gate's refusal until it runs; routes
+  under `/admin/auth/`; the concept-less tidy and dictionary mount; Turnstile's `missing_secret`;
+  review any access rule that names a `none`-capability role, since `canReach`, `requireAccess`,
+  and `createSectionAction` now admit it), a changelog line that publish and publish-all can answer
+  the calm conflict, and `Consumers may:` lines (the 503; `0001_roles.sql`). `migration-notes.md`
+  and `upgrade-cairn.md` carry the same actions.
 - **The ledger:** the accept entry `access-map-one-declaration`; the six declines
   (`admin-toolkit-shell-only`, `refusal-channels-per-call-site`, `csrf-no-rotation-under-identity`,
   `admin-headers-scope`, `dev-flag-strict-read`, `token-cache-no-401-eviction`); and dated
@@ -975,10 +1187,9 @@ ingest-delivery-design.md` (decision 1, `:162-168`); `ROADMAP.md`; `docs/interna
   shape" rewritten to the one-release path (a `0.x` minor after stage 5, not `1.0.0-beta.1`, with
   Phase P's open items, P8 and P9 among them, each named to the final engine batch or after the
   release); the engine-pass Now entry narrowed to pass B (Decision 9).
-- **Hand-off for pass B (Decision 10):** STATUS's carry-forwards list each affected 2a page with
-  the fact ids that changed.
-- **The charter phrase** is written into STATUS's open decisions for Geoff's read (Decision 12),
-  not into the charter.
+- **Hand-off for pass B (Decision 10) and the charter phrase (Decision 12):** this task's report
+  carries the affected-page list with the fact ids that changed, and the proposed charter phrase.
+  It writes neither into `docs/STATUS.md`; close step 9 does.
 
 **Acceptance:**
 - `check:reference`, `check:reference:signatures`, `check:surface`, `check:facts`,
@@ -986,20 +1197,42 @@ ingest-delivery-design.md` (decision 1, `:162-168`); `ROADMAP.md`; `docs/interna
   touched.
 - `grep -rn` over `docs/` and `README.md` for each removed option name (`AuthGuardConfig.roles`,
   `AuthGuardConfig.access`, `DevBackendConfig.access`, `DevBackendConfig.roles`,
-  `EditorRoutesConfig.roles`) and the old `/admin/auth/` public-prefix wording finds only the
-  per-version records and the ledger's dated history.
-- Every `Consumers must:` line in the spec's draft that this pass ships appears in `CHANGELOG.md`;
-  none of pass B's appears.
-- D green.
+  `EditorRoutesConfig.roles`) and for the old public-prefix wording (`startsWith('/admin/auth/')`
+  and `every path under \`/admin/auth/\``) finds only the per-version records and the ledger's
+  dated history.
+- Every `Consumers` line that the spec's draft or any task report drafted for pass A appears in
+  `CHANGELOG.md`; none of pass B's appears.
+- The gate green: the classifier's docs string with `&& npm run check:surface && npm run
+  check:rulings-format` appended, on the light lane.
 
 **Notes:** the published-page edits follow the register's drafting brief with no register review
 or polish (the "Edits after the chain" rule); an edit to a page with a brief updates the brief in
 the same change.
 
-**Gate:** D.
+**Decisions carried:**
+- **Decision 8:** this pass writes all seven new ledger entries the spec names
+  (`access-map-one-declaration` and the six declines) and eight of the nine dated annotations.
+  `audit-adapter-navmenuconfig` belongs to pass B, which ships D5.
+- **Decision 9:** ROADMAP's "Engine pass before stage 2b" Now entry narrows to pass B's remaining
+  scope rather than leaving; pass B removes it. Every other ROADMAP change the spec lists lands
+  here.
+- **Decision 10:** the relink re-arm list is pass B's. This task's report lists the affected 2a
+  pages and the fact ids each task changed, so pass B's task has one flat input.
+- **Decision 11:** this pass's close clears every friction entry for a pass A fix and every entry
+  the spec declines or batches; entries for pass B's fixes stay until pass B's close.
+- **Decision 12:** C7's charter phrase, "the sign-in form and its confirm page", for
+  `docs/internal/what-cairn-is-and-is-not.md:107`, is proposed for Geoff's read, never written into
+  the charter.
+- **Decision 13:** the doctor's changelog landed with Task 2 under `tool/CHANGELOG.md`; no tool
+  tag.
+- **Decision 16:** the D1 delete gate fails closed on a manifest with no reference data; the
+  changelog line discloses the refusal and its known cost.
 
-**S4 boundary:** F, T, and D green on the segment head; `check:close` green; STATUS and a Ledger
-entry.
+**Gate:** the classifier's docs string plus `check:surface` and `check:rulings-format`; `gateLane:
+"light"` in args.
+
+**S4 boundary:** D green on the segment head (Task 12 is docs-only); STATUS and a Ledger entry.
+Close step 2 runs the pass's final F, `check:close`, and T.
 
 ---
 
@@ -1009,38 +1242,59 @@ Run `pass-core`'s ritual with the cairn specifics, in order. The conductor stays
 is a dispatch that returns a structured verdict.
 
 1. **Simplify, once:** `code-simplifier:code-simplifier` over the pass's changed TypeScript,
-   JavaScript, Svelte, and Go, then F again if it changed code.
-2. **Full gate:** `cairn-run-gate 'npm test'` exits 0, then `cairn-run-gate 'npm run check:close'`
-   (0 errors, 0 warnings), then T. If the simplifier changed nothing and HEAD has not moved since
-   the S4 boundary, that boundary's run stands and none is repeated.
+   JavaScript, Svelte, and Go.
+2. **Full gate:** F again; never the stock `npm test` (it hangs on this workstation while holding
+   the heavy lock, `docs/internal/durable-gotchas.md`; F carries the serialized node and component
+   legs). Then `cairn-run-gate 'npm run check:close'` (0 errors, 0 warnings), then T. This is the
+   pass's one final full gate; the S4 boundary ran D only.
 3. **Consumer proof:** a from-scratch showcase build in the worktree (`rm -rf
-   examples/showcase/{node_modules,package-lock.json}`, fresh install, `npm run build`) exits 0,
-   plus the CI `e2e` run on the pushed head. Evidence quoted.
-4. **Review fan-out, in parallel:** `web-auth-security-reviewer` at `high` (always, for
-   `auth-data`), `svelte-reviewer` (EditPage and the load and action code), and
-   `cloudflare-workers-reviewer` (the health route, `waitUntil`, D1 writes, the migration), each on
-   `claude-opus-5-5`; and one `go-architecture-reader` for `tool/internal/doctor`. Blocking findings
-   go through one fix chain under the stop rules above; out-of-scope findings go to the friction
-   log.
-5. **Live admin smoke** (`auth-data`), per `docs/internal/admin-smoke-test.md`'s local flow, on the
-   showcase under `wrangler dev` with the default build (no `VITE_CAIRN_E2E`, no
-   `CAIRN_DEV_BACKEND` anywhere, checked first), on a port from an environment variable with
-   `--var PUBLIC_ORIGIN:http://localhost:$PORT`, and a local `AUTH_DB` migrated through 0001 and
-   seeded with an owner and a custom-role editor:
-   - the magic-link round trip driven in headless Chromium (Decision 14): `/admin/auth/confirm`
-     loads with no session, and `/admin/auth/request` with no session redirects to the login;
-   - a custom-role roster add succeeds after 0001 and, on a second local D1 without 0001, logs the
-     named condition;
-   - an editor refused by an adapter-declared rule on a custom screen, and the sidebar hiding it;
+   examples/showcase/{node_modules,package-lock.json}`, fresh install, `npm run build`, then `git
+   checkout -- examples/showcase/package-lock.json`) exits 0 and leaves the tree clean, plus the CI
+   `e2e` run on the pushed head. Evidence quoted.
+4. **Review fan-out, in parallel:** each on `claude-opus-5-5`:
+   - `web-auth-security-reviewer` at `high` (always, for `auth-data`), briefed on the guard and
+     dev handle, the access edges, the roles migration, and the live check, and on the pass's two
+     data-loss fixes: the C11 head guards on every writer to `main` (publish, publish-all, Library
+     delete, metadata, replace, alt, dictionary), with the head read before every snapshot read and
+     the null-head refusal; and the D1 delete gate over nested shapes and the pre-field manifest.
+   - `svelte-reviewer` (EditPage and the load and action code).
+   - `cloudflare-workers-reviewer` (the health route, `waitUntil`, the `AUTH_DB` writes, the
+     migration).
+   - One `go-architecture-reader` for `tool/internal/doctor`.
+
+   Blocking findings go through one fix chain under the stop rules above; out-of-scope findings go
+   to the friction log.
+5. **Live admin smoke** (`auth-data`), per `docs/internal/admin-smoke-test.md`'s local flow, under
+   `wrangler dev` with the default build (no `VITE_CAIRN_E2E`, no `CAIRN_DEV_BACKEND` anywhere,
+   checked first), on a port from an environment variable with `--var
+   PUBLIC_ORIGIN:http://localhost:$PORT`, and a local `AUTH_DB` migrated through 0001. The showcase
+   declares no custom role, so the custom-role checks run on a **scratch showcase copy** under
+   `$HOME/.cache/engine-pre-2b-a/` (its `file:` dependencies rewritten to the worktree's absolute
+   paths) whose adapter declares `roles` with one editor-capability custom role and an `access`
+   rule naming that role on a custom screen. Seed an owner and a custom-role editor.
+   - The magic-link round trip driven in headless Chromium (Decision 14): `/admin/auth/confirm`
+     loads with no session, and `/admin/auth/request` with no session redirects to the login.
+   - A custom-role roster add succeeds after 0001 and, on a second local D1 without 0001, logs the
+     named condition.
+   - The custom-role editor is admitted to its screen and refused on `/admin/signups`, and the
+     sidebar matches both outcomes (the guard resolving a declared role from the adapter alone).
    - `/healthz` answers 503 with the keyless env, and `/healthz?live=1` reports the signing
      failure without a network call (no key to sign with).
+
    Evidence: the commands, status codes, and the matching log lines quoted.
-6. **Live key probe** (Task 6's ruling): a scratch script under `$HOME/.cache/engine-pre-2b-a/`
-   that sources `~/.local/secrets` itself and runs the live check against the real App
-   (`GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_B64`, by name only)
-   reports `ok`, and with a freshly generated wrong key reports a refused key. The fingerprint it
-   reports for the real key is quoted; no token, JWT, or key byte is printed. Under fork 2's "no",
-   the probe runs the owner-gated path.
+6. **Live key probe** (Task 6's ruling), under `wrangler dev` from a scratch showcase copy under
+   `$HOME/.cache/engine-pre-2b-a/`. A script that sources `~/.local/secrets` itself writes
+   `GITHUB_APP_PRIVATE_KEY_B64` and the adapter's ids (`GITHUB_APP_ID`,
+   `GITHUB_APP_INSTALLATION_ID`, by name only) into a mode-600 `.dev.vars` in the scratch copy,
+   deleted on exit; never through `--var` (the process list) and never in the worktree.
+   - `/healthz?live=1` reports `ok` against the real App, and with a freshly generated wrong key
+     reports a refused key.
+   - **Concurrency (the workerd evidence for the single-flight slot):** N concurrent `?live=1`
+     requests all report the same `githubAppToken` verdict within the timeout, and the log shows
+     one mint; one more inside 60 seconds mints nothing.
+   - The fingerprint reported for the real key is quoted; no token, JWT, or key byte is printed.
+
+   Under fork 2's "no", the probe runs the owner-gated path and drops the concurrency check.
 7. **Docs check:** Task 12's pages re-read against any close-time fix; `check:surface -- --update`
    re-run if a fix moved a typed export.
 8. **Friction triage** (Decision 11): every friction-log entry for a pass A fix is deleted after a

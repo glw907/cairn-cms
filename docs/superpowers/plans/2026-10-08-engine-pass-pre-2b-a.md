@@ -1362,7 +1362,12 @@ is a dispatch that returns a structured verdict.
    its reader: a wrong claim, a missing working example, step, or failure case, too much or too
    little detail for the task, content in the wrong track or page or unfindable from where a
    reader looks, or drift since writing; the filing test is whether the reader can finish the
-   page's job from the page. The stage owning that arm clears it. **Repo tooling** (gates,
+   page's job from the page. A small docs item is cleared by the pass that meets it, like tooling
+   (Geoff, 2026-10-08): fixed on the page to its track's brief (the brief updated where the page
+   has one, Vale's error tier run), except on an arm whose stage is in flight or holds no page yet
+   (filed, or filed into the facts container) and on a page the running plan freezes (this pass:
+   the eleven 2a extend pages, whose small fixes join Task 12's hand-off to pass B's re-arm).
+   Anything larger stays for the stage owning that arm. **Repo tooling** (gates,
    scripts, fixtures, tooling comments) is cleared at every pass close: a small fix lands in the
    pass, anything larger moves to a ROADMAP row. The log's header states the three groups, and
    `cairn-pass`'s close step names who clears each. Pass B's own entries stay, grouped, until

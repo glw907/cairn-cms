@@ -333,6 +333,29 @@ Voice comes only from this brief and the primary exemplar below (Geoff, 2026-09-
   task page, is an exemplar for anatomy.
 - [`exemplars/google-concept-auth-overview.md`](./exemplars/google-concept-auth-overview.md), a
   Google concept page, is an exemplar for anatomy.
+- **Owner-ruled before and after pairs** (Geoff, 2026-10-07), kept as exemplars for the two
+  habits the tellgrader flags. Read each pair for the move, never the wording.
+  - *Appositive stack.* Flagged: "Every person signed in to a cairn admin holds a role, a name
+    from the site's declared role vocabulary, which is `owner` and `editor` unless the site
+    declares its own." The sentence defines a term inside an appositive that carries its own
+    relative clause, so the reader holds three things open at once. Approved rewrite ("This is
+    *much* better."): "Everyone who signs in to a cairn admin has a role. The site declares its
+    own role names, or uses the default pair, `owner` and `editor`." Two sentences, each one
+    idea, the default named last.
+  - *Trailing hinge.* Flagged, from the scaffolded-site-files `check.yml` section: "The
+    workflow runs `npm install`, `npm run check`, and `npm run check:cairn` on every push and
+    pull request. It pins `node-version: 24`, the only Node version the scaffold names, since
+    it ships neither an `.nvmrc` nor an `engines` field. Its last step runs
+    `npx cairn-guidance check` under `continue-on-error: true`, which "The guidance
+    tree" explains. The workflow installs no browser, so the `check:cairn:rendered` script cannot
+    run in it." Each sentence ends in a comma-hinged tail,
+    so the paragraph repeats one cadence. Approved rewrite: "On every push and pull request, the
+    workflow installs dependencies and runs `npm run check` and `npm run check:cairn`. It uses
+    Node 24. Nothing else in the scaffold names a version: there's no `.nvmrc` and no `engines`
+    field. The last step runs `npx cairn-guidance check`, but that step can't fail the job. No
+    browser is installed, so `check:cairn:rendered` can't run in CI." The move is a fronted
+    condition, a short sentence on its own, and a colon-and-list close, so the lengths vary and
+    the tails stop echoing.
 
 ### Tells
 
@@ -956,8 +979,18 @@ audience lands, and they carry the whole cairn story.
 - **Concrete extension examples belong here.** The extensibility claim lands through
   examples of the kinds of things a developer could build on cairn's seams: member signups,
   reservations, rosters, event and program management, and other member-facing tools for a
-  small organization. Name types of functionality, never a specific consumer site. Examples
-  state what could be built; they never pitch.
+  small organization. Examples state what could be built; they never pitch.
+- **Examples are generic and likely to apply to many organizations.** Use a `staff` role, a
+  members area, signups, an events screen. No example carries a consumer site's domain: its
+  organization type, its people, or its vocabulary, such as clubs, instructors, classes, or
+  dues. An implementer reading the page has zero context on any consumer site, so a domain
+  example reads as a cast from nowhere. A page opens on the job the reader came to do, never on
+  an invented scenario or cast. The same holds in the plans, briefs, outlines, and fact text
+  that feed a drafter, since a domain example there is copied into the page. The rule is the
+  owner's (Geoff, 2026-10-07): "Talking about classes and club members here seems VERY strange.
+  Where the heck does that come from?"; "If this relates to the ASC's site, an implementer will
+  have ZERO context."; "Staff is fine. Examples should be generic and likely to apply to many
+  organizations."
 - **Stack reasoning is welcome.** Explaining why cairn uses SvelteKit, DaisyUI, and
   Cloudflare is in-register here, in short form; the full argument, including the honest
   trade-offs, stays in `docs/why-cairn.md`.

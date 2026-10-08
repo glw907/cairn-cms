@@ -17,17 +17,17 @@ sits in its slot on the path in `ROADMAP.md`'s boundary-test entry, which every 
 
 ## Immediate next action
 
-Finish stage 2a's close: [`superpowers/plans/2026-10-07-2a-close-finish.md`](superpowers/plans/2026-10-07-2a-close-finish.md)
-(F1 merge the `leak-cleanup` code lane, F2 `check:leaks`, F3 cadence rewrite to a green
-`check:tellgrader`, F4 close review, F5 republish the review page and merge PR #107, F6 push
-dotfiles). It carries Geoff's 2026-10-07 rulings from his live page read. Then the engine-pass
-brainstorm (prompt below), the first slot on the path in `ROADMAP.md`'s boundary-test entry.
+Stage 2a is closed and merged (PR #107; post-mortem in
+[`superpowers/plans/2026-10-07-2a-close-finish.md`](superpowers/plans/2026-10-07-2a-close-finish.md)). The
+release holds until the docs are complete, per `ROADMAP.md`'s boundary-test entry.
 
-**Checkpoint (F3, 2026-10-07):** F1, F2, F3, and F6 are accepted. F1 merged `leak-cleanup` (`6a70471e`) and
-its worktree is gone. F2's `check:leaks` passes after one review fix round on its marker scope.
-F3 brought tellgrader to zero findings over 47 pages (`89c44122`, `6a1692e1`), with the full
-`check:docs-gate` green. Dotfiles are pushed (`c22a096`). Friction is filed on `main` (`2f4ef9d8`,
-unpushed). Next: F4 (close review), then F5.
+The engine pass before stage 2b is next, warranted by the boundary test; its scope is the spec
+[`superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`](superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md)
+(Geoff's ruling 1: an item earns its place only by improving the product), with the rulings at
+[`superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md`](superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md).
+The overnight pipeline is in flight: spec review, fold, verification, plan, plan review. Execution
+waits for Geoff's spec read and his answers to the spec's "Rulings for Geoff". The spec splits the
+work into pass A (access, auth, and the commit path) and pass B (scaffold, dev, and schema).
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
@@ -40,29 +40,21 @@ unpushed). Next: F4 (close review), then F5.
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
 
-### Resume prompt (finish the 2a close)
+### Resume prompt (engine pass before stage 2b)
 
-> Execute `docs/superpowers/plans/2026-10-07-2a-close-finish.md` from F1 as its conductor, in a fresh
-> `claude --model claude-opus-5-5` session at medium effort from `~/Projects/cairn-cms`; invoke
-> `cairn-pass`, read the plan, its rulings, and the leak audit it links, then dispatch F1. Settled:
-> every ruling in the plan. No release.
-
-### Next action after the merge (engine pass before stage 2b)
-
-> **Goal.** Brainstorm and plan the engine pass that runs before draft docs stage 2b.
+> **Goal.** Read the engine-pass spec, settle Geoff's rulings, and execute the plan for the engine
+> pass before draft docs stage 2b.
 >
-> **Scope.** In: the `ROADMAP.md` Now entries "Engine pass before stage 2b" and "Docs tooling before
-> stage 2b", sized by the boundary test, plus any fix Geoff's page read raises. Out: stage 2b's pages,
-> any release or tag, any site migration.
+> **Scope.** In: the engine-pass spec and its plan, pass A (access, auth, and the commit path) then
+> pass B (scaffold, dev, and schema). Out: stage 2b's pages, any release or tag, any site migration.
 >
-> **Settled (do not re-brainstorm):** the Geoff rulings of 2026-10-07 in `ROADMAP.md`'s boundary-test
-> entry (one release after stage 5; engine passes never release; no site migrates first; the test).
+> **Settled:** the spec's rulings file; `ROADMAP.md`'s 2026-10-07 boundary-test rulings (one release
+> after stage 5; engine passes never release; no site migrates first).
 >
-> **Still open, brainstorm these:** reconciling ROADMAP's "Toward 1.0" series with the one-release
-> path; where "Using Claude Code with cairn" lives; which *decide* items the
-> pass takes; the lead seam's shape; whether the docs tooling rides this pass or its own.
+> **Still open:** Geoff's answers to the spec's "Rulings for Geoff", and his spec read, which gate
+> execution; the overnight pipeline's plan and plan review, if unfinished.
 >
-> **Approach.** Fresh brainstorm session; read the two ROADMAP entries, `docs/internal/engine-rulings.md`,
-> and the charter (`docs/internal/what-cairn-is-and-is-not.md`) first, then write the plan. Invoke
-> `cairn-pass` to start. Launch directory: `~/Projects/cairn-cms`. Model: `claude --model claude-opus-5-5`.
-> Live contracts to keep: `tool/internal/{spine/conditions,doctor/site-config-path}.json`, `.cairn/site-facts.json`.
+> **Approach.** Fresh `claude --model claude-opus-5-5` session at medium effort from
+> `~/Projects/cairn-cms`; invoke `cairn-pass`, read the spec, rulings, and plan, then execute pass A
+> after Geoff's answers. Keep `tool/internal/{spine/conditions,doctor/site-config-path}.json` and
+> `.cairn/site-facts.json`.

@@ -106,3 +106,45 @@ checks are green, `origin/main` is an ancestor of the branch (merge `main` in if
 **F6. Dotfiles.** Outcome: `~/.dotfiles` pushed. It carries `6b3995f` (boundary-test step),
 `541fda5`, `b3ce82b`, `5e36af3`, `26a74c1`, and the code lane's engine-consult wording commit;
 `scripts/check.sh` green first.
+
+## Post-mortem (2026-10-07)
+
+**What each task landed.**
+
+- **F1.** `leak-cleanup` merged at `6a70471e`. A review fix round dropped the remaining owner and
+  ruling provenance from `src/lib`, plus the consumer-site test data under `tool/`. The worktree
+  was removed.
+- **F2.** `check:leaks` landed in `fda65231..f1700005`. The review fix is `321455aa`: a same-line
+  `leak-ok` marker had excused its whole line. `95b07c26` cleared the post-merge hits.
+  `docs/internal/credentials.md` was untracked.
+- **F3.** `89c44122` covers the extend pages and `6a1692e1` the reference pages. Tellgrader is at 0
+  findings across 47 pages. The register's hinge-word list and the tellgrader script header now
+  match the detector.
+- **F4.** The diff review found two blockers: a consumer site named in the shipped
+  `migrations/0002_audit.sql`, which `check:leaks` did not scan, and a missing CHANGELOG entry for
+  the audit output change. The register review found 13 blockers on the task 8 pages that
+  tellgrader missed, including Geoff's own flagged `check.yml` paragraph, which had never been
+  rewritten. The fixes landed in `c10ea293` and the merged `9488056a..8ace1c5a` (merge
+  `38af392d`). The verification read found one new blocker: the restrict page omitted
+  `devBackendHandle({ access })` for the tutorial site. It was fixed in `930b3167`.
+- **F5.** `main` merged into the branch (`f665d5fa`); PR #107 merges after this close.
+- **F6.** The dotfiles were pushed at `c22a096`.
+- **Conductor rulings.** The debug page's "row" vocabulary and its `cairn help agents` sentence
+  were removed. The scaffolded page's Claude Code legend is one line. Section hand-offs were cut
+  wherever the heading order already makes them obvious. Both adapter paths are now named. The
+  internal ROADMAP ASC naming was left for its own open ruling.
+
+**Engine-pass boundary verdict.** An engine pass is warranted before stage 2b. Its scope is the
+spec `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`, which applies Geoff's ruling
+1 (an item earns its place only by improving the product); the rulings are at
+`docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md`.
+
+**What a later pass would be wrong to rediscover.**
+
+- Tellgrader misses hinge runs split across paragraph breaks, so a register read stays mandatory.
+- `check:leaks`' T2 tier must track `package.json` `files`; a test now asserts it.
+- `npm run check` needs `NODE_OPTIONS=--max-old-space-size=6144` in a worktree.
+- A fresh worktree needs `npm ci`, or vitest resolves the main checkout's install.
+
+**Budgets.** Token spend: about 3.5M against the 6M ceiling (an estimate; the conductor could not
+read `/cost`). The fold-rule trial's measure is "no spec-plan-review on this plan": none ran.

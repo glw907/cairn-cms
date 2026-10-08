@@ -7,6 +7,44 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Stage 2a close finish, 2026-10-07
+
+Branch `draft-docs-2a` (PR #107). Plan and post-mortem:
+`docs/superpowers/plans/2026-10-07-2a-close-finish.md`. Closed unreleased: no version bump, no
+publish.
+
+**What landed:**
+
+- **The code lane merged** (`leak-cleanup`, `6a70471e`): owner and ruling provenance dropped from
+  `src/lib`, consumer-site test data dropped from `tool/`.
+- **`check:leaks`** (`fda65231..f1700005`, review fix `321455aa`, post-merge clearing `95b07c26`): a
+  deterministic leak gate in `check:docs-gate` and CI. `docs/internal/credentials.md` is untracked.
+- **The cadence rewrite** (`89c44122`, `6a1692e1`): tellgrader at 0 findings across 47 pages, with
+  the register's hinge-word list and the script header matching the detector.
+- **Close review fixes** (`c10ea293`, merge `38af392d` of `9488056a..8ace1c5a`, `930b3167`) and the
+  dotfiles push (`c22a096`).
+
+**What the gates caught:**
+
+- The diff review found a consumer site named in shipped `migrations/0002_audit.sql` (outside
+  `check:leaks`' scan) and a missing CHANGELOG entry for the audit output change.
+- The register review found 13 blockers on the task 8 pages that tellgrader passed, among them
+  Geoff's flagged `check.yml` paragraph, never rewritten.
+- The verification read found the restrict page omitting `devBackendHandle({ access })` for the
+  tutorial site.
+- `check:leaks`' review caught a same-line `leak-ok` marker excusing its whole line.
+
+**Budgets (estimates).** About 3.5M tokens against the 6M ceiling. Fold-rule trial measure: no
+spec-plan-review on this plan.
+
+**What a later pass would be wrong to rediscover:**
+
+- **Tellgrader misses hinge runs split across paragraph breaks.** A register read stays mandatory.
+- **`check:leaks`' T2 tier must track `package.json` `files`.** A test asserts it; a shipped path
+  outside the scan roots (as `migrations/` was) leaks silently.
+- **`npm run check` in a worktree** needs `NODE_OPTIONS=--max-old-space-size=6144`.
+- **A fresh worktree needs `npm ci`**, or vitest resolves the main checkout's install.
+
 ## The 0.97.0 window's per-site upgrade order, moved from the published migration notes, 2026-10-07
 
 `docs/extend/migration-notes.md` carried this under its `0.97.0` entry as "The four sites' upgrade

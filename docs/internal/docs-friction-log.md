@@ -241,6 +241,15 @@ promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings b
   history after the untrack. They are identifiers, not keys. Found by the 2a close-finish run (F1/F2 agents),
   2026-10-07.
 
+- **`docs-gate`.** `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS` in `scripts/checks/check-leaks.mjs`). Its `src` ships in that package's `files`, so it needs coverage before the package's first publish. Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt` (lines 52, 69, 678, 825, 945) still holds the maintainer's home path and a `glw907.workers.dev` URL. Fixing them needs a transcript regeneration that `check:transcripts` replays. Found by the 2a close-finish run, 2026-10-07.
+- **`docs-gate`.** `scripts/checks/check-symbols.mjs` (`extractFilePaths`) reads the inline import specifier `#theme/cairn.config.js` as the file path `theme/cairn.config.js`, so prose cannot name the scaffold's real import. Fenced blocks strip import specifiers; inline spans do not. Found by the 2a close-finish run, 2026-10-07.
+- **`engine`.** The tutorial puts the adapter at `src/lib/cairn.config.ts` (`#lib`, `docs/extend/add-cairn-to-a-sveltekit-app.md:294,411`) and the scaffold puts it at `src/theme/cairn.config.ts` (`#theme`, `docs/extend/choose-an-ai-posture.md:29,62`), so every extend page that touches the adapter names two paths. Found by the 2a close-finish run, 2026-10-07.
+- **`docs-gate`.** `docs/internal/facts/front-door.md:67` (`f:u705t5`) asserts a forward-looking "Topo is planned"; a fact should state only what ships. Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** The task 8 page plans now disagree with their pages after the rulings: `docs/internal/briefs/extend/debug-your-site.plan.md:64,263` (`cairn help agents`) and `docs/internal/briefs/extend/scaffolded-site-files.plan.md:226,252` (the `CLAUDE.md` subsection). Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** `npm test` takes about 11 minutes, longer than the 600-second foreground limit, and a re-attached run does not print `gate exit:`. (Reported by the run; the 7-to-11-minute range is also in `pass-gate-economy.md`.) Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** `packages/create-cairn-site/scripts/bake-template.mjs` requires `--to <dir>` (its usage line says so), and a bare invocation fails. The "create-cairn-site needs baked template" recipe the run followed omitted it; `scaffold.mjs`'s own error names `npm run prepack`, which passes it. Found by the 2a close-finish run, 2026-10-07.
+
 ## Clearings
 
 The detail of a cleared finding lives in the pass post-mortem that cleared it and in

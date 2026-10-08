@@ -144,8 +144,12 @@ no `roles` word, so the heuristic would report a false fail on every updated sit
 that a `runtime` argument is wired. Its bare-call and `{ roles }` branches serve only a site on an
 older engine, which the tool still serves. The remediation in `tmplRoleWiringUnwired`
 (`check_roles.go:29`) and `auth.role-wiring-missing` (`conditions.ts:170-172`, mirrored in
-`conditions.json`) names both eras. The `check:tool-heuristics` signature pin at `guard.ts:170`
-updates with it.
+`conditions.json`) names both eras. The `check:tool-heuristics` signature pin
+(`scripts/checks/check-tool-heuristics.mjs:50`, the literal
+`export function createAuthGuard(config: AuthGuardConfig = {}): Handle {` at `guard.ts:172`)
+updates in task 1, not with the doctor. `check-tool-heuristics.test.ts:13-15` asserts the pin under
+`npm test`, so task 1's signature change turns its own gate red until the regex follows. Task 2
+keeps the Go heuristic and the remediations.
 
 ### Outcome and acceptance
 
@@ -157,9 +161,12 @@ updates with it.
   ['owner'] }` and a declared editor-capability role, composed through `composeRuntime`. Run
   `createAuthGuard({ runtime })`'s handle over a real event with no locals set, and assert an editor
   session is refused by the media screen (`requireEngineAccess`), the nav resolver, `requireAccess`,
-  `createSectionAction`, and `createAdminAction` with `access`. Repeat through
-  `devBackendHandle({ runtime })`. Fails today: the guard has no `runtime` input, so a hand-seeded
-  `locals.cairnAccess` is the only way the last three see the map.
+  `createSectionAction`, and `createAdminAction` with `access`. The dev handle cannot repeat the
+  refusal, since it always mints an owner session (`packages/cairn-cms-dev/src/handle.ts:160-166`).
+  Through `devBackendHandle({ runtime })`, assert instead that `locals.cairnAccess` is
+  `runtime.access`, and `{}` when the adapter declares none. Fails today: the guard has no `runtime`
+  input, so a hand-seeded `locals.cairnAccess` is the only way the last three see the map, and the
+  dev handle attaches no map unless handed `access`.
 - A declared role's capability resolves the same in the guard and the roster screen from the
   adapter alone. Fails today: the guard reads `DEFAULT_ROLES` unless handed `roles`.
 - `config.access_unmapped` is silent for an href-only map and fires for a partial screen map. Fails
@@ -235,13 +242,33 @@ holds, and the minted token is never returned or logged. A failed live mint logs
 
 **Bounding a public route.** The verdict is cached per isolate for 60 seconds, with no key-hash
 key: `wrangler secret put` "creates a new version of the Worker and deploys it" (Cloudflare,
-"Secrets"), so an isolate never sees two keys. Concurrent misses share one in-flight mint (the
-single-flight pattern of Go's `golang.org/x/sync/singleflight`) raced against
-`AbortSignal.timeout(5000)`, whose signal the mint's `fetch` also carries, and the slot clears on
-settle or timeout. A mint canceled with its request therefore never leaves a dead promise in the
-slot, the incident that keeps the token cache result-only (`signing.ts:95-103`). The residual, one
-mint per isolate per minute summed over the fleet, is stated on the reference page. Whether an
-anonymous caller may trigger it at all is Rulings for Geoff, item 2.
+"Secrets"), so an isolate never sees two keys. Only a settled mint writes the verdict.
+
+Concurrent misses share one in-flight mint (the single-flight pattern of Go's
+`golang.org/x/sync/singleflight`), and the slot must survive the hazard the engine's incident
+record names: "Cross-request coalescing on a shared pending promise is exactly the hazard under
+workerd's per-request cancellation" (`docs/internal/record/2026-07-13-admin-token-cache-poisoning.md`,
+"Fix directions"; the reason `signing.ts:95-103` caches results only). Cloudflare states the cause:
+"An async call that is neither awaited nor passed to `ctx.waitUntil()` can be canceled when the
+invocation ends" ("Context", `waitUntil`). The starter's timer and its slot-clearing continuation
+die with the starter's request, so neither may be the only way out.
+
+- The slot stores `{ promise, startedAt }`. The mint's `fetch` carries `AbortSignal.timeout(5000)`.
+- Every caller, the starter included, races the shared promise against a 5-second timer created in
+  its own request, and a caller whose timer wins reads `unreachable`. A caller's own request is
+  live while it awaits, so its timer fires whatever happened to the starter.
+- A caller that finds `now - startedAt` at or past the timeout treats the slot as empty and starts
+  a fresh mint. The slot clears by timestamp, never only by the starter's continuation.
+- The starter hands the slot's promise to the engine's `waitUntil` (`workers-env.ts:43`, over
+  `cloudflare:workers`), Cloudflare's documented way to outlive the response or a client
+  disconnect, capped at "30 seconds after the response is sent or the client disconnects". The
+  5-second timeout sits inside that cap.
+
+A scratchpad probe of this shape, with an injected clock and a never-settling first mint whose
+starter is never awaited, answered the later caller `unreachable` within its own timeout, and the
+call after the stale point minted again. The residual, one mint per isolate per minute summed over
+the fleet, is stated on the reference page. Whether an anonymous caller may trigger it at all is
+Rulings for Geoff, item 2.
 
 **The fingerprint (decided).** The old key mints until it is deleted on GitHub, so a live `ok` can
 be false comfort two ways: a wrong deploy target (the friction entry's case), or an old-version
@@ -249,8 +276,11 @@ isolate still serving during rollout. Deleting the old key on either stops publi
 rollback. GitHub documents a SHA-256 fingerprint per App key, from the public half ("Managing
 private keys for GitHub Apps", "Verifying private keys": `openssl rsa -in KEY -pubout -outform DER |
 openssl sha256 -binary | openssl base64`). `signingSelfTest` reports it as `fingerprint:
-'SHA256:<base64>'`, with no network call and nothing secret; the review's Web Crypto probe matched
-the openssl value with one extractable import. Without it, the step ruling 3 exists to support has
+'SHA256:<base64>'`, the form the App settings page displays. The documentation page's own
+screenshot of the settings page (`github-apps-private-key-fingerprint-new.png`) shows
+`SHA256:V5iaE4MInJc3Em4dGLQjbzG0Py64ZPJ/G8IcDaOG4MI=` under "Private key". The value needs no
+network call and holds nothing secret; the review's Web Crypto probe matched the openssl value with
+one extractable import. Without it, the step ruling 3 exists to support has
 no safe signal, so this spec adds it rather than forking it. The rotation page reads: deploy, read
 `/healthz` until the fingerprint equals the new key's on GitHub, run the live check, then delete
 the old key.
@@ -271,7 +301,12 @@ Acceptance (each fails today because no live branch, fingerprint, or 503 exists)
   the hang after the timeout.
 - N parallel `live=1` calls on a cold slot make one `fetch`; an injected clock shows a second call
   inside 60 seconds makes none and one after makes one.
-- A fixture key pair's `fingerprint` equals the value the openssl pipeline above prints for it.
+- **A dead slot never wedges the isolate**, mirroring `github-token-cache.test.ts`'s "never serves
+  an unsettled in-flight mint to a later caller". The slot holds a never-settling promise, the
+  starter is never awaited, and the injected clock never fires its timer. A later caller reads
+  `unreachable` within its own timeout, and the next call past the stale point mints again.
+- A fixture key pair's `fingerprint`, after its `SHA256:` prefix, equals the base64 the openssl
+  pipeline above prints for it.
 - The template route answers 503 on `ok: false` and 200 on `ok: true`; a non-GitHub provider reads
   `ok: true`. The showcase's `healthz.spec.ts` expects the 503 its keyless env produces.
 - The plain call makes no `fetch`. This holds today; it guards the new branch and proves nothing.
@@ -439,16 +474,36 @@ outlined. The verification column of each claim is in the triage table at the en
   (`EditPage.svelte:163-166,1041-1062`), and the leave guard stands down while `busy`
   (`:266,269,277`).
 
-  Fix: `use:enhance` with a submit callback. Every result clears `saving` and `publishing`. A
+  Fix: `use:enhance` with a submit callback. The submit function awaits `commitPendingDictionary()`
+  before the action POST, replacing today's fire-and-forget call (`EditPage.svelte:163-171`), so a
+  pending word's commit to `main` lands before publish reads the head (C11, task 10). Kit 3.0.1
+  awaits the submit function before it fetches: `(await submit({ ... })) ?? fallback_callback` runs
+  ahead of `fetch(action, ...)` (`src/runtime/app/forms/client.js:147-155,182`).
+  `postFormAction` already resolves every failure, a network throw included, to `{ ok: false }`
+  (`client-action.ts:29-39`), and `commitPendingDictionary` then leaves the words pending, so the
+  await never blocks the save or publish. Every result clears `saving` and `publishing`. A
   `failure` goes through `applyAction(result)`, which sets the form and status and runs no load
   (`client.js:2980-3005`). A `redirect` does `location.assign(result.location)`, keeping today's
   document reload, `{#key}` remount, and dirty reset. The `&new=1` reasoning at `:199-206` carries
-  over. Acceptance, a showcase e2e from `?saved=1`: type text, then `page.route` (already used at
+  over.
+
+  A failure applied in place clears the page's saved signals until the next load. A failure leaves
+  the page at `?saved=1`, so `data.saved` still reads `true` and the flash strip says "Saved."
+  (`:1139-1142`). A refusal that echoes `body`, such as a 400 or the 409 "This file changed since
+  you opened it" (`content-routes-entry-write.ts:184,306`, `commit-log.ts:60-62`), also sets the
+  dirty baseline `form.body` to the editor's text (`:190`), so `saveState` reads "Saved" and the
+  leave guard stands down. A local flag set by the enhance callback on `failure` suppresses the
+  `data.saved` flash and `saveState`'s "Saved", and the dirty baseline for an in-place failure is
+  the loaded `data.body`.
+
+  Acceptance, a showcase e2e from `?saved=1`: type text, then `page.route` (already used at
   `examples/showcase/e2e/csrf-helpers.ts:60`) answers `?/save` with a 500 failure and fails any
-  following `__data.json`. The calm message shows, the text is intact, Save is enabled, a retry
-  succeeds, and the leave guard prompts; a successful save ends in a document load reading "Saved".
-  Fails today: a bare 500 replaces the page (under plain enhance, the failed load does). Surface:
-  none. Pages: rotate-the-github-app-key (2a). Class `engine-logic` (Svelte).
+  following `__data.json`. The calm message shows, no "Saved" text shows, the text is intact, Save
+  is enabled, a retry succeeds, and the leave guard prompts. The same forge with a 409 failure
+  echoing `body` shows "Unsaved changes", no "Saved" text, and a leave guard that prompts. A
+  successful save ends in a document load reading "Saved". Fails today: a bare 500 replaces the
+  page (under plain enhance, the failed load does). Surface: none. Pages:
+  rotate-the-github-app-key (2a). Class `engine-logic` (Svelte).
 
 ### The commit path and media
 
@@ -471,13 +526,18 @@ outlined. The verification column of each claim is in the triage table at the en
   conflict answers with the path's existing message: `MANIFEST_CONFLICT_MESSAGE` for delete and
   update, `CONTENT_CONFLICT_MESSAGE` for replace and alt, the calm conflict for publish (the entry
   stays held on its branch, so a retry is one click), and the dictionary's own re-merge retry.
-  Publish takes the fail-closed guard every other main writer uses, not a merge inside the retry,
-  since a conflict needs a commit to `main` inside a seconds-wide window. The delete docstring's
-  stale-read note (`content-routes-media-delete.ts:110-114`) is updated. Acceptance, a race test per
-  path committing between the head read and the commit: a deleted row stays deleted, an upload's row
-  survives, a publish's prose survives a replace and an alt, a Library delete inside a publish stays
-  deleted, and two concurrent dictionary adds both land. Fails today: each retry re-parents the stale
-  file. Surface: a publish can answer a conflict. Pages: none written; 2b configure-media drops its
+  Publish takes the fail-closed guard every other main writer uses, not a merge inside the retry.
+  The page's own dictionary commit is the one writer that would otherwise race every publish
+  carrying a pending word: `onEditSubmit` fires `?/dictionaryAdd`, which commits to `main`
+  (`content-routes-dictionary.ts:57-73`), beside the publish POST. A6's enhance submit awaits that
+  commit before posting (task 8), so the publish reads a head that already holds it, and no
+  conflict comes from one click. The delete docstring's stale-read note
+  (`content-routes-media-delete.ts:110-114`) is updated. Acceptance, a race test per path committing
+  between the head read and the commit: a deleted row stays deleted, an upload's row survives, a
+  publish's prose survives a replace and an alt, a Library delete inside a publish stays deleted, and
+  two concurrent dictionary adds both land. Fails today: each retry re-parents the stale file. A
+  publish submitted with a pending dictionary word, through A6's submit, lands without a conflict,
+  and the word commits. This holds today; it guards the new head read against the page's own commit. Surface: a publish can answer a conflict. Pages: none written; 2b configure-media drops its
   caveat. Class `auth-data` (the commit path).
 - **D1, nested images are invisible to where-used.** `extractMediaRefs` reads top-level image fields
   only (`src/lib/content/media-refs.ts:45-52`), and `imageFieldKeys` skips arrays
@@ -497,7 +557,10 @@ outlined. The verification column of each claim is in the triage table at the en
   splices it, since alt fill is optional and a sequence item's `alt:` sits at another indent.
   `verifyManifest` drops `mediaRefs` only for a manifest that predates the field (no committed entry
   carries the key), so a post-field manifest compares exactly and a stale one fails the build with
-  the regenerate message. Acceptance: where-used, safe-delete, bulk delete, and replace run over each
+  the regenerate message. One residual passes silently: a site whose only image references are
+  nested (no hero and no body image anywhere) commits no `mediaRefs` key, so its stale manifest
+  reads as pre-field and still builds green. The `Consumers must:` regenerate line below covers that
+  site. Acceptance: where-used, safe-delete, bulk delete, and replace run over each
   of the four shapes, including a `- src:` line and an asset twice in one array; alt propagation
   over a sequence-form entry leaves it byte-identical and reports the placement; a committed
   manifest whose gallery-only entry lacks `mediaRefs` fails `verifyManifest`. Fails today: each
@@ -658,7 +721,9 @@ outlined. The verification column of each claim is in the triage table at the en
      so an uptime monitor can use it, at one mint per isolate per minute. A caller spread across
      many locations multiplies the mints, and GitHub's secondary limits (its rate-limit page: 900
      points a minute, 5 per REST `POST`) are shared with publishing, so a sustained distributed
-     burst could delay publishes. Nothing is lost; the branch holds each save.
+     burst could delay publishes. Nothing is lost; the branch holds each save. The one-mint bound
+     holds once the per-caller timer and the stale-slot rule under "Bounding a public route" land,
+     and this spec now carries them.
    - *No* (the integrity lens) honors `live=1` only for a signed-in owner. The guard attaches the
      editor only under `/admin`, so the scaffold gains an owner-only health route there, and public
      `/healthz` keeps the no-network self-test and fingerprint. No anonymous request reaches
@@ -805,13 +870,16 @@ order, and both land before stage 2b.
 **Pass A, access, auth, and the commit path** (header class `auth-data`; twelve tasks):
 
 1. The lead: required `runtime` on the guard, dev handle, and editor routes; `config.access_unmapped`
-   narrowed; the comments and reference rows; the scaffold and showcase hooks.
+   narrowed; the comments and reference rows; the scaffold and showcase hooks; the
+   `check:tool-heuristics` signature pin.
 2. The Go doctor's `auth.role-wiring` learns `{ runtime }` (`tool`; gated on task 1's signature).
 3. A1, A2, C1, C7: the access tightening in `access.ts` and `guard.ts`.
 4. A3: the roles migration and its named failure on every role write.
 5. A7, A8, A10: the auth channel and branding (`engine-logic`).
 6. Ruling 3: the live check, its single-flight cache, the typed mint error, and the fingerprint.
-7. B5, B9, B11a: the template's 503 and non-applicable signing check, and the rotation strings.
+7. B5, B9, B11a: the template's 503 and non-applicable signing check, and the rotation strings
+   (`engine-logic`; B5 changes the health route's status and `ok` composition, not signing,
+   session, D1, or commit-path code).
 8. A6: the failed save in place (`engine-logic`).
 9. C11, Library: the head guard on the five Library paths and the dictionary.
 10. C11, publish: the head guard on publish and publish-all.

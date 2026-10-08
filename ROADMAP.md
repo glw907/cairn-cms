@@ -51,7 +51,7 @@ Readiness checklist:
   first post-1.0 major. The SvelteKit 3 move took the `checkOrigin` removal and the `event.platform` retirement
   ahead of 1.0; the standing candidate is SvelteKit's remote functions, which stay experimental in Kit 3, so
   decide at their stable release whether adopting them lands before 1.0 or becomes the first 2.0 driver.
-- [ ] **Both production sites run the latest published cairn on the v2 adapter**, with their URL policies
+- [ ] **Both consumer sites run the latest published cairn on the v2 adapter**, with their URL policies
   transcribed onto `defineConcept` (the per-site cutover watch items), so the real surface is exercised and
   needs no engine break to serve them.
 - [ ] **The enforced boundary is green and complete**: `check:surface`, `check:reference` (including
@@ -159,7 +159,7 @@ same way: ship it, batch its `Consumers must:` line, and let this note stand as 
 rather than re-litigating it pass by pass.
 
 **Clean breaks, no aliases, until the Waymark rebuilds land (Geoff, 2026-09-27).** Every
-production site (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org, cairn-pub) is to be
+consumer site (ecxc-ski, 907-life, aksailingclub-org, xcathletes-org, cairn-pub) is to be
 rebuilt from the Waymark theme, re-skinned to each site's personality. A site rebuilt from the
 template carries no migration burden, so a breaking rename (the `./components` to `./admin`
 case) is cheap now: take the clean break with one `Consumers must:` line rather than a
@@ -170,7 +170,7 @@ rebuilt site goes live.
 **Promote the two public theme rules to error tier (theme identity pass C, 2026-09-29; a roadmap
 intent, not a shipped promise).** `theme-conformance` and `theme-contrast` ship at advisory tier on a
 consumer, and the changelog makes no promise about their tier. Promote both to error at the first
-minor cut after all five sites (the four production sites and cairn.pub) report zero advisory
+minor cut after all five sites (the four consumer sites and cairn.pub) report zero advisory
 findings from them, counted by the `cairn-release` step that runs the audit's public scope over each
 site at every cut. `public-literals` stays advisory. A site that reports findings is asked to clear
 them first; no calendar date is attached.
@@ -1099,7 +1099,7 @@ the named human gates only):**
     cairn.pub.
 
 - **Cut the pre-beta release after the polish pass merges (Geoff, 2026-07-02), then REBUILD both
-  production sites from Waymark as the dogfood test (Geoff, 2026-07-02 — supersedes the
+  consumer sites from Waymark as the dogfood test (Geoff, 2026-07-02 — supersedes the
   upgrade-style cutovers).** One deliberate cut rolls the pruning + polish window (verify the next
   number free via `npm view`; the `cairn-release` skill owns the mechanics). Then, instead of
   upgrading in place, ecxc.ski and 907-life are rebuilt fresh from Waymark on that cut: the end
@@ -1780,14 +1780,14 @@ the named human gates only):**
   and nav-label strings, or a manual sweep folded into each stage's page brief. **Trigger:** the
   first rebuild stage that writes those strings (stage 2a).
 
-- **`link:consumer` cannot measure a production site against unreleased engine work (filed at
-  retire-1's close, 2026-09-22).** Every production site is pinned to a released version and calls
+- **`link:consumer` cannot measure a consumer site against unreleased engine work (filed at
+  retire-1's close, 2026-09-22).** Every consumer site is pinned to a released version and calls
   the released export names, so while `main`'s unreleased window carries a rename, a linked site's
   adapter fails to evaluate and `cairn-manifest` writes nothing. retire-1's agreement study hit
   exactly this (`extractMenu is not a function`) and measured on a scratch copy instead. Either
   `link:consumer` gains a pre-flight naming the renamed exports a site still calls, or a pass
   needing a live measurement plans to release first. **Trigger:** the next pass whose acceptance
-  needs a production site run against unreleased engine work.
+  needs a consumer site run against unreleased engine work.
 
 - **Three docs items for the draft-docs pass, filed at B2's close (2026-09-21).** Promoted here
   from `docs/internal/docs-friction-log.md` because the pass that leans on them is the draft-docs
@@ -1952,7 +1952,7 @@ the named human gates only):**
   `cairnAccess`) defers with the dev package's other watches: the SvelteKit 3 move changed how the
   doubles reach the Worker, not which exist.
 
-- **The `ec-*` -> `cairn-*` rename ships a `/render` output break the four production sites have
+- **The `ec-*` -> `cairn-*` rename ships a `/render` output break the four consumer sites have
   not taken yet (release decision owed at the next cut, filed 2026-09-05 from internals-C's
   pass-end reviewer fan-out).** The rename is documented under `Consumers must:` in
   `CHANGELOG.md` and `docs/extend/migration-notes.md`, but a site's own forked
@@ -2172,7 +2172,7 @@ the named human gates only):**
   `src/lib/auth/store.ts` is trimmed and lowercased before it matches or writes, so no path through the
   engine or the public `/auth-store` subpath can create a shadow row. The residual is a site writing the
   `editor` table with raw `wrangler d1 execute`, which is why this is filed rather than urgent. Closing it
-  at the database is a schema change against two production sites, so it wants batching with the next
+  at the database is a schema change against two consumer sites, so it wants batching with the next
   migration rather than a migration of its own. Found by the pass's review gate while confirming the
   lockout defect the store fix closed. `migrations/0002_audit.sql` (the ASC engine-seams pass two audit
   sink) claimed `0002`, so this migration takes the next free number, `0003`, whenever it lands.
@@ -2932,7 +2932,7 @@ the named human gates only):**
 - **`cairn health` does not name the one failure mode the Builds chapter was built around (docs
   friction log, backfill mining, 2026-08-18).** The scaffolder's own README documents that
   revoking or rolling the build token breaks push-to-deploy silently, and says plainly that this
-  is not hypothetical because a production cairn site was found in exactly that state (STATUS
+  is not hypothetical because a consumer cairn site was found in exactly that state (STATUS
   hand step tracked 907-life's deploys as broken since 2026-07-14). `cairn health`'s `deploy`
   check (`tool/internal/health/check_deploy.go`) covers part of it: a failed last build reports
   `deploy.build-failed`. It reads no build-token state, though, and a default branch ahead of the
@@ -3602,7 +3602,7 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
 
 - **Secrets Store, for the shared GitHub App key.** Status as of 2026-08-21: beta since
   2025-04-09 (https://developers.cloudflare.com/changelog/post/2025-04-09-secrets-store-beta/).
-  What cairn does today: both production sites (ecxc.ski, 907.life) hold the same
+  What cairn does today: both consumer sites (ecxc.ski, 907.life) hold the same
   `GITHUB_APP_PRIVATE_KEY_B64` value as separate per-Worker secrets. Why not adopted: where a
   secret lives is the operator's domain, not the engine's; `create-cairn-site`'s scaffolder, not
   the runtime library, is where cairn would offer a Secrets Store option. Trigger: general
@@ -3664,7 +3664,7 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
   whether the engine's own zero-config editor auth should someday move from a magic-link URL to an
   OTP code, either on the same `createAuthChannel` session model or its own. No trigger yet:
   magic-link's disciplines (hashed-at-rest tokens, a per-address cooldown, one live token per
-  address) already hold in production on two sites, and a code brings its own guessing-bound
+  address) already hold on two consumer sites, and a code brings its own guessing-bound
   trade-offs the design spec's residual risks catalogue names for the second-audience case. Take
   this up only if a concrete reason to prefer codes for editors surfaces, not speculatively; email
   magic-link stays the documented, zero-config editor default until then.

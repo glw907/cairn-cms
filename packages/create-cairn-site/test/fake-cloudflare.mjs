@@ -529,10 +529,10 @@ function createWorkersDomainListHandler(ctx) {
 //
 // Response bodies below are copied verbatim from
 // docs/internal/2026-08-11-t4b-email-spike.md ("Appendix: the captured bodies, verbatim"),
-// captured live against the scratch domain and against ecxc.ski on 2026-08-12. Two things a
+// captured live against the scratch domain and against a second zone on 2026-08-12. Two things a
 // later edit must not "fix":
 //
-// 1. `preview_enabled` is NOT a constant (a fresh create returns `true`; `ecxc.ski`, onboarded
+// 1. `preview_enabled` is NOT a constant (a fresh create returns `true`; a zone onboarded
 //    earlier, reports `false`), which is why a second fixture exists for it.
 // 2. The send refusal body is byte-identical for a never-onboarded domain and one still
 //    propagating (spike amendment 2). There is no field to key a fake failure on; the caller's

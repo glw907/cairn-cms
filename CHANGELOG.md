@@ -10,9 +10,12 @@
   `computeCountLine`, `ExpandableRow`, `FieldLabel`, `StatusChip`, `createAdminAction`, and
   `createSectionAction` use signups and `/admin/team/...` paths. The `/reproductions` fixtures
   name the site `Trailhead` and the nav section `Team`. The scaffold's `wrangler.jsonc` and
-  chassis files no longer carry maintainer provenance comments.
+  chassis files no longer carry maintainer provenance comments. Two `cairn-audit` outputs change
+  with it: a rule message now prints an absolute GitHub URL where it printed a path into the
+  maintainer docs, and `norms card` prints new reference text for the `--cairn-card-border` row, a
+  noun phrase that opens "the card-shell hairline decision: ...".
 
-  Consumers must: nothing.
+  Consumers must: nothing, unless a script matches on the old message or `norms` text.
 
 - **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
   `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer

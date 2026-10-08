@@ -1,4 +1,4 @@
--- The packaged audit-log sink's table (seam 5, ASC's schema carried whole). Opt-in: only a site
+-- The packaged audit-log sink's table (seam 5, the audit-log schema carried whole). Opt-in: only a site
 -- that wires `createD1AuditSink` (./sveltekit) needs this migration; a site that never wires the
 -- sink never touches this table. `actor` holds whatever string the writing wrapper supplies: an
 -- editor email when written through `createD1AuditSink`, or a site's own identifier (a member id,
@@ -7,11 +7,11 @@
 -- `AUTOINCREMENT` is deliberate, not a copied default: it costs an extra `sqlite_sequence` write
 -- per insert, but it guarantees an id is never reused, an audit trail's whole point.
 --
--- `created_at`'s format is the one deviation from "ASC's schema, carried whole" (design doc, Pass
--- two): ASC's original default is `datetime('now')`, a space-separated, second-resolution, no-`Z`
+-- `created_at`'s format is the one deviation from "the audit-log schema, carried whole" (design doc,
+-- Pass two): the original default is `datetime('now')`, a space-separated, second-resolution, no-`Z`
 -- string. That string parses as LOCAL time under `new Date(...)` in a browser, and its second
 -- resolution sorts several same-second audits non-deterministically. No site has applied this
--- migration yet, so the format is free to fix now and expensive to fix once two production sites
+-- migration yet, so the format is free to fix now and expensive to fix once two sites
 -- have; a later fix means a second migration against both. `strftime`'s ISO 8601 form is
 -- unambiguous UTC at millisecond resolution, and this column exists to be read by people, not by
 -- the engine, so an unambiguous timestamp is worth the deviation.

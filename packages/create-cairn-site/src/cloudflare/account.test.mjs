@@ -15,7 +15,7 @@ const WHOAMI_JSON_WITH_PREAMBLE =
   JSON.stringify({
     loggedIn: true,
     authType: 'User API Token',
-    accounts: [{ id: '120c269ad6d3dfbe6d63a0bb53758ca0', name: 'glw907', type: 'standard' }],
+    accounts: [{ id: '0123456789abcdef0123456789abcdef', name: 'my-account', type: 'standard' }],
   });
 
 const ONE_ACCOUNT_JSON = JSON.stringify({
@@ -136,7 +136,7 @@ test('a preamble line ahead of the JSON still parses correctly', async (t) => {
     log: () => {},
   });
 
-  assert.deepEqual(result, { accountId: '120c269ad6d3dfbe6d63a0bb53758ca0', learned: true });
+  assert.deepEqual(result, { accountId: '0123456789abcdef0123456789abcdef', learned: true });
 });
 
 test('an unreadable whoami body reports a lookup failure, not an abandoned sign-in', async (t) => {

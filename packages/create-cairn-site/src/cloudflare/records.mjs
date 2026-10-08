@@ -34,7 +34,7 @@ const CLOUDFLARE_NS_PATTERN = /\.ns\.cloudflare\.com$/i;
  * primitive, so discovery asks an explicit list and cannot see anything else. Matches the T4a
  * design's ruling 4 exactly: apex A/AAAA/MX/TXT/CAA/NS, plus `www`, `mail`, `autodiscover`, and
  * `_dmarc` (DMARC records are always TXT, per RFC 7489), plus every named DKIM selector, probed as
- * both TXT (Google's own publishing form) and CNAME (Fastmail's, observed live on 907.life's own
+ * both TXT (Google's own publishing form) and CNAME (Fastmail's, observed live on a Fastmail-hosted
  * zone in the spike appendix).
  * @type {{ apex: string[], subdomains: Record<string, string[]>, dkimSelectors: string[] }}
  */
@@ -47,7 +47,7 @@ export const PROBE_PLAN = {
     _dmarc: ['TXT'],
   },
   // Not independently observed live beyond 'google' (the spike's own Step 3 run) and 'fm1'
-  // (Fastmail's own selector, seen on 907.life's zone in the spike appendix); fm2/fm3 follow
+  // (Fastmail's own selector, seen on a Fastmail-hosted zone in the spike appendix); fm2/fm3 follow
   // Fastmail's documented rotation, and selector1/selector2 are Microsoft 365's documented
   // default pair. A best-effort list, per ruling 4: it cannot see a selector outside it.
   dkimSelectors: ['google', 'fm1', 'fm2', 'fm3', 'selector1', 'selector2'],

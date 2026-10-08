@@ -159,19 +159,19 @@ test('a doctored fixture missing a target throws naming the file and the string'
 
 test('writePublicOrigin replaces the localhost placeholder', async (t) => {
   const dir = await fixtureDir(t);
-  await writePublicOrigin(dir, 'https://alpine-club.geoff.workers.dev');
+  await writePublicOrigin(dir, 'https://alpine-club.my-account.workers.dev');
   const content = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
-  assert.ok(content.includes('"PUBLIC_ORIGIN": "https://alpine-club.geoff.workers.dev"'));
+  assert.ok(content.includes('"PUBLIC_ORIGIN": "https://alpine-club.my-account.workers.dev"'));
   assert.ok(!content.includes('http://localhost:4173'));
 });
 
 test('writePublicOrigin replaces a previous workers.dev value on a resumed run', async (t) => {
   const dir = await fixtureDir(t);
-  await writePublicOrigin(dir, 'https://alpine-club.geoff.workers.dev');
-  await writePublicOrigin(dir, 'https://alpine-club-2.geoff.workers.dev');
+  await writePublicOrigin(dir, 'https://alpine-club.my-account.workers.dev');
+  await writePublicOrigin(dir, 'https://alpine-club-2.my-account.workers.dev');
   const content = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
-  assert.ok(content.includes('"PUBLIC_ORIGIN": "https://alpine-club-2.geoff.workers.dev"'));
-  assert.ok(!content.includes('alpine-club.geoff.workers.dev"'));
+  assert.ok(content.includes('"PUBLIC_ORIGIN": "https://alpine-club-2.my-account.workers.dev"'));
+  assert.ok(!content.includes('alpine-club.my-account.workers.dev"'));
 });
 
 test('workerNameFor slugs the name with the cairn-site fallback, matching scaffold.mjs and the GitHub chapter', () => {

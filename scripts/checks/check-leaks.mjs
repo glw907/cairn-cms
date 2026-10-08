@@ -191,7 +191,8 @@ export function profileFor(relPath) {
     path === 'docs/README.md' ||
     path === 'docs/why-cairn.md' ||
     path === 'examples/showcase/README.md' ||
-    /^docs\/(?:extend|reference|admin|editors)\/.+\.md$/.test(path)
+    /^docs\/(?:extend|reference|admin|editors)\/.+\.md$/.test(path) ||
+    /^docs\/reference\/schema\/.+\.json$/.test(path)
   ) {
     return { tier: 'T1', classes: all, mode: 'whole' };
   }
@@ -209,7 +210,7 @@ export function profileFor(relPath) {
     return { tier: 'T2', classes: all, mode: 'whole' };
   }
   if (
-    /^(?:skills|claude)\//.test(path) ||
+    /^(?:skills|claude|migrations|migrations-channel)\//.test(path) ||
     path.startsWith('examples/showcase/src/chassis/') ||
     path.startsWith('src/lib/reproductions/') ||
     path === 'tool/cmd/cairn/messages.go'
@@ -483,6 +484,8 @@ const SCAN_ROOTS = [
   'docs/internal/docs-register.md',
   'skills',
   'claude',
+  'migrations',
+  'migrations-channel',
   'examples/showcase/README.md',
   'examples/showcase/src/chassis',
   'src/lib',

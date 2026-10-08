@@ -238,7 +238,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   `cookieName` (`/auth-crypto`) to `buildCookieName`, `githubApp` (`.`) to `createGithubApp`, and
   `adminAction` (`/sveltekit`) to `createAdminAction` at any call site; every signature, return
   type, and thrown error is unchanged. `src/theme/cairn.config.ts` is the site file every consumer
-  meets for `createGithubApp`, since every production site's adapter calls it directly.
+  meets for `createGithubApp`, since every site's adapter calls it directly.
 - **Thirteen more functions rename per the engine's verb vocabulary, name-only, no deprecated
   alias.** Rename `buildMediaResolver` (`/media`) to `createMediaResolver`; `buildLinkResolver`
   and `buildFragmentResolver` (`/delivery`, `/delivery/data`) to `createLinkResolver` and
@@ -274,8 +274,8 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   `previewMint` (`/sveltekit`) to `mintPreview`, `previewRevoke` (`/sveltekit`) to `revokePreview`,
   `previewLoad` (`/sveltekit`) to `loadPreview`, and `healthLoad` (`/sveltekit`) to `loadHealth` at
   any call site; every signature, return type, and thrown error is unchanged. `loadHealth` reaches
-  every production site's own `src/routes/healthz/+server.ts`; `loadPreview` reaches the two of
-  four that mount a preview route, each in its own `src/routes/(site)/preview/[token]/+page.server.ts`.
+  every site's own `src/routes/healthz/+server.ts`; `loadPreview` reaches a site that mounts a
+  preview route, in its own `src/routes/(site)/preview/[token]/+page.server.ts`.
 - **Four discriminated results move onto the `outcome` idiom, every discriminant value restated in
   kebab case.** `RequestResult` (`/sveltekit`) renames to `RequestOutcome`: a login form switches
   from `form.status` to `form.outcome`, and from `'send_error'` to `'send-error'`; `form.sent` is
@@ -409,7 +409,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   `createCairnAdmin`, which still serves the component the full action vocabulary it posts to. A
   site that hand-mounts any other admin view is unaffected, `uploadAction` and `mediaLibraryLoad`
   included, and every result and failure type stays exported from `/sveltekit`.
-- **The retires pass closed 56 ratified any-site-audit rulings, removing 53 exported names with
+- **The retires pass closed 56 any-site-audit rulings, removing 53 exported names with
   zero remaining public consumers**; the other 3 closed rulings were process/tooling proposals
   with no exported name to remove. The removals span `@glw907/cairn-cms` (the root package),
   `/admin-toolkit`, `/auth-crypto`, `/auth-channel`, `/auth-store`, `/delivery`, `/delivery/data`,
@@ -503,7 +503,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
     let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
   </script>
 
-  <PageHeader eyebrow="Club" title="Events" meta="12 upcoming">
+  <PageHeader eyebrow="Team" title="Events" meta="12 upcoming">
     {#snippet action()}
       <button type="button" class="btn btn-primary btn-sm">New event</button>
     {/snippet}
@@ -559,7 +559,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   own Tailwind content or restate the declaration.
 - **A native `title` on an admin action control is replaced by `admin-toolkit`'s `Tooltip`.** No
   action, unless your own admin copied the `cairn-btn-guarded` marker class from the engine's own
-  markup; no production site has. `cairn-audit`'s `stock-default-hazards` rule now names that
+  markup; no site has. `cairn-audit`'s `stock-default-hazards` rule now names that
   class retired, reported at advisory tier until `0.98.0` promotes the finding to error; the class
   itself stays compiled until a later release removes it.
 - **`cairn-doctor` loses `--fix`, the `skill.admin-screens` check, and the
@@ -573,32 +573,12 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   the precompiled sheet renders. A site that snapshot-tests the admin visually should refresh
   those baselines after the bump.
 
-### The four sites' upgrade order
+### Upgrade order
 
-Four production sites depend on this window, each on its own version range measured at plan
-authoring: `ecxc-ski` (`^0.95.0`), `907-life` (`^0.84.4`), `xcathletes-org` (`^0.96.0`, plus
-`@glw907/cairn-cms-dev` `^0.96.0`), and `aksailingclub-org` (`^0.96.0`). Upgrade in this order:
-`ecxc-ski`, `907-life`, `xcathletes-org`, `aksailingclub-org`. The first three are four or five
-mechanical call-site edits each; the fourth carries the `OfficeList` sweep across eighteen
-screens and is the only one needing a composition change rather than a rename, so proving the
-rename set on three smaller sites first de-risks the one site with real work.
-
-- **`ecxc-ski`**, four files: `src/chassis/cairn.server.ts` (`createCairnAdmin`),
-  `src/routes/media/[...path]/+server.ts` (`createMediaRoute`),
-  `src/routes/healthz/+server.ts` (`healthLoad`), and `src/theme/cairn.config.ts` (`githubApp`).
-- **`907-life`**, the same four files and the same four calls. It crosses the widest version gap
-  of the four sites, so it reads more of this page than the others.
-- **`xcathletes-org`**, five files: the same four as `ecxc-ski` plus
-  `src/routes/(site)/preview/[token]/+page.server.ts` (`previewLoad`). It is the one site on
-  `@glw907/cairn-cms-dev`, and it calls `devBackendHandle()` bare today with no type annotation,
-  so `DevBackendConfig` reaches it only if it starts annotating.
-- **`aksailingclub-org`**, the heaviest by far: the same four files as `ecxc-ski` plus
-  `src/tests/adapter.test.ts` (`createContentRoutes`),
-  `src/routes/(site)/preview/[token]/+page.server.ts` (`previewLoad`),
-  `src/member-auth/lib/crypto.ts` (`cookieName`), `src/admin-club/lib/announcements.ts` and
-  `src/routes/(site)/events/[id]/+page.server.ts` (`deriveExcerpt`), and **eighteen**
-  `src/routes/admin/club/**/+page.svelte` files importing `OfficeList` plus
-  `src/tests/announce-list-order.test.ts`. It is the only site the `OfficeList` removal reaches.
+Most of this window is a rename set of four or five call-site edits. A site that composes
+`OfficeList` needs a composition change as well: update every route that imports it, and update
+any test that asserts its order. Do the renames first, so the `OfficeList` sweep is the only
+edit left.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
 

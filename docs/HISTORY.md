@@ -7,6 +7,37 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## The 0.97.0 window's per-site upgrade order, moved from the published migration notes, 2026-10-07
+
+`docs/extend/migration-notes.md` carried this under its `0.97.0` entry as "The four sites' upgrade
+order". It named the maintainer's production sites, which no public reader can use, so the page now
+states the order generically and the per-site detail lives here.
+
+Four consumer sites depend on this window, each on its own version range measured at plan
+authoring: `ecxc-ski` (`^0.95.0`), `907-life` (`^0.84.4`), `xcathletes-org` (`^0.96.0`, plus
+`@glw907/cairn-cms-dev` `^0.96.0`), and `aksailingclub-org` (`^0.96.0`). Upgrade in this order:
+`ecxc-ski`, `907-life`, `xcathletes-org`, `aksailingclub-org`. The first three are four or five
+mechanical call-site edits each; the fourth carries the `OfficeList` sweep across eighteen
+screens and is the only one needing a composition change rather than a rename, so proving the
+rename set on three smaller sites first de-risks the one site with real work.
+
+- **`ecxc-ski`**, four files: `src/chassis/cairn.server.ts` (`createCairnAdmin`),
+  `src/routes/media/[...path]/+server.ts` (`createMediaRoute`),
+  `src/routes/healthz/+server.ts` (`healthLoad`), and `src/theme/cairn.config.ts` (`githubApp`).
+- **`907-life`**, the same four files and the same four calls. It crosses the widest version gap
+  of the four sites, so it reads more of this page than the others.
+- **`xcathletes-org`**, five files: the same four as `ecxc-ski` plus
+  `src/routes/(site)/preview/[token]/+page.server.ts` (`previewLoad`). It is the one site on
+  `@glw907/cairn-cms-dev`, and it calls `devBackendHandle()` bare today with no type annotation,
+  so `DevBackendConfig` reaches it only if it starts annotating.
+- **`aksailingclub-org`**, the heaviest by far: the same four files as `ecxc-ski` plus
+  `src/tests/adapter.test.ts` (`createContentRoutes`),
+  `src/routes/(site)/preview/[token]/+page.server.ts` (`previewLoad`),
+  `src/member-auth/lib/crypto.ts` (`cookieName`), `src/admin-club/lib/announcements.ts` and
+  `src/routes/(site)/events/[id]/+page.server.ts` (`deriveExcerpt`), and **eighteen**
+  `src/routes/admin/club/**/+page.svelte` files importing `OfficeList` plus
+  `src/tests/announce-list-order.test.ts`. It is the only site the `OfficeList` removal reaches.
+
 ## Draft docs stage 2a, and its unattended finish, 2026-09-30 to 10-07
 
 Branch `draft-docs-2a`, closed 2026-10-07 at R7 of the unattended run. Governing plan, ledger, and

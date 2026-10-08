@@ -182,6 +182,10 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ### The pre-beta pass series and the two-release shape (organized 2026-08-01)
 
+**Superseded in part (2026-10-07).** The next release is the one release after docs stage 5, on the
+path in the Now tier's boundary-test entry. The engine pass before stage 2b reconciles this series'
+remaining phases and its two-release shape with that path, and rewrites this section to match.
+
 The Now and Next tiers' pre-beta entries execute as this series. The release shape is
 RECOMMENDED, not yet ratified: two releases, where release one carries everything that impacts a
 current consumer site and release two is `1.0.0-beta.1` itself. The alternative Geoff weighed
@@ -323,6 +327,25 @@ The original decision framing, for the record:
   forecast, accepted by Geoff (2026-10-07), not a schedule: an engine pass before 2b (below), likely
   one before stage 4 for the editor screenshots, probably none before stages 3 and 5, and a batch
   before the final release.
+
+  **The path to the release, with each engine pass in its slot.** Every stage close re-runs the test
+  and may add or drop a pass; this list is where each one sits today.
+  1. Finish stage 2a's close: `docs/superpowers/plans/2026-10-07-2a-close-finish.md` (leak check,
+     cadence rewrite, merge of PR #107). Not an engine pass.
+  2. **Engine pass before stage 2b** (the Now entry below): its listed fixes, tool-neutral agent
+     guidance, the placement of the dedicated coding-agent docs, and whichever "Docs tooling before
+     stage 2b" items ride with it (or run as their own dotfiles pass).
+  3. Stage 2b: the 14 remaining extend pages. Its close runs the test.
+  4. Stage 3: the admin arm. Forecast: no engine pass after it.
+  5. **Engine pass before stage 4** (forecast): the editor screenshots, plus the batched items marked
+     "for the stage 4 boundary" in the Next tier's batched engine friction entry.
+  6. Stage 4: the editors arm. Stage 5: the front door. Forecast: no engine pass between them.
+  7. **The final engine batch:** every item still in the Next tier's batched engine friction and
+     reference-arm corrections entries, the held dependency majors whose tripwires have fired, and
+     the dependency sweep a release starts from.
+  8. **The one release** (`cairn-release`).
+  9. Site migrations, one site pass each, cairn.pub first among equals. Their friction takes the same
+     test, so a migration can still produce an engine fix after the release.
 
 - **Engine pass before stage 2b (the boundary test at stage 2a's close, 2026-10-07).** Next after
   Geoff reads the five task 8 pages; a fresh brainstorm sizes it by the test above, so it may take
@@ -565,10 +588,11 @@ The original decision framing, for the record:
   briefs and exemplars. The reference arm stays, with `extend/`'s three kept pages. cairn.pub's
   pin ceiling is `0.98.0` until the one release after stage 5 (the standing rule above).
   **Stage 2a closed (2026-10-07):** the first 11 extend pages and the interim index are on `main`
-  (`docs/HISTORY.md`, "Draft docs stage 2a"). **Current step:** Geoff reads the five task 8 pages,
-  then the engine pass before stage 2b, then stage 2b's 14 pages from the committed outline
-  `docs/internal/outlines/extend.json`, then admin (stage 3), editors (stage 4), and the front door
-  (stage 5). `docs/internal/record/harvest/relink.json` names what each stage re-arms. The
+  (`docs/HISTORY.md`, "Draft docs stage 2a"). **Current step:** finishing stage 2a's close
+  (`docs/superpowers/plans/2026-10-07-2a-close-finish.md`), then the sequence in the boundary-test
+  entry above: the engine pass before stage 2b, stage 2b's 14 pages from the committed outline
+  `docs/internal/outlines/extend.json`, admin (stage 3), editors (stage 4), and the front door
+  (stage 5), with each engine pass in its slot. `docs/internal/record/harvest/relink.json` names what each stage re-arms. The
   style-guide sync (2026-09-28 to 29) settled the drafting inputs: each track's brief in
   `docs/internal/docs-register.md`, the AI posture page as the developer exemplar, and a
   Microsoft Learn capture for editors. The stage 2 and stage 5 outline input is

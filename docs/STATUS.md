@@ -11,36 +11,37 @@ October dependency sweep, and the doctor cleanup. CI is green. cairn.pub pins `0
 ceiling `0.98.0` until the one release below
 ([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md), with the extend redirect rows).
 
-**The sequence (Geoff, 2026-10-07).** After Geoff reads the five task 8 pages: the engine pass before stage
-2b, then stage 2b, admin (stage 3), editors (stage 4), and the front door (stage 5). Engine passes land on
-`main` and never release. One release follows stage 5 with SvelteKit 3, every engine fix, and the complete
-docs; then each site migrates to it as a site pass that follows the docs, cairn.pub included, and none
-before. The conductor's forecast, accepted by Geoff (2026-10-07), not a schedule: a pass before 2b, likely
-one before stage 4 (editor screenshots), probably none before 3 or 5, a batch before the final release.
+**The sequence (Geoff, 2026-10-07).** Docs stages 2b to 5, then one release, then each site
+migrates (cairn.pub included, none before). Engine passes land on `main` and never release; each
+sits in its slot on the path in `ROADMAP.md`'s boundary-test entry, which every stage close re-tests.
 
 ## Immediate next action
 
-Geoff reads the five task 8 pages (`scaffolded-site-files`, `restrict-admin-access`,
-`add-a-second-sign-in-group`, `rotate-the-github-app-key`, `debug-your-site`) and the conductor
-rulings on the review page: https://claude.ai/artifact/LQL6u4SWcYZH97kgBH1qGP. His fixes land as a follow-up commit. Then a fresh
-session brainstorms the engine pass before stage 2b (resume prompt below).
+Finish stage 2a's close: [`superpowers/plans/2026-10-07-2a-close-finish.md`](superpowers/plans/2026-10-07-2a-close-finish.md)
+(F1 merge the `leak-cleanup` code lane, F2 `check:leaks`, F3 cadence rewrite to a green
+`check:tellgrader`, F4 close review, F5 republish the review page and merge PR #107, F6 push
+dotfiles). It carries Geoff's 2026-10-07 rulings from his live page read. Then the engine-pass
+brainstorm (prompt below), the first slot on the path in `ROADMAP.md`'s boundary-test entry.
 
 ## Open decisions and watches
-- Every docs-stage close runs the boundary test over the engine friction and tells Geoff whether an
-  engine pass is warranted, and its scope (`cairn-pass` close, Documentation step).
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
   majors (`trig_01UCoKqxRXVwAfMdnF913E4v`); remote functions reaching stable
   (`trig_0193pPNoyxsTGeUhF1xx7woa`); the monthly drift sample (`trig_015UPQostYVisXuExTHTH2vu`), which
   widens to all four tracks at stage 4's merge.
-- Dotfiles: `cairn-docs-outline`'s lock was built past need; `gateMatches`' doc comment still says a
-  placeholder "matches any non-empty text". The per-version records' paths are hardcoded in
-  `cairn-pass`, `CLAUDE.md`, and `docs/internal/facts/README.md`; a move updates all three.
-- Node 26 is the beta floor only if Active LTS by then; TypeScript 7 waits on `tsgo.yml`;
-  `radius-scale` and the retired-patch arms promote at the next version commit. The `0.98.0` prep ran
-  no `check:dev-package`; `CAIRN_GATE_READ_TOKEN` expires 2026-10-19; `npm pkg fix` is owed for the
-  four `./` `bin` entries.
+- Dotfiles: simplify `cairn-docs-outline`'s lock; fix `gateMatches`' stale doc comment. A move of a
+  per-version record updates `cairn-pass`, `CLAUDE.md`, and `docs/internal/facts/README.md`.
+- Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; `radius-scale` and the retired
+  patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
+  (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
 
-### Next action (engine pass before stage 2b)
+### Resume prompt (finish the 2a close)
+
+> Execute `docs/superpowers/plans/2026-10-07-2a-close-finish.md` from F1 as its conductor, in a fresh
+> `claude --model claude-opus-5-5` session at medium effort from `~/Projects/cairn-cms`; invoke
+> `cairn-pass`, read the plan, its rulings, and the leak audit it links, then dispatch F1. Settled:
+> every ruling in the plan. No release.
+
+### Next action after the merge (engine pass before stage 2b)
 
 > **Goal.** Brainstorm and plan the engine pass that runs before draft docs stage 2b.
 >
@@ -51,8 +52,9 @@ session brainstorms the engine pass before stage 2b (resume prompt below).
 > **Settled (do not re-brainstorm):** the Geoff rulings of 2026-10-07 in `ROADMAP.md`'s boundary-test
 > entry (one release after stage 5; engine passes never release; no site migrates first; the test).
 >
-> **Still open, brainstorm these:** which *decide* items the pass takes, the lead seam's shape (one
-> map both readers use, or a wiring condition), and whether the docs tooling rides this pass or its own.
+> **Still open, brainstorm these:** reconciling ROADMAP's "Toward 1.0" series with the one-release
+> path; tool-neutral agent guidance and where the coding-agent docs live; which *decide* items the
+> pass takes; the lead seam's shape; whether the docs tooling rides this pass or its own.
 >
 > **Approach.** Fresh brainstorm session; read the two ROADMAP entries, `docs/internal/engine-rulings.md`,
 > and the charter (`docs/internal/what-cairn-is-and-is-not.md`) first, then write the plan. Invoke

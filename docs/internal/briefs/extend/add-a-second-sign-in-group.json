@@ -452,7 +452,11 @@
       ]
     },
     {
-      "text": "The `roles` list names declared roles only, since a name the vocabulary does not declare fails validation.",
+      "text": "The `roles` list names declared roles only.",
+      "id": "f:16paho"
+    },
+    {
+      "text": "A name the vocabulary does not declare fails validation.",
       "id": "f:16paho"
     },
     {
@@ -460,7 +464,14 @@
       "id": "f:bvfs3e"
     },
     {
-      "text": "The home path takes no rule in the access map, since an entry whose href matches a map rule shows only to the roles `canReach` admits, and `canReach` admits no `none` session.",
+      "text": "The home path takes no rule in the access map.",
+      "id": [
+        "f:altcjp",
+        "f:p1xmp5"
+      ]
+    },
+    {
+      "text": "An entry whose href matches a map rule shows only to the roles `canReach` admits, and `canReach` admits no `none` session.",
       "id": [
         "f:altcjp",
         "f:p1xmp5"

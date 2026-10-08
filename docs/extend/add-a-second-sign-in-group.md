@@ -181,9 +181,11 @@ To add the link, follow this step:
   });
   ```
 
-The `roles` list names declared roles only, since a name the vocabulary does not declare fails validation.
+The `roles` list names declared roles only.
+A name the vocabulary does not declare fails validation.
 Hiding a link is never authorization, so the screen's role check is what refuses everyone else.
-The home path takes no rule in the access map, since an entry whose href matches a map rule shows only to the roles `canReach` admits, and `canReach` admits no `none` session.
+The home path takes no rule in the access map.
+An entry whose href matches a map rule shows only to the roles `canReach` admits, and `canReach` admits no `none` session.
 [Restrict admin access](restrict-admin-access.md) covers the access map itself, and [Arrange the admin sidebar](arrange-the-admin-sidebar.md) covers the rest of the sidebar.
 The role's people come last, once the screen they land on exists.
 

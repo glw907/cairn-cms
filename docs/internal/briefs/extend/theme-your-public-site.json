@@ -10,14 +10,28 @@
       ]
     },
     {
-      "text": "The engine's part in public styling is a sheet of defaults, `cairn-public.css`, whose roles sit in `@layer theme`, the lowest layer Tailwind declares, so a value the site writes for any of those roles overrides the engine's default.",
+      "text": "The engine's part in public styling is a sheet of defaults, `cairn-public.css`.",
       "id": [
         "f:c4nnu9",
         "f:hva8r5"
       ]
     },
     {
-      "text": "In the admin, a theme reaches the editor's preview frame, which renders an entry through the same `render` function as the public pages but loads only the style sheets the site's adapter names.",
+      "text": "Its roles sit in `@layer theme`, the lowest layer Tailwind declares, so a value the site writes for any of those roles overrides the engine's default.",
+      "id": [
+        "f:c4nnu9",
+        "f:hva8r5"
+      ]
+    },
+    {
+      "text": "In the admin, a theme reaches the editor's preview frame.",
+      "id": [
+        "f:dl1trb",
+        "f:gnn3pv"
+      ]
+    },
+    {
+      "text": "That frame renders an entry through the same `render` function as the public pages but loads only the style sheets the site's adapter names.",
       "id": [
         "f:dl1trb",
         "f:gnn3pv"
@@ -68,7 +82,16 @@
       "id": "no-claim"
     },
     {
-      "text": "Both recipes end at the same check, the three public-scope rules that `cairn-audit` ships, which include a check for a color or font size written as a literal and a contrast measurement of the theme's text colors against their backgrounds.",
+      "text": "Both recipes end at the same check, the three public-scope rules that `cairn-audit` ships.",
+      "id": [
+        "f:xv2ien",
+        "f:o4ctu5",
+        "f:lqtwdt",
+        "f:tbq6gh"
+      ]
+    },
+    {
+      "text": "Among them are a check for a color or font size written as a literal and a contrast measurement of the theme's text colors against their backgrounds.",
       "id": [
         "f:xv2ien",
         "f:o4ctu5",

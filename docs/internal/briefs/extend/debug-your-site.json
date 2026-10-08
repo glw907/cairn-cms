@@ -508,7 +508,14 @@
       ]
     },
     {
-      "text": "The production record is an error carrying `editor` and `path`, as the [log events](../reference/log-events.md) reference lists, and the action leaves no audit record.",
+      "text": "The production record is an error carrying `editor` and `path`, and the action leaves no audit record.",
+      "id": [
+        "f:07efts",
+        "f:pfy9cw"
+      ]
+    },
+    {
+      "text": "The [log events](../reference/log-events.md) reference lists the record's fields.",
       "id": [
         "f:07efts",
         "f:pfy9cw"
@@ -519,7 +526,11 @@
       "id": "f:07efts"
     },
     {
-      "text": "The fix is a code change in the handler that calls `ctx.audit` on every successful path before it returns, as the [`createAdminAction`](../reference/sveltekit.md#createadminaction) entry describes.",
+      "text": "The fix is a code change in the handler that calls `ctx.audit` on every successful path before it returns.",
+      "id": "f:07efts"
+    },
+    {
+      "text": "The [`createAdminAction`](../reference/sveltekit.md#createadminaction) entry describes that call.",
       "id": "f:07efts"
     },
     {
@@ -545,7 +556,11 @@
       "id": "f:r3l7eq"
     },
     {
-      "text": "A site that wires [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) reads `audit.sink.write_failed` instead, since that sink catches its own failures before `audit.sink.call_failed` can fire.",
+      "text": "A site that wires [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) reads `audit.sink.write_failed` instead.",
+      "id": "f:r3l7eq"
+    },
+    {
+      "text": "That sink catches its own failures before `audit.sink.call_failed` can fire.",
       "id": "f:r3l7eq"
     },
     {
@@ -553,7 +568,11 @@
       "id": "f:yauo4m"
     },
     {
-      "text": "Its `actor` need not be an editor's email when site code calls the sink directly with the site's domain events, so a query filtered on editor addresses can miss those records.",
+      "text": "Its `actor` need not be an editor's email when site code calls the sink directly with the site's domain events.",
+      "id": "f:k085q0"
+    },
+    {
+      "text": "A query filtered on editor addresses can miss those records.",
       "id": "f:k085q0"
     },
     {
@@ -589,11 +608,15 @@
       "id": "f:mou1li"
     },
     {
-      "text": "A Workers Logs query scoped to a live request window can miss the warning entirely, so finding it takes a wider window.",
+      "text": "A Workers Logs query scoped to a live request window can miss the warning entirely.",
       "id": "f:mou1li"
     },
     {
-      "text": "The record's `unmapped` field lists the targets with no rule, as the [log events](../reference/log-events.md) reference describes.",
+      "text": "Finding it takes a wider window.",
+      "id": "f:mou1li"
+    },
+    {
+      "text": "As the [log events](../reference/log-events.md) reference describes, the record's `unmapped` field lists the targets with no rule.",
       "id": "f:pfy9cw"
     },
     {
@@ -633,7 +656,7 @@
       "id": "f:vih1k1"
     },
     {
-      "text": "An alert built on it counts live sign-outs only, so it can report fewer records than sign-outs.",
+      "text": "An alert built on it counts live sign-outs only and can report fewer records than sign-outs.",
       "id": "f:vih1k1"
     },
     {

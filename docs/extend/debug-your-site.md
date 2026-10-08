@@ -210,12 +210,12 @@ change that declares the D1 binding in the Wrangler config under the name `resol
 
 A `createAdminAction` route that returns without calling `ctx.audit`, other than through SvelteKit's
 `fail()`, throws `UnauditedActionError` in development and logs `admin.action.unaudited` in
-production. The production record is an error carrying `editor` and `path`, as the [log
-events](../reference/log-events.md) reference lists, and the action leaves no audit record.
+production. The production record is an error carrying `editor` and `path`, and the action leaves no
+audit record. The [log events](../reference/log-events.md) reference lists the record's fields.
 Production logs instead of throwing, since an error response mid-request would be worse than a gap
 in the audit trail. The fix is a code change in the handler that calls `ctx.audit` on every
-successful path before it returns, as the
-[`createAdminAction`](../reference/sveltekit.md#createadminaction) entry describes.
+successful path before it returns. The
+[`createAdminAction`](../reference/sveltekit.md#createadminaction) entry describes that call.
 
 ### `audit.sink.call_failed`
 
@@ -227,10 +227,10 @@ because the `admin.action.audited` record logged before it carries the full audi
 a code change to the site's sink, at the failure that `error` names.
 
 A site that wires [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) reads
-`audit.sink.write_failed` instead, since that sink catches its own failures before
+`audit.sink.write_failed` instead. That sink catches its own failures before
 `audit.sink.call_failed` can fire. That record carries the audit record itself, truncated, because
 it is the only surviving trace of a row the packaged sink failed to write. Its `actor` need not be
-an editor's email when site code calls the sink directly with the site's domain events, so a query
+an editor's email when site code calls the sink directly with the site's domain events. A query
 filtered on editor addresses can miss those records.
 
 ## Site config events
@@ -252,11 +252,12 @@ the record's `scope` names, using the message in `error`, and commits it.
 
 The engine checks the access map once, when the site composes, so `config.access_unmapped` appears
 at most once per isolate, on a cold start. A Workers Logs query scoped to a live request window can
-miss the warning entirely, so finding it takes a wider window. The record's `unmapped` field lists
-the targets with no rule, as the [log events](../reference/log-events.md) reference describes. The
-[Security model](security-model.md#allowlist-semantics-from-an-exhaustive-map) page sets out what
-the warning reports and when a map is meant to be exhaustive. For a map meant to be exhaustive, the
-fix is a code change that adds a rule for each target the warning names. [Restrict admin
+miss the warning entirely. Finding it takes a wider window. As the [log
+events](../reference/log-events.md) reference describes, the record's `unmapped` field lists the
+targets with no rule. The [Security
+model](security-model.md#allowlist-semantics-from-an-exhaustive-map) page sets out what the warning
+reports and when a map is meant to be exhaustive. For a map meant to be exhaustive, the fix is a
+code change that adds a rule for each target the warning names. [Restrict admin
 access](restrict-admin-access.md) describes the rules. A map that is not meant to be exhaustive
 needs no change.
 
@@ -269,8 +270,8 @@ one fires and which field it carries. No row in this group needs a code change.
 
 Sign-out logs `auth.session.destroyed` only when the deleted session row was still live, so a stale
 cookie or an expired row leaves no record. The record carries the row's `email`, as the [log
-events](../reference/log-events.md) reference lists. An alert built on it counts live sign-outs
-only, so it can report fewer records than sign-outs.
+events](../reference/log-events.md) reference lists. An alert built on it counts live sign-outs only
+and can report fewer records than sign-outs.
 
 ### `auth.channel.session.destroyed`
 

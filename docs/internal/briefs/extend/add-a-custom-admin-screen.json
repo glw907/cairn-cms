@@ -560,15 +560,15 @@
       ]
     },
     {
-      "text": "The sheet turns off automatic source detection, scans `./routes/admin` and `./lib/admin` through `@source`, and then imports `@glw907/cairn-cms/admin-sources.css`, as the [audit configuration](../reference/cairn-audit.md#configuration) reference describes.",
+      "text": "As the [audit configuration](../reference/cairn-audit.md#configuration) reference describes, the sheet turns off automatic source detection, scans `./routes/admin` and `./lib/admin` through `@source`, and then imports `@glw907/cairn-cms/admin-sources.css`.",
       "id": "f:vkfd7b"
     },
     {
-      "text": "The `build:admin-css` script compiles it to `.cairn/admin.css`, which `src/routes/admin/+layout.svelte` imports.",
+      "text": "The `build:admin-css` script compiles it to `.cairn/admin.css`, and `src/routes/admin/+layout.svelte` imports the result.",
       "id": "f:vkfd7b"
     },
     {
-      "text": "The scaffold's `predev`, `prebuild`, and `precheck` scripts run that compile, so a build needs no separate style sheet step.",
+      "text": "Because the scaffold's `predev`, `prebuild`, and `precheck` scripts run that compile, a build needs no separate style sheet step.",
       "id": "f:666eg6"
     },
     {

@@ -57,11 +57,15 @@
       "id": "no-claim"
     },
     {
-      "text": "Adding cairn by hand, as this tutorial does, serves the readers the setup command leaves out.",
+      "text": "This tutorial adds cairn by hand, for the readers the setup command leaves out.",
       "id": "no-claim"
     },
     {
-      "text": "A developer with an existing SvelteKit app needs it, because the setup command scaffolds only into a missing or empty directory and never adds cairn to an app that already exists.",
+      "text": "A developer with an existing SvelteKit app needs that route.",
+      "id": "f:9slxqf"
+    },
+    {
+      "text": "The setup command scaffolds only into a missing or empty directory and never adds cairn to an app that already exists.",
       "id": "f:9slxqf"
     },
     {
@@ -69,7 +73,11 @@
       "id": "f:rxj43c"
     },
     {
-      "text": "A developer curious about what cairn does underneath can read it through without building anything, since the tutorial shows every file the engine needs and why.",
+      "text": "A developer curious about what cairn does underneath can read the tutorial through without building anything.",
+      "id": "no-claim"
+    },
+    {
+      "text": "It shows every file the engine needs and why.",
       "id": "no-claim"
     },
     {
@@ -634,15 +642,19 @@
       "id": "f:f21bcz"
     },
     {
-      "text": "The flag test reads `process.env`, because `vite dev` runs the hooks in Node, where the Worker env never carries the shell variable that `npm run dev` sets.",
+      "text": "The flag test reads `process.env`.",
       "id": "f:f21bcz"
     },
     {
-      "text": "It imports `devBackendHandle` dynamically, so a default build never carries it.",
+      "text": "Under `vite dev`, the hooks run in Node, and the Worker env there never carries the shell variable that `npm run dev` sets.",
+      "id": "f:f21bcz"
+    },
+    {
+      "text": "The hooks module imports `devBackendHandle` dynamically, so a default build never carries it.",
       "id": "f:eiaqkh"
     },
     {
-      "text": "The `if`'s other branch calls `createAuthGuard()` with no options, which the guard accepts.",
+      "text": "The `if`'s other branch calls `createAuthGuard()` with no options, a form the guard accepts.",
       "id": "f:f21bcz"
     },
     {
@@ -892,7 +904,11 @@
       ]
     },
     {
-      "text": "The content module also exports `origin`, the local dev origin for now, which the production milestone changes.",
+      "text": "The content module also exports `origin`.",
+      "id": "f:k16chc"
+    },
+    {
+      "text": "For now it holds the local dev origin, and the production milestone changes it.",
       "id": "f:k16chc"
     },
     {
@@ -984,7 +1000,11 @@
       "id": "f:c4nnu9"
     },
     {
-      "text": "The engine ships its public defaults as one style sheet, `@glw907/cairn-cms/cairn-public.css`, which the [public style sheet reference](../reference/public-css.md) documents.",
+      "text": "The engine ships its public defaults as one style sheet, `@glw907/cairn-cms/cairn-public.css`.",
+      "id": "f:c4nnu9"
+    },
+    {
+      "text": "The [public style sheet reference](../reference/public-css.md) documents it.",
       "id": "f:c4nnu9"
     },
     {

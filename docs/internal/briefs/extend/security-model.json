@@ -537,15 +537,25 @@
       "id": "f:tkpmxr"
     },
     {
-      "text": "The second refusal belongs to an [auth channel](#the-auth-channels-threat-surface), the seam a site adds for a second sign-in audience on the site's member routes, which the guard's admin-path handling never covers.",
+      "text": "The second refusal belongs to an [auth channel](#the-auth-channels-threat-surface).",
+      "id": "f:tkpmxr"
+    },
+    {
+      "text": "A channel is the seam a site adds for a second sign-in audience on the site's member routes, and the guard's admin-path handling never covers those routes.",
       "id": [
-        "f:tkpmxr",
         "f:q7fj6p",
         "f:2sd4if"
       ]
     },
     {
-      "text": "[`createAuthChannel`](../reference/auth-channel.md#createauthchannel) builds a channel from functions the site supplies, among them `lookup`, which resolves a contact against the channel's roster, and `deliver`, which carries a code to the contact.",
+      "text": "[`createAuthChannel`](../reference/auth-channel.md#createauthchannel) builds a channel from functions the site supplies.",
+      "id": [
+        "f:irs7fg",
+        "f:fslodf"
+      ]
+    },
+    {
+      "text": "Among them, `lookup` resolves a contact against the channel's roster, and `deliver` carries a code to the contact.",
       "id": [
         "f:irs7fg",
         "f:fslodf"
@@ -633,7 +643,11 @@
       "id": "f:4q8kin"
     },
     {
-      "text": "The site-wide publish, `publishAllAction`, spans every concept, so it makes no single access call and any editor-capability session can post it.",
+      "text": "The site-wide publish, `publishAllAction`, spans every concept.",
+      "id": "f:ji8xa0"
+    },
+    {
+      "text": "It makes no single access call, and any editor-capability session can post it.",
       "id": "f:ji8xa0"
     },
     {
@@ -641,7 +655,11 @@
       "id": "f:ji8xa0"
     },
     {
-      "text": "The tidy action and the personal-dictionary action run their access check only when the route carries a `concept` parameter, so on a route without one either action is open to any editor-capability session.",
+      "text": "The tidy action and the personal-dictionary action run their access check only when the route carries a `concept` parameter.",
+      "id": "f:arr13a"
+    },
+    {
+      "text": "On a route without one, either action is open to any editor-capability session.",
       "id": "f:arr13a"
     },
     {

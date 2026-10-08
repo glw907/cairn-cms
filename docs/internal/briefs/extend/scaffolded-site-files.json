@@ -300,11 +300,15 @@
       "id": "f:pmmtrm"
     },
     {
-      "text": "The setup command's package stores this file as `gitignore`, because npm's packlist drops a file named `.gitignore`.",
+      "text": "Because npm's packlist drops a file named `.gitignore`, the setup command's package stores this file as `gitignore`.",
       "id": "f:qfv5iw"
     },
     {
-      "text": "The setup command renames it after copying and stops with an error when it is absent, while `.gitattributes` ships under its own name.",
+      "text": "The setup command renames it after copying and stops with an error when it is absent.",
+      "id": "f:qfv5iw"
+    },
+    {
+      "text": "The `.gitattributes` file ships under its own name.",
       "id": "f:qfv5iw"
     },
     {
@@ -601,7 +605,15 @@
       "id": "f:f21bcz"
     },
     {
-      "text": "Both handles receive `{ access }`, the `defineAccess` map in `src/access.ts`, which [Restrict admin access](restrict-admin-access.md) configures.",
+      "text": "Both handles receive `{ access }`, the `defineAccess` map in `src/access.ts`.",
+      "id": [
+        "f:f21bcz",
+        "f:qlgggh",
+        "f:u78zg6"
+      ]
+    },
+    {
+      "text": "[Restrict admin access](restrict-admin-access.md) configures that map.",
       "id": [
         "f:f21bcz",
         "f:qlgggh",
@@ -853,7 +865,11 @@
       ]
     },
     {
-      "text": "The config's other entry, the engine's precompiled `dist` sheet, is a different artifact, the compile the audit's `no-uncompiled-class` rule checks against, which the sources import does not replace.",
+      "text": "The config's other entry is the engine's precompiled `dist` sheet, a different artifact that the sources import does not replace.",
+      "id": "f:vs6k2k"
+    },
+    {
+      "text": "The audit's `no-uncompiled-class` rule checks classes against that compile.",
       "id": "f:vs6k2k"
     },
     {

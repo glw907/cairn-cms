@@ -57,7 +57,11 @@
       "id": "no-claim"
     },
     {
-      "text": "Setting the guard's `identity` option replaces the whole magic-link path, so every editor signs in through the gate or none does.",
+      "text": "Setting the guard's `identity` option replaces the whole magic-link path.",
+      "id": "f:v5ndhs"
+    },
+    {
+      "text": "Every editor signs in through the gate, or none does.",
       "id": "f:v5ndhs"
     },
     {

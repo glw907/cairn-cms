@@ -253,14 +253,15 @@ The first refusal belongs to the guard, which answers with a 503 on the flag alo
 `guard.refused` with reason `dev_backend_in_prod`. The guard can refuse on the flag alone because it
 mounts only in a production build, and a site's dev branch replaces it.
 
-The second refusal belongs to an [auth channel](#the-auth-channels-threat-surface), the seam a site
-adds for a second sign-in audience on the site's member routes, which the guard's admin-path
-handling never covers. [`createAuthChannel`](../reference/auth-channel.md#createauthchannel) builds
-a channel from functions the site supplies, among them `lookup`, which resolves a contact against
-the channel's roster, and `deliver`, which carries a code to the contact. Every channel action
-refuses with a 503 before any other work, only when the flag is set and the request counts as
-deployed, because the flag is the enable contract of a dev transport, a `deliver` that prints the
-code in development instead of sending it.
+The second refusal belongs to an [auth channel](#the-auth-channels-threat-surface). A channel is the
+seam a site adds for a second sign-in audience on the site's member routes, and the guard's
+admin-path handling never covers those routes.
+[`createAuthChannel`](../reference/auth-channel.md#createauthchannel) builds a channel from
+functions the site supplies. Among them, `lookup` resolves a contact against the channel's roster,
+and `deliver` carries a code to the contact. Every channel action refuses with a 503 before any
+other work, only when the flag is set and the request counts as deployed, because the flag is the
+enable contract of a dev transport, a `deliver` that prints the code in development instead of
+sending it.
 
 A request counts as deployed when the configured `PUBLIC_ORIGIN` names a non-local host, whatever
 `Host` claims. A local, absent, or unparseable `PUBLIC_ORIGIN` hands the answer to the request's
@@ -305,12 +306,12 @@ following three ordered gates:
 
 ### Limits of access map coverage
 
-The site-wide publish, `publishAllAction`, spans every concept, so it makes no single access call
-and any editor-capability session can post it. It filters the pending entries it acts on through
+The site-wide publish, `publishAllAction`, spans every concept. It makes no single access call, and
+any editor-capability session can post it. It filters the pending entries it acts on through
 `canReach` against each entry's concept, so a concept the map narrows publishes nothing for that
 session, while a concept the map never names publishes as it would with no map. The tidy action and
 the personal-dictionary action run their access check only when the route carries a `concept`
-parameter, so on a route without one either action is open to any editor-capability session.
+parameter. On a route without one, either action is open to any editor-capability session.
 `validateAccessComposition` does not throw for a partial map, and it logs a `config.access_unmapped`
 warning naming the targets a map leaves unmapped when it covers some, but not all, of the concept
 ids and fixed engine screens.

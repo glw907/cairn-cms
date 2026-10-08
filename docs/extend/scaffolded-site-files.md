@@ -181,9 +181,9 @@ These are Claude Code's guidance files, covered in the [guidance reference](../r
 
 ### `.gitignore`
 
-The setup command's package stores this file as `gitignore`, because npm's packlist drops a file
-named `.gitignore`. The setup command renames it after copying and stops with an error when it is
-absent, while `.gitattributes` ships under its own name. Among its entries, `.gitignore` excludes
+Because npm's packlist drops a file named `.gitignore`, the setup command's package stores this file
+as `gitignore`. The setup command renames it after copying and stops with an error when it is
+absent. The `.gitattributes` file ships under its own name. Among its entries, `.gitignore` excludes
 the local `.dev.vars` and the compiled `.cairn/admin.css`, which the pre-scripts rebuild.
 
 ### Other root files
@@ -334,8 +334,8 @@ src/
 The hook picks `devBackendHandle` or `createAuthGuard` in one `if` and exports the result as
 `handle`. Its test reads the build-time `__CAIRN_DEV_BUILD__` define first and the runtime opt-in
 `CAIRN_DEV_BACKEND === '1'` second. Under `vite dev`, the opt-in falls back to `process.env`. Both
-handles receive `{ access }`, the `defineAccess` map in `src/access.ts`, which
-[Restrict admin access](restrict-admin-access.md) configures.
+handles receive `{ access }`, the `defineAccess` map in `src/access.ts`. [Restrict admin
+access](restrict-admin-access.md) configures that map.
 
 ### `src/routes/admin/`
 
@@ -451,11 +451,11 @@ site's from `theme.css` and `site.css`.
 
 Its last line imports `@glw907/cairn-cms/admin-sources.css`, an engine-owned file that holds only
 the `@source` directives for the engine's shipped admin markup, resolved from the file's installed
-location. The pre-scripts compile it into the gitignored `.cairn/admin.css` at the project root,
-one of the two sheets `cairn-audit.config.json` names. The config's other entry, the engine's
-precompiled `dist` sheet, is a different artifact, the compile the audit's `no-uncompiled-class`
-rule checks against, which the sources import does not replace. A compile failure in this file
-fails `npm run check`, `npm run build`, and `npm run check:cairn`, since each compiles it first.
+location. The pre-scripts compile it into the gitignored `.cairn/admin.css` at the project root, one
+of the two sheets `cairn-audit.config.json` names. The config's other entry is the engine's
+precompiled `dist` sheet, a different artifact that the sources import does not replace. The audit's
+`no-uncompiled-class` rule checks classes against that compile. A compile failure in this file fails
+`npm run check`, `npm run build`, and `npm run check:cairn`, since each compiles it first.
 
 ### `src/theme/theme.css` and `src/theme/site.css`
 

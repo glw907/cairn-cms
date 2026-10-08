@@ -316,9 +316,9 @@ The [admin components](../reference/admin.md) reference lists the engine's compo
 
 The screen's utility classes compile only through the site admin sheet, `src/admin.css`, which a scaffolded site already builds.
 The screen matches the admin's design by using stock daisyUI classes.
-The sheet turns off automatic source detection, scans `./routes/admin` and `./lib/admin` through `@source`, and then imports `@glw907/cairn-cms/admin-sources.css`, as the [audit configuration](../reference/cairn-audit.md#configuration) reference describes.
-The `build:admin-css` script compiles it to `.cairn/admin.css`, which `src/routes/admin/+layout.svelte` imports.
-The scaffold's `predev`, `prebuild`, and `precheck` scripts run that compile, so a build needs no separate style sheet step.
+As the [audit configuration](../reference/cairn-audit.md#configuration) reference describes, the sheet turns off automatic source detection, scans `./routes/admin` and `./lib/admin` through `@source`, and then imports `@glw907/cairn-cms/admin-sources.css`.
+The `build:admin-css` script compiles it to `.cairn/admin.css`, and `src/routes/admin/+layout.svelte` imports the result.
+Because the scaffold's `predev`, `prebuild`, and `precheck` scripts run that compile, a build needs no separate style sheet step.
 The engine's packaged admin sheet scans only the engine's admin components and the toolkit, so the site's markup never feeds it.
 
 To style the screen, follow these steps:

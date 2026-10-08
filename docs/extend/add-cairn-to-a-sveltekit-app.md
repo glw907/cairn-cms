@@ -4,7 +4,7 @@ cairn is a markdown CMS embedded in a SvelteKit site that runs on Cloudflare Wor
 
 The usual way to start a cairn site is the setup command, `npx create-cairn-site`, which scaffolds a complete starter site with Waymark, cairn's public reading theme, already wired in. For a new site it is the much easier route, since it also creates the GitHub App, the repository, and the Cloudflare bindings and deploys the site, all in one run. [Scaffolded site files](scaffolded-site-files.md) explains what it writes.
 
-Adding cairn by hand, as this tutorial does, serves the readers the setup command leaves out. A developer with an existing SvelteKit app needs it, because the setup command scaffolds only into a missing or empty directory and never adds cairn to an app that already exists. A developer who wants cairn without Waymark can start it from an empty project, since the npm package carries no template and a hand-built site brings its own. A developer curious about what cairn does underneath can read it through without building anything, since the tutorial shows every file the engine needs and why.
+This tutorial adds cairn by hand, for the readers the setup command leaves out. A developer with an existing SvelteKit app needs that route. The setup command scaffolds only into a missing or empty directory and never adds cairn to an app that already exists. A developer who wants cairn without Waymark can start it from an empty project, since the npm package carries no template and a hand-built site brings its own. A developer curious about what cairn does underneath can read the tutorial through without building anything. It shows every file the engine needs and why.
 
 The tutorial carries one example throughout: Field Notes, a site with one post. By the end, Field Notes runs in production, and an editor can sign in, edit the post, and publish it to the deployed site.
 
@@ -451,7 +451,7 @@ The dev backend, `devBackendHandle` from `@glw907/cairn-cms-dev`, replaces the G
 - `@glw907/cairn-cms-dev` installs as a `devDependency`.
 - The guard refuses to serve a production build that has `CAIRN_DEV_BACKEND` set, and the [log events reference](../reference/log-events.md) records that refusal.
 
-Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly. A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker. The hooks module is that call site, and it picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if` that reads the define first and `CAIRN_DEV_BACKEND === '1'` second. The flag test reads `process.env`, because `vite dev` runs the hooks in Node, where the Worker env never carries the shell variable that `npm run dev` sets. It imports `devBackendHandle` dynamically, so a default build never carries it. The `if`'s other branch calls `createAuthGuard()` with no options, which the guard accepts.
+Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly. A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker. The hooks module is that call site, and it picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if` that reads the define first and `CAIRN_DEV_BACKEND === '1'` second. The flag test reads `process.env`. Under `vite dev`, the hooks run in Node, and the Worker env there never carries the shell variable that `npm run dev` sets. The hooks module imports `devBackendHandle` dynamically, so a default build never carries it. The `if`'s other branch calls `createAuthGuard()` with no options, a form the guard accepts.
 
 The site's config sets no `csrf` option, so SvelteKit's origin check runs ahead of every handle on every route, `/admin` included. SvelteKit skips that check under `vite dev`. The guard adds its double-submit token on top of that check. A `'*'` entry in `csrf.trustedOrigins` turns the origin check off on every route, and the `config.csrf-trusted-origins` check of `cairn doctor` warns on it. For the reasoning behind the CSRF design, see the [security model](security-model.md).
 
@@ -657,7 +657,8 @@ To index the content and commit the manifest, follow these steps:
    export const origin = 'http://localhost:5173';
    ```
 
-   The content module also exports `origin`, the local dev origin for now, which the production milestone changes.
+   The content module also exports `origin`.
+   For now it holds the local dev origin, and the production milestone changes it.
 
 2. In `vite.config.ts`, add the `cairnManifest` plugin:
 
@@ -780,7 +781,7 @@ To confirm the rendered entry, follow these steps:
 
 3. Confirm that the post's body renders.
 
-The entry renders as unstyled markup, since the site loads no style sheet yet. The engine ships its public defaults as one style sheet, `@glw907/cairn-cms/cairn-public.css`, which the [public style sheet reference](../reference/public-css.md) documents. Tailwind and daisyUI are optional peers of the engine, so a site installs them only when its pages use them. To style the entry, see [Theme your public site](theme-your-public-site.md#theme-a-hand-built-site).
+The entry renders as unstyled markup, since the site loads no style sheet yet. The engine ships its public defaults as one style sheet, `@glw907/cairn-cms/cairn-public.css`. The [public style sheet reference](../reference/public-css.md) documents it. Tailwind and daisyUI are optional peers of the engine, so a site installs them only when its pages use them. To style the entry, see [Theme your public site](theme-your-public-site.md#theme-a-hand-built-site).
 
 ### Resolve a content build failure
 

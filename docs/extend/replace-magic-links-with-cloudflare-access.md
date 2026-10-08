@@ -16,13 +16,13 @@ roster stays in cairn, so the application decides who reaches the admin and the 
 which of those people may edit. The work spans the site's server hooks and the account's Zero
 Trust settings, so it takes a developer who can change both.
 
-Setting the guard's `identity` option replaces the whole magic-link path, so every editor signs in
-through the gate or none does. Under `identity`, the guard mints no token and sets no session
+Setting the guard's `identity` option replaces the whole magic-link path. Every editor signs in
+through the gate, or none does. Under `identity`, the guard mints no token and sets no session
 cookie, since `identity.resolve` reads the gate's proof of identity and the guard looks the proven
-email up in the roster as it would a magic-link session's email. The free Cloudflare Zero Trust
-plan caps the number of users who authenticate through Access, so an editorial team larger than
-the cap on the [Zero Trust plans page](https://www.cloudflare.com/plans/zero-trust-services/) needs
-a paid plan.
+email up in the roster as it would a magic-link session's email. The free Cloudflare Zero Trust plan
+caps the number of users who authenticate through Access, so an editorial team larger than the cap
+on the [Zero Trust plans page](https://www.cloudflare.com/plans/zero-trust-services/) needs a paid
+plan.
 
 This task assumes that you have edited a SvelteKit server hooks file, deployed a Worker with
 Wrangler, and can read a JWT verification sample closely enough to own the code it becomes. A site

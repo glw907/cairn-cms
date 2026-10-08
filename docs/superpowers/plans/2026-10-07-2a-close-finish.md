@@ -49,6 +49,27 @@ code lane's report, or a `diff-reviewer` read of its range if no report reached 
 emitted audit messages (`border-contrast.ts`, `norms.ts`) match `docs/reference/cairn-audit.md`'s
 samples.
 
+The code lane reported `DONE_WITH_CONCERNS` at `b623ff9a` (pushed). Its `npm run check` and
+component suite are green. Its full `npm test` never ran clean in one pass: one Firefox
+`docs-review-browsers` failure passed in isolation, and the run stopped before the component
+project. F1 therefore also requires these:
+- A `diff-reviewer` read of `b2c2d162..b623ff9a`.
+- One clean `npm test` (the durable-gotchas rerun rule applies).
+- A `make -C tool check` that prints `gate exit: 0`.
+- Three conductor rulings the lane left open, applied before the merge:
+  1. `tool/internal/render/fixtures/fixtures.go` names the consumer sites as sample health-report
+     sites, and the render goldens and reference files are built from it. Replace the sites with
+     generic ids (`my-site`, `docs-site`, and so on) and regenerate the goldens.
+  2. Every audit rule message that prints a `docs/internal/...` path takes the absolute GitHub URL,
+     as `norms.ts` now does: `screen-anatomy.ts`, `one-filled-action.ts:170`,
+     `stock-default-hazards.ts`, `ConceptList.svelte:431-435`, `admin-css-safelist.ts:62`, and
+     `EditorToolbar.svelte`. A `//` comment may keep its path.
+  3. `src/lib/content/ids.ts:28` and its test use "Geoff's" as the apostrophe example. Use a
+     generic name instead ("O'Brien's").
+
+  Test-file comments that name the club, and the `create-cairn-site` package's maintainer comments
+  (which are not shipped), stay as they are.
+
 **F2. Build `check:leaks`.** Outcome: a deterministic check in `check:docs-gate` that also runs in
 CI (pure Node, unlike tellgrader), built to the audit's design: tiers T1 published, T2 shipped
 (skills, claude, chassis, reproductions, CLI messages, TSDoc blocks, template and waymark minus seed

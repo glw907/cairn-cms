@@ -25,8 +25,8 @@ export function filenameFromId(id: string): string {
 }
 
 /**
- * Lowercase a title into a filename-safe slug stem. Apostrophes are dropped so "Geoff's"
- * becomes "geoffs" (no spurious hyphen). All other non-alphanumeric runs collapse to a
+ * Lowercase a title into a filename-safe slug stem. Apostrophes are dropped so "O'Brien's"
+ * becomes "obriens" (no spurious hyphen). All other non-alphanumeric runs collapse to a
  * single hyphen; leading and trailing hyphens are trimmed.
  */
 export function slugify(title: string): string {

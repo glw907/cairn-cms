@@ -1367,7 +1367,8 @@ is a dispatch that returns a structured verdict.
    has one, Vale's error tier run), except on an arm whose stage is in flight or holds no page yet
    (filed, or filed into the facts container) and on a page the running plan freezes (this pass:
    the eleven 2a extend pages, whose small fixes join Task 12's hand-off to pass B's re-arm).
-   Anything larger stays for the stage owning that arm. **Repo tooling** (gates,
+   A larger docs rework moves to a ROADMAP row in the tier where it bites, naming the page and
+   its arm, the same as tooling (Geoff, 2026-10-08). **Repo tooling** (gates,
    scripts, fixtures, tooling comments) is cleared at every pass close: a small fix lands in the
    pass, anything larger moves to a ROADMAP row. The log's header states the three groups, and
    `cairn-pass`'s close step names who clears each. Pass B's own entries stay, grouped, until

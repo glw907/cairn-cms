@@ -1,11 +1,10 @@
 # Roadmap
 
-cairn-cms runs two production sites today, [ecxc.ski](https://ecxc.ski) (formerly ecnordic.ski) and
-[907.life](https://907.life). It is `0.x` and breaks between minor versions; the latest published
+cairn-cms is `0.x` and breaks between minor versions; the latest published
 release is `0.98.0`. The author is still working through the core-feature roadmap, and the project stays
 closely held until that core lands.
 
-This roadmap is a direction, not a commitment. Priorities shift as the production sites surface needs,
+This roadmap is a direction, not a commitment. Priorities shift as consumer sites surface needs,
 and items move up from lower tiers as the core fills in.
 
 **This file is a pass dimension.** A pass that ships a roadmap item marks it done and removes it from the

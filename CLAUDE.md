@@ -146,8 +146,8 @@ friction log, it drifts heavy when work is only ever added, so a pass that remov
 backlog item is not done until the roadmap stops listing it. Shipped history lives in
 `docs/STATUS.md` and the per-plan post-mortems, not in the roadmap.
 
-Four production sites depend on the package, each on its own version range, so a stale doc costs
-real users. cairn.pub renders the doc arms shipped inside the
+Consumer sites depend on the package, each on its own version range, so a stale doc costs the
+developers who build on it. cairn.pub renders the doc arms shipped inside the
 npm tarball from its installed engine version, so its dependency pin is the docs version selector:
 docs on `main` describe `main`'s engine and go public at the next release and pin bump. No
 separate docs deploy, no dev-docs channel (record: cairn-pub `docs/architecture.md`, "Docs

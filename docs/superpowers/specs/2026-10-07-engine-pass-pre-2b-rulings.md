@@ -65,3 +65,7 @@ Geoff's answer, verbatim: "Recomendations accepted for Fork 1 and 2. For Fork 3,
 - **Fork 2** (anonymous `/healthz?live=1` mint): the recommendation is accepted. Yes, with the
   coalesced per-isolate slot and the per-caller timeout.
 - **Fork 3** (pass B ceiling): 14.0M, with the 80 percent stop at 11.2M.
+
+## Spec read (Geoff, 2026-10-08)
+
+Geoff's answer, verbatim: "Spec is good." The spec is approved as written, and execution starts with pass A.

@@ -42,12 +42,7 @@ A new owner's questions about a scaffolded site's files and state fall under the
 - The routes, the theme, the chassis, the content, and the style sheets
 - The settings a new owner edits by hand
 - The build's crawl rules and the themed 404 page
-- The Claude Code guidance and the commands that maintain it
 - The state the setup command left outside the repository
-
-cairn ships its agent guidance only in Claude Code's format, with no `AGENTS.md` and no file for any
-other coding agent, so a developer whose coding agent is not Claude Code has no cairn guidance to
-read yet.
 
 Reading these files takes working knowledge of SvelteKit's project structure (routes, layouts,
 hooks, and prerendering), Vite configuration, and Wrangler configuration for a Worker's bindings and
@@ -77,11 +72,8 @@ created the site's GitHub App, its repository, and its Cloudflare bindings, and 
 so the site arrives already live.
 
 The npm package's `files` list carries neither Waymark nor the chassis, so no engine release ships a
-newer copy of any file in the tree. Owning the tree has the following consequences in practice:
-
-- An engine update arrives through the `@glw907/cairn-cms` dependency and leaves the tree's files as
-  they are.
-- The Claude Code guidance under `.claude/` changes when `npx cairn-guidance install` refreshes it.
+newer copy of any file in the tree. An engine update arrives through the `@glw907/cairn-cms`
+dependency and leaves the tree's files as they are.
 
 A site built by hand from `sv create` starts with neither Waymark nor the chassis, as
 [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) describes. A file the site owns can
@@ -148,11 +140,11 @@ writes, and `[gate]` marks a file a check reads that can fail the build or the C
 ```
 
 The tree shows the entries the following sections cover and leaves out files no section discusses.
-`CLAUDE.md` carries no marker, since `cairn-guidance check` reads it only to report whether it holds
-the import line, a report that never fails the CI run, and `cairn-guidance install` never rewrites
-it. The `[engine]` marker on `.claude/` marks the tree that `cairn-guidance install` writes. Both
-`CLAUDE.md` and `.claude/` are Claude Code's files, which [The guidance tree](#the-guidance-tree)
-explains.
+`CLAUDE.md` and `.claude/` are Claude Code's files, listed under
+[`CLAUDE.md` and `.claude/`](#claudemd-and-claude). `CLAUDE.md` carries no marker, since
+`cairn-guidance check` reads it only to report whether it holds the import line, a report that
+never fails the CI run, and `cairn-guidance install` never rewrites it. The `[engine]` marker on
+`.claude/` marks the tree that `cairn-guidance install` writes.
 
 ## Root files
 
@@ -163,8 +155,8 @@ secrets, the audit's config, and the Claude Code guidance.
 
 The workflow runs `npm install`, `npm run check`, and `npm run check:cairn` on every push and pull
 request. It pins `node-version: 24`, the only Node version the scaffold names, since it ships
-neither an `.nvmrc` nor an `engines` field. Its last step runs `npx cairn-guidance check` under
-`continue-on-error: true`, which [The guidance tree](#the-guidance-tree) explains. The workflow
+neither an `.nvmrc` nor an `engines` field. Its last step reports Claude Code guidance status and
+never fails the job. The [guidance reference](../reference/guidance.md) covers the step. The workflow
 installs no browser, so the `check:cairn:rendered` script cannot run in it.
 
 ### `.dev.vars.example`
@@ -185,10 +177,7 @@ build output in a `.cairn/` directory at the project root, separate from the com
 
 ### `CLAUDE.md` and `.claude/`
 
-Both are Claude Code's files, and cairn ships no guidance for another coding agent. The root
-`CLAUDE.md` imports cairn's packaged guidance fragment and keeps a `# Your site` section
-for the site's guidance. The `.claude/` directory holds the packaged skills, the review agent, and
-the fragment, and [The guidance tree](#the-guidance-tree) covers both.
+These are Claude Code's guidance files, covered in the [guidance reference](../reference/guidance.md).
 
 ### `.gitignore`
 
@@ -529,57 +518,6 @@ Cloudflare's
 [Worker script routing page](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/)
 documents both values. With `"404-page"`, the error page never runs, and without the root error
 page, no layout rebuilds the chrome for an unmatched path.
-
-The `.claude/` directory holds the guidance cairn installs with the scaffold, which Claude Code reads
-and other coding agents do not.
-
-## The guidance tree
-
-A scaffolded site starts with cairn's agent-facing guidance installed under `.claude/` in Claude
-Code's format, and `npx cairn-guidance install` refreshes it after an engine upgrade. cairn writes
-no `AGENTS.md` and no file for another tool, so a developer whose coding agent is not Claude Code
-has no cairn guidance to read yet. The tree is `.claude/skills/`
-with one directory per packaged skill, `.claude/agents/cairn-extension-reviewer.md`, and
-`.claude/cairn/`, which holds `CLAUDE.md`, `VERSION`, and `MANIFEST`. The same command lets a site
-built without the scaffold adopt the tree.
-
-Claude Code loads the four packaged skills for the following work:
-
-- `cairn-admin-screens`, for building or reviewing a screen inside `/admin`
-- `cairn-consult`, for writing a consultation brief after working around an engine behavior twice,
-  or for something the seams do not reach
-- `cairn-extend`, for a change that touches `/admin`, a form action, logging, or an engine seam
-- `cairn-public`, for restyling or extending the public side
-
-The root `CLAUDE.md` is the import line `@.claude/cairn/CLAUDE.md` followed by a `# Your site`
-section for the site's guidance. The `cairn-guidance install` command writes the fragment to
-`.claude/cairn/CLAUDE.md` and never rewrites the root file. The `cairn-guidance check` command
-reports a root `CLAUDE.md` that lacks the import line. A scaffolded site's `VERSION` holds the
-engine dependency spec the template was baked against, with the caret stripped, and is not read from
-an installed copy.
-
-The `cairn-guidance check` command reports seven lines and exits 0 by default, and `--strict` exits
-1 only when the guidance tree itself is stale or missing. The CI workflow's last step runs the check
-without `--strict` and under `continue-on-error: true`, so a stale or missing tree shows in the job
-log, and the check's default exit code of 0 keeps it from failing the CI run. The
-[`check`](../reference/guidance.md#check) section of the guidance reference documents the seven
-lines.
-
-The `cairn-guidance install` command behaves in the following ways:
-
-- It never deletes, and it prints any path an earlier `MANIFEST` listed that the package no longer
-  ships, for the site to remove.
-- It exits 0 even when an entry is refused or a write fails, so a script that must detect a partial
-  install reads stderr.
-- It never writes `.claude/settings.json`, so the Claude Code `Stop` hook that runs
-  `npm run check:cairn --if-present` is a snippet, `claude/snippets/settings-hook.json`, pasted in
-  deliberately.
-
-The [`install`](../reference/guidance.md#install) section of the guidance reference covers how
-`install` treats a file the site edited.
-
-The setup command also saved a record of its run outside the repository, in the home directory of
-whoever ran it.
 
 ## Setup state outside the tree
 

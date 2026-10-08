@@ -8,9 +8,8 @@ import (
 
 // siteConfigStatus enumerates what siteConfig found: whether a candidate path held a file and,
 // if so, whether that file satisfied the parse predicate this package narrows to. It carries no
-// status word of its own: check_siteconfig.go maps it onto config.site-config's status words
-// (pass, fail, unchecked), which keeps the file read and the status decision in separate
-// files.
+// status word of its own: configSiteConfig maps it onto config.site-config's status words (pass,
+// fail, unchecked).
 type siteConfigStatus int
 
 const (
@@ -29,17 +28,14 @@ const (
 type siteConfigOutcome struct {
 	// Status is what siteConfig found.
 	Status siteConfigStatus
-	// Path is the candidate path the file was read from. Empty when Status is
-	// siteConfigNotFound.
-	Path string
 	// Reason explains a siteConfigInvalid outcome: the YAML parse error, or which shape rule
 	// failed. Empty for every other Status.
 	Reason string
 }
 
-// siteConfigPaths returns the four candidate paths a site's site.config.yaml can live at, in
-// lookup order: the canonical path from siteConfigPath, then the three legacy locations older
-// production sites still use. Mirrors src/lib/doctor/checks-local.ts's SITE_CONFIG_PATHS.
+// siteConfigPaths returns the four candidate paths a site's site.config.yaml can live at, in lookup
+// order: the canonical path from siteConfigPath, then the three legacy locations older production
+// sites still use.
 func siteConfigPaths() []string {
 	return []string{
 		siteConfigPath(),
@@ -54,18 +50,15 @@ func siteConfigPaths() []string {
 // root, and a non-empty siteName. It reads no other field of the file: the per-concept URL
 // policy and every other site-config value are out of this check's narrowed scope.
 func (s Snapshot) siteConfig() (siteConfigOutcome, error) {
-	for _, path := range siteConfigPaths() {
-		body, ok, err := s.ReadFile(path)
-		if err != nil {
-			return siteConfigOutcome{}, err
-		}
-		if !ok {
-			continue
-		}
-		status, reason := parseSiteConfigBody(body)
-		return siteConfigOutcome{Status: status, Path: path, Reason: reason}, nil
+	body, _, found, err := s.readFirst(siteConfigPaths())
+	if err != nil {
+		return siteConfigOutcome{}, err
 	}
-	return siteConfigOutcome{Status: siteConfigNotFound}, nil
+	if !found {
+		return siteConfigOutcome{Status: siteConfigNotFound}, nil
+	}
+	status, reason := parseSiteConfigBody(body)
+	return siteConfigOutcome{Status: status, Reason: reason}, nil
 }
 
 // parseSiteConfigBody applies the narrowed predicate to a found file's body: it must parse as

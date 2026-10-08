@@ -6330,7 +6330,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** a site-config defect that reaches production through a preflight that passed,
   which is the evidence that the narrowing costs something real; or a Go-readable schema artifact
   the engine emits, which would make the fuller check a read rather than a port.
-- **Shape:** `ConfigSiteConfig` in `tool/internal/doctor/check_siteconfig.go` holds the status arms
+- **Shape:** `configSiteConfig` in `tool/internal/doctor/check_siteconfig.go` holds the status arms
   alone and `siteconfig.go` owns the read and the parse predicate; a found file that fails the
   predicate fails the check, and no file at any candidate path is `unchecked`, never a fail.
 - **Record:** `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, "Checks", the

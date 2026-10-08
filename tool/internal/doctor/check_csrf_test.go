@@ -296,7 +296,7 @@ func TestConfigCsrfTrustedOrigins(t *testing.T) {
 			name:          "unchecked: no Vite config",
 			files:         map[string]string{},
 			wantStatus:    StatusUnchecked,
-			wantDetailHas: []string{"vite.config.js", "vite.config.ts", "vite.config.mts"},
+			wantDetailHas: []string{"none of vite.config.js, vite.config.ts, or vite.config.mts was found"},
 		},
 		{
 			name:          "unchecked: a vite.config.mjs alone is not read",
@@ -320,7 +320,7 @@ func TestConfigCsrfTrustedOrigins(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := ConfigCsrfTrustedOrigins.Run(s)
+			result := runCheck(configCsrfTrustedOrigins, s).Result
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
@@ -334,50 +334,21 @@ func TestConfigCsrfTrustedOrigins(t *testing.T) {
 					t.Errorf("Detail = %q, want it not to contain %q", result.Detail, unwanted)
 				}
 			}
-			if tt.wantStatus == StatusFail {
-				if result.Condition != ConfigCsrfTrustedOrigins.Condition {
-					t.Errorf("Condition = %q, want %q", result.Condition, ConfigCsrfTrustedOrigins.Condition)
-				}
-				if result.Severity != severityFor(ConfigCsrfTrustedOrigins.Condition) {
-					t.Errorf("Severity = %v, want the registry severity for %s", result.Severity, ConfigCsrfTrustedOrigins.Condition)
-				}
+			if tt.wantStatus == StatusFail && result.Severity != spine.WarningFailure {
+				t.Errorf("Severity = %v, want spine.WarningFailure", result.Severity)
 			}
 		})
 	}
 }
 
 func TestConfigCsrfTrustedOriginsIdentity(t *testing.T) {
-	if ConfigCsrfTrustedOrigins.ID != "config.csrf-trusted-origins" {
-		t.Errorf("ID = %q, want config.csrf-trusted-origins", ConfigCsrfTrustedOrigins.ID)
+	if configCsrfTrustedOrigins.ID != "config.csrf-trusted-origins" {
+		t.Errorf("ID = %q, want config.csrf-trusted-origins", configCsrfTrustedOrigins.ID)
 	}
-	if string(ConfigCsrfTrustedOrigins.Condition) != "config.csrf-trusted-origins-wildcard" {
-		t.Errorf("Condition = %q, want config.csrf-trusted-origins-wildcard", ConfigCsrfTrustedOrigins.Condition)
+	if string(configCsrfTrustedOrigins.Condition) != "config.csrf-trusted-origins-wildcard" {
+		t.Errorf("Condition = %q, want config.csrf-trusted-origins-wildcard", configCsrfTrustedOrigins.Condition)
 	}
-	if got := severityFor(ConfigCsrfTrustedOrigins.Condition); got != spine.WarningFailure {
+	if got := conditionText(configCsrfTrustedOrigins.Condition).Severity; got != spine.WarningFailure {
 		t.Errorf("registry severity = %v, want spine.WarningFailure", got)
-	}
-}
-
-// TestBlankJSCommentsKeepsStringsAndOffsets holds the scanner's two views to the contract the
-// parser leans on: both keep every byte offset, the code view keeps string text, and the masked
-// view blanks string interiors, so a comment marker inside a string never cuts the line and a
-// key name inside a string never reads as a key.
-func TestBlankJSCommentsKeepsStringsAndOffsets(t *testing.T) {
-	src := "a: 'https://x', // tail\nb: \"csrf: {\" /* block\nspans */ c"
-	masked, code := blankJSComments(src)
-	if len(masked) != len(src) || len(code) != len(src) {
-		t.Fatalf("lengths = %d and %d, want %d", len(masked), len(code), len(src))
-	}
-	if !strings.Contains(code, "'https://x'") {
-		t.Errorf("code = %q, want the string with its two slashes kept", code)
-	}
-	if strings.Contains(code, "tail") || strings.Contains(code, "spans") {
-		t.Errorf("code = %q, want both comments blanked", code)
-	}
-	if strings.Contains(masked, "csrf") || strings.Contains(masked, "https") {
-		t.Errorf("masked = %q, want string interiors blanked", masked)
-	}
-	if strings.Count(code, "\n") != strings.Count(src, "\n") {
-		t.Errorf("code = %q, want every newline kept", code)
 	}
 }

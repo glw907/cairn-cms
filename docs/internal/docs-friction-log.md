@@ -73,14 +73,29 @@ New findings start below this line, one per finding, with its perspective and a 
 - **`extender`.** Found by the cairn-themes Survey S1 viewport grade (visual-verifier, 2026-10-07; verified by the conductor against daisyUI 5.7.47). daisyUI 5 has no theme variable for a form field's ground: `.input` and `.select` paint on `--color-base-100`, so a theme whose fields sit on their own ground (Survey's white light fields and sunken dark fields) must add a component override, and `cairn-public.css` offers no `--cairn-*` role for it. `theme-contrast` therefore never measures field text on the real field ground. The same holds for a field's resting border: daisyUI draws input, select, and textarea borders in `base-200` and the checkbox and radio ring in a 20% `base-content` mix, all under the 3:1 that WCAG 1.4.11 asks of a control boundary (Survey measured 1.36:1 and 1.48:1; its close-time a11y review caught both, and no `cairn-audit` rule did). `border-contrast` would, but `--rendered` drives a running admin, so a public theme's controls are never measured. A fix adds field-ground and field-border roles to the public theme contract, mapped onto `.input`, `.select`, `.textarea`, `.checkbox`, and `.radio` in `cairn-public.css`, plus `theme-contrast` pairs for field text on the field ground and the field border against `base-100` at 3:1.
 - **`extender`.** Found by the cairn-themes Survey S1 viewport grades, rounds 1 and 2 (visual-verifier, 2026-10-07; verified by the conductor in `daisyui/components/*.css` 5.7.47). daisyUI 5 ignores `--color-base-300` for most component borders: `card-border`, `input`, `select`, and `textarea` hard-wire `--color-base-200`, and `.list-row` draws its divider in `color-mix(in oklab, var(--color-base-content) 5%, transparent)`. A theme whose border role is `base-300` gets frames that nearly vanish on `base-100`, and finds them one grader round at a time (Survey needed two). A fix maps these component borders onto one border role in `cairn-public.css`, or at least lists the components and the override recipe in the re-skin docs, so each theme stops rediscovering them.
 
-- **`go`.** `tool/internal/doctor` (graded "workmanlike" by the SvelteKit 3 pass's close `go-architecture-reader`,
-  2026-10-06) carries pre-existing debt the pass did not cause: eleven exported check values plus `Snapshot.ReadFile`,
-  the `RobotsAbsent*` constants, and `doctor.Results` have no caller outside the package (unexport them; `Verdicts`
-  can take `[]CheckedResult`); `check_origin.go`'s `isLocal` and `check_csrf.go`'s `isLocalOrigin` disagree on `::1`;
-  `labelFor`, `severityFor`, and `conditionText` triplicate one lookup; `resultFromFloorsVerdict` rebuilds `failResult`;
-  three loops each read the first existing file; `siteConfigOutcome.Path` and `Snapshot.At` are test-only; about 55
-  comment lines cite deleted TypeScript files by line range (`checks-local.ts` and siblings). Also `spine.Conditions()`
-  is test-only behind a "2.0 seam" comment. A tool cleanup pass, not a SvelteKit concern.
+- **`engine`.** `requireOrigin` (`src/lib/env.ts`) treats `localhost` and `127.0.0.1` as local but not `::1`,
+  the IPv6 loopback (RFC 4291 section 2.5.3), so a `PUBLIC_ORIGIN` of `http://[::1]:5173` throws
+  `config.public-origin-invalid`. An engine pass decides whether to add `::1` to its local test; the doctor's
+  `isLoopbackHost` (`tool/internal/doctor/check_origin.go`) mirrors the engine's set and follows the decision.
+  The engine already disagrees with itself here: `csrfSecure` reads `isLocalHost` (`src/lib/dev-flag.ts`), which
+  counts `::1` as local (`f:g22dnw`), so an `http://[::1]` dev server gets bare cookie names from `csrfSecure` and a
+  throw from `requireOrigin`. Found by the `tool/internal/doctor` cleanup lane, 2026-10-07.
+- **`go`.** The package grade of `tool/internal/doctor` after its cleanup lane (2026-10-07) named four findings the
+  lane's one fix round left, since each reaches past the lane's changed code or is optional. First, the command's
+  `resolvePublicOrigin` (`tool/cmd/cairn/doctor.go:136`) applies the vars-over-environment precedence the doctor
+  package owns (`OriginSource`), so `ReadWranglerConfig` and `WranglerFacts` stay exported for it alone; a
+  `doctor.ResolvePublicOrigin(s, envOrigin)` in `snapshot.go` would unexport both. Second, three checks restate the
+  facts-file preamble (`check_media.go:31`, `check_roles.go:105`, `check_posture.go:286`) and three the wrangler
+  preamble (`check_bindings.go:31`, `check_observability.go:18`, `check_media.go:41`); a helper returning
+  `(siteFacts, *Result)` is optional. Third, `siteconfigpath.go` (49 lines, one reader) could merge into
+  `siteconfig.go`, and `IsCairnSite` (`fileread.go:85`) sits more naturally beside `NewSnapshot` in `snapshot.go`.
+  Fourth, the comment at `json.go:82-84` restates the empty-array choice that `checkPayload`'s doc and the schema
+  carry. Found by the lane's package grade (2026-10-07).
+- **`facts`.** `check:facts` never checks a Go `Source:` pointer: `POINTER_RE`
+  (`scripts/checks/check-facts.mjs:350-351`) lists no `go` extension, so a `.go` `path:line` is neither resolved nor
+  range-checked. The doctor cleanup lane's diff review found four doctor cites past the end of `check_referrer.go`
+  that the gate passed. Adding `go` to the extension list brings Go pointers under the existing path and range
+  checks. Found by the `tool/internal/doctor` cleanup lane's review, 2026-10-07.
 - **`extend`.** SvelteKit 3 remote functions (`/_app/remote/...`) are not `/admin` paths, so a site-built admin
   remote command gets no guard session, no Rule 1 token check, and no security headers (Kit's `is_remote_forbidden`
   gives same-origin protection only). The extend arm should say a site-built admin remote function resolves the

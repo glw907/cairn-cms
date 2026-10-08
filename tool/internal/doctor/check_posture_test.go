@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
 // snapshotForPosture builds a Snapshot carrying factsJSON at site-facts.json (when non-empty)
@@ -32,14 +34,14 @@ func TestAIPostureEffectiveDeclaredMatchesServed(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1, "aiPosture": "decline"}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := AIPostureEffective.Run(s)
+	result := aiPostureEffective.Run(s)
 	if result.Status != StatusPass {
 		t.Fatalf("Status = %v, want StatusPass (detail %q)", result.Status, result.Detail)
 	}
 }
 
-// TestAIPostureEffectiveDeclaredDoesNotMatchServed asserts a declared posture the served file
-// does not carry fails: the one case checks-local's port fails on.
+// TestAIPostureEffectiveDeclaredDoesNotMatchServed asserts a declared posture the served file does
+// not carry fails.
 func TestAIPostureEffectiveDeclaredDoesNotMatchServed(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("User-agent: *\nAllow: /\nContent-Signal: ai-train=no\n"))
@@ -47,12 +49,12 @@ func TestAIPostureEffectiveDeclaredDoesNotMatchServed(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1, "aiPosture": "invite"}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := AIPostureEffective.Run(s)
+	result := runCheck(aiPostureEffective, s).Result
 	if result.Status != StatusFail {
 		t.Fatalf("Status = %v, want StatusFail (detail %q)", result.Status, result.Detail)
 	}
-	if result.Condition != AIPostureEffective.Condition {
-		t.Errorf("Condition = %q, want %q", result.Condition, AIPostureEffective.Condition)
+	if result.Severity != spine.WarningFailure {
+		t.Errorf("Severity = %v, want spine.WarningFailure", result.Severity)
 	}
 }
 
@@ -65,7 +67,7 @@ func TestAIPostureEffectiveNoDeclaredNoDirectives(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := AIPostureEffective.Run(s)
+	result := aiPostureEffective.Run(s)
 	if result.Status != StatusPass {
 		t.Fatalf("Status = %v, want StatusPass (detail %q)", result.Status, result.Detail)
 	}
@@ -81,7 +83,7 @@ func TestAIPostureEffectiveManagedLayerTwoUserAgentStarGroups(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := AIPostureEffective.Run(s)
+	result := aiPostureEffective.Run(s)
 	if result.Status != StatusPass {
 		t.Fatalf("Status = %v, want StatusPass (detail %q)", result.Status, result.Detail)
 	}
@@ -99,7 +101,7 @@ func TestAIPostureEffectiveForeignContentSignal(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := AIPostureEffective.Run(s)
+	result := aiPostureEffective.Run(s)
 	if result.Status != StatusPass {
 		t.Fatalf("Status = %v, want StatusPass (detail %q)", result.Status, result.Detail)
 	}
@@ -117,7 +119,7 @@ func TestAIPostureEffectiveNon200(t *testing.T) {
 	defer srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Value: srv.URL, Source: OriginFromEnv})
-	result := AIPostureEffective.Run(s)
+	result := aiPostureEffective.Run(s)
 	if result.Status != StatusUnchecked {
 		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
 	}
@@ -134,7 +136,7 @@ func TestAIPostureEffectiveUnreachableOrigin(t *testing.T) {
 	srv.Close()
 
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Value: closedURL, Source: OriginFromEnv})
-	result := AIPostureEffective.Run(s)
+	result := aiPostureEffective.Run(s)
 	if result.Status != StatusUnchecked {
 		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
 	}
@@ -148,7 +150,7 @@ func TestAIPostureEffectiveUnreachableOrigin(t *testing.T) {
 // check did not observe rather than that it did not apply.
 func TestAIPostureEffectiveNoOriginAtAll(t *testing.T) {
 	s := snapshotForPosture(t, `{"version": 1}`, PublicOrigin{Source: OriginAbsent})
-	result := AIPostureEffective.Run(s)
+	result := aiPostureEffective.Run(s)
 	if result.Status != StatusUnchecked {
 		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
 	}
@@ -176,8 +178,8 @@ func TestFetchRobotsRedirectIsNotFollowed(t *testing.T) {
 	if got.Present {
 		t.Fatalf("Present = true, want false (a redirect is not followed)")
 	}
-	if got.Reason != RobotsAbsentNonOK {
-		t.Errorf("Reason = %v, want RobotsAbsentNonOK", got.Reason)
+	if got.Reason != robotsAbsentNonOK {
+		t.Errorf("Reason = %v, want robotsAbsentNonOK", got.Reason)
 	}
 	if targetHits != 0 {
 		t.Errorf("redirect target was hit %d times, want 0", targetHits)
@@ -191,8 +193,8 @@ func TestFetchRobotsFileSchemeIsUnknown(t *testing.T) {
 	if got.Present {
 		t.Fatal("Present = true, want false for a file:// origin")
 	}
-	if got.Reason != RobotsAbsentUnparsedOrigin {
-		t.Errorf("Reason = %v, want RobotsAbsentUnparsedOrigin", got.Reason)
+	if got.Reason != robotsAbsentUnparsedOrigin {
+		t.Errorf("Reason = %v, want robotsAbsentUnparsedOrigin", got.Reason)
 	}
 }
 
@@ -244,7 +246,7 @@ func TestFetchRobotsNoOrigin(t *testing.T) {
 	if got.Present {
 		t.Fatal("Present = true, want false")
 	}
-	if got.Reason != RobotsAbsentNoOrigin {
-		t.Errorf("Reason = %v, want RobotsAbsentNoOrigin", got.Reason)
+	if got.Reason != robotsAbsentNoOrigin {
+		t.Errorf("Reason = %v, want robotsAbsentNoOrigin", got.Reason)
 	}
 }

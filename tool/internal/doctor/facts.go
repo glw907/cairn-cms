@@ -53,7 +53,7 @@ type siteFactsFile struct {
 // refusal, a JSON parse failure, or a version other than siteFactsSupportedVersion, each naming
 // the file so an operator knows which one to regenerate with cairn-manifest.
 func readSiteFacts(s Snapshot) (facts siteFacts, found bool, err error) {
-	body, ok, err := s.ReadFile(siteFactsRelPath)
+	body, ok, err := s.readFile(siteFactsRelPath)
 	if err != nil {
 		return siteFacts{}, false, err
 	}

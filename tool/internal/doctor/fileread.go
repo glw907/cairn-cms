@@ -20,9 +20,8 @@ const cairnModule = "@glw907/cairn-cms"
 // exist or is a dangling symlink; err is non-nil for a containment refusal or any other read
 // failure, a permission-denied file included.
 //
-// Ported whole from the stronger containment form in src/lib/media-seed/bin.ts (isWithin,
-// realpathNearestAncestor, and the two checks their caller makes), not the doctor's own weaker
-// textual-prefix form.
+// The containment form is the stronger one in src/lib/media-seed/bin.ts (isWithin,
+// realpathNearestAncestor, and the two checks their caller makes), not a textual prefix test.
 func readUnder(dir, relPath string) (body []byte, ok bool, err error) {
 	candidate := filepath.Join(dir, relPath)
 	if !contains(dir, candidate) {

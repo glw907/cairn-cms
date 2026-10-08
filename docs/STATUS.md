@@ -23,6 +23,12 @@ Finish stage 2a's close: [`superpowers/plans/2026-10-07-2a-close-finish.md`](sup
 dotfiles). It carries Geoff's 2026-10-07 rulings from his live page read. Then the engine-pass
 brainstorm (prompt below), the first slot on the path in `ROADMAP.md`'s boundary-test entry.
 
+**Checkpoint (F3, 2026-10-07):** F1, F2, F3, and F6 are accepted. F1 merged `leak-cleanup` (`6a70471e`) and
+its worktree is gone. F2's `check:leaks` passes after one review fix round on its marker scope.
+F3 brought tellgrader to zero findings over 47 pages (`89c44122`, `6a1692e1`), with the full
+`check:docs-gate` green. Dotfiles are pushed (`c22a096`). Friction is filed on `main` (`2f4ef9d8`,
+unpushed). Next: F4 (close review), then F5.
+
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
   majors (`trig_01UCoKqxRXVwAfMdnF913E4v`); remote functions reaching stable

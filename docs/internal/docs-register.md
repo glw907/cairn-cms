@@ -3,7 +3,7 @@
 This document is the agent-facing standard for cairn's published documentation, its front door,
 and the other public surfaces the table in "The base guides" names. Geoff ratified it on
 2026-07-18 (spec: `docs/superpowers/specs/2026-07-18-docs-register-standard-design.md`), and the
-specimen history lives in the `cairn-pub-front-page-voice` memory. Pass D (2026-08-14) organized
+specimen history lives in the front-page-voice memory. Pass D (2026-08-14) organized
 it around the four audience tracks the rebuild ships
 ([`2026-08-14-pass-d-target-manifest.md`](./record/2026-08-14-pass-d-target-manifest.md) names the
 target page set; a page count belongs there, since a number in this document rots). The
@@ -983,6 +983,7 @@ audience lands, and they carry the whole cairn story.
   examples of the kinds of things a developer could build on cairn's seams: member signups,
   reservations, rosters, event and program management, and other member-facing tools for a
   small organization. Examples state what could be built; they never pitch.
+<!-- leak-ok-begin: C1,C2 -- the rule quotes the leaked vocabulary and the owner's words to forbid them -->
 - **Examples are generic and likely to apply to many organizations.** Use a `staff` role, a
   members area, signups, an events screen. No example carries a consumer site's domain: its
   organization type, its people, or its vocabulary, such as clubs, instructors, classes, or
@@ -994,6 +995,7 @@ audience lands, and they carry the whole cairn story.
   Where the heck does that come from?"; "If this relates to the ASC's site, an implementer will
   have ZERO context."; "Staff is fine. Examples should be generic and likely to apply to many
   organizations."
+<!-- leak-ok-end -->
 - **Stack reasoning is welcome.** Explaining why cairn uses SvelteKit, DaisyUI, and
   Cloudflare is in-register here, in short form; the full argument, including the honest
   trade-offs, stays in `docs/why-cairn.md`.

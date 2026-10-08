@@ -7,6 +7,8 @@ description: Build or change anything in a cairn site that touches /admin, a for
 
 ## The DaisyUI question
 
+<!-- leak-ok-begin: C3 -- names a maintainer doc by path; the router paragraph below states these paths live in the cairn-cms source repository -->
+
 Ask this before writing any admin markup, not after: does DaisyUI already ship this component,
 and if a home-grown one is the answer instead, is there a dated ruling in
 `docs/internal/engine-rulings.md` recording the DaisyUI defect that forces it? A home-grown
@@ -14,10 +16,14 @@ component the ledger does not explain is a finding to raise, not a pattern to co
 `references/daisyui-first.md` carries the current answer for every place cairn's own admin
 already diverges from stock DaisyUI, and why.
 
+<!-- leak-ok-end -->
+
 Restyling the public site (a theme token, `prose.css`, a directive's rules, a public component) is
 `cairn-public`, not a row below.
 
 ## The router
+
+<!-- leak-ok-begin: C3 -- this paragraph discloses that the paths live in the cairn-cms source repository, not in the installed package -->
 
 Each row names a pattern, the atom that builds it, the seam it lives behind, and the reference
 page that documents it. The `docs/internal/facts/extend.md`,
@@ -26,6 +32,8 @@ and its references cite live in the cairn-cms source repository
 (https://github.com/glw907/cairn-cms), not in the installed package; look them up there. So does
 `examples/showcase`, whose routes back each recipe below and open with an `Archetype:`/`Atoms:`/
 `Recipe:` header naming the pattern and the engine calls it proves.
+
+<!-- leak-ok-end -->
 
 | Building | Atom | Seam | Reference |
 |---|---|---|---|

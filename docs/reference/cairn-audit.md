@@ -606,11 +606,11 @@ card  (container)  .card-shell
 
   background-color  var(--color-base-100)  15 sites  observed
   border-color  var(--cairn-card-border)  15 sites  ratified
-    ratified by the --cairn-card-border hairline measures 1.11 against the ambient beside it and 1.19
-    against the card's own fill in light, 1.43 and 1.20 in dark, and stays by design. The
-    border-contrast rule applies a house floor of 3:1, the number WCAG 1.4.11 sets for a
-    control-identifying boundary rather than for a card hairline, and exempts this one on the better
-    of its two ratios against a documented floor of 1.15
+    ratified by the card-shell hairline decision: --cairn-card-border measures 1.11 against the
+    ambient beside it and 1.19 against the card's own fill in light, 1.43 and 1.20 in dark, and
+    stays by design. The border-contrast rule applies a house floor of 3:1, the number WCAG 1.4.11
+    sets for a control-identifying boundary rather than for a card hairline, and exempts this one on
+    the better of its two ratios against a documented floor of 1.15
   border-radius  8px  15 sites  ratified
     ratified by https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-box)
 ```

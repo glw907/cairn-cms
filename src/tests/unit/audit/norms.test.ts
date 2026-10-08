@@ -494,6 +494,12 @@ describe('the query', () => {
     expect(printed).toContain('ratified by');
   });
 
+  it('words the card-border reference as a noun phrase that reads after "ratified by"', () => {
+    const printed = formatNormsQuery(queryNorms(manifest, 'card'));
+    expect(printed).toContain('ratified by the card-shell hairline decision: --cairn-card-border measures 1.11');
+    expect(printed).not.toContain('ratified by the --cairn-card-border hairline measures');
+  });
+
   // The shipped manifest carries no open question once Ruling 2 settled the last one, so the
   // OPEN: line is proved against a fixture question rather than the manifest's live contents, the
   // same reasoning FIXTURE_OPEN_QUESTION exists for above.

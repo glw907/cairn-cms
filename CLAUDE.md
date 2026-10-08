@@ -269,7 +269,8 @@ Map the symptom to its event: a sign-in failure points at a send-failure or guar
 (check `reason`); a save that does nothing points at a commit failure (`conflict` is a stale-edit
 collision, `error` is the GitHub failure). On Cloudflare, Workers Logs is the query surface
 (`observability.enabled = true` in `wrangler.jsonc`; filter by `event` or `editor`). Records carry
-an editor's email, never a token or session id, so a log is safe to read and paste.
+an editor's email, never a token or session id, so a log is safe to read; check a record before
+pasting it in public, since the email identifies the editor.
 
 A pass adding a diagnosable code path gives it an event in the vocabulary, not a bare `console`
 call, and updates the reference table in the same pass. `createLogger` is public from the `/log`

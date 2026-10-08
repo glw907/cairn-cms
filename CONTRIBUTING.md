@@ -93,6 +93,46 @@ which invariant broke, not that the gate is wrong:
 - Every map key must still be cited by a real `CHANGELOG.md` link. If one isn't, the entry
   answers for nothing; delete it rather than carrying a rule nothing reaches.
 
+## How the docs stay true
+
+The published docs rest on a record of checked claims, and three gates hold the docs to the code.
+A change to public behavior files its part of that record in the same pull request.
+
+- **The facts container.** `docs/internal/facts/` holds one bullet per claim about cairn, split by
+  docs track. Each bullet carries a fixed id, a `Source:` that points at the code or the vendor
+  page that proves it, and one status tag.
+  [`docs/internal/facts/README.md`](./docs/internal/facts/README.md) defines the format and the tags.
+- **Page briefs.** Each rebuilt page has a brief under `docs/internal/briefs/` that lists every
+  sentence on the page with the fact ids it rests on.
+- **The option map.** `docs/internal/option-map.json` gives every public option path one row: a
+  fact id, `exclude` with a reason, or `pending` with the slug of the page that documents it next.
+
+The gates check each part:
+
+- `npm run check:facts` checks every bullet's id, tag, and `Source:` pointer, and fails on a
+  pointer that names a missing file or an out-of-range line.
+- `npm run check:provenance` checks that every page sentence appears in its brief and cites a fact
+  whose tag makes it citable.
+- `npm run check:options` regenerates the option paths from the built type declarations and fails
+  when the map and the paths disagree, so an option can't ship without a row.
+
+`npm run check:docs-gate` runs these three with the rest of the docs checks. CI runs the same
+script.
+
+To pass the docs gate, file these in the same change:
+
+- If you change public behavior, add or correct its fact bullet, and update the reference page
+  when the behavior is public API. Mint a new bullet's id with
+  `node scripts/checks/check-facts.mjs --mint`, and never change an existing id.
+- If you move or rewrite code that a bullet cites, retarget that bullet's `Source:`.
+- If you add, rename, or remove a public option, update its row in the option map. A new option
+  gets a fact id, or an `exclude` row when a developer never sets it.
+- If you edit a page that has a brief, update the brief's sentences in the same change.
+
+The maintainer's page chain drafts the rebuilt narrative pages. It's a set of agent workflows kept
+in the maintainer's own tooling, and you don't need it to contribute. A change touches only the
+facts, the map, the briefs, and the gates this section names.
+
 ## Conventions a change is held to
 
 - Write the failing test first. Tests live under `src/tests/{unit,integration,component}/`,

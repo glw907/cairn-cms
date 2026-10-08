@@ -183,6 +183,33 @@
   `deliver` throws, the cleanup that deletes the pending row and refunds the send charge now logs
   `auth.channel.send_cleanup_failed` if it fails in turn, instead of leaving an unobserved rejection.
 
+### Documentation
+
+- **The extend arm's first 11 rebuilt pages ship, with an interim index.** Each page is drafted
+  from the facts container and checked sentence by sentence against it:
+  `docs/extend/security-model.md`, `add-cairn-to-a-sveltekit-app.md`,
+  `add-a-custom-admin-screen.md`, `replace-magic-links-with-cloudflare-access.md`,
+  `architecture.md`, `theme-your-public-site.md`, `scaffolded-site-files.md`,
+  `restrict-admin-access.md`, `add-a-second-sign-in-group.md`, `rotate-the-github-app-key.md`,
+  and `debug-your-site.md`. `docs/extend/README.md` is an interim index that lists only the pages
+  in place so far. The pages describe the SvelteKit 3 engine. The other 14 extend pages land with
+  stage 2b.
+- **Five removed extend paths are absorbed into rebuilt pages.** `docs/extend/data-tiers.md` is
+  now the state section of `architecture.md`. `build-a-site-by-hand.md` is now
+  `add-cairn-to-a-sveltekit-app.md`. `animate-a-custom-screen.md` is now the motion section of
+  `add-a-custom-admin-screen.md`. `auth-channel-security-model.md` and `render-safety.md` are now
+  sections of `security-model.md`. Four renamed paths also have successors:
+  `what-the-scaffold-wrote.md` is `scaffolded-site-files.md`, `design-your-site.md` is
+  `theme-your-public-site.md`, `sign-in-through-your-organization.md` is
+  `replace-magic-links-with-cloudflare-access.md`, and `add-a-second-audience.md` is
+  `add-a-second-sign-in-group.md`.
+- The reference arm takes the corrections the rebuild surfaced. `docs/reference/log-events.md`
+  corrects its `admin.action.csrf_refused` and `admin.action.misconfigured` rows, and
+  `docs/reference/sveltekit.md` and `docs/reference/auth-channel.md` correct the `Env` and
+  `vocabularySaveAction` claims.
+
+  Consumers must: nothing.
+
 ### Dependencies
 
 - The October sweep takes every minor and patch (`docs/internal/record/2026-10-07-dependency-sweep.md`).

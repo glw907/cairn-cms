@@ -18,7 +18,7 @@ this file's user-facing content land once the button flow has been verified live
      release. 0.95.0 was expected to retire it, but the tool is held on four first-run defects and
      the live button spike that supplies this file's replacement content is unrun, so dropping the
      notice now would promise a Deploy button that does not exist. Retire it in the same change
-     that publishes the tool. Filed in ROADMAP.md beside those defects.
+     that publishes the tool.
 
      The button URL this file will carry points at the subdirectory, the shape Cloudflare's own
      template gallery uses:

@@ -50,7 +50,7 @@ export function formatCivilDate(iso: string | null | undefined, options: FormatC
 export interface FormatTimestampOptions {
   /**
    * An IANA time zone name. Defaults to `'UTC'`, the neutral zone a Cloudflare Worker's own
-   * runtime already reads in; a site passes its own zone (a club's Anchorage, say) explicitly
+   * runtime already reads in; a site passes its own zone (`'America/Denver'`, say) explicitly
    * rather than inheriting one from this formatter.
    */
   timeZone?: string;
@@ -111,15 +111,14 @@ export function formatTimestamp(input: string | null | undefined, options: Forma
 }
 
 /**
- * A count-line noun in both grammatical numbers, graduated from a consumer site's own formatter
- * (the "1 households" defect: a bare plural noun reads wrong at exactly one). `one`
- * is the singular form, used when the count is exactly 1; `many` is the plural, used for every
- * other count, zero included ("0 households").
+ * A count-line noun in both grammatical numbers (the "1 signups" defect: a bare plural noun
+ * reads wrong at exactly one). `one` is the singular form, used when the count is exactly 1;
+ * `many` is the plural, used for every other count, zero included ("0 signups").
  */
 export interface ItemLabel {
   /** The singular noun, used when the count is exactly 1. */
   one: string;
-  /** The plural noun, used for every other count, zero included ("0 households"). */
+  /** The plural noun, used for every other count, zero included ("0 signups"). */
   many: string;
 }
 
@@ -128,7 +127,7 @@ export interface ItemLabel {
  * also accepts a plain string, which is invariant across every count -- the original `Pagination`/
  * `ListToolbar` contract's behavior, unchanged, for a caller that has not opted into grammatical
  * number. `Pagination`'s range line and `ListToolbar`'s count line both route through this, so the
- * "1 households" defect class has a single fix point.
+ * "1 signups" defect class has a single fix point.
  */
 export function itemNoun(count: number, label: string | ItemLabel): string {
   if (typeof label === 'string') return label;

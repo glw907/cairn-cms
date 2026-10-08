@@ -1,1 +1,13 @@
-[]
+[
+  "docs/extend/security-model.md",
+  "docs/extend/add-cairn-to-a-sveltekit-app.md",
+  "docs/extend/add-a-custom-admin-screen.md",
+  "docs/extend/replace-magic-links-with-cloudflare-access.md",
+  "docs/extend/architecture.md",
+  "docs/extend/theme-your-public-site.md",
+  "docs/extend/scaffolded-site-files.md",
+  "docs/extend/restrict-admin-access.md",
+  "docs/extend/add-a-second-sign-in-group.md",
+  "docs/extend/rotate-the-github-app-key.md",
+  "docs/extend/debug-your-site.md"
+]

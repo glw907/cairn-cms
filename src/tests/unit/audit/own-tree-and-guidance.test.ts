@@ -8,7 +8,7 @@
 // A guidance fence is parsed after two normalizations a fence may legitimately rely on for
 // readability: an elided expression `{...}` reads as `{_}`, and a line holding only `...` is
 // dropped. Each fence is also prefixed with `<script lang="ts"></script>` so a TypeScript
-// snippet parameter (`{#snippet panel(datum: HouseholdListRow)}`) parses. A fence that still
+// snippet parameter (`{#snippet panel(datum: SignupListRow)}`) parses. A fence that still
 // does not parse fails this test naming its file and line; it is never skipped.
 //
 // One stated exemption: stock-default-hazards's guarded-retirement arm (identified by its own

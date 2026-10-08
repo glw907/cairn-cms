@@ -240,8 +240,8 @@ func TestAuthCheckPrintsCredentialSourcesNeverValues(t *testing.T) {
 // the run exits 0.
 func TestAuthCheckAllConfirmedWithSiteExitsOK(t *testing.T) {
 	env := testEnv()
-	dir := openTestRegistry(t, map[string]testSite{"ecxc-ski-abc123": {owner: "glw907", repo: "ecxc-ski"}})
-	rt := mergeRoutes(cloudflareOKRoutes(), cloudflareZoneRoutes(), githubOKRoutes("glw907", "ecxc-ski"))
+	dir := openTestRegistry(t, map[string]testSite{"my-site-abc123": {owner: "glw907", repo: "my-site"}})
+	rt := mergeRoutes(cloudflareOKRoutes(), cloudflareZoneRoutes(), githubOKRoutes("glw907", "my-site"))
 
 	var code int
 	cmd := newAuthCheckCmd(checkDeps(env, rt, func() (string, error) { return dir, nil }, func(c int) { code = c }))
@@ -249,7 +249,7 @@ func TestAuthCheckAllConfirmedWithSiteExitsOK(t *testing.T) {
 	cmd.SetOut(&out)
 	cmd.SetErr(&bytes.Buffer{})
 
-	code = runCheck(t, cmd, "ecxc-ski-abc123")
+	code = runCheck(t, cmd, "my-site-abc123")
 	if code != int(spine.VerdictOK) {
 		t.Fatalf("exit code = %d, want OK; output:\n%s", code, out.String())
 	}
@@ -268,10 +268,10 @@ func TestAuthCheckAllConfirmedWithSiteExitsOK(t *testing.T) {
 // holds the permission reads pass rather than the not-found a hardcoded main would produce.
 func TestAuthCheckContentsReadsTheSitesOwnDefaultBranch(t *testing.T) {
 	const branch = "trunk"
-	dir := openTestRegistry(t, map[string]testSite{"ecxc-ski-abc123": {owner: "glw907", repo: "ecxc-ski", branch: branch}})
+	dir := openTestRegistry(t, map[string]testSite{"my-site-abc123": {owner: "glw907", repo: "my-site", branch: branch}})
 	rt := refRoundTripper{
-		base:         mergeRoutes(cloudflareOKRoutes(), cloudflareZoneRoutes(), githubOKRoutes("glw907", "ecxc-ski")),
-		contentsPath: "/repos/glw907/ecxc-ski/contents/package.json",
+		base:         mergeRoutes(cloudflareOKRoutes(), cloudflareZoneRoutes(), githubOKRoutes("glw907", "my-site")),
+		contentsPath: "/repos/glw907/my-site/contents/package.json",
 		wantRef:      branch,
 	}
 
@@ -281,7 +281,7 @@ func TestAuthCheckContentsReadsTheSitesOwnDefaultBranch(t *testing.T) {
 	cmd.SetOut(&out)
 	cmd.SetErr(&bytes.Buffer{})
 
-	code = runCheck(t, cmd, "ecxc-ski-abc123")
+	code = runCheck(t, cmd, "my-site-abc123")
 	if code != int(spine.VerdictOK) {
 		t.Fatalf("exit code = %d, want OK; output:\n%s", code, out.String())
 	}

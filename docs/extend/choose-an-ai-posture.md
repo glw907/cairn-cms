@@ -10,14 +10,14 @@ scaffold writes.
 
 The choice is among three states of the adapter's optional `aiPosture` member: `'decline'`,
 `'invite'`, or unset, which is the default. A declining site adds a `Content-Signal: ai-train=no`
-line and appends a `User-agent`/`Disallow: /` group for each token in the engine's
-training-crawler table. That line leaves the `search` key unset, since an absent key in
-Cloudflare's [Content Signals Policy](https://blog.cloudflare.com/content-signals-policy/) states
-no preference. An inviting site adds `Content-Signal: search=yes, ai-train=yes` and nothing else,
-because no `robots.txt` directive grants a crawler access. An unset posture adds no
+line and appends a `User-agent`/`Disallow: /` group for each token in the engine's training-crawler
+table. That line leaves the `search` key unset, since an absent key in Cloudflare's [Content Signals
+Policy](https://blog.cloudflare.com/content-signals-policy/) states no preference. Because no
+`robots.txt` directive grants a crawler access, an inviting site adds
+`Content-Signal: search=yes, ai-train=yes` and nothing else. An unset posture adds no
 `Content-Signal` line and no crawler groups, so the file is byte-identical to that of a site that
-never declared a posture. The scaffold leaves `aiPosture` unset on
-purpose, so a scaffolded site states nothing until you choose.
+never declared a posture. The scaffold leaves `aiPosture` unset on purpose. A scaffolded site states
+nothing until you choose.
 
 A `robots.txt` file cannot block a fetch, so `'decline'` reaches only crawlers whose operators
 honor it. The [`buildRobots`](../reference/delivery-data.md#buildrobots) entry records which
@@ -58,8 +58,8 @@ its own:
 // src/routes/robots.txt/+server.ts
 import type { RequestHandler } from './$types';
 import { robotsResponse } from '@glw907/cairn-cms/delivery';
-import { siteMeta } from '$chassis/content.js';
-import { cairn } from '$theme/cairn.config.js';
+import { siteMeta } from '#chassis/content.js';
+import { cairn } from '#theme/cairn.config.js';
 
 export const prerender = true;
 

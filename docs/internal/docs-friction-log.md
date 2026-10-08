@@ -49,92 +49,24 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-- **`package`.** `@glw907/cairn-cms-dev` ships `.ts` source, and a consumer's `svelte-check` type-checks it through
-  the dynamic import (`skipLibCheck` covers only `.d.ts`): on a fresh SvelteKit 3 scaffold it reports `Cannot find
-  module 'cloudflare:workers'` at `src/handle.ts:14`, plus `node:sqlite` in `channel-db.ts` until `@types/node` loads.
-  Found by the 2a unattended run's add-cairn re-test (R4, conductor, 2026-10-07). Ship `.d.ts` or `.js` plus types.
-- **`engine`.** The stale-manifest build error tells the reader to run `npm run cairn:manifest`, a script a site that
-  follows `add-cairn-to-a-sveltekit-app` does not have; the page uses `npx cairn-manifest`. Name the bin in the
-  message. Found by the R4 re-test (conductor, 2026-10-07).
-- **`tooling`.** `npm run link:consumer` refuses a site whose `package.json` declares neither engine package ("is it a
-  cairn consumer?"), so a fresh site following the add-cairn page must hand-add both before it can take unreleased
-  engine work. Found by the R4 re-test (conductor, 2026-10-07).
-- **`docs-gate`.** The add-cairn hooks snippet's `snippet-check-skip` (for the `__CAIRN_DEV_BUILD__` global) also hid a
-  `Handle` import from `@sveltejs/kit` that SvelteKit 3 no longer exports, and `check:snippets` typechecks against the
-  repo's own types, so a `process.env` read that fails on a fresh scaffold (no `@types/node`) passes. A
-  fresh-scaffold snippet typecheck would catch both. Found by the R4 re-test (conductor, 2026-10-07).
-- **`facts`.** `main`'s fact `Source:` lines drifted in range when SvelteKit 3 shrank engine files (`f:j254i8`'s
-  `factory.ts`, `f:cvv6to`'s `content-routes-settings.ts`, others in `guard.ts` and `factory.ts`); `check:facts`
-  catches only out-of-range lines and missing paths, so in-range drift goes unseen until a reader checks. Found by the
-  2a run's R2 merge review (conductor, 2026-10-07).
-- **`scripter`.** Found by the cairn-themes Survey S1 plan review and run (conductor, 2026-10-07). `cairn-audit` exits 0 on any advisory finding and has no flag to make an advisory fail, while `public-literals`, `theme-conformance`, and `theme-contrast`, the three rules a theme author gates on, are all advisory on a consumer. It also prints no machine-readable report, and the package exports no `./audit` entry. A theme repo that wants contrast to fail CI must scrape the human summary line (`N errors, M advisories, K suppressed`, `src/lib/audit/report.ts:49`) and treat a missing line as a crash. A fix adds a `--strict` (advisories fail) or `--fail-on advisory` flag and a `--json` report, so the summary format stops being an interface.
-- **`extender`.** Found by the cairn-themes Survey S1 plan review (conductor, 2026-10-07). `docs/reference/cairn-audit.md` frames the public scope as a site's, and gives no recipe for auditing a standalone theme package, such as a theme core developed outside any site. The working shape the Survey probe found is a contrast-only entry sheet that imports Tailwind, `@glw907/cairn-cms/cairn-public.css`, and the core, named in `public.stylesheets`, with `public.themeRoots` on the core directory. Without `cairn-public.css` in that chain, `theme-conformance` reports 23 advisories. A fix adds a short "Audit a theme outside a site" section with that config.
-- **`scripter`.** Found by the cairn-themes Survey S1 run, Task 4 (implementer and reviewer, 2026-10-07). A `cairn-audit` finding carries a rule id but no stable finding code, so a test that must prove one specific failure (a fixture theme whose info pair sits at 4.46:1) can only regex the prose message. The Survey contrast fixture fell back to asserting a nonzero count, which still passes if `theme-contrast` stops flagging the pair, because the minimal fixture theme also raises 12 `unmeasured` advisories. Each of those repeats the same resolver explanation ("The resolver follows var() chains to a literal..."). A fix gives each finding a stable code (`theme-contrast/below-aa`, `theme-contrast/unmeasured`) in the text and in the `--json` report the earlier `scripter` entry asks for, and prints the resolver note once per run.
-- **`extender`.** Found by the cairn-themes Survey S1 viewport grade (visual-verifier, 2026-10-07; verified by the conductor against daisyUI 5.7.47). daisyUI 5 has no theme variable for a form field's ground: `.input` and `.select` paint on `--color-base-100`, so a theme whose fields sit on their own ground (Survey's white light fields and sunken dark fields) must add a component override, and `cairn-public.css` offers no `--cairn-*` role for it. `theme-contrast` therefore never measures field text on the real field ground. The same holds for a field's resting border: daisyUI draws input, select, and textarea borders in `base-200` and the checkbox and radio ring in a 20% `base-content` mix, all under the 3:1 that WCAG 1.4.11 asks of a control boundary (Survey measured 1.36:1 and 1.48:1; its close-time a11y review caught both, and no `cairn-audit` rule did). `border-contrast` would, but `--rendered` drives a running admin, so a public theme's controls are never measured. A fix adds field-ground and field-border roles to the public theme contract, mapped onto `.input`, `.select`, `.textarea`, `.checkbox`, and `.radio` in `cairn-public.css`, plus `theme-contrast` pairs for field text on the field ground and the field border against `base-100` at 3:1.
-- **`extender`.** Found by the cairn-themes Survey S1 viewport grades, rounds 1 and 2 (visual-verifier, 2026-10-07; verified by the conductor in `daisyui/components/*.css` 5.7.47). daisyUI 5 ignores `--color-base-300` for most component borders: `card-border`, `input`, `select`, and `textarea` hard-wire `--color-base-200`, and `.list-row` draws its divider in `color-mix(in oklab, var(--color-base-content) 5%, transparent)`. A theme whose border role is `base-300` gets frames that nearly vanish on `base-100`, and finds them one grader round at a time (Survey needed two). A fix maps these component borders onto one border role in `cairn-public.css`, or at least lists the components and the override recipe in the re-skin docs, so each theme stops rediscovering them.
-
-- **`engine`.** `requireOrigin` (`src/lib/env.ts`) treats `localhost` and `127.0.0.1` as local but not `::1`,
-  the IPv6 loopback (RFC 4291 section 2.5.3), so a `PUBLIC_ORIGIN` of `http://[::1]:5173` throws
-  `config.public-origin-invalid`. An engine pass decides whether to add `::1` to its local test; the doctor's
-  `isLoopbackHost` (`tool/internal/doctor/check_origin.go`) mirrors the engine's set and follows the decision.
-  The engine already disagrees with itself here: `csrfSecure` reads `isLocalHost` (`src/lib/dev-flag.ts`), which
-  counts `::1` as local (`f:g22dnw`), so an `http://[::1]` dev server gets bare cookie names from `csrfSecure` and a
-  throw from `requireOrigin`. Found by the `tool/internal/doctor` cleanup lane, 2026-10-07.
-- **`go`.** The package grade of `tool/internal/doctor` after its cleanup lane (2026-10-07) named four findings the
-  lane's one fix round left, since each reaches past the lane's changed code or is optional. First, the command's
-  `resolvePublicOrigin` (`tool/cmd/cairn/doctor.go:136`) applies the vars-over-environment precedence the doctor
-  package owns (`OriginSource`), so `ReadWranglerConfig` and `WranglerFacts` stay exported for it alone; a
-  `doctor.ResolvePublicOrigin(s, envOrigin)` in `snapshot.go` would unexport both. Second, three checks restate the
-  facts-file preamble (`check_media.go:31`, `check_roles.go:105`, `check_posture.go:286`) and three the wrangler
-  preamble (`check_bindings.go:31`, `check_observability.go:18`, `check_media.go:41`); a helper returning
-  `(siteFacts, *Result)` is optional. Third, `siteconfigpath.go` (49 lines, one reader) could merge into
-  `siteconfig.go`, and `IsCairnSite` (`fileread.go:85`) sits more naturally beside `NewSnapshot` in `snapshot.go`.
-  Fourth, the comment at `json.go:82-84` restates the empty-array choice that `checkPayload`'s doc and the schema
-  carry. Found by the lane's package grade (2026-10-07).
-- **`facts`.** `check:facts` never checks a Go `Source:` pointer: `POINTER_RE`
-  (`scripts/checks/check-facts.mjs:350-351`) lists no `go` extension, so a `.go` `path:line` is neither resolved nor
-  range-checked. The doctor cleanup lane's diff review found four doctor cites past the end of `check_referrer.go`
-  that the gate passed. Adding `go` to the extension list brings Go pointers under the existing path and range
-  checks. Found by the `tool/internal/doctor` cleanup lane's review, 2026-10-07.
-- **`extend`.** SvelteKit 3 remote functions (`/_app/remote/...`) are not `/admin` paths, so a site-built admin
-  remote command gets no guard session, no Rule 1 token check, and no security headers (Kit's `is_remote_forbidden`
-  gives same-origin protection only). The extend arm should say a site-built admin remote function resolves the
-  session itself. Close `web-auth-security-reviewer`, 2026-10-06.
-- **`engine`.** Kit 3 loads `node:async_hooks` only under the `nodejs_als` compatibility flag, so without it
-  `getRequestEvent` works only synchronously. Nothing in cairn, the showcase, or Waymark calls it today, so the
-  configs deliberately carry no flag (no flag for an unused feature); revisit with the remote-functions watch
-  (`trig_0193pPNoyxsTGeUhF1xx7woa`). Close `cloudflare-workers-reviewer`, 2026-10-06.
-- **`admin`.** Error documents on public admin paths (a thrown 404 on `/admin/auth/<unknown>`, a failed admin layout
-  load) render the root `+error.svelte` outside the shell, so they carry no referrer meta; the guard's header covers
-  production but not the dev-backend handle. No form, so no lockout risk. Optional fix: an `admin/+error.svelte` that
-  emits the meta. Close `svelte-reviewer`, 2026-10-06.
-- **`chassis`.** `examples/showcase/src/theme/components/SiteHeader.svelte:66` starts `$state(browser ?
-  resolveTheme(...) : light)`, so server and client start from different values (a hydration-mismatch risk for the
-  theme toggle's icon and label); start from `light` and resolve in `onMount`. And `members/login/+page.svelte:48-50`
-  names its field twice (a `<legend>` and an sr-only `<label>`). Close `svelte-reviewer`, 2026-10-06.
-- **`engine`.** `createAuthChannel`'s dev-backend tripwire no longer sees a flag set only in the shell (it reads the
-  Worker env), so under `vite dev --host` a LAN request with a shell-only `CAIRN_DEV_BACKEND=1` no longer trips the
-  member-action refusal; dev-only, and `captureDeliver` still refuses. Close `web-auth-security-reviewer`, 2026-10-06.
-
-- **`tooling`.** `scripts/lab/theme-fixture.mjs` defaults `THEME_FIXTURE_PORT` to 4393 (`:59`), which the
-  SvelteKit 3 pass's e2e host now pins as its `wrangler dev` inspector port (`E2E_PORT` + 1,
-  `examples/showcase/playwright.config.ts:48`), and `RESERVED_PORTS` (`:63`) lists neither 4393 nor
-  any fixture `PORT + 1` inspector port. A concurrent run fails loudly at the `listening()` check
-  rather than colliding, so the cost is a confusing refusal. Fix: move the default and reserve the
-  inspector ports. Found by the Task 6 diff review, conductor-verified, 2026-10-05 (on branch
-  `sveltekit-3` until it merges).
-- **`tooling`.** `npm run test:theme-fixture -- --arm both --build-only` exceeds the light gate
-  lane's 3G cap: two runs were SIGKILLed (exit 137) during the fixture copy's `vite build`, and it
-  passed only with `CAIRN_GATE_MEMORY_HIGH=5G CAIRN_GATE_MEMORY_MAX=6G`. It launches no browser, so
-  the lane rule puts it on light, where it cannot fit. Fix: document the override in the script's
-  header, or have it run on the heavy lane. Found by Task 6's implementer, conductor-verified
-  against `cairn-run-gate`'s caps, 2026-10-05.
-- **`tooling`.** `examples/showcase/e2e/spellcheck.spec.ts:20` (the worker-lint test, "the worker lints the seeded
-  misspellings, a suggestion applies, and an added word clears its underline") times out on a slow CI runner: the
-  worker streams the 1.5MB en-US dictionary into wasm on first lint, and the test already raises its ceiling to 90s
-  (`test.setTimeout`, line 26) without removing the race. It is the slow-runner pattern that the zen-toggle and
-  preview-delete flakes shared. Fix: wait on a real readiness signal from the worker (the dictionary loaded), never a
-  longer timeout. Found by the SvelteKit 3 pass's CI diagnosis, 2026-10-06.
+Draft docs stage 2a's close (2026-10-07, the 2a unattended run's R7) triaged the whole log and
+found 187 open entries, verified against the tree at `b38ef6b3` (each group's cited lines read or
+grepped there; the entries filed on 2026-10-07 were verified at filing the same day), after reconciling every `frictionFiled` entry in the R4, R5, and R6
+stage records against the log (all present). It applied the engine-pass boundary test (Geoff,
+2026-10-07; `ROADMAP.md`'s standing rule) and emptied the log: 76 entries went to the Now tier's
+"Engine pass before stage 2b" entry, whose fixes change an extend page's content; 30 to the Next
+tier's batched engine friction entry; 21 to the Now tier's "Docs tooling before stage 2b" entry,
+two of them workstation-tool findings filed there for the dotfiles; 17 to the Next tier's
+reference-arm corrections; 23 to the Next tier's "Docs content the extend rebuild owes"; and 3 to
+the Next tier's cairn-audit and public theme contract entry. 17 were fixed and deleted or deleted
+as overtaken: three facts the architecture page inputs flagged (`f:pzbmhq`, `f:70mf58`, `f:hk24xs`)
+and `f:68h31z`'s type name were corrected at this close, `CLAUDE.md`'s log-safety sentence was
+narrowed, and the rest had already been fixed on their pages or in the container. Items meeting
+only the test's third class went to `ROADMAP.md`, not back into this log, since the log holds only
+live findings and its triage is complete-or-move. Several duplicates merged on the way (the
+stale-manifest error, the `check:public-tokens` comment, the indented-fence snippet gap, and the
+disclosure-tag provenance gap). `git show b38ef6b3:docs/internal/docs-friction-log.md` holds
+every entry in full. See Clearings.
 
 The draft docs harvest's close (2026-09-30) triaged the whole log and found four open entries,
 all filed by the harvest itself, each verified against the tree first. The stale `/components`
@@ -223,7 +155,7 @@ The rest of this section is triage history. retire-1's close (2026-09-22) triage
 routed the one entry it carried, the Names one (filed 2026-09-21), to `ROADMAP.md`'s Next tier
 with its trigger, since the draft-docs pass that writes those strings is the one that pays for it.
 retire-1's own `contributor` finding was filed in the same step, also to Next: `link:consumer`
-cannot measure a production site against unreleased engine work, because every site is pinned to a
+cannot measure a consumer site against unreleased engine work, because every site is pinned to a
 released version and calls the released export names. See Clearings.
 
 The doctor-retirement pre-task's close (2026-09-21) triaged the whole log again and found no
@@ -278,24 +210,6 @@ shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not 
 `fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` all
 promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings below.
 
-Filed 2026-09-30 from the extend arm's code-first gap sweep (finder: the sweep, each finding verified by an independent Opus verifier; record `docs/superpowers/research/2026-09-30-extend-gap-sweep.md` on the `draft-docs-2a` branch, commit `86fd134c`). Line numbers were re-checked on `main` at `5c47a6e3`. Twelve code defects follow, then four misleading-text notes.
-
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity major. `src/lib/content/media-refs.ts:44-51` and `src/lib/content/media-rewrite.ts:158-171` read only top-level image fields and body images, so an image inside an `array` or `object` field (the scaffold's own `gallery: fields.array(fields.image())`, `templates/waymark/src/theme/cairn.config.ts:116`; a documented shape at `docs/reference/core.md:471`) is invisible to the where-used index, the replace rewrite, and the safe-delete gate, which can then delete an asset a page still uses. A fix walks nested array and object image values in both readers.
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity major. `templates/waymark/src/chassis/feed.ts:20` renders bodies with no `resolveFragment`, so the seeded post's `::include` (`templates/waymark/src/content/posts/2026-03-10-callout.md:17`) ships as literal text in `feed.xml` and `feed.json`. A fix passes `createFragmentResolver(site)` to the render call.
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor. `templates/waymark/src/chassis/feed.ts:13-20` passes no origin-anchored `resolveMedia`, so `media:` images in `contentHtml` resolve to root-relative `/media/...` paths a feed reader cannot fetch. A fix passes a `resolveMedia` that prefixes `siteMeta.origin`, as `resolve` already does for links.
-- **`editor`.** Found by the 2026-09-30 extend gap sweep. Severity major. The `address-collision` advisory at `src/lib/sveltekit/content-routes-entry-read.ts:412` tells an editor "Publish this one and it replaces the other at that address", but two published routable entries on one permalink make `createSiteResolver` throw (`src/lib/delivery/site-resolver.ts:84-90`), so following the advice fails the next deploy build. A fix rewords the advice to say the other entry must be unpublished or renamed first.
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor. `FieldBehavior.itemLabel` (`src/lib/content/fieldset.ts#FieldBehavior`, documented at `docs/reference/core.md:1137`) is declared as an array row's label deriver, but nothing in `src/lib` reads `behavior[field].itemLabel`, so the behavior table never reaches the editor. A fix either wires it into the array row label or removes the member and its doc.
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor. Nothing in `src/lib/sveltekit/admin-dispatch.ts#parseAdminPath` or `src/lib/content/concepts.ts#normalizeConcepts` rejects a concept id that collides with an engine admin segment: `login`, `auth`, `editors`, `nav`, `settings`, `vocabulary`, and `help` make the concept's admin views unreachable, and `media` loses its list view to the Library (its edit views still dispatch). A fix makes `normalizeConcepts` throw on a reserved id.
-- **`editor`.** Found by the 2026-09-30 extend gap sweep. Severity minor. The nav editor's page suggestions at `src/lib/sveltekit/nav-routes.ts:63-73` build each url as `/${id}` from the default branch with no permalink resolution and no draft filter, so a suggestion for any concept whose permalink is not `/:slug` 404s, and each nav load reads every page-like concept's directory. A fix derives the url from the site resolver's permalink and skips unpublished entries.
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor. `normalizePublishActions` (`src/lib/sveltekit/publish-actions.ts`) never checks label uniqueness, while `src/lib/admin/EditPage.svelte:1689` keys its `{#each}` by label, so two same-label actions that apply to one concept hit Svelte's duplicate-key error. A fix rejects duplicate labels in validation or keys the each block by index.
-- **`scripter`.** Found by the 2026-09-30 extend gap sweep. Severity minor. `cairn-media-seed` downloads from the fixed path `<from>/media/<slug>.<hash>.<ext>` (`src/lib/media-seed/assemble.ts:117-123`) and reads a fixed `src/content/.cairn/media.json` (`src/lib/media-seed/bin.ts:135`), ignoring `assets.publicBase`, so a site that mounted its media route elsewhere cannot seed and the tool has no flag for it. A fix adds a base-path flag, or reads `assets.publicBase` from the config.
-- **`contributor`.** Found by the 2026-09-30 extend gap sweep. Severity minor. Comments at `src/lib/sveltekit/health.ts:1,9` and `src/lib/github/signing.ts:126` name `GET /admin/healthz`, but `parseAdminPath` resolves no such engine view; the scaffold mounts `/healthz` at the site root. A fix rewords the comments to name the site-mounted route.
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor. `docs/reference/sveltekit.md:1207` says `vocabularySaveAction` writes "the same committed `src/lib/site.config.yaml`" the tidy settings write, but it writes `editor.nav.configPath` when declared (`src/lib/sveltekit/content-routes-settings.ts:198-199`), and the scaffold's file is `src/theme/site.config.yaml`. A fix rewords the sentence to name the configured path.
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor. `docs/reference/sveltekit.md:805` and `src/lib/sveltekit/section-action.ts:147-149` say an uninferred `Env` "collapses to `{}`", but tsc 6.0.3 under `--strict` infers `unknown`; the same wording sits at `docs/reference/auth-channel.md:38` and `src/lib/auth-channel/factory.ts:573` (same mechanism, not separately probed). A fix corrects all four to `unknown` after probing the second pair.
-- **`contributor`.** Found by the 2026-09-30 extend gap sweep. Severity minor (stale comment). The `setMenu` doc comment at `src/lib/nav/site-config.ts:354-356` says "YAML comments are not preserved", but a probe with the repo's `yaml` package showed comments outside the replaced block survive and only those inside it are lost. A fix narrows the comment to the replaced block.
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor (misleading scaffold comment). The comment at `templates/waymark/src/theme/markdown-components.ts:124-129` says `resolveMedia` shares the throwing "build-backstop posture" with `resolveLinks`, but `createMediaResolver` returns `undefined` on a miss and the build succeeds. A fix drops `resolveMedia` from the comment's list.
-- **`extender`.** Found by the 2026-09-30 extend gap sweep. Severity minor (misleading doc example). The `createSiteIndexes` doc example at `src/lib/delivery/site-indexes.ts:33` writes `import.meta.glob('...?raw', { eager: true })`, omitting `import: 'default'`, the form that makes the index build throw. A fix adds `import: 'default'` to the example.
-- **`admin`.** Found by the 2026-09-30 extend gap sweep. Severity minor (misleading README line). `packages/create-cairn-site/README.md:337` tells the reader to "run this CLI's own update path" to apply a new migration, but `create-cairn-site` has no update path that applies migrations. A fix names the real migration procedure the sweep's container fact `f:jtl15v` states.
 - **`contributor`.** `npm run check` (the `check` script, `svelte-check --tsconfig ./tsconfig.json && tsc ...` in
   `package.json`) runs svelte-check out of heap at Node's default limit in a worktree; it passes with
   `NODE_OPTIONS=--max-old-space-size=6144`. Neither `docs/internal/durable-gotchas.md` nor `CLAUDE.md` names the
@@ -327,6 +241,15 @@ Filed 2026-09-30 from the extend arm's code-first gap sweep (finder: the sweep, 
   history after the untrack. They are identifiers, not keys. Found by the 2a close-finish run (F1/F2 agents),
   2026-10-07.
 
+- **`docs-gate`.** `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS` in `scripts/checks/check-leaks.mjs`). Its `src` ships in that package's `files`, so it needs coverage before the package's first publish. Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt` (lines 52, 69, 678, 825, 945) still holds the maintainer's home path and a `glw907.workers.dev` URL. Fixing them needs a transcript regeneration that `check:transcripts` replays. Found by the 2a close-finish run, 2026-10-07.
+- **`docs-gate`.** `scripts/checks/check-symbols.mjs` (`extractFilePaths`) reads the inline import specifier `#theme/cairn.config.js` as the file path `theme/cairn.config.js`, so prose cannot name the scaffold's real import. Fenced blocks strip import specifiers; inline spans do not. Found by the 2a close-finish run, 2026-10-07.
+- **`engine`.** The tutorial puts the adapter at `src/lib/cairn.config.ts` (`#lib`, `docs/extend/add-cairn-to-a-sveltekit-app.md:294,411`) and the scaffold puts it at `src/theme/cairn.config.ts` (`#theme`, `docs/extend/choose-an-ai-posture.md:29,62`), so every extend page that touches the adapter names two paths. Found by the 2a close-finish run, 2026-10-07.
+- **`docs-gate`.** `docs/internal/facts/front-door.md:67` (`f:u705t5`) asserts a forward-looking "Topo is planned"; a fact should state only what ships. Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** The task 8 page plans now disagree with their pages after the rulings: `docs/internal/briefs/extend/debug-your-site.plan.md:64,263` (`cairn help agents`) and `docs/internal/briefs/extend/scaffolded-site-files.plan.md:226,252` (the `CLAUDE.md` subsection). Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** `npm test` takes about 11 minutes, longer than the 600-second foreground limit, and a re-attached run does not print `gate exit:`. (Reported by the run; the 7-to-11-minute range is also in `pass-gate-economy.md`.) Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** `packages/create-cairn-site/scripts/bake-template.mjs` requires `--to <dir>` (its usage line says so), and a bare invocation fails. The "create-cairn-site needs baked template" recipe the run followed omitted it; `scaffold.mjs`'s own error names `npm run prepack`, which passes it. Found by the 2a close-finish run, 2026-10-07.
+
 ## Clearings
 
 The detail of a cleared finding lives in the pass post-mortem that cleared it and in
@@ -347,7 +270,7 @@ history holds every pruned entry in full.
 | 2026-08-18 | seam Pass 1b (A8b) | eleven backfill findings from the unharvested 2026-08-04 to 08-16 window, filed across all three tiers; the Windows finding ruled and disclosed rather than fixed |
 | 2026-08-18 | seam Pass 2 Task B0 | the cost-preamble finding, the last live one. Geoff ruled the copy hedges rather than waiting on a browser glance; `money.mjs` and two admin pages now scope the total to the confirmed figures, with a test pinning the hedge |
 | 2026-08-19 | the release-debt pass | **supersedes the B0 cost ruling above.** A measured build put the deployable bundle at 3,246,163 bytes gzipped, over Cloudflare's 3 MiB Workers Free script limit, so "free, and stays free" was not a hedge to tune but a false claim. Geoff ruled Workers Paid is the expectation, stated plainly and without apology. `money.mjs`, its transcript fixture, and three admin pages now say so; the CLI's own consent prompt still does not, and is filed to `ROADMAP.md` as its own pass |
-| 2026-08-22 | the aksailingclub-org 0.95.0 adoption fix pass (`15a2c979`) | five `extender` findings from a real production adoption of 0.95.0, all shipped: `previewLoad`'s static `$app/environment` import broke a raw, non-Vite Wrangler bundle of the `/sveltekit` barrel (now a dynamic import, gated by a new static-import-graph walker test over the built barrel); `previewLoad` now strips `canonical`/`og:url`/`jsonLd.url` from its `seo` instead of leaving every adopter to rediscover the strip; `PreviewBanner`'s four `--cairn-preview-*` custom properties are now documented as the site-override seam; `PreviewBanner` renders the expiry as a fixed UTC `<time>` string instead of `Intl.DateTimeFormat(undefined, ...)`, closing a possible hydration mismatch, with an optional `formatExpiry` prop; `@cloudflare/workers-types` is now a `peerDependency` at `^5`, so a `wrangler types`-only consumer's install now surfaces the requirement instead of silently losing every cairn-typed binding signature to `any` |
+| 2026-08-22 | the aksailingclub-org 0.95.0 adoption fix pass (`15a2c979`) | five `extender` findings from a real adoption of 0.95.0, all shipped: `previewLoad`'s static `$app/environment` import broke a raw, non-Vite Wrangler bundle of the `/sveltekit` barrel (now a dynamic import, gated by a new static-import-graph walker test over the built barrel); `previewLoad` now strips `canonical`/`og:url`/`jsonLd.url` from its `seo` instead of leaving every adopter to rediscover the strip; `PreviewBanner`'s four `--cairn-preview-*` custom properties are now documented as the site-override seam; `PreviewBanner` renders the expiry as a fixed UTC `<time>` string instead of `Intl.DateTimeFormat(undefined, ...)`, closing a possible hydration mismatch, with an optional `formatExpiry` prop; `@cloudflare/workers-types` is now a `peerDependency` at `^5`, so a `wrangler types`-only consumer's install now surfaces the requirement instead of silently losing every cairn-typed binding signature to `any` |
 | 2026-09-01 | the 4b conformance pass's whole-log sweep | toolkit-seams T1–T6, all verified shipped against the code: T1 `MediaPicker`/`MediaLibraryEntry` now export from `/admin-toolkit` (and `MediaLibraryEntry` from `/sveltekit`); T2 `StatusChip`'s tone dot retired and the `quiet`/`warning`/`outline` registers ship (`docs/internal/probes/2026-08-26-chip-registers-v2`); T3 `ExpandableRow`'s trigger measured inside the engine's own 24x24 floor (no fix needed) and the documented `data-cairn-inert-cell` escape ships; T4 `ToolbarDisclosure` ships and exports; T5 `CsrfField` sets `defaultValue` explicitly (the reset-blanking theory itself did not hold, per the csrf-hardening entry above, but the component still carries the fix); T6 the checkbox/select/radio edge-contrast fix, the `cairn-text-warning`/`cairn-text-success` utilities, and the `.toolkit-list` padding-only opt-in all ship in `cairn-admin.css` |
 | 2026-09-01 | the 4b conformance pass's whole-log sweep | toolkit-seams T7 (`isUniqueViolation` in `/cloudflare`) verified NOT shipped: the plan deferred it at review (membership did not clear the gate) with recorded reopen triggers, but the plan's own commitment to record that defer in `docs/internal/engine-rulings.md` was never carried out (no ledger entry found). Promoted to `ROADMAP.md`'s Next tier with its reopen triggers rather than re-queued here |
 | 2026-09-01 | the 4b conformance pass's whole-log sweep | harvest-detection T1–T7, all verified against the code: T1 the blanket-`no-referrer` doctor check ships (`checks-local.ts`); T2 `sheet` became a list of compiled-class sources (`b82f06b5`); T3 `stripe-trim-parity` and `unlayered-font-clobber` ship as static rules; the "bare-tag hover parity" sub-item was dropped at the pre-approval review as a falsified premise (`focus-parity.ts` already catches it) and the "DaisyUI dead class" sub-item was dropped as unbuildable on its own motivating case (both recorded in the plan's "second-round review record", not silently missed); `list-role` ships and is explicitly routed to the any-site audit remediation initiative for its own known descendant-selector gap; T4 `panel-width` ships as a rendered rule; T5 (oklch falsification) was cut at the same pre-approval review as a proven no-op, since `border-contrast` already carries an extensive real-Chromium oklch red-path suite (`rulings.border-contrast.test.ts`) and the other two contrast rules already route through the shared canvas normalizer; T6 (chassis+docs) ships the smooth-scroll halves and the dialog-form-failure/load-when-the-panel-opens recipes |
@@ -373,6 +296,7 @@ history holds every pruned entry in full.
 | 2026-09-29 | the style-guide sync's close | two open entries, both its own: Tidy's pinned default model promoted whole to `ROADMAP.md`'s Next tier; the entry on the stale `Microsoft.Quotes` suppression comment in `docs/editors/when-something-goes-wrong.md` deleted as overtaken, since the harvest-then-delete program deletes the page. The whole-log sweep found no other open finding |
 | 2026-09-29 | theme identity pass C's close | one open entry, the media library's orphan purge open to every editor, verified against the tree, then ruled on by Geoff and promoted to `ROADMAP.md` Later (an owner-restrictable purge); the pass's own findings routed to `ROADMAP.md` (the four edge cases to Next, the rule promotion to Toward 1.0, the docs standing order to Next) |
 | 2026-09-30 | the draft docs harvest's close | four open entries, all its own: the `src/lib/islands/index.ts` `/components` comment fixed and deleted; `cli-cairn-media-seed.md`'s `vite dev` claim and `requiredDocsPaths`'s kept-page existence filter promoted whole to `ROADMAP.md`'s Next tier; the `tool/internal/health` package debt promoted whole to Later. The whole-log sweep found no other open finding |
+| 2026-10-07 | draft docs stage 2a's close (R7) | all 187 open entries, under the engine-pass boundary test: 76 to the Now tier's engine pass before stage 2b, 21 to Now's docs tooling before stage 2b, 30 to Next's batched engine friction, 17 to Next's reference-arm corrections, 23 to Next's docs content the extend rebuild owes, 3 to Next's cairn-audit and theme contract entry, 17 fixed and deleted or deleted as overtaken |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

@@ -65,3 +65,35 @@ than moving a page.
 The live proof owed before the `tool/v1.1.0` tag is the other direction: each distinct
 `https://cairn.pub/docs/admin/<page>` a failure block prints must resolve on the deployed
 cairn.pub. That check belongs to the tag session, recorded in `docs/STATUS.md`.
+
+## Redirect rows for the rebuilt extend arm (added at draft docs stage 2a's close, 2026-10-07)
+
+The extend rebuild retires 15 old page paths. cairn.pub serves `https://cairn.pub/docs/extend/<page>`
+for each `from` path below and should redirect it to the `to` page, since a shipped binary, a
+search engine, or an old bookmark may still hold the old URL. A row whose target lands with stage
+2b has no page to redirect to until that stage merges, so serve those rows from 2b on. The source
+of truth is the `redirects` list in `docs/internal/outlines/extend.json`, which is deleted at the
+2b merge; these rows outlive it.
+
+| From | To | Target | Reason |
+| --- | --- | --- | --- |
+| `docs/extend/data-tiers.md` | `docs/extend/architecture.md` | live now (stage 2a) | Absorbed: the data tiers become the architecture page's state section |
+| `docs/extend/build-a-site-by-hand.md` | `docs/extend/add-cairn-to-a-sveltekit-app.md` | live now (stage 2a) | Absorbed: its milestones become the page's sections |
+| `docs/extend/declare-your-own-concept.md` | `docs/extend/define-an-adapter-and-schema.md` | lands with stage 2b | Absorbed: adding a concept is a section of declaring the adapter |
+| `docs/extend/animate-a-custom-screen.md` | `docs/extend/add-a-custom-admin-screen.md` | live now (stage 2a) | Absorbed as the page's motion section |
+| `docs/extend/auth-channel-security-model.md` | `docs/extend/security-model.md` | live now (stage 2a) | Absorbed as the auth channel threat catalogue section |
+| `docs/extend/render-safety.md` | `docs/extend/security-model.md` | live now (stage 2a) | Absorbed as the render safety section |
+| `docs/extend/what-the-scaffold-wrote.md` | `docs/extend/scaffolded-site-files.md` | live now (stage 2a) | Renamed to match its title |
+| `docs/extend/design-your-site.md` | `docs/extend/theme-your-public-site.md` | live now (stage 2a) | Renamed to match its title |
+| `docs/extend/wire-the-delivery-surface.md` | `docs/extend/build-the-public-routes.md` | lands with stage 2b | Renamed to match its title |
+| `docs/extend/announce-on-publish.md` | `docs/extend/act-on-newly-published-entries.md` | lands with stage 2b | Renamed to match its title |
+| `docs/extend/organize-your-admin-nav.md` | `docs/extend/arrange-the-admin-sidebar.md` | lands with stage 2b | Renamed to match its title |
+| `docs/extend/enable-tidy.md` | `docs/extend/turn-on-tidy.md` | lands with stage 2b | Renamed to match its title |
+| `docs/extend/sign-in-through-your-organization.md` | `docs/extend/replace-magic-links-with-cloudflare-access.md` | live now (stage 2a) | Renamed to match its title |
+| `docs/extend/add-a-second-audience.md` | `docs/extend/add-a-second-sign-in-group.md` | live now (stage 2a) | Renamed to match its title |
+| `docs/extend/gate-your-site-with-cairn-audit.md` | `docs/extend/run-cairn-audit-on-your-site.md` | lands with stage 2b | Renamed to match its title |
+
+No consumer site, cairn.pub included, moves to the engine that carries these pages until every
+docs track is rebuilt (Geoff, 2026-10-07). One release then ships SvelteKit 3, the engine fixes,
+and the complete docs, and each site migrates to it as a site pass that follows the docs. The
+`0.98.0` ceiling above holds until that release.

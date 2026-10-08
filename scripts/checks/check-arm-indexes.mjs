@@ -50,9 +50,15 @@ const FRONT_DOOR_PAGES = [
 ];
 
 // Pages deliberately left unindexed (a draft skeleton, a page mid-retirement). Keyed by the
-// page's repo-relative path. Currently empty: every real page belongs in its arm's index, so an
-// entry here should carry a reason comment and be rare.
-const ALLOWLIST = /** @type {Set<string>} */ (new Set());
+// page's repo-relative path. Every real page belongs in its arm's index, so an entry here should
+// carry a reason comment and be rare.
+const ALLOWLIST = /** @type {Set<string>} */ (
+  new Set([
+    // Gitignored and present only on the maintainer's workstation. The index names it in prose,
+    // not as a link, because a link to a file absent from the repository breaks check:docs in CI.
+    'docs/internal/credentials.md',
+  ])
+);
 
 // Directory names skipped while walking an arm, since they hold generated or fixture output
 // rather than published pages.

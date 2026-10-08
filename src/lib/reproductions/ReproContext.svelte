@@ -46,7 +46,7 @@ that repair, by recording `document.activeElement` before the frame loads and re
 
 One thing changes because containment holds: the seven stories that focused a control on open no
 longer paint the admin's `:focus-visible` ring, so each shows the mouse face of its screen rather
-than the keyboard one. `docs/internal/record/repro-story-audit.md` records which seven.
+than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md records which seven.
 -->
 <script lang="ts">
   import { onDestroy, setContext, untrack } from 'svelte';
@@ -60,7 +60,7 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
   import type { ReproStory } from './index.js';
   import '../admin/cairn-admin.css';
 
-  // The media base every mounted story gets when its mounting page passes none: cairn-pub's own
+  // The media base every mounted story gets when its mounting page passes none: cairn.pub's own
   // asset route, `/repro-assets`. Module-internal rather than exported: a docs site deployed
   // under a SvelteKit `paths.base` cannot override a hardcode, and the `mediaBase` prop below is
   // the fix, not a second name for it.

@@ -167,15 +167,15 @@ Precedence is CRITICAL, then UNKNOWN, then WARNING, then OK, which is not numeri
 Pass --json for the machine-readable report; run `cairn help agents` for the whole contract.
 The payload contract is published at https://cairn.pub/docs/reference/cli-cairn-json-output.
 - Show which provider answers each credential variable
-- cairn adopt --worker ecxc-ski
+- cairn adopt --worker my-site
 - cairn adopt list
-- cairn auth check ecxc-ski-a1b2c3
+- cairn auth check my-site-a1b2c3
 - cairn auth list
 - cairn auth set CAIRN_CF_READ_TOKEN
 - cairn auth unset CAIRN_CF_READ_TOKEN
 - cairn doctor ./my-site
-- cairn health ecxc-ski-a1b2c3
-- cairn health ecxc-ski-a1b2c3 --json
+- cairn health my-site-a1b2c3
+- cairn health my-site-a1b2c3 --json
 - cairn help agents
 - cairn is a monitoring plugin. This page is its whole contract for a program.
 
@@ -232,7 +232,7 @@ Every contract this page summarises is published in full:
   https://cairn.pub/docs/reference/cli-cairn-exit-codes
   https://cairn.pub/docs/reference/cli-cairn-json-output
   https://cairn.pub/docs/reference/cli-cairn-doctor
-- cairn logs ecxc-ski-a1b2c3 --since 24h
+- cairn logs my-site-a1b2c3 --since 24h
 - cairn sites
 - cairn sites list --json
 - cairn: %d stored credential values are shorter than %d characters, so this output does not scrub them

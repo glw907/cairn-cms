@@ -11,6 +11,10 @@
 // `cairn:` content link is skipped because it is an author's in-post token, not a doc target. Links
 // inside fenced or inline code are ignored, since those are examples, not navigation.
 //
+// A relative link from a published docs page to a missing page passes as a pending link when a
+// committed outline (`docs/internal/outlines/*.json`) names that path; its anchor is not checked.
+// Deleting the outline at the arm's final merge makes the check strict again.
+//
 // The harvest deletes the old narrative pages named on the committed deletion list (arm-state.mjs).
 // A dated record keeps the links it was written with, so its links into deletion-list paths are
 // accepted for good (DATED_RECORD_PREFIXES); the same link anywhere else is repaired or fails.
@@ -160,38 +164,42 @@ const LEGACY_HOST = 'CHANGELOG.md';
 // a stale entry. And every key must still be cited
 // by a LEGACY_HOST link, so an entry nothing reaches gets removed rather than carried forever.
 //
+// A value under docs/extend/ that names a page the arm's rebuild has not written yet points at the
+// arm index, which exists. docs/internal/record/harvest/relink.json records the page that later
+// takes each one over.
+//
 // Only the path half is translated. The anchor half is deliberately left unchecked for a mapped
 // link: these headings described the old page's own structure, and the fold did not preserve them
 // (none of the three anchors CHANGELOG.md carries on a legacy path survives on its new page).
 /** @type {Record<string, string>} */
 const LEGACY_PATH_MAP = {
-  'docs/explanation/auth-channel-security-model.md': 'docs/extend/auth-channel-security-model.md',
-  'docs/explanation/editor-copyedit.md': 'docs/extend/enable-tidy.md',
+  'docs/explanation/auth-channel-security-model.md': 'docs/extend/security-model.md',
+  'docs/explanation/editor-copyedit.md': 'docs/extend/README.md',
   'docs/explanation/enforced-design.md': 'docs/extend/add-a-custom-admin-screen.md',
-  'docs/explanation/media-storage.md': 'docs/extend/data-tiers.md',
+  'docs/explanation/media-storage.md': 'docs/extend/architecture.md',
   'docs/explanation/security-model.md': 'docs/extend/security-model.md',
   'docs/guides/add-a-custom-admin-screen.md': 'docs/extend/add-a-custom-admin-screen.md',
-  'docs/guides/add-a-login-channel.md': 'docs/extend/add-a-second-audience.md',
+  'docs/guides/add-a-login-channel.md': 'docs/extend/add-a-second-sign-in-group.md',
   'docs/guides/add-an-image.md': 'docs/editors/add-an-image.md',
-  'docs/guides/add-an-island.md': 'docs/extend/add-an-island.md',
-  'docs/guides/add-authors.md': 'docs/extend/declare-your-own-concept.md',
-  'docs/guides/announce-on-publish.md': 'docs/extend/announce-on-publish.md',
+  'docs/guides/add-an-island.md': 'docs/extend/README.md',
+  'docs/guides/add-authors.md': 'docs/extend/README.md',
+  'docs/guides/announce-on-publish.md': 'docs/extend/README.md',
   'docs/guides/cloudflare-readiness.md': 'docs/admin/is-it-working.md',
   'docs/guides/configure-auth-and-d1.md': 'docs/extend/add-cairn-to-a-sveltekit-app.md',
-  'docs/guides/define-an-adapter-and-schema.md': 'docs/extend/define-an-adapter-and-schema.md',
-  'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md',
-  'docs/guides/iterate-your-design-locally.md': 'docs/extend/design-your-site.md',
-  'docs/guides/link-content-with-references.md': 'docs/extend/link-content-with-references.md',
+  'docs/guides/define-an-adapter-and-schema.md': 'docs/extend/README.md',
+  'docs/guides/enable-tidy.md': 'docs/extend/README.md',
+  'docs/guides/iterate-your-design-locally.md': 'docs/extend/theme-your-public-site.md',
+  'docs/guides/link-content-with-references.md': 'docs/extend/README.md',
   'docs/guides/manage-the-media-library.md': 'docs/editors/manage-the-media-library.md',
-  'docs/guides/organize-your-admin-nav.md': 'docs/extend/organize-your-admin-nav.md',
+  'docs/guides/organize-your-admin-nav.md': 'docs/extend/README.md',
   'docs/guides/publish-and-discard.md': 'docs/editors/publish-and-history.md',
   'docs/guides/read-cairn-logs.md': 'docs/admin/troubleshooting.md',
   'docs/guides/restrict-admin-access.md': 'docs/extend/restrict-admin-access.md',
-  'docs/guides/reuse-content-across-entries.md': 'docs/extend/reuse-content-across-entries.md',
-  'docs/guides/share-a-draft-preview.md': 'docs/extend/share-a-draft-preview.md',
+  'docs/guides/reuse-content-across-entries.md': 'docs/extend/README.md',
+  'docs/guides/share-a-draft-preview.md': 'docs/extend/README.md',
   'docs/guides/structured-fields.md': 'docs/reference/core.md',
   'docs/guides/upgrade-cairn.md': 'docs/extend/upgrade-cairn.md',
-  'docs/guides/wire-the-delivery-surface.md': 'docs/extend/wire-the-delivery-surface.md',
+  'docs/guides/wire-the-delivery-surface.md': 'docs/extend/README.md',
   'docs/guides/write-in-the-editor.md': 'docs/editors/write-in-the-editor.md',
   'docs/reference/authoring-syntax.md': 'docs/editors/write-in-the-editor.md',
   'docs/reference/doctor.md': 'docs/reference/cli-cairn-doctor.md',
@@ -319,15 +327,54 @@ function isDatedRecord(file) {
   return file === LEGACY_HOST || DATED_RECORD_PREFIXES.some((prefix) => file.startsWith(prefix));
 }
 
+const OUTLINES_DIR = join('docs', 'internal', 'outlines');
+
 /**
- * Check every relative link in the scoped files. Returns the broken ones with file, line, dest, and a
- * reason. A target file that does not exist or a `#anchor` with no matching heading is broken.
+ * The repo-relative path of every page a committed outline plans, whether or not it is drafted.
+ * @param {string} root
+ * @returns {Set<string>}
+ */
+function outlinePagePaths(root) {
+  const dir = join(root, OUTLINES_DIR);
+  /** @type {Set<string>} */
+  const paths = new Set();
+  if (!existsSync(dir)) return paths;
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith('.json')) continue;
+    const outline = JSON.parse(readFileSync(join(dir, name), 'utf8'));
+    for (const page of outline.pages ?? []) {
+      if (typeof page?.path === 'string') paths.add(page.path);
+    }
+  }
+  return paths;
+}
+
+// The published arm paths, the only places a pending link is excused. The rolling STATUS and
+// HISTORY stay strict: they name pages by path while an arm is in flight and must not hide a typo.
+const PUBLISHED_DOC_PREFIXES = ['docs/extend/', 'docs/admin/', 'docs/editors/', 'docs/reference/'];
+const PUBLISHED_DOC_FILES = ['docs/why-cairn.md'];
+
+/**
+ * Whether a repo-relative file is a published docs page, the only place a pending link is excused.
+ * @param {string} file
+ */
+function isPublishedDoc(file) {
+  return PUBLISHED_DOC_FILES.includes(file) || PUBLISHED_DOC_PREFIXES.some((prefix) => file.startsWith(prefix));
+}
+
+/**
+ * Check every relative link in the scoped files. `broken` holds the dead ones with file, line, dest,
+ * and a reason: a target file that does not exist or a `#anchor` with no matching heading. `pending`
+ * holds the links from a published docs page to an outline page not yet on disk, which pass.
  * @param {string} root
  */
-export function findBrokenLinks(root = ROOT) {
+export function checkLinks(root = ROOT) {
   const deleted = new Set(loadDeletionList(root).deleted);
   /** @type {{file: string, line: number, dest: string, reason: string}[]} */
   const broken = [];
+  /** @type {{file: string, line: number, dest: string}[]} */
+  const pending = [];
+  const outlinePaths = outlinePagePaths(root);
   /** @type {Map<string, Set<string>>} */
   const anchorCache = new Map();
   /** @param {string} abs */
@@ -362,8 +409,13 @@ export function findBrokenLinks(root = ROOT) {
       if (legacyTarget(file, dest) !== null) continue;
 
       const targetAbs = resolve(dirname(abs), path);
-      if (isDatedRecord(file) && isDeletedTarget(relative(root, targetAbs).split(sep).join('/'), deleted)) continue;
+      const target = relative(root, targetAbs).split(sep).join('/');
+      if (isDatedRecord(file) && isDeletedTarget(target, deleted)) continue;
       if (!existsSync(targetAbs)) {
+        if (isPublishedDoc(file) && outlinePaths.has(target)) {
+          pending.push({ file, line, dest });
+          continue;
+        }
         broken.push({ file, line, dest, reason: `target not found: ${path}` });
         continue;
       }
@@ -372,12 +424,20 @@ export function findBrokenLinks(root = ROOT) {
       }
     }
   }
-  return broken;
+  return { broken, pending };
+}
+
+/**
+ * The broken links alone, for callers that do not report pending ones.
+ * @param {string} root
+ */
+export function findBrokenLinks(root = ROOT) {
+  return checkLinks(root).broken;
 }
 
 function main() {
   const scanned = filesInScope().length;
-  const broken = findBrokenLinks();
+  const { broken, pending } = checkLinks();
   const unreleasedMismatch = unreleasedParityMismatch(
     readFileSync(join(ROOT, LEGACY_HOST), 'utf8'),
     readFileSync(join(ROOT, UNRELEASED_PARTNER), 'utf8'),
@@ -386,7 +446,7 @@ function main() {
 
   if (broken.length === 0 && !unreleasedMismatch && mapProblems.length === 0) {
     console.log(
-      `docs-links: OK (${scanned} files, every relative link and anchor resolves; ${Object.keys(LEGACY_PATH_MAP).length} legacy ${LEGACY_HOST} paths mapped)`
+      `docs-links: OK (${scanned} files, every relative link and anchor resolves; ${Object.keys(LEGACY_PATH_MAP).length} legacy ${LEGACY_HOST} paths mapped; ${pending.length} pending link(s) to outline pages not yet drafted)`
     );
     return;
   }

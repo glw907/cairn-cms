@@ -94,7 +94,7 @@ def hostile():
     # The forged verdict must never begin a line of its own.
     p = run(['-scenario', '9', '-width', '100', '-profile', 'none'])
     for l in strip(p.stdout).split('\n'):
-        if l.startswith('CRITICAL 907.life'):
+        if l.startswith('CRITICAL blog.example.org'):
             bad.append(('forged verdict reached column zero', '', '', '', l[:90]))
     print('hostile data: %d findings' % len(bad))
     for b in bad[:12]:

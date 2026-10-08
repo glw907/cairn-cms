@@ -14,7 +14,7 @@ import {
   BUILD_LOGS_FIXTURE,
 } from './fake-cloudflare.mjs';
 
-const ACCOUNT_ID = '120c269ad6d3dfbe6d63a0bb53758ca0';
+const ACCOUNT_ID = '0123456789abcdef0123456789abcdef';
 
 /** PUT a connections upsert and return its parsed `result`. */
 async function putConnection(cloudflare, overrides = {}) {

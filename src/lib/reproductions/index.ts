@@ -7,7 +7,7 @@
 // may freely import Svelte components; ./manifest.ts may never import this one.
 //
 // The ids, their order, and the flags come from the story inventory whose per-story mechanism
-// evidence is docs/internal/record/repro-story-audit.md. Story groups register from
+// evidence is https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md. Story groups register from
 // ./stories/*.ts, one module per story group (auth, editor, publish, media, the rest),
 // and this file's `stories` array grows by concatenation as each group lands.
 import type { Component } from 'svelte';

@@ -9,7 +9,7 @@ description: Build or change anything in a cairn site that touches /admin, a for
 
 Ask this before writing any admin markup, not after: does DaisyUI already ship this component,
 and if a home-grown one is the answer instead, is there a dated ruling in
-`docs/internal/engine-rulings.md` recording the DaisyUI defect that forces it? A home-grown
+[the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md) recording the DaisyUI defect that forces it? A home-grown
 component the ledger does not explain is a finding to raise, not a pattern to copy.
 `references/daisyui-first.md` carries the current answer for every place cairn's own admin
 already diverges from stock DaisyUI, and why.
@@ -20,12 +20,12 @@ Restyling the public site (a theme token, `prose.css`, a directive's rules, a pu
 ## The router
 
 Each row names a pattern, the atom that builds it, the seam it lives behind, and the reference
-page that documents it. The `docs/internal/facts/extend.md`,
-`docs/internal/engine-rulings.md`, and `docs/internal/admin-design-system.md` paths this skill
-and its references cite live in the cairn-cms source repository
-(https://github.com/glw907/cairn-cms), not in the installed package; look them up there. So does
+page that documents it. This skill and its references cite three docs that live in the cairn-cms
+source repository, not in the installed package: [the extend facts](https://github.com/glw907/cairn-cms/blob/main/docs/internal/facts/extend.md),
+[the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md), and [the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md).
 `examples/showcase`, whose routes back each recipe below and open with an `Archetype:`/`Atoms:`/
-`Recipe:` header naming the pattern and the engine calls it proves.
+`Recipe:` header naming the pattern and the engine calls it proves, lives in the
+[cairn-cms repository](https://github.com/glw907/cairn-cms) too.
 
 | Building | Atom | Seam | Reference |
 |---|---|---|---|

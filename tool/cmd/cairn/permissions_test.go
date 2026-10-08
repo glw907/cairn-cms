@@ -80,7 +80,7 @@ func TestEveryPermissionHasAProbe(t *testing.T) {
 			}
 			continue
 		}
-		if githubProbe(p.Label, nil, "glw907", "ecxc-ski", "main") == nil {
+		if githubProbe(p.Label, nil, "glw907", "my-site", "main") == nil {
 			t.Errorf("githubProbe(%q) = nil; every table row needs a probe", p.Label)
 		}
 	}

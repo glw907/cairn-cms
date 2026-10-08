@@ -1,6 +1,6 @@
 {
   // The deployable template's Cloudflare Worker config. A scaffolded site keeps this shape and
-  // swaps the names and ids. Modeled on the live 907-life cairn site.
+  // swaps the names and ids.
   "name": "cairn-showcase",
   "compatibility_date": "2026-08-21",
   "main": ".svelte-kit/cloudflare/_worker.js",
@@ -44,7 +44,7 @@
     // cairn-template:exclude-start
     ,
     {
-      // The showcase members fixture's own D1 binding.
+      // The showcase members fixture's own D1 binding (docs/extend/add-a-second-sign-in-group.md).
       // Its own migrations_dir, never "migrations": sharing AUTH_DB's directory would apply
       // this channel's schema against the auth store and vice versa.
       "binding": "MEMBER_DB",

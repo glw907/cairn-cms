@@ -176,9 +176,9 @@ describe('resolveNavLayout: ownerOnly', () => {
 describe('resolveNavLayout: roles', () => {
   it('renders a roles-gated entry only for a matching role, capability irrelevant', () => {
     const layout = [
-      { label: 'Signups', icon: 'inbox', href: '/admin/signups', roles: ['club-admin'] },
+      { label: 'Signups', icon: 'inbox', href: '/admin/signups', roles: ['manager'] },
     ] as unknown as NavLayout;
-    const matching = resolveNavLayout(opts({ layout, capability: 'editor', role: 'club-admin' }));
+    const matching = resolveNavLayout(opts({ layout, capability: 'editor', role: 'manager' }));
     expect(matching.items).toEqual([
       { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
     ]);
@@ -189,8 +189,8 @@ describe('resolveNavLayout: roles', () => {
   it('gates every child at once when a section carries roles', () => {
     const layout = [
       {
-        label: 'Club',
-        roles: ['club-admin'],
+        label: 'Team',
+        roles: ['manager'],
         children: [{ screen: 'editors' }, { label: 'Signups', icon: 'inbox', href: '/admin/signups' }],
       },
     ] as unknown as NavLayout;
@@ -204,13 +204,13 @@ describe('resolveNavLayout: roles', () => {
   it('never widens access: an engine ref in a roles-granted section still obeys the capability gate', () => {
     const layout = [
       {
-        label: 'Club',
-        roles: ['club-admin'],
+        label: 'Team',
+        roles: ['manager'],
         children: [{ screen: 'editors' }],
       },
     ] as unknown as NavLayout;
-    // club-admin matches the section's roles, but editor capability still gates the editors screen.
-    const resolved = resolveNavLayout(opts({ layout, capability: 'editor', role: 'club-admin' }));
+    // manager matches the section's roles, but editor capability still gates the editors screen.
+    const resolved = resolveNavLayout(opts({ layout, capability: 'editor', role: 'manager' }));
     expect(resolved.items).toEqual([]);
   });
 });

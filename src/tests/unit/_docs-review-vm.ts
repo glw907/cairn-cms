@@ -51,7 +51,7 @@ export interface ArtifactStub {
 
 export interface DocsReviewState {
   title: string;
-  files: { path: string; markdown: string }[];
+  files: { path: string; markdown: string; plan?: string }[];
 }
 
 export interface ReviewTestHooks {
@@ -60,6 +60,7 @@ export interface ReviewTestHooks {
   buildDocument: (state: DocsReviewState) => string;
   save: () => Promise<void>;
   render: () => void;
+  fileSectionHtml: (file: { path: string; markdown: string; plan?: string }, index: number) => string;
 }
 
 export interface ReviewWindow {

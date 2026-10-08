@@ -61,7 +61,7 @@ documented in `examples/showcase/src/chassis/README.md` rather than here.
 
 **Registration.** `cairn-*` is a shared namespace. The admin sheet also owns roughly sixty of its
 own `cairn-*` classes (`cairn-type-*`, `cairn-chip-*`, and similar), documented in
-[the admin design system](../internal/admin-design-system.md). This page is the emitted-markup
+[the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md). This page is the emitted-markup
 side's registry; a new name on either side should check the other's list before landing, so the
 two vocabularies never collide. `cairn-icon-label`, an admin toolkit label class, is an
 admin-sheet neighbor, not one of the names above; no render helper emits it.

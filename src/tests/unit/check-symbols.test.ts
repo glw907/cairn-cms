@@ -441,12 +441,12 @@ describe('the ALLOWLIST', () => {
     expect(ALLOWLIST.has('env-var:--prefix')).toBe(false);
   });
 
-  // A kept per-version record names a deletion-list page in a code span. The page goes, the record
+  // A kept per-version record names a retired page in a code span. The page goes, the record
   // stays immutable, so the path is allowlisted rather than resolved.
-  it('carries the kept migration-notes record\'s code-span path to a deleted extend page', () => {
-    const segments = codeVoiceSegments('the `docs/extend/security-model.md#recovering-whitelist-semantics` recipe');
-    expect(extractFilePaths(segments).map(({ token }) => token)).toEqual(['docs/extend/security-model.md']);
-    expect(ALLOWLIST.has('file-path:docs/extend/security-model.md')).toBe(true);
+  it('carries the kept migration-notes record\'s code-span path to a retired reference page', () => {
+    const segments = codeVoiceSegments('see `docs/reference/doctor.md#status-vocabulary`');
+    expect(extractFilePaths(segments).map(({ token }) => token)).toEqual(['docs/reference/doctor.md']);
+    expect(ALLOWLIST.has('file-path:docs/reference/doctor.md')).toBe(true);
   });
 });
 

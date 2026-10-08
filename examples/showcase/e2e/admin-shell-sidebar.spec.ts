@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test';
 //    no such drift.
 // 2. Sidebar auto-collapse on navigate: `isDeskRoute` classified any three-segment `/admin` path as
 //    an open document and receded the persistent desktop sidebar, but a developer's own custom nav
-//    can be just as deep (a section entry like `/admin/club/events`) without being a document editor.
+//    can be just as deep (a section entry like `/admin/team/events`) without being a document editor.
 //    Navigating to a route that merely happened to sit three segments deep receded the sidebar to the
 //    mobile toggle-controlled overlay, which read as the sidebar sliding away at desktop width. The
 //    fix requires the second segment to name a real content concept before treating a route as a desk.

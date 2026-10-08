@@ -100,7 +100,8 @@ durable orientation only.
 
 Every pass updates the docs for what it changed, and a public-API change is not done until its
 reference page matches. The `cairn-pass` ritual carries the step; `check:reference` fails on an
-undocumented export and `check:package` checks the entry points.
+undocumented export, `check:options` is its option counterpart (every member of a public option
+type needs a row in the committed option map), and `check:package` checks the entry points.
 
 The public docs are four audience tracks under `docs/`, one reader each:
 `admin/` (running the default site, no code), `editors/` (writing in `/admin`, no terminal),
@@ -145,8 +146,8 @@ friction log, it drifts heavy when work is only ever added, so a pass that remov
 backlog item is not done until the roadmap stops listing it. Shipped history lives in
 `docs/STATUS.md` and the per-plan post-mortems, not in the roadmap.
 
-Four production sites depend on the package, each on its own version range, so a stale doc costs
-real users. cairn.pub renders the doc arms shipped inside the
+Consumer sites depend on the package, each on its own version range, so a stale doc costs the
+developers who build on it. cairn.pub renders the doc arms shipped inside the
 npm tarball from its installed engine version, so its dependency pin is the docs version selector:
 docs on `main` describe `main`'s engine and go public at the next release and pin bump. No
 separate docs deploy, no dev-docs channel (record: cairn-pub `docs/architecture.md`, "Docs
@@ -268,7 +269,8 @@ Map the symptom to its event: a sign-in failure points at a send-failure or guar
 (check `reason`); a save that does nothing points at a commit failure (`conflict` is a stale-edit
 collision, `error` is the GitHub failure). On Cloudflare, Workers Logs is the query surface
 (`observability.enabled = true` in `wrangler.jsonc`; filter by `event` or `editor`). Records carry
-an editor's email, never a token or session id, so a log is safe to read and paste.
+an editor's email, never a token or session id, so a log is safe to read; check a record before
+pasting it in public, since the email identifies the editor.
 
 A pass adding a diagnosable code path gives it an event in the vocabulary, not a bare `console`
 call, and updates the reference table in the same pass. `createLogger` is public from the `/log`
@@ -293,7 +295,7 @@ Five recurring traps, one line each; full detail per anchor in
 ## Credentials (machine-local, intentionally not in git)
 
 GitHub App and D1 `AUTH_DB` credentials:
-[`docs/internal/credentials.md`](docs/internal/credentials.md), reference data, not orientation.
+`docs/internal/credentials.md` (gitignored, present only on the maintainer's workstation), reference data, not orientation.
 
 ## Authoring
 

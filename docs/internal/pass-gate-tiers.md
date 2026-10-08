@@ -38,9 +38,9 @@ of that, and `full` adds the remaining CI-only checks plus the whole showcase e2
 
 The `docs` gate string is `scripts/checks/docs-gate.mjs` (`npm run check:docs-gate`), the one
 runner that carries every check that reads a doc arm's content: check:docs, check:vale,
-check:facts, check:provenance, check:symbols, check:snippets, check:transcripts, check:visuals,
+check:facts, check:provenance, check:leaks, check:symbols, check:snippets, check:transcripts, check:visuals,
 check:arm-indexes, check:editor-quotes, check:readiness, check:tool-conditions,
-check:target-stack, check:reference, and check:reference:signatures. Every tier above `docs`
+check:target-stack, check:reference, check:reference:signatures, and check:options. Every tier above `docs`
 carries it once, through the superset chain, so `full`'s own explicit checks list does not repeat
 check:snippets, check:transcripts, or check:symbols.
 

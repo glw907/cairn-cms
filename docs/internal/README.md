@@ -35,9 +35,9 @@ subdirectories, each of which keeps its own filing rule and its own index.
   admin idiomatic re-expression sweep.
 - [`code-idioms.md`](code-idioms.md): the agent-facing idiom charter, one obvious way per
   pattern; a standing pass dimension.
-- [`credentials.md`](credentials.md): machine-local credential locations (the GitHub App id,
-  installation id, private key, and per-site D1 `AUTH_DB` bindings), moved out of `CLAUDE.md`
-  to keep that file inside its context budget.
+- `credentials.md`: machine-local credential locations (the GitHub App id, installation id,
+  private key, and per-site D1 `AUTH_DB` bindings), moved out of `CLAUDE.md` to keep that file
+  inside its context budget. It is gitignored and exists only on the maintainer's workstation.
 - [`daisy-absorption-ritual.md`](daisy-absorption-ritual.md): the maintainer's routine check
   against a daisyUI release renaming or dropping a class the admin's blessed set depends on. Run
   it against every daisy release Dependabot opens a PR for.

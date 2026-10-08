@@ -12,7 +12,7 @@
 // `[role="heading"]`): the text before the first heading is its own region, and each heading opens
 // a new one that runs until the next, MINUS CHROME.
 //
-// Ruling 4 (2026-07-28, Geoff): the region definition above, before this ruling, still
+// The chrome exclusion: an earlier region definition still
 // counted a route's own toolbar, pagination, and column-header furniture as if it were the body
 // prose or data the rule exists to test. Every one of the ten advisories the rendered baseline
 // raised against cairn's own admin (five routes times two themes, every one at exactly three
@@ -49,7 +49,7 @@
 //    facet menu trigger), every sort button on a table's own column header, a row's own delete
 //    action, `Pagination`'s own page buttons, and `CairnTidySettings`' own disclosure `<summary>`.
 //    This reverses the prior cut's stated position ("a button label ... is ordinary region
-//    content"); the reversal is Ruling 4 itself, and the axis borrows the WCAG glossary's term
+//    content"); the reversal is this chrome exclusion itself, and the axis borrows the WCAG glossary's term
 //    "user interface component" to name one side of it. The term only, never a criterion: SC 4.1.2
 //    Name, Role, Value is a Level A requirement that a component's name, role, and value be
 //    programmatically determinable, it draws no line about typographic weight, and an earlier draft
@@ -70,7 +70,7 @@
 //    and a plain data cell (400) until this ruling.
 //
 // TWO LIMITS OF THIS CUT, both demonstrated against cairn's own markup, both stated here rather
-// than papered over with a heuristic (Ruling 4's own instruction):
+// than papered over with a heuristic:
 //
 //  - A `<button>` used as a row WRAPPER takes its whole content out of the rule's reach.
 //    `CairnMediaLibrary` wraps an asset row's name, meta line, and status chip in one bare
@@ -380,7 +380,7 @@ export const weightBudget: RenderedRule = {
     // The two ways that happens are different problems and say so separately. "No visible text at
     // all" is the unhydrated-root condition, a fix-in-the-app signal; a root or region that renders
     // only chrome is fully hydrated and covered in text this rule deliberately does not count. One
-    // message for both was factually false about the second, which after Ruling 4's narrowing is
+    // message for both was factually false about the second, which after the chrome exclusion narrows the region is
     // the common case: a heading followed by a toolbar or a pagination strip.
     const unmeasured = (selector: string, label: string, chrome: number): RenderedFinding => ({
       ruleId: 'weight-budget',

@@ -34,17 +34,17 @@ func TestCompletionCommandIsPresentAndNotHidden(t *testing.T) {
 // registry's own ids, filtered by prefix, with no network involved.
 func TestSiteIDCompletionListsTheRegistry(t *testing.T) {
 	d, _ := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
-	writeTestRecord(t, d, "ninenine-a1b2c3", "907.life", "ninenine")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
+	writeTestRecord(t, d, "ninenine-a1b2c3", "blog.example.org", "ninenine")
 
 	complete := completeSiteIDs(d)
 
-	got, directive := complete(nil, nil, "ecxc")
+	got, directive := complete(nil, nil, "my-")
 	if directive != cobra.ShellCompDirectiveNoFileComp {
 		t.Errorf("directive = %v, want ShellCompDirectiveNoFileComp", directive)
 	}
-	if len(got) != 1 || got[0] != "ecxc-ski-a1b2c3" {
-		t.Errorf("candidates = %v, want [ecxc-ski-a1b2c3]", got)
+	if len(got) != 1 || got[0] != "my-site-a1b2c3" {
+		t.Errorf("candidates = %v, want [my-site-a1b2c3]", got)
 	}
 }
 
@@ -52,7 +52,7 @@ func TestSiteIDCompletionListsTheRegistry(t *testing.T) {
 // site: an empty candidate list, not an error.
 func TestSiteIDCompletionNoMatchReturnsNoCandidates(t *testing.T) {
 	d, _ := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
 	got, directive := completeSiteIDs(d)(nil, nil, "no-such-prefix")
 	if directive != cobra.ShellCompDirectiveNoFileComp {
@@ -83,9 +83,9 @@ func TestSiteIDCompletionWithNoRegistryAnswersNoCandidates(t *testing.T) {
 // offered.
 func TestSiteIDCompletionIgnoresAPositionalAlreadyGiven(t *testing.T) {
 	d, _ := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
-	got, _ := completeSiteIDs(d)(nil, []string{"ecxc-ski-a1b2c3"}, "")
+	got, _ := completeSiteIDs(d)(nil, []string{"my-site-a1b2c3"}, "")
 	if len(got) != 0 {
 		t.Errorf("candidates = %v, want none once a site is already named", got)
 	}

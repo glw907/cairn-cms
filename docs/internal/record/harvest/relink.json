@@ -1,5 +1,5 @@
 {
-  "_note": "Agent-facing. One entry per repaired link, narrowed gate assertion, and allowlist entry the harvest made. Each entry names the file, a grep-able context string, the old target, what was done, and the stage (2a, 2b, 3, 4, 5) whose rebuild restores or re-arms it; null means the change is permanent. Each stage outline consumes the entries keyed to it. The gate narrowings read arm state from scripts/checks/arm-state.mjs; an arm counts as rebuilt as soon as it holds any page outside the kept set, so extend's entries re-arm at the 2a pilot, not at 2b.",
+  "_note": "Agent-facing. One entry per repaired link, narrowed gate assertion, and allowlist entry the harvest made. Each entry names the file, a grep-able context string, the old target, what was done, and the stage (2a, 2b, 3, 4, 5) whose rebuild restores or re-arms it; null means the change is permanent. Each stage outline consumes the entries keyed to it. The gate narrowings read arm state from scripts/checks/arm-state.mjs; an arm counts as rebuilt as soon as it holds any page outside the kept set, so extend's entries re-arm at the 2a pilot, not at 2b. A stage-2a entry's restoredIn names the commit that restored or re-armed it; docs/superpowers/research/2026-10-07-draft-docs-2a-r6-consistency-record.md says what each change was.",
   "entries": [
     {
       "file": "scripts/checks/check-arm-indexes.mjs",
@@ -20,7 +20,8 @@
       "context": "index: 'docs/extend/README.md', state: 'extend'",
       "oldTarget": "docs/extend/README.md",
       "done": "The extend arm's index coverage check runs only while the arm is rebuilt; absent or kept-only, it is skipped by name.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "f6cee04f"
     },
     {
       "file": "scripts/checks/check-arm-indexes.mjs",
@@ -48,7 +49,8 @@
       "context": "extend: 'docs/extend/README.md'",
       "oldTarget": "docs/extend/README.md",
       "done": "requiredDocsPaths asks for the extend index in the tarball only while the arm is rebuilt.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "f6cee04f"
     },
     {
       "file": "scripts/checks/check-package-files.mjs",
@@ -82,15 +84,17 @@
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "'file-path:docs/extend/security-model.md'",
       "oldTarget": "docs/extend/security-model.md",
-      "done": "Allowlisted: migration-notes.md's 0.97.0 record cites the page by path in a code span (the security-model.md#recovering-whitelist-semantics recipe); the record is immutable, so the path stays and is excused. The extend rebuild decides whether a rebuilt page carries the recipe.",
-      "stage": "2a"
+      "done": "Allowlisted: migration-notes.md's 0.97.0 record cites the page by path in a code span (the security-model.md#recovering-whitelist-semantics recipe); the path was excused until the extend rebuild. The rebuilt page carries the recipe under \"Allowlist semantics from an exhaustive map\", so commit a0213cc3 repointed the anchor in migration-notes.md to #allowlist-semantics-from-an-exhaustive-map (link restoration only).",
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "src/tests/unit/github-slug-contract.test.ts",
       "context": "## Milestone 1: a bare SvelteKit site, deployed",
       "oldTarget": "docs/extend/build-a-site-by-hand.md",
-      "done": "The heading stays a literal slug case; the source-page check skips it while the page's arm is not rebuilt, and fails once the arm is rebuilt without the page, so the case gets repointed at a live page.",
-      "stage": "2a"
+      "done": "The heading stays a slug case, marked synthetic (no live page carries its shape); the test's source check skips a synthetic case and asserts every other source exists.",
+      "stage": "2a",
+      "restoredIn": "f6cee04f"
     },
     {
       "file": "src/tests/unit/github-slug-contract.test.ts",
@@ -138,50 +142,70 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/auth-channel-security-model.md': 'docs/extend/auth-channel-security-model.md'",
       "oldTarget": "docs/extend/auth-channel-security-model.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "security-model",
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/editor-copyedit.md': 'docs/extend/enable-tidy.md'",
       "oldTarget": "docs/extend/enable-tidy.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "turn-on-tidy",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/enforced-design.md': 'docs/extend/add-a-custom-admin-screen.md'",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "add-a-custom-admin-screen",
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/media-storage.md': 'docs/extend/data-tiers.md'",
       "oldTarget": "docs/extend/data-tiers.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "architecture",
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/explanation/security-model.md': 'docs/extend/security-model.md'",
       "oldTarget": "docs/extend/security-model.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "security-model",
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/add-a-custom-admin-screen.md': 'docs/extend/add-a-custom-admin-screen.md'",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "add-a-custom-admin-screen",
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/add-a-login-channel.md': 'docs/extend/add-a-second-audience.md'",
       "oldTarget": "docs/extend/add-a-second-audience.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "add-a-second-sign-in-group",
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -194,22 +218,28 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/add-an-island.md': 'docs/extend/add-an-island.md'",
       "oldTarget": "docs/extend/add-an-island.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "add-an-island",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/add-authors.md': 'docs/extend/declare-your-own-concept.md'",
       "oldTarget": "docs/extend/declare-your-own-concept.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "define-an-adapter-and-schema",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/announce-on-publish.md': 'docs/extend/announce-on-publish.md'",
       "oldTarget": "docs/extend/announce-on-publish.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "act-on-newly-published-entries",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -222,36 +252,48 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/configure-auth-and-d1.md': 'docs/extend/add-cairn-to-a-sveltekit-app.md'",
       "oldTarget": "docs/extend/add-cairn-to-a-sveltekit-app.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "add-cairn-to-a-sveltekit-app",
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/define-an-adapter-and-schema.md': 'docs/extend/define-an-adapter-and-schema.md'",
       "oldTarget": "docs/extend/define-an-adapter-and-schema.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "define-an-adapter-and-schema",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md'",
       "oldTarget": "docs/extend/enable-tidy.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "turn-on-tidy",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/iterate-your-design-locally.md': 'docs/extend/design-your-site.md'",
       "oldTarget": "docs/extend/design-your-site.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "theme-your-public-site",
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/link-content-with-references.md': 'docs/extend/link-content-with-references.md'",
       "oldTarget": "docs/extend/link-content-with-references.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "link-content-with-references",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -264,8 +306,10 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/organize-your-admin-nav.md': 'docs/extend/organize-your-admin-nav.md'",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "arrange-the-admin-sidebar",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -285,29 +329,38 @@
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/restrict-admin-access.md': 'docs/extend/restrict-admin-access.md'",
       "oldTarget": "docs/extend/restrict-admin-access.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "restrict-admin-access",
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/reuse-content-across-entries.md': 'docs/extend/reuse-content-across-entries.md'",
       "oldTarget": "docs/extend/reuse-content-across-entries.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "reuse-content-across-entries",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/share-a-draft-preview.md': 'docs/extend/share-a-draft-preview.md'",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "share-a-draft-preview",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/guides/wire-the-delivery-surface.md': 'docs/extend/wire-the-delivery-surface.md'",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
-      "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the extend arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "2a"
+      "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
+      "interim": "docs/extend/README.md",
+      "repointedBy": "build-the-public-routes",
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -383,71 +436,80 @@
       "file": "docs/reference/admin-routes.md",
       "context": "setting both go inside `vite.config.ts`'s `sveltekit({ ... })` call instead.",
       "oldTarget": "docs/extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff",
-      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "done": "Moot on SvelteKit 3: the sentence this link served is gone from the page (the wiring carries no csrf setting), so nothing restores. Permanent.",
+      "stage": null
     },
     {
       "file": "docs/reference/admin-routes.md",
       "context": "renders inside this same shell.",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/auth-channel.md",
       "context": "The design is built from one rule: no control keyed on the victim's identity",
       "oldTarget": "docs/extend/auth-channel-security-model.md",
       "done": "Link and its pointer sentence removed, the rule sentence kept; restore a link to the threat catalogue.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/auth-channel.md",
       "context": "flag as its own enable contract.",
       "oldTarget": "docs/extend/security-model.md#what-the-dev-backend-flags-two-refusals-leave-open",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/auth-channel.md",
       "context": "the whole economic bound on guessing a code is `challenge`'s consequence.",
       "oldTarget": "docs/extend/auth-channel-security-model.md",
       "done": "Parenthetical link removed; restore a link to the threat catalogue.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/auth-channel.md",
       "context": "Resend cooldown per nonce, in ms; UX only |",
       "oldTarget": "docs/extend/auth-channel-security-model.md",
       "done": "Parenthetical link removed; restore a link to the residual-risks section.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/auth-channel.md",
       "context": "never at the `migrations` directory your site's `AUTH_DB` uses. A shared",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/auth-crypto.md",
       "context": "different `secure` values on the same request. A site building",
       "oldTarget": "docs/extend/security-model.md#the-session-cookie",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/cli-cairn-media-seed.md",
       "context": "Once seeded, an author edits",
       "oldTarget": "docs/extend/design-your-site.md#local-iteration",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/cli-cairn-media-seed.md",
       "context": "- [The `cairn doctor` command](./cli-cairn-doctor.md), which reads the same wrangler config for",
       "oldTarget": "docs/extend/design-your-site.md#local-iteration",
       "done": "See-also bullet removed; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/core.md",
@@ -461,21 +523,23 @@
       "context": "over that path. This grew from a",
       "oldTarget": "docs/extend/data-tiers.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/core.md",
       "context": "flatten the fields instead of nesting them.",
       "oldTarget": "docs/extend/content-model.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/core.md",
       "context": "never widens it, so a site that declares no map sees no behavior change.",
       "oldTarget": "docs/extend/restrict-admin-access.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/guidance.md",
@@ -489,112 +553,119 @@
       "context": "- [`rendering.islands` on the core reference](./core.md#renderingislands-adapter-member)",
       "oldTarget": "docs/extend/add-an-island.md",
       "done": "See-also bullet removed; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/log-events.md",
       "context": "magic-link's contents.\n",
       "oldTarget": "docs/extend/security-model.md; docs/admin/troubleshooting.md",
       "done": "Two pointers removed: the redaction-stance link (extend, restored at 2a) and the log-query link (admin troubleshooting, restored at 3).",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/log-events.md",
       "context": "session by design. This only surfaces a map a site believed",
       "oldTarget": "docs/extend/security-model.md#an-access-map-is-not-a-whitelist",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/public.md",
       "context": "for the `loadPreview` seam it pairs with.",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/public.md",
       "context": "replaces the token default in both states.",
       "oldTarget": "docs/extend/share-a-draft-preview.md#override-the-banners-palette",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/render.md",
       "context": "its own.\n",
       "oldTarget": "docs/extend/configure-rendering.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/supported-toolchain.md",
       "context": "disabling `checkOrigin`,\nand the current",
       "oldTarget": "docs/extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff",
-      "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "done": "Moot on SvelteKit 3: the checkOrigin paragraph was rewritten as the checkOrigin-removal section, which carries no pointer to the dev-backend walkthrough, so nothing restores. Permanent.",
+      "stage": null
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "that writes a sink following the `waitUntil` advice. `ctx.audit` catches",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md#wire-the-auditsink",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "the same convention as a hand-rolled one:",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md#wire-the-auditsink",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "what any given site's own routes show.\n",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md#gate-it",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "out of their own link.\n",
       "oldTarget": "docs/extend/security-model.md#sign-in-binds-to-the-browser-that-asked",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "insert still works and stays documented\nas the fallback",
       "oldTarget": "docs/extend/add-cairn-to-a-sveltekit-app.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "below for the site-mounted page these actions\nfeed.",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "rather than an approximated shell.\n",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "map](./core.md#access-map), when one is declared.\n",
       "oldTarget": "docs/extend/restrict-admin-access.md; docs/extend/organize-your-admin-nav.md",
       "done": "Two pointers removed from a sentence that ends at the access-map link; the reference page keeps the rule, and the pointers return with the rebuilt pages. Two occurrences (the NavLayout and the layout-types sections).",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "contract in full.\n",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "README.md",
@@ -615,7 +686,8 @@
       "context": "Start from\n`npm install @glw907/cairn-cms`, and read [the reference]",
       "oldTarget": "docs/extend/add-cairn-to-a-sveltekit-app.md",
       "done": "Guide link replaced by the reference index; restore the guide link when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "README.md",
@@ -650,21 +722,22 @@
       "context": "HTML or a `javascript:` URL unless a site explicitly opts out.",
       "oldTarget": "docs/extend/security-model.md; docs/extend/data-tiers.md",
       "done": "Pointer sentence removed; the extend rebuild restores links to the security model and the data tiers.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/extend/choose-an-ai-posture.md",
       "context": "that the\nscaffold writes.\n",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
       "done": "Link and its relative clause removed from the kept page and its brief in lockstep; restore the pointer when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/extend/choose-an-ai-posture.json",
       "context": "that the scaffold writes.\"",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
       "done": "Brief sentence matches the kept page edit.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/extend/choose-an-ai-posture.md",
@@ -685,7 +758,8 @@
       "context": "A `0.x` minor can break a documented seam, so an upgrade is never a blind bump.",
       "oldTarget": "docs/extend/README.md#operate-across-versions",
       "done": "The pointer to the stability statement dropped; restore it when the extend index returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/extend/upgrade-cairn.md",
@@ -699,7 +773,8 @@
       "context": "version the error's import or field name last appeared in.",
       "oldTarget": "docs/extend/debug-your-site.md",
       "done": "Pointer sentence removed; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/extend/migration-notes.md",
@@ -734,140 +809,154 @@
       "context": "// site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "packages/create-cairn-site/src/substitute.mjs",
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "packages/create-cairn-site/src/substitute.test.mjs",
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "packages/create-cairn-site/src/scaffold.test.mjs",
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "packages/create-cairn-site/src/substitute.mjs",
       "context": "'  // route passes it to robotsResponse, and CairnAdapter.aiPosture',",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "The emitted decline/invite comment block drops the pointer too (aiPostureBlock).",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "examples/cairn-theme/cairn.css",
       "context": "regardless of order.\n   ====",
       "oldTarget": "docs/extend/design-your-site.md",
       "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/cairn-theme/README.md",
       "context": "regardless of position.",
       "oldTarget": "docs/extend/design-your-site.md",
       "done": "Pointer sentence removed; restore the link when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/e2e/members.spec.ts",
       "context": "(src/members/channel.ts, the worked exemplar). Each",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/src/app.d.ts",
       "context": "The showcase members fixture's own binding;",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/src/members/capture-transport.ts",
       "context": "channel end to end: instead of sending",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/src/members/channel.ts",
       "context": "a second audience. Two named divergences from the documented shape",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/src/routes/members/+page.server.ts",
       "context": "which reads the signed-in subject, into this",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/src/routes/admin/signups/+page.server.ts",
       "context": "// Recipe: docs/reference/sveltekit.md (createSectionAction, requireAccess).",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
       "done": "Recipe header retargeted to the reference page that documents the atoms; restore the recipe path when the guide returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/src/routes/members/login/+page.server.ts",
       "context": "// Recipe: docs/reference/auth-channel.md (createAuthChannel).",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Recipe header retargeted to the reference page that documents the atom; restore the recipe path when the guide returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/src/routes/members/login/+page.server.ts",
       "context": "of the documented pattern, folded onto one page",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/src/routes/members/login/+page.svelte",
       "context": "the documented exemplar rendered. Both forms",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/src/routes/test/last-otp/+server.ts",
       "context": "// the second-audience pattern states that as a rule",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/wrangler.jsonc",
       "context": "The showcase members fixture's own D1 binding.",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/svelte.config.js",
       "context": "hand the authority over.\n    // WATCH:",
       "oldTarget": "docs/extend/build-a-site-by-hand.md",
-      "done": "Comment pointer dropped; restore it when the page returns.",
-      "stage": "2a"
+      "done": "Closed on SvelteKit 3: examples/showcase/svelte.config.js is deleted (the Kit config sits inline in vite.config.ts) and its WATCH, which tracked kit#15992, ended when SvelteKit 3 removed csrf.checkOrigin. No file holds a successor WATCH, so no pointer is restored. Permanent.",
+      "stage": null
     },
     {
       "file": "examples/showcase/README.md",
       "context": "run against this directory in CI.",
       "oldTarget": "docs/extend/build-a-site-by-hand.md",
       "done": "Companion clause removed; restore the link when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "examples/showcase/README.md",
@@ -881,56 +970,59 @@
       "context": "scaffolds from. A few",
       "oldTarget": "docs/extend/what-the-scaffold-wrote.md",
       "done": "Pointer clause removed; restore the link when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "skills/cairn-extend/SKILL.md",
       "context": "and the reference\npage that documents it.",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
       "done": "The router names reference pages instead of the shipped recipe pages; the extend rebuild may restore per-pattern recipes. Sites re-run `npx cairn-guidance install` (the changelog carries the Consumers must line).",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "skills/cairn-extend/SKILL.md",
       "context": "docs/reference/auth-channel.md` |",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
       "done": "Both table rows now point at the reference pages that document their atoms (same edit as above).",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "src/lib/dev-flag.ts",
       "context": "The residual is honest: a deployment that sets",
       "oldTarget": "docs/extend/security-model.md",
       "done": "Comment pointer dropped or reworded; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "src/lib/public/PreviewBanner.svelte",
       "context": "property replaces the default for the whole banner.\n-->",
       "oldTarget": "docs/extend/share-a-draft-preview.md#override-the-banners-palette",
       "done": "Comment pointer dropped or reworded; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "src/lib/reproductions/fixtures.ts",
       "context": "The `navLayout` seam's own worked example, resolved to",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
       "done": "Comment pointer dropped or reworded; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "src/tests/unit/reproductions-fixtures.test.ts",
       "context": "it('resolves the navLayout worked example, with",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
       "done": "Test title named the deleted page by basename; it names the seam now.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "src/lib/reproductions/stories/CustomScreen.svelte",
       "context": "custom-admin-screen guide (removed pending its rebuild)",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
       "done": "Path replaced by the guide named in words; restore the path when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "src/lib/reproductions/stories/editor.ts",
@@ -944,28 +1036,32 @@
       "context": "worked snippet in the extend track's custom-admin-screen guide",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
       "done": "Path replaced by the guide named in words; restore the path when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "src/lib/sveltekit/admin-action.ts",
       "context": "(`waitUntil` advice for a custom section is",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
       "done": "Comment pointer dropped or reworded; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "src/lib/sveltekit/admin-nav.ts",
       "context": "(an access map is not a\n *  whitelist). This never blocks",
       "oldTarget": "docs/extend/security-model.md#an-access-map-is-not-a-whitelist",
       "done": "Comment pointer dropped or reworded; restore it when the page returns.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/internal/admin-design-system.md",
       "context": "A public docs page that touches motion cites it by heading rather",
       "oldTarget": "docs/extend/animate-a-custom-screen.md",
       "done": "The page-specific claim made general: the deleted page named here no longer exists, and the rebuilt extend arm carries the citation rule.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "CLAUDE.md",
@@ -1098,7 +1194,8 @@
       "context": "- `docs/reference/README.md` for the export-subpath view a consuming site reads",
       "oldTarget": "docs/extend/architecture.md",
       "done": "Retargeted to the reference index, which lists every export subpath; the extend rebuild may restore the architecture page.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "docs/internal/docs-register.md",
@@ -1189,28 +1286,28 @@
       "context": "by suppression.** `auth-channel-security-model.md` cites \"NIST",
       "oldTarget": "auth-channel-security-model.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/README.md",
       "context": "s own `README.md` (`docs/admin/README.md`,",
       "oldTarget": "docs/admin/README.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/README.md",
       "context": "`docs/editors/README.md`, `docs/extend/READ",
       "oldTarget": "docs/editors/README.md; docs/extend/README.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/README.md",
       "context": "ocs/internal/briefs/admin/README.json`, and so on),",
       "oldTarget": "admin/README",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/README.md",
@@ -1224,7 +1321,7 @@
       "context": "`docs/README.md`) never covers `doc",
       "oldTarget": "docs/README.md; docs/admin/README.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "docs/internal/briefs/README.md",
@@ -1245,140 +1342,154 @@
       "context": "env-var:CLUB_DB",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "env-var:CAIRN_FIXED_TODAY",
       "oldTarget": "docs/extend/debug-your-site.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "variable), cited in docs/extend/sign-in-through-your-organization.md's",
       "oldTarget": "docs/extend/sign-in-through-your-organization.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "log-event:tidy.conventions",
       "oldTarget": "docs/extend/enable-tidy.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "log-event:tidy.model",
       "oldTarget": "docs/extend/enable-tidy.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "0.97.0 entry cites docs/extend/security-model.md's exhaustive-map re",
       "oldTarget": "docs/extend/security-model.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/theme/theme.css",
       "oldTarget": "docs/extend/design-your-site.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/lib/club/section.ts",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/routes/admin/club/events/ApproveDialog.svelte",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/lib/today.ts",
       "oldTarget": "docs/extend/debug-your-site.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/lib/members/channel.ts",
       "oldTarget": "docs/extend/add-a-second-audience.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/lib/content.ts",
       "oldTarget": "docs/extend/build-a-site-by-hand.md; wire-the-delivery-surface.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/theme/islands/Converter.svelte",
       "oldTarget": "docs/extend/add-an-island.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/content/posts/2026-08-14-hello.md",
       "oldTarget": "docs/extend/build-a-site-by-hand.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:old-site/content/posts/my-post.md",
       "oldTarget": "docs/extend/migrate-existing-content.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/content/posts/2024-01-15-my-post.md",
       "oldTarget": "docs/extend/migrate-existing-content.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/content/fragments/trail-safety.md",
       "oldTarget": "docs/extend/reuse-content-across-entries.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2b"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:svelte-kit/cloudflare/_worker.js",
       "oldTarget": "docs/extend/build-a-site-by-hand.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/lib/access-identity.ts",
       "oldTarget": "docs/extend/sign-in-through-your-organization.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:admin/__data.json",
       "oldTarget": "docs/extend/sign-in-through-your-organization.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2a"
+      "stage": "2a",
+      "restoredIn": "c00cd0b4"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",

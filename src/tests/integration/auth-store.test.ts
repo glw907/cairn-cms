@@ -132,13 +132,13 @@ describe('last-owner guards (atomic)', () => {
   });
 
   it('counts across a two-owner-level-name vocabulary, not the literal owner string', async () => {
-    // A club-shaped vocabulary where both 'owner' and 'president' carry owner capability. A row
+    // A custom role vocabulary where both 'owner' and 'president' carry owner capability. A row
     // under either name counts toward the "another owner remains" test.
     await seedEditor('own@x.dev', 'Own', 'owner');
     await seedEditor('pres@x.dev', 'Pres', 'president');
     const ownerRoles = ['owner', 'president'];
-    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ownerRoles, 'club-admin')).toEqual({ outcome: 'ok' });
-    expect((await findEditor(db, 'own@x.dev'))?.role).toBe('club-admin');
+    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ownerRoles, 'webmaster')).toEqual({ outcome: 'ok' });
+    expect((await findEditor(db, 'own@x.dev'))?.role).toBe('webmaster');
     // Only 'pres@x.dev' carries an owner-level role now; refuse to strand the roster.
     expect(await removeOwnerIfNotLast(db, 'pres@x.dev', ownerRoles)).toEqual({ outcome: 'last-owner' });
     expect(await findEditor(db, 'pres@x.dev')).not.toBeNull();

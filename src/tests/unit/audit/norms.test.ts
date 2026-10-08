@@ -494,6 +494,12 @@ describe('the query', () => {
     expect(printed).toContain('ratified by');
   });
 
+  it('words the card-border reference as a noun phrase that reads after "ratified by"', () => {
+    const printed = formatNormsQuery(queryNorms(manifest, 'card'));
+    expect(printed).toContain('ratified by the card-shell hairline decision: --cairn-card-border measures 1.11');
+    expect(printed).not.toContain('ratified by the --cairn-card-border hairline measures');
+  });
+
   // The shipped manifest carries no open question once Ruling 2 settled the last one, so the
   // OPEN: line is proved against a fixture question rather than the manifest's live contents, the
   // same reasoning FIXTURE_OPEN_QUESTION exists for above.
@@ -614,13 +620,13 @@ describe('the shipped manifest', () => {
 
   // What a builder actually reads. A `ratified` row prints the document that settles it, and a
   // flagged row prints the question, so neither can appear as a bare word with no authority behind
-  // it. `card/border-color` is the row Ruling 2 moved, and it prints the ruling now.
+  // it. `card/border-color` is the row Ruling 2 moved, and it prints the floor it was measured against.
   it('prints a decision behind every provenance the CLI shows', () => {
     const printed = formatNormsQuery(queryNorms(manifest, 'card'));
     expect(printed).not.toContain('[open-question]');
     expect(printed).toContain('border-color  var(--cairn-card-border)');
     expect(printed).toMatch(/border-color .*ratified/);
-    expect(printed).toContain('Ruling 2');
+    expect(printed).toContain('documented floor of 1.15');
   });
 
   // The manifest ships to consumers who re-tune the palette, so a resolved Warm Stone value in it

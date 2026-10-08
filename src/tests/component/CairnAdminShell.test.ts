@@ -701,16 +701,16 @@ describe('CairnAdminShell', () => {
   });
 
   it('keeps the persistent nav drawer on a deep custom-nav route (path depth alone is not a desk route)', async () => {
-    // /admin/club/events is a developer's own custom nav section entry, three path segments deep,
+    // /admin/team/events is a developer's own custom nav section entry, three path segments deep,
     // but it is not a document editor: the second segment names no content concept. Path depth
     // alone once misclassified this as a desk route and receded the persistent sidebar to the
     // toggle-controlled mobile overlay, which read as the sidebar sliding away on an ordinary
     // desktop nav click.
     const layout: NavLayout = [
-      { label: 'Club', children: [{ label: 'Events', icon: 'calendar', href: '/admin/club/events' }] },
+      { label: 'Team', children: [{ label: 'Events', icon: 'calendar', href: '/admin/team/events' }] },
     ];
     const screen = await render(CairnAdminShell, {
-      data: dataWithLayout(layout, { pathname: '/admin/club/events' }),
+      data: dataWithLayout(layout, { pathname: '/admin/team/events' }),
       children: child,
     });
     const drawer = screen.container.querySelector('.drawer')!;
@@ -725,10 +725,10 @@ describe('CairnAdminShell', () => {
     // this fixture declares one navLayout section to exercise the toggle.
     document.cookie = 'cairn-admin-nav-collapsed=; path=/admin; max-age=0';
     const layout: NavLayout = [
-      { label: 'Club', children: [{ label: 'Events', icon: 'calendar', href: '/admin/club/events' }] },
+      { label: 'Team', children: [{ label: 'Events', icon: 'calendar', href: '/admin/team/events' }] },
     ];
     const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
-    await expect.element(screen.getByText('Club', { exact: true })).toBeInTheDocument();
+    await expect.element(screen.getByText('Team', { exact: true })).toBeInTheDocument();
     await screen.rerender({ data: dataWithLayout(layout, { pathname: '/admin/pages' }), children: child });
     const details = screen.container.querySelector('details')!;
     expect(details.open).toBe(true);
@@ -1122,17 +1122,17 @@ describe('CairnAdminShell', () => {
 
   it('renders a custom navLayout section as the only collapsible group, beside the loose defaults', async () => {
     const layout = flatLayoutWith([
-      { label: 'Club', children: [{ label: 'Events', icon: 'calendar', href: '/admin/club/events' }] },
+      { label: 'Team', children: [{ label: 'Events', icon: 'calendar', href: '/admin/team/events' }] },
     ]);
     const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
-    await expect.element(screen.getByText('Club')).toBeInTheDocument();
+    await expect.element(screen.getByText('Team')).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'Events' })).toBeInTheDocument();
-    // Club is the only collapsible group: the flat default's concepts and engine screens render as
+    // Team is the only collapsible group: the flat default's concepts and engine screens render as
     // loose links beside it, not folded into a second section.
     const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
     const details = sidebar.querySelectorAll('details');
     expect(details).toHaveLength(1);
-    expect(details[0].querySelector('summary')?.textContent?.trim()).toBe('Club');
+    expect(details[0].querySelector('summary')?.textContent?.trim()).toBe('Team');
     const postsLink = Array.from(sidebar.querySelectorAll('a')).find((a) => a.textContent?.trim() === 'Posts')!;
     expect(postsLink.closest('details')).toBeNull();
   });

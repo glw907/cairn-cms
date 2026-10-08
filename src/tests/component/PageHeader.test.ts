@@ -119,7 +119,7 @@ describe('PageHeader', () => {
       'zeroes the leaked child prose margins at %s, so the meta line sits ~4px under the h1 and the eyebrow sits tight above it',
       async (_label, width, height) => {
         await page.viewport(width, height);
-        const screen = await render(PageHeader, { eyebrow: 'Club', title: 'Events', meta: '12 upcoming' });
+        const screen = await render(PageHeader, { eyebrow: 'Team', title: 'Events', meta: '12 upcoming' });
         const eyebrow = screen.container.querySelector('header span')!;
         const heading = screen.container.querySelector('header h1')!;
         const meta = screen.container.querySelector('header p')!;

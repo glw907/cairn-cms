@@ -81,7 +81,8 @@ export const load = admin.shellLoad;
 ```
 
 A site adds its own admin screen by dropping a concrete route under `/admin/` (for example
-`/admin/signups`), which wins over the catch-all and renders inside this same shell.
+`/admin/signups`), which wins over the catch-all and renders inside this same shell. See
+[Add a custom admin screen](../extend/add-a-custom-admin-screen.md) for the worked route.
 
 The composer builds the runtime once, and every server route that needs it (the admin mount,
 `/healthz`) imports it rather than re-running `composeRuntime` per route:
@@ -251,8 +252,8 @@ src/routes/
 ```
 
 Group folders are invisible in the URL, so moving the public pages into `(site)/` changes no paths.
-Endpoints render no layout, so they stay at the root. The admin sits outside the group, so the host
-chrome never wraps it.
+Endpoints render no layout and stay at the root. With the admin outside the group, the host chrome
+never wraps it.
 
 A dev-only guard in the admin backs this rule. In development, the admin shell and the login page
 walk their ancestor chain on mount, and when a width-constraining ancestor sits between the admin

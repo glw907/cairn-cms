@@ -10,7 +10,7 @@
 // A `repro` fence carries its caption INSIDE the YAML body (a mermaid caption is the emphasis
 // paragraph after the fence), so the two fence kinds read their captions from different places.
 // Containment at narrow widths and a rendered accessible name are runtime properties this gate
-// cannot see; they belong to cairn-pub's themed render and browser probe.
+// cannot see; they belong to cairn.pub's themed render and browser probe.
 //
 // `scanDocument`/`scanTree` take the manifest and `validateReproFence` as parameters rather than
 // importing them at module scope: the validator compiles from TypeScript under NodeNext `.js`

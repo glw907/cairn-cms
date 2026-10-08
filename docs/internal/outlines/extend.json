@@ -1,0 +1,3852 @@
+{
+  "arm": "extend",
+  "track": "extend",
+  "index": "docs/extend/README.md",
+  "generatedFrom": {
+    "facts": "docs/internal/facts/extend.md",
+    "relink": "docs/internal/record/harvest/relink.json",
+    "commit": "5c47a6e38af477a0fb9c10f02a74065989be64bd"
+  },
+  "groups": [
+    {
+      "id": "start",
+      "title": "Start",
+      "pages": [
+        "architecture",
+        "add-cairn-to-a-sveltekit-app",
+        "scaffolded-site-files"
+      ]
+    },
+    {
+      "id": "model-content",
+      "title": "Model content",
+      "pages": [
+        "content-model",
+        "define-an-adapter-and-schema",
+        "configure-rendering",
+        "link-content-with-references",
+        "reuse-content-across-entries",
+        "configure-media",
+        "migrate-existing-content"
+      ]
+    },
+    {
+      "id": "public-site",
+      "title": "Public site",
+      "pages": [
+        "theme-your-public-site",
+        "build-the-public-routes",
+        "share-a-draft-preview",
+        "act-on-newly-published-entries",
+        "add-an-island"
+      ]
+    },
+    {
+      "id": "extend-the-admin",
+      "title": "Extend the admin",
+      "pages": [
+        "add-a-custom-admin-screen",
+        "arrange-the-admin-sidebar",
+        "turn-on-tidy"
+      ]
+    },
+    {
+      "id": "auth-and-access",
+      "title": "Auth and access",
+      "pages": [
+        "security-model",
+        "restrict-admin-access",
+        "replace-magic-links-with-cloudflare-access",
+        "add-a-second-sign-in-group"
+      ]
+    },
+    {
+      "id": "operate",
+      "title": "Operate",
+      "pages": [
+        "debug-your-site",
+        "rotate-the-github-app-key",
+        "run-cairn-audit-on-your-site"
+      ]
+    }
+  ],
+  "kept": [
+    "docs/extend/choose-an-ai-posture.md",
+    "docs/extend/upgrade-cairn.md",
+    "docs/extend/migration-notes.md"
+  ],
+  "terms": [
+    {
+      "term": "adapter",
+      "definition": "The single CairnAdapter object a site declares with defineAdapter (typically in src/theme/cairn.config.ts) and every route factory, admin screen, and delivery helper reads its behavior from.",
+      "definedOn": "architecture"
+    },
+    {
+      "term": "seam",
+      "definition": "A documented, stability-tiered point where a site supplies its own code or data to the engine (the content map, render, the access map and roles, identity, custom admin routes, navLayout, BackendProvider), as opposed to engine-internal machinery.",
+      "definedOn": "architecture"
+    },
+    {
+      "term": "holding branch",
+      "definition": "The per-entry `cairn/<concept>/<id>` branch a save commits onto; its existence alone makes the entry pending, and Publish copies it to main and deletes it.",
+      "definedOn": "architecture"
+    },
+    {
+      "term": "manifest",
+      "definition": "The committed content manifest (src/content/.cairn/index.json): one row per entry with identity, routing facts, links, reference edges, tags, and includes, regenerated and verified at build; distinct from the media manifest.",
+      "definedOn": "architecture"
+    },
+    {
+      "term": "data tier",
+      "definition": "One of the three places cairn keeps state by what reads it: git (content and both manifests), D1 (auth and operational rows), R2 (media bytes).",
+      "definedOn": "architecture"
+    },
+    {
+      "term": "stability tier",
+      "definition": "The promise an export carries across versions: Extension API and Scaffold API (frozen contracts, a target discipline while cairn is pre-1.0) or Unstable API (no promise across minors).",
+      "definedOn": "architecture"
+    },
+    {
+      "term": "dev backend",
+      "definition": "The @glw907/cairn-cms-dev handle that swaps in-memory fakes for GitHub, AUTH_DB, and the media bucket in a development build, fenced by the __CAIRN_DEV_BUILD__ define and the CAIRN_DEV_BACKEND flag.",
+      "definedOn": "add-cairn-to-a-sveltekit-app"
+    },
+    {
+      "term": "chassis",
+      "definition": "The genre-free plumbing under src/chassis/ that every scaffolded site shares regardless of look, reached by a theme only through the $chassis seam.",
+      "definedOn": "theme-your-public-site"
+    },
+    {
+      "term": "token tier",
+      "definition": "One of the three layers of Waymark's theme.css tokens, named by how far a re-skin reaches (the daisyUI theme blocks, the owned on-surface floor, and the design scale).",
+      "definedOn": "theme-your-public-site"
+    },
+    {
+      "term": "concept",
+      "definition": "One entry in the adapter's content map: a directory of markdown files plus a fieldset, declared with defineConcept; the set is the site's own.",
+      "definedOn": "content-model"
+    },
+    {
+      "term": "fieldset",
+      "definition": "A concept's declared fields, built from the fifteen field builders, which drive the editor form, the save-time validator, and the inferred TypeScript type.",
+      "definedOn": "content-model"
+    },
+    {
+      "term": "entry id",
+      "definition": "An entry's markdown filename with .md stripped, its only identity; a dated concept's date prefix feeds only the slug.",
+      "definedOn": "content-model"
+    },
+    {
+      "term": "routing",
+      "definition": "A concept's shorthand for its public behavior: feed (routable, dated, in feeds and the sitemap), page (routable, undated, the default), or embedded (no public page).",
+      "definedOn": "content-model"
+    },
+    {
+      "term": "reference field",
+      "definition": "A fields.reference field that stores another entry's id, typed to one declared concept, recorded as a manifest edge and checked by the build and the admin guards.",
+      "definedOn": "link-content-with-references"
+    },
+    {
+      "term": "fragment",
+      "definition": "An entry of the reserved embedded fragments concept, spliced into another entry's body by `::include{fragment=\"<id>\"}`, one pass deep.",
+      "definedOn": "reuse-content-across-entries"
+    },
+    {
+      "term": "render",
+      "definition": "The adapter's one rendering.render function (a SiteRender, usually built with createRenderer) that both the editor preview and every public page call.",
+      "definedOn": "configure-rendering"
+    },
+    {
+      "term": "component",
+      "definition": "A container directive a site registers with defineComponent and defineRegistry, with typed attributes and slots and a synchronous build returning a hast Element.",
+      "definedOn": "configure-rendering"
+    },
+    {
+      "term": "delivery surface",
+      "definition": "The public routes and responses a site wires from /delivery and /sveltekit: entry pages, markdown twins, archive, feeds, sitemap, and robots.txt.",
+      "definedOn": "build-the-public-routes"
+    },
+    {
+      "term": "island",
+      "definition": "A registered component declared with hydrate, whose build() output is the static fallback and which the client mounts over its boundary with hydrateIslands.",
+      "definedOn": "add-an-island"
+    },
+    {
+      "term": "admin toolkit",
+      "definition": "The /admin-toolkit set of general-purpose primitives a site's own admin screen composes instead of hand-rolling list, table, and field chrome.",
+      "definedOn": "add-a-custom-admin-screen"
+    },
+    {
+      "term": "section action",
+      "definition": "A form action built with createSectionAction, which runs CSRF, identity, access-map authorization, and audit on every call before the site's handler.",
+      "definedOn": "add-a-custom-admin-screen"
+    },
+    {
+      "term": "navLayout",
+      "definition": "The adapter editor group's ordered tree of engine references, site entries, and sections that arranges the admin sidebar; presentation only, never authorization.",
+      "definedOn": "arrange-the-admin-sidebar"
+    },
+    {
+      "term": "tidy",
+      "definition": "The opt-in AI copy-edit an editor triggers on a draft, run through the Anthropic API with the site's model and conventions and checked structurally before review.",
+      "definedOn": "turn-on-tidy"
+    },
+    {
+      "term": "access map",
+      "definition": "A defineAccess declaration keyed by engine screen id or /admin path that narrows, and never widens, which roles reach a target beyond their capability.",
+      "definedOn": "restrict-admin-access"
+    },
+    {
+      "term": "role",
+      "definition": "A named entry in the site's declared role vocabulary, owner and editor by default, each resolving to one capability.",
+      "definedOn": "restrict-admin-access"
+    },
+    {
+      "term": "capability",
+      "definition": "The floor a role grants: owner, editor, or none (signs in but reaches no engine content).",
+      "definedOn": "restrict-admin-access"
+    },
+    {
+      "term": "identity resolver",
+      "definition": "The IdentityResolver a site passes as createAuthGuard's identity option, whose resolve(event) returns a verified email per request and replaces the whole magic-link path.",
+      "definedOn": "replace-magic-links-with-cloudflare-access"
+    },
+    {
+      "term": "auth channel",
+      "definition": "A second-audience sign-in built with createAuthChannel: numeric-code request, confirm, and logout actions over the site's own roster and D1 binding, separate from AUTH_DB and locals.cairnEditor.",
+      "definedOn": "add-a-second-sign-in-group"
+    },
+    {
+      "term": "preview link",
+      "definition": "A revocable, expiring `/preview/<token>` URL minted from an entry's pending draft, where the token alone is the credential.",
+      "definedOn": "share-a-draft-preview"
+    },
+    {
+      "term": "media token",
+      "definition": "A media: reference, in body markdown or an image field, that names an uploaded asset by its content hash; the render resolves it through the media manifest to a URL under the public base.",
+      "definedOn": "configure-media"
+    },
+    {
+      "term": "rendered pass",
+      "definition": "The cairn-audit --rendered run that loads live admin pages in a real browser under a signed-in session and checks what they render, beside the static pass over source files and the compiled sheet.",
+      "definedOn": "run-cairn-audit-on-your-site"
+    }
+  ],
+  "crossLinks": [
+    {
+      "from": "architecture",
+      "to": "add-cairn-to-a-sveltekit-app",
+      "why": "From the map to the first build."
+    },
+    {
+      "from": "architecture",
+      "to": "scaffolded-site-files",
+      "why": "A scaffolded reader maps the architecture onto their own files."
+    },
+    {
+      "from": "architecture",
+      "to": "security-model",
+      "why": "Each component's security properties live there, not on the map."
+    },
+    {
+      "from": "architecture",
+      "to": "content-model",
+      "why": "The content map seam in depth."
+    },
+    {
+      "from": "architecture",
+      "to": "docs/extend/upgrade-cairn.md",
+      "why": "What the stability tiers mean for an upgrade."
+    },
+    {
+      "from": "architecture",
+      "to": "docs/reference/README.md",
+      "why": "Per-export stability tiers and signatures."
+    },
+    {
+      "from": "add-cairn-to-a-sveltekit-app",
+      "to": "define-an-adapter-and-schema",
+      "why": "The minimal adapter in milestone 3 grows there."
+    },
+    {
+      "from": "add-cairn-to-a-sveltekit-app",
+      "to": "security-model",
+      "why": "Why the GitHub App's write is repository-wide and how SvelteKit's origin check and the guard's double-submit token divide CSRF."
+    },
+    {
+      "from": "add-cairn-to-a-sveltekit-app",
+      "to": "build-the-public-routes",
+      "why": "The routes beyond the entry catch-all."
+    },
+    {
+      "from": "add-cairn-to-a-sveltekit-app",
+      "to": "rotate-the-github-app-key",
+      "why": "The later key rotation for the key registered here."
+    },
+    {
+      "from": "add-cairn-to-a-sveltekit-app",
+      "to": "debug-your-site",
+      "why": "Failure paths for the dev backend and bindings."
+    },
+    {
+      "from": "scaffolded-site-files",
+      "to": "theme-your-public-site",
+      "why": "The theme files it lists."
+    },
+    {
+      "from": "scaffolded-site-files",
+      "to": "add-a-custom-admin-screen",
+      "why": "The signups example as a pattern."
+    },
+    {
+      "from": "scaffolded-site-files",
+      "to": "add-cairn-to-a-sveltekit-app",
+      "why": "The same tree built by hand, and the sign-in email's copy and sender in that page's closing section."
+    },
+    {
+      "from": "content-model",
+      "to": "define-an-adapter-and-schema",
+      "why": "From the model to the declaration."
+    },
+    {
+      "from": "content-model",
+      "to": "link-content-with-references",
+      "why": "Reference edges in use."
+    },
+    {
+      "from": "content-model",
+      "to": "reuse-content-across-entries",
+      "why": "The reserved fragments concept."
+    },
+    {
+      "from": "define-an-adapter-and-schema",
+      "to": "configure-rendering",
+      "why": "The rendering group of the adapter."
+    },
+    {
+      "from": "define-an-adapter-and-schema",
+      "to": "restrict-admin-access",
+      "why": "The roles and access groups of the adapter."
+    },
+    {
+      "from": "define-an-adapter-and-schema",
+      "to": "arrange-the-admin-sidebar",
+      "why": "The editor group's navLayout."
+    },
+    {
+      "from": "reuse-content-across-entries",
+      "to": "configure-rendering",
+      "why": "Forwarding resolveFragment from render; components as the alternative to a fragment."
+    },
+    {
+      "from": "link-content-with-references",
+      "to": "reuse-content-across-entries",
+      "why": "The delete guard shape both share."
+    },
+    {
+      "from": "configure-rendering",
+      "to": "security-model",
+      "why": "What the sanitize floor and sink guard protect before a site opts out."
+    },
+    {
+      "from": "configure-rendering",
+      "to": "add-an-island",
+      "why": "Hydrating a registered component."
+    },
+    {
+      "from": "configure-rendering",
+      "to": "theme-your-public-site",
+      "why": "Styling render output."
+    },
+    {
+      "from": "migrate-existing-content",
+      "to": "content-model",
+      "why": "The id and date rules the migration satisfies."
+    },
+    {
+      "from": "migrate-existing-content",
+      "to": "configure-rendering",
+      "why": "Replacing old shortcodes with components."
+    },
+    {
+      "from": "theme-your-public-site",
+      "to": "scaffolded-site-files",
+      "why": "The file map behind the theme."
+    },
+    {
+      "from": "build-the-public-routes",
+      "to": "docs/extend/choose-an-ai-posture.md",
+      "why": "The robots posture option."
+    },
+    {
+      "from": "build-the-public-routes",
+      "to": "share-a-draft-preview",
+      "why": "The preview route shares the entry composition."
+    },
+    {
+      "from": "build-the-public-routes",
+      "to": "act-on-newly-published-entries",
+      "why": "Acting on newly published entries."
+    },
+    {
+      "from": "add-a-custom-admin-screen",
+      "to": "restrict-admin-access",
+      "why": "Declaring the map the screen enforces."
+    },
+    {
+      "from": "add-a-custom-admin-screen",
+      "to": "arrange-the-admin-sidebar",
+      "why": "Adding the screen to the sidebar."
+    },
+    {
+      "from": "add-a-custom-admin-screen",
+      "to": "debug-your-site",
+      "why": "admin.action.unaudited and audit sink failures."
+    },
+    {
+      "from": "arrange-the-admin-sidebar",
+      "to": "restrict-admin-access",
+      "why": "Hidden is not denied."
+    },
+    {
+      "from": "restrict-admin-access",
+      "to": "security-model",
+      "why": "An access map is not a whitelist."
+    },
+    {
+      "from": "restrict-admin-access",
+      "to": "add-a-second-sign-in-group",
+      "why": "A none-capability role."
+    },
+    {
+      "from": "security-model",
+      "to": "replace-magic-links-with-cloudflare-access",
+      "why": "Setting up the identity gate whose risks it describes."
+    },
+    {
+      "from": "security-model",
+      "to": "add-a-second-sign-in-group",
+      "why": "Building the channel whose threat catalogue it carries."
+    },
+    {
+      "from": "security-model",
+      "to": "rotate-the-github-app-key",
+      "why": "Operating the key it describes."
+    },
+    {
+      "from": "replace-magic-links-with-cloudflare-access",
+      "to": "security-model",
+      "why": "Identity mode's residual risks."
+    },
+    {
+      "from": "add-a-second-sign-in-group",
+      "to": "security-model",
+      "why": "The channel's threat catalogue and obligations."
+    },
+    {
+      "from": "rotate-the-github-app-key",
+      "to": "debug-your-site",
+      "why": "Signing failures after a rotation."
+    },
+    {
+      "from": "debug-your-site",
+      "to": "docs/reference/log-events.md",
+      "why": "The full event table."
+    },
+    {
+      "from": "debug-your-site",
+      "to": "docs/extend/upgrade-cairn.md",
+      "why": "Breakage after an upgrade."
+    },
+    {
+      "from": "docs/extend/upgrade-cairn.md",
+      "to": "debug-your-site",
+      "why": "Restores the pointer the harvest removed (relink 99)."
+    },
+    {
+      "from": "docs/extend/choose-an-ai-posture.md",
+      "to": "build-the-public-routes",
+      "why": "Restores the robots route pointer the harvest removed (relink 93)."
+    },
+    {
+      "from": "architecture",
+      "to": "configure-media",
+      "why": "The R2 tier configured."
+    },
+    {
+      "from": "scaffolded-site-files",
+      "to": "configure-media",
+      "why": "The MEDIA_BUCKET binding and media route it wired."
+    },
+    {
+      "from": "scaffolded-site-files",
+      "to": "run-cairn-audit-on-your-site",
+      "why": "cairn-audit.config.json and the check:cairn scripts."
+    },
+    {
+      "from": "configure-rendering",
+      "to": "configure-media",
+      "why": "The media resolver render forwards, and what a missing asset renders."
+    },
+    {
+      "from": "configure-media",
+      "to": "restrict-admin-access",
+      "why": "Restricting media also restricts the image picker."
+    },
+    {
+      "from": "configure-media",
+      "to": "theme-your-public-site",
+      "why": "Seeding local media for theme work."
+    },
+    {
+      "from": "configure-media",
+      "to": "docs/reference/sveltekit.md",
+      "why": "The media route and upload action signatures."
+    },
+    {
+      "from": "theme-your-public-site",
+      "to": "run-cairn-audit-on-your-site",
+      "why": "Running the public-scope rules as a gate."
+    },
+    {
+      "from": "add-a-custom-admin-screen",
+      "to": "run-cairn-audit-on-your-site",
+      "why": "Adding a custom screen to the rendered pass."
+    },
+    {
+      "from": "run-cairn-audit-on-your-site",
+      "to": "docs/reference/cairn-audit.md",
+      "why": "Every rule, flag, config key, and exit code."
+    },
+    {
+      "from": "run-cairn-audit-on-your-site",
+      "to": "add-a-custom-admin-screen",
+      "why": "The screen-level audit while building."
+    },
+    {
+      "from": "act-on-newly-published-entries",
+      "to": "add-a-custom-admin-screen",
+      "why": "A publish action can link to a screen of your own."
+    },
+    {
+      "from": "build-the-public-routes",
+      "to": "turn-on-tidy",
+      "why": "Declaring editor.nav also names the site-config file tidy conventions are saved to."
+    },
+    {
+      "from": "turn-on-tidy",
+      "to": "build-the-public-routes",
+      "why": "Declaring editor.nav, which also names the site-config file tidy writes."
+    },
+    {
+      "from": "migrate-existing-content",
+      "to": "build-the-public-routes",
+      "why": "The build validation that checks migrated frontmatter."
+    },
+    {
+      "from": "add-cairn-to-a-sveltekit-app",
+      "to": "configure-media",
+      "why": "Turning on uploads after production."
+    },
+    {
+      "from": "add-cairn-to-a-sveltekit-app",
+      "to": "theme-your-public-site",
+      "why": "Styling the public pages the tutorial leaves unstyled."
+    },
+    {
+      "from": "scaffolded-site-files",
+      "to": "define-an-adapter-and-schema",
+      "why": "Changing the concepts in cairn.config.ts."
+    },
+    {
+      "from": "scaffolded-site-files",
+      "to": "build-the-public-routes",
+      "why": "The (site) routes it lists."
+    },
+    {
+      "from": "scaffolded-site-files",
+      "to": "docs/extend/upgrade-cairn.md",
+      "why": "Moving an inherited engine pin."
+    },
+    {
+      "from": "define-an-adapter-and-schema",
+      "to": "build-the-public-routes",
+      "why": "Listing entries by tag."
+    },
+    {
+      "from": "turn-on-tidy",
+      "to": "define-an-adapter-and-schema",
+      "why": "The site-config file tidy conventions share with the tag vocabulary."
+    },
+    {
+      "from": "security-model",
+      "to": "restrict-admin-access",
+      "why": "Making the map exhaustive when you want whitelist behavior."
+    },
+    {
+      "from": "replace-magic-links-with-cloudflare-access",
+      "to": "add-cairn-to-a-sveltekit-app",
+      "why": "Staying on magic links but rebranding the sign-in email."
+    }
+  ],
+  "redirects": [
+    {
+      "from": "docs/extend/data-tiers.md",
+      "to": "docs/extend/architecture.md",
+      "reason": "Absorbed: the data tiers become the architecture page's state section."
+    },
+    {
+      "from": "docs/extend/build-a-site-by-hand.md",
+      "to": "docs/extend/add-cairn-to-a-sveltekit-app.md",
+      "reason": "Absorbed: its milestones become the page's sections."
+    },
+    {
+      "from": "docs/extend/declare-your-own-concept.md",
+      "to": "docs/extend/define-an-adapter-and-schema.md",
+      "reason": "Absorbed: adding a concept is a section of declaring the adapter."
+    },
+    {
+      "from": "docs/extend/animate-a-custom-screen.md",
+      "to": "docs/extend/add-a-custom-admin-screen.md",
+      "reason": "Absorbed as the page's motion section."
+    },
+    {
+      "from": "docs/extend/auth-channel-security-model.md",
+      "to": "docs/extend/security-model.md",
+      "reason": "Absorbed as the auth channel threat catalogue section."
+    },
+    {
+      "from": "docs/extend/render-safety.md",
+      "to": "docs/extend/security-model.md",
+      "reason": "Absorbed as the render safety section."
+    },
+    {
+      "from": "docs/extend/what-the-scaffold-wrote.md",
+      "to": "docs/extend/scaffolded-site-files.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/design-your-site.md",
+      "to": "docs/extend/theme-your-public-site.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/wire-the-delivery-surface.md",
+      "to": "docs/extend/build-the-public-routes.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/announce-on-publish.md",
+      "to": "docs/extend/act-on-newly-published-entries.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/organize-your-admin-nav.md",
+      "to": "docs/extend/arrange-the-admin-sidebar.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/enable-tidy.md",
+      "to": "docs/extend/turn-on-tidy.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/sign-in-through-your-organization.md",
+      "to": "docs/extend/replace-magic-links-with-cloudflare-access.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/add-a-second-audience.md",
+      "to": "docs/extend/add-a-second-sign-in-group.md",
+      "reason": "Renamed to match its title"
+    },
+    {
+      "from": "docs/extend/gate-your-site-with-cairn-audit.md",
+      "to": "docs/extend/run-cairn-audit-on-your-site.md",
+      "reason": "Renamed to match its title"
+    }
+  ],
+  "rearms": [
+    {
+      "relinkIndex": 2,
+      "file": "scripts/checks/check-arm-indexes.mjs",
+      "context": "index: 'docs/extend/README.md', state: 'extend'",
+      "oldTarget": "docs/extend/README.md",
+      "action": "Interim docs/extend/README.md lands at setup, so the index coverage check re-arms against it.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 6,
+      "file": "scripts/checks/check-package-files.mjs",
+      "context": "extend: 'docs/extend/README.md'",
+      "oldTarget": "docs/extend/README.md",
+      "action": "requiredDocsPaths asks for the interim extend README in the tarball once the arm holds it.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 11,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "'file-path:docs/extend/security-model.md'",
+      "oldTarget": "docs/extend/security-model.md",
+      "action": "The rebuilt page carries the \"Recovering whitelist semantics\" heading the 0.97.0 record links; the allowlist entry stays while that immutable record cites the path.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 12,
+      "file": "src/tests/unit/github-slug-contract.test.ts",
+      "context": "## Milestone 1: a bare SvelteKit site, deployed",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md",
+      "action": "Repoint the slug-contract case at a live page's heading (the old Milestone 1 heading does not return verbatim).",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 19,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/explanation/auth-channel-security-model.md': 'docs/extend/auth-channel-security-model.md'",
+      "oldTarget": "docs/extend/auth-channel-security-model.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/security-model.md (the old target was absorbed).",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 20,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/explanation/editor-copyedit.md': 'docs/extend/enable-tidy.md'",
+      "oldTarget": "docs/extend/enable-tidy.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/turn-on-tidy.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 21,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/explanation/enforced-design.md': 'docs/extend/add-a-custom-admin-screen.md'",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/add-a-custom-admin-screen.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 22,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/explanation/media-storage.md': 'docs/extend/data-tiers.md'",
+      "oldTarget": "docs/extend/data-tiers.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/architecture.md (the old target was absorbed).",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 23,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/explanation/security-model.md': 'docs/extend/security-model.md'",
+      "oldTarget": "docs/extend/security-model.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/security-model.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 24,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/add-a-custom-admin-screen.md': 'docs/extend/add-a-custom-admin-screen.md'",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/add-a-custom-admin-screen.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 25,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/add-a-login-channel.md': 'docs/extend/add-a-second-audience.md'",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/add-a-second-sign-in-group.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 27,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/add-an-island.md': 'docs/extend/add-an-island.md'",
+      "oldTarget": "docs/extend/add-an-island.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/add-an-island.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 28,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/add-authors.md': 'docs/extend/declare-your-own-concept.md'",
+      "oldTarget": "docs/extend/declare-your-own-concept.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/define-an-adapter-and-schema.md (the old target was absorbed).",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 29,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/announce-on-publish.md': 'docs/extend/announce-on-publish.md'",
+      "oldTarget": "docs/extend/announce-on-publish.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/act-on-newly-published-entries.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 31,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/configure-auth-and-d1.md': 'docs/extend/add-cairn-to-a-sveltekit-app.md'",
+      "oldTarget": "docs/extend/add-cairn-to-a-sveltekit-app.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/add-cairn-to-a-sveltekit-app.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 32,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/define-an-adapter-and-schema.md': 'docs/extend/define-an-adapter-and-schema.md'",
+      "oldTarget": "docs/extend/define-an-adapter-and-schema.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/define-an-adapter-and-schema.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 33,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md'",
+      "oldTarget": "docs/extend/enable-tidy.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/turn-on-tidy.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 34,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/iterate-your-design-locally.md': 'docs/extend/design-your-site.md'",
+      "oldTarget": "docs/extend/design-your-site.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/theme-your-public-site.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 35,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/link-content-with-references.md': 'docs/extend/link-content-with-references.md'",
+      "oldTarget": "docs/extend/link-content-with-references.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/link-content-with-references.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 37,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/organize-your-admin-nav.md': 'docs/extend/organize-your-admin-nav.md'",
+      "oldTarget": "docs/extend/organize-your-admin-nav.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/arrange-the-admin-sidebar.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 40,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/restrict-admin-access.md': 'docs/extend/restrict-admin-access.md'",
+      "oldTarget": "docs/extend/restrict-admin-access.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/restrict-admin-access.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 41,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/reuse-content-across-entries.md': 'docs/extend/reuse-content-across-entries.md'",
+      "oldTarget": "docs/extend/reuse-content-across-entries.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/reuse-content-across-entries.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 42,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/share-a-draft-preview.md': 'docs/extend/share-a-draft-preview.md'",
+      "oldTarget": "docs/extend/share-a-draft-preview.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/share-a-draft-preview.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 43,
+      "file": "scripts/checks/docs-links.mjs",
+      "context": "'docs/guides/wire-the-delivery-surface.md': 'docs/extend/wire-the-delivery-surface.md'",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "action": "Repoint the LEGACY_PATH_MAP value at docs/extend/build-the-public-routes.md once the arm is rebuilt.",
+      "restoredBy": "setup",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 55,
+      "file": "docs/reference/admin-routes.md",
+      "context": "renders inside this same shell.",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "action": "Restore the pointer at docs/extend/add-a-custom-admin-screen.md.",
+      "restoredBy": "add-a-custom-admin-screen",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 56,
+      "file": "docs/reference/auth-channel.md",
+      "context": "The design is built from one rule: no control keyed on the victim's identity",
+      "oldTarget": "docs/extend/auth-channel-security-model.md",
+      "action": "Restore the pointer at docs/extend/security-model.md (the old page was absorbed); pick the matching new heading.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 57,
+      "file": "docs/reference/auth-channel.md",
+      "context": "flag as its own enable contract.",
+      "oldTarget": "docs/extend/security-model.md#what-the-dev-backend-flags-two-refusals-leave-open",
+      "action": "Restore the pointer at docs/extend/security-model.md, at the heading that now carries the old #what-the-dev-backend-flags-two-refusals-leave-open content.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 58,
+      "file": "docs/reference/auth-channel.md",
+      "context": "the whole economic bound on guessing a code is `challenge`'s consequence.",
+      "oldTarget": "docs/extend/auth-channel-security-model.md",
+      "action": "Restore the pointer at docs/extend/security-model.md (the old page was absorbed); pick the matching new heading.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 59,
+      "file": "docs/reference/auth-channel.md",
+      "context": "Resend cooldown per nonce, in ms; UX only |",
+      "oldTarget": "docs/extend/auth-channel-security-model.md",
+      "action": "Restore the pointer at docs/extend/security-model.md (the old page was absorbed); pick the matching new heading.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 60,
+      "file": "docs/reference/auth-channel.md",
+      "context": "never at the `migrations` directory your site's `AUTH_DB` uses. A shared",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 61,
+      "file": "docs/reference/auth-crypto.md",
+      "context": "different `secure` values on the same request. A site building",
+      "oldTarget": "docs/extend/security-model.md#the-session-cookie",
+      "action": "Restore the pointer at docs/extend/security-model.md, at the heading that now carries the old #the-session-cookie content.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 62,
+      "file": "docs/reference/cli-cairn-media-seed.md",
+      "context": "Once seeded, an author edits",
+      "oldTarget": "docs/extend/design-your-site.md#local-iteration",
+      "action": "Restore the pointer at docs/extend/theme-your-public-site.md, at the heading that now carries the old #local-iteration content.",
+      "restoredBy": "theme-your-public-site",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 63,
+      "file": "docs/reference/cli-cairn-media-seed.md",
+      "context": "- [The `cairn doctor` command](./cli-cairn-doctor.md), which reads the same wrangler config for",
+      "oldTarget": "docs/extend/design-your-site.md#local-iteration",
+      "action": "Restore the pointer at docs/extend/theme-your-public-site.md, at the heading that now carries the old #local-iteration content.",
+      "restoredBy": "theme-your-public-site",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 65,
+      "file": "docs/reference/core.md",
+      "context": "over that path. This grew from a",
+      "oldTarget": "docs/extend/data-tiers.md",
+      "action": "Restore the pointer at docs/extend/architecture.md (the old page was absorbed); pick the matching new heading.",
+      "restoredBy": "architecture",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 66,
+      "file": "docs/reference/core.md",
+      "context": "flatten the fields instead of nesting them.",
+      "oldTarget": "docs/extend/content-model.md",
+      "action": "Restore the pointer at docs/extend/content-model.md.",
+      "restoredBy": "content-model",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 67,
+      "file": "docs/reference/core.md",
+      "context": "never widens it, so a site that declares no map sees no behavior change.",
+      "oldTarget": "docs/extend/restrict-admin-access.md",
+      "action": "Restore the pointer at docs/extend/restrict-admin-access.md.",
+      "restoredBy": "restrict-admin-access",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 69,
+      "file": "docs/reference/islands.md",
+      "context": "- [`rendering.islands` on the core reference](./core.md#renderingislands-adapter-member)",
+      "oldTarget": "docs/extend/add-an-island.md",
+      "action": "Restore the pointer at docs/extend/add-an-island.md.",
+      "restoredBy": "add-an-island",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 70,
+      "file": "docs/reference/log-events.md",
+      "context": "magic-link's contents.",
+      "oldTarget": "docs/extend/security-model.md; docs/admin/troubleshooting.md",
+      "action": "Restore the redaction-stance link to security-model; the log-query half restores at stage 3.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 71,
+      "file": "docs/reference/log-events.md",
+      "context": "session by design. This only surfaces a map a site believed",
+      "oldTarget": "docs/extend/security-model.md#an-access-map-is-not-a-whitelist",
+      "action": "Restore the pointer at docs/extend/security-model.md, at the heading that now carries the old #an-access-map-is-not-a-whitelist content.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 72,
+      "file": "docs/reference/public.md",
+      "context": "for the `loadPreview` seam it pairs with.",
+      "oldTarget": "docs/extend/share-a-draft-preview.md",
+      "action": "Restore the pointer at docs/extend/share-a-draft-preview.md.",
+      "restoredBy": "share-a-draft-preview",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 73,
+      "file": "docs/reference/public.md",
+      "context": "replaces the token default in both states.",
+      "oldTarget": "docs/extend/share-a-draft-preview.md#override-the-banners-palette",
+      "action": "Restore the pointer at docs/extend/share-a-draft-preview.md, at the heading that now carries the old #override-the-banners-palette content.",
+      "restoredBy": "share-a-draft-preview",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 74,
+      "file": "docs/reference/render.md",
+      "context": "its own.",
+      "oldTarget": "docs/extend/configure-rendering.md",
+      "action": "Restore the pointer at docs/extend/configure-rendering.md.",
+      "restoredBy": "configure-rendering",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 76,
+      "file": "docs/reference/sveltekit.md",
+      "context": "that writes a sink following the `waitUntil` advice. `ctx.audit` catches",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md#wire-the-auditsink",
+      "action": "Restore the pointer at docs/extend/add-a-custom-admin-screen.md, at the heading that now carries the old #wire-the-auditsink content.",
+      "restoredBy": "add-a-custom-admin-screen",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 77,
+      "file": "docs/reference/sveltekit.md",
+      "context": "the same convention as a hand-rolled one:",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md#wire-the-auditsink",
+      "action": "Restore the pointer at docs/extend/add-a-custom-admin-screen.md, at the heading that now carries the old #wire-the-auditsink content.",
+      "restoredBy": "add-a-custom-admin-screen",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 78,
+      "file": "docs/reference/sveltekit.md",
+      "context": "what any given site's own routes show.",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md#gate-it",
+      "action": "Restore the pointer at docs/extend/add-a-custom-admin-screen.md, at the heading that now carries the old #gate-it content.",
+      "restoredBy": "add-a-custom-admin-screen",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 79,
+      "file": "docs/reference/sveltekit.md",
+      "context": "out of their own link.",
+      "oldTarget": "docs/extend/security-model.md#sign-in-binds-to-the-browser-that-asked",
+      "action": "Restore the pointer at docs/extend/security-model.md, at the heading that now carries the old #sign-in-binds-to-the-browser-that-asked content.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 80,
+      "file": "docs/reference/sveltekit.md",
+      "context": "insert still works and stays documented as the fallback",
+      "oldTarget": "docs/extend/add-cairn-to-a-sveltekit-app.md",
+      "action": "Restore the pointer at docs/extend/add-cairn-to-a-sveltekit-app.md.",
+      "restoredBy": "add-cairn-to-a-sveltekit-app",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 81,
+      "file": "docs/reference/sveltekit.md",
+      "context": "below for the site-mounted page these actions feed.",
+      "oldTarget": "docs/extend/share-a-draft-preview.md",
+      "action": "Restore the pointer at docs/extend/share-a-draft-preview.md.",
+      "restoredBy": "share-a-draft-preview",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 82,
+      "file": "docs/reference/sveltekit.md",
+      "context": "rather than an approximated shell.",
+      "oldTarget": "docs/extend/share-a-draft-preview.md",
+      "action": "Restore the pointer at docs/extend/share-a-draft-preview.md.",
+      "restoredBy": "share-a-draft-preview",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 83,
+      "file": "docs/reference/sveltekit.md",
+      "context": "map](./core.md#access-map), when one is declared.",
+      "oldTarget": "docs/extend/restrict-admin-access.md; docs/extend/organize-your-admin-nav.md",
+      "action": "Restore both pointers (restrict-admin-access and arrange-the-admin-sidebar) once the later page, arrange-the-admin-sidebar, lands.",
+      "restoredBy": "arrange-the-admin-sidebar",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 84,
+      "file": "docs/reference/sveltekit.md",
+      "context": "contract in full.",
+      "oldTarget": "docs/extend/organize-your-admin-nav.md",
+      "action": "Restore the pointer at docs/extend/arrange-the-admin-sidebar.md.",
+      "restoredBy": "arrange-the-admin-sidebar",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 87,
+      "file": "README.md",
+      "context": "Start from `npm install @glw907/cairn-cms`, and read [the reference]",
+      "oldTarget": "docs/extend/add-cairn-to-a-sveltekit-app.md",
+      "action": "Restore the pointer at docs/extend/add-cairn-to-a-sveltekit-app.md.",
+      "restoredBy": "add-cairn-to-a-sveltekit-app",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 92,
+      "file": "SECURITY.md",
+      "context": "HTML or a `javascript:` URL unless a site explicitly opts out.",
+      "oldTarget": "docs/extend/security-model.md; docs/extend/data-tiers.md",
+      "action": "Restore the SECURITY.md pointers to security-model and to architecture (the data tiers now live there).",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 93,
+      "file": "docs/extend/choose-an-ai-posture.md",
+      "context": "that the scaffold writes.",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
+      "action": "Restore the pointer at docs/extend/build-the-public-routes.md, at the heading that now carries the old #feed-sitemap-and-robotstxt content.",
+      "restoredBy": "build-the-public-routes",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 94,
+      "file": "docs/internal/briefs/extend/choose-an-ai-posture.json",
+      "context": "that the scaffold writes.\"",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
+      "action": "Restore the brief sentence in lockstep with the kept page's restored pointer (relink 93).",
+      "restoredBy": "build-the-public-routes",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 97,
+      "file": "docs/extend/upgrade-cairn.md",
+      "context": "A `0.x` minor can break a documented seam, so an upgrade is never a blind bump.",
+      "oldTarget": "docs/extend/README.md#operate-across-versions",
+      "action": "Repoint the stability pointer at the architecture page's stability-tier section; the old README#operate-across-versions anchor does not return.",
+      "restoredBy": "architecture",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 99,
+      "file": "docs/extend/upgrade-cairn.md",
+      "context": "version the error's import or field name last appeared in.",
+      "oldTarget": "docs/extend/debug-your-site.md",
+      "action": "Restore the pointer at docs/extend/debug-your-site.md.",
+      "restoredBy": "debug-your-site",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 104,
+      "file": "examples/showcase/src/theme/cairn.config.ts",
+      "context": "// site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "action": "AI_POSTURE_COMMENT_BLOCK lockstep: restore the pointer in the showcase config, substitute.mjs, both tests, and the emitted template together (relinks 104 to 108).",
+      "restoredBy": "build-the-public-routes",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 105,
+      "file": "packages/create-cairn-site/src/substitute.mjs",
+      "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "action": "Part of the relink 104 lockstep.",
+      "restoredBy": "build-the-public-routes",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 106,
+      "file": "packages/create-cairn-site/src/substitute.test.mjs",
+      "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "action": "Part of the relink 104 lockstep.",
+      "restoredBy": "build-the-public-routes",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 107,
+      "file": "packages/create-cairn-site/src/scaffold.test.mjs",
+      "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "action": "Part of the relink 104 lockstep.",
+      "restoredBy": "build-the-public-routes",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 108,
+      "file": "packages/create-cairn-site/src/substitute.mjs",
+      "context": "'  // route passes it to robotsResponse, and CairnAdapter.aiPosture',",
+      "oldTarget": "docs/extend/wire-the-delivery-surface.md",
+      "action": "Part of the relink 104 lockstep (aiPostureBlock).",
+      "restoredBy": "build-the-public-routes",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 109,
+      "file": "examples/cairn-theme/cairn.css",
+      "context": "regardless of order.    ====",
+      "oldTarget": "docs/extend/design-your-site.md",
+      "action": "Restore the pointer at docs/extend/theme-your-public-site.md.",
+      "restoredBy": "theme-your-public-site",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 110,
+      "file": "examples/cairn-theme/README.md",
+      "context": "regardless of position.",
+      "oldTarget": "docs/extend/design-your-site.md",
+      "action": "Restore the pointer at docs/extend/theme-your-public-site.md.",
+      "restoredBy": "theme-your-public-site",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 111,
+      "file": "examples/showcase/e2e/members.spec.ts",
+      "context": "(src/members/channel.ts, the worked exemplar). Each",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 112,
+      "file": "examples/showcase/src/app.d.ts",
+      "context": "The showcase members fixture's own binding;",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 113,
+      "file": "examples/showcase/src/members/capture-transport.ts",
+      "context": "channel end to end: instead of sending",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 114,
+      "file": "examples/showcase/src/members/channel.ts",
+      "context": "a second audience. Two named divergences from the documented shape",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 115,
+      "file": "examples/showcase/src/routes/members/+page.server.ts",
+      "context": "which reads the signed-in subject, into this",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 116,
+      "file": "examples/showcase/src/routes/admin/signups/+page.server.ts",
+      "context": "// Recipe: docs/reference/sveltekit.md (createSectionAction, requireAccess).",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "action": "Restore the pointer at docs/extend/add-a-custom-admin-screen.md.",
+      "restoredBy": "add-a-custom-admin-screen",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 117,
+      "file": "examples/showcase/src/routes/members/login/+page.server.ts",
+      "context": "// Recipe: docs/reference/auth-channel.md (createAuthChannel).",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 118,
+      "file": "examples/showcase/src/routes/members/login/+page.server.ts",
+      "context": "of the documented pattern, folded onto one page",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 119,
+      "file": "examples/showcase/src/routes/members/login/+page.svelte",
+      "context": "the documented exemplar rendered. Both forms",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 120,
+      "file": "examples/showcase/src/routes/test/last-otp/+server.ts",
+      "context": "// the second-audience pattern states that as a rule",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 121,
+      "file": "examples/showcase/wrangler.jsonc",
+      "context": "The showcase members fixture's own D1 binding.",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Restore the pointer at docs/extend/add-a-second-sign-in-group.md.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 123,
+      "file": "examples/showcase/README.md",
+      "context": "run against this directory in CI.",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md",
+      "action": "Restore the pointer at docs/extend/add-cairn-to-a-sveltekit-app.md (the old page was absorbed); pick the matching new heading.",
+      "restoredBy": "add-cairn-to-a-sveltekit-app",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 125,
+      "file": "examples/showcase/README.md",
+      "context": "scaffolds from. A few",
+      "oldTarget": "docs/extend/what-the-scaffold-wrote.md",
+      "action": "Restore the pointer at docs/extend/scaffolded-site-files.md.",
+      "restoredBy": "scaffolded-site-files",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 126,
+      "file": "skills/cairn-extend/SKILL.md",
+      "context": "and the reference page that documents it.",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
+      "action": "Decide at arm close whether skills/cairn-extend restores per-pattern recipe rows for add-a-custom-admin-screen and add-a-second-sign-in-group; ship the Consumers must line if it changes.",
+      "restoredBy": "close",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 127,
+      "file": "skills/cairn-extend/SKILL.md",
+      "context": "docs/reference/auth-channel.md` |",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
+      "action": "Same decision as the router row above, for the table rows.",
+      "restoredBy": "close",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 128,
+      "file": "src/lib/dev-flag.ts",
+      "context": "The residual is honest: a deployment that sets",
+      "oldTarget": "docs/extend/security-model.md",
+      "action": "Restore the pointer at docs/extend/security-model.md.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 129,
+      "file": "src/lib/public/PreviewBanner.svelte",
+      "context": "property replaces the default for the whole banner. -->",
+      "oldTarget": "docs/extend/share-a-draft-preview.md#override-the-banners-palette",
+      "action": "Restore the pointer at docs/extend/share-a-draft-preview.md, at the heading that now carries the old #override-the-banners-palette content.",
+      "restoredBy": "share-a-draft-preview",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 130,
+      "file": "src/lib/reproductions/fixtures.ts",
+      "context": "The `navLayout` seam's own worked example, resolved to",
+      "oldTarget": "docs/extend/organize-your-admin-nav.md",
+      "action": "Restore the pointer at docs/extend/arrange-the-admin-sidebar.md.",
+      "restoredBy": "arrange-the-admin-sidebar",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 131,
+      "file": "src/tests/unit/reproductions-fixtures.test.ts",
+      "context": "it('resolves the navLayout worked example, with",
+      "oldTarget": "docs/extend/organize-your-admin-nav.md",
+      "action": "Restore the pointer at docs/extend/arrange-the-admin-sidebar.md.",
+      "restoredBy": "arrange-the-admin-sidebar",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 132,
+      "file": "src/lib/reproductions/stories/CustomScreen.svelte",
+      "context": "custom-admin-screen guide (removed pending its rebuild)",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "action": "Restore the pointer at docs/extend/add-a-custom-admin-screen.md.",
+      "restoredBy": "add-a-custom-admin-screen",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 134,
+      "file": "src/lib/reproductions/stories/site.ts",
+      "context": "worked snippet in the extend track's custom-admin-screen guide",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "action": "Restore the pointer at docs/extend/add-a-custom-admin-screen.md.",
+      "restoredBy": "add-a-custom-admin-screen",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 135,
+      "file": "src/lib/sveltekit/admin-action.ts",
+      "context": "(`waitUntil` advice for a custom section is",
+      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
+      "action": "Restore the pointer at docs/extend/add-a-custom-admin-screen.md.",
+      "restoredBy": "add-a-custom-admin-screen",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 136,
+      "file": "src/lib/sveltekit/admin-nav.ts",
+      "context": "(an access map is not a  *  whitelist). This never blocks",
+      "oldTarget": "docs/extend/security-model.md#an-access-map-is-not-a-whitelist",
+      "action": "Restore the pointer at docs/extend/security-model.md, at the heading that now carries the old #an-access-map-is-not-a-whitelist content.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 137,
+      "file": "docs/internal/admin-design-system.md",
+      "context": "A public docs page that touches motion cites it by heading rather",
+      "oldTarget": "docs/extend/animate-a-custom-screen.md",
+      "action": "The page's motion section cites admin-design-system by heading, which is the rule the generalized line now states; confirm the line still reads true once the page lands.",
+      "restoredBy": "add-a-custom-admin-screen",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 156,
+      "file": "docs/internal/src-lib-map.md",
+      "context": "- `docs/reference/README.md` for the export-subpath view a consuming site reads",
+      "oldTarget": "docs/extend/architecture.md",
+      "action": "Restore the pointer at docs/extend/architecture.md.",
+      "restoredBy": "architecture",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 169,
+      "file": "docs/internal/docs-register.md",
+      "context": "by suppression.** `auth-channel-security-model.md` cites \"NIST",
+      "oldTarget": "auth-channel-security-model.md",
+      "action": "Confirm or rewrite the register line that names auth-channel-security-model.md, now absorbed into security-model.md.",
+      "restoredBy": "close",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 170,
+      "file": "docs/internal/briefs/README.md",
+      "context": "s own `README.md` (`docs/admin/README.md`,",
+      "oldTarget": "docs/admin/README.md",
+      "action": "Confirm the briefs README line once the extend README exists; the admin and editors READMEs re-arm at stages 3 and 4.",
+      "restoredBy": "close",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 171,
+      "file": "docs/internal/briefs/README.md",
+      "context": "`docs/editors/README.md`, `docs/extend/READ",
+      "oldTarget": "docs/editors/README.md; docs/extend/README.md",
+      "action": "Confirm the briefs README line naming docs/extend/README.md once the arm index exists.",
+      "restoredBy": "close",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 172,
+      "file": "docs/internal/briefs/README.md",
+      "context": "ocs/internal/briefs/admin/README.json`, and so on),",
+      "oldTarget": "admin/README",
+      "action": "Confirm the briefs README line naming the per-arm README briefs.",
+      "restoredBy": "close",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 174,
+      "file": "docs/internal/briefs/README.md",
+      "context": "`docs/README.md`) never covers `doc",
+      "oldTarget": "docs/README.md; docs/admin/README.md",
+      "action": "Confirm the briefs README line; its front-door and admin halves re-arm at stages 5 and 3.",
+      "restoredBy": "close",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 178,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "env-var:CAIRN_FIXED_TODAY",
+      "oldTarget": "docs/extend/debug-your-site.md",
+      "action": "Keep the allowlist entry while debug-your-site cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "debug-your-site",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 179,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "variable), cited in docs/extend/sign-in-through-your-organization.md's",
+      "oldTarget": "docs/extend/sign-in-through-your-organization.md",
+      "action": "Keep the allowlist entry while replace-magic-links-with-cloudflare-access cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "replace-magic-links-with-cloudflare-access",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 180,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "log-event:tidy.conventions",
+      "oldTarget": "docs/extend/enable-tidy.md",
+      "action": "Keep the allowlist entry while turn-on-tidy cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "turn-on-tidy",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 181,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "log-event:tidy.model",
+      "oldTarget": "docs/extend/enable-tidy.md",
+      "action": "Keep the allowlist entry while turn-on-tidy cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "turn-on-tidy",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 182,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "0.97.0 entry cites docs/extend/security-model.md's exhaustive-map re",
+      "oldTarget": "docs/extend/security-model.md",
+      "action": "Keep the allowlist entry while security-model cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "security-model",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 183,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/theme/theme.css",
+      "oldTarget": "docs/extend/design-your-site.md",
+      "action": "Keep the allowlist entry while theme-your-public-site cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "theme-your-public-site",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 186,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/lib/today.ts",
+      "oldTarget": "docs/extend/debug-your-site.md",
+      "action": "Keep the allowlist entry while debug-your-site cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "debug-your-site",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 187,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/lib/members/channel.ts",
+      "oldTarget": "docs/extend/add-a-second-audience.md",
+      "action": "Keep the allowlist entry while add-a-second-sign-in-group cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "add-a-second-sign-in-group",
+      "batch": "2a"
+    },
+    {
+      "relinkIndex": 188,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/lib/content.ts",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md; wire-the-delivery-surface.md",
+      "action": "Allowlist entry names the deleted build-a-site-by-hand and wire-the-delivery-surface pages; keep while either rebuilt page (add-cairn-to-a-sveltekit-app, build-the-public-routes) cites the path, prune otherwise.",
+      "restoredBy": "add-cairn-to-a-sveltekit-app",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 189,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/theme/islands/Converter.svelte",
+      "oldTarget": "docs/extend/add-an-island.md",
+      "action": "Keep the allowlist entry while add-an-island cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "add-an-island",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 190,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/content/posts/2026-08-14-hello.md",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md",
+      "action": "Keep the allowlist entry while add-cairn-to-a-sveltekit-app cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "add-cairn-to-a-sveltekit-app",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 191,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:old-site/content/posts/my-post.md",
+      "oldTarget": "docs/extend/migrate-existing-content.md",
+      "action": "Keep the allowlist entry while migrate-existing-content cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "migrate-existing-content",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 192,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/content/posts/2024-01-15-my-post.md",
+      "oldTarget": "docs/extend/migrate-existing-content.md",
+      "action": "Keep the allowlist entry while migrate-existing-content cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "migrate-existing-content",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 193,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/content/fragments/trail-safety.md",
+      "oldTarget": "docs/extend/reuse-content-across-entries.md",
+      "action": "Keep the allowlist entry while reuse-content-across-entries cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "reuse-content-across-entries",
+      "batch": "2b"
+    },
+    {
+      "relinkIndex": 194,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:svelte-kit/cloudflare/_worker.js",
+      "oldTarget": "docs/extend/build-a-site-by-hand.md",
+      "action": "Keep the allowlist entry while add-cairn-to-a-sveltekit-app cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "add-cairn-to-a-sveltekit-app",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 195,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:src/lib/access-identity.ts",
+      "oldTarget": "docs/extend/sign-in-through-your-organization.md",
+      "action": "Keep the allowlist entry while replace-magic-links-with-cloudflare-access cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "replace-magic-links-with-cloudflare-access",
+      "batch": "pilot"
+    },
+    {
+      "relinkIndex": 196,
+      "file": "scripts/checks/check-symbols-allowlist.mjs",
+      "context": "file-path:admin/__data.json",
+      "oldTarget": "docs/extend/sign-in-through-your-organization.md",
+      "action": "Keep the allowlist entry while replace-magic-links-with-cloudflare-access cites it; prune it if the rebuilt page does not.",
+      "restoredBy": "replace-magic-links-with-cloudflare-access",
+      "batch": "pilot"
+    }
+  ],
+  "pages": [
+    {
+      "slug": "architecture",
+      "title": "Architecture",
+      "path": "docs/extend/architecture.md",
+      "group": "start",
+      "order": 1,
+      "batch": "pilot",
+      "job": "Learn where cairn ends and your site begins: which export subpath each piece of your site imports, which seams you extend through, where each kind of state lives, and what each tier of the public surface promises across versions. For a Svelte-fluent web developer evaluating cairn against alternatives or taking over a scaffolded site.",
+      "pageType": "concept",
+      "exemplars": [
+        {
+          "source": "core/rust-analyzer-architecture/",
+          "slice": "Core",
+          "manifestType": "Architecture overview",
+          "take": "Take the bird's-eye view, then entry points, then a code map with one invariant line per box (what it never does); leave the crate granularity and Rust vocabulary."
+        },
+        {
+          "source": "evaluators/litestream-how-it-works/",
+          "slice": "Evaluators",
+          "manifestType": "Concept page: architecture explainer (\"what runs where\")",
+          "take": "Take the follow-one-unit-of-data spine (one edit from save to holding branch to publish to deploy) with guarantees stated at the step that creates them; leave the file-format internals."
+        }
+      ],
+      "figure": true,
+      "figureNote": "One diagram of the write path and the three data tiers: an editor save lands on the `cairn/<concept>/<id>` holding branch through the GitHub App, Publish copies it to main, the deploy rebuilds the manifest; D1 and R2 shown beside git with what each holds. Topology only, no branding.",
+      "absorbs": [
+        "docs/extend/data-tiers.md"
+      ],
+      "factSections": [
+        "docs/extend/architecture.md",
+        "docs/extend/data-tiers.md",
+        "docs/extend/README.md",
+        "docs/extend/sign-in-through-your-organization.md"
+      ],
+      "factIds": [
+        "f:a7qx4m",
+        "f:0duu5p",
+        "f:4esdoz",
+        "f:cjonmm",
+        "f:cng7dr",
+        "f:e69d0l",
+        "f:n3cvf9",
+        "f:i87sd3",
+        "f:bmxw7w",
+        "f:3rb362",
+        "f:40pxcq",
+        "f:4b3rhm",
+        "f:533flu",
+        "f:5kerxw",
+        "f:5uhx5o",
+        "f:5vjwlc",
+        "f:6a32oy",
+        "f:b6gquz",
+        "f:pzbmhq",
+        "f:xkkt1o",
+        "f:wnvqlz",
+        "f:dtwvtz",
+        "f:2hnxsr",
+        "f:4t707i",
+        "f:lu67dk",
+        "f:qrwncf",
+        "f:6ign7q",
+        "f:0435ck",
+        "f:pgy0mr",
+        "f:70mf58",
+        "f:c1ujrl",
+        "f:zm9tp4",
+        "f:3pposq",
+        "f:549u00",
+        "f:n1om0r",
+        "f:gcd8h7",
+        "f:i74t7g",
+        "f:hk24xs",
+        "f:qehbx3",
+        "f:w379wu",
+        "f:gknz29",
+        "f:bhyvqg",
+        "f:99f221",
+        "f:025q6u",
+        "f:0gihxq",
+        "f:0oyrh6",
+        "f:0xxou5",
+        "f:ppqu4v"
+      ],
+      "covers": [
+        "The one-paragraph premise: a site declares one adapter, and every route factory, admin screen, and delivery helper reads its behavior from it.",
+        "The export map as six functional groups plus the subpaths outside them (delivery/head, delivery/data, reproductions, log), and the placement rules: nothing on the root barrel imports SvelteKit, nothing on /sveltekit is a .svelte file, no /components subpath; a /sveltekit export bundled outside Vite (a Cron Worker using the audit sink) needs no $app/env alias.",
+        "The three places a site touches the engine (adapter via the root barrel, the SvelteKit layer, the admin mount) and what is engine-internal behind them.",
+        "The named seams a site extends through (content map, render, access map and roles, identity, custom admin routes, navLayout, BackendProvider) with one line each and a link to the page that uses it; BackendProvider links its reference entry, since no page builds a second backend.",
+        "The write path: save to holding branch, pending entry as branch existence, Publish to main with the editor as author and no committer, the deploy, and the manifest rebuilt and verified at build.",
+        "The read path: the admin's batched GitHub reads per entry versus the committed manifest for the content graph.",
+        "The three data tiers (git, D1, R2): what each holds, why (placement by what reads it), that no table or manifest row stores an entry body, and that a site's own extension data sits outside them under the cairn_ naming reservation.",
+        "Sessions, tokens, audit_log, and preview_tokens as D1 rows, and git history as the edit record (their security properties on security-model).",
+        "Cloudflare and SvelteKit as hard dependencies with no host abstraction.",
+        "The three stability tiers (Extension, Scaffold, Unstable), that cairn is pre-1.0 so the tiers are a target discipline, and the 0.86.0 navLayout break as the worked example; link to the reference index for per-export tiers.",
+        "Commit concurrency: which writes use the head-merge retry and which are head-guarded, publish-all as one commit and one deploy, and the branch cleanup that keeps a concurrent save pending.",
+        "The Backend contract behind BackendProvider (expectedHead, missing-path, and missing-branch semantics); signatures stay in the reference."
+      ],
+      "outOfScope": [
+        "Security properties of each piece (security-model).",
+        "Declaring the adapter field by field (define-an-adapter-and-schema).",
+        "The concept and fieldset model in depth (content-model).",
+        "Per-export signatures (reference arm).",
+        "The upgrade procedure (upgrade-cairn, kept).",
+        "Media storage settings (configure-media).",
+        "The role column's former database CHECK constraint; state the application-layer check as it is (migration-notes, kept)."
+      ],
+      "pinned": [],
+      "rearms": [
+        65,
+        97,
+        156
+      ]
+    },
+    {
+      "slug": "add-cairn-to-a-sveltekit-app",
+      "title": "Add cairn to a SvelteKit app",
+      "path": "docs/extend/add-cairn-to-a-sveltekit-app.md",
+      "group": "start",
+      "order": 2,
+      "batch": "pilot",
+      "job": "Add cairn to a SvelteKit app, from an empty sv create project or one you already have, through a working /admin on the dev backend to a production deploy that commits through your own GitHub App. For a Svelte-fluent web developer who has Node 24, a GitHub account, and a Cloudflare account.",
+      "pageType": "tutorial milestone",
+      "exemplars": [
+        {
+          "source": "extenders/astro-tutorial-2-pages-1/",
+          "slice": "Extenders",
+          "manifestType": "Tutorial",
+          "take": "Take the objectives stated before any step, the check that ends nearly every step (the page loads at its URL), the \"Try it yourself\" prompt with its collapsed \"Show me the steps.\" answer, and the closing checklist of \"I can\" statements before the reader advances; each unit ends live, as each milestone here ends deployed or running; leave the beginner register, the VS Code and Netlify specifics, and the MDX components."
+        },
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the one running example carried through every milestone and the file-location tree before each file's code; leave the appended API reference."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [
+        "docs/extend/build-a-site-by-hand.md"
+      ],
+      "factSections": [
+        "docs/extend/add-cairn-to-a-sveltekit-app.md",
+        "docs/extend/build-a-site-by-hand.md",
+        "docs/extend/sign-in-through-your-organization.md"
+      ],
+      "factIds": [
+        "f:5f4kmk",
+        "f:vgw8x9",
+        "f:gglwt4",
+        "f:vpieos",
+        "f:if45on",
+        "f:gffvfd",
+        "f:rn62i1",
+        "f:pkrwom",
+        "f:xhwl32",
+        "f:t4pwpw",
+        "f:zcwf5i",
+        "f:pg2smj",
+        "f:m0ouh8",
+        "f:26kuvx",
+        "f:xyizai",
+        "f:gyu7jc",
+        "f:nbnq9c",
+        "f:ntdafg",
+        "f:hft8s8",
+        "f:fekvhi",
+        "f:xxtooz",
+        "f:02g94x",
+        "f:9yi7fu",
+        "f:e5vm42",
+        "f:7dtrwy",
+        "f:l5gx1t",
+        "f:0w7jar",
+        "f:rp65d2",
+        "f:75hawi",
+        "f:yegr67",
+        "f:ifuvcl",
+        "f:mhsere",
+        "f:q13lck",
+        "f:9mx680",
+        "f:vvgpr5",
+        "f:pdgkex",
+        "f:n0laoh",
+        "f:6ebew3",
+        "f:c8efq5",
+        "f:72mctx",
+        "f:f2vudv",
+        "f:3cekcy",
+        "f:7bch04",
+        "f:jzb3d0",
+        "f:7e1t0j",
+        "f:87hc1y",
+        "f:979v0a",
+        "f:9ug9mo",
+        "f:jbt2hh",
+        "f:d0sp1t",
+        "f:dqe7ij",
+        "f:dqjkci",
+        "f:dujlzg",
+        "f:dzmj90",
+        "f:7rehzh",
+        "f:e8dr5r",
+        "f:em69ru",
+        "f:ew4uk7",
+        "f:exxsvk",
+        "f:f21bcz",
+        "f:fj28xs",
+        "f:gj96px",
+        "f:eiaqkh",
+        "f:lbetsq",
+        "f:1b54g7",
+        "f:2gtftn",
+        "f:c4nnu9"
+      ],
+      "covers": [
+        "Prerequisites: Node 24, TypeScript 6 pin, a GitHub account, a Cloudflare account, and the Workers Paid plan the moment a second person receives email.",
+        "Milestone 1, a bare SvelteKit site deployed: sv create flags, inline kit config in vite.config.ts, adapter-cloudflare named explicitly, minimal wrangler.jsonc, wrangler login and deploy; check: the site answers at its workers.dev address.",
+        "Milestone 2, install and wire the engine: the package and its @cloudflare/workers-types peer, ssr.noExternal, the ambient import in app.d.ts, the admin catch-all and layout pair with prerender = false, createCairnAdmin and bootstrapOwner.",
+        "Milestone 3, content on disk: the content directories, a minimal adapter, parseSiteConfig, createSiteIndexes and the cairnManifest plugin with their two failure modes (full adapter detail links to define-an-adapter-and-schema); the rendered entry stays unstyled until the site adds Tailwind, daisyUI, and cairn-public.css (link theme-your-public-site).",
+        "The dev-backend section (suggested heading \"Wire the dev backend\"; no reference link reads the old CSRF-handoff slug now): devBackendHandle, the __CAIRN_DEV_BUILD__ define named at every call site, the hooks if-branch, and the Windows one-off env var forms; the site sets no csrf key, because SvelteKit 3 removed checkOrigin and its origin check covers every route beside the guard's double-submit token; check: sign in at /admin on the dev backend.",
+        "Milestone 4, production: register the GitHub App (one permission, webhook off, private key PEM, App and Installation IDs as non-secret identity), createGithubApp, the base64 single-line key secret, the auth D1 database and the migrations every site applies versus the opt-in ones, the optional audit database, the Email Sending binding and domain onboarding, a custom sender through auth.send, the three edits that move a dev-backend site to production; check: cairn doctor's config.bindings check passes, and a build with no AUTH_DB and no dev backend returns the branded 500.",
+        "Customize the sign-in email (a closing section after the milestones, not a milestone): which parts are engine copy, where the site name and sender come from, auth.branding replacing all three, and a custom auth.send's MagicLinkMessage and the log scrubbing of what it throws."
+      ],
+      "outOfScope": [
+        "The faster path: the setup command, create-cairn-site, which scaffolds a site in one step (scaffolded-site-files).",
+        "The scaffolded tree file by file (scaffolded-site-files).",
+        "Every adapter option (define-an-adapter-and-schema).",
+        "The security reasoning behind the GitHub App's repository-wide write and the CSRF design (security-model).",
+        "Delivery routes beyond the entry catch-all (build-the-public-routes).",
+        "Rotating the key later (rotate-the-github-app-key).",
+        "The retired JavaScript doctor and the removed /components subpath (upgrade-cairn and migration-notes, kept)."
+      ],
+      "pinned": [],
+      "rearms": [
+        80,
+        87,
+        123,
+        188,
+        190,
+        194
+      ]
+    },
+    {
+      "slug": "scaffolded-site-files",
+      "title": "Scaffolded site files",
+      "path": "docs/extend/scaffolded-site-files.md",
+      "group": "start",
+      "order": 3,
+      "batch": "2a",
+      "job": "Take over a site the setup command scaffolded: learn what each generated file and directory does, which ones you own and may change, and which ones the engine or its gates depend on. For a Svelte-fluent web developer who took over a scaffolded site and wants to know what the tool wrote and why.",
+      "pageType": "concept",
+      "exemplars": [
+        {
+          "source": "extenders/shadcn-introduction/",
+          "slice": "Extenders",
+          "manifestType": "Concept page",
+          "take": "Take the up-front ownership statement (you own and edit this code) and one line per principle on what it changes in practice; leave the pitch lines and the deploy CTA."
+        },
+        {
+          "source": "designers/ghost-themes-structure/",
+          "slice": "Designers",
+          "manifestType": "Reference entry",
+          "take": "Take the annotated file tree first, with load-bearing files marked inline, then one short entry per file saying what it does and what breaks without it; leave Handlebars helpers and Ghost routing."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/what-the-scaffold-wrote.md"
+      ],
+      "factIds": [
+        "f:mrv24k",
+        "f:jcux9z",
+        "f:n2skkz",
+        "f:s23sk0",
+        "f:7ozknm",
+        "f:6jxd81",
+        "f:gepykz",
+        "f:n7t4bn",
+        "f:vrue1g",
+        "f:7rehzh",
+        "f:xluud1",
+        "f:t2t5lx",
+        "f:4cet3p",
+        "f:guiavc",
+        "f:j7fha2",
+        "f:jd54ph",
+        "f:vs6k2k",
+        "f:0ygumq",
+        "f:dy5cfj",
+        "f:n4rg1z",
+        "f:n52h8f",
+        "f:nv0ok0",
+        "f:o47i0q",
+        "f:o7bkm0",
+        "f:ofex2m",
+        "f:onqm6k",
+        "f:paotzb",
+        "f:qfv5iw",
+        "f:qlgggh",
+        "f:qnf469",
+        "f:qtvesq",
+        "f:qtm9y2",
+        "f:kldwss",
+        "f:u705t5",
+        "f:2qnqkm",
+        "f:2s8u70",
+        "f:2zl3qz",
+        "f:34rsss",
+        "f:38pjqy",
+        "f:3bbeia",
+        "f:3m0oxs",
+        "f:3my5c1",
+        "f:498l97",
+        "f:4ax489",
+        "f:4h9fz4",
+        "f:4nccq6",
+        "f:5ohm23",
+        "f:666eg6",
+        "f:690k0p"
+      ],
+      "covers": [
+        "What the scaffold is: Waymark on the chassis, baked from the same tree cairn tests itself against, with Topo planned but not shipped.",
+        "The annotated root: .github/workflows/check.yml (Node 24, the continue-on-error guidance check), .dev.vars.example, cairn-audit.config.json, CLAUDE.md, the gitignore rename, and .claude/ with its four skills, the extension reviewer agent, and the VERSION stamp.",
+        "Config files: package.json scripts (dev, check:cairn, check:cairn:rendered and its missing Playwright), vite.config.ts (cairnManifest, the dev-build define, and the inline sveltekit() call: adapter options, handleHttpError, handleUnseenRoutes, no csrf key since SvelteKit 3 removed checkOrigin), app.d.ts, wrangler.jsonc bindings (AUTH_DB, APP_DB, EMAIL, MEDIA_BUCKET, observability).",
+        "migrations/ versus migrations-app/ and why the app schema sits in its own directory.",
+        "src/routes/: the admin catch-all and layout pair, the signups example screen, the (site) group with the public catch-all and markdown twin, archive, preview, media route, feeds, robots, and /healthz outside the guard.",
+        "src/theme/ and src/content/: cairn.config.ts with its navLayout, the registry and chrome, the content directories, and the committed manifests under src/content/.cairn/.",
+        "Stylesheets: admin.css importing admin-sources.css, and the public theme.css and site.css layering over cairn-public.css (depth on theme-your-public-site).",
+        "package.json's pre-scripts that compile .cairn/admin.css for any build, plus the cairn:manifest, format, and test:unit scripts.",
+        "The themed 404: the root +error.svelte and not_found_handling set to none, and why both are needed.",
+        "Crawl rules: handleUnseenRoutes' one exemption for the archive, and rel=\"external\" on every /admin link through isAdminHref.",
+        "The knobs a new owner looks for first: ARCHIVE_PAGE_SIZE and the home page's lead, and the footer menu edited by hand while /admin/nav edits the primary one.",
+        "What the setup command left outside the tree: its saved state file and the token in it, the resume overrides, the --brand-color forms, and the Workers Builds token whose revocation breaks deploys without warning.",
+        "The guidance tooling: cairn-guidance check and --strict, install's never-delete and exit-0 behavior, and the Stop hook snippet it never writes for you."
+      ],
+      "outOfScope": [
+        "Building the same tree by hand (add-cairn-to-a-sveltekit-app).",
+        "Changing the theme and chassis (theme-your-public-site).",
+        "The signups screen as a pattern (add-a-custom-admin-screen).",
+        "Each delivery route's wiring (build-the-public-routes).",
+        "Media configuration behind the MEDIA_BUCKET binding (configure-media).",
+        "cairn-audit.config.json in depth (run-cairn-audit-on-your-site)."
+      ],
+      "pinned": [],
+      "rearms": [
+        125
+      ]
+    },
+    {
+      "slug": "content-model",
+      "title": "Content model",
+      "path": "docs/extend/content-model.md",
+      "group": "model-content",
+      "order": 4,
+      "batch": "2b",
+      "job": "Understand cairn's content model before you declare one: what a concept is, how a fieldset drives the form, the validator, and your types, how entries are identified and routed, and what the manifest records. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "concept",
+      "exemplars": [
+        {
+          "source": "extenders/cf-workers-bindings/",
+          "slice": "Extenders",
+          "manifestType": "Concept page",
+          "take": "Take the one-sentence definition of the concept as a grant, the first example pairing the declaration with its use, and the failing snippet that marks the boundary; leave the four-language tabs."
+        },
+        {
+          "source": "designers/astro-layouts/",
+          "slice": "Designers",
+          "manifestType": "Concept page",
+          "take": "Take \"demystify before explaining\" and the bulleted list of exactly what a consumer receives, captioned by file path; leave Astro's layout frontmatter key and MDX specifics."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/content-model.md",
+        "docs/extend/declare-your-own-concept.md",
+        "docs/extend/README.md"
+      ],
+      "factIds": [
+        "f:phdgof",
+        "f:2hxm4t",
+        "f:68fh1k",
+        "f:t4hh8w",
+        "f:46edxb",
+        "f:zce3pt",
+        "f:s2zbzm",
+        "f:hdrzxd",
+        "f:t5ebsr",
+        "f:a8ecm0",
+        "f:z4j689",
+        "f:z5boz6",
+        "f:im6x7r",
+        "f:6e06p2",
+        "f:vs77a6",
+        "f:5eum60",
+        "f:69j91g",
+        "f:7ci1fm",
+        "f:7l7y5l",
+        "f:7lo8fe",
+        "f:7m8nd4",
+        "f:8b21y6",
+        "f:8igohk",
+        "f:8zdux6",
+        "f:9270mo"
+      ],
+      "covers": [
+        "A concept as one entry in the adapter's content map: a directory of markdown files plus a fieldset; the concept set is the site's own, and Posts and Pages are not reserved.",
+        "The fieldset as the single source of truth for the form, the save-time validator, and the inferred type; the fifteen builders as a closed union with no custom-field seam.",
+        "Containers (object and array) nested one level deep, and why a field key never contains a dot.",
+        "Entry identity: the filename stem is the id, the date prefix only feeds the slug, and the entry's date comes from frontmatter.",
+        "Routing shorthands (feed, page, embedded) and what each turns on or off; an embedded concept keeps its admin list and editor.",
+        "Validation behavior: the save is refused before any commit (the error banner and a throwing behavior.validate on define-an-adapter-and-schema).",
+        "The manifest: one row per entry with identity, routing facts, links, reference edges, tags, and includes; git stays the source of truth.",
+        "Rename as one atomic commit that moves the file and rewrites inbound cairn: tokens, refused on collision.",
+        "Frontmatter keys the engine reads by literal name (title, date, updated, description, draft) and why each must be declared to survive a save.",
+        "Field-type edges: url accepts absolute http(s) only, pattern is unanchored, default only prefills a new entry, multiselect options stay closed, and datetime ignores min and max and converts a parsed Date.",
+        "dir used verbatim; slugify's ASCII-only ids (permalink tokens on define-an-adapter-and-schema).",
+        "The address-collision advisory and the publish-time recheck, both warn-only and fail-open."
+      ],
+      "outOfScope": [
+        "Writing the declaration (define-an-adapter-and-schema).",
+        "Reference fields in use (link-content-with-references).",
+        "Fragments (reuse-content-across-entries).",
+        "Rendering the body (configure-rendering)."
+      ],
+      "pinned": [],
+      "rearms": [
+        66
+      ]
+    },
+    {
+      "slug": "define-an-adapter-and-schema",
+      "title": "Define an adapter and schema",
+      "path": "docs/extend/define-an-adapter-and-schema.md",
+      "group": "model-content",
+      "order": 5,
+      "batch": "2b",
+      "job": "Declare your site's adapter and its concepts: write the defineAdapter call, add a concept with its fields, permalink, and date prefix, and confirm the declaration typechecks and builds. For a Svelte-fluent web developer who has installed the engine and read the content model.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/sanity-custom-tool/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take naming the required members in prose before the code and a comment mapping a member to where it surfaces (dir to the directory, label to the nav); leave @sanity/ui specifics and the plugin-sharing tail."
+        },
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the file-location tree before the full working file, then variants (a second concept, a dated permalink) off one running example; leave the appended class reference."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [
+        "docs/extend/declare-your-own-concept.md"
+      ],
+      "factSections": [
+        "docs/extend/declare-your-own-concept.md",
+        "docs/extend/define-an-adapter-and-schema.md",
+        "docs/extend/README.md"
+      ],
+      "factIds": [
+        "f:r03vis",
+        "f:4mz4tp",
+        "f:7az6m2",
+        "f:a98mnn",
+        "f:hkh101",
+        "f:gwmmkx",
+        "f:lkgubp",
+        "f:2i6u6o",
+        "f:cg1eo5",
+        "f:twcsgm",
+        "f:68w9k9",
+        "f:g39nkp",
+        "f:sz71ur",
+        "f:z7lprs",
+        "f:u4cfvv",
+        "f:2zytgf",
+        "f:93iwom",
+        "f:97c6g1",
+        "f:9ro4u5",
+        "f:9sba8e",
+        "f:a81e6y",
+        "f:adsn4l",
+        "f:aj5c4z",
+        "f:apoa3k",
+        "f:ar5p72",
+        "f:dccnyu",
+        "f:7ak73t",
+        "f:2p519o",
+        "f:shv6wv",
+        "f:lbeeak"
+      ],
+      "covers": [
+        "Preconditions: an installed engine (link add-cairn-to-a-sveltekit-app) and the model (link content-model).",
+        "The defineAdapter call: the four required groups (content, backend, email, rendering), the optional ones, and the narrowed return type that carries field types into reads.",
+        "The scaffold's cairn.config.ts as the worked starting point.",
+        "Add a concept: dir, label, singular, routing, fields; register its glob in createSiteIndexes and in the cairnManifest plugin's content option (the silent-omission trap).",
+        "Permalinks and datePrefix: defaults (`/<id>/:slug`, pages at /:slug), the allowed tokens (:slug, :year, :month, :day) with the date tokens feed-only and requiring a date field, and declaration-time validation.",
+        "Tag a concept: the one top-level taxonomy: true multiselect, the tag vocabulary a save checks against (lowercase hyphenated values, existing out-of-vocabulary tags kept as orphans), where the vocabulary is stored (editor.nav.configPath, else src/lib/site.config.yaml), and the content.field_unmarked warning a missing marker raises.",
+        "The backend identity values as non-secret and the email sender group (from, replyTo).",
+        "Field behavior and refine: when each runs, a throwing behavior.validate treated as valid versus an uncaught refine throw, and the one-banner save error that makes a refine message a standalone sentence.",
+        "Normalized frontmatter: trimmed strings, empty values omitted, booleans present only when true, and InferFieldset's optional keys.",
+        "Concept and editor options beyond fields: summaryFields, an array field's itemLabel, and supportContact's empty-string hand-off.",
+        "What site.config.yaml refuses (the adapter group keys and content) and the single en-US spellcheck dictionary.",
+        "Verify: npm run check typechecks the declared fields and npm run build runs the manifest checks."
+      ],
+      "outOfScope": [
+        "What routing and identity mean (content-model).",
+        "Reference fields (link-content-with-references).",
+        "The render group (configure-rendering).",
+        "Roles and the access map (restrict-admin-access).",
+        "navLayout (arrange-the-admin-sidebar)."
+      ],
+      "pinned": [],
+      "rearms": []
+    },
+    {
+      "slug": "configure-rendering",
+      "title": "Configure rendering",
+      "path": "docs/extend/configure-rendering.md",
+      "group": "model-content",
+      "order": 6,
+      "batch": "2b",
+      "job": "Build the one render function your admin preview and public pages share, and register your own markdown components with typed attributes and slots. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "designers/astro-styling/",
+          "slice": "Designers",
+          "manifestType": "Task guide",
+          "take": "Take \"this input, compiles to this output\" pairs for a directive and its built HTML, and the \"Markdown styling\" move for content the developer does not write; leave the breadth across preprocessors."
+        },
+        {
+          "source": "extenders/payload-custom-components/",
+          "slice": "Extenders",
+          "manifestType": "Concept page",
+          "take": "Take every custom component defined the same way through one registry and the props every component receives, listed so a reader never reads source for them (here the typed attributes and slots); leave the import-map and React Server Components machinery and the performance section."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/configure-rendering.md",
+        "docs/extend/README.md",
+        "docs/extend/render-safety.md"
+      ],
+      "factIds": [
+        "f:3l7f56",
+        "f:dmn2uu",
+        "f:s6n9zw",
+        "f:cxhx8w",
+        "f:34wt4f",
+        "f:wvcw71",
+        "f:fqdknx",
+        "f:ps54gh",
+        "f:my6ci3",
+        "f:htxey1",
+        "f:0aatf6",
+        "f:zh8wdb",
+        "f:2dsv35",
+        "f:qvj951",
+        "f:xothz1",
+        "f:dwc2bu",
+        "f:bnqj5z",
+        "f:c7ruij",
+        "f:cefzv5",
+        "f:cgwyp6",
+        "f:co54dg",
+        "f:dat0dd",
+        "f:db26u3",
+        "f:dni13r",
+        "f:dw4rbb",
+        "f:e11npv",
+        "f:21by9u"
+      ],
+      "covers": [
+        "One rendering.render per adapter, called by the preview and every public page; the SiteRender signature and the resolvers it forwards.",
+        "createRenderer: renderMarkdown versus renderDocument (headings), and RendererConfig options (sanitizeSchema, tableScroll, remarkPlugins with where they run, highlighting).",
+        "defineComponent: required members, container-only directive grammar, attributes from the ten serializable field types validated by the fieldset machinery, title and body slots, and the build context.",
+        "build is synchronous and returns a hast Element; name inner classes apart from DaisyUI's.",
+        "How the preview reruns render on a debounce and drops stale results.",
+        "The picker and configure-step members of a component (icon, group, hidden, insertTemplate, use, preview, defaultIconByRole), the slot kinds, the full build context, and a repeatable slot's itemLabel.",
+        "The authoring grammar a component produces: the four-colon fence, nested slot containers, repeatable items as bullets, the label dropped without a title slot, and the reserved figure and include names.",
+        "Built-in render steps: the highlighter's preloaded languages and the mermaid passthrough, the table-scroll wrapper's accessible name, and the figure placement classes.",
+        "remarkPlugins in practice: the scaffold's smartypants wiring through its one createRenderer call."
+      ],
+      "outOfScope": [
+        "What the sanitize floor and sink guard protect and the opt-out's cost (security-model).",
+        "Hydrating a component on the client (add-an-island).",
+        "Styling the rendered output (theme-your-public-site).",
+        "Fragments (reuse-content-across-entries).",
+        "Missing media assets and the media resolver (configure-media)."
+      ],
+      "pinned": [],
+      "rearms": [
+        74
+      ]
+    },
+    {
+      "slug": "link-content-with-references",
+      "title": "Link content with references",
+      "path": "docs/extend/link-content-with-references.md",
+      "group": "model-content",
+      "order": 7,
+      "batch": "2b",
+      "job": "Connect one entry to another with a typed reference field, render the resolved target on a public page, and rely on the build and the admin guards to keep every reference pointing at a real entry. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take one running example (an event that names its venue) carried from declaration to rendering to the guards; leave the class reference."
+        },
+        {
+          "source": "extenders/directus-create-extension/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the verb-per-heading steps and the closing \"see it running\" check on the public page; leave the Docker steps."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/declare-your-own-concept.md",
+        "docs/extend/link-content-with-references.md"
+      ],
+      "factIds": [
+        "f:i2k4jp",
+        "f:563h9u",
+        "f:3zswxq",
+        "f:9i99mg",
+        "f:gk88bv",
+        "f:nibxrd",
+        "f:mpdshq",
+        "f:6ggh4v",
+        "f:l32sb1",
+        "f:2zl9zw",
+        "f:7s52oz",
+        "f:8on7h4",
+        "f:re5qlm",
+        "f:bz5j8f",
+        "f:5fs5o7",
+        "f:jxgm4i",
+        "f:2g0v8u",
+        "f:bbovmp",
+        "f:2dilwu",
+        "f:yw7rs6",
+        "f:aulk5e",
+        "f:bf47a8"
+      ],
+      "covers": [
+        "Declare fields.reference and array(reference), typed to a declared concept, with the normalizeConcepts failure when the concept is missing.",
+        "What the editor shows: the scoped picker button and the chip list.",
+        "Resolve on a public route with resolveReferences and what a ResolvedReference carries; missing ids dropped.",
+        "Integrity: verifyReferences fails the build on a dangling reference, with no prerender fallback, unlike a cairn: link.",
+        "The admin guards: save warns on a missing or draft target, delete checks body links then reference edges across open branches, rename refuses when another branch holds an inbound edge, and draft edges count.",
+        "The byte-preserving rewrite on rename.",
+        "Where a cairn: token is live (an inline body link) and where it stays inert (raw HTML, reference-style definitions, component attributes, frontmatter); a link to a draft resolves and 404s until the target publishes."
+      ],
+      "outOfScope": [
+        "cairn: body links as a model (content-model).",
+        "Fragments and the include directive (reuse-content-across-entries)."
+      ],
+      "pinned": [],
+      "rearms": []
+    },
+    {
+      "slug": "reuse-content-across-entries",
+      "title": "Reuse content across entries",
+      "path": "docs/extend/reuse-content-across-entries.md",
+      "group": "model-content",
+      "order": 8,
+      "batch": "2b",
+      "job": "Write a block of content once as a fragment and include it in any entry, with the build and the delete guard keeping every include valid. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/sanity-custom-tool/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the early \"right tool for the job?\" callout (a fragment versus a registered component) and required members named before code; leave the plugin tail."
+        },
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the file tree showing where the fragment lives and one running example (the scaffold's trail-safety notice) through to the rendered page; leave the class reference."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/content-model.md",
+        "docs/extend/declare-your-own-concept.md",
+        "docs/extend/reuse-content-across-entries.md"
+      ],
+      "factIds": [
+        "f:880bg6",
+        "f:y3s3t9",
+        "f:ojydmz",
+        "f:7wiuwr",
+        "f:60zw5n",
+        "f:i6zyab",
+        "f:0w7xeu",
+        "f:zv3q45",
+        "f:xlgfqm",
+        "f:k84qwy",
+        "f:82eo9p",
+        "f:3vndvj",
+        "f:72pqil",
+        "f:7250yh",
+        "f:kcm3gf",
+        "f:bfiuem"
+      ],
+      "covers": [
+        "Declare the reserved fragments concept with routing embedded, its glob in the content index, and its entry in the cairnManifest plugin.",
+        "Include syntax and the editor's insert-palette control.",
+        "Forward resolveFragment from your render alongside resolve and resolveMedia, backed by createFragmentResolver.",
+        "Render-time resolution one pass deep, and the refused nested include.",
+        "Guards: a dangling include fails the build, and deleting a fragment still included is refused; the fragment's edit screen lists where it is used.",
+        "The empty-fragment and not-found notices with their include.missing reasons, versus the build's throwing resolver."
+      ],
+      "outOfScope": [
+        "Reusable components with attributes (configure-rendering).",
+        "Reference fields (link-content-with-references)."
+      ],
+      "pinned": [],
+      "rearms": [
+        193
+      ]
+    },
+    {
+      "slug": "configure-media",
+      "title": "Configure media",
+      "path": "docs/extend/configure-media.md",
+      "group": "model-content",
+      "order": 9,
+      "batch": "2b",
+      "origin": "gap-sweep",
+      "job": "Turn on media for your site: bind the R2 bucket, set the adapter's media options, mount the media route, and know what the engine refuses at upload, serves at delivery, and counts as a use. For a Svelte-fluent web developer who has the R2 bucket binding in wrangler.jsonc.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/cf-workers-bindings/",
+          "slice": "Extenders",
+          "manifestType": "Concept page",
+          "take": "Take the first example that pairs the binding declaration with its use, so the R2 binding in wrangler.jsonc and the adapter's media block appear together; leave the four-language tabs."
+        },
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the file-location tree before the code (the media route under its public base) and the rule stated where it bites; leave the appended API reference."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [],
+      "factIds": [
+        "f:enuyhg",
+        "f:ett331",
+        "f:ex4hss",
+        "f:f4ulxz",
+        "f:fjnszk",
+        "f:frgg7d",
+        "f:fxit31",
+        "f:g4cwcw",
+        "f:69rw88",
+        "f:2hnxsr",
+        "f:db0cx6",
+        "f:6kdagb",
+        "f:ckuow3",
+        "f:wdmlys",
+        "f:r8vksa",
+        "f:9awije"
+      ],
+      "covers": [
+        "Preconditions: the R2 bucket binding in wrangler.jsonc and the media block on the adapter; what the resolved asset config holds.",
+        "Set the options: allowedTypes narrows but never widens the five sniffed image types (SVG, HTML, and HEIC always refused), maxUploadBytes and its default against the request-body limit of the Cloudflare plan, publicBase, urlForm, and transformations with the four built-in presets and the srcset they turn on.",
+        "Mount createMediaRoute at `<publicBase>/[...path]`: the param name, the last-segment lookup, and the response headers it sets.",
+        "What a missing asset does: the broken-image marker and media.resolve_missing, the build that still succeeds, and wrapping the resolver to fail it.",
+        "Usage tracking's reach: which media: references the Library counts, and why an asset can show no references while a page still renders it.",
+        "Uploading from your own screen: the upload action's raw-body protocol, its headers, and its fail() refusals.",
+        "Verify: an upload through the Library, the rendered image URL, and the media route's headers."
+      ],
+      "outOfScope": [
+        "Seeding local media for theme work (theme-your-public-site).",
+        "Editor-facing use of the Library (editors arm).",
+        "Restricting media through the access map (restrict-admin-access).",
+        "The R2 tier's place among the data tiers (architecture)."
+      ],
+      "pinned": [],
+      "rearms": []
+    },
+    {
+      "slug": "migrate-existing-content",
+      "title": "Migrate existing content",
+      "path": "docs/extend/migrate-existing-content.md",
+      "group": "model-content",
+      "order": 10,
+      "batch": "2b",
+      "job": "Move an existing site's markdown into cairn's concepts with a short script, so every entry keeps a stable id, validates, and links correctly. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/astro-v5-upgrade/",
+          "slice": "Extenders",
+          "manifestType": "Migration / upgrade guide",
+          "take": "Take the fixed pair per incompatibility (what differs in the old content, then \"What should I do?\"); leave the length and package-manager tabs."
+        },
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the full working script carried through as one example, with its file location first, then variants; leave the class reference."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/migrate-existing-content.md"
+      ],
+      "factIds": [
+        "f:qd7iat",
+        "f:3r6rqn",
+        "f:z68na4",
+        "f:grhib4",
+        "f:nhjraz",
+        "f:xl7d9s",
+        "f:w77gj8",
+        "f:ivhuyc",
+        "f:2p519o",
+        "f:0nw43j",
+        "f:4ikssa",
+        "f:xjdhau",
+        "f:tg9e0z",
+        "f:ggzzur",
+        "f:gh4ckg",
+        "f:kv3qen"
+      ],
+      "covers": [
+        "No importer ships: a short script with parseMarkdown and what it returns; write the frontmatter block yourself, since serializeMarkdown is internal.",
+        "Filenames: the stem is the id, the date-prefix stripping rule per datePrefix, and the slug shape a cairn: link and the rename guard require.",
+        "Frontmatter that must change: date as YYYY-MM-DD, draft: true semantics, tag values against a configured vocabulary.",
+        "Old body markup: image URLs pass through unchanged, no bulk media import, one upload per action; custom shortcodes become registered components.",
+        "Frontmatter traps: undeclared keys dropped on the first admin save, and unquoted YAML numbers, dates, or booleans read as empty by text-like fields.",
+        "The build as the migration check: createSiteIndexes fails listing each invalid field, and opts.validate false as the temporary escape.",
+        "Verify: the content index records content problems per entry."
+      ],
+      "outOfScope": [
+        "Declaring the target concepts (define-an-adapter-and-schema).",
+        "Registering components (configure-rendering)."
+      ],
+      "pinned": [],
+      "rearms": [
+        191,
+        192
+      ]
+    },
+    {
+      "slug": "theme-your-public-site",
+      "title": "Theme your public site",
+      "path": "docs/extend/theme-your-public-site.md",
+      "group": "public-site",
+      "order": 11,
+      "batch": "pilot",
+      "job": "Own your public site's design: re-skin the scaffolded theme through its token tiers, or port your own theme onto the chassis, and iterate locally against real content until it passes the audit gates. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "designers/shopify-create-theme/",
+          "slice": "Designers",
+          "manifestType": "Task guide",
+          "take": "Take \"start from the minimal reference theme\" as step one, one CLI verb per step linked to its reference, the caution beside the irreversible act, and next steps that hand off to concepts; leave store and Liquid vocabulary and the AI-toolkit tabs."
+        },
+        {
+          "source": "designers/astro-styling/",
+          "slice": "Designers",
+          "manifestType": "Task guide",
+          "take": "Take the cascading-order answer (which layer wins when theme, chassis, and engine roles style one element) and the Markdown-styling section for render output; leave the preprocessor breadth."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/design-your-site.md"
+      ],
+      "factIds": [
+        "f:p8hsnz",
+        "f:i9pgd2",
+        "f:nz87b3",
+        "f:faofr4",
+        "f:rxj43c",
+        "f:s4prb0",
+        "f:lwrqfd",
+        "f:iel6v5",
+        "f:kt0epf",
+        "f:ylmc9c",
+        "f:xv2ien",
+        "f:bdnzcy",
+        "f:7pv6se",
+        "f:ctognq",
+        "f:kj37zz",
+        "f:kq6ud3",
+        "f:l2mbcj",
+        "f:mvkyea",
+        "f:mzmvt8",
+        "f:gnn3pv",
+        "f:gtg454",
+        "f:guthtp",
+        "f:gzw7os",
+        "f:h1qxlq",
+        "f:hectgs",
+        "f:hgal3e",
+        "f:i3rn6f",
+        "f:i80vsl",
+        "f:ivp8wl",
+        "f:j2qzct",
+        "f:s23sk0",
+        "f:c4nnu9",
+        "f:w6pqic"
+      ],
+      "covers": [
+        "What a scaffolded site ships: Waymark on the chassis. A hand-built site starts with neither: it adds Tailwind and daisyUI, imports cairn-public.css after tailwindcss, and supplies its own daisyUI theme block, and the rest of this page's token and verify sections still apply (link docs/reference/public-css.md).",
+        "The chassis: one concern per file, the $chassis seam, the dependents rule before deleting a piece (feed.ts versus content.ts).",
+        "The three token tiers and tokens.css design-scale keys; the heading keys.",
+        "The theme guide (required, Geoff 2026-09-24): the fourteen-value re-skin recipe light and dark, a full status-color rebrand, and porting your own theme onto the chassis step by step with the composition primitives.",
+        "Theme toggle, skip link, and the preview frame's ground following base-100.",
+        "Local iteration: HMR, /styleguide, seeding local R2 with cairn-media-seed.",
+        "Style the editor preview: editor.preview (stylesheets, bodyClass, containerClass, byConcept), the ?url-only import rule, and data-cairn-preview for suppressing motion in the frame.",
+        "Chassis conventions and traps: class-prefix ownership, spacing keys shadowing max-w containers, unlayered rules beating utilities, the fluid root font size, formatDate as the one date vocabulary, data-flourish, and the no-flash script's hard-coded theme names.",
+        "Seeded media shows only with the dev backend off (npx vite dev without CAIRN_DEV_BACKEND, or wrangler dev).",
+        "Verify: check:public-tokens and the public-scope audit rules, theme-contrast at WCAG AA."
+      ],
+      "outOfScope": [
+        "The file map of the scaffold (scaffolded-site-files).",
+        "Building components (configure-rendering).",
+        "The admin's look (add-a-custom-admin-screen).",
+        "Delivery routes (build-the-public-routes).",
+        "Media storage and the media route (configure-media).",
+        "Configuring cairn-audit for the whole site (run-cairn-audit-on-your-site)."
+      ],
+      "pinned": [],
+      "rearms": [
+        62,
+        63,
+        109,
+        110,
+        183
+      ]
+    },
+    {
+      "slug": "build-the-public-routes",
+      "title": "Build the public routes",
+      "path": "docs/extend/build-the-public-routes.md",
+      "group": "public-site",
+      "order": 12,
+      "batch": "2b",
+      "job": "Wire your public routes to the engine: the entry pages and their markdown twins, the archive, the feeds, the sitemap, and robots.txt, all reading one typed index and one origin. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/directus-create-extension/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take verb-per-heading steps and the \"where you'll see it\" close (the prerendered /sitemap.xml, /feed.xml, /robots.txt); leave the Docker steps."
+        },
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the file tree of route files before code and one running site through every route; leave the class reference."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/build-a-site-by-hand.md",
+        "docs/extend/wire-the-delivery-surface.md"
+      ],
+      "factIds": [
+        "f:fvi8rk",
+        "f:k16chc",
+        "f:yef4lo",
+        "f:niuzzg",
+        "f:pkt8i6",
+        "f:03lbjg",
+        "f:gwpffe",
+        "f:0elmiu",
+        "f:xafwcw",
+        "f:hv8qs9",
+        "f:pvk6h5",
+        "f:d7v5cg",
+        "f:8k9xwm",
+        "f:upec9v",
+        "f:3r08v1",
+        "f:qzcpzc",
+        "f:bnt2wh",
+        "f:g030q0",
+        "f:dvg5gn",
+        "f:j2rndg",
+        "f:j81xye",
+        "f:jguiox",
+        "f:jsh6ae",
+        "f:k5uws5",
+        "f:k7nln3",
+        "f:kdo96n",
+        "f:kv3qen",
+        "f:ky39tz",
+        "f:m9z6sr",
+        "f:mc3n4w",
+        "f:ms7l5u",
+        "f:mt7qcl",
+        "f:mtltw7",
+        "f:n07oiu",
+        "f:n33lwb",
+        "f:nbn6j0",
+        "f:nibegw",
+        "f:nnup2g",
+        "f:rnwver",
+        "f:rzfdqw",
+        "f:2s8u70"
+      ],
+      "covers": [
+        "One typed index from createSiteIndexes with literal globs, and the ordering all() already gives.",
+        "One ORIGIN constant as a literal.",
+        "createPublicRoutes: entryLoad and entries, the load data an entry page receives, canonical URLs and og:url, the heroImage rules, and assetsEnabled.",
+        "The markdown twin and its Content-Type caveat on adapter-cloudflare.",
+        "The feed, sitemap, and robots builders and Response wrappers, prerendered; always disallow /admin; the posture option (link choose-an-ai-posture).",
+        "createLinkResolver for cairn: links; CairnHead's titleTemplate rule.",
+        "Build-time integrity: the glob form createSiteIndexes needs, frontmatter validation that fails the build, the permalink collision throw, and drafts left out of every public route.",
+        "Entry SEO: the description, social image, and hero fallbacks; article versus website typing and the JSON-LD shape a site can replace; which SEO fields the fieldset must declare; the hero field kept named image; the scaffold's defaultImage that 404s until the file exists.",
+        "Pages that are not entries get no SEO unless the site calls buildSeoMeta and renders CairnHead itself.",
+        "A tag page: allTags() and byTag() on the index, drafts excluded, and the SEO it gets only through buildSeoMeta and CairnHead.",
+        "An editable site menu: declare editor.nav (configPath, menuName, maxDepth), the menu node shape and its limits, readMenu in the root layout's load, and a second menu edited by hand in site.config.yaml.",
+        "The sitemap: buildSitemapView and extraRoutes versus the scaffold's hand-built route, noindex entries still listed, and an origin with no trailing slash.",
+        "delivery/data's pure builders (buildSiteDescriptors, buildSitemapView, renderJsonLdScript, buildExcerpt)."
+      ],
+      "outOfScope": [
+        "Choosing the AI posture (choose-an-ai-posture, kept).",
+        "The draft preview route (share-a-draft-preview).",
+        "Announcing new entries (act-on-newly-published-entries)."
+      ],
+      "pinned": [],
+      "rearms": [
+        93,
+        94,
+        104,
+        105,
+        106,
+        107,
+        108
+      ]
+    },
+    {
+      "slug": "share-a-draft-preview",
+      "title": "Share a draft preview",
+      "path": "docs/extend/share-a-draft-preview.md",
+      "group": "public-site",
+      "order": 13,
+      "batch": "2b",
+      "job": "Let an editor share an unpublished draft through a revocable link, mounted so the preview renders with your site's own chrome and styles. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/sanity-custom-tool/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the early callout on when not to use it (the link is the credential) and required pieces named before code; leave the plugin tail."
+        },
+        {
+          "source": "extenders/directus-create-extension/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the verb steps and the closing check where you see the preview render; leave the Docker steps."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/share-a-draft-preview.md"
+      ],
+      "factIds": [
+        "f:6gmzt1",
+        "f:049lo2",
+        "f:rr00qr",
+        "f:gvim4v",
+        "f:xssf06",
+        "f:afkvsb",
+        "f:zke3iw",
+        "f:l4waby",
+        "f:pimnjy",
+        "f:a7yrhq",
+        "f:cnz554",
+        "f:btx359",
+        "f:6c3amx",
+        "f:6hmgmv",
+        "f:6rao75",
+        "f:74ls5e",
+        "f:76m2vf",
+        "f:7e0i53",
+        "f:2awy1w",
+        "f:rdwesf",
+        "f:umdf7r",
+        "f:nssepj"
+      ],
+      "covers": [
+        "Preconditions: the 0003_preview migration and its table; the actionable failure before it runs.",
+        "The share affordance on by default and the mint and revoke actions.",
+        "Mount loadPreview inside the same route group as the entry page, and why (the rejected neutral-shell design); the shared composition with entryLoad.",
+        "Render PreviewBanner and override its palette with the five custom properties.",
+        "What the link is: token-only credential, no cookies, the response headers, draft versus published state, expiry and cascades on delete, rename, or discard, and the mint URL built from the configured origin.",
+        "Minting and revoking from your own admin route with mintPreview and revokePreview.",
+        "Verify, and the preview.refused reasons with their 404 versus 503."
+      ],
+      "outOfScope": [
+        "The public entry route itself (build-the-public-routes).",
+        "Session and cookie security (security-model)."
+      ],
+      "pinned": [],
+      "rearms": [
+        72,
+        73,
+        81,
+        82,
+        129
+      ]
+    },
+    {
+      "slug": "act-on-newly-published-entries",
+      "title": "Act on newly published entries",
+      "path": "docs/extend/act-on-newly-published-entries.md",
+      "group": "public-site",
+      "order": 14,
+      "batch": "2b",
+      "job": "Detect which entries a deploy newly published by diffing two manifests and hand them to your own notification code, or give editors a next-step link the moment they publish. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take one running example (a post-deploy job that emails new posts) from the manifest diff to the send; leave the class reference."
+        },
+        {
+          "source": "extenders/sanity-custom-tool/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the early \"right tool for the job?\" callout (the engine sends nothing; storage and delivery are yours); leave the plugin tail."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/announce-on-publish.md"
+      ],
+      "factIds": [
+        "f:ix641z",
+        "f:pm1osl",
+        "f:6cas58",
+        "f:pc3iy5",
+        "f:df3hqw",
+        "f:w3m0ac",
+        "f:xlj297",
+        "f:tdbki1",
+        "f:u1mies",
+        "f:4wnm6o",
+        "f:oduq77",
+        "f:wv457z",
+        "f:ohq7b9",
+        "f:ozz6fs"
+      ],
+      "covers": [
+        "The exports from delivery/data: buildNewlyPublished, parseManifest, Manifest.",
+        "The rule: not draft, stamped, and no prior stamp at the concept/id key; the draft check first.",
+        "Persisting the prior manifest across deploys is your job (KV, R2, or other storage).",
+        "before: null for a first backfill only.",
+        "Edge cases: rename and delete-recreate read as new; removals are silent; the function is pure.",
+        "The in-admin alternative: editor.publishActions next-step links shown after a publish, their {concept} and {id} placeholders, the concept filter, and validation at server start."
+      ],
+      "outOfScope": [
+        "The feed routes (build-the-public-routes)."
+      ],
+      "pinned": [],
+      "rearms": []
+    },
+    {
+      "slug": "add-an-island",
+      "title": "Add an island",
+      "path": "docs/extend/add-an-island.md",
+      "group": "public-site",
+      "order": 15,
+      "batch": "2b",
+      "job": "Make one markdown component interactive on the public site by hydrating it as an island, while its static fallback still serves readers without JavaScript. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/directus-create-extension/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the scaffold-build-see-it-running shape and the closing check on the live public page; leave the Docker steps."
+        },
+        {
+          "source": "extenders/payload-custom-components/",
+          "slice": "Extenders",
+          "manifestType": "Concept page",
+          "take": "Take stating the default (a component renders on the server) and the exact condition that flips it to the client before any how-to, which maps to the static fallback versus the hydrated island; leave the import-map machinery and the performance section."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/add-an-island.md",
+        "docs/extend/README.md"
+      ],
+      "factIds": [
+        "f:nm3bbo",
+        "f:1uk9sw",
+        "f:jz4qka",
+        "f:thjrvl",
+        "f:mv684d",
+        "f:rmlwca",
+        "f:urw3z7",
+        "f:w8oe1v",
+        "f:59u3b9",
+        "f:8o2gbl",
+        "f:4hd2vg",
+        "f:bwaj5c",
+        "f:hje4zb",
+        "f:drsabs",
+        "f:9zxml1",
+        "f:mynt0l",
+        "f:8356mn",
+        "f:lv29ox",
+        "f:keo8ze",
+        "f:42mh10",
+        "f:bh6css"
+      ],
+      "covers": [
+        "An island as a component declared with hydrate, eager or visible, and build() output as the fallback.",
+        "Register it in rendering.islands; the declaration-time mismatch check.",
+        "Call hydrateIslands from afterNavigate, gated on a hasIslands flag with a dynamic import so a static site ships no runtime.",
+        "Props: typed from declared attributes, untrusted, unsanitized by the runtime.",
+        "Runtime behavior: teardown on navigation, root scoping, failure isolation, fallback restore on a throwing mount.",
+        "Verify on the public page, since the sandboxed preview frame always shows the fallback."
+      ],
+      "outOfScope": [
+        "Declaring the component itself (configure-rendering)."
+      ],
+      "pinned": [],
+      "rearms": [
+        69,
+        189
+      ]
+    },
+    {
+      "slug": "add-a-custom-admin-screen",
+      "title": "Add a custom admin screen",
+      "path": "docs/extend/add-a-custom-admin-screen.md",
+      "group": "extend-the-admin",
+      "order": 16,
+      "batch": "pilot",
+      "job": "Add your own screen under /admin that renders inside the admin shell, gates its reads and writes through the access map, audits its actions, and passes the admin audit. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/sanity-custom-tool/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the closest analogue's shape: what a screen is, the \"right tool for the job?\" callout, a minimal example, then the typed version; leave @sanity/ui and the Exchange pitch."
+        },
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take one running example (the showcase signups screen) through route, load, action, audit, and test, with the file tree first; leave the class reference."
+        }
+      ],
+      "figure": true,
+      "figureNote": "A reproduction of the worked custom screen rendered inside CairnAdminShell (the showcase signups screen), so the reader sees the shell, the toolkit table, and the dialog form.",
+      "absorbs": [
+        "docs/extend/animate-a-custom-screen.md"
+      ],
+      "factSections": [
+        "docs/extend/add-a-custom-admin-screen.md",
+        "docs/extend/animate-a-custom-screen.md"
+      ],
+      "factIds": [
+        "f:03zj56",
+        "f:2sd4if",
+        "f:3j02dk",
+        "f:10ojk8",
+        "f:3lbdl6",
+        "f:lblh3u",
+        "f:7ik6ng",
+        "f:8x0qpa",
+        "f:mfa5vi",
+        "f:68h31z",
+        "f:rurhey",
+        "f:ff3l1u",
+        "f:da6d2z",
+        "f:9fwsz5",
+        "f:cdllbv",
+        "f:lmtfkt",
+        "f:g7zuji",
+        "f:9oa6sk",
+        "f:9rxw92",
+        "f:gc0hx3",
+        "f:5stbq2",
+        "f:2babfl",
+        "f:39sn8c",
+        "f:bwn0uo",
+        "f:x8rhdh",
+        "f:b8rkq9",
+        "f:brfitv",
+        "f:esp93u",
+        "f:hroqbu",
+        "f:clyg9r",
+        "f:zpi2ux",
+        "f:asujoi",
+        "f:xgy3iu",
+        "f:ho6dxa",
+        "f:tkqoia",
+        "f:vao0dd",
+        "f:b5mcea",
+        "f:5t1i7o",
+        "f:7m5o61",
+        "f:chsstm",
+        "f:pyt58u",
+        "f:6quvqm",
+        "f:jra92k",
+        "f:tskfz1",
+        "f:5vn194",
+        "f:n2bhjw",
+        "f:uy7vyc",
+        "f:od9mww",
+        "f:t767qb",
+        "f:017qss",
+        "f:018sgk",
+        "f:09g8ev",
+        "f:0aa9tp",
+        "f:0mbj5n",
+        "f:1md5oj",
+        "f:22odbz",
+        "f:2c19kf",
+        "f:2gdaks",
+        "f:2gmjvn",
+        "f:2p5otw",
+        "f:326755",
+        "f:9xthnq",
+        "f:k6aopn",
+        "f:xh2mwb",
+        "f:pb0vh9",
+        "f:ph6kjg",
+        "f:pmmtdv",
+        "f:pswc3n",
+        "f:pyfbqv",
+        "f:q4jyat",
+        "f:qk0l7p",
+        "f:qkr057",
+        "f:qmhbgs",
+        "f:qz4gj2",
+        "f:vs6k2k",
+        "f:666eg6",
+        "f:xbjxit"
+      ],
+      "covers": [
+        "Where the route goes and why it wins over the catch-all; it renders as the shell's child; the root layout must not wrap /admin in chrome.",
+        "Gate it (suggested heading \"Gate it\", so the restored reference link reuses the old slug): the guard covers the subtree, requireAccess in load, createSectionAction in every action, the shared fail-closed predicate, the 403 for an unmapped route, and nested routes not inheriting requireAccess.",
+        "createSectionAction versus createAdminAction: the Env parameter, resolveDb, and what each audits.",
+        "Wire the AuditSink (suggested heading \"Wire the AuditSink\", reusing the old slug): hooks.server.ts, sequence, createD1AuditSink and its fail-open write.",
+        "Compose from the admin toolkit: the primitives and their one job each, AdminTable and ExpandableRow markup rules, the graduation rule.",
+        "Styling: your screen's own utilities compile only through the site admin sheet (src/admin.css scanning routes/admin and importing admin-sources.css, compiled to .cairn/admin.css by the pre-scripts and imported from the admin layout), which a scaffolded site already has; daisyUI classes available in the admin sheet, the corner ladder and radius tokens, hairline and selected buttons, fixed Tailwind radii not following it.",
+        "The dialog-form recipe: enhance result types, failure handling without update(), live-region and dialog naming rules.",
+        "Loading data: streaming and lazy row detail, fetch error handling.",
+        "Animate it (section): the motion tokens, the reduced-motion blanket, the three error-tier motion rules and the frame-offset allowance, static.adminScope and cssFiles, citing admin-design-system by heading.",
+        "Toolkit props that change behavior (AdminTable density and zebra, EmptyState headingLevel, Pagination's conditional range line and size select), ExpandableRow's data-cairn-inert-cell, and MediaPicker's entries and selection.",
+        "Engine components as building blocks: CairnAdminShell's themeOverride, EditPage's spellcheckOverride, and ContentFormFailure for a content route's form prop.",
+        "The cairn-text-warning and cairn-text-success classes in place of bracketed arbitrary values the admin sheet does not compile.",
+        "What the shell does not let a site brand: the fixed favicon and wordmark, with siteName the only identity shown.",
+        "Verify: run npx cairn-audit over the screen and fix each error-tier finding (tiers and exit codes on run-cairn-audit-on-your-site)."
+      ],
+      "outOfScope": [
+        "Declaring the access map itself (restrict-admin-access).",
+        "Adding the screen to the nav (arrange-the-admin-sidebar).",
+        "Why an access map is not a whitelist (security-model).",
+        "Configuring the audit for the whole site: rendered pages, cookies, suppressions, allowlists (run-cairn-audit-on-your-site).",
+        "The media upload protocol (configure-media).",
+        "The audit norms' former values; state the current bands (migration-notes, kept)."
+      ],
+      "pinned": [],
+      "rearms": [
+        55,
+        76,
+        77,
+        78,
+        116,
+        132,
+        134,
+        135,
+        137,
+        177,
+        184,
+        185
+      ]
+    },
+    {
+      "slug": "arrange-the-admin-sidebar",
+      "title": "Arrange the admin sidebar",
+      "path": "docs/extend/arrange-the-admin-sidebar.md",
+      "group": "extend-the-admin",
+      "order": 17,
+      "batch": "2b",
+      "job": "Arrange the admin sidebar into sections of your own, relabel or hide engine screens, and add links to your custom screens, without mistaking a hidden door for a locked one. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/sanity-custom-tool/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take required members named before code and a comment mapping each node to what it renders; leave the plugin tail."
+        },
+        {
+          "source": "extenders/directus-create-extension/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the verb steps and the closing check in the running admin; leave the Docker steps."
+        }
+      ],
+      "figure": true,
+      "figureNote": "A reproduction of the navLayout worked example resolved into the sidebar (the fixture in src/lib/reproductions/fixtures.ts), showing sections, a relabeled engine screen, and the fallback group.",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/organize-your-admin-nav.md"
+      ],
+      "factIds": [
+        "f:ys1iq1",
+        "f:nvpcmk",
+        "f:jsig0m",
+        "f:hsk70g",
+        "f:s4kynf",
+        "f:ld6xam",
+        "f:yf1rrr",
+        "f:bvfs3e",
+        "f:542r4m",
+        "f:qzbfrd",
+        "f:zyjzeg",
+        "f:rwefuj",
+        "f:pgwmi4",
+        "f:18d9so",
+        "f:rnwver",
+        "f:rshs6k",
+        "f:rx9v6d",
+        "f:seum1o"
+      ],
+      "covers": [
+        "navLayout on the editor group; the flat default when absent.",
+        "The three node kinds and the six fixed screen ids; label, hidden, icon allowlist.",
+        "Runtime validation of the whole tree at composition.",
+        "Unreferenced screens fall into a trailing group; hidden is never authorization, nor is ownerOnly.",
+        "Section roles narrowing only; collapsed and the collapse cookie.",
+        "A one-line pointer: the nav screen id is the public menu editor, turned on by editor.nav (build-the-public-routes), and a navLayout that references it without editor.nav throws at server start.",
+        "navFilter: what it receives, when it runs, and what it cannot hide.",
+        "Attention badges: the attention callback, the items it drops, and catching inside it so a throw does not fail the shell."
+      ],
+      "outOfScope": [
+        "Real denial (restrict-admin-access).",
+        "Building the screen a link points to (add-a-custom-admin-screen).",
+        "The public menu editor (editor.nav), which shares the word nav but not the screen (build-the-public-routes)."
+      ],
+      "pinned": [],
+      "rearms": [
+        83,
+        84,
+        130,
+        131
+      ]
+    },
+    {
+      "slug": "turn-on-tidy",
+      "title": "Turn on tidy",
+      "path": "docs/extend/turn-on-tidy.md",
+      "group": "extend-the-admin",
+      "order": 18,
+      "batch": "2b",
+      "job": "Turn on tidy, the AI copy-edit editors run on a draft, choose its model and conventions, and know what it refuses and why. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/directus-create-extension/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the setup-then-see-it-working steps ending at the settings screen's key-health state; leave the Docker steps."
+        },
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the variants after the main path (model choice, conventions) as their own sections; leave the class reference."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/enable-tidy.md"
+      ],
+      "factIds": [
+        "f:glluwk",
+        "f:vcthwj",
+        "f:avtt69",
+        "f:59aion",
+        "f:fmv6m8",
+        "f:4c92fh",
+        "f:ssdn1f",
+        "f:wlohtk",
+        "f:3yte99",
+        "f:sdz8sm",
+        "f:xijdh6",
+        "f:q412re",
+        "f:f5548q",
+        "f:6zqexn",
+        "f:noqkmx",
+        "f:ymsfzv",
+        "f:z2vl1z",
+        "f:rcoz6t",
+        "f:mg0n21",
+        "f:rdenuk",
+        "f:0j54bd",
+        "f:625qj8",
+        "f:s6av65",
+        "f:jay6aq",
+        "f:tna81y",
+        "f:mbw7mk",
+        "f:shv6wv",
+        "f:sl0igk",
+        "f:tcadyk",
+        "f:tcvrgk"
+      ],
+      "covers": [
+        "Opt-in and editor-triggered only.",
+        "Install the optional SDK peer, set tidy.enabled, bind ANTHROPIC_API_KEY as a Worker secret.",
+        "Model choice: the default, the cheaper alternative, effort defaults and which models accept effort.",
+        "Conventions: fields and their prompt semantics; the personal dictionary file and where words get added.",
+        "Safeguards: the input cap, the structural validator as a backstop, the diff review.",
+        "Verify on /admin/settings: the key probe, its three states, the ten-minute cache; the refusals and the 401/403 message.",
+        "Dev builds use a fake client.",
+        "Where tidy conventions are stored (the site-config file at editor.nav.configPath, else the src/lib fallback; the file it shares with the tag vocabulary is on define-an-adapter-and-schema), the 404 when neither file exists, and saves that keep comments outside their own block.",
+        "The tidy client seam (tidy.client) and the 30-second deadline with tidy.timeoutMs."
+      ],
+      "outOfScope": [
+        "Editor-facing use of tidy (editors arm)."
+      ],
+      "pinned": [],
+      "rearms": [
+        180,
+        181
+      ]
+    },
+    {
+      "slug": "security-model",
+      "title": "Security model",
+      "path": "docs/extend/security-model.md",
+      "group": "auth-and-access",
+      "order": 19,
+      "batch": "pilot",
+      "job": "Assess what cairn defends and what it leaves to you: the sign-in and session design, CSRF, the access map's limits, the render pipeline's sanitizing, the GitHub App's reach, and the residual risks of each seam you replace. For a Svelte-fluent web developer assessing cairn before adopting it, and for one about to replace its sign-in or access rules.",
+      "pageType": "concept",
+      "exemplars": [
+        {
+          "source": "evaluators/cloudflare-workers-security-model/",
+          "slice": "Evaluators",
+          "manifestType": "Concept page: security model",
+          "take": "Take the organization around the questions reviewers ask, each with threat, defense layers, and what remains; link out for platform isolation instead of restating it."
+        },
+        {
+          "source": "evaluators/syncthing-security/",
+          "slice": "Evaluators",
+          "manifestType": "Concept page: security model",
+          "take": "Take one subsection per exposed component, the \"In short\" verdict, and the closing list of the operator's own responsibilities; leave the TLS protocol detail."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [
+        "docs/extend/auth-channel-security-model.md",
+        "docs/extend/render-safety.md"
+      ],
+      "factSections": [
+        "docs/extend/auth-channel-security-model.md",
+        "docs/extend/render-safety.md",
+        "docs/extend/security-model.md"
+      ],
+      "factIds": [
+        "f:pjjo64",
+        "f:7idpoq",
+        "f:k6u4g2",
+        "f:e0imm6",
+        "f:wu8x70",
+        "f:fslodf",
+        "f:plcf5v",
+        "f:wuwk2q",
+        "f:ez788q",
+        "f:2w1yrc",
+        "f:j254i8",
+        "f:dipwmx",
+        "f:s047l1",
+        "f:8u4iiv",
+        "f:d2j9cj",
+        "f:rv9gdc",
+        "f:zzbzo8",
+        "f:z3a58a",
+        "f:2fwybn",
+        "f:r7sbt1",
+        "f:q9yndd",
+        "f:gi3keo",
+        "f:296ar7",
+        "f:3yzqup",
+        "f:21by9u",
+        "f:wgovy6",
+        "f:r0cv6e",
+        "f:f39xqq",
+        "f:s32y4a",
+        "f:6lmusm",
+        "f:5iqvmt",
+        "f:91dwrk",
+        "f:9uhscf",
+        "f:jud805",
+        "f:wzcgs3",
+        "f:njh87y",
+        "f:9ik061",
+        "f:fhit7f",
+        "f:2glcaf",
+        "f:diro7m",
+        "f:7qqhda",
+        "f:gh73p5",
+        "f:7rehzh",
+        "f:vqh4a9",
+        "f:4q8kin",
+        "f:ubuj1w",
+        "f:yzbvk4",
+        "f:kkp5bi",
+        "f:u1bjul",
+        "f:sj1kt9",
+        "f:9pmipf",
+        "f:uz38ef",
+        "f:678law",
+        "f:an087n",
+        "f:g22dnw",
+        "f:0vofop",
+        "f:9exogy",
+        "f:8xxe3b",
+        "f:8rnym5",
+        "f:keuj8l",
+        "f:n3k03a",
+        "f:tkpmxr",
+        "f:i2udr5",
+        "f:irs7fg",
+        "f:cvv6to",
+        "f:ji8xa0",
+        "f:arr13a",
+        "f:8ciz2s",
+        "f:t976f1",
+        "f:horkxq",
+        "f:ix10bm",
+        "f:qbfriw",
+        "f:jha9f7",
+        "f:3cekcy",
+        "f:x2stjk",
+        "f:k3gfbi",
+        "f:8l4wwr",
+        "f:z0296p",
+        "f:qep9a9",
+        "f:72xplg",
+        "f:wi766c",
+        "f:doq8s2",
+        "f:u77pea",
+        "f:y3ljm0",
+        "f:l5gx1t",
+        "f:gglwt4"
+      ],
+      "covers": [
+        "Scope and who the realistic attacker is; floors, not ceilings.",
+        "Magic-link sign-in: token and session lifetimes, hashing at rest, non-enumerating answers and the throttled relaxation.",
+        "Sign-in binds to the browser that asked (suggested heading, so restored links reuse the old slug #sign-in-binds-to-the-browser-that-asked): the pending cookie, NULL-bound rows, last-requester-wins rebind and the forwarded-token residual.",
+        "The session cookie (suggested heading, so the restored link reuses the old slug #the-session-cookie): __Host-, Secure derivation, logout.",
+        "CSRF: the double-submit token, how SvelteKit's origin check (every route, no site csrf key, checkOrigin removed in SvelteKit 3) and the token divide the work, Origin null when a site-wide referrer policy strips the header, rotation.",
+        "The guard's request order and admin response headers; no CSP on /admin by design.",
+        "What the dev backend flag's two refusals leave open (suggested heading, so the restored link reuses the old slug it).",
+        "An access map is not a whitelist (suggested heading, so restored links reuse the old slug #an-access-map-is-not-a-whitelist): canReach, fail-closed gates, unmapped targets, publish-all and tidy exceptions, config.access_unmapped; end the section with a \"Recovering whitelist semantics\" subsection (the heading the 0.97.0 migration note links): the exhaustive-map rule in two sentences, linking restrict-admin-access for the steps.",
+        "Identity mode's threat surface: session lifetime moves to the gate, CSRF value never rotates, the email as the only join, gate login methods that let a user assert any email.",
+        "The auth channel threat catalogue: the identity-keyed-denial rule, escalation, eviction, spend ceiling, origin checks, hashing prefixes, code generation, dev transports as roster oracles.",
+        "Render safety: the pipeline order, the sanitize floor and additive schema, the sink guard, raw HTML, target=_blank, what unsafeDisableSanitize removes, and what a registered build() can still bypass.",
+        "The GitHub App's reach: one private key as a Worker secret, the installation token's repository-wide write.",
+        "Logs never carry tokens or session ids."
+      ],
+      "outOfScope": [
+        "Configuring the access map (restrict-admin-access).",
+        "Setting up Access (replace-magic-links-with-cloudflare-access).",
+        "Building a channel (add-a-second-sign-in-group).",
+        "Renderer options (configure-rendering).",
+        "Rotating the key (rotate-the-github-app-key).",
+        "When the sanitize floor shipped; state the floor as it is (migration-notes, kept)."
+      ],
+      "pinned": [],
+      "rearms": [
+        11,
+        56,
+        57,
+        58,
+        59,
+        61,
+        70,
+        71,
+        79,
+        92,
+        128,
+        136,
+        182
+      ]
+    },
+    {
+      "slug": "restrict-admin-access",
+      "title": "Restrict admin access",
+      "path": "docs/extend/restrict-admin-access.md",
+      "group": "auth-and-access",
+      "order": 20,
+      "batch": "2a",
+      "job": "Declare an access map that narrows which roles reach which admin screens and routes, and enforce it on your own screens' reads and writes. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/sveltekit-hooks/",
+          "slice": "Extenders",
+          "manifestType": "Reference entry",
+          "take": "Take \"where it goes, when it runs, a typed example, the default when unset\" per piece, and the placement of the security trap, stated in the same paragraph as the value that invites the misuse (in the capture it sits in the remote-function paragraph; imitate its placement, not its subject); leave the remote-function tangents."
+        },
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take one running example (restrict media and a custom route to one role) carried through declaration, guard, and verification; leave the class reference."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/restrict-admin-access.md"
+      ],
+      "factIds": [
+        "f:p1xmp5",
+        "f:grxpu5",
+        "f:0qb73i",
+        "f:iwf4nu",
+        "f:54d3ui",
+        "f:zo034s",
+        "f:5pyozi",
+        "f:iewhzh",
+        "f:smbsa6",
+        "f:8anql1",
+        "f:gun084",
+        "f:3s23un",
+        "f:altcjp",
+        "f:8ciz2s",
+        "f:cvv6to",
+        "f:uhoyun",
+        "f:uotol3",
+        "f:4xrx5f"
+      ],
+      "covers": [
+        "Capability as the floor and the map as a narrowing layer.",
+        "Roles: the declared vocabulary and capability values (link add-a-second-sign-in-group for a none-capability audience).",
+        "defineAccess: keys (screen ids or /admin paths) and values; validation against roles.",
+        "Pass the same map to the adapter and to createAuthGuard.",
+        "Enforce on your routes: requireAccess checks the route id; a load never gates its own action; ownerOnly adds to the rule.",
+        "The unmapped-target asymmetry between routes and engine screens; media restriction reaching the image picker.",
+        "Nav entries gated by a matching rule.",
+        "Href keys matched by deepest path-segment prefix, and an unmatched href that stays visible in the nav while its route refuses.",
+        "A role change applies on the editor's next request with no new sign-in.",
+        "Make the map exhaustive when you want whitelist behavior: map every concept and fixed screen until config.access_unmapped is silent.",
+        "Verify: the config.access_unmapped warning and a 403 per role."
+      ],
+      "outOfScope": [
+        "Why the map narrows and never whitelists (security-model).",
+        "Section actions in full (add-a-custom-admin-screen).",
+        "Hiding nav entries (arrange-the-admin-sidebar)."
+      ],
+      "pinned": [],
+      "rearms": [
+        67
+      ]
+    },
+    {
+      "slug": "replace-magic-links-with-cloudflare-access",
+      "title": "Replace magic links with Cloudflare Access",
+      "path": "docs/extend/replace-magic-links-with-cloudflare-access.md",
+      "group": "auth-and-access",
+      "order": 21,
+      "batch": "pilot",
+      "job": "Replace the magic link with your organization's identity provider by putting Cloudflare Access in front of /admin and writing the resolver that turns its token into a roster email. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/sveltekit-hooks/",
+          "slice": "Extenders",
+          "manifestType": "Reference entry",
+          "take": "Nearest capture only: the manifest records no auth-seam exemplar (Extenders gap). Take the handle section's locals contract and the placement of the security trap, stated in the same paragraph as the value that invites the misuse (in the capture it sits in the remote-function paragraph; imitate its placement, not its subject); leave remote-function tangents."
+        },
+        {
+          "source": "extenders/sanity-custom-tool/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the early \"right tool for the job?\" callout, here the all-or-nothing switch and when to stay on magic links; leave the plugin tail."
+        }
+      ],
+      "figure": true,
+      "figureNote": "A diagram of one request: browser, Cloudflare Access application (policies, AUD tag), the Worker's guard calling identity.resolve, the roster lookup by email, and the admin shell; with `/preview/<token>` and /healthz shown outside the application.",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/sign-in-through-your-organization.md"
+      ],
+      "factIds": [
+        "f:v5ndhs",
+        "f:gs23fb",
+        "f:g0206o",
+        "f:emrebl",
+        "f:k40l86",
+        "f:4olp4u",
+        "f:qhmydf",
+        "f:zt0oag",
+        "f:vnm1p5",
+        "f:0gltjq",
+        "f:51uyqr",
+        "f:iaqcq6",
+        "f:lyaf6p",
+        "f:42fdqq",
+        "f:zas1dk",
+        "f:q0icwk",
+        "f:3p8yu8",
+        "f:agif8l",
+        "f:hilyos",
+        "f:fu4uis",
+        "f:ig5pn3",
+        "f:fe0dyh",
+        "f:dwc4kp",
+        "f:4uqi5r",
+        "f:33upyd",
+        "f:8289h7",
+        "f:gw1oas",
+        "f:mjedcx",
+        "f:2glcaf",
+        "f:jha9f7"
+      ],
+      "covers": [
+        "Before you switch: all-or-nothing replacement, roster emails matching the IdP's primary address, the first owner seeded, Zero Trust free-plan user cap.",
+        "Create the Access application: /admin, its subpaths, and /admin/__data.json covered; `/preview/<token>` not covered; CORS off; no cache rule on /admin; preview URLs closed.",
+        "Write the verifier: header not cookie, type app, email claim required, stateless validation against the certs; the code is yours and cairn ships no OIDC client.",
+        "Wire identity on createAuthGuard: IdentityResolver, ResolvedIdentity carrying no role, per-request resolve, composition via sequence.",
+        "Logout under identity and Access's token lifetime.",
+        "The seam is not Cloudflare-specific.",
+        "Verify: identity refusal logs by reason, auth.identity.unknown."
+      ],
+      "outOfScope": [
+        "The threat analysis of identity mode (security-model).",
+        "Magic-link setup (add-cairn-to-a-sveltekit-app)."
+      ],
+      "pinned": [],
+      "rearms": [
+        179,
+        195,
+        196
+      ]
+    },
+    {
+      "slug": "add-a-second-sign-in-group",
+      "title": "Add a second sign-in group",
+      "path": "docs/extend/add-a-second-sign-in-group.md",
+      "group": "auth-and-access",
+      "order": 22,
+      "batch": "2a",
+      "job": "Give a second population its own sign-in and its own area, either as a declared role inside the admin or as a separate auth channel with its own login, roster, and sessions. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/django-custom-management-commands/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take one running example (the showcase members channel) through binding, migration, actions, route, and test; leave the class reference."
+        },
+        {
+          "source": "extenders/sanity-custom-tool/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the early \"right tool for the job?\" callout, here role versus channel; leave the plugin tail."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/add-a-second-audience.md"
+      ],
+      "factIds": [
+        "f:4673n6",
+        "f:kqcyv1",
+        "f:hcjb3o",
+        "f:we2lmp",
+        "f:rcpe0n",
+        "f:41kl6q",
+        "f:ffskeq",
+        "f:pa2hqh",
+        "f:6ab2z6",
+        "f:fcqs22",
+        "f:7n28wc",
+        "f:5t6hz6",
+        "f:16paho",
+        "f:dtz8oa",
+        "f:mfmmof",
+        "f:5rkxfp",
+        "f:tnvu0a",
+        "f:q7fj6p",
+        "f:vo4m61",
+        "f:b3l3t0",
+        "f:nguseg",
+        "f:nz890r",
+        "f:cf1avu",
+        "f:1rstld",
+        "f:gubeex",
+        "f:rv9gdc",
+        "f:ez788q"
+      ],
+      "covers": [
+        "Choose the mechanism: a declared role in AUTH_DB versus createAuthChannel; a site's domain actors stay the developer's.",
+        "Path A, a none-capability role: same magic link, home redirect or welcome screen, invites through the editor screen, nav gating with roles.",
+        "Path B, a channel: config members and their correctness obligations, its own D1 binding and migrations directory, the packaged migration, the returned actions and helpers, no route or UI shipped.",
+        "Build the login route and the member area from the showcase exemplar.",
+        "Test with createChannelDb and the Node requirement."
+      ],
+      "outOfScope": [
+        "The channel's threat model (security-model).",
+        "Access maps (restrict-admin-access)."
+      ],
+      "pinned": [],
+      "rearms": [
+        60,
+        111,
+        112,
+        113,
+        114,
+        115,
+        117,
+        118,
+        119,
+        120,
+        121,
+        187
+      ]
+    },
+    {
+      "slug": "debug-your-site",
+      "title": "Debug your site",
+      "path": "docs/extend/debug-your-site.md",
+      "group": "operate",
+      "order": 23,
+      "batch": "2a",
+      "job": "Diagnose a cairn site that misbehaves in development or production by matching the symptom to its log event and to the code change that fixes it. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "symptom row",
+      "exemplars": [
+        {
+          "source": "operators/github-pages-troubleshoot-domains/",
+          "slice": "Operators",
+          "manifestType": "Troubleshooting / symptom page",
+          "take": "Borrowed outside the extend slices: the manifest records no extend troubleshooting capture (spec gap). Take one heading per symptom named for what the reader sees, each holding cause and fix, and the verify-with tool named in the fix; add the log event each symptom correlates with, which the capture has no slot for; leave the DNS content and the dead-end 'contact your provider' fixes."
+        },
+        {
+          "source": "operators/cloudflare-too-many-redirects/",
+          "slice": "Operators",
+          "manifestType": "Troubleshooting / symptom page",
+          "take": "Borrowed for the same gap. Take the literal error or event string as the heading and the cause list that doubles as a triage order; leave the SSL-mode content and any fix that is a dashboard setting, since each fix here is a change to the site's code or config."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/debug-your-site.md"
+      ],
+      "factIds": [
+        "f:gy2h7p",
+        "f:lbeeak",
+        "f:qdfs37",
+        "f:twqb0s",
+        "f:07efts",
+        "f:r3l7eq",
+        "f:i1dayf",
+        "f:nup3og",
+        "f:8fyoha",
+        "f:ogz5eu",
+        "f:yomgrm",
+        "f:swjwxb",
+        "f:2r6juw",
+        "f:rkj7tn",
+        "f:eywrq8",
+        "f:v1jj2k",
+        "f:yauo4m",
+        "f:mou1li",
+        "f:avc1a2",
+        "f:k085q0",
+        "f:vg5zt8",
+        "f:vi9xh0",
+        "f:vih1k1",
+        "f:vq634h",
+        "f:vq8cta",
+        "f:vs9g9e"
+      ],
+      "covers": [
+        "Read the logs first: the envelope, the one chokepoint, redaction, createLogger.",
+        "Symptom rows for developer events: content.field_unmarked, content.field_behavior_failed, media.resolver_absent, admin.action.unaudited, audit.sink.call_failed, rate-limit events, admin.action.misconfigured, admin.action.session_absent, config.invalid, config.access_unmapped.",
+        "Environment traps: event.platform undefined under vite dev.",
+        "Time traps: baselines reading the clock, CAIRN_FIXED_TODAY and Invalid Date, host time zones.",
+        "Point to upgrade-cairn and migration-notes for errors after an upgrade (link only).",
+        "More developer events: when auth.session.destroyed and auth.channel.session.destroyed fire, and a commit record's concept versus scope.",
+        "The cairn CLI: cairn health's errors threshold and window, and cairn help agents for a program's contract.",
+        "A site-facts.json check that reports current when the adapter cannot derive the facts."
+      ],
+      "outOfScope": [
+        "Operator-facing symptoms (admin/troubleshooting).",
+        "The full event table (reference/log-events).",
+        "Configuring cairn-audit (run-cairn-audit-on-your-site)."
+      ],
+      "pinned": [],
+      "rearms": [
+        99,
+        178,
+        186
+      ]
+    },
+    {
+      "slug": "rotate-the-github-app-key",
+      "title": "Rotate the GitHub App key",
+      "path": "docs/extend/rotate-the-github-app-key.md",
+      "group": "operate",
+      "order": 24,
+      "batch": "2a",
+      "job": "Replace your GitHub App's private key without a publishing outage, and recover if the new key fails. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "operators/cloudflare-create-token/",
+          "slice": "Operators",
+          "manifestType": "Credential / token-scopes page",
+          "take": "Take the Warning placed at the step where the secret is shown once, and the closing verify call whose response is the success signal (here the /healthz signing check); leave the dashboard screenshots and the token-kind fork."
+        },
+        {
+          "source": "operators/ghost-install-ubuntu/",
+          "slice": "Operators",
+          "manifestType": "Task guide (multi-platform, setup, domain)",
+          "take": "Take the named recovery section that separates a total failure from an interrupted run (here rollback before deletion and the third-key recovery after it); leave the VPS and NGINX stack; code blocks are in page.html."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/rotate-the-github-app-key.md"
+      ],
+      "factIds": [
+        "f:ixr3ny",
+        "f:i4fg3o",
+        "f:sszb7b",
+        "f:lg2ae8",
+        "f:zoekqt",
+        "f:86h9o6",
+        "f:ejuoh6",
+        "f:olofdb",
+        "f:9xqudi",
+        "f:prb2os",
+        "f:7u49xs",
+        "f:dbue4k",
+        "f:vg42j3"
+      ],
+      "covers": [
+        "Why two keys can coexist and the zero-downtime order.",
+        "Generate a key in GitHub's settings.",
+        "Encode it on one line (Linux, macOS, and PowerShell forms) and push it with wrangler secret put, which deploys immediately.",
+        "Verify signing: /healthz, Workers Logs with observability on, github.unreachable.",
+        "Delete the old key; rollback before deletion and the third-key recovery after.",
+        "The per-isolate 55-minute installation token cache: a warm isolate keeps a token minted with the old key until it expires."
+      ],
+      "outOfScope": [
+        "Registering the App (add-cairn-to-a-sveltekit-app).",
+        "The key's custody reasoning (security-model)."
+      ],
+      "pinned": [],
+      "rearms": []
+    },
+    {
+      "slug": "run-cairn-audit-on-your-site",
+      "title": "Run cairn-audit on your site",
+      "path": "docs/extend/run-cairn-audit-on-your-site.md",
+      "group": "operate",
+      "order": 25,
+      "batch": "2b",
+      "origin": "gap-sweep",
+      "job": "Run cairn-audit as your site's gate: scope its static and rendered passes to your own sources, stylesheets, and admin pages, sign the rendered pass in, and suppress or allowlist a finding with a recorded reason. For a Svelte-fluent web developer building an organization's site on cairn's seams.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "extenders/directus-create-extension/",
+          "slice": "Extenders",
+          "manifestType": "Task guide",
+          "take": "Take the verb-per-heading steps, each ending in a check you can see, and the close on a visible success (a clean check:cairn:rendered run); leave the Docker steps."
+        },
+        {
+          "source": "operators/restic-scripting/",
+          "slice": "Operators",
+          "manifestType": "Reference entry (exit codes and JSON output, the agent half)",
+          "take": "Take the environment variable stated before the step that needs it (CAIRN_AUDIT_COOKIES before the rendered pass) and the one-line rule that an unexpected exit is a failure; leave the exit-code table and per-command message tables, since the page links the reference for codes."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [],
+      "factIds": [
+        "f:vsbkl6",
+        "f:wfv8qm",
+        "f:x84fah",
+        "f:xj180v",
+        "f:xjp2mx",
+        "f:y1mjsk",
+        "f:1md5oj",
+        "f:mrv24k",
+        "f:j7fha2",
+        "f:326755",
+        "f:24f8gn",
+        "f:1x8r1x",
+        "f:0w432q",
+        "f:54sgmg",
+        "f:eqsngu",
+        "f:t767qb",
+        "f:22odbz"
+      ],
+      "covers": [
+        "What cairn-audit checks: the static pass over sources and the compiled sheet, the rendered pass over live admin pages, the two tiers, and the exit codes (link the reference).",
+        "Scope the static pass: static.scope, static.sourceScope for the log rules, sheet as one path or a list, and the failure when a named path is missing.",
+        "Scope the rendered pass: the default core admin pages, rendered.pages for a site whose concepts are not posts and pages, rendered.extraPages for custom screens, and the exit 2 on a page outside 2xx.",
+        "Sign the rendered pass in with CAIRN_AUDIT_COOKIES, and the redirect-trap refusal without it.",
+        "Suppress a static finding with cairn-audit-disable-next-line and a reason; the suppression findings a malformed directive raises.",
+        "Allowlist a rendered finding with page, selector, reason, and rule; stale, dead, and unparseable entries.",
+        "Run it in CI: the scaffold's check:cairn and check:cairn:rendered scripts, and advisory versus error tier on a consumer."
+      ],
+      "outOfScope": [
+        "Auditing one custom admin screen while you build it (add-a-custom-admin-screen).",
+        "The public-scope theme rules in depth (theme-your-public-site).",
+        "Every rule, flag, and config key (docs/reference/cairn-audit.md)."
+      ],
+      "pinned": [],
+      "rearms": []
+    }
+  ]
+}

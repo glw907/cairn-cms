@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   extractFacts,
   loadFactIndex,
   checkSentences,
+  checkCuts,
+  checkBrief,
   checkPageCoverage,
   checkProvenance,
   loadRebuiltList,
@@ -77,7 +80,7 @@ describe('extractFacts', () => {
 describe('checkSentences, one failure mode per case', () => {
   const index = loadFactIndex(FACTS);
   const { cases } = JSON.parse(readFileSync(join(FIXTURES, 'cases.json'), 'utf8')) as {
-    cases: Array<{ name: string; sentence: { text: string; id?: string }; expect: string | null }>;
+    cases: Array<{ name: string; sentence: { text: string; id?: unknown }; expect: string | null }>;
   };
 
   for (const testCase of cases) {
@@ -87,6 +90,90 @@ describe('checkSentences, one failure mode per case', () => {
       else expect(defects).toEqual([expect.stringContaining(testCase.expect)]);
     });
   }
+});
+
+describe('checkCuts', () => {
+  const index = loadFactIndex(FACTS);
+
+  it('accepts an absent list and a list of well-formed cuts', () => {
+    expect(checkCuts(undefined, index)).toEqual([]);
+    expect(checkCuts([{ id: 'f:pv0004', reason: 'Stated on the reference page.' }], index)).toEqual([]);
+    expect(checkCuts([], index)).toEqual([]);
+  });
+
+  it.each([
+    ['a list that is not an array', { id: 'f:pv0004', reason: 'x' }, 'not an array'],
+    ['an entry that is not an object', ['f:pv0004'], 'cut 1: not an object'],
+    ['an entry with no id', [{ reason: 'x' }], 'cut 1: "id" is not a fact id'],
+    ['an entry whose id is malformed', [{ id: 'f:NOTANID', reason: 'x' }], 'cut 1: "id" is not a fact id'],
+    ['an entry whose id is no-claim', [{ id: 'no-claim', reason: 'x' }], 'cut 1: "id" is not a fact id'],
+    ['an entry whose id is an array', [{ id: ['f:pv0004'], reason: 'x' }], 'cut 1: "id" is not a fact id'],
+    ['an entry with no reason', [{ id: 'f:pv0004' }], 'cut 1: missing its "reason"'],
+    ['an entry with a blank reason', [{ id: 'f:pv0004', reason: '   ' }], 'cut 1: missing its "reason"'],
+  ])('rejects %s', (_name, cuts, message) => {
+    expect(checkCuts(cuts, index)).toEqual([expect.stringContaining(message)]);
+  });
+
+  it('rejects a well-formed cut whose id resolves to no fact, and allows any tag on a resolving one', () => {
+    expect(checkCuts([{ id: 'f:zzzzzz', reason: 'Stated on the reference page.' }], index)).toEqual([
+      'cuts: cut 1: f:zzzzzz resolves to no fact in the container',
+    ]);
+    // pv0006 is a [candidate] and pv0008 is [rejected]; a cut cites nothing, so neither tag blocks it.
+    expect(checkCuts([
+      { id: 'f:pv0006', reason: 'Not needed.' },
+      { id: 'f:pv0008', reason: 'Not needed.' },
+    ], index)).toEqual([]);
+  });
+});
+
+describe('checkBrief, a page plan\'s multi-id sentences and cuts', () => {
+  const index = loadFactIndex(FACTS);
+
+  it('passes a brief with a multi-id sentence and a cuts list, counting the sentence as cited', () => {
+    const root = join(FIXTURES, 'site-plan');
+    const result = checkBrief(join(root, 'docs/internal/briefs/admin/plan-page.json'), index, root);
+    expect(result.defects).toEqual([]);
+    expect(result.cited).toBe(1);
+    expect(result.noClaim).toBe(1);
+  });
+
+  it('fails a brief whose cuts list is malformed, alongside any sentence defect', () => {
+    const root = mkdtempSync(join(tmpdir(), 'cairn-provenance-'));
+    mkdirSync(join(root, 'docs/admin'), { recursive: true });
+    mkdirSync(join(root, 'docs/internal/briefs/admin'), { recursive: true });
+    writeFileSync(join(root, 'docs/admin/p.md'), 'The next section walks through it.\n');
+    const briefPath = join(root, 'docs/internal/briefs/admin/p.json');
+    writeFileSync(
+      briefPath,
+      JSON.stringify({
+        page: 'docs/admin/p.md',
+        sentences: [{ text: 'The next section walks through it.', id: 'no-claim' }],
+        cuts: [{ id: 'f:pv0004' }],
+      }),
+    );
+    expect(checkBrief(briefPath, index, root).defects).toEqual([
+      expect.stringContaining('cuts: cut 1: missing its "reason"'),
+    ]);
+  });
+
+  it('still fails a no-claim sentence that holds a fact, in a brief that carries cuts', () => {
+    const root = mkdtempSync(join(tmpdir(), 'cairn-provenance-'));
+    mkdirSync(join(root, 'docs/admin'), { recursive: true });
+    mkdirSync(join(root, 'docs/internal/briefs/admin'), { recursive: true });
+    writeFileSync(join(root, 'docs/admin/p.md'), 'Upgrade to 0.96.0 today.\n');
+    const briefPath = join(root, 'docs/internal/briefs/admin/p.json');
+    writeFileSync(
+      briefPath,
+      JSON.stringify({
+        page: 'docs/admin/p.md',
+        sentences: [{ text: 'Upgrade to 0.96.0 today.', id: 'no-claim' }],
+        cuts: [{ id: 'f:pv0004', reason: 'Stated on the reference page.' }],
+      }),
+    );
+    expect(checkBrief(briefPath, index, root).defects).toEqual([
+      expect.stringContaining('marked no-claim but states the version "0.96.0"'),
+    ]);
+  });
 });
 
 describe('loadFactIndex', () => {

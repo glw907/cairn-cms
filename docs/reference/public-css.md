@@ -117,7 +117,7 @@ Each status ink defaults to the status fill mixed toward the body ink. Mixing da
 
 `--color-muted` defaults to an opaque mix of the body ink over `base-100`, at 80 percent. An opaque mix has a contrast ratio that belongs to the theme. The earlier default was a translucent mix, which composites over whatever lies beneath it.
 
-The percentages come from a measurement in Chromium's computed colors across daisyUI's 35 stock themes, Waymark, and the fixture theme, on `base-100`, `base-200`, and each status's callout tint. The [derivation record](../superpowers/research/2026-09-29-theme-pass-c-ink-derivation.md) lists every theme's result at the chosen percentage and at its neighbors. Some stock themes fail AA with a derived ink, and the record names them. A theme that needs a tuned ink sets its own in its daisyUI block, and in both blocks when both schemes need it.
+The percentages come from a measurement in Chromium's computed colors across daisyUI's 35 stock themes, Waymark, and the fixture theme, on `base-100`, `base-200`, and each status's callout tint. The [derivation record](https://github.com/glw907/cairn-cms/blob/main/docs/superpowers/research/2026-09-29-theme-pass-c-ink-derivation.md) lists every theme's result at the chosen percentage and at its neighbors. Some stock themes fail AA with a derived ink, and the record names them. A theme that needs a tuned ink sets its own in its daisyUI block, and in both blocks when both schemes need it.
 
 Run the public-scope audit before you call a theme finished, since a derived ink can fail AA on a theme's own fills:
 

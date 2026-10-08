@@ -1,8 +1,8 @@
 <!--
 @component
 `toolkit/custom-screen`'s mounted subject: a faithful transcription of the worked example under
-"Compose the screen" in the extend track's custom-admin-screen guide (removed pending its rebuild),
-the page whose own render this story exists to prove. No component in the package renders one of a site's own content concepts,
+"Compose the screen from the toolkit" in `docs/extend/add-a-custom-admin-screen.md`, the page whose
+own render this story exists to prove. No component in the package renders one of a site's own content concepts,
 so this file lives inside the reproductions module rather than `src/lib/admin`, and composes
 only the toolkit primitives the doc snippet names: `PageHeader`, `AdminTable`, `StatusChip`. The
 card div around `AdminTable` is written at the call site with the design system's floating-card
@@ -19,7 +19,7 @@ improving on it; a drift here is a drift a reader of that page would hit.
   let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
 </script>
 
-<PageHeader eyebrow="Club" title="Events" meta={`${data.events.length} upcoming`} />
+<PageHeader eyebrow="Team" title="Events" meta={`${data.events.length} upcoming`} />
 
 <div class="overflow-hidden card-shell card-shadow">
   <AdminTable rowCount={data.events.length}>

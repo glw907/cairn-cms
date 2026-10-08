@@ -43,7 +43,7 @@ func TestReportDeclaresNoMarshalJSON(t *testing.T) {
 // renders, since a check keeps a verbose-only value out of Detail by contract rather than
 // relying on a rendering-time filter to catch it.
 func TestReportJSONDetailPassesThroughUnredacted(t *testing.T) {
-	detail := "build for glw907/ecxc-ski"
+	detail := "build for glw907/my-site"
 	report := Report{
 		Checks: []CheckResult{{ID: "deploy", Outcome: spine.Outcome{State: spine.Failing, Detail: detail}}},
 	}

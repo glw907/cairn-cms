@@ -86,7 +86,7 @@ test('an existing zone plus a create-refusing token adopts, issuing no create PO
   const { ensureZone } = await import('./zone.mjs');
 
   // Seed the "existing" zone the way a prior run of this same account would have.
-  const existing = await api.createZone('ecxc.ski');
+  const existing = await api.createZone('example.org');
 
   // Arm the create route with the missing-permission shape a create-refusing token hits, captured
   // live in the T4a spike. If ensureZone still posts a create, this is what it collides with.
@@ -99,7 +99,7 @@ test('an existing zone plus a create-refusing token adopts, issuing no create PO
 
   const requestsBefore = cloudflare.requests.length;
   const logLines = [];
-  const result = await ensureZone({ record: record('ecxc.ski'), api, log: (line) => logLines.push(line) });
+  const result = await ensureZone({ record: record('example.org'), api, log: (line) => logLines.push(line) });
 
   assert.equal(result.zoneId, existing.id);
   assert.ok(logLines.some((line) => line.includes('already a Cloudflare zone')));
@@ -159,16 +159,16 @@ test('a list miss followed by a 1061 create collision still adopts, via the race
     async listZones(filter) {
       const result = await api.listZones(filter);
       if (result.length === 0) {
-        const concurrent = await api.createZone('ecxc.ski');
+        const concurrent = await api.createZone('example.org');
         concurrentZoneId = concurrent.id;
-        cloudflare.failNext('zone_create', 400, zoneCreateFailure(1061, 'ecxc.ski already exists'));
+        cloudflare.failNext('zone_create', 400, zoneCreateFailure(1061, 'example.org already exists'));
       }
       return result;
     },
   };
 
   const logLines = [];
-  const result = await ensureZone({ record: record('ecxc.ski'), api: raceApi, log: (line) => logLines.push(line) });
+  const result = await ensureZone({ record: record('example.org'), api: raceApi, log: (line) => logLines.push(line) });
 
   assert.equal(result.zoneId, concurrentZoneId);
   assert.ok(logLines.some((line) => line.includes('already a Cloudflare zone')));
@@ -181,12 +181,12 @@ test('1061 followed by a zone-list hit adopts the existing zone rather than thro
   const { ensureZone } = await import('./zone.mjs');
 
   // Seed the "existing" zone the way a prior run of this same account would have.
-  const existing = await api.createZone('ecxc.ski');
+  const existing = await api.createZone('example.org');
 
-  cloudflare.failNext('zone_create', 400, zoneCreateFailure(1061, 'ecxc.ski already exists'));
+  cloudflare.failNext('zone_create', 400, zoneCreateFailure(1061, 'example.org already exists'));
 
   const logLines = [];
-  const result = await ensureZone({ record: record('ecxc.ski'), api, log: (line) => logLines.push(line) });
+  const result = await ensureZone({ record: record('example.org'), api, log: (line) => logLines.push(line) });
 
   assert.equal(result.zoneId, existing.id);
   assert.ok(logLines.some((line) => line.includes('already a Cloudflare zone')));
@@ -196,10 +196,10 @@ test('1061 followed by a zone-list miss raises the rewritten zone-already-exists
   const { cloudflare, api } = await setup(t);
   const { ensureZone } = await import('./zone.mjs');
 
-  cloudflare.failNext('zone_create', 400, zoneCreateFailure(1061, 'ecxc.ski already exists'));
+  cloudflare.failNext('zone_create', 400, zoneCreateFailure(1061, 'example.org already exists'));
 
   await assert.rejects(
-    () => ensureZone({ record: record('ecxc.ski'), api, log: () => {} }),
+    () => ensureZone({ record: record('example.org'), api, log: () => {} }),
     (err) => {
       assert.equal(err.catalogue.code, 'zone-already-exists');
       assert.match(err.message, /account other than/);

@@ -1,10 +1,10 @@
 // cairn-cms: the last four stories for the live-reproduction seam: `tags/screen`,
 // `roster/own-row`, `nav/worked-navlayout`, and `toolkit/custom-screen`. Each row's component, host,
-// and props-or-pose decision comes from docs/internal/record/repro-story-audit.md's four matching
+// and props-or-pose decision comes from https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md's four matching
 // rows.
 //
 // `toolkit/custom-screen` is the one row with no package component to mount: its subject is the
-// worked snippet in the extend track's custom-admin-screen guide, so ./CustomScreen.svelte builds that
+// worked snippet in docs/extend/add-a-custom-admin-screen.md, so ./CustomScreen.svelte builds that
 // screen inside this module from the exported `@glw907/cairn-cms/admin-toolkit` primitives, per the
 // audit's own row.
 import type { Component } from 'svelte';

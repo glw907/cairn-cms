@@ -65,8 +65,8 @@ the rendered html, the SEO head, and the hero; it throws `error(404)` on a miss.
 whose frontmatter `robots` field doesn't carry `noindex`, and a loader that resolves the same
 `.md`-suffixed request path back to the entry's stored body, unrendered. `markdownLoad` throws
 `error(404)` on a miss, the same as `entryLoad`, and on a `noindex` entry, so the loader and the
-enumerator agree whether or not the site's route is prerendered. Both read only through the injected `SiteResolver`,
-so a request for a path the resolver doesn't carry gets `error(404)`, and nothing outside the
+enumerator agree whether or not the site's route is prerendered. Both read only through the injected `SiteResolver`.
+A request for a path the resolver doesn't carry gets `error(404)`, and nothing outside the
 resolver's own committed content can reach a response. Pair `markdownEntries`/`markdownLoad` with
 [`markdownResponse`](./delivery-data.md#markdownresponse) in a prerendered `+server.ts`, never a
 runtime one, so the served set is always what a build against `main` produced.
@@ -237,7 +237,7 @@ site's own title-suffix convention (for example `(t) => `${t} · example.org`\`)
 only when `title` is left undefined, so an explicit `title` or `title={false}` still wins. `markdownUrl`,
 when passed, adds a `rel="alternate" type="text/markdown"` link pointing at the entry's raw-markdown
 twin ([`markdownResponse`](./delivery-data.md#markdownresponse)); a site that has not wired the twin
-route, or an entry with no twin (a `noindex` entry, which `markdownEntries` excludes), passes nothing
+route, or an entry with no twin (`markdownEntries` excludes a `noindex` entry), passes nothing
 and the link is omitted. The component carries no CSS, so it pulls in no admin styles. The showcase
 mounts it from the `seo` field the catch-all loader returns.
 

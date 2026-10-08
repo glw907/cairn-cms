@@ -1,17 +1,22 @@
 # Docs maintenance
 
 Three layers keep the docs current, in decreasing order of automation: the machine
-gates, the pass rule, and a monthly drift routine. Each covers ground the one before
+gates, the pass rule, and the drift layer (a monthly routine and the release sweep). Each covers ground the one before
 it can't reach.
 
 ## The machine layer
 
-Every `check:*` script that touches docs, and the one thing each catches:
+The docs gate's component list is `scripts/checks/docs-gate.mjs` (tiers in `docs/internal/pass-gate-tiers.md`);
+it also runs `check:facts`, `check:provenance`, `check:transcripts`, `check:visuals`, `check:tool-conditions`,
+`check:target-stack`, `check:editor-quotes`, and `check:vale-rules`, which this table does not describe. The table covers the
+older gates, and the one thing each catches:
 
 | Gate | What it catches |
 | --- | --- |
 | `check:reference` | Per exported subpath, checks each export name against its reference page three ways: the name appears on the page (missing), the page marks it with a stability tier (untagged), and any name the page mentions still exports for real (stale, the reverse check that catches an old name left behind after a rename). |
 | `check:reference:signatures` | For each function or const-function export, renders its real signature through the TypeScript compiler API and compares it against the page's declared fenced-block signature. Catches a page whose export still exists but whose documented shape has drifted. |
+| `check:options` | Walks the built declarations from `defineAdapter`, the other `define*` and `create*` roots, and the route-factory config types, and compares every member path it reaches to the committed option map (`docs/internal/option-map.json`): one row per path, a `[verified]` fact id, `exclude <reason>`, or `pending <page slug>`. Catches an option added inside a public type with no fact, a row for a path that no longer exists, a row naming a missing or unverified fact, an `exclude` row with no reason, a `pending` row whose slug names neither a page in a committed outline nor a published page, and a pending count above the committed constant (pending only shrinks). |
+| `check:leaks` | Scans the places a stranger reads (published docs, the shipped skills, chassis, reproductions, CLI messages, the Waymark template, the `src/lib` doc comments, `CHANGELOG.md`) and the agent inputs (briefs, outlines, facts, the register) for four classes of text that only mean something inside the maintainer's world: consumer-site identity, consumer domain vocabulary, maintainer process, and personal data. The patterns, tiers, and severities live in `scripts/checks/check-leaks.mjs`. A hit is excused only by a `leak-ok` marker that names its classes and gives a reason (`<!-- leak-ok: C1 -- reason -->` for the next line, `leak-ok-begin`/`leak-ok-end` for a region); a marker without a reason is itself an error, and a marker excuses nothing on its own line (the text beside it is scanned). A `#` marker (YAML, TOML) needs content before it on the line: a whole-line `# leak-ok` is not a marker, and its target line fails closed. `CHANGELOG.md` hits are errors under `## Unreleased` and warnings in released sections. Pure Node, so it runs in CI. |
 | `check:snippets` | Extracts every fenced `ts`, `typescript`, and `svelte` block from `docs/reference`, `docs/extend`, `docs/admin`, and `docs/editors`, and typechecks each one standalone against the built package. Catches a snippet that teaches a retired export or a stale call signature. A block that cannot stand alone (a continued fragment, or markup-only prose) needs an explicit opt-out, an `<!-- snippet-check-skip: reason -->` comment on the line before the fence, naming why. The annotation is a per-block escape hatch, used sparingly; a page thick with them has stopped proving anything. |
 | `check:docs` | Walks the published docs tree plus the root project files (`README.md`, `SECURITY.md`, `ROADMAP.md`, `CHANGELOG.md`, `CONTRIBUTING.md`), resolves every relative link and `#anchor`, and fails on a target that doesn't exist. Catches a moved or renamed page or heading a doc still points at. `CHANGELOG.md` gets one exception, a `LEGACY_PATH_MAP` translating a retired path to the page that inherited its job, since a release record's past links stay pointed at paths that were real when they shipped; `CONTRIBUTING.md` documents the map's contributor-facing mechanics. |
 | `check:arm-indexes` | For each published arm plus `docs/internal`, checks that every `.md` page in the arm's directory is linked from the arm's own index page. Catches a page that exists on disk but is unreachable from its track's front door. It parses no prose and does no counting; a page missing a link is the only thing this checks. |
@@ -29,7 +34,8 @@ tiers, symbol claims, and style. None of them read a sentence for meaning.
 
 The machine layer only catches what's mechanically checkable. The rest is one human rule,
 already standing in `cairn-cms/CLAUDE.md`: **a change is not done until its docs match.**
-Concretely, when a pass renames or removes something, grep the docs tree for the old name
+A pass that changes a public behavior files its fact in `docs/internal/facts/`, and one that adds,
+renames, or removes a public option also files its row in the option map. Concretely, when a pass renames or removes something, grep the docs tree for the old name
 before calling the pass finished, and prune `ROADMAP.md` and
 `docs/internal/docs-friction-log.md` of whatever the pass resolved, in the same pass, not
 later. No gate replaces this rule; it's the discipline the gates assume.
@@ -43,7 +49,16 @@ fact-checks every claim on them against the current code, and reports only confi
 file:line evidence. A clean run self-reports "no drift" in one line; it doesn't pad a report to
 look busy.
 
-Routine id: `trig_015UPQostYVisXuExTHTH2vu` (created 2026-07-04; monthly, first of the month).
+Routine id: `trig_015UPQostYVisXuExTHTH2vu` ("cairn docs freshness (monthly drift check)"), created
+2026-07-04. Verified 2026-09-30 through the RemoteTrigger API: it is enabled, its cron is `0 17 1 * *`,
+its last run (2026-09-01) succeeded, and its next run is 2026-10-01 17:02 UTC. Its original scope check
+required all four track directories and stopped with "SCOPE BROKEN" while `docs/admin` and `docs/editors`
+were empty. Geoff approved a re-scope on 2026-09-30: it samples `docs/reference` and the existing
+`docs/extend` pages, and widens to all four tracks at stage 4's merge.
+
+The release sweep (`cairn-release`, step 3, capability releases only) is the second drift mechanism. At
+each cut it finds new gaps in scaffold behavior and changelog-described behavior, the ground `check:options`
+cannot see, and files them as facts or friction entries.
 
 ## When Topo lands
 

@@ -298,6 +298,54 @@ lane's open branch.
 
 ## Ledger
 
+Token figures are agent usage blocks summed from the conductor's ledger (attribution only; the
+conductor could not read `/cost`).
+
 | Task | Commit | Verdict | Tokens |
 | --- | --- | --- | --- |
-| Planning (this plan, pre-flights, review) | | | |
+| Planning (this plan, pre-flights, review, folds) | through `159693c0` | approved | about 1.0M |
+| R1 matcher fix | dotfiles `5cbf9c0`, `9eff4a6` (hardening: tail limited to plain `&&` steps) | accept after one fix round | about 0.21M |
+| R2 merge `main` | `214b4856`, fix `e5ebb049` (six cite retargets, four riders) | accept after one fix round | about 0.27M |
+| R3 Kit 3 infra drift | `9f8f218e` | accept | about 0.2M |
+| R4 pilot pages on Kit 3 | facts `e397f3cf`, `1bd5a086`; pages `03ec19e5`, `2d25a811`, `344c2100`, `768f43d4`, `666720bc`, `6ea06c56`, `d2dc7376`; fix `140ab482` | accept after one file-set fix | about 1.9M |
+| Checkpoint 1 | `main` `338dc285`; branch `d102143a` | | conductor |
+| R5 task 8 chain run `wf_27395374-42e` | WIP `bd78ad83` | 0 of 5 accepted (2 at the plan read, 3 at the round cap) | 7.20M |
+| R5 closes (targeted close: scaffolded, second-sign-in, rotate; hand-run seats: restrict, debug) | `9f0b8add` | all five closed; conductor rulings 1 to 5 in the R5 record | about 4.2M |
+| R5 post-run record and file-set fix | `c882e4b2`, `80e73f8e` | accept after one fix round | about 0.33M |
+| Checkpoint 2 | `main` `74a0400b` | | conductor |
+| R6 task 9 consistency read and relink | `c00cd0b4`, stamp `78df0ef0` | accept | about 1.5M |
+| Checkpoint 3 | `main` `36c91167` | | conductor |
+| L2b e2e flakes | PR #104, `main` `d6ada013` (fix `3ef9a8d9`) | accept after one fix round | about 0.17M |
+| L1 dependency sweep | PR #106, `main` `cf5cadd5` | accept | about 0.3M |
+| L2a doctor cleanup | PR #105, `main` `8e8d84c3` (`75ff7008`, `1852d651`, `9444c409`, `788bd33c`) | accept after three fix rounds (the ruling fix `75ff7008`, the combined fix `1852d651` and `9444c409`, the upshifted `788bd33c`) | about 1.4M |
+| Checkpoint 4 | `main` `e020a54c` | | conductor |
+| R7a merge `main` | `6fd010ba` | one conflict resolved by rule | about 0.06M |
+| R7b `code-simplifier` | `b38ef6b3` | three scripts, behavior-neutral | not recorded |
+| R7c scoped fact read | read-only | 4 blocking, 5 advisory | not recorded |
+| R7d close (this fold) | see the branch head | pending diff review | not recorded |
+| Totals | | | 2a about 19M at R7's start against 25M (stop 20M); lanes about 1.85M against 5M (stop 4M) |
+
+## Post-mortem
+
+**Budgets (estimates, as the ledger above).** 2a: about 19M when R7 started, against the 25M ceiling
+and the 20M stop, so R7 ran as the task in flight past the stop, as the Budget section foresaw. R5
+came in near its 12.5M estimate (7.2M chain, about 4.2M of closes, 0.33M post-run). The lanes: about
+1.85M against their 4.0M estimate and 5M ceiling. The run stayed under its 30M cap. Attended time:
+none during execution beyond one ruling exchange at R7; one planning miss (R7's next action, below).
+
+**What went as planned.** Every track closed green: R1 to R7 accepted, all three lanes merged by the
+merge procedure, `main`'s CI green after each merge. No track hit a stop condition. The unattended
+contract held: the conductor ruled on the cases it lists and on two it did not foresee (hand-run seats
+for plan-read escalations, and the cap's scope), both recorded for Geoff.
+
+**What the plan got wrong.** R7's next action ("Geoff's read, then the release with Kit 3 and the
+rebuilt extend docs, then cairn.pub's migration") was overturned at R7 by Geoff's rulings: no
+release and no site migration until every docs track is complete, an engine pass before stage 2b,
+and the boundary test at every docs-stage close (`ROADMAP.md`). The plan's escalation rule assumed
+escalations at the round cap; two of five came at the plan read, which the targeted-close method did
+not cover, so the conductor ran the seats by hand. The review page marks these two "hand-run chain
+from the plan read" where the plan said "chain accept"; no page reached a chain accept.
+
+**Carried.** The persisted-runner `cmp` matched at R5's launch. R1's matcher served no gate in this
+run, as planned. The `gateMatches` doc comment fix in dotfiles is a STATUS watch.
+

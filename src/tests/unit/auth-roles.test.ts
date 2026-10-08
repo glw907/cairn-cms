@@ -14,13 +14,13 @@ describe('defineRoles validation', () => {
     expect(roles).toEqual({ owner: 'owner', editor: 'editor' });
   });
 
-  it('accepts an ASC-shaped vocabulary with the object form and a home', () => {
+  it('accepts an custom role vocabulary with the object form and a home', () => {
     const roles = defineRoles({
       owner: 'owner',
-      'club-admin': 'editor',
-      instructor: { capability: 'none', home: '/admin/classes' },
+      'webmaster': 'editor',
+      staff: { capability: 'none', home: '/admin/staff' },
     });
-    expect(roles.instructor).toEqual({ capability: 'none', home: '/admin/classes' });
+    expect(roles.staff).toEqual({ capability: 'none', home: '/admin/staff' });
   });
 
   it('throws on an empty record', () => {
@@ -56,49 +56,49 @@ describe('defineRoles validation', () => {
 });
 
 describe('resolveCapability', () => {
-  const asc = defineRoles({
+  const custom = defineRoles({
     owner: 'owner',
-    'club-admin': 'editor',
-    instructor: { capability: 'none', home: '/admin/classes' },
+    'webmaster': 'editor',
+    staff: { capability: 'none', home: '/admin/staff' },
   });
 
   it('resolves a bare capability declaration', () => {
-    expect(resolveCapability(asc, 'club-admin')).toBe('editor');
+    expect(resolveCapability(custom, 'webmaster')).toBe('editor');
   });
 
   it('resolves an object-form declaration', () => {
-    expect(resolveCapability(asc, 'instructor')).toBe('none');
-    expect(resolveCapability(asc, 'owner')).toBe('owner');
+    expect(resolveCapability(custom, 'staff')).toBe('none');
+    expect(resolveCapability(custom, 'owner')).toBe('owner');
   });
 
   it('fails closed to none for a role outside the vocabulary', () => {
-    expect(resolveCapability(asc, 'ghost')).toBe('none');
+    expect(resolveCapability(custom, 'ghost')).toBe('none');
   });
 
   it('treats an undefined vocabulary as the default owner/editor pair', () => {
     expect(resolveCapability(undefined, 'owner')).toBe('owner');
     expect(resolveCapability(undefined, 'editor')).toBe('editor');
-    expect(resolveCapability(undefined, 'club-admin')).toBe('none');
+    expect(resolveCapability(undefined, 'webmaster')).toBe('none');
   });
 
   it('does not treat inherited object keys as roles', () => {
-    expect(resolveCapability(asc, 'toString')).toBe('none');
+    expect(resolveCapability(custom, 'toString')).toBe('none');
   });
 });
 
 describe('roleHome', () => {
-  const asc = defineRoles({
+  const custom = defineRoles({
     owner: 'owner',
-    instructor: { capability: 'none', home: '/admin/classes' },
+    staff: { capability: 'none', home: '/admin/staff' },
   });
 
   it('returns the declared home for an object-form role', () => {
-    expect(roleHome(asc, 'instructor')).toBe('/admin/classes');
+    expect(roleHome(custom, 'staff')).toBe('/admin/staff');
   });
 
   it('returns undefined for a bare-capability role and an unknown role', () => {
-    expect(roleHome(asc, 'owner')).toBeUndefined();
-    expect(roleHome(asc, 'ghost')).toBeUndefined();
+    expect(roleHome(custom, 'owner')).toBeUndefined();
+    expect(roleHome(custom, 'ghost')).toBeUndefined();
   });
 });
 
@@ -107,7 +107,7 @@ describe('resolveOwnerLevelRoles', () => {
     const roles = defineRoles({
       owner: 'owner',
       commodore: { capability: 'owner', home: '/admin/roster' },
-      'club-admin': 'editor',
+      'webmaster': 'editor',
     });
     expect(resolveOwnerLevelRoles(roles).sort()).toEqual(['commodore', 'owner']);
   });
@@ -120,12 +120,12 @@ describe('resolveOwnerLevelRoles', () => {
 
 describe('role vocabulary and Editor types', () => {
   it('pins defineRoles: it const-captures the declared literal key set', () => {
-    const asc = defineRoles({
+    const custom = defineRoles({
       owner: 'owner',
-      'club-admin': 'editor',
-      instructor: { capability: 'none', home: '/admin/classes' },
+      'webmaster': 'editor',
+      staff: { capability: 'none', home: '/admin/staff' },
     });
-    expectTypeOf<Extract<keyof typeof asc, string>>().toEqualTypeOf<'owner' | 'club-admin' | 'instructor'>();
+    expectTypeOf<Extract<keyof typeof custom, string>>().toEqualTypeOf<'owner' | 'webmaster' | 'staff'>();
   });
 
   it('carries capability alongside an open (string) role on Editor', () => {

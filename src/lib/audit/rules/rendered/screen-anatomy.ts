@@ -44,7 +44,7 @@
 // The exemption is read off the RENDER, never off the path, and that is the whole point. The first
 // cut used path depth, which `CairnAdminShell.svelte`'s own comment names by name as the wrong
 // signal that already caused a shipped bug: "a developer's own custom nav can route just as deep
-// (a section entry like /admin/club/events) without opening a document". An adversarial pass drove
+// (a section entry like /admin/team/events) without opening a document". An adversarial pass drove
 // that exactly, injecting three real anatomy defects into `/admin/posts`'s DOM and getting three
 // findings under a 2-segment path and ZERO under a 3-segment one, on identical markup.
 //
@@ -185,7 +185,7 @@ export const screenAnatomy: RenderedRule = {
         message:
           snapshot.h1Selectors.length === 0
             ? 'no <h1> renders on this office route; every office screen carries PageHeader\'s one ' +
-              'display-face heading (docs/internal/admin-design-system.md, "The context model: office and desk").'
+              'display-face heading (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "The context model: office and desk").'
             : `${snapshot.h1Selectors.length} <h1> elements render on this route (expected exactly 1): ` +
               `${snapshot.h1Selectors.join(', ')}. PageHeader owns the page's one display-face heading.`,
       });
@@ -208,7 +208,7 @@ export const screenAnatomy: RenderedRule = {
         selector: 'main',
         message:
           'this office route renders no .card-shell region inside <main>; office content composes ' +
-          'inside a floating card (docs/internal/admin-design-system.md, "Floating card: card-shell card-shadow").',
+          'inside a floating card (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "Floating card: card-shell card-shadow").',
       });
     }
 

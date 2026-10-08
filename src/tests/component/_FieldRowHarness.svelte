@@ -13,7 +13,7 @@ anything to level.
 </script>
 
 <div class="toolkit-field-row-harness">
-  <FieldLabel label="Instructor">
+  <FieldLabel label="Staff">
     <input class="input input-sm" data-testid="field-control" />
   </FieldLabel>
   <button type="button" class="btn btn-sm" data-testid="bare-control">Add</button>

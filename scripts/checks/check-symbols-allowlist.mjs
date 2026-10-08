@@ -14,6 +14,8 @@ export const ALLOWLIST = new Set([
   'cli-flag:--local', // wrangler d1's own flag
   'cli-flag:--remote', // wrangler d1's own flag
   'cli-flag:--command', // wrangler d1 execute's own flag
+  'cli-flag:--env-file', // wrangler types' own flag, the regenerate command a scaffold's worker-configuration.d.ts records
+  'cli-flag:--include-runtime', // wrangler types' own flag, the same recorded command
   'cli-flag:--port', // wrangler dev's own flag, shown after `npm run preview --`
   'cli-flag:--var', // wrangler dev's own flag, shown after `npm run preview --`
   'cli-flag:--rendered', // cairn-audit's own flag, not create-cairn-site's
@@ -34,7 +36,6 @@ export const ALLOWLIST = new Set([
   'env-var:SECTION_RATE_LIMIT', // docs/reference/sveltekit.md's illustrative SectionEnv binding
   'env-var:TURNSTILE_SECRET', // docs/reference/auth-channel.md's illustrative Turnstile secret binding
   'env-var:SOME_UNSET_VAR', // docs/reference/cloudflare.md's illustrative name for an omitted config key
-  'env-var:CLUB_DB', // docs/extend/add-a-custom-admin-screen.md's illustrative section D1 binding
   'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
   'env-var:ERR_UNSUPPORTED_ESM_URL_SCHEME', // docs/extend/migration-notes.md, Node's own error code for `vite preview` serving adapter 8 output (sveltejs/kit#17271), never a cairn variable
 
@@ -45,7 +46,7 @@ export const ALLOWLIST = new Set([
   'env-var:CAIRN_GH_READ_TOKEN', // docs/reference/cli-cairn-json-output.md's authCheck section
 
   // jose's own SCREAMING_SNAKE_CASE error codes (the `code` property jose's error classes carry,
-  // never an environment variable), cited in docs/extend/sign-in-through-your-organization.md's
+  // never an environment variable), cited in docs/extend/replace-magic-links-with-cloudflare-access.md's
   // `reasonFor` switch. cairn does not depend on jose, so no source tree carries these strings.
   'env-var:ERR_JWT_EXPIRED',
   'env-var:ERR_JWT_CLAIM_VALIDATION_FAILED',
@@ -86,8 +87,8 @@ export const ALLOWLIST = new Set([
   'log-event:preview.published', // docs/reference/sveltekit.md and public.md, PreviewData's `published` field
   'log-event:tidy.enabled', // docs/reference/doctor.md, the site config's `tidy.enabled` field
   'log-event:tidy.client', // docs/reference/sveltekit.md, ContentRoutesOptions' `tidy.client` field
-  'log-event:tidy.conventions', // docs/extend/enable-tidy.md, the site config's `tidy.conventions` field
-  'log-event:tidy.model', // docs/extend/enable-tidy.md, migration-notes.md, and log-events.md, the site config's `tidy.model` field
+  'log-event:tidy.conventions', // CHANGELOG.md, the site config's `tidy.conventions` field
+  'log-event:tidy.model', // migration-notes.md, log-events.md, and sveltekit.md, the site config's `tidy.model` field
   'log-event:config.csrf-disable-missing', // docs/extend/migration-notes.md and docs/reference/cli-cairn-json-output.md, a retired condition id the tool v2 record must still name to say what changed
   'log-event:auth.csrf-origin-mismatch', // docs/extend/migration-notes.md and docs/reference/cli-cairn-json-output.md, a retired condition id the tool v2 record must still name to say what changed
   'log-event:auth.channel.delivery_inline', // docs/extend/migration-notes.md, the retired log event name a removal entry must still name to say what changed
@@ -119,24 +120,27 @@ export const ALLOWLIST = new Set([
   // is gone; docs/reference/cli-cairn-doctor.md is its Go-tool successor); the citation stays
   // unedited, since a release record is immutable and does not chase a later reorganization.
   'file-path:docs/reference/doctor.md',
-  // The same record's 0.97.0 entry cites docs/extend/security-model.md's exhaustive-map recipe by
-  // path. That page is on the harvest deletion list; the entry names it as it stood when it
-  // shipped and stays unedited for the same reason.
-  'file-path:docs/extend/security-model.md',
   'file-path:src/theme/cairn.config.ts', // docs/reference/vite.md's illustrative adapter location
-  'file-path:src/theme/theme.css', // docs/extend/design-your-site.md's own convention path, the reader's re-skin file
+  'file-path:src/theme/theme.css', // docs/extend/theme-your-public-site.md's own convention path, the reader's re-skin file
+  'file-path:src/theme/site.css', // docs/extend/scaffolded-site-files.md's scaffolded site's page styles (templates/waymark/src/theme/site.css)
+  'file-path:src/access.ts', // docs/extend/scaffolded-site-files.md's scaffolded site's access map (templates/waymark/src/access.ts)
   'file-path:src/chassis/tokens.css', // docs/reference/cairn-audit.md's default theme-root file, a site's own chassis token file
   'file-path:src/content/.cairn/index.json', // a site's own generated manifest, by convention
   'file-path:src/content/.cairn/media.json', // a site's own generated media manifest, by convention
   'file-path:src/content/.cairn/site-facts.json', // a site's own generated site-facts contract, by convention
   'file-path:src/content/.cairn/dictionary.txt', // a site's own spellcheck dictionary, by convention
-  'file-path:src/lib/club/section.ts', // docs/extend/add-a-custom-admin-screen.md's illustrative section module
-  'file-path:src/routes/admin/club/events/ApproveDialog.svelte', // docs/extend/add-a-custom-admin-screen.md's illustrative dialog-form recipe component
+  'file-path:cairn/admin.css', // a scaffolded site's gitignored compiled admin sheet, `.cairn/admin.css` (the extractor drops the leading dot)
   'file-path:src/lib/today.ts', // docs/extend/debug-your-site.md's illustrative fixed-today helper module
-  'file-path:src/lib/members/channel.ts', // docs/extend/add-a-second-audience.md's illustrative auth-channel module
-  'file-path:src/lib/content.ts', // docs/extend/build-a-site-by-hand.md and wire-the-delivery-surface.md's illustrative content-index module, by convention
+  'file-path:src/lib/server/member-channel.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative auth-channel module
+  'file-path:src/lib/server/members.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative roster-lookup and code-delivery module
+  'file-path:src/lib/server/member-channel.test.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative channel test
+  'file-path:migrations-members/0000_channel.sql', // a site's copy of the packaged channel migration, the directory docs/extend/add-a-second-sign-in-group.md creates (examples/showcase/migrations-members/ carries the same file)
+  // `@glw907/cairn-cms-dev` is a separate package, but the export extractor's specifier regex
+  // reads its name as a `-dev` subpath of the engine and finds no such subpath in the API
+  // surface snapshot. The dev package's own `src/index.ts` exports it.
+  'export:createChannelDb', // docs/extend/add-a-second-sign-in-group.md's channel test imports it from @glw907/cairn-cms-dev
+  'file-path:src/lib/content.ts', // docs/extend/add-cairn-to-a-sveltekit-app.md's illustrative content-index module, by convention
   'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
-  'file-path:src/content/posts/2026-08-14-hello.md', // docs/extend/build-a-site-by-hand.md's illustrative sample entry
   'file-path:old-site/content/posts/my-post.md', // docs/extend/migrate-existing-content.md's illustrative pre-migration source path
   'file-path:src/content/posts/2024-01-15-my-post.md', // docs/extend/migrate-existing-content.md's illustrative migrated output path
   'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
@@ -155,9 +159,9 @@ export const ALLOWLIST = new Set([
   // A leading-dot directory name (`.svelte-kit`) is stripped by the extractor's own
   // leading-dot/slash trim, so the literal `main` value from a Cloudflare `wrangler.jsonc`
   // (`.svelte-kit/cloudflare/_worker.js`) is checked here as the token the trim actually produces.
-  'file-path:svelte-kit/cloudflare/_worker.js', // docs/extend/build-a-site-by-hand.md's wrangler.jsonc `main` field, mangled by the leading-dot trim
-  'file-path:src/lib/access-identity.ts', // docs/extend/sign-in-through-your-organization.md's illustrative Access-verifier module, by convention
-  'file-path:admin/__data.json', // docs/extend/sign-in-through-your-organization.md, SvelteKit's own data-only fetch path, never a file on disk
+  'file-path:svelte-kit/cloudflare/_worker.js', // docs/extend/add-cairn-to-a-sveltekit-app.md's wrangler.jsonc `main` field, mangled by the leading-dot trim
+  'file-path:src/lib/access-identity.ts', // docs/extend/replace-magic-links-with-cloudflare-access.md's illustrative Access-verifier module, by convention
+  'file-path:admin/__data.json', // docs/extend/replace-magic-links-with-cloudflare-access.md, SvelteKit's own data-only fetch path, never a file on disk
   // docs/reference/guidance.md's own destination paths inside a CONSUMER repo's .claude/ and
   // .github/ trees, never a path in this repo: cairn-guidance writes them, it does not ship them.
   // The extractor's leading-dot trim strips the leading `.` off `.claude` and `.github` before

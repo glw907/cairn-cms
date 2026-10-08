@@ -522,7 +522,7 @@ discriminant, not the fields, gates the chrome).
   // The band has one job there, so the topbar drops the palette trigger and the site-wide Publish
   // button and renders the document's own desk controls instead. The second segment must name a
   // real content concept, not merely sit three-deep: a developer's own custom nav can route just as
-  // deep (a section entry like /admin/club/events) without opening a document, and treating path
+  // deep (a section entry like /admin/team/events) without opening a document, and treating path
   // depth alone as the signal wrongly receded the persistent desktop sidebar on that navigation (it
   // fell back to the mobile-drawer's toggle-controlled visibility, which read as the sidebar
   // sliding away, since only a genuine desk route needs that recede).

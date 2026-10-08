@@ -112,7 +112,7 @@ describe('panel-width against a real browser', () => {
   it('does not flag a summary row the table wrapper genuinely scrolls to reach', async () => {
     const findings = await findingsFor(
       tableFixture(
-        '<span style="white-space:nowrap">A long unbreakable household name that will not wrap at all</span>'
+        '<span style="white-space:nowrap">A long unbreakable signup name that will not wrap at all</span>'
       )
     );
     expect(findings).toEqual([]);
@@ -144,7 +144,7 @@ describe('panel-width against a real browser', () => {
           <table class="table"><tbody>
             <tr class="toolkit-expandable-row-summary" id="row-alvarez">
               <td style="width:200px;max-width:200px;overflow:hidden;box-sizing:border-box">
-                <span style="white-space:nowrap">A long unbreakable household name that clips mid word</span>
+                <span style="white-space:nowrap">A long unbreakable signup name that clips mid word</span>
               </td>
             </tr>
           </tbody></table>
@@ -168,7 +168,7 @@ describe('panel-width against a real browser', () => {
         <div class="toolkit-admin-table-wrap" style="overflow-x:auto">
           <table class="table"><tbody>
             <tr class="toolkit-expandable-row-summary" id="row-wide">
-              <td><span style="white-space:nowrap">A genuinely wide unclamped household name forcing scroll</span></td>
+              <td><span style="white-space:nowrap">A genuinely wide unclamped signup name forcing scroll</span></td>
             </tr>
             <tr class="toolkit-expandable-row-summary" id="row-clamped">
               <td>

@@ -254,8 +254,8 @@ reversible from git history, the same delete-order the single safe-delete uses.
 reference anywhere across `main` and every open branch) and the broken-reference rows (manifest
 hashes whose bytes are gone). A branch-only upload's bytes are excluded from `orphanedBytes`, since
 the branch that uploaded them references them. `mediaOrphanPurgeAction` is the one irreversible
-media action: it deletes the raw R2 bytes, which carry no git history, so it gates on a
-typed-count confirm (the number of files). At action time it re-derives the orphan set fresh and
+media action. The raw R2 bytes it deletes carry no git history, so it gates on a typed-count
+confirm (the number of files). At action time it re-derives the orphan set fresh and
 re-checks the strict usage index, so a key that gained a manifest row or a new branch reference
 since the scan is skipped, never purged; the `MediaOrphanPurgeResult` reports `purged`,
 `skippedClaimed`, and `failed`. All three fail closed: an unverifiable cross-branch usage read
@@ -356,7 +356,7 @@ carries a populated, typed `locals.cairnEditor`; it passes through the
 [`CairnAdminShell`](./admin.md#cairnadminshell) custom-route seam untouched. Only the
 engine's own content and roster surfaces refuse it with `requireEditor`/`requireOwner`. A
 site-mounted admin route gates itself: nothing about `none` blocks the route from resolving, so a
-custom route that wants a `none`-capability role to reach it (an instructor's own class roster,
+custom route that wants a `none`-capability role to reach it (a staff member's own dashboard,
 say) needs no extra wiring, and one that wants to refuse it calls `requireEditor`, `requireOwner`,
 or its own capability check on `event.locals.cairnEditor.capability`.
 
@@ -401,7 +401,7 @@ call this helper for that path; call `requireSession` or `requireEditor` instead
 inside a page.
 
 ```ts
-// src/routes/admin/club/money/+page.server.ts
+// src/routes/admin/team/money/+page.server.ts
 import { requireAccess } from '@glw907/cairn-cms/sveltekit';
 
 export const load = (event) => {
@@ -531,7 +531,7 @@ import { createAdminAction } from '@glw907/cairn-cms/sveltekit';
 
 export const actions = {
   approve: createAdminAction(async ({ ctx }) => ({ approvedBy: ctx.editor.email }), {
-    access: { target: '/admin/club/events', ownerOnly: true },
+    access: { target: '/admin/team/events', ownerOnly: true },
   }),
 };
 ```
@@ -549,8 +549,8 @@ runs once, reading `event.request.formData()` exactly once so the handler never
 re-reads an already-consumed body; (5) a handler that returns normally (its request succeeded) must
 call `ctx.audit` at least once. A successful mutating action that emits zero audit records throws
 `UnauditedActionError(500, ...)` in dev (`esm-env`'s `DEV`, overridable through `deps.isDev` for a
-test) and logs `admin.action.unaudited` in production, since an unaudited state change is a defect
-here but should never 500 a live site. A handler that returns SvelteKit's `fail()` (an
+test) and logs `admin.action.unaudited` in production. An unaudited state change is a defect here,
+but it should never 500 a live site. A handler that returns SvelteKit's `fail()` (an
 `ActionFailure`, detected with `@sveltejs/kit`'s own `isActionFailure`) is exempt from the required-audit
 check: a rejected request mutated nothing, so it owes no audit, and a validation reject never needs
 a spurious `ctx.audit` call just to satisfy the wrapper. The exemption assumes the handler rejects
@@ -576,7 +576,8 @@ seam's fail-open promise at its own call site, not merely by the sink's own disc
 holds it against both failure shapes: a sink that throws synchronously, and a sink that returns a
 rejecting promise. The rejecting case is reachable in practice, not theoretical: the seam's
 `(record) => void` type admits an async function through void-return bivariance, the same pressure
-that writes a sink following the `waitUntil` advice. `ctx.audit` catches the
+that writes a sink following the `waitUntil` advice in [Wire the audit
+sink](../extend/add-a-custom-admin-screen.md#wire-the-audit-sink). `ctx.audit` catches the
 synchronous throw directly and attaches a fire-and-forget rejection handler to a promise-returning
 result, so the handler's own result still returns exactly as if the sink had succeeded either way,
 and the failure logs `audit.sink.call_failed` (see [log events](./log-events.md)) rather
@@ -584,15 +585,15 @@ than disappearing. The catch rethrows SvelteKit's own `redirect()`/`error()` unt
 logging them: both are plain classes, not `Error` instances, so a sink built on one of those
 control-flow primitives (a hand-rolled auth check inside a sink, say) is never swallowed into a
 log line the site never sees. This is a distinct event from `createD1AuditSink`'s own
-`audit.sink.write_failed`: that one covers the packaged sink's internal persist failure, which the
-packaged sink already catches before it can reach the engine's call site, while
-`audit.sink.call_failed` covers any sink, hand-rolled or otherwise, that throws or rejects
-at the point `ctx.audit` invokes it.
+`audit.sink.write_failed`. That one covers the packaged sink's internal persist failure, and the
+packaged sink already catches that failure before it can reach the engine's call site.
+`audit.sink.call_failed` covers any sink, hand-rolled or otherwise, that throws or rejects at the
+point `ctx.audit` invokes it.
 
 ```ts
-// src/routes/admin/club/events/[id]/+page.server.ts
+// src/routes/admin/team/events/[id]/+page.server.ts
 import { createAdminAction } from '@glw907/cairn-cms/sveltekit';
-import { db } from '#lib/club/db.js';
+import { db } from '#lib/team/db.js';
 
 export const actions = {
   approve: createAdminAction(async ({ form, ctx }) => {
@@ -622,7 +623,7 @@ table, opt-in the same way the auth migrations are.
 Calling it directly, with a record your own site code composes rather than one `ctx.audit`
 produced, is supported: the sink has no admin-specific behavior, only a generic
 `{ actor, action, entity, entityId?, detail? }` shape bound into the columns of the same name. A
-domain event, a roster change, a season rollover, anything append-only worth a durable trail,
+domain event, a roster change, a plan change, anything append-only worth a durable trail,
 persists the same way an admin action's audit does. `actor` is the acting identity for that row
 and need not be a cairn editor; namespace your action names (`roster.add`, not a bare `add`) so a
 domain row stays distinguishable from an admin-action row in the shared table. The fail-open,
@@ -706,7 +707,8 @@ isolate tears down before it settles, so omitting it has to be a decision the ca
 purpose, with the drop risk understood. Inside a request, pass the `waitUntil` that
 `cloudflare:workers` exports.
 
-The sink is fail-open, the same convention as a hand-rolled one:
+The sink is fail-open, the same convention as [a hand-rolled
+one](../extend/add-a-custom-admin-screen.md#wire-the-audit-sink):
 it returns synchronously, before the insert settles, so a persist failure never fails the audited
 action, and a rejected insert logs `audit.sink.write_failed` (see [log events](./log-events.md))
 carrying the whole truncated record plus the error, since the audited action already completed and
@@ -761,7 +763,8 @@ actions. `createSectionAction` composes [`createAdminAction`](#createadminaction
 the single form read, the audit contract) with the same access-map check
 [`requireAccess`](#requireaccess) runs, an optional rate limit, and the section's own database
 binding, so a section's own actions need no hand-rolled precondition. This is the sanctioned
-shape for a custom section regardless of what any given site's own routes show.
+shape for a custom section regardless of what any given site's own routes show. See [Gate
+it](../extend/add-a-custom-admin-screen.md#gate-it) in Add a custom admin screen.
 
 The config is site-fixed, called once per section: `config.resolveDb` reads the section's own
 binding off the Worker env, and `config.rateLimit`, when set, names the binding and the
@@ -770,7 +773,7 @@ SvelteKit 3, which does not require the parameter narrowed. The engine passes th
 reads from `cloudflare:workers`, the object the site's generated `Env` describes. The engine can't
 conjure an absent binding, so an honest `undefined` return beats a callback that hides absence, and
 the fail-closed authorization and degrade-to-open rate limit split (the check order below) is the
-ratified reading of that absence.
+documented reading of that absence.
 
 The returned wrapper takes the call-site's own
 `opts: { action, entity, target?, ownerOnly?, deniedMessage? }`. `action` and `entity` are
@@ -797,14 +800,14 @@ change. `ownerOnly` requires owner capability on top of the map check, never ins
 
 Route groups are the one place a route id and its URL differ on every site, so the derived target
 drops them: a route id of `/admin/(app)/roster` resolves to the target `/admin/roster`, and
-`/admin/(app)/club/(section)/events/[id]` to `/admin/club/events/[id]`. **Key the access map by
+`/admin/(app)/team/(section)/events/[id]` to `/admin/team/events/[id]`. **Key the access map by
 the URL shape, group segments left out, however deep the route sits in groups.** This applies to
 the derived default only. `createSectionAction` matches a `target` you declare verbatim, so a
 declared target carrying a group segment needs a map key in that exact form.
 
 `Env` does not infer from `resolveDb`'s parameter alone; annotate it, as the snippet below
-does, or pass explicit type arguments, else it collapses to `{}` and every downstream binding
-read stops typechecking usefully.
+does, or pass explicit type arguments, else `Env` infers as `unknown` and a binding read such as
+`env?.MEMBER_DB` fails to typecheck.
 
 Check order, refusals returned as SvelteKit `fail(...)`, fail-closed at every step but the rate
 limit, which deliberately degrades to open. Authorization runs before the database-binding
@@ -822,9 +825,11 @@ is deployed:
    returns `fail(429)`. This branch calls no `ctx.audit`: a limiter denial is back-pressure, not
    a domain-state change.
 3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
-   `admin.action.misconfigured`, and returns `fail(500)`: the guard never ran on this route.
-   Only [`createAuthGuard`](#createauthguard) may write `locals.cairnEditor` and `locals.cairnAccess`,
-   and it must be the last handle in the sequence to set them. This check runs before
+   `admin.action.misconfigured`, and returns `fail(500)`. The cause is a hook that set
+   `locals.cairnEditor` without the map, as `devBackendHandle` does when given no `access`.
+   [`createAuthGuard`](#createauthguard) attaches the map right after it sets the editor, so behind
+   the guard this check never refuses. The fix passes the same map to
+   `devBackendHandle({ access })`. This check runs before
    authorization out of necessity (a route cannot authorize against a map that was never
    attached) and leaks nothing per-editor: it is identical for every session.
 4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
@@ -864,7 +869,7 @@ form read, so it never bounds the cost of parsing the request body.
 own binding shape (`SectionEnv`) standalone, so the resolver's annotation is explicit either way:
 
 ```ts
-// src/routes/admin/club/events/[id]/+page.server.ts
+// src/routes/admin/team/events/[id]/+page.server.ts
 import { createSectionAction, type RateLimitLike } from '@glw907/cairn-cms/sveltekit';
 import type { D1Database } from '@cloudflare/workers-types';
 
@@ -948,7 +953,8 @@ to the browser that asked for it. `loginLoad` sets it on the GET, so a browser h
 posts anything, and `requestAction` reuses that value rather than rotating it. On the throttled
 branch, where the send cooldown suppresses a second email, `requestAction` also rebinds the live
 token to the requesting browser when the two disagree, which is what keeps repeated requests from
-locking an editor out of their own link.
+locking an editor out of their own link. See [the security
+model](../extend/security-model.md#browser-binding-for-sign-in) for the full behavior.
 
 `requestAction` awaits the send, so its `RequestOutcome` reflects the outcome. The awaited-send
 behavior dates to `0.38.0`, under the type's earlier name `RequestResult` and a `status`
@@ -964,8 +970,10 @@ a manual `wrangler d1 execute` insert. On a request whose normalized email match
 `editor` table is still empty, `requestAction` inserts the owner atomically (a single
 `INSERT ... WHERE NOT EXISTS` statement) before the normal magic-link flow proceeds, and logs
 `editor.bootstrapped`. Once any row exists the config grants nothing, and a non-matching email on
-an empty table behaves exactly as an unknown email. The hand-run `wrangler d1 execute` insert still works and stays documented
-as the fallback for a site that prefers it.
+an empty table behaves exactly as an unknown email. The hand-run `wrangler d1 execute` insert still
+works as the fallback for a site that prefers it. The tutorial step [Compose the runtime and the
+admin](../extend/add-cairn-to-a-sveltekit-app.md#compose-the-runtime-and-the-admin) sets
+`bootstrapOwner` for a new site.
 
 ```ts
 // src/routes/admin/login/+page.server.ts (per-route mounting)
@@ -1024,13 +1032,13 @@ shown in the preceding signature for its shape, carries no export row of its own
 reaches it as `Extract<AdminData, { view: 'editors' }>['page']`.
 
 Build the loads and actions for the editor-management view at `/admin/editors`. `editorsLoad` lists
-the editors, names the current user, and returns `vocabulary`, the declared roles with their
-resolved capability, which [`ManageEditors`](./admin.md#manageeditors) renders. The three
-actions add an editor, remove one, and change a role, each validating the posted role against the
-vocabulary (rejecting an unknown one as a form error, no more silent coercion to `'editor'`) and
-returning a typed `ActionFailure` on a guard or validation error. The `roles` member of `config`
-is the same declared vocabulary [`createAuthGuard`](#createauthguard) takes; omitted, both resolve
-against the default owner/editor pair.
+the editors, names the current user, and returns `vocabulary`. `vocabulary` holds the declared
+roles with their resolved capability, and [`ManageEditors`](./admin.md#manageeditors) renders it.
+The three actions add an editor, remove one, and change a role, each validating the posted role
+against the vocabulary (rejecting an unknown one as a form error, no more silent coercion to
+`'editor'`) and returning a typed `ActionFailure` on a guard or validation error. The `roles` member
+of `config` is the same declared vocabulary [`createAuthGuard`](#createauthguard) takes; omitted,
+both resolve against the default owner/editor pair.
 
 ```ts
 // src/routes/admin/(app)/editors/+page.server.ts (per-route mounting)
@@ -1135,7 +1143,7 @@ cairn editor. The label the screen renders is "recent versions," never a complet
 commits API's path filter doesn't follow a rename, so a renamed entry's history restarts at the
 rename, and `HistoryData.truncated` only ever flags the 25-row bound, never a rename boundary the
 route can't see. A deleted entry answers a 404 exactly as `editLoad` does. Undelete is out of scope
-(see [ROADMAP.md](../../ROADMAP.md)), and a developer who needs a removed entry's content reads it
+(see [the roadmap](https://github.com/glw907/cairn-cms/blob/main/ROADMAP.md)), and a developer who needs a removed entry's content reads it
 straight from git. `revertAction` starts a fresh draft from an old publish: it re-validates the
 posted `ref` against a fresh `listCommits` read, full-sha exact membership, so `ref-unknown` always
 means the target fell outside that same 25-row window, either because it named a commit history
@@ -1170,16 +1178,16 @@ response (the one admin payload that carries a bearer credential), and logs
 `preview.token.minted`. The minted `url` is built from `PUBLIC_ORIGIN`
 ([`requireOrigin`](#createauthroutes)), never the request's own host. `previewRevokeAction` deletes
 every outstanding link for the entry in one call, returning `{ count }`; it is idempotent, since
-revoking with nothing minted still succeeds with a count of zero. Both actions answer the same
-`ActionFailure<ContentFormFailure>` when `AUTH_DB` is missing the `preview_tokens` table
-(`migrations/0003_preview.sql` not yet applied), naming the migration to apply rather than surfacing
-a raw D1 error, since the engine ships the share affordance to every upgraded site's edit screen
-regardless of adoption. `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's
+revoking with nothing minted still succeeds with a count of zero. The engine ships the share
+affordance to every upgraded site's edit screen regardless of adoption. Where `AUTH_DB` is missing
+the `preview_tokens` table (`migrations/0003_preview.sql` not yet applied), both actions answer the
+same `ActionFailure<ContentFormFailure>` naming the migration to apply rather than surfacing a raw
+D1 error. `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's
 outstanding preview rows unconditionally as part of their own cascade, since the id they touch stops
 naming that entry either way; `discardAction` clears them only when the entry was never published
 (discarding an edit to a live entry leaves its rows alone, since the id still names the same,
-still-live entry). All three close the same id-reuse collision, where a stale link could later
-resolve to a different entry's draft; publishing deliberately leaves the rows in place, since
+still-live entry). All three close the same id-reuse collision: a stale link that could later
+resolve to a different entry's draft. Publishing deliberately leaves the rows in place, since
 [`loadPreview`](#loadpreview) needs them to answer a stale link with "this preview has ended" rather
 than a bare 404. See [Public preview](#public-preview) below for the site-mounted page these actions
 feed.
@@ -1189,9 +1197,9 @@ present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'
 `'valid'` / `'unknown'`) alongside the presence-only `keyConfigured`, so a revoked key closes the
 `enabled` gate distinctly from a never-configured one; the probe result also feeds the same
 key-health cache `editLoad`'s Tidy control reads, so a confirmed-invalid key hides that control on
-the next edit load without a separate check. The same deadline that bounds a tidy call also bounds
-the probe, so a hung Anthropic connection resolves to `'unknown'` rather than stalling the load
-on the SDK's own multi-minute timeout. The key-health cache holds the probe's verdict for the
+the next edit load without a separate check. Because the same deadline that bounds a tidy call
+also bounds the probe, a hung Anthropic connection resolves to `'unknown'` rather than stalling the
+load on the SDK's own multi-minute timeout. The key-health cache holds the probe's verdict for the
 same ten-minute window as its mark, so a run of settings navigations spends at most one live
 round trip. `SettingsSaveFailure`, shown in the preceding signature, carries no export row of its
 own: a consumer reaches it as `Awaited<ReturnType<ContentRoutes['settingsSaveAction']>>['data']`.
@@ -1205,8 +1213,9 @@ branch unioned with every open `cairn/*` branch), and the in-use-but-unlisted ta
 `{}` and `unlisted` to `[]` while the committed `vocabulary` stays visible, since the strict gate lives
 on the save, not the load. `vocabularySaveAction` validates the posted vocabulary JSON, gates a delete on
 that strict cross-branch usage (an in-use value cannot be removed, failing closed), then
-read-modify-commits the `vocabulary` key into the same committed `src/lib/site.config.yaml` the tidy
-settings write, head-guarded and bouncing a stale-head conflict back to the screen.
+read-modify-commits the `vocabulary` key into the committed site-config YAML that the tidy settings
+write, at the path `editor.nav.configPath` names or at `src/lib/site.config.yaml` when the adapter
+declares no nav menu. The commit is head-guarded, and a stale-head conflict bounces back to the screen.
 `VocabularySaveFailure`, shown in the preceding signature, carries no export row of its own: a
 consumer reaches it as `Awaited<ReturnType<ContentRoutes['vocabularySaveAction']>>['data']`.
 
@@ -1281,7 +1290,7 @@ drives with `fetch` rather than a form submit, and the transport has two SvelteK
 govern any fetch-style admin action or a client that calls one of these. A SvelteKit form action rejects any POST whose content type is not
 form-encoded with a 415 before the action body runs, so the upload client posts `text/plain`, the one
 form content type that carries raw bytes. CSRF rides an `X-Cairn-CSRF` header that the admin guard
-clears before its body-cloning form-field check, since reading the body twice would consume the stream.
+clears before its body-cloning form-field check. Reading the body twice would consume the stream.
 A form action's result is always a 200 JSON envelope (`{ type, status, data }`), so a `fail(413)` from
 the action is not an HTTP 413: the client reads the envelope and branches on `data`, not on the
 response status. Build a new fetch-style admin action against this contract from the start. The upload
@@ -1441,8 +1450,8 @@ so `mintPreview` carries the authorization itself and runs it first: the signed-
 `runtime.access`, the entry-id shape rule, and only then the pending-draft check. A session
 without editor capability, or one the site's access map denies the concept, gets a 403 before the
 mint looks for the draft, so a refusal never reports whether an entry exists. Call it where the
-admin guard has already run: `event.locals.cairnEditor` is the only editor source, and the stored
-row carries the address it names, which is what lets removing an editor revoke every link they
+admin guard has already run: `event.locals.cairnEditor` is the only editor source. The stored
+row carries the address it names, and that address lets removing an editor revoke every link they
 minted.
 
 The `target` is the argument's, never the route's, so the call works from any route. A refusal
@@ -1853,7 +1862,7 @@ accessible noun for the count ("pending requests"), joined into the entry's acce
 ```ts
 // src/theme/cairn.config.ts
 import { defineAdapter } from '@glw907/cairn-cms';
-import { db } from './club/db.js';
+import { db } from './team/db.js';
 
 export const cairn = defineAdapter({
   // ...content, backend, email, rendering...
@@ -1861,7 +1870,7 @@ export const cairn = defineAdapter({
 
 export async function attention({ editor }) {
   const pending = await db.assetRequests.countPendingFor(editor.role);
-  return [{ href: '/admin/club/assets', count: pending, label: 'pending requests' }];
+  return [{ href: '/admin/team/assets', count: pending, label: 'pending requests' }];
 }
 ```
 
@@ -1929,7 +1938,7 @@ export const cairn = defineAdapter({
   // ...content, backend, email, rendering...
   editor: {
     publishActions: [
-      { label: 'Announce', href: '/admin/club/announce?post={id}', concepts: ['posts'] },
+      { label: 'Announce', href: '/admin/team/announce?post={id}', concepts: ['posts'] },
     ],
   },
 });

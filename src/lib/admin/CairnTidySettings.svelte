@@ -30,10 +30,10 @@ home), diffable and shared across editors.
 The header band is `PageHeader`, its `meta`
 line carrying the lede this screen already stated; Save stays in the form's own foot, the screen's
 form-semantic primary action. The section-count pills (Fixes' On/Off, Style conventions' on-count)
-re-express on `StatusChip` at a neutral tone (ruling 9 of the pass's adoption map: a Tidy pill never
+re-express on `StatusChip` at a neutral tone (a Tidy pill never
 reaches past neutral/warning), each still wrapped in its own `role="status" aria-live="polite"`
 region so the announcement contract is unchanged. The On/Off check-and-tint toggle itself stays
-bespoke (ruling 7): a single-use control, not a repeated device.
+bespoke: a single-use control, not a repeated device.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';

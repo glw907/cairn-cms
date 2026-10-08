@@ -45,7 +45,7 @@ const (
 // passing row carries a condition id, because a check that passed declared no condition.
 func healthy() Report {
 	return Report{
-		Site: "ecxc.ski", Now: now, Elapsed: 2900 * time.Millisecond, Age: 4 * time.Minute,
+		Site: "my-site.example.org", Now: now, Elapsed: 2900 * time.Millisecond, Age: 4 * time.Minute,
 		Engine: "0.78.0", Adopted: now.AddDate(0, -7, 0),
 		Checks: []Check{
 			{ID: "creds", State: Pass, Detail: "Cloudflare and GitHub tokens read from the keyring"},
@@ -66,7 +66,7 @@ func healthy() Report {
 // appears on the whole screen, on the one row whose shipped check declares one.
 func sick() Report {
 	return Report{
-		Site: "907.life", Now: now, Elapsed: 3200 * time.Millisecond, Age: 4 * time.Minute,
+		Site: "blog.example.org", Now: now, Elapsed: 3200 * time.Millisecond, Age: 4 * time.Minute,
 		Engine: "0.71.0", Adopted: now.AddDate(0, -7, 0),
 		Checks: []Check{
 			{ID: "creds", State: Fail,
@@ -100,7 +100,7 @@ func sick() Report {
 // shipped check declares config.observability-off on exactly that skip and gives it a fix.
 func drifting() Report {
 	r := healthy()
-	r.Site = "xcathletes.org"
+	r.Site = "events.example.org"
 	r.Engine = "0.76.0"
 	r.Age = 12 * time.Minute
 	r.Elapsed = 2400 * time.Millisecond
@@ -154,7 +154,7 @@ func fleet() []Report {
 	return []Report{
 		healthy(),
 		sick(),
-		site("aksailingclub.org", "0.78.0", 12*time.Minute, map[string]Check{
+		site("shop.example.org", "0.78.0", 12*time.Minute, map[string]Check{
 			"email": {State: Fail, Condition: "email.sender-not-onboarded",
 				Detail: "the sending subdomain is not onboarded",
 				Remedy: fixEmail,
@@ -166,7 +166,7 @@ func fleet() []Report {
 		}),
 		drifting(),
 		site("cairn.pub", "0.78.0", 31*time.Hour, nil),
-		site("topo.907.life", "0.78.0", 9*24*time.Hour, map[string]Check{
+		site("docs.example.org", "0.78.0", 9*24*time.Hour, map[string]Check{
 			"serving": {State: Fail,
 				Detail: "connection refused at the origin",
 				Remedy: fixRoute,
@@ -184,7 +184,7 @@ func fleet() []Report {
 // twelve is scenario 7: the sites grown past one screen, with the unreachable one still first.
 func twelve() []Report {
 	extra := []Report{
-		site("nordicskiclub.org", "0.78.0", 6*time.Minute, nil),
+		site("news.example.org", "0.78.0", 6*time.Minute, nil),
 		site("alpinehut.example", "0.77.0", 8*time.Minute, map[string]Check{
 			"engine": {State: Fail,
 				Detail: "0.77.0 installed, 0.78.0 latest, 1 release behind",
@@ -219,7 +219,7 @@ func hostile() Report {
 	for i := range r.Checks {
 		switch r.Checks[i].ID {
 		case "deploy":
-			r.Checks[i].Detail = "build failed\nCRITICAL 907.life  0 failing · 9 passing" +
+			r.Checks[i].Detail = "build failed\nCRITICAL blog.example.org  0 failing · 9 passing" +
 				"\x1b[2J\x1b[H\x1b[42;30m OK: everything is fine \x1b[0m\rall clear\tnow"
 			r.Checks[i].Remedy = strings.TrimSpace(strings.Repeat("Read the build log and push a fix. ", 9))
 		case "errors":
@@ -239,17 +239,17 @@ func hostile() Report {
 func logs() []Entry {
 	base := now.Add(-18 * time.Minute)
 	return []Entry{
-		{base, "info", "signin.link-sent", []Field{{"editor", "kari@ecxc.ski"}, {"ttl", "15m"}}},
-		{base.Add(42 * time.Second), "info", "signin.consumed", []Field{{"editor", "kari@ecxc.ski"}}},
-		{base.Add(3 * time.Minute), "info", "entry.saved", []Field{{"editor", "kari@ecxc.ski"},
+		{base, "info", "signin.link-sent", []Field{{"editor", "kari@example.org"}, {"ttl", "15m"}}},
+		{base.Add(42 * time.Second), "info", "signin.consumed", []Field{{"editor", "kari@example.org"}}},
+		{base.Add(3 * time.Minute), "info", "entry.saved", []Field{{"editor", "kari@example.org"},
 			{"branch", "cairn/post/spring-relay"}, {"sha", "5b1c9ae"}}},
-		{base.Add(6 * time.Minute), "warn", "publish.conflict", []Field{{"editor", "kari@ecxc.ski"},
+		{base.Add(6 * time.Minute), "warn", "publish.conflict", []Field{{"editor", "kari@example.org"},
 			{"branch", "cairn/post/spring-relay"}, {"reason", "stale-edit"}}},
-		{base.Add(7 * time.Minute), "error", "publish.commit-failed", []Field{{"editor", "kari@ecxc.ski"},
+		{base.Add(7 * time.Minute), "error", "publish.commit-failed", []Field{{"editor", "kari@example.org"},
 			{"status", "422"}, {"reason", "the branch is behind main by 2 commits"}}},
-		{base.Add(11 * time.Minute), "info", "entry.saved", []Field{{"editor", "dana@ecxc.ski"},
+		{base.Add(11 * time.Minute), "info", "entry.saved", []Field{{"editor", "dana@example.org"},
 			{"branch", "cairn/page/about"}, {"sha", "c02e17f"}}},
-		{base.Add(14 * time.Minute), "info", "publish.committed", []Field{{"editor", "dana@ecxc.ski"},
+		{base.Add(14 * time.Minute), "info", "publish.committed", []Field{{"editor", "dana@example.org"},
 			{"sha", "c02e17f"}, {"target", "main"}}},
 	}
 }

@@ -129,7 +129,7 @@ children and the fallback group included, alongside its own view-site and theme-
 
 At desktop widths the sidebar is persistent and scroll-independent (`position: fixed`, so it never
 drifts with the page scroll), and it stays open across navigation. That includes navigation to a
-site's own deep custom-nav routes like `/admin/club/events`. On an engine document-editor route (a desk route),
+site's own deep custom-nav routes like `/admin/team/events`. On an engine document-editor route (a desk route),
 the sidebar persists again at `xl` (1280px and up), recedes to the toggle-controlled overlay through
 the `lg`-`xl` tablet band (1024-1279px), where the editing surface takes priority on a narrower
 screen, and keeps the overlay drawer below `lg` like every other route. On small viewports it's
@@ -653,8 +653,8 @@ Worker while off. `spellcheckDictionary` names the dialect-resolved dictionary f
 Worker's init. `siteDictionary` seeds the Worker's personal layer with the committed
 personal-dictionary words at init, so a word another editor committed answers correct from the
 first lint. All are plain reactive props, so the host owns any toggle persistence (`EditPage`
-persists the writing-mode toggles per browser). CodeMirror loads only in the browser, so this
-component is client-only.
+persists the writing-mode toggles per browser). This component is client-only because CodeMirror
+loads only in the browser.
 
 The component renders no toolbar and no card chrome of its own; the host frames it. `EditPage`
 composes it inside the editor card with the engine's toolbar. A site mounting `MarkdownEditor`

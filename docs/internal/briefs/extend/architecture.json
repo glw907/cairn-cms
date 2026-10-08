@@ -1,0 +1,888 @@
+{
+  "page": "docs/extend/architecture.md",
+  "sentences": [
+    {
+      "text": "cairn is an embedded content management system for SvelteKit sites on Cloudflare.",
+      "id": "f:4zpvor"
+    },
+    {
+      "text": "The engine ships as the npm package `@glw907/cairn-cms`, and a site's admin and public pages are route files in its SvelteKit app whose load functions and form actions come from the engine's route factories.",
+      "id": "f:j0ut9n"
+    },
+    {
+      "text": "The app builds into one Cloudflare Worker, so the engine runs inside the site's Worker, and a cairn site needs no separate server for content management.",
+      "id": "f:j0ut9n"
+    },
+    {
+      "text": "Content is markdown in the site's git repository, and an editor's publish is a commit through the site's GitHub App that triggers the site's existing deploy.",
+      "id": [
+        "f:djoxr9",
+        "f:cjonmm"
+      ]
+    },
+    {
+      "text": "A D1 database holds the sign-in rows the guard checks on each admin request, and an R2 bucket holds the bytes of uploaded media.",
+      "id": "f:pgy0mr"
+    },
+    {
+      "text": "The engine manages a site's markdown content and its admin frame, and everything else the site needs belongs to the developer.",
+      "id": [
+        "f:99f221",
+        "f:bhyvqg"
+      ]
+    },
+    {
+      "text": "The boundary between engine and developer decides which code a site writes and which engine contracts it relies on across releases.",
+      "id": "f:bhyvqg"
+    },
+    {
+      "text": "A developer reaches the engine through a short list of seams, which form a narrow, versioned public surface across the engine's export subpaths.",
+      "id": [
+        "f:bhyvqg",
+        "f:gknz29"
+      ]
+    },
+    {
+      "text": "The usual route to a cairn site is the setup command, `create-cairn-site`, which creates the GitHub App, the repository, and the Cloudflare bindings and deploys the site in one run.",
+      "id": "f:kldwss"
+    },
+    {
+      "text": "A developer who takes over a site built that way finds the engine already wired into its files, and needs to know which of those files rest on an engine contract before changing them.",
+      "id": "f:3rb362"
+    },
+    {
+      "text": "[Scaffolded site files](scaffolded-site-files.md) maps each file the command writes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A developer weighing cairn against other content systems needs to know instead what the boundary commits a site to, from the platforms the engine builds on to the promise each export carries across versions.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The engine's architecture includes the following:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The export subpaths a site imports",
+      "id": "no-claim"
+    },
+    {
+      "text": "The seams a site extends through",
+      "id": "no-claim"
+    },
+    {
+      "text": "The path an edit takes from a save to the deploy, and how the admin reads content back",
+      "id": "no-claim"
+    },
+    {
+      "text": "The stores that hold each kind of state",
+      "id": "no-claim"
+    },
+    {
+      "text": "The dependencies the engine never abstracts, and the contract the swappable content store keeps",
+      "id": "no-claim"
+    },
+    {
+      "text": "The promise each export carries across versions",
+      "id": "no-claim"
+    },
+    {
+      "text": "Working with the seams takes knowledge of SvelteKit routing, load functions, and form actions, and of Cloudflare Worker bindings, because the engine builds on both platforms and abstracts neither.",
+      "id": "f:djoxr9"
+    },
+    {
+      "text": "Separate pages cover the following related subjects:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The security properties of each piece, in [Security model](security-model.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "Each adapter field, in [Define an adapter and schema](define-an-adapter-and-schema.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "Concepts and fieldsets in depth, in [Content model](content-model.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "Each export's signature, in the [export reference](../reference/README.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "The upgrade procedure, in [Upgrade cairn](upgrade-cairn.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "A cairn site declares one adapter, a single `CairnAdapter` object, and every route factory, admin screen, and delivery helper reads its behavior from that object.",
+      "id": "f:4esdoz"
+    },
+    {
+      "text": "The engine hard-codes no concept, directory, or field.",
+      "id": "f:4esdoz"
+    },
+    {
+      "text": "A site touches the engine in three places, which between them import four subpaths.",
+      "id": "f:3rb362"
+    },
+    {
+      "text": "The following list names each place and what it imports.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The adapter module imports `defineAdapter` from the root barrel, and `composeRuntime` folds that adapter into the runtime that `createCairnAdmin` from `/sveltekit` closes over.",
+      "id": "f:3rb362"
+    },
+    {
+      "text": "The admin mount renders `CairnAdmin` and `CairnAdminShell` from `/admin` over that factory's `load`, `shellLoad`, and `actions`.",
+      "id": "f:3rb362"
+    },
+    {
+      "text": "The public routes call `createPublicRoutes` and the feed, sitemap, and robots responders from `/delivery`.",
+      "id": "f:3rb362"
+    },
+    {
+      "text": "Behind those calls, the `/sveltekit` layer reads and writes the content repository through the `Backend`, renders through the render pipeline, and reads and writes the media store and the auth store.",
+      "id": "f:40pxcq"
+    },
+    {
+      "text": "The admin's Svelte components sit on `/admin` and receive the data that layer loads as props.",
+      "id": "f:40pxcq"
+    },
+    {
+      "text": "The directive stamping and dispatch inside the render pipeline, the commit tree shape sent to the GitHub API, and the guard's CSRF and session resolution are engine-internal.",
+      "id": "f:n3cvf9"
+    },
+    {
+      "text": "Each sits behind a stability-tiered subpath, `/render`, `/sveltekit`, or `/auth-crypto`, and none of them is a seam a site reaches into.",
+      "id": "f:n3cvf9"
+    },
+    {
+      "text": "The full export map holds more subpaths than the four a site imports.",
+      "id": [
+        "f:3rb362",
+        "f:a7qx4m"
+      ]
+    },
+    {
+      "text": "Placement rules govern what the root barrel, `/sveltekit`, `/admin`, and `/public` contain.",
+      "id": "f:0duu5p"
+    },
+    {
+      "text": "Most of the export map falls into six functional groups.",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "The following table names the subpaths in each group.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Group",
+      "id": "no-claim"
+    },
+    {
+      "text": "Subpaths",
+      "id": "no-claim"
+    },
+    {
+      "text": "Core and adapter",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "The root barrel",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "SvelteKit layer",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "`/sveltekit`",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "UI",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "`/admin`, `/public`, `/admin-toolkit`, and `/islands`",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "Rendering",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "`/render`",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "Delivery",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "`/delivery` and `/media`",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "Auth and platform",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "`/auth-store`, `/auth-channel`, `/auth-crypto`, `/cloudflare`, `/vite`, and `/ambient`",
+      "id": "f:a7qx4m"
+    },
+    {
+      "text": "In the UI group, `/islands` is the separate client runtime that mounts a site's live components.",
+      "id": "f:bmxw7w"
+    },
+    {
+      "text": "The map also carries `/delivery/head`, `/delivery/data`, `/reproductions`, `/reproductions/manifest`, and `/log` outside the six groups, along with the style sheets `/admin-sources.css` and `/cairn-public.css`.",
+      "id": "f:533flu"
+    },
+    {
+      "text": "The [reference index](../reference/README.md) documents every subpath.",
+      "id": "f:533flu"
+    },
+    {
+      "text": "The map follows three placement rules.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Nothing on the root barrel imports SvelteKit.",
+      "id": "f:0duu5p"
+    },
+    {
+      "text": "Nothing on `/sveltekit` is a `.svelte` file.",
+      "id": "f:0duu5p"
+    },
+    {
+      "text": "Admin Svelte components live on `/admin`, built-in public components live on `/public`, and no `/components` subpath exists.",
+      "id": [
+        "f:bmxw7w",
+        "f:0duu5p"
+      ]
+    },
+    {
+      "text": "The root barrel carries no server route, no Svelte component, and no per-request framework binding, so a build script can import it outside any request, as the [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin does inside the app's Vite graph.",
+      "id": "f:5uhx5o"
+    },
+    {
+      "text": "A `/sveltekit` export bundled with plain esbuild outside Vite, such as `createD1AuditSink` in a Cron Worker, needs no alias for `$app/env`, because [`loadPreview`](../reference/sveltekit.md#loadpreview) on the same subpath imports that module dynamically at call time.",
+      "id": "f:ppqu4v"
+    },
+    {
+      "text": "Beside the map's placement rules, a short list of seams fixes where a site hands the engine code or data.",
+      "id": "f:i87sd3"
+    },
+    {
+      "text": "A site adds a concept, a role, or an admin screen through a seam, and none of the three forks the engine.",
+      "id": "f:6a32oy"
+    },
+    {
+      "text": "A seam is a documented point where a site supplies code or data the engine reads.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The following table names each seam, what a site supplies through it, and the page that documents it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Seam",
+      "id": "no-claim"
+    },
+    {
+      "text": "What the site supplies",
+      "id": "no-claim"
+    },
+    {
+      "text": "Documented in",
+      "id": "no-claim"
+    },
+    {
+      "text": "The `content` map",
+      "id": "f:i87sd3"
+    },
+    {
+      "text": "A `ConceptConfig` with a `fieldset` for each concept",
+      "id": "f:i87sd3"
+    },
+    {
+      "text": "[Content model](content-model.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "`render`",
+      "id": "f:i87sd3"
+    },
+    {
+      "text": "A renderer built with `createRenderer`",
+      "id": "f:i87sd3"
+    },
+    {
+      "text": "[Configure rendering](configure-rendering.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "Roles and the access map",
+      "id": "f:i87sd3"
+    },
+    {
+      "text": "A role vocabulary that maps each site-defined role to one capability, `none`, `editor`, or `owner`, and an access map that only narrows a capability",
+      "id": [
+        "f:3pposq",
+        "f:p1xmp5"
+      ]
+    },
+    {
+      "text": "[Restrict admin access](restrict-admin-access.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "The `identity` option on `createAuthGuard`",
+      "id": "f:fhit7f"
+    },
+    {
+      "text": "A proven email from an external identity gate, which replaces the built-in sign-in path and which the guard still looks up in the roster",
+      "id": "f:fhit7f"
+    },
+    {
+      "text": "[Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "Custom admin routes",
+      "id": "f:6a32oy"
+    },
+    {
+      "text": "A route file under `src/routes/admin/`, resolved ahead of the `[...path]` catch-all and rendered inside the `CairnAdminShell` chrome with no registration",
+      "id": [
+        "f:03zj56",
+        "f:brfitv",
+        "f:6a32oy"
+      ]
+    },
+    {
+      "text": "[Add a custom admin screen](add-a-custom-admin-screen.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "`navLayout`",
+      "id": "f:i87sd3"
+    },
+    {
+      "text": "A site entry under `editor.navLayout` that lists a custom admin screen in the sidebar",
+      "id": [
+        "f:i87sd3",
+        "f:6a32oy"
+      ]
+    },
+    {
+      "text": "[Arrange the admin sidebar](arrange-the-admin-sidebar.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "The `media` member",
+      "id": "f:i87sd3"
+    },
+    {
+      "text": "An `AssetConfig` for the media store",
+      "id": "f:i87sd3"
+    },
+    {
+      "text": "[Configure media](configure-media.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "`BackendProvider`",
+      "id": "f:n1om0r"
+    },
+    {
+      "text": "A content backend other than GitHub",
+      "id": "f:n1om0r"
+    },
+    {
+      "text": "[The core reference's types table](../reference/core.md#types)",
+      "id": "no-claim"
+    },
+    {
+      "text": "An edit reaches the live site through a save onto a holding branch, a publish that copies the branch onto the default branch, and the deploy that the publish commit triggers.",
+      "id": [
+        "f:cjonmm",
+        "f:qehbx3"
+      ]
+    },
+    {
+      "text": "The path crosses three data tiers.",
+      "id": "f:pgy0mr"
+    },
+    {
+      "text": "Git holds the edit and the two manifests, committed JSON indexes in which the content manifest carries a metadata row for each entry and the media manifest describes each uploaded file.",
+      "id": [
+        "f:pgy0mr",
+        "f:lu67dk",
+        "f:6ign7q"
+      ]
+    },
+    {
+      "text": "D1 holds the session the guard checks on each admin request, and R2 holds the media bytes.",
+      "id": "f:pgy0mr"
+    },
+    {
+      "text": "A publish commit upserts the entry's manifest row together with the entry file.",
+      "id": "f:e69d0l"
+    },
+    {
+      "text": "[Data tiers](#data-tiers) states what each store holds.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A save commits the edit to a per-entry branch named `cairn/<concept>/<id>` through the site's GitHub App installation token, with the signed-in editor as author.",
+      "id": "f:cjonmm"
+    },
+    {
+      "text": "The engine sets no committer, so GitHub records the App's bot identity as the committer.",
+      "id": "f:cjonmm"
+    },
+    {
+      "text": "Each later save commits onto the same branch, so an editor iterates across saves while the entry stays off the live site.",
+      "id": "f:5kerxw"
+    },
+    {
+      "text": "A save commits no manifest change.",
+      "id": "f:e69d0l"
+    },
+    {
+      "text": "An entry is pending when its holding branch exists, and no other state marks it.",
+      "id": "f:5kerxw"
+    },
+    {
+      "text": "The concept list finds pending entries by listing the branches under `cairn/<concept>/`.",
+      "id": "f:5kerxw"
+    },
+    {
+      "text": "The branch holds the edit until a deliberate publish copies it to the default branch.",
+      "id": "f:qehbx3"
+    },
+    {
+      "text": "A publish copies the holding branch's content onto the default branch in one commit with the editor as author, and the entry's row in the content manifest lands in the same commit.",
+      "id": [
+        "f:qehbx3",
+        "f:e69d0l"
+      ]
+    },
+    {
+      "text": "As on a save, the App's bot identity is the committer.",
+      "id": [
+        "f:w379wu",
+        "f:cjonmm"
+      ]
+    },
+    {
+      "text": "Publish-all commits every pending entry the editor can reach, plus the content manifest, as one commit to the default branch, so one deploy fires.",
+      "id": "f:0oyrh6"
+    },
+    {
+      "text": "A delete or a rename carries its manifest change in the same default-branch commit as its file change, so the content manifest changes only in a default-branch commit that changes an entry.",
+      "id": "f:e69d0l"
+    },
+    {
+      "text": "After a publish lands, the engine deletes the entry's holding branch only when the branch head still equals the SHA the publish captured, so a save that lands during the publish keeps the entry pending.",
+      "id": "f:0xxou5"
+    },
+    {
+      "text": "A save or a publish can land on a head that another commit moved after the admin read it.",
+      "id": "f:0gihxq"
+    },
+    {
+      "text": "The save and publish commits handle a moved head with a head-merge retry, and each of the admin's other commits takes either that retry or a head guard that fails on the first stale head.",
+      "id": "f:0gihxq"
+    },
+    {
+      "text": "The following list names the commits under each rule.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The head-merge retry covers entry save, single publish, publish-all, entry delete and rename, and the media delete and metadata commits.",
+      "id": "f:0gihxq"
+    },
+    {
+      "text": "The head guard covers the nav, tidy-settings, vocabulary, media upload manifest, and revert commits.",
+      "id": "f:0gihxq"
+    },
+    {
+      "text": "The retry makes three further attempts against the moved head before it reports a conflict.",
+      "id": "f:0gihxq"
+    },
+    {
+      "text": "The publish commit that lands under the retry is the one the deploy builds.",
+      "id": [
+        "f:0gihxq",
+        "f:cjonmm"
+      ]
+    },
+    {
+      "text": "The publish commit triggers the site's existing deploy, and the build rebuilds the content manifest from the markdown on disk and compares it against the committed manifest.",
+      "id": [
+        "f:cjonmm",
+        "f:e69d0l",
+        "f:n0laoh"
+      ]
+    },
+    {
+      "text": "The [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin runs both steps in `buildStart`, and a committed manifest that has drifted from the markdown fails the build.",
+      "id": [
+        "f:e69d0l",
+        "f:n0laoh"
+      ]
+    },
+    {
+      "text": "The admin reads content back from both the holding branches and the default branch, the two places the path writes it.",
+      "id": "f:cng7dr"
+    },
+    {
+      "text": "The admin reads one entry from a concurrent batch of reads through the `Backend` and reads the whole corpus from the committed content manifest.",
+      "id": "f:cng7dr"
+    },
+    {
+      "text": "An entry's edit and history loads batch the file itself, its holding branch head, the committed manifest, and the media manifest.",
+      "id": "f:cng7dr"
+    },
+    {
+      "text": "The concept list's published entries, inbound links, reference and media usage, and the link check on save all read the manifest on the default branch instead of crawling the entry files.",
+      "id": "f:cng7dr"
+    },
+    {
+      "text": "That manifest is one kind of state the engine keeps in git, and git is one of three data tiers the engine chooses by what reads the state.",
+      "id": "f:pgy0mr"
+    },
+    {
+      "text": "The engine keeps state in three tiers, git, D1, and R2, and places each kind of state by what reads it.",
+      "id": "f:pgy0mr"
+    },
+    {
+      "text": "The following table lists what each tier holds.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Tier",
+      "id": "no-claim"
+    },
+    {
+      "text": "Holds",
+      "id": "no-claim"
+    },
+    {
+      "text": "Git",
+      "id": "f:b6gquz"
+    },
+    {
+      "text": "Content entries, the content manifest, and the media manifest",
+      "id": "f:b6gquz"
+    },
+    {
+      "text": "D1",
+      "id": "f:b6gquz"
+    },
+    {
+      "text": "The `editor`, `magic_token`, and `session` tables, plus the opt-in `audit_log` and `preview_tokens` tables",
+      "id": "f:b6gquz"
+    },
+    {
+      "text": "R2",
+      "id": "f:b6gquz"
+    },
+    {
+      "text": "Uploaded media bytes, deduplicated by content hash",
+      "id": "f:b6gquz"
+    },
+    {
+      "text": "Both manifests live under `src/content/.cairn/`.",
+      "id": "f:lu67dk"
+    },
+    {
+      "text": "The build and the admin's corpus-wide reads use the content manifest.",
+      "id": [
+        "f:cng7dr",
+        "f:e69d0l"
+      ]
+    },
+    {
+      "text": "The media manifest keys each row by a 16-hex content-hash prefix, and an upload checks it as the dedup lookup before storing anything.",
+      "id": "f:4t707i"
+    },
+    {
+      "text": "A content manifest row carries an entry's title, permalink, summary, links, and edges and never its body, and no D1 table stores a body either, so an entry body lives only in git.",
+      "id": "f:6ign7q"
+    },
+    {
+      "text": "The default branch's history records who published each change and when, since every publish commit carries its editor as author, whether or not the site wires the opt-in `audit_log` table.",
+      "id": [
+        "f:70mf58",
+        "f:w379wu",
+        "f:b6gquz"
+      ]
+    },
+    {
+      "text": "The guard looks up the `session` row by its session-cookie id on each admin request, and sign-in looks up a `magic_token` row by its SHA-256 hash.",
+      "id": "f:pgy0mr"
+    },
+    {
+      "text": "Only a site that wires `createD1AuditSink` writes `audit_log`, one row per audited admin action.",
+      "id": "f:wnvqlz"
+    },
+    {
+      "text": "Only a site that mints preview links writes `preview_tokens`, one hashed token per link, each row naming the draft it shares.",
+      "id": "f:dtwvtz"
+    },
+    {
+      "text": "[Security model](security-model.md) covers the security properties of these rows.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The [auth store reference](../reference/auth-store.md) documents the D1 editor-provisioning functions.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Because neither a git repository nor a D1 row suits binary assets at megabyte scale, R2 holds the media bytes.",
+      "id": "f:lu67dk"
+    },
+    {
+      "text": "The delivery route streams those bytes from R2.",
+      "id": "f:pgy0mr"
+    },
+    {
+      "text": "[Configure media](configure-media.md) covers the media store's settings.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A site places its extension data, such as a member roster or an event schedule, where it chooses, provided its cookie and table names avoid the reserved `cairn_` prefix.",
+      "id": "f:qrwncf"
+    },
+    {
+      "text": "The content store in git is the only tier a site can replace.",
+      "id": "f:hk24xs"
+    },
+    {
+      "text": "The engine depends on SvelteKit and Cloudflare and carries no framework- or host-agnostic layer.",
+      "id": "f:djoxr9"
+    },
+    {
+      "text": "The engine declares `svelte` and `@sveltejs/kit` as peer dependencies, and the [supported toolchain](../reference/supported-toolchain.md) reference records their ranges.",
+      "id": "f:xg1per"
+    },
+    {
+      "text": "The environment contract is Cloudflare Worker bindings, such as the `AUTH_DB` D1 database and the Email Sending binding, so a production site built on cairn runs on Cloudflare Workers.",
+      "id": "f:i74t7g"
+    },
+    {
+      "text": "No seam replaces Cloudflare as the host, and the one swappable dependency is the content store, through `BackendProvider`, of which `createGithubApp` is the only implementation the engine ships.",
+      "id": [
+        "f:hk24xs",
+        "f:n1om0r"
+      ]
+    },
+    {
+      "text": "A replacement content store keeps the contract the `Backend` interface fixes.",
+      "id": [
+        "f:gcd8h7",
+        "f:025q6u"
+      ]
+    },
+    {
+      "text": "A `BackendProvider` connects to a live `Backend` for a route that needs one, and the `Backend` interface fixes the semantics any provider keeps.",
+      "id": [
+        "f:gcd8h7",
+        "f:025q6u"
+      ]
+    },
+    {
+      "text": "A provider carries a `kind` tag and the default `branch` and connects through `connect(env)`, and the provider that `createGithubApp` returns mints and caches the installation token lazily.",
+      "id": "f:gcd8h7"
+    },
+    {
+      "text": "The following list states each semantic the interface fixes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A `commit` with `expectedHead` makes one attempt and throws `CommitConflictError` on a head mismatch.",
+      "id": "f:025q6u"
+    },
+    {
+      "text": "A `commit` without `expectedHead` keeps the head-merge retry.",
+      "id": "f:025q6u"
+    },
+    {
+      "text": "`readFile` returns null for a missing path.",
+      "id": "f:025q6u"
+    },
+    {
+      "text": "`listCommits` returns an empty array for a missing file instead of throwing.",
+      "id": "f:025q6u"
+    },
+    {
+      "text": "`createBranch` returns the SHA it branched at and throws `BranchExistsError` on a name collision.",
+      "id": "f:025q6u"
+    },
+    {
+      "text": "`deleteBranch` treats a missing branch as success.",
+      "id": "f:025q6u"
+    },
+    {
+      "text": "The head-guarded commits, such as the nav, vocabulary, and revert commits, pass `expectedHead`, and the retried commits, a save and a publish among them, omit it.",
+      "id": [
+        "f:025q6u",
+        "f:0gihxq"
+      ]
+    },
+    {
+      "text": "The `Backend` and `BackendProvider` rows of the core reference's [types table](../reference/core.md#types) carry the signatures, and its [error classes](../reference/core.md#error-classes) entry documents both errors.",
+      "id": "f:gcd8h7"
+    },
+    {
+      "text": "The contract is one exported surface among many, and its stability tier decides what a provider written against it can expect across versions.",
+      "id": [
+        "f:c1ujrl",
+        "f:gcd8h7"
+      ]
+    },
+    {
+      "text": "Every export carries one of three stability tiers, and the tier states what the export promises across versions.",
+      "id": "f:c1ujrl"
+    },
+    {
+      "text": "Extension API and Scaffold API, the tier for the copied wiring a scaffolded site owns, become frozen contracts at 1.0, and Unstable API is importable today with no promise across minor versions.",
+      "id": [
+        "f:c1ujrl",
+        "f:549u00",
+        "f:u1y47n"
+      ]
+    },
+    {
+      "text": "The [reference index](../reference/README.md#stability-tiers) defines each tier, and each export's reference entry names its tier.",
+      "id": "f:c1ujrl"
+    },
+    {
+      "text": "Because the engine is still pre-1.0, an Extension-tier break can ship in a minor release, and until 1.0 the `check:surface` snapshot gate detects and discloses such a break instead of preventing it.",
+      "id": [
+        "f:549u00",
+        "f:gknz29"
+      ]
+    },
+    {
+      "text": "In `0.86.0`, the minor version that shipped `navLayout`, the nav fields on `AdminShellData` and the parameter and return types of `navFilter` changed shape, both inside the Extension API tier.",
+      "id": "f:zm9tp4"
+    },
+    {
+      "text": "A site that read those fields or declared a `navFilter` had code to change before it could take the upgrade.",
+      "id": "f:zm9tp4"
+    },
+    {
+      "text": "The [migration notes for `0.86.0`](migration-notes.md#0860) list the edits that release asks of a site.",
+      "id": "f:zm9tp4"
+    },
+    {
+      "text": "A later minor version, `0.94.0`, renamed the `navLayout` types as well, and the [migration notes for `0.94.0`](migration-notes.md#0940) record that rename.",
+      "id": "f:zm9tp4"
+    },
+    {
+      "text": "Code a site writes against the Extension tier therefore meets each break as a named change, and [Upgrade cairn](upgrade-cairn.md) describes how a site applies each crossed release's named changes in order.",
+      "id": "f:gknz29"
+    },
+    {
+      "text": "The following guides cover building a site on these seams.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Define an adapter and schema](define-an-adapter-and-schema.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Add a custom admin screen](add-a-custom-admin-screen.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Upgrade cairn](upgrade-cairn.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "The following pages take one part of the architecture in more depth.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Scaffolded site files](scaffolded-site-files.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Content model](content-model.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Security model](security-model.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Migration notes](migration-notes.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "The following external pages document the platforms the engine builds on.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[SvelteKit routing](https://svelte.dev/docs/kit/routing)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[SvelteKit load functions](https://svelte.dev/docs/kit/load)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[SvelteKit form actions](https://svelte.dev/docs/kit/form-actions)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Cloudflare Workers bindings](https://developers.cloudflare.com/workers/runtime-apis/bindings/)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[GitHub Apps overview](https://docs.github.com/en/apps/overview)",
+      "id": "no-claim"
+    }
+  ],
+  "cuts": [
+    {
+      "id": "f:4b3rhm",
+      "reason": "Subordinated to docs/reference/auth-store.md, whose lede states that the subpath holds the D1 editor-provisioning functions (re-read at this revision and confirmed); the Data tiers D1 paragraph links the page with no code span"
+    },
+    {
+      "id": "f:5vjwlc",
+      "reason": "docs/extend/define-an-adapter-and-schema.md's subject, out of scope by the outline (the pilot's cut, kept)"
+    },
+    {
+      "id": "f:pzbmhq",
+      "reason": "A security property, docs/extend/security-model.md's subject (the pilot's cut, kept)"
+    },
+    {
+      "id": "f:xkkt1o",
+      "reason": "Out of scope by the outline; docs/extend/migration-notes.md holds the record (the pilot's cut, kept)"
+    },
+    {
+      "id": "f:2hnxsr",
+      "reason": "Media settings, docs/extend/configure-media.md's subject (the pilot's cut, kept)"
+    },
+    {
+      "id": "f:0435ck",
+      "reason": "Column-level detail below this page's placement claim (the pilot's cut, kept)"
+    }
+  ]
+}

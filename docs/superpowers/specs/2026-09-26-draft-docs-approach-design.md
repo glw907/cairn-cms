@@ -3,7 +3,7 @@
 **Date:** 2026-09-26. **Status:** amended 2026-09-29 (harvest, then delete; see the amendment section). Revision 2 folded four review lenses
 (`docs/superpowers/research/2026-09-26-draft-docs-approach-fold.md`); owner rulings R8 and R9
 (2026-09-26) settle its two open rulings; a second fold took the fold verification; a third took the
-prose review and owner ruling R10. **Replaces:** the reader-validation line of
+prose review and owner ruling R10. The 2026-09-30 errata application (owner ruling, Geoff) amends six passages in place per `docs/superpowers/research/2026-09-29-draft-docs-harvest-fold.md` ("Owed errata"). A second 2026-09-30 errata application (owner ruling, Geoff) amends six more passages in place per the docs-code sync spec's "Amends the parent" (`2026-09-30-docs-code-sync-design.md`) and the 2a plan fold's "Owed errata" (`docs/superpowers/research/2026-09-30-draft-docs-2a-plan-fold.md`): the Brief's "No new check is built" and "The budget goes to pages", the Budget's per-stage planning line and the extend page count, the stage flow's step 1, and, per the voice ruling of 2026-09-30, the Exemplars section. **Replaces:** the reader-validation line of
 `2026-09-23-docs-reset-design.md` (stopped 2026-09-25). **Input:**
 `docs/internal/record/2026-09-26-docs-approach-handoff.md`.
 
@@ -14,7 +14,10 @@ draft, a technical review, an editorial review, and one revision, run by agents 
 owner and subject-matter expert. Arms go easiest first (reference, extend, admin, editors, front
 door), and every stage merge leaves `main` releasable. Stages 0 and 1 share one pass, extend runs as
 two (2a and 2b), and each later arm takes one. Geoff reviews outlines and sample pages on an
-editable claude.ai Artifact page (R10). The budget goes to pages. No new check is built: four
+editable claude.ai Artifact page (R10). The budget goes to pages, less the non-page shares the docs-code sync spec adds (the
+planning-phase sweep, measured at 3.3M for extend; the sync mechanisms and friction route, about
+1.2M; the release sweep, 1M per capability cut). No new check is built beyond one: the option-coverage
+gate (`check:options`), which fails an engine option with no fact, exclusion, or pending row. Four
 existing checks each gain a small extension (a per-command flag list for `check:symbols`, a coverage
 rule for `check:provenance`, a shipped-anchor list for `check:readiness`, a zero-quote floor for
 `check:editor-quotes`), and one script runs the docs gate. The real-use test is the site round after
@@ -113,8 +116,10 @@ draft carried the old page's framing. The program changes order:
 4. **Draft.** Stages run as below against an empty arm, from the facts, the job, and the register's
    exemplars only.
 
-**Release.** cairn.pub stays pinned to `0.97.0`'s docs until the rebuilt arms ship; a release cut in
-between (theme pass C's `0.98.0`) publishes with the reference arm only, and its changelog says so.
+**Release.** cairn.pub stays pinned to `0.94.0-rc.1`'s docs until the rebuilt arms ship. `0.98.0`
+carries the old arms, since the harvest orders after the theme lineage. The pin ceiling is the last
+release cut before the deletion merges; a release cut after it publishes with the reference arm
+only, and its changelog says so.
 
 **Design.** The harvest pass's design, and the answers to the four questions this amendment left
 open (harvest proof, the per-version records, arm order, outline format), are in
@@ -152,14 +157,20 @@ escalation outside these prices. Short index pages (the READMEs) are estimated a
 whole. Every front-door page is drafted one section per dispatch (R9), so `why-cairn.md` and each
 index are priced at about twice their whole-page share. Each stage adds about 1M for planning,
 the outline, the consistency read, the owner fold (its R10 review pages included), and the close; stage 2 adds 2M, since 2a and 2b
-each carry a consistency read and a close.
+each carry a consistency read and a close. That 1M excludes the planning-phase sweep, which measured
+3.3M on extend: across stages 3 to 5 it adds up to about 7M against R8's 30M, scaled to each arm's
+surface, and the pilot checkpoint's combined question on the initiative ceiling carries it.
 
-**Pages.** Admin 8, editors 7, and extend 30, each excluding the arm README (stage 5 owns it) and
-excluding extend's two per-version records (`migration-notes.md`, `upgrade-cairn.md`), which stay
-maintained in place. The front door is `why-cairn.md` plus five indexes (`docs/README.md` and the
-four arm READMEs). The root `README.md` is out of scope. Reference is 29 pages, checked in place
-outside the chain; its README is stage 5's. Outlines may merge pages; the counts here do not
-assume it.
+**Pages.** Admin 8, editors 7, and extend 32 (30 plus the two pages the planning sweep added,
+`configure-media` and `run-cairn-audit-on-your-site`, which Geoff kept on 2026-09-30), each excluding the arm index (the harvest deleted the
+arm READMEs, and each rebuilding stage recreates its own) and excluding extend's two per-version
+records (`migration-notes.md`, `upgrade-cairn.md`), which stay maintained in place. The front door
+is `why-cairn.md` plus five indexes (`docs/README.md` and the four arm READMEs). The root
+`README.md` is out of scope. Reference is 29 pages, checked in place outside the chain; its README
+stays in place and is stage 5's. Outlines may merge pages; the counts here do not assume it. The two added extend pages cost about
+1.3M at the lean rate; the Stage 2 row below (its derivation and its Planned figure) is not restated,
+so "24 x 0.65M" is a pre-sweep figure, not an oversight; every share resets from the pilot's
+measured cost.
 
 | Stage | Scope | Derivation | Planned |
 | --- | --- | --- | --- |
@@ -179,7 +190,7 @@ plan at about 36M.
 The planned total must sit at or below 80 percent of the ceiling, about 24M under R8's 30M, so the
 global 80 percent stop fires only on an overrun. **The full scope does not fit 30M, even lean.**
 Within 24M, stages 0, 1, and 5, the stage 2 to 4 overheads, and the pilot take about 21M, which
-leaves about 3M: roughly four more arm pages at the lean rate, so about 10 of the 45 arm pages.
+leaves about 3M: roughly four more arm pages at the lean rate, so about 10 of the 47 arm pages.
 The pilot checkpoint (under "Checkpoints and stops") settles the gap with one combined question to
 Geoff. Every share resets from the pilot's measured cost and again at each checkpoint.
 
@@ -189,7 +200,8 @@ Stages 0 and 1 run as one pass. Stage 2 runs as two passes, 2a (the pilot and th
 half) and 2b, each mergeable with its own consistency read, link repair, and close. Stages 3, 4,
 and 5 each run as one pass. Every pass has its own worktree and merges to `main` before the next
 starts. Each later stage's plan is written after the previous checkpoint and carries that stage's
-outline, so plan approval is outline approval (R3), reviewed on the R10 page. The 2a plan carries
+outline, cited by its path and commit, so plan approval is outline approval (R3), reviewed on the
+R10 page. The 2a plan carries
 the whole extend outline; 2b carries no new outline, and extend's freeze lifts at the 2b merge.
 
 Approving this spec authorizes stages 0 and 1 and the stage 2a pilot. The rest of 2a, and every
@@ -198,10 +210,12 @@ later stage, waits on Geoff's answer to the pilot checkpoint question.
 **Every stage merge leaves `main` releasable.** Releases keep the triggers in `CLAUDE.md`
 (a consumer needs the change now, or a coherent capability lands), so a cut can fall between stage
 merges and ship some arms rebuilt and some not. A mixed register is a polish cost. Broken paths and
-anchors are correctness costs, and the merge gate and the outline's contract table (below) remove
-those. cairn.pub's pin bump stays cairn.pub's own pass. Each stage merge adds a `## Unreleased`
-entry listing renamed and removed doc paths, with a `Consumers must:` line when a shipped skill,
-`claude/` file, or scaffold template pointed at one.
+anchors are correctness costs, and the merge gate and `relink.json` (below) remove those.
+cairn.pub's pin bump stays cairn.pub's own pass. Each stage merge adds a `## Unreleased` entry
+listing renamed and removed doc paths, with a `Consumers must:` line when a shipped skill, `claude/`
+file, or scaffold template pointed at one. The harvest's `## Unreleased` entry names the removal
+once, with its `Consumers must:` line; later stage entries list only the paths they restore or
+change.
 
 ### Stage 0 acceptance
 
@@ -253,9 +267,10 @@ entry listing renamed and removed doc paths, with a `Consumers must:` line when 
   which leaves released binaries pointing at the old heading. So a committed, append-only list
   snapshots the `is-it-working` fragments released binaries print: each released tool tag's
   `conditions.json` anchors (today `tool/v1.1.0`) plus `check_referrer.go`'s one.
-  `check:readiness` also fails when a listed anchor stops resolving as a heading in
-  `docs/admin/is-it-working.md`. A fragment never reaches a server, so no redirect can repair a
-  renamed heading.
+  `check:readiness` checks the live anchors against `shipped-anchors.json` while the admin arm is
+  empty, and re-arms against `docs/admin/is-it-working.md` when the arm holds any page, failing
+  when a listed anchor stops resolving as a heading there. A fragment never reaches a server, so no
+  redirect can repair a renamed heading.
 - `check:editor-quotes` fails when the page it pins carries zero quotes.
 - **Docs gate.** One `package.json` script runs every CI check that reads the doc arms' content
   (`check:package`, which checks that the arm paths ship in the tarball, keeps its own step):
@@ -304,17 +319,22 @@ turns up a structural problem.
 
 ## Each rebuilt stage's flow
 
-1. **Outline**, in the stage's plan. A page list drawn fresh from the jobs the arm serves, one line
-   per page with its page type, the two exemplars assigned to that page type (named on each page's
-   line), and whether it keeps or gains a figure. It carries the arm's term list and planned
-   cross-links. Its **contract table** lists, for every rename or removal against today's pages:
-   the redirect row for cairn.pub, and every inbound reference a repo-wide grep finds for the old
-   path (other arms, `skills/`, `claude/`, the scaffold template, `conditions.ts`, and check scripts
-   that pin a page). It also lists every heading slug a shipped binary, `conditions.ts`, or a gate
-   names; those pages keep their paths and headings verbatim, and the chain passes them as
-   `pinned`. `is-it-working.md` keeps its path. Geoff reviews and edits the outline on that stage's
-   R10 page and approves it with the plan; the conductor reads back his saved version and applies
-   the diff to the plan before execution starts.
+1. **Sweep, then outline.** The stage opens with the planning-phase sweep (docs-code sync spec, "The
+   gap sweep in each stage's planning phase"): finders, independent verifiers, and one filer, sized
+   to the arm's surface, file verified gaps as facts and place each on an outline page. The
+   **outline** is at `docs/internal/outlines/<arm>.json`, reviewed as rendered cards with edits
+   folded back to the JSON; the stage's plan cites it by path and commit. A page list drawn fresh
+   from the jobs the arm serves, one line per page with its page type, the two exemplars assigned
+   to that page type (named on each page's line), and whether it keeps or gains a figure. It
+   carries the arm's term list and planned cross-links. It consumes the `relink.json` entries keyed
+   to its stage, which replace the per-stage contract table grepped against today's pages: for
+   every rename or removal, the redirect row for cairn.pub and every inbound reference for the old
+   path (other arms, `skills/`, `claude/`, the scaffold template, `conditions.ts`, and check
+   scripts that pin a page). The outline itself lists every heading slug a shipped binary,
+   `conditions.ts`, or a gate names; those pages keep their paths and headings verbatim, and the
+   chain passes them as `pinned`. `is-it-working.md` keeps its path. Geoff reviews and edits the
+   outline on that stage's R10 page and approves it with the plan; the conductor folds his saved
+   edits back into `docs/internal/outlines/<arm>.json`, and the plan cites the resulting commit.
 2. **Pilot (stage 2a only).** The first six pages through the chain are among the arm's hardest,
    chosen on purpose to measure the chain at its costliest (R5 still governs arm order). Both
    reviewers re-read after every redraft, and each page's record carries the cross-regression flag
@@ -339,9 +359,9 @@ turns up a structural problem.
    drafter prompt, or the runner.
 7. **Merge and checkpoint.** The arm branch passes the docs gate plus `make -C tool check`, merges,
    appends its rebuilt page paths to the brief-coverage list, and its freeze lifts (extend's at the
-   2b merge). Each stage keeps its own arm README's links and `docs/README.md`'s links into the arm
-   current as in-place fixes; stage 5 rebuilds their prose. The merge waits for Geoff's read and
-   its fold. The read is a wait, never a gate on the arm's quality bar.
+   2b merge). The arm READMEs and `docs/README.md` are deleted; each rebuilding stage recreates its
+   index. The merge waits for Geoff's read and its fold. The read is a wait, never a gate on the
+   arm's quality bar.
 
 ## The page chain
 
@@ -395,9 +415,10 @@ The 68-capture corpus stays (`docs/internal/record/docs-exemplars.md`), unreview
 slices map to arms: admin to Operators, editors to Editors, extend to Extenders plus Designers
 (and Core's architecture overview), the front door to Evaluators. The page type vocabulary is the
 manifest's section headings. Each outline assigns two exemplars per page type from different
-sources, since one example invites copying its structure, phrasing, and content. The drafter prompt
-names what to take (structure, register, detail per step) and what to leave (content, terms,
-product names). Known "no capture fits" cases, to fill only when an outline needs one: editors
+sources, since one example invites copying its structure, phrasing, and content. The drafter takes
+voice only from the register's drafting brief and its primary exemplar
+(`docs/extend/choose-an-ai-posture.md`), and takes structure and detail per step from the page's
+two exemplars. It leaves their voice, wording, content, terms, and product names. Known "no capture fits" cases, to fill only when an outline needs one: editors
 concept (both captures from one source), the evaluator support-and-versioning page (one capture),
 and extend troubleshooting (none). A weak exemplar is swapped at a checkpoint, never mid-arm.
 

@@ -38,7 +38,7 @@ describe('slugify', () => {
     expect(slugify('First Snow')).toBe('first-snow');
   });
   it('drops apostrophes without a spurious hyphen', () => {
-    expect(slugify("Geoff's Notes")).toBe('geoffs-notes');
+    expect(slugify("O'Brien's Notes")).toBe('obriens-notes');
   });
   it('collapses non-alphanumeric runs and trims edges', () => {
     expect(slugify('  Hello, World!  ')).toBe('hello-world');

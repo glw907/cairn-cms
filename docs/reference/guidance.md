@@ -6,6 +6,8 @@ that points a build agent at the boundary, the atoms, and the gates. A scaffolde
 with all three baked in; `cairn-guidance install` is how an existing site adopts them, and how any
 site refreshes after a version bump.
 
+The guidance is written for Claude Code and installs into its `.claude/` layout.
+
 ## How to run it
 
 ```bash
@@ -123,7 +125,7 @@ The package's `claude/` directory, added to `files` alongside `skills/`, carries
   its override seams. It defers to the official DaisyUI skill for component classes.
 - **`cairn-consult`** triggers when a developer has worked around the engine twice, or wants
   something the seams do not reach, and writes a consultation brief in the four-field format
-  (what the pass builds, the engine edge it presses, evidence for the any-site case, the site's
+  (what the site is building, the engine edge it presses, evidence for the any-site case, the site's
   fallback if declined) filed at the installed package's `bugs.url` when it is reachable, or
   handed to the developer to send by whatever channel they have when it is not.
 
@@ -141,16 +143,18 @@ under `src/chassis/` writes `../../.claude`, and a stylesheet at the project roo
 ## The trust boundary
 
 Shipping agent markdown adds no capability a compromised release does not already have: the
-package runs three other bins and a Vite plugin in the site's build. It adds a review class,
-because markdown is not typed, tested, or read by any gate. Two rules hold the line:
-`cairn-guidance` never writes `.claude/settings.json`, because a hook is what would give a
-compromised package unattended execution inside a developer's session without a deliberate edit;
-and the shipped agent carries no tool that can write or execute
-(`tools: Read, Grep, Glob`, no `Bash`, no model pin). Claude Code auto-discovers `.claude/skills/`
-and `.claude/agents/` once they exist, so the honest statement is that installing the package's
-guidance is the consent, and the one deliberate act that removes all of it is deleting
-`.claude/skills/cairn-*`, `.claude/agents/cairn-extension-reviewer.md`, and `.claude/cairn/`.
-Everything `install` writes is committed to the site's own repository, so it is diffable. A third
+package runs three other bins and a Vite plugin in the site's build. It does add a review class.
+Markdown is not typed, tested, or read by any gate. Two rules hold that boundary:
+
+- `cairn-guidance` never writes `.claude/settings.json`, because a hook is what would give a
+  compromised package unattended execution inside a developer's session without a deliberate edit.
+- The shipped agent carries no tool that can write or execute (`tools: Read, Grep, Glob`, no
+  `Bash`, no model pin).
+
+Because Claude Code auto-discovers `.claude/skills/` and `.claude/agents/` once they exist,
+installing the package's guidance is the consent. The one deliberate act that removes all of it is
+deleting `.claude/skills/cairn-*`, `.claude/agents/cairn-extension-reviewer.md`, and
+`.claude/cairn/`. Everything `install` writes is committed to the site's own repository, so it is diffable. A third
 rule holds the write side: `install` resolves every destination against the real `.claude`
 directory and refuses any path that reaches it through a symlink, so a link committed in the
 site's own repository cannot redirect the tree, or a `.orig` copy, onto a file elsewhere on the

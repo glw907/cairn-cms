@@ -58,7 +58,7 @@ export const cairn = defineAdapter({
   email: { from: 'cms@test.example' },
   backend: { kind: 'github-app', owner: 'acme', repo: 'site', branch: 'main' },
   media: { bucketBinding: 'MEDIA_BUCKET' },
-  roles: { owner: 'owner', instructor: { capability: 'editor', home: '/admin/schedule' } },
+  roles: { owner: 'owner', staff: { capability: 'editor', home: '/admin/staff' } },
   aiPosture: 'decline',
   content: {
     posts: { dir: 'src/content/posts', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }) },
@@ -164,7 +164,7 @@ describe('readAdapterFacts', () => {
     const dir = tempProject(ADAPTER_FULL);
     expect(await readAdapterFacts(dir)).toEqual({
       mediaBucketBinding: 'MEDIA_BUCKET',
-      roles: { owner: 'owner', instructor: { capability: 'editor', home: '/admin/schedule' } },
+      roles: { owner: 'owner', staff: { capability: 'editor', home: '/admin/staff' } },
       aiPosture: 'decline',
     });
   }, 30000);

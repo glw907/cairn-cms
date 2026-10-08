@@ -1,6 +1,6 @@
 # cairn showcase
 
-This is Waymark, cairn's starter template: a complete, working cairn site built in the DaisyUI and Tailwind idiom. The engine's own e2e and design suites run against this directory in CI.
+This is Waymark, cairn's starter template: a complete, working cairn site built in the DaisyUI and Tailwind idiom. The engine's e2e and design suites run against this directory in CI. [Add cairn to a SvelteKit app](../../docs/extend/add-cairn-to-a-sveltekit-app.md) builds the same engine wiring by hand in a bare SvelteKit app.
 
 The showcase depends on cairn through the relative `file:../..` path, so it always builds against the engine version in this checkout, not a published release.
 
@@ -20,7 +20,8 @@ Read it as the worked example. Once you have your own site, restyle or replace i
 
 ## Fixture convention
 
-This directory doubles as the source `create-cairn-site` scaffolds from. A few
+This directory doubles as the source `create-cairn-site` scaffolds from, per
+[`docs/extend/scaffolded-site-files.md`](../../docs/extend/scaffolded-site-files.md). A few
 files exist only to drive the engine's own tests and never belong in the tree the CLI produces.
 `.cairn-template.json`'s `exclude` list keeps them out of that tree. `src/routes/probe-craft` is
 the admin design lab, and `src/routes/(site)/+layout.server.ts` is a fixture load returning

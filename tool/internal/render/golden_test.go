@@ -250,14 +250,14 @@ func goldenLogEntries() []logs.Entry {
 	}
 	return []logs.Entry{
 		{At: at(28), Level: "info", Event: "entry.published", Fields: []logs.Field{
-			field("editor", "dana@ecxc.ski"), field("sha", "c02e17f")}},
+			field("editor", "dana@example.org"), field("sha", "c02e17f")}},
 		{At: at(21), Level: "error", Event: "commit.failed", Fields: []logs.Field{
-			field("editor", "kari@ecxc.ski"), field("status", "422"),
+			field("editor", "kari@example.org"), field("status", "422"),
 			field("reason", "the branch is behind main by 2 commits")}},
 		{At: at(20), Level: "warn", Event: "publish.failed", Fields: []logs.Field{
-			field("editor", "kari@ecxc.ski"), field("branch", "cairn/post/spring-relay")}},
+			field("editor", "kari@example.org"), field("branch", "cairn/post/spring-relay")}},
 		{At: at(14), Level: "info", Event: "auth.link.requested", Fields: []logs.Field{
-			field("editor", "kari@ecxc.ski"), field("ttl", "15m")}},
+			field("editor", "kari@example.org"), field("ttl", "15m")}},
 	}
 }
 
@@ -283,11 +283,11 @@ func goldenMixedLogEntries() []logs.Entry {
 	}
 	return []logs.Entry{
 		{At: at(42), Level: "error", Fields: message("\n\x1b[1;31m[404] GET /wordpress/\x1b[0m")},
-		{At: at(42), Level: "info", Fields: message("GET https://907.life/wordpress/?rest_route=%2Fwp%2Fv2%2Fusers")},
+		{At: at(42), Level: "info", Fields: message("GET https://blog.example.org/wordpress/?rest_route=%2Fwp%2Fv2%2Fusers")},
 		{At: at(20), Level: "warn", Event: "guard.rejected", Fields: []logs.Field{
 			{Key: "reason", Value: value("origin")}, {Key: "path", Value: value("/about")}}},
 		{At: at(6), Level: "error", Fields: message("\n\x1b[1;31m[404] POST /blog/\x1b[0m")},
-		{At: at(6), Level: "info", Fields: message("POST https://907.life/blog/?rest_route=%2Fbatch%2Fv1")},
+		{At: at(6), Level: "info", Fields: message("POST https://blog.example.org/blog/?rest_route=%2Fbatch%2Fv1")},
 	}
 }
 
@@ -358,7 +358,7 @@ func (c goldenCase) render() string {
 		ASCII:   c.ascii,
 		Reports: c.reports,
 		Entries: c.entries,
-		Site:    "ecxc.ski",
+		Site:    "my-site",
 		Status:  statusFor(c.fixture),
 		Verdict: verdictFor(c.reports),
 		Now:     fixtures.Now(),

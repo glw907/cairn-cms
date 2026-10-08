@@ -66,9 +66,9 @@ function refused(reason: string): IdentityRefusal {
 
 describe('guard identity branch: rostered', () => {
   it('sets locals.cairnEditor and locals.cairnAccess, capability resolved through the roles option', async () => {
-    await seedEditor('owner@x.dev', 'Roster Name', 'club-admin');
+    await seedEditor('owner@x.dev', 'Roster Name', 'webmaster');
     const guard = guardWith(async () => resolved('owner@x.dev'), {
-      roles: { owner: 'owner', 'club-admin': 'editor' },
+      roles: { owner: 'owner', 'webmaster': 'editor' },
     });
     const ev = event('/admin');
     const res = await guard({ event: ev, resolve: async () => OK });
@@ -76,7 +76,7 @@ describe('guard identity branch: rostered', () => {
     expect(ev.locals.cairnEditor).toEqual({
       email: 'owner@x.dev',
       displayName: 'Roster Name',
-      role: 'club-admin',
+      role: 'webmaster',
       capability: 'editor',
     });
     expect(ev.locals.cairnAccess).toEqual({});

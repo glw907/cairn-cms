@@ -5,6 +5,14 @@
 //   { "page": "docs/extend/choose-an-ai-posture.md",
 //     "sentences": [{ "text": "...", "id": "f:7k3q9x" }, { "text": "...", "id": "no-claim" }] }
 //
+// A sentence's `id` is a fact id, a non-empty array of fact ids (a sentence that synthesizes two
+// facts cites both), or "no-claim". A brief may also carry a top-level `cuts` array of
+// `{ "id": "f:...", "reason": "..." }`, mirroring the cut dispositions of the page's plan at
+// docs/internal/briefs/<track>/<page>.plan.md: a fact the plan leaves off the page, or
+// subordinates to a named reference link, is a cut whose reason says which. Each cut needs a fact id
+// and a non-empty reason; `cuts` is optional, and a cut id must resolve to a fact bullet in the
+// container, with any tag allowed, since a cut cites nothing.
+//
 // Run it over every brief with `node scripts/checks/check-provenance.mjs`, or over just the
 // briefs a page chain drafted with `node scripts/checks/check-provenance.mjs <brief path>...`
 // (each path must exist and sit under docs/internal/briefs/), so one page's gate does not fail
@@ -16,16 +24,18 @@
 // The gate is deny-by-default. A script cannot decide which sentences state facts, but it can
 // refuse a page whose author declined to decide, so it fails:
 //
-// - a sentence with no id, or an id that is neither `f:` plus six base36 characters nor
-//   "no-claim" (unclassified);
+// - a sentence with no id, an empty id array, or an id that is neither `f:` plus six base36
+//   characters nor "no-claim" (unclassified; "no-claim" is not valid inside an array);
 // - a page sentence missing from the brief, and a brief sentence missing from the page (the
 //   page's prose, after its front matter, headings, fenced code blocks, images, and HTML
 //   comments are set aside, must be exactly the brief's sentences plus markdown punctuation);
-// - an id that resolves to no fact bullet in docs/internal/facts/;
+// - an id (each id of an array) that resolves to no fact bullet in docs/internal/facts/;
+// - a malformed `cuts` entry (not an object, an id that is not a fact id, or a missing reason),
+//   and a cut id that resolves to no fact bullet;
 // - a cited bullet tagged [candidate] (any qualifier, `[candidate: excluded, ...]` included),
 //   [rejected], or [docs-drift] (citable again once the drift is resolved and retagged);
 //   [verified], [external], and [vendor] bullets are citable;
-// - a machine-extractable fact in a sentence that the sentence's cited bullet does not contain;
+// - a machine-extractable fact in a sentence that none of the sentence's cited bullets contains;
 //   a no-claim sentence cites nothing, so any extractable fact in it fails.
 //
 // The extractor is deterministic regex work over the sentence text. Its classes:
@@ -86,6 +96,15 @@ const NO_CLAIM = 'no-claim';
 
 /** A brief's fact id: the same shape the container's leading id span carries. */
 const BRIEF_ID_RE = /^f:[0-9a-z]{6}$/;
+
+/**
+ * Whether a brief value is a well-formed fact id. A brief is untyped JSON, so the value may be anything.
+ * @param {unknown} id
+ * @returns {id is string}
+ */
+function isFactId(id) {
+  return typeof id === 'string' && BRIEF_ID_RE.test(id);
+}
 
 /** Tags a brief may not cite, each with the reason the defect gives. */
 const UNCITABLE_TAGS = new Map([
@@ -340,6 +359,39 @@ export function loadFactIndex(factsDir) {
  */
 
 /**
+ * The defects in a brief's top-level `cuts` list, which mirrors a page plan's cut dispositions: an
+ * array of `{ id, reason }`, each `id` a fact id (one id, never a list or `no-claim`) and each
+ * `reason` a non-empty string. An absent list has no defects. A cut id must resolve to a fact
+ * bullet in the container; any tag is allowed, since a cut fact is by definition not cited.
+ * @param {unknown} cuts
+ * @param {FactIndex} index
+ * @returns {string[]}
+ */
+export function checkCuts(cuts, index) {
+  if (cuts === undefined) return [];
+  if (!Array.isArray(cuts)) return ['cuts: not an array of { id, reason } entries'];
+  /** @type {string[]} */
+  const defects = [];
+  cuts.forEach((cut, i) => {
+    const label = `cut ${i + 1}`;
+    if (typeof cut !== 'object' || cut === null || Array.isArray(cut)) {
+      defects.push(`cuts: ${label}: not an object with an "id" and a "reason"`);
+      return;
+    }
+    const { id, reason } = /** @type {{ id?: unknown, reason?: unknown }} */ (cut);
+    if (!isFactId(id)) {
+      defects.push(`cuts: ${label}: "id" is not a fact id (\`f:\` plus six base36 characters)`);
+    } else if (!index.facts.has(id)) {
+      defects.push(`cuts: ${label}: ${id} resolves to no fact in the container`);
+    }
+    if (typeof reason !== 'string' || reason.trim().length === 0) {
+      defects.push(`cuts: ${label}: missing its "reason"`);
+    }
+  });
+  return defects;
+}
+
+/**
  * A short, one-line preview of a sentence for a defect message.
  * @param {string} text
  * @returns {string}
@@ -347,6 +399,57 @@ export function loadFactIndex(factsDir) {
 function preview(text) {
   const flat = text.replace(/\s+/g, ' ').trim();
   return flat.length > 60 ? `${flat.slice(0, 57)}...` : flat;
+}
+
+/**
+ * The defects in one sentence's citation of one or more fact ids: each id's shape, resolution, and
+ * citability, then every extractable fact in the sentence against the cited bullets. A fact passes
+ * when at least one cited bullet contains it, so a sentence that synthesizes two facts cites both.
+ * @param {string} label The sentence's defect-message prefix.
+ * @param {unknown[]} ids The cited ids; a list of one is a single citation.
+ * @param {string} text The sentence text.
+ * @param {FactIndex} index
+ * @returns {string[]}
+ */
+function checkCitedIds(label, ids, text, index) {
+  /** @type {string[]} */
+  const defects = [];
+  if (ids.length === 0) {
+    defects.push(`${label}: unclassified, an empty id list; give it a fact id or "${NO_CLAIM}"`);
+    return defects;
+  }
+  const malformed = ids.filter((id) => !isFactId(id));
+  for (const id of malformed) {
+    defects.push(
+      `${label}: ${JSON.stringify(id)} is neither a fact id (\`f:\` plus six base36 characters) nor valid in an id list (\`${NO_CLAIM}\` is not), so the sentence is unclassified`,
+    );
+  }
+  if (malformed.length > 0) return defects;
+
+  /** @type {IndexedFact[]} */
+  const resolved = [];
+  for (const id of /** @type {string[]} */ (ids)) {
+    const fact = index.facts.get(id);
+    if (!fact) {
+      defects.push(`${label}: ${id} resolves to no fact in the container`);
+      continue;
+    }
+    resolved.push(fact);
+    if (fact.tag === null) {
+      defects.push(`${label}: cites ${id} (${fact.file}:${fact.line}), whose status tag does not parse`);
+    } else if (UNCITABLE_TAGS.has(fact.tag)) {
+      defects.push(`${label}: cites ${id} (${fact.file}:${fact.line}), tagged [${fact.tag}]: ${UNCITABLE_TAGS.get(fact.tag)}`);
+    }
+  }
+  if (resolved.length === 0) return defects;
+
+  const where = resolved.map((fact) => `${fact.id}, ${fact.file}:${fact.line}`).join('; ');
+  for (const fact of extractFacts(text, index.keyPhrases)) {
+    if (!resolved.some((bullet) => bulletContainsFact(bullet.text, fact))) {
+      defects.push(`${label}: the ${fact.kind} "${fact.value}" is in no cited fact (cites ${where})`);
+    }
+  }
+  return defects;
 }
 
 /**
@@ -367,8 +470,12 @@ export function checkSentences(sentences, index) {
       return;
     }
     const id = sentence.id;
-    if (typeof id !== 'string') {
-      defects.push(`${label}: unclassified; give it a fact id or "${NO_CLAIM}"`);
+    if (typeof id !== 'string' && !Array.isArray(id)) {
+      defects.push(`${label}: unclassified; give it a fact id, a list of fact ids, or "${NO_CLAIM}"`);
+      return;
+    }
+    if (Array.isArray(id)) {
+      defects.push(...checkCitedIds(label, id, text, index));
       return;
     }
     if (id !== NO_CLAIM && !BRIEF_ID_RE.test(id)) {
@@ -381,22 +488,7 @@ export function checkSentences(sentences, index) {
       for (const fact of extracted) defects.push(`${label}: marked ${NO_CLAIM} but states the ${fact.kind} "${fact.value}"`);
       return;
     }
-
-    const cited = index.facts.get(id);
-    if (!cited) {
-      defects.push(`${label}: ${id} resolves to no fact in the container`);
-      return;
-    }
-    if (cited.tag === null) {
-      defects.push(`${label}: cites ${id} (${cited.file}:${cited.line}), whose status tag does not parse`);
-    } else if (UNCITABLE_TAGS.has(cited.tag)) {
-      defects.push(`${label}: cites ${id} (${cited.file}:${cited.line}), tagged [${cited.tag}]: ${UNCITABLE_TAGS.get(cited.tag)}`);
-    }
-    for (const fact of extracted) {
-      if (!bulletContainsFact(cited.text, fact)) {
-        defects.push(`${label}: the ${fact.kind} "${fact.value}" is in no cited fact (cites ${id}, ${cited.file}:${cited.line})`);
-      }
-    }
+    defects.push(...checkCitedIds(label, [id], text, index));
   });
   return defects;
 }
@@ -543,7 +635,7 @@ export function checkBrief(briefPath, index, root) {
     result.defects.push('not a JSON object');
     return result;
   }
-  const { page, sentences } = /** @type {{ page?: unknown, sentences?: unknown }} */ (brief);
+  const { page, sentences, cuts } = /** @type {{ page?: unknown, sentences?: unknown, cuts?: unknown }} */ (brief);
   if (typeof page !== 'string') {
     result.defects.push('missing a "page" path');
     return result;
@@ -555,7 +647,9 @@ export function checkBrief(briefPath, index, root) {
   /** @type {BriefSentence[]} */
   const list = sentences.map((s) => (typeof s === 'object' && s !== null ? s : {}));
   result.sentences = list.length;
-  result.cited = list.filter((s) => typeof s.id === 'string' && BRIEF_ID_RE.test(s.id)).length;
+  result.cited = list.filter(
+    (s) => isFactId(s.id) || (Array.isArray(s.id) && s.id.length > 0 && s.id.every(isFactId)),
+  ).length;
   result.noClaim = list.filter((s) => s.id === NO_CLAIM).length;
 
   if (basename(briefPath, '.json') !== basename(page, '.md')) {
@@ -566,6 +660,7 @@ export function checkBrief(briefPath, index, root) {
   if (!pageExists) result.defects.push(`page "${page}" does not exist`);
 
   result.defects.push(...checkSentences(list, index));
+  result.defects.push(...checkCuts(cuts, index));
   if (pageExists) result.defects.push(...checkPageCoverage(readFileSync(pagePath, 'utf8'), list));
   return result;
 }

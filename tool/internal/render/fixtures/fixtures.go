@@ -174,7 +174,7 @@ func Empty() []health.Report {
 // AllUnknown is a site whose every check could not run, the shape a run with no credentials and
 // an unreachable host takes. Nothing was measured, so nothing may be reported green.
 func AllUnknown() []health.Report {
-	return []health.Report{report("topo.907.life", "topo.907.life",
+	return []health.Report{report("docs-site", "docs-site",
 		skip("creds", spine.ReasonCredMissing, ""),
 		skip("serving", spine.ReasonTimeout, "the site did not answer"),
 		skip("delegation", spine.ReasonCredMissing, ""),
@@ -190,7 +190,7 @@ func AllUnknown() []health.Report {
 // Degraded is a run missing one provider credential: the checks that needed it could not run,
 // and the rest are honest measurements.
 func Degraded() []health.Report {
-	return []health.Report{report("ecxc.ski", "ecxc.ski",
+	return []health.Report{report("my-site", "my-site",
 		fail("creds", spine.CodeCredsUnauthorized, "the token was rejected"),
 		pass("serving", "200 in 84ms"),
 		pass("delegation", "nameservers match the zone"),
@@ -206,7 +206,7 @@ func Degraded() []health.Report {
 // Offline is a run that could reach nothing at all: every check that needed the network is
 // unobservable, and the credential check is the only one that settled.
 func Offline() []health.Report {
-	return []health.Report{report("907.life", "907.life",
+	return []health.Report{report("blog-site", "blog-site",
 		skip("creds", spine.ReasonOffline, ""),
 		skip("serving", spine.ReasonOffline, ""),
 		skip("delegation", spine.ReasonOffline, ""),
@@ -222,7 +222,7 @@ func Offline() []health.Report {
 // OneSick is the reference's scenario 2: three failures, two checks that could not run, one held
 // failure, and three passes on one site.
 func OneSick() []health.Report {
-	return []health.Report{report("907.life", "907.life",
+	return []health.Report{report("blog-site", "blog-site",
 		fail("creds", spine.CodeCredsUnauthorized, "Cloudflare token not found; GitHub token read from the keyring"),
 		pass("serving", "200 in 132ms"),
 		pass("delegation", "nameservers match the zone"),
@@ -239,7 +239,7 @@ func OneSick() []health.Report {
 
 // Healthy is the one scenario that can afford to show its work: every check passed.
 func Healthy() []health.Report {
-	return []health.Report{report("ecxc.ski", "ecxc.ski",
+	return []health.Report{report("my-site", "my-site",
 		pass("creds", "Cloudflare and GitHub tokens read from the keyring"),
 		pass("serving", "200 in 84ms"),
 		pass("delegation", "nameservers match the zone"),
@@ -280,25 +280,25 @@ func WarningOnly() []health.Report {
 // creds, email and errors everywhere, not only on the site a scenario names it for.
 func TwelveSites() []health.Report {
 	out := []health.Report{
-		report("ecxc.ski", "ecxc.ski", fillNine(
+		report("my-site", "my-site", fillNine(
 			pass("serving", "200 in 84ms"), withEngineVersion(pass("engine", "0.78.0 is current"), "0.78.0"))...),
 		report("cairn.pub", "cairn.pub", fillNine(
 			pass("serving", "200 in 96ms"),
 			withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.76.0 installed, 0.78.0 latest, 2 releases behind"), "0.76.0"))...),
-		// topo's engine row is not a credential skip: the engine check reads GitHub, and the
+		// docs-site's engine row is not a credential skip: the engine check reads GitHub, and the
 		// GitHub token is the one this sweep holds. What it went without is a version to compare
 		// against, the other way that check fails to settle.
-		report("topo.907.life", "topo.907.life", fillNine(
+		report("docs-site", "docs-site", fillNine(
 			fail("serving", spine.CodeServingMismatch, "the hostname does not answer"),
 			skip("engine", spine.ReasonNotObservable,
 				"the installed or latest version is not in the published version list"))...),
-		report("907.life", "907.life", fillNine(
+		report("blog-site", "blog-site", fillNine(
 			pass("serving", "200 in 132ms"),
 			fail("deploy", spine.CodeDeployBuildFailed, "build failed 26m ago (3f0ba18), main is 2 commits ahead"))...),
-		report("aksailingclub.org", "aksailingclub.org", fillNine(
+		report("shop-site", "shop-site", fillNine(
 			pass("serving", "200 in 210ms"),
 			failCondition("email", spine.ConditionEmailSenderNotOnboarded, "the sending subdomain is not onboarded"))...),
-		report("xcathletes.org", "xcathletes.org", fillNine(
+		report("events-site", "events-site", fillNine(
 			pass("serving", "200 in 121ms"),
 			withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.77.0 installed, 0.78.0 latest, 1 release behind"), "0.77.0"))...),
 	}

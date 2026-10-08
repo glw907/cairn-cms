@@ -14,7 +14,7 @@ export interface ListToolbarFilterOption {
   label: string;
   /**
    * An optional per-option match count, rendered beside the label in the segmented display
-   * (graduation extension: ruling 6's finding-11 "segmented filter group" device). Omit for a
+   * (the segmented filter group device). Omit for a
    * filter that carries no count of its own.
    */
   count?: number;
@@ -53,7 +53,7 @@ export interface ListToolbarFilter {
   promoted?: boolean;
   /**
    * The filter's presentation: a `<select>` (the default), a `'segmented'` group of toggle
-   * buttons (graduation extension: ruling 6, finding-11's segmented filter device; ConceptList's
+   * buttons (the segmented filter device; ConceptList's
    * publish-state filter and MediaLibrary's triage radiogroup are the first consumers), or a
    * `'menu'` quiet bordered button showing the filter's own name at rest and its applied value
    * in-control (the recomposition that replaced the applied-pills row: `"Standing"` at rest,
@@ -95,13 +95,13 @@ export function computeAppliedFilters(filters: ListToolbarFilter[]): AppliedFilt
 
 /**
  * The scope-stating count line's own copy pattern: `"<count> <itemLabel>"`, followed by every
- * applied-filter label joined with a middle dot (`"12 households · Overdue · Holding assets"`).
+ * applied-filter label joined with a middle dot (`"12 signups · Pending · Waitlisted"`).
  * With no applied filters, the line is just the bare count and item label; the count line always
  * renders, but it only ever states a scope beyond "everything" when a filter is actually applied.
  * `itemLabel` accepts a plain string (invariant across every count, the original contract
  * unchanged) or an `{ one, many }` pair, picked by grammatical number through `itemNoun` -- so
- * `computeCountLine(1, { one: 'household', many: 'households' }, [])` reads `"1 household"`,
- * never `"1 households"`.
+ * `computeCountLine(1, { one: 'signup', many: 'signups' }, [])` reads `"1 signup"`,
+ * never `"1 signups"`.
  */
 export function computeCountLine(count: number, itemLabel: string | ItemLabel, appliedLabels: string[]): string {
   return [`${count} ${itemNoun(count, itemLabel)}`, ...appliedLabels].join(' · ');

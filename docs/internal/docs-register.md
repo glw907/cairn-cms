@@ -3,7 +3,7 @@
 This document is the agent-facing standard for cairn's published documentation, its front door,
 and the other public surfaces the table in "The base guides" names. Geoff ratified it on
 2026-07-18 (spec: `docs/superpowers/specs/2026-07-18-docs-register-standard-design.md`), and the
-specimen history lives in the `cairn-pub-front-page-voice` memory. Pass D (2026-08-14) organized
+specimen history lives in the front-page-voice memory. Pass D (2026-08-14) organized
 it around the four audience tracks the rebuild ships
 ([`2026-08-14-pass-d-target-manifest.md`](./record/2026-08-14-pass-d-target-manifest.md) names the
 target page set; a page count belongs there, since a number in this document rots). The
@@ -146,10 +146,32 @@ guide is silent.
   illustrative, with the authoritative reference beside it. When two of a vendor's pages
   disagree, linking one disposes of the conflict that restating both would force the page to
   reconcile.
+- **The general docs assume the reader uses no coding assistant, and a separate section covers
+  Claude Code** (Geoff, 2026-10-07: "You should not assume that an implementor is using Claude.";
+  "A page shouldn't even assume that a reader IS using a coding agent."; "If we want to address
+  coding agents, we can create separate docs specifically for that."; "we don't have to assume any
+  other agent than claude code."; "we _should_ assume in the general docs that a user is not using
+  a coding assistance, and then we can write a separate section for claude code."). Every task on a
+  general page is written for a developer working by hand, and no page addresses a coding agent.
+  Working with Claude Code belongs in its own section of the docs, never on a page for the
+  developer. A page may name an agent-specific file
+  it must document, such as a file-tree entry, in one line that labels the tool and links the
+  dedicated doc or reference ("`CLAUDE.md`: Claude Code's guidance file; see
+  [Guidance](../reference/guidance.md)").
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling, Geoff,
   2026-08-14). A reader does not need the taxonomy a page was planned under. Names such as task
   guide and reference entry belong to the writers and reviewers who plan a page, and a published
   page follows its form without naming it.
+- **A page is drafted from its committed page plan** (Geoff, 2026-10-01). The plan, at
+  `docs/internal/briefs/<track>/<page>.plan.md`, is Google's outline written down: "You might find
+  it useful to think of an outline as the narrative for your document" ([Organizing large
+  documents](https://developers.google.com/tech-writing/two/large-docs)). It holds the
+  introduction's three parts (what the document covers, what prior knowledge the reader needs,
+  and what it does not cover); the sections in the order the plan argues for, each with its
+  heading, the one sentence a reader takes from it, the fact ids it draws on, and its hand-off;
+  and the ending the page's anatomy requires. Every fact in the page's inventory is placed in a
+  section, subordinated to a named reference link, or cut with a reason. The draft follows the
+  plan's order, and the plan is kept beside the page's brief.
 
 ### Voice
 
@@ -303,7 +325,8 @@ Google's check, "Does your introduction provide an accurate overview of the topi
 
 ### Exemplars
 
-A drafter reads each exemplar whole and imitates its anatomy and rhythm, never its wording.
+A drafter reads each exemplar whole and takes its anatomy and detail per step, never its wording.
+Voice comes only from this brief and the primary exemplar below (Geoff, 2026-09-30).
 
 - [`docs/extend/choose-an-ai-posture.md`](../extend/choose-an-ai-posture.md) is the primary
   exemplar, for both the task-guide anatomy (choose, set, pass, verify, resolve) and the voice
@@ -313,6 +336,29 @@ A drafter reads each exemplar whole and imitates its anatomy and rhythm, never i
   task page, is an exemplar for anatomy.
 - [`exemplars/google-concept-auth-overview.md`](./exemplars/google-concept-auth-overview.md), a
   Google concept page, is an exemplar for anatomy.
+- **Owner-ruled before and after pairs** (Geoff, 2026-10-07), kept as exemplars for the two
+  habits the tellgrader flags. Read each pair for the move, never the wording.
+  - *Appositive stack.* Flagged: "Every person signed in to a cairn admin holds a role, a name
+    from the site's declared role vocabulary, which is `owner` and `editor` unless the site
+    declares its own." The sentence defines a term inside an appositive that carries its own
+    relative clause, so the reader holds three things open at once. Approved rewrite ("This is
+    *much* better."): "Everyone who signs in to a cairn admin has a role. The site declares its
+    own role names, or uses the default pair, `owner` and `editor`." Two sentences, each one
+    idea, the default named last.
+  - *Trailing hinge.* Flagged, from the scaffolded-site-files `check.yml` section: "The
+    workflow runs `npm install`, `npm run check`, and `npm run check:cairn` on every push and
+    pull request. It pins `node-version: 24`, the only Node version the scaffold names, since
+    it ships neither an `.nvmrc` nor an `engines` field. Its last step runs
+    `npx cairn-guidance check` under `continue-on-error: true`, which "The guidance
+    tree" explains. The workflow installs no browser, so the `check:cairn:rendered` script cannot
+    run in it." Each sentence ends in a comma-hinged tail,
+    so the paragraph repeats one cadence. Approved rewrite: "On every push and pull request, the
+    workflow installs dependencies and runs `npm run check` and `npm run check:cairn`. It uses
+    Node 24. Nothing else in the scaffold names a version: there's no `.nvmrc` and no `engines`
+    field. The last step runs `npx cairn-guidance check`, but that step can't fail the job. No
+    browser is installed, so `check:cairn:rendered` can't run in CI." The move is a fronted
+    condition, a short sentence on its own, and a colon-and-list close, so the lengths vary and
+    the tails stop echoing.
 
 ### Tells
 
@@ -342,6 +388,13 @@ flat taste.
 - **No em-dash rhythm.** The sentence-final elaborative tail is the tell whatever punctuation
   carries it, so the remedy restructures it into a second sentence instead of swapping the glyph
   for a comma or a colon.
+- **No trailing-hinge runs** (Geoff, 2026-10-07, on a paragraph of sentences each ending in
+  ", since ...", ", which [link] explains", or ", so ...": "really awkward AI cadence"). Avoid a
+  run of sentences that each end in a comma-hinged tail: a comma followed by since, which, so, so
+  that, because, as, where, while, whereas, although, or though (", as well as" does not count).
+  Read each paragraph whole for rhythm. Fix a hinge by folding the reason into the main clause, dropping it,
+  giving a link its own clause or sentence, or adding a short sentence. Three in a row fails
+  `check:docs-gate` through `tellgrader` (skipped where the binary is absent, as in CI).
 - **No two-headed headings.** A heading of the shape "X, and Y" hangs a second head off a comma,
   and a heading names one thing, so a section with two subjects splits or takes a name for the
   <!-- vale Google.Quotes = NO -->
@@ -450,6 +503,16 @@ guide is silent.
   cairn does not control.
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling, Geoff,
   2026-08-14). A reader does not need the taxonomy a page was planned under.
+- **A page is drafted from its committed page plan** (Geoff, 2026-10-01). The plan, at
+  `docs/internal/briefs/<track>/<page>.plan.md`, is an outline written down, which Google's
+  guidance on large documents calls "the narrative for your document" ([Organizing large
+  documents](https://developers.google.com/tech-writing/two/large-docs)). It holds the
+  introduction's three parts (what the document covers, what prior knowledge the reader needs,
+  and what it does not cover); the sections in the order the plan argues for, each with its
+  heading, the one sentence a reader takes from it, the fact ids it draws on, and its hand-off;
+  and the ending the page's anatomy requires. Every fact in the page's inventory is placed in a
+  section, subordinated to a named reference link, or cut with a reason. The draft follows the
+  plan's order.
 
 ### Voice
 
@@ -470,7 +533,9 @@ reader as surely as a pitch does.
 
 ### Exemplars
 
-A drafter reads each exemplar whole and imitates its anatomy and rhythm, never its wording.
+A drafter reads each exemplar whole and takes its anatomy and detail per step, never its wording.
+Voice comes only from this brief and its primary exemplar, when the list below names one (Geoff,
+2026-09-30).
 
 - [`exemplars/microsoft-procedure-blobs-portal.md`](./exemplars/microsoft-procedure-blobs-portal.md),
   a Microsoft Learn procedure page, is the exemplar for the anatomy of a UI-only procedure.
@@ -499,6 +564,13 @@ flat taste.
 - **No em-dash rhythm.** The sentence-final elaborative tail is the tell whatever punctuation
   carries it, so the remedy restructures it into a second sentence instead of swapping the glyph
   for a comma or a colon.
+- **No trailing-hinge runs** (Geoff, 2026-10-07, on a paragraph of sentences each ending in
+  ", since ...", ", which [link] explains", or ", so ...": "really awkward AI cadence"). Avoid a
+  run of sentences that each end in a comma-hinged tail: a comma followed by since, which, so, so
+  that, because, as, where, while, whereas, although, or though (", as well as" does not count).
+  Read each paragraph whole for rhythm. Fix a hinge by folding the reason into the main clause, dropping it,
+  giving a link its own clause or sentence, or adding a short sentence. Three in a row fails
+  `check:docs-gate` through `tellgrader` (skipped where the binary is absent, as in CI).
 - **No two-headed headings.** A heading of the shape "X, and Y" hangs a second head off a comma,
   <!-- vale Google.Quotes = NO -->
   <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
@@ -677,9 +749,26 @@ Each track builds its pages from a small set of reproducible shapes. A page stat
 anatomy it follows by following it, not by naming it; the shapes below exist so a writer or
 reviewer can check a page against a checklist rather than a feeling.
 
+Every page type opens with an introduction and ends with a closing section for its type (Geoff,
+2026-10-01). The introduction is reasoned per page, as "The introduction" above sets out. Each
+type adds what its template asks of the opening, as the following anatomies state.
+
+- **Concept page** (the extend track's concept pages). It opens with the introduction, a summary paragraph that introduces the concept,
+  explains its importance or relevance, and gives an overview of the content the page covers,
+  its scope, and that states what is out of scope and the pages that cover it. A definition of
+  the concept follows. Each later section takes one subtopic. The page ends with a
+  related-resources section, grouped as how-to guides, linked concepts, and external resources,
+  with not more than 3 to 5 links in each group ([Good Docs concept
+  template](https://gitlab.com/tgdp/templates/-/blob/main/concept/template_concept.md) and its
+  guide, templates v1.6.0).
 - **Task guide** (most admin and extend pages). Its sections run in the following order:
 
-  1. A one-line contract naming what the reader accomplishes.
+  1. An introduction that states the task, when and why the reader would do it, and who the page
+     is for, and that names the page to read instead where a reader could be in the wrong place.
+     The one-line contract naming what the reader accomplishes sits inside the framing, per "The
+     introduction", and the contract alone does not meet the introduction requirement ([Good Docs how-to
+     template](https://gitlab.com/tgdp/templates/-/blob/main/how-to/template_how-to.md) and its
+     guide, templates v1.6.0).
   2. Preconditions, each stated with a link to whatever produces it.
   3. The steps, as a numbered list with one action to a step and the location named before the
      action. A procedure of one step is a single bulleted item.
@@ -691,6 +780,8 @@ reviewer can check a page against a checklist rather than a feeling.
   5. Failure paths that point at the track's recovery surface (`admin/setup-recovery.md`,
      `admin/troubleshooting.md`, or `extend/debug-your-site.md`) rather than restating recovery
      prose inline. Ordered diagnostic checks form a numbered list here too.
+  6. A see-also section that links related how-to guides, concept pages, and the limitations the
+     page leaves out. The recovery link in item 5 is not repeated here.
 
   Explanation stays subordinate to the steps. A guide carries only the explanation a reader
   needs to choose or verify, and each such section opens with a sentence tying it to the task,
@@ -698,10 +789,18 @@ reviewer can check a page against a checklist rather than a feeling.
   full output listing, the behavior's limits, its rationale) belongs on the reference entry or
   a separate page, linked from the step that needs it. The introduction is the one exception:
   it may say why the thing the guide covers exists, as "The introduction" above allows.
-- **Tutorial milestone** (the extend track's deep path): stated objectives, the state the
-  prior milestone produced, steps, a checklist before advancing, and a disclosure block (the
-  Astro "Show me the steps" device) for a reader who wants to try first and check the answer
-  after.
+- **Tutorial** (a page of milestones, the extend track's deep path). It opens with an overview
+  that says what the tutorial teaches the reader to do, who it is intended for, the knowledge it
+  assumes, and what the reader can do by the end, written in second person (Google's voice,
+  and the template's). A prerequisites section follows, then the milestones, each in the shape
+  below. The page ends with a summary of what the reader learned, in different words from the
+  overview's objectives, and a next-steps section that links related tutorials and other
+  documentation ([Good Docs tutorial
+  template](https://gitlab.com/tgdp/templates/-/blob/main/tutorial/template_tutorial.md) and
+  its guide, templates v1.6.0).
+- **Tutorial milestone**: stated objectives, the state the prior milestone produced, steps, a
+  checklist before advancing, and a disclosure block (the Astro "Show me the steps" device) for
+  a reader who wants to try first and check the answer after.
 - **Reference entry** (`docs/reference/`): the existing gated template (signature, parameters,
   defaults, failure modes), now opening with a short narrative lede, a sentence or two of
   what the shape is and why it exists, before the table. The lede is additive to the gates,
@@ -885,8 +984,20 @@ audience lands, and they carry the whole cairn story.
 - **Concrete extension examples belong here.** The extensibility claim lands through
   examples of the kinds of things a developer could build on cairn's seams: member signups,
   reservations, rosters, event and program management, and other member-facing tools for a
-  small organization. Name types of functionality, never a specific consumer site. Examples
-  state what could be built; they never pitch.
+  small organization. Examples state what could be built; they never pitch.
+<!-- leak-ok-begin: C1,C2 -- the rule quotes the leaked vocabulary and the owner's words to forbid them -->
+- **Examples are generic and likely to apply to many organizations.** Use a `staff` role, a
+  members area, signups, an events screen. No example carries a consumer site's domain: its
+  organization type, its people, or its vocabulary, such as clubs, instructors, classes, or
+  dues. An implementer reading the page has zero context on any consumer site, so a domain
+  example reads as a cast from nowhere. A page opens on the job the reader came to do, never on
+  an invented scenario or cast. The same holds in the plans, briefs, outlines, and fact text
+  that feed a drafter, since a domain example there is copied into the page. The rule is the
+  owner's (Geoff, 2026-10-07): "Talking about classes and club members here seems VERY strange.
+  Where the heck does that come from?"; "If this relates to the ASC's site, an implementer will
+  have ZERO context."; "Staff is fine. Examples should be generic and likely to apply to many
+  organizations."
+<!-- leak-ok-end -->
 - **Stack reasoning is welcome.** Explaining why cairn uses SvelteKit, DaisyUI, and
   Cloudflare is in-register here, in short form; the full argument, including the honest
   trade-offs, stays in `docs/why-cairn.md`.
@@ -1017,6 +1128,10 @@ question and teaser headings and every tell. The figurative-language rule adopts
 in place of the register's earlier allowance for an explanatory metaphor (Geoff, 2026-09-28,
 ruling 8), and the "writing room" and "The four arms" specimens stay as illustrations of it.
 
+The page plan rule in both briefs adds a step the base guides are silent on and forbids no form
+either guide prescribes, so it is a tightening and needs no row. It adopts Google's outline
+guidance as published (Geoff, 2026-10-01).
+
 The editor brief departs from nothing in Microsoft (ruling 4). Its tightenings are the no-pitch
 keystone, the tells that pass this section's test against Microsoft, and the Names rules. Three
 developer-brief rules fail that test on the editors track and stay out of the editor brief: the
@@ -1068,6 +1183,11 @@ The introduction section cites the following pages, read on 2026-10-04; the sour
 - [GitLab concept topic type](https://docs.gitlab.com/development/documentation/topic_types/concept/) and [style guide](https://docs.gitlab.com/development/documentation/styleguide/)
 - [Red Hat supplementary style guide](https://redhat-documentation.github.io/supplementary-style-guide/)
 - [Microsoft Writing Style Guide: Developer content](https://learn.microsoft.com/en-us/style-guide/developer-content/)
+
+The page plan rule in both briefs cites one page of Google's Technical Writing Two course, read on
+2026-10-03.
+
+- [Organizing large documents](https://developers.google.com/tech-writing/two/large-docs)
 
 The exemplar captures carry their source URLs and licenses in
 [`exemplars/README.md`](./exemplars/README.md).

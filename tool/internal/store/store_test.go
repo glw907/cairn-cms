@@ -354,7 +354,7 @@ func TestAnAbsentRegistryIsAnEmptyRegistry(t *testing.T) {
 		t.Errorf("List reported %v, want no error", errs)
 	}
 
-	if err := s.Save("ecxc-ski-a1b2c3", record.Record{Name: "ecxc.ski", Domain: "ecxc.ski"}); err != nil {
+	if err := s.Save("my-site-a1b2c3", record.Record{Name: "my-site.example.org", Domain: "my-site.example.org"}); err != nil {
 		t.Fatalf("Save into an absent directory: %v", err)
 	}
 	entries, errs = s.List()

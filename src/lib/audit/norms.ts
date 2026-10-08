@@ -240,44 +240,44 @@ export const RATIFIED_NORMS: readonly RatifiedNorm[] = [
     role: 'button-primary',
     property: 'border-radius',
     values: [6],
-    reference: 'docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'button-ghost',
     property: 'border-radius',
     values: [6],
-    reference: 'docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'input-text',
     property: 'border-radius',
     values: [6],
-    reference: 'docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'select',
     property: 'border-radius',
     values: [6],
-    reference: 'docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'card',
     property: 'border-radius',
     values: [8],
-    reference: 'docs/internal/admin-design-system.md (--radius-box)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-box)',
   },
   {
     role: 'card',
     property: 'border-width',
     values: [1],
-    reference: 'docs/internal/admin-design-system.md (the card-shell hairline)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (the card-shell hairline)',
   },
   {
     role: 'card',
     property: 'border-color',
     values: ['var(--cairn-card-border)'],
     reference:
-      'Ratified (Ruling 2): the --cairn-card-border hairline measures 1.11 against the ambient beside it and 1.19 against the card\'s own fill in light, 1.43 and 1.20 in dark, and stays by design. The border-contrast rule applies a house floor of 3:1, the number WCAG 1.4.11 sets for a control-identifying boundary rather than for a card hairline, and exempts this one on the better of its two ratios against a ratified floor of 1.15',
+      'the card-shell hairline decision: --cairn-card-border measures 1.11 against the ambient beside it and 1.19 against the card\'s own fill in light, 1.43 and 1.20 in dark, and stays by design. The border-contrast rule applies a house floor of 3:1, the number WCAG 1.4.11 sets for a control-identifying boundary rather than for a card hairline, and exempts this one on the better of its two ratios against a documented floor of 1.15',
   },
 ];
 
@@ -402,7 +402,7 @@ export interface OpenDesignQuestion {
 //
 // Empty is the ordinary state, not a stale one: it means every design question a spec raised has
 // been ruled. The table's last resident, the `--cairn-card-border` hairline, moved to
-// {@link RATIFIED_NORMS} once Ruling 2 settled it; that move is the discipline working, not a gap
+// {@link RATIFIED_NORMS} once it was settled; that move is the discipline working, not a gap
 // in it.
 /** Every open design question the manifest must not present as settled. */
 export const OPEN_DESIGN_QUESTIONS: readonly OpenDesignQuestion[] = [];
@@ -634,7 +634,7 @@ export function buildManifest(source: NormsSource, tables: NormsTables = {}): No
  * shipped manifest a live check on the tables rather than a snapshot beside them. A table-to-entry
  * lookup can only ever notice a row it already knows about, so a flag whose referent had been
  * ruled away survived in the committed file, and `norms card` printed `[open-question]` with no
- * question behind it: the one row Geoff had actually ruled on read to a builder as unsettled with
+ * question behind it: the one row that had actually been settled read to a builder as unsettled with
  * the question redacted. Nothing in `npm test`, `npm run check`, or CI could see it, because the
  * only gate that regenerates the manifest needs a built package and a running preview server. This
  * check needs neither, and it reads the production tables on every run, which is also what keeps

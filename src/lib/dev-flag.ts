@@ -5,7 +5,7 @@
 // instance serves both dev and prod, so it additionally requires a deployed request before
 // refusing), and `sveltekit/csrf.ts` (which reads only the local-host predicate). A divergent
 // second wording would violate the read-from-the-source rule; the two flag refusals diverge on
-// WITNESS, never on message, and each states why where it fires (ruling 4 as letter-amended:
+// WITNESS, never on message, and each states why where it fires (the rule:
 // refuse when the flag is set AND the request is deployed; docs/internal/engine-rulings.md,
 // `dev-backend-flag-refusal`).
 //
@@ -77,8 +77,9 @@ export function readPublicOrigin(env: unknown): string | undefined {
  * local host (or is absent, or does not parse) leaves the request's own hostname to decide, the
  * behavior a site with no `PUBLIC_ORIGIN` at all keeps.
  *
- * The residual is honest: a deployment that sets
- * no `PUBLIC_ORIGIN` still rests on the Host-derived fallback.
+ * The residual is honest and documented (docs/extend/security-model.md, "The dev-backend flag's
+ * two refusals"): a deployment that sets no `PUBLIC_ORIGIN` still rests on the Host-derived
+ * fallback.
  */
 export function isDeployedHost(url: URL, env: unknown): boolean {
   const origin = readPublicOrigin(env);

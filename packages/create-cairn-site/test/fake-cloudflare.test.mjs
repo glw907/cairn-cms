@@ -19,9 +19,9 @@ test('zone create returns the v4 envelope and the captured zone shape, minus nam
   const cloudflare = await startFakeCloudflare();
   t.after(() => cloudflare.close());
 
-  const zone = await createZone(cloudflare, { name: '907.life', accountId: '120c269ad6d3dfbe6d63a0bb53758ca0' });
-  assert.equal(zone.name, '907.life');
-  assert.equal(zone.account.id, '120c269ad6d3dfbe6d63a0bb53758ca0');
+  const zone = await createZone(cloudflare, { name: 'example.org', accountId: '0123456789abcdef0123456789abcdef' });
+  assert.equal(zone.name, 'example.org');
+  assert.equal(zone.account.id, '0123456789abcdef0123456789abcdef');
   assert.equal(zone.id.length, 32);
   assert.equal(zone.status, 'pending');
   // name_servers is deliberately absent from the create response (amendment 16: no real create
@@ -61,7 +61,7 @@ test('failNext reproduces the captured zone-already-exists body (1061), no owner
 
   cloudflare.failNext('zone_create', 400, {
     success: false,
-    errors: [{ code: 1061, message: 'ecxc.ski already exists' }],
+    errors: [{ code: 1061, message: 'example.org already exists' }],
     messages: [],
     result: null,
   });
@@ -69,12 +69,12 @@ test('failNext reproduces the captured zone-already-exists body (1061), no owner
   const res = await fetch(`${cloudflare.apiBase}/zones`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name: 'ecxc.ski', account: { id: 'acct-1' } }),
+    body: JSON.stringify({ name: 'example.org', account: { id: 'acct-1' } }),
   });
   assert.equal(res.status, 400);
   const body = await res.json();
   assert.equal(body.errors[0].code, 1061);
-  assert.equal(body.errors[0].message, 'ecxc.ski already exists');
+  assert.equal(body.errors[0].message, 'example.org already exists');
   assert.equal('account' in body.errors[0], false);
 });
 
@@ -397,15 +397,15 @@ const CAPTURED_SUBDOMAIN_CREATE_BODY = {
   modified: '2026-08-12T08:12:02.593597Z',
 };
 
-// The `ecxc.ski` entry, captured for its `preview_enabled: false` (amendment 4: the field is not
+// The onboarded `example.org` entry, captured for its `preview_enabled: false` (amendment 4: the field is not
 // a constant), used to seed state for the pagination and non-constant tests below.
-const CAPTURED_ECXC_SUBDOMAIN = {
+const CAPTURED_ONBOARDED_SUBDOMAIN = {
   id: '02b29178254d48fab3a5a85b38f56126',
   tag: '02b29178254d48fab3a5a85b38f56126',
-  name: 'ecxc.ski',
+  name: 'example.org',
   enabled: true,
   preview_enabled: false,
-  return_path_domain: 'cf-bounce.ecxc.ski',
+  return_path_domain: 'cf-bounce.example.org',
   dkim_selector: 'cf-bounce',
   created: '2026-06-09T06:26:41.226901Z',
   modified: '2026-06-09T06:26:41.226901Z',
@@ -472,7 +472,7 @@ test('the subdomain list paginates like every other list route', async (t) => {
   cloudflare.state.emailSubdomains.set(zone.id, [
     { ...CAPTURED_SUBDOMAIN_CREATE_BODY, id: 'sub-1', name: 'one.example' },
     { ...CAPTURED_SUBDOMAIN_CREATE_BODY, id: 'sub-2', name: 'two.example' },
-    { ...CAPTURED_ECXC_SUBDOMAIN },
+    { ...CAPTURED_ONBOARDED_SUBDOMAIN },
   ]);
 
   const page1 = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains?per_page=2&page=1`);
@@ -483,14 +483,14 @@ test('the subdomain list paginates like every other list route', async (t) => {
   const page2 = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains?per_page=2&page=2`);
   const page2Body = await page2.json();
   assert.equal(page2Body.result.length, 1);
-  assert.equal(page2Body.result[0].name, 'ecxc.ski');
+  assert.equal(page2Body.result[0].name, 'example.org');
 });
 
 test('preview_enabled is not forced to a constant: a seeded entry keeps its own value', async (t) => {
   const cloudflare = await startFakeCloudflare();
   t.after(() => cloudflare.close());
-  const zone = await createZone(cloudflare, { name: 'ecxc.ski' });
-  cloudflare.state.emailSubdomains.set(zone.id, [{ ...CAPTURED_ECXC_SUBDOMAIN }]);
+  const zone = await createZone(cloudflare, { name: 'example.org' });
+  cloudflare.state.emailSubdomains.set(zone.id, [{ ...CAPTURED_ONBOARDED_SUBDOMAIN }]);
 
   const res = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains`);
   const body = await res.json();

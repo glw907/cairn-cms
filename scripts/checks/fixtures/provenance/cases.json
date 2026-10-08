@@ -19,6 +19,15 @@
     { "name": "a candidate citation fails", "sentence": { "text": "An untraced claim.", "id": "f:pv0006" }, "expect": "[candidate]" },
     { "name": "an excluded candidate citation fails", "sentence": { "text": "An excluded claim.", "id": "f:pv0007" }, "expect": "[candidate]" },
     { "name": "a rejected citation fails", "sentence": { "text": "A false claim.", "id": "f:pv0008" }, "expect": "[rejected]" },
+    { "name": "a sentence citing two ids passes when each fact is in one of its cited bullets", "sentence": { "text": "Run `cairn doctor --json`; a GitHub installation token expires after one hour.", "id": ["f:pv0001", "f:pv0003"] }, "expect": null },
+    { "name": "a one-element id list passes like a single id", "sentence": { "text": "Run `cairn doctor --json` in the site directory.", "id": ["f:pv0001"] }, "expect": null },
+    { "name": "a fact in none of a sentence's several cited bullets fails", "sentence": { "text": "Run `cairn doctor --json`; it expires after 99 hours.", "id": ["f:pv0001", "f:pv0003"] }, "expect": "numeral \"99\" is in no cited fact" },
+    { "name": "an empty id list is unclassified", "sentence": { "text": "A sentence.", "id": [] }, "expect": "empty id list" },
+    { "name": "an id list holding a malformed id is unclassified", "sentence": { "text": "A sentence.", "id": ["f:pv0003", "f:NOTANID"] }, "expect": "neither a fact id" },
+    { "name": "an id list holding no-claim is unclassified", "sentence": { "text": "A sentence.", "id": ["f:pv0003", "no-claim"] }, "expect": "neither a fact id" },
+    { "name": "an id list holding a non-string is unclassified", "sentence": { "text": "A sentence.", "id": ["f:pv0003", 7] }, "expect": "neither a fact id" },
+    { "name": "an id list holding an id that resolves to no fact fails", "sentence": { "text": "A sentence.", "id": ["f:pv0003", "f:zzzzzz"] }, "expect": "resolves to no fact" },
+    { "name": "an id list holding a candidate fails", "sentence": { "text": "A sentence.", "id": ["f:pv0003", "f:pv0006"] }, "expect": "[candidate]" },
     { "name": "a docs-drift citation fails until resolved", "sentence": { "text": "The token lasts a while.", "id": "f:pv0005" }, "expect": "[docs-drift]" }
   ]
 }

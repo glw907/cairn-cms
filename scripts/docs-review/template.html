@@ -93,6 +93,18 @@
     margin-inline-end: auto;
     word-break: break-all;
   }
+  .doc-file-plan {
+    background: var(--cdr-bg);
+    border: 1px solid var(--cdr-border);
+    border-radius: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .doc-file-plan summary { cursor: pointer; color: var(--cdr-muted); font-size: 0.9rem; }
+  .doc-file-plan-body { margin-top: 0.5rem; font-size: 0.95rem; }
+  .doc-file-plan-body code { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: 0.9em; }
+  .doc-file-plan-body :is(ul, ol) { margin-block: 0.4rem; padding-inline-start: 1.5rem; }
+  .doc-file-plan-body a { color: var(--cdr-accent); }
   .doc-file-preview :is(h1, h2, h3, h4, h5, h6) { font-family: Georgia, "Times New Roman", serif; }
   .doc-file-preview pre {
     overflow-x: auto;
@@ -123,6 +135,18 @@
     background: var(--cdr-bg);
     color: var(--cdr-ink);
   }
+  .doc-file-preview :is(ul, ol) { margin-block: 0.4rem; padding-inline-start: 1.5rem; }
+  .doc-file-preview li { margin-block: 0.2rem; }
+  .doc-file-preview li > :is(ul, ol) { margin-block: 0.2rem; }
+  .doc-file-preview strong { font-weight: 700; }
+  .doc-file-preview em { font-style: italic; }
+  .doc-file-preview a { color: var(--cdr-accent); text-decoration: underline; text-underline-offset: 0.15em; }
+  .doc-file-preview blockquote {
+    margin-inline: 0;
+    padding-inline-start: 0.9rem;
+    border-inline-start: 3px solid var(--cdr-border);
+    color: var(--cdr-muted);
+  }
   img { max-width: 100%; }
   [hidden] { display: none !important; }
 </style>
@@ -132,6 +156,8 @@
 </div>
 <div id="app"></div>
 <script type="application/json" id="cairn-docs-review-state">__CAIRN_REVIEW_STATE__</script>
+<script id="cairn-docs-review-marked" src="https://cdnjs.cloudflare.com/ajax/libs/marked/18.0.14/lib/marked.umd.min.js"></script>
+<script id="cairn-docs-review-purify" src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.16/purify.min.js"></script>
 <script id="cairn-docs-review-script">
 /*__CAIRN_REVIEW_RUNTIME__*/
 (function () {
@@ -153,6 +179,15 @@
   var styleHtml = document.getElementById('cairn-docs-review-style').outerHTML;
   var toolbarHtml = document.getElementById('cairn-docs-review-toolbar').outerHTML;
   var ownScriptHtml = document.currentScript.outerHTML;
+  // The two library tags ahead of this script, carried into every rebuilt document so a saved
+  // page keeps loading them. Absent tags (a copy stripped of them) contribute nothing.
+  var libsHtml = ['cairn-docs-review-marked', 'cairn-docs-review-purify']
+    .map(function (id) {
+      var el = document.getElementById(id);
+      return el ? el.outerHTML : '';
+    })
+    .join('');
+  var renderDoc = selectMarkdownRenderer(window);
 
   var stateEl = document.getElementById(STATE_ELEMENT_ID);
   var embeddedState = decodeState(stateEl.textContent);
@@ -202,6 +237,7 @@
       '<script type="application/json" id="' + STATE_ELEMENT_ID + '">' +
       encodeState(nextState) +
       '<' + '/script>' +
+      libsHtml +
       ownScriptHtml +
       '</body></html>'
     );
@@ -272,7 +308,8 @@
       '<button type="button" data-action="comment" data-index="' + index + '"' +
       offAttributes(commentOffReason) + '>Comment</button>' +
       '</header>' +
-      '<div class="doc-file-preview">' + renderMarkdown(file.markdown) + '</div>' +
+      planSectionHtml(file, renderDoc) +
+      '<div class="doc-file-preview">' + renderDoc(file.markdown) + '</div>' +
       '<textarea class="doc-file-editor" hidden data-index="' + index + '">' +
       escapeHtml(file.markdown) + '</textarea>' +
       '</section>'
@@ -288,7 +325,7 @@
   function readTextareaValues() {
     state.files = state.files.map(function (file, index) {
       var textarea = document.querySelector('.doc-file-editor[data-index="' + index + '"]');
-      return textarea ? { path: file.path, markdown: textarea.value } : file;
+      return textarea ? Object.assign({}, file, { markdown: textarea.value }) : file;
     });
   }
 
@@ -413,7 +450,7 @@
     var editor = section.querySelector('.doc-file-editor');
     if (!preview || !editor) return;
     var opening = editor.hidden;
-    if (!opening) preview.innerHTML = renderMarkdown(editor.value);
+    if (!opening) preview.innerHTML = renderDoc(editor.value);
     preview.hidden = opening;
     editor.hidden = !opening;
     button.textContent = opening ? 'Preview' : 'Edit';
@@ -465,6 +502,7 @@
     buildDocument: buildDocument,
     save: save,
     render: render,
+    fileSectionHtml: fileSectionHtml,
   };
 
   init();

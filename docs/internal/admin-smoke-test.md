@@ -5,7 +5,7 @@ email round-trip. Run this on both consumer sites (ecnordic-ski and 907-life) af
 package gates pass; it is the live half of the cairn-pass verification.
 
 > **Custom-domain sites: smoke against the deployed https Worker, not local http.** Both
-> production sites declare a `custom_domain` route in `wrangler.toml` (`pattern = "907.life"`,
+> consumer sites declare a `custom_domain` route in `wrangler.toml` (`pattern = "907.life"`,
 > `custom_domain = true`). Under `wrangler dev`, the Worker then resolves `event.url` to the
 > production https origin regardless of the local request host, so a local `http://localhost`
 > request to `/admin` matches the guard's deployed-http branch and serves the `0.34.0`

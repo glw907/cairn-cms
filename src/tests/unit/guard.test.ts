@@ -14,8 +14,8 @@ const editor = { email: 'e@x.test', displayName: 'E', role: 'editor' as const, c
 // Role names are open (`string`), so a fixture can name any out-of-vocabulary role directly, the
 // shape the guard produces (capability already resolved to 'none') for a row outside a site's
 // declared vocabulary.
-const unknownRole = { email: 'u@x.test', displayName: 'U', role: 'club-admin', capability: 'none' as const };
-const noneCapability = { email: 'n@x.test', displayName: 'N', role: 'instructor', capability: 'none' as const };
+const unknownRole = { email: 'u@x.test', displayName: 'U', role: 'manager', capability: 'none' as const };
+const noneCapability = { email: 'n@x.test', displayName: 'N', role: 'staff', capability: 'none' as const };
 
 /** Build a full CairnEvent from just the locals under test, so each fixture states only what
  *  makes it different; `url` defaults to a plausible admin path. `routeId` defaults to the URL's

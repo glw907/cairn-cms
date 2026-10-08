@@ -106,15 +106,15 @@ describe('formatTimestamp', () => {
 
 describe('itemNoun', () => {
   it('picks the singular form at exactly 1', () => {
-    expect(itemNoun(1, { one: 'household', many: 'households' })).toBe('household');
+    expect(itemNoun(1, { one: 'signup', many: 'signups' })).toBe('signup');
   });
 
   it('picks the plural form for a count greater than 1', () => {
-    expect(itemNoun(6, { one: 'household', many: 'households' })).toBe('households');
+    expect(itemNoun(6, { one: 'signup', many: 'signups' })).toBe('signups');
   });
 
   it('picks the plural form for a zero count', () => {
-    expect(itemNoun(0, { one: 'household', many: 'households' })).toBe('households');
+    expect(itemNoun(0, { one: 'signup', many: 'signups' })).toBe('signups');
   });
 
   it('reads a plain string label back unchanged regardless of count, the original contract', () => {

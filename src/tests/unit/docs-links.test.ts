@@ -6,6 +6,7 @@ import {
   isExternal,
   filesInScope,
   findBrokenLinks,
+  checkLinks,
   hasUnreleasedHeading,
   unreleasedParityMismatch,
   legacyTarget,
@@ -171,17 +172,17 @@ describe('the legacy CHANGELOG path map', () => {
   const root = resolve(__dirname, '../../..');
 
   it('resolves a retired path written in CHANGELOG.md', () => {
-    expect(legacyTarget('CHANGELOG.md', 'docs/guides/add-an-island.md')).toBe(
-      'docs/extend/add-an-island.md'
+    expect(legacyTarget('CHANGELOG.md', 'docs/guides/upgrade-cairn.md')).toBe(
+      'docs/extend/upgrade-cairn.md'
     );
   });
 
   it('resolves the same path written with a leading ./ or carrying an anchor', () => {
-    expect(legacyTarget('CHANGELOG.md', './docs/guides/add-an-island.md')).toBe(
-      'docs/extend/add-an-island.md'
+    expect(legacyTarget('CHANGELOG.md', './docs/guides/upgrade-cairn.md')).toBe(
+      'docs/extend/upgrade-cairn.md'
     );
-    expect(legacyTarget('CHANGELOG.md', 'docs/explanation/security-model.md#who-may-edit')).toBe(
-      'docs/extend/security-model.md'
+    expect(legacyTarget('CHANGELOG.md', 'docs/guides/upgrade-cairn.md#precondition')).toBe(
+      'docs/extend/upgrade-cairn.md'
     );
   });
 
@@ -214,7 +215,7 @@ describe('the legacy CHANGELOG path map', () => {
 
   it('fails a key whose own page is back on disk', () => {
     const problems = legacyMapProblems(root, {
-      'docs/reference/core.md': 'docs/extend/architecture.md',
+      'docs/reference/core.md': 'docs/extend/upgrade-cairn.md',
     });
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('docs/reference/core.md');
@@ -223,7 +224,7 @@ describe('the legacy CHANGELOG path map', () => {
 
   it('fails a key that no CHANGELOG link names', () => {
     const problems = legacyMapProblems(root, {
-      'docs/guides/never-cited-anywhere.md': 'docs/extend/architecture.md',
+      'docs/guides/never-cited-anywhere.md': 'docs/extend/upgrade-cairn.md',
     });
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('never-cited-anywhere.md');
@@ -321,5 +322,89 @@ describe('deletion-list links', () => {
       const problems = legacyMapProblems(root, { 'docs/guides/enable-tidy.md': 'docs/extend/no-such-page.md' });
       expect(problems).toEqual([expect.stringContaining('docs/extend/no-such-page.md')]);
     });
+  });
+});
+
+// During an arm's rebuild, pages link forward to outline pages a later stage has not drafted. A link
+// to a path a committed outline names passes as pending; a path in no outline still fails.
+describe('forward links to outline pages', () => {
+  const tmpDirs: string[] = [];
+  afterEach(() => {
+    for (const dir of tmpDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  function fixtureRoot(files: Record<string, string>) {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-links-outline-'));
+    tmpDirs.push(dir);
+    const all: Record<string, string> = {
+      'CHANGELOG.md': '# Changelog\n',
+      [DELETION_LIST_PATH]: JSON.stringify({ deleted: [], kept: [] }),
+      'docs/internal/outlines/extend.json': JSON.stringify({
+        arm: 'extend',
+        pages: [{ path: 'docs/extend/later-page.md' }, { path: 'docs/extend/another-page.md' }],
+      }),
+      ...files,
+    };
+    for (const [path, content] of Object.entries(all)) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), content);
+    }
+    return dir;
+  }
+
+  it('passes a link to an outline page not on disk and counts it pending', () => {
+    const root = fixtureRoot({ 'docs/extend/here.md': 'see [later](later-page.md) and [more](./another-page.md)\n' });
+    const { broken, pending } = checkLinks(root);
+    expect(broken).toEqual([]);
+    expect(pending).toHaveLength(2);
+    expect(pending[0]).toMatchObject({ file: 'docs/extend/here.md', line: 1, dest: 'later-page.md' });
+    expect(findBrokenLinks(root)).toEqual([]);
+  });
+
+  it('fails a link to a path in no outline', () => {
+    const root = fixtureRoot({ 'docs/extend/here.md': 'see [gone](never-planned.md)\n' });
+    const { broken, pending } = checkLinks(root);
+    expect(pending).toEqual([]);
+    expect(broken).toEqual([
+      { file: 'docs/extend/here.md', line: 1, dest: 'never-planned.md', reason: 'target not found: never-planned.md' },
+    ]);
+  });
+
+  it('does not check the anchor on a pending link', () => {
+    const root = fixtureRoot({ 'docs/extend/here.md': 'see [later](later-page.md#no-such-heading)\n' });
+    const { broken, pending } = checkLinks(root);
+    expect(broken).toEqual([]);
+    expect(pending).toHaveLength(1);
+  });
+
+  it('checks the anchor once the outline page exists on disk', () => {
+    const root = fixtureRoot({
+      'docs/extend/here.md': 'see [later](later-page.md#no-such-heading)\n',
+      'docs/extend/later-page.md': '# Later\n',
+    });
+    const { broken, pending } = checkLinks(root);
+    expect(pending).toEqual([]);
+    expect(broken).toHaveLength(1);
+  });
+
+  it.each([
+    ['docs/extend/here.md', 'later-page.md', true],
+    ['docs/admin/here.md', '../extend/later-page.md', true],
+    ['docs/editors/here.md', '../extend/later-page.md', true],
+    ['docs/reference/here.md', '../extend/later-page.md', true],
+    ['docs/why-cairn.md', 'extend/later-page.md', true],
+    ['docs/STATUS.md', 'extend/later-page.md', false],
+    ['docs/HISTORY.md', 'extend/later-page.md', false],
+  ])('excuses a pending link from %s only inside the arm paths (%s: %s)', (file, dest, excused) => {
+    const root = fixtureRoot({ [file]: `see [later](${dest})\n` });
+    const { broken, pending } = checkLinks(root);
+    expect(pending).toHaveLength(excused ? 1 : 0);
+    expect(broken).toHaveLength(excused ? 0 : 1);
+  });
+
+  it('goes strict again once the outline is gone', () => {
+    const root = fixtureRoot({ 'docs/extend/here.md': 'see [later](later-page.md)\n' });
+    rmSync(join(root, 'docs/internal/outlines'), { recursive: true });
+    expect(checkLinks(root).broken).toHaveLength(1);
   });
 });

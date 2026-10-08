@@ -4,7 +4,7 @@
 // Both paths run the identical code, so the batch state they encode and decode never drifts
 // between the Node side and the browser side.
 
-/** @typedef {{ path: string, markdown: string }} DocsReviewFile */
+/** @typedef {{ path: string, markdown: string, plan?: string }} DocsReviewFile */
 /** @typedef {{ title: string, files: DocsReviewFile[] }} DocsReviewState */
 
 export const STATE_ELEMENT_ID = 'cairn-docs-review-state';
@@ -77,6 +77,22 @@ export function computeRestoredFiles(stashedFiles, embeddedFiles) {
     const stashed = stashByPath.get(file.path);
     return stashed && stashed.markdown !== file.markdown ? stashed : file;
   });
+}
+
+/**
+ * The read-only page plan shown beside one file's preview: a collapsed `details` element holding
+ * the plan's rendered markdown, or an empty string for a file with no plan, so a page without one
+ * shows nothing extra. The plan is displayed only; the page never edits or saves it.
+ * @param {DocsReviewFile} file
+ * @param {(markdown: string) => string} renderDoc The page's markdown renderer.
+ * @returns {string}
+ */
+export function planSectionHtml(file, renderDoc) {
+  if (typeof file.plan !== 'string' || file.plan.trim() === '') return '';
+  return (
+    '<details class="doc-file-plan"><summary>Page plan</summary>' +
+    '<div class="doc-file-plan-body">' + renderDoc(file.plan) + '</div></details>'
+  );
 }
 
 /**
@@ -221,4 +237,36 @@ export function renderMarkdown(markdown) {
     out.push(`<p>${renderInline(para.join(' '))}</p>`);
   }
   return out.join('\n');
+}
+
+/**
+ * Picks the renderer the page uses for its previews. When the page's two CDN libraries loaded
+ * (marked and DOMPurify, both as globals on `scope`), previews are full CommonMark plus GFM,
+ * sanitized; raw HTML comments in the markdown parse to comment nodes, which DOMPurify drops, so
+ * they stay invisible and inert. When either is missing (an offline copy, a blocked host), the
+ * built-in renderMarkdown keeps the page working. Links are made to open in a new tab, since a
+ * click that navigated the sandboxed page would replace the review in place.
+ * @param {any} scope The global object, or an object standing in for it.
+ * @returns {(markdown: string) => string}
+ */
+export function selectMarkdownRenderer(scope) {
+  const marked = scope && scope.marked;
+  const purify = scope && scope.DOMPurify;
+  if (
+    !marked ||
+    typeof marked.parse !== 'function' ||
+    !purify ||
+    typeof purify.sanitize !== 'function'
+  ) {
+    return renderMarkdown;
+  }
+  if (typeof purify.addHook === 'function') {
+    purify.addHook('afterSanitizeAttributes', (/** @type {any} */ node) => {
+      if (node.tagName === 'A' && node.hasAttribute('href')) {
+        node.setAttribute('target', '_blank');
+        node.setAttribute('rel', 'noopener noreferrer');
+      }
+    });
+  }
+  return (markdown) => purify.sanitize(marked.parse(markdown, { gfm: true, async: false }));
 }

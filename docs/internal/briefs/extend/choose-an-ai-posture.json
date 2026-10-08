@@ -22,7 +22,7 @@
       "id": "f:ibespi"
     },
     {
-      "text": "An inviting site adds `Content-Signal: search=yes, ai-train=yes` and nothing else, because no `robots.txt` directive grants a crawler access.",
+      "text": "Because no `robots.txt` directive grants a crawler access, an inviting site adds `Content-Signal: search=yes, ai-train=yes` and nothing else.",
       "id": "f:qgtfu6"
     },
     {
@@ -30,7 +30,11 @@
       "id": "f:2edxez"
     },
     {
-      "text": "The scaffold leaves `aiPosture` unset on purpose, so a scaffolded site states nothing until you choose.",
+      "text": "The scaffold leaves `aiPosture` unset on purpose.",
+      "id": "f:gnlib7"
+    },
+    {
+      "text": "A scaffolded site states nothing until you choose.",
       "id": "f:gnlib7"
     },
     {

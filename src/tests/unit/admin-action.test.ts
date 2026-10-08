@@ -31,16 +31,16 @@ function makeEvent(opts: {
   for (const [k, v] of Object.entries(opts.extra ?? {})) body.set(k, v);
   const headers: Record<string, string> = { 'content-type': 'application/x-www-form-urlencoded' };
   if (opts.csrfHeader !== undefined) headers['x-cairn-csrf'] = opts.csrfHeader;
-  const request = new Request('https://x.dev/admin/club/events', {
+  const request = new Request('https://x.dev/admin/team/events', {
     method: 'POST',
     headers,
     body: body.toString(),
   });
   return {
-    url: new URL('https://x.dev/admin/club/events'),
+    url: new URL('https://x.dev/admin/team/events'),
     request,
     params: {},
-    route: { id: '/admin/club/events' },
+    route: { id: '/admin/team/events' },
     cookies: jar(opts.cookie !== undefined ? { '__Host-cairn_csrf': opts.cookie } : {}),
     locals: {
       cairnEditor: opts.editor === undefined ? editor : opts.editor,
@@ -101,7 +101,7 @@ describe('createAdminAction: editor guard', () => {
     await redirectOf(action(event));
     expect(warnSpy).toHaveBeenCalledWith(
       'admin.action.session_absent',
-      expect.objectContaining({ path: '/admin/club/events' }),
+      expect.objectContaining({ path: '/admin/team/events' }),
     );
     warnSpy.mockRestore();
   });
@@ -138,7 +138,7 @@ describe('createAdminAction: CSRF guard (defense-in-depth)', () => {
     await httpErrorStatusOf(action(makeEvent({ cookie: 'AAAA', csrfField: 'AAAB' })));
     expect(warnSpy).toHaveBeenCalledWith(
       'admin.action.csrf_refused',
-      expect.objectContaining({ path: '/admin/club/events', editor: editor.email }),
+      expect.objectContaining({ path: '/admin/team/events', editor: editor.email }),
     );
     warnSpy.mockRestore();
   });
@@ -267,7 +267,7 @@ describe('createAdminAction: the handler runs with a verified editor and a bound
 
 describe('createAdminAction: opt-in authorization', () => {
   const staff: Editor = { email: 'staff@example.com', displayName: 'Staff', role: 'editor', capability: 'editor' };
-  const target = '/admin/club/events';
+  const target = '/admin/team/events';
   const csrf = { cookie: 'MATCH', csrfField: 'MATCH' } as const;
 
   /** A wrapped handler that records its calls and audits, opted into the access check. */
@@ -433,7 +433,7 @@ describe('createAdminAction: the audit sink is fail-open', () => {
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'audit.sink.call_failed',
-        path: '/admin/club/events',
+        path: '/admin/team/events',
         action: 'approve',
         entity: 'signup',
         entityId: '42',

@@ -294,7 +294,9 @@ Transformations on the zone.
 Content references a stored asset by a logical handle, `media:<slug>.<hash>` (or the bare
 `media:<hash>`), the same shape as the `cairn:` link scheme. The hash is the content identity and the
 slug is cosmetic, so a rename never breaks a reference. At render, the handle rewrites to a delivery
-URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that path. This grew from a
+URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that path. [Data
+tiers](../extend/architecture.md#data-tiers) covers where the media manifest and the stored bytes
+live. This grew from a
 reserved seam, so it is additive: a site that declares no `media` is unchanged, and the author-facing
 upload surface lands in a later phase on this substrate.
 
@@ -952,8 +954,8 @@ import { defineAdapter, defineRoles } from '@glw907/cairn-cms';
 
 export const roles = defineRoles({
   owner: 'owner',
-  'club-admin': 'editor',
-  instructor: { capability: 'none', home: '/admin/classes' },
+  webmaster: 'editor',
+  staff: { capability: 'none', home: '/admin/staff' },
 });
 
 export const cairn = defineAdapter({
@@ -979,7 +981,7 @@ the implicit `{ owner: 'owner', editor: 'editor' }` pair `defineRoles` falls bac
 closed rather than locking the person out of sign-in.
 `resolveOwnerLevelRoles` lists every name mapped to owner capability, the set the last-owner guard counts
 across instead of the literal `'owner'` string. (`roleHome`, which used to resolve a role's
-declared `/admin` landing `home`, retired from this subpath in the retires pass, batch 1a: zero
+declared `/admin` landing `home`, retired from this subpath: zero
 consumers, and its own logic was only the first of three branches in the engine's landing policy,
 so a site copying it got no policy from it alone.)
 
@@ -990,6 +992,7 @@ A role vocabulary says who has which name; the access map says what each name ma
 enforcement and visibility point reads: the guard's [`requireAccess`](./sveltekit.md#requireaccess)
 helper, the engine's own route gates, and the nav resolver. Capability is always the floor, and
 the map only narrows it, never widens it, so a site that declares no map sees no behavior change.
+See [Restrict admin access](../extend/restrict-admin-access.md) for the worked guide.
 
 #### `defineAccess`
 
@@ -1019,7 +1022,7 @@ import { roles } from '#theme/cairn.config.js';
 export const access = defineAccess(roles, {
   pages: ['webmaster'],
   media: ['webmaster', 'publisher'],
-  '/admin/money': ['club-admin'],
+  '/admin/money': ['webmaster'],
 });
 ```
 

@@ -4,15 +4,17 @@ This subpath holds `createAuthChannel`, a factory for a site's own second-audien
 an 8-digit-by-default OTP code, requested and confirmed over any transport the site's own `deliver`
 function sends (SMS, email, or another channel), backed by the site's own D1 binding rather than
 `AUTH_DB`. It is server-only surface (no `svelte` export condition), for a site building a login
-flow for an audience other than cairn editors: members, athletes, boosters, or any roster the
+flow for an audience other than cairn editors: members, customers, or any roster the
 engine's own owner/editor auth was never meant to model.
 
 This subpath carries the second-audience login discipline the factory owns: code generation and
 canonicalization, identity derivation and salting, the atomic budget and lockout mechanics,
 session issuance and revocation, and the D1 schema underneath all of it. The email magic-link
 stays the zero-config default and the documented primary path for cairn editors. A general-purpose
-auth primitive with no bearing on this discipline stays out. The design is built from one rule: no
-control keyed on the victim's identity may deny, delay, or destroy anything.
+auth primitive with no bearing on this discipline stays out. See [the security
+model](../extend/security-model.md#the-auth-channels-threat-surface) for the threat catalogue and
+the rule this design is built from: no control keyed on the victim's identity may deny, delay, or
+destroy anything.
 
 ```ts
 import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
@@ -35,7 +37,8 @@ validates every clamp in [Defaults and clamps](#defaults-and-clamps), the requir
 before serving any request.
 
 `Env` does not infer from `resolveDb`'s parameter alone; annotate it explicitly, as the example
-below does, or it collapses to `{}` and every downstream binding read stops typechecking usefully.
+below does, else `Env` infers as `unknown` and a binding read such as `env?.MEMBER_DB` fails to
+typecheck.
 
 <!-- snippet-check-skip: imports cloudflare:workers, which a site's own Worker types declare -->
 ```ts
@@ -140,7 +143,9 @@ code for a polluted environment, so SvelteKit renders your error page instead of
 form. The flag is read from the Worker env alone. "Deployed" reads the configured
 `PUBLIC_ORIGIN` from the Worker env first and falls back to the request's own hostname only when no `PUBLIC_ORIGIN` is
 set. Local development with the flag set is untouched, which is what lets a dev transport use the
-flag as its own enable contract.
+flag as its own enable contract. See [the security
+model](../extend/security-model.md#the-dev-backend-flags-two-refusals) for the full rule and what it
+doesn't cover.
 
 ## Config obligations
 
@@ -150,7 +155,9 @@ must be idempotent, canonical per identity, and injective across distinct people
 budget. `lookup`'s returned subject must be stable and canonical per person. `challenge` is the
 most load-bearing of the three: the factory awaits its return value and treats a truthy result as a
 passed check, with no way to distinguish a real Turnstile `siteverify` call from `async () => true`,
-and the whole economic bound on guessing a code is `challenge`'s consequence.
+and the whole economic bound on guessing a code (see [Write the channel
+module](../extend/add-a-second-sign-in-group.md#write-the-channel-module)) is `challenge`'s
+consequence.
 
 ## Defaults and clamps
 
@@ -203,7 +210,9 @@ The factory's own D1 schema ships as a migration file in the package, at
 `migrations-channel/0000_channel.sql`: the `cairn_channel_meta`, `cairn_channel_code`,
 `cairn_channel_session`, and `cairn_channel_budget` tables, their indexes, and one `INSERT` that
 seeds `schema_version`. Point your channel binding's `migrations_dir` at a copy of that directory,
-never at the `migrations` directory your site's `AUTH_DB` uses. A shared `migrations_dir` applies
+never at the `migrations` directory your site's `AUTH_DB` uses; see [Provision the channel
+database](../extend/add-a-second-sign-in-group.md#provision-the-channel-database) for the wiring. A
+shared `migrations_dir` applies
 cairn's auth migrations to the channel database and the channel's schema to the auth store.
 
 Every statement is idempotent (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, and

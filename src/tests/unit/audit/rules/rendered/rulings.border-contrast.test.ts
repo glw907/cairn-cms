@@ -104,7 +104,7 @@ describe('border-contrast, Ruling 2: the ratified hairline is quiet', () => {
     expect(reported(findings)).toEqual([]);
     expect(selectors(exempted(findings))).toEqual(['div.card-shell']);
     // The reason has to stand alone in a report: the ruling, the measurement, and the token.
-    expect(exempted(findings)[0].exemption).toContain('RULING 2');
+    expect(exempted(findings)[0].exemption).toContain('the documented hairline');
     expect(exempted(findings)[0].exemption).toContain('--cairn-card-border');
     expect(exempted(findings)[0].exemption).toContain('1.19');
   });
@@ -464,7 +464,7 @@ describe('border-contrast, Ruling 2: the exemption reaches the report as a count
     const text = formatReport(report);
     expect(text).toMatch(/1 suppressed/);
     expect(text).toContain('Suppressed:');
-    expect(text).toContain('RULING 2');
+    expect(text).toContain('the documented hairline');
     expect(text).toContain('--cairn-card-border');
     expect(text).toContain('div.card-shell:');
 

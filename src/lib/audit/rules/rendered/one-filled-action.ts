@@ -9,7 +9,7 @@
 // two `<nav>` rails partitions into two surfaces, never one shared `'nav'` surface
 // (latent until now only because every shipped nav uses `btn-active`, never a real fill).
 //
-// The partition RULING (Geoff, 2026-07-30, SETTLED, not re-litigated): <nav> and <aside> partition;
+// The partition rule (settled): <nav> and <aside> partition;
 // the topmost open dialog layer partitions; <header>, <footer>, and <main> itself do NOT. The rule
 // exists to stop two controls both claiming to be the action, and a DOM boundary between a page
 // header and the card beneath it removes none of that harm, same visual column, same first look. A
@@ -167,7 +167,7 @@ export const oneFilledAction: RenderedRule = {
         message:
           `${controls.length} accent-filled controls compete on this surface (expected at ` +
           `most 1): ${controls.join(', ')}. Keep one accent fill per surface; make the rest ` +
-          `outline, ghost, or the sanctioned ink fill (docs/internal/admin-design-system.md, "the ink story").`,
+          `outline, ghost, or the sanctioned ink fill (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "the ink story").`,
       }));
   },
 };

@@ -18,7 +18,7 @@ field, not just whether you write it at all.
 
 ## Write the brief
 
-`references/brief-template.md` carries the four-field shape: what the pass builds, the engine
+`references/brief-template.md` carries the four-field shape: what the site is building, the engine
 edge it presses (with `file:line` where the edge is a specific export), evidence for the
 any-site case, and the site's fallback if declined, with its rough size. Save it under the site's
 own docs, never inside a cairn-cms checkout you might have on disk; this skill does not touch

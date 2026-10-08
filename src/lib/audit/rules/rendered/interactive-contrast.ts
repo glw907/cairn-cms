@@ -60,8 +60,8 @@ import {
 
 /**
  * Below this contrast ratio, an interactive element's own text and its composited background are
- * close enough to read as camouflaged rather than merely low-contrast. RATIFIED (ruling 3,
- * Geoff, 2026-07-28) alongside `chip-ground-collision`, which borrowed this exact number from the
+ * close enough to read as camouflaged rather than merely low-contrast. RATIFIED
+ * alongside `chip-ground-collision`, which borrowed this exact number from the
  * graduated probe this rule itself graduates from. The shared rationale, now on the record so
  * neither rule re-litigates it: both test "not accidentally camouflaged," and neither is a contrast
  * standard. Legibility is WCAG 1.4.3 Contrast (Minimum), AA, at 4.5:1 for normal text and 3:1 for

@@ -61,8 +61,8 @@ undercounts the roster's owners. The guard then refuses a safe removal, or allow
 when the omitted name sits on the row the caller removes.
 
 Each of the four guarded write functions on this page returns a discriminated `outcome` result
-rather than a `boolean` or `void`, so a caller reads the refusal reason off the type rather than
-re-deriving it from a separate read. `deleteEditor` and `setEditorRole` distinguish `'not-found'` (no row matched the
+rather than a `boolean` or `void`. A caller reads the refusal reason off the type and never
+re-derives it from a separate read. `deleteEditor` and `setEditorRole` distinguish `'not-found'` (no row matched the
 email) from `'last-owner'` (the row is present and is the last owner-capability row), because
 their own atomic write's `WHERE` matches any row, owner or not, so a `changes === 0` result can
 only mean one or the other. `removeOwnerIfNotLast` and `demoteOwnerIfNotLast` instead report

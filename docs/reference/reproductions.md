@@ -3,12 +3,12 @@
 This subpath is the story registry backing a `repro` fenced code block: a docs page names a story
 id, and the fence resolves to a live render of the real admin component the id names, mounted with
 its fixture data and driven to the state its page contract describes. It ships in the tarball
-beside the docs corpus for a site that builds a docs corpus against it, notably cairn-pub; it
+beside the docs corpus for a site that builds a docs corpus against it, notably cairn.pub, cairn's docs site; it
 carries no general-purpose admin UI a site mounts on its own. The engine mounts the real component
 and contains it, so an embedded story cannot act as a live admin surface. The mounted subtree is
 inert, a modal dialog a story opens is marked inert as it opens, and window-level keyboard,
 pointer, drag, and unload events stop before any handler sees them. Containment holds from first
-paint and does not depend on a pose, which a consumer runs. An inert subtree also contributes no
+paint and does not depend on the pose a consumer runs. An inert subtree also contributes no
 node to the accessibility tree, so a screen reader reaches none of the mounted markup. Whatever alt
 text a page authors for the embed is the entire accessible content of that embed, which is worth
 knowing before writing it.
@@ -33,14 +33,14 @@ The matching node-safe manifest lives one level down at
 here against them.
 
 Every export on both subpaths is Unstable API: the registry is new, coupled to one consumer's
-build (cairn-pub's docs), and its shape is not yet committed across minor versions.
+build (cairn.pub's docs), and its shape is not yet committed across minor versions.
 
 ---
 
 ## Why two subpaths
 
 The registry splits across two entry points because its two consumers need different things from
-it. A build-time gate (this engine's own `check:visuals`, and cairn-pub's fence validation at
+it. A build-time gate (this engine's own `check:visuals`, and cairn.pub's fence validation at
 build time) needs to read story ids, declared heights, and marker keys from a bare `node` process,
 with no bundler and no Svelte runtime in the way. A docs route and this engine's own story-mount
 test need the opposite: the real components, their fixture props, and the poses that drive them
@@ -50,7 +50,7 @@ into the states a page contracts to show.
 its static import graph. `@glw907/cairn-cms/reproductions` is the Svelte-importing half: component
 references, fixture props, poses, and the mounting wrapper. Nothing in the manifest's module graph
 may ever resolve to a `.svelte` specifier, because a single one would break both the node-safe gate
-and cairn-pub's build at once. `src/tests/unit/reproductions-manifest.test.ts` holds the source
+and cairn.pub's build at once. `src/tests/unit/reproductions-manifest.test.ts` holds the source
 graph to that rule, and `src/tests/unit/reproductions-manifest-dist-spawn.test.ts` holds the built
 `dist/reproductions/manifest.js` to it by spawning a bare `node` process against it.
 
@@ -91,11 +91,11 @@ does not appear in the server render. `pose` drives a state that lives in the co
 internal state rather than a prop. Both take `root`, the element `ReproContext` mounted the story
 into, never `document`: a posed dialog and the editor's fixed-position insert panel render inside
 that element rather than appended to `document.body`, so a `settle` or `pose` that queries
-`document` instead of `root` misses them. `pose` also takes the mounted component's own exports
-(`ReproInstance`, which carries no export row of its own: a consumer reaches it as
-`Parameters<NonNullable<ReproStory['pose']>>[1]`), for a story the real admin reaches by calling
-an exported method rather than by clicking, such as
-the insert panel the editor mounts headless and opens from its toolbar. The parameter is required,
+`document` instead of `root` misses them. `pose` also takes the mounted component's own exports,
+for a story the real admin reaches by calling an exported method rather than by clicking, such as
+the insert panel the editor mounts headless and opens from its toolbar. That parameter's type is
+`ReproInstance`. It carries no export row of its own: a consumer reaches it as
+`Parameters<NonNullable<ReproStory['pose']>>[1]`. The parameter is required,
 so a host that cannot supply an instance fails to compile rather than posing half a story.
 `markers` are the numbered callout anchors a story exposes, mirroring its manifest entry's
 `markerKeys`.
@@ -137,7 +137,7 @@ supply a theme root.
 
 `mediaBase` is the path segment every fixture media URL mounts under, so a docs site deployed
 under a SvelteKit `paths.base` composes fixture image URLs inside its own namespace instead of a
-hardcoded default; absent, it falls back to `/repro-assets`, cairn-pub's own asset route. It
+hardcoded default; absent, it falls back to `/repro-assets`, cairn.pub's own asset route. It
 threads to both places a mounted story reaches its media base: the reserved context key below, and,
 for a `'shell'` story, the shell payload's own `mediaBase` field, which feeds `CairnAdminShell`'s
 identical, shadowing context of the same key.

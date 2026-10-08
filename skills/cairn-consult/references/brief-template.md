@@ -1,14 +1,18 @@
 # Brief template
 
+<!-- leak-ok-begin: C3 -- the path is where the consulting site files its own brief, named by the consult protocol -->
+
 One document, saved under the site's own docs (for example
 `docs/internal/consultations/YYYY-MM-DD-<what-it-presses>.md`), never inside the cairn-cms
 checkout. One item per edge pressed; a pass that presses more than one edge lists more than one
 item in the same document.
 
+<!-- leak-ok-end -->
+
 ```markdown
 ### <item slug>
 
-1. **What the pass builds:** <the site feature, one paragraph>
+1. **What the site is building:** <the site feature, one paragraph>
 2. **The engine edge it presses:** <surface, `file:line` where known>
 3. **Evidence for the any-site case:** <recurrence, measurements, prior instances>
 4. **The site's fallback if declined:** <the hand-roll, with its rough size>

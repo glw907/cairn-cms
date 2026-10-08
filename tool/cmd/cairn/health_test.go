@@ -32,7 +32,7 @@ func (blockingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 func okReport() health.Report {
 	return health.Report{
 		SchemaVersion: 1,
-		Site:          "ecxc.ski",
+		Site:          "my-site.example.org",
 		Checks: []health.CheckResult{
 			{ID: "creds", Outcome: spine.Outcome{State: spine.OK, Detail: "both tokens answer"}},
 			{ID: "serving", Outcome: spine.Outcome{State: spine.OK, Detail: "200 in 84ms"}},
@@ -50,7 +50,7 @@ const fixtureDetail = "the fixture's own measured line"
 func failingReport() health.Report {
 	return health.Report{
 		SchemaVersion: 1,
-		Site:          "907.life",
+		Site:          "blog.example.org",
 		Checks: []health.CheckResult{
 			{ID: "creds", Outcome: spine.Outcome{State: spine.OK, Detail: "both tokens answer"}},
 			{ID: "https", Outcome: spine.Outcome{State: spine.Failing, Detail: fixtureDetail}},
@@ -155,7 +155,7 @@ func TestStatusLineCarriesTheTokenExpiry(t *testing.T) {
 	}
 	report := health.Report{
 		SchemaVersion: 1,
-		Site:          "907.life",
+		Site:          "blog.example.org",
 		Checks: []health.CheckResult{{
 			ID: "creds",
 			Outcome: spine.Outcome{
@@ -211,9 +211,9 @@ func TestJSONWinsOverQuiet(t *testing.T) {
 // the rule holds at the command surface and not only in the body writer.
 func TestHealthJSONAndQuietTogetherIsNotAUsageError(t *testing.T) {
 	d, _ := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
-	stdout, _, err := execTree(t, d, "health", "ecxc-ski-a1b2c3", "--json", "--quiet")
+	stdout, _, err := execTree(t, d, "health", "my-site-a1b2c3", "--json", "--quiet")
 	if err != nil {
 		t.Fatalf("health --json --quiet: %v", err)
 	}
@@ -266,8 +266,8 @@ func TestSinceGrammarIsOneTableForHealthAndLogs(t *testing.T) {
 
 			for _, command := range []string{"health", "logs"} {
 				d, _ := testDeps(t)
-				writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
-				_, _, runErr := execTree(t, d, command, "ecxc-ski-a1b2c3", "--since", tt.value)
+				writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
+				_, _, runErr := execTree(t, d, command, "my-site-a1b2c3", "--since", tt.value)
 
 				refused := runErr != nil && strings.Contains(runErr.Error(), "--since")
 				if tt.accept && refused {
@@ -293,7 +293,7 @@ func TestSignalCancelsTheRunAndExitsUnknown(t *testing.T) {
 		"CAIRN_CF_READ_TOKEN": "cf-token",
 		"CAIRN_GH_READ_TOKEN": "gh-token",
 	})
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
 	parent, cancelParent := context.WithCancel(context.Background())
 	defer cancelParent()
@@ -303,7 +303,7 @@ func TestSignalCancelsTheRunAndExitsUnknown(t *testing.T) {
 	cmd := newRootCmd(d)
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetArgs([]string{"health", "ecxc-ski-a1b2c3"})
+	cmd.SetArgs([]string{"health", "my-site-a1b2c3"})
 
 	returned := make(chan error, 1)
 	go func() { returned <- cmd.ExecuteContext(ctx) }()

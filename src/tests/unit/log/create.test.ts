@@ -199,11 +199,11 @@ describe('createLogger', () => {
   it('unions a site own redactKeys with the defaults rather than replacing them', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const logger = createLogger<TestEvent>({ redactKeys: ['memberNumber'] });
-    logger.info('widget.created', { memberNumber: '4471', token: 'abc', household: 'Alvarez' });
+    logger.info('widget.created', { memberNumber: '4471', token: 'abc', signup: 'Alvarez' });
     const record = spy.mock.calls[0][0] as Record<string, unknown>;
     expect(record.memberNumber).toBe('<redacted>');
     expect(record.token).toBe('<redacted>');
-    expect(record.household).toBe('Alvarez');
+    expect(record.signup).toBe('Alvarez');
   });
 
   it('freezes both public arrays, so a push throws rather than corrupting the list', () => {

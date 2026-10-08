@@ -28,7 +28,8 @@ The spec and both plans are reviewed, folded, and verified: pass A
 [`superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md`](superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)
 (11.1M), then pass B (`...-pre-2b-b.md`). The three forks are ruled (forks 1 and 2 take the
 recommendations, and pass B's ceiling is 14.0M), and Geoff approved the spec on 2026-10-08. Pass A
-executes next.
+is paused inside Task 0 on worktree `.claude/worktrees/engine-pre-2b-a` (branch `engine-pre-2b-a`);
+the Task 0 entry in the plan's Ledger, on that branch, carries the state and the next step.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
@@ -57,6 +58,6 @@ executes next.
 > **Still open:** nothing; Geoff approved the spec on 2026-10-08 ("Spec is good.").
 >
 > **Approach.** Fresh `claude --model claude-opus-5-5` session at medium effort from
-> `~/Projects/cairn-cms`; invoke `cairn-pass`, read the spec, rulings, and pass A's plan, then execute
-> pass A. Keep `tool/internal/{spine/conditions,doctor/site-config-path}.json` and
+> `~/Projects/cairn-cms`; invoke `cairn-pass`, read the spec, rulings, and pass A's plan, then resume
+> pass A from the plan's Ledger on the `engine-pre-2b-a` branch (Task 0: baseline, draft PR, guards, then S1). Keep `tool/internal/{spine/conditions,doctor/site-config-path}.json` and
 > `.cairn/site-facts.json`.

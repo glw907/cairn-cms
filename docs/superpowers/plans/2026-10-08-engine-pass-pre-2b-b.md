@@ -412,7 +412,13 @@ The inputs most likely to bite a real user that per-task tests would not exercis
 3. **Worktree.** Create `.claude/worktrees/engine-pre-2b-b` on `engine-pre-2b-b` from `main`'s
    head. Run `npm ci`, then a from-scratch showcase install (`rm -rf examples/showcase/node_modules`,
    then `npm ci --prefix examples/showcase`). `realpath` confirms the engine and the dev package
-   resolve into the worktree.
+   resolve into the worktree. Then make CI's three preparation steps, which a fresh worktree lacks
+   and without which the baseline F goes red on setup alone (pass A's Task 0, 2026-10-08): `npm run
+   package`; bake the `create-cairn-site` template as `.github/workflows/test.yml` does (in
+   `packages/create-cairn-site`, `node scripts/bake-template.mjs --to template --engine-spec
+   "^$VERSION" --dev-spec "^$VERSION"`, with `VERSION` the root `package.json` version); and `npx
+   svelte-kit sync` in `examples/showcase` (`check-public-skill.test.ts` fails on
+   `$app/tsconfig` without it).
 4. **Gate strings.** Print F and E from the module's `TIER_GATES` (under "Gates"; a `--range` on a
    branch equal to `main` is empty, and the script exits 1 before it reads `--pin`) and record both.
 5. **Baseline.** One gate agent runs F in the worktree and returns the `gate exit:` line and its

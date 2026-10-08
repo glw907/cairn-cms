@@ -53,7 +53,7 @@ brainstorm (prompt below), the first slot on the path in `ROADMAP.md`'s boundary
 > entry (one release after stage 5; engine passes never release; no site migrates first; the test).
 >
 > **Still open, brainstorm these:** reconciling ROADMAP's "Toward 1.0" series with the one-release
-> path; tool-neutral agent guidance and where the coding-agent docs live; which *decide* items the
+> path; where "Using Claude Code with cairn" lives; which *decide* items the
 > pass takes; the lead seam's shape; whether the docs tooling rides this pass or its own.
 >
 > **Approach.** Fresh brainstorm session; read the two ROADMAP entries, `docs/internal/engine-rulings.md`,

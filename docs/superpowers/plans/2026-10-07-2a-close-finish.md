@@ -17,7 +17,9 @@ agents, example context, and consumer-site leaks. This plan carries what those r
    that a reader IS using a coding agent." / "If we want to address coding agents, we can create
    separate docs specifically for that." / "Having a 'using Claude Code with cairn' would certainly
    be a useful documentation topic." (Landed: brief rule, `scaffolded-site-files.md` restructure,
-   ROADMAP "Tool-neutral agent guidance" and "Dedicated coding-agent docs".)
+   ROADMAP "Dedicated coding-agent docs".) Narrowed later the same day: "we don't have to assume any
+   other agent than claude code. It's the only one that either of us is familiar with." Guidance
+   stays Claude Code's; no `AGENTS.md` work.
 2. On a run of ", since … / , which … / , so …" sentences: "really awkward AI cadence"; avoiding it
    "should live in our writing infrastructure." (Landed: tellgrader `trailing-hinge-run`, gating;
    `check:tellgrader` in `check:docs-gate`, local only.)

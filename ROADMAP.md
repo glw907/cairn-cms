@@ -332,8 +332,8 @@ The original decision framing, for the record:
   and may add or drop a pass; this list is where each one sits today.
   1. Finish stage 2a's close: `docs/superpowers/plans/2026-10-07-2a-close-finish.md` (leak check,
      cadence rewrite, merge of PR #107). Not an engine pass.
-  2. **Engine pass before stage 2b** (the Now entry below): its listed fixes, tool-neutral agent
-     guidance, the placement of the dedicated coding-agent docs, and whichever "Docs tooling before
+  2. **Engine pass before stage 2b** (the Now entry below): its listed fixes, the placement of the
+     "Using Claude Code with cairn" docs, and whichever "Docs tooling before
      stage 2b" items ride with it (or run as their own dotfiles pass).
   3. Stage 2b: the 14 remaining extend pages. Its close runs the test.
   4. Stage 3: the admin arm. Forecast: no engine pass after it.
@@ -471,31 +471,22 @@ The original decision framing, for the record:
     leanest fix may drop the free key choice); `cairn-audit` exits 0 on advisories with no `--json`
     report and no stable finding codes (`src/lib/audit/report.ts:49`; run-cairn-audit-on-your-site).
 
-  - **Tool-neutral agent guidance (owner ruling, Geoff, 2026-10-07: "You should not assume that an
-    implementor is using Claude.").** A developer building on cairn may use Codex, Cursor, Gemini
-    CLI, Copilot, or no coding agent. Today `cairn-guidance` and the scaffold ship agent guidance
-    only in Claude Code's format (a root `CLAUDE.md` importing `.claude/cairn/CLAUDE.md`, skills
-    under `.claude/skills/`, the review agent under `.claude/agents/`, the `Stop` hook snippet for
-    `.claude/settings.json`) and no `AGENTS.md`, so a developer on another tool gets nothing; the
-    reference page `docs/reference/guidance.md` says so for now. The guidance stays an optional aid:
-    human pages never address coding agents or assume a reader uses one (rulings, Geoff,
-    2026-10-07: "A page shouldn't even assume that a reader IS using a coding agent."; "If we want
-    to address coding agents, we can create separate docs specifically for that."). *Decide* (premise for the brainstorm, not a design): the cross-tool
-    `AGENTS.md` convention as the canonical guidance, Claude Code reaching it through `CLAUDE.md`
-    (which can import it), and the Claude-only extras (the review agent, the `Stop` hook snippet,
-    the skills location) kept as optional extras labeled as such; evaluate the open Agent Skills
-    format for the skills. The brainstorm verifies each tool's current conventions from their
-    published docs before designing. It changes `docs/reference/guidance.md`, the one-line
-    `CLAUDE.md` and `.claude/` entries in `docs/extend/scaffolded-site-files.md`, and any other hit
-    from `grep -rniE "claude" docs/extend docs/reference` (today only those pages, plus the
-    per-version records).
+  - **Agent guidance stays Claude Code's, and human pages never assume it (rulings, Geoff,
+    2026-10-07).** "You should not assume that an implementor is using Claude." "A page shouldn't
+    even assume that a reader IS using a coding agent." "If we want to address coding agents, we can
+    create separate docs specifically for that." Then, narrowing the engine side: "we don't have to
+    assume any other agent than claude code. It's the only one that either of us is familiar with."
+    So `cairn-guidance` and the scaffold keep shipping guidance in Claude Code's format only, with no
+    `AGENTS.md` or other-tool support planned. What the rulings require is already landed: human pages
+    never address agents, `scaffolded-site-files.md` names `CLAUDE.md` and `.claude/` in one labeled
+    line each, and `docs/reference/guidance.md` states the format. Nothing here needs an engine change.
   - **Dedicated coding-agent docs (Geoff, 2026-10-07: "Having a 'using Claude Code with cairn' would
     certainly be a useful documentation topic.").** A separate doc set for working with a coding
     agent on a cairn site, outside the developer and editor tracks. Its first page is "Using Claude
     Code with cairn": the guidance tree, the four skills and when each loads, the review agent, the
     `Stop` hook snippet, and `cairn-guidance install` and `check` with their exit codes and the CI
-    step. Siblings for other agents follow once tool-neutral guidance ships. Track and placement are
-    settled in the engine-pass brainstorm. The facts already sit in `docs/internal/facts/extend.md`:
+    step. It documents Claude Code only (the ruling above). Track and placement are settled in the
+    engine-pass brainstorm. The facts already sit in `docs/internal/facts/extend.md`:
     `f:0ygumq` (the installed tree), `f:pmmtrm` (Claude Code format only), `f:7ozknm` and
     `f:o7bkm0` (the four skills), `f:6ro1n9` (the root `CLAUDE.md`), `f:dy5cfj` (`VERSION`),
     `f:4ax489` (`check` and `--strict`), `f:jd54ph` (the CI step), `f:4h9fz4` and `f:5ohm23`

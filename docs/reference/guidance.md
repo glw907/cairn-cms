@@ -6,9 +6,7 @@ that points a build agent at the boundary, the atoms, and the gates. A scaffolde
 with all three baked in; `cairn-guidance install` is how an existing site adopts them, and how any
 site refreshes after a version bump.
 
-The guidance is written for Claude Code and installs into its `.claude/` layout. The package ships
-no `AGENTS.md` and no file for any other coding agent, so a site using another agent has no cairn
-guidance to read yet.
+The guidance is written for Claude Code and installs into its `.claude/` layout.
 
 ## How to run it
 

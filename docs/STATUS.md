@@ -26,8 +26,8 @@ The engine pass before stage 2b is next, warranted by the boundary test; its sco
 [`superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md`](superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md).
 The spec and both plans are reviewed, folded, and verified: pass A
 [`superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md`](superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)
-(11.1M), then pass B (`...-pre-2b-b.md`). Execution waits for Geoff's spec read and three forks:
-dev-save landing (pass B Task 10), anonymous `/healthz?live=1` (pass A Task 6), pass B's ceiling.
+(11.1M), then pass B (`...-pre-2b-b.md`). The three forks are ruled (forks 1 and 2 take the
+recommendations, and pass B's ceiling is 14.0M); execution waits only on Geoff's spec read.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
@@ -49,12 +49,13 @@ dev-save landing (pass B Task 10), anonymous `/healthz?live=1` (pass A Task 6), 
 > pass B (scaffold, dev, and schema). Out: stage 2b's pages, any release or tag, any site migration.
 >
 > **Settled:** the spec's rulings file; `ROADMAP.md`'s 2026-10-07 boundary-test rulings (one release
-> after stage 5; engine passes never release; no site migrates first).
+> after stage 5; engine passes never release; no site migrates first); Geoff's 2026-10-08 fork
+> rulings: fork 1 in-memory dev saves with a persistent notice, fork 2 anonymous `/healthz?live=1`
+> yes, fork 3 pass B ceiling 14.0M.
 >
-> **Still open:** Geoff's spec read and his answers to forks 1 to 3 (the plans' "Rulings for
-> Geoff" sections), which gate execution.
+> **Still open:** Geoff's spec read only, which gates execution.
 >
 > **Approach.** Fresh `claude --model claude-opus-5-5` session at medium effort from
 > `~/Projects/cairn-cms`; invoke `cairn-pass`, read the spec, rulings, and pass A's plan, then execute
-> pass A after Geoff's answers. Keep `tool/internal/{spine/conditions,doctor/site-config-path}.json` and
+> pass A after Geoff's spec read. Keep `tool/internal/{spine/conditions,doctor/site-config-path}.json` and
 > `.cairn/site-facts.json`.

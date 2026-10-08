@@ -11,7 +11,7 @@ site-config path is declared once, and `cairn-audit` can fail on advisories. The
 **Architecture:** Four segments on one worktree. S1 changes the scaffold and its provisioning. S2
 moves the dev package to `dist/`, moves the dev-build define into the engine's Vite plugin, and fixes
 `cairn-guidance check`. S3 adds the composition and build-time checks. S4 runs ruling 5's dev
-backend, which an open owner fork governs, and then the docs and records task.
+backend (fork 1 ruled: in-memory saves with a persistent notice), and then the docs and records task.
 
 **Tech stack:** SvelteKit 3, `@sveltejs/adapter-cloudflare` 8, svelte 5 runes, Vite 8, wrangler 4,
 vitest (unit, component, and workerd integration projects), Playwright, Node `node:test` for
@@ -34,8 +34,8 @@ runner's `engine-logic` bar sets `coverageBlocks: false` and demotes a `coverage
 C5 mutation proof on the first review. `web-auth-security-reviewer` is named on its C5 item. The
 close runs the union: `auth-data`'s security review and live auth smoke, and `sweep`'s capture.
 
-**Token ceiling:** 12.1M for the whole pass, chains plus close, pending Geoff's yes on fork 3
-(under "Rulings for Geoff"). Basis:
+**Token ceiling:** 14.0M for the whole pass, chains plus close (fork 3, ruled by Geoff on
+2026-10-08). The basis below sums to 12.1M; the remaining 1.9M is unallocated reserve. Basis:
 
 | Item | Budget |
 | --- | --- |
@@ -48,8 +48,8 @@ close runs the union: `auth-data`'s security review and live auth smoke, and `sw
 | Close: simplifier, gates, consumer proof, four reviewer seats and the `visual-verifier` read, one fix chain, smoke, ledgers | 2.95M |
 | **Total** | **12.10M** |
 
-At 80 percent (9.68M) the conductor finishes the task in flight, writes STATUS, and asks one
-combined question at the next segment boundary. It starts no new segment past 9.68M without an
+At 80 percent (11.2M) the conductor finishes the task in flight, writes STATUS, and asks one
+combined question at the next segment boundary. It starts no new segment past 11.2M without an
 answer. The SvelteKit 3 close's fix chain alone cost about 1.95M against about 1.45M budgeted for
 the whole close (`2026-10-03-sveltekit-3-upgrade.md:1562`), and that pass ended at about 14.7M
 against 12.4M. The close line carries that record.
@@ -231,17 +231,15 @@ failed item stops the run before any dispatch.
    (`scripts/checks/docs-links.mjs:168` names it in a comment only). Task 11 defines the entry shape.
 6. **Fork 2** (anonymous `/healthz?live=1`) is ruled and landed in pass A. Pass B does not depend on
    it; Task 0 records the ruling.
-7. **Fork 1** (where a dev-admin save lands) is ruled or open. Task 0 records which. If Geoff ruled
-   "No", the conductor rewrites Task 10 per its "Under the other answer" before S4, and commits the
-   amendment.
+7. **Fork 1** (where a dev-admin save lands) is ruled yes (Geoff, 2026-10-08). Task 10 builds as
+   written.
 
 ## Decisions this plan takes
 
 1. **Ruling 5 runs in S4, not third.** The spec's pass B list is an order, not a dependency chain,
-   and nothing in it needs ruling 5 early. Placing it last keeps the one task an open owner fork
-   governs off the critical path, so S1 to S3 run whatever fork 1's status. B1's `dist/` build lands
+   and nothing in it needs ruling 5 early. B1's `dist/` build lands
    first, so ruling 5's code is proven through the built package. Task 10 owns every ruling-5
-   record, so Task 11 can run before it if fork 1 is still open. Those records are the `seedContent`
+   record. Those records are the `seedContent`
    and `content: 'fixtures'` lines in `CHANGELOG.md` and `migration-notes.md`, ruling 5's facts
    bullets, the README and the `DevBackendConfig` doc comment, and the ruling-5 items on the
    `add-cairn-to-a-sveltekit-app` and `scaffolded-site-files` re-arm entries. They also include
@@ -267,8 +265,8 @@ failed item stops the run before any dispatch.
    no backend call at all (resolving the provider is lazy, `src/lib/github/backend.ts:176-178`, and
    the token mints only inside a backend method). It maps the member to one optional `AdminShellData` member, and
    `CairnAdminShell` renders one DaisyUI `alert`. That is two public members, with no sixth
-   `App.Locals` key and no change to `CairnEvent.locals`. Fork 1's question carries this scope as
-   its sub-point.
+   `App.Locals` key and no change to `CairnEvent.locals`. Geoff's fork 1 ruling accepted this scope
+   with the recommendation.
 4. **A5's e2e reaches a 403 through a showcase-only fixture route.** The dev backend always mints an
    owner session (`packages/cairn-cms-dev/src/handle.ts:160-166`), so no access-map refusal is
    reachable in the showcase e2e. A route under `src/routes/admin/` whose load throws `error(403)`,
@@ -321,38 +319,18 @@ failed item stops the run before any dispatch.
 
 ## Rulings for Geoff
 
-**Fork 1, open: should a dev-admin save stay in memory, with a persistent notice?** Recommended:
-yes, in memory, plus one persistent DaisyUI `alert` in the admin shell. The notice says edits are held
-in memory and discarded when the dev server stops. Sub-point, decided by this plan unless Geoff says
-otherwise: the notice shows when the dev backend serves the site's real content, not in fixtures
-mode (Decision 3). Task 10 is **BLOCKED until Geoff rules**. Its section states what changes under
-"No".
-
-"No" writes dev publishes to the working tree, and it carries these costs beyond the spec's list
-(the empty fake R2, the non-atomic multi-file commit):
-
-- **Stale overwrite.** A commit's `expectedHead` is the in-memory head, which the developer's own
-  editor never moves. A dev publish built from an earlier read overwrites an on-disk edit made
-  since, with no conflict.
-- **Unauthenticated LAN write.** The dev handle's host tripwire fires only when `CAIRN_DEV_BACKEND`
-  is on the Worker env (`packages/cairn-cms-dev/src/handle.ts:39-42`). Under `vite dev` the opt-in
-  lives in `process.env` (`examples/showcase/src/chassis/dev-gate.ts:31-36`), so
-  `npm run dev -- --host` serves the owner-session admin to the LAN with no host check. Under "No"
-  that becomes an unauthenticated write into the working tree.
-- **Orphaned media rows.** A dev upload's bytes stay in the fake R2, but its `media.json` row
-  publishes to disk, gets committed, and deploys a reference to an asset never uploaded.
-
-Under "No" Geoff also chooses, in the same ruling: pull the R2 read-through forward, or disable the
-Library's broken-asset cleanup under the dev backend (the fake R2 starts empty and flags every real
-asset as broken). Recommended: disable the cleanup, which keeps the read-through out of this pass.
+**Fork 1, ruled yes (Geoff, 2026-10-08: "Recomendations accepted for Fork 1 and 2."):** a
+dev-admin save stays in memory, plus one persistent DaisyUI `alert` in the admin shell. The notice
+says edits are held in memory and discarded when the dev server stops. It shows when the dev
+backend serves the site's real content, not in fixtures mode (Decision 3). The "No" alternative
+(dev publishes written to disk) was not taken.
 
 Fork 2 belongs to pass A.
 
-**Fork 3, open: is the pass ceiling 12.1M?** Recommended: yes, 12.1M, with the 80 percent stop at
-9.68M. The evidence is the chain rate pass A and the SvelteKit 3 pass price (0.55M for a full-tier
-chain) and that pass's close record (its fix chain alone cost about 1.95M against 1.45M for the
-whole close). "No" keeps the drafted 10.8M, with the 80 percent stop at 8.64M. On that record the
-stop is likely to trip in S4 or the close, and each trip costs an owner turn.
+**Fork 3, ruled (Geoff, 2026-10-08: "For Fork 3, ceiling at 14M."):** the pass ceiling is 14.0M,
+with the 80 percent stop at 11.2M. The planned basis is 12.1M, priced from the chain rate pass A
+and the SvelteKit 3 pass use (0.55M for a full-tier chain) and that pass's close record (its fix
+chain alone cost about 1.95M against 1.45M for the whole close).
 
 No other open ruling. Method calls this plan made are under "Decisions this plan takes". The
 review's two low-stakes forks are decided there: the Firefox click goes (Decision 11), and the
@@ -386,14 +364,11 @@ Geoff wants this pass to survive a 10-hour unattended run, so every stop is plan
   report that a task needs public surface this plan does not name;
 - a CI red outside the inherited set that one fix round does not clear;
 - the 80 percent ceiling (finish the task in flight first);
-- fork 1 still open when S4 begins: run Task 11 first, then stop before Task 10;
 - the battery stand-down at 11 percent (`~/.claude/docs/unattended-work-guards.md`).
 
 **Owner-gated steps, batched at the end:**
 
-1. Fork 1's and fork 3's rulings, if either is still open (one question each, with the
-   recommendation).
-2. The merge to `main` (Geoff's go; the PR leaves draft once CI is green).
+1. The merge to `main` (Geoff's go; the PR leaves draft once CI is green).
 
 Nothing else waits on Geoff. The live smoke is Claude's (Decision 11). Neither the A5 capture nor
 the notice needs an owner sitting: the main loop reads both captures, and a fresh-context
@@ -913,16 +888,16 @@ its tests; `docs/reference/render.md` (minimal edit stating the floor).
 **Gate:** computed; expected F (`examples/showcase/src/theme/` computes `full`).
 
 **S3 boundary:** F green on the segment head; `check:close` green; STATUS written; S4 pre-flight
-dispatched, including fork 1's status.
+dispatched.
 
 ---
 
 ## S4: dev backend and records
 
-### Task 10: The dev backend over the site's real content (ruling 5), BLOCKED until Geoff rules fork 1
+### Task 10: The dev backend over the site's real content (ruling 5)
 
 **Pass class:** `engine-logic`. **Spec:** "Ruling 5" in full; "Rulings for Geoff", item 1; pass B
-task 3. **Decisions 1 and 3.** Built on the recommendation: in memory, plus a persistent notice.
+task 3. **Decisions 1 and 3.** Built on fork 1's ruling (yes): in memory, plus a persistent notice.
 
 **Files:** `packages/cairn-cms-dev/src/{handle,fake-github}.ts` and their tests (plus a new overlay
 module if the implementer splits one out); `packages/cairn-cms-dev/README.md`;
@@ -1010,24 +985,7 @@ committed manifest; each fails today, where the dev admin shows only fixtures):
   re-arm entries carry the ruling-5 items with their fact ids.
 - The computed gate green.
 
-**Under the other answer ("No": publishes write to disk).** If Geoff rules "No", the conductor
-rewrites this task before S4, and the rewritten task runs as `auth-data` (it writes user data), with
-its mutation proofs and stop rule:
-- The overlay and tombstones go. A commit to `main` writes files through `node:fs`, deleting for a
-  delete. A `cairn/*` branch keeps its in-memory overlay until publish, so drafts never touch disk.
-- The notice and its `Backend` and `AdminShellData` members go.
-- Fork 1's three listed costs become constraints. Each disk write compares the target's current
-  bytes with the bytes the commit was built from, and refuses on a mismatch. The host refusal
-  applies under `vite dev` whenever the handle is mounted. A dev upload is refused under the dev
-  backend, or its bytes go to local R2.
-- The whole-tree snapshot case becomes "the tree changes exactly by the published files".
-- New constraints: a multi-file commit writes each file atomically (temp file plus rename), and the
-  README states that the commit as a whole is not atomic on disk. The Library's fake R2 starts empty
-  and flags every real asset as broken. The README states this, and the R2 read-through is pulled
-  forward or the Library's broken-asset cleanup is disabled under the dev backend (the conductor
-  brings that choice to Geoff in the same ruling).
-- Acceptance changes: "leaves the file untouched" becomes "writes the file, and `git diff` shows
-  it". A delete removes the file. The public page reflects a dev publish on the next request.
+The "No" alternative (publishes written to disk) was not taken.
 
 **Interfaces produced:** the `content` option and the notice members, with their own facts,
 version records, and re-arm items (above). Task 11 re-reads them when Task 10 ran first.
@@ -1221,8 +1179,8 @@ Step 11's merge is the one batched owner step.
      whether any refused fold finding turned real.
    - `ROADMAP.md`'s "Engine pass before stage 2b" Now entry, which pass A narrowed to pass B's
      scope, is removed, now that Tasks 10 and 11 have both landed.
-   - The plan takes its post-mortem with the budget score: tokens against the ruled ceiling (12.1M
-     recommended) via `/cost`, planning misses, and execution sittings.
+   - The plan takes its post-mortem with the budget score: tokens against the ruled ceiling (14.0M)
+     via `/cost`, planning misses, and execution sittings.
 10. **Pre-bake.** Plan, STATUS, and ROADMAP committed; tree clean; the resume prompt names stage 2b
     as the next action and its launch directory.
 11. **Merge** (owner step): the PR leaves draft once CI is green, and the merge to `main` waits for

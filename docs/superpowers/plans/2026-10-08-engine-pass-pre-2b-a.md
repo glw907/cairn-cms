@@ -211,7 +211,7 @@ A lone unrelated test-file failure, or a component run printing `Cannot connect 
 
 ## Decisions this plan takes
 
-1. **Task 7 runs before Task 6**, so only Task 6 waits on fork 2. Task 7 lands the 503 and the
+1. **Task 7 runs before Task 6**, so the 503 lands first. Task 7 lands the 503 and the
    non-applicable signing report with `ok` as the signing check alone. Task 6 then extends `ok` to
    `githubAppSigning.ok && (githubAppToken?.ok ?? true)`, the spec's composition. Task 7's route
    test stubs `loadHealth`, so it covers the route's status mapping only; Task 6's own rows cover
@@ -299,10 +299,9 @@ A lone unrelated test-file failure, or a component run printing `Cannot connect 
 
 ## Rulings for Geoff
 
-1. **Fork 2: may an anonymous `/healthz?live=1` mint a token?** Open. It governs Task 6 alone,
-   which is built on the spec's recommendation (yes, with the coalesced per-isolate cache and the
-   per-caller timeout) and is **BLOCKED until Geoff rules**. Task 6's section states what changes
-   under "no", and the close's key probe drops its concurrency check under "no". Fork 1 (the
+1. **Fork 2: may an anonymous `/healthz?live=1` mint a token?** Ruled yes (Geoff, 2026-10-08:
+   "Recomendations accepted for Fork 1 and 2."), with the coalesced per-isolate slot and the
+   per-caller timeout. It governs Task 6 alone. The "no" alternative was not taken. Fork 1 (the
    dev-save notice) belongs to pass B.
 
 ## Running unattended
@@ -343,11 +342,9 @@ The pass is planned to run 10 or more hours without Geoff. Every stop is settled
 - An escalate verdict that names an architectural fork the spec did not settle.
 - A pre-flight finding that changes a task's outcome (a claim the spec rests on is false).
 - The ceiling at 80 percent, at the next segment boundary.
-- Fork 2 unruled when S4 reaches Task 6: the run finishes Task 11, writes STATUS, and stops. Task 6
-  and Task 12 wait for the ruling.
 - A red boundary gate that is not a flake.
 
-**Owner-gated steps, batched at the end:** fork 2 (if still open), the charter phrase, and the
+**Owner-gated steps, batched at the end:** the charter phrase, and the
 go to merge the PR. Nothing else waits on Geoff: the live smoke, the key probe, and every review
 are Claude's.
 
@@ -411,8 +408,7 @@ The inputs most likely to bite a real site that per-task tests would not exercis
    amendment), push `engine-pre-2b-a` and open a draft PR against `main` so CI runs on every later
    push, and record that SHA's CI result. GitHub refuses a pull request with no commits.
 7. **S1 pre-flight** per "Pre-flight claims, S1".
-8. **Fork 2's state:** record whether Geoff has ruled. If he has, amend Task 6 to the ruled answer
-   (strike its BLOCKED line or apply its "Under no" changes) and commit.
+8. **Fork 2** is ruled yes (Geoff, 2026-10-08); Task 6 builds as written.
 9. **Guards:** arm the set under "Running unattended" before the first workflow launch.
 10. **Counter:** record spend through Task 0.
 
@@ -844,7 +840,7 @@ the stale transcript fixture (Decision 5). Affected 2a pages: rotate-the-github-
 scaffolded-site-files.
 
 **Decisions carried:**
-- **Decision 1:** Task 7 runs before Task 6, so only Task 6 waits on fork 2. Task 7 lands the 503
+- **Decision 1:** Task 7 runs before Task 6. Task 7 lands the 503
   and the non-applicable signing report with `ok` as the signing check alone. Task 6 then extends
   `ok` to `githubAppSigning.ok && (githubAppToken?.ok ?? true)`. This task's route test stubs
   `loadHealth`, so it covers the route's status mapping only.
@@ -999,7 +995,7 @@ caveat (pass B's hand-off).
 **Gate:** F.
 
 **S3 boundary:** F green; branch pushed; CI green on the head; STATUS and a Ledger entry; S4's
-pre-flight dispatched, which also records fork 2's state.
+pre-flight dispatched.
 
 ---
 
@@ -1097,8 +1093,7 @@ name (B2) is pass B's; leave it. `verifyManifest`'s new argument is public surfa
 
 ### Task 6: The opt-in live key check and the fingerprint (ruling 3)
 
-**BLOCKED until Geoff rules fork 2.** Built on the recommendation ("yes"). If fork 2 is still open
-when S4 reaches this task, the run stops after Task 11 (see "Running unattended").
+Fork 2 is ruled yes (Geoff, 2026-10-08); the task is built on that ruling.
 
 **Pass class:** `auth-data` (signing). **model:** `"opus"` in args (see "Models"). **Spec:**
 "Ruling 3: the opt-in live key check", every paragraph but the 503's.
@@ -1162,21 +1157,7 @@ events.md` (the `github.unreachable` row), `docs/internal/api-surface.md`.
 the verdict on an unsettled mint; route the mint through `cachedInstallationToken`; map 403 to a
 refused key; log the minted token's length or prefix; `ok` reads the signing check alone.
 
-**Under "no" (fork 2 answered no), the task changes as follows:**
-- `live=1` is honored only for a signed-in owner (`locals.cairnEditor.capability === 'owner'`);
-  any other caller gets the plain report with no network call.
-- The template and the showcase gain an owner-only health route under `/admin` (the guard attaches
-  the editor only there), at a path the task settles beside the existing admin routes, emitted
-  through `npm run emit:template`; `check:template` asserts it. Public `/healthz` keeps the
-  no-network self-test and the fingerprint. The task then pins `gateTier: "full"`, since the
-  emitted template files are unclassified and its gate must carry the `E2E_PORT` export.
-- The 60-second verdict cache and the single-flight slot are dropped: an owner-only call needs no
-  fleet bound. The 5-second abort, the uncached mint, the classifier, the never-touch-the-cache
-  rule, and the fingerprint stay.
-- The parallel-calls and dead-slot criteria are replaced by: an anonymous and an editor-capability
-  request with `live=1` make no `fetch`, and an owner's does. Their mutations go with them; "admit a
-  non-owner" joins the list.
-- Task 12's `doctor-drop-github-app` annotation reads "closes through the owner-only live check".
+The "no" alternative (an owner-only live check) was not taken.
 
 **Notes:** `HealthData` gains optional members; not breaking. Affected 2a page:
 rotate-the-github-app-key (its confirming publish and 55-minute wait give way to the fingerprint and
@@ -1370,20 +1351,18 @@ is a dispatch that returns a structured verdict.
      one mint; one more inside 60 seconds mints nothing.
    - The fingerprint reported for the real key is quoted; no token, JWT, or key byte is printed.
 
-   Under fork 2's "no", the probe runs the owner-gated path and drops the concurrency check.
 7. **Docs check:** Task 12's pages re-read against any close-time fix; `check:surface -- --update`
    re-run if a fix moved a typed export.
 8. **Friction triage** (Decision 11): every friction-log entry for a pass A fix is deleted after a
    check against the code; every declined or batched entry leaves for its ledger entry or ROADMAP
    row; new friction the pass met is filed. The HISTORY entry counts entries and outcomes.
 9. **Ledgers:** `docs/STATUS.md` rewritten present tense (≤60 lines): pass A closed unreleased,
-   pass B next, the hand-off list (Decision 10), the charter phrase for Geoff's read, and fork 1
-   for pass B. `docs/HISTORY.md` takes the pass entry: what landed, what the gates caught, what a
+   pass B next, the hand-off list (Decision 10), and the charter phrase for Geoff's read. `docs/HISTORY.md` takes the pass entry: what landed, what the gates caught, what a
    later pass would be wrong to rediscover, and whether any refused fold finding (the six standing
    refusals) turned out real. This plan takes its post-mortem with the budget score: tokens against
    11.1M via `/cost`, planning misses, and execution sittings.
 10. **Merge:** the PR leaves draft once CI is green; the merge to `main` waits for Geoff's go,
-    batched with the charter phrase and any open fork. No version bump, no tag, no publish.
+    batched with the charter phrase. No version bump, no tag, no publish.
 11. **Pre-bake and hand off:** plan, STATUS, and ROADMAP committed; tree clean; the resume prompt
     names pass B's plan as the next action.
 

@@ -704,7 +704,7 @@ outlined. The verification column of each claim is in the triage table at the en
 
 ## Rulings for Geoff
 
-1. **Should a dev-admin save stay in memory, with a persistent notice saying so?** Ruling 5 says the
+1. **Ruled (Geoff, 2026-10-08): recommendation accepted, yes.** **Should a dev-admin save stay in memory, with a persistent notice saying so?** Ruling 5 says the
    dev admin "reads and edits the site's real content files, saving to a local stand-in". This spec
    reads the stand-in as the in-memory overlay: a save never touches disk, and a restart discards it.
    Recommended: yes, in memory, plus one persistent DaisyUI `alert` in the admin shell while the dev
@@ -715,7 +715,7 @@ outlined. The verification column of each claim is in the triage table at the en
      fake R2 starts empty, so the Library flags every real asset as broken, and cleaning those rows
      writes a real `media.json` the developer commits; a multi-file commit is not atomic on disk;
      and a dev publish overwrites a file open in the developer's editor.
-2. **May an anonymous `/healthz?live=1` mint a token?** The two review lenses recommend opposite
+2. **Ruled (Geoff, 2026-10-08): recommendation accepted, yes.** **May an anonymous `/healthz?live=1` mint a token?** The two review lenses recommend opposite
    answers. Recommended: yes, with the coalesced per-isolate cache and the timeout above.
    - *Yes* (the mechanics lens) keeps the live check on the public route, where ruling 3 places it,
      so an uptime monitor can use it, at one mint per isolate per minute. A caller spread across

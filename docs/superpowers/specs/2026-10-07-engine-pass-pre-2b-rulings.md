@@ -54,3 +54,14 @@ Runs unattended through the `spec-plan-review` skill at full depth:
 4. Plan review: three lenses, one fold, a verification read, and a second fold only on a blocker or major.
 
 Execution waits for Geoff's spec read. Review files go to `docs/superpowers/research/`, and the conductor commits each stage on `main`.
+
+## Fork rulings (Geoff, 2026-10-08)
+
+Geoff's answer, verbatim: "Recomendations accepted for Fork 1 and 2. For Fork 3, ceiling at 14M."
+
+- **Fork 1** (dev-admin save): the recommendation is accepted. Saves stay in memory, and one
+  persistent DaisyUI `alert` notice shows in the admin shell when the dev backend serves the site's
+  real content.
+- **Fork 2** (anonymous `/healthz?live=1` mint): the recommendation is accepted. Yes, with the
+  coalesced per-isolate slot and the per-caller timeout.
+- **Fork 3** (pass B ceiling): 14.0M, with the 80 percent stop at 11.2M.

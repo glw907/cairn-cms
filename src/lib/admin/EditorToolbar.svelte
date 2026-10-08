@@ -3,8 +3,7 @@
 The editor card's instrument strip. Three labelled clusters, Format (bold, italic, strike, inline
 code), Structure (headings, lists, quote, table, plus the More overflow), and Insert (the host's
 insert/edit/link/image/figure/Tidy controls), each divided by a hairline and, at sm and up, topped
-with a presentational micro-eyebrow naming it (docs/internal/2026-07-15-design-arc-log.md,
-"grouped micro-eyebrows"). Each cluster wrapper carries `role="group"` with an `aria-label` matching
+with a presentational micro-eyebrow naming it (https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/2026-07-15-design-arc-log.md, "grouped micro-eyebrows"). Each cluster wrapper carries `role="group"` with an `aria-label` matching
 its eyebrow, so the grouping reaches assistive tech even though the eyebrow text itself is
 `aria-hidden`. "Blocks" never labels a cluster: cairn's own vocabulary already uses block for a
 component (Insert block / Edit block), so the word appears only inside those two existing control
@@ -20,7 +19,7 @@ toggles live in the host's card footer (the bottom strip carries the writing env
 strip acts on the text). The glyphs are stroke SVG icons in the admin's house style (24x24
 viewBox, `currentColor`, round caps).
 
-Below sm (docs/internal/2026-07-15-design-arc-log.md) the scrolling region becomes
+Below sm the scrolling region becomes
 one horizontally scrolling row instead of wrapping, every square control grows to a 44px floor,
 the micro-eyebrow labels disappear (the hairlines alone still divide the three clusters), the
 Write/Preview tablist hides, and the host's `moreExtra` snippet appends its own items to the
@@ -49,10 +48,10 @@ stays pinned at the row's right end, reachable at every width.
     /** The host's Insert controls (link picker, component insert, image), rendered in the Insert group. */
     insertControls?: Snippet;
     /**
-     * Extra items appended to the More-formatting popover, visible below sm only
-     * (docs/internal/2026-07-15-design-arc-log.md): the host's Write/Preview picks, writing-mode
-     * toggles, and Markdown help fold in here at that width, since the phone composition gives the
-     * toolbar exactly one overflow trigger. Receives a close-the-menu callback so a pick dismisses
+     * Extra items appended to the More-formatting popover, visible below sm only:
+     * the host's Write/Preview picks, writing-mode toggles, and Markdown help fold in here at
+     * that width, since the phone composition gives the toolbar exactly one overflow trigger.
+     * Receives a close-the-menu callback so a pick dismisses
      * the popover the way the built-in items do.
      */
     moreExtra?: Snippet<[closeMenu: () => void]>;

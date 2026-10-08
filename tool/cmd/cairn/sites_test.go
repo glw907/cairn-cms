@@ -40,7 +40,7 @@ func writeTestRecord(t *testing.T, d deps, id, domain, worker string) {
 // and logs take as their argument, so an agent reading the list can act on it.
 func TestSitesListJSONCarriesEachSiteID(t *testing.T) {
 	d, _ := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
 	out, _, err := execTree(t, d, "sites", "list", "--json")
 	if err != nil {
@@ -56,7 +56,7 @@ func TestSitesListJSONCarriesEachSiteID(t *testing.T) {
 	if len(lines) != 1 {
 		t.Fatalf("got %d sites, want 1", len(lines))
 	}
-	if lines[0].ID != "ecxc-ski-a1b2c3" || lines[0].Domain != "ecxc.ski" {
+	if lines[0].ID != "my-site-a1b2c3" || lines[0].Domain != "my-site.example.org" {
 		t.Errorf("got %+v, want the saved id and domain", lines[0])
 	}
 }
@@ -99,7 +99,7 @@ func TestSitesListExitCodes(t *testing.T) {
 // is: withheld by default and printed when --verbose asks for it.
 func TestSitesListVerbosePrintsTheRegistryDirectory(t *testing.T) {
 	d, _ := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 	dir, err := d.registryDir()
 	if err != nil {
 		t.Fatalf("registryDir: %v", err)

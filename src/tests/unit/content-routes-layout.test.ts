@@ -31,16 +31,16 @@ function runtime(): CairnRuntime {
   });
 }
 
-/** ASC-shaped vocabulary: an instructor lands on its own declared home, at none capability. */
-const CLUB_ROLES = defineRoles({
+/** custom role vocabulary: an staff lands on its own declared home, at none capability. */
+const SITE_ROLES = defineRoles({
   owner: 'owner',
-  'club-admin': 'editor',
-  instructor: { capability: 'none' as const, home: '/admin/classes' },
+  'manager': 'editor',
+  staff: { capability: 'none' as const, home: '/admin/staff' },
 });
 
-/** The same posts/pages runtime, but declaring CLUB_ROLES instead of the implicit default. */
+/** The same posts/pages runtime, but declaring SITE_ROLES instead of the implicit default. */
 function runtimeWithRoles(): CairnRuntime {
-  return { ...runtime(), roles: CLUB_ROLES };
+  return { ...runtime(), roles: SITE_ROLES };
 }
 
 /** A two-role vocabulary, `pages` mapped away from `publisher`, for the access-map filters over
@@ -197,7 +197,7 @@ describe('shellLoad', () => {
     const noneEvent = testEvent({
       url: 'https://test.example/admin/posts',
       locals: {
-        cairnEditor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
+        cairnEditor: { email: 'inst@test', displayName: 'Inst', role: 'staff', capability: 'none' },
         cairnBackend: quickFailBackend(),
       },
     });
@@ -228,7 +228,7 @@ describe('shellLoad', () => {
     const noneEvent = testEvent({
       url: 'https://test.example/admin/posts',
       locals: {
-        cairnEditor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
+        cairnEditor: { email: 'inst@test', displayName: 'Inst', role: 'staff', capability: 'none' },
         // A none-capability session must never reach the backend at all (the assertion below), so
         // a listBranches-only stub is enough; the full Backend contract is unexercised.
         cairnBackend: { listBranches } as unknown as Backend,
@@ -244,7 +244,7 @@ describe('shellLoad', () => {
     const rt = runtimeWithRoles();
     const routes = createContentRoutes({ runtime: rt });
     const { shell } = await routes.shellLoad(
-      customRoleEvent('/admin/posts', 'club-admin', 'owner', quickFailBackend()),
+      customRoleEvent('/admin/posts', 'manager', 'owner', quickFailBackend()),
     );
     if (shell.public) throw new Error('expected authed shell');
     expect(screenIds(shell.nav.items)).toContain('editors');
@@ -358,10 +358,10 @@ const NAV_LAYOUT_WITH_SECTION: NavLayout = [
   { screen: 'settings' },
   { screen: 'editors' },
   {
-    label: 'Club',
+    label: 'Team',
     children: [
-      { label: 'Members', icon: 'users', href: '/admin/club/members' },
-      { label: 'Events', icon: 'calendar', href: '/admin/club/events' },
+      { label: 'Members', icon: 'users', href: '/admin/team/members' },
+      { label: 'Events', icon: 'calendar', href: '/admin/team/events' },
     ],
   },
 ];
@@ -376,7 +376,7 @@ const NAV_WITH_SECTION_CONCEPTS = [
 
 /** The arrangement resolveNavLayout produces for NAV_LAYOUT_WITH_SECTION at one capability: the
  *  flat 'Standalone' entry rides as its own loose top-level node beside the concepts and engine
- *  screens, and the 'Club' section rides alongside them as its own top-level node. Every navFilter
+ *  screens, and the 'Team' section rides alongside them as its own top-level node. Every navFilter
  *  test below compares shellLoad's real output against this directly-computed baseline, so the
  *  wiring assertion never has to hand-trace the resolver's own shape. */
 function expectedNav(capability: 'owner' | 'editor' | 'none') {
@@ -415,14 +415,14 @@ describe('shellLoad: navFilter', () => {
     rt.navLayout = NAV_LAYOUT_WITH_SECTION;
     const routes = createContentRoutes({
       runtime: rt,
-      navFilter: (items) => items.filter((item) => item.label !== 'Club'),
+      navFilter: (items) => items.filter((item) => item.label !== 'Team'),
     });
     const { shell } = await routes.shellLoad(event('/admin/posts', 'editor', quickFailBackend()));
     if (shell.public) throw new Error('expected authed shell');
     const expected = expectedNav('editor');
     expect(shell.nav).toEqual({
       ...expected,
-      items: expected.items.filter((item) => item.label !== 'Club'),
+      items: expected.items.filter((item) => item.label !== 'Team'),
     });
     await shell.pendingEntries;
   });
@@ -462,7 +462,7 @@ describe('shellLoad: navFilter', () => {
     });
     const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', quickFailBackend()));
     // Exact equality proves navFilter saw the whole resolved arrangement: the loose concept and
-    // engine nodes, the loose Standalone entry, plus the Club section.
+    // engine nodes, the loose Standalone entry, plus the Team section.
     expect(received).toEqual(expectedNav('owner').items);
     expect(receivedEditor).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
     if (!shell.public) await shell.pendingEntries;
@@ -597,13 +597,13 @@ describe('indexLoad', () => {
 
   it('redirects a role with a declared home there, with a 303, over the default list landing', () => {
     const routes = createContentRoutes({ runtime: runtimeWithRoles() });
-    const e = customRoleEvent('/admin', 'instructor', 'none');
+    const e = customRoleEvent('/admin', 'staff', 'none');
     try {
       routes.indexLoad(e);
       throw new Error('expected a redirect');
     } catch (err) {
       expect((err as { status: number; location: string }).status).toBe(303);
-      expect((err as { location: string }).location).toBe('/admin/classes');
+      expect((err as { location: string }).location).toBe('/admin/staff');
     }
   });
 
@@ -613,17 +613,17 @@ describe('indexLoad', () => {
     // code never reaches resolveRefusalCode on the far side.
     const rolesWithQueryHome = defineRoles({
       owner: 'owner',
-      'club-admin': 'editor',
-      instructor: { capability: 'none' as const, home: '/admin/classes?tab=upcoming' },
+      'manager': 'editor',
+      staff: { capability: 'none' as const, home: '/admin/staff?tab=upcoming' },
     });
     const routes = createContentRoutes({ runtime: { ...runtime(), roles: rolesWithQueryHome } });
-    const e = customRoleEvent('/admin?error=publish_conflict', 'instructor', 'none');
+    const e = customRoleEvent('/admin?error=publish_conflict', 'staff', 'none');
     try {
       routes.indexLoad(e);
       throw new Error('expected a redirect');
     } catch (err) {
       const location = (err as { status: number; location: string }).location;
-      expect(location).toBe('/admin/classes?tab=upcoming&error=publish_conflict');
+      expect(location).toBe('/admin/staff?tab=upcoming&error=publish_conflict');
     }
   });
 

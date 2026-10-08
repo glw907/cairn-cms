@@ -73,7 +73,7 @@ func TestCloseFlushesAnUnterminatedTail(t *testing.T) {
 // three credentials whether or not the operator configured them, so an unconfigured one must
 // leave the stream byte-identical to a run with no credentials at all.
 func TestAnAbsentCredentialChangesNothing(t *testing.T) {
-	const body = "CRITICAL  907.life  1 failing\nfix: push a build\n"
+	const body = "CRITICAL  blog.example.org  1 failing\nfix: push a build\n"
 
 	absent := write(t, []providers.Credential{{}, providers.NewCredential(""), {}}, body)
 	none := write(t, nil, body)

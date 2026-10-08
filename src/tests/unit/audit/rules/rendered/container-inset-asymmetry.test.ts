@@ -82,7 +82,7 @@ describe('container-inset-asymmetry against a real browser', () => {
   });
 
   // The corpus's own shape, pinned from the live page rather than paraphrased (design ratchet fix
-  // C). The gutter on `/admin/club/asset-requests` was never an author's padding utility: the
+  // C). The gutter on `/admin/team/asset-requests` was never an author's padding utility: the
   // `<ul class="list">` carried NO author inset at all and kept the user agent's own 40px bullet
   // indent, which the published sheet of that moment never reset. So this fixture declares no
   // padding, and the numbers it asserts are the ones the rule reported against the running site.
@@ -92,8 +92,8 @@ describe('container-inset-asymmetry against a real browser', () => {
     const findings = await findingsFor(
       `<body style="margin:0"><div data-theme="cairn-admin">
         <ul class="list" id="ua-indent-list" style="display:flex;flex-direction:column;width:400px;">
-          <li style="display:grid;">Mooring &middot; Kelleher household</li>
-          <li style="display:grid;">Boat storage &middot; Vaara household</li>
+          <li style="display:grid;">Workshop &middot; Kelleher signup</li>
+          <li style="display:grid;">Parking &middot; Vaara signup</li>
         </ul>
       </div></body>`
     );

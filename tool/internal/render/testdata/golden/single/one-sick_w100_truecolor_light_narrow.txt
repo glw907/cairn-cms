@@ -1,4 +1,4 @@
-[1;38;2;183;24;36mCRITICAL[m  [1;38;2;40;35;29m907.life[m  [38;2;97;93;87m3 failing · 2 could not run · 1 held · 3 passing[m
+[1;38;2;183;24;36mCRITICAL[m  [1;38;2;40;35;29mblog-site[m  [38;2;97;93;87m3 failing · 2 could not run · 1 held · 3 passing[m
 [38;2;97;93;87mchecked 4m ago (2026-09-20 22:28 UTC), in 16.3s[m
 
 [38;2;201;195;187m──[m [38;2;40;35;29mfailing[m [38;2;201;195;187m─────────────────────────────────────────────────────────────────────────────────────────[m
@@ -23,4 +23,4 @@
 
 [38;2;97;93;87m●[m [38;2;97;93;87m3 passing[m  [38;2;97;93;87mserving · delegation · publish-path[m
 
-[1;38;2;183;24;36mCRITICAL[m  [1;38;2;40;35;29m907.life[m  [38;2;97;93;87m3 failing · 2 could not run · 1 held · 3 passing[m
+[1;38;2;183;24;36mCRITICAL[m  [1;38;2;40;35;29mblog-site[m  [38;2;97;93;87m3 failing · 2 could not run · 1 held · 3 passing[m

@@ -9,8 +9,8 @@
 // `DEFAULT_STATIC_SCOPE`'s three roots (`src/routes/admin`, `src/lib/admin`, `src/lib/admin-toolkit`)
 // are all admin surfaces; this interaction is Tailwind-general, not admin-specific, but the rule now
 // reaches only a site's admin markup, never its public-side components, since none of the default
-// roots are public ones. That narrowing is disclosed and permanent (Geoff, admin/public
-// one-scope-per-file ruling): a root a site's public scope claims leaves the admin scope, so this
+// roots are public ones. That narrowing is disclosed and permanent (the admin/public
+// one-scope-per-file rule): a root a site's public scope claims leaves the admin scope, so this
 // rule never reads a site's public components again. A scan of `src/lib/admin-toolkit`,
 // `src/lib/admin`, and `src/routes/admin` found zero co-occurrences, so the rule does not red the
 // engine's own tree.

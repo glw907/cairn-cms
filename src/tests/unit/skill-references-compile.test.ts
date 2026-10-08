@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { parseSheet, type CompiledSheet } from '../../lib/audit/sheet.js';
 
-// CONTRACT (ASC Assets-trial harvest finding 2): `cairn-admin-screens`'s own reference docs
+// CONTRACT: `cairn-admin-screens`'s own reference docs
 // prescribe class recipes for a developer to copy, and nothing ever checked those recipes
 // against the sheet they ride. `form-anatomy.md` taught `gap-x-6 gap-y-4`, a pair the built
 // sheet never compiled, and `cairn-audit`'s own `no-uncompiled-class` rule then convicted the
@@ -63,12 +63,13 @@ function isClassShaped(token: string): boolean {
 }
 
 // A hand-authored CSS class an exemplar leaves to the reader's own component, never a class the
-// admin sheet ships: `exemplar-list.md`'s expand panel names its own grid (`household-panel`,
-// `household-panel-grid`) the way a component's own scoped `<style>` block would, which
+// admin sheet ships: `exemplar-list.md`'s expand panel names its own grid (`signup-panel`,
+// `signup-panel-grid`) and the Signups screen's create button names its scoped sizing class
+// (`signup-create-submit`) the way a component's own scoped `<style>` block would, which
 // `no-uncompiled-class` excludes through `file.styleClassNames`. Markdown carries no such block
 // to check against, so this is the small, commented allowlist the finding anticipates for a
 // genuine placeholder.
-const CONSUMER_DEFINED_CLASSES = new Set(['household-panel', 'household-panel-grid']);
+const CONSUMER_DEFINED_CLASSES = new Set(['signup-panel', 'signup-panel-grid', 'signup-create-submit']);
 
 // An inline span whose first word is the audit CLI's own binary name is a command example
 // (`` `npx cairn-audit` ``, `` `cairn-audit norms destination` ``), never a class list; every

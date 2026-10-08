@@ -141,7 +141,7 @@ reflows its neighboring characters.
     primaryAction?: ListToolbarAction;
     /** The count line's own count (e.g. the number of entries the current filters match). */
     count: number;
-    /** The count line's noun (e.g. `'households'`). A plain string is invariant across every
+    /** The count line's noun (e.g. `'signups'`). A plain string is invariant across every
      *  count, the original contract unchanged; an `{ one, many }` pair picks by grammatical
      *  number through `itemNoun`, so a count of exactly 1 reads its singular form. */
     itemLabel: string | ItemLabel;

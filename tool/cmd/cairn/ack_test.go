@@ -224,7 +224,7 @@ func TestAckFilePathDefaultsInsideTheRegistryDirectory(t *testing.T) {
 // the listing by its resolved path, not by name.
 func TestSitesListSkipsTheResolvedAckFileEvenWithASiteIDShapedStem(t *testing.T) {
 	d, code := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
 	dir, err := d.registryDir()
 	if err != nil {
@@ -237,7 +237,7 @@ func TestSitesListSkipsTheResolvedAckFileEvenWithASiteIDShapedStem(t *testing.T)
 	if err != nil {
 		t.Fatalf("sites list --ack-file: %v", err)
 	}
-	if !strings.Contains(out, "ecxc.ski") {
+	if !strings.Contains(out, "my-site.example.org") {
 		t.Errorf("listing %q does not name the real site", out)
 	}
 	if strings.Contains(out, "not-a-site") {
@@ -262,9 +262,9 @@ var unresolvedSiteFailingChecks = []string{"serving=2099-01-01", "email=2099-01-
 // the more severe of the two, disappears once every failing check carries an acknowledgement.
 func TestHealthAckSoftensAFailingCheckToWarning(t *testing.T) {
 	d, code := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
-	if _, _, err := execTree(t, d, "health", "ecxc-ski-a1b2c3"); err != nil {
+	if _, _, err := execTree(t, d, "health", "my-site-a1b2c3"); err != nil {
 		t.Fatalf("cairn health: %v", err)
 	}
 	unacked := *code
@@ -272,7 +272,7 @@ func TestHealthAckSoftensAFailingCheckToWarning(t *testing.T) {
 		t.Fatalf("exit code without --ack = %d, want %d (CRITICAL); the fixture no longer fails deterministically", unacked, int(spine.VerdictCritical))
 	}
 
-	args := []string{"health", "ecxc-ski-a1b2c3"}
+	args := []string{"health", "my-site-a1b2c3"}
 	for _, ack := range unresolvedSiteFailingChecks {
 		args = append(args, "--ack", ack)
 	}
@@ -328,7 +328,7 @@ func TestHealthAckAppliesAcrossEverySiteInASweep(t *testing.T) {
 // --ack-file, with no --ack flag at all, read the same failing checks as held.
 func TestHealthAckFileEntriesApply(t *testing.T) {
 	d, code := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
 	dir, err := d.registryDir()
 	if err != nil {
@@ -339,7 +339,7 @@ func TestHealthAckFileEntriesApply(t *testing.T) {
 		ackFileEntry{CheckID: "email", Expires: "2099-01-01"},
 	)
 
-	stdout, _, err := execTree(t, d, "health", "ecxc-ski-a1b2c3")
+	stdout, _, err := execTree(t, d, "health", "my-site-a1b2c3")
 	if err != nil {
 		t.Fatalf("cairn health: %v", err)
 	}

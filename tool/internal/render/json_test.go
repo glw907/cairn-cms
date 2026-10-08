@@ -345,11 +345,11 @@ func TestEveryPayloadCarriesSchemaVersionAndVerdict(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MarshalSummary: %v", err)
 	}
-	list, err := MarshalSitesList([]SiteListEntry{{ID: "ecxc-ski-a1b2c3"}}, spine.VerdictOK, nil)
+	list, err := MarshalSitesList([]SiteListEntry{{ID: "my-site-a1b2c3"}}, spine.VerdictOK, nil)
 	if err != nil {
 		t.Fatalf("MarshalSitesList: %v", err)
 	}
-	logsData, err := MarshalLogs("ecxc.ski", nil)
+	logsData, err := MarshalLogs("my-site", nil)
 	if err != nil {
 		t.Fatalf("MarshalLogs: %v", err)
 	}
@@ -642,7 +642,7 @@ func TestSummaryCountsSitesTheSweepNeverReached(t *testing.T) {
 // known step, so an agent acts on the listing without a follow-up read.
 func TestSitesListCarriesEnoughToSkipASecondCall(t *testing.T) {
 	data, err := MarshalSitesList([]SiteListEntry{{
-		ID: "ecxc-ski-a1b2c3", Name: "ecxc.ski", Domain: "ecxc.ski", Step: "live",
+		ID: "my-site-a1b2c3", Name: "my-site", Domain: "my-site", Step: "live",
 	}}, spine.VerdictOK, nil)
 	if err != nil {
 		t.Fatalf("MarshalSitesList: %v", err)
@@ -666,14 +666,14 @@ func TestSitesListCarriesEnoughToSkipASecondCall(t *testing.T) {
 // stderr line a plain run prints is suppressed under --json, so without this field the warning
 // that these two payloads carry identifiers reaches nobody.
 func TestLogsAndAdoptPayloadsCarryTheSensitiveDataFlag(t *testing.T) {
-	logsData, err := MarshalLogs("ecxc.ski", []logs.Entry{{
+	logsData, err := MarshalLogs("my-site", []logs.Entry{{
 		At: fixtures.Now(), Level: "info", Event: "auth.magic-link.sent",
 		Fields: []logs.Field{{Key: "editor", Value: json.RawMessage(`"someone@example.com"`)}},
 	}})
 	if err != nil {
 		t.Fatalf("MarshalLogs: %v", err)
 	}
-	adoptData, err := MarshalAdoptList([]AdoptCandidate{{Worker: "ecxc-ski"}})
+	adoptData, err := MarshalAdoptList([]AdoptCandidate{{Worker: "my-site"}})
 	if err != nil {
 		t.Fatalf("MarshalAdoptList: %v", err)
 	}

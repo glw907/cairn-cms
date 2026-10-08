@@ -2,7 +2,7 @@
 //
 // The contract that matters is not "imports nothing" (this module now re-exports ./validate.ts's
 // YAML-checking logic) but that nothing in this module's static import graph is ever a `.svelte`
-// specifier or pulls in Svelte's runtime: the engine's check:visuals gate and cairn-pub's fence
+// specifier or pulls in Svelte's runtime: the engine's check:visuals gate and cairn.pub's fence
 // validation both read this module from a bare `node` process, so a single Svelte-carrying
 // specifier anywhere in the graph would break both gates at once.
 // src/tests/unit/reproductions-manifest.test.ts holds the source graph to that rule and
@@ -61,7 +61,7 @@ export interface ReproManifestEntry {
 /**
  * The 25 stories, in the spec inventory's order.
  *
- * Adding, removing, or renaming an entry is a spec edit: cairn-pub docs pages cite these ids, and
+ * Adding, removing, or renaming an entry is a spec edit: cairn.pub docs pages cite these ids, and
  * a fence naming an id the installed manifest does not carry fails the consumer's build.
  */
 export const manifest: ReproManifestEntry[] = [
@@ -263,7 +263,7 @@ export const manifest: ReproManifestEntry[] = [
   {
     // Sized to its own callouts rather than to a comfortable screen box: chips 4 and 5 anchor on
     // the not-on-the-list panel and the Save changes button, which land at roughly 814 and 900 at
-    // the docs measure, and a declared height is a hard crop (cairn-pub's boundHeight only ever
+    // the docs measure, and a declared height is a hard crop (cairn.pub's boundHeight only ever
     // shrinks a render, never grows it), so the 700 this row shipped with cut two of the five
     // chips off a page whose prose list still numbered them.
     // src/tests/component/reproductions-marker-crop.test.ts is what holds this to the anchors.
@@ -319,6 +319,6 @@ export const fixtureMediaFiles: string[] = [
 ];
 
 // Re-exported from ./validate.ts so a consumer of the node-safe manifest subpath (this gate,
-// cairn-pub's fence plugin) gets the validator from the same specifier as the data it checks
+// cairn.pub's fence plugin) gets the validator from the same specifier as the data it checks
 // against, with no second import path to keep in sync.
 export { validateReproFence, type ValidateReproFenceOptions } from './validate.js';

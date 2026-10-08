@@ -162,7 +162,7 @@ Swapping the editor stays a one-file change.
      *  independently timed read of the diagnostic set. */
     onDiagnosticsCounts?: (counts: import('./editor-diagnostics-announcer.js').DiagnosticCounts) => void;
     /** Whether every component block folds the moment the editor mounts, so an entry opens with its
-     *  blocks collapsed and its prose readable at a glance (Geoff's pre-beta ruling). Off by default,
+     *  blocks collapsed and its prose readable at a glance. Off by default,
      *  since most render callers, and every fold-invariant test, want blocks open on mount; EditPage
      *  turns this on for the real entry-editing surface. The safety invariant governs a fold this
      *  creates exactly as it governs a manual one: a touch or an edit reaching it springs it open. */
@@ -949,7 +949,7 @@ Swapping the editor stays a one-file change.
     // below hands out a live api, so nothing observes the pre-fold state.
     if (foldOnMount) foldingMod.foldContainersOnLoad(view);
 
-    // The one uniform grant (ruling 1; docs/internal/engine-rulings.md,
+    // The one uniform grant (docs/internal/engine-rulings.md,
     // `audit-admin-markdowneditor`): every registerEditor caller now receives the full
     // buffer-scoped EditorApi, where the retired register* props each handed back only the one
     // callback (or object) that caller wired.

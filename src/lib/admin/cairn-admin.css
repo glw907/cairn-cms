@@ -294,8 +294,7 @@
   /* The editor's inline-code chip, a quiet tint beside base-200. Locked pair: base-content ink
      on the chip measures 13.2:1 (AA). Do not darken the chip without re-checking. */
   --cairn-code-chip: oklch(94.5% 0.008 75);
-  /* The chip register tuning percentages (second generation, docs/internal/probes/
-     2026-08-26-chip-registers-v2): how much of the tone color mixes into the base-200 anchor for
+  /* The chip register tuning percentages (second generation): how much of the tone color mixes into the base-200 anchor for
      the `quiet`/`warning` chip fills. One custom property per register per theme, referenced by
      the single shared `.cairn-chip-quiet`/`.cairn-chip-warning` rule below, so the SAME rule (and
      StatusChip's own scoped mirror) resolves a theme-appropriate percentage instead of forking into
@@ -303,7 +302,7 @@
      parity.test.ts) depends on there being exactly one rule per class. Measured by canvas readback
      (paint the fill, then read the pixel) against both this theme's row grounds, plain (base-100)
      and zebra (base-200): light quiet 1.389/1.297, light warning 1.283/1.198, both inside the
-     1.16-1.47:1 band the second-generation grammar ratifies. Do not change without re-measuring. */
+     1.16-1.47:1 band the second-generation grammar documents. Do not change without re-measuring. */
   --cairn-chip-quiet-mix: 12%;
   --cairn-chip-warning-mix: 27%;
   /* Focus mode's dim ink for the lines outside the caret's paragraph. A color, not opacity, so
@@ -1684,20 +1683,19 @@
   will-change: auto;
 }
 
-/* The three ratified chip registers, second generation (2026-08-24 owner probe, Geoff's own
-   ratification: docs/internal/probes/2026-08-26-chip-registers-v2). The first generation
+/* The three documented chip registers, second generation. The first generation
    paired a `bounded`/`quiet` register axis with a five-tone `status` dot for
-   the color signal; the probe measured the 6px dot illegible toolkit-wide and ratified fusing tone
-   INTO the register instead, so the register alone carries both shape and color and the dot
+   the color signal; the 6px dot measured illegible toolkit-wide, so tone fuses
+   INTO the register instead: the register alone carries both shape and color and the dot
    retires. `quiet` (neutral tint, a settled state that recedes), `warning` (warning-toned tint, a
    state needing attention), and `outline` (hairline border, transparent fill, the successor of
    `bounded`, for a transient or reversible absence) are the whole chip vocabulary; there is no
-   chip-level danger tier (the probe ratified none). All three normalize to `font-weight: 400`.
+   chip-level danger tier. All three normalize to `font-weight: 400`.
    Every fill is tuned to a 1.16-1.47:1 contrast band against its own row ground (plain and zebra,
    both admin themes: 3 registers x 2 themes x 2 grounds = 12 combinations, standing proof in
    status-chip-register-tuning.test.ts), a deliberately LOW band: a chip that competed at
    badge-ghost's old strength melted into one ground or read as a clickable button on the other, and
-   the probe's own ratified recipe is a quiet presence, not a bounded object. The outline border
+   the documented recipe is a quiet presence, not a bounded object. The outline border
    holds the unrelated >= 3:1 non-text floor (WCAG 1.4.11); the warning register's ink additionally
    holds a >= 4.5:1 text floor (WCAG 1.4.3) against its own tinted ground, reusing the on-surface
    `--cairn-warning-ink` token already locked for this exact purpose elsewhere in this file. Values

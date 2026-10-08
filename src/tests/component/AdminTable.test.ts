@@ -43,7 +43,7 @@ function normalizeRenderedHtml(html: string) {
 describe('AdminTable', () => {
   it('defaults to the sm density with no zebra stripe', async () => {
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet('<tr><td>Alvarez</td></tr>'),
       rowCount: 1,
     });
@@ -56,7 +56,7 @@ describe('AdminTable', () => {
     const screen = await render(AdminTable, {
       density: 'xs',
       zebra: true,
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet('<tr><td>Alvarez</td></tr>'),
       rowCount: 1,
     });
@@ -70,34 +70,34 @@ describe('AdminTable', () => {
     // here; a caller's real Svelte template renders as many <th>/<td> siblings as it likes, since
     // production markup compiles through Svelte's own template handling, not a raw-string snippet.
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet('<tr><td>Alvarez</td><td>Current</td></tr>'),
       rowCount: 1,
     });
     const thead = screen.container.querySelector('thead')!;
     const tbody = screen.container.querySelector('tbody')!;
-    expect(thead.querySelector('th')?.textContent).toBe('Household');
+    expect(thead.querySelector('th')?.textContent).toBe('Signup');
     expect(tbody.textContent).toContain('Alvarez');
     expect(tbody.textContent).toContain('Current');
   });
 
   it('renders the empty-state snippet instead of the body when rowCount is 0', async () => {
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet('<tr><td>Alvarez</td></tr>'),
       rowCount: 0,
-      empty: staticSnippet('<p>No households match.</p>'),
+      empty: staticSnippet('<p>No signups match.</p>'),
       emptyColspan: 4,
     });
     expect(screen.container.textContent).not.toContain('Alvarez');
-    expect(screen.container.textContent).toContain('No households match.');
+    expect(screen.container.textContent).toContain('No signups match.');
     const cell = screen.container.querySelector('td')!;
     expect(cell.getAttribute('colspan')).toBe('4');
   });
 
   it('renders an empty tbody, not a padded empty row, when empty is omitted', async () => {
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet(''),
       rowCount: 0,
     });
@@ -108,7 +108,7 @@ describe('AdminTable', () => {
 
   it('defaults the empty-state colspan to 100 (HTML clamps it to the real column count)', async () => {
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet(''),
       rowCount: 0,
       empty: staticSnippet('<p>Nothing yet.</p>'),
@@ -119,7 +119,7 @@ describe('AdminTable', () => {
 
   it('renders the wrapper with the horizontal-scroll fallback', async () => {
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet('<tr><td>Alvarez</td></tr>'),
       rowCount: 1,
     });
@@ -128,7 +128,7 @@ describe('AdminTable', () => {
 
   it('enforces single-line cells: every cell computes white-space: nowrap', async () => {
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet('<tr><td>A very long value that would otherwise wrap</td></tr>'),
       rowCount: 1,
     });
@@ -138,7 +138,7 @@ describe('AdminTable', () => {
 
   it('renders exactly the branch-point markup when selection is omitted', async () => {
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet('<tr><td>Alvarez</td></tr>'),
       rowCount: 1,
     });
@@ -147,10 +147,10 @@ describe('AdminTable', () => {
 
   it('renders the batch region with an empty-count status while the selection set is empty', async () => {
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet('<tr><td>Alvarez</td></tr>'),
       rowCount: 1,
-      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select households' },
+      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select signups' },
       batchBar: batchBarSnippet(),
     });
     // The region and its live status exist before the count ever changes; only the caller's own
@@ -164,10 +164,10 @@ describe('AdminTable', () => {
   it('renders the batch actions with the selected count while the set is non-empty, and clear empties it through onchange', async () => {
     const onchange = vi.fn();
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet('<tr><td>Alvarez</td><td>Diallo</td></tr>'),
       rowCount: 2,
-      selection: { ids: new Set(['alvarez', 'diallo']), onchange, label: 'Select households' },
+      selection: { ids: new Set(['alvarez', 'diallo']), onchange, label: 'Select signups' },
       batchBar: batchBarSnippet(),
     });
     const region = screen.container.querySelector('[role="group"]');
@@ -182,8 +182,8 @@ describe('AdminTable', () => {
   it('flips the header checkbox through empty, partial, and full as a caller stores each new set', async () => {
     const screen = await render(AdminTableSelectionHarness, {
       rows: [
-        { id: 'alvarez', household: 'Alvarez' },
-        { id: 'diallo', household: 'Diallo' },
+        { id: 'alvarez', signup: 'Alvarez' },
+        { id: 'diallo', signup: 'Diallo' },
       ],
     });
     const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
@@ -195,7 +195,7 @@ describe('AdminTable', () => {
     expect(header.indeterminate).toBe(false);
     expect(header.getAttribute('aria-disabled')).toBe('true');
     expect(header.disabled).toBe(false);
-    expect(header.getAttribute('aria-label')).toBe('Select households');
+    expect(header.getAttribute('aria-label')).toBe('Select signups');
 
     await screen.getByLabelText('Select Alvarez').click();
     expect(header.indeterminate).toBe(true);
@@ -212,8 +212,8 @@ describe('AdminTable', () => {
   it('empties the selection from the batch bar clear and lands focus on the header checkbox', async () => {
     const screen = await render(AdminTableSelectionHarness, {
       rows: [
-        { id: 'alvarez', household: 'Alvarez' },
-        { id: 'diallo', household: 'Diallo' },
+        { id: 'alvarez', signup: 'Alvarez' },
+        { id: 'diallo', signup: 'Diallo' },
       ],
     });
     const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
@@ -228,7 +228,7 @@ describe('AdminTable', () => {
 
   it('clears the selection from the header checkbox itself', async () => {
     const screen = await render(AdminTableSelectionHarness, {
-      rows: [{ id: 'alvarez', household: 'Alvarez' }],
+      rows: [{ id: 'alvarez', signup: 'Alvarez' }],
     });
     await screen.getByLabelText('Select Alvarez').click();
     await screen.getByLabelText('Clear selection').click();
@@ -251,8 +251,8 @@ describe('AdminTable', () => {
     // declarative bindings to catch up, so the DOM never diverges from "a click can only clear."
     const screen = await render(AdminTableSelectionHarness, {
       rows: [
-        { id: 'alvarez', household: 'Alvarez' },
-        { id: 'diallo', household: 'Diallo' },
+        { id: 'alvarez', signup: 'Alvarez' },
+        { id: 'diallo', signup: 'Diallo' },
       ],
     });
     const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
@@ -274,10 +274,10 @@ describe('AdminTable', () => {
     // click can read as not focus-visible even on a freshly rendered element; Tab is itself a
     // keyboard interaction, which is what the CSS rule keys off.
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet(''),
       rowCount: 0,
-      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select households' },
+      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select signups' },
     });
     const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
     await userEvent.tab();
@@ -287,10 +287,10 @@ describe('AdminTable', () => {
 
   it('marks the header checkbox inert with no rows and no selection to clear', async () => {
     const screen = await render(AdminTable, {
-      header: staticSnippet('<th>Household</th>'),
+      header: staticSnippet('<th>Signup</th>'),
       children: staticSnippet(''),
       rowCount: 0,
-      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select households' },
+      selection: { ids: new Set<string>(), onchange: vi.fn(), label: 'Select signups' },
     });
     const header = screen.container.querySelector('thead input[type="checkbox"]') as HTMLInputElement;
     expect(header.getAttribute('aria-disabled')).toBe('true');

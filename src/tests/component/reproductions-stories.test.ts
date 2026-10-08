@@ -742,7 +742,7 @@ describe('publish/pending-list', () => {
     // The grouped list, under the concept's own nav label.
     expect(dialog?.textContent).toContain('Posts');
     expect(dialog?.textContent).toContain('2026-06-24-spring-newsletter');
-    expect(dialog?.textContent).toContain('2026-06-10-welcome-to-the-club');
+    expect(dialog?.textContent).toContain('2026-06-10-welcome-to-trailhead');
   });
 });
 
@@ -760,7 +760,7 @@ describe('publish/refusal-banner', () => {
       .element(screen.getByRole('link', { name: 'A Guide to the North Ridge Trailhead' }))
       .toBeInTheDocument();
     // The inbound linkers the banner names.
-    for (const title of ['Welcome to the Club', 'Team Retreat Recap', 'Spring Newsletter']) {
+    for (const title of ['Welcome to Trailhead', 'Team Retreat Recap', 'Spring Newsletter']) {
       expect(banner?.textContent, `the refusal banner does not name "${title}"`).toContain(title);
     }
   });
@@ -975,13 +975,12 @@ describe('nav/worked-navlayout', () => {
     expect(sidebar).not.toBeNull();
     expect(sidebar?.getAttribute('role')).toBeNull();
 
-    // The fixture navLayout's own nested "Club" section, a collapsible group with its two children.
-    // Scoped to the sidebar's own <summary>, since the site name ("Trailhead Club") elsewhere on
-    // the page also contains the word "Club".
+    // The fixture navLayout's own nested "Team" section, a collapsible group with its two children.
+    // Scoped to the sidebar's own <summary>, which is where the section label renders.
     const sectionLabel = [...(sidebar?.querySelectorAll('summary') ?? [])].find(
-      (el) => el.textContent?.trim() === 'Club',
+      (el) => el.textContent?.trim() === 'Team',
     );
-    expect(sectionLabel, 'the "Club" section header did not render').toBeDefined();
+    expect(sectionLabel, 'the "Team" section header did not render').toBeDefined();
     await expect.element(screen.getByRole('link', { name: 'Events' })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'Members' })).toBeInTheDocument();
 
@@ -1004,7 +1003,7 @@ describe('toolkit/custom-screen', () => {
     const headings = screen.container.querySelectorAll('h1');
     expect(headings).toHaveLength(1);
     await expect.element(screen.getByRole('heading', { name: 'Events', exact: true })).toBeInTheDocument();
-    expect(screen.container.textContent).toContain('Club');
+    expect(screen.container.textContent).toContain('Team');
     expect(screen.container.textContent).toContain('3 upcoming');
 
     // The table sits inside the floating-card recipe's own div, written at the call site rather
@@ -1057,7 +1056,7 @@ for (const { entry, story } of registeredStories) {
     // different contract: the keys bind a story to its manifest entry, while `n` is what the docs
     // page's keyed prose list counts off against the picture. A gap or a repeat there misnumbers
     // the list against the render with every other assertion here still green, and no gate on
-    // either side of the seam was watching it (cairn-pub's own build cannot: it never mounts a
+    // either side of the seam was watching it (cairn.pub's own build cannot: it never mounts a
     // story). Sequential from 1 in declaration order, so the chips read top to bottom the way the
     // list does.
     it('numbers its markers 1..n with no gap or repeat', () => {

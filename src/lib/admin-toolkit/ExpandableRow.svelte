@@ -32,7 +32,7 @@ independent of the row's own click-to-expand affordance; `ReferenceField.svelte`
 button (`max-sm:min-h-11 max-sm:min-w-11`, the narrow-viewport-only floor a dense summary cell also
 needs) is the idiom to reach for.
 
-**The trigger cell is `position: sticky; right: 0`** (the Members pass coherence round).
+**The trigger cell is `position: sticky; right: 0`**.
 `AdminTable`'s own horizontal-scroll fallback means a summary row wider than its viewport scrolls
 rather than wraps (that component's own contract); without this, a narrow viewport strands the
 trigger off-screen with no visible cue that a row even expands. Sticky keeps the trigger inside the
@@ -50,7 +50,7 @@ is *still* driven by the table's real column widths (verified empirically: `widt
 un-tabled cell kept measuring the summary rows' own narrower first-two-column width, not the table
 wrap's full width, at every viewport). A caller that wants the panel's own internal grid to collapse
 at a narrow width needs the table itself to never need horizontal scroll in the first place -- see
-Members' own `+page.svelte` for the pattern (hiding lower-priority summary columns under a
+the `cairn-admin-screens` skill's list exemplar for the pattern (hiding lower-priority summary columns under a
 breakpoint so the whole row, panel included, fits the viewport with nothing to scroll).
 
 **Three visual fixes carried at graduation, adversarially verified against zebra stripes in both
@@ -94,7 +94,7 @@ themes:**
     /** The panel's content, rendered inside one spanning cell while `expanded` is `true`. Receives
      *  `datum`. */
     panel: Snippet<[T]>;
-    /** An accessible name for the trigger control (e.g. `"Expand the Alvarez household"`), since a
+    /** An accessible name for the trigger control (e.g. `"Expand the Alvarez signup"`), since a
      *  chevron glyph alone carries no text for assistive tech. */
     triggerLabel: string;
   }

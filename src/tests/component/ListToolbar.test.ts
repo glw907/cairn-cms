@@ -6,14 +6,14 @@ import compiledAdminCss from '../../../dist/admin/cairn-admin.css?inline';
 import ListToolbar from '../../lib/admin-toolkit/ListToolbar.svelte';
 import type { ListToolbarFilter } from '../../lib/admin-toolkit/list-toolbar.js';
 
-function standingFilter(overrides: Partial<ListToolbarFilter> = {}): ListToolbarFilter {
+function statusFilter(overrides: Partial<ListToolbarFilter> = {}): ListToolbarFilter {
   return {
-    id: 'standing',
-    label: 'Standing',
+    id: 'status',
+    label: 'Status',
     options: [
       { value: 'all', label: 'All' },
-      { value: 'overdue', label: 'Overdue' },
-      { value: 'former', label: 'Former' },
+      { value: 'pending', label: 'Pending' },
+      { value: 'waitlisted', label: 'Waitlisted' },
     ],
     value: 'all',
     onChange: vi.fn(),
@@ -21,33 +21,33 @@ function standingFilter(overrides: Partial<ListToolbarFilter> = {}): ListToolbar
   };
 }
 
-// The exact facet shape aksailingclub-org's Members screen renders (four `'select'` facets plus
+// The exact facet shape a five-facet list screen renders (four `'select'` facets plus
 // one `'menu'` facet, C2's own stress case): the C2 972px/326px acceptance measurements below
 // render this fixture, not a synthetic short-option stand-in, so a passing measurement actually
-// proves the real screen's own option lengths fit.
-function membersScreenFilters(): ListToolbarFilter[] {
+// proves the five-facet fixture's own option lengths fit.
+function facetScreenFilters(): ListToolbarFilter[] {
   return [
     {
-      id: 'standing',
-      label: 'Standing',
-      value: 'members',
-      defaultValue: 'members',
+      id: 'status',
+      label: 'Status',
+      value: 'active',
+      defaultValue: 'active',
       options: [
-        { value: 'members', label: 'Current + Overdue' },
-        { value: 'current', label: 'Current' },
-        { value: 'overdue', label: 'Overdue' },
-        { value: 'former', label: 'Former' },
+        { value: 'active', label: 'Confirmed + Pending' },
+        { value: 'confirmed', label: 'Confirmed' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'waitlisted', label: 'Waitlisted' },
       ],
       onChange: vi.fn(),
     },
     {
-      id: 'holdings',
-      label: 'Holdings',
+      id: 'venue',
+      label: 'Venue',
       value: 'all',
       defaultValue: 'all',
       options: [
-        { value: 'all', label: 'Any holdings' },
-        { value: 'holding', label: 'Holding assets' },
+        { value: 'all', label: 'Any venue' },
+        { value: 'main-hall', label: 'Main hall' },
       ],
       onChange: vi.fn(),
     },
@@ -58,7 +58,7 @@ function membersScreenFilters(): ListToolbarFilter[] {
       defaultValue: 'all',
       options: [
         { value: 'all', label: 'Any role' },
-        { value: 'instructor', label: 'Instructor' },
+        { value: 'volunteer', label: 'Volunteer' },
       ],
       onChange: vi.fn(),
     },
@@ -69,8 +69,8 @@ function membersScreenFilters(): ListToolbarFilter[] {
       defaultValue: 'all',
       options: [
         { value: 'all', label: 'Any class' },
-        { value: 'keelboat', label: 'Keelboat Fundamentals' },
-        { value: 'racing', label: 'Advanced Racing Clinic' },
+        { value: 'beginner', label: 'Beginner Skills Clinic' },
+        { value: 'maintenance', label: 'Trail Maintenance Day' },
       ],
       onChange: vi.fn(),
     },
@@ -91,7 +91,7 @@ function membersScreenFilters(): ListToolbarFilter[] {
 
 describe('ListToolbar', () => {
   it('renders the search box with its accessible name and no autofocus by default', async () => {
-    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
+    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'signups' });
     const input = screen.container.querySelector('input')!;
     expect(input.getAttribute('aria-label')).toBe('Search');
     expect(input.hasAttribute('autofocus')).toBe(false);
@@ -101,11 +101,11 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter()],
+      filters: [statusFilter()],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    expect(screen.container.querySelector('[aria-label="Standing"]')).not.toBeNull();
+    expect(screen.container.querySelector('[aria-label="Status"]')).not.toBeNull();
     expect(screen.container.querySelector('.dropdown-content')).toBeNull();
   });
 
@@ -113,22 +113,22 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ promoted: false })],
+      filters: [statusFilter({ promoted: false })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     expect(screen.container.textContent).toContain('More filters');
     expect(screen.container.querySelector('.dropdown-content')).not.toBeNull();
-    expect(screen.container.querySelector('[aria-label="Standing"]')).not.toBeNull();
+    expect(screen.container.querySelector('[aria-label="Status"]')).not.toBeNull();
   });
 
   it('gives the overflow disclosure real toggle semantics that open on a click', async () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ promoted: false })],
+      filters: [statusFilter({ promoted: false })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const trigger = screen.getByRole('button', { name: 'More filters' });
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
@@ -140,16 +140,16 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      primaryAction: { label: 'Add household', onClick: () => {} },
+      primaryAction: { label: 'Add signup', onClick: () => {} },
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     expect(screen.container.querySelectorAll('.toolkit-toolbar-primary')).toHaveLength(1);
-    expect(screen.container.textContent).toContain('Add household');
+    expect(screen.container.textContent).toContain('Add signup');
   });
 
   it('renders no primary action markup when none is given', async () => {
-    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
+    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'signups' });
     expect(screen.container.querySelector('.toolkit-toolbar-primary')).toBeNull();
   });
 
@@ -157,18 +157,18 @@ describe('ListToolbar', () => {
     const atRest = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter()],
+      filters: [statusFilter()],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     expect(atRest.container.querySelector('.toolkit-toolbar-pills')).toBeNull();
 
     const applied = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      filters: [statusFilter({ value: 'pending', display: 'menu' })],
       count: 12,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     expect(applied.container.querySelector('.toolkit-toolbar-pills')).toBeNull();
     expect(applied.container.querySelector('.toolkit-toolbar-pill')).toBeNull();
@@ -178,12 +178,12 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const trigger = screen.container.querySelector('.toolkit-toolbar-facet-trigger')!;
-    expect(trigger.textContent).toContain('Standing');
+    expect(trigger.textContent).toContain('Status');
     expect(screen.container.querySelector('.toolkit-toolbar-facet-clear')).toBeNull();
     expect(screen.container.querySelector('.toolkit-toolbar-facet-applied')).toBeNull();
   });
@@ -192,15 +192,15 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      filters: [statusFilter({ value: 'pending', display: 'menu' })],
       count: 12,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const trigger = screen.container.querySelector('.toolkit-toolbar-facet-trigger')!;
-    expect(trigger.textContent).toContain('Standing: Overdue');
+    expect(trigger.textContent).toContain('Status: Pending');
     const facet = screen.container.querySelector('.toolkit-toolbar-facet-applied')!;
     expect(facet).not.toBeNull();
-    const clear = screen.container.querySelector('[aria-label="Clear Standing filter"]')!;
+    const clear = screen.container.querySelector('[aria-label="Clear Status filter"]')!;
     expect(clear).not.toBeNull();
     // The clear control is a sibling of the trigger, never nested inside it (nested interactive
     // controls are invalid markup and unreliable to activate).
@@ -213,11 +213,11 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue', display: 'menu', onChange })],
+      filters: [statusFilter({ value: 'pending', display: 'menu', onChange })],
       count: 12,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    await screen.getByRole('button', { name: 'Clear Standing filter' }).click();
+    await screen.getByRole('button', { name: 'Clear Status filter' }).click();
     expect(onChange).toHaveBeenCalledWith('all');
     // Mirrors what a real controlled caller does after `onChange`: re-render with the cleared
     // value, which unmounts the clear button this click landed on. Focus must already have moved
@@ -226,11 +226,11 @@ describe('ListToolbar', () => {
     await screen.rerender({
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ value: 'all', display: 'menu', onChange })],
+      filters: [statusFilter({ value: 'all', display: 'menu', onChange })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await expect.poll(() => document.activeElement).toBe(trigger.element());
   });
 
@@ -238,26 +238,26 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.container.querySelector('.toolkit-toolbar-facet-menu')?.textContent).toContain('Overdue');
+    expect(screen.container.querySelector('.toolkit-toolbar-facet-menu')?.textContent).toContain('Pending');
   });
 
   it("moves focus to a 'menu' facet's first option when it opens, the menu-button idiom", async () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
     const firstOption = screen.getByRole('menuitemradio', { name: 'All' });
     await expect.poll(() => document.activeElement).toBe(firstOption.element());
@@ -267,14 +267,14 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
-    const lastOption = screen.getByRole('menuitemradio', { name: 'Former' }).element() as HTMLElement;
+    const lastOption = screen.getByRole('menuitemradio', { name: 'Waitlisted' }).element() as HTMLElement;
     const nextControl = document.createElement('button');
     document.body.appendChild(nextControl);
     // A real focus move (not a synthetic `dispatchEvent`): by the time the container's own
@@ -294,14 +294,14 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu', onChange })],
+      filters: [statusFilter({ display: 'menu', onChange })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
-    await screen.getByRole('menuitemradio', { name: 'Overdue' }).click();
-    expect(onChange).toHaveBeenCalledWith('overdue');
+    await screen.getByRole('menuitemradio', { name: 'Pending' }).click();
+    expect(onChange).toHaveBeenCalledWith('pending');
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect.poll(() => document.activeElement).toBe(trigger.element());
   });
@@ -310,11 +310,11 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
     trigger.element().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -326,11 +326,11 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
     document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
@@ -342,19 +342,19 @@ describe('ListToolbar', () => {
       search: '',
       onSearch: () => {},
       filters: [
-        standingFilter({ display: 'menu' }),
-        standingFilter({ id: 'holdings', label: 'Holdings', display: 'menu' }),
+        statusFilter({ display: 'menu' }),
+        statusFilter({ id: 'venue', label: 'Venue', display: 'menu' }),
       ],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const standingTrigger = screen.getByRole('button', { name: 'Standing' });
-    const holdingsTrigger = screen.getByRole('button', { name: 'Holdings' });
-    await standingTrigger.click();
-    await expect.element(standingTrigger).toHaveAttribute('aria-expanded', 'true');
+    const statusTrigger = screen.getByRole('button', { name: 'Status' });
+    const holdingsTrigger = screen.getByRole('button', { name: 'Venue' });
+    await statusTrigger.click();
+    await expect.element(statusTrigger).toHaveAttribute('aria-expanded', 'true');
     await holdingsTrigger.click();
     await expect.element(holdingsTrigger).toHaveAttribute('aria-expanded', 'true');
-    await expect.element(standingTrigger).toHaveAttribute('aria-expanded', 'false');
+    await expect.element(statusTrigger).toHaveAttribute('aria-expanded', 'false');
   });
 
   // Proper menu semantics (the WAI menu-button pattern), not bare buttons in a plain list: the
@@ -365,16 +365,16 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
     expect(screen.getByRole('menu').element()).not.toBeNull();
     expect(screen.getByRole('menuitemradio', { name: 'All' }).element()).not.toBeNull();
-    expect(screen.getByRole('menuitemradio', { name: 'Overdue' }).element()).not.toBeNull();
-    expect(screen.getByRole('menuitemradio', { name: 'Former' }).element()).not.toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'Pending' }).element()).not.toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'Waitlisted' }).element()).not.toBeNull();
   });
 
   // WCAG 1.3.1/4.1.2: a single-select filter's applied choice must be exposed to assistive tech,
@@ -384,20 +384,20 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      filters: [statusFilter({ value: 'pending', display: 'menu' })],
       count: 12,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing: Overdue' });
+    const trigger = screen.getByRole('button', { name: 'Status: Pending' });
     await trigger.click();
     await expect
-      .element(screen.getByRole('menuitemradio', { name: 'Overdue' }))
+      .element(screen.getByRole('menuitemradio', { name: 'Pending' }))
       .toHaveAttribute('aria-checked', 'true');
     await expect
       .element(screen.getByRole('menuitemradio', { name: 'All' }))
       .toHaveAttribute('aria-checked', 'false');
     await expect
-      .element(screen.getByRole('menuitemradio', { name: 'Former' }))
+      .element(screen.getByRole('menuitemradio', { name: 'Waitlisted' }))
       .toHaveAttribute('aria-checked', 'false');
   });
 
@@ -407,9 +407,9 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const trigger = screen.container.querySelector('.toolkit-toolbar-facet-trigger')!;
     expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
@@ -425,11 +425,11 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
     const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
     await expect.poll(() => options().filter((o) => o.getAttribute('tabindex') === '0').length).toBe(1);
@@ -444,12 +444,12 @@ describe('ListToolbar', () => {
   it("keeps at least one 'menu' facet option tabbable when its options shrink out from under a stale focus index", async () => {
     const onChange = vi.fn();
     const filter: ListToolbarFilter = {
-      id: 'standing',
-      label: 'Standing',
+      id: 'status',
+      label: 'Status',
       options: [
         { value: 'all', label: 'All' },
-        { value: 'overdue', label: 'Overdue' },
-        { value: 'former', label: 'Former' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'waitlisted', label: 'Waitlisted' },
       ],
       value: 'all',
       onChange,
@@ -459,9 +459,9 @@ describe('ListToolbar', () => {
       onSearch: () => {},
       filters: [{ ...filter, display: 'menu' }],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
     const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
     // Move the roving focus to the last option (index 2), then shrink the options to just one.
@@ -472,7 +472,7 @@ describe('ListToolbar', () => {
       onSearch: () => {},
       filters: [{ ...filter, options: [{ value: 'all', label: 'All' }], display: 'menu' }],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const shrunkOptions = options();
     expect(shrunkOptions).toHaveLength(1);
@@ -483,11 +483,11 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
     const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
     await expect.poll(() => document.activeElement).toBe(options()[0]);
@@ -513,11 +513,11 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
     const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
     await expect.poll(() => document.activeElement).toBe(options()[0]);
@@ -537,11 +537,11 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
     const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
     await expect.poll(() => document.activeElement).toBe(options()[0]);
@@ -553,7 +553,7 @@ describe('ListToolbar', () => {
 
 
   // Regression: the outside-click dismissal used to key `document.querySelector` on the bare
-  // filter id ("standing"), not the component's own `uid`. Two `ListToolbar` instances sharing a
+  // filter id ("status"), not the component's own `uid`. Two `ListToolbar` instances sharing a
   // filter id then collided: the query always resolved the FIRST toolbar's facet container, so a
   // pointerdown inside the SECOND toolbar's own open menu read as "outside" and wrongly closed it.
   it("scopes a facet's outside-click dismissal by component instance, so a pointerdown inside a second toolbar's own open menu leaves it open", async () => {
@@ -567,9 +567,9 @@ describe('ListToolbar', () => {
       props: {
         search: '',
         onSearch: () => {},
-        filters: [standingFilter({ display: 'menu' })],
+        filters: [statusFilter({ display: 'menu' })],
         count: 149,
-        itemLabel: 'households',
+        itemLabel: 'signups',
       },
     });
     const second = await render(ListToolbar, {
@@ -577,13 +577,13 @@ describe('ListToolbar', () => {
       props: {
         search: '',
         onSearch: () => {},
-        filters: [standingFilter({ display: 'menu' })],
+        filters: [statusFilter({ display: 'menu' })],
         count: 149,
-        itemLabel: 'households',
+        itemLabel: 'signups',
       },
     });
 
-    const secondTrigger = second.getByRole('button', { name: 'Standing' });
+    const secondTrigger = second.getByRole('button', { name: 'Status' });
     await secondTrigger.click();
     await expect.element(secondTrigger).toHaveAttribute('aria-expanded', 'true');
 
@@ -599,11 +599,11 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue' })],
+      filters: [statusFilter({ value: 'pending' })],
       count: 12,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('12 households · Overdue');
+    expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('12 signups · Pending');
   });
 
   it('picks the singular noun in the count line when itemLabel is an { one, many } pair and count is 1', async () => {
@@ -611,9 +611,9 @@ describe('ListToolbar', () => {
       search: '',
       onSearch: () => {},
       count: 1,
-      itemLabel: { one: 'household', many: 'households' },
+      itemLabel: { one: 'signup', many: 'signups' },
     });
-    expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('1 household');
+    expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('1 signup');
   });
 
   it('picks the plural noun in the count line when itemLabel is an { one, many } pair and count is not 1', async () => {
@@ -621,13 +621,13 @@ describe('ListToolbar', () => {
       search: '',
       onSearch: () => {},
       count: 12,
-      itemLabel: { one: 'household', many: 'households' },
+      itemLabel: { one: 'signup', many: 'signups' },
     });
-    expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('12 households');
+    expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('12 signups');
   });
 
   it('gives the count line a polite, atomic status role so a filter change is announced', async () => {
-    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
+    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'signups' });
     const count = screen.container.querySelector('.toolkit-toolbar-count')!;
     expect(count.getAttribute('role')).toBe('status');
     expect(count.getAttribute('aria-live')).toBe('polite');
@@ -638,9 +638,9 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      filters: [statusFilter({ value: 'pending', display: 'menu' })],
       count: 12,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const clear = screen.container.querySelector('.toolkit-toolbar-facet-clear')!;
     const style = getComputedStyle(clear);
@@ -652,9 +652,9 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ promoted: false })],
+      filters: [statusFilter({ promoted: false })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const trigger = screen.getByRole('button', { name: 'More filters' });
     await trigger.click();
@@ -668,9 +668,9 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ promoted: false })],
+      filters: [statusFilter({ promoted: false })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const trigger = screen.getByRole('button', { name: 'More filters' });
     await trigger.click();
@@ -683,9 +683,9 @@ describe('ListToolbar', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ promoted: false })],
+      filters: [statusFilter({ promoted: false })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const trigger = screen.getByRole('button', { name: 'More filters' });
     await trigger.click();
@@ -876,17 +876,17 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(new Set(tops).size).toBe(1);
   });
 
-  // The Members-refinement-round-1 recomposition: the band is a flat flex row (not the prior
+  // The band is a flat flex row (not the prior
   // grid), search/select/facet/segmented controls share one row height because they all derive
   // from --size-field, and the search/count text land at the ruled 13px.
   it('lays out the band as a wrapped flex row, not a grid', async () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
-      primaryAction: { label: 'Add household', onClick: () => {} },
+      filters: [statusFilter({ display: 'menu' })],
+      primaryAction: { label: 'Add signup', onClick: () => {} },
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const band = screen.container.querySelector('.toolkit-toolbar-band')!;
     const style = getComputedStyle(band);
@@ -902,9 +902,9 @@ describe('ListToolbar layout (compiled CSS)', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const search = screen.container.querySelector('.toolkit-toolbar-search')!;
     const facet = screen.container.querySelector('.toolkit-toolbar-facet')!;
@@ -982,7 +982,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
       search: '',
       onSearch: () => {},
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const input = screen.container.querySelector('.toolkit-toolbar-search input')!;
     const count = screen.container.querySelector('.toolkit-toolbar-count')!;
@@ -991,7 +991,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
   });
 
   it('gives the count line tabular-nums', async () => {
-    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
+    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'signups' });
     const count = screen.container.querySelector('.toolkit-toolbar-count')!;
     expect(getComputedStyle(count).fontVariantNumeric).toBe('tabular-nums');
   });
@@ -1000,16 +1000,16 @@ describe('ListToolbar layout (compiled CSS)', () => {
     const atRest = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const applied = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      filters: [statusFilter({ value: 'pending', display: 'menu' })],
       count: 12,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const restFacet = atRest.container.querySelector('.toolkit-toolbar-facet')!;
     const appliedFacet = applied.container.querySelector('.toolkit-toolbar-facet')!;
@@ -1029,9 +1029,9 @@ describe('ListToolbar layout (compiled CSS)', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const facet = screen.container.querySelector('.toolkit-toolbar-facet')!;
     expect(getComputedStyle(facet).overflow).not.toBe('hidden');
@@ -1041,14 +1041,17 @@ describe('ListToolbar layout (compiled CSS)', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' });
+    const trigger = screen.getByRole('button', { name: 'Status' });
     await trigger.click();
-    const overdueOption = screen.getByRole('menuitemradio', { name: 'Overdue' }).element();
-    const rect = overdueOption.getBoundingClientRect();
+    const pendingOption = screen.getByRole('menuitemradio', { name: 'Pending' }).element();
+    // `elementFromPoint` answers null for a point outside the viewport, which would read as a
+    // clip; bring the option on screen first so the assertion measures only the container's clip.
+    pendingOption.scrollIntoView({ block: 'center', inline: 'center' });
+    const rect = pendingOption.getBoundingClientRect();
     expect(rect.width).toBeGreaterThan(0);
     expect(rect.height).toBeGreaterThan(0);
     // `elementFromPoint` only finds an element that is actually painted at that point; an
@@ -1056,16 +1059,16 @@ describe('ListToolbar layout (compiled CSS)', () => {
     // something else (or nothing) instead, the exact way the pre-fix bug was invisible to any
     // assertion that only checked the DOM, not what the browser actually paints.
     const paintedAt = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    expect(paintedAt === overdueOption || overdueOption.contains(paintedAt)).toBe(true);
+    expect(paintedAt === pendingOption || pendingOption.contains(paintedAt)).toBe(true);
   });
 
   it("caps an applied 'menu' facet's in-control value at 14rem with an ellipsis", async () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      filters: [statusFilter({ value: 'pending', display: 'menu' })],
       count: 12,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const trigger = screen.container.querySelector('.toolkit-toolbar-facet-trigger')!;
     const value = screen.container.querySelector('.toolkit-toolbar-facet-value')!;
@@ -1079,9 +1082,9 @@ describe('ListToolbar layout (compiled CSS)', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter()],
+      filters: [statusFilter()],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const select = screen.container.querySelector('.toolkit-toolbar-select')!;
     const style = getComputedStyle(select);
@@ -1099,15 +1102,15 @@ describe('ListToolbar layout (compiled CSS)', () => {
       search: '',
       onSearch: () => {},
       filters: [
-        standingFilter({
+        statusFilter({
           options: [
             { value: 'all', label: 'Any role' },
-            { value: 'instructor', label: 'Instructor' },
+            { value: 'volunteer', label: 'Volunteer' },
           ],
         }),
       ],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const select = screen.container.querySelector('.toolkit-toolbar-select')!;
     expect(select.getBoundingClientRect().width).toBeLessThan(160);
@@ -1118,7 +1121,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
       search: '',
       onSearch: () => {},
       filters: [
-        standingFilter({
+        statusFilter({
           options: [
             { value: 'all', label: 'Any class' },
             { value: 'long', label: 'A very long class title that would otherwise overflow its container' },
@@ -1126,7 +1129,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
         }),
       ],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     screen.container.style.width = '200px';
     screen.container.style.boxSizing = 'border-box';
@@ -1141,25 +1144,25 @@ describe('ListToolbar layout (compiled CSS)', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter(), standingFilter({ id: 'archived', label: 'Archived', display: 'menu' })],
+      filters: [statusFilter(), statusFilter({ id: 'archived', label: 'Archived', display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const select = screen.container.querySelector('.toolkit-toolbar-select')!;
     const facet = screen.container.querySelector('.toolkit-toolbar-facet')!;
     expect(getComputedStyle(select).borderColor).toBe(getComputedStyle(facet).borderColor);
   });
 
-  // C2 acceptance, proven against the real Members screen's own facet shape rather than a
+  // C2 acceptance, proven against the five-facet screen's own facet shape rather than a
   // synthetic stand-in: at a 972px container, four select facets plus one menu facet plus search
   // all sit on one line at rest.
   it('fits four select facets, one menu facet, and search on one line at a 972px container (C2 acceptance)', async () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: membersScreenFilters(),
+      filters: facetScreenFilters(),
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     screen.container.style.width = '972px';
     screen.container.style.boxSizing = 'border-box';
@@ -1175,14 +1178,14 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(band.getBoundingClientRect().width).toBeLessThanOrEqual(972);
   });
 
-  // C2 acceptance: nothing exceeds the container at ASC's own narrow content-column width.
+  // C2 acceptance: nothing exceeds the container at a narrow content-column width.
   it('keeps every control within a 326px container, nothing exceeding the container width (C2 acceptance)', async () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: membersScreenFilters(),
+      filters: facetScreenFilters(),
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     screen.container.style.width = '326px';
     screen.container.style.boxSizing = 'border-box';
@@ -1206,11 +1209,11 @@ describe('ListToolbar layout (compiled CSS)', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ display: 'menu' })],
+      filters: [statusFilter({ display: 'menu' })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
-    const trigger = screen.getByRole('button', { name: 'Standing' }).element() as HTMLButtonElement;
+    const trigger = screen.getByRole('button', { name: 'Status' }).element() as HTMLButtonElement;
     trigger.focus();
     await expect.poll(() => document.activeElement).toBe(trigger);
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
@@ -1222,9 +1225,9 @@ describe('ListToolbar layout (compiled CSS)', () => {
     const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ promoted: false })],
+      filters: [statusFilter({ promoted: false })],
       count: 149,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const trigger = screen.getByRole('button', { name: 'More filters' }).element() as HTMLButtonElement;
     trigger.focus();

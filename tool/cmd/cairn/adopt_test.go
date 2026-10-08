@@ -50,7 +50,7 @@ func credentialedDeps(t *testing.T) deps {
 // and a default frozen at 1.0 is one no later release can move.
 func TestAdoptListPrintsCandidatesAsJSONAndWritesNothing(t *testing.T) {
 	d := credentialedDeps(t)
-	d.transport = adoptRoutes("ecxc-ski")
+	d.transport = adoptRoutes("my-site")
 
 	stdout, stderr, err := execTree(t, d, "adopt", "list", "--json")
 	if err != nil {
@@ -73,7 +73,7 @@ func TestAdoptListPrintsCandidatesAsJSONAndWritesNothing(t *testing.T) {
 		t.Error("the payload does not carry containsPersonalData; the notice reaches nobody under --json")
 	}
 	lines := payload.Candidates
-	if len(lines) != 1 || lines[0].Worker != "ecxc-ski" {
+	if len(lines) != 1 || lines[0].Worker != "my-site" {
 		t.Fatalf("got %+v, want the one discovered Worker", lines)
 	}
 	if lines[0].Adopted {
@@ -96,7 +96,7 @@ func TestAdoptListPrintsCandidatesAsJSONAndWritesNothing(t *testing.T) {
 func TestAdoptListWrapsItsNoticesToTheWidth(t *testing.T) {
 	for _, width := range []int{60, 80, 100} {
 		d := credentialedDeps(t)
-		d.transport = adoptRoutes("ecxc-ski")
+		d.transport = adoptRoutes("my-site")
 
 		_, stderr, err := execTree(t, d, "adopt", "list", "--width", strconv.Itoa(width))
 		if err != nil {
@@ -134,7 +134,7 @@ func TestAdoptWithoutAWorkerNamesTheListing(t *testing.T) {
 // wrong: a name that discovery does not carry.
 func TestAdoptNamesTheListingWhenTheWorkerIsNotOnTheAccount(t *testing.T) {
 	d := credentialedDeps(t)
-	d.transport = adoptRoutes("ecxc-ski")
+	d.transport = adoptRoutes("my-site")
 
 	_, _, err := execTree(t, d, "adopt", "--worker", "not-a-worker")
 	if err == nil {

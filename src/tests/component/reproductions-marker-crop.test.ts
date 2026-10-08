@@ -1,7 +1,7 @@
 // cairn-cms: the gate that binds a story's numbered callout chips to the crop its own manifest
 // entry declares. The seam's first gate counts manifest marker keys against the keyed prose list
 // on the embedding page, which is a naming check: it cannot see WHERE a chip lands. A declared
-// height is a hard crop (cairn-pub's boundHeight takes the smaller of declared and measured, so
+// height is a hard crop (cairn.pub's boundHeight takes the smaller of declared and measured, so
 // refinement only ever removes dead space), so a marker anchored below the declared height is a
 // chip the reader never sees, against a prose list that still numbers it. `tags/screen` shipped
 // exactly that: five keyed entries, three visible chips.
@@ -22,7 +22,7 @@ const BASELINE_VIEWPORT = { width: 1280, height: 720 };
 let viewportPinned = false;
 
 // The CSS pixel width a responsive `column` embed renders at on a desk-width reader, and so the
-// width every `column` height is declared against: cairn-pub's docs measure, `--container-measure:
+// width every `column` height is declared against: cairn.pub's docs measure, `--container-measure:
 // 44rem` in its theme.css, against that site's 16px root. Hardcoded here rather than imported,
 // since it belongs to the consuming site's type scale, not to this package's public surface; a
 // change there is a re-measurement of these heights, which is the point of failing loudly.

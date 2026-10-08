@@ -14,7 +14,7 @@
 // `src/lib/admin-toolkit`) are all admin surfaces, so this rule reads only a site's admin rows;
 // the interaction is plain CSS with no admin-specific vocabulary, but it no longer reaches a site's
 // own public-side components, since none of the default roots are public ones. That narrowing is
-// disclosed and permanent (Geoff, admin/public one-scope-per-file ruling): a root a site's public
+// disclosed and permanent (the admin/public one-scope-per-file rule): a root a site's public
 // scope claims leaves the admin scope, so this rule never reads a site's public components again.
 import { selectorClassNames, splitSelectorList } from '../../sheet.js';
 import { cssRulePosition, cssScopeRules, normalizeSelector, selectorsFor } from './css-scope.js';

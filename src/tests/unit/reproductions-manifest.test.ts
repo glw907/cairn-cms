@@ -1,7 +1,7 @@
 // cairn-cms: the reproduction manifest's shape and its node-safety guarantee.
 //
 // The manifest is the node-safe half of the reproductions seam: the engine's check:visuals and
-// cairn-pub's fence validation both read it from a plain `node` process, so it may hold data and
+// cairn.pub's fence validation both read it from a plain `node` process, so it may hold data and
 // nothing else. The import-graph assertion below is what keeps that true against the source tree;
 // reproductions-manifest-dist-spawn.test.ts makes the same claim against the emitted dist, where a
 // packaging rewrite could reintroduce what the source walk cannot see.
@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 import { staticImportGraph } from './_static-import-graph.js';
 import { manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 
-// The 25 ids the spec's story inventory freezes (cairn-pub
+// The 25 ids the spec's story inventory freezes (cairn.pub
 // docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md). Changing one is a spec edit,
 // so this list is written out rather than derived from the manifest it checks.
 const IDS = [

@@ -132,7 +132,7 @@ describe('navLoad', () => {
     const routes = createNavRoutes({ runtime: runtime(NAV) });
     const event = testEvent({
       url: 'https://t.example/admin/nav',
-      locals: { cairnEditor: { email: 'inst@t', displayName: 'Inst', role: 'instructor', capability: 'none' } },
+      locals: { cairnEditor: { email: 'inst@t', displayName: 'Inst', role: 'staff', capability: 'none' } },
     });
     await expect(routes.navLoad(event)).rejects.toMatchObject({ status: 403 });
   });

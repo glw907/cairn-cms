@@ -10,7 +10,7 @@
 // real fix stops tripping the floor it already clears and a fake one (a `::before` with no rendered
 // content, or one `pointer-events: none` strips of its own click-catching) still does.
 //
-// The floor is 24x24, not 44x44, by Geoff's ruling (ruling 1). Spec 6.3 originally set
+// The floor is 24x24, not 44x44, by design. The original spec set
 // 44x44, which is WCAG 2.2's AAA criterion (2.5.5, Target Size (Enhanced)); the bar cairn can
 // honestly claim is AA, and AA's own target-size criterion (2.5.8, Target Size (Minimum)) is 24x24.
 // At 44x44

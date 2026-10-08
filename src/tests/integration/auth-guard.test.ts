@@ -119,34 +119,34 @@ describe('guard (scenario 6)', () => {
 describe('capability resolution (a site-declared vocabulary)', () => {
   const ROLES = defineRoles({
     owner: 'owner',
-    'club-admin': 'editor',
-    instructor: { capability: 'none', home: '/admin/classes' },
+    'webmaster': 'editor',
+    staff: { capability: 'none', home: '/admin/staff' },
   });
   const guard = asHandle(createAuthGuard({ roles: ROLES }));
 
   it('resolves a declared non-canonical role to its mapped capability', async () => {
     await db
       .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
-      .bind('club@x.dev', 'Club', 'club-admin', Date.now())
+      .bind('web@x.dev', 'Team', 'webmaster', Date.now())
       .run();
-    await createSession(db, 'sid-club', 'club@x.dev', Date.now() + 10_000, Date.now());
-    const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-club' }));
+    await createSession(db, 'sid-web', 'web@x.dev', Date.now() + 10_000, Date.now());
+    const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-web' }));
     const res = await guard({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.cairnEditor).toEqual({ email: 'club@x.dev', displayName: 'Club', role: 'club-admin', capability: 'editor' });
+    expect(ev.locals.cairnEditor).toEqual({ email: 'web@x.dev', displayName: 'Team', role: 'webmaster', capability: 'editor' });
   });
 
   it('resolves a declared none-capability role, authenticating without a warn log', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await db
       .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
-      .bind('inst@x.dev', 'Inst', 'instructor', Date.now())
+      .bind('inst@x.dev', 'Inst', 'staff', Date.now())
       .run();
     await createSession(db, 'sid-inst', 'inst@x.dev', Date.now() + 10_000, Date.now());
     const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-inst' }));
     const res = await guard({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.cairnEditor).toEqual({ email: 'inst@x.dev', displayName: 'Inst', role: 'instructor', capability: 'none' });
+    expect(ev.locals.cairnEditor).toEqual({ email: 'inst@x.dev', displayName: 'Inst', role: 'staff', capability: 'none' });
     const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
     expect(events).not.toContain('auth.role.unknown');
     vi.restoreAllMocks();
@@ -183,7 +183,7 @@ describe('double-wiring: a custom role against a guard that was never handed the
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await db
       .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
-      .bind('inst@x.dev', 'Inst', 'instructor', Date.now())
+      .bind('inst@x.dev', 'Inst', 'staff', Date.now())
       .run();
     await createSession(db, 'sid-unwired', 'inst@x.dev', Date.now() + 10_000, Date.now());
     const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-unwired' }));
@@ -192,14 +192,14 @@ describe('double-wiring: a custom role against a guard that was never handed the
     expect(ev.locals.cairnEditor?.capability).toBe('none');
     expect(ev.locals.cairnEditor?.capability).not.toBe('owner');
     const records = warnSpy.mock.calls.map((c) => c[0] as { event?: string; role?: string });
-    expect(records.some((r) => r.event === 'auth.role.unknown' && r.role === 'instructor')).toBe(true);
+    expect(records.some((r) => r.event === 'auth.role.unknown' && r.role === 'staff')).toBe(true);
     vi.restoreAllMocks();
   });
 });
 
 describe('the access map (Task 2)', () => {
   it('attaches the declared map to locals.cairnAccess alongside locals.cairnEditor', async () => {
-    const access: AccessMap = { '/admin/money': ['club-admin'] };
+    const access: AccessMap = { '/admin/money': ['webmaster'] };
     const guard = asHandle(createAuthGuard({ access }));
     const cookies = await seedSession('own@x.dev');
     const ev = event('/admin', cookies);

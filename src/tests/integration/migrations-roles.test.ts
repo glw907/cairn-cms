@@ -48,7 +48,7 @@ describe('migration 0001: open the editor role column', () => {
     expect(await editorTableSql()).toMatch(/CHECK/i);
 
     // Under 0000 alone, a role outside the CHECK's literal pair is rejected at the schema layer.
-    await expect(insertEditorRow('club@x.dev', 'Club Admin', 'club-admin', 500)).rejects.toThrow();
+    await expect(insertEditorRow('web@x.dev', 'Web Admin', 'webmaster', 500)).rejects.toThrow();
 
     await insertEditorRow('own@x.dev', 'Own', 'owner', 1000);
     await insertEditorRow('ed@x.dev', 'Ed', 'editor', 2000);
@@ -64,7 +64,7 @@ describe('migration 0001: open the editor role column', () => {
     ]);
 
     // The CHECK is gone: a role outside the old literal pair now inserts cleanly.
-    await expect(insertEditorRow('club@x.dev', 'Club Admin', 'club-admin', 3000)).resolves.toBeDefined();
+    await expect(insertEditorRow('web@x.dev', 'Web Admin', 'webmaster', 3000)).resolves.toBeDefined();
     expect(await editorTableSql()).not.toMatch(/CHECK/i);
   });
 });

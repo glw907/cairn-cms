@@ -37,7 +37,7 @@ const BASE_PROPS = {
   colspan: 3,
   summary,
   panel,
-  triggerLabel: 'Expand the Alvarez household',
+  triggerLabel: 'Expand the Alvarez signup',
 };
 
 describe('ExpandableRow', () => {
@@ -45,7 +45,7 @@ describe('ExpandableRow', () => {
     const screen = await render(ExpandableRow, { ...BASE_PROPS });
     const button = screen.container.querySelector('button')!;
     expect(button.getAttribute('aria-expanded')).toBe('false');
-    expect(button.getAttribute('aria-label')).toBe('Expand the Alvarez household');
+    expect(button.getAttribute('aria-label')).toBe('Expand the Alvarez signup');
     expect(screen.container.textContent).not.toContain('Panel for Alvarez');
     expect(screen.container.textContent).toContain('▸');
   });
@@ -54,7 +54,7 @@ describe('ExpandableRow', () => {
     const screen = await render(ExpandableRow, {
       ...BASE_PROPS,
       expanded: true,
-      triggerLabel: 'Collapse the Alvarez household',
+      triggerLabel: 'Collapse the Alvarez signup',
     });
     const button = screen.container.querySelector('button')!;
     expect(button.getAttribute('aria-expanded')).toBe('true');
@@ -111,7 +111,7 @@ describe('ExpandableRow', () => {
 
   it('does not show the row-toggle pointer cursor over a data-cairn-inert-cell wrapped cell', async () => {
     const inertSummary = staticSnippet(
-      '<td data-cairn-inert-cell><span>Household</span><button type="button">Edit</button></td>'
+      '<td data-cairn-inert-cell><span>Signup</span><button type="button">Edit</button></td>'
     );
     const screen = await render(ExpandableRow, { ...BASE_PROPS, summary: inertSummary });
     const inertCell = screen.container.querySelector('[data-cairn-inert-cell]') as HTMLElement;
@@ -280,7 +280,7 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
       const screen = await render(ExpandableRow, {
         ...BASE_PROPS,
         expanded: true,
-        triggerLabel: 'Collapse the Alvarez household',
+        triggerLabel: 'Collapse the Alvarez signup',
       });
       const panelCell = screen.container.querySelector('.toolkit-expandable-row-panel td')!;
       const style = getComputedStyle(panelCell);

@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { validateReproFence, type ValidateReproFenceOptions } from '../../lib/reproductions/validate.js';
 import type { ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 
-// cairn-pub's own register, passed explicitly by any caller that wants those checks: the
+// cairn.pub's own register, passed explicitly by any caller that wants those checks: the
 // engine bakes in no register default (audit-repro-validatereprofence).
 const CAIRN_PUB_REGISTER: ValidateReproFenceOptions = {
   altPrefix: /^reproduction\b/i,
@@ -101,7 +101,7 @@ describe('validateReproFence', () => {
     );
   });
 
-  it('accepts a localized alt prefix passing under caller options, the English-only cairn-pub register would refuse', () => {
+  it('accepts a localized alt prefix passing under caller options, the English-only cairn.pub register would refuse', () => {
     const body = [
       'story: media/library',
       'alt: Abbildung der Medienbibliothek in der Rasteransicht.',

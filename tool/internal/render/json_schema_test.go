@@ -107,15 +107,15 @@ func jsonGoldens(t *testing.T) []jsonGoldenCase {
 	out = append(out, jsonGoldenCase{name: "health-single", schema: "cairn-health.schema.json", data: append(single, '\n')})
 
 	list, err := MarshalSitesList([]SiteListEntry{
-		{ID: "ecxc-ski-a1b2c3", Name: "ecxc.ski", Domain: "ecxc.ski", Step: "live"},
-		{ID: "907-life-d4e5f6", Name: "907.life", Domain: "907.life", Step: "live"},
+		{ID: "my-site-a1b2c3", Name: "my-site", Domain: "my-site", Step: "live"},
+		{ID: "blog-site-d4e5f6", Name: "blog-site", Domain: "blog-site", Step: "live"},
 	}, spine.VerdictOK, nil)
 	if err != nil {
 		t.Fatalf("MarshalSitesList: %v", err)
 	}
 	out = append(out, jsonGoldenCase{name: "sites-list", schema: "cairn-sites-list.schema.json", data: append(list, '\n')})
 
-	logsData, err := MarshalLogs("ecxc.ski", []logs.Entry{{
+	logsData, err := MarshalLogs("my-site", []logs.Entry{{
 		At:    now.Add(-2 * time.Hour),
 		Level: "error",
 		Event: "publish.commit.failed",
@@ -130,8 +130,8 @@ func jsonGoldens(t *testing.T) []jsonGoldenCase {
 	out = append(out, jsonGoldenCase{name: "logs", schema: "cairn-logs.schema.json", data: append(logsData, '\n')})
 
 	adoptData, err := MarshalAdoptList([]AdoptCandidate{{
-		Worker: "ecxc-ski", Repo: "glw907/ecxc-ski", Zone: "ecxc.ski", Domain: "ecxc.ski",
-		AccountID: "120c269ad6d3dfbe6d63a0bb53758ca0", Connected: true, Adopted: false,
+		Worker: "my-site", Repo: "my-org/my-site", Zone: "my-site", Domain: "my-site",
+		AccountID: "0123456789abcdef0123456789abcdef", Connected: true, Adopted: false,
 	}})
 	if err != nil {
 		t.Fatalf("MarshalAdoptList: %v", err)
@@ -401,7 +401,7 @@ func TestAuthCheckPayloadValidatesAgainstSchema(t *testing.T) {
 	schema := loadSchema(t, "cairn-auth-check.schema.json")
 
 	cases := map[string][]byte{}
-	confirmed, err := MarshalAuthCheck("ecxc-ski-a1b2c3", []AuthCheckPermission{
+	confirmed, err := MarshalAuthCheck("my-site-a1b2c3", []AuthCheckPermission{
 		{Label: "Workers Scripts", Credential: "CAIRN_CF_READ_TOKEN", State: "pass"},
 		{Label: "Metadata", Credential: "CAIRN_GH_READ_TOKEN", State: "pass"},
 	}, spine.VerdictOK)

@@ -44,8 +44,8 @@ describe('buildCookieName', () => {
   });
 
   it('applies the same prefixing to an arbitrary base', () => {
-    expect(buildCookieName('asc-member', true)).toBe('__Host-asc-member');
-    expect(buildCookieName('asc-member', false)).toBe('asc-member');
+    expect(buildCookieName('site-member', true)).toBe('__Host-site-member');
+    expect(buildCookieName('site-member', false)).toBe('site-member');
   });
 
   it('is the byte-identical basis for the engine cookie-name functions', () => {

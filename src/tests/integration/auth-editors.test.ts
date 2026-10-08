@@ -17,16 +17,16 @@ interface EditorLogRecord {
 const db = env.AUTH_DB;
 const routes = createEditorRoutes();
 
-// An ASC-shaped vocabulary: 'owner' plus 'president' (a second owner-level name), 'club-admin'
-// (editor capability under a site-chosen name), and 'instructor' (none capability). Every
+// A custom role vocabulary: 'owner' plus 'president' (a second owner-level name), 'webmaster'
+// (editor capability under a site-chosen name), and 'staff' (none capability). Every
 // custom-vocabulary test below runs against this same declaration.
 const ascRoles = defineRoles({
   owner: 'owner',
   president: 'owner',
-  'club-admin': 'editor',
-  instructor: 'none',
+  'webmaster': 'editor',
+  staff: 'none',
 });
-const ascRoutes = createEditorRoutes({ roles: ascRoles });
+const customRoutes = createEditorRoutes({ roles: ascRoles });
 
 beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM editor')]);
@@ -161,18 +161,18 @@ describe('editorsLoad carries the declared vocabulary', () => {
 
   it('lists a custom vocabulary and fills capability on every listed editor', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
-    await seedEditor('admin@x.dev', 'Admin', 'club-admin');
-    const data = await ascRoutes.editorsLoad(asOwner());
+    await seedEditor('admin@x.dev', 'Admin', 'webmaster');
+    const data = await customRoutes.editorsLoad(asOwner());
     expect(data.vocabulary).toEqual(
       expect.arrayContaining([
         { role: 'owner', capability: 'owner' },
         { role: 'president', capability: 'owner' },
-        { role: 'club-admin', capability: 'editor' },
-        { role: 'instructor', capability: 'none' },
+        { role: 'webmaster', capability: 'editor' },
+        { role: 'staff', capability: 'none' },
       ]),
     );
     const admin = data.editors.find((e) => e.email === 'admin@x.dev');
-    expect(admin).toMatchObject({ role: 'club-admin', capability: 'editor' });
+    expect(admin).toMatchObject({ role: 'webmaster', capability: 'editor' });
   });
 
   it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
@@ -189,7 +189,7 @@ describe('editorsLoad carries the declared vocabulary', () => {
 describe('role validation against the vocabulary', () => {
   it('rejects adding an editor with a role outside the vocabulary', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
-    const result = await routes.editorAddAction(asOwner({ email: 'ghost@x.dev', name: 'Ghost', role: 'club-admin' }));
+    const result = await routes.editorAddAction(asOwner({ email: 'ghost@x.dev', name: 'Ghost', role: 'webmaster' }));
     expect(result).toHaveProperty('status', 400);
     expect(await findEditor(db, 'ghost@x.dev')).toBeNull();
   });
@@ -197,27 +197,27 @@ describe('role validation against the vocabulary', () => {
   it('rejects editorSetRole to a role outside the vocabulary, writing nothing', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
     await seedEditor('ed@x.dev', 'Ed', 'editor');
-    const result = await routes.editorSetRoleAction(asOwner({ email: 'ed@x.dev', role: 'club-admin' }));
+    const result = await routes.editorSetRoleAction(asOwner({ email: 'ed@x.dev', role: 'webmaster' }));
     expect(result).toHaveProperty('status', 400);
     expect((await findEditor(db, 'ed@x.dev'))?.role).toBe('editor');
   });
 
-  it('accepts adding and setting club-admin under the ASC-shaped vocabulary', async () => {
+  it('accepts adding and setting webmaster under the custom role vocabulary', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
-    const added = await ascRoutes.editorAddAction(asOwner({ email: 'admin@x.dev', name: 'Admin', role: 'club-admin' }));
+    const added = await customRoutes.editorAddAction(asOwner({ email: 'admin@x.dev', name: 'Admin', role: 'webmaster' }));
     expect(added).toEqual({ ok: true });
-    expect((await findEditor(db, 'admin@x.dev'))?.role).toBe('club-admin');
+    expect((await findEditor(db, 'admin@x.dev'))?.role).toBe('webmaster');
 
-    const changed = await ascRoutes.editorSetRoleAction(asOwner({ email: 'admin@x.dev', role: 'instructor' }));
+    const changed = await customRoutes.editorSetRoleAction(asOwner({ email: 'admin@x.dev', role: 'staff' }));
     expect(changed).toEqual({ ok: true });
-    expect((await findEditor(db, 'admin@x.dev'))?.role).toBe('instructor');
+    expect((await findEditor(db, 'admin@x.dev'))?.role).toBe('staff');
   });
 });
 
 describe('last-owner guard over a custom vocabulary (routes level)', () => {
   it('refuses to demote the last owner-capability row when a second owner-level name is declared but has no rows', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
-    const result = await ascRoutes.editorSetRoleAction(asOwner({ email: 'own@x.dev', role: 'club-admin' }));
+    const result = await customRoutes.editorSetRoleAction(asOwner({ email: 'own@x.dev', role: 'webmaster' }));
     expect(result).toHaveProperty('status', 400);
     expect((await findEditor(db, 'own@x.dev'))?.role).toBe('owner');
   });
@@ -225,8 +225,8 @@ describe('last-owner guard over a custom vocabulary (routes level)', () => {
   it('allows demoting when the second owner-level name carries a real row', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
     await seedEditor('pres@x.dev', 'Pres', 'president');
-    const result = await ascRoutes.editorSetRoleAction(asOwner({ email: 'own@x.dev', role: 'club-admin' }));
+    const result = await customRoutes.editorSetRoleAction(asOwner({ email: 'own@x.dev', role: 'webmaster' }));
     expect(result).toEqual({ ok: true });
-    expect((await findEditor(db, 'own@x.dev'))?.role).toBe('club-admin');
+    expect((await findEditor(db, 'own@x.dev'))?.role).toBe('webmaster');
   });
 });

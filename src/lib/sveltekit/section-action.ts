@@ -150,7 +150,7 @@ export type SectionAction<Env, Db> = <T>(
  * typechecking usefully.
  *
  * ```ts
- * // src/routes/admin/club/events/[id]/+page.server.ts
+ * // src/routes/admin/team/events/[id]/+page.server.ts
  * const sectionAction = createSectionAction<Env, D1Database>({
  *   resolveDb: (env: Env | undefined) => env?.SECTION_DB,
  * });

@@ -53,7 +53,7 @@ func main() {
 	case 4:
 		lines = clampAll(renderMany(t, fleet(), *width, false).Lines(), *width)
 	case 5:
-		lines = clampAll(renderLogs(t, "ecxc.ski", logs(), *width).Lines(), *width)
+		lines = clampAll(renderLogs(t, "my-site.example.org", logs(), *width).Lines(), *width)
 	case 6:
 		lines = clampAll(renderSingle(t, drifting(), *width, one).Lines(), *width)
 	case 7:

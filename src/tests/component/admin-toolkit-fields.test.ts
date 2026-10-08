@@ -13,8 +13,8 @@ describe('FieldLabel', () => {
   // asserts only that the label text and the composed control both render, not their position.
   it('renders the label with its control', async () => {
     const control = createRawSnippet(() => ({ render: () => '<input name="x" />' }));
-    const screen = await render(FieldLabel, { label: 'Instructor', children: control });
-    await expect.element(screen.getByText('Instructor')).toBeInTheDocument();
+    const screen = await render(FieldLabel, { label: 'Staff', children: control });
+    await expect.element(screen.getByText('Staff')).toBeInTheDocument();
     expect(screen.container.querySelector('input[name="x"]')).not.toBeNull();
   });
 
@@ -25,12 +25,12 @@ describe('FieldLabel', () => {
   // once FieldLabel renders one label with a conditional class list.
   it('keeps the control element and its focus across a live register flip', async () => {
     const control = createRawSnippet(() => ({ render: () => '<input name="x" />' }));
-    const screen = await render(FieldLabel, { label: 'Instructor', children: control, register: 'inline' });
+    const screen = await render(FieldLabel, { label: 'Staff', children: control, register: 'inline' });
     const input = screen.container.querySelector('input[name="x"]') as HTMLInputElement;
     input.focus();
     expect(document.activeElement).toBe(input);
 
-    await screen.rerender({ label: 'Instructor', children: control, register: 'stacked' });
+    await screen.rerender({ label: 'Staff', children: control, register: 'stacked' });
 
     const inputAfter = screen.container.querySelector('input[name="x"]') as HTMLInputElement;
     expect(inputAfter).toBe(input);

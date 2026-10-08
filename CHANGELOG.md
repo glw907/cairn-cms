@@ -2,6 +2,18 @@
 
 ### Changed
 
+- **The shipped examples are generic.** The `cairn` tool's `--help` examples use `my-site` where
+  they named a real site id (`cairn health my-site-a1b2c3`, `cairn adopt --worker my-site`). The
+  `cairn-admin-screens` skill's list and detail exemplars, copied into every scaffolded site, are
+  annotated against the scaffold's own `/admin/signups` screen, and the `cairn-consult` brief
+  template's first field reads "What the site is building". The TSDoc examples on `ItemLabel`,
+  `computeCountLine`, `ExpandableRow`, `FieldLabel`, `StatusChip`, `createAdminAction`, and
+  `createSectionAction` use signups and `/admin/team/...` paths. The `/reproductions` fixtures
+  name the site `Trailhead` and the nav section `Team`. The scaffold's `wrangler.jsonc` and
+  chassis files no longer carry maintainer provenance comments.
+
+  Consumers must: nothing.
+
 - **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
   `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer
   becomes `^3`. A site also needs `@sveltejs/adapter-cloudflare` `^8`, `vite` `^8.0.12`,
@@ -104,7 +116,7 @@
   colo cache. Adapter 8's worker does not, and the engine adds no replacement: Cloudflare's Cache API
   does not replicate across data centers, so a Cache API purge reaches one of them, while `/media`
   answers `max-age=31536000, immutable` and a deleted image would linger at the others.
-  `ROADMAP.md` files a watch for a measured R2 cost or `/media` latency problem.
+  The project roadmap files a watch for a measured R2 cost or `/media` latency problem.
 
   Consumers must: if your site relied on that caching, add your own, for example a zone Cache Rule
   or a `Cache-Control` on the routes that need it.
@@ -150,7 +162,7 @@
 
 - The admin, editors, and extend narrative arms and the front-door pages (`docs/README.md` and
   `docs/why-cairn.md`) are removed pending their rebuild. Every claim on them now lives in an
-  agent-facing facts container, and each arm returns as its own rebuild lands. `docs/reference/`
+  agent-facing record, and each arm returns as its own rebuild lands. `docs/reference/`
   is unchanged, and `docs/extend/migration-notes.md`, `docs/extend/upgrade-cairn.md`, and
   `docs/extend/choose-an-ai-posture.md` stay in place. A release cut before the rebuild ships the
   reference arm and those three pages only. The shipped `cairn-extend` skill now points its
@@ -186,14 +198,13 @@
 ### Documentation
 
 - **The extend arm's first 11 rebuilt pages ship, with an interim index.** Each page is drafted
-  from the facts container and checked sentence by sentence against it:
+  from that record and checked sentence by sentence against it:
   `docs/extend/security-model.md`, `add-cairn-to-a-sveltekit-app.md`,
   `add-a-custom-admin-screen.md`, `replace-magic-links-with-cloudflare-access.md`,
   `architecture.md`, `theme-your-public-site.md`, `scaffolded-site-files.md`,
   `restrict-admin-access.md`, `add-a-second-sign-in-group.md`, `rotate-the-github-app-key.md`,
   and `debug-your-site.md`. `docs/extend/README.md` is an interim index that lists only the pages
-  in place so far. The pages describe the SvelteKit 3 engine. The other 14 extend pages land with
-  stage 2b.
+  in place so far. The pages describe the SvelteKit 3 engine. The other 14 extend pages follow.
 - **Five removed extend paths are absorbed into rebuilt pages.** `docs/extend/data-tiers.md` is
   now the state section of `architecture.md`. `build-a-site-by-hand.md` is now
   `add-cairn-to-a-sveltekit-app.md`. `animate-a-custom-screen.md` is now the motion section of
@@ -212,7 +223,7 @@
 
 ### Dependencies
 
-- The October sweep takes every minor and patch (`docs/internal/record/2026-10-07-dependency-sweep.md`).
+- The October sweep takes every minor and patch.
   Runtime floors move: `@codemirror/autocomplete` (`^6.20.3`), `@codemirror/lang-markdown`
   (`^6.5.2`), `@codemirror/language` (`^6.13.1`), `@codemirror/view` (`^6.43.14`), `@lucide/svelte`
   (`^1.52.0`), `@rodrigodagostino/svelte-sortable-list` (`^2.2.6`), `heic-to` (`^1.6.5`, libheif

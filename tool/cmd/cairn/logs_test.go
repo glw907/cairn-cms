@@ -19,14 +19,14 @@ func TestImplicitlyVerboseCommandsWarnBeforeTheyPrint(t *testing.T) {
 	// adopt list defaults to --json, where the notice travels inside the payload instead, so the
 	// stderr line it is asserted on here is the one a --json=false run prints.
 	for _, args := range [][]string{
-		{"logs", "ecxc-ski-a1b2c3"},
+		{"logs", "my-site-a1b2c3"},
 		{"adopt", "list", "--json=false"},
 		{"sites", "list"},
-		{"health", "ecxc-ski-a1b2c3"},
+		{"health", "my-site-a1b2c3"},
 		{"auth", "list"},
 	} {
 		d, _ := testDeps(t)
-		writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+		writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
 		// Each run fails for want of a credential or a route; the notice is written before any
 		// of that, which is the point: it precedes the output it is warning about.
@@ -34,13 +34,13 @@ func TestImplicitlyVerboseCommandsWarnBeforeTheyPrint(t *testing.T) {
 		warned[strings.Join(args, " ")] = strings.Contains(stderr, pasteNotice)
 	}
 
-	for _, command := range []string{"logs ecxc-ski-a1b2c3", "adopt list --json=false"} {
+	for _, command := range []string{"logs my-site-a1b2c3", "adopt list --json=false"} {
 		if !warned[command] {
 			t.Errorf("%s printed no paste notice; it is implicitly verbose", command)
 		}
 	}
 	for command, did := range warned {
-		if did && command != "logs ecxc-ski-a1b2c3" && command != "adopt list --json=false" {
+		if did && command != "logs my-site-a1b2c3" && command != "adopt list --json=false" {
 			t.Errorf("%s printed the paste notice; only the two implicitly verbose commands do", command)
 		}
 	}
@@ -74,7 +74,7 @@ func findCommand(t *testing.T, root *cobra.Command, path ...string) *cobra.Comma
 // the sensitive-data notice travels inside the payload as containsPersonalData.
 func TestLogsUnderJSONWritesNothingToStderr(t *testing.T) {
 	d := credentialedDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 	d.transport = routeRoundTripper{
 		"/client/v4/accounts/" + testAccountID + "/workers/observability/telemetry/query": {
 			status: http.StatusOK,
@@ -82,7 +82,7 @@ func TestLogsUnderJSONWritesNothingToStderr(t *testing.T) {
 		},
 	}
 
-	stdout, stderr, err := execTree(t, d, "logs", "ecxc-ski-a1b2c3", "--json", "--verbose")
+	stdout, stderr, err := execTree(t, d, "logs", "my-site-a1b2c3", "--json", "--verbose")
 	if err != nil {
 		t.Fatalf("logs --json --verbose: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestLogsUnderJSONWritesNothingToStderr(t *testing.T) {
 // of the object: a consumer would be handed a stream that is no longer JSON.
 func TestSitesListUnderJSONWritesOnlyThePayloadToStdout(t *testing.T) {
 	d, _ := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
 	stdout, _, err := execTree(t, d, "sites", "list", "--json", "--verbose")
 	if err != nil {

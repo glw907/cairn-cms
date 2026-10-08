@@ -56,7 +56,7 @@ export function variantUrl(publicPath: string, spec: VariantSpec): string {
   // allowlist check. Safe today because every VariantSpec is engine-owned (BUILT_IN_PRESETS,
   // media/config.ts, whose map is now Object.frozen, though the freeze is shallow and does not
   // reach into each nested VariantSpec value) and validateVariant was retired alongside the
-  // site-declared `variants` field (ruling 4, 2026-09-01). Reintroducing a caller-supplied
+  // site-declared `variants` field (see docs/internal/engine-rulings.md). Reintroducing a caller-supplied
   // VariantSpec (a site declaring its own preset again) reopens comma/slash injection into the
   // transform URL's options segment; re-add a value check on gravity and format before that seam
   // returns.

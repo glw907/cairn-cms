@@ -14,7 +14,7 @@ export interface ListToolbarFilterOption {
   label: string;
   /**
    * An optional per-option match count, rendered beside the label in the segmented display
-   * (graduation extension: ruling 6's finding-11 "segmented filter group" device). Omit for a
+   * (the segmented filter group device). Omit for a
    * filter that carries no count of its own.
    */
   count?: number;
@@ -53,7 +53,7 @@ export interface ListToolbarFilter {
   promoted?: boolean;
   /**
    * The filter's presentation: a `<select>` (the default), a `'segmented'` group of toggle
-   * buttons (graduation extension: ruling 6, finding-11's segmented filter device; ConceptList's
+   * buttons (the segmented filter device; ConceptList's
    * publish-state filter and MediaLibrary's triage radiogroup are the first consumers), or a
    * `'menu'` quiet bordered button showing the filter's own name at rest and its applied value
    * in-control (the recomposition that replaced the applied-pills row: `"Standing"` at rest,

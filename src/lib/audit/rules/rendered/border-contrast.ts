@@ -1,12 +1,12 @@
 // cairn-audit's border-contrast rule: a rendered border against the surfaces it separates, at a
 // house floor of 3:1 borrowed from WCAG 1.4.11 rather than an application of it (see
 // `RATIO_FLOOR`; the criterion reaches control-identifying boundaries and graphical objects, not
-// every card hairline). Advisory, and deliberately report-only by ruling, not by
-// accident: the ratified `--cairn-card-border` hairline measures 1.11:1 in light and 1.43:1 in dark
+// every card hairline). Advisory, and deliberately report-only, not by
+// accident: the documented `--cairn-card-border` hairline measures 1.11:1 in light and 1.43:1 in dark
 // against the page's base-200 ambient (both numbers reproduced exactly by this rule's own fixtures
-// against real Chromium). RULING 2 (2026-07-28) settled the question spec 6.3 raised: the
+// against real Chromium). The hairline's quiet edge is a settled design decision: the
 // hairline stays as designed, the quiet edge is deliberate, and `check` below stops reporting the
-// page's own `--cairn-card-border` while it still renders the way Geoff signed it off (see
+// page's own `--cairn-card-border` while it still renders the way it was designed (see
 // `RATIFIED_TOKEN` and `RATIFIED_HAIRLINE_FLOOR`). Do not loosen the floor or widen the exemption
 // to make cairn's own admin quiet; every OTHER boundary still has to answer the measurement
 // honestly, including a border that merely resolves to the same bytes as the ratified one, and
@@ -17,7 +17,7 @@
 // `--color-base-300: oklch(30% 0.014 75)` and `--cairn-card-border: oklch(30% 0.014 75)` in the same
 // dark block, so equality swallowed every `border-base-300` boundary in the dark theme (the shell's
 // CMS pill, the media library's clear-selection button, RepeatableField, MediaHeroField) under a
-// printed reason naming a ruling Geoff never made about them. A flat `border-base-300` on a floating
+// printed reason that does not apply to them. A flat `border-base-300` on a floating
 // surface is a hazard `stock-default-hazards` exists to flag, so silencing it is the exact inversion
 // of this engine's job. The same cut also swallowed `static-admin-page.ts`'s separate `--border` and
 // any hard-coded `rgb(235, 231, 226)`. `readBorderCandidates` therefore probes each candidate with a
@@ -59,7 +59,7 @@
 // The verdict is that a border renders no visible boundary when it clears the floor against
 // NEITHER surface, and the badge-on-thumbnail case stops reporting because a 3.63 boundary is
 // genuinely visible. The ratified hairline measures 1.11 outside and 1.19 against the card's own
-// fill under that reading, which is the pair Ruling 2's exemption is bounded by, and it is still
+// fill under that reading, which is the pair the hairline exemption is bounded by, and it is still
 // the pair the message prints for any border painted in that color WITHOUT the token.
 //
 // Hit testing is viewport-relative, so the window scrolls each candidate into view and scrolls back
@@ -109,7 +109,7 @@ const RATIO_FLOOR = 3;
 const NO_BORDER_ALPHA = 0.02;
 
 /**
- * The custom property RULING 2 ratified. Never compared as a value: what qualifies a border is that
+ * The custom property the documented hairline is declared on. Never compared as a value: what qualifies a border is that
  * it is PAINTED THROUGH this property, which {@link RATIFIED_SENTINEL} decides per element.
  *
  * Two cuts failed here and both are worth keeping named. Hard-coding cairn's own resolved sRGB
@@ -140,7 +140,7 @@ const RATIFIED_TOKEN = '--cairn-card-border';
  *
  * - A mix that only DIMS the token, `color-mix(in oklab, var(--cairn-card-border) 70%, transparent)`
  *   on the media library's orphan-scan result rows and HelpHome's section rules, renders the
- *   ratified hairline quieter than ratified. Ruling 2 ratified a MEASUREMENT, so a weaker rendering
+ *   documented hairline quieter than documented. The exemption covers a MEASUREMENT, so a weaker rendering
  *   of the same color is outside it on the same grounds an `opacity`-dimmed hairline already is
  *   (see {@link RATIFIED_HAIRLINE_FLOOR}). Admitting it to identity would only move the decision
  *   onto the floor, which is where a dimmed hairline belongs anyway.
@@ -160,7 +160,7 @@ const RATIFIED_SENTINEL = 'rgb(1, 2, 3)';
 
 /**
  * The contrast the ratified hairline actually renders at, and the floor its exemption is gated on.
- * RULING 2 ratified a MEASUREMENT, not a color, so matching the token is necessary and not
+ * The exemption covers a MEASUREMENT, not a color, so matching the token is necessary and not
  * sufficient: the exemption applies only while the boundary still reads at least this well against
  * one of the two surfaces it separates, which is the rule's own verdict shape ({@link RATIO_FLOOR})
  * evaluated at the ratified number instead of WCAG's.
@@ -406,7 +406,7 @@ export const borderContrast: RenderedRule = {
     });
     if (candidates.length === 0) return [];
 
-    // Ruling 2's identity question was already answered in the page, by substitution, so nothing
+    // The identity question was already answered in the page, by substitution, so nothing
     // here has to resolve the token as a color. That is the whole point: two properties holding the
     // same bytes are indistinguishable to any color comparison and distinguishable to this one.
     const flat = candidates.flatMap((candidate) => [
@@ -446,7 +446,7 @@ export const borderContrast: RenderedRule = {
         const ground = grounds[index];
         // Derivation joins the key so a side painted through the token and a side painted in a
         // literal of the same color never merge into one finding, which would hand one verdict two
-        // different answers to Ruling 2's identity question.
+        // different answers to the identity question.
         const key = `${side.color}|${side.tokenDerived}|${ground.kind === 'resolved' ? describeColor(ground.color) : ground.reason}`;
         const group = groups.get(key);
         if (group) group.sides.push(side.side);
@@ -529,10 +529,10 @@ export const borderContrast: RenderedRule = {
         const bestRatio = Math.max(outerRatio, innerRatio);
         if (bestRatio >= RATIO_FLOOR) continue;
 
-        // RULING 2, applied last because it is a claim about a MEASUREMENT and not only about
+        // The hairline exemption, applied last because it is a claim about a MEASUREMENT and not only about
         // which property paints the line: the page declares the hairline, this side is painted
         // THROUGH it (proved in-page by sentinel substitution, never by comparing bytes), and it
-        // still separates its two surfaces at least as well as the rendering Geoff signed off on.
+        // still separates its two surfaces at least as well as the documented rendering.
         // Any of those three failing reports the finding plainly: a different token or a literal
         // that happens to resolve to the same bytes, the token dimmed by an ancestor's `opacity`,
         // and, the case a colour-only exemption silenced, the ratified token used where it

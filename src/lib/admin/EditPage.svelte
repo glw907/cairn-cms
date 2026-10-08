@@ -1411,7 +1411,7 @@ persistent "?" carries Markdown help).
 {#snippet desk()}
   <div class="ml-2 flex min-w-0 flex-1 items-center gap-3 max-sm:ml-0 max-sm:gap-1">
     {#if narrow}
-      <!-- The below-sm compact band (docs/internal/2026-07-15-design-arc-log.md):
+      <!-- The below-sm compact band (https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/2026-07-15-design-arc-log.md):
            the way back to the concept list, the document title as read-only truncating text (not
            the input, which lives with the manuscript), and one status pill. The pill folds the
            Hidden signal in as the eye-off glyph and carries the dirty dot beside it, so the rare

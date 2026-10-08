@@ -949,7 +949,7 @@ Swapping the editor stays a one-file change.
     // below hands out a live api, so nothing observes the pre-fold state.
     if (foldOnMount) foldingMod.foldContainersOnLoad(view);
 
-    // The one uniform grant (ruling 1; docs/internal/engine-rulings.md,
+    // The one uniform grant (docs/internal/engine-rulings.md,
     // `audit-admin-markdowneditor`): every registerEditor caller now receives the full
     // buffer-scoped EditorApi, where the retired register* props each handed back only the one
     // callback (or object) that caller wired.

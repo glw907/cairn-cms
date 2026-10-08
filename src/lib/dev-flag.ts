@@ -5,7 +5,7 @@
 // instance serves both dev and prod, so it additionally requires a deployed request before
 // refusing), and `sveltekit/csrf.ts` (which reads only the local-host predicate). A divergent
 // second wording would violate the read-from-the-source rule; the two flag refusals diverge on
-// WITNESS, never on message, and each states why where it fires (ruling 4 as letter-amended:
+// WITNESS, never on message, and each states why where it fires (the rule:
 // refuse when the flag is set AND the request is deployed; docs/internal/engine-rulings.md,
 // `dev-backend-flag-refusal`).
 //

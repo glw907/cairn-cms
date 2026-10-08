@@ -86,9 +86,9 @@ import {
 
 /**
  * Below this contrast ratio, a chip's composited fill and the ground behind it are close enough
- * to read as the same color. RATIFIED (ruling 3, Geoff, 2026-07-28): spec 6.3 named no
- * number here, a builder borrowed this value from `interactive-contrast`'s own probe-derived floor,
- * and Geoff confirmed the borrow on review rather than leaving it as an open question. The shared
+ * to read as the same color. RATIFIED: the original spec named no
+ * number here, so the value is borrowed from `interactive-contrast`'s own probe-derived floor,
+ * a borrow confirmed on review rather than left as an open question. The shared
  * rationale, now on the record so neither rule re-litigates it: both rules test "not accidentally
  * camouflaged," and neither is a contrast standard. Legibility is WCAG 1.4.3 Contrast (Minimum),
  * AA, at 4.5:1 for normal text and 3:1 for large, and NO rule in this engine measures it. Do not
@@ -326,12 +326,12 @@ function readChipGrounds(): ChipGroundReading {
  * false positive would flag the correct `badge-outline` pattern (see the file header), so a chip
  * with no fill of its own is skipped rather than compared.
  *
- * DEMOTED TO ADVISORY (ruling 3, Geoff 2026-07-28): the formula had no chroma term
+ * DEMOTED TO ADVISORY: the formula had no chroma term
  * and could not see hue, so a hue-distinct chip a sighted user reads as plainly bounded still
  * flagged. As coded then it could not serve as a consumer gate. This was a tier change only at the
  * time; the formula itself was untouched, on the discipline that a gating rule's repair
  * earns its own dedicated fix rather than a gate-stage patch. Sequencing also argued for demoting first:
- * ruling 1 moved the rule's own domain (the chip recipe StatusChip ships), and repairing the
+ * the rule's own domain moved with the chip recipe StatusChip ships, and repairing the
  * formula before that recipe settled would have fit it twice.
  *
  * CHROMA-AWARE REPAIR LANDED, HUE HALF ONLY: the check below now

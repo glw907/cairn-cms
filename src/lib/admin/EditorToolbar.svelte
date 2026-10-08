@@ -3,7 +3,7 @@
 The editor card's instrument strip. Three labelled clusters, Format (bold, italic, strike, inline
 code), Structure (headings, lists, quote, table, plus the More overflow), and Insert (the host's
 insert/edit/link/image/figure/Tidy controls), each divided by a hairline and, at sm and up, topped
-with a presentational micro-eyebrow naming it. Each cluster wrapper carries `role="group"` with an `aria-label` matching
+with a presentational micro-eyebrow naming it (https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/2026-07-15-design-arc-log.md, "grouped micro-eyebrows"). Each cluster wrapper carries `role="group"` with an `aria-label` matching
 its eyebrow, so the grouping reaches assistive tech even though the eyebrow text itself is
 `aria-hidden`. "Blocks" never labels a cluster: cairn's own vocabulary already uses block for a
 component (Insert block / Edit block), so the word appears only inside those two existing control

@@ -1034,12 +1034,11 @@ reaches it as `Extract<AdminData, { view: 'editors' }>['page']`.
 Build the loads and actions for the editor-management view at `/admin/editors`. `editorsLoad` lists
 the editors, names the current user, and returns `vocabulary`. `vocabulary` holds the declared
 roles with their resolved capability, and [`ManageEditors`](./admin.md#manageeditors) renders it.
-The three
-actions add an editor, remove one, and change a role, each validating the posted role against the
-vocabulary (rejecting an unknown one as a form error, no more silent coercion to `'editor'`) and
-returning a typed `ActionFailure` on a guard or validation error. The `roles` member of `config`
-is the same declared vocabulary [`createAuthGuard`](#createauthguard) takes; omitted, both resolve
-against the default owner/editor pair.
+The three actions add an editor, remove one, and change a role, each validating the posted role
+against the vocabulary (rejecting an unknown one as a form error, no more silent coercion to
+`'editor'`) and returning a typed `ActionFailure` on a guard or validation error. The `roles` member
+of `config` is the same declared vocabulary [`createAuthGuard`](#createauthguard) takes; omitted,
+both resolve against the default owner/editor pair.
 
 ```ts
 // src/routes/admin/(app)/editors/+page.server.ts (per-route mounting)
@@ -1187,8 +1186,8 @@ D1 error. `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's
 outstanding preview rows unconditionally as part of their own cascade, since the id they touch stops
 naming that entry either way; `discardAction` clears them only when the entry was never published
 (discarding an edit to a live entry leaves its rows alone, since the id still names the same,
-still-live entry). All three close the same id-reuse collision: a stale link that later resolves to
-a different entry's draft. Publishing deliberately leaves the rows in place, since
+still-live entry). All three close the same id-reuse collision: a stale link that could later
+resolve to a different entry's draft. Publishing deliberately leaves the rows in place, since
 [`loadPreview`](#loadpreview) needs them to answer a stale link with "this preview has ended" rather
 than a bare 404. See [Public preview](#public-preview) below for the site-mounted page these actions
 feed.

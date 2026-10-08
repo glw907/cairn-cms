@@ -32,12 +32,12 @@ func TestGitHubReasonMappingFromCorpusFixtures(t *testing.T) {
 
 		t.Run(tt.name+"/commits main", func(t *testing.T) {
 			gh := NewGitHub(Credential{}, rt)
-			_, err := gh.HeadSHA(context.Background(), "glw907", "ecxc-ski", "main")
+			_, err := gh.HeadSHA(context.Background(), "glw907", "my-site", "main")
 			assertGitHubReason(t, err, status, tt.want)
 		})
 		t.Run(tt.name+"/contents package.json", func(t *testing.T) {
 			gh := NewGitHub(Credential{}, rt)
-			_, err := gh.FileAtRef(context.Background(), "glw907", "ecxc-ski", "package.json", "main")
+			_, err := gh.FileAtRef(context.Background(), "glw907", "my-site", "package.json", "main")
 			assertGitHubReason(t, err, status, tt.want)
 		})
 	}
@@ -69,7 +69,7 @@ func TestHeadSHADecodesSuccess(t *testing.T) {
 	body := []byte(`{"sha":"a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"}`)
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
-	sha, err := gh.HeadSHA(context.Background(), "glw907", "ecxc-ski", "main")
+	sha, err := gh.HeadSHA(context.Background(), "glw907", "my-site", "main")
 	if err != nil {
 		t.Fatalf("HeadSHA: %v", err)
 	}
@@ -79,14 +79,14 @@ func TestHeadSHADecodesSuccess(t *testing.T) {
 }
 
 func TestFileAtRefDecodesSuccess(t *testing.T) {
-	body := []byte(`{"content":"eyJuYW1lIjoiZWN4Yy1za2kifQ==\n","encoding":"base64"}`)
+	body := []byte(`{"content":"eyJuYW1lIjoibXktc2l0ZSJ9\n","encoding":"base64"}`)
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: body})
 
-	content, err := gh.FileAtRef(context.Background(), "glw907", "ecxc-ski", "package.json", "main")
+	content, err := gh.FileAtRef(context.Background(), "glw907", "my-site", "package.json", "main")
 	if err != nil {
 		t.Fatalf("FileAtRef: %v", err)
 	}
-	if string(content) != `{"name":"ecxc-ski"}` {
+	if string(content) != `{"name":"my-site"}` {
 		t.Errorf("content = %q, want the decoded base64 payload", content)
 	}
 }
@@ -99,11 +99,11 @@ type branchesRoundTripper struct {
 }
 
 func (rt branchesRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	if req.URL.Path == "/repos/glw907/ecxc-ski/branches" {
+	if req.URL.Path == "/repos/glw907/my-site/branches" {
 		return fixtureRoundTripper{status: http.StatusOK, body: rt.list}.RoundTrip(req)
 	}
 	for sha, body := range rt.commits {
-		if req.URL.Path == "/repos/glw907/ecxc-ski/commits/"+sha {
+		if req.URL.Path == "/repos/glw907/my-site/commits/"+sha {
 			return fixtureRoundTripper{status: http.StatusOK, body: body}.RoundTrip(req)
 		}
 	}
@@ -119,7 +119,7 @@ func TestBranchesJoinsCommitDateAndAuthor(t *testing.T) {
 	}
 	gh := NewGitHub(Credential{}, rt)
 
-	branches, err := gh.Branches(context.Background(), "glw907", "ecxc-ski")
+	branches, err := gh.Branches(context.Background(), "glw907", "my-site")
 	if err != nil {
 		t.Fatalf("Branches: %v", err)
 	}
@@ -135,7 +135,7 @@ func TestBranchesJoinsCommitDateAndAuthor(t *testing.T) {
 func TestLatestBotCommitReturnsZeroTimeWhenNone(t *testing.T) {
 	gh := NewGitHub(Credential{}, fixtureRoundTripper{status: http.StatusOK, body: []byte(`[]`)})
 
-	when, err := gh.LatestBotCommit(context.Background(), "glw907", "ecxc-ski", "main")
+	when, err := gh.LatestBotCommit(context.Background(), "glw907", "my-site", "main")
 	if err != nil {
 		t.Fatalf("LatestBotCommit: %v", err)
 	}
@@ -156,7 +156,7 @@ func TestLatestBotCommitReturnsNewestDate(t *testing.T) {
 	})
 	gh := NewGitHub(Credential{}, rt)
 
-	when, err := gh.LatestBotCommit(context.Background(), "glw907", "ecxc-ski", "main")
+	when, err := gh.LatestBotCommit(context.Background(), "glw907", "my-site", "main")
 	if err != nil {
 		t.Fatalf("LatestBotCommit: %v", err)
 	}

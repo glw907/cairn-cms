@@ -289,7 +289,7 @@ func TestSectionLabels(t *testing.T) {
 		t.Error("the passing checks did not fold to one line")
 	}
 	for _, l := range lines {
-		if l != strings.ToUpper(l) && strings.Contains(l, "907.LIFE") {
+		if l != strings.ToUpper(l) && strings.Contains(l, "MY-SITE") {
 			t.Errorf("line %q case-folded a domain", l)
 		}
 	}

@@ -377,13 +377,13 @@ func TestNoCommandBlocksOnClosedStdin(t *testing.T) {
 	d.readPassword = func(cmd *cobra.Command, name string) (string, error) {
 		return promptPassword(cmd, name, d.stdin)
 	}
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
 	commands := [][]string{
 		{"sites", "list"},
 		{"health"},
-		{"health", "ecxc-ski-a1b2c3"},
-		{"logs", "ecxc-ski-a1b2c3"},
+		{"health", "my-site-a1b2c3"},
+		{"logs", "my-site-a1b2c3"},
 		{"adopt"},
 		{"adopt", "list"},
 		{"auth", "list"},

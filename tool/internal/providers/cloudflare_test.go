@@ -217,7 +217,7 @@ func TestListWorkersFollowsPagination(t *testing.T) {
 // TestListZonesDecodesEveryPage asserts ListZones returns each zone's id and name, the pair
 // Worker discovery joins a custom domain's zone_id against.
 func TestListZonesDecodesEveryPage(t *testing.T) {
-	body := []byte(`{"success":true,"result":[{"id":"zone-1","name":"ecxc.ski","status":"active"},{"id":"zone-2","name":"907.life","status":"pending"}],"result_info":{"page":1,"total_pages":1}}`)
+	body := []byte(`{"success":true,"result":[{"id":"zone-1","name":"my-site.example.org","status":"active"},{"id":"zone-2","name":"blog.example.org","status":"pending"}],"result_info":{"page":1,"total_pages":1}}`)
 	cf := NewCloudflare("account-id", NewCredential("token"), fixtureRoundTripper{status: http.StatusOK, body: body})
 
 	zones, err := cf.ListZones(context.Background())
@@ -225,8 +225,8 @@ func TestListZonesDecodesEveryPage(t *testing.T) {
 		t.Fatalf("ListZones: %v", err)
 	}
 	want := []Zone{
-		{ID: "zone-1", Name: "ecxc.ski", Status: "active"},
-		{ID: "zone-2", Name: "907.life", Status: "pending"},
+		{ID: "zone-1", Name: "my-site.example.org", Status: "active"},
+		{ID: "zone-2", Name: "blog.example.org", Status: "pending"},
 	}
 	if len(zones) != len(want) {
 		t.Fatalf("ListZones returned %d zones, want %d", len(zones), len(want))
@@ -269,7 +269,7 @@ func TestBuildsTokensClassifiesFailure(t *testing.T) {
 // TestDNSRecordsDecodesEveryPage asserts DNSRecords returns each record's name and type,
 // following the route's own result_info like every other paginated list.
 func TestDNSRecordsDecodesEveryPage(t *testing.T) {
-	body := []byte(`{"success":true,"result":[{"name":"ecxc.ski","type":"A"},{"name":"www.ecxc.ski","type":"CNAME"}],"result_info":{"page":1,"total_pages":1}}`)
+	body := []byte(`{"success":true,"result":[{"name":"my-site.example.org","type":"A"},{"name":"www.my-site.example.org","type":"CNAME"}],"result_info":{"page":1,"total_pages":1}}`)
 	cf := NewCloudflare("account-id", NewCredential("token"), fixtureRoundTripper{status: http.StatusOK, body: body})
 
 	records, err := cf.DNSRecords(context.Background(), "zone-1")
@@ -277,8 +277,8 @@ func TestDNSRecordsDecodesEveryPage(t *testing.T) {
 		t.Fatalf("DNSRecords: %v", err)
 	}
 	want := []DNSRecord{
-		{Name: "ecxc.ski", Type: "A"},
-		{Name: "www.ecxc.ski", Type: "CNAME"},
+		{Name: "my-site.example.org", Type: "A"},
+		{Name: "www.my-site.example.org", Type: "CNAME"},
 	}
 	if len(records) != len(want) {
 		t.Fatalf("DNSRecords returned %d records, want %d", len(records), len(want))

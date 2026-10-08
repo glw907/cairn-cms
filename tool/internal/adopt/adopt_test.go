@@ -49,11 +49,11 @@ func (rt routedRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 // custom domain and a Builds trigger, one with neither.
 func discoveryRoutes() map[string]string {
 	return map[string]string{
-		"/workers/scripts":                   `{"success":true,"result":[{"id":"ecxc-ski","tag":"tag-ecxc"},{"id":"spare","tag":"tag-spare"}]}`,
-		"/workers/domains":                   `{"success":true,"result":[{"hostname":"www.ecxc.ski","service":"ecxc-ski","zone_id":"zone-1"}]}`,
-		"/zones":                             `{"success":true,"result":[{"id":"zone-1","name":"ecxc.ski","status":"active"}]}`,
-		"/builds/workers/tag-ecxc/triggers":  `{"success":true,"result":[{"uuid":"trigger-1","repo_connection":{"provider_account_name":"glw907","repo_name":"ecxc-ski"}}]}`,
-		"/builds/workers/tag-spare/triggers": `{"success":true,"result":[]}`,
+		"/workers/scripts":                     `{"success":true,"result":[{"id":"my-site","tag":"tag-my-site"},{"id":"spare","tag":"tag-spare"}]}`,
+		"/workers/domains":                     `{"success":true,"result":[{"hostname":"www.my-site.example.org","service":"my-site","zone_id":"zone-1"}]}`,
+		"/zones":                               `{"success":true,"result":[{"id":"zone-1","name":"my-site.example.org","status":"active"}]}`,
+		"/builds/workers/tag-my-site/triggers": `{"success":true,"result":[{"uuid":"trigger-1","repo_connection":{"provider_account_name":"glw907","repo_name":"my-site"}}]}`,
+		"/builds/workers/tag-spare/triggers":   `{"success":true,"result":[]}`,
 	}
 }
 
@@ -73,7 +73,7 @@ func TestDiscoverFillsEveryCandidateField(t *testing.T) {
 		t.Fatalf("Discover: %v", err)
 	}
 	want := []Candidate{
-		{Worker: "ecxc-ski", Repo: "glw907/ecxc-ski", Zone: "ecxc.ski", ZoneID: "zone-1", Domain: "www.ecxc.ski", AccountID: "account-1", Connected: true},
+		{Worker: "my-site", Repo: "glw907/my-site", Zone: "my-site.example.org", ZoneID: "zone-1", Domain: "www.my-site.example.org", AccountID: "account-1", Connected: true},
 		{Worker: "spare", AccountID: "account-1"},
 	}
 	if len(got) != len(want) {
@@ -92,7 +92,7 @@ func TestDiscoverFillsEveryCandidateField(t *testing.T) {
 // carry the test on Windows and under a root uid, where a 0500 mode does not block a write.
 func TestDiscoverPerformsNoWrite(t *testing.T) {
 	dir := t.TempDir()
-	writeRecord(t, dir, "ecxc-ski-a1b2c3", `{"name":"ecxc","schemaVersion":1}`)
+	writeRecord(t, dir, "my-site-a1b2c3", `{"name":"my-site","schemaVersion":1}`)
 
 	if err := os.Chmod(dir, 0o500); err != nil {
 		t.Fatalf("chmod: %v", err)
@@ -169,10 +169,10 @@ func publicResolver() fakeResolver {
 // liveCandidate is the Candidate the adoption tests below start from.
 func liveCandidate() Candidate {
 	return Candidate{
-		Worker:    "ecxc-ski",
-		Repo:      "glw907/ecxc-ski",
-		Zone:      "ecxc.ski",
-		Domain:    "www.ecxc.ski",
+		Worker:    "my-site",
+		Repo:      "glw907/my-site",
+		Zone:      "my-site.example.org",
+		Domain:    "www.my-site.example.org",
 		AccountID: "account-1",
 		Connected: true,
 	}
@@ -185,12 +185,12 @@ func TestAdoptWritesTheRecordShape(t *testing.T) {
 	dir := t.TempDir()
 	st := openStore(t, dir)
 
-	got, err := Adopt(context.Background(), st, liveCandidate(), "ECXC Ski", publicResolver())
+	got, err := Adopt(context.Background(), st, liveCandidate(), "My Site", publicResolver())
 	if err != nil {
 		t.Fatalf("Adopt: %v", err)
 	}
-	if got.Name != "ECXC Ski" {
-		t.Errorf("Name = %q, want %q", got.Name, "ECXC Ski")
+	if got.Name != "My Site" {
+		t.Errorf("Name = %q, want %q", got.Name, "My Site")
 	}
 	if got.Step != string(spine.StepLive) {
 		t.Errorf("Step = %q, want %q", got.Step, string(spine.StepLive))
@@ -198,14 +198,14 @@ func TestAdoptWritesTheRecordShape(t *testing.T) {
 	if !got.Adopted {
 		t.Error("Adopted = false, want true")
 	}
-	if got.Domain != "www.ecxc.ski" {
-		t.Errorf("Domain = %q, want %q", got.Domain, "www.ecxc.ski")
+	if got.Domain != "www.my-site.example.org" {
+		t.Errorf("Domain = %q, want %q", got.Domain, "www.my-site.example.org")
 	}
-	if got.Cloudflare.WorkerName != "ecxc-ski" || got.Cloudflare.AccountID != "account-1" {
+	if got.Cloudflare.WorkerName != "my-site" || got.Cloudflare.AccountID != "account-1" {
 		t.Errorf("Cloudflare = %+v, want the candidate's worker and account", got.Cloudflare)
 	}
-	if got.GitHub.Repo.Owner != "glw907" || got.GitHub.Repo.Repo != "ecxc-ski" {
-		t.Errorf("GitHub.Repo = %+v, want glw907/ecxc-ski", got.GitHub.Repo)
+	if got.GitHub.Repo.Owner != "glw907" || got.GitHub.Repo.Repo != "my-site" {
+		t.Errorf("GitHub.Repo = %+v, want glw907/my-site", got.GitHub.Repo)
 	}
 	if len(got.Extra) != 0 {
 		t.Errorf("Extra = %+v, want no untyped keys", got.Extra)
@@ -232,8 +232,8 @@ func TestAdoptGeneratesAFreshIDInTheNodeShape(t *testing.T) {
 	seen := map[string]bool{}
 	for range 20 {
 		c := liveCandidate()
-		c.Worker = "ecxc-ski-" + rand6(t)
-		if _, err := Adopt(context.Background(), st, c, "ECXC Ski", publicResolver()); err != nil {
+		c.Worker = "my-site-" + rand6(t)
+		if _, err := Adopt(context.Background(), st, c, "My Site", publicResolver()); err != nil {
 			t.Fatalf("Adopt: %v", err)
 		}
 		entries, errs := st.List()
@@ -251,7 +251,7 @@ func TestAdoptGeneratesAFreshIDInTheNodeShape(t *testing.T) {
 		if !shape.MatchString(id) {
 			t.Errorf("id %q does not match the Node CLI site id shape", id)
 		}
-		if !strings.HasPrefix(id, "ecxc-ski-") {
+		if !strings.HasPrefix(id, "my-site-") {
 			t.Errorf("id %q does not carry the slugged name as its stem", id)
 		}
 	}
@@ -265,16 +265,16 @@ func TestAdoptRefusesAnUnusableDomain(t *testing.T) {
 		domain string
 	}{
 		{"no custom domain", ""},
-		{"a URL rather than a hostname", "https://www.ecxc.ski/"},
+		{"a URL rather than a hostname", "https://www.my-site.example.org/"},
 		{"an IP literal", "104.16.0.1"},
-		{"an empty label", "www..ecxc.ski"},
+		{"an empty label", "www..my-site.example.org"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			st := openStore(t, t.TempDir())
 			c := liveCandidate()
 			c.Domain = tt.domain
-			if _, err := Adopt(context.Background(), st, c, "ECXC Ski", publicResolver()); err == nil {
+			if _, err := Adopt(context.Background(), st, c, "My Site", publicResolver()); err == nil {
 				t.Fatal("Adopt accepted the candidate, want an error")
 			}
 			if entries, _ := st.List(); len(entries) != 0 {
@@ -304,7 +304,7 @@ func TestAdoptRefusesANonPublicAddress(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			st := openStore(t, t.TempDir())
 			resolve := fakeResolver{addrs: []net.IP{net.ParseIP(tt.addr)}}
-			_, err := Adopt(context.Background(), st, liveCandidate(), "ECXC Ski", resolve)
+			_, err := Adopt(context.Background(), st, liveCandidate(), "My Site", resolve)
 			if tt.adopted && err != nil {
 				t.Fatalf("Adopt: %v", err)
 			}
@@ -332,7 +332,7 @@ func TestAdoptRefusesAnUnresolvableDomain(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			st := openStore(t, t.TempDir())
-			if _, err := Adopt(context.Background(), st, liveCandidate(), "ECXC Ski", tt.resolver); err == nil {
+			if _, err := Adopt(context.Background(), st, liveCandidate(), "My Site", tt.resolver); err == nil {
 				t.Fatal("Adopt accepted an unresolvable candidate, want an error")
 			}
 		})
@@ -344,11 +344,11 @@ func TestAdoptRefusesAnUnresolvableDomain(t *testing.T) {
 func TestAdoptingTwiceYieldsOneRecord(t *testing.T) {
 	st := openStore(t, t.TempDir())
 
-	first, err := Adopt(context.Background(), st, liveCandidate(), "ECXC Ski", publicResolver())
+	first, err := Adopt(context.Background(), st, liveCandidate(), "My Site", publicResolver())
 	if err != nil {
 		t.Fatalf("first Adopt: %v", err)
 	}
-	second, err := Adopt(context.Background(), st, liveCandidate(), "ECXC Ski Again", publicResolver())
+	second, err := Adopt(context.Background(), st, liveCandidate(), "My Site Again", publicResolver())
 	if err != nil {
 		t.Fatalf("second Adopt: %v", err)
 	}
@@ -368,7 +368,7 @@ func TestAdoptingTwiceYieldsOneRecord(t *testing.T) {
 // Worker name never matches a record carrying none either.
 func TestAlreadyAdopted(t *testing.T) {
 	st := openStore(t, t.TempDir())
-	if _, err := Adopt(context.Background(), st, liveCandidate(), "ECXC Ski", publicResolver()); err != nil {
+	if _, err := Adopt(context.Background(), st, liveCandidate(), "My Site", publicResolver()); err != nil {
 		t.Fatalf("Adopt: %v", err)
 	}
 
@@ -377,7 +377,7 @@ func TestAlreadyAdopted(t *testing.T) {
 		worker string
 		want   bool
 	}{
-		{"the adopted worker", "ecxc-ski", true},
+		{"the adopted worker", "my-site", true},
 		{"another worker", "spare", false},
 		{"no worker name", "", false},
 	}

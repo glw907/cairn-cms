@@ -82,7 +82,7 @@ shot() {
   echo "  real-$name.png  verified"
 }
 
-S2='CRITICAL  907.life  3 failing'
+S2='CRITICAL  blog.example.org  3 failing'
 S3='CRITICAL  6 sites  3 CRITICAL'
 S9='CRITICAL  a-very-long-subdomain-name-for-a-client.example-corp.co.uk'
 

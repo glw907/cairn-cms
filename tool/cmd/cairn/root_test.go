@@ -33,7 +33,7 @@ func fixedNow() time.Time {
 // net.DefaultResolver: without it these tests query live DNS, for domains including real ones a
 // fixture names, and settle on whatever the runner's network happens to answer. That is what made
 // three of them platform-dependent, passing on the Linux and macOS CI legs and failing on the
-// Windows one, where the lookups for ecxc.ski and the .example fixtures did not return in time
+// Windows one, where the lookups for my-site.example.org and the .example fixtures did not return in time
 // and the email check settled unknown instead of failing.
 type noRecordsResolver struct{}
 
@@ -234,7 +234,7 @@ func TestGrammarResolvesEveryCommandAndAlias(t *testing.T) {
 // the two are one body, so a change to the listing cannot reach only one of them.
 func TestBareSitesPrintsTheSameListingAsSitesList(t *testing.T) {
 	d, _ := testDeps(t)
-	writeTestRecord(t, d, "ecxc-ski-a1b2c3", "ecxc.ski", "ecxc-ski")
+	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
 
 	bare, _, err := execTree(t, d, "sites")
 	if err != nil {
@@ -247,7 +247,7 @@ func TestBareSitesPrintsTheSameListingAsSitesList(t *testing.T) {
 	if bare != explicit {
 		t.Errorf("cairn sites printed %q, cairn sites list printed %q", bare, explicit)
 	}
-	if !strings.Contains(bare, "ecxc.ski") {
+	if !strings.Contains(bare, "my-site.example.org") {
 		t.Errorf("listing %q does not name the registered site", bare)
 	}
 }

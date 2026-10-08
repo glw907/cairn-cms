@@ -285,7 +285,7 @@ func TwelveSites() []health.Report {
 		report("cairn.pub", "cairn.pub", fillNine(
 			pass("serving", "200 in 96ms"),
 			withEngineVersion(fail("engine", spine.CodeEngineBehind, "0.76.0 installed, 0.78.0 latest, 2 releases behind"), "0.76.0"))...),
-		// topo's engine row is not a credential skip: the engine check reads GitHub, and the
+		// docs-site's engine row is not a credential skip: the engine check reads GitHub, and the
 		// GitHub token is the one this sweep holds. What it went without is a version to compare
 		// against, the other way that check fails to settle.
 		report("docs-site", "docs-site", fillNine(

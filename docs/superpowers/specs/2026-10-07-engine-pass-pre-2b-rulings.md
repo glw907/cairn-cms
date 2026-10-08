@@ -43,3 +43,14 @@ filed at `2f4ef9d8` and the F4 close review of the 2a close finish.
 - The general docs assume no coding assistant.
 - Method, idiom, and architecture calls on the "decide" items belong to the spec author, decided
   from evidence and the charter. Only product forks go to Geoff.
+
+## Overnight pipeline (Geoff, 2026-10-07: "We'll also need an adversarial review of the spec, than the plan, then an adversarial review of the plan.")
+
+Runs unattended through the `spec-plan-review` skill at full depth:
+
+1. Spec draft: `2026-10-07-engine-pass-pre-2b-design.md`.
+2. Spec review: four lenses, one fold, a verification read, and a second fold only on a blocker or major.
+3. Plan: outcome-only, at high effort. Tasks governed by an open spec fork build on the recommendation and are marked blocked until Geoff rules.
+4. Plan review: three lenses, one fold, a verification read, and a second fold only on a blocker or major.
+
+Execution waits for Geoff's spec read. Review files go to `docs/superpowers/research/`, and the conductor commits each stage on `main`.

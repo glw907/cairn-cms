@@ -480,9 +480,11 @@ The original decision framing, for the record:
     `AGENTS.md` or other-tool support planned. What the rulings require is already landed: human pages
     never address agents, `scaffolded-site-files.md` names `CLAUDE.md` and `.claude/` in one labeled
     line each, and `docs/reference/guidance.md` states the format. Nothing here needs an engine change.
-  - **Dedicated coding-agent docs (Geoff, 2026-10-07: "Having a 'using Claude Code with cairn' would
-    certainly be a useful documentation topic.").** A separate doc set for working with a coding
-    agent on a cairn site, outside the developer and editor tracks. Its first page is "Using Claude
+  - **A Claude Code section of the docs (Geoff, 2026-10-07: "Having a 'using Claude Code with cairn'
+    would certainly be a useful documentation topic."; "we _should_ assume in the general docs that a
+    user is not using a coding assistance, and then we can write a separate section for claude
+    code.").** A separate section for working on a cairn site with Claude Code, outside the developer
+    and editor tracks, which assume no coding assistant. Its first page is "Using Claude
     Code with cairn": the guidance tree, the four skills and when each loads, the review agent, the
     `Stop` hook snippet, and `cairn-guidance install` and `check` with their exit codes and the CI
     step. It documents Claude Code only (the ruling above). Track and placement are settled in the

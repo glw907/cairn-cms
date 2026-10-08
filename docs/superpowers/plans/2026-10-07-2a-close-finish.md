@@ -19,7 +19,10 @@ agents, example context, and consumer-site leaks. This plan carries what those r
    be a useful documentation topic." (Landed: brief rule, `scaffolded-site-files.md` restructure,
    ROADMAP "Dedicated coding-agent docs".) Narrowed later the same day: "we don't have to assume any
    other agent than claude code. It's the only one that either of us is familiar with." Guidance
-   stays Claude Code's; no `AGENTS.md` work.
+   stays Claude Code's; no `AGENTS.md` work. Then: "we _should_ assume in the general docs that a
+   user is not using a coding assistance, and then we can write a separate section for claude code."
+   F6 also words the drafter and register-editor rule in `~/.dotfiles` this way (the general docs
+   assume no coding assistant; Claude Code gets its own section), matching `docs-register.md:149`.
 2. On a run of ", since … / , which … / , so …" sentences: "really awkward AI cadence"; avoiding it
    "should live in our writing infrastructure." (Landed: tellgrader `trailing-hinge-run`, gating;
    `check:tellgrader` in `check:docs-gate`, local only.)

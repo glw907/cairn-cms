@@ -97,6 +97,15 @@ const NO_CLAIM = 'no-claim';
 /** A brief's fact id: the same shape the container's leading id span carries. */
 const BRIEF_ID_RE = /^f:[0-9a-z]{6}$/;
 
+/**
+ * Whether a brief value is a well-formed fact id. A brief is untyped JSON, so the value may be anything.
+ * @param {unknown} id
+ * @returns {id is string}
+ */
+function isFactId(id) {
+  return typeof id === 'string' && BRIEF_ID_RE.test(id);
+}
+
 /** Tags a brief may not cite, each with the reason the defect gives. */
 const UNCITABLE_TAGS = new Map([
   ['candidate', 'a candidate is not citable until it is traced and retagged'],
@@ -370,7 +379,7 @@ export function checkCuts(cuts, index) {
       return;
     }
     const { id, reason } = /** @type {{ id?: unknown, reason?: unknown }} */ (cut);
-    if (typeof id !== 'string' || !BRIEF_ID_RE.test(id)) {
+    if (!isFactId(id)) {
       defects.push(`cuts: ${label}: "id" is not a fact id (\`f:\` plus six base36 characters)`);
     } else if (!index.facts.has(id)) {
       defects.push(`cuts: ${label}: ${id} resolves to no fact in the container`);
@@ -409,7 +418,7 @@ function checkCitedIds(label, ids, text, index) {
     defects.push(`${label}: unclassified, an empty id list; give it a fact id or "${NO_CLAIM}"`);
     return defects;
   }
-  const malformed = ids.filter((id) => typeof id !== 'string' || !BRIEF_ID_RE.test(id));
+  const malformed = ids.filter((id) => !isFactId(id));
   for (const id of malformed) {
     defects.push(
       `${label}: ${JSON.stringify(id)} is neither a fact id (\`f:\` plus six base36 characters) nor valid in an id list (\`${NO_CLAIM}\` is not), so the sentence is unclassified`,
@@ -417,10 +426,10 @@ function checkCitedIds(label, ids, text, index) {
   }
   if (malformed.length > 0) return defects;
 
-  const cited = /** @type {string[]} */ (ids).map((id) => ({ id, fact: index.facts.get(id) }));
   /** @type {IndexedFact[]} */
   const resolved = [];
-  for (const { id, fact } of cited) {
+  for (const id of /** @type {string[]} */ (ids)) {
+    const fact = index.facts.get(id);
     if (!fact) {
       defects.push(`${label}: ${id} resolves to no fact in the container`);
       continue;
@@ -638,7 +647,6 @@ export function checkBrief(briefPath, index, root) {
   /** @type {BriefSentence[]} */
   const list = sentences.map((s) => (typeof s === 'object' && s !== null ? s : {}));
   result.sentences = list.length;
-  const isFactId = (/** @type {unknown} */ id) => typeof id === 'string' && BRIEF_ID_RE.test(id);
   result.cited = list.filter(
     (s) => isFactId(s.id) || (Array.isArray(s.id) && s.id.length > 0 && s.id.every(isFactId)),
   ).length;

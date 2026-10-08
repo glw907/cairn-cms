@@ -409,9 +409,10 @@ export function checkLinks(root = ROOT) {
       if (legacyTarget(file, dest) !== null) continue;
 
       const targetAbs = resolve(dirname(abs), path);
-      if (isDatedRecord(file) && isDeletedTarget(relative(root, targetAbs).split(sep).join('/'), deleted)) continue;
+      const target = relative(root, targetAbs).split(sep).join('/');
+      if (isDatedRecord(file) && isDeletedTarget(target, deleted)) continue;
       if (!existsSync(targetAbs)) {
-        if (isPublishedDoc(file) && outlinePaths.has(relative(root, targetAbs).split(sep).join('/'))) {
+        if (isPublishedDoc(file) && outlinePaths.has(target)) {
           pending.push({ file, line, dest });
           continue;
         }

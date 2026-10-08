@@ -91,6 +91,19 @@ const LEAF_FLAGS =
   ts.TypeFlags.Index;
 
 /**
+ * Code-unit order, never locale order, so the walk's attribution and its output stay stable on
+ * every machine.
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+function compareCodeUnits(a, b) {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
+
+/**
  * @typedef {{ key: string, exportName: string, subpath: string, file: string | null }} GeneratedPath
  * @typedef {{ subpath: string, dts: string }} SubpathEntry
  */
@@ -183,14 +196,10 @@ function walkRoot(ctx, rootType, rootPath) {
   const visited = new Set();
 
   /** @param {string} path @param {string} why */
-  const fail = (path, why) => {
-    if (!failures.has(path)) {
-      failures.set(
-        path,
-        `${path}: ${why}; reached from ${root.exportName} (subpath ${root.subpath})`,
-      );
-    }
-  };
+  function fail(path, why) {
+    if (failures.has(path)) return;
+    failures.set(path, `${path}: ${why}; reached from ${root.exportName} (subpath ${root.subpath})`);
+  }
 
   /** @param {ts.Type} type @param {string} path */
   function walk(type, path) {
@@ -291,7 +300,7 @@ export function generateOptionPaths({
   const absoluteRoot = resolve(declRoot);
   for (const { subpath, dts } of subpaths) {
     const { checker, symbols } = moduleExports(dts);
-    const ordered = [...symbols].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    const ordered = [...symbols].sort((a, b) => compareCodeUnits(a.name, b.name));
     for (const exported of ordered) {
       if (!rootPattern.test(exported.name) && !extraRoots.includes(exported.name)) continue;
       const symbol =
@@ -315,7 +324,7 @@ export function generateOptionPaths({
     }
   }
   return {
-    paths: [...paths.values()].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)),
+    paths: [...paths.values()].sort((a, b) => compareCodeUnits(a.key, b.key)),
     failures: [...failures.values()],
   };
 }

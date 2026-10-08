@@ -10,21 +10,28 @@
       "id": "f:4xrx5f"
     },
     {
-      "text": "Each role resolves to one capability, `owner`, `editor`, or `none`, and capability is the floor that cairn enforces.",
+      "text": "Each role resolves to one capability, `owner`, `editor`, or `none`, and cairn enforces capability first.",
       "id": [
         "f:zjglk8",
         "f:p1xmp5"
       ]
     },
     {
-      "text": "The access map is the site's declaration of which roles reach each engine screen and each route under `/admin`, and it only narrows that floor.",
+      "text": "The access map declares which roles reach each engine screen and each route under `/admin`, and it can only narrow what a capability allows.",
       "id": [
         "f:0qb73i",
         "f:p1xmp5"
       ]
     },
     {
-      "text": "Whatever the map says, a role with `none` capability stays out and an owner reaches every target the map names, so the map decides only which editor-capability roles reach each target.",
+      "text": "Whatever the map says, a role with `none` capability stays out, and an owner reaches every target the map names.",
+      "id": [
+        "f:p1xmp5",
+        "f:0qb73i"
+      ]
+    },
+    {
+      "text": "The map decides only which editor-capability roles reach each target.",
       "id": [
         "f:p1xmp5",
         "f:0qb73i"
@@ -50,9 +57,15 @@
       ]
     },
     {
-      "text": "In a build that handle is the guard, `createAuthGuard`; under `npm run dev` it is `devBackendHandle`.",
+      "text": "In a build, that handle is the guard, `createAuthGuard`.",
       "id": [
         "f:cvzb8z",
+        "f:7cv105"
+      ]
+    },
+    {
+      "text": "Under `npm run dev`, it's `devBackendHandle`.",
+      "id": [
         "f:7cv105",
         "f:o47i0q"
       ]
@@ -66,34 +79,50 @@
       "id": "f:iwf4nu"
     },
     {
-      "text": "A single example runs through every step, a webmaster role that, with owners, alone reaches the media library and the scaffold's signups screen.",
-      "id": "f:onqm6k"
-    },
-    {
-      "text": "A developer arrives here to gate a custom admin screen's route, to close an engine screen such as the media library to most editors, or to make the map admit named roles alone, which [Make the map exhaustive](#make-the-map-exhaustive) covers.",
+      "text": "One example runs through every step.",
       "id": "no-claim"
     },
     {
-      "text": "The steps assume working knowledge of SvelteKit server hooks, `load` functions, form actions, and route ids with their groups and parameters, of the site's adapter in `src/theme/cairn.config.ts`, and of a Workers Logs query.",
+      "text": "It declares a webmaster role, and only webmasters and owners reach the media library and the scaffold's signups screen.",
+      "id": "f:onqm6k"
+    },
+    {
+      "text": "A developer arrives here to gate a custom admin screen's route, to close an engine screen such as the media library to most editors, or to make the map admit named roles alone.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Make the map exhaustive](#make-the-map-exhaustive) covers that case.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The steps assume working knowledge of SvelteKit server hooks, `load` functions, form actions, and route ids with their groups and parameters, of the site's adapter module, and of a Workers Logs query.",
       "id": [
         "f:4esdoz",
         "f:5pyozi"
       ]
     },
     {
-      "text": "Why the map only narrows, and never acts as an allowlist by itself, is covered in [Security model](security-model.md).",
-      "id": "f:vqh4a9"
-    },
-    {
-      "text": "Building a screen and its section actions in full belongs to [Add a custom admin screen](add-a-custom-admin-screen.md), and hiding a sidebar entry without denying its route belongs to [Arrange the admin sidebar](arrange-the-admin-sidebar.md).",
+      "text": "Four related subjects are covered on other pages:",
       "id": "no-claim"
     },
     {
-      "text": "[Add a second sign-in group](add-a-second-sign-in-group.md) covers a role that signs in but reaches no engine content, such as one for a staff area.",
+      "text": "Why the map only narrows and never acts as an allowlist by itself, in [Security model](security-model.md)",
+      "id": "f:vqh4a9"
+    },
+    {
+      "text": "Building a screen and its section actions in full, in [Add a custom admin screen](add-a-custom-admin-screen.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "Hiding a sidebar entry without denying its route, in [Arrange the admin sidebar](arrange-the-admin-sidebar.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "A role that signs in but reaches no engine content, such as one for a staff area, in [Add a second sign-in group](add-a-second-sign-in-group.md)",
       "id": "f:4673n6"
     },
     {
-      "text": "The steps need a scaffolded site with a custom admin screen, and the checks need a deployed site you can redeploy:",
+      "text": "The steps need a cairn site with a custom admin screen, and the checks need a deployed site you can redeploy:",
       "id": "no-claim"
     },
     {
@@ -104,8 +133,8 @@
       ]
     },
     {
-      "text": "For a hand-built site, [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) brings it to the same shape.",
-      "id": "no-claim"
+      "text": "A hand-built site from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) has no `src/access.ts` until [Declare the roles](#declare-the-roles) creates it.",
+      "id": "f:q07rd5"
     },
     {
       "text": "A custom admin screen whose `load` calls `requireAccess` and whose form actions are `createSectionAction` wrappers, such as the scaffold's signups screen in `src/routes/admin/signups/`.",
@@ -140,14 +169,14 @@
       "id": "f:9ug9mo"
     },
     {
-      "text": "The access map admits roles by name, so the site first declares its role vocabulary, mapping each role name to the capability it stands on.",
+      "text": "The access map admits roles by name, so the site first declares its role vocabulary, mapping each role name to the capability it resolves to.",
       "id": [
         "f:0qb73i",
         "f:zjglk8"
       ]
     },
     {
-      "text": "Each declaration is either a bare capability, `'owner'`, `'editor'`, or `'none'`, or an object with a `capability` member.",
+      "text": "Each declaration is either a bare capability name (`'owner'`, `'editor'`, or `'none'`) or an object with a `capability` member.",
       "id": "f:zjglk8"
     },
     {
@@ -201,10 +230,6 @@
       ]
     },
     {
-      "text": "The example under [Declare the access map](#declare-the-access-map) shows the whole file.",
-      "id": "no-claim"
-    },
-    {
       "text": "The access map keys each target, an engine screen id or an `/admin` route path, to the role names it admits.",
       "id": "f:0qb73i"
     },
@@ -213,7 +238,7 @@
       "id": "f:0qb73i"
     },
     {
-      "text": "A route key is an `/admin`-prefixed path, and each value lists the role names admitted to that target.",
+      "text": "A route key is an `/admin`-prefixed path.",
       "id": "f:0qb73i"
     },
     {
@@ -225,11 +250,12 @@
       "id": "f:vqh4a9"
     },
     {
-      "text": "Composition, the engine building its runtime from the adapter at server start, throws on a screen key outside the declared concepts and fixed screens.",
-      "id": [
-        "f:mou1li",
-        "f:3z48zf"
-      ]
+      "text": "When the server starts, the engine builds its runtime from the adapter, a step called composition.",
+      "id": "f:mou1li"
+    },
+    {
+      "text": "Composition throws on a screen key outside the declared concepts and fixed screens.",
+      "id": "f:3z48zf"
     },
     {
       "text": "To declare the map, follow this step:",
@@ -275,11 +301,11 @@
       "id": "f:grxpu5"
     },
     {
-      "text": "It throws on an empty map, an empty role list, a role outside the vocabulary, and a malformed key.",
+      "text": "It throws on an empty map, a role outside the vocabulary, and a malformed key.",
       "id": "f:3z48zf"
     },
     {
-      "text": "An owner-only rule is therefore written `['owner']`.",
+      "text": "It also throws on an empty role list, so an owner-only rule is written `['owner']`.",
       "id": "f:3z48zf"
     },
     {
@@ -295,14 +321,18 @@
       "id": "f:zo034s"
     },
     {
-      "text": "The adapter's `access` gates the engine's screens and the sidebar, and the guard's gates your own routes, so the same map goes to both.",
+      "text": "The adapter's map gates the engine's screens and the sidebar.",
+      "id": "f:cvzb8z"
+    },
+    {
+      "text": "The guard's copy gates your routes, so both need the same map.",
       "id": [
         "f:cvzb8z",
         "f:iwf4nu"
       ]
     },
     {
-      "text": "The adapter in `src/theme/cairn.config.ts` takes `roles` and `access` as optional members.",
+      "text": "The adapter takes `roles` and `access` as optional members.",
       "id": [
         "f:4esdoz",
         "f:2zytgf"
@@ -342,22 +372,30 @@
       "id": "f:hwffph"
     },
     {
+      "text": "The [`createAuthGuard`](../reference/sveltekit.md#createauthguard) entry documents the guard's other options.",
+      "id": "f:4xrx5f"
+    },
+    {
       "text": "To pass the map to both readers, follow these steps:",
       "id": "no-claim"
     },
     {
-      "text": "In `src/theme/cairn.config.ts`, add `roles` and `access`, imported from `src/access.ts`, to the `defineAdapter` call.",
+      "text": "In the adapter module, add `roles` and `access`, imported from `src/access.ts`, to the `defineAdapter` call.",
       "id": [
-        "f:4esdoz",
         "f:2zytgf",
         "f:qlgggh"
       ]
     },
     {
-      "text": "In `src/hooks.server.ts`, import `roles` beside the existing `access` import.",
+      "text": "The module is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the tutorial's.",
+      "id": "f:q07rd5"
+    },
+    {
+      "text": "In `src/hooks.server.ts`, import both `roles` and `access` from `src/access.ts`.",
       "id": [
         "f:hwffph",
-        "f:cvzb8z"
+        "f:cvzb8z",
+        "f:qlgggh"
       ]
     },
     {
@@ -370,10 +408,6 @@
     {
       "text": "After these steps, the adapter call and the guard line read as follows:",
       "id": "no-claim"
-    },
-    {
-      "text": "The [`createAuthGuard`](../reference/sveltekit.md#createauthguard) entry documents the guard's other options.",
-      "id": "f:4xrx5f"
     },
     {
       "text": "Your own routes check the map themselves, with `requireAccess` in each `load` and a `createSectionAction` wrapper around each form action.",
@@ -423,7 +457,7 @@
       "id": "f:3s23un"
     },
     {
-      "text": "`ownerOnly` requires owner capability on top of the map's rule, never in place of it.",
+      "text": "`ownerOnly` adds an owner-capability check after the map's rule passes.",
       "id": "f:smbsa6"
     },
     {
@@ -487,7 +521,7 @@
       ]
     },
     {
-      "text": "In the example, the warning names every concept and fixed screen except `media`, the expected result of a map that only narrows.",
+      "text": "In the example, the warning names every concept and fixed screen except `media`.",
       "id": [
         "f:8ciz2s",
         "f:0qb73i"
@@ -678,11 +712,19 @@
       "id": "no-claim"
     },
     {
-      "text": "For an editor already on the roster, an owner chooses the role in the select on that editor's row, then selects **Change**.",
+      "text": "To change the role of an editor already on the roster, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `/admin/editors`, choose the role in the select on that editor's row.",
       "id": [
         "f:udg87q",
         "f:dfxxwb"
       ]
+    },
+    {
+      "text": "Select **Change**.",
+      "id": "f:dfxxwb"
     },
     {
       "text": "The session reads the editor's row on every request, so a change needs no new sign-in.",
@@ -831,6 +873,10 @@
       ]
     },
     {
+      "text": "[Debug your site](debug-your-site.md) covers reading the logs and the admin's other events.",
+      "id": "no-claim"
+    },
+    {
       "text": "To find the cause, run these checks in order:",
       "id": "no-claim"
     },
@@ -861,7 +907,7 @@
       "id": "f:hwffph"
     },
     {
-      "text": "[Pass the map to the adapter and the guard](#pass-the-map-to-the-adapter-and-the-guard) holds the fix.",
+      "text": "The fix is in [Pass the map to the adapter and the guard](#pass-the-map-to-the-adapter-and-the-guard).",
       "id": "no-claim"
     },
     {
@@ -869,8 +915,11 @@
       "id": "f:cvzb8z"
     },
     {
-      "text": "The same section holds the fix.",
-      "id": "no-claim"
+      "text": "If it wasn't, add `roles` and `access` to the adapter's `defineAdapter` call.",
+      "id": [
+        "f:cvzb8z",
+        "f:2zytgf"
+      ]
     },
     {
       "text": "If adding the test editor with the webmaster role fails on `/admin/editors`, check whether `0001_roles.sql` was applied to the remote database.",
@@ -884,12 +933,8 @@
       "id": "f:rn62i1"
     },
     {
-      "text": "[Deploy the changes](#deploy-the-changes) holds the fix.",
-      "id": "no-claim"
-    },
-    {
-      "text": "[Debug your site](debug-your-site.md) covers reading the logs and the admin's other events.",
-      "id": "no-claim"
+      "text": "If it wasn't, copy the migration and apply it with the `--remote` flag, as [Deploy the changes](#deploy-the-changes) does.",
+      "id": "f:xxtooz"
     },
     {
       "text": "The following pages cover the reasoning and the tasks around the access map:",

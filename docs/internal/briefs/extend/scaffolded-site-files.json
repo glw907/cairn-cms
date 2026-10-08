@@ -9,51 +9,70 @@
       ]
     },
     {
-      "text": "Its theme is Waymark, cairn's reference reading theme, on a chassis of shared plumbing, both baked from the same tree the engine tests itself against.",
+      "text": "Its theme is Waymark, cairn's reference reading theme.",
+      "id": "f:n2skkz"
+    },
+    {
+      "text": "Waymark runs on the chassis, the plumbing every scaffolded site shares.",
+      "id": "f:rxj43c"
+    },
+    {
+      "text": "The setup command copies both from the tree the engine tests itself against.",
       "id": [
         "f:n2skkz",
         "f:rxj43c"
       ]
     },
     {
-      "text": "SvelteKit mounts the admin as one catch-all route pair under `/admin` and the public site as a prerendered route group, a server hook guards `/admin`, and the SvelteKit config sits inline in `vite.config.ts` with no `svelte.config.js`.",
+      "text": "SvelteKit mounts the admin as one catch-all route pair under `/admin`, and it mounts the public site as a prerendered route group.",
       "id": [
         "f:t2t5lx",
-        "f:qtm9y2",
-        "f:2qnqkm",
-        "f:f21bcz",
-        "f:n4rg1z"
+        "f:qtm9y2"
       ]
     },
     {
-      "text": "On the Cloudflare side, `wrangler.jsonc` declares the Worker's two D1 databases, its Email Sending binding, and its R2 bucket.",
+      "text": "A server hook guards `/admin`.",
+      "id": [
+        "f:f21bcz",
+        "f:t2t5lx"
+      ]
+    },
+    {
+      "text": "The SvelteKit config sits inline in `vite.config.ts`, and the project has no `svelte.config.js`.",
+      "id": "f:n4rg1z"
+    },
+    {
+      "text": "`wrangler.jsonc` declares the Worker's Cloudflare bindings, among them two D1 databases and an R2 bucket.",
       "id": "f:n7t4bn"
     },
     {
-      "text": "On the GitHub side, the repository holds the code and the markdown, the site's GitHub App commits each editor's publish into it, and a GitHub Actions workflow checks every push and pull request.",
+      "text": "The GitHub repository holds the code and the markdown, and the site's GitHub App commits each editor's publish into it.",
       "id": [
         "f:cjonmm",
-        "f:gj96px",
-        "f:guiavc"
+        "f:gj96px"
       ]
     },
     {
-      "text": "Every file in the tree belongs to the site, since the npm package carries neither Waymark nor the chassis.",
+      "text": "A GitHub Actions workflow checks every push and pull request.",
+      "id": "f:guiavc"
+    },
+    {
+      "text": "Every file in the tree belongs to the site.",
       "id": "f:rxj43c"
     },
     {
-      "text": "An engine upgrade moves the `@glw907/cairn-cms` range and leaves the tree as it is.",
+      "text": "The npm package carries neither Waymark nor the chassis, and an engine upgrade moves only the `@glw907/cairn-cms` range and leaves the tree as it is.",
       "id": [
-        "f:jtl15v",
-        "f:rxj43c"
+        "f:rxj43c",
+        "f:jtl15v"
       ]
     },
     {
-      "text": "Any change a release needs in the site's code, a new D1 migration included, is the site's to make, as the changelog's `Consumers must:` lines name it.",
+      "text": "When a release needs a change in the site's code, such as a new D1 migration, the changelog's `Consumers must:` lines name it, and the site makes the change.",
       "id": "f:jtl15v"
     },
     {
-      "text": "Owning a file does not leave it unread, since some files carry a contract with a reader outside the site's code.",
+      "text": "Some files have a reader outside the site's code.",
       "id": "no-claim"
     },
     {
@@ -65,15 +84,25 @@
       ]
     },
     {
-      "text": "The admin commits editors' work into the content directories and their manifests, and `/admin/nav` writes the primary menu in `site.config.yaml`.",
+      "text": "The admin commits editors' work into the content directories and their manifests.",
       "id": [
         "f:cjonmm",
-        "f:vrue1g",
-        "f:2s8u70"
+        "f:vrue1g"
       ]
     },
     {
-      "text": "A few more can fail the CI workflow or the build, since `check.yml` runs the checks and the prerender handlers in `vite.config.ts` throw on an unseen route or an HTTP error.",
+      "text": "The `/admin/nav` screen writes the primary menu in `site.config.yaml`.",
+      "id": "f:2s8u70"
+    },
+    {
+      "text": "A few more files can fail the CI workflow or the build.",
+      "id": [
+        "f:guiavc",
+        "f:2zl3qz"
+      ]
+    },
+    {
+      "text": "`check.yml` runs the checks, and the prerender handlers in `vite.config.ts` throw on an unseen route or an HTTP error.",
       "id": [
         "f:guiavc",
         "f:mrv24k",
@@ -82,34 +111,58 @@
       ]
     },
     {
-      "text": "Those files share directories with files only the site reads, as the adapter shares `src/theme/` with the theme's style sheets, so a file's directory does not say whether it carries a contract.",
+      "text": "The adapter shares `src/theme/` with the theme's style sheets, so a file's directory doesn't show whether it carries a contract.",
       "id": "f:qnf469"
     },
     {
-      "text": "A developer who ran the setup command, or who took over a site from someone who did, needs to know what each file does and whether to change it.",
+      "text": "A developer reads this page for one of the following reasons:",
       "id": "no-claim"
     },
     {
-      "text": "One who took over also lacks the state the command left outside the repository, which includes its saved record on the machine that ran it.",
+      "text": "To learn what each file in a scaffolded site does, and whether to change it",
+      "id": "no-claim"
+    },
+    {
+      "text": "To take over a site that someone else scaffolded",
+      "id": "no-claim"
+    },
+    {
+      "text": "To find where each of the engine's import points and seams from [Architecture](architecture.md) lands in the tree",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Architecture](architecture.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "To find the files around the theme while working on it",
+      "id": "no-claim"
+    },
+    {
+      "text": "To see what the setup command writes before choosing between it and the by-hand build",
+      "id": "no-claim"
+    },
+    {
+      "text": "A developer who takes over a site also lacks the state the setup command left outside the repository.",
       "id": "f:3m0oxs"
     },
     {
-      "text": "When the run connected Workers Builds, that state also includes the build token the site deploys on, whose revocation stops deploys without warning.",
+      "text": "That state includes the command's saved record on the machine that ran it.",
+      "id": "f:3m0oxs"
+    },
+    {
+      "text": "When the run connected Workers Builds, it also includes the build token the site deploys on.",
       "id": [
         "f:3bbeia",
         "f:qca0t0"
       ]
     },
     {
-      "text": "A reader who knows the engine's import points and seams from [Architecture](architecture.md) finds where each lands in the tree, and a reader working on the theme finds the files around it.",
-      "id": "no-claim"
+      "text": "Revoking that token stops deploys without warning.",
+      "id": "f:3bbeia"
     },
     {
-      "text": "A developer still choosing between the setup command and the by-hand build sees what the command writes.",
-      "id": "no-claim"
-    },
-    {
-      "text": "One adding cairn to an app that already exists has no choice to make, since the setup command writes only into a missing or empty directory.",
+      "text": "A developer adding cairn to an app that already exists has no choice to make, since the setup command writes only into a missing or empty directory.",
       "id": "f:9slxqf"
     },
     {
@@ -157,11 +210,23 @@
       "id": "no-claim"
     },
     {
+      "text": "[Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md)",
+      "id": "no-claim"
+    },
+    {
       "text": "Changes to the theme and the chassis, in [Theme your public site](theme-your-public-site.md)",
       "id": "no-claim"
     },
     {
+      "text": "[Theme your public site](theme-your-public-site.md)",
+      "id": "no-claim"
+    },
+    {
       "text": "The signups screen as a pattern, in [Add a custom admin screen](add-a-custom-admin-screen.md)",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Add a custom admin screen](add-a-custom-admin-screen.md)",
       "id": "no-claim"
     },
     {
@@ -177,34 +242,24 @@
       "id": "f:guiavc"
     },
     {
-      "text": "A scaffolded site is Waymark, cairn's reference theme, wired into a chassis of design-neutral plumbing, both baked into the setup command's package from the engine repository's `examples/showcase`, the tree the engine tests itself against.",
-      "id": [
-        "f:n2skkz",
-        "f:rxj43c"
-      ]
+      "text": "The setup command's package carries Waymark and the chassis.",
+      "id": "f:rxj43c"
     },
     {
-      "text": "The bake prunes the showcase's Playwright suite, its design-review routes (`theme-kit` and `probe-craft`), its test routes, and a members-login fixture.",
+      "text": "They are copied from the engine repository's example site, `examples/showcase`, the same tree the engine runs its tests against.",
       "id": "f:n2skkz"
     },
     {
-      "text": "Waymark is the only template the setup command ships, and a second, Topo, is planned but not shipped.",
+      "text": "The copy leaves out the example site's Playwright suite, its design-review routes (`theme-kit` and `probe-craft`), its test routes, and a members-login fixture.",
+      "id": "f:n2skkz"
+    },
+    {
+      "text": "Waymark is the only template the setup command ships.",
       "id": "f:u705t5"
     },
     {
       "text": "The same run created the site's GitHub App, its repository, and its Cloudflare bindings, and deployed the site, so the site arrives already live.",
       "id": "f:kldwss"
-    },
-    {
-      "text": "The npm package's `files` list carries neither Waymark nor the chassis, so no engine release ships a newer copy of any file in the tree.",
-      "id": "f:rxj43c"
-    },
-    {
-      "text": "An engine update arrives through the `@glw907/cairn-cms` dependency and leaves the tree's files as they are.",
-      "id": [
-        "f:o47i0q",
-        "f:rxj43c"
-      ]
     },
     {
       "text": "A site built by hand from `sv create` starts with neither Waymark nor the chassis, as [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) describes.",
@@ -223,52 +278,53 @@
       "id": "no-claim"
     },
     {
-      "text": "`CLAUDE.md` and `.claude/` are Claude Code's files, listed under [`CLAUDE.md` and `.claude/`](#claudemd-and-claude).",
+      "text": "`CLAUDE.md` and `.claude/` are Claude Code's guidance files.",
       "id": "f:pmmtrm"
     },
     {
-      "text": "`CLAUDE.md` carries no marker, since `cairn-guidance check` reads it only to report whether it holds the import line, a report that never fails the CI run, and `cairn-guidance install` never rewrites it.",
-      "id": [
-        "f:6ro1n9",
-        "f:4ax489",
-        "f:jd54ph"
-      ]
+      "text": "The [guidance reference](../reference/guidance.md) covers them.",
+      "id": "no-claim"
     },
     {
-      "text": "The `[engine]` marker on `.claude/` marks the tree that `cairn-guidance install` writes.",
-      "id": [
-        "f:0ygumq",
-        "f:6ro1n9"
-      ]
-    },
-    {
-      "text": "Beside a plain SvelteKit project's files, the root carries a CI workflow, a template for local secrets, the audit's config, and the Claude Code guidance.",
+      "text": "Beside a plain SvelteKit project's files, the root carries a CI workflow, a template for local secrets, the audit's config, and a `.gitignore` the setup command renames.",
       "id": [
         "f:qlgggh",
         "f:guiavc"
       ]
     },
     {
-      "text": "The workflow runs `npm install`, `npm run check`, and `npm run check:cairn` on every push and pull request.",
+      "text": "On every push and pull request, the workflow installs dependencies and runs `npm run check` and `npm run check:cairn`.",
       "id": "f:guiavc"
     },
     {
-      "text": "It pins `node-version: 24`, the only Node version the scaffold names, since it ships neither an `.nvmrc` nor an `engines` field.",
+      "text": "It uses Node 24.",
       "id": "f:jcux9z"
     },
     {
-      "text": "Its last step reports Claude Code guidance status and never fails the job.",
+      "text": "Nothing else in the scaffold names a Node version.",
+      "id": "f:jcux9z"
+    },
+    {
+      "text": "There's no `.nvmrc` and no `engines` field.",
+      "id": "f:jcux9z"
+    },
+    {
+      "text": "The last step reports Claude Code guidance status, but that step can't fail the job.",
       "id": [
         "f:jd54ph",
         "f:4ax489"
       ]
     },
     {
-      "text": "The [guidance reference](../reference/guidance.md) covers the step.",
+      "text": "The [guidance reference](../reference/guidance.md) covers it.",
       "id": "no-claim"
     },
     {
-      "text": "The workflow installs no browser, so the `check:cairn:rendered` script cannot run in it.",
+      "text": "No browser is installed, so `check:cairn:rendered` can't run in CI.",
+      "id": "f:j7fha2"
+    },
+    {
+      "text": "`check:cairn:rendered`",
       "id": "f:j7fha2"
     },
     {
@@ -294,10 +350,6 @@
     {
       "text": "[Run cairn-audit on your site](run-cairn-audit-on-your-site.md) covers the config in depth.",
       "id": "no-claim"
-    },
-    {
-      "text": "These are Claude Code's guidance files, covered in the [guidance reference](../reference/guidance.md).",
-      "id": "f:pmmtrm"
     },
     {
       "text": "Because npm's packlist drops a file named `.gitignore`, the setup command's package stores this file as `gitignore`.",
@@ -331,19 +383,20 @@
       "id": "f:o47i0q"
     },
     {
-      "text": "The `src/lib/` directory, imported through `#lib`, holds `log.ts`, the site's own [`createLogger`](../reference/log.md#createlogger) instance over the site's own event names.",
+      "text": "`dev`",
+      "id": "f:o47i0q"
+    },
+    {
+      "text": "The `src/lib/` directory is imported through `#lib`.",
+      "id": "f:wnsv5x"
+    },
+    {
+      "text": "It holds `log.ts`, which creates the site's logger with [`createLogger`](../reference/log.md#createlogger) for event names the site defines.",
       "id": "f:wnsv5x"
     },
     {
       "text": "The two migration directories are covered under [Database migrations](#database-migrations).",
       "id": "no-claim"
-    },
-    {
-      "text": "The `check` and `check:cairn` commands the CI workflow runs are scripts in `package.json`, the first of the site's configuration files.",
-      "id": [
-        "f:guiavc",
-        "f:n4rg1z"
-      ]
     },
     {
       "text": "The site builds and deploys from three configuration files, `package.json`, `vite.config.ts`, and `wrangler.jsonc`, and `src/app.d.ts` types what they provide.",
@@ -357,6 +410,10 @@
     {
       "text": "The engine, `@glw907/cairn-cms`, sits in `dependencies`, and [Upgrade cairn](upgrade-cairn.md) covers moving the range the site inherited.",
       "id": "f:o47i0q"
+    },
+    {
+      "text": "[Upgrade cairn](upgrade-cairn.md)",
+      "id": "no-claim"
     },
     {
       "text": "The `@glw907/cairn-cms-dev` package sits only in `devDependencies`, and a build-time flag and a runtime check keep it out of a deployed site.",
@@ -381,10 +438,6 @@
     {
       "text": "What it runs",
       "id": "no-claim"
-    },
-    {
-      "text": "`dev`",
-      "id": "f:o47i0q"
     },
     {
       "text": "Runs the `dev.mjs` script in `scripts/`, which starts `vite dev` with `CAIRN_DEV_BACKEND=1` beside a Tailwind watch, so the local admin runs on the in-memory dev backend.",
@@ -413,10 +466,6 @@
     {
       "text": "Compiles the admin sheet, then runs `cairn-audit`, which exits 1 only on an unsuppressed error-tier finding and names a missing `daisyui` or `tailwindcss` peer.",
       "id": "f:mrv24k"
-    },
-    {
-      "text": "`check:cairn:rendered`",
-      "id": "f:j7fha2"
     },
     {
       "text": "Runs `cairn-audit --rendered` in a real Playwright browser against a running admin, and the scaffold ships neither Playwright nor a browser-install step, so it does not run as shipped.",
@@ -478,11 +527,12 @@
       ]
     },
     {
-      "text": "The `__CAIRN_DEV_BUILD__` define is the build-time half of the dev-backend gate, which the server hook reads.",
-      "id": [
-        "f:xluud1",
-        "f:f21bcz"
-      ]
+      "text": "The `__CAIRN_DEV_BUILD__` define is the build-time half of the dev-backend gate.",
+      "id": "f:xluud1"
+    },
+    {
+      "text": "The server hook reads it.",
+      "id": "f:f21bcz"
     },
     {
       "text": "This file imports `@glw907/cairn-cms/ambient` and declares the `__CAIRN_DEV_BUILD__` global.",
@@ -505,7 +555,7 @@
       "id": "f:peks2u"
     },
     {
-      "text": "The flag is a dev-only opt-in, never a production variable.",
+      "text": "The flag is a dev-only opt-in.",
       "id": "f:peks2u"
     },
     {
@@ -533,16 +583,16 @@
       "id": "f:n7t4bn"
     },
     {
+      "text": "Each D1 binding names its own `migrations_dir`, so the site carries one migration directory per database.",
+      "id": "f:nv0ok0"
+    },
+    {
       "text": "The `observability.enabled` setting is `true`, so Workers Logs records the Worker's logs.",
       "id": "f:prb2os"
     },
     {
       "text": "The `assets.not_found_handling` setting is `\"none\"`, and [Themed 404 page](#themed-404-page) explains why.",
       "id": "f:2qnqkm"
-    },
-    {
-      "text": "Each D1 binding names its own `migrations_dir`, so the site carries one migration directory per database.",
-      "id": "f:nv0ok0"
     },
     {
       "text": "The site keeps two migration directories because it binds two D1 databases, and `wrangler d1 migrations apply` walks one directory per database.",
@@ -576,7 +626,11 @@
       "id": "f:nv0ok0"
     },
     {
-      "text": "The signups table backs the one custom admin screen among the scaffold's routes, which reads it only after `migrations-app/` is applied.",
+      "text": "The signups table backs the one custom admin screen among the scaffold's routes.",
+      "id": "f:onqm6k"
+    },
+    {
+      "text": "That screen reads the table only after `migrations-app/` is applied.",
       "id": "f:onqm6k"
     },
     {
@@ -683,7 +737,7 @@
       "id": "f:paotzb"
     },
     {
-      "text": "Because the status is 200 either way, a monitor reads the `ok` field for the verdict.",
+      "text": "A monitor reads the `ok` field for the verdict.",
       "id": "f:paotzb"
     },
     {
@@ -714,13 +768,6 @@
       "id": "no-claim"
     },
     {
-      "text": "The menus and the site name the root layout returns come from `src/theme/`, the directory that also holds the adapter.",
-      "id": [
-        "f:ofex2m",
-        "f:qnf469"
-      ]
-    },
-    {
       "text": "The `src/theme/` directory holds the adapter and Waymark's design, `src/chassis/` holds the plumbing every scaffolded site shares, and `src/content/` holds the markdown and its committed manifests.",
       "id": [
         "f:qnf469",
@@ -745,6 +792,10 @@
       "id": "f:qnf469"
     },
     {
+      "text": "[Define an adapter and schema](define-an-adapter-and-schema.md)",
+      "id": "no-claim"
+    },
+    {
       "text": "[Customize the sign-in email](add-cairn-to-a-sveltekit-app.md#customize-the-sign-in-email) in Add cairn to a SvelteKit app covers the email's sender and copy.",
       "id": "no-claim"
     },
@@ -753,7 +804,7 @@
       "id": "no-claim"
     },
     {
-      "text": "`site-config.ts`, the one `parseSiteConfig` call, over `site.config.yaml`",
+      "text": "`site-config.ts`, which makes the one `parseSiteConfig` call over `site.config.yaml`",
       "id": "f:qnf469"
     },
     {
@@ -761,15 +812,15 @@
       "id": "f:qnf469"
     },
     {
-      "text": "`markdown-components.ts`, with nine `defineComponent` declarations, one of them hydrated",
+      "text": "`markdown-components.ts`, which holds nine `defineComponent` declarations, one of them hydrated",
       "id": "f:qnf469"
     },
     {
-      "text": "`icons.ts`, the `IconSet` the components and the picker draw from",
+      "text": "`icons.ts`, which holds the `IconSet` the components and the picker draw from",
       "id": "f:qnf469"
     },
     {
-      "text": "`components/`, the chrome: `ArticleView`, `EntryRow`, `SiteFooter`, `SiteHeader`, and `admin-link.ts`",
+      "text": "`components/`, which holds the chrome (`ArticleView`, `EntryRow`, `SiteFooter`, `SiteHeader`, and `admin-link.ts`)",
       "id": "f:qnf469"
     },
     {
@@ -781,15 +832,18 @@
       "id": "f:qnf469"
     },
     {
-      "text": "`theme-names.ts`",
-      "id": "f:qnf469"
+      "text": "`theme-names.ts`, which holds the two daisyUI theme names that a theme rename edits",
+      "id": [
+        "f:qnf469",
+        "f:i3rn6f"
+      ]
     },
     {
       "text": "[Theme your public site](theme-your-public-site.md) covers changing these files.",
       "id": "no-claim"
     },
     {
-      "text": "The chassis is the design-neutral plumbing every scaffolded site shares, copied into the tree with Waymark, so an engine update leaves it unchanged.",
+      "text": "The chassis is the design-neutral plumbing every scaffolded site shares, copied into the tree with Waymark.",
       "id": "f:rxj43c"
     },
     {
@@ -853,27 +907,38 @@
       ]
     },
     {
-      "text": "Its last line imports `@glw907/cairn-cms/admin-sources.css`, an engine-owned file that holds only the `@source` directives for the engine's shipped admin markup, resolved from the file's installed location.",
+      "text": "Its last line imports `@glw907/cairn-cms/admin-sources.css`.",
       "id": "f:vs6k2k"
     },
     {
-      "text": "The pre-scripts compile it into the gitignored `.cairn/admin.css` at the project root, one of the two sheets `cairn-audit.config.json` names.",
+      "text": "That engine-owned file holds only the `@source` directives for the engine's shipped admin markup, resolved from the file's installed location.",
+      "id": "f:vs6k2k"
+    },
+    {
+      "text": "The pre-scripts compile `src/admin.css` into the gitignored `.cairn/admin.css` at the project root.",
       "id": [
         "f:666eg6",
-        "f:guiavc",
+        "f:vs6k2k",
         "f:xi5uwl"
       ]
     },
     {
-      "text": "The config's other entry is the engine's precompiled `dist` sheet, a different artifact that the sources import does not replace.",
+      "text": "`cairn-audit.config.json` names that sheet beside the engine's precompiled `dist` sheet.",
+      "id": [
+        "f:xi5uwl",
+        "f:vs6k2k"
+      ]
+    },
+    {
+      "text": "The `dist` sheet is a different artifact, and the sources import doesn't replace it.",
       "id": "f:vs6k2k"
     },
     {
-      "text": "The audit's `no-uncompiled-class` rule checks classes against that compile.",
+      "text": "The audit's `no-uncompiled-class` rule checks classes against the compiled output.",
       "id": "f:vs6k2k"
     },
     {
-      "text": "A compile failure in this file fails `npm run check`, `npm run build`, and `npm run check:cairn`, since each compiles it first.",
+      "text": "`npm run check`, `npm run build`, and `npm run check:cairn` each compile the file first, so a compile error in it fails all three.",
       "id": "f:gxaxvh"
     },
     {
@@ -913,13 +978,6 @@
     {
       "text": "The footer menu, `menus.footer`, is a flat menu the developer edits by hand in `site.config.yaml`, read through `readMenu(siteConfig, 'footer', 1)`.",
       "id": "f:2s8u70"
-    },
-    {
-      "text": "The archive route the page size governs is also the one route the build's unseen-route check exempts.",
-      "id": [
-        "f:38pjqy",
-        "f:2zl3qz"
-      ]
     },
     {
       "text": "The prerender crawl fails the build on an unseen route or an HTTP error, and the scaffold keeps its build passing with one route exemption and one link attribute.",
@@ -966,10 +1024,6 @@
     {
       "text": "A new `/admin` link in public markup needs the same attribute.",
       "id": "f:34rsss"
-    },
-    {
-      "text": "A path the build never emitted is answered at request time, and the scaffold's `wrangler.jsonc` passes it to the Worker so the themed 404 page can render.",
-      "id": "f:2qnqkm"
     },
     {
       "text": "A scaffolded site serves a themed 404 page through two pieces that need each other, the root `src/routes/+error.svelte` and the `assets.not_found_handling` setting of `\"none\"` in `wrangler.jsonc`.",
@@ -1038,10 +1092,6 @@
       "id": "f:3my5c1"
     },
     {
-      "text": "The `--brand-color` flag takes a `#`-prefixed hex color, an `oklch(...)` string, or a bare number read as a hue in degrees, and any other shape fails.",
-      "id": "f:498l97"
-    },
-    {
       "text": "The build token is named `cairn create-cairn-site build token`, and the Workers Builds step reuses an existing build token that wraps the same token id.",
       "id": "f:3bbeia"
     },
@@ -1066,31 +1116,7 @@
       "id": "no-claim"
     },
     {
-      "text": "[Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md)",
-      "id": "no-claim"
-    },
-    {
-      "text": "[Theme your public site](theme-your-public-site.md)",
-      "id": "no-claim"
-    },
-    {
-      "text": "[Add a custom admin screen](add-a-custom-admin-screen.md)",
-      "id": "no-claim"
-    },
-    {
-      "text": "[Define an adapter and schema](define-an-adapter-and-schema.md)",
-      "id": "no-claim"
-    },
-    {
-      "text": "[Upgrade cairn](upgrade-cairn.md)",
-      "id": "no-claim"
-    },
-    {
       "text": "The following pages explain the engine these files wire in.",
-      "id": "no-claim"
-    },
-    {
-      "text": "[Architecture](architecture.md)",
       "id": "no-claim"
     },
     {
@@ -1130,6 +1156,18 @@
     {
       "id": "f:6jxd81",
       "reason": "The styleguide's contents belong to docs/extend/theme-your-public-site.md; f:qtm9y2 already names the route in the route tree, which is all this page needs."
+    },
+    {
+      "id": "f:6ro1n9",
+      "reason": "Cut by the conductor's ruling (b) on the 2a close-finish fix round (2026-10-07): the general docs assume no coding assistant, so the file tree labels `CLAUDE.md` and `.claude/` in one line and links docs/reference/guidance.md, which carries how `cairn-guidance` reads and writes them"
+    },
+    {
+      "id": "f:0ygumq",
+      "reason": "Cut by the conductor's ruling (b) on the 2a close-finish fix round (2026-10-07): the `[engine]` marker on `.claude/` is dropped, and docs/reference/guidance.md carries the guidance tree the scaffold installs"
+    },
+    {
+      "id": "f:498l97",
+      "reason": "Cut in the 2a close-finish register-editor round (2026-10-07): the `--brand-color` format is a setup-command flag detail with no bearing on the state a new owner inherits, and the setup command's own prompt states it"
     }
   ]
 }

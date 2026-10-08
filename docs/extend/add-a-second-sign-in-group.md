@@ -1,13 +1,14 @@
 # Add a second sign-in group
 
 Some sites need people besides editors to sign in, to reach screens or pages made for them.
-The engine's sign-in exists only to gate the admin, so out of the box it knows the two kinds of people who work there, owners and editors, and signs them in by an emailed magic link.
+The engine's sign-in exists only to gate the admin, so by default it knows the two kinds of people who work there, owners and editors, and signs them in by an emailed magic link.
 For a second group, cairn supplies the sign-in through one of two mechanisms.
 What a staff member or a member is, and the records the site keeps about them, stay in the site's code.
 
 A declared role adds the group to the editors' roster in `AUTH_DB`, the D1 database behind editor sign-in, at `none` capability.
 Its people sign in by the same magic link and find the engine's content screens closed to them.
 At `/admin`, the engine sends them to a screen the site builds for the role.
+
 An auth channel, built with `createAuthChannel`, gives the group a separate login that sends a numeric code over the site's transport, while the editors keep their magic link.
 The channel keeps its sessions in a D1 database apart from `AUTH_DB`, and a channel session never becomes an editor's, so the group's area is a set of the site's SvelteKit routes outside `/admin`.
 The channel exists for people the owner and editor sign-in was never meant to model.
@@ -16,21 +17,21 @@ The site supplies the code's delivery, the roster lookup, the contact normalizer
 
 Whichever mechanism you choose, by the end the group signs in on your deployed site and lands in an area made for it.
 The role path builds a `staff` role whose `home` is `/admin/staff`, the declaration the [roles reference](../reference/core.md#defineroles) uses.
-The channel path follows the members channel in the repository's example site, `examples/showcase`, which signs members in at `/members/login` and gates `/members`.
-The example site's code delivery is a development stand-in, a capture transport that refuses outside the dev backend.
-The channel path writes a `deliver` for your transport in its place.
-The two mechanisms share no steps, so a developer who arrives having chosen, such as one sent here for a `none` role or to build a channel, builds only that path.
+The channel path follows the members channel in the repository's example site, `examples/showcase`.
+That channel signs members in at `/members/login` and gates `/members`.
+It delivers codes through a capture transport for development, which refuses to run outside the dev backend.
+The channel path replaces that transport with a `deliver` for your own.
+The two mechanisms share no steps, so a developer who has already chosen follows only that path.
 
 The steps assume a site built through [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) or scaffolded by the setup command, so its hooks file, its adapter module, its Wrangler bindings, and its D1 migrations are familiar.
 They also assume SvelteKit load functions and form actions, and Vitest for the channel's test.
 
-Three related tasks belong to other pages:
+Other pages cover three related tasks:
 
 - To let a group write the site's content, see [Restrict admin access](restrict-admin-access.md).
+  Such a group needs editor capability, since `none` closes the engine's content screens, and an access map narrows what it reaches.
 - To sign the editors themselves in through the organization's identity provider, see [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md).
 - To assess the channel's threat surface and the hazards a site's delivery function can introduce, see [The auth channel's threat surface](security-model.md#the-auth-channels-threat-surface).
-
-A group that writes content needs editor capability, since `none` closes the engine's content screens, and an access map narrows what it reaches.
 
 ## Before you begin
 
@@ -42,9 +43,7 @@ Both mechanisms start from a cairn site whose editors already sign in by magic l
 - For a channel, the group's roster, in a store the site's code can read.
 - For a channel, a Cloudflare [Turnstile widget and its secret key](https://developers.cloudflare.com/turnstile/get-started/), for the bot challenge the channel requires.
 - For the channel's test, Node 24 or later and `@glw907/cairn-cms-dev` installed as a dev dependency, as [Wire the dev backend](add-cairn-to-a-sveltekit-app.md#wire-the-dev-backend) installs it.
-
-The dev package declares that Node floor, and nothing enforces it at runtime.
-Which mechanism to build is the first decision.
+  The dev package declares that minimum Node version, and nothing enforces it at runtime.
 
 ## Choose the mechanism
 
@@ -68,14 +67,14 @@ If you chose a channel, skip to [Sign the group in through a channel](#sign-the-
 
 A role adds the group to the editors' roster at `none` capability, so its people sign in by the magic link and reach only the screens the site builds for them.
 The steps build the `staff` role from the [roles reference](../reference/core.md#defineroles), whose `home` is `/admin/staff`.
-The steps start with the role's declaration.
 
 ### Declare the role
 
 A role is one entry in the site's role vocabulary, declared with `defineRoles` on the adapter and passed to the guard, and an object entry's `home` names the `/admin` path its people land on.
 To declare the role, follow these steps:
 
-1. In `cairn.config.ts`, set the adapter's `roles` member to a `defineRoles` vocabulary that keeps `owner` and `editor` beside the `staff` entry.
+1. In the adapter module, set the adapter's `roles` member to a `defineRoles` vocabulary that keeps `owner` and `editor` beside the `staff` entry.
+   The module is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the tutorial's.
 
    <!-- snippet-check-skip: elides the adapter's required content, backend, email, and rendering groups -->
    ```ts
@@ -118,18 +117,20 @@ To declare the role, follow these steps:
    export { handle };
    ```
 
-The import uses `#lib`, which the `imports` field of `package.json` maps to `src/lib`, since SvelteKit 3 refuses a `$lib` import.
+SvelteKit 3 refuses a `$lib` import.
+The import uses `#lib`, which the `imports` field of `package.json` maps to `src/lib`.
+A scaffolded site imports the adapter module through `#theme` instead.
 
 The vocabulary keeps `owner` and `editor` for two reasons.
-`defineRoles` throws without an `owner` key mapped to owner capability, and a roster row whose role the vocabulary omits resolves to `none`, so dropping `editor` would close the content screens to every existing editor.
+`defineRoles` throws without an `owner` key mapped to owner capability.
+A roster row whose role the vocabulary omits resolves to `none`, so dropping `editor` would close the content screens to every existing editor.
 
 A `home` must be an absolute path under `/admin`, or `defineRoles` throws.
-At `/admin`, the index redirects a role that declares a `home` to that path, and it shows a `none` role without one a welcome screen.
+At `/admin`, the index redirects a role that declares a `home` to that path, and it shows a welcome screen to a `none` role with no `home`.
 The `none` capability keeps the engine's content and roster screens closed to the role's people.
 
 A guard created without `roles` resolves every session against the owner and editor pair, and [Verify the role signs in to its home screen](#verify-the-role-signs-in-to-its-home-screen) checks that wiring.
 The [roles reference](../reference/core.md#defineroles) states the full rules for a declaration.
-The `home` path needs a screen before anyone lands there.
 
 ### Build the role's home screen
 
@@ -152,20 +153,20 @@ To build the screen, follow these steps:
    };
    ```
 
-The screen checks the role itself because `requireAccess` refuses every `none` session whatever the map says, since capability is the floor that the map only narrows.
-The role's session is an ordinary roster row that populates `locals.cairnEditor` like an editor's, with `capability` resolved to `none`, so the session carries the role the screen checks.
+`requireAccess` refuses every `none` session whatever the map says, so the screen checks the role itself.
+Each of the role's people is an ordinary roster row.
+Their session populates `locals.cairnEditor` like an editor's, with `capability` resolved to `none`, and the screen reads `role` from it.
 
-An action on the screen needs the same check, since `createSectionAction` runs the map check on every call and refuses the role.
-`createAdminAction` with its `access` option omitted authorizes nothing, so its handler checks the role itself.
-
-The screen's sidebar link comes next.
+An action on the screen needs the same check.
+`createSectionAction` would refuse the role, because it runs the map check on every call.
+With its `access` option omitted, `createAdminAction` authorizes nothing, and its handler checks the role instead.
 
 ### Show the home screen in the sidebar
 
 A `navLayout` entry with a `roles` list shows the home screen's link only to the roles it names.
 To add the link, follow this step:
 
-- In `cairn.config.ts`, add a `navLayout` entry for `/admin/staff` to the adapter's `editor` group, with `roles` set to the `staff` role.
+- In the adapter module, add a `navLayout` entry for `/admin/staff` to the adapter's `editor` group, with `roles` set to the `staff` role.
 
   <!-- snippet-check-skip: elides the adapter's required content, backend, email, and rendering groups -->
   ```ts
@@ -183,11 +184,10 @@ To add the link, follow this step:
 
 The `roles` list names declared roles only.
 A name the vocabulary does not declare fails validation.
-Hiding a link is never authorization, so the screen's role check is what refuses everyone else.
 The home path takes no rule in the access map.
-An entry whose href matches a map rule shows only to the roles `canReach` admits, and `canReach` admits no `none` session.
+A sidebar entry whose href matches a rule shows only to roles `canReach` admits, and `canReach` admits no `none` session, so a rule would hide the link from staff.
+The screen's role check refuses everyone else, whatever the sidebar shows.
 [Restrict admin access](restrict-admin-access.md) covers the access map itself, and [Arrange the admin sidebar](arrange-the-admin-sidebar.md) covers the rest of the sidebar.
-The role's people come last, once the screen they land on exists.
 
 ### Add the role's people
 
@@ -212,11 +212,10 @@ To add the people, follow these steps:
 6. Select **Add editor**.
 7. Tell the person to sign in at `/admin`, since adding them sends no email.
 
-The role is ready to verify.
-
 ### Verify the role signs in to its home screen
 
 A working role signs its people in by the magic link onto the home screen, with the screen's link in the sidebar and the engine's content screens closed to them.
+If a check fails, see [Resolve a failed setup](#resolve-a-failed-setup).
 To confirm that the role works, follow these steps:
 
 1. After a build, in the project directory, run [`cairn doctor`](../reference/cli-cairn-doctor.md) and confirm that it reports no `auth.role-wiring-missing` warning. That warning means the guard never received the vocabulary.
@@ -226,18 +225,15 @@ To confirm that the role works, follow these steps:
 4. In the sidebar, confirm that the **Staff** link shows.
 5. Open one of the engine's content screens, and confirm that it refuses the person.
 
-If a check fails, see [Resolve a failed setup](#resolve-a-failed-setup).
-
 ## Sign the group in through a channel
 
 `createAuthChannel` builds the request, confirm, and logout actions for a separate login over a numeric code.
 The site supplies the routes, the code's delivery, and the roster.
 The steps follow the members channel in the example site, which binds `MEMBER_DB`, names its cookie `member_session`, and serves `/members/login` and `/members`.
-The channel's database comes first.
 
 ### Provision the channel database
 
-The channel keeps its codes and sessions in a separate D1 database, bound beside `AUTH_DB` and never as it, with the packaged migration in a sibling migrations directory.
+The channel keeps its codes and sessions in another D1 database, bound under a separate name beside `AUTH_DB`, with the packaged migration in a sibling migrations directory.
 To provision the database, follow these steps:
 
 1. In the project directory, create a D1 database for the channel the way [Create the auth database](add-cairn-to-a-sveltekit-app.md#create-the-auth-database) creates the auth database, and note its id.
@@ -283,7 +279,6 @@ The migration lives in a sibling directory because a shared `migrations_dir` app
 Every statement in the migration is idempotent, so applying it to a database that already holds the tables changes nothing and records the migration.
 The remote database takes the same migration in [Deploy the channel](#deploy-the-channel), once the code that reads it is ready to ship.
 The reference's [packaged migration](../reference/auth-channel.md#the-packaged-migration) section describes the schema the file installs.
-The channel module's `resolveDb` returns this binding.
 
 ### Write the channel module
 
@@ -458,7 +453,6 @@ The following page component holds both forms:
 The two actions switch on outcomes, which carry the failures a member can retry.
 A wrong code answers `bad-code` and mints no session, and a false or thrown challenge answers `challenge-required` without minting.
 The reference's [types table](../reference/auth-channel.md#types) lists every outcome.
-A confirmed code lands the member on `/members`, which needs a gate.
 
 ### Gate the member area
 
@@ -530,7 +524,6 @@ A `false` from `verify` destroys the session row, while a throw refuses only tha
 `verify` takes the same `{ env }` context as `lookup` and never reads request data.
 `revokeSessions` ends every session for that identity at once.
 The [channel reference](../reference/auth-channel.md#createauthchannel) describes calling it outside a request.
-A Vitest run on Node can prove the channel before it deploys.
 
 ### Test the channel on Node
 
@@ -608,16 +601,18 @@ To test the channel, follow these steps:
    ```
 
 The test's shape follows from how the engine reaches the Worker.
-The mock supplies the Worker env and a `waitUntil` that collects promises, held in a hoisted object so the mock factory can reach them, since the engine reads every binding and `waitUntil` from `cloudflare:workers`.
-Inlining runs the engine through Vitest's transform, so that mock reaches the engine's import.
-The double goes on the mocked env as `MEMBER_DB`, built from the site's copy of the migration, the file its binding applies.
+The engine reads every binding and `waitUntil` from `cloudflare:workers`.
+The mock supplies the Worker env and a `waitUntil` that collects promises, held in a hoisted object so the mock factory can reach them.
+Because the package is inlined, Vitest transforms the engine, and the mock reaches its import.
+The double goes on the mocked env as `MEMBER_DB`, built from the same migration file the binding applies.
+
 The test's channel keeps the module's normalizer and stands in for the delivery, the challenge, and the roster lookup.
-The event carries a local URL and an `Origin` header that matches it, since every action refuses a mismatched `Origin` or plain http outside a local host.
+Every action refuses a mismatched `Origin` or plain http outside a local host.
+The event therefore carries a local URL and an `Origin` header that matches it.
 After awaiting the collected promises, the test asserts that the request answered `sent` and that the stand-in delivery received one 8-digit code.
 
 The double runs only on Node, since under workerd `node:sqlite` resolves but the database constructor throws.
 Under `wrangler dev`, the channel reads the local D1 database that [Provision the channel database](#provision-the-channel-database) migrated.
-A passing test leaves the channel ready to deploy.
 
 ### Deploy the channel
 
@@ -643,7 +638,7 @@ To deploy the channel, follow these steps in order:
    npx wrangler deploy
    ```
 
-Because `wrangler secret put` creates and deploys a new Worker version at once, the secret is live before the deploy ships the code that reads it.
+`wrangler secret put` deploys a new Worker version at once, so the secret is in place before the final deploy ships the code that reads it.
 
 ### Verify a member signs in to the member area
 
@@ -658,11 +653,10 @@ To confirm that a member signs in, follow these steps:
 6. Confirm that the login page returns.
 7. Confirm that `/members` now redirects to the login page.
 
-If a check fails, see [Resolve a failed setup](#resolve-a-failed-setup).
-
 ## Resolve a failed setup
 
-The following checks cover the common failures, the role's on `/admin/editors` and at its home screen, then the channel's at construction and at the challenge:
+The first three checks cover the role, and the rest cover the channel.
+Run the checks in order:
 
 1. If adding a person with the new role fails on `/admin/editors`, apply `0001_roles.sql` to the auth database as [Add the role's people](#add-the-roles-people) does.
    Until `0001_roles.sql` runs, the roster holds only owner and editor.

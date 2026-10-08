@@ -2,7 +2,7 @@
   "page": "docs/extend/debug-your-site.md",
   "sentences": [
     {
-      "text": "A cairn site is a SvelteKit app running as a Cloudflare Worker, and the engine inside it writes every operationally meaningful event as one JSON record through one internal chokepoint.",
+      "text": "A cairn site is a SvelteKit app running as a Cloudflare Worker, and the engine inside it writes every operationally meaningful event as one JSON record through one internal module.",
       "id": [
         "f:eywrq8",
         "f:swjwxb"
@@ -20,7 +20,7 @@
       ]
     },
     {
-      "text": "When such an event reports a fault, the fault is site code that broke the seam's contract, never an engine bug, so its record names the seam and the place the fix goes.",
+      "text": "When such an event reports a fault, its record names the seam whose contract the site's code broke and the place the fix goes.",
       "id": "f:gy2h7p"
     },
     {
@@ -52,35 +52,35 @@
       "id": "no-claim"
     },
     {
-      "text": "For each symptom, a developer matches the record it leaves, or the error or test result it shows, to the change that fixes it.",
+      "text": "For each symptom, its section names the record it leaves, or the error or test result it shows, and the change that fixes it.",
       "id": "no-claim"
     },
     {
-      "text": "A row that needs no change says so.",
+      "text": "A section whose symptom needs no change says so.",
       "id": "no-claim"
     },
     {
-      "text": "The rows assume working knowledge of SvelteKit server code, including hooks, loads, and form actions, along with the site's Wrangler config and whichever seams the site uses.",
+      "text": "The sections assume working knowledge of SvelteKit server code, including hooks, loads, and form actions, along with the site's Wrangler config and whichever seams the site uses.",
       "id": "no-claim"
     },
     {
-      "text": "Most rows link the reference entry for the seam their fix changes.",
+      "text": "Most sections link the reference entry for the seam their fix changes.",
       "id": "no-claim"
     },
     {
-      "text": "The [log events](../reference/log-events.md) reference lists every event with its fields, and it holds the rows for sign-in and access refusals and for a sign-in email the engine could not send, which this page leaves out.",
+      "text": "The [log events](../reference/log-events.md) reference lists every event with its fields, and it covers sign-in and access refusals and a sign-in email the engine could not send, which this page leaves out.",
       "id": "no-claim"
     },
     {
-      "text": "An error that began with an engine upgrade belongs to [Upgrade cairn](upgrade-cairn.md) and the [migration notes](migration-notes.md).",
+      "text": "For an error that began with an engine upgrade, see [Upgrade cairn](upgrade-cairn.md) and the [migration notes](migration-notes.md).",
       "id": "no-claim"
     },
     {
-      "text": "Configuring cairn-audit for a whole site belongs to [Run cairn-audit on your site](run-cairn-audit-on-your-site.md).",
+      "text": "[Run cairn-audit on your site](run-cairn-audit-on-your-site.md) covers configuring cairn-audit for a whole site.",
       "id": "no-claim"
     },
     {
-      "text": "Apart from the records whose rows say no change is needed, a symptom that a site's operator can resolve without changing code is outside this page's scope.",
+      "text": "A symptom an operator can resolve without a code change is outside this page's scope, except for the records that need no change at all.",
       "id": "no-claim"
     },
     {
@@ -138,26 +138,14 @@
       "id": "f:q9ylqa"
     },
     {
-      "text": "A failed `errors` check is the cue to read those records with `cairn logs` and match each one to its row on this page.",
+      "text": "A failed `errors` check is the cue to read those records with `cairn logs` and match each one to its section on this page.",
       "id": [
         "f:vg5zt8",
         "f:q9ylqa"
       ]
     },
     {
-      "text": "A script or an agent that runs these commands reads their contract from `cairn help agents`.",
-      "id": "f:vi9xh0"
-    },
-    {
-      "text": "The `cairn` CLI prints that contract itself, because `go install` installs no docs tree.",
-      "id": "f:vi9xh0"
-    },
-    {
-      "text": "That contract covers the exit codes and their precedence, stdout for payload with stderr for diagnostics, skip versus unknown, and the schema URLs.",
-      "id": "f:vi9xh0"
-    },
-    {
-      "text": "The [exit codes](../reference/cli-cairn-exit-codes.md) and [JSON output](../reference/cli-cairn-json-output.md) references are its published form.",
+      "text": "The [exit codes](../reference/cli-cairn-exit-codes.md) and [JSON output](../reference/cli-cairn-json-output.md) references give the contract a script relies on when it runs these commands.",
       "id": "no-claim"
     },
     {
@@ -298,25 +286,25 @@
       ]
     },
     {
-      "text": "The rate limit, when one is configured, which degrades to open and logs `admin.action.rate_limit_absent` or `admin.action.rate_limit_failed`.",
+      "text": "The rate-limit check, which runs only when a limit is configured and logs `admin.action.rate_limit_absent` or `admin.action.rate_limit_failed` as it degrades to open.",
       "id": [
         "f:1b3ye3",
         "f:cp0tek"
       ]
     },
     {
-      "text": "The access map, which must be attached, or the action answers `fail(500)` and logs `admin.action.misconfigured`.",
+      "text": "The access-map check, which answers `fail(500)` and logs `admin.action.misconfigured` when no map is attached.",
       "id": "f:1b3ye3"
     },
     {
-      "text": "The authorization against the map that [Restrict admin access](restrict-admin-access.md) describes, which answers `fail(403)` and logs [`auth.access.refused`](../reference/log-events.md).",
+      "text": "The map authorization check that [Restrict admin access](restrict-admin-access.md) describes, which answers `fail(403)` and logs [`auth.access.refused`](../reference/log-events.md).",
       "id": [
         "f:1b3ye3",
         "f:xbjxit"
       ]
     },
     {
-      "text": "The database binding, which must resolve, or the action answers `fail(500)` and logs `admin.action.misconfigured`.",
+      "text": "The database-binding check, which answers `fail(500)` and logs `admin.action.misconfigured` when the binding does not resolve.",
       "id": "f:1b3ye3"
     },
     {
@@ -357,11 +345,15 @@
       ]
     },
     {
-      "text": "This record is the only trace of the lapse, since the guard's CSRF refusal covers an earlier condition.",
+      "text": "This record is the only trace of the lapse.",
       "id": "f:v1jj2k"
     },
     {
-      "text": "The row needs no code change, and the editor signs in again.",
+      "text": "The lapse needs no code change.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The editor signs in again.",
       "id": "no-claim"
     },
     {
@@ -379,6 +371,10 @@
       ]
     },
     {
+      "text": "The record is a warning whose fields the [log events](../reference/log-events.md) reference lists.",
+      "id": "f:cp0tek"
+    },
+    {
       "text": "`devBackendHandle` runs no CSRF check, so under the dev backend this record is the first trace of a form that posts without a token.",
       "id": "f:m4ihla"
     },
@@ -392,10 +388,6 @@
     },
     {
       "text": "`createSectionAction` logs `admin.action.rate_limit_absent` and runs the action with no limit when `config.rateLimit.resolve` returns no limiter.",
-      "id": "f:cp0tek"
-    },
-    {
-      "text": "The record is a warning whose fields the [log events](../reference/log-events.md) reference lists.",
       "id": "f:cp0tek"
     },
     {
@@ -431,7 +423,7 @@
       "id": "f:cp0tek"
     },
     {
-      "text": "An over-limit call logs `admin.action.rate_limited` and answers `fail(429)`, which is the limit working and not a fault.",
+      "text": "An over-limit call logs `admin.action.rate_limited` and answers `fail(429)`, which is the limit working.",
       "id": "f:cp0tek"
     },
     {
@@ -584,7 +576,7 @@
       ]
     },
     {
-      "text": "When the committed site config fails to parse or validate, the record's `error` carries the parser's real message while the admin shows an empty list or generic copy.",
+      "text": "When the committed site config fails to parse or validate, the record's `error` carries the parser's message while the admin shows an empty list or generic copy.",
       "id": "f:8fyoha"
     },
     {
@@ -644,7 +636,7 @@
       ]
     },
     {
-      "text": "No row in this group needs a code change.",
+      "text": "None of these records needs a code change.",
       "id": "no-claim"
     },
     {
@@ -767,7 +759,7 @@
       "id": "f:i8pbhc"
     },
     {
-      "text": "The engine's paths ask the same question through an internal helper that a site does not call.",
+      "text": "The engine's paths ask the same question.",
       "id": "f:i8pbhc"
     },
     {
@@ -794,18 +786,30 @@
       "id": "no-claim"
     },
     {
-      "text": "In a site module, read today through a fixed-today reader that takes `CAIRN_FIXED_TODAY` from the Worker env, never through `Date.now()` in a rendered component.",
+      "text": "In a site module, read today through a fixed-today reader that takes `CAIRN_FIXED_TODAY` from the Worker env.",
       "id": "f:ogz5eu"
     },
     {
-      "text": "In `.dev.vars`, set `CAIRN_FIXED_TODAY` to an explicit instant, never in the Wrangler config's `vars`, which deploy with the Worker.",
+      "text": "Don't call `Date.now()` for today in a rendered component.",
+      "id": "f:ogz5eu"
+    },
+    {
+      "text": "In `.dev.vars`, set `CAIRN_FIXED_TODAY` to an explicit instant.",
       "id": [
         "f:o7mr6f",
         "f:yomgrm"
       ]
     },
     {
-      "text": "In `.dev.vars.example`, add `CAIRN_FIXED_TODAY = \"\"`, then regenerate `worker-configuration.d.ts` with the command its first lines record, so the generated `Env` declares it.",
+      "text": "Don't set it in the Wrangler config's `vars`, which deploy with the Worker.",
+      "id": "f:o7mr6f"
+    },
+    {
+      "text": "In `.dev.vars.example`, add `CAIRN_FIXED_TODAY = \"\"`.",
+      "id": "f:pe4vuc"
+    },
+    {
+      "text": "In the project directory, run the command that `worker-configuration.d.ts` records on its first lines, so the generated `Env` declares the variable.",
       "id": [
         "f:pe4vuc",
         "f:3ccbez"
@@ -882,8 +886,12 @@
       "id": "f:eqlssz"
     },
     {
-      "text": "When the adapter throws for an unrelated reason, the build cannot derive the facts and reports the file current with no signal, so a passing build does not show that the file matches.",
+      "text": "An adapter that throws for an unrelated reason leaves the build unable to derive the facts, and the build gives no signal.",
       "id": "f:vs9g9e"
+    },
+    {
+      "text": "The [`cairn-manifest`](../reference/cli-cairn-manifest.md) reference describes the command that regenerates the file.",
+      "id": "f:yio35u"
     },
     {
       "text": "After a change to the adapter's media bucket binding, its `roles`, or its `aiPosture`, the following steps bring the file current:",
@@ -901,15 +909,11 @@
       "id": "f:yio35u"
     },
     {
-      "text": "The [`cairn-manifest`](../reference/cli-cairn-manifest.md) reference describes the command.",
-      "id": "f:yio35u"
-    },
-    {
       "text": "The following pages cover the seams and tasks this page's events come from:",
       "id": "no-claim"
     },
     {
-      "text": "[Architecture](architecture.md#seams) describes the seams whose events the rows name.",
+      "text": "[Architecture](architecture.md#seams) describes the seams these events name.",
       "id": "no-claim"
     },
     {
@@ -929,6 +933,10 @@
     {
       "id": "f:vpk81e",
       "reason": "Subordinated to `docs/reference/site-facts.md` \"Who writes it and who verifies it\", which states that an absent file is not drift and the build warns once naming `npx cairn-manifest` (opened and confirmed); the warning's own message names its fix, so the page needs no row for it"
+    },
+    {
+      "id": "f:vi9xh0",
+      "reason": "Cut by the conductor's ruling (a) on the 2a close-finish fix round (2026-10-07): a general page addresses a reader with no coding assistant, so the `cairn help agents` sentences leave the page, and the exit-code and JSON-output references carry the contract a script relies on"
     }
   ]
 }

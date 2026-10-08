@@ -1,14 +1,14 @@
 # Debug your site
 
 A cairn site is a SvelteKit app running as a Cloudflare Worker, and the engine inside it writes
-every operationally meaningful event as one JSON record through one internal chokepoint. The events
-a developer meets most often fire from engine code running inside the site's extension points, such
-as a concept's fieldset, a wrapped admin action, or a public route factory. Some come instead from
-the engine's checks on the site's committed config. When such an event reports a fault, the fault
-is site code that broke the seam's contract, never an engine bug, so its record names the seam and
-the place the fix goes. Other failures leave no record, and a developer finds them by what the site
-shows instead. Those include an error from a Worker env read, a test whose result changes with no
-source change, and a build check that passes without comparing.
+every operationally meaningful event as one JSON record through one internal module. The events a
+developer meets most often fire from engine code running inside the site's extension points, such as
+a concept's fieldset, a wrapped admin action, or a public route factory. Some come instead from the
+engine's checks on the site's committed config. When such an event reports a fault, its record names
+the seam whose contract the site's code broke and the place the fix goes. Other failures leave no
+record, and a developer finds them by what the site shows instead. Those include an error from a
+Worker env read, a test whose result changes with no source change, and a build check that passes
+without comparing.
 
 A developer building an organization's site on cairn's seams arrives at this page for one of the
 following reasons:
@@ -17,19 +17,19 @@ following reasons:
 - A check in an extend guide failed, and the failure names an event or failure this page covers.
 - The developer is building a query, an alert, or records of their own on the same record shape.
 
-For each symptom, a developer matches the record it leaves, or the error or test result it shows,
-to the change that fixes it. A row that needs no change says so. The rows
-assume working knowledge of SvelteKit server code, including hooks, loads, and form actions, along
-with the site's Wrangler config and whichever seams the site uses. Most rows link the reference
-entry for the seam their fix changes.
+For each symptom, its section names the record it leaves, or the error or test result it shows, and
+the change that fixes it. A section whose symptom needs no change says so. The sections assume
+working knowledge of SvelteKit server code, including hooks, loads, and form actions, along with the
+site's Wrangler config and whichever seams the site uses. Most sections link the reference entry for
+the seam their fix changes.
 
 The [log events](../reference/log-events.md) reference lists every event with its fields, and it
-holds the rows for sign-in and access refusals and for a sign-in email the engine could not send,
-which this page leaves out. An error that began with an engine upgrade belongs to [Upgrade
-cairn](upgrade-cairn.md) and the [migration notes](migration-notes.md). Configuring cairn-audit
-for a whole site belongs to [Run cairn-audit on your site](run-cairn-audit-on-your-site.md). Apart
-from the records whose rows say no change is needed, a symptom that a site's operator can resolve
-without changing code is outside this page's scope.
+covers sign-in and access refusals and a sign-in email the engine could not send, which this page
+leaves out. For an error that began with an engine upgrade, see [Upgrade cairn](upgrade-cairn.md)
+and the [migration notes](migration-notes.md). [Run cairn-audit on your
+site](run-cairn-audit-on-your-site.md) covers configuring cairn-audit for a whole site. A symptom an
+operator can resolve without a code change is outside this page's scope, except for the records that
+need no change at all.
 
 ## Read the structured logs
 
@@ -53,8 +53,8 @@ A developer reads the records through the following surfaces:
   documentation](https://developers.cloudflare.com/workers/observability/logs/workers-logs/)
   describes.
 - `npx wrangler tail` streams the Worker's logs live while the developer reproduces the problem, as
-  the [Wrangler commands reference](https://developers.cloudflare.com/workers/wrangler/commands/#tail)
-  describes.
+  the [Wrangler commands
+  reference](https://developers.cloudflare.com/workers/wrangler/commands/#tail) describes.
 - `cairn logs <site>` reads the site's records from Workers Observability, where `<site>` is the
   site id that `cairn sites list` prints.
 - `cairn health` fails its `errors` check when the engine's error-level records within the `--since`
@@ -62,12 +62,10 @@ A developer reads the records through the following surfaces:
 
 A Worker with observability off answers `cairn logs` with zero entries and no error, so an empty
 result is no proof the site is quiet. A failed `errors` check is the cue to read those records with
-`cairn logs` and match each one to its row on this page. A script or an agent that runs these
-commands reads their contract from `cairn help agents`. The `cairn` CLI prints that contract itself,
-because `go install` installs no docs tree. That contract covers the exit codes and their
-precedence, stdout for payload with stderr for diagnostics, skip versus unknown, and the schema
-URLs. The [exit codes](../reference/cli-cairn-exit-codes.md) and [JSON
-output](../reference/cli-cairn-json-output.md) references are its published form.
+`cairn logs` and match each one to its section on this page. The [exit
+codes](../reference/cli-cairn-exit-codes.md) and [JSON
+output](../reference/cli-cairn-json-output.md) references give the contract a script relies on when
+it runs these commands.
 
 ### Record contents
 
@@ -131,15 +129,14 @@ log these events at the check that stopped or degraded the action.
 
 1. The session and CSRF checks that `createAdminAction` runs, which log
    `admin.action.session_absent` or `admin.action.csrf_refused`.
-2. The rate limit, when one is configured, which degrades to open and logs
-   `admin.action.rate_limit_absent` or `admin.action.rate_limit_failed`.
-3. The access map, which must be attached, or the action answers `fail(500)` and logs
-   `admin.action.misconfigured`.
-4. The authorization against the map that [Restrict admin access](restrict-admin-access.md)
-   describes, which answers `fail(403)` and logs
-   [`auth.access.refused`](../reference/log-events.md).
-5. The database binding, which must resolve, or the action answers `fail(500)` and logs
-   `admin.action.misconfigured`.
+2. The rate-limit check, which runs only when a limit is configured and logs
+   `admin.action.rate_limit_absent` or `admin.action.rate_limit_failed` as it degrades to open.
+3. The access-map check, which answers `fail(500)` and logs `admin.action.misconfigured` when no map
+   is attached.
+4. The map authorization check that [Restrict admin access](restrict-admin-access.md) describes,
+   which answers `fail(403)` and logs [`auth.access.refused`](../reference/log-events.md).
+5. The database-binding check, which answers `fail(500)` and logs `admin.action.misconfigured` when
+   the binding does not resolve.
 
 The handler must call `ctx.audit` before it returns, and the site's audit sink runs inside that
 call. Each event in this list places the request at the check that logged it.
@@ -152,9 +149,8 @@ contract.
 A wrapped action logs `admin.action.session_absent` and redirects to `/admin/login` when the
 editor's session lapsed after the guard resolved it. The editor sees a form submission land on the
 sign-in page. The record is a warning whose `path` names the action's route, as the [log
-events](../reference/log-events.md) reference lists. This record is the only trace of the lapse,
-since the guard's CSRF refusal covers an earlier condition. The row needs no code change, and the
-editor signs in again.
+events](../reference/log-events.md) reference lists. This record is the only trace of the lapse. The
+lapse needs no code change. The editor signs in again.
 
 ### `admin.action.csrf_refused`
 
@@ -183,7 +179,7 @@ the throw, with its other fields in the [log events](../reference/log-events.md)
 check degrades to open, except that a SvelteKit `redirect()` or `error()` thrown from either call is
 rethrown untouched, so a deliberate redirect or error still takes effect. The fix is a code change
 to `key()` or to the limiter, wherever the throw in `error` began. An over-limit call logs
-`admin.action.rate_limited` and answers `fail(429)`, which is the limit working and not a fault.
+`admin.action.rate_limited` and answers `fail(429)`, which is the limit working.
 
 ### `admin.action.misconfigured`
 
@@ -220,11 +216,11 @@ successful path before it returns. The
 ### `audit.sink.call_failed`
 
 The site's `event.locals.cairnAuditSink` threw or rejected after the action's change completed, so
-the action's result stands and only its audit record was lost. The engine logs `audit.sink.call_failed`
-as an error whose `error` carries the sink's failure, with its other fields in the [log
-events](../reference/log-events.md) reference. The record omits the audit record's `detail`,
-because the `admin.action.audited` record logged before it carries the full audit record. The fix is
-a code change to the site's sink, at the failure that `error` names.
+the action's result stands and only its audit record was lost. The engine logs
+`audit.sink.call_failed` as an error whose `error` carries the sink's failure, with its other fields
+in the [log events](../reference/log-events.md) reference. The record omits the audit record's
+`detail`, because the `admin.action.audited` record logged before it carries the full audit record.
+The fix is a code change to the site's sink, at the failure that `error` names.
 
 A site that wires [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) reads
 `audit.sink.write_failed` instead. That sink catches its own failures before
@@ -241,12 +237,12 @@ a declared access map leaves a concept or a fixed engine screen without a rule.
 ### `config.invalid`
 
 When the committed site config fails to parse or validate, the record's `error` carries the parser's
-real message while the admin shows an empty list or generic copy. The engine logs `config.invalid`
-as an error carrying `scope` and `error`, and the [log events](../reference/log-events.md) reference
-lists its fields. The two loads, with `scope` set to `nav` or `vocabulary`, leave the nav editor or
-the tag-vocabulary screen empty. The two saves, with `scope` set to `settings` or `vocabulary`,
-answer `fail(500)` with generic copy. The fix is a code change that corrects the committed config
-the record's `scope` names, using the message in `error`, and commits it.
+message while the admin shows an empty list or generic copy. The engine logs `config.invalid` as an
+error carrying `scope` and `error`, and the [log events](../reference/log-events.md) reference lists
+its fields. The two loads, with `scope` set to `nav` or `vocabulary`, leave the nav editor or the
+tag-vocabulary screen empty. The two saves, with `scope` set to `settings` or `vocabulary`, answer
+`fail(500)` with generic copy. The fix is a code change that corrects the committed config the
+record's `scope` names, using the message in `error`, and commits it.
 
 ### `config.access_unmapped`
 
@@ -264,7 +260,7 @@ needs no change.
 ## Session and commit records
 
 These records report no fault, yet a query built on them miscounts unless it allows for when each
-one fires and which field it carries. No row in this group needs a code change.
+one fires and which field it carries. None of these records needs a code change.
 
 ### `auth.session.destroyed`
 
@@ -326,10 +322,9 @@ deploys.
 Every `cloudflare:workers` `env` read throws while the build prerenders, so a read in a hook or at
 module scope fails the build. Code that can run then checks `building` from `$app/env` first.
 `building` is SvelteKit 3's flag, and `$app/environment` survives only as a deprecated alias. The
-engine's paths ask the same question through an internal helper that a site does not call. The fix
-is a code change that guards the read, as the audit-sink hook in the
-[`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry does with `if (!building &&
-env.AUDIT_DB)`.
+engine's paths ask the same question. The fix is a code change that guards the read, as the
+audit-sink hook in the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry does
+with `if (!building && env.AUDIT_DB)`.
 
 ## Date-dependent output
 
@@ -344,12 +339,14 @@ variable that the site owns, since no engine code reads that variable. The follo
 the reader and the variable, in order:
 
 1. In a site module, read today through a fixed-today reader that takes `CAIRN_FIXED_TODAY` from the
-   Worker env, never through `Date.now()` in a rendered component.
-2. In `.dev.vars`, set `CAIRN_FIXED_TODAY` to an explicit instant, never in the Wrangler config's
-   `vars`, which deploy with the Worker.
-3. In `.dev.vars.example`, add `CAIRN_FIXED_TODAY = ""`, then regenerate `worker-configuration.d.ts`
-   with the command its first lines record, so the generated `Env` declares it. A scaffolded site
-   records `npx wrangler types --env-file=.dev.vars.example --include-runtime=false`.
+   Worker env.
+   Don't call `Date.now()` for today in a rendered component.
+2. In `.dev.vars`, set `CAIRN_FIXED_TODAY` to an explicit instant.
+   Don't set it in the Wrangler config's `vars`, which deploy with the Worker.
+3. In `.dev.vars.example`, add `CAIRN_FIXED_TODAY = ""`.
+4. In the project directory, run the command that `worker-configuration.d.ts` records on its first
+   lines, so the generated `Env` declares the variable. A scaffolded site records
+   `npx wrangler types --env-file=.dev.vars.example --include-runtime=false`.
 
 Cloudflare's [local development environment
 variables](https://developers.cloudflare.com/workers/local-development/environment-variables/) page
@@ -396,22 +393,20 @@ build error names the file and the fix. The [`site-facts.json`
 contract](../reference/site-facts.md#who-writes-it-and-who-verifies-it) describes what the file
 carries and the warning for an absent file.
 
-When the adapter throws for an unrelated reason, the build cannot derive the facts and reports the
-file current with no signal, so a passing build does not show that the file matches. After a change
-to the adapter's media bucket binding, its `roles`, or its `aiPosture`, the following steps bring
-the file current:
+An adapter that throws for an unrelated reason leaves the build unable to derive the facts, and the
+build gives no signal. The [`cairn-manifest`](../reference/cli-cairn-manifest.md) reference
+describes the command that regenerates the file. After a change to the adapter's media bucket
+binding, its `roles`, or its `aiPosture`, the following steps bring the file current:
 
 1. In the directory that holds the site's `vite.config.ts`, run `npx cairn-manifest`, which writes
    `site-facts.json` in the same run as the content manifest.
 2. In the site's repository, commit the regenerated `site-facts.json`.
 
-The [`cairn-manifest`](../reference/cli-cairn-manifest.md) reference describes the command.
-
 ## See also
 
 The following pages cover the seams and tasks this page's events come from:
 
-- [Architecture](architecture.md#seams) describes the seams whose events the rows name.
+- [Architecture](architecture.md#seams) describes the seams these events name.
 - [Add a custom admin screen](add-a-custom-admin-screen.md) describes how to build a wrapped action
   and wire its audit sink.
 - [Add a second sign-in group](add-a-second-sign-in-group.md) describes the auth channel whose

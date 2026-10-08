@@ -1,12 +1,12 @@
 # Rotate the GitHub App key
 
-A GitHub App's private key never expires, so the key a cairn site signs with stays in service until its developer replaces it. The Worker holds that key as `GITHUB_APP_PRIVATE_KEY_B64` and signs with it whenever it needs an installation token, the short-lived credential that every save and publish commits with. GitHub names one occasion for replacing the key, a copy that may have been exposed, and an organization may also replace it on a schedule it sets. The replacement happens on GitHub, which holds the App's keys, and in Cloudflare, where `wrangler secret put` deploys the new key to the Worker at once. The App ID and installation ID in the adapter stay as they are, so no source file changes and no build runs.
+A GitHub App's private key never expires, so the key a cairn site signs with stays in service until its developer replaces it. The Worker holds that key as `GITHUB_APP_PRIVATE_KEY_B64` and signs with it whenever it needs an installation token. Every save and publish commits with that short-lived token. GitHub advises replacing the key when a copy may have been exposed, and an organization may also replace it on a schedule it sets. The replacement happens on GitHub, which holds the App's keys, and in Cloudflare, where `wrangler secret put` deploys the new key to the Worker at once. The App ID and installation ID in the adapter stay as they are, so no source file changes and no build runs.
 
 An App can hold several private keys at once, and a new key does not invalidate the old one. The overlap allows an order with no gap, in which the new key is generated beside the old one, pushed to the Worker, and confirmed before the old key is deleted. In that order, a developer who can edit the site's GitHub App and deploy its Worker replaces the App's private key without a publishing outage, proves the new key before the old one goes, and recovers if the new key fails. Until the deletion, the old key still works, so a failed new key can be rolled back to it. After the deletion, GitHub restores nothing, and the recovery from a failed key is a third key.
 
-Proving the new key takes at least 55 minutes, because the Worker caches each installation token that long, and a publish inside that window can run on a token the old key minted. For a key that may have been exposed, that window is the cost of avoiding an outage, since GitHub accepts the old key until it is deleted. GitHub's plan for a compromised key runs in the same order, generating a new key and switching the App to it before deleting the old one. The rollback needs a copy of the old key. A site that `create-cairn-site` created kept none outside the Worker, so on such a site a failed new key is recovered with a third key. If the new key already fails, [Recover from a failed key](#recover-from-a-failed-key) is the place to start.
+Proving the new key takes at least 55 minutes, because the Worker caches each installation token that long, and a publish inside that window can run on a token the old key minted. For a key that may have been exposed, that window is the cost of avoiding an outage, since GitHub accepts the old key until it is deleted. GitHub's plan for a compromised key runs in the same order, generating a new key and switching the App to it before deleting the old one. If the new key already fails, [Recover from a failed key](#recover-from-a-failed-key) is the place to start.
 
-This page assumes a terminal on your platform and familiarity with Wrangler's secret commands and with querying Workers Logs. Registering the App the first time belongs to [Register the GitHub App](add-cairn-to-a-sveltekit-app.md#register-the-github-app) in the hand-built tutorial, or to the setup command for a scaffolded site. Why the key lives only as a Worker secret, and what the App's token can write, belong to [The GitHub App's reach](security-model.md#the-github-apps-reach) in the security model.
+This page assumes a terminal on your platform and familiarity with Wrangler's secret commands and with querying Workers Logs. The App's first registration happens in [Register the GitHub App](add-cairn-to-a-sveltekit-app.md#register-the-github-app) in the hand-built tutorial, or in the setup command for a scaffolded site. [The GitHub App's reach](security-model.md#the-github-apps-reach) in the security model explains why the key lives only as a Worker secret and what the App's token can write.
 
 ## Before you begin
 
@@ -15,12 +15,10 @@ The rotation needs the following site, access, signals, and file:
 - A deployed site whose Worker holds the App's key as `GITHUB_APP_PRIVATE_KEY_B64`, from the setup command or from [Store the App's credentials](add-cairn-to-a-sveltekit-app.md#store-the-apps-credentials).
 - A GitHub account that can edit the App's settings, which hold its private keys, as GitHub's [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps) describes.
 - Wrangler signed in through `npx wrangler login` to the Cloudflare account that holds the site's Worker, and a terminal in the site's directory.
-- A sign-in to the admin as an editor who can publish, since the verification publishes an entry and queries the logs an admin visit writes.
+- A sign-in to the admin as an editor who can publish, since the verification publishes an entry and queries the logs an admin visit writes. On a scaffolded site, the setup command already wrote its runner's owner row and opened a sign-in link. On a hand-built site, [Verify the production site](add-cairn-to-a-sveltekit-app.md#verify-the-production-site) shows the sign-in.
 - Workers Logs active through `observability.enabled` set to `true` in `wrangler.jsonc`, which the scaffold sets and [Add the Email Sending binding and name the origin](add-cairn-to-a-sveltekit-app.md#add-the-email-sending-binding-and-name-the-origin) adds.
 - A `/healthz` route at the site root, which the scaffold ships and the [`loadHealth`](../reference/sveltekit.md#loadhealth) entry shows for a hand-built site.
 - The current key's PEM file, if you have it, for the rollback. A scaffolded site keeps no copy outside the Worker, so recovery there takes a third key.
-
-The setup command creates the App and deploys the site in one run. It also writes its runner's owner row and opens a sign-in link to the admin. On a hand-built site, [Verify the production site](add-cairn-to-a-sveltekit-app.md#verify-the-production-site) shows the sign-in.
 
 ## Generate a new key
 
@@ -28,7 +26,7 @@ Generating a new key changes nothing until the Worker starts using it, because t
 
 - On the App's settings page on GitHub, generate a private key and download its PEM file, as [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps) describes.
 
-The old key stays in place, since an App with one key needs the new key before the old one can be deleted. The old key also keeps the site publishing until [Delete the old key](#delete-the-old-key).
+GitHub won't delete an App's only key, so the old key can go only after the new one exists. The old key also keeps the site publishing until [Delete the old key](#delete-the-old-key).
 
 > **Warning:** GitHub keeps only the public portion of a key, so the downloaded file is the only copy of the new private key.
 
@@ -56,11 +54,11 @@ The Worker reads `GITHUB_APP_PRIVATE_KEY_B64` as the PEM file encoded in base64 
     [Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\path\to\new-key.pem')) | npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
     ```
 
-Saving that value with `Out-File` first writes the file as UTF-16LE under Windows PowerShell 5.1, at two bytes per character, while PowerShell 7 writes `utf8NoBOM`. The PowerShell form therefore pipes the value straight to Wrangler and writes no file.
+The PowerShell form pipes the value straight to Wrangler and writes no file. Under Windows PowerShell 5.1, `Out-File` would write the value as UTF-16LE, two bytes per character. PowerShell 7 writes `utf8NoBOM`.
 
 `wrangler secret put` creates a new version of the Worker and deploys it immediately, without a build. A site on gradual deployments uses `wrangler versions secret put` instead, as Cloudflare's [Secrets](https://developers.cloudflare.com/workers/configuration/secrets/) page describes. The rest of this page assumes `wrangler secret put`.
 
-The adapter's `createGithubApp` call keeps the same App ID and installation ID, which are not secrets. Local `wrangler dev` reads secrets from `.dev.vars`, never from the deployed secret, so a key kept there for development needs the same replacement.
+The adapter's `createGithubApp` call keeps the same App ID and installation ID. Neither is a secret. Local `wrangler dev` reads secrets from `.dev.vars` and never from the deployed secret, so a key kept there needs the same replacement.
 
 ## Verify the new key
 
@@ -106,11 +104,9 @@ The `commit.failed` and `publish.failed` events come only from the commit step, 
 
 ## Delete the old key
 
-The old key is deleted on GitHub once every check passes, and GitHub offers no restore for a deleted key. To delete the key, follow this step:
+The old key is deleted on GitHub once every check passes. GitHub offers no restore for a deleted key, so from then on a failure of the new key is recovered with a third key, as [Generate a third key](#generate-a-third-key) describes. To delete the key, follow this step:
 
 - On the App's settings page on GitHub, delete the old private key, as [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps) describes.
-
-From here on, a failure of the new key is recovered with a third key, as [Generate a third key](#generate-a-third-key) describes.
 
 ## Recover from a failed key
 
@@ -120,7 +116,7 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
 1. If `/healthz` reports the detail `GITHUB_APP_PRIVATE_KEY_B64 is not configured`, the Worker holds no key.
 
-   The missing key also throws cairn's `github.app-unreachable` error on first token use, which the shell logs as a `github.unreachable` record. In the site's directory, run the push from [Push the new key to the Worker](#push-the-new-key-to-the-worker) again.
+   The missing key also throws cairn's `github.app-unreachable` error on first token use. In the site's directory, run the push from [Push the new key to the Worker](#push-the-new-key-to-the-worker) again.
 
 2. If `/healthz` reports `key import or sign failed` or `malformed JWT`, the secret is not a usable private key.
 

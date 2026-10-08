@@ -6,7 +6,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The engine's sign-in exists only to gate the admin, so out of the box it knows the two kinds of people who work there, owners and editors, and signs them in by an emailed magic link.",
+      "text": "The engine's sign-in exists only to gate the admin, so by default it knows the two kinds of people who work there, owners and editors, and signs them in by an emailed magic link.",
       "id": [
         "f:zxdoaf",
         "f:nz890r"
@@ -28,6 +28,10 @@
       ]
     },
     {
+      "text": "A declared role",
+      "id": "no-claim"
+    },
+    {
       "text": "Its people sign in by the same magic link and find the engine's content screens closed to them.",
       "id": "f:4673n6"
     },
@@ -42,6 +46,10 @@
         "f:cf1avu",
         "f:qqy4uq"
       ]
+    },
+    {
+      "text": "An auth channel",
+      "id": "no-claim"
     },
     {
       "text": "The channel keeps its sessions in a D1 database apart from `AUTH_DB`, and a channel session never becomes an editor's, so the group's area is a set of the site's SvelteKit routes outside `/admin`.",
@@ -80,19 +88,23 @@
       ]
     },
     {
-      "text": "The channel path follows the members channel in the repository's example site, `examples/showcase`, which signs members in at `/members/login` and gates `/members`.",
+      "text": "The channel path follows the members channel in the repository's example site, `examples/showcase`.",
       "id": "f:265s4t"
     },
     {
-      "text": "The example site's code delivery is a development stand-in, a capture transport that refuses outside the dev backend.",
+      "text": "That channel signs members in at `/members/login` and gates `/members`.",
+      "id": "f:265s4t"
+    },
+    {
+      "text": "It delivers codes through a capture transport for development, which refuses to run outside the dev backend.",
       "id": "f:rv9gdc"
     },
     {
-      "text": "The channel path writes a `deliver` for your transport in its place.",
+      "text": "The channel path replaces that transport with a `deliver` for your own.",
       "id": "f:rv9gdc"
     },
     {
-      "text": "The two mechanisms share no steps, so a developer who arrives having chosen, such as one sent here for a `none` role or to build a channel, builds only that path.",
+      "text": "The two mechanisms share no steps, so a developer who has already chosen follows only that path.",
       "id": "f:4673n6"
     },
     {
@@ -104,12 +116,19 @@
       "id": "no-claim"
     },
     {
-      "text": "Three related tasks belong to other pages:",
+      "text": "Other pages cover three related tasks:",
       "id": "no-claim"
     },
     {
       "text": "To let a group write the site's content, see [Restrict admin access](restrict-admin-access.md).",
       "id": "no-claim"
+    },
+    {
+      "text": "Such a group needs editor capability, since `none` closes the engine's content screens, and an access map narrows what it reaches.",
+      "id": [
+        "f:4673n6",
+        "f:p1xmp5"
+      ]
     },
     {
       "text": "To sign the editors themselves in through the organization's identity provider, see [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md).",
@@ -118,13 +137,6 @@
     {
       "text": "To assess the channel's threat surface and the hazards a site's delivery function can introduce, see [The auth channel's threat surface](security-model.md#the-auth-channels-threat-surface).",
       "id": "no-claim"
-    },
-    {
-      "text": "A group that writes content needs editor capability, since `none` closes the engine's content screens, and an access map narrows what it reaches.",
-      "id": [
-        "f:4673n6",
-        "f:p1xmp5"
-      ]
     },
     {
       "text": "Both mechanisms start from a cairn site whose editors already sign in by magic link, and each path adds the items labeled for it:",
@@ -161,12 +173,8 @@
       "id": "f:fcqs22"
     },
     {
-      "text": "The dev package declares that Node floor, and nothing enforces it at runtime.",
+      "text": "The dev package declares that minimum Node version, and nothing enforces it at runtime.",
       "id": "f:fcqs22"
-    },
-    {
-      "text": "Which mechanism to build is the first decision.",
-      "id": "no-claim"
     },
     {
       "text": "A second group signs in either as a declared role in the editors' roster in `AUTH_DB` or through a separate login built with `createAuthChannel`.",
@@ -177,14 +185,6 @@
     },
     {
       "text": "The following table compares the two mechanisms by where each keeps its people and what the site builds.",
-      "id": "no-claim"
-    },
-    {
-      "text": "A declared role",
-      "id": "no-claim"
-    },
-    {
-      "text": "An auth channel",
       "id": "no-claim"
     },
     {
@@ -296,10 +296,6 @@
       ]
     },
     {
-      "text": "The steps start with the role's declaration.",
-      "id": "no-claim"
-    },
-    {
       "text": "A role is one entry in the site's role vocabulary, declared with `defineRoles` on the adapter and passed to the guard, and an object entry's `home` names the `/admin` path its people land on.",
       "id": [
         "f:2zytgf",
@@ -312,12 +308,16 @@
       "id": "no-claim"
     },
     {
-      "text": "In `cairn.config.ts`, set the adapter's `roles` member to a `defineRoles` vocabulary that keeps `owner` and `editor` beside the `staff` entry.",
+      "text": "In the adapter module, set the adapter's `roles` member to a `defineRoles` vocabulary that keeps `owner` and `editor` beside the `staff` entry.",
       "id": [
         "f:2zytgf",
         "f:pvs115",
         "f:dbaklx"
       ]
+    },
+    {
+      "text": "The module is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the tutorial's.",
+      "id": "f:q07rd5"
     },
     {
       "text": "A site that already declares `roles`, as [Restrict admin access](restrict-admin-access.md) does in `src/access.ts`, adds the `staff` entry to that vocabulary instead.",
@@ -346,8 +346,16 @@
       ]
     },
     {
-      "text": "The import uses `#lib`, which the `imports` field of `package.json` maps to `src/lib`, since SvelteKit 3 refuses a `$lib` import.",
+      "text": "SvelteKit 3 refuses a `$lib` import.",
       "id": "f:pgeeq3"
+    },
+    {
+      "text": "The import uses `#lib`, which the `imports` field of `package.json` maps to `src/lib`.",
+      "id": "f:pgeeq3"
+    },
+    {
+      "text": "A scaffolded site imports the adapter module through `#theme` instead.",
+      "id": "f:q07rd5"
     },
     {
       "text": "The vocabulary keeps `owner` and `editor` for two reasons.",
@@ -357,18 +365,19 @@
       ]
     },
     {
-      "text": "`defineRoles` throws without an `owner` key mapped to owner capability, and a roster row whose role the vocabulary omits resolves to `none`, so dropping `editor` would close the content screens to every existing editor.",
-      "id": [
-        "f:dbaklx",
-        "f:zjglk8"
-      ]
+      "text": "`defineRoles` throws without an `owner` key mapped to owner capability.",
+      "id": "f:dbaklx"
+    },
+    {
+      "text": "A roster row whose role the vocabulary omits resolves to `none`, so dropping `editor` would close the content screens to every existing editor.",
+      "id": "f:zjglk8"
     },
     {
       "text": "A `home` must be an absolute path under `/admin`, or `defineRoles` throws.",
       "id": "f:pvs115"
     },
     {
-      "text": "At `/admin`, the index redirects a role that declares a `home` to that path, and it shows a `none` role without one a welcome screen.",
+      "text": "At `/admin`, the index redirects a role that declares a `home` to that path, and it shows a welcome screen to a `none` role with no `home`.",
       "id": "f:7n28wc"
     },
     {
@@ -382,10 +391,6 @@
     {
       "text": "The [roles reference](../reference/core.md#defineroles) states the full rules for a declaration.",
       "id": "no-claim"
-    },
-    {
-      "text": "The `home` path needs a screen before anyone lands there.",
-      "id": "f:pvs115"
     },
     {
       "text": "The home path is a custom admin screen the site builds, and it gates on the session's role, because the access map admits no `none`-capability session.",
@@ -410,30 +415,34 @@
       ]
     },
     {
-      "text": "The screen checks the role itself because `requireAccess` refuses every `none` session whatever the map says, since capability is the floor that the map only narrows.",
+      "text": "`requireAccess` refuses every `none` session whatever the map says, so the screen checks the role itself.",
       "id": [
         "f:p1xmp5",
         "f:8anql1"
       ]
     },
     {
-      "text": "The role's session is an ordinary roster row that populates `locals.cairnEditor` like an editor's, with `capability` resolved to `none`, so the session carries the role the screen checks.",
+      "text": "Each of the role's people is an ordinary roster row.",
       "id": "f:5t6hz6"
     },
     {
-      "text": "An action on the screen needs the same check, since `createSectionAction` runs the map check on every call and refuses the role.",
+      "text": "Their session populates `locals.cairnEditor` like an editor's, with `capability` resolved to `none`, and the screen reads `role` from it.",
+      "id": "f:5t6hz6"
+    },
+    {
+      "text": "An action on the screen needs the same check.",
+      "id": "no-claim"
+    },
+    {
+      "text": "`createSectionAction` would refuse the role, because it runs the map check on every call.",
       "id": [
         "f:xbjxit",
         "f:p1xmp5"
       ]
     },
     {
-      "text": "`createAdminAction` with its `access` option omitted authorizes nothing, so its handler checks the role itself.",
+      "text": "With its `access` option omitted, `createAdminAction` authorizes nothing, and its handler checks the role instead.",
       "id": "f:xbjxit"
-    },
-    {
-      "text": "The screen's sidebar link comes next.",
-      "id": "no-claim"
     },
     {
       "text": "A `navLayout` entry with a `roles` list shows the home screen's link only to the roles it names.",
@@ -444,7 +453,7 @@
       "id": "no-claim"
     },
     {
-      "text": "In `cairn.config.ts`, add a `navLayout` entry for `/admin/staff` to the adapter's `editor` group, with `roles` set to the `staff` role.",
+      "text": "In the adapter module, add a `navLayout` entry for `/admin/staff` to the adapter's `editor` group, with `roles` set to the `staff` role.",
       "id": [
         "f:ys1iq1",
         "f:16paho",
@@ -460,10 +469,6 @@
       "id": "f:16paho"
     },
     {
-      "text": "Hiding a link is never authorization, so the screen's role check is what refuses everyone else.",
-      "id": "f:bvfs3e"
-    },
-    {
       "text": "The home path takes no rule in the access map.",
       "id": [
         "f:altcjp",
@@ -471,18 +476,22 @@
       ]
     },
     {
-      "text": "An entry whose href matches a map rule shows only to the roles `canReach` admits, and `canReach` admits no `none` session.",
+      "text": "A sidebar entry whose href matches a rule shows only to roles `canReach` admits, and `canReach` admits no `none` session, so a rule would hide the link from staff.",
       "id": [
         "f:altcjp",
         "f:p1xmp5"
       ]
     },
     {
+      "text": "The screen's role check refuses everyone else, whatever the sidebar shows.",
+      "id": "f:bvfs3e"
+    },
+    {
       "text": "[Restrict admin access](restrict-admin-access.md) covers the access map itself, and [Arrange the admin sidebar](arrange-the-admin-sidebar.md) covers the rest of the sidebar.",
       "id": "no-claim"
     },
     {
-      "text": "The role's people come last, once the screen they land on exists.",
+      "text": "[Arrange the admin sidebar](arrange-the-admin-sidebar.md) covers the rest of the sidebar.",
       "id": "no-claim"
     },
     {
@@ -532,16 +541,16 @@
       "id": "f:nj0nfm"
     },
     {
-      "text": "The role is ready to verify.",
-      "id": "no-claim"
-    },
-    {
       "text": "A working role signs its people in by the magic link onto the home screen, with the screen's link in the sidebar and the engine's content screens closed to them.",
       "id": [
         "f:4673n6",
         "f:7n28wc",
         "f:16paho"
       ]
+    },
+    {
+      "text": "If a check fails, see [Resolve a failed setup](#resolve-a-failed-setup).",
+      "id": "no-claim"
     },
     {
       "text": "To confirm that the role works, follow these steps:",
@@ -582,10 +591,6 @@
       "id": "f:4673n6"
     },
     {
-      "text": "If a check fails, see [Resolve a failed setup](#resolve-a-failed-setup).",
-      "id": "no-claim"
-    },
-    {
       "text": "`createAuthChannel` builds the request, confirm, and logout actions for a separate login over a numeric code.",
       "id": "f:we2lmp"
     },
@@ -605,11 +610,7 @@
       ]
     },
     {
-      "text": "The channel's database comes first.",
-      "id": "no-claim"
-    },
-    {
-      "text": "The channel keeps its codes and sessions in a separate D1 database, bound beside `AUTH_DB` and never as it, with the packaged migration in a sibling migrations directory.",
+      "text": "The channel keeps its codes and sessions in another D1 database, bound under a separate name beside `AUTH_DB`, with the packaged migration in a sibling migrations directory.",
       "id": [
         "f:rcpe0n",
         "f:5rkxfp"
@@ -663,10 +664,6 @@
     {
       "text": "The reference's [packaged migration](../reference/auth-channel.md#the-packaged-migration) section describes the schema the file installs.",
       "id": "no-claim"
-    },
-    {
-      "text": "The channel module's `resolveDb` returns this binding.",
-      "id": "f:rcpe0n"
     },
     {
       "text": "A channel is one `createAuthChannel` call in a server-only module.",
@@ -888,10 +885,6 @@
       "id": "no-claim"
     },
     {
-      "text": "A confirmed code lands the member on `/members`, which needs a gate.",
-      "id": "f:265s4t"
-    },
-    {
       "text": "A channel session never populates `locals.cairnEditor`, so the member area lives in the site's own routes outside `/admin`.",
       "id": "f:q7fj6p"
     },
@@ -982,10 +975,6 @@
       "id": "no-claim"
     },
     {
-      "text": "A Vitest run on Node can prove the channel before it deploys.",
-      "id": "no-claim"
-    },
-    {
       "text": "`createChannelDb`, exported from `@glw907/cairn-cms-dev`, applies the channel's migration to an in-memory SQLite database and returns a D1-shaped double, so a Vitest run on Node can drive the channel's actions with no Worker.",
       "id": [
         "f:0l7si2",
@@ -1013,18 +1002,22 @@
       "id": "no-claim"
     },
     {
-      "text": "The mock supplies the Worker env and a `waitUntil` that collects promises, held in a hoisted object so the mock factory can reach them, since the engine reads every binding and `waitUntil` from `cloudflare:workers`.",
+      "text": "The engine reads every binding and `waitUntil` from `cloudflare:workers`.",
+      "id": "f:nv475y"
+    },
+    {
+      "text": "The mock supplies the Worker env and a `waitUntil` that collects promises, held in a hoisted object so the mock factory can reach them.",
       "id": [
         "f:nv475y",
         "f:1stlyv"
       ]
     },
     {
-      "text": "Inlining runs the engine through Vitest's transform, so that mock reaches the engine's import.",
+      "text": "Because the package is inlined, Vitest transforms the engine, and the mock reaches its import.",
       "id": "f:1stlyv"
     },
     {
-      "text": "The double goes on the mocked env as `MEMBER_DB`, built from the site's copy of the migration, the file its binding applies.",
+      "text": "The double goes on the mocked env as `MEMBER_DB`, built from the same migration file the binding applies.",
       "id": [
         "f:0l7si2",
         "f:uci4pa"
@@ -1035,7 +1028,11 @@
       "id": "no-claim"
     },
     {
-      "text": "The event carries a local URL and an `Origin` header that matches it, since every action refuses a mismatched `Origin` or plain http outside a local host.",
+      "text": "Every action refuses a mismatched `Origin` or plain http outside a local host.",
+      "id": "f:wu8x70"
+    },
+    {
+      "text": "The event therefore carries a local URL and an `Origin` header that matches it.",
       "id": "f:wu8x70"
     },
     {
@@ -1052,10 +1049,6 @@
     {
       "text": "Under `wrangler dev`, the channel reads the local D1 database that [Provision the channel database](#provision-the-channel-database) migrated.",
       "id": "f:l2xruc"
-    },
-    {
-      "text": "A passing test leaves the channel ready to deploy.",
-      "id": "no-claim"
     },
     {
       "text": "The deployed site needs the channel's migration on the remote database and the Turnstile secret as a Worker secret before the code that reads them goes live.",
@@ -1084,7 +1077,7 @@
       "id": "no-claim"
     },
     {
-      "text": "Because `wrangler secret put` creates and deploys a new Worker version at once, the secret is live before the deploy ships the code that reads it.",
+      "text": "`wrangler secret put` deploys a new Worker version at once, so the secret is in place before the final deploy ships the code that reads it.",
       "id": "f:86h9o6"
     },
     {
@@ -1124,17 +1117,17 @@
       "id": "f:265s4t"
     },
     {
-      "text": "If a check fails, see [Resolve a failed setup](#resolve-a-failed-setup).",
-      "id": "no-claim"
-    },
-    {
-      "text": "The following checks cover the common failures, the role's on `/admin/editors` and at its home screen, then the channel's at construction and at the challenge:",
+      "text": "The first three checks cover the role, and the rest cover the channel.",
       "id": [
         "f:nj0nfm",
         "f:rn62i1",
         "f:7n28wc",
         "f:vo4m61"
       ]
+    },
+    {
+      "text": "Run the checks in order:",
+      "id": "no-claim"
     },
     {
       "text": "If adding a person with the new role fails on `/admin/editors`, apply `0001_roles.sql` to the auth database as [Add the role's people](#add-the-roles-people) does.",
@@ -1217,10 +1210,6 @@
     },
     {
       "text": "[Restrict admin access](restrict-admin-access.md) narrows which editor-capability roles reach which admin screens.",
-      "id": "no-claim"
-    },
-    {
-      "text": "[Arrange the admin sidebar](arrange-the-admin-sidebar.md) covers the rest of the sidebar.",
       "id": "no-claim"
     },
     {

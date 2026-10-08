@@ -2,37 +2,44 @@
 
 A site that `create-cairn-site` scaffolded arrives as a complete SvelteKit project in its own GitHub
 repository, already deployed as a Cloudflare Worker, with the engine, `@glw907/cairn-cms`, listed as
-one ordinary dependency in `package.json`. Its theme is Waymark, cairn's reference reading theme, on
-a chassis of shared plumbing, both baked from the same tree the engine tests itself against.
-SvelteKit mounts the admin as one catch-all route pair under `/admin` and the public site as a
-prerendered route group, a server hook guards `/admin`, and the SvelteKit config sits inline in
-`vite.config.ts` with no `svelte.config.js`. On the Cloudflare side, `wrangler.jsonc` declares the
-Worker's two D1 databases, its Email Sending binding, and its R2 bucket. On the GitHub side, the
-repository holds the code and the markdown, the site's GitHub App commits each editor's publish into
-it, and a GitHub Actions workflow checks every push and pull request.
+one ordinary dependency in `package.json`. Its theme is Waymark, cairn's reference reading theme.
+Waymark runs on the chassis, the plumbing every scaffolded site shares. The setup command copies
+both from the tree the engine tests itself against.
 
-Every file in the tree belongs to the site, since the npm package carries neither Waymark nor the
-chassis. An engine upgrade moves the `@glw907/cairn-cms` range and leaves the tree as it is. Any
-change a release needs in the site's code, a new D1 migration included, is the site's to make, as
-the changelog's `Consumers must:` lines name it. Owning a file does not leave it unread, since some
-files carry a contract with a reader outside the site's code. The engine reads the adapter in
+SvelteKit mounts the admin as one catch-all route pair under `/admin`, and it mounts the public site
+as a prerendered route group. A server hook guards `/admin`. The SvelteKit config sits inline in
+`vite.config.ts`, and the project has no `svelte.config.js`. `wrangler.jsonc` declares the Worker's
+Cloudflare bindings, among them two D1 databases and an R2 bucket. The GitHub repository holds the
+code and the markdown, and the site's GitHub App commits each editor's publish into it. A GitHub
+Actions workflow checks every push and pull request.
+
+Every file in the tree belongs to the site. The npm package carries neither Waymark nor the chassis,
+and an engine upgrade moves only the `@glw907/cairn-cms` range and leaves the tree as it is. When a
+release needs a change in the site's code, such as a new D1 migration, the changelog's
+`Consumers must:` lines name it, and the site makes the change.
+
+Some files have a reader outside the site's code. The engine reads the adapter in
 `src/theme/cairn.config.ts`, the server hook that installs the guard, and the bindings in
-`wrangler.jsonc`. The admin commits editors' work into the content directories and their manifests,
-and `/admin/nav` writes the primary menu in `site.config.yaml`. A few more can fail the CI workflow
-or the build, since `check.yml` runs the checks and the prerender handlers in `vite.config.ts` throw
-on an unseen route or an HTTP error. Those files share directories with files only the site reads,
-as the adapter shares `src/theme/` with the theme's style sheets, so a file's directory does not
-say whether it carries a contract.
+`wrangler.jsonc`. The admin commits editors' work into the content directories and their manifests.
+The `/admin/nav` screen writes the primary menu in `site.config.yaml`. A few more files can fail the
+CI workflow or the build. `check.yml` runs the checks, and the prerender handlers in
+`vite.config.ts` throw on an unseen route or an HTTP error. The adapter shares `src/theme/` with the
+theme's style sheets, so a file's directory doesn't show whether it carries a contract.
 
-A developer who ran the setup command, or who took over a site from someone who did, needs to know
-what each file does and whether to change it. One who took over also lacks the state the command
-left outside the repository, which includes its saved record on the machine that ran it. When the
-run connected Workers Builds, that state also includes the build token the site deploys on, whose
-revocation stops deploys without warning. A reader who knows the engine's import points and seams
-from [Architecture](architecture.md) finds where each lands in the tree, and a reader working on the
-theme finds the files around it. A developer still choosing between the setup command and the
-by-hand build sees what the command writes. One adding cairn to an app that already exists has no
-choice to make, since the setup command writes only into a missing or empty directory.
+A developer reads this page for one of the following reasons:
+
+- To learn what each file in a scaffolded site does, and whether to change it
+- To take over a site that someone else scaffolded
+- To find where each of the engine's import points and seams from [Architecture](architecture.md)
+  lands in the tree
+- To find the files around the theme while working on it
+- To see what the setup command writes before choosing between it and the by-hand build
+
+A developer who takes over a site also lacks the state the setup command left outside the
+repository. That state includes the command's saved record on the machine that ran it. When the run
+connected Workers Builds, it also includes the build token the site deploys on. Revoking that token
+stops deploys without warning. A developer adding cairn to an app that already exists has no choice
+to make, since the setup command writes only into a missing or empty directory.
 
 A new owner's questions about a scaffolded site's files and state fall under the following subjects:
 
@@ -62,18 +69,12 @@ Separate pages cover the following related work:
 
 ## The scaffold
 
-A scaffolded site is Waymark, cairn's reference theme, wired into a chassis of design-neutral
-plumbing, both baked into the setup command's package from the engine repository's
-`examples/showcase`, the tree the engine tests itself against. The bake prunes the showcase's
-Playwright suite, its design-review routes (`theme-kit` and `probe-craft`), its test routes, and a
-members-login fixture. Waymark is the
-only template the setup command ships, and a second, Topo, is planned but not shipped. The same run
-created the site's GitHub App, its repository, and its Cloudflare bindings, and deployed the site,
-so the site arrives already live.
-
-The npm package's `files` list carries neither Waymark nor the chassis, so no engine release ships a
-newer copy of any file in the tree. An engine update arrives through the `@glw907/cairn-cms`
-dependency and leaves the tree's files as they are.
+The setup command's package carries Waymark and the chassis. They are copied from the engine
+repository's example site, `examples/showcase`, the same tree the engine runs its tests against. The
+copy leaves out the example site's Playwright suite, its design-review routes (`theme-kit` and
+`probe-craft`), its test routes, and a members-login fixture. Waymark is the only template the setup
+command ships. The same run created the site's GitHub App, its repository, and its Cloudflare
+bindings, and deployed the site, so the site arrives already live.
 
 A site built by hand from `sv create` starts with neither Waymark nor the chassis, as
 [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) describes. A file the site owns can
@@ -86,7 +87,7 @@ writes, and `[gate]` marks a file a check reads that can fail the build or the C
 
 ```text
 .
-├── .claude/                      [engine]
+├── .claude/
 │   ├── agents/
 │   ├── cairn/
 │   └── skills/
@@ -140,24 +141,21 @@ writes, and `[gate]` marks a file a check reads that can fail the build or the C
 ```
 
 The tree shows the entries the following sections cover and leaves out files no section discusses.
-`CLAUDE.md` and `.claude/` are Claude Code's files, listed under
-[`CLAUDE.md` and `.claude/`](#claudemd-and-claude). `CLAUDE.md` carries no marker, since
-`cairn-guidance check` reads it only to report whether it holds the import line, a report that
-never fails the CI run, and `cairn-guidance install` never rewrites it. The `[engine]` marker on
-`.claude/` marks the tree that `cairn-guidance install` writes.
+`CLAUDE.md` and `.claude/` are Claude Code's guidance files. The [guidance
+reference](../reference/guidance.md) covers them.
 
 ## Root files
 
 Beside a plain SvelteKit project's files, the root carries a CI workflow, a template for local
-secrets, the audit's config, and the Claude Code guidance.
+secrets, the audit's config, and a `.gitignore` the setup command renames.
 
 ### `.github/workflows/check.yml`
 
-The workflow runs `npm install`, `npm run check`, and `npm run check:cairn` on every push and pull
-request. It pins `node-version: 24`, the only Node version the scaffold names, since it ships
-neither an `.nvmrc` nor an `engines` field. Its last step reports Claude Code guidance status and
-never fails the job. The [guidance reference](../reference/guidance.md) covers the step. The workflow
-installs no browser, so the `check:cairn:rendered` script cannot run in it.
+On every push and pull request, the workflow installs dependencies and runs `npm run check` and
+`npm run check:cairn`. It uses Node 24. Nothing else in the scaffold names a Node version. There's no
+`.nvmrc` and no `engines` field. The last step reports Claude Code guidance status, but that step
+can't fail the job. The [guidance reference](../reference/guidance.md) covers it. No browser is
+installed, so `check:cairn:rendered` can't run in CI.
 
 ### `.dev.vars.example`
 
@@ -173,11 +171,8 @@ The audit's config names both compiled admin sheets, the engine's
 `node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css` and the site's `.cairn/admin.css`, so
 the static audit sees every class the site's admin routes write. The site's sheet is a gitignored
 build output in a `.cairn/` directory at the project root, separate from the committed
-`src/content/.cairn/`. [Run cairn-audit on your site](run-cairn-audit-on-your-site.md) covers the config in depth.
-
-### `CLAUDE.md` and `.claude/`
-
-These are Claude Code's guidance files, covered in the [guidance reference](../reference/guidance.md).
+`src/content/.cairn/`. [Run cairn-audit on your site](run-cairn-audit-on-your-site.md) covers the
+config in depth.
 
 ### `.gitignore`
 
@@ -191,13 +186,10 @@ the local `.dev.vars` and the compiled `.cairn/admin.css`, which the pre-scripts
 The files `LICENSE`, `README.md`, `.prettierignore`, `.prettierrc`, `tsconfig.json`, and
 `vitest.config.ts` are a plain project's files. The `worker-configuration.d.ts` file is the
 generated `wrangler types` output that `src/app.d.ts` references. The `scripts/` directory holds the
-`dev.mjs` that the `dev` script runs. The `src/lib/` directory, imported through `#lib`, holds
-`log.ts`, the site's own [`createLogger`](../reference/log.md#createlogger) instance over the site's
-own event names. The two migration directories are covered under
-[Database migrations](#database-migrations).
-
-The `check` and `check:cairn` commands the CI workflow runs are scripts in `package.json`, the first
-of the site's configuration files.
+`dev.mjs` that the `dev` script runs. The `src/lib/` directory is imported through `#lib`. It holds
+`log.ts`, which creates the site's logger with [`createLogger`](../reference/log.md#createlogger)
+for event names the site defines. The two migration directories are covered under [Database
+migrations](#database-migrations).
 
 ## Configuration files
 
@@ -241,7 +233,7 @@ route, `/admin` included, and cairn's guard adds a double-submit token on top. S
 
 The `cairnManifest` plugin regenerates the committed content manifest on every build, and the
 `src/content/.cairn/` entry states what fails when it drifts. The `__CAIRN_DEV_BUILD__` define is
-the build-time half of the dev-backend gate, which the server hook reads.
+the build-time half of the dev-backend gate. The server hook reads it.
 
 ### `src/app.d.ts`
 
@@ -253,7 +245,7 @@ root layout load returns. It references `@cloudflare/workers-types` and the
 
 It also declares an optional `CAIRN_DEV_BACKEND` on `Cloudflare.Env`, because the chassis dev gate
 reads it and `wrangler types` generates only what `wrangler.jsonc` and `.dev.vars.example` name. The
-flag is a dev-only opt-in, never a production variable.
+flag is a dev-only opt-in.
 
 ### `wrangler.jsonc`
 
@@ -265,12 +257,12 @@ The Worker's config declares the following bindings and one variable:
 - `MEDIA_BUCKET`, the R2 bucket that [Configure media](configure-media.md) sets up
 - `PUBLIC_ORIGIN`, a plain variable
 
+Each D1 binding names its own `migrations_dir`, so the site carries one migration directory per
+database.
+
 The `observability.enabled` setting is `true`, so Workers Logs records the Worker's logs. The
 `assets.not_found_handling` setting is `"none"`, and [Themed 404 page](#themed-404-page) explains
 why.
-
-Each D1 binding names its own `migrations_dir`, so the site carries one migration directory per
-database.
 
 ## Database migrations
 
@@ -292,7 +284,8 @@ describes.
 This directory holds `0000_signups.sql`, the `signups` table with `id`, `name`, and `email` columns
 behind `/admin/signups`. The `migrations_dir` of `APP_DB` points at it, because a directory shared
 with `migrations/` would apply each schema to both databases. The signups table backs the one custom
-admin screen among the scaffold's routes, which reads it only after `migrations-app/` is applied.
+admin screen among the scaffold's routes. That screen reads the table only after `migrations-app/`
+is applied.
 
 ## Routes and the server hook
 
@@ -371,10 +364,10 @@ outside `/admin`. [Configure media](configure-media.md) sets up the bucket, and 
 
 The `healthz/` route sits outside `/admin`, so the guard does not gate it. It returns the
 `loadHealth` payload `{ ok, checks: { githubAppSigning } }` as JSON with status 200 even on failure,
-catches a thrown error into the same shape, and sets `prerender = false`. Because the status is 200
-either way, a monitor reads the `ok` field for the verdict.
-[Why `/healthz` lives at the site root](../reference/admin-routes.md#why-healthz-lives-at-the-site-root)
-in the admin mount reference explains the placement.
+catches a thrown error into the same shape, and sets `prerender = false`. A monitor reads the `ok`
+field for the verdict. [Why `/healthz` lives at the site
+root](../reference/admin-routes.md#why-healthz-lives-at-the-site-root) in the admin mount reference
+explains the placement.
 
 ### Root layout and error page
 
@@ -384,8 +377,7 @@ that runs on every non-prerendered request never imports the adapter. The `SiteH
 the root `+error.svelte` read that data through `page.data`. The error page is the site's themed 404
 and error page, which [Themed 404 page](#themed-404-page) explains. The admin mount reference covers
 the root layout's limits in [The root layout must be
-chrome-free](../reference/admin-routes.md#the-root-layout-must-be-chrome-free). The menus and the
-site name the root layout returns come from `src/theme/`, the directory that also holds the adapter.
+chrome-free](../reference/admin-routes.md#the-root-layout-must-be-chrome-free). 
 
 ## Theme, chassis, and content
 
@@ -404,26 +396,25 @@ cairn to a SvelteKit app covers the email's sender and copy.
 
 The rest of the directory holds the following files:
 
-- `site-config.ts`, the one `parseSiteConfig` call, over `site.config.yaml`
+- `site-config.ts`, which makes the one `parseSiteConfig` call over `site.config.yaml`
 - `site.config.yaml`, which holds `siteName`, `description`, the primary and footer menus, and the
   tag `vocabulary`
-- `markdown-components.ts`, with nine `defineComponent` declarations, one of them hydrated
-- `icons.ts`, the `IconSet` the components and the picker draw from
-- `components/`, the chrome: `ArticleView`, `EntryRow`, `SiteFooter`, `SiteHeader`, and
-  `admin-link.ts`
+- `markdown-components.ts`, which holds nine `defineComponent` declarations, one of them hydrated
+- `icons.ts`, which holds the `IconSet` the components and the picker draw from
+- `components/`, which holds the chrome (`ArticleView`, `EntryRow`, `SiteFooter`, `SiteHeader`, and
+  `admin-link.ts`)
 - `islands/`, which holds `Banner.svelte`, its `registry.ts`, and `banner-expiry.ts`
 - `theme.css` and `site.css`, which [Style sheets](#style-sheets) covers
-- `theme-names.ts`
+- `theme-names.ts`, which holds the two daisyUI theme names that a theme rename edits
 
 [Theme your public site](theme-your-public-site.md) covers changing these files.
 
 ### `src/chassis/`
 
 The chassis is the design-neutral plumbing every scaffolded site shares, copied into the tree with
-Waymark, so an engine update leaves it unchanged.
-[The chassis boundary](theme-your-public-site.md#the-chassis-boundary) in Theme your public site
-covers what it holds and when a port edits it. Its `archive.ts` holds the archive's page size, which
-[Settings outside the admin](#settings-outside-the-admin) covers.
+Waymark. [The chassis boundary](theme-your-public-site.md#the-chassis-boundary) in Theme your public
+site covers what it holds and when a port edits it. Its `archive.ts` holds the archive's page size,
+which [Settings outside the admin](#settings-outside-the-admin) covers.
 
 ### `src/content/`
 
@@ -449,13 +440,14 @@ site's from `theme.css` and `site.css`.
 
 ### `src/admin.css`
 
-Its last line imports `@glw907/cairn-cms/admin-sources.css`, an engine-owned file that holds only
-the `@source` directives for the engine's shipped admin markup, resolved from the file's installed
-location. The pre-scripts compile it into the gitignored `.cairn/admin.css` at the project root, one
-of the two sheets `cairn-audit.config.json` names. The config's other entry is the engine's
-precompiled `dist` sheet, a different artifact that the sources import does not replace. The audit's
-`no-uncompiled-class` rule checks classes against that compile. A compile failure in this file fails
-`npm run check`, `npm run build`, and `npm run check:cairn`, since each compiles it first.
+Its last line imports `@glw907/cairn-cms/admin-sources.css`. That engine-owned file holds only the
+`@source` directives for the engine's shipped admin markup, resolved from the file's installed
+location. The pre-scripts compile `src/admin.css` into the gitignored `.cairn/admin.css` at the
+project root. `cairn-audit.config.json` names that sheet beside the engine's precompiled `dist`
+sheet. The `dist` sheet is a different artifact, and the sources import doesn't replace it. The
+audit's `no-uncompiled-class` rule checks classes against the compiled output. `npm run check`,
+`npm run build`, and `npm run check:cairn` each compile the file first, so a compile error in it
+fails all three.
 
 ### `src/theme/theme.css` and `src/theme/site.css`
 
@@ -477,9 +469,6 @@ newest one, which the home page shows as its lead, so a new site with its 14 see
 The `/admin/nav` screen edits only `menus.primary`. The footer menu, `menus.footer`, is a flat menu
 the developer edits by hand in `site.config.yaml`, read through `readMenu(siteConfig, 'footer', 1)`.
 
-The archive route the page size governs is also the one route the build's unseen-route check
-exempts.
-
 ## Crawl rules
 
 The prerender crawl fails the build on an unseen route or an HTTP error, and the scaffold keeps its
@@ -499,9 +488,6 @@ requests it. Every `/admin` route answers a build-time crawl with an error, and 
 shared `isAdminHref` predicate in `admin-link.ts` under `src/theme/components/`. A new `/admin` link
 in public markup needs the same attribute.
 
-A path the build never emitted is answered at request time, and the scaffold's `wrangler.jsonc`
-passes it to the Worker so the themed 404 page can render.
-
 ## Themed 404 page
 
 A scaffolded site serves a themed 404 page through two pieces that need each other, the root
@@ -514,10 +500,10 @@ itself. It reads the menus and the site name through `page.data` from the root `
 
 The `"none"` value passes an unmatched request to the Worker, where the error page renders. The
 `"404-page"` value would serve an unthemed static file from the edge without invoking the Worker.
-Cloudflare's
-[Worker script routing page](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/)
-documents both values. With `"404-page"`, the error page never runs, and without the root error
-page, no layout rebuilds the chrome for an unmatched path.
+Cloudflare's [Worker script routing
+page](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/) documents both
+values. With `"404-page"`, the error page never runs, and without the root error page, no layout
+rebuilds the chrome for an unmatched path.
 
 ## Setup state outside the tree
 
@@ -533,20 +519,17 @@ ran the command.
 
 A resumed run reads the saved answers from that record, so the run resumes only on a machine that
 holds the file. On a resumed run, `--org`, `--repo-name`, `--app-name`, and `--owner-email`
-override the saved answer for any setup step not yet run. The `--brand-color` flag takes a
-`#`-prefixed hex color, an `oklch(...)` string, or a bare number read as a hue in degrees, and any
-other shape fails.
+override the saved answer for any setup step not yet run.
 
 The build token is named `cairn create-cairn-site build token`, and the Workers Builds step reuses
 an existing build token that wraps the same token id. Revoking or rolling that token at Cloudflare
 breaks automatic deploys with no prior warning. The next commit still triggers a build, and the
 build fails. The API token setting in the Worker's Workers Builds build configuration holds the
 token its builds authenticate with. A new owner can create an API token of their own and select it
-there, as Cloudflare's
-[build configuration page](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token)
-describes.
+there, as Cloudflare's [build configuration
+page](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token) describes.
 
-## Related resources
+## See also
 
 The following guides cover changing or rebuilding parts of the tree.
 

@@ -59,7 +59,7 @@ Apply them by relationship, not by eyeballing a value that happens to render clo
 - A field grid's own row-to-row gap is `gap-group`'s relationship (1rem); the gap *between*
   two field columns in that same grid is `gap-section`'s relationship (1.5rem), wide enough
   that a reader never mistakes the right column's first label as continuing the left column's
-  last row. `ClassForm`'s two-column attribute grid (`grid gap-x-6 gap-y-4 sm:grid-cols-2`)
+  last row. A two-column attribute grid (`grid gap-x-6 gap-y-4 sm:grid-cols-2`)
   already resolves both axes to the correct values.
   This one cannot become a cairn-native rewrite by swapping in the named utilities, though:
   `gap-group` and `gap-section` both set the single `gap` shorthand property (`@utility
@@ -73,8 +73,8 @@ Apply them by relationship, not by eyeballing a value that happens to render clo
   utilities yet.
 - A modal's own footer row (`Cancel` beside `Save`) is `gap-control`: two controls acting on
   the same submission, not two fields.
-- A block that is visually a distinct group from the fields above it (`ClassForm`'s
-  free-text block: Description, Instructor notes, Reminder note override) still wants
+- A block that is visually a distinct group from the fields above it (a form's
+  free-text block: Description, Internal notes, Reminder note override) still wants
   `gap-section`-scale separation from the grid above it, expressed as a `border-t` plus its
   own padding rather than a bare gap, since the boundary needs to read even when the two
   blocks sit inside the same unbroken card.
@@ -84,7 +84,7 @@ Apply them by relationship, not by eyeballing a value that happens to render clo
 **A row using the inline control-adjacent register must be verified at the actual widths the
 form renders at, not assumed safe once it clears its own mobile breakpoint.**
 
-The traced defect: `ClassForm`'s `sm:grid-cols-2` grid holds every field in the inline
+The traced defect: a form's `sm:grid-cols-2` grid holds every field in the inline
 register (`FieldLabel`, label beside control on one flex row). At 1440 the form's own card
 caps its width well below the viewport, so each grid column is a fixed, narrow track, and a
 longer label ("Reminder note override") paired with a full-width control has nowhere to give:

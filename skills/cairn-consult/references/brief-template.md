@@ -8,7 +8,7 @@ item in the same document.
 ```markdown
 ### <item slug>
 
-1. **What the pass builds:** <the site feature, one paragraph>
+1. **What the site is building:** <the site feature, one paragraph>
 2. **The engine edge it presses:** <surface, `file:line` where known>
 3. **Evidence for the any-site case:** <recurrence, measurements, prior instances>
 4. **The site's fallback if declined:** <the hand-roll, with its rough size>

@@ -43,7 +43,7 @@
    band was cairn's own last caller, retired onto StatusChip's chip vocabulary, and they stay
    compiled here for any consumer's own hand-authored admin markup still riding them. */
 @source inline("badge-ghost badge-warning badge-info badge-neutral gap-6 text-2xl text-3xl text-[0.625rem] text-[0.6875rem] text-[0.6rem] text-[0.75rem] text-[0.7rem] text-[0.8125rem] text-[0.875rem] text-[0.9375rem] text-[0.9em] text-[1.0625rem] text-base text-lg text-sm text-xs tracking-tight");
-/* SKILL-EXEMPLAR SAFELIST (ASC Assets-trial harvest finding 2, 2026-07-30). The
+/* SKILL-EXEMPLAR SAFELIST. The
    cairn-admin-screens skill's own reference docs teach class recipes cairn's own tree never
    calls, so a Tailwind tree-shake drops them from the shipped sheet with no warning: a consumer
    who copies the recipe verbatim gets markup that silently renders unstyled, then cairn-audit's

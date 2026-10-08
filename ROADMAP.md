@@ -325,7 +325,7 @@ The original decision framing, for the record:
   migration is the complete docs' acceptance test, run as a site pass that follows the docs. Friction
   a migration finds is handled then, by the same test. The expected shape is the conductor's
   forecast, accepted by Geoff (2026-10-07), not a schedule: an engine pass before 2b (below), likely
-  one before stage 4 for the editor screenshots, probably none before stages 3 and 5, and a batch
+  one before stage 4 for the live-reproduction seam, probably none before stages 3 and 5, and a batch
   before the final release.
 
   **The path to the release, with each engine pass in its slot.** Every stage close re-runs the test
@@ -337,8 +337,12 @@ The original decision framing, for the record:
      stage 2b" items ride with it (or run as their own dotfiles pass).
   3. Stage 2b: the 14 remaining extend pages. Its close runs the test.
   4. Stage 3: the admin arm. Forecast: no engine pass after it.
-  5. **Engine pass before stage 4** (forecast): the editor screenshots, plus the batched items marked
-     "for the stage 4 boundary" in the Next tier's batched engine friction entry.
+  5. **Engine pass before stage 4** (forecast): the live UI reproduction seam (the docs render the
+     actual admin components, never screenshots; Pass D's 2026-08-14 ruling, reaffirmed by Geoff
+     2026-10-08: "As much as possible, we should be building components live for the docs rather
+     than using screenshots"), plus the batched items marked "for the stage 4 boundary" in the Next
+     tier's batched engine friction entry. Stages 2b and 3 outline any visual half as a live
+     reproduction from the start, and file a need the seam must meet.
   6. Stage 4: the editors arm. Stage 5: the front door. Forecast: no engine pass between them.
   7. **The final engine batch:** every item still in the Next tier's batched engine friction and
      reference-arm corrections entries, the held dependency majors whose tripwires have fired, and

@@ -21,6 +21,7 @@ describe('buildSteps', () => {
     'check:vale-rules',
     'check:facts',
     'check:provenance',
+    'check:leaks',
     'check:symbols',
     'check:snippets',
     'check:transcripts',

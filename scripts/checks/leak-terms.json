@@ -1,0 +1,10 @@
+{
+  "knownIdHashes": [
+    "67c620f0af0a22a0ba5ed6a529b7fa9f0f740649b834be44756efd7f54241d97",
+    "b8b1988effeda3744b2fee0a8515df50b5012b5cfb837c4c2751c4853818796b",
+    "148f9a8ab9f8a3287e780c3c972cf38301e8c487eb29211678e0d7042757702a"
+  ],
+  "allowedEmailDomains": ["example.com", "example.org", "example.net", "site.com"],
+  "allowedEmailSuffixes": [".test", ".invalid", ".example"],
+  "allowedEmailLocalParts": ["noreply", "no-reply"]
+}

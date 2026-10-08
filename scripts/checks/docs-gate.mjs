@@ -1,20 +1,20 @@
 // cairn-cms: the docs gate. One script runs every docs check, so CI, the gate-tier classifier's
 // `docs` tier, and a page-chain page's own gate all read the identical list from one place
-// instead of seventeen separate steps that can drift apart. `check:package` is deliberately not in
+// instead of eighteen separate steps that can drift apart. `check:package` is deliberately not in
 // this list: it checks the tarball's own shape (publint, attw, the file manifest), not a doc
 // arm's content, so it keeps its own CI step.
 //
 // Interface: `node scripts/checks/docs-gate.mjs [--page <path>] [--brief <path>]`. Every component
-// reads the whole tree except two: `--page <path>` narrows Vale to that one path in place of the
-// fixed list `check:vale` runs by default, and `--brief <path>` narrows check:provenance to that
-// one brief through check-provenance.mjs's own positional-argument mode. Both flags exist so a
-// page-chain page's gate (npm run check:docs-gate -- --page {page} --brief {brief}) proves only
+// reads the whole tree except three: `--page <path>` narrows Vale to that one path in place of the
+// fixed list `check:vale` runs by default, and also narrows check:tellgrader to that page;
+// `--brief <path>` narrows check:provenance to that one brief through check-provenance.mjs's own
+// positional-argument mode. Both flags exist so a page-chain page's gate (npm run check:docs-gate -- --page {page} --brief {brief}) proves only
 // the page and brief it drafted, not every sibling page's in-flight brief or prose.
 //
 // Tree mode (no `--page`) also runs `vale test` over the Cairn rules' own cases, since a rule's
 // pass and fail cases guard the rule itself, not any one page.
 //
-// `dist` is built exactly once, before any component runs. Seven of the seventeen checks
+// `dist` is built exactly once, before any component runs. Seven of the eighteen checks
 // (check:snippets, check:visuals, check:readiness, check:tool-conditions, check:reference,
 // check:reference:signatures, check:options) call `npm run package` themselves when run as their own npm script,
 // so this runner calls each component's underlying node script directly and pays that cost once.
@@ -53,7 +53,7 @@ export function parseArgs(argv) {
 
 /**
  * The ordered component list this gate runs, each a label plus the command and args `spawnSync`
- * runs (relative to ROOT). `page` and `brief` reach only the two components that read them;
+ * runs (relative to ROOT). `page` and `brief` reach only the components that read them;
  * every other component runs unscoped.
  * @param {{ page: string | null, brief: string | null }} args
  * @returns {{ label: string, command: string, args: string[] }[]}
@@ -98,6 +98,8 @@ export function buildSteps({ page, brief }) {
     { label: 'check:reference', ...node('scripts/checks/reference-coverage.mjs') },
     { label: 'check:reference:signatures', ...node('scripts/checks/check-reference-signatures.mjs') },
     { label: 'check:options', ...node('scripts/checks/check-options.mjs') },
+    // Workstation-only: skips with one line and passes when the tellgrader binary is absent (CI).
+    { label: 'check:tellgrader', ...node('scripts/checks/check-tellgrader.mjs', page ? [page] : []) },
   ];
 }
 

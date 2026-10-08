@@ -33,6 +33,7 @@ describe('buildSteps', () => {
     'check:reference',
     'check:reference:signatures',
     'check:options',
+    'check:tellgrader',
   ];
 
   it('runs exactly the docs-gate list from the spec, in order', () => {
@@ -89,11 +90,20 @@ describe('buildSteps', () => {
     ]);
   });
 
+  it('scopes check:tellgrader to only the given --page path and scans the tree otherwise', () => {
+    const unscoped = buildSteps({ page: null, brief: null }).find((step) => step.label === 'check:tellgrader');
+    expect(unscoped?.args).toEqual(['scripts/checks/check-tellgrader.mjs']);
+    const scoped = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md', brief: null }).find(
+      (step) => step.label === 'check:tellgrader',
+    );
+    expect(scoped?.args).toEqual(['scripts/checks/check-tellgrader.mjs', 'docs/extend/choose-an-ai-posture.md']);
+  });
+
   it('leaves every other component unscoped by --page or --brief', () => {
     const scoped = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md', brief: 'docs/internal/briefs/extend/choose-an-ai-posture.json' });
     const unscoped = buildSteps({ page: null, brief: null });
     for (const label of LABELS) {
-      if (label === 'check:vale' || label === 'check:vale-rules' || label === 'check:provenance') continue;
+      if (['check:vale', 'check:vale-rules', 'check:provenance', 'check:tellgrader'].includes(label)) continue;
       const scopedStep = scoped.find((step) => step.label === label);
       const unscopedStep = unscoped.find((step) => step.label === label);
       expect(scopedStep).toEqual(unscopedStep);

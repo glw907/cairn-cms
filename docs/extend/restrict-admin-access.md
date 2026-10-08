@@ -1,6 +1,7 @@
 # Restrict admin access
 
-Every person signed in to a cairn admin holds a role, a name from the site's declared role vocabulary, which is `owner` and `editor` unless the site declares its own.
+Everyone who signs in to a cairn admin has a role.
+The site declares its own role names, or uses the default pair, `owner` and `editor`.
 Each role resolves to one capability, `owner`, `editor`, or `none`, and capability is the floor that cairn enforces.
 The access map is the site's declaration of which roles reach each engine screen and each route under `/admin`, and it only narrows that floor.
 Whatever the map says, a role with `none` capability stays out and an owner reaches every target the map names, so the map decides only which editor-capability roles reach each target.
@@ -17,7 +18,7 @@ A developer arrives here to gate a custom admin screen's route, to close an engi
 The steps assume working knowledge of SvelteKit server hooks, `load` functions, form actions, and route ids with their groups and parameters, of the site's adapter in `src/theme/cairn.config.ts`, and of a Workers Logs query.
 Why the map only narrows, and never acts as an allowlist by itself, is covered in [Security model](security-model.md).
 Building a screen and its section actions in full belongs to [Add a custom admin screen](add-a-custom-admin-screen.md), and hiding a sidebar entry without denying its route belongs to [Arrange the admin sidebar](arrange-the-admin-sidebar.md).
-[Add a second sign-in group](add-a-second-sign-in-group.md) covers a role that signs in but reaches no engine content, such as one for a member or instructor area.
+[Add a second sign-in group](add-a-second-sign-in-group.md) covers a role that signs in but reaches no engine content, such as one for a staff area.
 
 ## Before you begin
 

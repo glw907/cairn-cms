@@ -277,7 +277,7 @@ Each of the three primitives has one job:
   let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
 </script>
 
-<PageHeader eyebrow="Club" title="Events" meta={`${data.events.length} upcoming`} />
+<PageHeader eyebrow="Team" title="Events" meta={`${data.events.length} upcoming`} />
 
 <div class="overflow-hidden card-shell card-shadow">
   <AdminTable rowCount={data.events.length}>

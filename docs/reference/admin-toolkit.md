@@ -85,7 +85,7 @@ own moment is always read from its own text, a zone it names, or the UTC this fu
 the SQLite shape, and never from the runtime's local zone. `options.timeZone` governs only the
 rendered zone. A nullish `input` reads `options.fallback`. `options.timeZone` defaults `'UTC'`, the
 neutral zone a Cloudflare Worker's own runtime already reads in, never a site's own zone; a site
-that wants its own local time (a club's Anchorage, say) passes `timeZone` explicitly.
+that wants its own local time (`America/Chicago`, say) passes `timeZone` explicitly.
 `options.locale` defaults `'en-US'`; `options.fallback` defaults `''`.
 
 `Pagination`'s range line and `ListToolbar`'s count line both pick the grammatical number for
@@ -154,8 +154,8 @@ own `<label>` (visually hidden if the row's own layout already reads clearly) or
   import { FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
 </script>
 
-<FieldLabel label="Instructor">
-  <input class="input input-sm" name="instructor" />
+<FieldLabel label="Venue">
+  <input class="input input-sm" name="venue" />
 </FieldLabel>
 ```
 
@@ -174,12 +174,12 @@ that control, so the row levels the trailing line against the bare control inste
 <script lang="ts">
   import { FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
 
-  let instructor = $state('');
+  let venue = $state('');
 </script>
 
 <div style="display: flex; align-items: flex-end; gap: var(--cairn-gap-control, 0.5rem);">
-  <FieldLabel label="Instructor">
-    <input class="input input-sm" name="instructor" bind:value={instructor} />
+  <FieldLabel label="Venue">
+    <input class="input input-sm" name="venue" bind:value={venue} />
   </FieldLabel>
   <button type="button" class="btn btn-sm">Add</button>
 </div>

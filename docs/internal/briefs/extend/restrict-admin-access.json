@@ -2,11 +2,12 @@
   "page": "docs/extend/restrict-admin-access.md",
   "sentences": [
     {
-      "text": "Every person signed in to a cairn admin holds a role, a name from the site's declared role vocabulary, which is `owner` and `editor` unless the site declares its own.",
-      "id": [
-        "f:p1xmp5",
-        "f:4xrx5f"
-      ]
+      "text": "Everyone who signs in to a cairn admin has a role.",
+      "id": "f:p1xmp5"
+    },
+    {
+      "text": "The site declares its own role names, or uses the default pair, `owner` and `editor`.",
+      "id": "f:4xrx5f"
     },
     {
       "text": "Each role resolves to one capability, `owner`, `editor`, or `none`, and capability is the floor that cairn enforces.",
@@ -88,7 +89,7 @@
       "id": "no-claim"
     },
     {
-      "text": "[Add a second sign-in group](add-a-second-sign-in-group.md) covers a role that signs in but reaches no engine content, such as one for a member or instructor area.",
+      "text": "[Add a second sign-in group](add-a-second-sign-in-group.md) covers a role that signs in but reaches no engine content, such as one for a staff area.",
       "id": "f:4673n6"
     },
     {

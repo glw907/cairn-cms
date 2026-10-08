@@ -954,8 +954,8 @@ import { defineAdapter, defineRoles } from '@glw907/cairn-cms';
 
 export const roles = defineRoles({
   owner: 'owner',
-  'club-admin': 'editor',
-  instructor: { capability: 'none', home: '/admin/classes' },
+  webmaster: 'editor',
+  staff: { capability: 'none', home: '/admin/staff' },
 });
 
 export const cairn = defineAdapter({
@@ -1022,7 +1022,7 @@ import { roles } from '#theme/cairn.config.js';
 export const access = defineAccess(roles, {
   pages: ['webmaster'],
   media: ['webmaster', 'publisher'],
-  '/admin/money': ['club-admin'],
+  '/admin/money': ['webmaster'],
 });
 ```
 

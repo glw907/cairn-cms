@@ -128,8 +128,8 @@ the page from above before the contract. Content items, in order; the intro-fram
 final wording.
 
 1. **The model (what the document covers, framed from above).** Three ideas only, at the pace of
-   an overview. Every signed-in person carries a role, a name in the site's declared vocabulary
-   (`owner` and `editor` by default, `f:4xrx5f`). Each role resolves to one capability, `owner`,
+   an overview. Everyone who signs in has a role; the site declares its own role names, or uses
+   the default pair, `owner` and `editor` (`f:4xrx5f`). Each role resolves to one capability, `owner`,
    `editor`, or `none` (`f:zjglk8`), and capability is the floor cairn enforces. The access map is
    the site's declaration, keyed by engine screen or `/admin` route, that narrows which
    editor-capability roles reach each target; it never widens, so `none` stays out and an owner
@@ -154,7 +154,7 @@ final wording.
    only narrows and never acts as an allowlist on its own: `docs/extend/security-model.md`.
    Building a screen and its section actions in full: `docs/extend/add-a-custom-admin-screen.md`.
    Hiding a sidebar entry without denying its route: `docs/extend/arrange-the-admin-sidebar.md`.
-   A role that signs in but reaches no engine content, such as a member or instructor area:
+   A role that signs in but reaches no engine content, such as a staff area:
    `docs/extend/add-a-second-sign-in-group.md`. This sentence may name the page, since scope has
    no subject-first form.
 

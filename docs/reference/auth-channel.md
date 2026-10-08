@@ -4,7 +4,7 @@ This subpath holds `createAuthChannel`, a factory for a site's own second-audien
 an 8-digit-by-default OTP code, requested and confirmed over any transport the site's own `deliver`
 function sends (SMS, email, or another channel), backed by the site's own D1 binding rather than
 `AUTH_DB`. It is server-only surface (no `svelte` export condition), for a site building a login
-flow for an audience other than cairn editors: members, athletes, boosters, or any roster the
+flow for an audience other than cairn editors: members, customers, or any roster the
 engine's own owner/editor auth was never meant to model.
 
 This subpath carries the second-audience login discipline the factory owns: code generation and

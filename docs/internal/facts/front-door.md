@@ -150,7 +150,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   "cairn then mints no session and reads an owner/editor identity through a defined hand-off".
   [verified]
 - `f:nguseg` cairn never names or models a domain actor beyond owner/editor; a site's own domain
-  (members, customers, assets, dues, a directory) is the developer's to build. Key phrase: "A site's
+  (members, customers, assets, a directory) is the developer's to build. Key phrase: "A site's
   domain is the site's". Source: `docs/internal/what-cairn-is-and-is-not.md:67-69`, "A site's domain
   is the site's." and "cairn never names or models a domain actor". [verified]
 - `f:gknz29` The seams form a narrow, versioned public surface across kind-based export subpaths, held by a

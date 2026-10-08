@@ -1,9 +1,9 @@
 # Add a second sign-in group
 
-An organization's site often has people beyond its editors who need to sign in, such as instructors who need a screen for their classes or club members who need pages that only members see.
+Some sites need people besides editors to sign in, to reach screens or pages made for them.
 The engine's sign-in exists only to gate the admin, so out of the box it knows the two kinds of people who work there, owners and editors, and signs them in by an emailed magic link.
 For a second group, cairn supplies the sign-in through one of two mechanisms.
-What a member or an instructor is, and the records the site keeps about them, stay in the site's code.
+What a staff member or a member is, and the records the site keeps about them, stay in the site's code.
 
 A declared role adds the group to the editors' roster in `AUTH_DB`, the D1 database behind editor sign-in, at `none` capability.
 Its people sign in by the same magic link and find the engine's content screens closed to them.
@@ -15,7 +15,7 @@ Its factory mints and consumes codes and owns rate budgets, sessions, and revoca
 The site supplies the code's delivery, the roster lookup, the contact normalizer, and the check that a requester is human.
 
 Whichever mechanism you choose, by the end the group signs in on your deployed site and lands in an area made for it.
-The role path builds an instructor role whose `home` is `/admin/classes`, the declaration the [roles reference](../reference/core.md#defineroles) uses.
+The role path builds a `staff` role whose `home` is `/admin/staff`, the declaration the [roles reference](../reference/core.md#defineroles) uses.
 The channel path follows the members channel in the repository's example site, `examples/showcase`, which signs members in at `/members/login` and gates `/members`.
 The example site's code delivery is a development stand-in, a capture transport that refuses outside the dev backend.
 The channel path writes a `deliver` for your transport in its place.
@@ -61,13 +61,13 @@ The following table compares the two mechanisms by where each keeps its people a
 
 A role suits a group that an owner adds person by person and that works in screens under `/admin`.
 A channel suits a group whose roster the site already keeps and that never needs the admin.
-For either mechanism, the site's code defines what a member, a class, or a dues payment is.
+For either mechanism, the site's code defines what a member, a staff assignment, or a signup is.
 If you chose a channel, skip to [Sign the group in through a channel](#sign-the-group-in-through-a-channel).
 
 ## Sign the group in with a role
 
 A role adds the group to the editors' roster at `none` capability, so its people sign in by the magic link and reach only the screens the site builds for them.
-The steps build the instructor role from the [roles reference](../reference/core.md#defineroles), whose `home` is `/admin/classes`.
+The steps build the `staff` role from the [roles reference](../reference/core.md#defineroles), whose `home` is `/admin/staff`.
 The steps start with the role's declaration.
 
 ### Declare the role
@@ -75,7 +75,7 @@ The steps start with the role's declaration.
 A role is one entry in the site's role vocabulary, declared with `defineRoles` on the adapter and passed to the guard, and an object entry's `home` names the `/admin` path its people land on.
 To declare the role, follow these steps:
 
-1. In `cairn.config.ts`, set the adapter's `roles` member to a `defineRoles` vocabulary that keeps `owner` and `editor` beside the instructor entry.
+1. In `cairn.config.ts`, set the adapter's `roles` member to a `defineRoles` vocabulary that keeps `owner` and `editor` beside the `staff` entry.
 
    <!-- snippet-check-skip: elides the adapter's required content, backend, email, and rendering groups -->
    ```ts
@@ -85,7 +85,7 @@ To declare the role, follow these steps:
    export const roles = defineRoles({
      owner: 'owner',
      editor: 'editor',
-     instructor: { capability: 'none', home: '/admin/classes' },
+     staff: { capability: 'none', home: '/admin/staff' },
    });
 
    export const cairn = defineAdapter({
@@ -94,7 +94,7 @@ To declare the role, follow these steps:
    });
    ```
 
-   A site that already declares `roles`, as [Restrict admin access](restrict-admin-access.md) does in `src/access.ts`, adds the instructor entry to that vocabulary instead.
+   A site that already declares `roles`, as [Restrict admin access](restrict-admin-access.md) does in `src/access.ts`, adds the `staff` entry to that vocabulary instead.
 
 2. In `src/hooks.server.ts`, pass the same vocabulary to `createAuthGuard` and `devBackendHandle` as their `roles` option.
    Keep any option either handle already receives, such as the scaffold's `access`, beside `roles`.
@@ -136,18 +136,18 @@ The `home` path needs a screen before anyone lands there.
 The home path is a custom admin screen the site builds, and it gates on the session's role, because the access map admits no `none`-capability session.
 To build the screen, follow these steps:
 
-1. In the site's admin routes, create the screen's route for `/admin/classes`, as [Add a custom admin screen](add-a-custom-admin-screen.md) describes.
+1. In the site's admin routes, create the screen's route for `/admin/staff`, as [Add a custom admin screen](add-a-custom-admin-screen.md) describes.
 2. In the screen's server file, make the load function call `requireSession` and answer 403 to any session whose `role` the screen does not serve.
 
    ```ts
-   // src/routes/admin/classes/+page.server.ts
+   // src/routes/admin/staff/+page.server.ts
    import type { PageServerLoad } from './$types';
    import { error } from '@sveltejs/kit';
    import { requireSession } from '@glw907/cairn-cms/sveltekit';
 
    export const load: PageServerLoad = async (event) => {
      const editor = requireSession(event);
-     if (editor.role !== 'instructor') error(403, 'This screen is for instructors.');
+     if (editor.role !== 'staff') error(403, 'This screen is for staff.');
      return { displayName: editor.displayName };
    };
    ```
@@ -165,7 +165,7 @@ The screen's sidebar link comes next.
 A `navLayout` entry with a `roles` list shows the home screen's link only to the roles it names.
 To add the link, follow this step:
 
-- In `cairn.config.ts`, add a `navLayout` entry for `/admin/classes` to the adapter's `editor` group, with `roles` set to the instructor role.
+- In `cairn.config.ts`, add a `navLayout` entry for `/admin/staff` to the adapter's `editor` group, with `roles` set to the `staff` role.
 
   <!-- snippet-check-skip: elides the adapter's required content, backend, email, and rendering groups -->
   ```ts
@@ -175,7 +175,7 @@ To add the link, follow this step:
     roles,
     editor: {
       navLayout: [
-        { label: 'Classes', icon: 'graduation-cap', href: '/admin/classes', roles: ['instructor'] },
+        { label: 'Staff', icon: 'users', href: '/admin/staff', roles: ['staff'] },
       ],
     },
   });
@@ -206,7 +206,7 @@ To add the people, follow these steps:
 
 3. In the project directory, build and deploy the site as [Deploy a change](add-cairn-to-a-sveltekit-app.md#deploy-a-change) does, so the screen that adds editors offers the new role.
 4. On `/admin/editors`, enter the person's name and email.
-5. In the **Role** list, choose the instructor role.
+5. In the **Role** list, choose the `staff` role.
 6. Select **Add editor**.
 7. Tell the person to sign in at `/admin`, since adding them sends no email.
 
@@ -220,8 +220,8 @@ To confirm that the role works, follow these steps:
 1. After a build, in the project directory, run [`cairn doctor`](../reference/cli-cairn-doctor.md) and confirm that it reports no `auth.role-wiring-missing` warning. That warning means the guard never received the vocabulary.
    The check reads the site facts that a build writes.
 2. As one of the role's people, open `/admin` on the deployed site and sign in with the emailed link.
-3. Confirm that `/admin` lands on `/admin/classes`.
-4. In the sidebar, confirm that the **Classes** link shows.
+3. Confirm that `/admin` lands on `/admin/staff`.
+4. In the sidebar, confirm that the **Staff** link shows.
 5. Open one of the engine's content screens, and confirm that it refuses the person.
 
 If a check fails, see [Resolve a failed setup](#resolve-a-failed-setup).

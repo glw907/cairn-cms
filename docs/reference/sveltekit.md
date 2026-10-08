@@ -356,7 +356,7 @@ carries a populated, typed `locals.cairnEditor`; it passes through the
 [`CairnAdminShell`](./admin.md#cairnadminshell) custom-route seam untouched. Only the
 engine's own content and roster surfaces refuse it with `requireEditor`/`requireOwner`. A
 site-mounted admin route gates itself: nothing about `none` blocks the route from resolving, so a
-custom route that wants a `none`-capability role to reach it (an instructor's own class roster,
+custom route that wants a `none`-capability role to reach it (a staff member's own dashboard,
 say) needs no extra wiring, and one that wants to refuse it calls `requireEditor`, `requireOwner`,
 or its own capability check on `event.locals.cairnEditor.capability`.
 
@@ -401,7 +401,7 @@ call this helper for that path; call `requireSession` or `requireEditor` instead
 inside a page.
 
 ```ts
-// src/routes/admin/club/money/+page.server.ts
+// src/routes/admin/team/money/+page.server.ts
 import { requireAccess } from '@glw907/cairn-cms/sveltekit';
 
 export const load = (event) => {
@@ -531,7 +531,7 @@ import { createAdminAction } from '@glw907/cairn-cms/sveltekit';
 
 export const actions = {
   approve: createAdminAction(async ({ ctx }) => ({ approvedBy: ctx.editor.email }), {
-    access: { target: '/admin/club/events', ownerOnly: true },
+    access: { target: '/admin/team/events', ownerOnly: true },
   }),
 };
 ```
@@ -591,9 +591,9 @@ packaged sink already catches before it can reach the engine's call site, while
 at the point `ctx.audit` invokes it.
 
 ```ts
-// src/routes/admin/club/events/[id]/+page.server.ts
+// src/routes/admin/team/events/[id]/+page.server.ts
 import { createAdminAction } from '@glw907/cairn-cms/sveltekit';
-import { db } from '#lib/club/db.js';
+import { db } from '#lib/team/db.js';
 
 export const actions = {
   approve: createAdminAction(async ({ form, ctx }) => {
@@ -623,7 +623,7 @@ table, opt-in the same way the auth migrations are.
 Calling it directly, with a record your own site code composes rather than one `ctx.audit`
 produced, is supported: the sink has no admin-specific behavior, only a generic
 `{ actor, action, entity, entityId?, detail? }` shape bound into the columns of the same name. A
-domain event, a roster change, a season rollover, anything append-only worth a durable trail,
+domain event, a roster change, a plan change, anything append-only worth a durable trail,
 persists the same way an admin action's audit does. `actor` is the acting identity for that row
 and need not be a cairn editor; namespace your action names (`roster.add`, not a bare `add`) so a
 domain row stays distinguishable from an admin-action row in the shared table. The fail-open,
@@ -800,7 +800,7 @@ change. `ownerOnly` requires owner capability on top of the map check, never ins
 
 Route groups are the one place a route id and its URL differ on every site, so the derived target
 drops them: a route id of `/admin/(app)/roster` resolves to the target `/admin/roster`, and
-`/admin/(app)/club/(section)/events/[id]` to `/admin/club/events/[id]`. **Key the access map by
+`/admin/(app)/team/(section)/events/[id]` to `/admin/team/events/[id]`. **Key the access map by
 the URL shape, group segments left out, however deep the route sits in groups.** This applies to
 the derived default only. `createSectionAction` matches a `target` you declare verbatim, so a
 declared target carrying a group segment needs a map key in that exact form.
@@ -869,7 +869,7 @@ form read, so it never bounds the cost of parsing the request body.
 own binding shape (`SectionEnv`) standalone, so the resolver's annotation is explicit either way:
 
 ```ts
-// src/routes/admin/club/events/[id]/+page.server.ts
+// src/routes/admin/team/events/[id]/+page.server.ts
 import { createSectionAction, type RateLimitLike } from '@glw907/cairn-cms/sveltekit';
 import type { D1Database } from '@cloudflare/workers-types';
 
@@ -1862,7 +1862,7 @@ accessible noun for the count ("pending requests"), joined into the entry's acce
 ```ts
 // src/theme/cairn.config.ts
 import { defineAdapter } from '@glw907/cairn-cms';
-import { db } from './club/db.js';
+import { db } from './team/db.js';
 
 export const cairn = defineAdapter({
   // ...content, backend, email, rendering...
@@ -1870,7 +1870,7 @@ export const cairn = defineAdapter({
 
 export async function attention({ editor }) {
   const pending = await db.assetRequests.countPendingFor(editor.role);
-  return [{ href: '/admin/club/assets', count: pending, label: 'pending requests' }];
+  return [{ href: '/admin/team/assets', count: pending, label: 'pending requests' }];
 }
 ```
 
@@ -1938,7 +1938,7 @@ export const cairn = defineAdapter({
   // ...content, backend, email, rendering...
   editor: {
     publishActions: [
-      { label: 'Announce', href: '/admin/club/announce?post={id}', concepts: ['posts'] },
+      { label: 'Announce', href: '/admin/team/announce?post={id}', concepts: ['posts'] },
     ],
   },
 });

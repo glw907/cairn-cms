@@ -71,9 +71,9 @@ them. The introduction is the untitled text under the H1 and is named `Introduct
   Explanation stays subordinate to the steps, and each explanation block opens with a sentence
   tying it to the task.
 - **Exemplar takes.** Django: one running example carried from setup to test. This page carries
-  two, one per path, since the paths share no code: the instructor role from the roles reference
-  (`docs/reference/core.md`, the `defineRoles` example, `instructor: { capability: 'none', home:
-  '/admin/classes' }`), and the example site's members channel (`MEMBER_DB`, `member_session`,
+  two, one per path, since the paths share no code: the `staff` role from the roles reference
+  (`docs/reference/core.md`, the `defineRoles` example, `staff: { capability: 'none', home:
+  '/admin/staff' }`), and the example site's members channel (`MEMBER_DB`, `member_session`,
   `/members/login`, `/members`) carried through binding, migration, module, routes, removal,
   test, deploy, and verification. The class reference stays on `docs/reference/auth-channel.md`. Sanity:
   the early "right tool for the job?" callout becomes the section "Choose the mechanism", the
@@ -185,10 +185,9 @@ imperative and never a sentence about the page.
 
 1. **What the document covers.** A cairn site signs in two kinds of people out of the box, owners
    and editors, by the email magic link (f:nz890r). Many organizations have a second group to
-   sign in, such as instructors who need a class screen of their own or club members who need a
-   members-only area. The page gives that group its own sign-in and its own area by one of two
+   sign in, to reach screens or pages made for them. The page gives that group its own sign-in and its own area by one of two
    mechanisms, a declared role or an auth channel, and helps the reader choose (f:b3l3t0). It
-   carries the instructor role from the roles reference through the role path and the members channel
+   carries the `staff` role from the roles reference through the role path and the members channel
    of the repository's example site, `examples/showcase`, through the channel path. The one-line contract (sign a second group in and
    give it its own area) sits inside this framing.
 2. **What prior knowledge you expect readers to have.** A site built through
@@ -206,7 +205,7 @@ imperative and never a sentence about the page.
      second-population reader here; this page sends the reverse reader there).
    - The channel's threat model and the hazards a site's `deliver` can introduce:
      `docs/extend/security-model.md`.
-   - The site's own model of the group (its records, dues, directories): the site's code, stated
+   - The site's own model of the group (its records, signups, directories): the site's code, stated
      in "Choose the mechanism" (f:nguseg).
 
 ## Sections, in order
@@ -264,7 +263,7 @@ carries. A sentence citing several ids synthesizes them; the brief records it as
   in screens under `/admin`; a channel suits a group whose roster the site already keeps and that
   never needs the admin. (f:hcjb3o, f:7n28wc, f:dtz8oa, f:q7fj6p)
 - **Domain sentence:** either way, cairn signs the people in and the site models them: what a
-  member, a class, or a dues payment is stays the site's own code. (f:nguseg)
+  member, a staff assignment, or a signup is stays the site's own code. (f:nguseg)
 - **Hand-off:** the role path follows; a channel reader goes to "Sign the group in through a
   channel" (an in-page link, `no-claim`).
 
@@ -273,8 +272,8 @@ carries. A sentence citing several ids synthesizes them; the brief records it as
 - Heading: `## Sign the group in with a role`
 - **Takes:** A role adds the group to the editors' roster at `none` capability, so its people sign
   in by the magic link and reach only the screens the site builds for them. (f:4673n6, f:5t6hz6)
-- **Draws on:** the two facts above; one more sentence names the running example, the instructor
-  role from the roles reference, whose `home` is `/admin/classes` (f:4673n6; link
+- **Draws on:** the two facts above; one more sentence names the running example, the `staff`
+  role from the roles reference, whose `home` is `/admin/staff` (f:4673n6; link
   `docs/reference/core.md#defineroles`).
 - **Hand-off:** the role starts as one entry in the vocabulary.
 
@@ -286,8 +285,8 @@ carries. A sentence citing several ids synthesizes them; the brief records it as
   people land on. (f:2zytgf, f:4xrx5f, f:pvs115)
 - **Steps,** a numbered list of two:
   1. In the adapter module (`src/lib/cairn.config.ts` in the tutorial's site), declare the
-     vocabulary with `defineRoles`, keeping `owner` and `editor` beside `instructor: { capability:
-     'none', home: '/admin/classes' }`, and pass it as the adapter's `roles` member (f:2zytgf,
+     vocabulary with `defineRoles`, keeping `owner` and `editor` beside `staff: { capability:
+     'none', home: '/admin/staff' }`, and pass it as the adapter's `roles` member (f:2zytgf,
      f:4673n6, f:pvs115).
   2. In `src/hooks.server.ts`, pass the same vocabulary to `createAuthGuard({ roles })` (f:4xrx5f).
 - **Explanation after the steps,** opening with a sentence tying it to the declaration:
@@ -311,7 +310,7 @@ carries. A sentence citing several ids synthesizes them; the brief records it as
   session's role itself, because the access map admits no `none`-capability session. (f:p1xmp5,
   f:5t6hz6)
 - **Steps,** a numbered list of two:
-  1. At `src/routes/admin/classes/`, build the screen as `docs/extend/add-a-custom-admin-screen.md`
+  1. At `src/routes/admin/staff/`, build the screen as `docs/extend/add-a-custom-admin-screen.md`
      does (`no-claim` link).
   2. In the screen's `+page.server.ts`, have `load` call `requireSession` and refuse with a 403
      any session whose `role` the screen does not serve, in place of the `requireAccess` call
@@ -332,14 +331,14 @@ carries. A sentence citing several ids synthesizes them; the brief records it as
 - **Takes:** A `navLayout` entry with a `roles` list shows the home screen's link only to the roles
   it names. (f:16paho)
 - **Step,** one bullet: in the adapter's `editor` group, add a `navLayout` entry for
-  `/admin/classes` with `roles: ['instructor']` (f:ys1iq1, f:16paho).
+  `/admin/staff` with `roles: ['staff']` (f:ys1iq1, f:16paho).
 - **Explanation after the step,** opening with a sentence tying it to the entry:
   - A role name the vocabulary does not declare fails validation (f:16paho).
   - Hiding a link is never authorization; the screen's own role check from the previous section
     is what refuses everyone else (f:bvfs3e, cited for its first clause only: its "denied via the
     access map" clause does not hold for a `none` role, which the friction entry filed by this
     plan records).
-  - Leave `/admin/classes` out of the access map: an entry whose href matches a map rule is shown
+  - Leave `/admin/staff` out of the access map: an entry whose href matches a map rule is shown
     only to the roles `canReach` admits, and `canReach` admits no `none` session (f:altcjp,
     f:p1xmp5). The map itself belongs to `docs/extend/restrict-admin-access.md` (`no-claim`
     link).
@@ -360,7 +359,7 @@ carries. A sentence citing several ids synthesizes them; the brief records it as
      apply <database> --remote` (f:xxtooz).
   3. Deploy the site, as the tutorial's deploy step does, so `/admin/editors` offers the new role
      (f:hcjb3o; link `docs/extend/add-cairn-to-a-sveltekit-app.md#deploy-a-change`).
-  4. On `/admin/editors`, enter the person's name and email, choose `instructor` in the role
+  4. On `/admin/editors`, enter the person's name and email, choose `staff` in the role
      select, and select **Add editor** (f:hcjb3o, f:nj0nfm).
   5. Tell the person to sign in at `/admin/login`, since adding them sends no email (f:nj0nfm).
 - **Hand-off:** the role is ready to verify.
@@ -376,7 +375,7 @@ carries. A sentence citing several ids synthesizes them; the brief records it as
      `auth.role-wiring-missing`, the warning for a vocabulary the guard never received (f:hwffph;
      link `docs/reference/cli-cairn-doctor.md`).
   2. As one of the role's people, sign in at `/admin/login` with the emailed link (f:4673n6).
-  3. Confirm that `/admin` lands on `/admin/classes` (f:7n28wc).
+  3. Confirm that `/admin` lands on `/admin/staff` (f:7n28wc).
   4. Confirm that the sidebar shows the screen's link (f:16paho).
   5. Open a content screen, such as `/admin/posts`, and confirm that it refuses the person
      (f:4673n6).
@@ -807,7 +806,7 @@ consumer test and the two Node floors).
   (`f:pe4vuc`); "Gate the member area" adds the `+page.svelte` sign-out step and component
   (`f:k0cryh`). Advisories folded: both hooks handles take `{ roles }` and keep `access`
   (`f:7cv105`, `f:f21bcz`), `cairn doctor` runs after a build (`f:6oopkt`), both member routes
-  export `prerender = false` (`f:k0cryh`; the custom `/admin/classes` screen takes none, since no
+  export `prerender = false` (`f:k0cryh`; the custom `/admin/staff` screen takes none, since no
   fact or example screen sets it), the Turnstile address is optional (`f:yd9ytp`), and the
   Vitest inline step adds the entry if missing. The page's code blocks typecheck clean and its
   test passes in the reader's scratch showcase.

@@ -129,7 +129,7 @@ children and the fallback group included, alongside its own view-site and theme-
 
 At desktop widths the sidebar is persistent and scroll-independent (`position: fixed`, so it never
 drifts with the page scroll), and it stays open across navigation. That includes navigation to a
-site's own deep custom-nav routes like `/admin/club/events`. On an engine document-editor route (a desk route),
+site's own deep custom-nav routes like `/admin/team/events`. On an engine document-editor route (a desk route),
 the sidebar persists again at `xl` (1280px and up), recedes to the toggle-controlled overlay through
 the `lg`-`xl` tablet band (1024-1279px), where the editing surface takes priority on a narrower
 screen, and keeps the overlay drawer below `lg` like every other route. On small viewports it's

@@ -11,7 +11,7 @@ follows the page plan (`docs/internal/briefs/extend/add-a-second-sign-in-group.p
      joins it beside Security model and Replace magic links), a search for a member login or a
      second login on a cairn site, or an old link to `docs/extend/add-a-second-audience.md`, which
      the outline redirects here.
-   - Came for: a way to sign in instructors, members, or another group beside the editors, and
+   - Came for: a way to sign in staff, members, or another group beside the editors, and
      which mechanism to use.
    - Knows: the site, SvelteKit, and that editors sign in by magic link.
    - Lacks: that cairn offers exactly two mechanisms, where each lives (inside `/admin` or on the
@@ -62,7 +62,7 @@ Readers likely in the wrong place, each with the page they belong on:
 - A developer whose organization wants the editors themselves to sign in through its identity
   provider: `docs/extend/replace-magic-links-with-cloudflare-access.md`.
 - A developer assessing the channel's threats: `docs/extend/security-model.md#the-auth-channels-threat-surface`.
-- A developer looking for how cairn models members, dues, or a directory: no cairn page; the site's
+- A developer looking for how cairn models members, signups, or a directory: no cairn page; the site's
   own code (f:nguseg).
 
 ## Background the page rests on
@@ -70,7 +70,7 @@ Readers likely in the wrong place, each with the page they belong on:
 1. **Why the default is owners and editors.** cairn's own sign-in exists only to gate the admin,
    and its zero-config identity is the owner/editor pair on the emailed magic link (f:zxdoaf,
    f:nz890r). cairn never names or models a domain actor beyond those two; members, customers,
-   dues, and a directory are the site's to build (f:nguseg). So a second group is the site's to
+   assets, and a directory are the site's to build (f:nguseg). So a second group is the site's to
    define, and cairn's part is signing it in.
 2. **The general model: two mechanisms.** A declared role puts the group in the editors' own roster
    in `AUTH_DB` at `none` capability: the same magic link, the engine's content and roster screens
@@ -138,15 +138,14 @@ on the page. Wording is the drafter's; each item fixes the claim and its facts. 
 sentence stays under 26 words, so the drafter splits any item below that runs long.
 
 1. **The reader's second group, and the default it meets.**
-   - Opening: an organization's site often has people beyond its editors who need to sign in,
-     such as instructors who need a class screen of their own or club members who need pages only
-     members see. (`no-claim`: the reader's situation; the two examples are the page's two running
-     examples.)
+   - Opening: some sites need people besides editors to sign in, to reach screens or pages made
+     for them. (`no-claim`: the reader's situation; the page opens on the job, with no invented
+     cast.)
    - cairn's own sign-in exists to gate the admin, so out of the box it knows only the people who
      work there, owners and editors, and signs them in by an emailed magic link (f:zxdoaf,
      f:nz890r).
    - For a second group, cairn supplies the sign-in through one of two mechanisms, and the people
-     themselves stay the site's: what a member or an instructor is, and the records kept about
+     themselves stay the site's: what a staff member or a member is, and the records kept about
      them, are the site's own code (f:b3l3t0, f:nguseg). If the drafter uses the phrase "A site's
      domain is the site's", the sentence must cite f:nguseg, its owner-tier key phrase. No "not X
      but Y" frame.
@@ -168,7 +167,7 @@ sentence stays under 26 words, so the drafter splits any item below that runs lo
      by the end the group signs in on your deployed site and lands in an area of its own
      (`no-claim`: the page's promise; both paths end in a deploy and a verification on the
      deployed site, per the plan).
-   - The running examples: an instructor role whose `home` is `/admin/classes`, the declaration the
+   - The running examples: a `staff` role whose `home` is `/admin/staff`, the declaration the
      roles reference uses (f:4673n6, f:pvs115), and the members channel in the repository's example
      site, `examples/showcase`, which signs members in at `/members/login` and gates `/members`
      (f:265s4t). First mention of the example site uses that full form, per the plan's drafting

@@ -1414,3 +1414,22 @@ is a dispatch that returns a structured verdict.
   restructure, folded into close step 8).
 - **Next:** baseline result, draft PR, guards, then the S1 `pass-execute` launch (Tasks 1, 2, 3)
   with the moved lines above passed in the task notes.
+
+### 2026-10-08, Task 0 resumed and closed
+
+- **Setup gaps (repo tooling friction, filed at the S1 checkpoint):** a fresh worktree needs
+  CI's preparation steps before F can pass: `npx svelte-kit sync` in `examples/showcase`
+  (`check-public-skill.test.ts` fails on `$app/tsconfig`), `npm run package`, and the
+  `create-cairn-site` template bake from `.github/workflows/test.yml`. All three run here; pass B's
+  Task 0 now carries them (`7a8d5c19` on `main`).
+- **Item 5, baseline:** T green (`gate exit: 0`). F ran the whole chain: every step green through
+  the showcase e2e, which ended 20 failed, 328 passed. The 20 are exactly the
+  `site-visual.spec.ts` home and archive-page-2 files at five widths and two schemes, the drift
+  `durable-gotchas.md` names under "CI-canonical baselines this workstation cannot reproduce". Ruled
+  green under that rule.
+- **Local F amended (conductor ruling):** the per-task and boundary F replaces its last step with
+  `npm --prefix examples/showcase run test:e2e -- --grep-invert "site home|archive page 2"`. The
+  pattern lists exactly those 20 tests (`--list`: 328 kept, 20 excluded, all in
+  `site-visual.spec.ts`). The runner's gate agent sees only the gate string, so without it every
+  F-pinned task would read red. CI runs the 20 on every push against its canonical baselines,
+  so S3's CI boundary and the close still cover them.

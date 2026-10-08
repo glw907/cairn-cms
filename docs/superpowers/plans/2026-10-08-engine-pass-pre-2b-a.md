@@ -1386,3 +1386,31 @@ is a dispatch that returns a structured verdict.
 ## Ledger
 
 (Checkpoint entries go here: date, segment, task statuses, decisions taken, spend, next task.)
+
+### 2026-10-08, Task 0 (paused mid-task at Geoff's request)
+
+- **Item 1, no live executor:** none; no prior `engine-pre-2b-a` branch or worktree; `main` clean.
+- **Item 2, start state:** PR #107 merged 2026-10-08T08:06Z; spec and plan on `main` at `034f30a0`
+  (spec read approved, all three forks ruled).
+- **Item 3, worktree:** created on `engine-pre-2b-a` from `034f30a0`; `npm ci` and the from-scratch
+  showcase `npm ci` both exit 0; `realpath` resolves the engine and `packages/cairn-cms-dev` into
+  the worktree.
+- **Item 4, gate strings:** F (`--pin full`) and E (`--pin engine`) printed and match "Gates";
+  F carries 31 steps ending in the showcase `test:e2e`.
+- **Item 5, baseline:** a `haiku` gate agent was running F then T at the pause. If no result is
+  recorded below, re-run it on resume before any dispatch.
+- **Item 6, draft PR:** not yet opened; open it after the baseline.
+- **Item 7, S1 pre-flight:** no false claim. Moved lines, outcome unchanged: the regex pin is
+  `check-tool-heuristics.mjs:52`; the dev handle's owner mint is `handle.ts:169-173`; the
+  `access_map_not_attached` literal is `section-action.ts:277`; the required `runtime` fields are
+  `cairn-admin.ts:36`, `content-routes-context.ts:193`, `nav-routes.ts:48`, `media-route.ts:76`;
+  the bare call in `admin-routes.md`'s snippet is `:224`; the `sveltekit.md` snippet calls are
+  `:134` and `:1048`. Caller counts: `createAuthGuard` 1 non-test + 18 test, `devBackendHandle`
+  1 + 15 (plus the template's hooks), `createEditorRoutes` 1 + 4. Fact bullets citing
+  `templates/waymark/src/access.ts`: `f:3z1uxv`, `f:qlgggh`.
+- **Item 8, fork 2:** ruled yes.
+- **Items 9 and 10:** guards not armed (no workflow launched); spend not yet recorded.
+- **Plan amendments on the branch:** `53e3d7de`, `42e4f3d5`, `3bc97946` (Geoff's friction-log
+  restructure, folded into close step 8).
+- **Next:** baseline result, draft PR, guards, then the S1 `pass-execute` launch (Tasks 1, 2, 3)
+  with the moved lines above passed in the task notes.

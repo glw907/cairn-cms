@@ -469,7 +469,8 @@ export function scanText(text, profile, path = '') {
 
 // --- Walking the tree. ---
 
-const SCAN_ROOTS = [
+/** The files and directories the check walks, relative to the repo root. */
+export const SCAN_ROOTS = [
   'README.md',
   'CHANGELOG.md',
   'docs/README.md',

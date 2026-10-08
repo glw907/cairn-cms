@@ -129,12 +129,14 @@ To pass the map to both readers, follow these steps:
    The module is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the tutorial's.
 2. In `src/hooks.server.ts`, import both `roles` and `access` from `src/access.ts`.
 3. In the same file, pass `{ roles, access }` to `createAuthGuard`.
+4. If the file's dev branch calls `devBackendHandle()` with no argument, as the tutorial's site does, pass `{ access }` to it as well.
+   Without the map, every section action under `npm run dev` answers `fail(500)` and logs `admin.action.misconfigured`.
 
 After these steps, the adapter call and the guard line read as follows:
 
 <!-- snippet-check-skip: excerpt; the adapter's content, backend, email, rendering, and editor members stay as they are -->
 ```ts
-// src/theme/cairn.config.ts (excerpt)
+// the adapter module (excerpt)
 import { roles, access } from '../access.js';
 
 export const cairn = defineAdapter({

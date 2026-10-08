@@ -420,6 +420,10 @@
       ]
     },
     {
+      "text": "The shell logs that error as a [`github.unreachable`](../reference/log-events.md) record.",
+      "id": "f:jjava3"
+    },
+    {
       "text": "In the site's directory, run the push from [Push the new key to the Worker](#push-the-new-key-to-the-worker) again.",
       "id": "no-claim"
     },

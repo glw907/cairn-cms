@@ -116,7 +116,7 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
 1. If `/healthz` reports the detail `GITHUB_APP_PRIVATE_KEY_B64 is not configured`, the Worker holds no key.
 
-   The missing key also throws cairn's `github.app-unreachable` error on first token use. In the site's directory, run the push from [Push the new key to the Worker](#push-the-new-key-to-the-worker) again.
+   The missing key also throws cairn's `github.app-unreachable` error on first token use. The shell logs that error as a [`github.unreachable`](../reference/log-events.md) record. In the site's directory, run the push from [Push the new key to the Worker](#push-the-new-key-to-the-worker) again.
 
 2. If `/healthz` reports `key import or sign failed` or `malformed JWT`, the secret is not a usable private key.
 

@@ -377,7 +377,7 @@ that runs on every non-prerendered request never imports the adapter. The `SiteH
 the root `+error.svelte` read that data through `page.data`. The error page is the site's themed 404
 and error page, which [Themed 404 page](#themed-404-page) explains. The admin mount reference covers
 the root layout's limits in [The root layout must be
-chrome-free](../reference/admin-routes.md#the-root-layout-must-be-chrome-free). 
+chrome-free](../reference/admin-routes.md#the-root-layout-must-be-chrome-free).
 
 ## Theme, chassis, and content
 

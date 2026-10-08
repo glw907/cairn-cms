@@ -12,6 +12,7 @@ import {
   runLeakCheck,
   formatFindings,
   KNOWN_ID_HASHES,
+  SCAN_ROOTS,
 } from '../../../scripts/checks/check-leaks.mjs';
 
 const T1 = profileFor('docs/reference/sveltekit.md')!;
@@ -91,12 +92,13 @@ describe('shipped roots', () => {
     }
   });
 
-  it('maps every tracked file under a package.json "files" root to a scanned tier', () => {
+  it('maps every tracked file under a package.json "files" root to a scanned tier and a scan root', () => {
     const pkg = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8')) as { files: string[] };
     // `dist` is built from src/lib, whose doc comments are scanned as `tsdoc`. An arm with no
     // tracked page yet lists nothing, and `.gitkeep` is empty.
     const exceptions = new Set(['dist']);
     const unscanned: string[] = [];
+    const unreached: string[] = [];
     let checked = 0;
     for (const entry of pkg.files) {
       if (exceptions.has(entry)) continue;
@@ -104,10 +106,15 @@ describe('shipped roots', () => {
         .split('\n')
         .filter((file) => file && !file.endsWith('/.gitkeep'));
       checked += tracked.length;
-      for (const file of tracked) if (!profileFor(file)) unscanned.push(file);
+      for (const file of tracked) {
+        if (!profileFor(file)) unscanned.push(file);
+        // runLeakCheck only walks SCAN_ROOTS, so a mapped file outside every root is never scanned.
+        if (!SCAN_ROOTS.some((root) => file === root || file.startsWith(`${root}/`))) unreached.push(file);
+      }
     }
     expect(checked).toBeGreaterThan(0);
     expect(unscanned).toEqual([]);
+    expect(unreached).toEqual([]);
     expect(profileFor('src/lib/admin/Thing.svelte')?.mode).toBe('tsdoc');
   });
 });

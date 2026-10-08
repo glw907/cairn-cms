@@ -406,6 +406,20 @@
       ]
     },
     {
+      "text": "If the file's dev branch calls `devBackendHandle()` with no argument, as the tutorial's site does, pass `{ access }` to it as well.",
+      "id": [
+        "f:q07rd5",
+        "f:u78zg6"
+      ]
+    },
+    {
+      "text": "Without the map, every section action under `npm run dev` answers `fail(500)` and logs `admin.action.misconfigured`.",
+      "id": [
+        "f:u78zg6",
+        "f:f21bcz"
+      ]
+    },
+    {
       "text": "After these steps, the adapter call and the guard line read as follows:",
       "id": "no-claim"
     },

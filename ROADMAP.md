@@ -455,15 +455,30 @@ The original decision framing, for the record:
     only in Claude Code's format (a root `CLAUDE.md` importing `.claude/cairn/CLAUDE.md`, skills
     under `.claude/skills/`, the review agent under `.claude/agents/`, the `Stop` hook snippet for
     `.claude/settings.json`) and no `AGENTS.md`, so a developer on another tool gets nothing; the
-    pages say so for now. *Decide* (premise for the brainstorm, not a design): the cross-tool
+    reference page `docs/reference/guidance.md` says so for now. The guidance stays an optional aid:
+    human pages never address coding agents or assume a reader uses one (rulings, Geoff,
+    2026-10-07: "A page shouldn't even assume that a reader IS using a coding agent."; "If we want
+    to address coding agents, we can create separate docs specifically for that."). *Decide* (premise for the brainstorm, not a design): the cross-tool
     `AGENTS.md` convention as the canonical guidance, Claude Code reaching it through `CLAUDE.md`
     (which can import it), and the Claude-only extras (the review agent, the `Stop` hook snippet,
     the skills location) kept as optional extras labeled as such; evaluate the open Agent Skills
     format for the skills. The brainstorm verifies each tool's current conventions from their
-    published docs before designing. It changes the guidance sections of
-    `docs/extend/scaffolded-site-files.md` and `docs/reference/guidance.md`, and any other hit from
-    `grep -rniE "claude" docs/extend docs/reference` (today only those two pages, plus the
+    published docs before designing. It changes `docs/reference/guidance.md`, the one-line
+    `CLAUDE.md` and `.claude/` entries in `docs/extend/scaffolded-site-files.md`, and any other hit
+    from `grep -rniE "claude" docs/extend docs/reference` (today only those pages, plus the
     per-version records).
+  - **Dedicated coding-agent docs (Geoff, 2026-10-07: "Having a 'using Claude Code with cairn' would
+    certainly be a useful documentation topic.").** A separate doc set for working with a coding
+    agent on a cairn site, outside the developer and editor tracks. Its first page is "Using Claude
+    Code with cairn": the guidance tree, the four skills and when each loads, the review agent, the
+    `Stop` hook snippet, and `cairn-guidance install` and `check` with their exit codes and the CI
+    step. Siblings for other agents follow once tool-neutral guidance ships. Track and placement are
+    settled in the engine-pass brainstorm. The facts already sit in `docs/internal/facts/extend.md`:
+    `f:0ygumq` (the installed tree), `f:pmmtrm` (Claude Code format only), `f:7ozknm` and
+    `f:o7bkm0` (the four skills), `f:6ro1n9` (the root `CLAUDE.md`), `f:dy5cfj` (`VERSION`),
+    `f:4ax489` (`check` and `--strict`), `f:jd54ph` (the CI step), `f:4h9fz4` and `f:5ohm23`
+    (`install`'s behavior and exit code), and `f:4nccq6` (the `Stop` hook snippet). The page
+    `scaffolded-site-files.md` cited them in a "guidance tree" section it dropped under the rulings.
 
 - **Docs tooling before stage 2b (stage 2a's close, 2026-10-07).** The page chain and the docs gate
   cost stage 2a rounds in these places; fix them before 2b's run. Lands in `~/.dotfiles` (the chain,
@@ -496,6 +511,9 @@ The original decision framing, for the record:
   - The register: the symptom-row anatomy names no closing section, and the people a channel signs
     in carry three names ("second audience", "second sign-in group", "second population"); sanction
     one in "Names" and bring the reference, TSDoc, and guidance to it.
+  - `tellgrader` now gates `check:docs-gate` locally (the `check:tellgrader` component, failing on
+    `trailing-hinge-run` under the docs-register profile) and is skipped in CI, where the binary is
+    absent. A follow-up could vendor it for CI.
   - Workstation tools, filed for the dotfiles: `tellgrader --register docs` flags the proper noun
     "showcase" as `slop-hard`; a `cairn-run-gate` re-issue during a live run once returned "gate
     vanished" instead of attaching (not reproduced).

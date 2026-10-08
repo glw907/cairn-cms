@@ -30,32 +30,37 @@ const (
 	sourceEnvironment  = "environment"
 )
 
-// validatePublicOrigin ports requireOrigin's three rules (src/lib/env.ts:43-66) applied to an
+// isLoopbackHost reports whether hostname, as url.URL.Hostname returns it, is a host the engine
+// treats as local: exactly localhost or 127.0.0.1, the set requireOrigin in src/lib/env.ts is the
+// source of truth for. The IPv6 loopback ::1 is not in it, so the doctor never passes a
+// config.public-origin the engine rejects. The match is exact, so a lookalike host like
+// localhost.example.com is not local. config.public-origin and the config.csrf-trusted-origins
+// plain-http note both use it, so they agree.
+func isLoopbackHost(hostname string) bool {
+	return hostname == "localhost" || hostname == "127.0.0.1"
+}
+
+// validatePublicOrigin applies the engine's requireOrigin rules (src/lib/env.ts) to an
 // already-nonempty origin: it must parse as an absolute URL, and it must be https unless its
-// hostname is exactly "localhost" or "127.0.0.1" (matched exactly, so a lookalike host like
-// localhost.example.com cannot skip the https requirement). Returns the empty string and true
-// when origin satisfies both rules.
+// hostname is a loopback host. Returns the empty string and true when origin satisfies both.
 func validatePublicOrigin(origin string) (failDetail string, ok bool) {
 	u, err := url.Parse(origin)
 	if err != nil || u.Scheme == "" || u.Host == "" {
 		return fmt.Sprintf(tmplPublicOriginNotAURL, origin), false
 	}
-	hostname := u.Hostname()
-	isLocal := hostname == "localhost" || hostname == "127.0.0.1"
-	if !strings.HasPrefix(origin, "https://") && !isLocal {
+	if !strings.HasPrefix(origin, "https://") && !isLoopbackHost(u.Hostname()) {
 		return fmt.Sprintf(tmplPublicOriginNotHTTPS, origin), false
 	}
 	return "", true
 }
 
-// ConfigPublicOrigin ports checks-local.ts's configPublicOrigin (:129-152). Snapshot.PublicOrigin
-// is resolved by the command layer, wrangler vars taking precedence over the environment, before
-// any check runs; this check reads wrangler.jsonc/wrangler.toml itself only to learn whether a
-// wrangler config was found at all, matching the ported skip condition: skip only when no
-// wrangler config exists and no origin resolved from either source. A wrangler config found with
-// no PUBLIC_ORIGIN in its vars and none in the environment falls through to the same
-// empty-origin fail every other unconfigured case gets.
-var ConfigPublicOrigin = Check{
+// configPublicOrigin validates the site's public origin. Snapshot.PublicOrigin is resolved by the
+// command layer, wrangler vars taking precedence over the environment, before any check runs; this
+// check reads wrangler.jsonc/wrangler.toml itself only to learn whether a wrangler config was found
+// at all, so it skips only when no wrangler config exists and no origin resolved from either
+// source. A wrangler config found with no PUBLIC_ORIGIN in its vars and none in the environment
+// falls through to the same empty-origin fail every other unconfigured case gets.
+var configPublicOrigin = Check{
 	ID:        "config.public-origin",
 	Condition: spine.ConditionConfigPublicOriginInvalid,
 	Run: func(s Snapshot) Result {
@@ -68,10 +73,10 @@ var ConfigPublicOrigin = Check{
 			return skipResult(detailPublicOriginSkip)
 		}
 		if origin.Value == "" {
-			return failResult(spine.ConditionConfigPublicOriginInvalid, detailPublicOriginUnconfigured)
+			return failResult(detailPublicOriginUnconfigured)
 		}
 		if detail, ok := validatePublicOrigin(origin.Value); !ok {
-			return failResult(spine.ConditionConfigPublicOriginInvalid, detail)
+			return failResult(detail)
 		}
 		source := sourceEnvironment
 		if origin.Source == OriginFromVars {

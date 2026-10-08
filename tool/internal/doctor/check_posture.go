@@ -21,8 +21,8 @@ var aiCrawlerTokens = map[string]struct{}{
 	"meta-externalagent": {},
 }
 
-// The two Content-Signal values buildRobots emits (src/lib/delivery/robots.ts:22-25), the
-// postures a served file's own directive states rather than what the adapter declares.
+// The two Content-Signal values buildRobots emits (CONTENT_SIGNAL in src/lib/delivery/robots.ts),
+// the postures a served file's own directive states rather than what the adapter declares.
 const (
 	contentSignalDecline = "ai-train=no"
 	contentSignalInvite  = "search=yes, ai-train=yes"
@@ -31,8 +31,7 @@ const (
 // whitespacePattern backs canonicalizeSignal, folding a Content-Signal value's comma-spacing.
 var whitespacePattern = regexp.MustCompile(`\s+`)
 
-// canonicalizeSignal ports check-posture.ts's own helper: strip whitespace and case so a
-// comparison never hinges on comma-spacing.
+// canonicalizeSignal strips whitespace and case so a comparison never hinges on comma-spacing.
 func canonicalizeSignal(value string) string {
 	return strings.ToLower(whitespacePattern.ReplaceAllString(value, ""))
 }
@@ -70,11 +69,10 @@ type parsedRobots struct {
 	declinesAIToken bool
 }
 
-// parseRobots ports check-posture.ts's own parseRobots (:93-132). Consecutive User-agent lines
-// share one rule set (RFC 9309 section 2.2.1), so a file naming seven agents above a single
-// Disallow: / declines all seven; crediting only the last would report a declining site as
-// contradicting itself. Product tokens match case-insensitively, as that same section
-// requires.
+// parseRobots parses a robots.txt body. Consecutive User-agent lines share one rule set (RFC 9309
+// section 2.2.1), so a file naming seven agents above a single Disallow: / declines all seven;
+// crediting only the last would report a declining site as contradicting itself. Product tokens
+// match case-insensitively, as that same section requires.
 func parseRobots(text string) parsedRobots {
 	var parsed parsedRobots
 	// groupNamesAIToken and groupHasRule track whether the group being read names a
@@ -124,9 +122,8 @@ func parseRobots(text string) parsedRobots {
 	return parsed
 }
 
-// observedPosture ports check-posture.ts's own helper: what the served file itself states, read
-// off its Content-Signal or its per-crawler groups. One declined token is enough to read the
-// file as declining.
+// observedPosture returns what the served file itself states, read off its Content-Signal or its
+// per-crawler groups. One declined token is enough to read the file as declining.
 func observedPosture(parsed parsedRobots) (posture string, ok bool) {
 	if parsed.hasSignalPosture {
 		return parsed.signalPosture, true
@@ -157,11 +154,10 @@ const (
 		"produces, and this check cannot see what wrote it."
 )
 
-// describeOutsideLayer ports check-posture.ts's own helper: what the served file shows of a
-// layer other than cairn writing into it, or ok false when it shows none. Two User-agent: *
-// groups is the shape a managed robots.txt produces by prepending to the origin's own file; a
-// single group carrying an unfamiliar Content-Signal is not that shape, so it reports the
-// directive without naming a cause.
+// describeOutsideLayer returns what the served file shows of a layer other than cairn writing into
+// it, or ok false when it shows none. Two User-agent: * groups is the shape a managed robots.txt
+// produces by prepending to the origin's own file; a single group carrying an unfamiliar
+// Content-Signal is not that shape, so it reports the directive without naming a cause.
 func describeOutsideLayer(parsed parsedRobots, target *url.URL) (note string, ok bool) {
 	if parsed.userAgentStarCount > 1 {
 		signal := ""
@@ -203,11 +199,10 @@ const (
 	tmplPostureUnsetObserved = "%s, but %s carries directives consistent with '%s'. Set aiPosture explicitly if that is deliberate."
 )
 
-// evaluatePosture ports check-posture.ts's own evaluate (:187-219): decide and report one of the
-// three cases, no stance, a contradiction, or an outside layer. The declared posture is compared
-// against the served file first, and an outside layer is reported alongside that comparison
-// rather than instead of it, since a site declaring invite under a managed robots.txt that
-// declines is exactly the incident this check exists for.
+// evaluatePosture decides and reports one of the three cases, no stance, a contradiction, or an
+// outside layer. The declared posture is compared against the served file first, and an outside
+// layer is reported alongside that comparison rather than instead of it, since a site declaring
+// invite under a managed robots.txt that declines is exactly the incident this check exists for.
 func evaluatePosture(hasDeclared bool, declared, body string, target *url.URL) Result {
 	parsed := parseRobots(body)
 	observed, hasObserved := observedPosture(parsed)
@@ -225,8 +220,7 @@ func evaluatePosture(hasDeclared bool, declared, body string, target *url.URL) R
 		if hasObserved {
 			carries = fmt.Sprintf(tmplPostureObservedInstead, observed)
 		}
-		return failResult(spine.ConditionAIPostureNotEffective,
-			fmt.Sprintf(tmplPostureDeclaredMismatch, declared, target, carries, suffix))
+		return failResult(fmt.Sprintf(tmplPostureDeclaredMismatch, declared, target, carries, suffix))
 	}
 
 	if hasOutside {
@@ -256,13 +250,13 @@ const (
 // postureRobotsAbsentDetail names why Snapshot.Robots carries no body, for ai.posture-effective's
 // unchecked detail. A doctor run offline must not read as an AI-posture problem, so every reason
 // here is unknown, never fail.
-func postureRobotsAbsentDetail(reason RobotsAbsentReason) string {
+func postureRobotsAbsentDetail(reason robotsAbsentReason) string {
 	switch reason {
-	case RobotsAbsentNoOrigin:
+	case robotsAbsentNoOrigin:
 		return detailPostureNoOrigin
-	case RobotsAbsentUnparsedOrigin:
+	case robotsAbsentUnparsedOrigin:
 		return detailPostureBadOrigin
-	case RobotsAbsentNonOK:
+	case robotsAbsentNonOK:
 		return detailPostureNonOK
 	default:
 		return detailPostureUnreachable
@@ -280,13 +274,12 @@ func robotsURL(origin string) (target *url.URL, ok bool) {
 	return u.ResolveReference(&url.URL{Path: "/robots.txt"}), true
 }
 
-// AIPostureEffective ports check-posture.ts's postureEffective (:45-73): a live probe of the
-// deployed origin's /robots.txt, compared against the adapter's declared aiPosture. It reads
-// siteFacts for the declared posture, so it reports unchecked with factsAbsentDetail when
-// site-facts.json is absent, and it reads Snapshot.Robots for the served body, so it reports
-// unchecked with the fetch's own reason when the command layer's GET did not produce one; it
-// never dials itself.
-var AIPostureEffective = Check{
+// aiPostureEffective is a live probe of the deployed origin's /robots.txt, compared against the
+// adapter's declared aiPosture. It reads siteFacts for the declared posture, so it reports
+// unchecked with factsAbsentDetail when site-facts.json is absent, and it reads Snapshot.Robots for
+// the served body, so it reports unchecked with the fetch's own reason when the command layer's GET
+// did not produce one; it never dials itself.
+var aiPostureEffective = Check{
 	ID:        "ai.posture-effective",
 	Condition: spine.ConditionAIPostureNotEffective,
 	Run: func(s Snapshot) Result {

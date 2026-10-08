@@ -15,8 +15,8 @@ import (
 func TestAbsentSiteFactsMakesAllThreeChecksUnknown(t *testing.T) {
 	s := snapshotWithFiles(t, nil)
 
-	checks := []Check{ConfigMediaBucket, AuthRoleWiring, AIPostureEffective}
-	var results []Result
+	checks := []Check{configMediaBucket, authRoleWiring, aiPostureEffective}
+	var checked []CheckedResult
 	for _, c := range checks {
 		result := c.Run(s)
 		t.Run(c.ID, func(t *testing.T) {
@@ -27,10 +27,10 @@ func TestAbsentSiteFactsMakesAllThreeChecksUnknown(t *testing.T) {
 				t.Errorf("Detail = %q, want the exact absent-facts message", result.Detail)
 			}
 		})
-		results = append(results, result)
+		checked = append(checked, CheckedResult{Check: c, Result: result})
 	}
 
-	got := spine.ExitCode([]spine.SiteVerdicts{Verdicts(results)}, nil, 0)
+	got := spine.ExitCode([]spine.SiteVerdicts{Verdicts(checked)}, nil, 0)
 	if got != spine.VerdictUnknown {
 		t.Errorf("ExitCode = %v, want VerdictUnknown", got)
 	}
@@ -67,7 +67,7 @@ func TestSiteFactsVersionMismatchPropagatesAsUnchecked(t *testing.T) {
 		"src/content/.cairn/site-facts.json": `{"version": 3}`,
 	})
 
-	result := ConfigMediaBucket.Run(s)
+	result := configMediaBucket.Run(s)
 	if result.Status != StatusUnchecked {
 		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
 	}

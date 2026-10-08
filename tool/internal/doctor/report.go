@@ -3,65 +3,7 @@ package doctor
 import (
 	"fmt"
 	"strings"
-
-	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
-
-// checks is the complete doctor check set cairn doctor runs, in report order: the eight
-// file-only checks followed by the three facts-dependent checks, the same relative order the
-// engine's own doctor registers them in, with the checks this port does not carry (the
-// Cloudflare and GitHub App chain) left out. It is a literal slice, never populated by init(),
-// the same shape health.All uses.
-//
-// It is also the published check-id list: the tests that hold
-// docs/reference/cli-cairn-json-output.md and docs/reference/cli-cairn-doctor.md to every id
-// read it here rather than retyping the eleven.
-var checks = []Check{
-	ConfigBindings,
-	ConfigMediaBucket,
-	ConfigObservability,
-	ConfigCsrfTrustedOrigins,
-	ConfigSiteConfig,
-	ConfigPublicOrigin,
-	ConfigNoReferrerBlanket,
-	AdminMountShape,
-	ConfigDependencyFloors,
-	AuthRoleWiring,
-	AIPostureEffective,
-}
-
-// CheckedResult pairs one Check with the Result its Run produced. A report's per-check line and
-// its failure block both need the check's own Label, which lives on Check (its Condition) and
-// not on every Result, so the pair travels together the way report.ts's own
-// { check, result }[] does.
-type CheckedResult struct {
-	// Check is the check that ran.
-	Check Check
-	// Result is the settled outcome Check.Run produced against the run's Snapshot.
-	Result Result
-}
-
-// Run executes every check in checks against s, in report order, stamps each Result with its
-// own check's ID, and pairs the two.
-func Run(s Snapshot) []CheckedResult {
-	out := make([]CheckedResult, len(checks))
-	for i, c := range checks {
-		result := c.Run(s)
-		result.ID = c.ID
-		out[i] = CheckedResult{Check: c, Result: result}
-	}
-	return out
-}
-
-// Results returns the Result half of each pair in checked, in order, for doctor.Verdicts to
-// fold into the run's exit code.
-func Results(checked []CheckedResult) []Result {
-	out := make([]Result, len(checked))
-	for i, c := range checked {
-		out[i] = c.Result
-	}
-	return out
-}
 
 // docsBaseAdmin is the admin docs directory a failure's docs URL resolves against, the same
 // shape internal/render/layout.go's own fixAnchorBase carries for the health report. It is not
@@ -80,26 +22,13 @@ func docsURL(anchor string) string {
 	return docsBaseAdmin + strings.Replace(anchor, ".md", "", 1)
 }
 
-// conditionText returns id's registry text, panicking on a missing entry the same way
-// check_bindings.go's own labelFor does: a check raising a condition the embedded mirror does
-// not carry is a build-time defect a report must not paper over.
-func conditionText(id spine.Condition) spine.ConditionText {
-	text, ok := spine.TextFor(id)
-	if !ok {
-		panic(fmt.Sprintf("doctor: no registry entry for condition %q", id))
-	}
-	return text
-}
-
-// Format renders checked as cairn doctor's plain-text report, the shape report.ts:22-40
-// produces: one "STATUS  Label: detail" line per check, keyed to its own condition's registry
-// title, then a why/fix/docs block per failure, then a count summary. No ANSI, so a terminal and
-// a CI log read the same. The docs line is this port's own addition; report.ts carries no
-// equivalent.
+// Format renders checked as cairn doctor's plain-text report: one "STATUS  Label: detail" line per
+// check, keyed to its own condition's registry title, then a why/fix/docs block per failure, then a
+// count summary. No ANSI, so a terminal and a CI log read the same.
 func Format(checked []CheckedResult) string {
 	lines := make([]string, 0, len(checked)+8)
 	for _, cr := range checked {
-		lines = append(lines, fmt.Sprintf("%s  %s: %s", cr.Result.Status, cr.Check.Label(), cr.Result.Detail))
+		lines = append(lines, fmt.Sprintf("%s  %s: %s", cr.Result.Status, cr.Check.label(), cr.Result.Detail))
 	}
 
 	for _, cr := range checked {
@@ -107,7 +36,7 @@ func Format(checked []CheckedResult) string {
 			continue
 		}
 		text := conditionText(cr.Check.Condition)
-		lines = append(lines, "", fmt.Sprintf("%s failed.", cr.Check.Label()),
+		lines = append(lines, "", fmt.Sprintf("%s failed.", cr.Check.label()),
 			"  Why: "+text.Why, "  Fix: "+text.Remediation)
 		if url := docsURL(text.DocsAnchor); url != "" {
 			lines = append(lines, "  Docs: "+url)
@@ -124,4 +53,20 @@ func Format(checked []CheckedResult) string {
 	))
 
 	return strings.Join(lines, "\n")
+}
+
+// joinOr joins a list of names the way a sentence offers alternatives, matching the copy
+// standard's serial "or": "a or b" for two, and commas with a serial comma before the trailing
+// "or" for three or more.
+func joinOr(items []string) string {
+	switch len(items) {
+	case 0:
+		return ""
+	case 1:
+		return items[0]
+	case 2:
+		return items[0] + " or " + items[1]
+	default:
+		return strings.Join(items[:len(items)-1], ", ") + ", or " + items[len(items)-1]
+	}
 }

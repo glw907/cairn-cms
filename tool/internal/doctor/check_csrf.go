@@ -72,57 +72,6 @@ func keyMatches(pattern *regexp.Regexp, masked, code string) [][]int {
 	return out
 }
 
-// blankJSComments scans JavaScript or TypeScript source once and returns two views of it that
-// keep every byte offset. Comments become spaces in both. In masked the interior of every string
-// literal is blanked too, so a key name or a bracket inside a string never reads as syntax; in
-// code the strings stay, so an entry's text can be read back at the offsets masked found.
-// Newlines survive in both. A backtick string is scanned to its closing backtick without
-// following ${} nesting, which a trustedOrigins value never needs.
-func blankJSComments(src string) (masked, code string) {
-	m := []byte(src)
-	c := []byte(src)
-	blank := func(b []byte, i int) {
-		if b[i] != '\n' {
-			b[i] = ' '
-		}
-	}
-	for i := 0; i < len(src); {
-		switch {
-		case strings.HasPrefix(src[i:], "//"):
-			for i < len(src) && src[i] != '\n' {
-				blank(m, i)
-				blank(c, i)
-				i++
-			}
-		case strings.HasPrefix(src[i:], "/*"):
-			end := strings.Index(src[i+2:], "*/")
-			stop := len(src)
-			if end >= 0 {
-				stop = i + 2 + end + 2
-			}
-			for ; i < stop; i++ {
-				blank(m, i)
-				blank(c, i)
-			}
-		case src[i] == '\'' || src[i] == '"' || src[i] == '`':
-			quote := src[i]
-			i++
-			for i < len(src) && src[i] != quote {
-				if src[i] == '\\' && i+1 < len(src) {
-					blank(m, i)
-					i++
-				}
-				blank(m, i)
-				i++
-			}
-			i++
-		default:
-			i++
-		}
-	}
-	return string(m), string(c)
-}
-
 // closingIndex returns the index of the bracket closing the one at masked[open], or -1 when the
 // text ends first. masked must come from blankJSComments, so no string or comment holds a bracket.
 func closingIndex(masked string, open int) int {
@@ -225,13 +174,6 @@ func readTrustedOrigins(text string) (entries []string, readable bool) {
 	return entries, true
 }
 
-// isLocalOrigin reports whether an origin entry names a loopback host, the one place plain http
-// stays safe.
-func isLocalOrigin(u *url.URL) bool {
-	host := u.Hostname()
-	return host == "localhost" || host == "127.0.0.1" || host == "::1"
-}
-
 // csrfVerdict turns a config's entries into the check's Result.
 func csrfVerdict(path string, entries []string, svelteConfigFound bool) Result {
 	var failing []string
@@ -242,8 +184,7 @@ func csrfVerdict(path string, entries []string, svelteConfigFound bool) Result {
 		failing = append(failing, clauseCsrfNull)
 	}
 	if len(failing) > 0 {
-		return failResult(spine.ConditionConfigCSRFTrustedOriginsWildcard,
-			fmt.Sprintf(tmplCsrfFail, path, strings.Join(failing, "; ")))
+		return failResult(fmt.Sprintf(tmplCsrfFail, path, strings.Join(failing, "; ")))
 	}
 	if svelteConfigFound {
 		return uncheckedResult(detailCsrfSvelteConfigMoved)
@@ -254,47 +195,42 @@ func csrfVerdict(path string, entries []string, svelteConfigFound bool) Result {
 	var detail strings.Builder
 	fmt.Fprintf(&detail, tmplCsrfPassEntries, path, strings.Join(entries, ", "))
 	for _, entry := range entries {
-		if u, err := url.Parse(entry); err == nil && u.Scheme == "http" && !isLocalOrigin(u) {
+		if u, err := url.Parse(entry); err == nil && u.Scheme == "http" && !isLoopbackHost(u.Hostname()) {
 			fmt.Fprintf(&detail, tmplCsrfPlainHTTP, entry)
 		}
 	}
 	return passResult(detail.String())
 }
 
-// ConfigCsrfTrustedOrigins reads the csrf key in the site's Vite config and fails on a
+// configCsrfTrustedOrigins reads the csrf key in the site's Vite config and fails on a
 // trustedOrigins entry of "*" or "null". SvelteKit compares the raw Origin string against each
 // entry, so "*" turns the check off on every route and "null" admits every opaque-origin POST,
 // which a sandboxed iframe sends. Any other entry passes with a note that it widens /admin too.
 //
 // A state the text read cannot see never passes: no Vite config, a value that is not a literal,
 // and a leftover svelte.config.js all report unchecked. A definite failure outranks unchecked.
-var ConfigCsrfTrustedOrigins = Check{
+var configCsrfTrustedOrigins = Check{
 	ID:        "config.csrf-trusted-origins",
 	Condition: spine.ConditionConfigCSRFTrustedOriginsWildcard,
 	Run: func(s Snapshot) Result {
-		_, svelteConfigFound, err := s.ReadFile("svelte.config.js")
+		_, svelteConfigFound, err := s.readFile("svelte.config.js")
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
-		var path string
+		body, path, found, err := s.readFirst(viteConfigCandidates)
+		if err != nil {
+			return uncheckedResult(err.Error())
+		}
 		var entries []string
-		for _, candidate := range viteConfigCandidates {
-			body, found, err := s.ReadFile(candidate)
-			if err != nil {
-				return uncheckedResult(err.Error())
-			}
-			if !found {
-				continue
-			}
+		if found {
 			read, readable := readTrustedOrigins(string(body))
 			if !readable {
-				return uncheckedResult(fmt.Sprintf(tmplCsrfUnreadable, candidate))
+				return uncheckedResult(fmt.Sprintf(tmplCsrfUnreadable, path))
 			}
-			path, entries = candidate, read
-			break
+			entries = read
 		}
-		if path == "" && !svelteConfigFound {
-			return uncheckedResult(fmt.Sprintf(tmplCsrfNoViteConfig, strings.Join(viteConfigCandidates, ", ")))
+		if !found && !svelteConfigFound {
+			return uncheckedResult(fmt.Sprintf(tmplCsrfNoViteConfig, joinOr(viteConfigCandidates)))
 		}
 		return csrfVerdict(path, entries, svelteConfigFound)
 	},

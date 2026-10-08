@@ -49,20 +49,53 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
-- **`tooling`.** `examples/showcase/e2e/admin-visual.spec.ts:490` ("zen toggle: the frame offset animates through more
-  than two margin-left values") asserts more than two distinct samples inside a 400 ms window. It failed once in a
-  full local gate (received 2) and passed 3 of 3 alone (SvelteKit 3 pass, close Task C4, 2026-10-06): timing-sensitive
-  under load. Fix with a readiness or sampling approach that does not depend on frame timing (sample until the
-  animation reports finished, or assert start and end values), never a longer window.
+- **`package`.** `@glw907/cairn-cms-dev` ships `.ts` source, and a consumer's `svelte-check` type-checks it through
+  the dynamic import (`skipLibCheck` covers only `.d.ts`): on a fresh SvelteKit 3 scaffold it reports `Cannot find
+  module 'cloudflare:workers'` at `src/handle.ts:14`, plus `node:sqlite` in `channel-db.ts` until `@types/node` loads.
+  Found by the 2a unattended run's add-cairn re-test (R4, conductor, 2026-10-07). Ship `.d.ts` or `.js` plus types.
+- **`engine`.** The stale-manifest build error tells the reader to run `npm run cairn:manifest`, a script a site that
+  follows `add-cairn-to-a-sveltekit-app` does not have; the page uses `npx cairn-manifest`. Name the bin in the
+  message. Found by the R4 re-test (conductor, 2026-10-07).
+- **`tooling`.** `npm run link:consumer` refuses a site whose `package.json` declares neither engine package ("is it a
+  cairn consumer?"), so a fresh site following the add-cairn page must hand-add both before it can take unreleased
+  engine work. Found by the R4 re-test (conductor, 2026-10-07).
+- **`docs-gate`.** The add-cairn hooks snippet's `snippet-check-skip` (for the `__CAIRN_DEV_BUILD__` global) also hid a
+  `Handle` import from `@sveltejs/kit` that SvelteKit 3 no longer exports, and `check:snippets` typechecks against the
+  repo's own types, so a `process.env` read that fails on a fresh scaffold (no `@types/node`) passes. A
+  fresh-scaffold snippet typecheck would catch both. Found by the R4 re-test (conductor, 2026-10-07).
+- **`facts`.** `main`'s fact `Source:` lines drifted in range when SvelteKit 3 shrank engine files (`f:j254i8`'s
+  `factory.ts`, `f:cvv6to`'s `content-routes-settings.ts`, others in `guard.ts` and `factory.ts`); `check:facts`
+  catches only out-of-range lines and missing paths, so in-range drift goes unseen until a reader checks. Found by the
+  2a run's R2 merge review (conductor, 2026-10-07).
+- **`scripter`.** Found by the cairn-themes Survey S1 plan review and run (conductor, 2026-10-07). `cairn-audit` exits 0 on any advisory finding and has no flag to make an advisory fail, while `public-literals`, `theme-conformance`, and `theme-contrast`, the three rules a theme author gates on, are all advisory on a consumer. It also prints no machine-readable report, and the package exports no `./audit` entry. A theme repo that wants contrast to fail CI must scrape the human summary line (`N errors, M advisories, K suppressed`, `src/lib/audit/report.ts:49`) and treat a missing line as a crash. A fix adds a `--strict` (advisories fail) or `--fail-on advisory` flag and a `--json` report, so the summary format stops being an interface.
+- **`extender`.** Found by the cairn-themes Survey S1 plan review (conductor, 2026-10-07). `docs/reference/cairn-audit.md` frames the public scope as a site's, and gives no recipe for auditing a standalone theme package, such as a theme core developed outside any site. The working shape the Survey probe found is a contrast-only entry sheet that imports Tailwind, `@glw907/cairn-cms/cairn-public.css`, and the core, named in `public.stylesheets`, with `public.themeRoots` on the core directory. Without `cairn-public.css` in that chain, `theme-conformance` reports 23 advisories. A fix adds a short "Audit a theme outside a site" section with that config.
+- **`scripter`.** Found by the cairn-themes Survey S1 run, Task 4 (implementer and reviewer, 2026-10-07). A `cairn-audit` finding carries a rule id but no stable finding code, so a test that must prove one specific failure (a fixture theme whose info pair sits at 4.46:1) can only regex the prose message. The Survey contrast fixture fell back to asserting a nonzero count, which still passes if `theme-contrast` stops flagging the pair, because the minimal fixture theme also raises 12 `unmeasured` advisories. Each of those repeats the same resolver explanation ("The resolver follows var() chains to a literal..."). A fix gives each finding a stable code (`theme-contrast/below-aa`, `theme-contrast/unmeasured`) in the text and in the `--json` report the earlier `scripter` entry asks for, and prints the resolver note once per run.
+- **`extender`.** Found by the cairn-themes Survey S1 viewport grade (visual-verifier, 2026-10-07; verified by the conductor against daisyUI 5.7.47). daisyUI 5 has no theme variable for a form field's ground: `.input` and `.select` paint on `--color-base-100`, so a theme whose fields sit on their own ground (Survey's white light fields and sunken dark fields) must add a component override, and `cairn-public.css` offers no `--cairn-*` role for it. `theme-contrast` therefore never measures field text on the real field ground. The same holds for a field's resting border: daisyUI draws input, select, and textarea borders in `base-200` and the checkbox and radio ring in a 20% `base-content` mix, all under the 3:1 that WCAG 1.4.11 asks of a control boundary (Survey measured 1.36:1 and 1.48:1; its close-time a11y review caught both, and no `cairn-audit` rule did). `border-contrast` would, but `--rendered` drives a running admin, so a public theme's controls are never measured. A fix adds field-ground and field-border roles to the public theme contract, mapped onto `.input`, `.select`, `.textarea`, `.checkbox`, and `.radio` in `cairn-public.css`, plus `theme-contrast` pairs for field text on the field ground and the field border against `base-100` at 3:1.
+- **`extender`.** Found by the cairn-themes Survey S1 viewport grades, rounds 1 and 2 (visual-verifier, 2026-10-07; verified by the conductor in `daisyui/components/*.css` 5.7.47). daisyUI 5 ignores `--color-base-300` for most component borders: `card-border`, `input`, `select`, and `textarea` hard-wire `--color-base-200`, and `.list-row` draws its divider in `color-mix(in oklab, var(--color-base-content) 5%, transparent)`. A theme whose border role is `base-300` gets frames that nearly vanish on `base-100`, and finds them one grader round at a time (Survey needed two). A fix maps these component borders onto one border role in `cairn-public.css`, or at least lists the components and the override recipe in the re-skin docs, so each theme stops rediscovering them.
 
-- **`go`.** `tool/internal/doctor` (graded "workmanlike" by the SvelteKit 3 pass's close `go-architecture-reader`,
-  2026-10-06) carries pre-existing debt the pass did not cause: eleven exported check values plus `Snapshot.ReadFile`,
-  the `RobotsAbsent*` constants, and `doctor.Results` have no caller outside the package (unexport them; `Verdicts`
-  can take `[]CheckedResult`); `check_origin.go`'s `isLocal` and `check_csrf.go`'s `isLocalOrigin` disagree on `::1`;
-  `labelFor`, `severityFor`, and `conditionText` triplicate one lookup; `resultFromFloorsVerdict` rebuilds `failResult`;
-  three loops each read the first existing file; `siteConfigOutcome.Path` and `Snapshot.At` are test-only; about 55
-  comment lines cite deleted TypeScript files by line range (`checks-local.ts` and siblings). Also `spine.Conditions()`
-  is test-only behind a "2.0 seam" comment. A tool cleanup pass, not a SvelteKit concern.
+- **`engine`.** `requireOrigin` (`src/lib/env.ts`) treats `localhost` and `127.0.0.1` as local but not `::1`,
+  the IPv6 loopback (RFC 4291 section 2.5.3), so a `PUBLIC_ORIGIN` of `http://[::1]:5173` throws
+  `config.public-origin-invalid`. An engine pass decides whether to add `::1` to its local test; the doctor's
+  `isLoopbackHost` (`tool/internal/doctor/check_origin.go`) mirrors the engine's set and follows the decision.
+  The engine already disagrees with itself here: `csrfSecure` reads `isLocalHost` (`src/lib/dev-flag.ts`), which
+  counts `::1` as local (`f:g22dnw`), so an `http://[::1]` dev server gets bare cookie names from `csrfSecure` and a
+  throw from `requireOrigin`. Found by the `tool/internal/doctor` cleanup lane, 2026-10-07.
+- **`go`.** The package grade of `tool/internal/doctor` after its cleanup lane (2026-10-07) named four findings the
+  lane's one fix round left, since each reaches past the lane's changed code or is optional. First, the command's
+  `resolvePublicOrigin` (`tool/cmd/cairn/doctor.go:136`) applies the vars-over-environment precedence the doctor
+  package owns (`OriginSource`), so `ReadWranglerConfig` and `WranglerFacts` stay exported for it alone; a
+  `doctor.ResolvePublicOrigin(s, envOrigin)` in `snapshot.go` would unexport both. Second, three checks restate the
+  facts-file preamble (`check_media.go:31`, `check_roles.go:105`, `check_posture.go:286`) and three the wrangler
+  preamble (`check_bindings.go:31`, `check_observability.go:18`, `check_media.go:41`); a helper returning
+  `(siteFacts, *Result)` is optional. Third, `siteconfigpath.go` (49 lines, one reader) could merge into
+  `siteconfig.go`, and `IsCairnSite` (`fileread.go:85`) sits more naturally beside `NewSnapshot` in `snapshot.go`.
+  Fourth, the comment at `json.go:82-84` restates the empty-array choice that `checkPayload`'s doc and the schema
+  carry. Found by the lane's package grade (2026-10-07).
+- **`facts`.** `check:facts` never checks a Go `Source:` pointer: `POINTER_RE`
+  (`scripts/checks/check-facts.mjs:350-351`) lists no `go` extension, so a `.go` `path:line` is neither resolved nor
+  range-checked. The doctor cleanup lane's diff review found four doctor cites past the end of `check_referrer.go`
+  that the gate passed. Adding `go` to the extension list brings Go pointers under the existing path and range
+  checks. Found by the `tool/internal/doctor` cleanup lane's review, 2026-10-07.
 - **`extend`.** SvelteKit 3 remote functions (`/_app/remote/...`) are not `/admin` paths, so a site-built admin
   remote command gets no guard session, no Rule 1 token check, and no security headers (Kit's `is_remote_forbidden`
   gives same-origin protection only). The extend arm should say a site-built admin remote function resolves the
@@ -90,13 +123,6 @@ New findings start below this line, one per finding, with its perspective and a 
   Worker env), so under `vite dev --host` a LAN request with a shell-only `CAIRN_DEV_BACKEND=1` no longer trips the
   member-action refusal; dev-only, and `captureDeliver` still refuses. Close `web-auth-security-reviewer`, 2026-10-06.
 
-- **`tooling`.** Two showcase e2e specs time out on a slow CI runner while waiting on an admin list link, the same
-  slow-runner pattern as the known `spellcheck.spec.ts:20` flake: `e2e/tidy.spec.ts:20` (line 24, waiting for the
-  seeded `a[href="/admin/posts/2026-06-copyedit"]`) and `e2e/preview.spec.ts:371` (line 398, waiting for the "Delete
-  Broken link sibling" button). Both failed every attempt in CI run e2e on `7722ab44` (11.6 minutes against 5.7 on the
-  passing rerun of the next commit). Candidates for the same readiness-signal fix the zen test took (wait on a real
-  ready signal, never a longer timeout). Found by the SvelteKit 3 pass's CI diagnosis, 2026-10-06.
-
 - **`tooling`.** `scripts/lab/theme-fixture.mjs` defaults `THEME_FIXTURE_PORT` to 4393 (`:59`), which the
   SvelteKit 3 pass's e2e host now pins as its `wrangler dev` inspector port (`E2E_PORT` + 1,
   `examples/showcase/playwright.config.ts:48`), and `RESERVED_PORTS` (`:63`) lists neither 4393 nor
@@ -110,6 +136,12 @@ New findings start below this line, one per finding, with its perspective and a 
   the lane rule puts it on light, where it cannot fit. Fix: document the override in the script's
   header, or have it run on the heavy lane. Found by Task 6's implementer, conductor-verified
   against `cairn-run-gate`'s caps, 2026-10-05.
+- **`tooling`.** `examples/showcase/e2e/spellcheck.spec.ts:20` (the worker-lint test, "the worker lints the seeded
+  misspellings, a suggestion applies, and an added word clears its underline") times out on a slow CI runner: the
+  worker streams the 1.5MB en-US dictionary into wasm on first lint, and the test already raises its ceiling to 90s
+  (`test.setTimeout`, line 26) without removing the race. It is the slow-runner pattern that the zen-toggle and
+  preview-delete flakes shared. Fix: wait on a real readiness signal from the worker (the dictionary loaded), never a
+  longer timeout. Found by the SvelteKit 3 pass's CI diagnosis, 2026-10-06.
 
 The draft docs harvest's close (2026-09-30) triaged the whole log and found four open entries,
 all filed by the harvest itself, each verified against the tree first. The stale `/components`

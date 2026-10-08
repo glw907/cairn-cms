@@ -239,7 +239,7 @@
     "color-scheme": "dark",
     "font-family": "\"IBM Plex Sans Variable\", system-ui, -apple-system, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
     "font-synthesis": "none",
-    "scrollbar-color": "oklab(0.93 0.00155291 0.00579556 / 0.55) rgba(0, 0, 0, 0)",
+    "scrollbar-color": "oklab(0.93 0.00155291 0.00579555 / 0.55) rgba(0, 0, 0, 0)",
     "scrollbar-width": "thin"
   },
   "dark-child": {
@@ -320,7 +320,7 @@
     "color-scheme": "dark",
     "font-family": "\"IBM Plex Sans Variable\", system-ui, -apple-system, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
     "font-synthesis": "none",
-    "scrollbar-color": "oklab(0.93 0.00155291 0.00579556 / 0.55) rgba(0, 0, 0, 0)",
+    "scrollbar-color": "oklab(0.93 0.00155291 0.00579555 / 0.55) rgba(0, 0, 0, 0)",
     "scrollbar-width": "auto"
   }
 }

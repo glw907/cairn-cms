@@ -3,14 +3,16 @@ package doctor
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
+
+	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// enginePackageJSONFixture is a minimal installed @glw907/cairn-cms/package.json, its peer
-// ranges matching the real ones asserted in src/tests/unit/doctor-check-floors.test.ts's
-// readEnginePeers suite: svelte ^5.56.10, @sveltejs/kit ^3, and @anthropic-ai/sdk marked
-// optional in peerDependenciesMeta (finding 6).
+// enginePackageJSONFixture is a minimal installed @glw907/cairn-cms/package.json, its peer ranges
+// matching the engine's real ones: svelte ^5.56.10, @sveltejs/kit ^3, and @anthropic-ai/sdk marked
+// optional in peerDependenciesMeta.
 const enginePackageJSONFixture = `{
   "peerDependencies": {
     "@anthropic-ai/sdk": ">=0.105.0 <1",
@@ -23,7 +25,7 @@ const enginePackageJSONFixture = `{
 }`
 
 // npmLockFixture writes a lockfileVersion 3 package-lock.json body naming the given resolved
-// versions, the same shape lockV3 builds in the TypeScript corpus.
+// versions.
 func npmLockFixture(versions map[string]string) string {
 	var b strings.Builder
 	b.WriteString(`{"name":"site","lockfileVersion":3,"packages":{"":{"version":"0.0.0"}`)
@@ -38,8 +40,7 @@ func npmLockFixture(versions map[string]string) string {
 	return b.String()
 }
 
-// pnpmLockFixture writes a pnpm-lock.yaml v9 body whose root importer resolves the given
-// versions, the same shape pnpmLockV9 builds in the TypeScript corpus.
+// pnpmLockFixture writes a pnpm-lock.yaml v9 body whose root importer resolves the given versions.
 func pnpmLockFixture(versions map[string]string) string {
 	var b strings.Builder
 	b.WriteString("lockfileVersion: '9.0'\nimporters:\n  .:\n    devDependencies:\n")
@@ -51,8 +52,7 @@ func pnpmLockFixture(versions map[string]string) string {
 	return b.String()
 }
 
-// yarnLockFixture writes a classic yarn.lock body naming the given resolved versions, the same
-// shape yarnLockClassic builds in the TypeScript corpus.
+// yarnLockFixture writes a classic yarn.lock body naming the given resolved versions.
 func yarnLockFixture(versions map[string]string) string {
 	var b strings.Builder
 	for dep, version := range versions {
@@ -154,7 +154,7 @@ func TestConfigDependencyFloors(t *testing.T) {
 				enginePackageJSONPath: enginePackageJSONFixture,
 			},
 			wantStatus:    StatusUnchecked,
-			wantDetailHas: detailNoLockfileFound,
+			wantDetailHas: "none of package-lock.json, pnpm-lock.yaml, or yarn.lock was found",
 		},
 		{
 			name: "prefers package-lock.json when more than one lockfile exists",
@@ -170,17 +170,38 @@ func TestConfigDependencyFloors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
-			result := ConfigDependencyFloors.Run(s)
+			result := runCheck(configDependencyFloors, s).Result
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 			if !strings.Contains(result.Detail, tt.wantDetailHas) {
 				t.Errorf("Detail = %q, want it to contain %q", result.Detail, tt.wantDetailHas)
 			}
-			if tt.wantStatus == StatusFail && result.Condition != ConfigDependencyFloors.Condition {
-				t.Errorf("Condition = %v, want %v", result.Condition, ConfigDependencyFloors.Condition)
+			if tt.wantStatus == StatusFail && result.Severity != spine.CriticalFailure {
+				t.Errorf("Severity = %v, want spine.CriticalFailure", result.Severity)
 			}
 		})
+	}
+}
+
+// TestConfigDependencyFloorsUnexpectedLockfileIsUnchecked proves the parser dispatch refuses a
+// lockfile name it has no case for: with a fourth name appended to lockfiles, a site carrying
+// only that file reports unchecked, naming it, rather than reaching the yarn parser.
+func TestConfigDependencyFloorsUnexpectedLockfileIsUnchecked(t *testing.T) {
+	saved := lockfiles
+	t.Cleanup(func() { lockfiles = saved })
+	lockfiles = append(slices.Clone(saved), "bun.lock")
+
+	s := snapshotWithFiles(t, map[string]string{
+		enginePackageJSONPath: enginePackageJSONFixture,
+		"bun.lock":            "{}\n",
+	})
+	result := runCheck(configDependencyFloors, s).Result
+	if result.Status != StatusUnchecked {
+		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
+	}
+	if want := "bun.lock has no lockfile parser"; !strings.Contains(result.Detail, want) {
+		t.Errorf("Detail = %q, want it to contain %q", result.Detail, want)
 	}
 }
 
@@ -189,15 +210,15 @@ func TestConfigDependencyFloors(t *testing.T) {
 // real caret ranges: judgePeers skips rather than guesses when the engine's own declared range
 // is not a simple caret form.
 func TestConfigDependencyFloorsNonCaretEngineRangeSkips(t *testing.T) {
-	verdict := npmDependencyFloors(
+	result := npmDependencyFloors(
 		npmLockFixture(map[string]string{"svelte": "5.56.10"}),
 		map[string]string{"svelte": ">=5.56.10"},
 	)
-	if verdict.status != StatusSkip {
-		t.Fatalf("status = %v, want StatusSkip (detail %q)", verdict.status, verdict.detail)
+	if result.Status != StatusSkip {
+		t.Fatalf("Status = %v, want StatusSkip (detail %q)", result.Status, result.Detail)
 	}
-	if !strings.Contains(verdict.detail, "not a simple caret range") {
-		t.Errorf("detail = %q, want it to name the non-caret range", verdict.detail)
+	if !strings.Contains(result.Detail, "not a simple caret range") {
+		t.Errorf("Detail = %q, want it to name the non-caret range", result.Detail)
 	}
 }
 
@@ -217,7 +238,7 @@ func TestConfigDependencyFloorsSymlinkedNodeModulesIsUnchecked(t *testing.T) {
 		t.Fatalf("write package.json: %v", err)
 	}
 
-	result := ConfigDependencyFloors.Run(Snapshot{Dir: site})
+	result := configDependencyFloors.Run(Snapshot{Dir: site})
 	if result.Status != StatusUnchecked {
 		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
 	}
@@ -251,7 +272,7 @@ func TestReadEnginePeersFiltersOptionalPeer(t *testing.T) {
 
 	// A lockfile carrying no entry for the optional peer must not turn the run into a skip:
 	// the two real peers alone must still pass.
-	result := ConfigDependencyFloors.Run(snapshotWithFiles(t, map[string]string{
+	result := configDependencyFloors.Run(snapshotWithFiles(t, map[string]string{
 		enginePackageJSONPath: enginePackageJSONFixture,
 		"package-lock.json":   npmLockFixture(map[string]string{"svelte": "5.56.10", "@sveltejs/kit": "3.0.0"}),
 	}))

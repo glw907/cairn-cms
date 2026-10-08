@@ -887,6 +887,25 @@ the named human gates only):**
 
 ## Next
 
+- **The tidy model catalog does not know `claude-haiku-5-5` or `claude-sonnet-5-5` (October dependency
+  sweep, 2026-10-07; record `docs/internal/record/2026-10-07-dependency-sweep.md`).** `@anthropic-ai/sdk`
+  0.132 lists both ids. `claude-sonnet-5-5` already resolves by prefix in `EFFORT_TIER_PREFIXES`
+  (`src/lib/sveltekit/content-routes-tidy.ts:58`), but `TIDY_MODEL_LABELS`
+  (`content-routes-settings.ts:130-132`) has no label for it, and a Haiku 5.5 id would fall to the
+  no-effort branch of `supportsEffort` without anyone having checked that it rejects the parameter.
+  Which models the editor setting offers is a product call. Trigger: the next pass that touches the
+  tidy model setting, or an owner asking for a newer default.
+
+- **Held dependency majors (October dependency sweep, 2026-10-07).** Each waits on a condition a
+  tripwire can read. `devalue` 6: `@sveltejs/kit` declares `devalue` `^6` (cairn's
+  `client-action.ts` and `MediaInsertPopover.svelte` parse what SvelteKit stringifies, so the two
+  must agree). TypeScript 7: the `svelte-check --tsgo` entry under Now and `@sveltejs/kit`'s
+  `typescript` peer admitting `^7`. Vitest 5 with `@vitest/browser*`: `@cloudflare/vitest-plugin`
+  declares a `vitest` peer that admits `^5` (its latest, 1.3.7, peers `^4.1.0`). `@types/node` 26:
+  Node 26 reaches Active LTS (the engine floor decision in `docs/STATUS.md`). Go: `xo/terminfo`
+  `v1.x` (it also holds `charmbracelet/ultraviolet`), `x/exp/golden`, and `check.v1` move when
+  Geoff accepts the tagged-release scheme or an upstream we require pulls them in.
+
 - **`wrangler types --check` agrees with a committed `worker-configuration.d.ts` only on a tree with
   no build output (2026-10-05, SvelteKit 3 pass, S4; record
   `docs/superpowers/research/2026-10-05-sveltekit-3-bump-survey.md`).** wrangler adds

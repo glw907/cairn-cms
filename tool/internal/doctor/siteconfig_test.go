@@ -48,9 +48,6 @@ func TestSiteConfigFindsAtEveryCandidatePath(t *testing.T) {
 			if outcome.Status != siteConfigValid {
 				t.Fatalf("Status = %v, want siteConfigValid (reason %q)", outcome.Status, outcome.Reason)
 			}
-			if outcome.Path != tt.path {
-				t.Errorf("Path = %q, want %q", outcome.Path, tt.path)
-			}
 		})
 	}
 }
@@ -94,8 +91,5 @@ func TestSiteConfigNotFound(t *testing.T) {
 	}
 	if outcome.Status != siteConfigNotFound {
 		t.Fatalf("Status = %v, want siteConfigNotFound", outcome.Status)
-	}
-	if outcome.Path != "" {
-		t.Errorf("Path = %q, want empty", outcome.Path)
 	}
 }

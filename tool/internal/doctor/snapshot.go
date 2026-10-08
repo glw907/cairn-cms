@@ -3,7 +3,6 @@ package doctor
 import (
 	"fmt"
 	"path/filepath"
-	"time"
 )
 
 // OriginSource names which precedence rule produced Snapshot.PublicOrigin's value, or that
@@ -30,21 +29,21 @@ type PublicOrigin struct {
 	Source OriginSource
 }
 
-// RobotsAbsentReason names why Snapshot.Robots carries no body. It is read only when
-// Robots.Present is false.
-type RobotsAbsentReason int
+// robotsAbsentReason names why Snapshot.Robots carries no body. It is read only when Robots.Present
+// is false.
+type robotsAbsentReason int
 
 // The reasons a robots.txt fetch can come back empty.
 const (
-	// RobotsAbsentNoOrigin means the snapshot carries no public origin to fetch from.
-	RobotsAbsentNoOrigin RobotsAbsentReason = iota + 1
-	// RobotsAbsentUnparsedOrigin means the resolved origin does not parse as a URL.
-	RobotsAbsentUnparsedOrigin
-	// RobotsAbsentTransportFailure means the fetch itself failed: a timeout, a DNS failure, a
+	// robotsAbsentNoOrigin means the snapshot carries no public origin to fetch from.
+	robotsAbsentNoOrigin robotsAbsentReason = iota + 1
+	// robotsAbsentUnparsedOrigin means the resolved origin does not parse as a URL.
+	robotsAbsentUnparsedOrigin
+	// robotsAbsentTransportFailure means the fetch itself failed: a timeout, a DNS failure, a
 	// refused connection.
-	RobotsAbsentTransportFailure
-	// RobotsAbsentNonOK means the origin answered with a non-200 status.
-	RobotsAbsentNonOK
+	robotsAbsentTransportFailure
+	// robotsAbsentNonOK means the origin answered with a non-200 status.
+	robotsAbsentNonOK
 )
 
 // Robots is the fetched robots.txt body, or its typed absence.
@@ -54,23 +53,21 @@ type Robots struct {
 	// Present reports whether Body was fetched. False means Reason names why.
 	Present bool
 	// Reason is read only when Present is false.
-	Reason RobotsAbsentReason
+	Reason robotsAbsentReason
 }
 
-// Snapshot is one doctor run's already-gathered inputs: every check reads from it and performs
-// no network call and reads no clock of its own. The command layer fills PublicOrigin, Robots,
-// and At before any check runs; NewSnapshot fills only Dir.
+// Snapshot is one doctor run's already-gathered inputs: every check reads from it and performs no
+// network call and reads no clock of its own. The command layer fills PublicOrigin and Robots
+// before any check runs; NewSnapshot fills only Dir.
 type Snapshot struct {
-	// Dir is the resolved, symlink-free directory being examined, absolute if the argument was
-	// and relative otherwise. Every file read a check makes through ReadFile is measured
-	// against this boundary.
+	// Dir is the resolved, symlink-free directory being examined, absolute if the argument was and
+	// relative otherwise. Every file read a check makes through readFile is measured against this
+	// boundary.
 	Dir string
 	// PublicOrigin is the site's resolved public origin, or its typed absence.
 	PublicOrigin PublicOrigin
 	// Robots is the fetched robots.txt body, or its typed absence.
 	Robots Robots
-	// At is the run's own instant, stamped once.
-	At time.Time
 }
 
 // NewSnapshot resolves dir once via filepath.EvalSymlinks and returns a Snapshot whose Dir is
@@ -84,8 +81,36 @@ func NewSnapshot(dir string) (Snapshot, error) {
 	return Snapshot{Dir: resolved}, nil
 }
 
-// ReadFile reads the file at relPath inside s.Dir, refusing any path that resolves outside it,
-// even through a symlink. See readUnder for the exact contract.
-func (s Snapshot) ReadFile(relPath string) (body []byte, ok bool, err error) {
+// readFile reads the file at relPath inside s.Dir, refusing any path that resolves outside it, even
+// through a symlink. See readUnder for the exact contract.
+func (s Snapshot) readFile(relPath string) (body []byte, ok bool, err error) {
 	return readUnder(s.Dir, relPath)
+}
+
+// readFirst reads the first of paths that exists inside s.Dir, in order, and returns its body with
+// the path it came from. found is false when none exists. A read error on any probed path stops the
+// search, so an unreadable earlier candidate is never skipped in favor of a later one.
+func (s Snapshot) readFirst(paths []string) (body []byte, path string, found bool, err error) {
+	for _, candidate := range paths {
+		body, ok, err := s.readFile(candidate)
+		if err != nil {
+			return nil, "", false, err
+		}
+		if ok {
+			return body, candidate, true, nil
+		}
+	}
+	return nil, "", false, nil
+}
+
+// hooksCandidatePaths are the two spellings a site's hooks module might use, .ts checked first.
+var hooksCandidatePaths = []string{"src/hooks.server.ts", "src/hooks.server.js"}
+
+// readHooksSource reads the site's hooks module under either spelling, .ts preferred, returning
+// the path it read from alongside the text so a failure can name the file. found is false when
+// neither candidate exists. Two checks read the same file: auth.role-wiring and
+// config.no-referrer-blanket.
+func readHooksSource(s Snapshot) (text, path string, found bool, err error) {
+	body, path, found, err := s.readFirst(hooksCandidatePaths)
+	return string(body), path, found, err
 }

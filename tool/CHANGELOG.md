@@ -40,6 +40,19 @@ every route. No `tool/v2.0.0` tag exists yet.
 - **`cairn doctor --help`'s first sentence is split in two.** The text still names every clause
   the original did (the checked-in configuration, that it is read straight off the directory,
   and what it covers), reworded so the sentence carries at most one comma.
+- **`config.public-origin` and the `csrf.trustedOrigins` plain-http note now agree on the loopback
+  set**, `localhost` and `127.0.0.1`, the hosts the engine's `requireOrigin` treats as local. The
+  note no longer exempts the IPv6 loopback `::1`, so an `http://[::1]` entry now carries it.
+
+### Dependencies
+
+- **Every Go minor and patch moves.** `go.yaml.in/yaml/v3` is `v3.0.5`; the indirect modules
+  `go-runewidth` (`v0.0.30`), `go-md2man/v2` (`v2.0.7`), and `golang.org/x/sync` (`v0.23.0`) follow.
+  The isolated lint module moves `golangci-lint` to `v2.14.0` and its linters with it. Three
+  modules are held in the product module because their version scheme jumped to a tagged release:
+  `github.com/xo/terminfo` (`v1.x`, which also holds `charmbracelet/ultraviolet` at its August
+  pseudo-version), `github.com/charmbracelet/x/exp/golden`, and `gopkg.in/check.v1`. No behavior
+  changes: the goldens and the copy list are unchanged.
 
 ## 1.1.0
 

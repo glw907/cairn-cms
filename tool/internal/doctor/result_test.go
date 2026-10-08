@@ -37,12 +37,12 @@ func TestResultCheckVerdictContributesTheDecidedTable(t *testing.T) {
 // TestVerdictsOfPassSkipInfoIsOK asserts a run of only pass, skip, and info folds to
 // spine.VerdictOK, the spec's own "today's exit-0 runs stay exit 0".
 func TestVerdictsOfPassSkipInfoIsOK(t *testing.T) {
-	results := []Result{
-		{ID: "a", Status: StatusPass},
-		{ID: "b", Status: StatusSkip},
-		{ID: "c", Status: StatusInfo},
+	checked := []CheckedResult{
+		{Result: Result{ID: "a", Status: StatusPass}},
+		{Result: Result{ID: "b", Status: StatusSkip}},
+		{Result: Result{ID: "c", Status: StatusInfo}},
 	}
-	if got := Verdicts(results).Verdict(); got != spine.VerdictOK {
+	if got := Verdicts(checked).Verdict(); got != spine.VerdictOK {
 		t.Errorf("Verdicts(...).Verdict() = %v, want %v", got, spine.VerdictOK)
 	}
 }

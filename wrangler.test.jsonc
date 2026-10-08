@@ -1,5 +1,5 @@
 {
-  // Test-only Worker config consumed by @cloudflare/vitest-pool-workers.
+  // Test-only Worker config consumed by @cloudflare/vitest-plugin.
   // This package is a library and is never deployed; this file exists solely
   // to give the integration tests a real miniflare D1 binding.
   "name": "cairn-cms-test",

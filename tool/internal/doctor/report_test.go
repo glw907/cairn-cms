@@ -15,8 +15,8 @@ import (
 // `go test ./internal/doctor -run TestGolden -update` and read the diff instead.
 var updateGolden = flag.Bool("update", false, "rewrite the golden text reports from this package's checks")
 
-// cleanWranglerJSONC is a wrangler.jsonc every config check this pass ports reads cleanly: both
-// bindings declared, observability on, and a PUBLIC_ORIGIN the command layer would resolve into
+// cleanWranglerJSONC is a wrangler.jsonc every config check reads cleanly: both bindings declared,
+// observability on, and a PUBLIC_ORIGIN the command layer would resolve into
 // Snapshot.PublicOrigin's OriginFromVars.
 const cleanWranglerJSONC = `{
   "send_email": [{"name": "EMAIL"}],
@@ -25,11 +25,11 @@ const cleanWranglerJSONC = `{
   "vars": {"PUBLIC_ORIGIN": "https://example.com"}
 }`
 
-// cleanSiteFiles is the file set a passing site carries for every check this pass ports: valid
-// wrangler bindings, a Vite config that sets no csrf key, a valid site.config.yaml at its
-// canonical path, a wired /admin mount, an installed engine satisfying its own peer floors, and a
-// site-facts.json declaring no media bucket and no custom roles (so both facts-dependent checks
-// that read it settle as a clean skip rather than a pass needing more fixture).
+// cleanSiteFiles is the file set a passing site carries for every check: valid wrangler bindings, a
+// Vite config that sets no csrf key, a valid site.config.yaml at its canonical path, a wired /admin
+// mount, an installed engine satisfying its own peer floors, and a site-facts.json declaring no
+// media bucket and no custom roles (so both facts-dependent checks that read it settle as a clean
+// skip rather than a pass needing more fixture).
 func cleanSiteFiles() map[string]string {
 	return map[string]string{
 		"wrangler.jsonc":                              cleanWranglerJSONC,
@@ -150,7 +150,7 @@ func goldenReportCases() []goldenReportCase {
 			name:   "unchecked-result",
 			files:  cleanSiteFiles(),
 			origin: cleanOrigin(),
-			robots: Robots{Present: false, Reason: RobotsAbsentTransportFailure},
+			robots: Robots{Present: false, Reason: robotsAbsentTransportFailure},
 		},
 		{
 			// Every one of the five doctor statuses in one run: config.observability fails
@@ -165,7 +165,7 @@ func goldenReportCases() []goldenReportCase {
   "vars": {"PUBLIC_ORIGIN": "https://example.com"}
 }`), "src/routes/admin/+layout.svelte"),
 			origin: cleanOrigin(),
-			robots: Robots{Present: false, Reason: RobotsAbsentTransportFailure},
+			robots: Robots{Present: false, Reason: robotsAbsentTransportFailure},
 		},
 	}
 }
@@ -254,7 +254,7 @@ func TestRunStampsResultIDFromCheck(t *testing.T) {
 		}
 	}
 
-	verdicts := Verdicts(Results(checked))
+	verdicts := Verdicts(checked)
 	if len(verdicts) != len(checked) {
 		t.Fatalf("Verdicts returned %d entries, want %d", len(verdicts), len(checked))
 	}
@@ -262,5 +262,26 @@ func TestRunStampsResultIDFromCheck(t *testing.T) {
 		if verdicts[i].ID != cr.Check.ID {
 			t.Errorf("Verdicts[%d].ID = %q, want %q", i, verdicts[i].ID, cr.Check.ID)
 		}
+	}
+}
+
+// TestJoinOrRendersASerialOrList covers the one-, two-, and three-item shapes a detail's file
+// list takes: a lone name, "a or b", and "a, b, or c" with the serial comma.
+func TestJoinOrRendersASerialOrList(t *testing.T) {
+	tests := []struct {
+		name  string
+		items []string
+		want  string
+	}{
+		{name: "one item", items: []string{"package-lock.json"}, want: "package-lock.json"},
+		{name: "two items", items: []string{"vite.config.js", "vite.config.ts"}, want: "vite.config.js or vite.config.ts"},
+		{name: "three items", items: []string{"package-lock.json", "pnpm-lock.yaml", "yarn.lock"}, want: "package-lock.json, pnpm-lock.yaml, or yarn.lock"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := joinOr(tt.items); got != tt.want {
+				t.Errorf("joinOr(%q) = %q, want %q", tt.items, got, tt.want)
+			}
+		})
 	}
 }

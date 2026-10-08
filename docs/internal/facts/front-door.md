@@ -65,17 +65,14 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   `docs/internal/what-cairn-is-and-is-not.md:42-43`, "An admin skeleton a developer extends, built
   with DaisyUI + Tailwind (the idiom custom admin screens follow". [verified]
 - `f:u705t5` `create-cairn-site` scaffolds a complete starter called Waymark; a second template, Topo, is planned but not shipped. Source: `packages/create-cairn-site/package.json:4`, "scaffold a branded Waymark starter"; `packages/create-cairn-site/src/prompts.mjs:15`, `DEFAULTS = { name: 'Waymark', ... }`; no `Topo` package or directory found under `packages/` or `examples/` (`find . -iname "*topo*"` matched only spec and record docs under `docs/`). [verified: Waymark and the absence of any Topo template trace to the tree; "planned" rests on the specs and ROADMAP.md, not code]
-- `f:4sxnxp` cairn is pre-1.0 and runs in production on two sites today, ecxc.ski and 907.life. Source:
-  CLAUDE.md credentials section, "a single installation on glw907 covering ecxc-ski and 907-life."
-  [candidate: excluded, the pre-1.0 half traces to `package.json:3` but "runs in production on
-  ecxc.ski and 907.life today" is an operational deployment claim this repo's code cannot confirm]
+- `f:4sxnxp` cairn is pre-1.0. Source: `package.json:3`, `"version": "0.98.0"`. [verified]
 - `f:3utth1` The published version, unpublished window, and next action live in `docs/STATUS.md`. Source:
   `docs/STATUS.md:7`, "Published: **`0.98.0`**..."; `docs/STATUS.md:21`, "## Immediate next
   action". [verified]
 
 ## docs/README.md
 - `f:zmih7p` cairn publishes through a GitHub App. Source: `src/lib/github/repo.ts:262` (App-attributed
-  commits); CLAUDE.md credentials, GITHUB_APP_ID `3847496`. [verified]
+  commits). [verified]
 - `f:k439hm` The reference docs are one page per package subpath plus the CLI commands, gated by
   `check:reference`. Source: `package.json:39`, `"check:reference": "npm run package && node
   scripts/checks/reference-coverage.mjs"`. [verified]
@@ -85,15 +82,14 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:am80o6` `docs/internal/` holds cairn's maintainer-facing planning and design records, none of them part of the adopter docs, and the npm package's `files` list ships the doc arms, `docs/README.md`, and `docs/why-cairn.md`, never `docs/internal/`. Source: `docs/internal/README.md:1-4`, `package.json:204-217`. [verified]
 
 ## CLAUDE.md
-- `f:psrfdx` A publish commit is authored by the editor and sets no committer, so GitHub records the App's bot identity as the committer: `<app name>[bot]`, which is `cairn-cms[bot]` for an App named cairn-cms. The scaffold names a site's App `cairn-<site slug>` by default, and that name is the App's, not a commit field the engine sets. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`, `packages/create-cairn-site/src/github/chapter.mjs:161`. [verified: the engine omits the committer; observed on `glw907/907-life` commit `18644a55` (2026-05-30, an "Update posts" publish): author Geoff Wright, committer `cairn-cms[bot]`]
-- `f:9093mg` The GitHub App id is `3847496`; a single installation, id `135372268`, covers both ecxc-ski and
-  907-life. Source: CLAUDE.md, "Credentials" section. [verified: values live in
-  `~/.dotfiles/secrets/values.age` and `~/.local/secrets`, outside this repo, not independently
-  checkable from inside the repo]
-- `f:8l1ii4` Two D1 auth databases back magic-link sessions, one per site: `cairn-ecxc-auth`
-  (`a47c56d2-25ef-4131-a505-8c9fd5a92f1f`) and `cairn-907-auth`
-  (`93aa929d-0228-4f8b-8d1e-5e7e0d755617`), each bound as `AUTH_DB`. Source: `src/lib/env.ts:19`,
-  `AUTH_DB?: D1Database`; CLAUDE.md credentials section for the concrete database ids. [verified]
+- `f:psrfdx` A publish commit is authored by the editor and sets no committer, so GitHub records the App's bot identity as the committer: `<app name>[bot]`, which is `cairn-cms[bot]` for an App named cairn-cms. The scaffold names a site's App `cairn-<site slug>` by default, and that name is the App's, not a commit field the engine sets. Source: `src/lib/github/types.ts:20`, `src/lib/github/repo.ts:260-263`, `packages/create-cairn-site/src/github/chapter.mjs:161`. [verified: the engine omits the committer; observed on a production publish commit: author the signed-in editor, committer `cairn-cms[bot]`]
+- `f:9093mg` A site's GitHub App is identified by an App id and one installation id, which the site
+  passes as `appId` and `installationId`. Source: `src/lib/github/backend.ts:93,111`,
+  `readonly installationId: string`. [verified: the ids are per-deployment values held in the
+  maintainer's secret store, outside this repo, and are not facts a page may cite]
+- `f:8l1ii4` A D1 database backs a site's magic-link sessions, bound as `AUTH_DB`. Source:
+  `src/lib/env.ts:19`, `AUTH_DB?: D1Database`. [verified: the database names and ids are
+  per-deployment values held outside this repo, and are not facts a page may cite]
 - `f:mgimvs` Two Cloudflare Email error vocabularies never cross: the `env.EMAIL.send` binding throws
   `E_SENDER_NOT_VERIFIED` (also used by Email Routing for an unverified destination); the REST
   send (`POST /accounts/{id}/email/sending/send`) throws no `E_` codes, instead `10203`

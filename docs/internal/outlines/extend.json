@@ -1514,15 +1514,6 @@
       "batch": "2b"
     },
     {
-      "relinkIndex": 177,
-      "file": "scripts/checks/check-symbols-allowlist.mjs",
-      "context": "env-var:CLUB_DB",
-      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
-      "action": "Keep the allowlist entry while add-a-custom-admin-screen cites it; prune it if the rebuilt page does not.",
-      "restoredBy": "add-a-custom-admin-screen",
-      "batch": "pilot"
-    },
-    {
       "relinkIndex": 178,
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "env-var:CAIRN_FIXED_TODAY",
@@ -1574,24 +1565,6 @@
       "oldTarget": "docs/extend/design-your-site.md",
       "action": "Keep the allowlist entry while theme-your-public-site cites it; prune it if the rebuilt page does not.",
       "restoredBy": "theme-your-public-site",
-      "batch": "pilot"
-    },
-    {
-      "relinkIndex": 184,
-      "file": "scripts/checks/check-symbols-allowlist.mjs",
-      "context": "file-path:src/lib/club/section.ts",
-      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
-      "action": "Keep the allowlist entry while add-a-custom-admin-screen cites it; prune it if the rebuilt page does not.",
-      "restoredBy": "add-a-custom-admin-screen",
-      "batch": "pilot"
-    },
-    {
-      "relinkIndex": 185,
-      "file": "scripts/checks/check-symbols-allowlist.mjs",
-      "context": "file-path:src/routes/admin/club/events/ApproveDialog.svelte",
-      "oldTarget": "docs/extend/add-a-custom-admin-screen.md",
-      "action": "Keep the allowlist entry while add-a-custom-admin-screen cites it; prune it if the rebuilt page does not.",
-      "restoredBy": "add-a-custom-admin-screen",
       "batch": "pilot"
     },
     {

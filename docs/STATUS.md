@@ -22,7 +22,7 @@ one before stage 4 (editor screenshots), probably none before 3 or 5, a batch be
 
 Geoff reads the five task 8 pages (`scaffolded-site-files`, `restrict-admin-access`,
 `add-a-second-sign-in-group`, `rotate-the-github-app-key`, `debug-your-site`) and the conductor
-rulings on the review page: REVIEW-PAGE-URL. His fixes land as a follow-up commit. Then a fresh
+rulings on the review page: https://claude.ai/artifact/LQL6u4SWcYZH97kgBH1qGP. His fixes land as a follow-up commit. Then a fresh
 session brainstorms the engine pass before stage 2b (resume prompt below).
 
 ## Open decisions and watches

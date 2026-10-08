@@ -4,54 +4,57 @@ Present tense only; the past lives in [`docs/HISTORY.md`](HISTORY.md), orientati
 
 ## Current state
 
-Published: **`0.98.0`** (npm `latest`, release commit `a84a6853`; `@glw907/cairn-cms-dev` `0.98.0`
-beside it); the Go tool is `tool/v1.1.0`. Unreleased on `main`: the SvelteKit 3 upgrade (Kit 3.0.0,
-adapter-cloudflare 8.0.0; `04116a3b`, PR #103; tool major under `tool/CHANGELOG.md` `## Unreleased`,
-untagged) and the harvest's page removal. The release holds until draft docs stage 2a lands. Held
-majors: `devalue` 6, TypeScript 7, Vitest 5, `@types/node` 26. CI is green on all seven workflows.
-cairn.pub pins `0.94.0-rc.1` (un-pinnable since `0.95.0`); its ceiling is `0.98.0` until the narrative
-arms are rebuilt ([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)), and it is the only
-site that migrates to Kit 3, as a site pass after the cut. Live contracts:
-`tool/internal/{spine/conditions,doctor/site-config-path}.json` and `.cairn/site-facts.json`.
+Published: **`0.98.0`** (npm `latest`, release commit `a84a6853`, with `@glw907/cairn-cms-dev`
+`0.98.0`); the Go tool is `tool/v1.1.0`. Unreleased on `main`: SvelteKit 3 (with an untagged tool
+major), the harvest's page removal, draft docs stage 2a (11 extend pages and the interim index), the
+October dependency sweep, and the doctor cleanup. CI is green. cairn.pub pins `0.94.0-rc.1`, its
+ceiling `0.98.0` until the one release below
+([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md), with the extend redirect rows).
+
+**The sequence (Geoff, 2026-10-07; `ROADMAP.md`'s boundary-test entry).** Geoff reads the five task 8
+pages, then the engine pass before stage 2b, then stage 2b, admin (stage 3), editors (stage 4), and
+the front door (stage 5). Engine passes land on `main` and never release. One release follows stage 5
+with SvelteKit 3, every engine fix, and the complete docs; then each site migrates to it as a site
+pass that follows the docs, cairn.pub included, and none before. Forecast, not a schedule: an engine
+pass before 2b, likely one before stage 4, a batch before the release, probably none before 3 or 5.
 
 ## Immediate next action
 
-Execute the planned, reviewed unattended run:
-[`docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`](superpowers/plans/2026-10-07-2a-unattended-finish.md)
-(review, fold, verification, and second fold committed through `159693c0`). It finishes draft docs stage 2a
-(R1 matcher fix, R2 merge `main` into `draft-docs-2a`, R3 infra drift, R4 pilot pages on Kit 3, R5 task 8,
-R6 task 9, R7 close and merge) with two side lanes (L1 dependency sweep, L2 engineering cleanup). Owner
-rulings (Geoff, 2026-10-07): 2a ceiling 25M, stop at 20M; lanes 5M shared, stop at 4M; run cap 30M; targeted
-close unattended; merge on a green close; no release. After the run: Geoff reads the five task 8 pages, then
-the release (Kit 3 and the rebuilt extend docs), then cairn.pub's migration as a site pass.
-
-**Run in flight (checkpoint 4, 2026-10-07):** R1 to R6 accepted on `draft-docs-2a` (pushed; records
-`docs/superpowers/research/2026-10-07-draft-docs-2a-r5-task8-record.md` and `...-r6-consistency-record.md`, with conductor
-rulings for Geoff). All three lanes merged to `main`: L2b e2e flakes (#104), L1 dependency sweep (#106; held-majors
-tripwire `trig_01UCoKqxRXVwAfMdnF913E4v`), L2a doctor cleanup (#105; ruling: the doctor's loopback set follows the
-engine's `requireOrigin`). `main` CI green at `8e8d84c3`. 2a spend is about 18.9M; lanes about 1.85M. Next: R7 (close).
-Open carry: `gateMatches`' doc comment in dotfiles still says a placeholder "matches any non-empty text".
+Geoff reads the five task 8 pages (`scaffolded-site-files`, `restrict-admin-access`,
+`add-a-second-sign-in-group`, `rotate-the-github-app-key`, `debug-your-site`) and the conductor
+rulings on the review page: REVIEW-PAGE-URL. His fixes land as a follow-up commit. Then a fresh
+session brainstorms the engine pass before stage 2b (resume prompt below).
 
 ## Open decisions and watches
-- Watch: sveltejs/kit#17368 (adapter-cloudflare 8's shared platform proxy, closes #17344). Routine
-  `trig_01KPzLTU7rzLMQUp2y6bjZtm` emails on activity, CI failure, merge, or close; delete it once the PR
-  closes. cairn does not depend on it.
-- The monthly drift routine (`trig_015UPQostYVisXuExTHTH2vu`) samples `docs/reference` and extend pages
-  only; widen it to all four tracks at stage 4's merge.
-- Watch: `cairn-docs-outline`'s lock (dotfiles) was built past need; simplify it separately.
-- Watch: the per-version records' paths are hardcoded in `cairn-pass`, `CLAUDE.md`, and
-  `docs/internal/facts/README.md`; a pass that moves a record updates all three.
-- The remote-functions routine (`trig_0193pPNoyxsTGeUhF1xx7woa`) opens an issue when they reach stable.
-  Node 26 is the beta floor only if Active LTS by then; TypeScript 7 waits on `tsgo.yml`. `radius-scale`
-  and the retired-patch arms promote at `0.99.0`.
-- `cairn-release` gap: the `0.98.0` prep ran no `check:dev-package`. `CAIRN_GATE_READ_TOKEN` expires
-  2026-10-19. `npm pkg fix` is owed for the four `./` `bin` entries.
+- Every docs-stage close runs the boundary test over the engine friction and tells Geoff whether an
+  engine pass is warranted, and its scope (`cairn-pass` close, Documentation step).
+- Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
+  majors (`trig_01UCoKqxRXVwAfMdnF913E4v`); remote functions reaching stable
+  (`trig_0193pPNoyxsTGeUhF1xx7woa`); the monthly drift sample (`trig_015UPQostYVisXuExTHTH2vu`), which
+  widens to all four tracks at stage 4's merge.
+- Dotfiles: `cairn-docs-outline`'s lock was built past need; `gateMatches`' doc comment still says a
+  placeholder "matches any non-empty text". The per-version records' paths are hardcoded in
+  `cairn-pass`, `CLAUDE.md`, and `docs/internal/facts/README.md`; a move updates all three.
+- Node 26 is the beta floor only if Active LTS by then; TypeScript 7 waits on `tsgo.yml`;
+  `radius-scale` and the retired-patch arms promote at the next version commit. The `0.98.0` prep ran
+  no `check:dev-package`; `CAIRN_GATE_READ_TOKEN` expires 2026-10-19; `npm pkg fix` is owed for the
+  four `./` `bin` entries.
 
-## Resume prompt
-> **Goal.** Run the 2a unattended finish to its merged close, with both side lanes merged.
-> **Scope.** In: everything in `docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`. Out: the release,
-> cairn.pub's migration, stage 2b.
-> **Settled:** every ruling in the plan's Owner rulings section; no open forks.
-> **Approach.** Fresh session, `TMPDIR=$HOME/.cache/claude-tmp claude --model claude-opus-5-5` at medium
-> effort, from `~/Projects/cairn-cms`. Invoke `cairn-pass`, read the plan and its governing 2a plan, arm the
-> guards the plan names, and start at R1.
+### Next action (engine pass before stage 2b)
+
+> **Goal.** Brainstorm and plan the engine pass that runs before draft docs stage 2b.
+>
+> **Scope.** In: the `ROADMAP.md` Now entries "Engine pass before stage 2b" and "Docs tooling before
+> stage 2b", sized by the boundary test, plus any fix Geoff's page read raises. Out: stage 2b's pages,
+> any release or tag, any site migration.
+>
+> **Settled (do not re-brainstorm):** the Geoff rulings of 2026-10-07 in `ROADMAP.md`'s boundary-test
+> entry (one release after stage 5; engine passes never release; no site migrates first; the test).
+>
+> **Still open, brainstorm these:** which *decide* items the pass takes, the lead seam's shape (one
+> map both readers use, or a wiring condition), and whether the docs tooling rides this pass or its own.
+>
+> **Approach.** Fresh brainstorm session; read the two ROADMAP entries, `docs/internal/engine-rulings.md`,
+> and the charter (`docs/internal/what-cairn-is-and-is-not.md`) first, then write the plan. Invoke
+> `cairn-pass` to start. Launch directory: `~/Projects/cairn-cms`. Model: `claude --model claude-opus-5-5`.
+> Live contracts to keep: `tool/internal/{spine/conditions,doctor/site-config-path}.json`, `.cairn/site-facts.json`.

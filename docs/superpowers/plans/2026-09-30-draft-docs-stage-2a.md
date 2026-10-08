@@ -683,3 +683,33 @@ Run `cairn-pass`'s close:
 | 7b resolution | run 1 `wf_fe61a650-884` (WIP `2aacb280`), run 2 `wf_ab29e38c-e13` (WIP `bf156175`), each 0 of 6 at the round cap; targeted close (Geoff, 2026-10-03) `7675dd82`, record `docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md`; security-model chain run `wf_30959fac-694` | all six accepted, final reader read run on every page (four `fix`, each closed by one redraft and an accepted re-test); file-set review accept; owner pages republished as version 2 of https://claude.ai/artifact/5xEGWkUwrhmY9pjhLTSoKs with plans | subagent about 6.5M + 8.0M + 1.7M (runs) plus about 4M (close); session `/cost` not read |
 
 ## Post-mortem
+
+Closed 2026-10-07 by R7 of the unattended finish (`docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`),
+which governed tasks 8 to 10 where the two disagreed. `docs/HISTORY.md`, "Draft docs stage 2a, and
+its unattended finish", carries the full account; this section scores the plan.
+
+**Token budget (estimates from the ledgers; no session `/cost` read covers the whole plan).** Ceiling
+25M, flag 20M, projected 19.6M to 21.7M. Spent across the plan's sessions: planning and reviews about
+7.6M, tasks 1 to 5 about 1.4M, the pilot's first run about 8.0M (about 1.3M a page, the measure task 7
+used), the pilot's rework, two resolution runs, and targeted close about 25M more (2026-10-01 to 03),
+then the unattended finish's 2a track about 19M to 21M (R2 to R7, with Kit 3 corrections in R4).
+About 60M to 65M in all, more than twice the ceiling. Geoff's post-pilot ruling (45M to 60M accepted
+for the remaining pages across stages 2a to 5) covers task 8 onward; the overrun before it sits in
+the pilot's page-level rework, which the plan did not foresee. **Attended time:** the outline and
+plan approval (R10), the pilot checkpoint, the 7a to 7c rulings, the run plan's review, and one
+ruling exchange at R7. Planning misses: two, the pilot's rework (task 7a to 7c, added mid-plan) and
+the post-close next action (a release and cairn.pub's migration, overturned at R7).
+
+**Task 1's lock is an S2 instance.** The `cairn-docs-outline` helper's lock handles more races than
+the chain ever produced (three pages in flight write the index serially through one helper), so it
+was built past need against the lean guard. It stays; its simplification is a STATUS watch.
+
+**The plan's measures.** Cross-regression: 1 of 1 qualifying pilot page (2 of 6 flagged), and 1 of 5
+on task 8, so `bothReviewers` held. Map: 264 generated paths, 156 pending at creation, 104 at close.
+Friction: 187 log entries at the close, all triaged (counts in HISTORY). Release sweep seeded at
+`v0.98.0`. No refused plan-review finding is known to have turned real.
+
+**What the plan got wrong.** It sized pages on the chain's first-run cost; every one of the 11 pages
+escalated and closed by hand (targeted close or hand-run seats), so the true unit cost is the chain
+plus a close. The chain's seats disagree on section hand-offs and on the 26-word cap's scope, both
+filed for the docs tooling before 2b.

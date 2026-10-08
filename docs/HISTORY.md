@@ -7,6 +7,108 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Draft docs stage 2a, and its unattended finish, 2026-09-30 to 10-07
+
+Branch `draft-docs-2a`, closed 2026-10-07 at R7 of the unattended run. Governing plan, ledger, and
+post-mortem: `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md`; the run's plan:
+`docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`. Stage records under
+`docs/superpowers/research/` (the pilot record, the rework and resolution records, the targeted-close
+record, and the run's R4, R5, and R6 records). Closed unreleased: no version bump, no publish.
+
+**What landed:**
+
+- **The first 11 extend pages, on SvelteKit 3.** The pilot (`security-model`,
+  `add-cairn-to-a-sveltekit-app`, `add-a-custom-admin-screen`,
+  `replace-magic-links-with-cloudflare-access`, `architecture`, `theme-your-public-site`), corrected
+  for Kit 3 in R4, and task 8's five (`scaffolded-site-files`, `restrict-admin-access`,
+  `add-a-second-sign-in-group`, `rotate-the-github-app-key`, `debug-your-site`), plus the interim
+  index `docs/extend/README.md`. Every sentence cites facts through its brief; the 11 paths are in
+  `docs/internal/briefs-rebuilt.json`. All 15 of the outline's redirects have rows in the cairn.pub
+  handoff record, 9 of them to pages that exist now.
+- **The docs-code sync mechanisms (spec S1 to S9).** Option coverage: `check:options` over
+  `docs/internal/option-map.json` (264 generated paths; 156 pending at creation, 152 after task 2's
+  fix round, 126 after the pilot, 104 at close). The page chain's map rows and friction route. The
+  release sweep in `cairn-release`, seeded at `v0.98.0`. The mechanisms cost about 1.2M (tasks 2 to
+  4b, attribution only).
+- **Task 9's consistency read and relink** (R6): 71 stage-2a relink entries restored and stamped
+  (`78df0ef0`); three reference sentences fixed (`Env`, `vocabularySaveAction`, `log-events.md`).
+- **The close.** `CONTRIBUTING.md`, "How the docs stay true"; the `CHANGELOG.md` documentation
+  entry (no `Consumers must:` line for `skills/`, which this branch did not change); the redirect
+  rows; the infra checklist from task 4b re-run, all 14 items green. The R7 fact read's four
+  blocking corrections and about 45 pointer retargets landed, along with three wrong facts found in
+  the triage (`f:pzbmhq` claimed a session id is hashed; `f:70mf58` and `f:hk24xs` overclaimed).
+- **The lanes** merged to `main` before the close: L2b e2e flakes (#104), L1 dependency sweep (#106;
+  held-majors routine `trig_01UCoKqxRXVwAfMdnF913E4v`), L2a doctor cleanup (#105).
+
+**Friction (S7 and the boundary test).** The log held 187 open entries at the close. Every
+`frictionFiled` entry in the R4, R5, and R6 records was present. Outcomes: 80 to the Now tier's
+"Engine pass before stage 2b"; 21 to Now's "Docs tooling before stage 2b" (two workstation-tool
+findings among them); 27 to Next's batched engine friction; 16 to Next's reference-arm corrections;
+23 to Next's docs content the rebuild owes; 3 to Next's cairn-audit and theme-contract entry; 17
+fixed and deleted or deleted as overtaken. Kept in the log: none.
+
+**Rulings (Geoff, 2026-10-07, at R7), recorded in `ROADMAP.md`'s boundary-test entry:** no consumer
+site migrates to the new engine, cairn.pub included, until all docs tracks are complete; each site
+migration is the complete docs' acceptance test, run as a site pass. An engine pass comes next,
+after his read of the five task 8 pages and before stage 2b. Engine passes are not releases: one
+release after stage 5 carries SvelteKit 3, every engine fix, and the complete docs. The number and
+timing of engine passes follows the boundary test at every docs-stage close (fix before the next
+stage what would make a page document a workaround; fix promptly what blocks a page or migration;
+batch the rest), now a step in `cairn-pass`'s close (dotfiles `6b3995f`). This replaces the run
+plan's "release, then cairn.pub's migration" next action.
+
+**Conductor rulings (the run).** R4: the architecture page's `$app/environment` cite was stale
+despite the hand list's "leave alone", so it was corrected; the add-cairn re-test's engine install
+was disposed "unexercised: unreleased engine". R5: the two plan-read escalations (`restrict`,
+`debug`) ran the chain's seats by hand from the plan read's own rewrites; the 26-word cap is per
+sentence, in list items and task sections only; reader re-test rewrites applied without another
+round (rotate's rollback, second-sign-in's file paths), per the pilot precedent; the final reader's
+hand-off placement advisory on `scaffolded-site-files` declined; `debug-your-site`'s symptom-index
+shape carried to Geoff's read; second-sign-in names its site files in code blocks' first lines, since
+`check:provenance` cannot cite a site-invented path. R6: the full gate accepted under the baseline
+and lone-rerun rules. L2a: the plan's premise was wrong (the engine's `requireOrigin` rejects
+`::1`), so the doctor's loopback set follows the engine and the `::1` question went to friction.
+
+**What the gates caught:**
+
+- **The R4 re-test**, on a fresh Kit 3 scaffold, failed `svelte-check` on the add-cairn hooks
+  sample (`Handle` from `@sveltejs/kit`, `process` untyped). A `snippet-check-skip` had hidden both.
+- **The final reader reads** caught real blockers on every task 8 page: `$lib` imports SvelteKit 3
+  refuses, an untyped `TURNSTILE_SECRET`, a rotation rollback that never finished, the roster's
+  Change button. No page closed on the chain alone: all five escalated (two at the plan read, three
+  at the round cap), and the pilot's six had too.
+- **R6's fact read** caught `--include-runtime=false` written for every site, which would break a
+  consumer whose `app.d.ts` takes runtime types from the generated file.
+- **R7's scoped fact read** caught three facts the lanes broke (`f:ytwrgp`, `f:em69ru`, `f:3ccbez`)
+  and about 45 unanchored `package.json` and `CHANGELOG.md` pointers drifted in range, which
+  `check:facts` cannot see.
+- **The lane reviews** caught five wrong fact cites from L2a's remap and a lost serial "or"; L2b's
+  review re-filed a flake the lane had deleted with its entry.
+- **Refused plan-review findings:** none known to have turned real.
+
+**Budgets (estimates; the conductor could not read `/cost`, so these sum agent usage blocks plus
+the conductor's own estimate).** This run: 2a about 19M at R7's start (planning 1.0M, R1 to R4
+about 2.4M, R5's chain 7.2M plus closes about 4.2M, R6 about 1.5M, the conductor about 2.5M) against
+the 25M ceiling and the 20M stop; R7 ran past the stop as the plan allowed. The lanes about 1.85M
+against 5M. Task 8 cost about 2.3M a page (estimate 2.5M). The pilot measured about 1.3M a page on
+its first run (task 6), but its rework, two resolution runs, and the targeted close brought its six
+pages to about 33M across 2026-09-30 to 10-03, about 5.5M a page. Cross-regression: 2 of 6 pilot
+pages flagged, 1 of 1 qualifying; task 8 flagged 1 of 5 (`rotate`). Attended time: the planning
+session, the pilot checkpoint and rework rulings (2026-10-01 to 03), and one ruling exchange at R7;
+one planning miss (the run plan's post-close next action, overturned at R7).
+
+**What a later pass would be wrong to rediscover:**
+
+- **No page has closed on the chain alone.** All 11 escalated; every one closed by a targeted
+  close or hand-run seats. Budget 2b for that, or fix the chain's hand-off ownership and cap wording
+  first (Now tier).
+- **`check:facts` passes in-range drift.** An unanchored pointer into `package.json` or
+  `CHANGELOG.md` drifts silently, and a `CHANGELOG.md` entry added at the top shifts every pointer
+  below it. Re-run a fact read over every file a merged lane changed.
+- **A page cannot name a site-invented path in prose** under `check:provenance`; name it in a code
+  block's first line, or fix the gate (Now tier).
+- **The reader re-test is the one seat that compiles the page.** It caught what the gates passed.
+
 ## SvelteKit 3 upgrade, 2026-10-03 to 07
 
 Branch `sveltekit-3`, merged to `main` 2026-10-07 as `04116a3b` (PR #103). Plan, ledger, and

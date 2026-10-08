@@ -1,13 +1,12 @@
 <!--
 @component
 The admin toolkit's one surface allowed a semantic status color, graduated from a consumer site's
-admin toolkit and re-expressed for its second generation (the 2026-08-24 owner probe, Geoff's own
-ratification: docs/internal/probes/2026-08-26-chip-registers-v2). The first generation split a
+admin toolkit and re-expressed for its second generation. The first generation split a
 `tone` prop (the color signal, carried by a small `status` dot) from a `bounded`/`quiet` register
 (the shape).
-The probe measured the 6px dot illegible toolkit-wide across three consumer screens and ratified
-fusing tone INTO the register instead: `register` alone now carries both shape and color, `tone`
-retires with the dot, and the whole chip vocabulary is three registers, no more.
+The 6px dot measured illegible toolkit-wide across three consumer screens, so tone fuses INTO the
+register instead: `register` alone now carries both shape and color, `tone` retires with the dot,
+and the whole chip vocabulary is three registers, no more.
 
 Assembles from one daisyUI 5 primitive already in cairn's admin CSS build: `badge` (the chip
 shape), with `badge-outline` supplying the inherited-border box model every register composes on
@@ -15,9 +14,9 @@ top of. `badge-outline` retired from cairn's own tree on its own: it compiles to
 background and border color that can match one of
 AdminTable's own zebra stripe colors, so a ghost chip melts into whichever row shares that color,
 and neither it nor the un-tuned `badge-outline` clears the audit's own 3:1 border-contrast floor in
-both themes. `register` supplies the three ratified recipes instead: `'quiet'` (the default) tints
+both themes. `register` supplies the three documented recipes instead: `'quiet'` (the default) tints
 the ground with a low-contrast wash off the admin theme's own content token, for a settled state
-(a household's Published, say) that should recede rather than compete; `'warning'` tints the same
+(a signup's Confirmed, say) that should recede rather than compete; `'warning'` tints the same
 way but off `--color-warning`, carrying its own on-surface ink, for a state that needs
 attention (an unpublished-changes marker, a needs-alt notice); `'outline'` drops the fill and
 demotes `badge-outline`'s full-strength inherited-text-color border to
@@ -25,10 +24,9 @@ demotes `badge-outline`'s full-strength inherited-text-color border to
 a transient or reversible absence (the successor of the first generation's `'bounded'`). Every
 tinted fill is tuned to a 1.16-1.47:1 contrast band against its own row ground (plain and zebra,
 both admin themes), deliberately low: a chip that competed at the old ghost badge's strength melted
-into one ground or read as a clickable button on the other, and the ratified recipe is a quiet
+into one ground or read as a clickable button on the other, and the documented recipe is a quiet
 presence, not a bounded object. All values are measured, not invented
-(docs/internal/probes/2026-08-26-chip-registers-v2, the standing proof in
-status-chip-register-tuning.test.ts).
+(the standing proof is status-chip-register-tuning.test.ts).
 
 Padding, truncation, and the min/max width live in this component's own scoped `<style>` rather
 than a Tailwind utility string. That was a hard constraint when this component was written, since
@@ -38,7 +36,7 @@ written here does compile now; the scoped rules stay because they are settled, a
 still binds a CONSUMER's own admin screen, which cairn never scans.
 
 The `sm` size keeps a `5rem` floor (comfortable next to a longer generic label, its first
-consumer's own household-standing context; a min-width-free "hugging" alternative was tried and
+consumer's own signup-status context; a min-width-free "hugging" alternative was tried and
 adversarially refuted -- it produces a ragged column when chip labels vary in length); `xs`
 carries no floor of its own: a dense table column, ConceptList's publish-state cell and
 MediaLibrary's alt/usage cells, budgets its narrow-
@@ -49,9 +47,8 @@ the office's own three-word vocabulary never needs).
   /** Two named sizes, matching AdminTable's own density tier names rather than a bespoke scale. */
   export type StatusChipSize = 'xs' | 'sm';
 
-  /** The three ratified chip registers (second generation, docs/internal/probes/
-   *  2026-08-26-chip-registers-v2): `quiet`, a token-derived tinted ground for a settled state
-   *  that should recede; `warning`, the same tinted-ground shape off the warning tone, for a
+  /** The three documented chip registers (second generation): `quiet`, a token-derived tinted ground for a
+   *  settled state that should recede; `warning`, the same tinted-ground shape off the warning tone, for a
    *  state that needs attention; and `outline`, a demoted hairline border with no fill, for a
    *  transient or reversible absence. The register alone carries both shape and color; there is
    *  no separate tone axis and no chip-level danger tier. */
@@ -115,7 +112,7 @@ the office's own three-word vocabulary never needs).
     max-width: 10rem;
   }
 
-  /* OUTLINE (second generation, docs/internal/probes/2026-08-26-chip-registers-v2): demotes
+  /* OUTLINE (second generation): demotes
      badge-outline's full-strength `border-color: currentColor` (reads as a button, not a status
      marker) to a hairline that clears the audit's own 3:1 border-contrast floor in both themes
      (light card 3.579, light page 3.506, dark card 4.951, dark page 5.254; measured against both
@@ -133,11 +130,11 @@ the office's own three-word vocabulary never needs).
      content token mixed into the base-200 row ground (the same ground this recipe is tuned
      against), for a settled state that should recede (Published) rather than read as an object.
      Measured fill-vs-ground contrast, plain/zebra: light 1.389/1.297, dark 1.182/1.407, all
-     inside the ratified 1.16-1.47:1 band. Depends on the admin theme's `--color-base-content`/
+     inside the documented 1.16-1.47:1 band. Depends on the admin theme's `--color-base-content`/
      `--color-base-200`/`--cairn-chip-quiet-mix`, the same constraint every other admin color
      token carries, so it resolves only inside the admin theme root; the layout rules above stay
      context-free by design, but a recipe that leans on the theme palette cannot also promise a
-     literal outside it without inventing a value the probe never measured. */
+     literal outside it without inventing a value that was never measured. */
   .status-chip-quiet {
     font-weight: 400;
     border-width: 0;

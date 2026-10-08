@@ -162,7 +162,7 @@ Swapping the editor stays a one-file change.
      *  independently timed read of the diagnostic set. */
     onDiagnosticsCounts?: (counts: import('./editor-diagnostics-announcer.js').DiagnosticCounts) => void;
     /** Whether every component block folds the moment the editor mounts, so an entry opens with its
-     *  blocks collapsed and its prose readable at a glance (Geoff's pre-beta ruling). Off by default,
+     *  blocks collapsed and its prose readable at a glance. Off by default,
      *  since most render callers, and every fold-invariant test, want blocks open on mount; EditPage
      *  turns this on for the real entry-editing surface. The safety invariant governs a fold this
      *  creates exactly as it governs a manual one: a touch or an edit reaching it springs it open. */

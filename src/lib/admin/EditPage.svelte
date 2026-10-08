@@ -2365,7 +2365,7 @@ persistent "?" carries Markdown help).
      sr-only default submit in the band always precedes this bar in tree order (the band renders
      ahead of this form-external bar), so Enter-in-a-field keeps saving rather than publishing
      either way. The bar's own vertical padding plus env(safe-area-inset-bottom) keeps it off the
-     physical screen edge (Geoff's note on the mockup: "hard-smashed against the bottom"); staying
+     physical screen edge (a bar flush against the bottom edge reads as hard-smashed); staying
      above an open keyboard depends on the interactive-widget viewport hint above. The `{#if}`
      here gates only zen, which drops the whole chrome (topbar, sidebar, this bar) at every width
      per the design system's context model, the same gate the band and the footer strip use;

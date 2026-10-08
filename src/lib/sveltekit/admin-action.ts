@@ -174,7 +174,7 @@ function serializeThrownError(error: unknown): string {
  *    handler never re-reads an already-consumed body.
  *
  * ```ts
- * // src/routes/admin/club/events/[id]/+page.server.ts
+ * // src/routes/admin/team/events/[id]/+page.server.ts
  * export const actions = {
  *   approve: createAdminAction(async ({ form, ctx }) => {
  *     const id = String(form.get('id'));

@@ -18,7 +18,7 @@ WHAT `children` MAY HOLD: the control, and nothing that is not the control. This
 a real `<label>` wrapping its content, so every piece of text inside it joins the field's
 accessible name. An action affordance therefore goes BESIDE the field, never in it: a button, a
 link, a clear or reset control, a unit switcher. Put one inside and a screen reader announces the
-field as "Instructor Add", and the affordance also inherits the label's own click-to-focus
+field as "Venue Add", and the affordance also inherits the label's own click-to-focus
 behavior. A caller composing that pair hand-rolls a bottom-aligned row (`display: flex;
 align-items: flex-end; gap: var(--cairn-gap-control, 0.5rem)`, the recipe the retired `FieldRow`
 component shipped): the alignment the eye reads when the labelled child is a whole label taller

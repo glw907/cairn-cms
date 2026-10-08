@@ -240,44 +240,44 @@ export const RATIFIED_NORMS: readonly RatifiedNorm[] = [
     role: 'button-primary',
     property: 'border-radius',
     values: [6],
-    reference: 'docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'button-ghost',
     property: 'border-radius',
     values: [6],
-    reference: 'docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'input-text',
     property: 'border-radius',
     values: [6],
-    reference: 'docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'select',
     property: 'border-radius',
     values: [6],
-    reference: 'docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
   },
   {
     role: 'card',
     property: 'border-radius',
     values: [8],
-    reference: 'docs/internal/admin-design-system.md (--radius-box)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-box)',
   },
   {
     role: 'card',
     property: 'border-width',
     values: [1],
-    reference: 'docs/internal/admin-design-system.md (the card-shell hairline)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (the card-shell hairline)',
   },
   {
     role: 'card',
     property: 'border-color',
     values: ['var(--cairn-card-border)'],
     reference:
-      'Ratified (Ruling 2): the --cairn-card-border hairline measures 1.11 against the ambient beside it and 1.19 against the card\'s own fill in light, 1.43 and 1.20 in dark, and stays by design. The border-contrast rule applies a house floor of 3:1, the number WCAG 1.4.11 sets for a control-identifying boundary rather than for a card hairline, and exempts this one on the better of its two ratios against a ratified floor of 1.15',
+      'The --cairn-card-border hairline measures 1.11 against the ambient beside it and 1.19 against the card\'s own fill in light, 1.43 and 1.20 in dark, and stays by design. The border-contrast rule applies a house floor of 3:1, the number WCAG 1.4.11 sets for a control-identifying boundary rather than for a card hairline, and exempts this one on the better of its two ratios against a documented floor of 1.15',
   },
 ];
 

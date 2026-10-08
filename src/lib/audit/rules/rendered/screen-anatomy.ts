@@ -44,7 +44,7 @@
 // The exemption is read off the RENDER, never off the path, and that is the whole point. The first
 // cut used path depth, which `CairnAdminShell.svelte`'s own comment names by name as the wrong
 // signal that already caused a shipped bug: "a developer's own custom nav can route just as deep
-// (a section entry like /admin/club/events) without opening a document". An adversarial pass drove
+// (a section entry like /admin/team/events) without opening a document". An adversarial pass drove
 // that exactly, injecting three real anatomy defects into `/admin/posts`'s DOM and getting three
 // findings under a 2-segment path and ZERO under a 3-segment one, on identical markup.
 //

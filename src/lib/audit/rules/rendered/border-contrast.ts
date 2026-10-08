@@ -190,14 +190,14 @@ const RATIFIED_HAIRLINE_FLOOR = 1.15;
 
 /**
  * The reason the report prints beside a hairline this rule exempts. It has to stand on its own in a
- * CI log, so it names the ruling, the token the exemption keys on, and the measurement that
- * qualified this particular boundary; a reader who has never opened this file can tell from the
- * line what was let through and on whose authority.
+ * CI log, so it names the token the exemption keys on and the measurement that qualified
+ * this particular boundary; a reader who has never opened this file can tell from the line what
+ * was let through and why.
  */
 function ratifiedExemption(bestRatio: number): string {
   return (
-    `RULING 2 (2026-07-28): painted in this page's own ${RATIFIED_TOKEN}, the ratified hairline, and still ` +
-    `separating its two surfaces at ${bestRatio.toFixed(3)} against the better of them (ratified floor ` +
+    `painted in this page's own ${RATIFIED_TOKEN}, the documented hairline, and still ` +
+    `separating its two surfaces at ${bestRatio.toFixed(3)} against the better of them (documented floor ` +
     `${RATIFIED_HAIRLINE_FLOOR})`
   );
 }

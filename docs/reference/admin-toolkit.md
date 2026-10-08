@@ -90,9 +90,9 @@ that wants its own local time (`America/Chicago`, say) passes `timeZone` explici
 
 `Pagination`'s range line and `ListToolbar`'s count line both pick the grammatical number for
 their own `itemLabel` prop internally (`label.one` at exactly 1, `label.many` otherwise, zero
-included, for example `"0 households"`; a plain string reads back invariant across every count),
-so the "1 households" defect class has a single fix point (`itemNoun`, retired from this
-subpath's barrel in the retires pass, batch 1a: zero consumers independent of `Pagination` or
+included, for example `"0 signups"`; a plain string reads back invariant across every count),
+so the "1 signups" defect class has a single fix point (`itemNoun`, retired from this
+subpath's barrel: zero consumers independent of `Pagination` or
 `ListToolbar`).
 
 ---
@@ -104,7 +104,7 @@ editor. It renders with the admin's own label rhythm, matching the built-in cont
 Merged here from the retired `admin-fields` subpath (CHANGELOG `0.94.0`). `TextInput` and
 `SelectInput` shipped alongside it as of `0.94.0` (renamed from the retired subpath's
 `TextField`/`SelectField`); `FieldRow` joined later (`0.95.0`). All three retired from this subpath
-in the retires pass, batch 1a (zero consumers anywhere in the engine, showcase, or docs); their
+(zero consumers anywhere in the engine, showcase, or docs); their
 worked examples below now hand-roll the same markup directly.
 
 ```ts
@@ -210,14 +210,13 @@ let { label, size = 'sm', register = 'quiet', legend }: {
 };
 ```
 
-The toolkit's one surface allowed a semantic status color, second generation (the 2026-08-24 owner
-probe, Geoff's own ratification: `docs/internal/probes/2026-08-26-chip-registers-v2`). `register`
+The toolkit's one surface allowed a semantic status color, second generation. `register`
 alone now carries both shape and color; there is no separate `tone` prop, and there is no
 chip-level danger tier. `size` defaults `'sm'`, matching AdminTable's own density tier names. `sm`
 keeps a `5rem` minimum width, comfortable next to a longer generic label; `xs` carries no minimum
 of its own, so a dense table column (a publish-state cell, an alt/usage cell) budgets the chip's
 width against its own short vocabulary rather than a floor sized for a longer label. `register`
-picks which of the three ratified chip recipes the badge renders in: `'quiet'` (the default) tints
+picks which of the three documented chip recipes the badge renders in: `'quiet'` (the default) tints
 the ground for a settled state that should recede, such as Published; `'warning'` tints the same
 way off the warning tone, for a state needing attention, such as an unpublished-changes marker or
 a needs-alt notice; `'outline'` drops the fill for a hairline border, for a transient or reversible
@@ -238,7 +237,7 @@ border-contrast floor against both a card ground and a page ground. The engine's
 sites, EditPage (through the component), ManageEditors, ReferenceField, and MediaCaptureCard (the
 last three hand-composed), all clear this floor; a consumer that places an `outline` chip inside its
 own muted-text ancestor should re-measure. `quiet` and `warning` are tuned to a 1.16-1.47:1 contrast
-band against both admin row grounds (plain and zebra) in both admin themes, and the whole ratified
+band against both admin row grounds (plain and zebra) in both admin themes, and the whole documented
 band sits under the audit's own 1.5 ground-collision floor, by design: a `quiet` or `warning` chip
 measures as an advisory camouflaged finding on some row/theme pairs.
 `chip-ground-collision` stays advisory rather than gating today, pending its own chroma-aware
@@ -261,7 +260,7 @@ Tailwind layer, that pin outranks any `font-semibold`/`font-medium` Tailwind uti
 same element, so a hand-composed chip should carry no weight utility of its own.
 
 ```svelte
-<StatusChip label="Overdue" register="warning" legend="Full benefits continue for 30 days." />
+<StatusChip label="Waitlisted" register="warning" legend="Confirmed when a place opens." />
 ```
 
 **Badge tier, the raw daisyUI alternative.** `badge-error`, `badge-success`, `badge-soft`,
@@ -308,8 +307,8 @@ own; `totalItems`/`pageSize` are optional and only add the "Showing X&ndash;Y of
 line, so a consumer that knows its own page count but not a raw item total (or the reverse) still
 gets a working pager. `itemLabel` defaults `'items'` and accepts a plain string (invariant across
 every total, the original contract unchanged) or an `{ one, many }` pair, picked by grammatical
-number through `itemNoun` -- so `totalItems={1}` with `itemLabel={{ one: 'household', many:
-'households' }}` reads `"1 household"`, never `"1 households"`. A page count of 7 or fewer renders every
+number through `itemNoun` -- so `totalItems={1}` with `itemLabel={{ one: 'signup', many:
+'signups' }}` reads `"1 signup"`, never `"1 signups"`. A page count of 7 or fewer renders every
 page button; beyond that, the component's own internal windowing math reduces the control to
 first, last, and a run around the current page with `'ellipsis'` gap markers. A single page
 renders no nav at all, only the range line (and the page-size select, if given) if one applies.
@@ -330,7 +329,7 @@ sheet with the rest of daisyUI.
 `select`, `select-sm`.
 
 ```svelte
-<Pagination page={page} pageCount={pageCount} onPageChange={(p) => (page = p)} totalItems={149} pageSize={20} itemLabel="households" />
+<Pagination page={page} pageCount={pageCount} onPageChange={(p) => (page = p)} totalItems={149} pageSize={20} itemLabel="signups" />
 ```
 
 ### `AdminTable`
@@ -407,16 +406,16 @@ compiled into the packaged `cairn-admin.css`.
 ```svelte
 <AdminTable {density} zebra rowCount={rows.length}>
   {#snippet header()}
-    <th>Household</th>
-    <th>Standing</th>
+    <th>Name</th>
+    <th>Status</th>
   {/snippet}
   {#snippet children()}
     {#each rows as row (row.id)}
-      <tr><td>{row.household}</td><td><StatusChip register={row.register} label={row.standing} /></td></tr>
+      <tr><td>{row.name}</td><td><StatusChip register={row.register} label={row.status} /></td></tr>
     {/each}
   {/snippet}
   {#snippet empty()}
-    <p>No households match.</p>
+    <p>No signups match.</p>
   {/snippet}
 </AdminTable>
 ```
@@ -430,10 +429,10 @@ that does is reinventing a register `AdminTable` already carries.
 ```svelte
 <AdminTable
   rowCount={rows.length}
-  selection={{ ids: selectedIds, onchange: (next) => (selectedIds = next), label: 'Select households' }}
+  selection={{ ids: selectedIds, onchange: (next) => (selectedIds = next), label: 'Select signups' }}
 >
   {#snippet header()}
-    <th>Household</th>
+    <th>Name</th>
   {/snippet}
   {#snippet children()}
     {#each rows as row (row.id)}
@@ -442,7 +441,7 @@ that does is reinventing a register `AdminTable` already carries.
           <input
             type="checkbox"
             class="checkbox"
-            aria-label={`Select ${row.household}`}
+            aria-label={`Select ${row.name}`}
             checked={selectedIds.has(row.id)}
             onchange={(event) => {
               const next = new Set(selectedIds);
@@ -451,7 +450,7 @@ that does is reinventing a register `AdminTable` already carries.
             }}
           />
         </td>
-        <td>{row.household}</td>
+        <td>{row.name}</td>
       </tr>
     {/each}
   {/snippet}
@@ -546,12 +545,12 @@ windowing math is:
   the raw value for a stale or externally set one, so a pill is never blank.
 - `computeCountLine(count, itemLabel, appliedLabels)` returns the count line's own copy pattern:
   `"<count> <itemLabel>"`, followed by every applied-filter label joined with a middle dot
-  (`"12 households · Overdue · Holding assets"`). The line always renders, even at zero applied
+  (`"12 signups · Pending · Waitlisted"`). The line always renders, even at zero applied
   filters or a zero count, per the count-line-always-states-its-scope contract. `itemLabel`
   accepts a plain string or an `{ one, many }` pair, routed through `itemNoun`, so
-  `computeCountLine(1, { one: 'household', many: 'households' }, [])` reads `"1 household"`.
+  `computeCountLine(1, { one: 'signup', many: 'signups' }, [])` reads `"1 signup"`.
 
-Neither publishes from this subpath's barrel (the retires pass, batch 1a: zero consumers reached
+Neither publishes from this subpath's barrel (zero consumers reached
 either independently of `ListToolbar` itself). `computeAppliedFilters` feeds the count line's own
 scope labels only; there is no separate applied-pills row. An applied filter shows its own value
 in-control instead, on the `'menu'`-display facet documented earlier in this entry.
@@ -706,7 +705,7 @@ filter row, and this line covers a screen with neither (a stats-prose summary, a
 never lives in this band, since `ListToolbar` owns it.
 
 **daisyUI assembly:** none. This component is typography and layout only, the eyebrow and
-page-heading recipes from `docs/internal/admin-design-system.md`.
+page-heading recipes from [the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md).
 
 **Exact class inventory:** none (no daisyUI component class).
 
@@ -746,7 +745,7 @@ with no heading of its own (`WelcomeView`, the none-capability landing view), pa
 page still has a real heading in its accessible tree.
 
 **daisyUI assembly:** none. Typography and layout only, the same empty-state recipe
-`docs/internal/admin-design-system.md` documents.
+[the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md) documents.
 
 **Exact class inventory:** none (no daisyUI component class).
 
@@ -833,27 +832,27 @@ compiled from cairn's own admin usage.
 **Exact class inventory:** `btn`, `btn-ghost`, `btn-xs`.
 
 ```svelte
-<AdminTable {density} zebra rowCount={households.length}>
+<AdminTable {density} zebra rowCount={signups.length}>
   {#snippet header()}
-    <th>Household</th>
-    <th>Standing</th>
+    <th>Name</th>
+    <th>Status</th>
     <th></th>
   {/snippet}
   {#snippet children()}
-    {#each households as household (household.id)}
+    {#each signups as signup (signup.id)}
       <ExpandableRow
-        expanded={expandedId === household.id}
-        onToggle={() => (expandedId = expandedId === household.id ? null : household.id)}
-        datum={household}
+        expanded={expandedId === signup.id}
+        onToggle={() => (expandedId = expandedId === signup.id ? null : signup.id)}
+        datum={signup}
         colspan={3}
-        triggerLabel={`${expandedId === household.id ? 'Collapse' : 'Expand'} the ${household.name} household`}
+        triggerLabel={`${expandedId === signup.id ? 'Collapse' : 'Expand'} the ${signup.name} signup`}
       >
         {#snippet summary()}
-          <td>{household.name}</td>
-          <td><StatusChip register={household.register} label={household.standing} /></td>
+          <td>{signup.name}</td>
+          <td><StatusChip register={signup.register} label={signup.status} /></td>
         {/snippet}
-        {#snippet panel(household)}
-          <p>{household.contact}</p>
+        {#snippet panel(signup)}
+          <p>{signup.contact}</p>
         {/snippet}
       </ExpandableRow>
     {/each}
@@ -1019,7 +1018,7 @@ no compiled-admin-CSS ancestor.
 | `FormatCivilDateOptions` | Extension API | `interface FormatCivilDateOptions { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }` | `formatCivilDate`'s options: the nullish-or-empty-input fallback string (defaults `''`), locale, and the `Intl.DateTimeFormat` options passthrough. |
 | `FormatTimestampOptions` | Extension API | `interface FormatTimestampOptions { timeZone?: string; locale?: string; fallback?: string }` | `formatTimestamp`'s options: the IANA time zone, BCP 47 locale tag, and the nullish-input fallback string (defaults `''`). |
 | `StatusChipSize` | Extension API | `type StatusChipSize = 'xs' \| 'sm'` | `StatusChip`'s two named sizes, matching AdminTable's own density tier names. |
-| `StatusChipRegister` | Extension API | `type StatusChipRegister = 'quiet' \| 'warning' \| 'outline'` | `StatusChip`'s three ratified visual registers (second generation): `'quiet'`, a token-tinted ground with no border for a settled state that should recede; `'warning'`, the same tinted-ground shape for a state needing attention; and `'outline'`, a demoted-hairline border for a transient or reversible absence. |
+| `StatusChipRegister` | Extension API | `type StatusChipRegister = 'quiet' \| 'warning' \| 'outline'` | `StatusChip`'s three documented visual registers (second generation): `'quiet'`, a token-tinted ground with no border for a settled state that should recede; `'warning'`, the same tinted-ground shape for a state needing attention; and `'outline'`, a demoted-hairline border for a transient or reversible absence. |
 | `AdminTableDensity` | Extension API | `type AdminTableDensity = 'xs' \| 'sm'` | `AdminTable`'s two named density tiers, matching `StatusChip`'s own size vocabulary. |
 | `ListToolbarFilterOption` | Extension API | `interface ListToolbarFilterOption { value: string; label: string; count?: number }` | One option in a `ListToolbarFilter`'s own vocabulary. `count` is an optional per-option match count for the segmented display. |
 | `ListToolbarFilter` | Extension API | `interface ListToolbarFilter { id: string; label: string; options: ListToolbarFilterOption[]; value: string; onChange: (value: string) => void; defaultValue?: string; promoted?: boolean; display?: 'select' \| 'segmented' \| 'menu' }` | One filter control, fully controlled by the caller. |

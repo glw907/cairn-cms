@@ -981,7 +981,7 @@ the implicit `{ owner: 'owner', editor: 'editor' }` pair `defineRoles` falls bac
 closed rather than locking the person out of sign-in.
 `resolveOwnerLevelRoles` lists every name mapped to owner capability, the set the last-owner guard counts
 across instead of the literal `'owner'` string. (`roleHome`, which used to resolve a role's
-declared `/admin` landing `home`, retired from this subpath in the retires pass, batch 1a: zero
+declared `/admin` landing `home`, retired from this subpath: zero
 consumers, and its own logic was only the first of three branches in the engine's landing policy,
 so a site copying it got no policy from it alone.)
 

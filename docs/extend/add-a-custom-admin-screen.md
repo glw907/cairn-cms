@@ -333,7 +333,7 @@ To style the screen, follow these steps:
    A fixed radius still compiles in the admin sheet but does not follow the corner ladder.
    Both admin themes set daisyUI's radius tokens as a three-step ladder.
    `--radius-selector` covers chips and small markers, `--radius-field` covers controls, and `--radius-box` covers cards and dialogs.
-   The ratified norms that `cairn-audit` measures follow the same ladder.
+   The documented norms that `cairn-audit` measures follow the same ladder.
    They set 6px for buttons, inputs, and selects, 8px for a card, and 4px for a status chip.
    Their control height bands grow with `--size-field`.
 

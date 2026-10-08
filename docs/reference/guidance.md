@@ -127,7 +127,7 @@ The package's `claude/` directory, added to `files` alongside `skills/`, carries
   its override seams. It defers to the official DaisyUI skill for component classes.
 - **`cairn-consult`** triggers when a developer has worked around the engine twice, or wants
   something the seams do not reach, and writes a consultation brief in the four-field format
-  (what the pass builds, the engine edge it presses, evidence for the any-site case, the site's
+  (what the site is building, the engine edge it presses, evidence for the any-site case, the site's
   fallback if declined) filed at the installed package's `bugs.url` when it is reachable, or
   handed to the developer to send by whatever channel they have when it is not.
 

@@ -83,12 +83,12 @@ vocabulary rules below, is advisory too; see [The rules](#the-rules) under Rende
 | `type-scale` | Every font size a text-sizing class token resolves to comes from a `--cairn-type-*` role. The rule reads only Tailwind's own text-sizing namespace and the `type-*` role utilities. A daisyUI component class carries its own size as part of the control's chrome, a separate system with its own `btn-sm`-style modifiers |
 | `gap-scale` | An arbitrary margin, padding, or gap literal, a Tailwind bracket rather than a named step, resolves to a `--cairn-gap-*` role or lands on an exact half-step of Tailwind's spacing grid. A bracket whose value isn't a plain length, a viewport unit or a `calc()`, expresses geometry the spacing scale has no vocabulary for, so it falls outside the rule rather than failing it |
 | `radius-scale` **advisory** | Every framed element's corner resolves to one of `rounded-selector`, `rounded-field`, or `rounded-box`. The rule reads `utilityBase()`, so a variant-prefixed radius (`md:rounded-lg`) is caught. It flags a bare `rounded`, a fixed size (`xs` through `4xl`), an arbitrary bracket or the `rounded-(--x)` variable shorthand, and any side or corner form of those; it passes the three role classes and their side forms, `rounded-none` and its structural zeros, and `rounded-full` except on an element that also carries `badge` (chips leave the pill). Each finding names the replacement role class the element's own daisyUI class fixes, the exact role for an arbitrary `var(--radius-<role>)` reference, or the three-role mapping otherwise. Reported at **advisory** tier until `0.99.0` promotes it to error. Coverage is class tokens only: a `border-radius` literal in a scoped `<style>` block is outside this rule's remit |
-| `stock-default-hazards` | Four stock daisyUI patterns cairn's own recipes replace: `badge-ghost`, the focus-driven bare `.dropdown`, a native `disabled` on a guarded button, and a flat `base-300` card border. A fifth arm names cairn's own retired marker class, `cairn-btn-guarded`, whose reason text belongs in a `Tooltip` around the control instead: that finding is error tier, while the class itself stays compiled until a later release removes it. Three more arms, each on a `btn` element only, guard the patches cairn's own ratified button recipes replaced: an ink-opener patch (`bg-neutral` or `bg-[var(--cairn-ink-hover)]` with no `btn-neutral`, names `btn btn-neutral`), a Publish-tint patch (`bg-primary/10` with no `btn-soft`, names `btn btn-soft btn-primary`), and a `shadow-none` cancel that names nothing to add, since the theme's own depth is already zero. All three report at **advisory** tier until `0.99.0` promotes them to error; a recipe arm (ink opener or Publish tint) takes precedence over `shadow-none` on the same element, so a full retired recipe raises exactly one finding. Each finding names the refuted alternative and cites where the decision lives, eight arms total |
+| `stock-default-hazards` | Four stock daisyUI patterns cairn's own recipes replace: `badge-ghost`, the focus-driven bare `.dropdown`, a native `disabled` on a guarded button, and a flat `base-300` card border. A fifth arm names cairn's own retired marker class, `cairn-btn-guarded`, whose reason text belongs in a `Tooltip` around the control instead: that finding is error tier, while the class itself stays compiled until a later release removes it. Three more arms, each on a `btn` element only, guard the patches cairn's own documented button recipes replaced: an ink-opener patch (`bg-neutral` or `bg-[var(--cairn-ink-hover)]` with no `btn-neutral`, names `btn btn-neutral`), a Publish-tint patch (`bg-primary/10` with no `btn-soft`, names `btn btn-soft btn-primary`), and a `shadow-none` cancel that names nothing to add, since the theme's own depth is already zero. All three report at **advisory** tier until `0.99.0` promotes them to error; a recipe arm (ink opener or Publish tint) takes precedence over `shadow-none` on the same element, so a full retired recipe raises exactly one finding. Each finding names the refuted alternative and cites where the decision lives, eight arms total |
 | `token-colors` | No raw hex, `rgb()`, or named-color literal, and no pure achromatic, a color function whose chroma or saturation is exactly zero. `transparent` and `currentColor` are excluded: neither names a color the palette could have supplied. A file listed in `static.paletteFiles` is exempt, since writing literal values down is what a palette declaration site is for |
 | `grammar-boundary` | CSS never redeclares a grammar token. A site re-tunes the palette tokens freely; a grammar token names structure and holds across both themes |
 | `focus-parity` | Every hand-authored `:hover` selector has a sibling selector in the same source that swaps `:hover` for `:focus-visible`, or for `:focus-within` when a container's wash acknowledges a descendant gaining focus. Tailwind's `hover:` variant classes are deliberately out of scope: their keyboard affordance is the admin's blanket focus ring, a real guarantee of a different shape |
 | `motion-band` | Every transition or animation duration lands in the admin's `70ms` to `400ms` band, and `transition: all` never ships. A declaration inside a `prefers-reduced-motion: reduce` guard is exempt, since collapsing a duration toward zero is what that guard is for |
-| `motion-property` | A transition or animation names only a property on the [motion allowlist](../internal/admin-design-system.md#motion), or the one frame-offset exception: an element carrying `data-cairn-motion="frame-offset"` may transition `margin-left`, one such element per screen. A named-error layout property (`width`, `margin`, and the rest) reports as a judder rather than merely outside the vocabulary. `display` and `overlay` also pass when the same transition entry carries `allow-discrete`, the CSS idiom that defers a popover or dialog's discrete top-layer exit until an accompanying paint transition finishes. The transition list splits at the top level only, so a comma inside `var()` or `cubic-bezier()` reads as a function argument rather than another transitioned property. DaisyUI's own component classes and Tailwind's `transition*` utilities are exempt on the class-join half; see [the coverage limits](#what-the-motion-rules-dont-cover) |
+| `motion-property` | A transition or animation names only a property on the [motion allowlist](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md#motion), or the one frame-offset exception: an element carrying `data-cairn-motion="frame-offset"` may transition `margin-left`, one such element per screen. A named-error layout property (`width`, `margin`, and the rest) reports as a judder rather than merely outside the vocabulary. `display` and `overlay` also pass when the same transition entry carries `allow-discrete`, the CSS idiom that defers a popover or dialog's discrete top-layer exit until an accompanying paint transition finishes. The transition list splits at the top level only, so a comma inside `var()` or `cubic-bezier()` reads as a function argument rather than another transitioned property. DaisyUI's own component classes and Tailwind's `transition*` utilities are exempt on the class-join half; see [the coverage limits](#what-the-motion-rules-dont-cover) |
 | `motion-vocabulary` | A transition or animation names its duration and easing with a `--cairn-dur-*` and `--cairn-ease-*` token rather than a literal value. The same DaisyUI and Tailwind exemption applies |
 | `motion-hover-gate` | A hand-authored `:hover` selector that declares a transition or animation, on its own or through the rule pairing it with `:focus-visible`, sits inside `@media (hover: hover)`. It does not reach a vendor component's own `:hover` rule |
 | `reduced-motion` | Every selector that declares motion is named again inside an `@media (prefers-reduced-motion: reduce)` guard in the same source |
@@ -238,7 +238,7 @@ and each carries a limit worth knowing before you rely on it:
   `.collapse`, and DaisyUI's other component classes, or `transition`, `transition-all`,
   `transition-colors`, `transition-opacity`, `transition-shadow`, `transition-transform`, even
   where the vendor's own sheet disagrees with the language (see [the design system's eleven
-  vendor disagreements](../internal/admin-design-system.md#the-daisyui-decision-eleven-vendor-disagreements)).
+  vendor disagreements](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md#the-daisyui-decision-eleven-vendor-disagreements)).
   An arbitrary form such as `transition-[color]` isn't exempt.
 - **The frame-offset allowance only recognizes a literal attribute value.** A bound or
   interpolated `data-cairn-motion` value reads as absent and claims no allowance.
@@ -549,11 +549,11 @@ harness id:
 
 ### Rule-declared exemptions
 
-A rendered rule can also carry its own exemption, for a ratified exception neither suppression idiom
+A rendered rule can also carry its own exemption, for a documented exception neither suppression idiom
 can express: a design token every recipe shares, on every page, which no page+selector entry names
 and no source-positioned directive can reach. `border-contrast` holds the one that ships.
 `--cairn-card-border`, the card hairline, is a recorded decision, so a border painted through that
-token still separates its two surfaces at least as well as the ratified rendering.
+token still separates its two surfaces at least as well as the documented rendering.
 
 An exemption suppresses a finding without silencing it. The rule still constructs the finding, the
 finding still carries its measurement, and it reaches the report's suppressed list with the reason
@@ -564,9 +564,9 @@ Suppressed:
   /admin/posts [light, rest]:0  advisory  border-contrast  div.card-shell: top/right/bottom/left
   border rgb(235, 231, 226) reads at contrast 1.11 against the surface beside it rgb(246, 243, 239),
   and 1.19 against its own fill rgb(253, 251, 249), both under the 3:1 house floor (WCAG 1.4.11's
-  bar for a control-identifying boundary, applied here to every rendered border) (exempt: RULING 2
-  (2026-07-28): painted in this page's own --cairn-card-border, the ratified hairline, and still
-  separating its two surfaces at 1.190 against the better of them (ratified floor 1.15))
+  bar for a control-identifying boundary, applied here to every rendered border) (exempt: painted
+  in this page's own --cairn-card-border, the documented hairline, and still separating its two
+  surfaces at 1.190 against the better of them (documented floor 1.15))
 
 1 file scanned, 1 rule run
 0 errors, 0 advisories, 1 suppressed
@@ -606,13 +606,13 @@ card  (container)  .card-shell
 
   background-color  var(--color-base-100)  15 sites  observed
   border-color  var(--cairn-card-border)  15 sites  ratified
-    ratified by ... (Ruling 2): the --cairn-card-border hairline measures 1.11 against the ambient
+    ratified by ...: the --cairn-card-border hairline measures 1.11 against the ambient
     beside it and 1.19 against the card's own fill in light, 1.43 and 1.20 in dark, and stays by
     design. The border-contrast rule applies a house floor of 3:1, the number WCAG 1.4.11 sets for a
     control-identifying boundary rather than for a card hairline, and exempts this one on the better
-    of its two ratios against a ratified floor of 1.15
+    of its two ratios against a documented floor of 1.15
   border-radius  8px  15 sites  ratified
-    ratified by docs/internal/admin-design-system.md (--radius-box)
+    ratified by the admin design system (--radius-box)
 ```
 
 ### The term

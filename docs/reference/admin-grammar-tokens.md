@@ -107,8 +107,8 @@ Both read the on-surface TEXT ink for their tone, never the FILL tone (`--color-
 own core color utilities compiled them. The fills are tuned for a badge or alert background, not
 small text: `--color-warning` measures about 2.2:1 as text on `base-100`, well under the 4.5:1
 WCAG 1.4.3 floor. `--cairn-warning-ink` and `--color-positive-ink` are the already-locked,
-measured, readable-small-text counterparts (`docs/internal/admin-design-system.md`, "The
-accessibility text inks"). Write `cairn-text-warning`/`cairn-text-success`, never
+measured, readable-small-text counterparts (see "The accessibility text inks" in
+[the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md)). Write `cairn-text-warning`/`cairn-text-success`, never
 `text-[var(--cairn-warning-ink)]` or the bare `text-warning`/`text-success`.
 
 The sheet's shared status-chip vocabulary, `.cairn-chip-quiet`/`.cairn-chip-warning`/
@@ -153,7 +153,7 @@ and strand the rest. Two roles show why:
   fewer still carry the eyebrow's tracking, so the eyebrow's case and tracking stay a component
   recipe and the role fits every site.
 - `type-heading` sets 18px. Its prose sites also write `font-bold` and the display family, which
-  together form the ratified heading recipe. The media library's stat numerals take the same role
+  together form the documented heading recipe. The media library's stat numerals take the same role
   for its size while keeping `tabular-nums` and skipping the display family, because a numeral is
   not prose.
 
@@ -161,7 +161,7 @@ Color is a palette choice, so it stays a separate `text-muted` or `text-subtle` 
 
 ## Off-scale values and the exception list
 
-Every font size in the admin resolves to a `--cairn-type-*` role, with five ratified exceptions.
+Every font size in the admin resolves to a `--cairn-type-*` role, with five documented exceptions.
 Each one carries a counted, reasoned directive at its call site:
 
 ```

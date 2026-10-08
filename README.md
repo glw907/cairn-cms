@@ -11,7 +11,7 @@ npx create-cairn-site
 - **Looking up a contract?** [The reference](./docs/reference/README.md) has one page per export
   subpath.
 - **Working on cairn itself?** [CONTRIBUTING](./CONTRIBUTING.md) maps the repository and how a
-  change lands. [The `src/lib` map](./docs/internal/src-lib-map.md) goes deeper into the library
+  change lands. [The `src/lib` map](https://github.com/glw907/cairn-cms/blob/main/docs/internal/src-lib-map.md) goes deeper into the library
   tree itself.
 
 ## What cairn is
@@ -58,9 +58,8 @@ reference](./docs/reference/README.md) covers each export subpath.
 
 ## Where cairn stands
 
-cairn is pre-1.0 and runs in production on two sites today, [ecxc.ski](https://ecxc.ski) and
-[907.life](https://907.life). Content stays yours regardless of what happens to cairn: it's
-markdown in your own repository, and leaving is a matter of cloning it.
+cairn is pre-1.0. Content stays yours regardless of what happens to cairn: it's markdown in your
+own repository, and leaving is a matter of cloning it.
 
 The [docs](./docs/reference/README.md) hold the reference for every export. History is in the
 [CHANGELOG](./CHANGELOG.md), security reporting goes through the [policy](./SECURITY.md), and the

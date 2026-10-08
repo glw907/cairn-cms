@@ -773,7 +773,7 @@ SvelteKit 3, which does not require the parameter narrowed. The engine passes th
 reads from `cloudflare:workers`, the object the site's generated `Env` describes. The engine can't
 conjure an absent binding, so an honest `undefined` return beats a callback that hides absence, and
 the fail-closed authorization and degrade-to-open rate limit split (the check order below) is the
-ratified reading of that absence.
+documented reading of that absence.
 
 The returned wrapper takes the call-site's own
 `opts: { action, entity, target?, ownerOnly?, deniedMessage? }`. `action` and `entity` are
@@ -1143,7 +1143,7 @@ cairn editor. The label the screen renders is "recent versions," never a complet
 commits API's path filter doesn't follow a rename, so a renamed entry's history restarts at the
 rename, and `HistoryData.truncated` only ever flags the 25-row bound, never a rename boundary the
 route can't see. A deleted entry answers a 404 exactly as `editLoad` does. Undelete is out of scope
-(see [ROADMAP.md](../../ROADMAP.md)), and a developer who needs a removed entry's content reads it
+(see [the roadmap](https://github.com/glw907/cairn-cms/blob/main/ROADMAP.md)), and a developer who needs a removed entry's content reads it
 straight from git. `revertAction` starts a fresh draft from an old publish: it re-validates the
 posted `ref` against a fresh `listCommits` read, full-sha exact membership, so `ref-unknown` always
 means the target fell outside that same 25-row window, either because it named a commit history

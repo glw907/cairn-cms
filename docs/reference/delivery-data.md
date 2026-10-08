@@ -188,8 +188,8 @@ about it. See the [`AiPosture`](#types) row below for the full honesty constrain
 `CairnAdapter.aiPosture`.
 
 The crawler table is fixed, and no option declines a crawler outside it. `disallow` cannot stand
-in for one, because its paths always emit under the `User-agent: *` group. A token ships only
-with first-party documentation from its operator, which is why Bytespider is absent. Search
+in for one, because its paths always emit under the `User-agent: *` group. Bytespider is
+absent because a token ships only with first-party documentation from its operator. Search
 crawlers such as Googlebot stay out of the table, since disallowing one costs search presence and brings
 no training benefit.
 

@@ -254,8 +254,8 @@ reversible from git history, the same delete-order the single safe-delete uses.
 reference anywhere across `main` and every open branch) and the broken-reference rows (manifest
 hashes whose bytes are gone). A branch-only upload's bytes are excluded from `orphanedBytes`, since
 the branch that uploaded them references them. `mediaOrphanPurgeAction` is the one irreversible
-media action: it deletes the raw R2 bytes, which carry no git history, so it gates on a
-typed-count confirm (the number of files). At action time it re-derives the orphan set fresh and
+media action. The raw R2 bytes it deletes carry no git history, so it gates on a typed-count
+confirm (the number of files). At action time it re-derives the orphan set fresh and
 re-checks the strict usage index, so a key that gained a manifest row or a new branch reference
 since the scan is skipped, never purged; the `MediaOrphanPurgeResult` reports `purged`,
 `skippedClaimed`, and `failed`. All three fail closed: an unverifiable cross-branch usage read
@@ -549,8 +549,8 @@ runs once, reading `event.request.formData()` exactly once so the handler never
 re-reads an already-consumed body; (5) a handler that returns normally (its request succeeded) must
 call `ctx.audit` at least once. A successful mutating action that emits zero audit records throws
 `UnauditedActionError(500, ...)` in dev (`esm-env`'s `DEV`, overridable through `deps.isDev` for a
-test) and logs `admin.action.unaudited` in production, since an unaudited state change is a defect
-here but should never 500 a live site. A handler that returns SvelteKit's `fail()` (an
+test) and logs `admin.action.unaudited` in production. An unaudited state change is a defect here,
+but it should never 500 a live site. A handler that returns SvelteKit's `fail()` (an
 `ActionFailure`, detected with `@sveltejs/kit`'s own `isActionFailure`) is exempt from the required-audit
 check: a rejected request mutated nothing, so it owes no audit, and a validation reject never needs
 a spurious `ctx.audit` call just to satisfy the wrapper. The exemption assumes the handler rejects
@@ -585,10 +585,10 @@ than disappearing. The catch rethrows SvelteKit's own `redirect()`/`error()` unt
 logging them: both are plain classes, not `Error` instances, so a sink built on one of those
 control-flow primitives (a hand-rolled auth check inside a sink, say) is never swallowed into a
 log line the site never sees. This is a distinct event from `createD1AuditSink`'s own
-`audit.sink.write_failed`: that one covers the packaged sink's internal persist failure, which the
-packaged sink already catches before it can reach the engine's call site, while
-`audit.sink.call_failed` covers any sink, hand-rolled or otherwise, that throws or rejects
-at the point `ctx.audit` invokes it.
+`audit.sink.write_failed`. That one covers the packaged sink's internal persist failure, and the
+packaged sink already catches that failure before it can reach the engine's call site.
+`audit.sink.call_failed` covers any sink, hand-rolled or otherwise, that throws or rejects at the
+point `ctx.audit` invokes it.
 
 ```ts
 // src/routes/admin/team/events/[id]/+page.server.ts
@@ -1032,8 +1032,9 @@ shown in the preceding signature for its shape, carries no export row of its own
 reaches it as `Extract<AdminData, { view: 'editors' }>['page']`.
 
 Build the loads and actions for the editor-management view at `/admin/editors`. `editorsLoad` lists
-the editors, names the current user, and returns `vocabulary`, the declared roles with their
-resolved capability, which [`ManageEditors`](./admin.md#manageeditors) renders. The three
+the editors, names the current user, and returns `vocabulary`. `vocabulary` holds the declared
+roles with their resolved capability, and [`ManageEditors`](./admin.md#manageeditors) renders it.
+The three
 actions add an editor, remove one, and change a role, each validating the posted role against the
 vocabulary (rejecting an unknown one as a form error, no more silent coercion to `'editor'`) and
 returning a typed `ActionFailure` on a guard or validation error. The `roles` member of `config`
@@ -1178,16 +1179,16 @@ response (the one admin payload that carries a bearer credential), and logs
 `preview.token.minted`. The minted `url` is built from `PUBLIC_ORIGIN`
 ([`requireOrigin`](#createauthroutes)), never the request's own host. `previewRevokeAction` deletes
 every outstanding link for the entry in one call, returning `{ count }`; it is idempotent, since
-revoking with nothing minted still succeeds with a count of zero. Both actions answer the same
-`ActionFailure<ContentFormFailure>` when `AUTH_DB` is missing the `preview_tokens` table
-(`migrations/0003_preview.sql` not yet applied), naming the migration to apply rather than surfacing
-a raw D1 error, since the engine ships the share affordance to every upgraded site's edit screen
-regardless of adoption. `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's
+revoking with nothing minted still succeeds with a count of zero. The engine ships the share
+affordance to every upgraded site's edit screen regardless of adoption. Where `AUTH_DB` is missing
+the `preview_tokens` table (`migrations/0003_preview.sql` not yet applied), both actions answer the
+same `ActionFailure<ContentFormFailure>` naming the migration to apply rather than surfacing a raw
+D1 error. `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's
 outstanding preview rows unconditionally as part of their own cascade, since the id they touch stops
 naming that entry either way; `discardAction` clears them only when the entry was never published
 (discarding an edit to a live entry leaves its rows alone, since the id still names the same,
-still-live entry). All three close the same id-reuse collision, where a stale link could later
-resolve to a different entry's draft; publishing deliberately leaves the rows in place, since
+still-live entry). All three close the same id-reuse collision: a stale link that later resolves to
+a different entry's draft. Publishing deliberately leaves the rows in place, since
 [`loadPreview`](#loadpreview) needs them to answer a stale link with "this preview has ended" rather
 than a bare 404. See [Public preview](#public-preview) below for the site-mounted page these actions
 feed.
@@ -1197,9 +1198,9 @@ present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'
 `'valid'` / `'unknown'`) alongside the presence-only `keyConfigured`, so a revoked key closes the
 `enabled` gate distinctly from a never-configured one; the probe result also feeds the same
 key-health cache `editLoad`'s Tidy control reads, so a confirmed-invalid key hides that control on
-the next edit load without a separate check. The same deadline that bounds a tidy call also bounds
-the probe, so a hung Anthropic connection resolves to `'unknown'` rather than stalling the load
-on the SDK's own multi-minute timeout. The key-health cache holds the probe's verdict for the
+the next edit load without a separate check. Because the same deadline that bounds a tidy call
+also bounds the probe, a hung Anthropic connection resolves to `'unknown'` rather than stalling the
+load on the SDK's own multi-minute timeout. The key-health cache holds the probe's verdict for the
 same ten-minute window as its mark, so a run of settings navigations spends at most one live
 round trip. `SettingsSaveFailure`, shown in the preceding signature, carries no export row of its
 own: a consumer reaches it as `Awaited<ReturnType<ContentRoutes['settingsSaveAction']>>['data']`.
@@ -1290,7 +1291,7 @@ drives with `fetch` rather than a form submit, and the transport has two SvelteK
 govern any fetch-style admin action or a client that calls one of these. A SvelteKit form action rejects any POST whose content type is not
 form-encoded with a 415 before the action body runs, so the upload client posts `text/plain`, the one
 form content type that carries raw bytes. CSRF rides an `X-Cairn-CSRF` header that the admin guard
-clears before its body-cloning form-field check, since reading the body twice would consume the stream.
+clears before its body-cloning form-field check. Reading the body twice would consume the stream.
 A form action's result is always a 200 JSON envelope (`{ type, status, data }`), so a `fail(413)` from
 the action is not an HTTP 413: the client reads the envelope and branches on `data`, not on the
 response status. Build a new fetch-style admin action against this contract from the start. The upload
@@ -1450,8 +1451,8 @@ so `mintPreview` carries the authorization itself and runs it first: the signed-
 `runtime.access`, the entry-id shape rule, and only then the pending-draft check. A session
 without editor capability, or one the site's access map denies the concept, gets a 403 before the
 mint looks for the draft, so a refusal never reports whether an entry exists. Call it where the
-admin guard has already run: `event.locals.cairnEditor` is the only editor source, and the stored
-row carries the address it names, which is what lets removing an editor revoke every link they
+admin guard has already run: `event.locals.cairnEditor` is the only editor source. The stored
+row carries the address it names, and that address lets removing an editor revoke every link they
 minted.
 
 The `target` is the argument's, never the route's, so the call works from any route. A refusal

@@ -75,16 +75,22 @@ declare function tokensMatch(a: string, b: string): boolean;
 ```
 
 A length-checked, constant-time compare, so checking a token leaks no timing beyond its length.
-Four properties to design around: it leaks length, since a length mismatch is a cheap,
-non-constant-time reject and length is not a secret; `tokensMatch('', '')` is deliberately
-`false`, so an unset expected value can never match an unset submitted one; it is meant only
-for fixed-length CSPRNG tokens and hex hashes, the shape `generateToken` and `hashToken`
-produce, never for a password or anything an attacker can enumerate; and it compares UTF-8
-encoded bytes (`TextEncoder`), so two distinct strings that differ only in a lone (unpaired) surrogate collapse
-to the same replacement-character byte sequence and compare equal. That collapse is harmless for
-a CSPRNG token or a hex digest, since neither can carry a lone surrogate in the first place, which
-is exactly why this precondition is stated rather than guarded against; it stops being harmless
-the moment a caller reaches for `tokensMatch` on a value that isn't one of those two shapes.
+The compare has four properties to design around:
+
+- It leaks length, since a length mismatch is a cheap, non-constant-time reject and length is not
+  a secret.
+- `tokensMatch('', '')` is deliberately `false`, so an unset expected value can never match an
+  unset submitted one.
+- It is meant only for fixed-length CSPRNG tokens and hex hashes, the shape `generateToken` and
+  `hashToken` produce, never for a password or anything an attacker can enumerate.
+- It compares UTF-8 encoded bytes (`TextEncoder`), so two distinct strings that differ only in a
+  lone (unpaired) surrogate collapse to the same replacement-character byte sequence and compare
+  equal.
+
+That collapse is harmless for a CSPRNG token or a hex digest. Neither can carry a lone surrogate
+in the first place, which is exactly why this precondition is stated rather than guarded against.
+It stops being harmless the moment a caller reaches for `tokensMatch` on a value that isn't one of
+those two shapes.
 
 ## Naming a cookie
 

@@ -8,7 +8,7 @@ carries no general-purpose admin UI a site mounts on its own. The engine mounts 
 and contains it, so an embedded story cannot act as a live admin surface. The mounted subtree is
 inert, a modal dialog a story opens is marked inert as it opens, and window-level keyboard,
 pointer, drag, and unload events stop before any handler sees them. Containment holds from first
-paint and does not depend on a pose, which a consumer runs. An inert subtree also contributes no
+paint and does not depend on the pose a consumer runs. An inert subtree also contributes no
 node to the accessibility tree, so a screen reader reaches none of the mounted markup. Whatever alt
 text a page authors for the embed is the entire accessible content of that embed, which is worth
 knowing before writing it.
@@ -91,11 +91,11 @@ does not appear in the server render. `pose` drives a state that lives in the co
 internal state rather than a prop. Both take `root`, the element `ReproContext` mounted the story
 into, never `document`: a posed dialog and the editor's fixed-position insert panel render inside
 that element rather than appended to `document.body`, so a `settle` or `pose` that queries
-`document` instead of `root` misses them. `pose` also takes the mounted component's own exports
-(`ReproInstance`, which carries no export row of its own: a consumer reaches it as
-`Parameters<NonNullable<ReproStory['pose']>>[1]`), for a story the real admin reaches by calling
-an exported method rather than by clicking, such as
-the insert panel the editor mounts headless and opens from its toolbar. The parameter is required,
+`document` instead of `root` misses them. `pose` also takes the mounted component's own exports,
+for a story the real admin reaches by calling an exported method rather than by clicking, such as
+the insert panel the editor mounts headless and opens from its toolbar. That parameter's type is
+`ReproInstance`. It carries no export row of its own: a consumer reaches it as
+`Parameters<NonNullable<ReproStory['pose']>>[1]`. The parameter is required,
 so a host that cannot supply an instance fails to compile rather than posing half a story.
 `markers` are the numbered callout anchors a story exposes, mirroring its manifest entry's
 `markerKeys`.

@@ -1,8 +1,11 @@
 // cairn-cms: the tellgrader gate. `tellgrader` (a workstation binary) grades prose for cadence
-// tells; under the repo's docs-register profile (.tellgrader.json) it gates on exactly one finding,
-// `trailing-hinge-run`: a paragraph whose consecutive sentences each end in a comma-hinged tail
-// (", since ...", ", which ...", ", so ..."). This script runs it over every published docs page
-// and fails when any file gates, printing each gating finding as `file:line: excerpt`.
+// tells; under the repo's docs-register profile (.tellgrader.json) two findings gate. One is
+// `trailing-hinge-run`: three or more consecutive sentences in a paragraph that each carry a
+// comma-hinged tail, a comma followed by since, which, so, so that, because, as, where, while,
+// whereas, although, or though. The other is `appositive-stack`: a sentence that renames a noun in
+// a comma appositive and then hangs a which or who clause after it. This script runs tellgrader
+// over every published docs page and fails when any file gates, printing each gating finding as
+// `file:line: excerpt`.
 //
 // CI has no tellgrader. When the binary is absent the check prints one skip line and passes, so
 // absence never fails a build.

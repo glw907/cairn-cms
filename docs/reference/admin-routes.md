@@ -252,8 +252,8 @@ src/routes/
 ```
 
 Group folders are invisible in the URL, so moving the public pages into `(site)/` changes no paths.
-Endpoints render no layout, so they stay at the root. The admin sits outside the group, so the host
-chrome never wraps it.
+Endpoints render no layout and stay at the root. With the admin outside the group, the host chrome
+never wraps it.
 
 A dev-only guard in the admin backs this rule. In development, the admin shell and the login page
 walk their ancestor chain on mount, and when a width-constraining ancestor sits between the admin

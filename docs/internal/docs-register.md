@@ -390,8 +390,9 @@ flat taste.
   for a comma or a colon.
 - **No trailing-hinge runs** (Geoff, 2026-10-07, on a paragraph of sentences each ending in
   ", since ...", ", which [link] explains", or ", so ...": "really awkward AI cadence"). Avoid a
-  run of sentences that each end in a comma-hinged tail (since, which, so, because). Read each
-  paragraph whole for rhythm. Fix a hinge by folding the reason into the main clause, dropping it,
+  run of sentences that each end in a comma-hinged tail: a comma followed by since, which, so, so
+  that, because, as, where, while, whereas, although, or though (", as well as" does not count).
+  Read each paragraph whole for rhythm. Fix a hinge by folding the reason into the main clause, dropping it,
   giving a link its own clause or sentence, or adding a short sentence. Three in a row fails
   `check:docs-gate` through `tellgrader` (skipped where the binary is absent, as in CI).
 - **No two-headed headings.** A heading of the shape "X, and Y" hangs a second head off a comma,
@@ -565,8 +566,9 @@ flat taste.
   for a comma or a colon.
 - **No trailing-hinge runs** (Geoff, 2026-10-07, on a paragraph of sentences each ending in
   ", since ...", ", which [link] explains", or ", so ...": "really awkward AI cadence"). Avoid a
-  run of sentences that each end in a comma-hinged tail (since, which, so, because). Read each
-  paragraph whole for rhythm. Fix a hinge by folding the reason into the main clause, dropping it,
+  run of sentences that each end in a comma-hinged tail: a comma followed by since, which, so, so
+  that, because, as, where, while, whereas, although, or though (", as well as" does not count).
+  Read each paragraph whole for rhythm. Fix a hinge by folding the reason into the main clause, dropping it,
   giving a link its own clause or sentence, or adding a short sentence. Three in a row fails
   `check:docs-gate` through `tellgrader` (skipped where the binary is absent, as in CI).
 - **No two-headed headings.** A heading of the shape "X, and Y" hangs a second head off a comma,

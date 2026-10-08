@@ -653,8 +653,8 @@ Worker while off. `spellcheckDictionary` names the dialect-resolved dictionary f
 Worker's init. `siteDictionary` seeds the Worker's personal layer with the committed
 personal-dictionary words at init, so a word another editor committed answers correct from the
 first lint. All are plain reactive props, so the host owns any toggle persistence (`EditPage`
-persists the writing-mode toggles per browser). CodeMirror loads only in the browser, so this
-component is client-only.
+persists the writing-mode toggles per browser). This component is client-only because CodeMirror
+loads only in the browser.
 
 The component renders no toolbar and no card chrome of its own; the host frames it. `EditPage`
 composes it inside the editor card with the engine's toolbar. A site mounting `MarkdownEditor`

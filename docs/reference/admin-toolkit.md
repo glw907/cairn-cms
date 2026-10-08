@@ -164,8 +164,8 @@ as a button or a checkbox that carries no label of its own, wants its children l
 bottom edges: the labelled child stands a whole label taller than the bare one, and only their
 controls belong on one line. Hand-roll it directly (`display: flex; align-items: flex-end;
 gap: var(--cairn-gap-control, 0.5rem)`, the same three declarations the retired `FieldRow`
-component shipped in its own scoped `<style>`); the literal `0.5rem` fallback keeps the row a row
-even outside the admin theme root, where `--cairn-gap-control` is undefined. For children of
+component shipped in its own scoped `<style>`). Outside the admin theme root `--cairn-gap-control`
+is undefined, and the literal `0.5rem` fallback keeps the row a row there. For children of
 equal height it changes nothing, so a row doesn't have to know which case it has. One composition
 it gets wrong: a field that renders an error line or a hint *below* its control no longer ends at
 that control, so the row levels the trailing line against the bare control instead.
@@ -376,10 +376,10 @@ partial `selection.ids`, and a caller renders each row's own checkbox `<td>`, in
 reading the same id set. `AdminTable` never holds the full set of selectable row ids (rows stay
 caller-rendered), so the header checkbox can only empty the selection through `selection.onchange`,
 never build one. It follows that the checkbox carries `aria-disabled="true"` while rows exist and
-nothing is selected, and that its `aria-label` reads "Clear selection" once something is, rather
-than `selection.label`, which names it only in the empty state. `aria-disabled` rather than the
-native attribute, because a natively disabled input cannot hold focus and this is the element
-`clear` hands focus back to; the component restates daisyUI's own disabled dimming for it. A caller
+nothing is selected, and that its `aria-label` reads "Clear selection" once something is.
+`selection.label` names it only in the empty state. The checkbox takes `aria-disabled` and not the
+native attribute: a natively disabled input cannot hold focus, and `clear` hands focus back to this
+element. The component restates daisyUI's own disabled dimming for it. A caller
 wanting a select-all affordance supplies it itself. Select-all over caller-rendered rows stays
 open until a second engine screen adopts the pattern and shows what the contract should be.
 
@@ -779,9 +779,9 @@ the row it belongs to. Fully controlled, matching `Pagination`'s own convention:
 `onToggle` are props, not internal state, so the caller holds a single expanded-row id and derives
 `expanded={expandedId === row.id}` per instance, the "one row expanded at a time" contract living
 in the caller the same way a radio group's own `checked` prop carries it. `summary` is the row's
-own `<td>` cells (this component supplies the wrapping `<tr>` and the trailing trigger cell);
-`colspan` is the summary row's own `<td>` count, including that trigger cell, since the panel's
-single spanning cell must cover the whole row.
+own `<td>` cells (this component supplies the wrapping `<tr>` and the trailing trigger cell).
+The panel's single spanning cell must cover the whole row. `colspan` is therefore the summary row's
+own `<td>` count, including that trigger cell.
 
 Keyboard operability rides the native `<button>` element's own Enter/Space activation; the summary
 `<tr>` also carries a mouse-only click convenience, but the trailing button is the one control
@@ -792,14 +792,14 @@ carrying **`data-cairn-inert-cell`**: the row's own click handler walks the clic
 with `closest('[data-cairn-inert-cell]')` and ignores any click that resolves inside one, so the
 wrapped control's own handler runs without also toggling the row, no `stopPropagation()` wrapper of
 the caller's own. The escape leaves the trigger button's own `aria-expanded` control and keyboard
-behavior unchanged; its own `onclick` already calls `event.stopPropagation()`, and it carries no
-`onkeydown` handler by design, since native `<button>` Enter/Space activation already covers it. The
+behavior unchanged. Its own `onclick` already calls `event.stopPropagation()`. It carries no
+`onkeydown` handler by design: native `<button>` Enter/Space activation already covers it. The
 trigger cell is `position: sticky; right: 0`, so `AdminTable`'s own horizontal-scroll fallback never
 strands it off-screen: a summary row wider than its viewport scrolls rather than wraps, and the
 trigger stays reachable at every scroll position, unconditionally, with no caller opt-in. The panel
-cell stays a genuine `<td colspan>`, not `display: block`, because a spanning cell removed from table
+cell stays a genuine `<td colspan>`, not `display: block`. A spanning cell removed from table
 layout still resolves its width against the table's own real column widths through the browser's
-anonymous fixup row; a caller that wants the panel's own internal grid to collapse at a narrow width
+anonymous fixup row. A caller that wants the panel's own internal grid to collapse at a narrow width
 needs the table itself to never need horizontal scroll in the first place (hide lower-priority
 summary columns under a breakpoint instead).
 
@@ -816,13 +816,13 @@ smaller than that at wider widths).
 
 Three treatments carry no prop of their own. They apply unconditionally. The whole summary row
 washes with `color-mix(in oklab, var(--color-base-content) 5%, transparent)` on hover, including
-the sticky trigger cell (adversarially verified against a zebra-striped row, where a plain
-`base-200` wash reads as invisible, being the stripe's own color). The trigger cell's own
+the sticky trigger cell (adversarially verified against a zebra-striped row: a plain `base-200`
+wash is the stripe's own color and reads as invisible there). The trigger cell's own
 background follows zebra parity instead of a fixed `base-100`: on a `table-zebra` ancestor it
 mirrors the exact `tr:nth-child(2n)` selector daisyUI's own zebra striping uses, so the pinned
-column never seams against a striped row underneath it. The panel `<td>` carries a depth story,
-`background: var(--color-base-300)` plus `box-shadow: inset 0 1px 0 var(--cairn-card-border)`, so
-it reads as a recessed drawer rather than a flat continuation of the row preceding it. A `base-200`
+column never seams against a striped row underneath it. The panel `<td>` reads as a recessed drawer rather
+than a flat continuation of the row preceding it. Its depth comes from
+`background: var(--color-base-300)` plus `box-shadow: inset 0 1px 0 var(--cairn-card-border)`. A `base-200`
 recess was the first attempt, and adversarial review refuted it: it's the zebra stripe's own color,
 so the drawer visually merged with a striped row.
 

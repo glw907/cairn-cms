@@ -60,7 +60,7 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
   import type { ReproStory } from './index.js';
   import '../admin/cairn-admin.css';
 
-  // The media base every mounted story gets when its mounting page passes none: cairn-pub's own
+  // The media base every mounted story gets when its mounting page passes none: cairn.pub's own
   // asset route, `/repro-assets`. Module-internal rather than exported: a docs site deployed
   // under a SvelteKit `paths.base` cannot override a hardcode, and the `mediaBase` prop below is
   // the fix, not a second name for it.

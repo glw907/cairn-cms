@@ -1,9 +1,9 @@
 // cairn-cms: the repro fence validator, shared by the engine's check:visuals gate (gate 1) and
-// cairn-pub's docsReproBlocks build-time throw (gate 3). One implementation checks a
+// cairn.pub's docsReproBlocks build-time throw (gate 3). One implementation checks a
 // `repro` fence body against the manifest so the two gates cannot silently drift apart.
 //
 // This module stays on the node-safe half of the reproductions seam: nothing here may import
-// Svelte, so a bare `node` process (this gate, cairn-pub's build) can run it. The
+// Svelte, so a bare `node` process (this gate, cairn.pub's build) can run it. The
 // `ReproManifestEntry` import below is type-only, erased entirely at compile time, so it adds no
 // runtime edge back to ./manifest.js despite manifest.ts re-exporting from here.
 import { parse } from 'yaml';
@@ -14,7 +14,7 @@ import type { ReproManifestEntry } from './manifest.js';
  * (required keys, story resolves, width declared). Each member is independently optional, and
  * omitting one skips the check it backs entirely: none of the three carries a baked-in default,
  * since a "Reproduction"-prefixed English alt, a 150-character ceiling, and a closed key set are
- * cairn-pub's own register, not a rule the engine imposes on every consumer.
+ * cairn.pub's own register, not a rule the engine imposes on every consumer.
  */
 export interface ValidateReproFenceOptions {
   /** When given, `alt` must match this pattern; omit to skip the alt-prefix check. */

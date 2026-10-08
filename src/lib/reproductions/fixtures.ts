@@ -47,7 +47,7 @@ export const fixtureConcept: ConceptDescriptor = {
  * alike. One constant because a story and the shell around it render it in two different places, and
  * two literals drifting apart is visible on any reproduction wide enough to show both.
  */
-export const fixtureSiteName = 'Trailhead Club';
+export const fixtureSiteName = 'Trailhead';
 
 /**
  * The CSRF token every reproduction's forms carry: the value a story bakes into its own `data.csrf`
@@ -111,8 +111,8 @@ export const fixtureEntries: FixtureEntry[] = [
   },
   {
     concept: fixtureConcept.id,
-    id: '2026-06-10-welcome-to-the-club',
-    title: 'Welcome to the Club',
+    id: '2026-06-10-welcome-to-trailhead',
+    title: 'Welcome to Trailhead',
     date: '2026-06-10',
     draft: false,
     status: 'published',
@@ -187,7 +187,7 @@ const teamPhoto: MediaLibraryEntry = {
   ext: 'png',
   contentType: 'image/png',
   displayName: 'Team Photo',
-  alt: "The club's spring retreat group photo on a hillside overlook.",
+  alt: "The team's spring retreat group photo on a hillside overlook.",
   width: 320,
   height: 200,
   bytes: 1717,
@@ -213,7 +213,7 @@ const trailMap: MediaLibraryEntry = {
   ext: 'png',
   contentType: 'image/png',
   displayName: 'Trail Map',
-  alt: "A hand-drawn map of the club's three most-used trailheads.",
+  alt: "A hand-drawn map of the three most-used trailheads.",
   width: 240,
   height: 150,
   bytes: 936,
@@ -261,7 +261,7 @@ export const fixtureVocabulary: VocabularyData = {
 
 /**
  * The `navLayout` seam's own worked example, resolved to
- * the shape `CairnAdminShell` renders: two engine references, a "Club" section of two site entries,
+ * the shape `CairnAdminShell` renders: two engine references, a "Team" section of two site entries,
  * two more engine references (one relabeled), then an unreferenced trailing group after the divider
  * (`vocabulary`, `editors`, `help`, none of which the worked example's tree names).
  */
@@ -270,10 +270,10 @@ export const fixtureNavLayout: ResolvedNavLayout = {
     { screen: 'posts', label: 'Posts', href: '/admin/posts', dated: true },
     { screen: 'pages', label: 'Pages', href: '/admin/pages', dated: false },
     {
-      label: 'Club',
+      label: 'Team',
       children: [
-        { label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false },
-        { label: 'Members', iconName: 'users', href: '/admin/club/members', ownerOnly: false },
+        { label: 'Events', iconName: 'calendar', href: '/admin/team/events', ownerOnly: false },
+        { label: 'Members', iconName: 'users', href: '/admin/team/members', ownerOnly: false },
       ],
     },
     { screen: 'media', label: 'Library', href: '/admin/media' },

@@ -16,7 +16,7 @@ type ReproInstance = Parameters<NonNullable<ReproStory['pose']>>[1];
 /**
  * Mount `story` through `ReproContext` and bring it to the state its page contract names: `settle`
  * for a surface that only exists after hydration, then `pose` for a state that lives in internal
- * component state. Both of the seam's consumers, this repo's suites and cairn-pub's docs route,
+ * component state. Both of the seam's consumers, this repo's suites and cairn.pub's docs route,
  * run them in that order.
  *
  * Pin the viewport before calling: a story pinned to a width renders a different screen at the

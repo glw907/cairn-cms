@@ -10,7 +10,7 @@ snapshot a test re-renders by hand.
 
   interface Props {
     /** The rows the table renders, each with its own checkbox `<td>` the way a caller writes one. */
-    rows: { id: string; household: string }[];
+    rows: { id: string; signup: string }[];
   }
 
   let { rows }: Props = $props();
@@ -27,10 +27,10 @@ snapshot a test re-renders by hand.
 
 <AdminTable
   rowCount={rows.length}
-  selection={{ ids: selectedIds, onchange: (next) => (selectedIds = next), label: 'Select households' }}
+  selection={{ ids: selectedIds, onchange: (next) => (selectedIds = next), label: 'Select signups' }}
 >
   {#snippet header()}
-    <th>Household</th>
+    <th>Signup</th>
   {/snippet}
   {#snippet children()}
     {#each rows as row (row.id)}
@@ -39,12 +39,12 @@ snapshot a test re-renders by hand.
           <input
             type="checkbox"
             class="checkbox"
-            aria-label={`Select ${row.household}`}
+            aria-label={`Select ${row.signup}`}
             checked={selectedIds.has(row.id)}
             onchange={(event) => toggle(row.id, event.currentTarget.checked)}
           />
         </td>
-        <td>{row.household}</td>
+        <td>{row.signup}</td>
       </tr>
     {/each}
   {/snippet}

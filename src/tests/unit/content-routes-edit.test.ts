@@ -273,7 +273,7 @@ describe('editLoad', () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     const withPages = runtime();
     withPages.concepts.push(postsConcept({ id: 'pages', label: 'Pages' }));
-    const publishActions = [{ label: 'Announce', href: '/admin/club/announce?post={id}', concepts: ['pages'] }];
+    const publishActions = [{ label: 'Announce', href: '/admin/team/announce?post={id}', concepts: ['pages'] }];
     const routes = createContentRoutes({ runtime: { ...withPages, publishActions } });
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data.publishActions).toEqual([]);

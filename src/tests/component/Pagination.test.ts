@@ -10,12 +10,12 @@ describe('Pagination', () => {
       onPageChange: () => {},
       totalItems: 149,
       pageSize: 20,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const text = screen.container.textContent ?? '';
     expect(text).toContain('Showing 1');
     expect(text).toContain('149');
-    expect(text).toContain('households');
+    expect(text).toContain('signups');
   });
 
   it('omits the range line when totalItems is not given', async () => {
@@ -30,7 +30,7 @@ describe('Pagination', () => {
       onPageChange: () => {},
       totalItems: 149,
       pageSize: 20,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const range = screen.container.querySelector('.toolkit-pagination-range')!;
     expect(range.getAttribute('role')).toBe('status');
@@ -75,11 +75,11 @@ describe('Pagination', () => {
       onPageChange: () => {},
       totalItems: 1,
       pageSize: 20,
-      itemLabel: { one: 'household', many: 'households' },
+      itemLabel: { one: 'signup', many: 'signups' },
     });
     const text = screen.container.textContent ?? '';
-    expect(text).toContain('1 household');
-    expect(text).not.toContain('1 households');
+    expect(text).toContain('1 signup');
+    expect(text).not.toContain('1 signups');
   });
 
   it('picks the plural noun when itemLabel is an { one, many } pair and the total is not 1', async () => {
@@ -89,9 +89,9 @@ describe('Pagination', () => {
       onPageChange: () => {},
       totalItems: 149,
       pageSize: 20,
-      itemLabel: { one: 'household', many: 'households' },
+      itemLabel: { one: 'signup', many: 'signups' },
     });
-    expect(screen.container.textContent ?? '').toContain('149 households');
+    expect(screen.container.textContent ?? '').toContain('149 signups');
   });
 
   it('gives the range line 13px text with tabular-nums', async () => {
@@ -101,7 +101,7 @@ describe('Pagination', () => {
       onPageChange: () => {},
       totalItems: 149,
       pageSize: 20,
-      itemLabel: 'households',
+      itemLabel: 'signups',
     });
     const range = screen.container.querySelector('.toolkit-pagination-range')!;
     const style = getComputedStyle(range);

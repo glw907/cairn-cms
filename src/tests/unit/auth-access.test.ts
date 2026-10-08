@@ -7,7 +7,7 @@ const roles = defineRoles({
   owner: 'owner',
   webmaster: 'editor',
   publisher: 'editor',
-  'club-admin': 'editor',
+  'manager': 'editor',
 });
 
 function editor(role: string, capability: Editor['capability'] = 'editor'): Editor {
@@ -78,7 +78,7 @@ describe('defineAccess validation', () => {
 });
 
 describe('canReach: capability floors and owner bypass', () => {
-  const access = defineAccess(roles, { pages: ['webmaster'], '/admin/money': ['club-admin'] });
+  const access = defineAccess(roles, { pages: ['webmaster'], '/admin/money': ['manager'] });
 
   it('none capability reaches nothing, mapped or unmapped', () => {
     expect(canReach(access, editor('ghost', 'none'), 'pages')).toBe(false);
@@ -117,17 +117,17 @@ describe('canReach: mapped and unmapped screen ids', () => {
 
 describe('canReach: href prefix matching', () => {
   const access = defineAccess(roles, {
-    '/admin/money': ['club-admin'],
+    '/admin/money': ['manager'],
     '/admin/money/refunds': ['owner'],
   });
 
   it('a shallower key covers its own descendants', () => {
-    expect(canReach(access, editor('club-admin'), '/admin/money/tabs')).toBe(true);
+    expect(canReach(access, editor('manager'), '/admin/money/tabs')).toBe(true);
     expect(canReach(access, editor('publisher'), '/admin/money/tabs')).toBe(false);
   });
 
   it('the deeper key wins when both match', () => {
-    expect(canReach(access, editor('club-admin'), '/admin/money/refunds')).toBe(false);
+    expect(canReach(access, editor('manager'), '/admin/money/refunds')).toBe(false);
     expect(canReach(access, editor('owner', 'owner'), '/admin/money/refunds')).toBe(true);
   });
 
@@ -143,7 +143,7 @@ describe('canReach: href prefix matching', () => {
 describe('hasAccessRule', () => {
   const access = defineAccess(roles, {
     pages: ['webmaster'],
-    '/admin/money': ['club-admin'],
+    '/admin/money': ['manager'],
   });
 
   it('reports true for a mapped screen id, false for an unmapped one', () => {

@@ -13,11 +13,11 @@ describe('StatusChip', () => {
   });
 
   it('defaults to the sm size and switches to xs on request', async () => {
-    const sm = await render(StatusChip, { label: 'Former' });
+    const sm = await render(StatusChip, { label: 'Pending' });
     const smChip = sm.container.querySelector('.status-chip')!;
     expect(smChip.className).toContain('badge-sm');
 
-    const xs = await render(StatusChip, { label: 'Former', size: 'xs' });
+    const xs = await render(StatusChip, { label: 'Pending', size: 'xs' });
     const xsChip = xs.container.querySelector('.status-chip')!;
     expect(xsChip.className).toContain('badge-xs');
   });
@@ -68,11 +68,11 @@ describe('StatusChip', () => {
   });
 
   it('keeps the sm size at a 5rem min-width floor (hugging was adversarially refuted) while xs stays floor-free', async () => {
-    const sm = await render(StatusChip, { label: 'Former' });
+    const sm = await render(StatusChip, { label: 'Pending' });
     const smChip = sm.container.querySelector('.status-chip')!;
     expect(getComputedStyle(smChip).minWidth).toBe('80px'); // 5rem at the default 16px root
 
-    const xs = await render(StatusChip, { label: 'Former', size: 'xs' });
+    const xs = await render(StatusChip, { label: 'Pending', size: 'xs' });
     const xsChip = xs.container.querySelector('.status-chip')!;
     expect(getComputedStyle(xsChip).minWidth).toBe('0px');
   });

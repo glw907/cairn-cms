@@ -251,14 +251,14 @@ describe('screen-anatomy against a real browser', () => {
 
   // The demonstrated defect the DOM signal closes. Path depth alone is the signal
   // `CairnAdminShell.svelte:395-402` names by name as wrong, because "a developer's own custom nav
-  // can route just as deep (a section entry like /admin/club/events) without opening a document".
+  // can route just as deep (a section entry like /admin/team/events) without opening a document".
   // An adversarial pass drove exactly that: identical broken markup reported three findings under a
   // two-segment path and ZERO under a three-segment one.
   it('judges a three-deep CUSTOM office route as the office screen it renders as', async () => {
     const findings = await findingsFor(
       screenAnatomy,
       `<body style="margin:0"><div class="drawer lg:drawer-open"><main><p>No header, no card, nothing.</p></main></div></body>`,
-      '/admin/club/events'
+      '/admin/team/events'
     );
     expect(findings.map((finding) => finding.message)).toEqual([
       expect.stringContaining('no <h1> renders'),

@@ -1,6 +1,6 @@
 // cairn-cms: a compile-only fixture for the `/auth-channel` fold (conventions pass, Task 8),
 // mirroring the one production consumer's actual wiring rather than an invented one. It is modelled
-// on xcathletes-org's member login (`src/lib/server/auth/channel.ts`), post-migration: a
+// on a production site's member login, post-migration: a
 // module-scope channel per binding, a D1-backed `lookup` that now reads its binding off the
 // callback context instead of a `WeakMap` keyed on the binding, a session helper whose PUBLIC
 // signature names the event type, a roster-archive path that revokes with a bare `db` and no
@@ -82,7 +82,7 @@ const memberChannel: AuthChannel<SiteEnv> = createAuthChannel<SiteEnv>({
     return hasActiveMembership(db, subject);
   },
   // A base without cairn's reserved prefix, which construction still rejects.
-  cookie: { name: 'xcathletes_member' },
+  cookie: { name: 'site_member' },
   // The one knob this consumer overrides. A single-knob override names one knob and nothing else.
   limits: { session: { ttlMs: NINETY_DAYS } },
 });

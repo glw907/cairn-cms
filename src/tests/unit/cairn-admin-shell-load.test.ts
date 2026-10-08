@@ -86,17 +86,17 @@ describe('createCairnAdmin shellLoad', () => {
     const rt = runtime();
     rt.navLayout = [
       { label: 'Standalone', icon: 'wrench', href: '/admin/tools' },
-      { label: 'Club', children: [{ label: 'Members', icon: 'users', href: '/admin/club/members' }] },
+      { label: 'Team', children: [{ label: 'Members', icon: 'users', href: '/admin/team/members' }] },
     ];
     const { shellLoad } = createCairnAdmin({
       runtime: rt,
-      navFilter: (items) => items.filter((item) => item.label !== 'Club'),
+      navFilter: (items) => items.filter((item) => item.label !== 'Team'),
     });
     const { shell } = await shellLoad(eventFor('/admin/posts'));
     if (shell.public) throw new Error('expected authed shell');
-    // The declared navLayout renders the flat 'Standalone' entry and the 'Club' section as
+    // The declared navLayout renders the flat 'Standalone' entry and the 'Team' section as
     // top-level nodes; the filter drops only the latter.
-    expect(shell.nav.items.map((item) => item.label)).not.toContain('Club');
+    expect(shell.nav.items.map((item) => item.label)).not.toContain('Team');
     expect(shell.nav.items.map((item) => item.label)).toContain('Standalone');
   });
 });

@@ -8,13 +8,13 @@ const DEFAULT_VOCABULARY: { role: string; capability: Capability }[] = [
   { role: 'editor', capability: 'editor' },
 ];
 
-// An ASC-shaped vocabulary: 'owner' plus 'president' (a second owner-level name), 'club-admin'
-// (editor capability under a site-chosen name), and 'instructor' (none capability).
+// A custom role vocabulary: 'owner' plus 'president' (a second owner-level name), 'webmaster'
+// (editor capability under a site-chosen name), and 'staff' (none capability).
 const ASC_VOCABULARY: { role: string; capability: Capability }[] = [
   { role: 'owner', capability: 'owner' },
   { role: 'president', capability: 'owner' },
-  { role: 'club-admin', capability: 'editor' },
-  { role: 'instructor', capability: 'none' },
+  { role: 'webmaster', capability: 'editor' },
+  { role: 'staff', capability: 'none' },
 ];
 
 function data() {
@@ -122,8 +122,8 @@ describe('ManageEditors vocabulary-driven role control', () => {
           { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' as const },
           {
             email: 'ted@t',
-            displayName: 'Ted Instructor',
-            role: 'instructor',
+            displayName: 'Ted Staffer',
+            role: 'staff',
             capability: 'none' as const,
           },
         ],
@@ -133,11 +133,11 @@ describe('ManageEditors vocabulary-driven role control', () => {
       form: null,
     });
     expect(screen.container.querySelector('button[aria-label*="Toggle role"]')).toBeNull();
-    const select = screen.container.querySelector('select[aria-label="Change role for Ted Instructor"]');
+    const select = screen.container.querySelector('select[aria-label="Change role for Ted Staffer"]');
     expect(select).not.toBeNull();
     const optionText = [...(select as unknown as HTMLSelectElement).options].map((option) => option.textContent);
-    expect(optionText).toContain('instructor (none)');
-    expect(optionText).toContain('club-admin (editor)');
+    expect(optionText).toContain('staff (none)');
+    expect(optionText).toContain('webmaster (editor)');
   });
 
   it('submits the selected role name from the vocabulary select', async () => {
@@ -147,8 +147,8 @@ describe('ManageEditors vocabulary-driven role control', () => {
           { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' as const },
           {
             email: 'ted@t',
-            displayName: 'Ted Instructor',
-            role: 'club-admin',
+            displayName: 'Ted Staffer',
+            role: 'webmaster',
             capability: 'editor' as const,
           },
         ],
@@ -158,7 +158,7 @@ describe('ManageEditors vocabulary-driven role control', () => {
       form: null,
     });
     const select = screen.container.querySelector(
-      'select[aria-label="Change role for Ted Instructor"]',
+      'select[aria-label="Change role for Ted Staffer"]',
     ) as unknown as HTMLSelectElement;
     const captured = { role: '', email: '' };
     const stop = (event: Event) => {
@@ -169,14 +169,14 @@ describe('ManageEditors vocabulary-driven role control', () => {
     };
     document.addEventListener('submit', stop, true);
     try {
-      select.value = 'instructor';
+      select.value = 'staff';
       select.dispatchEvent(new Event('change', { bubbles: true }));
       const form = select.closest('form') as unknown as HTMLFormElement;
       (form.querySelector('button[type="submit"]') as unknown as HTMLButtonElement).click();
     } finally {
       document.removeEventListener('submit', stop, true);
     }
-    expect(captured.role).toBe('instructor');
+    expect(captured.role).toBe('staff');
     expect(captured.email).toBe('ted@t');
   });
 

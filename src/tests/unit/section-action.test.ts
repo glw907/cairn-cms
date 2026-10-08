@@ -51,7 +51,7 @@ function makeEvent(opts: {
   /** Installed as the fake Worker env when given, the bindings `resolveDb` reads. */
   env?: TestEnv;
   auditSink?: (record: AdminActionAuditRecord) => void;
-  /** The concrete request path; defaults to the shared '/admin/club/events' fixture path. */
+  /** The concrete request path; defaults to the shared '/admin/team/events' fixture path. */
   pathname?: string;
   /** The route id kit reports; defaults to `pathname` (the static-route case, where they match). */
   routeId?: string | null;
@@ -59,7 +59,7 @@ function makeEvent(opts: {
   if (opts.env !== undefined) setFakeEnv({ ...opts.env });
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
-  const pathname = opts.pathname ?? '/admin/club/events';
+  const pathname = opts.pathname ?? '/admin/team/events';
   const request = new Request(`https://x.dev${pathname}`, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
@@ -80,7 +80,7 @@ function makeEvent(opts: {
   };
 }
 
-const mappedTarget = '/admin/club/events';
+const mappedTarget = '/admin/team/events';
 const mappedAccess: AccessMap = { [mappedTarget]: ['editor'] };
 
 /** A ready-to-admit event: a verified CSRF pair, an editor-capability session, and a mapped path. */
@@ -388,15 +388,15 @@ describe('createSectionAction: rate limit catch rethrows control-flow shapes', (
 
 describe('createSectionAction: opts.target overrides the default route.id-derived target (the catch-all defense)', () => {
   it('refuses when the map admits the pathname but not the declared target', async () => {
-    const { handler, action } = approveAction(boundDb, { target: '/admin/club/other' });
+    const { handler, action } = approveAction(boundDb, { target: '/admin/team/other' });
     const result = await action(readyEvent({ cairnAccess: mappedAccess })); // mappedAccess admits pathname, not the target
     expect(refusal(result).status).toBe(403);
     expect(handler).not.toHaveBeenCalled();
   });
 
   it('admits when the map admits the declared target but not the pathname', async () => {
-    const targetOnlyAccess: AccessMap = { '/admin/club/other': ['editor'] };
-    const { handler, action } = approveAction(boundDb, { target: '/admin/club/other' });
+    const targetOnlyAccess: AccessMap = { '/admin/team/other': ['editor'] };
+    const { handler, action } = approveAction(boundDb, { target: '/admin/team/other' });
     const result = await action(readyEvent({ cairnAccess: targetOnlyAccess })); // admits the target, not the pathname
     expect(handler).toHaveBeenCalledOnce();
     expect(result).toEqual({ ok: true, db: fakeDb });
@@ -405,13 +405,13 @@ describe('createSectionAction: opts.target overrides the default route.id-derive
 
 describe('createSectionAction: target defaults to event.route.id, never the concrete pathname (R9)', () => {
   it('a parameterized route: an access map keyed on the bracket-form route id admits', async () => {
-    const bracketAccess: AccessMap = { '/admin/club/events/[id]': ['editor'] };
+    const bracketAccess: AccessMap = { '/admin/team/events/[id]': ['editor'] };
     const { handler, action } = approveAction(boundDb);
     const result = await action(
       readyEvent({
         cairnAccess: bracketAccess,
-        routeId: '/admin/club/events/[id]',
-        pathname: '/admin/club/events/hello-world',
+        routeId: '/admin/team/events/[id]',
+        pathname: '/admin/team/events/hello-world',
       }),
     );
     expect(handler).toHaveBeenCalledOnce();
@@ -419,13 +419,13 @@ describe('createSectionAction: target defaults to event.route.id, never the conc
   });
 
   it('a parameterized route: an access map keyed on the concrete pathname does not match', async () => {
-    const concreteAccess: AccessMap = { '/admin/club/events/hello-world': ['editor'] };
+    const concreteAccess: AccessMap = { '/admin/team/events/hello-world': ['editor'] };
     const { handler, action } = approveAction(boundDb);
     const result = await action(
       readyEvent({
         cairnAccess: concreteAccess,
-        routeId: '/admin/club/events/[id]',
-        pathname: '/admin/club/events/hello-world',
+        routeId: '/admin/team/events/[id]',
+        pathname: '/admin/team/events/hello-world',
       }),
     );
     expect(refusal(result).status).toBe(403);
@@ -433,15 +433,15 @@ describe('createSectionAction: target defaults to event.route.id, never the conc
   });
 
   it('a route group in the route id authorizes against the URL-shaped access-map key', async () => {
-    // A SvelteKit route group is organizational: `/admin/(app)/club/events` serves the URL
-    // `/admin/club/events`, which is the shape an access map is keyed by.
-    const urlShapedAccess: AccessMap = { '/admin/club/events': ['editor'] };
+    // A SvelteKit route group is organizational: `/admin/(app)/team/events` serves the URL
+    // `/admin/team/events`, which is the shape an access map is keyed by.
+    const urlShapedAccess: AccessMap = { '/admin/team/events': ['editor'] };
     const { handler, action } = approveAction(boundDb);
     const result = await action(
       readyEvent({
         cairnAccess: urlShapedAccess,
-        routeId: '/admin/(app)/club/events',
-        pathname: '/admin/club/events',
+        routeId: '/admin/(app)/team/events',
+        pathname: '/admin/team/events',
       }),
     );
     expect(handler).toHaveBeenCalledOnce();
@@ -449,13 +449,13 @@ describe('createSectionAction: target defaults to event.route.id, never the conc
   });
 
   it('strips every route group in a multi-group route id, not just the first', async () => {
-    const urlShapedAccess: AccessMap = { '/admin/club/events/[id]': ['editor'] };
+    const urlShapedAccess: AccessMap = { '/admin/team/events/[id]': ['editor'] };
     const { handler, action } = approveAction(boundDb);
     const result = await action(
       readyEvent({
         cairnAccess: urlShapedAccess,
-        routeId: '/admin/(app)/club/(section)/events/[id]',
-        pathname: '/admin/club/events/hello-world',
+        routeId: '/admin/(app)/team/(section)/events/[id]',
+        pathname: '/admin/team/events/hello-world',
       }),
     );
     expect(handler).toHaveBeenCalledOnce();
@@ -464,8 +464,8 @@ describe('createSectionAction: target defaults to event.route.id, never the conc
 
   it('leaves an explicit opts.target untouched, group segments included', async () => {
     // Only the derived default is normalized: a caller who declares a target owns its exact string.
-    const literalAccess: AccessMap = { '/admin/(app)/club/events': ['editor'] };
-    const { handler, action } = approveAction(boundDb, { target: '/admin/(app)/club/events' });
+    const literalAccess: AccessMap = { '/admin/(app)/team/events': ['editor'] };
+    const { handler, action } = approveAction(boundDb, { target: '/admin/(app)/team/events' });
     const result = await action(readyEvent({ cairnAccess: literalAccess, routeId: '/admin/other' }));
     expect(handler).toHaveBeenCalledOnce();
     expect(result).toEqual({ ok: true, db: fakeDb });
@@ -482,7 +482,7 @@ describe('createSectionAction: target defaults to event.route.id, never the conc
   it('a null route.id (the unreachable unmatched-request case) fails closed, never falling back to the pathname', async () => {
     // Even a map keyed on the exact pathname must not admit: a null route id must never fall
     // back to url.pathname, the attacker-chosen value this derivation removes.
-    const pathnameKeyedAccess: AccessMap = { '/admin/club/events': ['editor'] };
+    const pathnameKeyedAccess: AccessMap = { '/admin/team/events': ['editor'] };
     const { handler, action } = approveAction(boundDb);
     const result = await action(readyEvent({ cairnAccess: pathnameKeyedAccess, routeId: null }));
     expect(refusal(result).status).toBe(403);

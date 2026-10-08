@@ -594,13 +594,13 @@ describe('trap 1: the first line is the visually first one, not the first in the
     `<div class="order-row" style="display:flex;align-items:flex-start;gap:12px;font-family:sans-serif">
       ${icon}<div style="display:flex;flex-direction:column">${first}${second}</div></div>`;
   const eyebrow = '<span style="font-size:12px;line-height:24px">MEMBERSHIP</span>';
-  const title = '<h3 style="margin:0;font-size:18px;line-height:24px">Club Boats</h3>';
+  const title = '<h3 style="margin:0;font-size:18px;line-height:24px">Team Boats</h3>';
 
   // Same rendered pixels, two DOM orders. Reading document order anchored the pair on the line
   // BELOW the one the icon sits on and manufactured 23.5px of phantom delta.
   it('reads a column reordered by `order` the same as the identical column in visual order', async () => {
     const one = await measureFirst(
-      column(`<h3 style="order:2;margin:0;font-size:18px;line-height:24px">Club Boats</h3>`, `<span style="order:1;font-size:12px;line-height:24px">MEMBERSHIP</span>`),
+      column(`<h3 style="order:2;margin:0;font-size:18px;line-height:24px">Team Boats</h3>`, `<span style="order:1;font-size:12px;line-height:24px">MEMBERSHIP</span>`),
       'icon-beside-text'
     );
     const other = await measureFirst(column(eyebrow, title), 'icon-beside-text');
@@ -629,7 +629,7 @@ describe('trap 1: the first line is the visually first one, not the first in the
       'icon-beside-text'
     );
     expect(pair?.b.selector).toBe('h3');
-    expect(pair?.b.text).toBe('Club Boats');
+    expect(pair?.b.text).toBe('Team Boats');
     expect(pair?.magnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
   });
 

@@ -63,16 +63,16 @@ describe('validateNavLayout: construction throws', () => {
 
   it('rejects a roles name outside the declared vocabulary, on a top-level entry', () => {
     const layout: NavLayout = [
-      { label: 'Signups', icon: 'inbox', href: '/admin/signups', roles: ['club-admin'] },
+      { label: 'Signups', icon: 'inbox', href: '/admin/signups', roles: ['webmaster'] },
     ];
-    expect(() => validateNavLayout(layout, ctx())).toThrow(/role "club-admin".*outside the declared vocabulary/);
+    expect(() => validateNavLayout(layout, ctx())).toThrow(/role "webmaster".*outside the declared vocabulary/);
   });
 
   it('rejects a roles name outside the declared vocabulary, on a section', () => {
     const layout: NavLayout = [
-      { label: 'Club', roles: ['club-admin'], children: [{ screen: 'editors' }] },
+      { label: 'Programs', roles: ['webmaster'], children: [{ screen: 'editors' }] },
     ];
-    expect(() => validateNavLayout(layout, ctx())).toThrow(/role "club-admin".*outside the declared vocabulary/);
+    expect(() => validateNavLayout(layout, ctx())).toThrow(/role "webmaster".*outside the declared vocabulary/);
   });
 
   it('rejects a blank or whitespace-only section label', () => {
@@ -84,11 +84,11 @@ describe('validateNavLayout: construction throws', () => {
 
   it('rejects two sections sharing a label', () => {
     const layout: NavLayout = [
-      { label: 'Club', children: [{ screen: 'settings' }] },
-      { label: 'Club', children: [{ screen: 'editors' }] },
+      { label: 'Programs', children: [{ screen: 'settings' }] },
+      { label: 'Programs', children: [{ screen: 'editors' }] },
     ];
     expect(() => validateNavLayout(layout, ctx())).toThrow(
-      /navLayout: two sections share the label "Club"/,
+      /navLayout: two sections share the label "Programs"/,
     );
   });
 
@@ -108,7 +108,7 @@ describe('validateNavLayout: construction throws', () => {
 
   it('rejects a section-embedded entry that shadows a reserved admin segment, the same way', () => {
     const layout: NavLayout = [
-      { label: 'Club', children: [{ label: 'X', icon: 'list', href: '/admin/editors' }] },
+      { label: 'Programs', children: [{ label: 'X', icon: 'list', href: '/admin/editors' }] },
     ];
     expect(() => validateNavLayout(layout, ctx())).toThrow(
       /navLayout: href "\/admin\/editors" collides with cairn's built-in "editors" view/,
@@ -118,14 +118,14 @@ describe('validateNavLayout: construction throws', () => {
   it('rejects two site entries sharing an href, one top-level and one section-embedded', () => {
     const layout = [
       { label: 'X', icon: 'inbox', href: '/admin/dup' },
-      { label: 'Club', children: [{ label: 'Y', icon: 'list', href: '/admin/dup' }] },
+      { label: 'Programs', children: [{ label: 'Y', icon: 'list', href: '/admin/dup' }] },
     ] as unknown as NavLayout;
     expect(() => validateNavLayout(layout, ctx())).toThrow(/navLayout: href "\/admin\/dup" is used by more than one entry/);
   });
 
   it('rejects two site entries sharing an href across two different sections', () => {
     const layout: NavLayout = [
-      { label: 'Club', children: [{ label: 'X', icon: 'inbox', href: '/admin/dup' }] },
+      { label: 'Programs', children: [{ label: 'X', icon: 'inbox', href: '/admin/dup' }] },
       { label: 'Team', children: [{ label: 'Y', icon: 'list', href: '/admin/dup' }] },
     ];
     expect(() => validateNavLayout(layout, ctx())).toThrow(/navLayout: href "\/admin\/dup" is used by more than one entry/);
@@ -139,7 +139,7 @@ describe('validateNavLayout: a section-embedded entry validates the same way a t
   });
 
   it('rejects a colliding href on a section-embedded entry, the same way a top-level entry is rejected', () => {
-    const layout: NavLayout = [{ label: 'Club', children: [{ label: 'X', icon: 'list', href: '/admin/posts' }] }];
+    const layout: NavLayout = [{ label: 'Programs', children: [{ label: 'X', icon: 'list', href: '/admin/posts' }] }];
     expect(() => validateNavLayout(layout, ctx())).toThrow(/posts/);
   });
 });
@@ -150,7 +150,7 @@ describe('validateNavLayout: a valid tree', () => {
       { screen: 'settings', label: 'Site settings' },
       { screen: 'help', hidden: true },
       {
-        label: 'Club',
+        label: 'Programs',
         roles: ['owner'],
         children: [{ screen: 'editors' }, { label: 'Signups', icon: 'inbox', href: '/admin/signups' }],
       },
@@ -166,7 +166,7 @@ describe('validateNavLayout: a valid tree', () => {
 
   it('validates without throwing: two sections with distinct labels, each entry with a distinct href', () => {
     const layout: NavLayout = [
-      { label: 'Club', children: [{ label: 'X', icon: 'inbox', href: '/admin/club-x' }] },
+      { label: 'Programs', children: [{ label: 'X', icon: 'inbox', href: '/admin/programs-x' }] },
       { label: 'Team', children: [{ label: 'Y', icon: 'list', href: '/admin/team-y' }] },
     ];
     expect(() => validateNavLayout(layout, ctx())).not.toThrow();

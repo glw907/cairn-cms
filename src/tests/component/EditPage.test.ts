@@ -1029,10 +1029,10 @@ describe('EditPage', () => {
       EditPage,
       postProps({
         publishedFlash: true,
-        publishActions: [{ label: 'Announce', href: '/admin/club/announce?post=2026-05-hello' }],
+        publishActions: [{ label: 'Announce', href: '/admin/team/announce?post=2026-05-hello' }],
       }),
     );
-    const link = screen.container.querySelector('a[href="/admin/club/announce?post=2026-05-hello"]');
+    const link = screen.container.querySelector('a[href="/admin/team/announce?post=2026-05-hello"]');
     expect(link?.textContent ?? '').toBe('Announce');
   });
 
@@ -1046,7 +1046,7 @@ describe('EditPage', () => {
       EditPage,
       postProps({
         publishedFlash: false,
-        publishActions: [{ label: 'Announce', href: '/admin/club/announce?post=2026-05-hello' }],
+        publishActions: [{ label: 'Announce', href: '/admin/team/announce?post=2026-05-hello' }],
       }),
     );
     expect(screen.container.querySelector('a.link-primary')).toBeNull();

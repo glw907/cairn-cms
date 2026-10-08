@@ -9,8 +9,8 @@ import { runtime } from './_content-harness.js';
 import { testEvent } from '../helpers/test-event.js';
 
 /** A none-capability editor, the shape the guard produces for a role outside the site's declared
- *  vocabulary or one explicitly mapped to `none` (e.g. an ASC-shaped instructor with no `home`). */
-const NONE_EDITOR = { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' as const };
+ *  vocabulary or one explicitly mapped to `none` (e.g. a custom-vocabulary staff role with no `home`). */
+const NONE_EDITOR = { email: 'inst@test', displayName: 'Inst', role: 'staff', capability: 'none' as const };
 
 /** A minimal event for a none-capability session; params/body are irrelevant since requireEditor
  *  refuses before either function reads them. */

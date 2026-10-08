@@ -1497,7 +1497,7 @@ export const VERTICAL_CALIBRATION_FIXTURES: VerticalCalibrationFixture[] = [
     </svg>
   </span>
   <div>
-    <h3 style="margin:0;width:110px;font-size:18px;line-height:24px;font-weight:600">Club Boats and moorage</h3>
+    <h3 style="margin:0;width:110px;font-size:18px;line-height:24px;font-weight:600">Team Boats and moorage</h3>
     <p style="margin:0;font-size:14px;line-height:20px">Keelboats and a summer mooring.</p>
   </div>
 </div>`,

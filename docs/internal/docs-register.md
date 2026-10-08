@@ -146,6 +146,13 @@ guide is silent.
   illustrative, with the authoritative reference beside it. When two of a vendor's pages
   disagree, linking one disposes of the conflict that restating both would force the page to
   reconcile.
+- **A page never assumes the reader's coding agent** (Geoff, 2026-10-07: "You should not assume that
+  an implementor is using Claude."). A developer building on cairn may use Codex, Cursor, Gemini
+  CLI, Copilot, or no coding agent. A page never treats Claude, or any one tool, as the reader's
+  agent. It names a tool only where a file or command is specific to that tool, and it says so
+  where it names it, as in "Claude Code's `.claude/` directory". A page that describes cairn's
+  agent guidance says which tool's format the guidance is in, and what a developer on another tool
+  gets.
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling, Geoff,
   2026-08-14). A reader does not need the taxonomy a page was planned under. Names such as task
   guide and reference entry belong to the writers and reviewers who plan a page, and a published

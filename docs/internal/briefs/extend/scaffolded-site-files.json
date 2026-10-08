@@ -141,12 +141,16 @@
       "id": "f:2qnqkm"
     },
     {
-      "text": "The agent guidance and the commands that maintain it",
+      "text": "The Claude Code guidance and the commands that maintain it",
       "id": "no-claim"
     },
     {
       "text": "The state the setup command left outside the repository",
       "id": "no-claim"
+    },
+    {
+      "text": "cairn ships its agent guidance only in Claude Code's format, with no `AGENTS.md` and no file for any other coding agent, so a developer whose coding agent is not Claude Code has no cairn guidance to read yet.",
+      "id": "f:pmmtrm"
     },
     {
       "text": "Reading these files takes working knowledge of SvelteKit's project structure (routes, layouts, hooks, and prerendering), Vite configuration, and Wrangler configuration for a Worker's bindings and D1 migrations.",
@@ -215,7 +219,7 @@
       ]
     },
     {
-      "text": "The agent guidance under `.claude/` changes when `npx cairn-guidance install` refreshes it.",
+      "text": "The Claude Code guidance under `.claude/` changes when `npx cairn-guidance install` refreshes it.",
       "id": "f:0ygumq"
     },
     {
@@ -250,7 +254,11 @@
       ]
     },
     {
-      "text": "Beside a plain SvelteKit project's files, the root carries a CI workflow, a template for local secrets, the audit's config, and the agent guidance.",
+      "text": "Both `CLAUDE.md` and `.claude/` are Claude Code's files, which [The guidance tree](#the-guidance-tree) explains.",
+      "id": "f:pmmtrm"
+    },
+    {
+      "text": "Beside a plain SvelteKit project's files, the root carries a CI workflow, a template for local secrets, the audit's config, and the Claude Code guidance.",
       "id": [
         "f:qlgggh",
         "f:guiavc"
@@ -295,6 +303,10 @@
     {
       "text": "[Run cairn-audit on your site](run-cairn-audit-on-your-site.md) covers the config in depth.",
       "id": "no-claim"
+    },
+    {
+      "text": "Both are Claude Code's files, and cairn ships no guidance for another coding agent.",
+      "id": "f:pmmtrm"
     },
     {
       "text": "The root `CLAUDE.md` imports cairn's packaged guidance fragment and keeps a `# Your site` section for the site's guidance.",
@@ -993,12 +1005,22 @@
       "id": "f:2qnqkm"
     },
     {
-      "text": "The `.claude/` directory holds what the site's coding agents read, the guidance cairn installs with the scaffold.",
-      "id": "f:0ygumq"
+      "text": "The `.claude/` directory holds the guidance cairn installs with the scaffold, which Claude Code reads and other coding agents do not.",
+      "id": [
+        "f:0ygumq",
+        "f:pmmtrm"
+      ]
     },
     {
-      "text": "A scaffolded site starts with cairn's agent-facing guidance installed under `.claude/`, and `npx cairn-guidance install` refreshes it after an engine upgrade.",
-      "id": "f:0ygumq"
+      "text": "A scaffolded site starts with cairn's agent-facing guidance installed under `.claude/` in Claude Code's format, and `npx cairn-guidance install` refreshes it after an engine upgrade.",
+      "id": [
+        "f:0ygumq",
+        "f:pmmtrm"
+      ]
+    },
+    {
+      "text": "cairn writes no `AGENTS.md` and no file for another tool, so a developer whose coding agent is not Claude Code has no cairn guidance to read yet.",
+      "id": "f:pmmtrm"
     },
     {
       "text": "The tree is `.claude/skills/` with one directory per packaged skill, `.claude/agents/cairn-extension-reviewer.md`, and `.claude/cairn/`, which holds `CLAUDE.md`, `VERSION`, and `MANIFEST`.",
@@ -1009,8 +1031,11 @@
       "id": "f:0ygumq"
     },
     {
-      "text": "The four packaged skills load for the following work:",
-      "id": "f:7ozknm"
+      "text": "Claude Code loads the four packaged skills for the following work:",
+      "id": [
+        "f:7ozknm",
+        "f:pmmtrm"
+      ]
     },
     {
       "text": "`cairn-admin-screens`, for building or reviewing a screen inside `/admin`",
@@ -1075,8 +1100,11 @@
       "id": "f:5ohm23"
     },
     {
-      "text": "It never writes `.claude/settings.json`, so the `Stop` hook that runs `npm run check:cairn --if-present` is a snippet, `claude/snippets/settings-hook.json`, pasted in deliberately.",
-      "id": "f:4nccq6"
+      "text": "It never writes `.claude/settings.json`, so the Claude Code `Stop` hook that runs `npm run check:cairn --if-present` is a snippet, `claude/snippets/settings-hook.json`, pasted in deliberately.",
+      "id": [
+        "f:4nccq6",
+        "f:pmmtrm"
+      ]
     },
     {
       "text": "The [`install`](../reference/guidance.md#install) section of the guidance reference covers how `install` treats a file the site edited.",

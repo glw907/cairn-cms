@@ -449,6 +449,22 @@ The original decision framing, for the record:
     leanest fix may drop the free key choice); `cairn-audit` exits 0 on advisories with no `--json`
     report and no stable finding codes (`src/lib/audit/report.ts:49`; run-cairn-audit-on-your-site).
 
+  - **Tool-neutral agent guidance (owner ruling, Geoff, 2026-10-07: "You should not assume that an
+    implementor is using Claude.").** A developer building on cairn may use Codex, Cursor, Gemini
+    CLI, Copilot, or no coding agent. Today `cairn-guidance` and the scaffold ship agent guidance
+    only in Claude Code's format (a root `CLAUDE.md` importing `.claude/cairn/CLAUDE.md`, skills
+    under `.claude/skills/`, the review agent under `.claude/agents/`, the `Stop` hook snippet for
+    `.claude/settings.json`) and no `AGENTS.md`, so a developer on another tool gets nothing; the
+    pages say so for now. *Decide* (premise for the brainstorm, not a design): the cross-tool
+    `AGENTS.md` convention as the canonical guidance, Claude Code reaching it through `CLAUDE.md`
+    (which can import it), and the Claude-only extras (the review agent, the `Stop` hook snippet,
+    the skills location) kept as optional extras labeled as such; evaluate the open Agent Skills
+    format for the skills. The brainstorm verifies each tool's current conventions from their
+    published docs before designing. It changes the guidance sections of
+    `docs/extend/scaffolded-site-files.md` and `docs/reference/guidance.md`, and any other hit from
+    `grep -rniE "claude" docs/extend docs/reference` (today only those two pages, plus the
+    per-version records).
+
 - **Docs tooling before stage 2b (stage 2a's close, 2026-10-07).** The page chain and the docs gate
   cost stage 2a rounds in these places; fix them before 2b's run. Lands in `~/.dotfiles` (the chain,
   its seats, and its prompts) and in `scripts/checks/`.

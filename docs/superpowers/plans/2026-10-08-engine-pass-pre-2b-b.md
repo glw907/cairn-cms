@@ -31,23 +31,25 @@ record V-m5's precedent); its A5 and B3 items keep their grep post-conditions, a
 capture read. Task 8 is `engine-logic` with `web-auth-security-reviewer` named on its C5 item. The
 close runs the union: `auth-data`'s security review and live auth smoke, and `sweep`'s capture.
 
-**Token ceiling:** 10.8M for the whole pass, chains plus close. Basis:
+**Token ceiling:** 12.0M for the whole pass, chains plus close, pending Geoff's yes on fork 3
+(under "Rulings for Geoff"). Basis:
 
 | Item | Budget |
 | --- | --- |
 | Task 0 pre-flight and baseline gate | 0.30M |
-| Nine Sonnet chains (Tasks 1 to 9): 0.50M each, plus 0.10M for each `auth-data` chain (2, 5) and 0.10M for Task 3's four items | 4.80M |
-| Task 10, ruling 5 (overlay, workerd guard, notice, bake marker) | 0.90M |
+| Nine Sonnet chains (Tasks 1 to 9): 0.55M each, the full-tier rate pass A and the SvelteKit 3 pass use, plus 0.10M for each `auth-data` chain (2, 5) and 0.10M for Task 3's four items | 5.25M |
+| Task 10, ruling 5 (overlay, workerd guard, notice, bake marker, its records) | 0.90M |
 | Task 11, docs and records | 1.20M |
 | Three segment pre-flights after Task 0, at 0.10M | 0.30M |
 | One fix round per segment in reserve | 1.10M |
-| Close: simplifier, gates, consumer proof, five reviewer seats, one fix chain, smoke, capture read, ledgers | 2.20M |
-| **Total** | **10.80M** |
+| Close: simplifier, gates, consumer proof, four reviewer seats and the `visual-verifier` read, one fix chain, smoke, ledgers | 2.95M |
+| **Total** | **12.05M, held at 12.0M** |
 
-At 80 percent (8.64M) the conductor finishes the task in flight, writes STATUS, and asks one
-combined question at the next segment boundary. It starts no new segment past 8.64M without an
-answer. The SvelteKit 3 pass's close overran its budget by about a third, so the close line carries
-that margin.
+At 80 percent (9.6M) the conductor finishes the task in flight, writes STATUS, and asks one
+combined question at the next segment boundary. It starts no new segment past 9.6M without an
+answer. The SvelteKit 3 close's fix chain alone cost about 1.95M against about 1.45M budgeted for
+the whole close (`2026-10-03-sveltekit-3-upgrade.md:1562`), and that pass ended at about 14.7M
+against 12.4M. The close line carries that record.
 
 **Checkpoint interval:** one segment (three tasks or fewer). STATUS is written at the end of Task 0
 and of S1, S2, S3, and S4, at any split, before any question to Geoff, and before any stop.
@@ -63,7 +65,10 @@ and of S1, S2, S3, and S4, at any split, before any question to Geoff, and befor
 | S4, dev backend and records | 10, 11 | F green; `check:close` green; pushed; every CI workflow green |
 
 **Disjoint Files seams:** Tasks 1 and 2 have disjoint Files (the showcase, the exemplars, and
-`.cairn-template.json`, against `packages/create-cairn-site/src` and `test`). Task 6
+`.cairn-template.json`, against `packages/create-cairn-site/src` and `test`), but they must land
+together. Neither is shippable alone: `nameWranglerResources` runs `replaceExact` on
+`"database_name": "cairn-showcase-app"` and throws when that target is missing
+(`packages/create-cairn-site/src/cloudflare/config.mjs:71-79,115`). Task 6
 (`src/lib/guidance/**`) is disjoint from Tasks 4 and 5. Task 8 is disjoint from Tasks 7 and 9 if the
 S3 pre-flight finds that D6's manifest build touches no file Task 7 or 9 names; otherwise S3 runs as
 a chain. All tasks still run in sequence: one worktree, one index, one gate key. A seam matters only
@@ -83,18 +88,31 @@ into the worktree.
 
 **Execution mode:** `pass-execute` by name, one invocation per segment for S1 to S4, sequential
 (`parallel` unset). Args: `repo` the worktree's absolute path, `implementer: "cairn-implementer"`,
-`reviewer: "diff-reviewer"`, `passClass: "engine-logic"`, `gate` the F string, `commonNotes`
-carrying "Global constraints" and the pre-flight checklist from `~/.claude/docs/pass-gate-economy.md`,
-and each task's own `passClass`, `gate`, `gateLane`, and `model` where this plan sets one. The runner
-sizes each task's gate from its committed diff with `scripts/checks/gate-tier.mjs`; the gate a task
-names here is its floor and the runner's fallback. Task 0 is conductor-led, outside the runner.
-`auth-data` fix rounds always run the full gate.
+`reviewer: "diff-reviewer"`, `passClass: "engine-logic"`, `gate` the F string, `maxFix: 1`,
+`stopOnEscalate: true`, `commonNotes` carrying "Global constraints" and the pre-flight checklist from
+`~/.claude/docs/pass-gate-economy.md`, and each task's own `passClass` where this plan sets one.
+Each task maps as follows, because neither agent reads this plan (`cairn-implementer.md:12`,
+`diff-reviewer.md:11`), and the reviewer's prompt carries `criteria` alone, never `notes`
+(`pass-execute.js:602-615`):
+
+- `criteria`: the task's **Outcome** block, then its **Acceptance** block, then the full text of
+  every Decision the task cites, each verbatim.
+- `files`: the **Files** block.
+- `notes`: the task's own notes and mutation proofs, if any.
+
+The computed tier rules every task's gate. The runner sizes it from the committed diff with
+`scripts/checks/gate-tier.mjs`, and the runner's fallback is F. No task pins `gateTier` or sets
+`gateLane`. A browser-bearing tier on the light lane would break `pass-gate-economy.md`'s lane rule,
+and S and D are not tiers the script can pin. A task's **Gate** line names the tier its Files are
+expected to compute. The conductor uses it as a cross-check, never as a floor. Where a task needs a
+check its tier lacks, its Acceptance quotes the command. Task 0 is conductor-led, outside the
+runner. `auth-data` fix rounds always run the full gate.
 
 **Models:** implementers `sonnet` (agent pin); `diff-reviewer` on `claude-opus-5-5` at `medium`; the
 close's `web-auth-security-reviewer` at `high`. No task is upshifted at plan time. Each task is
 specified to its acceptance criteria, and ruling 5's overlay semantics are spelled out in the spec.
-A second `fix` on Task 8's C5 item or on Task 10 lets the conductor upshift that re-dispatch to
-`model: opus`.
+No unattended re-dispatch upshifts. After a stop under "Unattended run", the resume path Geoff
+approves may re-dispatch the stopped task on `model: opus`.
 
 **Pre-flight (every segment):** before each segment's first dispatch, one `haiku` or `sonnet`
 pre-flight lists every checkable claim the segment's tasks make about existing code at the worktree
@@ -115,8 +133,10 @@ browser. The engine's root `npm test` drives Chromium and is never light.
   `durable-gotchas.md`, after `ss -ltnp` shows no listener on that port.
 - **Engine (E):** the `engine` tier of the same script: the docs gate, `npm run check`, the node
   projects, the serialized component project, and the `create-cairn-site` workspace suite.
-- **Scaffold (S):** `CAIRN_GATE_LANE=light cairn-run-gate 'npm test -w packages/create-cairn-site && npm run test:emit && npm run check:template && npm run check:transcripts'`.
-- **Docs (D):** `CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:docs-gate && npm run check:surface && npm run check:rulings-format && npm run check:facts'`.
+
+The script's `--range` must name a non-empty range, so Task 0 prints both strings from the module
+itself: `node -e "import('./scripts/checks/gate-tier.mjs').then(m => console.log(m.TIER_GATES.full))"`,
+and the same with `engine`.
 
 A lone unrelated test-file failure, or a component run printing `Cannot connect to the server in 60
 seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it counts as red.
@@ -140,7 +160,10 @@ seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it
 - **No new public surface** beyond what a task names. An implementer who finds a task needs another
   export, option, or `App.Locals` member stops and reports it.
 - **Scratch work** lives under `$HOME/.cache/engine-pre-2b-b/`, never `/tmp` and never inside the
-  repo. Fresh scaffolds and fixture consumers are built there.
+  repo. Fresh scaffolds and fixture consumers are built there. Every probe that installs a packed
+  tarball uses a fresh directory and `npm install --prefer-online`, because a re-pack at the same
+  version reuses the tarball name and a later install can serve the old build
+  (`docs/internal/durable-gotchas.md`, "Pointing a consumer at unreleased engine work").
 - **Servers** a task starts outside Playwright run on a port from an environment variable, never the
   showcase e2e's port, and stop on exit; the report says so.
 - **No release.** No version bump (engine, dev package, or `tool/`), no tag, no publish, no
@@ -191,13 +214,15 @@ failed item stops the run before any dispatch.
    - every friction-log entry for a pass A fix, and every declined or batched entry, gone from the
      log; the entries for pass B's fixes still present;
    - `docs/STATUS.md`'s carry-forwards hold pass A's hand-off list: each 2a page pass A changed, with
-     the fact ids that changed. Task 11 consumes it for the `relink.json` re-arm list, which is pass
-     B's alone.
+     the fact ids that changed. Task 0 copies the list verbatim into this plan's Ledger, since a
+     checkpoint STATUS rewrite can drop it before S4. Task 11 reads it from the Ledger for the
+     `relink.json` re-arm list, which is pass B's alone.
 
    A missing item is a precondition failure: the conductor reports it, never back-fills it silently.
    Also record whether `docs/internal/record/harvest/relink.json` has any stage-2b page re-arm entry
-   yet (expected: none), and whether `scripts/checks/docs-links.mjs` tolerates extra fields on an
-   entry. Task 11 defines the entry shape.
+   yet (expected: none). The file already holds `"stage": "2b"` link-repair entries, so the probe
+   counts only entries that carry a `facts` array. No check parses the file
+   (`scripts/checks/docs-links.mjs:168` names it in a comment only). Task 11 defines the entry shape.
 6. **Fork 2** (anonymous `/healthz?live=1`) is ruled and landed in pass A. Pass B does not depend on
    it; Task 0 records the ruling.
 7. **Fork 1** (where a dev-admin save lands) is ruled or open. Task 0 records which. If Geoff ruled
@@ -209,8 +234,14 @@ failed item stops the run before any dispatch.
 1. **Ruling 5 runs in S4, not third.** The spec's pass B list is an order, not a dependency chain,
    and nothing in it needs ruling 5 early. Placing it last keeps the one task an open owner fork
    governs off the critical path, so S1 to S3 run whatever fork 1's status. B1's `dist/` build lands
-   first, so ruling 5's code is proven through the built package. Task 10 carries its own docs delta,
-   so Task 11 can run before it if fork 1 is still open.
+   first, so ruling 5's code is proven through the built package. Task 10 owns every ruling-5
+   record, so Task 11 can run before it if fork 1 is still open. Those records are the `seedContent`
+   and `content: 'fixtures'` lines in `CHANGELOG.md` and `migration-notes.md`, ruling 5's facts
+   bullets, the README and the `DevBackendConfig` doc comment, and the ruling-5 items on the
+   `add-cairn-to-a-sveltekit-app` and `scaffolded-site-files` re-arm entries. They also include
+   ROADMAP's B12 removal and the `MEDIA_BUCKET` watch verdict. Task 11 owns the rest. It leaves
+   `seedContent` out of its grep and its clause list, and it re-reads Task 10's lines only when
+   Task 10 ran first.
 2. **B1 covers the publish path.** The spec says every path that resolves the dev package by name
    already runs the root `package` script. The `publish-dev` job in `.github/workflows/publish.yml`
    does not. It publishes straight from the checkout, with no install and no build, so
@@ -219,11 +250,17 @@ failed item stops the run before any dispatch.
 3. **The dev-admin notice (fork 1, "Yes") shows only when the dev backend serves real content**
    (`content: 'repository'`). The risk the notice answers is real writing that a restart drops, which
    fixtures mode does not carry. The showcase e2e runs in fixtures mode, and a notice there would
-   change every CI-canonical admin-visual baseline. The signal is one optional member on `App.Locals`
-   in the `/ambient` barrel, which the dev handle sets only in `'repository'` mode. This follows the
-   `cairnBackend` precedent: a dev-only member a production request never sets. The engine's shell
-   load maps it to one optional `AdminShellData` member, and `CairnAdminShell` renders one DaisyUI
-   `alert`. Fork 1's question carries this scope as its sub-point.
+   change every CI-canonical admin-visual baseline. The notice describes the content store, so the
+   signal is one optional read-only member on `Backend` (`src/lib/github/backend.ts`), named
+   `ephemeral` and typed `true`. The dev package's `'repository'` backend sets it, and
+   `createGithubApp`'s backend never does, so a production request never carries it by
+   construction. The dev handle already injects its store as `locals.cairnBackend`, which
+   `CairnEvent.locals` already types (`src/lib/sveltekit/types.ts:66-72`). The shell load reads
+   `event.locals.cairnBackend?.ephemeral` directly, never through the provider resolve, which would
+   mint a token in production. It maps the member to one optional `AdminShellData` member, and
+   `CairnAdminShell` renders one DaisyUI `alert`. That is two public members, with no sixth
+   `App.Locals` key and no change to `CairnEvent.locals`. Fork 1's question carries this scope as
+   its sub-point.
 4. **A5's e2e reaches a 403 through a showcase-only fixture route.** The dev backend always mints an
    owner session (`packages/cairn-cms-dev/src/handle.ts:160-166`), so no access-map refusal is
    reachable in the showcase e2e. A route under `src/routes/admin/` whose load throws `error(403)`,
@@ -234,10 +271,14 @@ failed item stops the run before any dispatch.
    `builds-app-not-authorized`, and the test slug `alpine-club-resume-app`. It also reaches the
    transcript fixtures, which Decision 10 keeps unedited. Task 2 uses the pattern below over sources
    and tests, excludes the transcripts directory, and names each remaining hit as unrelated.
-6. **D5's default has one source.** `packages/create-cairn-site/src/site-config-path.json` already
+6. **D5's default is a pinned twin.** `packages/create-cairn-site/src/site-config-path.json` already
    holds the canonical site-config path that the scaffold bakes and the Go doctor embeds
-   (`scripts/build/emit-tool-conditions.mjs:19-22`). The engine's new `editor.siteConfigPath` default
-   must equal it, and a unit test pins the two together (ledger `read-from-the-source-rule`).
+   (`scripts/build/emit-tool-conditions.mjs:19-22`). The engine cannot read that file at runtime, so
+   its new `editor.siteConfigPath` default is a committed twin, and a unit test pins the two
+   together. This is the sanctioned form under `read-from-the-source-rule`, per
+   `audit-cli-config-site-config-check`'s 2026-09-02 amendment (a committed twin plus a sync test).
+   The third copy, `DEFAULT_SITE_CONFIG_PATH = 'src/lib/site.config.yaml'` at
+   `src/lib/sveltekit/content-routes-settings.ts:124`, is deleted.
 7. **The records split follows pass A's plan.** Pass A writes the seven new ledger entries, eight
    of the nine annotations, the ROADMAP rewrite, and the C7 and media-design amendments, and clears
    every declined and batched friction entry. Pass B writes the `audit-adapter-navmenuconfig`
@@ -247,7 +288,8 @@ failed item stops the run before any dispatch.
 8. **ROADMAP watches pass B trips get a verdict in Task 11.** Pass B changes `DevBackendConfig`, which
    is the trigger three ROADMAP watches name. They are the `APP_DB` overwrite, the media-seed
    `MEDIA_BUCKET` double, and the custom-screen skill traps with the missing `cairnAccess`. The spec
-   rules on none of them, so Task 11 gives each its verdict.
+   rules on none of them, so each gets a verdict: the `MEDIA_BUCKET` double in Task 10 (it is ruling
+   5's R2 read-through), the other two in Task 11.
 9. **`form-anatomy.md` is edited only if the S1 pre-flight finds a Signups claim in it.** The spec
    names it among the three exemplars, but at `2b37ae78` it carries no Signups or scaffold claim; the
    claims sit in `exemplar-list.md` and `exemplar-detail.md`.
@@ -256,6 +298,18 @@ failed item stops the run before any dispatch.
     re-capture changes one. Task 2 carries its acceptance in unit tests over the step's output and
     files the stale fixtures (`01c-resume.txt`, `01d-resume.txt` at plan time) in the friction log for
     the next capture, as pass A did for B11a (its Decision 5).
+11. **The live smoke needs no owner click** (pass A's Decision 14). The smoke agent drives the
+    magic-link round trip in headless Chromium: it requests a link, reads it from wrangler's local
+    `send_email` message file, opens it, posts the confirm, and lands in `/admin`. No pass B task
+    touches the magic-link path, and the spec needs no owner sitting (spec, "neither pass needs an
+    owner sitting").
+12. **A cross-version resume window is accepted.** A site scaffolded before this pass, whose setup
+    stopped before its migrations ran, and which is then resumed by the new `create-cairn-site`,
+    gets an `APP_DB` the deploy provisions but never migrates. Its Signups route then reads a
+    database with no table. Only a setup interrupted across the one release after stage 5 reaches
+    this case. Deriving the migration set from the site's own `wrangler.jsonc` would add new
+    mechanism to `auth-data` provisioning code to cover it. The close's HISTORY entry records the
+    window.
 
 ## Rulings for Geoff
 
@@ -264,9 +318,33 @@ yes, in memory, plus one persistent DaisyUI `alert` in the admin shell. The noti
 in memory and discarded when the dev server stops. Sub-point, decided by this plan unless Geoff says
 otherwise: the notice shows when the dev backend serves the site's real content, not in fixtures
 mode (Decision 3). Task 10 is **BLOCKED until Geoff rules**. Its section states what changes under
-"No". Fork 2 belongs to pass A.
+"No".
 
-No other open ruling. Method calls this plan made are under "Decisions this plan takes".
+"No" writes dev publishes to the working tree, and it carries these costs beyond the spec's list
+(the empty fake R2, the non-atomic multi-file commit):
+
+- **Stale overwrite.** A commit's `expectedHead` is the in-memory head, which the developer's own
+  editor never moves. A dev publish built from an earlier read overwrites an on-disk edit made
+  since, with no conflict.
+- **Unauthenticated LAN write.** The dev handle's host tripwire fires only when `CAIRN_DEV_BACKEND`
+  is on the Worker env (`packages/cairn-cms-dev/src/handle.ts:39-42`). Under `vite dev` the opt-in
+  lives in `process.env` (`examples/showcase/src/chassis/dev-gate.ts:31-36`), so
+  `npm run dev -- --host` serves the owner-session admin to the LAN with no host check. Under "No"
+  that becomes an unauthenticated write into the working tree.
+- **Orphaned media rows.** A dev upload's bytes stay in the fake R2, but its `media.json` row
+  publishes to disk, gets committed, and deploys a reference to an asset never uploaded.
+
+Fork 2 belongs to pass A.
+
+**Fork 3, open: is the pass ceiling 12.0M?** Recommended: yes, 12.0M, with the 80 percent stop at
+9.6M. The evidence is the chain rate pass A and the SvelteKit 3 pass price (0.55M for a full-tier
+chain) and that pass's close record (its fix chain alone cost about 1.95M against 1.45M for the
+whole close). "No" keeps the drafted 10.8M, with the 80 percent stop at 8.64M. On that record the
+stop is likely to trip in S4 or the close, and each trip costs an owner turn.
+
+No other open ruling. Method calls this plan made are under "Decisions this plan takes". The
+review's two low-stakes forks are decided there: the Firefox click goes (Decision 11), and the
+cross-version resume window is accepted (Decision 12).
 
 ## Unattended run
 
@@ -275,21 +353,24 @@ Geoff wants this pass to survive a 10-hour unattended run, so every stop is plan
 **The conductor rules alone on:**
 
 - a `diff-reviewer` accept, and one re-dispatch on a `fix`;
-- a second `fix` whose findings are all `commentOnly`, `testOnly`, or `coverageOnly` on a
-  non-`auth-data` task: accept with the notes batched to the boundary, or run one more round;
+- a second `fix` whose findings are all `commentOnly`, `testOnly`, or `coverageOnly`, on any task
+  but Task 2, Task 5, and Task 8's C5 item: accept with the notes batched to the boundary, or run
+  one more round;
 - a `cairn-run-gate` exit 75 (re-issue), a flake the durable-gotchas rerun rule covers, and a
-  gate-string mismatch the runner raises when the computed tier is at or above the task's floor;
+  gate-string mismatch the runner raises (re-run the gate on the runner's resolved string);
 - a pre-flight finding that a plan line number, count, or path moved (amend, commit, dispatch);
 - an implementer's unspecified decision inside the task's constraints (recorded in the Ledger);
 - an out-of-scope finding (verified, then filed to `docs/internal/docs-friction-log.md` at the next
   checkpoint, or dropped with a one-line reason);
-- a CI red that matches Task 0's inherited expected-red set;
-- an upshift to `model: opus` on a second `fix` where the models line allows one.
+- a CI red that matches Task 0's inherited expected-red set.
 
 **These stop the run** (write STATUS with the resume prompt, then stop):
 
 - a failed precondition at Task 0, or a red baseline gate;
-- a second `fix` on an `auth-data` task (2, 5) with a behavior defect, or a third `fix` on any task;
+- a second `fix` with any blocking finding, coverage included, on Task 2, Task 5, or Task 8's C5
+  item;
+- a behavior defect still standing after its one fix round, on any task;
+- a third `fix` on any task;
 - an `escalate` verdict naming an architectural question the spec did not settle, or an implementer
   report that a task needs public surface this plan does not name;
 - a CI red outside the inherited set that one fix round does not clear;
@@ -299,12 +380,13 @@ Geoff wants this pass to survive a 10-hour unattended run, so every stop is plan
 
 **Owner-gated steps, batched at the end:**
 
-1. Fork 1's ruling, if it is still open (one question, with the recommendation).
-2. The live smoke's magic-link click in Firefox (Close step 6); everything before it runs unattended.
-3. The merge to `main` (Geoff's go; the PR leaves draft once CI is green).
+1. Fork 1's and fork 3's rulings, if either is still open (one question each, with the
+   recommendation).
+2. The merge to `main` (Geoff's go; the PR leaves draft once CI is green).
 
-Neither the A5 capture nor the notice needs an owner sitting; the main loop reads both captures and a
-fresh-context `visual-verifier` grades them.
+Nothing else waits on Geoff. The live smoke is Claude's (Decision 11). Neither the A5 capture nor
+the notice needs an owner sitting: the main loop reads both captures, and a fresh-context
+`visual-verifier` grades them.
 
 **Guards armed at launch** (`~/.claude/docs/unattended-work-guards.md`):
 
@@ -340,18 +422,20 @@ The inputs most likely to bite a real user that per-task tests would not exercis
    pattern in the command's own text). No `engine-pre-2b-b` branch or worktree exists. The `main`
    checkout's `git status --porcelain` shows no warm edits pass B would collide with.
 2. **Preconditions 1 to 7** above, each recorded with its evidence (`git log`, `git grep` output,
-   file paths).
+   file paths). Pass A's hand-off list is copied verbatim into the Ledger (precondition 5).
 3. **Worktree.** Create `.claude/worktrees/engine-pre-2b-b` on `engine-pre-2b-b` from `main`'s
    head. Run `npm ci`, then a from-scratch showcase install (`rm -rf examples/showcase/node_modules`,
    then `npm ci --prefix examples/showcase`). `realpath` confirms the engine and the dev package
    resolve into the worktree.
-4. **Gate strings.** Print F and E with `gate-tier.mjs --pin full` and `--pin engine` and record
-   both.
+4. **Gate strings.** Print F and E from the module's `TIER_GATES` (under "Gates"; a `--range` on a
+   branch equal to `main` is empty, and the script exits 1 before it reads `--pin`) and record both.
 5. **Baseline.** One gate agent runs F in the worktree and returns the `gate exit:` line and its
    tail. The conductor quotes it to Task 1's reviewer as Task 0's gate evidence. A red stops the run
    with one message to Geoff.
-6. **Draft PR and inherited CI.** Push `engine-pre-2b-b`, open a draft PR against `main` (so CI runs
-   on every later push), and record that SHA's CI result as the inherited expected-red set.
+6. **Draft PR and inherited CI.** Commit Task 0's Ledger entry (and any item 7 amendment) on
+   `engine-pre-2b-b` first, since GitHub refuses a pull request with no commits between base and
+   head. Then push, open a draft PR against `main` (so CI runs on every later push), and record
+   that SHA's CI result as the inherited expected-red set.
 7. **S1 pre-flight**, checked at `HEAD`, with the plan amended where a fact moved:
    - `examples/showcase/.cairn-template.json` lists `exclude` paths and does not yet list
      `src/routes/admin/signups` or `migrations-app`.
@@ -376,7 +460,9 @@ The inputs most likely to bite a real user that per-task tests would not exercis
    - `packages/create-cairn-site/src/cloudflare/deploy.mjs:175` (`MIGRATION_DATABASES`),
      `chapter.mjs:119` (the two-database announcement), and `config.mjs:115` (the `-app` rename, with
      its comments at `:36` and `:48`). Their tests (`deploy.test.mjs:243,319-336`,
-     `chapter.test.mjs:283`, `config.test.mjs:54-57,105-114`) and `README.md:138`. Which transcript
+     `chapter.test.mjs:283`, `config.test.mjs:54-57,105-114`) and `README.md:138`. The two
+     `WRANGLER_JSONC_FIXTURE` literals that carry `APP_DB` (`src/scaffold.test.mjs:23-26`, with the
+     `alpine-club-app` assertion at `:268`, and `src/github/repo.test.mjs:67-70`). Which transcript
      fixtures show the two-database lines (`01c-resume.txt`, `01d-resume.txt` at plan time), for the
      friction filing; they are not edited.
    - That the template's `src/theme/cairn.config.ts` `access` member holds only the
@@ -392,8 +478,9 @@ The inputs most likely to bite a real user that per-task tests would not exercis
      `createFragmentResolver` is exported from the path the feed can import.
    - No `src/routes/admin/+error.svelte` exists in the showcase or the template. The root
      `src/routes/+error.svelte` exists.
-   - The facts candidate set for Task 11 (ids under Task 11), re-grepped for `signups`, `APP_DB`,
-     `seedContent`, `devBuildDefine`, `configPath`, `cairn:manifest`, and `itemLabel`.
+   - The facts candidate set for Task 11 (ids under Task 11), re-grepped over all of
+     `docs/internal/facts/` for `signups`, `APP_DB`, `seedContent`, `devBuildDefine`, `configPath`,
+     `cairn:manifest`, `itemLabel`, `two (D1 )?databases`, and `-app\b`.
 8. **Dependency state.** `npm outdated` at the root, the showcase, and each `packages/*` manifest,
    recorded. Pass B takes no bump. A bump it would need goes through `dependency-upgrade` as its own
    question.
@@ -408,9 +495,9 @@ moved a fact.
 
 ### Task 1: The signups demo leaves the scaffold (ruling 2, the bake)
 
-**Pass class:** `sweep`; gate floor raised to F by acceptance (the showcase e2e must stay green over
-the marker edits). **Independent** of Task 2 (disjoint Files). **Spec:** "Ruling 2", whole-file and
-marked-span exclusions and the skill exemplars; pass B task 1.
+**Pass class:** `sweep`. Disjoint Files from Task 2, but the two land together (see "Disjoint Files
+seams"). **Spec:** "Ruling 2", whole-file and marked-span exclusions and the skill exemplars; pass B
+task 1.
 
 **Files:** `examples/showcase/.cairn-template.json`; the marked spans in
 `examples/showcase/src/theme/cairn.config.ts` (the Signups `navLayout` entry and its comment, and
@@ -428,7 +515,13 @@ only per Decision 9). Plus `src/tests/unit/emit-template-tree.test.ts`,
   binding, no Signups sidebar entry, no `admin.signups.misconfigured` event, and no `/admin/signups`
   test case. The showcase keeps all of them as the worked custom-screen example.
 - The scaffold declares no `access`, the zero-config floor. The showcase keeps its full map inline
-  on its adapter, the scaffold-excluded rules inside exclude markers. The change uses markers only.
+  on its adapter. The change uses markers only, under the emitter's line-granular rules
+  (`scripts/build/emit-template.mjs:36` throws on a nested start):
+  - One marker block wraps the whole `access` member and replaces pass A's inner `theme-kit` block.
+  - `SiteLogEvent` (`examples/showcase/src/lib/log.ts:7`, one line today) is split onto one line
+    per member, so the `admin.signups.misconfigured` member can sit in its own block.
+  - In `examples/showcase/wrangler.jsonc`, the comma before the `APP_DB` object sits inside its
+    block, so the emitted array stays valid JSONC.
 - The exemplars stop saying every scaffold ships the screen. Each carries the shipped source inline
   and names `examples/showcase` as provenance. The baked `.claude/` copies match after re-emit.
 - `@glw907/cairn-cms-dev` keeps `fake-app-db.ts` and its `APP_DB` layering; this task does not touch
@@ -446,20 +539,22 @@ only per Decision 9). Plus `src/tests/unit/emit-template-tree.test.ts`,
   report quotes both exit lines.
 - `skill-references-compile.test.ts` green; `check:template` and `test:emit` green.
 - The showcase e2e, which still covers Signups, stays green as part of F.
-- F green.
+- The computed gate green.
 
 **Interfaces produced:** a scaffold with no access declaration and one D1 binding, consumed by Task 2
 (provisioning one database) and Task 11 (facts).
 
-**Gate:** F.
+**Gate:** computed; expected F (`examples/showcase/src/theme/` and `wrangler.jsonc` compute `full`).
 
 ### Task 2: `create-cairn-site` stops provisioning `APP_DB` (ruling 2, provisioning)
 
-**Pass class:** `auth-data` (it edits D1 provisioning beside `AUTH_DB`); class gate overridden to S
-by blast radius (no engine source and no showcase file changes). **Independent** of Task 1.
-**Spec:** "Ruling 2", the `create-cairn-site` bullet; pass B task 2.
+**Pass class:** `auth-data` (it edits D1 provisioning beside `AUTH_DB`). Lands with Task 1 (see
+"Disjoint Files seams"). **Spec:** "Ruling 2", the `create-cairn-site` bullet; pass B task 2.
+**Decisions 5 and 10.**
 
 **Files:** `packages/create-cairn-site/src/cloudflare/{deploy,chapter,config}.mjs` and their tests;
+`packages/create-cairn-site/src/scaffold.test.mjs` and `src/github/repo.test.mjs` (their
+`WRANGLER_JSONC_FIXTURE` literals and the `-app` assertions);
 `packages/create-cairn-site/README.md` (`:138`). The transcript fixtures under
 `packages/create-cairn-site/test/fixtures/transcripts/` are not edited (Decision 10).
 
@@ -475,32 +570,37 @@ works.
   `<worker>-auth`, and no `-app` name (fails today: it names both). These unit tests carry the
   acceptance the spec gave the transcripts. A mutation proof: re-adding `'APP_DB'` to `MIGRATION_DATABASES` turns the
   deploy test red (quoted, then reverted).
-- `git grep -nE 'APP_DB|migrations-app|showcase-app|\}-app\b|-app"' -- packages/create-cairn-site ':!packages/create-cairn-site/test/fixtures/transcripts'`
-  prints nothing. A wider `git grep -n -- "-app"` hit is named in the report as unrelated
+- ``git grep -nE 'APP_DB|migrations-app|showcase-app|\}-app\b|-app"|<site>-app|-app,|`-app`' -- packages/create-cairn-site ':!packages/create-cairn-site/test/fixtures/transcripts'``
+  prints nothing. On `main` the last three alternatives match exactly `README.md:138` and
+  `config.mjs:36,48`. A wider `git grep -n -- "-app"` hit is named in the report as unrelated
   (`--app-name`, `builds-app-not-authorized`, a test slug) (Decision 5).
 - `git diff --stat main -- packages/create-cairn-site/test/fixtures/transcripts` is empty. The
   report names each fixture that still shows the two-database lines, and the conductor files them in
   the friction log at the S1 checkpoint as stale until the next live capture.
 - `check:transcripts` stays green on the unedited fixtures.
-- S green; CI `create-site` on the segment push green.
+- `cairn-run-gate 'npm run test:emit && npm run check:template'` exits 0; the report quotes the
+  `gate exit:` line.
+- The computed gate green; CI `create-site` on the segment push green.
 
 **Interfaces produced:** none consumed later.
 
-**Gate:** S.
+**Gate:** computed; expected `scripts` (the `create-cairn-site` suite, `npm run check`, and the
+serialized component project), on the heavy lane.
 
 ### Task 3: The admin error page, the manifest message, the types script, and the feed (A5, B2, B3, D2)
 
 **Pass class:** `engine-logic` (the stricter of its items). A5 and B3 are `sweep` items: grep
 post-conditions, no test-first mandate. B2 and D2 are test-first. **Spec:** A5, B2, B3, D2; pass B
-task 5.
+task 5. **Decision 4.**
 
 **Files:**
 - A5: `examples/showcase/src/routes/admin/+error.svelte` (new), a showcase-only fixture route under
   `examples/showcase/src/routes/admin/` (new, Decision 4) with its `.cairn-template.json` exclusion,
   and a new showcase e2e spec under `examples/showcase/e2e/`.
 - B2: `src/lib/content/manifest.ts` and its unit test.
-- B3: `scripts/build/emit-template.mjs` (`transformPackageJson`) or the showcase `package.json`, and
-  `src/tests/unit/emit-template-tree.test.ts` (the B3 assertion).
+- B3: `scripts/build/emit-template.mjs` (`transformPackageJson`) only, never the showcase
+  `package.json`: the showcase has no `.dev.vars.example` at its root, so the template's command
+  would fail there. Plus `src/tests/unit/emit-template-tree.test.ts` (the B3 assertion).
 - D2: `examples/showcase/src/chassis/feed.ts` and a feed unit test beside it.
 - `templates/waymark/**` through `npm run emit:template`.
 
@@ -531,12 +631,12 @@ task 5.
 - **D2:** a feed unit test over an entry with an `::include{...}` and a media image yields the
   fragment's rendered text and an absolute `https://<origin>/media/...` URL. Fails today: literal
   include text and a root-relative URL.
-- F green.
+- The computed gate green.
 
 **Interfaces produced:** the admin error page, named in Task 11's facts and the re-arm list
 (restrict-admin-access, scaffolded-site-files); the A5 captures, read at the close.
 
-**Gate:** F.
+**Gate:** computed; expected F (an unclassified `admin/+error.svelte` computes `full`).
 
 **S1 boundary:** F green on the segment head; pushed; CI `scaffold`, `create-site`, and `e2e` green;
 STATUS written; S2 pre-flight dispatched.
@@ -561,10 +661,13 @@ only where it names the source export.
   script, after `svelte-package`, because its declarations import `@glw907/cairn-cms` types from the
   root `dist/`. It carries no `prepare` of its own: npm runs a workspace's `prepare` before the
   root's (spec, the review's npm 11.19 probe).
-- `exports` points `types` and `default` at `dist/`, and `files` is `['dist', 'README.md']`, with
-  no `src` and no test file.
-- `check:dev-package` asserts the manifest's `exports` and `files` point at `dist/`, beside its four
-  existing checks.
+- Every `exports` condition points into `dist/`. The `svelte` condition
+  (`packages/cairn-cms-dev/package.json:23`, `./src/index.ts` today) is dropped, since the package
+  ships no `.svelte` file, or points into `dist/`. Vite resolves `svelte` first, so a leftover source
+  path breaks every registry install while the monorepo symlink hides it. `files` is
+  `['dist', 'README.md']`, with no `src` and no test file.
+- `check:dev-package` asserts that every `exports` condition string and every `files` entry points
+  into `dist/` (or is `README.md`), beside its four existing checks.
 - The `publish-dev` job installs and builds before `npm publish`, so a release publishes `dist/`
   (Decision 2).
 - No runtime behavior changes; the built output is the source's behavior.
@@ -577,19 +680,22 @@ only where it names the source export.
   `node:sqlite` ambiently. It installs the packed engine and dev package and imports
   `devBackendHandle`, and `svelte-check` reports 0 errors and 0 warnings. Fails today: errors on
   both modules.
-- The `publish-dev` job's steps, replayed locally from a clean clone up to
-  `npm publish --dry-run`, list `dist/index.js`. The report quotes the listing.
-- A `check-dev-package` test case fails on a manifest whose `exports` points at `src/`.
+- From a clean clone, replay the `publish-dev` job's install and build steps, then run
+  `npm publish --dry-run --access public` in `packages/cairn-cms-dev`. The job's version guard is
+  bypassed, since `0.98.0` is already on the registry and the guard exits before publishing. The
+  listing shows `dist/index.js`, and the report quotes it.
+- A table-driven `check-dev-package` test fails on a manifest with any one `exports` condition
+  (`types`, `svelte`, `default`) pointing outside `dist/`, one row per condition.
 - After a from-scratch showcase install, `realpath` resolves the dev package into the worktree, and
   the showcase e2e build resolves `dist/` (the report shows the resolved file). The `wrangler deploy
   --dry-run` grep steps of `e2e.yml` and `scaffold.yml` still pass: no marker in a default build, and
   markers present in a flagged build. Replay both locally, and confirm on CI at the boundary.
-- F green.
+- The computed gate green.
 
 **Interfaces produced:** the built dev package, consumed by Tasks 5 and 10 and by the close's
 consumer proof.
 
-**Gate:** F.
+**Gate:** computed; expected F (`publish.yml` computes `full`).
 
 ### Task 5: The engine supplies the dev-build define (B7)
 
@@ -604,8 +710,11 @@ into a deployed Worker. **Spec:** B7; pass B task 7.
 
 **Outcome:**
 - `cairnManifest` gains a `config` hook that defines `__CAIRN_DEV_BUILD__` as
-  `command === 'serve' || loadEnv(mode, root, 'VITE_').VITE_CAIRN_E2E === '1'`, the template's
-  current expression. A define the site already set wins, in either plugin order.
+  `command === 'serve' || loadEnv(mode, process.cwd(), 'VITE_').VITE_CAIRN_E2E === '1'`, the
+  template's current expression (`templates/waymark/vite.config.ts:29`). The flag's channels stay
+  the template's: the process env, and the `.env`, `.env.local`, `.env.<mode>`, and
+  `.env.<mode>.local` files in `process.cwd()`. A define the site already set wins, in either plugin
+  order.
 - `@glw907/cairn-cms/ambient` declares the global. The showcase and the template drop their
   `devBuildDefine()` plugin and their `app.d.ts` declaration, since with `skipLibCheck` off the two
   declarations collide (`TS2451`).
@@ -617,20 +726,26 @@ into a deployed Worker. **Spec:** B7; pass B task 7.
 
 **Acceptance:**
 - Test-first unit tests over the hook: `true` under `serve`, `false` under `build`, `true` under
-  `build` with `VITE_CAIRN_E2E=1`, and a site-set define kept in both plugin orders. Fails today: no
-  hook. Mutation proof: flipping the `serve` comparison turns the first case red (quoted, reverted).
+  `build` with `VITE_CAIRN_E2E=1` in the process env, and `true` under `build` when only a
+  `.env.production` file sets the flag. Fails today: no hook. Mutation proof: flipping the `serve`
+  comparison turns the first case red (quoted, reverted).
+- A site-set `false` define is kept in both plugin orders, proven through Vite's `resolveConfig`
+  with both plugin arrays, which starts no server. A direct call of the hook sees only an
+  already-merged config and cannot prove the order where the engine's plugin runs first.
 - `git grep -n "devBuildDefine\|const __CAIRN_DEV_BUILD__" -- examples/showcase templates/waymark`
   prints nothing.
 - Under a default `npm run build` of the showcase, `npx wrangler deploy --dry-run` output carries no
   line of `scripts/checks/dev-fold-markers.txt` (excluding `*.map`). A `VITE_CAIRN_E2E=1` build
   carries at least one. Replay both e2e.yml steps locally; the report quotes each result line.
-- A fresh emission's `npm run check` reports 0 errors and 0 warnings (no `TS2451`).
-- F green.
+- A fresh emission's `npm run check` reports 0 errors and 0 warnings, which proves the template's
+  reads of the global resolve through `/ambient`. It cannot show `TS2451`: the template sets
+  `skipLibCheck` (`templates/waymark/tsconfig.json:14`).
+- The computed gate green.
 
 **Interfaces produced:** the engine-supplied define, named in Task 11's `Consumers may:` line and
 the close's smoke.
 
-**Gate:** F.
+**Gate:** computed; expected F (`vite.config.ts` computes `full`).
 
 ### Task 6: `cairn-guidance check` reads a fresh scaffold as fresh (B6)
 
@@ -650,11 +765,11 @@ leaves out `VERSION`, which the bake and `install` stamp differently.
   the freshness verdict is `fresh`. Fails today: `stale`.
 - A stylesheet with neither form still reports `not-excluded`, and a tree differing in a real
   guidance file still reads `stale`.
-- E green.
+- The computed gate green.
 
 **Interfaces produced:** none consumed later; the Claude Code arm's facts (Task 11).
 
-**Gate:** E.
+**Gate:** computed; expected E.
 
 **S2 boundary:** F green on the segment head; pushed; CI `scaffold`, `create-site`, `e2e`, and
 `test` green; STATUS written; S3 pre-flight dispatched (including the Task 8 seam check).
@@ -691,11 +806,11 @@ with `check:surface -- --update`.
   removal. Fails today: it compiles.
 - The showcase and template adapters still compose (F's e2e, or E plus a composition smoke over both
   adapters).
-- E green.
+- The computed gate green.
 
 **Interfaces produced:** the shared reserved-id set; three `Consumers must:` clauses for Task 11.
 
-**Gate:** E.
+**Gate:** computed; expected E.
 
 ### Task 8: The sanitize floor and two build warnings (C5, C13, D6)
 
@@ -713,27 +828,38 @@ its tests; `docs/reference/render.md` (minimal edit stating the floor).
   callback's. The floor is exactly `script` plus the core `strip` entries. Attributes and protocols
   stay the callback's responsibility, and the comment says so. No module default is reachable for
   mutation by a callback.
+- **C5, the absent allowlist.** When the callback's result carries no `tagNames` array, the engine
+  throws at renderer construction (`buildSanitizeSchema`, called from `src/lib/render/pipeline.ts:113`)
+  with a message naming `sanitizeSchema`. The measured defect: `hast-util-sanitize` treats an
+  absent `tagNames` as "every element is safe"
+  (`node_modules/hast-util-sanitize/lib/index.js:367-370`) and reads `strip` only for an unsafe
+  element (`:390-393`), so no floor holds over a missing allowlist. `unsafeDisableSanitize` stays
+  the documented way to turn the floor off.
 - **C13.** When the facts derivation throws, `checkSiteFacts` emits one build-log warning naming the
   skip, and still does not fail the build.
 - **D6.** The manifest build warns once per concept, naming each frontmatter key it found on that
   concept's entries that the concept's schema does not declare.
 
 **Acceptance:**
-- **C5:** a callback that adds `script` and mutates `strip` in place still yields output with the
-  script stripped. A second `buildSanitizeSchema` call in the same module instance gets the untouched
-  default. A callback that adds to `strip` keeps its additions. Fails today: the script survives and
-  the default is mutated. Mutation proof: dropping the post-callback `script` removal turns the first
-  case red (quoted, reverted).
+- **C5:** a callback that adds `script` and mutates `strip` in place still yields output with no
+  `<script>` element and none of the script's body text. A callback that mutates a nested
+  non-`strip` array of its argument (for example `protocols.src`) leaves a second
+  `buildSanitizeSchema` call in the same module instance with the untouched default. A callback that
+  adds to `strip` keeps its additions. A callback returning `tagNames: undefined` throws at
+  construction, naming `sanitizeSchema`. Fails today: the script survives, the default is mutated,
+  and the undefined allowlist admits every tag. Two mutation proofs, each quoted and reverted:
+  dropping the post-callback `script` removal turns the first case red, and dropping the `strip`
+  union turns the body-text assertion red.
 - **C13:** a throwing derivation yields exactly one warning naming the skip, and the status stays
   non-failing. Fails today: silent `ok`.
 - **D6:** a concept without a `robots` field, with two entries carrying `robots: noindex`, yields one
   warning naming `robots` for that concept. A concept with no undeclared keys yields none. Fails
   today: silent.
-- E green (the runner's computed tier rules if the render seam raises it).
+- The computed gate green.
 
 **Interfaces produced:** one `Consumers must:` clause (C5) for Task 11.
 
-**Gate:** E.
+**Gate:** computed; expected F (`src/lib/render/` computes `full`).
 
 ### Task 9: The site-config path is declared once, and `cairn-audit --fail-on advisory` (D5, D8a)
 
@@ -753,7 +879,8 @@ its tests; `docs/reference/render.md` (minimal edit stating the floor).
 - **D5.** The adapter's `editor.siteConfigPath` names the site-config file once. Its default equals
   the canonical path in `packages/create-cairn-site/src/site-config-path.json`
   (`src/theme/site.config.yaml` at plan time). The nav editor, Settings, and Tags all read it.
-  `editor.nav.configPath` is removed.
+  `editor.nav.configPath` is removed, and so is `DEFAULT_SITE_CONFIG_PATH` at
+  `content-routes-settings.ts:124` (Decision 6).
 - **D8a.** `cairn-audit --fail-on advisory` exits non-zero when any unsuppressed advisory survives.
   The bare call keeps today's exit rule. The `--json` report is batched, not built.
 
@@ -766,11 +893,11 @@ its tests; `docs/reference/render.md` (minimal edit stating the floor).
 - **D8a:** an advisory-only report exits 0 bare and non-zero with `--fail-on advisory`. An
   error-tier report exits non-zero either way. An unknown `--fail-on` value is a usage error. Fails
   today: always 0 on advisories.
-- E green.
+- The computed gate green.
 
 **Interfaces produced:** two `Consumers must:` clauses (D5) for Task 11.
 
-**Gate:** E.
+**Gate:** computed; expected F (`examples/showcase/src/theme/` computes `full`).
 
 **S3 boundary:** F green on the segment head; `check:close` green; STATUS written; S4 pre-flight
 dispatched, including fork 1's status.
@@ -785,21 +912,36 @@ dispatched, including fork 1's status.
 task 3. **Decisions 1 and 3.** Built on the recommendation: in memory, plus a persistent notice.
 
 **Files:** `packages/cairn-cms-dev/src/{handle,fake-github}.ts` and their tests (plus a new overlay
-module if the implementer splits one out); `packages/cairn-cms-dev/README.md`; `src/lib/ambient.ts`
-(one optional `App.Locals` member, Decision 3); the engine's shell load
+module if the implementer splits one out); `packages/cairn-cms-dev/README.md`;
+`src/lib/github/backend.ts` (one optional `Backend` member, Decision 3); the engine's shell load
 (`src/lib/sveltekit/content-routes-shell.ts`, `AdminShellData` at `:44`) and
 `src/lib/admin/CairnAdminShell.svelte`, with their tests; `examples/showcase/src/hooks.server.ts`
 (the marked `content: 'fixtures'` line); `src/tests/unit/emit-template-tree.test.ts`;
-`templates/waymark/**` through `npm run emit:template`; minimal `docs/reference/{sveltekit,ambient}.md`
-edits with `check:surface -- --update`. This task's own docs delta goes in the same task: the
-`DevBackendConfig` doc comment, the README's option table and its overlay limits, one facts bullet
-per behavior change, and the `CHANGELOG.md` and `migration-notes.md` lines for `seedContent`.
+`templates/waymark/**` through `npm run emit:template`; minimal `docs/reference/{core,sveltekit}.md`
+edits with `check:surface -- --update`. This task owns every ruling-5 record (Decision 1), in the
+same task:
+- the `DevBackendConfig` doc comment, and the README's option table and its overlay limits;
+- one facts bullet per behavior change;
+- the `CHANGELOG.md` and `migration-notes.md` lines: the `Consumers must:` clause "drop
+  `seedContent`, and pass `content: 'fixtures'` when the dev backend runs under `wrangler dev`",
+  and the `Consumers may:` clause "pass `content: 'fixtures'` to keep the seeded dev content". The
+  second reaches a site that runs the dev backend without ever naming `seedContent`
+  (`xcathletes-org/src/hooks.server.ts:62-63`);
+- the ruling-5 items, with their fact ids, on the `add-cairn-to-a-sveltekit-app` and
+  `scaffolded-site-files` entries in `docs/internal/record/harvest/relink.json`, created if absent
+  and extended if present;
+- ROADMAP's B12 row removed, and the `MEDIA_BUCKET` watch's verdict (batched as ruling 5's R2
+  read-through, tagged add-cairn).
 
 **Outcome:**
 - `DevBackendConfig.seedContent` is removed. `devBackendHandle({ runtime, content })` takes
   `content: 'repository' | 'fixtures'`, default `'repository'`. `'fixtures'` is today's seeded
-  in-memory repo, unchanged. The module-level seed post moves into the `'fixtures'` path, so no
-  fixture id reaches a real site's admin.
+  in-memory repo, unchanged. Every seed runs only in `'fixtures'`, so no fixture reaches a real
+  site's admin: the module-level seed post (`fake-github.ts:42-47`), `seedMediaLibrary`,
+  `seedFragments`, `seedVocabulary`, `seedPreviewTwin`, the seeded branches, and the R2
+  `SEED_MEDIA_KEYS` bytes (`handle.ts:100-132` on `main` at `7a777e5e`). Otherwise the fixture `media.json`,
+  manifest, and `src/theme/site.config.yaml` would shadow the developer's real files in Settings,
+  Tags, the nav editor, and the Library.
 - In `'repository'`, each branch is an overlay over the working tree: a map from path to content or
   to a tombstone. Nothing writes to disk.
   - `readFile` answers the overlay, then the disk; a tombstone reads `null`.
@@ -818,37 +960,54 @@ per behavior change, and the `CHANGELOG.md` and `migration-notes.md` lines for `
   so new sites get `'repository'`. The showcase and the scaffold hooks stay a byte copy otherwise.
 - **The notice (fork 1, "Yes").** While the dev backend serves `'repository'`, the admin shell shows
   one persistent DaisyUI `alert` saying edits are held in memory and discarded when the dev server
-  stops. The copy is in the admin voice. The signal is the `App.Locals` member the dev handle sets
-  only in `'repository'` mode, mapped by the shell load to one optional `AdminShellData` member. A
-  production request never sets it.
+  stops. The copy is in the admin voice. The signal is `Backend.ephemeral`, which only the dev
+  package's `'repository'` backend sets (Decision 3). The shell load reads it from
+  `event.locals.cairnBackend` and maps it to one optional `AdminShellData` member. A production
+  backend never carries it.
 - Media bytes stay in the in-memory R2 double. This task states the limit in the README; reading
   local R2 through is batched.
 
 **Acceptance** (against a temp directory under `$HOME/.cache/engine-pre-2b-b/` holding entries and a
 committed manifest; each fails today, where the dev admin shows only fixtures):
 - The list equals the disk set exactly, with no fixture id, read through the manifest.
-- A save shows in the next read and leaves the file's bytes and mtime untouched. A disk edit to an
-  unwritten file shows without a restart.
+- At construction in `'repository'`, reads of `src/theme/site.config.yaml` and
+  `src/content/.cairn/media.json` return the disk bytes, and no `cairn/*` branch exists.
+- A save shows in the next read. A disk edit to an unwritten file shows without a restart. After a
+  save, a disk edit to that same file does not show until restart.
 - A deleted or renamed on-disk entry stays gone. A `cairn/*` branch read of an untouched disk file
   returns its content.
+- A snapshot of the temp tree (every path, its bytes, and its mtime) is identical before and after
+  this sequence: save, delete, rename, branch create, publish, Settings save, nav save, and media
+  upload.
 - The handle throws under a stubbed `Cloudflare-Workers` user agent and not under Node.
 - `emit-template-tree.test.ts` asserts the emitted hooks carry no `content:` option and no exclude
   marker.
 - Under `'repository'`, the shell payload carries the notice member and a component test renders the
-  `alert`. Under `'fixtures'` and under the engine guard, the member is absent and no alert renders.
-  Mutation proof: setting the member in `'fixtures'` turns the fixtures test red (quoted, reverted).
+  `alert`. Under `'fixtures'` and with no dev backend (the production provider), the member is
+  absent and no alert renders. Mutation proof: setting `ephemeral` on the `'fixtures'` backend turns
+  the fixtures test red (quoted, reverted).
+- `check:surface` shows exactly two new public members: `Backend.ephemeral` and the
+  `AdminShellData` member. `App.Locals` and `CairnEvent.locals` are unchanged.
 - The showcase e2e suite stays green on `'fixtures'`, admin-visual baselines unchanged.
 - A fresh emission under `npm run dev` (port from an environment variable) lists the scaffold's two
   seed entries in the dev admin and shows the notice. The report attaches the capture for the close.
 - `git grep -n "seedContent" -- src packages templates examples docs/reference README.md` prints
   nothing.
-- F green.
+- `CHANGELOG.md` and `migration-notes.md` carry the two ruling-5 clauses above, and the two
+  re-arm entries carry the ruling-5 items with their fact ids.
+- The computed gate green.
 
 **Under the other answer ("No": publishes write to disk).** If Geoff rules "No", the conductor
-rewrites this task before S4:
+rewrites this task before S4, and the rewritten task runs as `auth-data` (it writes user data), with
+its mutation proofs and stop rule:
 - The overlay and tombstones go. A commit to `main` writes files through `node:fs`, deleting for a
   delete. A `cairn/*` branch keeps its in-memory overlay until publish, so drafts never touch disk.
-- The notice and its `App.Locals` and `AdminShellData` members go.
+- The notice and its `Backend` and `AdminShellData` members go.
+- Fork 1's three listed costs become constraints. Each disk write compares the target's current
+  bytes with the bytes the commit was built from, and refuses on a mismatch. The host refusal
+  applies under `vite dev` whenever the handle is mounted. A dev upload is refused under the dev
+  backend, or its bytes go to local R2.
+- The whole-tree snapshot case becomes "the tree changes exactly by the published files".
 - New constraints: a multi-file commit writes each file atomically (temp file plus rename), and the
   README states that the commit as a whole is not atomic on disk. The Library's fake R2 starts empty
   and flags every real asset as broken. The README states this, and the R2 read-through is pulled
@@ -857,16 +1016,16 @@ rewrites this task before S4:
 - Acceptance changes: "leaves the file untouched" becomes "writes the file, and `git diff` shows
   it". A delete removes the file. The public page reflects a dev publish on the next request.
 
-**Interfaces produced:** the `content` option and the notice member, named in Task 11's facts and
-the re-arm list (add-cairn-to-a-sveltekit-app, scaffolded-site-files).
+**Interfaces produced:** the `content` option and the notice members, with their own facts,
+version records, and re-arm items (above). Task 11 re-reads them when Task 10 ran first.
 
-**Gate:** F.
+**Gate:** computed; expected F (`hooks.server.ts` computes `full`).
 
 ### Task 11: Docs and records for pass B
 
 **Pass class:** `docs`. **Spec:** "Docs and records", "Consumers must (draft, finalized at the
 close)", "Declined, with proposed ledger entries", "Ledger entries this pass falsifies"; the fold
-record's "Owed errata"; pass B task 11. **Decisions 7 and 8.** Drafts to the developer brief in
+record's "Owed errata"; pass B task 11. **Decisions 1, 7, and 8.** Drafts to the developer brief in
 `docs/internal/docs-register.md`; Vale's error tier is the floor.
 
 **Files:** `docs/reference/{sveltekit,core,render,vite,ambient,guidance,cairn-audit}.md` and every
@@ -883,9 +1042,9 @@ other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/ap
   (`vite.md`, `ambient.md`); `editor.siteConfigPath` and the removed `configPath` (`sveltekit.md`,
   `core.md`); the removed `FieldBehavior.itemLabel` and the two composition refusals (`core.md`); the
   sanitize floor (`render.md`); `--fail-on advisory` (`cairn-audit.md`); the guidance check
-  (`guidance.md`); and the dev-admin notice member (`sveltekit.md`, `ambient.md`). Each page Tasks 1
-  to 10 touched minimally is re-read and finished.
-- **Repoint greps:** every hit for `seedContent`, `devBuildDefine`, `cairn:manifest` in a message
+  (`guidance.md`). Ruling 5's rows, the `content` option and the notice members, are Task 10's
+  (Decision 1). Each page Tasks 1 to 10 touched minimally is re-read and finished.
+- **Repoint greps:** every hit for `devBuildDefine`, `cairn:manifest` in a message
   context, `nav.configPath`, `FieldBehavior.itemLabel`, `APP_DB`, `migrations-app`, and "every
   scaffold ships" Signups wording across `docs/`, `README.md`, `skills/`, and `claude/` is repointed
   or named as intentional.
@@ -893,19 +1052,22 @@ other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/ap
   falsifies. Plan-time candidate set, triaged each to corrected, retired, or unchanged with a
   one-line reason: `docs/internal/facts/extend.md` `f:pyt58u` `f:onqm6k` `f:qtm9y2` `f:b0kf86`
   `f:thnbyp` `f:7ji7x0` `f:n7t4bn` `f:nv0ok0` `f:3z1uxv` `f:tycp7k` `f:s5pdrz` `f:wnsv5x` `f:c7nyan`.
-  `front-door.md` `f:9xthnq` and `f:dpbswc` are checked for a scaffold claim. The task re-runs the
-  keyword grep and amends the set. The Claude Code arm's facts in `extend.md` take B6's two
-  corrections.
+  `docs/internal/facts/admin.md` `f:vfpai6` (`:10`, "two D1 databases"), `f:gcuj1j` (`:40`,
+  `APP_DB`), `f:xw0bit` (`:51`, the closing summary's two databases), and `f:l3cxgc` (`:116`,
+  "beside `APP_DB`"), which Tasks 1 and 2 falsify. `f:xw0bit` cites `01d-resume.txt`, so its
+  correction notes the capture is stale until the next live capture. `front-door.md` `f:9xthnq` and
+  `f:dpbswc` are checked for a scaffold claim. The task re-runs Task 0's keyword grep over all of
+  `docs/internal/facts/` and amends the set. Ruling 5's facts are Task 10's. The Claude Code arm's
+  facts in `extend.md` take B6's two corrections.
 - **Per-version records:** `CHANGELOG.md` `## Unreleased` carries pass B's entry and its
-  `Consumers must:` lines, finalized against what shipped:
-  - drop `seedContent`, and pass `content: 'fixtures'` when the dev backend runs under
-    `wrangler dev`;
+  `Consumers must:` lines, finalized against what shipped. Ruling 5's two clauses are Task 10's
+  (Decision 1); this task re-reads them when Task 10 ran first.
   - move `editor.nav.configPath` to `editor.siteConfigPath`, and set `editor.siteConfigPath` when
     the site config lives anywhere but the canonical path;
   - remove any `itemLabel` from a `FieldBehavior`, rename a concept whose id names an engine view,
     and make publish-action labels unique;
-  - a `sanitizeSchema` callback can no longer allow `<script>`; use a registered component or
-    island.
+  - a `sanitizeSchema` callback can no longer allow `<script>`, and must return a `tagNames`
+    array; use a registered component or island.
 
   Plus the `Consumers may:` line: delete the site's own `devBuildDefine` plugin and
   `__CAIRN_DEV_BUILD__` declaration. A stale content manifest's message now names
@@ -916,13 +1078,13 @@ other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/ap
   site-config default.
 - **The 2b re-arm list** is pass B's alone (Decision 7). Each entry follows the file's existing
   fields: `file` (the page), `context` (a grep-able line from it), `done` (what changed), `stage`
-  `"2b"`, plus a `facts` array of the changed fact ids. If `docs-links.mjs` rejects the extra field,
-  the ids go into `done` instead. It holds two sets of pages. First, every page on pass A's hand-off
-  list in STATUS, with its fact ids. Second, each 2a page pass B changed, with the facts that
-  changed. When one page is on both lists, the two merge into one entry. Pass B's pages and their
-  items:
-  - `add-cairn-to-a-sveltekit-app`: B1, B2, B3, B7, ruling 5;
-  - `scaffolded-site-files`: ruling 2, A5, B3, B6, B7, ruling 5;
+  `"2b"`, plus a `facts` array of the changed fact ids. It holds two sets of pages. First, every
+  page on pass A's hand-off list, read from this plan's Ledger (Task 0), with its fact ids. Second, each 2a page pass B changed, with the facts that
+  changed. When one page is on both lists, the two merge into one entry, and an entry Task 10
+  already wrote is extended, never replaced. Pass B's pages and their items (ruling 5's items are
+  Task 10's):
+  - `add-cairn-to-a-sveltekit-app`: B1, B2, B3, B7;
+  - `scaffolded-site-files`: ruling 2, A5, B3, B6, B7;
   - `add-a-custom-admin-screen`: ruling 2;
   - `restrict-admin-access`: ruling 2, A5;
   - `security-model`: C5;
@@ -932,14 +1094,13 @@ other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/ap
   and need no entry: define-an-adapter-and-schema (A14, D4, D6), act-on-newly-published-entries
   (A13), build-the-public-routes (D2, D6), turn-on-tidy and arrange-the-admin-sidebar (D5), and
   run-cairn-audit-on-your-site (D8a).
-- **ROADMAP:** the "Engine pass before stage 2b" Now entry, which pass A narrowed to pass B's
-  scope, is removed. The pass B items leave every other live tier (B1, B2, B3, B6, B7, B8 via ruling
-  2, B12 via ruling 5, A5, A13, A14, C5, C13, D2, D4, D5, D6, D8a). Pass A's ROADMAP rewrite is not
-  touched. The three tripped dev-package watches each get a verdict, verified against the code first
-  (Decision 8):
+- **ROADMAP:** the pass B items leave every live tier (B1, B2, B3, B6, B7, B8 via ruling 2, A5,
+  A13, A14, C5, C13, D2, D4, D5, D6, D8a). B12 is Task 10's, and the "Engine pass before stage 2b"
+  Now entry leaves at the close (step 9), since Task 11 can run before Task 10. Pass A's ROADMAP
+  rewrite is not touched. Two of the three tripped dev-package watches get their verdict here,
+  verified against the code first (Decision 8); the `MEDIA_BUCKET` double is Task 10's:
   - the `APP_DB` overwrite: batched with its page tag, since only the showcase now ships a D1
     screen, or fixed if the code shows a one-line answer;
-  - the `MEDIA_BUCKET` double: batched as ruling 5's R2 read-through, tagged add-cairn;
   - the custom-screen skill traps: the `cairnAccess` defect closed if pass A's lead fixed it, and the
     rest re-armed to the extend stage that outlines the custom-screen page.
 - **Friction log:** every entry for a pass B fix is deleted after a check against the code. The
@@ -948,22 +1109,27 @@ other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/ap
   is Task 2's stale-transcript entry, which stays until a live capture.
 
 **Acceptance:**
-- `git grep -nE "seedContent|devBuildDefine|nav\.configPath|FieldBehavior\.itemLabel|npm run cairn:manifest" -- docs/reference docs/extend/migration-notes.md docs/extend/upgrade-cairn.md README.md skills claude packages/*/README.md`
+- `git grep -nE "devBuildDefine|nav\.configPath|FieldBehavior\.itemLabel|npm run cairn:manifest" -- docs/reference docs/extend/migration-notes.md docs/extend/upgrade-cairn.md README.md skills claude packages/*/README.md`
   prints only lines the report names as intentional (a version record, a removal note).
 - The facts triage covers every id in the candidate set; `check:facts` green.
 - `CHANGELOG.md` carries one `Consumers must:` line per clause above and the `Consumers may:` line;
   `migration-notes.md` matches it clause for clause.
-- `relink.json` carries an entry for every page on pass A's hand-off list and every pass B page
-  above, each with its fact ids. `node scripts/checks/docs-links.mjs` (or the check that reads it)
-  green.
+- A `node -e` one-liner, quoted in the report, parses `relink.json` and asserts two things. Every
+  page on pass A's hand-off list and every pass B page above has a `stage: "2b"` entry with a
+  `facts` array. Every entry on `main` before this task still carries all its fields. No other check
+  reads the file.
 - `check:rulings-format` green, and `audit-adapter-navmenuconfig` carries a 2026-10 dated note.
-- The ROADMAP diff removes the engine-pass Now entry and every pass B item from the live tiers, and
-  each tripped watch carries its verdict.
-- D green; `check:close` green.
+- The ROADMAP diff removes every pass B item but B12 from the live tiers, and the two watches above
+  carry their verdicts.
+- `cairn-run-gate 'npm run check:surface && npm run check:rulings-format'` exits 0, and the report
+  quotes the `gate exit:` line. The `docs` tier's `check:docs-gate` carries `check:facts` but
+  neither of these.
+- The computed gate green; `check:close` green.
 
 **Interfaces produced:** none consumed later; the close finalizes STATUS and HISTORY.
 
-**Gate:** D, then `check:close` at the boundary.
+**Gate:** computed; expected `docs`, or higher if a `claude/**` or `packages/create-cairn-site/`
+path lands; then `check:close` at the boundary.
 
 **S4 boundary:** F green on the segment head; `check:close` green; pushed; every CI workflow green;
 STATUS written.
@@ -972,13 +1138,17 @@ STATUS written.
 
 ## Close
 
-Run `pass-core`'s ritual with the `cairn-pass` specifics, in order. Steps 1 to 5 and 7 to 10 run
-unattended. Step 6's last click and step 11's merge are the batched owner steps.
+Run `pass-core`'s ritual with the `cairn-pass` specifics, in order. Steps 1 to 10 run unattended.
+Step 11's merge is the one batched owner step.
 
 1. **Simplify, once.** `code-simplifier:code-simplifier` over the pass's changed TypeScript,
    JavaScript, and Svelte, then the full gate again if it changed code.
-2. **Full gate.** `cairn-run-gate 'npm test'` exits 0, then `cairn-run-gate 'npm run check:close'`
-   (0 errors, 0 warnings).
+2. **Full gate.** If step 1 changed code, F again; otherwise the S4 boundary's F stands, since a
+   second full run on an unchanged commit is barred (`pass-gate-economy.md`, heavy-lock rule 2).
+   Never the stock `npm test`: its parallel component project hangs on this workstation while it
+   holds the heavy gate lock (`docs/internal/durable-gotchas.md`, "The component project stalls
+   under file parallelism"), and F runs the same projects serialized. Then
+   `cairn-run-gate 'npm run check:close'` (0 errors, 0 warnings).
 3. **Consumer proof**, since the dev package moves to `dist/` and the scaffold changes:
    - A from-scratch showcase build in the worktree (`rm -rf examples/showcase/{node_modules,package-lock.json}`,
      fresh install, `npm run build`), with `realpath` showing both packages resolve into the
@@ -991,9 +1161,11 @@ unattended. Step 6's last click and step 11's merge are the batched owner steps.
 
    Evidence is quoted.
 4. **Review fan-out, in parallel**, over the pass's whole diff against `main`:
-   - `web-auth-security-reviewer` at `high`: Task 2's provisioning, Task 5's define (the
-     owner-session bypass's compile-out), Task 8's C5 sanitize floor, Task 10's `App.Locals` member
-     and workerd guard, and Task 3's fixture route exclusion;
+   - `web-auth-security-reviewer` at `high`: Task 2's provisioning; Task 5's define (the
+     owner-session bypass's compile-out) and its flag channels, the process env and the `.env*`
+     files in `process.cwd()`; Task 8's C5 sanitize floor and its absent-allowlist throw; Task 10's
+     `Backend.ephemeral` member, its fixtures-only seeds, and its workerd guard; and Task 3's
+     fixture route exclusion;
    - `svelte-reviewer`: the admin error page, the shell's notice, and the shell load;
    - `cloudflare-workers-reviewer`: the workerd detection, the dynamic `node:fs` import, the
      dev-fold bundle, and `wrangler.jsonc`;
@@ -1013,13 +1185,16 @@ unattended. Step 6's last click and step 11's merge are the batched owner steps.
      migration set.
    - Unauthenticated `GET /admin` redirects to `/admin/login`: no owner-session bypass compiled in
      (Task 5).
-   - A session minted by inserting a D1 session row reaches `/admin`, and a Settings save on a site
-     without `editor.nav` reaches the commit path (Task 9). The expected `commit.failed` record from
-     the placeholder GitHub App is quoted from the logs.
-   - **Owner step, batched:** request a magic link, read it from wrangler's local `send_email` file,
-     and Geoff clicks it in Firefox; confirm lands in `/admin`.
-   - Task 2's provisioning is proven by its suite, its transcripts, and CI `create-site`. No live
-     Cloudflare provisioning runs, since it creates real resources; the evidence says so.
+   - A session minted by inserting a D1 session row reaches `/admin`. A Settings save on the
+     showcase, whose adapter names no site-config path after Task 9, reaches the commit path through
+     the engine default. The expected `commit.failed` record from the placeholder GitHub App is
+     quoted from the logs.
+   - The magic-link round trip, driven in headless Chromium (Decision 11): the smoke agent requests
+     a link, reads it from wrangler's local `send_email` message file, opens it, posts the confirm,
+     and lands in `/admin`.
+   - Task 2's provisioning is proven by its unit tests and CI `create-site`. The transcripts are
+     stale until the next live capture (Decision 10). No live Cloudflare provisioning runs, since it
+     creates real resources; the evidence says so.
 7. **Docs check.** Task 11's pages are re-read against any close-time fix.
    `check:surface -- --update` is re-run if a reviewer fix moved a typed export. The friction log is
    triaged complete-or-move.
@@ -1029,9 +1204,12 @@ unattended. Step 6's last click and step 11's merge are the batched owner steps.
    - `docs/STATUS.md` is rewritten present tense (60 lines or fewer). The engine pass before stage 2b
      is closed unreleased, and stage 2b is next, starting from the re-arm list.
    - `docs/HISTORY.md` takes the pass entry: what landed, what the gates caught, and what a later
-     pass would be wrong to rediscover. It names whether any refused fold finding turned real.
-   - The plan takes its post-mortem with the budget score: tokens against 10.8M via `/cost`,
-     planning misses, and execution sittings.
+     pass would be wrong to rediscover, including Decision 12's accepted resume window. It names
+     whether any refused fold finding turned real.
+   - `ROADMAP.md`'s "Engine pass before stage 2b" Now entry, which pass A narrowed to pass B's
+     scope, is removed, now that Tasks 10 and 11 have both landed.
+   - The plan takes its post-mortem with the budget score: tokens against the ruled ceiling (12.0M
+     recommended) via `/cost`, planning misses, and execution sittings.
 10. **Pre-bake.** Plan, STATUS, and ROADMAP committed; tree clean; the resume prompt names stage 2b
     as the next action and its launch directory.
 11. **Merge** (owner step): the PR leaves draft once CI is green, and the merge to `main` waits for
@@ -1040,7 +1218,7 @@ unattended. Step 6's last click and step 11's merge are the batched owner steps.
 ## Ledger
 
 (Checkpoint entries go here: Task 0's record, then one entry per segment boundary with the task
-ledger, verdicts, decisions taken, spend against 10.8M, and the next task.)
+ledger, verdicts, decisions taken, spend against the ceiling, and the next task.)
 
 ## Post-mortem
 

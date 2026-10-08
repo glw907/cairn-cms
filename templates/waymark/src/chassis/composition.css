@@ -1,6 +1,6 @@
 /* ============================================================================
    The chassis's composition primitives: card, band, section, hero, and sidebar-layout. These are
-   the "generous, not minimal" ruling made concrete (Geoff, 2026-07-05): a theme reaches for one of
+   the chassis's generosity made concrete: a theme reaches for one of
    these recipes instead of hand-rolling its own card or two-column layout from scratch, the same
    way it reaches for a token instead of a literal color. This site's own `(site)` chrome uses
    the site-shell pair; the rest are a theme's choice, never a requirement, and every recipe

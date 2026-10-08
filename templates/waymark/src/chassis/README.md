@@ -13,7 +13,7 @@ check:chassis-boundary` (root) enforces this: it fails on any import that resolv
 `src/chassis/` but names a file not in this table, the same way a reach past a package's public
 exports would.
 
-The chassis is deliberately generous, not minimal (Geoff, 2026-07-05): the point is a developer's
+The chassis is deliberately generous, not minimal: the point is a developer's
 ease building a theme on top, not the fewest lines here. Every default this layer ships is
 designed to be overridden, and each override seam is documented below. A theme that wants the
 chassis default as-is changes nothing; a theme that wants its own look overrides the value, never
@@ -186,7 +186,7 @@ pagination block stays hidden until a fifteenth post crosses the page boundary; 
 larger corpus, or one that wants a shorter page, sets its own value here.
 
 **Composition primitives (`composition.css`).** `.cairn-card`, `.cairn-band`, `.cairn-section`,
-`.cairn-hero`, `.cairn-sidebar-layout` are the "generous, not minimal" ruling made concrete: a
+`.cairn-hero`, `.cairn-sidebar-layout` make the chassis's generosity concrete: a
 theme reaches for one of these instead of hand-rolling its own card or two-column layout from
 scratch. Three are real site uses: the styleguide masthead is `.cairn-hero`, the home page's
 `.index` is `.cairn-section`, and the root error page's message block is
@@ -238,7 +238,7 @@ since the whole point of `"none"` is what already happens once nothing else over
 
 ## Subtracting an element
 
-The chassis is site-owned code over the versioned engine API (Geoff, 2026-07-05): an ultra-light
+The chassis is site-owned code over the versioned engine API: an ultra-light
 theme builder may rebuild, ditch, or modify any of it, or simply remove an element it never uses.
 Organization backs this up: one concern per file, and anything load-bearing for more than one
 element lives in its own file rather than hiding inside a sibling, so removing one element's file

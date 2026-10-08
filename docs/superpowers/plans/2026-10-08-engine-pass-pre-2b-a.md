@@ -1356,6 +1356,17 @@ is a dispatch that returns a structured verdict.
 8. **Friction triage** (Decision 11): every friction-log entry for a pass A fix is deleted after a
    check against the code; every declined or batched entry leaves for its ledger entry or ROADMAP
    row; new friction the pass met is filed. The HISTORY entry counts entries and outcomes.
+   **Log restructure (Geoff, 2026-10-08):** the close triages the whole log per `cairn-pass`, not
+   only pass A's entries, and regroups "Open findings" by who clears an entry, keeping the file
+   path. **Engine** feeds the docs-stage boundary test. **Docs content** is any way a page fails
+   its reader: a wrong claim, a missing working example, step, or failure case, too much or too
+   little detail for the task, content in the wrong track or page or unfindable from where a
+   reader looks, or drift since writing; the filing test is whether the reader can finish the
+   page's job from the page. The stage owning that arm clears it. **Repo tooling** (gates,
+   scripts, fixtures, tooling comments) is cleared at every pass close: a small fix lands in the
+   pass, anything larger moves to a ROADMAP row. The log's header states the three groups, and
+   `cairn-pass`'s close step names who clears each. Pass B's own entries stay, grouped, until
+   pass B's close.
 9. **Ledgers:** `docs/STATUS.md` rewritten present tense (≤60 lines): pass A closed unreleased,
    pass B next, the hand-off list (Decision 10), and the charter phrase for Geoff's read. `docs/HISTORY.md` takes the pass entry: what landed, what the gates caught, what a
    later pass would be wrong to rediscover, and whether any refused fold finding (the six standing

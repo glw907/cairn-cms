@@ -110,9 +110,11 @@ A change to public behavior files its part of that record in the same pull reque
 The gates check each part:
 
 - `npm run check:facts` checks every bullet's id, tag, and `Source:` pointer, and fails on a
-  pointer that names a missing file or an out-of-range line.
-- `npm run check:provenance` checks that every page sentence appears in its brief and cites a fact
-  whose tag makes it citable.
+  pointer that names a missing file or an out-of-range line. It checks pointers for the file types
+  it resolves; it does not yet resolve `.go` pointers.
+- `npm run check:provenance` checks that every page sentence appears in its brief and that each
+  claim-bearing sentence cites a fact whose tag makes it citable. A sentence that makes no claim is
+  marked as such.
 - `npm run check:options` regenerates the option paths from the built type declarations and fails
   when the map and the paths disagree, so an option can't ship without a row.
 

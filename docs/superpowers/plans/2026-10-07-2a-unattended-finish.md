@@ -317,7 +317,7 @@ conductor could not read `/cost`).
 | Checkpoint 3 | `main` `36c91167` | | conductor |
 | L2b e2e flakes | PR #104, `main` `d6ada013` (fix `3ef9a8d9`) | accept after one fix round | about 0.17M |
 | L1 dependency sweep | PR #106, `main` `cf5cadd5` | accept | about 0.3M |
-| L2a doctor cleanup | PR #105, `main` `8e8d84c3` (`75ff7008`, `1852d651`, `9444c409`, `788bd33c`) | accept after two fix rounds (the second upshifted) | about 1.4M |
+| L2a doctor cleanup | PR #105, `main` `8e8d84c3` (`75ff7008`, `1852d651`, `9444c409`, `788bd33c`) | accept after three fix rounds (the ruling fix `75ff7008`, the combined fix `1852d651` and `9444c409`, the upshifted `788bd33c`) | about 1.4M |
 | Checkpoint 4 | `main` `e020a54c` | | conductor |
 | R7a merge `main` | `6fd010ba` | one conflict resolved by rule | about 0.06M |
 | R7b `code-simplifier` | `b38ef6b3` | three scripts, behavior-neutral | not recorded |

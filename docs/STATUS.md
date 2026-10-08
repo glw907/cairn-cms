@@ -11,12 +11,12 @@ October dependency sweep, and the doctor cleanup. CI is green. cairn.pub pins `0
 ceiling `0.98.0` until the one release below
 ([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md), with the extend redirect rows).
 
-**The sequence (Geoff, 2026-10-07; `ROADMAP.md`'s boundary-test entry).** Geoff reads the five task 8
-pages, then the engine pass before stage 2b, then stage 2b, admin (stage 3), editors (stage 4), and
-the front door (stage 5). Engine passes land on `main` and never release. One release follows stage 5
-with SvelteKit 3, every engine fix, and the complete docs; then each site migrates to it as a site
-pass that follows the docs, cairn.pub included, and none before. Forecast, not a schedule: an engine
-pass before 2b, likely one before stage 4, a batch before the release, probably none before 3 or 5.
+**The sequence (Geoff, 2026-10-07).** After Geoff reads the five task 8 pages: the engine pass before stage
+2b, then stage 2b, admin (stage 3), editors (stage 4), and the front door (stage 5). Engine passes land on
+`main` and never release. One release follows stage 5 with SvelteKit 3, every engine fix, and the complete
+docs; then each site migrates to it as a site pass that follows the docs, cairn.pub included, and none
+before. The conductor's forecast, accepted by Geoff (2026-10-07), not a schedule: a pass before 2b, likely
+one before stage 4 (editor screenshots), probably none before 3 or 5, a batch before the final release.
 
 ## Immediate next action
 

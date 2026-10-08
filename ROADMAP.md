@@ -320,9 +320,10 @@ The original decision framing, for the record:
   **One release** follows the complete docs (after stage 5) and carries SvelteKit 3, every engine
   fix, and the complete docs. **No consumer site migrates before it**, cairn.pub included: each site
   migration is the complete docs' acceptance test, run as a site pass that follows the docs. Friction
-  a migration finds is handled then, by the same test. The expected shape is a forecast, not a
-  schedule: an engine pass before 2b (below), likely one before stage 4 for the editor screenshots, a
-  batch before the release, and probably none before stages 3 and 5.
+  a migration finds is handled then, by the same test. The expected shape is the conductor's
+  forecast, accepted by Geoff (2026-10-07), not a schedule: an engine pass before 2b (below), likely
+  one before stage 4 for the editor screenshots, probably none before stages 3 and 5, and a batch
+  before the final release.
 
 - **Engine pass before stage 2b (the boundary test at stage 2a's close, 2026-10-07).** Next after
   Geoff reads the five task 8 pages; a fresh brainstorm sizes it by the test above, so it may take
@@ -373,10 +374,7 @@ The original decision framing, for the record:
     200 when its check fails (`templates/waymark/src/routes/healthz/+server.ts:14-20`); `cairn-guidance
     check` flags the scaffold's `source(none)` sheet (`src/lib/guidance/check.ts:21,84`) and reads a
     fresh scaffold as stale because two writers stamp `VERSION` (`bake-template.mjs:213`,
-    `src/lib/guidance/install.ts:52,208`); the baked scaffold keeps showcase-only comments and config
-    (`templates/waymark/vite.config.ts:26-29,65-72,91-95`, `package.json:23-24`,
-    `src/chassis/archive.ts:7-9`, `src/routes/+layout.server.ts:3-5`, `src/hooks.server.ts:14`,
-    `src/lib/log.ts:1-10`, `.gitignore:10-11`). Pages: add cairn, debug your site, second sign-in
+    `src/lib/guidance/install.ts:52,208`). Pages: add cairn, debug your site, second sign-in
     group, scaffolded site files, rotate the key.
   - *Decide (dev and scaffold):* the dev backend never reads the site's content (`seedContent` "has
     no effect yet", `handle.ts:58-63`); the `__CAIRN_DEV_BUILD__` define is a plugin every site
@@ -386,9 +384,7 @@ The original decision framing, for the record:
     root error page in public chrome (`templates/waymark/src/routes/+error.svelte`,
     `guard.ts:442-446`; restrict); the edit page posts full-page, so a load that throws the same
     GitHub error replaces the calm failure message with a bare 500 (`src/lib/admin/EditPage.svelte:199`,
-    `src/lib/sveltekit/cairn-admin.ts:199-200,236-251`; rotate the key); the signups remove dialog's
-    `role="status"` sits outside the open modal (`templates/waymark/src/routes/admin/signups/+page.svelte:92,132-137`,
-    an accessibility defect; restrict).
+    `src/lib/sveltekit/cairn-admin.ts:199-200,236-251`; rotate the key).
   - **Key rotation signals (rotate the key).** `github.app-unreachable`'s remediation names
     `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` (`src/lib/diagnostics/conditions.ts:198`,
     `templates/waymark/.dev.vars.example:7-8`), which no code reads. *Decide:* no signal proves GitHub
@@ -399,8 +395,7 @@ The original decision framing, for the record:
     (`packages/create-cairn-site/src/cloudflare/secret.mjs:25-28,43-46`), so the pages carry a
     per-platform encode matrix.
   - **Auth channel (second sign-in group).** A missing Turnstile secret logs the same
-    `invalid_input` as a blank token (`src/lib/cloudflare/turnstile.ts:92-104`), and
-    `createAuthChannel`'s TSDoc example cannot typecheck (`src/lib/auth-channel/factory.ts:547`).
+    `invalid_input` as a blank token (`src/lib/cloudflare/turnstile.ts:92-104`).
     *Decide:* `createChannelDb` has no in-repo consumer and is not assignable to `D1Database`
     (`packages/cairn-cms-dev/src/channel-db.ts:26-29`), so the page's test casts; the admin toolkit
     renders unstyled outside the shell (`CairnAdminShell.svelte:43`).
@@ -423,9 +418,7 @@ The original decision framing, for the record:
     (`cairn-admin.ts:105-110`); one access predicate refuses through three channels with different
     copy, audit verbs, and target defaults, and the CSRF refusal under `createSectionAction` is never
     audited (`guard.ts:476-484`, `section-action.ts:216-220`, `admin-action.ts:214-215,306-311`);
-    the motion rules read two scope keys (`src/lib/audit/run.ts:226`) and `frame-offset` counts per
-    run while the reference says per screen (`motion-property.ts:395-396`); whether a custom screen
-    exports `prerender = false`.
+    whether a custom screen exports `prerender = false`.
   - *Decide (architecture):* media delete and metadata commits are not head-guarded
     (`content-routes-media-delete.ts:189-193`, `content-routes-media-metadata.ts:187-191`), and the
     dictionary add takes a third concurrency path (`content-routes-dictionary.ts:133-148`).
@@ -1089,10 +1082,17 @@ the named human gates only):**
     `setMenu`'s comment says YAML comments are lost (`src/lib/nav/site-config.ts:354`; only those
     inside the replaced block are); `KNOWN_TOP_LEVEL_KEYS` claims the engine reads `description`,
     `author`, and `locale` (`site-config.ts:293`); `IdentityResolver`'s comments name the retired
-    `admin.login-probe-failed` condition (`guard.ts:77,88`); the dev-only chrome-wrap check points at
+    `admin.login-probe-failed` condition (`guard.ts:77,88`; see the dead registry entries below); the dev-only chrome-wrap check points at
     a missing doc (`src/lib/admin/chrome-guard.ts:11`, now `add-a-custom-admin-screen.md`);
     `createSiteIndexes`'s example omits `import: 'default'` (`src/lib/delivery/site-indexes.ts:33`);
-    the scaffold's `markdown-components.ts:124-129` gives `resolveMedia` a throwing posture it lacks.
+    the scaffold's `markdown-components.ts:124-129` gives `resolveMedia` a throwing posture it lacks;
+    `createAuthChannel`'s TSDoc example cannot typecheck (`src/lib/auth-channel/factory.ts:547`).
+  - Dead registry entries: `admin.login-probe-failed` is registered
+    (`src/lib/diagnostics/conditions.ts:229`, `tool/internal/spine/conditions.json:3`, the Go
+    constant at `tool/internal/spine/condition.go:43,71`) but nothing emits it, so the registry
+    entries are dead along with the doc comments that name it (`src/lib/sveltekit/guard.ts:77,88`).
+    The doctor-retirement ruling (`docs/internal/engine-rulings.md`, the login-envelope arm) kept the
+    id deliberately; the fix is to retire it from all three registries or to wire an emitter.
   - Scaffold and showcase copy: Waymark's `theme.css` says "about fourteen" role values where its list
     names twelve (`:58`, styleguide `+page.svelte:105`), names `check:public-tokens`, an engine-repo
     gate a site lacks (`theme.css:66,126`, styleguide `:13`), and lists the code-highlight binding as
@@ -1101,7 +1101,12 @@ the named human gates only):**
     members login names its field twice (`members/login/+page.svelte:48-50`);
     `packages/create-cairn-site/README.md:359` names an update path the CLI lacks (admin, stage 3);
     the setup command's hand-over and baked README link no page that maps the scaffold
-    (`scaffold.mjs:230-264`, `bake-template.mjs:31-34`).
+    (`scaffold.mjs:230-264`, `bake-template.mjs:31-34`); the baked scaffold keeps showcase-only
+    comments and config (`templates/waymark/vite.config.ts:26-29,65-72,91-95`, `package.json:23-24`,
+    `src/chassis/archive.ts:7-9`, `src/routes/+layout.server.ts:3-5`, `src/hooks.server.ts:14`,
+    `src/lib/log.ts:1-10`, `.gitignore:10-11`); the signups remove dialog's `role="status"` sits
+    outside the open modal (`templates/waymark/src/routes/admin/signups/+page.svelte:92,132-137`, an
+    accessibility defect).
   - Engine behavior no page describes: `requireOrigin` rejects the IPv6 loopback `::1` while
     `csrfSecure` counts it local (`src/lib/env.ts`, `src/lib/dev-flag.ts`; the doctor's
     `isLoopbackHost` follows the engine); the auth channel's dev tripwire misses a shell-only
@@ -1131,13 +1136,15 @@ the named human gates only):**
   broke at `0.86.0` and `0.94.0`; `core.md:174-176` and two comments say the preview frame pins a
   white ground (it follows `base-100`); `public-css.md:67-71` names a different home for the
   `--cairn-cta-*` keys than Waymark uses; the admin motion tokens have no published home and
-  `cairn-audit.md:91,241` link into `docs/internal/`; no entry lists the five selected-segment forms of
+  `cairn-audit.md:91,241` link into `docs/internal/`; the motion rules read two scope keys
+  (`src/lib/audit/run.ts:226`) and `frame-offset` counts per run while the reference says per screen
+  (`motion-property.ts:395-396`; fix `docs/reference/cairn-audit.md`); no entry lists the five selected-segment forms of
   a `btn` or the shell's fixed brand mark; `createSectionAction`'s entry omits the 429 copy and a thrown
   `redirect()`'s path; the `ExpandableRow` example heads its trigger column with a bare `<th></th>`
   (`admin-toolkit.md:840`); no page catalogues the five migrations (`auth-store.md`);
   `NO_PENDING_REQUEST_ERROR`'s entry states its condition too narrowly; the `cli-cairn-media-seed`
   `--from` row never says the path ignores `assets.publicBase`; `cairn logs`, `cairn health`, and
-  `cairn sites` have no command page; the roster is called an "allowlist" 16 times
+  `cairn sites` have no command page; the roster is called an "allowlist" 14 times
   (`log-events.md`, `auth-store.md`, `admin.md`, `sveltekit.md`).
 
 - **Docs content the extend rebuild owes (stage 2a's close, 2026-10-07).** Facts and sentences the

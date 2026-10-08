@@ -41,9 +41,9 @@ record, and the run's R4, R5, and R6 records). Closed unreleased: no version bum
   held-majors routine `trig_01UCoKqxRXVwAfMdnF913E4v`), L2a doctor cleanup (#105).
 
 **Friction (S7 and the boundary test).** The log held 187 open entries at the close. Every
-`frictionFiled` entry in the R4, R5, and R6 records was present. Outcomes: 80 to the Now tier's
+`frictionFiled` entry in the R4, R5, and R6 records was present. Outcomes: 76 to the Now tier's
 "Engine pass before stage 2b"; 21 to Now's "Docs tooling before stage 2b" (two workstation-tool
-findings among them); 27 to Next's batched engine friction; 16 to Next's reference-arm corrections;
+findings among them); 30 to Next's batched engine friction; 17 to Next's reference-arm corrections;
 23 to Next's docs content the rebuild owes; 3 to Next's cairn-audit and theme-contract entry; 17
 fixed and deleted or deleted as overtaken. Kept in the log: none.
 
@@ -88,7 +88,7 @@ and lone-rerun rules. L2a: the plan's premise was wrong (the engine's `requireOr
 
 **Budgets (estimates; the conductor could not read `/cost`, so these sum agent usage blocks plus
 the conductor's own estimate).** This run: 2a about 19M at R7's start (planning 1.0M, R1 to R4
-about 2.4M, R5's chain 7.2M plus closes about 4.2M, R6 about 1.5M, the conductor about 2.5M) against
+about 2.6M by the ledger rows, R5's chain 7.2M plus closes about 4.2M, R6 about 1.5M, the conductor about 2.5M) against
 the 25M ceiling and the 20M stop; R7 ran past the stop as the plan allowed. The lanes about 1.85M
 against 5M. Task 8 cost about 2.3M a page (estimate 2.5M). The pilot measured about 1.3M a page on
 its first run (task 6), but its rework, two resolution runs, and the targeted close brought its six

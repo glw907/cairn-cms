@@ -49,7 +49,7 @@
       ]
     },
     {
-      "text": "That handle is the guard, `createAuthGuard`, in a build and `devBackendHandle` under `npm run dev`.",
+      "text": "In a build that handle is the guard, `createAuthGuard`; under `npm run dev` it is `devBackendHandle`.",
       "id": [
         "f:cvzb8z",
         "f:7cv105",

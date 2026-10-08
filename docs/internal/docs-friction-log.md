@@ -53,10 +53,10 @@ Draft docs stage 2a's close (2026-10-07, the 2a unattended run's R7) triaged the
 found 187 open entries, verified against the tree at `b38ef6b3` (each group's cited lines read or
 grepped there; the entries filed on 2026-10-07 were verified at filing the same day), after reconciling every `frictionFiled` entry in the R4, R5, and R6
 stage records against the log (all present). It applied the engine-pass boundary test (Geoff,
-2026-10-07; `ROADMAP.md`'s standing rule) and emptied the log: 80 entries went to the Now tier's
-"Engine pass before stage 2b" entry, whose fixes change an extend page's content; 27 to the Next
+2026-10-07; `ROADMAP.md`'s standing rule) and emptied the log: 76 entries went to the Now tier's
+"Engine pass before stage 2b" entry, whose fixes change an extend page's content; 30 to the Next
 tier's batched engine friction entry; 21 to the Now tier's "Docs tooling before stage 2b" entry,
-two of them workstation-tool findings filed there for the dotfiles; 16 to the Next tier's
+two of them workstation-tool findings filed there for the dotfiles; 17 to the Next tier's
 reference-arm corrections; 23 to the Next tier's "Docs content the extend rebuild owes"; and 3 to
 the Next tier's cairn-audit and public theme contract entry. 17 were fixed and deleted or deleted
 as overtaken: three facts the architecture page inputs flagged (`f:pzbmhq`, `f:70mf58`, `f:hk24xs`)
@@ -256,7 +256,7 @@ history holds every pruned entry in full.
 | 2026-09-29 | the style-guide sync's close | two open entries, both its own: Tidy's pinned default model promoted whole to `ROADMAP.md`'s Next tier; the entry on the stale `Microsoft.Quotes` suppression comment in `docs/editors/when-something-goes-wrong.md` deleted as overtaken, since the harvest-then-delete program deletes the page. The whole-log sweep found no other open finding |
 | 2026-09-29 | theme identity pass C's close | one open entry, the media library's orphan purge open to every editor, verified against the tree, then ruled on by Geoff and promoted to `ROADMAP.md` Later (an owner-restrictable purge); the pass's own findings routed to `ROADMAP.md` (the four edge cases to Next, the rule promotion to Toward 1.0, the docs standing order to Next) |
 | 2026-09-30 | the draft docs harvest's close | four open entries, all its own: the `src/lib/islands/index.ts` `/components` comment fixed and deleted; `cli-cairn-media-seed.md`'s `vite dev` claim and `requiredDocsPaths`'s kept-page existence filter promoted whole to `ROADMAP.md`'s Next tier; the `tool/internal/health` package debt promoted whole to Later. The whole-log sweep found no other open finding |
-| 2026-10-07 | draft docs stage 2a's close (R7) | all 187 open entries, under the engine-pass boundary test: 80 to the Now tier's engine pass before stage 2b, 21 to Now's docs tooling before stage 2b, 27 to Next's batched engine friction, 16 to Next's reference-arm corrections, 23 to Next's docs content the extend rebuild owes, 3 to Next's cairn-audit and theme contract entry, 17 fixed and deleted or deleted as overtaken |
+| 2026-10-07 | draft docs stage 2a's close (R7) | all 187 open entries, under the engine-pass boundary test: 76 to the Now tier's engine pass before stage 2b, 21 to Now's docs tooling before stage 2b, 30 to Next's batched engine friction, 17 to Next's reference-arm corrections, 23 to Next's docs content the extend rebuild owes, 3 to Next's cairn-audit and theme contract entry, 17 fixed and deleted or deleted as overtaken |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

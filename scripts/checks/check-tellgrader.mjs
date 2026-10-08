@@ -9,16 +9,16 @@
 //
 // Interface: `node scripts/checks/check-tellgrader.mjs [<page> ...]`. With no arguments it scans
 // the published tree; with paths it scans only those (a page-chain gate passes `--page`).
-import { spawnSync } from 'node:child_process';
-import { readdirSync } from 'node:fs';
-import { resolve, dirname, relative, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { spawnSync } from "node:child_process";
+import { readdirSync } from "node:fs";
+import { resolve, dirname, relative, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 // Directories under docs/ that are not published pages, and the two rolling ledgers beside them.
-const UNPUBLISHED_DIRS = new Set(['internal', 'superpowers']);
-const UNPUBLISHED_FILES = new Set(['docs/STATUS.md', 'docs/HISTORY.md']);
+const UNPUBLISHED_DIRS = new Set(["internal", "superpowers"]);
+const UNPUBLISHED_FILES = new Set(["docs/STATUS.md", "docs/HISTORY.md"]);
 
 /**
  * Every published Markdown page under docs/, as repo-relative paths in sorted order.
@@ -34,14 +34,15 @@ export function publishedPages(root = ROOT) {
       const full = join(dir, entry.name);
       const rel = relative(root, full);
       if (entry.isDirectory()) {
-        if (dir === join(root, 'docs') && UNPUBLISHED_DIRS.has(entry.name)) continue;
+        if (dir === join(root, "docs") && UNPUBLISHED_DIRS.has(entry.name))
+          continue;
         walk(full);
-      } else if (entry.name.endsWith('.md') && !UNPUBLISHED_FILES.has(rel)) {
+      } else if (entry.name.endsWith(".md") && !UNPUBLISHED_FILES.has(rel)) {
         pages.push(rel);
       }
     }
   };
-  walk(join(root, 'docs'));
+  walk(join(root, "docs"));
   return pages.sort();
 }
 
@@ -57,23 +58,28 @@ export function gatingLines(report) {
 }
 
 function main() {
-  const probe = spawnSync('tellgrader', ['--help'], { encoding: 'utf8' });
+  const probe = spawnSync("tellgrader", ["--help"], { encoding: "utf8" });
   if (probe.error) {
-    console.log('check:tellgrader: skipped, tellgrader is not installed (workstation tool)');
+    console.log(
+      "check:tellgrader: skipped, tellgrader is not installed (workstation tool)",
+    );
     return;
   }
-  const pages = process.argv.length > 2 ? process.argv.slice(2) : publishedPages();
+  const pages =
+    process.argv.length > 2 ? process.argv.slice(2) : publishedPages();
   /** @type {string[]} */
   const failures = [];
   for (const page of pages) {
-    const run = spawnSync('tellgrader', ['--register', 'docs', page], {
+    const run = spawnSync("tellgrader", ["--register", "docs", page], {
       cwd: ROOT,
-      encoding: 'utf8',
+      encoding: "utf8",
       maxBuffer: 16 * 1024 * 1024,
     });
     if (run.status === 0) continue;
     if (run.status !== 2) {
-      console.error(`check:tellgrader: tellgrader failed on ${page}: ${run.stderr.trim()}`);
+      console.error(
+        `check:tellgrader: tellgrader failed on ${page}: ${run.stderr.trim()}`,
+      );
       process.exitCode = 1;
       return;
     }
@@ -88,4 +94,8 @@ function main() {
   process.exitCode = 1;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+)
+  main();

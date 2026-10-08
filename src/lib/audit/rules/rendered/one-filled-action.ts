@@ -167,7 +167,7 @@ export const oneFilledAction: RenderedRule = {
         message:
           `${controls.length} accent-filled controls compete on this surface (expected at ` +
           `most 1): ${controls.join(', ')}. Keep one accent fill per surface; make the rest ` +
-          `outline, ghost, or the sanctioned ink fill (docs/internal/admin-design-system.md, "the ink story").`,
+          `outline, ghost, or the sanctioned ink fill (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "the ink story").`,
       }));
   },
 };

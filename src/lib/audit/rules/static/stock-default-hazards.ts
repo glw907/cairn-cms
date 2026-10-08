@@ -28,17 +28,17 @@ const DROPDOWN_MESSAGE =
   'class "dropdown" here is the focus-driven daisyUI wrapper, which opens on focus-in-transit and ' +
   'ignores Escape; cairn\'s recipe is a DaisyUI v5 popover dropdown (a `popover` attribute) or an ' +
   'explicit `class:dropdown-open` state toggle, neither of which this element carries ' +
-  '(docs/internal/admin-design-system.md, "Popover menu")';
+  '(https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "Popover menu")';
 
 const DISABLED_MESSAGE =
   'a guarded button ("cairn-btn-guarded") carries a hardcoded native "disabled", which native ' +
   'disabled is never allowed to be outside the mid-submit busy case; cairn\'s guarded-button ' +
   'pattern uses aria-disabled so the control stays focusable and its reason reaches assistive ' +
-  'technology (docs/internal/admin-design-system.md, "The desk band")';
+  'technology (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "The desk band")';
 
 const CARD_BORDER_MESSAGE =
   'a floating card (rounded-box, bg-base-100) carries a flat "border-base-300"; cairn\'s recipe is ' +
-  'var(--cairn-card-border), the theme-adaptive hairline (docs/internal/admin-design-system.md, ' +
+  'var(--cairn-card-border), the theme-adaptive hairline (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, ' +
   '"Component recipes", "Floating card")';
 
 const GUARDED_RETIREMENT_MESSAGE =
@@ -60,7 +60,7 @@ const SHADOW_NONE_BASES = new Set(['shadow-none']);
 function inkOpenerMessage(offending: string): string {
   return (
     `class "${offending}" is the retired ink-opener patch; cairn's own recipe is the class ` +
-    '"btn btn-neutral" instead (docs/internal/admin-design-system.md, "The ink story"). ' +
+    '"btn btn-neutral" instead (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "The ink story"). ' +
     `Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the finding to error`
   );
 }
@@ -68,14 +68,14 @@ function inkOpenerMessage(offending: string): string {
 function publishTintMessage(offending: string): string {
   return (
     `class "${offending}" is the retired Publish-tint patch; cairn's own recipe is the class ` +
-    '"btn btn-soft btn-primary" instead (docs/internal/admin-design-system.md, "Buttons"). ' +
+    '"btn btn-soft btn-primary" instead (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "Buttons"). ' +
     `Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the finding to error`
   );
 }
 
 const SHADOW_NONE_MESSAGE =
   'class "shadow-none" on a "btn" cancels a stock shadow the theme\'s own depth token already ' +
-  'zeroes (docs/internal/admin-design-system.md, "Component recipes"); there is nothing to add ' +
+  'zeroes (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "Component recipes"); there is nothing to add ' +
   `in its place. Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the ` +
   'finding to error';
 

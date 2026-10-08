@@ -564,9 +564,9 @@ Suppressed:
   /admin/posts [light, rest]:0  advisory  border-contrast  div.card-shell: top/right/bottom/left
   border rgb(235, 231, 226) reads at contrast 1.11 against the surface beside it rgb(246, 243, 239),
   and 1.19 against its own fill rgb(253, 251, 249), both under the 3:1 house floor (WCAG 1.4.11's
-  bar for a control-identifying boundary, applied here to every rendered border) (exempt: RULING 2
-  (2026-07-28): painted in this page's own --cairn-card-border, the ratified hairline, and still
-  separating its two surfaces at 1.190 against the better of them (ratified floor 1.15))
+  bar for a control-identifying boundary, applied here to every rendered border) (exempt: painted in
+  this page's own --cairn-card-border, the documented hairline, and still separating its two
+  surfaces at 1.190 against the better of them (documented floor 1.15))
 
 1 file scanned, 1 rule run
 0 errors, 0 advisories, 1 suppressed
@@ -606,13 +606,13 @@ card  (container)  .card-shell
 
   background-color  var(--color-base-100)  15 sites  observed
   border-color  var(--cairn-card-border)  15 sites  ratified
-    ratified by ... (Ruling 2): the --cairn-card-border hairline measures 1.11 against the ambient
-    beside it and 1.19 against the card's own fill in light, 1.43 and 1.20 in dark, and stays by
-    design. The border-contrast rule applies a house floor of 3:1, the number WCAG 1.4.11 sets for a
+    ratified by The --cairn-card-border hairline measures 1.11 against the ambient beside it and 1.19
+    against the card's own fill in light, 1.43 and 1.20 in dark, and stays by design. The
+    border-contrast rule applies a house floor of 3:1, the number WCAG 1.4.11 sets for a
     control-identifying boundary rather than for a card hairline, and exempts this one on the better
-    of its two ratios against a ratified floor of 1.15
+    of its two ratios against a documented floor of 1.15
   border-radius  8px  15 sites  ratified
-    ratified by docs/internal/admin-design-system.md (--radius-box)
+    ratified by https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-box)
 ```
 
 ### The term

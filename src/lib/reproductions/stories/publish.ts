@@ -1,7 +1,7 @@
 // cairn-cms: the four publish stories for the live-reproduction seam. Each row's component, host,
-// and props-or-pose decision comes from docs/internal/record/repro-story-audit.md's
+// and props-or-pose decision comes from https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md's
 // `publish/header-band`, `publish/history-list`, `publish/pending-list`, and `publish/refusal-banner`
-// rows, and the sweep at docs/internal/record/2026-08-17-repro-audit-verification-sweep.md's
+// rows, and the sweep at https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/2026-08-17-repro-audit-verification-sweep.md's
 // findings 9, 10, and 15 correct three mechanism details the audit itself understated.
 //
 // `publish/header-band` mounts `EditPage` for the same reason three editor stories do (the band is

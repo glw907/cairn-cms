@@ -12,7 +12,7 @@
 // ./index.ts, on the `@glw907/cairn-cms/reproductions` subpath. Nothing here may import it.
 //
 // The ids, their order, and the flags come from the story inventory whose per-story mechanism
-// evidence is docs/internal/record/repro-story-audit.md.
+// evidence is https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md.
 
 /**
  * The prerendered iframe height for each embed width a docs page may ask for, in CSS pixels.

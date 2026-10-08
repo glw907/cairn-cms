@@ -1,6 +1,6 @@
 // cairn-cms: the two auth stories for the live-reproduction seam. Both mount `bare` and own
 // their theme root: LoginPage and ConfirmPage render their wrapper from `data.theme`
-// (docs/internal/record/repro-story-audit.md), so ReproContext routes an override theme into
+// (https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md), so ReproContext routes an override theme into
 // `data.theme` rather than a shell prop. Neither needs a pose or markers; the contracted state
 // (an empty sign-in form, the resting "Confirm sign-in" button) is the resting render.
 import { fixtureCsrf, fixtureSiteName } from '../fixtures.js';

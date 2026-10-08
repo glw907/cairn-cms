@@ -1,6 +1,6 @@
 // cairn-cms: the last four stories for the live-reproduction seam: `tags/screen`,
 // `roster/own-row`, `nav/worked-navlayout`, and `toolkit/custom-screen`. Each row's component, host,
-// and props-or-pose decision comes from docs/internal/record/repro-story-audit.md's four matching
+// and props-or-pose decision comes from https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md's four matching
 // rows.
 //
 // `toolkit/custom-screen` is the one row with no package component to mount: its subject is the

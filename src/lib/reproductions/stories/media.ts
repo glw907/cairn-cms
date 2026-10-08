@@ -1,6 +1,6 @@
 // cairn-cms: the seven media stories for the live-reproduction seam. Each row's component, host,
-// and props-or-pose decision comes from docs/internal/record/repro-story-audit.md's seven `media/*`
-// rows, and the sweep at docs/internal/record/2026-08-17-repro-audit-verification-sweep.md's
+// and props-or-pose decision comes from https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md's seven `media/*`
+// rows, and the sweep at https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/2026-08-17-repro-audit-verification-sweep.md's
 // findings 12, 14, and 17 correct three of that row set's own details (finding 9 is a general
 // shellData invariant, already carried by ./support.js and ../ReproContext.svelte).
 //

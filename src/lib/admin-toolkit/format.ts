@@ -50,7 +50,7 @@ export function formatCivilDate(iso: string | null | undefined, options: FormatC
 export interface FormatTimestampOptions {
   /**
    * An IANA time zone name. Defaults to `'UTC'`, the neutral zone a Cloudflare Worker's own
-   * runtime already reads in; a site passes its own zone (`'America/Anchorage'`, say) explicitly
+   * runtime already reads in; a site passes its own zone (`'America/Denver'`, say) explicitly
    * rather than inheriting one from this formatter.
    */
   timeZone?: string;

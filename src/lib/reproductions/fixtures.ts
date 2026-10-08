@@ -12,7 +12,7 @@
 // file that pulls in @sveltejs/kit or the GitHub client to declare its interface never drags that
 // weight in here.
 //
-// docs/internal/record/repro-story-audit.md is the per-story mechanism record these fixtures serve;
+// https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md is the per-story mechanism record these fixtures serve;
 // its "Note for A2" paragraphs on `media/upload-form` and `media/delete-in-use` are load-bearing
 // here. src/tests/unit/reproductions-fixtures.test.ts holds this module to its own consistency.
 import { defineFieldset } from '../content/fieldset.js';

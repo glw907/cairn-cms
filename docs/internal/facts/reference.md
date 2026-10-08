@@ -550,7 +550,7 @@ re-sourced to Go on this tree rather than to the page.
   `src/hooks.server.ts`, `static/_headers`, the site-config YAML, the `/admin` route candidates,
   and `src/content/.cairn/site-facts.json`. Source: `tool/internal/doctor/wrangler.go:34,46`,
   `tool/internal/doctor/check_csrf.go:43,216`, `tool/internal/doctor/check_referrer.go:180,184`,
-  `tool/internal/doctor/check_floors.go:314,336,353`, `tool/internal/doctor/facts.go:11`.
+  `tool/internal/doctor/check_floors.go:317,339,356`, `tool/internal/doctor/facts.go:11`.
   [verified]
 - `f:q01lkt` The `/admin` mount check probes six candidate route files by name, since a Snapshot offers no
   directory listing and a route file can be `.ts` or `.js`. Source:
@@ -585,7 +585,7 @@ re-sourced to Go on this tree rather than to the page.
   `config.csrf-trusted-origins`, `config.site-config`, `config.public-origin`,
   `config.no-referrer-blanket`, `admin.mount-shape`, `config.dependency-floors`,
   `auth.role-wiring`, `ai.posture-effective`. That slice is also the published check-id list the
-  page tests read. Source: `tool/internal/doctor/check.go:119-133`,
+  page tests read. Source: `tool/internal/doctor/check.go:120-134`,
   `tool/internal/doctor/docs_test.go:44`. [verified]
 - `f:kjp61u` Each check names one engine condition id, which carries the check's severity: blocker for
   `config.bindings-missing`, `config.site-config-invalid`, `config.public-origin-invalid`, and
@@ -594,7 +594,7 @@ re-sourced to Go on this tree rather than to the page.
   `admin.mount-incomplete`, `auth.role-wiring-missing`, and `ai.posture-not-effective`. Source:
   `tool/internal/doctor/check_bindings.go:29`, `check_media.go:29`, `check_observability.go:16`,
   `check_csrf.go:214`, `check_siteconfig.go:25`, `check_origin.go:65`, `check_referrer.go:178`,
-  `check_mount.go:75`, `check_floors.go:343`, `check_roles.go:103`, `check_posture.go:284`, with
+  `check_mount.go:75`, `check_floors.go:346`, `check_roles.go:103`, `check_posture.go:284`, with
   each severity at `tool/internal/spine/conditions.json:103-110`. [verified]
 - `f:3sxgcl` `config.site-config` reports presence and parsing only; the per-concept URL policy lives on the
   adapter concepts and is not checkable from a directory preflight. Source:
@@ -608,7 +608,7 @@ re-sourced to Go on this tree rather than to the page.
   `deploy`, `publish-path`, and `errors`. Source:
   `tool/internal/health/check_serving.go:25`, `check_delegation.go:20`, `check_https.go:45`,
   `check_email.go:32`, `check_deploy.go:132`, `check_publish.go:59`, `check_errors.go:26`, against
-  the doctor's own list at `tool/internal/doctor/check.go:121-133`. [verified]
+  the doctor's own list at `tool/internal/doctor/check.go:122-134`. [verified]
 - `f:re7sn7` The run's exit code is the worst severity among failing checks, 0 when every check passed,
   skipped, or reported info, and 3 when an unchecked result is the only non-passing one. Source:
   `tool/internal/doctor/result.go:86-110` folding through `tool/internal/spine/exit.go:133-167`;
@@ -631,7 +631,7 @@ re-sourced to Go on this tree rather than to the page.
   second pass]
 - `f:a71nbo` `config.dependency-floors` reports `UNCHECKED` when no recognized lockfile
   (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`) is found, or when the installed engine's
-  own `package.json` cannot be read. Source: `tool/internal/doctor/check_floors.go:341-368`.
+  own `package.json` cannot be read. Source: `tool/internal/doctor/check_floors.go:344-373`.
   [candidate: found during the 2026-09-22 redraft's Go read, not independently re-verified by a
   second pass]
 - `f:v2isa4` `config.csrf-trusted-origins` reports `UNCHECKED` when none of `vite.config.js`,

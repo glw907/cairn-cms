@@ -296,7 +296,7 @@ func TestConfigCsrfTrustedOrigins(t *testing.T) {
 			name:          "unchecked: no Vite config",
 			files:         map[string]string{},
 			wantStatus:    StatusUnchecked,
-			wantDetailHas: []string{"vite.config.js", "vite.config.ts", "vite.config.mts"},
+			wantDetailHas: []string{"none of vite.config.js, vite.config.ts, or vite.config.mts was found"},
 		},
 		{
 			name:          "unchecked: a vite.config.mjs alone is not read",

@@ -230,7 +230,7 @@ var configCsrfTrustedOrigins = Check{
 			entries = read
 		}
 		if !found && !svelteConfigFound {
-			return uncheckedResult(fmt.Sprintf(tmplCsrfNoViteConfig, strings.Join(viteConfigCandidates, ", ")))
+			return uncheckedResult(fmt.Sprintf(tmplCsrfNoViteConfig, joinOr(viteConfigCandidates)))
 		}
 		return csrfVerdict(path, entries, svelteConfigFound)
 	},

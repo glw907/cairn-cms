@@ -332,6 +332,7 @@ Name the check that entry holds
 - "null" admits every POST from an opaque origin (a sandboxed iframe or a data: page can send one) on every route, /admin included
 - %s carries %d "User-agent: *" groups%s. cairn's own output writes one such group, so a second came from somewhere ahead of it, and this check cannot see what or assert why. A managed robots.txt prepending to the origin's is the common source, so the zone's robots.txt and AI Crawl Control settings are where to look first.
 - %s carries a Content-Signal directive cairn did not write, so something other than this engine is writing directives into the served file. The file carries one "User-agent: *" group, so this is not the prepend shape a managed robots.txt produces, and this check cannot see what wrote it.
+- %s has no lockfile parser, so the dependency floors were not checked
 - %s resolves to %s, below the engine floor %s
 - %s resolves to %s, outside the engine peer range %s
 - %s satisfy the engine peer ranges

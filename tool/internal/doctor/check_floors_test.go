@@ -3,6 +3,7 @@ package doctor
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -153,7 +154,7 @@ func TestConfigDependencyFloors(t *testing.T) {
 				enginePackageJSONPath: enginePackageJSONFixture,
 			},
 			wantStatus:    StatusUnchecked,
-			wantDetailHas: "none of package-lock.json, pnpm-lock.yaml, yarn.lock was found",
+			wantDetailHas: "none of package-lock.json, pnpm-lock.yaml, or yarn.lock was found",
 		},
 		{
 			name: "prefers package-lock.json when more than one lockfile exists",
@@ -180,6 +181,27 @@ func TestConfigDependencyFloors(t *testing.T) {
 				t.Errorf("Severity = %v, want spine.CriticalFailure", result.Severity)
 			}
 		})
+	}
+}
+
+// TestConfigDependencyFloorsUnexpectedLockfileIsUnchecked proves the parser dispatch refuses a
+// lockfile name it has no case for: with a fourth name appended to lockfiles, a site carrying
+// only that file reports unchecked, naming it, rather than reaching the yarn parser.
+func TestConfigDependencyFloorsUnexpectedLockfileIsUnchecked(t *testing.T) {
+	saved := lockfiles
+	t.Cleanup(func() { lockfiles = saved })
+	lockfiles = append(slices.Clone(saved), "bun.lock")
+
+	s := snapshotWithFiles(t, map[string]string{
+		enginePackageJSONPath: enginePackageJSONFixture,
+		"bun.lock":            "{}\n",
+	})
+	result := runCheck(configDependencyFloors, s).Result
+	if result.Status != StatusUnchecked {
+		t.Fatalf("Status = %v, want StatusUnchecked (detail %q)", result.Status, result.Detail)
+	}
+	if want := "bun.lock has no lockfile parser"; !strings.Contains(result.Detail, want) {
+		t.Errorf("Detail = %q, want it to contain %q", result.Detail, want)
 	}
 }
 

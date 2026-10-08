@@ -54,3 +54,19 @@ func Format(checked []CheckedResult) string {
 
 	return strings.Join(lines, "\n")
 }
+
+// joinOr joins a list of names the way a sentence offers alternatives, matching the copy
+// standard's serial "or": "a or b" for two, and commas with a serial comma before the trailing
+// "or" for three or more.
+func joinOr(items []string) string {
+	switch len(items) {
+	case 0:
+		return ""
+	case 1:
+		return items[0]
+	case 2:
+		return items[0] + " or " + items[1]
+	default:
+		return strings.Join(items[:len(items)-1], ", ") + ", or " + items[len(items)-1]
+	}
+}

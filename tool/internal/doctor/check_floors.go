@@ -35,6 +35,9 @@ const (
 	tmplNpmMissingEntry  = "%s: no node_modules/%s entry in package-lock.json"
 	tmplPnpmMissingEntry = "%s: no entry for it in pnpm-lock.yaml"
 	tmplYarnMissingEntry = "%s: no entry for it in yarn.lock"
+	// tmplUnexpectedLockfile guards the parser dispatch: a name added to lockfiles without its
+	// own parser case reports itself here instead of reaching another format's parser.
+	tmplUnexpectedLockfile = "%s has no lockfile parser, so the dependency floors were not checked"
 )
 
 // semver is a plain major.minor.patch triple, the only shape parseVersion and caretFloor
@@ -355,15 +358,17 @@ var configDependencyFloors = Check{
 			return uncheckedResult(err.Error())
 		}
 		if !found {
-			return uncheckedResult(fmt.Sprintf(tmplNoLockfileFound, strings.Join(lockfiles, ", ")))
+			return uncheckedResult(fmt.Sprintf(tmplNoLockfileFound, joinOr(lockfiles)))
 		}
 		switch path {
 		case "package-lock.json":
 			return npmDependencyFloors(string(body), peers)
 		case "pnpm-lock.yaml":
 			return pnpmDependencyFloors(string(body), peers)
-		default:
+		case "yarn.lock":
 			return yarnDependencyFloors(string(body), peers)
+		default:
+			return uncheckedResult(fmt.Sprintf(tmplUnexpectedLockfile, path))
 		}
 	},
 }

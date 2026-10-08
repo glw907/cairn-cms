@@ -264,3 +264,24 @@ func TestRunStampsResultIDFromCheck(t *testing.T) {
 		}
 	}
 }
+
+// TestJoinOrRendersASerialOrList covers the one-, two-, and three-item shapes a detail's file
+// list takes: a lone name, "a or b", and "a, b, or c" with the serial comma.
+func TestJoinOrRendersASerialOrList(t *testing.T) {
+	tests := []struct {
+		name  string
+		items []string
+		want  string
+	}{
+		{name: "one item", items: []string{"package-lock.json"}, want: "package-lock.json"},
+		{name: "two items", items: []string{"vite.config.js", "vite.config.ts"}, want: "vite.config.js or vite.config.ts"},
+		{name: "three items", items: []string{"package-lock.json", "pnpm-lock.yaml", "yarn.lock"}, want: "package-lock.json, pnpm-lock.yaml, or yarn.lock"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := joinOr(tt.items); got != tt.want {
+				t.Errorf("joinOr(%q) = %q, want %q", tt.items, got, tt.want)
+			}
+		})
+	}
+}

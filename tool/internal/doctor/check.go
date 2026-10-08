@@ -55,6 +55,7 @@ func Catalogue() []string {
 		tmplNpmMissingEntry,
 		tmplPnpmMissingEntry,
 		tmplYarnMissingEntry,
+		tmplUnexpectedLockfile,
 		tmplCsrfNoViteConfig,
 		detailCsrfSvelteConfigMoved,
 		tmplCsrfUnreadable,

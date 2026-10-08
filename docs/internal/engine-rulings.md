@@ -1398,10 +1398,10 @@ when the remediation pass lands.
 
 ## audit-adapter-defineroles: `defineRoles`  (keep, 2026-08-26, any-site audit)
 
-- **Verdict:** keep. Any site whose people are not called editor: a club with instructors, a team with coaches. The owner reservation is engine-enforced 'since the last-owner guard and the bootstrap owner both anchor on it'.
+- **Verdict:** keep. Any site whose people are not called editor: a staff area, a volunteer team. The owner reservation is engine-enforced 'since the last-owner guard and the bootstrap owner both anchor on it'.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 95.
-- **Any-site case:** Any site whose people are not called editor: a club with instructors, a team with coaches. The owner reservation is engine-enforced 'since the last-owner guard and the bootstrap owner both anchor on it'.
+- **Any-site case:** Any site whose people are not called editor: a staff area, a volunteer team. The owner reservation is engine-enforced 'since the last-owner guard and the bootstrap owner both anchor on it'.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
 
 ## audit-adapter-editor: `Editor`  (keep, 2026-08-26, any-site audit)

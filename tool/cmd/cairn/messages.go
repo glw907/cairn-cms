@@ -80,7 +80,7 @@ const (
 		"  https://cairn.pub/docs/reference/cli-cairn-exit-codes\n" +
 		"  https://cairn.pub/docs/reference/cli-cairn-json-output\n" +
 		"  https://cairn.pub/docs/reference/cli-cairn-doctor"
-	exampleRoot = "cairn health ecxc-ski-a1b2c3"
+	exampleRoot = "cairn health my-site-a1b2c3"
 )
 
 // tmplFlagError is the shape every flag parse failure reaches the operator in: cobra's own
@@ -265,7 +265,7 @@ const (
 		"Pass --json for the machine-readable report; run `cairn help agents` for the whole contract.\n" +
 		"The payload contract is published at https://cairn.pub/docs/reference/cli-cairn-json-output."
 	shortHealth            = "Run the read-only health checks against one site, or every site when none is named"
-	exampleHealth          = "cairn health ecxc-ski-a1b2c3 --json"
+	exampleHealth          = "cairn health my-site-a1b2c3 --json"
 	flagHealthJSONHelp     = "print the report as JSON"
 	flagErrorThresholdHelp = "error records in the window that still report OK"
 	flagHealthSinceHelp    = "lookback window for the error count: a whole number of m, h, or d"
@@ -343,7 +343,7 @@ func notACairnSiteLine(dir string) string {
 // logs.go's own Short, Example, and flag help.
 const (
 	shortLogs         = "Read one site's engine log records"
-	exampleLogs       = "cairn logs ecxc-ski-a1b2c3 --since 24h"
+	exampleLogs       = "cairn logs my-site-a1b2c3 --since 24h"
 	flagEventHelp     = "narrow the query to one engine event name"
 	flagLogsSinceHelp = "lookback window: a whole number of m, h, or d"
 	flagLogsJSONHelp  = "print the entries as JSON"
@@ -352,7 +352,7 @@ const (
 // adopt.go's own Short, Example, and flag help, for both cairn adopt and cairn adopt list.
 const (
 	shortAdopt            = "Add a Cloudflare Worker to the registry as a site"
-	exampleAdopt          = "cairn adopt --worker ecxc-ski"
+	exampleAdopt          = "cairn adopt --worker my-site"
 	flagWorkerHelp        = "the Workers script to adopt"
 	flagRepoHelp          = "the repository the Worker deploys from, as owner/name"
 	shortAdoptList        = "List the Workers on the account that cairn could adopt"
@@ -503,7 +503,7 @@ func notACredentialError(name string) error {
 const (
 	shortAuthCheck   = "Confirm the credential permissions this tool itself needs"
 	longAuthCheck    = "Confirm the credential permissions this tool itself needs, against Cloudflare and GitHub.\n\nWith no site named, every zone-scoped and repository-scoped permission reports skip: run cairn auth check <site> to confirm those against one registered site's own zone and repository, read-only.\n\nauth check's whole output is identifiers (permission labels, credential variable names, and pass/fail/skip/unknown words), so it is implicitly verbose the same way adopt list is; there is no --verbose flag."
-	exampleAuthCheck = "cairn auth check ecxc-ski-a1b2c3"
+	exampleAuthCheck = "cairn auth check my-site-a1b2c3"
 
 	// tmplAuthCheckCFSkipped and tmplAuthCheckGHSkipped are auth check's own credential-group
 	// notices, printed once per provider whose credentials the run found unset, ahead of the

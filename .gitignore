@@ -24,3 +24,6 @@ dist/
 
 # the theme-fixture harness's throwaway showcase copy, removed when the harness exits
 .cairn-theme-fixture-*/
+
+# machine-local credential locations: identifiers only, never committed
+docs/internal/credentials.md

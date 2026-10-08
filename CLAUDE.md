@@ -295,7 +295,7 @@ Five recurring traps, one line each; full detail per anchor in
 ## Credentials (machine-local, intentionally not in git)
 
 GitHub App and D1 `AUTH_DB` credentials:
-[`docs/internal/credentials.md`](docs/internal/credentials.md), reference data, not orientation.
+`docs/internal/credentials.md` (gitignored, present only on the maintainer's workstation), reference data, not orientation.
 
 ## Authoring
 

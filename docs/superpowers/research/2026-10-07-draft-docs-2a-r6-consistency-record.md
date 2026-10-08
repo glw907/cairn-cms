@@ -305,9 +305,9 @@ confirmed each tag as filed.
 
 ## Relink entries, stage 2a (71)
 
-Indices are `relink.json` `entries[]` positions, the outline's `rearms[].relinkIndex`. "R6" is the
-commit "Apply task 9's consistency read and relinks (2a R6)"; `relink.json` carries its hash in
-each entry's `restoredIn`.
+Indices are `relink.json` `entries[]` positions, the outline's `rearms[].relinkIndex`. "R6" is
+`c00cd0b4`, "Apply task 9's consistency read and relinks (2a R6)"; `relink.json` carries each
+entry's restoring commit in its `restoredIn`.
 
 | index | file | change that restored it | commit |
 |---|---|---|---|

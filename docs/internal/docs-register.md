@@ -146,13 +146,15 @@ guide is silent.
   illustrative, with the authoritative reference beside it. When two of a vendor's pages
   disagree, linking one disposes of the conflict that restating both would force the page to
   reconcile.
-- **A page never assumes the reader's coding agent** (Geoff, 2026-10-07: "You should not assume that
-  an implementor is using Claude."). A developer building on cairn may use Codex, Cursor, Gemini
-  CLI, Copilot, or no coding agent. A page never treats Claude, or any one tool, as the reader's
-  agent. It names a tool only where a file or command is specific to that tool, and it says so
-  where it names it, as in "Claude Code's `.claude/` directory". A page that describes cairn's
-  agent guidance says which tool's format the guidance is in, and what a developer on another tool
-  gets.
+- **A page never assumes the reader uses a coding agent, or which one, and never addresses coding
+  agents** (Geoff, 2026-10-07: "You should not assume that an implementor is using Claude."; "A
+  page shouldn't even assume that a reader IS using a coding agent."; "If we want to address
+  coding agents, we can create separate docs specifically for that."). A developer building on
+  cairn may use any coding agent or none. Content about working with a coding agent belongs in
+  docs dedicated to it, never on a page for the developer. A page may name an agent-specific file
+  it must document, such as a file-tree entry, in one line that labels the tool and links the
+  dedicated doc or reference ("`CLAUDE.md`: Claude Code's guidance file; see
+  [Guidance](../reference/guidance.md)").
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling, Geoff,
   2026-08-14). A reader does not need the taxonomy a page was planned under. Names such as task
   guide and reference entry belong to the writers and reviewers who plan a page, and a published
@@ -360,6 +362,12 @@ flat taste.
 - **No em-dash rhythm.** The sentence-final elaborative tail is the tell whatever punctuation
   carries it, so the remedy restructures it into a second sentence instead of swapping the glyph
   for a comma or a colon.
+- **No trailing-hinge runs** (Geoff, 2026-10-07, on a paragraph of sentences each ending in
+  ", since ...", ", which [link] explains", or ", so ...": "really awkward AI cadence"). Avoid a
+  run of sentences that each end in a comma-hinged tail (since, which, so, because). Read each
+  paragraph whole for rhythm. Fix a hinge by folding the reason into the main clause, dropping it,
+  giving a link its own clause or sentence, or adding a short sentence. Three in a row fails
+  `check:docs-gate` through `tellgrader` (skipped where the binary is absent, as in CI).
 - **No two-headed headings.** A heading of the shape "X, and Y" hangs a second head off a comma,
   and a heading names one thing, so a section with two subjects splits or takes a name for the
   <!-- vale Google.Quotes = NO -->
@@ -529,6 +537,12 @@ flat taste.
 - **No em-dash rhythm.** The sentence-final elaborative tail is the tell whatever punctuation
   carries it, so the remedy restructures it into a second sentence instead of swapping the glyph
   for a comma or a colon.
+- **No trailing-hinge runs** (Geoff, 2026-10-07, on a paragraph of sentences each ending in
+  ", since ...", ", which [link] explains", or ", so ...": "really awkward AI cadence"). Avoid a
+  run of sentences that each end in a comma-hinged tail (since, which, so, because). Read each
+  paragraph whole for rhythm. Fix a hinge by folding the reason into the main clause, dropping it,
+  giving a link its own clause or sentence, or adding a short sentence. Three in a row fails
+  `check:docs-gate` through `tellgrader` (skipped where the binary is absent, as in CI).
 - **No two-headed headings.** A heading of the shape "X, and Y" hangs a second head off a comma,
   <!-- vale Google.Quotes = NO -->
   <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->

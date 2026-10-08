@@ -31,7 +31,9 @@
 //
 // A marker with no class list or no reason is itself an error, and so is an unterminated or stray
 // region marker. Path exceptions are fixed in profileFor: seed content and LICENSE, nothing else.
-// A marker line is not scanned itself, so its reason may quote the term it excuses.
+// The marker comment itself is not scanned, so its reason may quote the term it excuses; the rest of
+// its line is, and a marker excuses nothing on its own line. The `#` form needs content before it on
+// the line, so a markdown heading is never a marker, and `//` and `/*` must follow whitespace.
 //
 // The known-account-id list in leak-terms.json holds SHA-256 digests, not the ids: listing the ids
 // in a tracked file would publish the very values the gate guards.
@@ -222,7 +224,7 @@ export function profileFor(relPath) {
 
 // --- Allowlist markers. ---
 
-const MARKER = /(?:<!--|\/\/|\/\*|#)\s*leak-ok(-begin|-end)?\b([^\n]*)/;
+const MARKER = /(?:<!--|(?<![^\s])(?:\/\/|\/\*)|(?<=\S\s+)#)\s*leak-ok(-begin|-end)?\b([^\n]*)/;
 
 /**
  * Parse one line for a `leak-ok` marker. Returns null for a line that carries none. An invalid
@@ -261,6 +263,22 @@ export function parseMarker(line) {
   return { kind, classes, error: null };
 }
 
+/**
+ * The text of a marker line outside the marker comment: what precedes the opener and what follows
+ * the closing `-->` or `*\/`. A `//` or `#` marker runs to the end of the line, so it has no tail.
+ * @param {string} line
+ * @returns {{ before: string, after: string }}
+ */
+export function outsideMarker(line) {
+  const found = MARKER.exec(line);
+  if (!found) return { before: line, after: '' };
+  const opener = found[0].startsWith('<!--') ? '-->' : found[0].startsWith('/*') ? '*/' : null;
+  const before = line.slice(0, found.index);
+  if (!opener) return { before, after: '' };
+  const close = line.indexOf(opener, found.index + found[0].indexOf('leak-ok'));
+  return { before, after: close === -1 ? '' : line.slice(close + opener.length) };
+}
+
 // --- Doc-comment masking for src/lib. ---
 
 /**
@@ -288,7 +306,8 @@ export function docCommentLines(text) {
 
 // --- Scanning one text. ---
 
-const KNOWN_ID_HASHES = new Set(TERMS.knownIdHashes);
+/** The SHA-256 digests of the known account ids. Exported so a test can register a made-up id. */
+export const KNOWN_ID_HASHES = new Set(TERMS.knownIdHashes);
 
 /**
  * Whether a UUID is an obvious placeholder: at least 20 leading zero digits, which covers the
@@ -391,37 +410,55 @@ export function scanText(text, profile, path = '') {
     const lineNo = index + 1;
     if (profile.mode === 'changelog' && /^## /.test(text)) inUnreleased = /^## Unreleased\b/i.test(text);
 
-    const marker = parseMarker(text);
-    if (marker) {
-      if (marker.error) problem(lineNo, marker.error);
-      else if (marker.kind === 'next') for (const cls of marker.classes) pending.add(cls);
-      else if (marker.kind === 'begin') {
-        for (const cls of marker.classes) regionDepth[cls] += 1;
-        openRegions.push({ line: lineNo, classes: marker.classes });
-      } else {
-        const region = openRegions.pop();
-        if (!region) problem(lineNo, 'leak-ok-end with no open leak-ok-begin');
-        else for (const cls of region.classes) regionDepth[cls] -= 1;
+    /**
+     * @param {string} segment
+     * @param {Set<string>} excused
+     */
+    const scan = (segment, excused) => {
+      if (inDoc && !inDoc.has(lineNo)) return;
+      for (const hit of lineHits(segment, profile.tier, profile.classes)) {
+        if (excused.has(hit.cls) || regionDepth[hit.cls] > 0) continue;
+        const releasedChangelog = profile.mode === 'changelog' && !inUnreleased;
+        findings.push({
+          path,
+          line: lineNo,
+          cls: hit.cls,
+          tier: profile.tier,
+          severity: releasedChangelog ? 'warning' : hit.severity,
+          text: hit.text,
+          label: hit.label,
+        });
       }
+    };
+
+    const marker = parseMarker(text);
+    if (!marker) {
+      const excused = pending;
+      pending = new Set();
+      scan(text, excused);
       return;
     }
 
+    // A marker line is still a line: a previous next-line marker excuses the text outside this
+    // marker's comment, and this marker excuses nothing on its own line. Only the text before a
+    // region-end marker sits inside the region it closes.
+    const { before, after } = outsideMarker(text);
     const excused = pending;
-    pending = new Set();
-    if (inDoc && !inDoc.has(lineNo)) return;
-
-    for (const hit of lineHits(text, profile.tier, profile.classes)) {
-      if (excused.has(hit.cls) || regionDepth[hit.cls] > 0) continue;
-      const releasedChangelog = profile.mode === 'changelog' && !inUnreleased;
-      findings.push({
-        path,
-        line: lineNo,
-        cls: hit.cls,
-        tier: profile.tier,
-        severity: releasedChangelog ? 'warning' : hit.severity,
-        text: hit.text,
-        label: hit.label,
-      });
+    if ((before + after).trim().length > 0) pending = new Set();
+    scan(before, excused);
+    if (marker.kind === 'end') {
+      const region = openRegions.pop();
+      if (region) for (const cls of region.classes) regionDepth[cls] -= 1;
+      scan(after, excused);
+      if (!region) problem(lineNo, 'leak-ok-end with no open leak-ok-begin');
+      return;
+    }
+    scan(after, excused);
+    if (marker.error) problem(lineNo, marker.error);
+    else if (marker.kind === 'next') for (const cls of marker.classes) pending.add(cls);
+    else {
+      for (const cls of marker.classes) regionDepth[cls] += 1;
+      openRegions.push({ line: lineNo, classes: marker.classes });
     }
   });
 

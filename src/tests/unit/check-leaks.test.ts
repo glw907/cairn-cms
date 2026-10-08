@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -9,6 +10,7 @@ import {
   docCommentLines,
   runLeakCheck,
   formatFindings,
+  KNOWN_ID_HASHES,
 } from '../../../scripts/checks/check-leaks.mjs';
 
 const T1 = profileFor('docs/reference/sveltekit.md')!;
@@ -203,10 +205,24 @@ describe('C4 personal data', () => {
     expect(hits('00000000-0000-0000-0000-000000000001')).toEqual([]);
   });
 
-  it('flags a known account id by digest, without the gate file naming it', () => {
-    expect(hits('account 120c269ad6d3dfbe6d63a0bb53758ca0')).toEqual(['C4:error']);
-    expect(hits('account 120c269ad6d3dfbe6d63a0bb53758ca1')).toEqual([]);
+  it('flags a known account id by digest, without any id written in the gate or its test', () => {
+    // A made-up id, registered by digest only for this test, stands in for a real account id.
+    const id = 'f00dcafe'.repeat(4);
+    const digest = createHash('sha256').update(id).digest('hex');
+    KNOWN_ID_HASHES.add(digest);
+    try {
+      expect(hits(`account ${id}`)).toEqual(['C4:error']);
+      expect(hits(`account ${id.toUpperCase()}`)).toEqual(['C4:error']);
+      expect(hits(`account ${id.slice(0, -1)}0`)).toEqual([]);
+    } finally {
+      KNOWN_ID_HASHES.delete(digest);
+    }
+    expect(hits(`account ${id}`)).toEqual([]);
     expect(hits('order 12345678')).toEqual([]);
+  });
+
+  it('ships a non-empty digest list', () => {
+    expect(KNOWN_ID_HASHES.size).toBeGreaterThan(0);
   });
 });
 
@@ -272,8 +288,62 @@ describe('the allowlist', () => {
     expect(scanText(text, T1, 'x.md').map((finding) => finding.line)).toEqual([5]);
   });
 
-  it('does not scan a marker line, so its reason may quote the term', () => {
+  it('does not scan a marker comment, so its reason may quote the term', () => {
     expect(hits('<!-- leak-ok: C1 -- quotes ecxc on purpose -->\nplain')).toEqual([]);
+    expect(hits('// leak-ok: C1 -- quotes ecxc on purpose\nplain', T2)).toEqual([]);
+  });
+
+  it('scans the text on a marker line outside the marker comment, and a same-line marker excuses nothing', () => {
+    const before = scanText('Deploy ecxc-ski and count households <!-- leak-ok: C1,C2 -- x -->', T1, 'x.md');
+    expect(before.map((finding) => finding.cls)).toEqual(['C1', 'C2']);
+    const after = scanText('<!-- leak-ok: C1 -- x --> then ecxc-ski', T1, 'x.md');
+    expect(after.map((finding) => finding.cls)).toEqual(['C1']);
+    const code = scanText('const a = "household"; // leak-ok: C2 -- x\nconst b = 1;', T2, 'x.ts');
+    expect(code.map((finding) => [finding.line, finding.cls])).toEqual([[1, 'C2']]);
+    const block = scanText('a household /* leak-ok: C2 -- x */ and a club', T2, 'x.ts');
+    expect(block.map((finding) => finding.text)).toEqual(['household', 'club']);
+  });
+
+  it('scans the text around a region marker, and a marker line still sets up its region', () => {
+    const begin = scanText(['ecxc <!-- leak-ok-begin: C1 -- x -->', 'ecxc', '<!-- leak-ok-end -->'].join('\n'), T1, 'x.md');
+    expect(begin.map((finding) => finding.line)).toEqual([1]);
+    const end = scanText(['<!-- leak-ok-begin: C2 -- x -->', 'households <!-- leak-ok-end --> households'].join('\n'), T1, 'x.md');
+    // The text before the closing marker is still inside the region; the text after is not.
+    expect(end.map((finding) => [finding.line, finding.cls])).toEqual([[2, 'C2']]);
+    const stray = scanText('households <!-- leak-ok-end -->', T1, 'x.md');
+    expect(stray.map((finding) => finding.cls)).toEqual(['C2', 'marker']);
+  });
+
+  it('lets a next-line marker excuse the text beside a following marker, and carries a stack through a bare marker', () => {
+    const beside = scanText(['<!-- leak-ok: C1 -- x -->', 'ecxc <!-- leak-ok: C2 -- y -->', 'ecxc household'].join('\n'), T1, 'x.md');
+    expect(beside.map((finding) => [finding.line, finding.cls])).toEqual([[3, 'C1']]);
+  });
+
+  it('excuses only the classes a region names, and nested regions each hold their own', () => {
+    const c1 = ['<!-- leak-ok-begin: C1 -- x -->', 'the ecxc household', '<!-- leak-ok-end -->'].join('\n');
+    expect(hits(c1)).toEqual(['C2:error']);
+    const nested = [
+      '<!-- leak-ok-begin: C1 -- outer -->',
+      '<!-- leak-ok-begin: C2 -- inner -->',
+      'ecxc household',
+      '<!-- leak-ok-end -->',
+      'ecxc household',
+      '<!-- leak-ok-end -->',
+      'ecxc household',
+    ].join('\n');
+    expect(scanText(nested, T1, 'x.md').map((finding) => [finding.line, finding.cls])).toEqual([
+      [5, 'C2'],
+      [7, 'C1'],
+      [7, 'C2'],
+    ]);
+  });
+
+  it('does not read a markdown heading or a mid-token slash pair as a marker', () => {
+    expect(parseMarker('# leak-ok: C1 -- reason')).toBeNull();
+    expect(parseMarker('## leak-ok and friends')).toBeNull();
+    expect(parseMarker('see https://x.test//leak-ok: C1 -- r')).toBeNull();
+    expect(hits('# leak-ok: C1 -- reason\necxc')).toEqual(['C1:error']);
+    expect(parseMarker('value # leak-ok: C1 -- reason')).toEqual({ kind: 'next', classes: ['C1'], error: null });
   });
 
   it('treats a marker with no reason as an error and excuses nothing', () => {

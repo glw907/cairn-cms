@@ -25,11 +25,12 @@ rulings (Geoff, 2026-10-07): 2a ceiling 25M, stop at 20M; lanes 5M shared, stop 
 close unattended; merge on a green close; no release. After the run: Geoff reads the five task 8 pages, then
 the release (Kit 3 and the rebuilt extend docs), then cairn.pub's migration as a site pass.
 
-**Run in flight (checkpoint 2, 2026-10-07):** R1 to R4 accepted (record `d102143a`). R5 closed all five task 8 pages
-on `draft-docs-2a` (pushed): chain run `wf_27395374-42e` escalated all five (7.2M), then targeted closes and two
-hand-run chains for the plan-read escalations; close `9f0b8add`, record and 14 friction entries `c882e4b2`
-(`docs/superpowers/research/2026-10-07-draft-docs-2a-r5-task8-record.md`, with five conductor rulings for Geoff).
-Whole-tree docs gate green. 2a spend is about 16.4M against the 20M stop. Next: R6 (task 9) beside lanes L1 and L2.
+**Run in flight (checkpoint 3, 2026-10-07):** R1 to R6 accepted on `draft-docs-2a` (pushed). R5 closed the five task 8
+pages (record `docs/superpowers/research/2026-10-07-draft-docs-2a-r5-task8-record.md`, five conductor rulings for
+Geoff); R6 applied the consistency read and restored all 71 stage-2a relinks (`c00cd0b4`, `78df0ef0`; record
+`...-r6-consistency-record.md`). Lanes: L2b merged (#104), L1 merged (#106; held-majors tripwire routine
+`trig_01UCoKqxRXVwAfMdnF913E4v`), L2a in its fix round (#105, ruling: the doctor's loopback set follows the engine's
+`requireOrigin`, so no `::1`). 2a spend is about 18.8M against the 20M stop. Next: L2a's merge, then R7 (close).
 Open carry: `gateMatches`' doc comment in dotfiles still says a placeholder "matches any non-empty text".
 
 ## Open decisions and watches

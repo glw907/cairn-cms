@@ -183,6 +183,23 @@
   `deliver` throws, the cleanup that deletes the pending row and refunds the send charge now logs
   `auth.channel.send_cleanup_failed` if it fails in turn, instead of leaving an unobserved rejection.
 
+### Dependencies
+
+- The October sweep takes every minor and patch (`docs/internal/record/2026-10-07-dependency-sweep.md`).
+  Runtime floors move: `@codemirror/autocomplete` (`^6.20.3`), `@codemirror/lang-markdown`
+  (`^6.5.2`), `@codemirror/language` (`^6.13.1`), `@codemirror/view` (`^6.43.14`), `@lucide/svelte`
+  (`^1.52.0`), `@rodrigodagostino/svelte-sortable-list` (`^2.2.6`), `heic-to` (`^1.6.5`, libheif
+  1.23.5), `mdast-util-directive` (`^3.1.1`), `shiki` (`^4.5.0`), and the `@types/hast`,
+  `gray-matter`, `remark-gfm`, and `yaml` floors. The peer ranges do not move. The scaffold's
+  `package.json` takes `wrangler` `^4.148.0`, `@sveltejs/kit` `^3.0.1`, `svelte` `^5.57.2`, `vite`
+  `^8.3.3`, and `@cloudflare/workers-types` `^5.20261007.1`. The Workers test project moves to
+  `@cloudflare/vitest-plugin` (the renamed `@cloudflare/vitest-pool-workers`, which is deprecated),
+  so the unit tests now share the repo's one Wrangler and Miniflare instead of nesting an older
+  pair. Held: `devalue` 6, TypeScript 7, Vitest 5 with `@vitest/browser*`, and `@types/node` 26.
+
+  Consumers must: nothing. A site that regenerates `worker-configuration.d.ts` with Wrangler 4.148
+  gains ambient `*.txt`, `*.html`, `*.sql`, `*.bin`, and `*.wasm` module declarations.
+
 ## 0.98.0
 
 <!-- release-size: minor -->

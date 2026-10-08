@@ -168,28 +168,36 @@ failed item stops the run before any dispatch.
    `createEditorRoutes` each take one required bag with a `runtime` member. `DevBackendConfig` has no
    `access` or `roles` member, and the dev handle attaches `runtime.access ?? {}`. The showcase and
    template hooks pass `{ runtime }` from `#chassis/cairn.server.js`. Tasks 1 and 10 build on this.
-3. **Where the access map lives.** Record where the showcase's map sits after the lead (an adapter
-   member, or a module the adapter imports). Record whether `examples/showcase/src/access.ts` and
-   `templates/waymark/src/access.ts` still exist. Record what the emitted adapter declares for
-   `access`. Task 1 removes the scaffold's declaration; this record fixes its exact Files.
+3. **The access map is inline on the adapter (pass A Decision 2).** The showcase and the template
+   declare `access` as a member of the adapter in `src/theme/cairn.config.ts`, and `src/access.ts`
+   is gone from both. The showcase-only `theme-kit` rule sits inside
+   `cairn-template:exclude-start/-end` markers in that member. The emitted adapter's `access` holds
+   only the `/admin/signups` rule. Task 1 removes that rule with markers alone.
 4. **Pass A's edits to files pass B also edits.** D1's `verifyManifest` change in
    `src/lib/content/manifest.ts` landed, and the stale-manifest message still names
    `npm run cairn:manifest` (Task 3's B2). B9's `.dev.vars.example` and B11a's `secret.mjs` edits
    landed in `create-cairn-site` (Task 2 edits the same package). A6's `EditPage.svelte` change
    landed, and `{#each data.publishActions as action (action.label)}` is still the keying (Task 7's
    A13 premise). B5's 503 landed in the template's `/healthz` route.
-5. **Records pass A's docs task wrote.** List which of the spec's owed records are on `main`:
-   - the seven new ledger entries and the nine annotations ("Declined, with proposed ledger
-     entries", "Ledger entries this pass falsifies");
-   - the `admin-toolkit.md` shell-only sentence;
-   - the corrected fact for the `cmd.exe` `set` form (`dev-flag-strict-read`);
-   - the ROADMAP rewrite: the engine-pass entry, the boundary-test amendment, the Claude Code
-     stage, the batched rows with page tags, and the one-release path;
-   - the functional-spec and media-design amendments.
+5. **The records split with pass A landed as pass A's plan states** (its Decisions 8 to 11). On
+   `main`, confirm each:
+   - the seven new ledger entries and eight of the nine annotations, every one but
+     `audit-adapter-navmenuconfig`, which is pass B's;
+   - the `admin-toolkit.md` shell-only sentence and the functional-spec C7 and media-design
+     amendments;
+   - the ROADMAP rewrite (boundary-test amendment, batched rows with page tags, the Claude Code
+     stage, the one-release path), with the "Engine pass before stage 2b" Now entry narrowed to
+     pass B's scope; pass B removes that entry at its close;
+   - every friction-log entry for a pass A fix, and every declined or batched entry, gone from the
+     log; the entries for pass B's fixes still present;
+   - `docs/STATUS.md`'s carry-forwards hold pass A's hand-off list: each 2a page pass A changed, with
+     the fact ids that changed. Task 11 consumes it for the `relink.json` re-arm list, which is pass
+     B's alone.
 
-   Also record the entry shape pass A used for a stage-2b page re-arm in
-   `docs/internal/record/harvest/relink.json`. Task 11 writes every owed record still missing and
-   follows that shape.
+   A missing item is a precondition failure: the conductor reports it, never back-fills it silently.
+   Also record whether `docs/internal/record/harvest/relink.json` has any stage-2b page re-arm entry
+   yet (expected: none), and whether `scripts/checks/docs-links.mjs` tolerates extra fields on an
+   entry. Task 11 defines the entry shape.
 6. **Fork 2** (anonymous `/healthz?live=1`) is ruled and landed in pass A. Pass B does not depend on
    it; Task 0 records the ruling.
 7. **Fork 1** (where a dev-admin save lands) is ruled or open. Task 0 records which. If Geoff ruled
@@ -223,15 +231,19 @@ failed item stops the run before any dispatch.
    second case, since it renders through the same page.
 5. **The provisioning grep is narrowed.** The spec's post-condition ("no `APP_DB` or `-app` in
    `create-cairn-site`'s sources and transcripts") over-matches legitimate names: `--app-name`,
-   `builds-app-not-authorized`, and the test slug `alpine-club-resume-app`. Task 2 uses the pattern
-   below and names each remaining hit as unrelated.
+   `builds-app-not-authorized`, and the test slug `alpine-club-resume-app`. It also reaches the
+   transcript fixtures, which Decision 10 keeps unedited. Task 2 uses the pattern below over sources
+   and tests, excludes the transcripts directory, and names each remaining hit as unrelated.
 6. **D5's default has one source.** `packages/create-cairn-site/src/site-config-path.json` already
    holds the canonical site-config path that the scaffold bakes and the Go doctor embeds
    (`scripts/build/emit-tool-conditions.mjs:19-22`). The engine's new `editor.siteConfigPath` default
    must equal it, and a unit test pins the two together (ledger `read-from-the-source-rule`).
-7. **Spec-owed records with no pass named.** The spec lists records "the close writes" without saying
-   which pass writes each. Task 11 writes every one that Task 0's precondition 5 found missing, plus
-   pass B's own.
+7. **The records split follows pass A's plan.** Pass A writes the seven new ledger entries, eight
+   of the nine annotations, the ROADMAP rewrite, and the C7 and media-design amendments, and clears
+   every declined and batched friction entry. Pass B writes the `audit-adapter-navmenuconfig`
+   annotation, D5's functional-spec amendment, the whole `relink.json` re-arm list (pass A's pages
+   from its STATUS hand-off list, plus pass B's own), and removes ROADMAP's narrowed engine-pass
+   entry. Each pass clears the friction entries for its own fixes.
 8. **ROADMAP watches pass B trips get a verdict in Task 11.** Pass B changes `DevBackendConfig`, which
    is the trigger three ROADMAP watches name. They are the `APP_DB` overwrite, the media-seed
    `MEDIA_BUCKET` double, and the custom-screen skill traps with the missing `cairnAccess`. The spec
@@ -239,6 +251,11 @@ failed item stops the run before any dispatch.
 9. **`form-anatomy.md` is edited only if the S1 pre-flight finds a Signups claim in it.** The spec
    names it among the three exemplars, but at `2b37ae78` it carries no Signups or scaffold claim; the
    claims sit in `exemplar-list.md` and `exemplar-detail.md`.
+10. **Transcript fixtures are never edited.** The directory
+    `packages/create-cairn-site/test/fixtures/transcripts/` holds recorded captures, and only a live
+    re-capture changes one. Task 2 carries its acceptance in unit tests over the step's output and
+    files the stale fixtures (`01c-resume.txt`, `01d-resume.txt` at plan time) in the friction log for
+    the next capture, as pass A did for B11a (its Decision 5).
 
 ## Rulings for Geoff
 
@@ -359,8 +376,11 @@ The inputs most likely to bite a real user that per-task tests would not exercis
    - `packages/create-cairn-site/src/cloudflare/deploy.mjs:175` (`MIGRATION_DATABASES`),
      `chapter.mjs:119` (the two-database announcement), and `config.mjs:115` (the `-app` rename, with
      its comments at `:36` and `:48`). Their tests (`deploy.test.mjs:243,319-336`,
-     `chapter.test.mjs:283`, `config.test.mjs:54-57,105-114`), the transcripts
-     `test/fixtures/transcripts/01c-resume.txt` and `01d-resume.txt`, and `README.md:138`.
+     `chapter.test.mjs:283`, `config.test.mjs:54-57,105-114`) and `README.md:138`. Which transcript
+     fixtures show the two-database lines (`01c-resume.txt`, `01d-resume.txt` at plan time), for the
+     friction filing; they are not edited.
+   - That the template's `src/theme/cairn.config.ts` `access` member holds only the
+     `/admin/signups` rule, and that no `src/access.ts` exists (precondition 3).
    - `src/lib/content/manifest.ts` stale message (`:373-377` at `2b37ae78`) names
      `npm run cairn:manifest`.
    - The bake's `package.json` transform is `transformPackageJson` in `scripts/build/emit-template.mjs`.
@@ -393,11 +413,11 @@ the marker edits). **Independent** of Task 2 (disjoint Files). **Spec:** "Ruling
 marked-span exclusions and the skill exemplars; pass B task 1.
 
 **Files:** `examples/showcase/.cairn-template.json`; the marked spans in
-`examples/showcase/src/theme/cairn.config.ts` (the Signups `navLayout` entry and its comment, plus
-the showcase's access declaration wherever precondition 3 found it), `examples/showcase/wrangler.jsonc`
-(`APP_DB`), `examples/showcase/src/lib/log.ts`, and
-`examples/showcase/src/theme/components/admin-link.test.ts`. Also
-`examples/showcase/src/access.ts` if precondition 3 found it still emitted. In the exemplars:
+`examples/showcase/src/theme/cairn.config.ts` (the Signups `navLayout` entry and its comment, and
+the `/admin/signups` rule in the adapter's inline `access` member, so the emitted adapter carries no
+`access` member at all), `examples/showcase/wrangler.jsonc` (`APP_DB`),
+`examples/showcase/src/lib/log.ts`, and `examples/showcase/src/theme/components/admin-link.test.ts`.
+No `src/access.ts` exists to touch (precondition 3). In the exemplars:
 `skills/cairn-admin-screens/references/{exemplar-list,exemplar-detail}.md` (and `form-anatomy.md`
 only per Decision 9). Plus `src/tests/unit/emit-template-tree.test.ts`,
 `src/tests/unit/skill-references-compile.test.ts` only if its extraction needs a fixture change, and
@@ -407,8 +427,8 @@ only per Decision 9). Plus `src/tests/unit/emit-template-tree.test.ts`,
 - The emitted template carries no `src/routes/admin/signups/`, no `migrations-app/`, no `APP_DB`
   binding, no Signups sidebar entry, no `admin.signups.misconfigured` event, and no `/admin/signups`
   test case. The showcase keeps all of them as the worked custom-screen example.
-- The scaffold declares no `access`, the zero-config floor. The showcase keeps its map on its
-  adapter, inside exclude markers, and the scaffold has no `src/access.ts`.
+- The scaffold declares no `access`, the zero-config floor. The showcase keeps its full map inline
+  on its adapter, the scaffold-excluded rules inside exclude markers. The change uses markers only.
 - The exemplars stop saying every scaffold ships the screen. Each carries the shipped source inline
   and names `examples/showcase` as provenance. The baked `.claude/` copies match after re-emit.
 - `@glw907/cairn-cms-dev` keeps `fake-app-db.ts` and its `APP_DB` layering; this task does not touch
@@ -440,8 +460,8 @@ by blast radius (no engine source and no showcase file changes). **Independent**
 **Spec:** "Ruling 2", the `create-cairn-site` bullet; pass B task 2.
 
 **Files:** `packages/create-cairn-site/src/cloudflare/{deploy,chapter,config}.mjs` and their tests;
-`packages/create-cairn-site/test/fixtures/transcripts/*.txt` that name the second database
-(`01c-resume.txt`, `01d-resume.txt` at plan time); `packages/create-cairn-site/README.md` (`:138`).
+`packages/create-cairn-site/README.md` (`:138`). The transcript fixtures under
+`packages/create-cairn-site/test/fixtures/transcripts/` are not edited (Decision 10).
 
 **Outcome:** the setup command provisions and migrates `AUTH_DB` only. `MIGRATION_DATABASES` holds
 `AUTH_DB` alone, the announcement names one database, and the `-app` rename and its comments go. An
@@ -451,12 +471,17 @@ works.
 **Acceptance:**
 - Test-first: a deploy test asserts exactly one `d1 migrations apply AUTH_DB --remote` invocation
   (fails today: two). A config test asserts the rewritten `wrangler.jsonc` carries one D1 database
-  (fails today: two). A mutation proof: re-adding `'APP_DB'` to `MIGRATION_DATABASES` turns the
+  (fails today: two). A chapter test asserts the provisioning announcement names one database,
+  `<worker>-auth`, and no `-app` name (fails today: it names both). These unit tests carry the
+  acceptance the spec gave the transcripts. A mutation proof: re-adding `'APP_DB'` to `MIGRATION_DATABASES` turns the
   deploy test red (quoted, then reverted).
-- `git grep -nE 'APP_DB|migrations-app|showcase-app|\}-app\b|-app"' -- packages/create-cairn-site`
+- `git grep -nE 'APP_DB|migrations-app|showcase-app|\}-app\b|-app"' -- packages/create-cairn-site ':!packages/create-cairn-site/test/fixtures/transcripts'`
   prints nothing. A wider `git grep -n -- "-app"` hit is named in the report as unrelated
   (`--app-name`, `builds-app-not-authorized`, a test slug) (Decision 5).
-- `check:transcripts` green over the regenerated transcripts.
+- `git diff --stat main -- packages/create-cairn-site/test/fixtures/transcripts` is empty. The
+  report names each fixture that still shows the two-database lines, and the conductor files them in
+  the friction log at the S1 checkpoint as stale until the next live capture.
+- `check:transcripts` stays green on the unedited fixtures.
 - S green; CI `create-site` on the segment push green.
 
 **Interfaces produced:** none consumed later.
@@ -886,12 +911,16 @@ other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/ap
   `__CAIRN_DEV_BUILD__` declaration. A stale content manifest's message now names
   `npx cairn-manifest`. `migration-notes.md` and `upgrade-cairn.md` carry the same version record.
 - **Ledger:** a dated annotation on `audit-adapter-navmenuconfig` (`configPath` moves to
-  `editor.siteConfigPath`). Every spec-owed entry and annotation precondition 5 found missing is
-  written in the ledger format. `check:rulings-format` green.
+  `editor.siteConfigPath`), pass B's one ledger item (Decision 7). `check:rulings-format` green.
 - **Functional spec:** a dated amendment to the adapter contract line (`:390` at plan time) for D5's
-  site-config default. Any other owed erratum precondition 5 found missing is written too.
-- **The 2b re-arm list:** each 2a page pass B changed is added to `relink.json` in the entry shape
-  precondition 5 recorded, with the facts that changed. The pages and their items:
+  site-config default.
+- **The 2b re-arm list** is pass B's alone (Decision 7). Each entry follows the file's existing
+  fields: `file` (the page), `context` (a grep-able line from it), `done` (what changed), `stage`
+  `"2b"`, plus a `facts` array of the changed fact ids. If `docs-links.mjs` rejects the extra field,
+  the ids go into `done` instead. It holds two sets of pages. First, every page on pass A's hand-off
+  list in STATUS, with its fact ids. Second, each 2a page pass B changed, with the facts that
+  changed. When one page is on both lists, the two merge into one entry. Pass B's pages and their
+  items:
   - `add-cairn-to-a-sveltekit-app`: B1, B2, B3, B7, ruling 5;
   - `scaffolded-site-files`: ruling 2, A5, B3, B6, B7, ruling 5;
   - `add-a-custom-admin-screen`: ruling 2;
@@ -903,18 +932,20 @@ other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/ap
   and need no entry: define-an-adapter-and-schema (A14, D4, D6), act-on-newly-published-entries
   (A13), build-the-public-routes (D2, D6), turn-on-tidy and arrange-the-admin-sidebar (D5), and
   run-cairn-audit-on-your-site (D8a).
-- **ROADMAP:** the pass B items leave the live tiers (B1, B2, B3, B6, B7, B8 via ruling 2, B12 via
-  ruling 5, A5, A13, A14, C5, C13, D2, D4, D5, D6, D8a). The engine-pass entry is marked done if
-  pass A left it for pass B. The three tripped dev-package watches each get a verdict, verified
-  against the code first (Decision 8):
+- **ROADMAP:** the "Engine pass before stage 2b" Now entry, which pass A narrowed to pass B's
+  scope, is removed. The pass B items leave every other live tier (B1, B2, B3, B6, B7, B8 via ruling
+  2, B12 via ruling 5, A5, A13, A14, C5, C13, D2, D4, D5, D6, D8a). Pass A's ROADMAP rewrite is not
+  touched. The three tripped dev-package watches each get a verdict, verified against the code first
+  (Decision 8):
   - the `APP_DB` overwrite: batched with its page tag, since only the showcase now ships a D1
     screen, or fixed if the code shows a one-line answer;
   - the `MEDIA_BUCKET` double: batched as ruling 5's R2 read-through, tagged add-cairn;
   - the custom-screen skill traps: the `cairnAccess` defect closed if pass A's lead fixed it, and the
     rest re-armed to the extend stage that outlines the custom-screen page.
-- **Friction log:** every entry the spec rules on for a pass B item leaves the log: fixed and
-  deleted, or moved to the ledger or the ROADMAP tier the spec names. Every entry the S1 to S4
-  checkpoints filed is triaged complete-or-move, verified against the code first.
+- **Friction log:** every entry for a pass B fix is deleted after a check against the code. The
+  declined and batched entries already left with pass A (Decision 7). Every entry the S1 to S4
+  checkpoints filed is triaged complete-or-move, verified against the code first. The one exception
+  is Task 2's stale-transcript entry, which stays until a live capture.
 
 **Acceptance:**
 - `git grep -nE "seedContent|devBuildDefine|nav\.configPath|FieldBehavior\.itemLabel|npm run cairn:manifest" -- docs/reference docs/extend/migration-notes.md docs/extend/upgrade-cairn.md README.md skills claude packages/*/README.md`
@@ -922,11 +953,12 @@ other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/ap
 - The facts triage covers every id in the candidate set; `check:facts` green.
 - `CHANGELOG.md` carries one `Consumers must:` line per clause above and the `Consumers may:` line;
   `migration-notes.md` matches it clause for clause.
-- `relink.json` carries an entry for each page above; `node scripts/checks/docs-links.mjs` (or the
-  check that reads it) green.
+- `relink.json` carries an entry for every page on pass A's hand-off list and every pass B page
+  above, each with its fact ids. `node scripts/checks/docs-links.mjs` (or the check that reads it)
+  green.
 - `check:rulings-format` green, and `audit-adapter-navmenuconfig` carries a 2026-10 dated note.
-- The ROADMAP diff removes every pass B item from the live tiers, and each tripped watch carries its
-  verdict.
+- The ROADMAP diff removes the engine-pass Now entry and every pass B item from the live tiers, and
+  each tripped watch carries its verdict.
 - D green; `check:close` green.
 
 **Interfaces produced:** none consumed later; the close finalizes STATUS and HISTORY.

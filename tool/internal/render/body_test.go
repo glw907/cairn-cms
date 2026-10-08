@@ -86,7 +86,7 @@ func TestSharedLayer(t *testing.T) {
 		"plain":          input(reports, BodyPlain, 120, ProfileNoColor, true, spine.VerdictCritical),
 	}
 	facts := []string{
-		"CRITICAL", "907.life",
+		"CRITICAL", "blog-site",
 		"creds", "deploy", "engine", "email", "errors", "https-forced", "serving",
 		"edge.https-not-forced",
 		"3 failing", "2 could not run", "1 held", "3 passing",
@@ -627,7 +627,7 @@ func TestWidthTableFollowsTheGlyphTier(t *testing.T) {
 		t.Errorf("wide table measures %q as %d cells, want 2", ambiguous, got)
 	}
 	// The tables agree on plain ASCII, which is the whole of the ASCII tier's own glyph set.
-	for _, s := range []string{"+", "!", "*", "?", "o", ">", "-", "...", "ecxc.ski"} {
+	for _, s := range []string{"+", "!", "*", "?", "o", ">", "-", "...", "my-site"} {
 		if narrow.width(s) != wide.width(s) {
 			t.Errorf("the tables disagree on %q: narrow %d, wide %d", s, narrow.width(s), wide.width(s))
 		}
@@ -724,10 +724,10 @@ func TestStripWidthFormulaIsExact(t *testing.T) {
 	ids := stripColumns()
 	theme := NewTheme(true, ProfileNoColor)
 	siteCol := theme.siteColWidth(reports)
-	// 8 for "ecxc.ski", the widest of the two sites, plus a gutter, plus the nine headings
+	// 9 for "blog-site", the widest of the two sites, plus a gutter, plus the nine headings
 	// (creds serving delegation https email deploy publish-path engine errors) with eight
 	// gutters between them, plus a gutter, plus the eight cells CRITICAL needs.
-	const want = 88
+	const want = 89
 	if got := theme.stripWidth(stripHeadingsFor(ids), siteCol, verdictColWidth); got != want {
 		t.Fatalf("stripWidth = %d, want %d", got, want)
 	}
@@ -814,7 +814,7 @@ func TestHeldFailureKeepsTheHeldMarkInTheStrip(t *testing.T) {
 // sentence cannot move it.
 func TestFallbackTableCarriesTheEngineVersionAndTheDataAge(t *testing.T) {
 	reports := fixtures.TwelveSites()
-	// 80 columns is under the strip's own 88, so the fallback table is what draws.
+	// 80 columns is under the strip's own width, so the fallback table is what draws.
 	text := strings.Join(plainLines(manyInput(reports, 80, false)), "\n")
 	for _, want := range []string{"engine", "checked", "0.78.0", "0.76.0", "4m ago"} {
 		if !strings.Contains(text, want) {
@@ -1109,7 +1109,7 @@ func TestNoBodyPrintsAReasonCode(t *testing.T) {
 		t.Fatal("the reason vocabulary is empty, so this test could not fail")
 	}
 	for _, r := range codes {
-		reports := []health.Report{{Site: "907.life", Checks: []health.CheckResult{{
+		reports := []health.Report{{Site: "blog-site", Checks: []health.CheckResult{{
 			ID:        "email",
 			CheckedAt: fixtures.Now(),
 			Outcome:   spine.Outcome{State: spine.Unknown, Reason: r},
@@ -1183,7 +1183,7 @@ func TestFixListEndsNoLineInACutToken(t *testing.T) {
 			}
 			for _, tok := range tokens {
 				// A count or a single letter is a word of its own that happens to open a handle
-				// ("9" opens "907.life"), so only a piece long enough to be a cut is read as one.
+				// ("9" opens "blog-site"), so only a piece long enough to be a cut is read as one.
 				if len(last) > 2 && len(last) < len(tok) && strings.HasPrefix(tok, last) {
 					t.Errorf("width %d: the line %q ends in a cut %q", width, l, tok)
 				}
@@ -1198,7 +1198,7 @@ func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 	for _, width := range []int{60, 80, 100, 120} {
 		lines := plainLines(RenderInput{
 			View: ViewLogs, Width: width, Dark: true, Profile: ProfileNoColor,
-			Site: "ecxc.ski", Entries: entries, Now: fixtures.Now(),
+			Site: "my-site", Entries: entries, Now: fixtures.Now(),
 		})
 		text := strings.Join(lines, "\n")
 		if n := strings.Count(text, "2026-09-20"); n != 1 {
@@ -1240,7 +1240,7 @@ func TestLogRowWithNoEventDropsTheEventColumn(t *testing.T) {
 	for _, width := range []int{60, 80, 100, 120} {
 		lines := plainLines(RenderInput{
 			View: ViewLogs, Width: width, Dark: true, Profile: ProfileNoColor,
-			Site: "907.life", Entries: goldenMixedLogEntries(), Now: fixtures.Now(),
+			Site: "blog-site", Entries: goldenMixedLogEntries(), Now: fixtures.Now(),
 		})
 		text := strings.Join(lines, "\n")
 		if strings.Contains(text, "message= ") {

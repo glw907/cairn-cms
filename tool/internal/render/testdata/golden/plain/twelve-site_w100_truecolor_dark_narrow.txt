@@ -1,4 +1,4 @@
-verdict: [1;38;2;255;142;134mCRITICAL[m - ecxc.ski, 3 could not run, 6 passing
+verdict: [1;38;2;255;142;134mCRITICAL[m - my-site, 3 could not run, 6 passing
 checked: 4m ago (2026-09-20 22:28 UTC), in 16.3s
 
 email: skip
@@ -21,5 +21,5 @@ https-forced: pass - forced at the edge, HSTS 1 year
 deploy: pass - built 4h ago (a91f2c7), main is level
 publish-path: pass - App installed, branch writable
 
-verdict: [1;38;2;255;142;134mCRITICAL[m - ecxc.ski, 3 could not run, 6 passing
+verdict: [1;38;2;255;142;134mCRITICAL[m - my-site, 3 could not run, 6 passing
 exit: 2

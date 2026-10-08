@@ -1,4 +1,4 @@
-CRITICAL  907.life  3 failing · 2 could not run · 1 held · 3 passing
+CRITICAL  blog-site  3 failing · 2 could not run · 1 held · 3 passing
 checked 4m ago (2026-09-20 22:28 UTC), in 16.3s
 
 ── failing ─────────────────────────────────────────────────────────────────────────────────────────
@@ -23,4 +23,4 @@ checked 4m ago (2026-09-20 22:28 UTC), in 16.3s
 
 ● 3 passing  serving · delegation · publish-path
 
-CRITICAL  907.life  3 failing · 2 could not run · 1 held · 3 passing
+CRITICAL  blog-site  3 failing · 2 could not run · 1 held · 3 passing

@@ -121,23 +121,23 @@ func TestRankResultsDoesNotMutate(t *testing.T) {
 // that two sites whose worst failures share a class keep the order the registry listed them in.
 func TestRankReportsWorstFirstThenListOrder(t *testing.T) {
 	got := rankReports(fixtures.TwelveSites())
-	if got[0].Site != "topo.907.life" {
+	if got[0].Site != "docs-site" {
 		t.Errorf("first site = %q, want the unreachable one", got[0].Site)
 	}
-	if got[1].Site != "907.life" {
+	if got[1].Site != "blog-site" {
 		t.Errorf("second site = %q, want the broken deploy", got[1].Site)
 	}
-	if got[2].Site != "aksailingclub.org" {
+	if got[2].Site != "shop-site" {
 		t.Errorf("third site = %q, want the email failure", got[2].Site)
 	}
-	// cairn.pub and xcathletes.org both fail engine alone, so the registry's own order decides.
+	// cairn.pub and events-site both fail engine alone, so the registry's own order decides.
 	drift := []string{}
 	for _, r := range got {
 		if worstClass(r) == classDrift {
 			drift = append(drift, r.Site)
 		}
 	}
-	if !slices.Equal(drift, []string{"cairn.pub", "xcathletes.org"}) {
+	if !slices.Equal(drift, []string{"cairn.pub", "events-site"}) {
 		t.Errorf("version-drift sites = %v, want registry order", drift)
 	}
 }

@@ -528,7 +528,8 @@ only per Decision 9). Plus `src/tests/unit/emit-template-tree.test.ts`,
 - The scaffold declares no `access`, the zero-config floor. The showcase keeps its full map inline
   on its adapter. The change uses markers only, under the emitter's line-granular rules
   (`scripts/build/emit-template.mjs:36` throws on a nested start):
-  - One marker block wraps the whole `access` member and replaces pass A's inner `theme-kit` block.
+  - One marker block wraps the whole `access` member, its doc comment included, and replaces
+    pass A's inner `theme-kit` block.
   - `SiteLogEvent` (`examples/showcase/src/lib/log.ts:7`, one line today) is split onto one line
     per member, so the `admin.signups.misconfigured` member can sit in its own block.
   - In `examples/showcase/wrangler.jsonc`, the comma before the `APP_DB` object sits inside its

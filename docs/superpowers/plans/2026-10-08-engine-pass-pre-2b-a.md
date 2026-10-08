@@ -26,15 +26,21 @@ folded, and verified). Its "Pass A" list is this plan's task list, numbered the 
 disagree, stop and report, except the items under "Decisions this plan takes".
 
 **Pass class:** `auth-data` (the header class). Overrides, from the spec: Task 2 is `tool`; Tasks
-5, 7, and 8 are `engine-logic`; Task 12 is `docs`. Tasks 1, 3, 4, 6, 9, 10, and 11 are `auth-data`.
-A mixed pass runs the union of its classes at the close.
+5 and 7 are `engine-logic`; Task 12 is `docs`. Tasks 1, 3, 4, 6, 8, 9, 10, and 11 are `auth-data`.
+Task 8 is `engine-logic` in the spec and runs here as `auth-data`, because the runner's
+`engine-logic` bar sets `coverageBlocks: false` and `applyClassBar` demotes every `coverageOnly`
+finding to `nonBlocking`, turning a `fix` left with nothing blocking into `accept`
+(`~/.claude/workflows/pass-execute.js:264-267,345-359`). Under `engine-logic`, a missing abort or
+dictionary-hold row would come back accepted with a batched note; under `auth-data` it blocks. Plan
+B runs its Task 8 the same way. A mixed pass runs the union of its classes at the close.
 
-**Token ceiling:** 11.0M for the whole pass, chains plus close. Basis: eleven code chains at 0.55M
-each under the class gate (6.05M; the observed rate is 0.4M to 0.5M per chain, raised for the
-full tier on the e2e-bearing tasks), the docs task at 1.2M, Task 0 at 0.2M, four pre-flights at 0.1M
-each (0.4M), one fix round per segment in reserve (1.0M), and the close at 2.15M (the simplifier,
-four reviewer seats, the consumer proof, the live smoke and key probe, ledgers, friction triage).
-**At 80 percent (8.8M)** the conductor finishes the task in flight, writes STATUS, and stops at the
+**Token ceiling:** 11.1M for the whole pass, chains plus close. Basis: eleven code chains at 0.55M
+each under the class gate, plus 0.10M for Task 8 as `auth-data` (6.15M; the observed rate is 0.4M to
+0.5M per chain, raised for the full tier on the e2e-bearing tasks), the docs task at 1.2M, Task 0
+at 0.2M, four pre-flights at 0.1M each (0.4M), one fix round per segment in reserve (1.0M), and the
+close at 2.15M (the simplifier, four reviewer seats, the consumer proof, the live smoke and key
+probe, ledgers, friction triage).
+**At 80 percent (8.88M)** the conductor finishes the task in flight, writes STATUS, and stops at the
 next segment boundary with one combined question. No budget question arrives mid-segment.
 
 **Checkpoint interval:** every segment boundary (no segment holds more than three tasks). The
@@ -93,7 +99,10 @@ The implementer and the reviewer never read this plan, and the runner's review p
 `criteria` is, verbatim and in order: its **Outcome**, its **Acceptance**, its **Mutations**, and
 its **Decisions carried** block, which holds the full text of every Decision the task cites (never
 a bare "Decision N"). Its `files` is its Files line, and its `notes` is its own Notes only. A
-task's own `passClass`, `gateTier`, `gateLane`, and `model` are set where this plan sets one.
+task's own `passClass`, `gate`, `gateTier`, `gateLane`, and `model` are set where this plan sets
+one. The `passClass` overrides are Task 2 `"tool"`, Tasks 5 and 7 `"engine-logic"`, and Task 12
+`"docs"`; every other task, Task 8 included, inherits the header's `"auth-data"`. The `gateTier`
+pins are under "Per-task gate"; Task 4 alone also sets its own `gate`.
 `auth-data` fix rounds run the full gate (the runner reduces only a comment-only round under
 `auth-data`). Task 0 and the close are conductor-led dispatches outside the runner.
 
@@ -133,15 +142,20 @@ engine's root `npm test` and the component project drive Chromium and are never 
 
 **Per-task gate.** The runner's classifier sizes each task's gate from its committed diff, with F
 as the fallback. Tasks whose acceptance carries a showcase e2e, or whose change is the sign-in
-path, pin `gateTier: "full"` (Tasks 1, 3, 7, 8, and 10). Task 2's diff spans `tool/` and
-`src/lib/diagnostics/`, so the classifier runs the npm tier and T together; Task 2 sets `gateLane:
-"heavy"`, because that tier runs the component project in Chromium and the `tool` class defaults to
-the light lane. Task 12 sets `gateLane: "light"`, and its implementer appends `&& npm run
-check:surface && npm run check:rulings-format` to the classifier's docs string (`gateMatches`
-accepts trailing steps). Every other task (4, 5, 6, 9, 11) runs the computed gate, and its
-acceptance says "the computed gate green": per `~/.claude/docs/pass-gate-economy.md`, a
-paint-neutral task keeps the showcase e2e at the boundary, and each segment's boundary F (or the
-close's) covers it.
+path, pin `gateTier: "full"` (Tasks 1, 3, 7, 8, and 10). Tasks 4, 5, and 11 pin it too, because
+their Files can reach a tier that runs the showcase e2e, and only a pinned gate carries the
+`E2E_PORT` export (see Global constraints). `gate-tier.mjs` counts an unclassified path as full:
+Task 4's migration `.sql`, Task 5's optional `packages/cairn-cms-dev/` edit, and Task 11's
+regenerated manifests and `templates/waymark/` files are all unclassified. Task 4 sets its own
+`gate`, `export E2E_PORT=4392 && <F> && make -C tool check`, because its diff also spans `tool/`.
+Task 2's diff spans `tool/` and `src/lib/diagnostics/`, so the classifier runs the npm tier and T
+together; Task 2 sets `gateLane: "heavy"`, because that tier runs the component project in Chromium
+and the `tool` class defaults to the light lane. Task 12 sets `gateLane: "light"`, and its
+implementer appends `&& npm run check:surface && npm run check:rulings-format` to the classifier's
+docs string (`gateMatches` accepts trailing steps). Every other task (2, 6, 9) runs the computed
+gate, and its acceptance says "the computed gate green": their Files compute to `engine` or
+`engine+tool`, which run no e2e. Per `~/.claude/docs/pass-gate-economy.md`, a paint-neutral task
+keeps the showcase e2e at the boundary, and each segment's boundary F (or the close's) covers it.
 
 A lone unrelated test-file failure, or a component run printing `Cannot connect to the server in
 60 seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it counts as red.
@@ -163,7 +177,15 @@ A lone unrelated test-file failure, or a component run printing `Cannot connect 
   check:surface -- --update`, all in the same task. Task 12 writes the prose and the claim
   corrections.
 - Every local showcase e2e runs with `E2E_PORT=4392` after `ss -ltnp 'sport = :4392'` shows no
-  listener (quoted in the report); the runner's `gate` string exports it.
+  listener (quoted in the report). The rule reaches each gate run through its gate string, never
+  through `commonNotes`: `commonNotes` reaches the implementer only (`pass-execute.js:416`), while
+  the runner's independent Haiku gate run receives the resolved gate string alone (`:541-557`), and
+  an unpinned task's string is the classifier's, which carries no export (`resolveGate`,
+  `:684-707`). So every task whose Files can reach an e2e-bearing tier pins `gateTier: "full"` and
+  runs `args.gate` (or its own `gate`), both of which export it (see "Per-task gate"). The
+  conductor's boundary and close F dispatches carry the same export. Backstop for a computed string
+  that names `full` or `admin-visual` anyway: the conductor confirms `ss -ltnp 'sport = :4173'`
+  shows no listener before each segment launch.
 - Every edit to `src/lib/diagnostics/conditions.ts` regenerates its mirror with `node
   scripts/build/emit-tool-conditions.mjs` and commits `tool/internal/spine/conditions.json` in the
   same task, so `check:tool-conditions` stays green.
@@ -254,16 +276,26 @@ A lone unrelated test-file failure, or a component run printing `Cannot connect 
     `kind` is not `github-app`, the live branch makes no network call and leaves `githubAppToken`
     out, so `ok` reads the signing check alone. The spec is silent on this case; a reported
     "unreachable" would blame GitHub for a missing secret the signing check already names.
-16. **D1's delete gate fails closed on a manifest with no reference data.** The spec accepted a
-    residual: a site whose only image references are nested commits no `mediaRefs` key, so its
-    stale manifest reads as pre-field and builds green while the deployed delete gate still sees
-    every gallery asset as unused. That residual is the data loss D1 exists to fix, so the gate
-    takes the conventional fail-closed default (the strict branch read's posture). When no
-    committed manifest entry carries a `mediaRefs` key and any concept declares a nested image
-    shape, a single delete of an asset the index reads as unused, and a bulk delete whose selection
-    holds one, answer a 409 naming `npx cairn-manifest` before any commit (Task 11). Known cost, disclosed in the message and the
-    changelog: a regenerated site whose content references no image at all also reads this way and
-    refuses until an entry references one.
+16. **D1 fails closed at the build, not at the delete.** The spec accepted a residual: a site
+    whose only image references are nested commits no `mediaRefs` key, so its stale manifest reads
+    as pre-field and builds green while the deployed where-used index sees every gallery asset as
+    unused. That residual is the data loss D1 exists to fix, so the manifest verify takes the
+    fail-closed default. `verifyManifest` gains an optional third argument, the adapter. Given it,
+    the verify keeps its pre-field allowance (drop the built `mediaRefs` when no committed entry
+    carries the key) only when no concept declares a nested image shape; with a nested shape
+    declared, it compares exactly. Called without the adapter, it keeps the allowance, so a direct
+    caller still compiles. The verify runs at every build and every dev start with the adapter in
+    scope: the generated verify source imports `cairn`, builds the manifest from it, and calls
+    `verifyManifest` (`src/lib/vite/internal.ts:84-94`), and the plugin's `buildStart` (`:273`)
+    evaluates that source through `runStartChecks` and `verifyManifestFromVite` (`:304-306`,
+    `:218-226`), against the dev server under `vite dev` and a nested server under a build. So on a
+    nested-shape site, a deployed manifest with no `mediaRefs` key proves the corpus references no
+    image, and the delete path keeps today's behavior with no gate of its own. The build is the
+    fail-closed point because a runtime gate keyed on an absent `mediaRefs` key is reachable by
+    ordinary editing (removing an entry's last image reference and publishing re-derives it with no
+    key, `manifest.ts:112`), and the remedy it would name, regenerating, clears nothing. At upgrade,
+    a nested-shape site that has not regenerated fails its build until it runs `npx
+    cairn-manifest`, which the `Consumers must:` regenerate line already requires.
 
 ## Rulings for Geoff
 
@@ -284,7 +316,7 @@ The pass is planned to run 10 or more hours without Geoff. Every stop is settled
   that exited 75.
 - A flake under the rerun rule in `docs/internal/durable-gotchas.md`: one rerun of the named test
   file or the serialized component run; a second red is a real failure.
-- A second `fix` verdict on a non-`auth-data` task (Tasks 2, 5, 7, 8, 12): one more fix round, an
+- A second `fix` verdict on a non-`auth-data` task (Tasks 2, 5, 7, 12): one more fix round, an
   upshift to `model: opus`, or a split of the task, whichever the findings point at. The runner
   stops on `needs-decision`, and a relaunch would re-record `baseSha` at the new HEAD, so the extra
   round is a hand-dispatched chain per `pass-core` that names the task's original base SHA and the
@@ -304,9 +336,10 @@ The pass is planned to run 10 or more hours without Geoff. Every stop is settled
   10, 11).
 - An `auth-data` coverage gap the reviewer still marks blocking after the fix round, such as a
   mutation the task names that no test kills.
-- A Task 8 behavior defect (a failed save reading as saved, or the writing lost) still standing
-  after the hand-dispatched Opus chain. Task 8's acceptance rows are blocking for coverage, as on
-  an `auth-data` task.
+- A Task 8 defect or coverage gap (a failed save reading as saved, the writing lost, or a named
+  row or mutation unproven) still standing after the hand-dispatched Opus chain. Task 8 is
+  `auth-data`, so the runner stops on it like any other; the Opus chain under "Models" runs before
+  the pass stops.
 - An escalate verdict that names an architectural fork the spec did not settle.
 - A pre-flight finding that changes a task's outcome (a claim the spec rests on is false).
 - The ceiling at 80 percent, at the next segment boundary.
@@ -347,8 +380,9 @@ The inputs most likely to bite a real site that per-task tests would not exercis
    failure. Task 8's e2e starts there.
 5. **A publish carrying a pending dictionary word.** Task 8 sequences the word's commit before the
    publish POST, and Task 10's head guard must not refuse that publish.
-6. **A stale manifest that still builds.** Task 11's verify narrowing, the nested-only residual,
-   and the delete gate that fails closed on it (Decision 16).
+6. **A stale manifest that still builds.** Task 11's verify narrowing, and the nested-only residual
+   it closes at the build: with a nested image shape declared, the verify compares exactly
+   (Decision 16).
 
 ---
 
@@ -471,7 +505,7 @@ comments only), `src/lib/auth/access.ts` and `src/lib/index.ts` (the comments on
 2), every other caller of the three factories under `src/`, `packages/`, `examples/showcase/src/`
 and their tests (the pre-flight counts them), `docs/reference/sveltekit.md`, `docs/reference/core.md`,
 `docs/reference/log-events.md` (the rows named below only), `docs/reference/admin-routes.md` (the
-snippet at `:218` only), `docs/internal/option-map.json` (the three removed options out, the
+`createAuthGuard()` prose at `:191` and the snippet at `:218` only), `docs/internal/option-map.json` (the three removed options out, the
 `AuthGuardConfig.runtime` and `EditorRoutesConfig.runtime` rows in, each with a fact id),
 `docs/internal/facts/*.md` (pointer repairs only, for each bullet whose Source cites a deleted
 `src/access.ts`), `docs/internal/api-surface.md`, and `templates/waymark/**` through `npm run
@@ -537,10 +571,12 @@ emit:template`.
   the `/admin/signups` rule.
 - `npm run check:tool-heuristics` green; `check:template`, `test:emit`, `check:options`,
   `check:facts`, and `check:snippets` green; the showcase e2e green (the dev handle path).
-- `rg -nU "(createAuthGuard|devBackendHandle)\(\s*\{\s*(access|roles)\b|createEditorRoutes\(\s*\{\s*roles\b|createAuthGuard\(\s*\)" src packages examples templates docs/reference`
-  prints nothing outside the `@ts-expect-error` file (multi-line calls included).
-- `rg -n "from ['\"].*cairn\.config" docs/reference` finds no access-module snippet importing
-  `roles` from the adapter.
+- `rg -nU -g '!src/lib/diagnostics/conditions.ts' "(createAuthGuard|devBackendHandle)\(\s*\{\s*(access|roles)\b|createEditorRoutes\(\s*\{\s*roles\b|createAuthGuard\(\s*\)" src packages examples templates docs/reference`
+  prints nothing outside the `@ts-expect-error` file (multi-line calls included). The exclusion is
+  Task 2's: that file's `auth.role-wiring-missing` remediation keeps the `{ roles }` form for a site
+  on an older engine.
+- `rg -n "import \{[^}]*\broles\b[^}]*\} from ['\"][^'\"]*cairn\.config" docs/reference` prints
+  nothing (on `main` it prints the three cycle snippets, `core.md:1020` and `sveltekit.md:131,1046`).
 - F green.
 
 **Mutations (each must turn a named test red; the report's mutation ledger quotes it):** the guard
@@ -673,7 +709,8 @@ pre-flight dispatched.
 
 ### Task 4: The roles migration ships, and every role write names it (A3)
 
-**Pass class:** `auth-data`. **Spec:** "Access and auth", item A3.
+**Pass class:** `auth-data`. **gateTier:** `full`, with its own `gate` (see "Per-task gate").
+**Spec:** "Access and auth", item A3.
 
 **Files:** `examples/showcase/migrations/0001_roles.sql` (new, byte-identical to the package's
 `migrations/0001_roles.sql`), `src/lib/auth/store.ts`, `src/lib/diagnostics/conditions.ts`,
@@ -704,7 +741,7 @@ failure, a primary-key violation included, rethrows untouched.
 - A duplicate-email add rethrows the primary-key failure untouched.
 - After 0001 the same writes succeed.
 - `check:tool-conditions`, `check:template`, and `test:emit` green; T green (the Go mirror test).
-- The computed gate green (`full+tool` for this diff).
+- Its pinned gate green: F, then `make -C tool check`, under `E2E_PORT=4392`.
 
 **Mutations:** drop the routing on each of the four routed statements in turn; widen the match so a
 non-constraint error (the primary-key failure) is renamed.
@@ -721,12 +758,13 @@ the friction log for the admin arm's stage.
   (sign-in and publishing still work; only a custom-role write fails), with `docsAnchor`
   `is-it-working.md#provision-the-auth-store`, the anchor `auth.store-unmigrated` already uses.
 
-**Gate:** computed (`auth-data`; this diff resolves to `full+tool`).
+**Gate:** pinned, `export E2E_PORT=4392 && <F> && make -C tool check` (the classifier would compute
+`full+tool` for this diff, with no port export).
 
 ### Task 5: Turnstile, the channel database type, and partial branding (A7, A8, A10)
 
-**Pass class:** `engine-logic`. **Independent** of Tasks 4 and 7. **Spec:** "Access and auth",
-items A7, A8, A10.
+**Pass class:** `engine-logic`. **gateTier:** `full` (its optional `packages/cairn-cms-dev/` edit
+is unclassified). **Independent** of Tasks 4 and 7. **Spec:** "Access and auth", items A7, A8, A10.
 
 **Files:** `src/lib/cloudflare/turnstile.ts`, `src/lib/log/events.ts`,
 `src/lib/auth-channel/factory.ts` (`resolveDb`'s return type, `:232`),
@@ -752,13 +790,13 @@ Turnstile row), `docs/internal/api-surface.md`.
   report quotes the red type error before the change.
 - **A10:** with a runtime whose `sender.replyTo` is set, `auth.branding: { siteName }` alone sends
   mail that keeps that reply-to. Fails today: dropped.
-- The computed gate green.
+- F green.
 
 **Notes:** not breaking. Alerting keyed on `invalid_input` for a missing secret now matches
 `missing_secret` (a `Consumers must:` line). Affected 2a pages: add-a-second-sign-in-group,
 add-cairn-to-a-sveltekit-app.
 
-**Gate:** computed.
+**Gate:** F (pinned).
 
 ### Task 7: The health route's 503 and the rotation strings (B5, B9, B11a)
 
@@ -833,7 +871,9 @@ scaffolded-site-files.
 
 ### Task 8: A failed save keeps the writing (A6)
 
-**Pass class:** `engine-logic` (Svelte). **gateTier:** `full`. **Spec:** "Admin behavior", item A6.
+**Pass class:** `auth-data` (runner `passClass: "auth-data"`, the header class, so a coverage
+finding blocks; the spec says `engine-logic`, see the header). **gateTier:** `full`. **Spec:**
+"Admin behavior", item A6.
 
 **Files:** `src/lib/admin/EditPage.svelte`, its component tests, a new showcase e2e spec under
 `examples/showcase/e2e/` (for example `edit-save-failure.spec.ts`), and
@@ -854,7 +894,7 @@ scaffolded-site-files.
   "Saved". The dirty baseline for an in-place failure is the loaded `data.body`, so a refusal that
   echoes `body` still reads as unsaved and the leave guard still prompts.
 
-**Acceptance (a showcase e2e from `?saved=1`; every row is blocking for coverage):**
+**Acceptance (a showcase e2e from `?saved=1`):**
 - Type text; `page.route` answers `?/save` with a 500 failure and fails any following
   `__data.json`. The calm message shows, no "Saved" text shows, the text is intact, Save is
   enabled, a retry succeeds, and the leave guard prompts.
@@ -967,19 +1007,22 @@ pre-flight dispatched, which also records fork 2's state.
 
 ### Task 11: Nested images in where-used, replace, and the manifest verify (D1)
 
-**Pass class:** `auth-data` (the commit path). **Independent** of Task 6. **Spec:** "The commit
-path and media", D1.
+**Pass class:** `auth-data` (the commit path). **gateTier:** `full` (its regenerated manifests and
+template files are unclassified). **Independent** of Task 6. **Spec:** "The commit path and
+media", D1.
 
 **Files:** `src/lib/content/media-refs.ts` (`:45-52`), `src/lib/content/media-rewrite.ts` (the
 `src:` locator at `:132`, `imageFieldKeys` at `:164-171`, replace's single-occurrence edit, alt
-propagation's placement report), `src/lib/content/manifest.ts` (`verifyManifest`, `:325-328`, and
-one exported-or-internal predicate for "no committed entry carries `mediaRefs`" that the verify and
-the delete gate share), `src/lib/sveltekit/content-routes-media-delete.ts` (the single and bulk
-safe-delete gate, Decision 16), `src/lib/sveltekit/content-routes-media-metadata.ts` only where
-replace or alt read a placement, `src/lib/log/events.ts` and `docs/reference/log-events.md` (the
-refusal's `reason`), their tests, `examples/showcase/src/content/.cairn/index.json` and the
-template's copy (regenerated if they change), and `docs/internal/api-surface.md` if a typed export
-moved.
+propagation's placement report), `src/lib/content/manifest.ts` (`verifyManifest`, `:308-345`, its
+optional adapter argument, and an internal predicate for "no committed entry carries
+`mediaRefs`"), `src/lib/vite/internal.ts` (the generated verify source at `:84`, which passes
+`cairn` as the third argument), `src/lib/sveltekit/content-routes-media-metadata.ts` only where
+replace or alt read a placement, their tests (the vite-level row beside
+`src/tests/unit/vite-verify-references.test.ts`), `docs/reference/core.md` (`verifyManifest`'s
+declaration at `:854` and its snippet at `:870-875`, the minimal edit `check:reference:signatures`
+needs), `docs/internal/api-surface.md` (regenerated; `verifyManifest` at `:115`),
+`examples/showcase/src/content/.cairn/index.json` and the template's copy (regenerated if they
+change).
 
 **Outcome:**
 - `extractMediaRefs` and `imageFieldKeys` walk all four shapes `checkContainerNesting` admits:
@@ -987,18 +1030,16 @@ moved.
 - The `src:` locator admits an optional `- ` sequence prefix, and replace rewrites every occurrence
   in an entry.
 - Alt propagation reports a nested placement and never splices it.
-- `verifyManifest` drops a built `mediaRefs` only for a manifest that predates the field (no
-  committed entry carries the key). A post-field manifest compares exactly, and a stale one fails
-  the build with the regenerate message.
-- **The delete gate fails closed on the residual (Decision 16).** When no committed manifest entry
-  carries a `mediaRefs` key and any concept declares a nested image shape, `mediaDeleteAction`
-  refuses an asset the index reads as unused, and `mediaBulkDeleteAction` refuses the whole batch
-  when any selected asset reads as unused, each with a 409 and one message naming `npx
-  cairn-manifest`, before any commit or R2 call. The refusal logs `media.delete_refused` with a
-  `reason` value typed in `events.ts`. An asset the index reads as in use keeps today's typed-slug
-  path. With a post-field manifest, or no nested shape declared, delete behaves as today.
-- A comment at the verify and at the gate states the residual and both its consequences: until the
-  site regenerates, the delete gate refuses (this rule), and the first publish that writes a
+- **The verify fails closed at the build (Decision 16).** `verifyManifest(built, committedRaw,
+  adapter?)` drops a built `mediaRefs` only for a manifest that predates the field (no committed
+  entry carries the key), and, when given the adapter, only when no concept declares a nested
+  image shape. With a nested shape declared, it compares exactly, so a stale manifest fails the
+  build with the regenerate message. Called without the adapter, it keeps the pre-field allowance.
+  A post-field manifest compares exactly in every case.
+- The generated verify source passes the adapter, so every build and dev start applies the rule.
+  The delete paths are unchanged.
+- A comment at the verify states the rule and its consequences: a nested-shape site that has not
+  regenerated fails its build; on a site with no nested shape, the first publish that writes a
   `mediaRefs` key makes the next build fail on every other stale entry.
 
 **Acceptance:**
@@ -1006,36 +1047,53 @@ moved.
   `- src:` line and an asset twice in one array, against a post-field manifest. Fails today: each
   nested asset reads as unused.
 - Alt propagation over a sequence-form entry leaves it byte-identical and reports the placement.
-- **Fail row:** a committed manifest in which a second entry carries `mediaRefs` (a hero image) and
-  the gallery-only entry lacks the key fails `verifyManifest`. Fails today: it passes.
-- **Pass row:** a manifest in which no entry carries `mediaRefs`, over a corpus with gallery refs,
-  still verifies.
-- **Gate rows:** with a manifest in which no entry carries `mediaRefs` and a concept declaring
-  `array(image)`, a single delete of an unreferenced-looking asset answers the 409 and the R2
-  object and the `media.json` row survive; a bulk delete over it commits nothing. The same deletes
-  succeed once one entry carries `mediaRefs`, and when no concept declares a nested shape. Fails
-  today: the delete removes the asset.
+- **Fail row, post-field:** a committed manifest in which a second entry carries `mediaRefs` (a
+  hero image) and the gallery-only entry lacks the key fails `verifyManifest`. Fails today: it
+  passes.
+- **Fail row, nested shape:** given an adapter declaring `array(image)`, a committed manifest in
+  which no entry carries `mediaRefs`, over a corpus with gallery refs, fails with the regenerate
+  message. Fails today: it passes.
+- **Pass row, nested shape:** the same adapter and manifest over a corpus with no image references
+  verifies.
+- **Pass row, no nested shape:** with an adapter declaring only top-level `image` fields, and with
+  no adapter passed, a manifest in which no entry carries `mediaRefs`, over a corpus with top-level
+  refs, still verifies.
+- **The build path:** `verifyManifestFromVite` over a fixture site whose adapter declares
+  `array(image)`, with a committed manifest carrying no `mediaRefs` and gallery refs in the corpus,
+  rejects with the regenerate message (the pattern of `vite-verify-references.test.ts`).
 - The showcase and template manifests are regenerated if they changed, and `check:template` is
   green.
-- The computed gate green.
+- F green (pinned).
 
 **Mutations:** walk top-level fields only; drop the `- ` prefix from the locator; replace only the
 first occurrence; restore the unconditional `mediaRefs` drop; never drop (always compare exactly),
-which the pass row kills; skip the delete gate's residual check.
+which the no-nested-shape pass row kills; drop on a nested-shape site (ignore the adapter's
+shapes); the generated verify source omits the adapter.
 
-**Notes:** **breaking:** `Consumers must:` regenerate the content manifest (`npx cairn-manifest`)
-and commit it; the report drafts the line with both residual consequences and the gate's refusal.
-The stale-manifest message's script name (B2) is pass B's; leave it.
+**Notes:** **breaking:** the report drafts the `Consumers must:` line: regenerate the content
+manifest (`npx cairn-manifest`) and commit it; a site that declares a nested image shape and has
+not regenerated fails its build at upgrade; a site that calls `verifyManifest` itself passes its
+adapter as the third argument to get the nested-shape rule. The stale-manifest message's script
+name (B2) is pass B's; leave it. `verifyManifest`'s new argument is public surface: the
+`core.md` declaration, `api-surface.md`, and a fact bullet (Task 12) carry it.
 
 **Decisions carried:**
-- **Decision 16:** D1's delete gate fails closed on a manifest with no reference data. A site whose
-  only image references are nested commits no `mediaRefs` key, so its stale manifest reads as
-  pre-field and builds green while the delete gate still sees every gallery asset as unused. That
-  residual is the data loss D1 exists to fix, so the gate takes the conventional fail-closed
-  default. Known cost, disclosed in the message and the changelog: a regenerated site whose content
-  references no image at all also reads this way and refuses until an entry references one.
+- **Decision 16:** D1 fails closed at the build, not at the delete. A site whose only image
+  references are nested commits no `mediaRefs` key, so its stale manifest reads as pre-field and
+  builds green while the deployed where-used index sees every gallery asset as unused. That
+  residual is the data loss D1 exists to fix. `verifyManifest` gains an optional third argument,
+  the adapter. Given it, the verify keeps its pre-field allowance only when no concept declares a
+  nested image shape, and compares exactly otherwise; without it, the allowance holds. The verify
+  runs at every build and dev start with the adapter in scope (`src/lib/vite/internal.ts:84-94`,
+  the generated source; `:273`, `buildStart`; `:304-306`, `runStartChecks`), so on a nested-shape
+  site a deployed manifest with no `mediaRefs` key proves the corpus references no image, and the
+  delete path keeps today's behavior. The build is the fail-closed point because a runtime gate
+  keyed on an absent `mediaRefs` key is reachable by ordinary editing and names a remedy,
+  regenerating, that clears nothing. At upgrade, a nested-shape site that has not regenerated
+  fails its build until it runs `npx cairn-manifest`, which the `Consumers must:` regenerate line
+  already requires.
 
-**Gate:** computed (`auth-data`).
+**Gate:** F (pinned).
 
 ### Task 6: The opt-in live key check and the fingerprint (ruling 3)
 
@@ -1110,7 +1168,8 @@ refused key; log the minted token's length or prefix; `ok` reads the signing che
 - The template and the showcase gain an owner-only health route under `/admin` (the guard attaches
   the editor only there), at a path the task settles beside the existing admin routes, emitted
   through `npm run emit:template`; `check:template` asserts it. Public `/healthz` keeps the
-  no-network self-test and the fingerprint.
+  no-network self-test and the fingerprint. The task then pins `gateTier: "full"`, since the
+  emitted template files are unclassified and its gate must carry the `E2E_PORT` export.
 - The 60-second verdict cache and the single-flight slot are dropped: an owner-only call needs no
   fleet bound. The 5-second abort, the uncached mint, the classifier, the never-touch-the-cache
   rule, and the fingerprint stay.
@@ -1164,10 +1223,11 @@ ingest-delivery-design.md` (decision 1, `:162-168`); `ROADMAP.md`; `docs/interna
   falsified, gated by `check:facts`.
 - **Per-version records:** `CHANGELOG.md` under `## Unreleased` carries pass A's `Consumers must:`
   lines (the `{ runtime }` and adapter declaration with its reconcile clause; the manifest
-  regenerate, with both residual consequences and the delete gate's refusal until it runs; routes
-  under `/admin/auth/`; the concept-less tidy and dictionary mount; Turnstile's `missing_secret`;
-  review any access rule that names a `none`-capability role, since `canReach`, `requireAccess`,
-  and `createSectionAction` now admit it), a changelog line that publish and publish-all can answer
+  regenerate, with its build failure at upgrade on a nested-shape site, the no-nested-shape
+  residual, and `verifyManifest`'s adapter argument for a direct caller; routes under
+  `/admin/auth/`; the concept-less tidy and dictionary mount; Turnstile's `missing_secret`; review
+  any access rule that names a `none`-capability role, since `canReach`, `requireAccess`, and
+  `createSectionAction` now admit it), a changelog line that publish and publish-all can answer
   the calm conflict, and `Consumers may:` lines (the 503; `0001_roles.sql`). `migration-notes.md`
   and `upgrade-cairn.md` carry the same actions.
 - **The ledger:** the accept entry `access-map-one-declaration`; the six declines
@@ -1225,8 +1285,10 @@ the same change.
   the charter.
 - **Decision 13:** the doctor's changelog landed with Task 2 under `tool/CHANGELOG.md`; no tool
   tag.
-- **Decision 16:** the D1 delete gate fails closed on a manifest with no reference data; the
-  changelog line discloses the refusal and its known cost.
+- **Decision 16:** D1 fails closed at the build: given the adapter, `verifyManifest` compares
+  exactly when any concept declares a nested image shape, so a nested-shape site that has not
+  regenerated fails its build at upgrade; the delete paths are unchanged. The changelog's
+  regenerate line says so, and `core.md` documents the optional adapter argument.
 
 **Gate:** the classifier's docs string plus `check:surface` and `check:rulings-format`; `gateLane:
 "light"` in args.
@@ -1256,7 +1318,8 @@ is a dispatch that returns a structured verdict.
      dev handle, the access edges, the roles migration, and the live check, and on the pass's two
      data-loss fixes: the C11 head guards on every writer to `main` (publish, publish-all, Library
      delete, metadata, replace, alt, dictionary), with the head read before every snapshot read and
-     the null-head refusal; and the D1 delete gate over nested shapes and the pre-field manifest.
+     the null-head refusal; and D1's build-time verify over nested shapes and the pre-field
+     manifest (the adapter reaching `verifyManifest` from the generated verify source).
    - `svelte-reviewer` (EditPage and the load and action code).
    - `cloudflare-workers-reviewer` (the health route, `waitUntil`, the `AUTH_DB` writes, the
      migration).
@@ -1283,10 +1346,23 @@ is a dispatch that returns a structured verdict.
 
    Evidence: the commands, status codes, and the matching log lines quoted.
 6. **Live key probe** (Task 6's ruling), under `wrangler dev` from a scratch showcase copy under
-   `$HOME/.cache/engine-pre-2b-a/`. A script that sources `~/.local/secrets` itself writes
-   `GITHUB_APP_PRIVATE_KEY_B64` and the adapter's ids (`GITHUB_APP_ID`,
-   `GITHUB_APP_INSTALLATION_ID`, by name only) into a mode-600 `.dev.vars` in the scratch copy,
-   deleted on exit; never through `--var` (the process list) and never in the worktree.
+   `$HOME/.cache/engine-pre-2b-a/`. A script that sources `~/.local/secrets` itself (which
+   exports `GITHUB_APP_PRIVATE_KEY_B64`, `GITHUB_APP_ID`, and `GITHUB_APP_INSTALLATION_ID`,
+   verified by name only) prepares the copy, printing no value:
+   - It writes only `GITHUB_APP_PRIVATE_KEY_B64` into a mode-600 `.dev.vars` beside the copy's
+     `wrangler.jsonc`, deleted on exit; never through `--var` (the process list) and never in the
+     worktree. The key is the one name the engine reads from the env
+     (`src/lib/github/credentials.ts:18`). Cloudflare documents the load: "Put secrets for use in
+     local development in either a `.dev.vars` file or a `.env` file, in the same directory as the
+     Wrangler configuration file"
+     (`https://developers.cloudflare.com/workers/configuration/secrets/`). The same page notes
+     that a `secrets.required` list limits which keys load; the showcase's `wrangler.jsonc` declares
+     none, and the copy has no `.env`.
+   - It rewrites the copy's `createGithubApp({ ... appId: '1', installationId: '2' })` literal
+     (`examples/showcase/src/theme/cairn.config.ts:149`) from `$GITHUB_APP_ID` and
+     `$GITHUB_APP_INSTALLATION_ID`. Nothing under `src/lib` reads those two env names: the ids live
+     on the adapter (B9), so a `.dev.vars` entry for them would leave the mint aimed at
+     installation 2.
    - `/healthz?live=1` reports `ok` against the real App, and with a freshly generated wrong key
      reports a refused key.
    - **Concurrency (the workerd evidence for the single-flight slot):** N concurrent `?live=1`
@@ -1305,7 +1381,7 @@ is a dispatch that returns a structured verdict.
    for pass B. `docs/HISTORY.md` takes the pass entry: what landed, what the gates caught, what a
    later pass would be wrong to rediscover, and whether any refused fold finding (the six standing
    refusals) turned out real. This plan takes its post-mortem with the budget score: tokens against
-   11.0M via `/cost`, planning misses, and execution sittings.
+   11.1M via `/cost`, planning misses, and execution sittings.
 10. **Merge:** the PR leaves draft once CI is green; the merge to `main` waits for Geoff's go,
     batched with the charter phrase and any open fork. No version bump, no tag, no publish.
 11. **Pre-bake and hand off:** plan, STATUS, and ROADMAP committed; tree clean; the resume prompt

@@ -142,3 +142,80 @@ as a fork and is settled by conductor ruling 3 (Decision 16).
   Task 8's added rows, and two scratch-copy smoke steps; it removes the S4 boundary F and the close's
   separate `npm test`. Task 6 on Opus changes the model, not the token count. The net stays inside the
   1.0M fix reserve.
+
+## Second fold (verification read, 2026-10-08)
+
+Input: `2026-10-08-engine-pass-pre-2b-a-plan-fold-verification.md`, findings V-M1 to V-M4 and V-m1
+to V-m3, with the conductor's ruling on each. Each finding was checked against `main` (`708fe2d1`)
+before its edit. Plan line count: 1316 before, 1392 after. Plan B took one line edit (V-m3) and is
+otherwise unchanged.
+
+- **V-M1: folded.** Verified: the Task 1 pattern on `main` hits
+  `src/lib/diagnostics/conditions.ts:173` and `docs/reference/admin-routes.md:191`. Task 1's grep
+  now carries `-g '!src/lib/diagnostics/conditions.ts'`, with the reason: Task 2 keeps that
+  remediation's `{ roles }` form for older engines. A run with the exclusion drops exactly that
+  line. Task 1's `admin-routes.md` Files entry now covers the `:191` prose and the `:218` snippet.
+- **V-M2: folded.** Verified: nothing under `src/lib` reads `GITHUB_APP_ID` or
+  `GITHUB_APP_INSTALLATION_ID` (the only hit is the remediation at `conditions.ts:198`, which Task 7
+  rewrites), the showcase adapter hard-codes `appId: '1', installationId: '2'`
+  (`examples/showcase/src/theme/cairn.config.ts:149`), and the engine reads only
+  `GITHUB_APP_PRIVATE_KEY_B64` (`src/lib/github/credentials.ts:18`). Close step 6 now writes only
+  the key into the scratch copy's mode-600 `.dev.vars`, and the probe script rewrites the copy's
+  `createGithubApp` ids from the sourced secrets, printing neither value. The step quotes
+  Cloudflare's rule ("Put secrets for use in local development in either a `.dev.vars` file or a
+  `.env` file, in the same directory as the Wrangler configuration file",
+  developers.cloudflare.com/workers/configuration/secrets/, read through the Cloudflare docs
+  search) and notes the `secrets.required` filter, which the showcase's `wrangler.jsonc` does not
+  set. Secret names verified by name only: `~/.local/secrets` exports all three, and the estate
+  inventory lists the same three names for the asc-site worker.
+- **V-M3: folded as the conductor ruled, not as the report proposed.** Verified:
+  `engine-logic` sets `coverageBlocks: false` (`pass-execute.js:264-270`), and `applyClassBar`
+  (`:345-359`) demotes `coverageOnly` findings and turns an emptied `fix` into `accept`. Task 8
+  now runs as `auth-data`: the header class paragraph (with the reason and plan B's precedent),
+  Task 8's class line, the args `passClass` overrides (Task 8 inherits the header's
+  `"auth-data"`), and the stop rules (Task 8 left the non-`auth-data` list; its stop bullet now
+  covers a defect or coverage gap standing after the Opus chain). The "every row is blocking for
+  coverage" claim and its stop-rule echo are removed as moot. The report's carve-out was not
+  added.
+- **V-M4: folded, the build-time form.** Verified the call sites: the generated verify source
+  imports `cairn`, builds the manifest from it, and calls `verifyManifest`
+  (`src/lib/vite/internal.ts:84-94`); the plugin's `buildStart` (`:273`) evaluates it through
+  `runStartChecks` (`:304-306`) and `verifyManifestFromVite` (`:218-226`), against the dev server
+  under `vite dev` and a nested server under a build. No other `src/lib` caller exists; the
+  `cairn-manifest` bin only writes. Decision 16 is rewritten to the build-time rule with its reason
+  and the upgrade consequence. Task 11 drops the runtime delete gate, its 409, its `reason` value,
+  its log row, and the disclosed cost; it gains the optional adapter argument (public: `core.md`
+  `:854` and its snippet, `api-surface.md:115`, a `Consumers must:` clause for a direct caller),
+  the generated source's change, the nested-shape fail and pass rows, a `verifyManifestFromVite`
+  row, and the mutations "drop on a nested-shape site" and "the generated verify source omits the
+  adapter" (the old "skip the delete gate's residual check" is gone). The old pass row (no
+  `mediaRefs` over gallery refs still verifies) contradicted the new rule; it now reads over
+  top-level refs with no nested shape declared, or with no adapter passed. Task 12's changelog
+  line, its carried Decision 16, Review focus 6, and close step 4's security brief match. Both the
+  showcase and the template declare `array(image)` and carry `mediaRefs` today, so they compare
+  exactly already.
+- **V-m1: folded per task, not through `commonNotes`.** `commonNotes` reaches the implementer only
+  (`pass-execute.js:416`); the independent Haiku gate run receives the resolved gate string alone
+  (`:541-557`), and an unpinned task's string is the classifier's, which carries no export
+  (`resolveGate`, `:684-707`). So the only channel to every gate run is the gate string, and every
+  task whose Files can reach an e2e-bearing tier now pins `gateTier: "full"`. Verified against
+  `classifyPath` (an unclassified path counts as full): Task 4 (the migration `.sql`; it also sets
+  its own `gate` with `make -C tool check` appended), Task 5 (its optional `packages/cairn-cms-dev/`
+  edit), Task 11 (regenerated manifests and template files), and Task 6 under fork 2's "no" (the
+  emitted owner-only route). Tasks 2, 6, and 9 compute to `engine` or `engine+tool`, which run no
+  e2e. Backstop: the conductor confirms nothing listens on 4173 before each segment launch. The
+  pins add at most one F per pinned task, inside the existing per-chain allowance, so the ceiling
+  line does not move for V-m1.
+- **V-m2: folded.** Task 1's second grep is the report's pattern and must print nothing. On `main`
+  it prints exactly the three cycle snippets (`core.md:1020`, `sveltekit.md:131,1046`).
+- **V-m3: folded in plan B.** Plan B's Task 1 marker bullet now says the outer block wraps the
+  whole `access` member, its doc comment included. No pass A change.
+
+**Ceiling:** 11.1M, up from 11.0M (chains 6.15M with 0.10M for Task 8 as `auth-data`; docs 1.2M;
+Task 0 0.2M; pre-flights 0.4M; fix reserve 1.0M; close 2.15M). The 80 percent stop is 8.88M, up
+from 8.8M. Close step 9's budget score reads 11.1M.
+
+**Side note for the conductor:** a stale shell from plan B's second fold (pid 1007277) is still
+alive, blocked in a `wc -l` with no file argument reading stdin. Its remaining commands include a
+`cat >>` that would append a second copy of plan B's "Second fold" section to
+`2026-10-08-engine-pass-pre-2b-b-plan-fold.md` if that `wc` ever gets EOF. It was left untouched.

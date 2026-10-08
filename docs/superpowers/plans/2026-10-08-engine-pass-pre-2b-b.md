@@ -25,28 +25,31 @@ in this plan are `draft-docs-2a`'s at `2b37ae78`; Task 0 re-reads every one on `
 plan and the spec disagree, stop and report, except under "Decisions this plan takes".
 
 **Pass class:** `engine-logic`. Overrides: Task 1 (the bake) is `sweep`; Task 2 (`create-cairn-site`
-provisioning) and Task 5 (B7) are `auth-data`; Task 11 is `docs`. Task 3 mixes two `sweep` items (A5,
+provisioning) Task 5 (B7), and Task 8 (C5's security floor) are `auth-data`; Task 11 is `docs`. Task 3 mixes two `sweep` items (A5,
 B3) with two `engine-logic` items (B2, D2) and runs as `engine-logic`, the stricter class (fold
 record V-m5's precedent); its A5 and B3 items keep their grep post-conditions, and A5 keeps its close
-capture read. Task 8 is `engine-logic` with `web-auth-security-reviewer` named on its C5 item. The
+capture read. Task 8 runs as `auth-data` (`passClass: "auth-data"` in its args), not `engine-logic`, because the
+runner's `engine-logic` bar sets `coverageBlocks: false` and demotes a `coverageOnly` finding to
+`nonBlocking` (`~/.claude/workflows/pass-execute.js:264-267,345-360`), which would accept a missing
+C5 mutation proof on the first review. `web-auth-security-reviewer` is named on its C5 item. The
 close runs the union: `auth-data`'s security review and live auth smoke, and `sweep`'s capture.
 
-**Token ceiling:** 12.0M for the whole pass, chains plus close, pending Geoff's yes on fork 3
+**Token ceiling:** 12.1M for the whole pass, chains plus close, pending Geoff's yes on fork 3
 (under "Rulings for Geoff"). Basis:
 
 | Item | Budget |
 | --- | --- |
 | Task 0 pre-flight and baseline gate | 0.30M |
-| Nine Sonnet chains (Tasks 1 to 9): 0.55M each, the full-tier rate pass A and the SvelteKit 3 pass use, plus 0.10M for each `auth-data` chain (2, 5) and 0.10M for Task 3's four items | 5.25M |
+| Nine Sonnet chains (Tasks 1 to 9): 0.55M each, the full-tier rate pass A and the SvelteKit 3 pass use, plus 0.10M for each `auth-data` chain (2, 5, 8) and 0.10M for Task 3's four items | 5.35M |
 | Task 10, ruling 5 (overlay, workerd guard, notice, bake marker, its records) | 0.90M |
 | Task 11, docs and records | 1.20M |
 | Three segment pre-flights after Task 0, at 0.10M | 0.30M |
 | One fix round per segment in reserve | 1.10M |
 | Close: simplifier, gates, consumer proof, four reviewer seats and the `visual-verifier` read, one fix chain, smoke, ledgers | 2.95M |
-| **Total** | **12.05M, held at 12.0M** |
+| **Total** | **12.10M** |
 
-At 80 percent (9.6M) the conductor finishes the task in flight, writes STATUS, and asks one
-combined question at the next segment boundary. It starts no new segment past 9.6M without an
+At 80 percent (9.68M) the conductor finishes the task in flight, writes STATUS, and asks one
+combined question at the next segment boundary. It starts no new segment past 9.68M without an
 answer. The SvelteKit 3 close's fix chain alone cost about 1.95M against about 1.45M budgeted for
 the whole close (`2026-10-03-sveltekit-3-upgrade.md:1562`), and that pass ended at about 14.7M
 against 12.4M. The close line carries that record.
@@ -90,7 +93,10 @@ into the worktree.
 (`parallel` unset). Args: `repo` the worktree's absolute path, `implementer: "cairn-implementer"`,
 `reviewer: "diff-reviewer"`, `passClass: "engine-logic"`, `gate` the F string, `maxFix: 1`,
 `stopOnEscalate: true`, `commonNotes` carrying "Global constraints" and the pre-flight checklist from
-`~/.claude/docs/pass-gate-economy.md`, and each task's own `passClass` where this plan sets one.
+`~/.claude/docs/pass-gate-economy.md`, and each task's own `passClass` where this plan sets one (Tasks 1, 2, 5, 8, and 11). `commonNotes`
+reaches the implementer only, so a Global constraint no gate checks (no plan, pass, or task numbers
+in shipped comments) binds the implementer and the close's reviewers, who read the whole diff, not
+the per-task reviewer.
 Each task maps as follows, because neither agent reads this plan (`cairn-implementer.md:12`,
 `diff-reviewer.md:11`), and the reviewer's prompt carries `criteria` alone, never `notes`
 (`pass-execute.js:602-615`):
@@ -256,8 +262,10 @@ failed item stops the run before any dispatch.
    `createGithubApp`'s backend never does, so a production request never carries it by
    construction. The dev handle already injects its store as `locals.cairnBackend`, which
    `CairnEvent.locals` already types (`src/lib/sveltekit/types.ts:66-72`). The shell load reads
-   `event.locals.cairnBackend?.ephemeral` directly, never through the provider resolve, which would
-   mint a token in production. It maps the member to one optional `AdminShellData` member, and
+   `event.locals.cairnBackend?.ephemeral` directly, never through the provider resolve: the notice
+   describes the dev store, a production request carries no `cairnBackend`, and the shell load needs
+   no backend call at all (resolving the provider is lazy, `src/lib/github/backend.ts:176-178`, and
+   the token mints only inside a backend method). It maps the member to one optional `AdminShellData` member, and
    `CairnAdminShell` renders one DaisyUI `alert`. That is two public members, with no sixth
    `App.Locals` key and no change to `CairnEvent.locals`. Fork 1's question carries this scope as
    its sub-point.
@@ -334,10 +342,14 @@ mode (Decision 3). Task 10 is **BLOCKED until Geoff rules**. Its section states 
 - **Orphaned media rows.** A dev upload's bytes stay in the fake R2, but its `media.json` row
   publishes to disk, gets committed, and deploys a reference to an asset never uploaded.
 
+Under "No" Geoff also chooses, in the same ruling: pull the R2 read-through forward, or disable the
+Library's broken-asset cleanup under the dev backend (the fake R2 starts empty and flags every real
+asset as broken). Recommended: disable the cleanup, which keeps the read-through out of this pass.
+
 Fork 2 belongs to pass A.
 
-**Fork 3, open: is the pass ceiling 12.0M?** Recommended: yes, 12.0M, with the 80 percent stop at
-9.6M. The evidence is the chain rate pass A and the SvelteKit 3 pass price (0.55M for a full-tier
+**Fork 3, open: is the pass ceiling 12.1M?** Recommended: yes, 12.1M, with the 80 percent stop at
+9.68M. The evidence is the chain rate pass A and the SvelteKit 3 pass price (0.55M for a full-tier
 chain) and that pass's close record (its fix chain alone cost about 1.95M against 1.45M for the
 whole close). "No" keeps the drafted 10.8M, with the 80 percent stop at 8.64M. On that record the
 stop is likely to trip in S4 or the close, and each trip costs an owner turn.
@@ -354,7 +366,7 @@ Geoff wants this pass to survive a 10-hour unattended run, so every stop is plan
 
 - a `diff-reviewer` accept, and one re-dispatch on a `fix`;
 - a second `fix` whose findings are all `commentOnly`, `testOnly`, or `coverageOnly`, on any task
-  but Task 2, Task 5, and Task 8's C5 item: accept with the notes batched to the boundary, or run
+  but Task 2, Task 5, and Task 8: accept with the notes batched to the boundary, or run
   one more round;
 - a `cairn-run-gate` exit 75 (re-issue), a flake the durable-gotchas rerun rule covers, and a
   gate-string mismatch the runner raises (re-run the gate on the runner's resolved string);
@@ -367,8 +379,7 @@ Geoff wants this pass to survive a 10-hour unattended run, so every stop is plan
 **These stop the run** (write STATUS with the resume prompt, then stop):
 
 - a failed precondition at Task 0, or a red baseline gate;
-- a second `fix` with any blocking finding, coverage included, on Task 2, Task 5, or Task 8's C5
-  item;
+- a second `fix` with any blocking finding, coverage included, on Task 2, Task 5, or Task 8;
 - a behavior defect still standing after its one fix round, on any task;
 - a third `fix` on any task;
 - an `escalate` verdict naming an architectural question the spec did not settle, or an implementer
@@ -496,7 +507,7 @@ moved a fact.
 ### Task 1: The signups demo leaves the scaffold (ruling 2, the bake)
 
 **Pass class:** `sweep`. Disjoint Files from Task 2, but the two land together (see "Disjoint Files
-seams"). **Spec:** "Ruling 2", whole-file and marked-span exclusions and the skill exemplars; pass B
+seams"). **Decision 9.** **Spec:** "Ruling 2", whole-file and marked-span exclusions and the skill exemplars; pass B
 task 1.
 
 **Files:** `examples/showcase/.cairn-template.json`; the marked spans in
@@ -814,7 +825,8 @@ with `check:surface -- --update`.
 
 ### Task 8: The sanitize floor and two build warnings (C5, C13, D6)
 
-**Pass class:** `engine-logic`, with `web-auth-security-reviewer` named on C5 at the close. **Spec:**
+**Pass class:** `auth-data` (runner `passClass: "auth-data"`, so a coverage finding on C5 blocks),
+with `web-auth-security-reviewer` named on C5 at the close. **Spec:**
 C5, C13, D6; pass B task 9.
 
 **Files:** `src/lib/render/sanitize-schema.ts` (`buildSanitizeSchema`, the comment at `:18-24` and
@@ -1208,7 +1220,7 @@ Step 11's merge is the one batched owner step.
      whether any refused fold finding turned real.
    - `ROADMAP.md`'s "Engine pass before stage 2b" Now entry, which pass A narrowed to pass B's
      scope, is removed, now that Tasks 10 and 11 have both landed.
-   - The plan takes its post-mortem with the budget score: tokens against the ruled ceiling (12.0M
+   - The plan takes its post-mortem with the budget score: tokens against the ruled ceiling (12.1M
      recommended) via `/cost`, planning misses, and execution sittings.
 10. **Pre-bake.** Plan, STATUS, and ROADMAP committed; tree clean; the resume prompt names stage 2b
     as the next action and its launch directory.

@@ -133,3 +133,31 @@ presumably pass A's own fold in flight. This fold did not read or touch them.
   and R-m4's derived migration set (Decision 12).
 - **Plan line count:** 1047 before (`57baf01b`), 1225 after.
 - **Ceiling:** 10.8M to 12.0M recommended (the 80 percent stop from 8.64M to 9.6M), pending fork 3.
+
+## Second fold (verification read, 2026-10-08)
+
+Each finding was verified against its cited source before the edit. Plan line count: 1225 before,
+1237 after.
+
+- **V-M1: folded.** Verified: `engine-logic` sets `coverageBlocks: false` (`pass-execute.js:264-267`),
+  and `applyClassBar` demotes `coverageOnly` findings and turns an emptied `fix` into `accept`
+  (`:345-360`). Task 8 now runs as `auth-data` in the header class paragraph and its own class line.
+  The args mapping lists Tasks 1, 2, 5, 8, and 11 as the per-task overrides. The stop wording reads
+  "Task 2, Task 5, or Task 8". The chain line carries +0.10M (chains 5.35M).
+- **V-m1: folded.** Verified: `connect` wraps the token getter lazily (`backend.ts:176-178`). Decision 3
+  keeps the direct `locals.cairnBackend` read and states the true reason: the notice describes the dev
+  store, production carries no `cairnBackend`, and the shell load needs no backend call.
+- **V-m2: folded.** The table sums to 12.10M after V-M1 (0.30 + 5.35 + 0.90 + 1.20 + 0.30 + 1.10 +
+  2.95). The ceiling is 12.1M and the 80 percent stop is 9.68M, in the header, the table, fork 3, and
+  the close's budget-score line. Nothing was trimmed. The "No" alternative for fork 3 (10.8M, 8.64M)
+  is unchanged.
+- **V-m3: folded.** Task 1's header now carries "Decision 9", so the `criteria` mapping finds it.
+- **V-m4: folded as the short line, not per-task criteria.** The unchecked constraints (comment
+  hygiene, no new surface) apply to nearly every task, so repeating them in nine criteria blocks adds
+  bulk and drift. The args mapping now says `commonNotes` reaches the implementer only, and names the
+  gap: those constraints bind the implementer and the close's reviewers, not the per-task reviewer.
+- **V-m5: folded.** Fork 1's "No" text now poses the second choice (pull the R2 read-through forward,
+  or disable broken-asset cleanup under the dev backend), recommending the disable.
+
+Ceiling: 12.1M with the 80 percent stop at 9.68M (recommended), up from 12.0M and 9.6M; "No" on fork 3
+keeps 10.8M and 8.64M.

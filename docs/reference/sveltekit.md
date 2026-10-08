@@ -87,8 +87,8 @@ Build the SvelteKit `Handle` that gates every `/admin/**` path and hardens the a
 headers. Wire it in `hooks.server.ts`. A site with its own hook keeps it by sequencing the guard
 last, so the site hook sees every request and the guard owns admin gating.
 
-`config.runtime` is required, with no default: the runtime `composeRuntime` returned for the
-site's adapter. The guard reads two members off it, so a site declares each once, on the adapter.
+The `runtime` member of the config is required, with no default: the runtime `composeRuntime`
+returned for the site's adapter. The guard reads two members off it, so a site declares each once, on the adapter.
 
 `runtime.roles` is the site's declared [role vocabulary](./core.md#roles) (`defineRoles`, a
 [core](./core.md) export); omitted on the adapter, the guard resolves every session against the

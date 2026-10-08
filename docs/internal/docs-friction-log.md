@@ -210,6 +210,37 @@ shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not 
 `fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` all
 promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings below.
 
+- **`contributor`.** `npm run check` (the `check` script, `svelte-check --tsconfig ./tsconfig.json && tsc ...` in
+  `package.json`) runs svelte-check out of heap at Node's default limit in a worktree; it passes with
+  `NODE_OPTIONS=--max-old-space-size=6144`. Neither `docs/internal/durable-gotchas.md` nor `CLAUDE.md` names the
+  trap. Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
+- **`contributor`.** No gate checks a `docs/internal/...` path cited in a comment under `src/lib`. The design-arc log
+  moved to `docs/internal/record/` and nothing flagged the stale citations in `EditorToolbar.svelte` and
+  `EditPage.svelte` (fixed on `draft-docs-2a`). A gate that requires every cited path to exist would catch the
+  next move. Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
+- **`contributor`.** The sample outputs in `docs/reference/cairn-audit.md` (the border-contrast exemption near line
+  236 and the `norms card` output near line 598) are hand-copied from emitter strings in `src/lib/audit/norms.ts`
+  (line 280) and `src/lib/audit/border-contrast.ts`. Nothing ties the two together; they drifted once and
+  conflicted textually in a merge. Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
+- **`contributor`.** The admin CSS `@source` scan reads comments as well as code
+  (`src/lib/admin/admin-css-safelist.ts`, around lines 62-70, which says so), so a class-like token in a comment
+  can change the built CSS. Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
+- **`tooling`.** The comment on the `golden` target in `tool/Makefile` (line 94) says it recuts the "render
+  frame"; `go test ./internal/render -run TestGolden -update` also regenerates `testdata/json`. Found by the 2a
+  close-finish run (F1/F2 agents), 2026-10-07.
+- **`docs-gate`.** `scripts/checks/check-arm-indexes.mjs` walks the filesystem, not tracked files, so a gitignored
+  local page such as the untracked `docs/internal/credentials.md` fails it locally and passes in CI. Branch
+  `draft-docs-2a` added an allowlist entry (line 59) for that page. Found by the 2a close-finish run (F1/F2
+  agents), 2026-10-07.
+- **`docs-gate`.** The header comment in `scripts/checks/docs-gate.mjs` (lines 3 and 17) counts its checks in
+  words ("nineteen" on `draft-docs-2a`), so the count goes stale each time a check is added. Drop the count.
+  Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
+- **`engine`.** The project `CLAUDE.md` (line 92) names the Cloudflare account id in plaintext, while `check:leaks`
+  on `draft-docs-2a` stores that id only as a SHA-256 digest and `CLAUDE.md` falls outside every check:leaks tier.
+  Separately, `docs/internal/credentials.md`'s identifiers (GitHub App id, installation id, D1 UUIDs) remain in git
+  history after the untrack. They are identifiers, not keys. Found by the 2a close-finish run (F1/F2 agents),
+  2026-10-07.
+
 ## Clearings
 
 The detail of a cleared finding lives in the pass post-mortem that cleared it and in

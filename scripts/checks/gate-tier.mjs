@@ -5,7 +5,7 @@
 // docs/internal/pass-gate-tiers.md, the doc page a reviewer reads to reproduce a classification.
 //
 // Interface (fixed by the runner): `node scripts/checks/gate-tier.mjs --range <base>..HEAD
-// [--paint yes|no] [--pin <tier>]`. On success, the chosen tier's gate string is the ONLY line on
+// [--paint yes|no] [--pin <tier>] [--related]`. On success, the chosen tier's gate string is the ONLY line on
 // stdout; the tier and the paths that decided it print to stderr. On an empty range or a git
 // failure, nothing prints to stdout and the process exits non-zero, so a caller that captures only
 // stdout gets a shell-safe empty string rather than a bogus gate command; the runner's own prompt
@@ -31,14 +31,44 @@
 // so it is not in TIER_ORDER; a diff with paths on both sides runs the computed npm gate AND the
 // tool gate, reported as `<npm tier>+tool`.
 //
+// Related mode (`--related`, opt-in). Without the flag every output above is unchanged. With it, a
+// diff whose npm half resolves to `scripts` or `engine` (computed or pinned; the two share one
+// string) gets a narrower string than the whole engine suite, built by `relatedGate`:
+//
+//   1. The static checks: `check:close:prebuilt` (check:close with `dist` built once; see
+//      close-prebuilt.mjs), `check:tool-heuristics`, `test:emit`, and the showcase's `test:unit`,
+//      which CI runs and check:close does not.
+//   2. The whole node projects (`test:node-projects`). They hold every guard test that reads files,
+//      spawns a script, or walks a tree, which no import graph can see, and they take minutes, so
+//      narrowing them would save little and lose those guards.
+//   3. The component project, narrowed with Vitest's `vitest related <files> --run`: Vitest walks
+//      each component test's static import graph and runs the tests that reach a changed file, and
+//      a changed test file always runs (https://vitest.dev/guide/cli#vitest-related; confirmed
+//      against the installed Vitest 4.1 CLI help and its `filterTestsBySource`). Only paths under
+//      `src/` outside the node-only test trees can reach a component test, so a diff with none
+//      runs no component command. When the diff touches `src/lib`, the run passes
+//      `--no-passWithNoTests`, so a selection that comes back empty fails the gate instead of
+//      passing silently. When the diff touches a path in COMPONENT_RERUN_TRIGGERS
+//      (scripts/test/component-rerun-triggers.mjs, the paths that reach component tests outside
+//      the import graph), the whole component project runs instead. vitest.config.ts reads the
+//      same list as `forceRerunTriggers`, so Vitest enforces the fallback on its own as well.
+//   4. The create-cairn-site suite, only when the diff touches a path in
+//      CREATE_CAIRN_SITE_TRIGGERS, the inputs that reach the scaffolder and its baked template.
+//
+// This is dependency-based test selection, the method Google's TAP uses to pick the tests a change
+// can affect (Memon et al., "Taming Google-Scale Continuous Testing", ICSE-SEIP 2017), applied
+// where the graph is sound: the component project, the slowest serialized leg. e2e spec selection
+// is unchanged; the runner still appends the specs a change reaches.
+//
 // This classifier chooses a tier, never a gate lane. A plan that pins the light lane for a
 // Go-only pass must not carry that pin onto a mixed diff whose npm half launches a browser
 // suite; the lane decision stays with the caller, checked against the tier this script reports
 // for the actual diff in hand.
 import { spawnSync } from 'node:child_process';
-import { resolve } from 'node:path';
+import { matchesGlob, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
+import { COMPONENT_RERUN_TRIGGERS } from '../test/component-rerun-triggers.mjs';
 
 const ROOT = repoRoot(import.meta.url);
 
@@ -111,6 +141,37 @@ export const TIER_GATES = {
 /** Tier names, ascending severity; `resolveTier` and the paint floor both rank against this. */
 export const TIER_ORDER = ['docs', 'scripts', 'engine', 'admin-visual', 'full'];
 
+/** The npm tiers `--related` narrows; every other tier keeps its string under the flag. */
+export const RELATED_TIERS = ['scripts', 'engine'];
+
+// The related-mode legs, in the order `relatedGate` joins them (see the header comment).
+const RELATED_STATIC = [
+  'npm run check:close:prebuilt',
+  'npm run check:tool-heuristics',
+  'npm run test:emit',
+  'npm --prefix examples/showcase run test:unit',
+].join(' && ');
+const NODE_PROJECTS = 'npm run test:node-projects';
+const COMPONENT_FULL = 'npm run test:component -- --no-file-parallelism';
+const COMPONENT_RELATED =
+  'node scripts/test/contained.mjs npx vitest related --run --project component --no-file-parallelism';
+const CREATE_CAIRN_SITE = 'npm test -w packages/create-cairn-site';
+
+/**
+ * Repo-relative globs whose change reaches the create-cairn-site suite: the package itself, the
+ * showcase its template is baked from, the emitter that bakes it, and the root package.json whose
+ * versions the bake writes into the template.
+ */
+export const CREATE_CAIRN_SITE_TRIGGERS = [
+  'packages/create-cairn-site/**',
+  'examples/showcase/**',
+  'scripts/build/emit-template*',
+  'package.json',
+];
+
+// Test trees the component project never includes, so a change there reaches no component test.
+const NODE_ONLY_TESTS = ['src/tests/unit/**', 'src/tests/integration/**', 'src/tests/lab/**', 'src/tests/types/**'];
+
 /**
  * The single tier one repo-relative, forward-slash path (relative to the repo root) demands, per
  * the ROADMAP.md:296 table. Returns `null` for a path none of the five triggers names; the caller
@@ -174,11 +235,26 @@ export function resolveTier(paths) {
  * surface), which a tool-only diff by definition does not. A diff with paths on both sides ranks
  * the non-tool paths as usual, applies the paint floor to that half same as always, then reports
  * `<npm tier>+tool` and runs both gate strings in sequence so each half is proven.
+ *
+ * With `related`, a `scripts` or `engine` npm half swaps its string for `relatedGate`'s and the
+ * decision gains a `related` record; `deleted` names the diff's deleted paths, which no test can
+ * import. Every other tier returns the same decision with or without `related`.
  * @param {string[]} paths
- * @param {{ paint?: 'yes' | 'no', pin?: string | null }} [opts]
- * @returns {{ tier: string, reason: string, decidingPaths: string[], gate: string }}
+ * @param {{ paint?: 'yes' | 'no', pin?: string | null, related?: boolean, deleted?: string[] }} [opts]
+ * @returns {{ tier: string, reason: string, decidingPaths: string[], gate: string, related?: { component: string, forcing: string[] } }}
  */
 export function decideGate(paths, opts = {}) {
+  const decision = tierDecision(paths, opts);
+  return opts.related ? withRelated(decision, paths, opts.deleted ?? []) : decision;
+}
+
+/**
+ * The tier decision with no related narrowing: the whole of `decideGate` without `--related`.
+ * @param {string[]} paths
+ * @param {{ paint?: 'yes' | 'no', pin?: string | null }} opts
+ * @returns {{ tier: string, reason: string, decidingPaths: string[], gate: string }}
+ */
+function tierDecision(paths, opts) {
   const { paint = 'no', pin = null } = opts;
   if (pin) {
     if (!Object.hasOwn(TIER_GATES, pin)) {
@@ -215,16 +291,86 @@ export function decideGate(paths, opts = {}) {
 }
 
 /**
+ * Narrow a `scripts` or `engine` decision (alone or as the npm half of `<tier>+tool`) to the
+ * related-mode string; return any other decision untouched.
+ * @param {{ tier: string, reason: string, decidingPaths: string[], gate: string }} decision
+ * @param {string[]} paths
+ * @param {string[]} deleted
+ * @returns {{ tier: string, reason: string, decidingPaths: string[], gate: string, related?: { component: string, forcing: string[] } }}
+ */
+function withRelated(decision, paths, deleted) {
+  const tier = decision.tier ?? '';
+  const withTool = tier.endsWith('+tool');
+  const npmTier = withTool ? tier.slice(0, -'+tool'.length) : tier;
+  if (!RELATED_TIERS.includes(npmTier)) return decision;
+  const { gate, component, forcing } = relatedGate(
+    paths.filter((path) => !path.startsWith('tool/')),
+    deleted,
+  );
+  return {
+    ...decision,
+    gate: withTool ? `${gate} && ${TIER_GATES.tool}` : gate,
+    related: { component, forcing },
+  };
+}
+
+/**
+ * The related-mode gate string for a diff's npm paths (see the header comment for each leg).
+ * `component` reports how the component project runs: `full`, `related`, or `none`; `forcing`
+ * names the paths that matched COMPONENT_RERUN_TRIGGERS.
+ * @param {string[]} paths
+ * @param {string[]} [deleted] - Paths the diff deletes; they stay out of the related file list.
+ * @returns {{ gate: string, component: 'full' | 'related' | 'none', forcing: string[] }}
+ */
+export function relatedGate(paths, deleted = []) {
+  const matchesAny = (/** @type {string} */ path, /** @type {readonly string[]} */ globs) =>
+    globs.some((glob) => matchesGlob(path, glob));
+  const forcing = paths.filter((path) => matchesAny(path, COMPONENT_RERUN_TRIGGERS));
+  const gone = new Set(deleted);
+  const reach = paths.filter(
+    (path) => path.startsWith('src/') && !matchesAny(path, NODE_ONLY_TESTS) && !gone.has(path),
+  );
+
+  /** @type {'full' | 'related' | 'none'} */
+  let component = 'none';
+  let componentLeg = null;
+  if (forcing.length > 0) {
+    component = 'full';
+    componentLeg = COMPONENT_FULL;
+  } else if (reach.length > 0) {
+    component = 'related';
+    const strict = reach.some((path) => path.startsWith('src/lib/')) ? ' --no-passWithNoTests' : '';
+    componentLeg = `${COMPONENT_RELATED}${strict} ${reach.map(shellQuote).join(' ')}`;
+  }
+
+  const legs = [RELATED_STATIC, NODE_PROJECTS];
+  if (componentLeg) legs.push(componentLeg);
+  if (paths.some((path) => matchesAny(path, CREATE_CAIRN_SITE_TRIGGERS))) legs.push(CREATE_CAIRN_SITE);
+  return { gate: legs.join(' && '), component, forcing };
+}
+
+/**
+ * A path as one shell word: bare when it holds only safe characters, single-quoted otherwise (a
+ * SvelteKit route group such as `(site)` would otherwise open a subshell).
+ * @param {string} path
+ * @returns {string}
+ */
+function shellQuote(path) {
+  return /^[\w@%+=:,./-]+$/.test(path) ? path : `'${path.replaceAll("'", `'\\''`)}'`;
+}
+
+/**
  * Parse the fixed CLI shape: `--range <spec>`, an optional `--paint yes|no`, an optional
- * `--pin <tier>`.
+ * `--pin <tier>`, an optional bare `--related`.
  * @param {string[]} argv
- * @returns {{ range: string | null, paint: 'yes' | 'no', pin: string | null }}
+ * @returns {{ range: string | null, paint: 'yes' | 'no', pin: string | null, related: boolean }}
  */
 export function parseArgs(argv) {
   let range = null;
   /** @type {'yes' | 'no'} */
   let paint = 'no';
   let pin = null;
+  let related = false;
   for (let i = 0; i < argv.length; i++) {
     switch (argv[i]) {
       case '--range':
@@ -236,20 +382,25 @@ export function parseArgs(argv) {
       case '--pin':
         pin = argv[++i] ?? null;
         break;
+      case '--related':
+        related = true;
+        break;
     }
   }
-  return { range, paint, pin };
+  return { range, paint, pin, related };
 }
 
 /**
  * Every changed path in `range` (`git diff --name-only`), forward-slash, relative to the repo
  * root. `null` when git itself fails (a malformed range, a missing ref); an empty array when git
- * succeeds but the range carries no diff.
+ * succeeds but the range carries no diff. A `filter` passes through as `--diff-filter`.
  * @param {string} range
+ * @param {string} [filter]
  * @returns {string[] | null}
  */
-export function changedPaths(range) {
-  const result = spawnSync('git', ['diff', '--name-only', range], { cwd: ROOT, encoding: 'utf8' });
+export function changedPaths(range, filter) {
+  const args = ['diff', '--name-only', ...(filter ? [`--diff-filter=${filter}`] : []), range];
+  const result = spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' });
   if (result.error || result.status !== 0) return null;
   return result.stdout.split('\n').filter((line) => line.length > 0);
 }
@@ -265,16 +416,19 @@ function fail(message) {
 }
 
 function main() {
-  const { range, paint, pin } = parseArgs(process.argv.slice(2));
+  const { range, paint, pin, related } = parseArgs(process.argv.slice(2));
   if (!range) return fail('gate-tier: --range <base>..HEAD is required');
 
   const paths = changedPaths(range);
   if (paths === null) return fail(`gate-tier: git diff failed for range "${range}"`);
   if (paths.length === 0) return fail(`gate-tier: range "${range}" carries no changed paths`);
 
+  const deleted = related ? changedPaths(range, 'D') : [];
+  if (deleted === null) return fail(`gate-tier: git diff failed for range "${range}"`);
+
   let decision;
   try {
-    decision = decideGate(paths, { paint, pin });
+    decision = decideGate(paths, { paint, pin, related, deleted });
   } catch (err) {
     return fail(err instanceof Error ? err.message : String(err));
   }
@@ -283,6 +437,12 @@ function main() {
     ? `\n  ${decision.decidingPaths.join('\n  ')}`
     : '';
   console.error(`gate-tier: ${decision.tier} (${decision.reason})${pathsLine}`);
+  if (decision.related) {
+    const forcing = decision.related.forcing.length
+      ? `, forced by\n  ${decision.related.forcing.join('\n  ')}`
+      : '';
+    console.error(`gate-tier: related, component project ${decision.related.component}${forcing}`);
+  }
   console.log(decision.gate);
 }
 

@@ -239,8 +239,9 @@ is kept. Both fail closed on an unverifiable usage read.
 The alt-propagation pair pushes an asset's default alt across the same corpus.
 `mediaAltPreviewAction` plans the fill over that header transport and returns a
 `MediaAltPreviewPlan` that sorts each placement into a will-fill bucket (an empty alt), a
-customized bucket (a hand-written alt kept unless the editor opts in), or a decorative-hero bucket
-(left alone). `mediaAltPropagateAction` re-derives the plan from a fresh read, fills the empty alts
+customized bucket (a hand-written alt kept unless the editor opts in), a decorative-hero bucket
+(left alone), or a nested bucket for an image inside a gallery or card (reported, never written; its
+`counts.nestedSkipped` is separate from `counts.decorativeSkipped`). `mediaAltPropagateAction` re-derives the plan from a fresh read, fills the empty alts
 (and the customized ones when the `overwrite` opt-in is set), and commits only the entries it
 changes in one commit. It never writes `media.json`, never gates on a typed slug, and never touches
 a decorative hero.

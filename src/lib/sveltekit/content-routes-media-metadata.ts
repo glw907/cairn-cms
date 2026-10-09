@@ -143,7 +143,7 @@ export interface MediaAltPreviewPlan {
   entries: MediaAltPreviewEntry[];
   branchDelta: BranchRef[];
   /** The placement counts by bucket, summed across all entries. */
-  counts: { willFill: number; customized: number; decorativeSkipped: number };
+  counts: { willFill: number; customized: number; decorativeSkipped: number; nestedSkipped: number };
 }
 
 /**
@@ -486,12 +486,13 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     // Enrich each planned entry with its title and permalink from the content manifest (the planner
     // carries neither), and aggregate the bucket counts across every placement.
     const byKey = new Map(contentManifest.entries.map((e) => [`${e.concept}/${e.id}`, e]));
-    const counts = { willFill: 0, customized: 0, decorativeSkipped: 0 };
+    const counts = { willFill: 0, customized: 0, decorativeSkipped: 0, nestedSkipped: 0 };
     const entries: MediaAltPreviewEntry[] = plan.entries.map((e) => {
       for (const p of e.placements) {
         if (p.bucket === 'will-fill') counts.willFill += 1;
         else if (p.bucket === 'customized') counts.customized += 1;
-        else counts.decorativeSkipped += 1;
+        else if (p.bucket === 'decorative-skipped') counts.decorativeSkipped += 1;
+        else counts.nestedSkipped += 1;
       }
       const manifestRow = byKey.get(`${e.concept}/${e.id}`);
       return {

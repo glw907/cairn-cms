@@ -339,9 +339,10 @@ export function repointMediaRef(markdown: string, oldHash: string, newToken: str
 
 /**
  * Which alt bucket a placement falls in: an empty alt always gets filled, a non-empty (custom) alt is
- *  reported and only overwritten on opt-in, and a decorative hero is never touched.
+ *  reported and only overwritten on opt-in, a decorative hero is never touched, and an image nested
+ *  in a container field (a gallery row, a card) is reported in its own bucket and never written.
  */
-type AltBucket = 'will-fill' | 'customized' | 'decorative-skipped';
+type AltBucket = 'will-fill' | 'customized' | 'decorative-skipped' | 'nested-skipped';
 
 /**
  * One placement of the target hash and what the alt-fill does to it: which surface it lives on, its
@@ -349,7 +350,7 @@ type AltBucket = 'will-fill' | 'customized' | 'decorative-skipped';
  *  is and for a decorative hero).
  */
 export interface AltPlacement {
-  /** `nested` is an image inside a container field; it is reported and never written. */
+  /** `nested` is an image inside a container field; it is reported in the `nested-skipped` bucket and never written. */
   kind: 'body' | 'figure' | 'hero' | 'nested';
   bucket: AltBucket;
   /** The existing alt, empty string when there is none. */
@@ -491,8 +492,9 @@ function heroAltEdits(
   for (const { key, nested, images } of imageFieldKeys(data, hash)) {
     if (nested) {
       // A nested image is reported, never spliced: its mapping sits inside a sequence row, where the
-      // sibling-key anchoring the hero arm relies on does not hold. It carries the skipped bucket so
-      // the counts never promise a write the transform does not make.
+      // sibling-key anchoring the hero arm relies on does not hold. It carries its own bucket, apart
+      // from the decorative one, so the counts never promise a write the transform does not make and
+      // never call a gallery image decorative.
       for (const image of images) {
         const alt = typeof image.alt === 'string' ? image.alt : '';
         edits.push({
@@ -500,7 +502,7 @@ function heroAltEdits(
           start: 0,
           end: 0,
           text: '',
-          placement: { kind: 'nested', bucket: 'decorative-skipped', before: alt, after: alt },
+          placement: { kind: 'nested', bucket: 'nested-skipped', before: alt, after: alt },
         });
       }
       continue;

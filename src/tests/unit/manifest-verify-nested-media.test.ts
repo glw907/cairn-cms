@@ -29,6 +29,10 @@ const adapterWith = (extra: Parameters<typeof defineFieldset>[0]) => ({
 });
 
 const gallery = adapterWith({ gallery: fields.array(fields.image({ label: 'Image' })) });
+const card = adapterWith({ card: fields.object({ label: 'Card', fields: { image: fields.image({ label: 'Image' }) } }) });
+const cards = adapterWith({
+  cards: fields.array(fields.object({ label: 'Card', fields: { image: fields.image({ label: 'Image' }) } }), { label: 'Cards' }),
+});
 const topLevelOnly = adapterWith({ hero: fields.image({ label: 'Hero' }) });
 
 const HERO = '00112233445566aa';
@@ -41,10 +45,16 @@ describe('verifyManifest mediaRefs rule', () => {
     expect(() => verifyManifest(built, committed)).toThrow(/stale/);
   });
 
-  it('fails a nested-shape site whose committed manifest carries no mediaRefs, with the regenerate message', () => {
-    const built = manifest(entry('a', { mediaRefs: [GALLERY] }));
-    const committed = formatManifest(manifest(entry('a')));
-    expect(() => verifyManifest(built, committed, gallery)).toThrow(/stale[\s\S]*Regenerate/);
+  describe.each([
+    ['array(image)', gallery],
+    ['object({ image })', card],
+    ['array(object({ image }))', cards],
+  ])('a site declaring %s', (_shape, adapter) => {
+    it('fails when the committed manifest carries no mediaRefs, with the regenerate message', () => {
+      const built = manifest(entry('a', { mediaRefs: [GALLERY] }));
+      const committed = formatManifest(manifest(entry('a')));
+      expect(() => verifyManifest(built, committed, adapter)).toThrow(/stale[\s\S]*Regenerate/);
+    });
   });
 
   it('verifies a nested-shape site whose corpus references no image', () => {

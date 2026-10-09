@@ -907,6 +907,36 @@ describe('CairnMediaLibrary Replace impact review', () => {
     expect(dialog.textContent ?? '').toContain('cairn/posts/trailhead-notes');
   });
 
+  it('counts a nested placement as "in a gallery or card", apart from the body count', async () => {
+    const plan: MediaReplacePreviewPlan = {
+      affectedCount: 1,
+      entries: [
+        {
+          concept: 'posts',
+          id: 'gallery-post',
+          title: 'A gallery post',
+          placements: [
+            { kind: 'body', before: 'media:first-light.aaaa111122223333', after: 'media:first-light.b42e0d51aaaa0000' },
+            { kind: 'nested', before: 'media:first-light.aaaa111122223333', after: 'media:first-light.b42e0d51aaaa0000' },
+            { kind: 'nested', before: 'media:first-light.aaaa111122223333', after: 'media:first-light.b42e0d51aaaa0000' },
+          ],
+        },
+      ],
+      branchDelta: [],
+    };
+    const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+    stubUpload(newRecord());
+    stubPreviewFetch(successBody(plan));
+    const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) });
+    const dialog = await uploadThroughReplace(screen, /first-light/);
+    await expect.poll(() => dialog.textContent ?? '').toContain('A gallery post');
+    const text = dialog.textContent ?? '';
+    expect(text).toContain('2 in a gallery or card');
+    // The one body placement is counted alone; the nested pair is not folded into it.
+    expect(text).toContain('1 in the body');
+    expect(text).not.toContain('3 in the body');
+  });
+
   it('gates the apply button until the typed slug matches, and posts the replace form fields', async () => {
     const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
     stubUpload(newRecord());
@@ -1078,7 +1108,7 @@ const ALT_PLAN: MediaAltPreviewPlan = {
     },
   ],
   branchDelta: [{ branch: 'cairn/posts/from-the-ridge', entries: [{ concept: 'posts', id: 'from-the-ridge' }] }],
-  counts: { willFill: 1, customized: 1, decorativeSkipped: 1 },
+  counts: { willFill: 1, customized: 1, decorativeSkipped: 1, nestedSkipped: 0 },
 };
 
 // Open the Push-alt dialog: open the slide-over for an asset, click "Push alt to placements", and wait
@@ -1162,6 +1192,39 @@ describe('CairnMediaLibrary Push-alt three buckets', () => {
     expect(skip.textContent ?? '').toContain('The crew page');
     // The skip bucket never carries a form input.
     expect(skip.querySelector('input')).toBeNull();
+  });
+
+  it('lists a nested placement in its own gallery-or-card well, not the decorative one', async () => {
+    const nestedPlan: MediaAltPreviewPlan = {
+      entries: [
+        ...ALT_PLAN.entries,
+        {
+          concept: 'posts',
+          id: 'the-gallery',
+          title: 'The gallery post',
+          placements: [{ kind: 'nested', bucket: 'nested-skipped', before: '', after: '' }],
+        },
+      ],
+      branchDelta: [],
+      counts: { willFill: 1, customized: 1, decorativeSkipped: 1, nestedSkipped: 1 },
+    };
+    stubPreviewFetch(successBody(nestedPlan));
+    const screen = await render(CairnMediaLibrary, { data: fixture() });
+    const dialog = await openPushAlt(screen, /first-light/);
+    await expect.poll(() => dialog.textContent ?? '').toContain('The gallery post');
+
+    const well = dialog.querySelector('[data-cairn-alt-nested]') as HTMLElement;
+    expect(well).not.toBeNull();
+    expect(well.textContent ?? '').toContain('In a gallery or card');
+    expect(well.textContent ?? '').toContain('Alt for these images is set where each one sits in the entry. They are left as they are.');
+    expect(well.textContent ?? '').toContain('The gallery post');
+    expect(well.querySelector('input')).toBeNull();
+
+    // The decorative well keeps its own entry and no longer holds the nested one.
+    const skip = dialog.querySelector('[data-cairn-alt-skip]') as HTMLElement;
+    expect(skip.textContent ?? '').toContain('The crew page');
+    expect(skip.textContent ?? '').not.toContain('The gallery post');
+    expect(skip.textContent ?? '').not.toContain('In a gallery or card');
   });
 });
 
@@ -1282,7 +1345,7 @@ const ALT_PLAN_MANY: MediaAltPreviewPlan = {
     placements: [{ kind: 'body' as const, bucket: 'will-fill' as const, before: '', after: PUSHED_ALT }],
   })),
   branchDelta: [],
-  counts: { willFill: 11, customized: 0, decorativeSkipped: 0 },
+  counts: { willFill: 11, customized: 0, decorativeSkipped: 0, nestedSkipped: 0 },
 };
 
 describe('CairnMediaLibrary "Show all" moves focus to the first revealed row', () => {
@@ -1365,7 +1428,7 @@ describe('CairnMediaLibrary preview in-flight guard', () => {
         },
       ],
       branchDelta: [],
-      counts: { willFill: 1, customized: 0, decorativeSkipped: 0 },
+      counts: { willFill: 1, customized: 0, decorativeSkipped: 0, nestedSkipped: 0 },
     };
     const bodies: (string | Promise<string>)[] = [firstBody, successBody(ALT_PLAN_SECOND)];
     let call = 0;

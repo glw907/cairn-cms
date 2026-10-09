@@ -180,6 +180,17 @@ describe('alt propagation over nested shapes', () => {
     }
   });
 
+  it('reports a nested placement in its own bucket, never decorative-skipped', () => {
+    const md =
+      `---\ntitle: T\ngallery:\n  - src: media:a.${HASH}\n    alt: ""\n  - src: media:a.${HASH}\n    alt: kept\n` +
+      `  - src: media:a.${HASH}\n    alt: ""\n    decorative: true\n---\nBody.\n`;
+    const out = fillAltForHash(md, HASH, 'New alt', { overwrite: false });
+    expect(out.placements.map((p) => p.bucket)).toEqual(['nested-skipped', 'nested-skipped', 'nested-skipped']);
+    expect(out.placements.some((p) => p.bucket === 'decorative-skipped')).toBe(false);
+    // Unwritten: each placement reports its alt unchanged.
+    expect(out.placements.every((p) => p.after === p.before)).toBe(true);
+  });
+
   it('leaves an object-wrapped image byte-identical and reports it', () => {
     const md = `---\ntitle: T\nitems:\n  - image:\n      src: media:a.${HASH}\n      alt: ""\n---\n`;
     const out = fillAltForHash(md, HASH, 'New alt', { overwrite: true });

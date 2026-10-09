@@ -189,7 +189,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     const tidyFn = vi.fn(async () => cannedResult('x'));
     const denied: Editor = { email: 'w@b.test', displayName: 'W', role: 'webmaster', capability: 'editor' };
     const routes = createContentRoutes({
-      runtime: runtime({ access: { media: ['publisher'] } }),
+      runtime: runtime({ roles: { owner: 'owner', webmaster: 'editor', publisher: 'editor' }, access: { media: ['publisher'] } }),
       tidy: { client: fakeAnthropic(tidyFn) },
     });
     await expect(runTidy(routes, tidyEvent({ params: {}, who: denied }))).rejects.toMatchObject({ status: 404 });

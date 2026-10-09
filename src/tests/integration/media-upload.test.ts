@@ -286,7 +286,9 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('logs auth.access.refused with reason role when the map denies the media screen', async () => {
-    const routes = createContentRoutes({ runtime: runtime({ access: { media: ['publisher'] } }) });
+    const routes = createContentRoutes({
+      runtime: runtime({ roles: { owner: 'owner', webmaster: 'editor', publisher: 'editor' }, access: { media: ['publisher'] } }),
+    });
     const warn = vi.spyOn(log, 'warn');
     const webmaster: Editor = { email: 'w@b.test', displayName: 'W', role: 'webmaster', capability: 'editor' };
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, who: webmaster }))) as ActionResult;

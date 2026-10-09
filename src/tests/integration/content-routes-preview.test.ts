@@ -540,7 +540,7 @@ describe('authorization: the view gate is not authorization (the round High)', (
   });
 
   it('refuses an editor the access map denies', async () => {
-    const routes = createContentRoutes({ runtime: runtime({ access: DENY_POSTS }) });
+    const routes = createContentRoutes({ runtime: runtime({ roles: ROLES, access: DENY_POSTS }) });
     expect(
       (await expectHttpError(() => routes.previewMintAction(eventAs('other-editor', 'editor')))).status,
     ).toBe(403);

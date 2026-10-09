@@ -1635,7 +1635,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   login) and publish-all's outcome (posted from the topbar on any screen, lands on the first
   reachable concept list). Publish-all carries exactly three `?error=` codes:
   `nothing_to_publish`, `publish_conflict` (validated outcomes), and `publish_failed` (unexpected
-  fault). Source: `src/lib/sveltekit/content-routes-entry-write.ts:475,496,504`
+  fault). Source: `src/lib/sveltekit/content-routes-entry-write.ts:501,525,533`
   (`redirect(303, '${listPage}?error=nothing_to_publish' | '...publish_conflict' |
   '...publish_failed')`) and `src/lib/sveltekit/refusal-codes.ts:17`
   (`RefusalCode = 'expired' | 'nothing_to_publish' | 'publish_conflict' | 'publish_failed'`, four

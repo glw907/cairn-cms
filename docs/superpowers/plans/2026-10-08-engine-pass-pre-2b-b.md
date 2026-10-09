@@ -344,6 +344,19 @@ backend serves the site's real content, not in fixtures mode (Decision 3). The "
 
 Fork 2 belongs to pass A.
 
+**Copy, ruled (Geoff, 2026-10-08: "They are all OK.").** These strings are used verbatim; the
+conductor pastes each into its task's `notes`.
+
+- **Task 10, the dev-mode notice:** "Edits are held in memory. They're discarded when the dev server
+  stops."
+- **Task 3, A5's 403:** heading "You don't have access to this page."; body "Your role doesn't
+  include this page. Ask the site owner if you need access."; link "Back to the dashboard".
+- **Task 3, A5's 404:** heading "This page doesn't exist."; body "Check the address, or go back to
+  the dashboard."; link "Back to the dashboard".
+
+Geoff struck "the admin" as a noun in this copy ("'the admin' is strange phrasing"), so no string
+in either error page uses it.
+
 **Fork 3, ruled (Geoff, 2026-10-08: "For Fork 3, ceiling at 14M."):** the pass ceiling is 14.0M,
 with the 80 percent stop at 11.2M. The planned basis is 12.1M, priced from the chain rate pass A
 and the SvelteKit 3 pass use (0.55M for a full-tier chain) and that pass's close record (its fix

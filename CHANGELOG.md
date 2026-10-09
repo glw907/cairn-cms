@@ -276,7 +276,7 @@
 
 - **Access rules name only declared roles.** An access rule naming a role the vocabulary does not
   declare now fails at server start, so dropping a role from `defineRoles` cannot leave it
-  reachable. The error names the rule's key and the role.
+  reachable. `composeRuntime` throws the error, naming the rule's key and the role.
 
   Consumers must: remove the role from every access rule, or keep it declared.
 

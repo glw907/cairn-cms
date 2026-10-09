@@ -282,23 +282,15 @@ const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const
 /**
  * Validate a site's declared access map once at composition (server start), after `defineAccess`'s
  *  own shape/vocabulary check: a screen-id key must name either a real concept or one of the fixed
- *  engine screens ({@link ACCESS_FIXED_SCREENS}), an href key must not
+ *  engine screens ({@link ACCESS_FIXED_SCREENS}), and an href key must not
  *  collide with a built-in admin route (the `parseAdminPath` authority, the same collision check
- *  `validateNavLayout` uses for a site entry's own href), and every role a rule names must be one
- *  the runtime's vocabulary declares. Throws an actionable `access:`-prefixed
+ *  `validateNavLayout` uses for a site entry's own href). Throws an actionable `access:`-prefixed
  *  error naming the bad key, so a misconfiguration fails at server start rather than silently never
  *  gating (or never even reachable) at request time.
  * @param access - The site's declared access map.
  *
  * The second parameter carries context this validation needs but does not itself derive: the
- *  site's real concept ids and its declared role names, the same role `validateNavLayout`'s own
- *  second parameter plays.
- *
- * The role check is what makes dropping a role from `defineRoles` revoke it. An undeclared role
- *  resolves to `none` capability, and `canReach` admits a `none` session to an href rule naming its
- *  role, so a leftover roster row would otherwise still reach that route. `defineAccess` checks
- *  the same thing against whatever vocabulary its caller handed it, which need not be the one the
- *  runtime carries, so composition checks again against the runtime's own.
+ *  site's real concept ids, the same role `validateNavLayout`'s own second parameter plays.
  *
  * Non-throwing once the shape checks above pass: logs `config.access_unmapped` when the map
  *  declares at least one screen-id key and leaves a declared concept or fixed screen without a
@@ -308,18 +300,8 @@ const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const
  *  is silent. This never blocks composition; it exists only to surface a screen map a site
  *  believed was exhaustive but is not.
  */
-export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: string[]; roleNames: string[] }): void {
+export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: string[] }): void {
   const knownScreens = new Set<string>([...ctx.conceptIds, ...ACCESS_FIXED_SCREENS]);
-  const declaredRoles = new Set(ctx.roleNames);
-  for (const [key, admitted] of Object.entries(access)) {
-    for (const role of admitted) {
-      if (!declaredRoles.has(role)) {
-        throw new Error(
-          `access: "${key}" names role "${role}", which the role vocabulary does not declare; declare "${role}" in defineRoles, or remove it from this rule`,
-        );
-      }
-    }
-  }
   // parseAdminPath's concept lookup (findConcept) reads only `.id`, mirroring validateNavLayout's
   // own stub above.
   const stubConcepts = ctx.conceptIds.map((id) => ({ id })) as unknown as ConceptDescriptor[];

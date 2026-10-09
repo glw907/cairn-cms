@@ -11,6 +11,8 @@
 // targetFromRouteId is the shared default-target derivation both authorization call sites use,
 // requireAccess (guard.ts) and createSectionAction (section-action.ts), so the load and action
 // halves of one route's authorization story never disagree on what they are checking.
+// validateAccessRoles is composeRuntime's check that every role a rule names is declared in the
+// adapter's own vocabulary, so a map can't outlive a role the site dropped.
 import { DEFAULT_ROLES, type RolesDeclaration } from './roles.js';
 import type { Editor } from './types.js';
 
@@ -246,4 +248,28 @@ export function targetFromRouteId(routeId: string | null): string {
   if (routeId === null) return UNRESOLVED_ROUTE_TARGET;
   const stripped = routeId.replace(ROUTE_GROUP_SEGMENT, '');
   return stripped === '' ? UNRESOLVED_ROUTE_TARGET : stripped;
+}
+
+/**
+ * Throw when any rule in `access` names a role `roles` does not declare (`undefined` reads the
+ * implicit owner/editor pair). `composeRuntime` runs this on the adapter's own `roles` and
+ * `access`, so a runtime whose map names an undeclared role is never built. `defineAccess` checks
+ * the same thing against whatever vocabulary its caller handed it, which need not be the adapter's,
+ * and a map written as a plain object skips `defineAccess` entirely.
+ *
+ * This is what makes dropping a role from `defineRoles` revoke it. An undeclared role resolves to
+ * `none` capability, and {@link canReach} admits a `none` session to an href rule naming its role,
+ * so a leftover roster row would otherwise still reach that route.
+ */
+export function validateAccessRoles(access: AccessMap, roles: RolesDeclaration | undefined): void {
+  const declared = roles ?? DEFAULT_ROLES;
+  for (const [key, admitted] of Object.entries(access)) {
+    for (const role of admitted) {
+      if (!Object.hasOwn(declared, role)) {
+        throw new Error(
+          `access: "${key}" names role "${role}", which the role vocabulary does not declare; declare "${role}" in defineRoles, or remove it from this rule`,
+        );
+      }
+    }
+  }
 }

@@ -750,7 +750,10 @@ declare function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRun
 
 Fold an adapter and its site-config into the composed runtime (seam 2). The per-concept URL policy
 is derived from the site-config, the same source delivery uses, so the runtime and delivery
-permalinks cannot diverge.
+permalinks cannot diverge. It throws when an access rule names a role the adapter's `roles` doesn't
+declare, the default owner/editor pair when `roles` is absent. The error names the rule's key, the
+role, and the fix. Every reader of the map takes this runtime, so the check covers the guard, the
+dev handle, the admin routes, and the nav alike.
 
 ```ts
 // src/lib/cairn.server.ts
@@ -1021,11 +1024,10 @@ trailing slash, or the bare `/admin` root). `roles` may be `undefined`: the map'
 validate against the same implicit owner/editor vocabulary `resolveCapability` falls back to for a
 site that declares no vocabulary of its own. A screen-id key's existence against the site's real
 concepts, and an href key's collision with a built-in admin route, validate later, at composition,
-once the runtime knows the real concept list. Composition also checks every role a rule names
-against the runtime's own vocabulary (the adapter's `roles`, or the default owner/editor pair) and
-throws at server start on a role it doesn't declare. Dropping a role from `defineRoles` then fails
-the server start until you remove the role from every rule, so a stale roster row can't reach the
-routes those rules name.
+once the runtime knows the real concept list. [`composeRuntime`](#composeruntime) also checks every
+role a rule names against the adapter's own `roles` (or the default owner/editor pair) and throws
+on a role it doesn't declare. Dropping a role from `defineRoles` then fails the server start until
+you remove the role from every rule, so a stale roster row can't reach the routes those rules name.
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the first worked example above) to focus on the access member -->
 ```ts

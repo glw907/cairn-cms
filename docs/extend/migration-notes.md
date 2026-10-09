@@ -101,9 +101,9 @@ this page carries; read `CHANGELOG.md` directly for anything older.
   path the rule names. A screen id, an href no rule matches, and `editors` stay refused for it.
 - **Remove a dropped role from every access rule, or keep it declared.** An access rule naming a
   role the vocabulary doesn't declare now fails at server start, so dropping a role from
-  `defineRoles` can't leave it reachable. The error names the rule's key and the role. A stale
-  roster row with a dropped role reads `none` capability, and without the check an href rule still
-  naming the role would admit it.
+  `defineRoles` can't leave it reachable. `composeRuntime` throws the error, naming the rule's key
+  and the role. A stale roster row with a dropped role reads `none` capability, and without the
+  check an href rule still naming the role would admit it.
 - **Key Turnstile alerting on `missing_secret` for a missing secret.** `turnstile.verify_failed` with
   `reason: 'invalid_input'` now means a bad token only. A blank or non-string secret logs
   `missing_secret`.

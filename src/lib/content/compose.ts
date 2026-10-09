@@ -4,6 +4,7 @@ import type { CairnAdapter, CairnRuntime } from './types.js';
 import { normalizeConcepts } from './concepts.js';
 import { normalizeAssets } from '../media/config.js';
 import { dictionaryFileForDialect, readVocabulary, type SiteConfig } from '../nav/site-config.js';
+import { validateAccessRoles } from '../auth/access.js';
 
 // The internal artifact paths the adapter does not carry. They share the `.cairn/` content root the
 // manifests use, so `composeRuntime` defaults them by convention rather than reading them off config.
@@ -30,10 +31,14 @@ export interface ComposeInput {
  * Fold an adapter into the composed runtime. This is the one place the grouped adapter maps onto
  * the flat runtime, and the one place the internal manifest and dictionary paths default by
  * convention. Each concept declares its own routing and URL policy, so the runtime and delivery
- * permalinks cannot diverge. The media slot (seam 4) passes through untouched.
+ * permalinks cannot diverge. The media slot (seam 4) passes through untouched. Throws when an
+ * access rule names a role the adapter's vocabulary does not declare.
  */
 export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRuntime {
   if (!siteConfig) throw new Error('cairn: composeRuntime needs a site config for the site name and editor settings');
+  // Every reader of the access map (the guard, the dev handle, the admin routes, the nav) takes
+  // this runtime, so checking the map's roles here covers them all at module evaluation.
+  if (adapter.access) validateAccessRoles(adapter.access, adapter.roles);
   return {
     siteName: siteConfig.siteName,
     concepts: normalizeConcepts(adapter.content),

@@ -117,6 +117,34 @@ after step 3:
 [`CairnPlatformBindings`](../reference/sveltekit.md#cairnplatformbindings) states what the generated
 `Env` must carry.
 
+## When your range crosses the one-declaration change
+
+The window that makes the adapter's `roles` and `access` the one declaration changes how the guard is
+wired, tightens two access edges, and regenerates the manifest. Do these in order, after step 3:
+
+1. In the adapter, declare `roles` and `access` as members (`defineAdapter({ roles, access })`). If
+   `src/hooks.server.ts` held a different map, reconcile the two first, because the adapter's now
+   governs every reader. Delete a scaffold's `src/access.ts` once its map sits on the adapter.
+2. In `src/hooks.server.ts`, import the site's runtime and pass `{ runtime }` to `createAuthGuard` and
+   to `devBackendHandle`. Remove their `roles` and `access` options. Do the same for any per-route
+   `createEditorRoutes` call.
+3. Run `npx cairn-manifest` and commit the result. A site that declares an image inside an object or
+   an array fails its build until you do.
+4. Move any site route mounted under `/admin/auth/` outside `/admin` if anonymous visitors must reach
+   it. Only `/admin/login` and `/admin/auth/confirm` are public now.
+5. Mount `tidyAction` and `dictionaryAddAction` only on a route with a `concept` param.
+6. Review any access rule that names a role of `none` capability. The rule now admits that role to the
+   route it names.
+7. Key alerting for a missing Turnstile secret on `missing_secret`, not `invalid_input`.
+8. If you passed a full `auth.branding` without `replyTo`, check the adapter's `email` group: the
+   runtime's `replyTo` applies now.
+9. Optionally, answer 503 from `/healthz` when `ok` is false, and apply `0001_roles.sql` if you declare
+   custom roles on a site scaffolded before the scaffold shipped it.
+10. Run `npm run check`, then `npm run build`, and expect both to exit 0. Run `cairn doctor` and expect
+    its `auth.role-wiring` check to pass.
+
+[Migration notes](./migration-notes.md) carries each item with its reason.
+
 ## You know it worked when
 
 `npm run check` (or your site's own type-check script) passes, `cairn doctor` reports every check

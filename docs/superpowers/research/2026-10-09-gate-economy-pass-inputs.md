@@ -154,3 +154,33 @@ e2e when reached), against 30 to 50 min before.
 5. Replay of pass A ranges: ranges 1 and 2 ran related component selections; range 3 fell back on the
    helper trigger; range 4 (an admin diff) kept the admin-visual tier, which `--related` leaves untouched.
    None of the replayed ranges touched a component test that the selection would have missed.
+
+## Pass A's clock as the motivating case (Geoff, 2026-10-09)
+
+Geoff asked that this pass's clock time be used as the brainstorm's evidence: it is part of why the
+gate economy pass exists. Clock time is now a scored metric at every close (dotfiles `2cbb4ec`:
+`~/.claude/docs/model-economy.md`, "The pass-end score"; `pass-core` plans carry a clock estimate),
+beside tokens and attended time, with output quality first. This pass is the first scored.
+
+Pass A's clock, from its first commit (2026-10-08 07:49) to the close's fix rounds (2026-10-09 about
+11:30), is about 28 hours of wall time. Netting out the daytime pauses (Geoff's Task 0 pause and the
+stop to rebuild the gate machinery after S1), the executing session from Task 3's relaunch (about
+18:45) runs about 17 hours:
+
+| Stretch | Clock | What the clock bought |
+|---|---|---|
+| Tasks 3 to 12 with four boundaries | about 13 h | 11 code tasks plus docs, each gated 30 to 50 min; boundaries about 45 min each |
+| S2 boundary reds | about 1 h | two static checks the per-task gate skipped (a process miss) |
+| Task 11's fix round | about 1 h | a real defect (dialog labels) |
+| Close: simplifier, four reviewers, smoke and key probe | about 1.5 h | real findings: two blockers (publish-all revert, double POST) |
+| Close fix rounds (two chains, item B reworked twice) | about 3.5 h | real defects, but each round paid a 30 to 100 min gate plus lock waits of 14 to 33 min |
+
+Most of the clock went to running the same broad gates many times, not to work. The reviewers and the
+smoke earned their clock: they caught two blockers no gate did. The fix rounds show the cost most
+plainly: a two-line test fix waited behind a 30-minute gate and up to 33 minutes of lock queue.
+
+**A measurement gap the pass must close first:** `cairn-run-gate` reuses one log directory per gate
+string (the full gate's `98b67494cb7ba49b/gate.log` spans the whole night), so file times cannot give
+a run's duration, and lock waits appear only as NOTE lines an agent may or may not relay. The clock
+metric needs `cairn-run-gate` (or its receipts) to record each run's start, end, lock wait, gate
+string, and result in a machine-readable line, so a close can sum gate time and lock wait directly.

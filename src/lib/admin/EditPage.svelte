@@ -219,7 +219,9 @@ persistent "?" carries Markdown help).
       saving = false;
       publishing = false;
       failedInPlace = true;
-      if (editorHadFocus) {
+      // Focus returns only when it was left on nothing at settle time (the read-only surface dropped
+      // it), so an author who moved to another field while the request ran keeps it there.
+      if (editorHadFocus && (document.activeElement === document.body || document.activeElement === null)) {
         // Wait for the surface to take edits again before focusing it.
         await tick();
         editor?.focus();
@@ -682,9 +684,12 @@ persistent "?" carries Markdown help).
     getTidy: () => data.tidy,
     getCsrf: () => csrf?.(),
   });
-  // The insert controls disable in Preview (read-only) and while a tidy review is open (the author
-  // cannot edit underneath a pending review, the same posture Preview takes).
-  const insertDisabled = $derived(mode === 'preview' || tidyController.tidyMode);
+  // The insert controls disable in Preview (read-only), while a tidy review is open (the author
+  // cannot edit underneath a pending review, the same posture Preview takes), and while a save or
+  // publish is in flight. The surface's read-only state does not stop a programmatic transaction,
+  // so an insert dispatched mid-request would land after the text was sent and be dropped by the
+  // reload a success ends in.
+  const insertDisabled = $derived(mode === 'preview' || tidyController.tidyMode || busy);
 
   // The three tidy status dialogs (working, no-op, message). Each is promoted to the top layer with
   // showModal() the way TidyReview does, so the focus trap, Escape, and inert background come from the

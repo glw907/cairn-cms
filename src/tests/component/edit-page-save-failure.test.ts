@@ -89,6 +89,21 @@ async function submitSave(screen: Screen) {
   await expect.poll(() => enhanceRuns.length).toBe(1);
 }
 
+/**
+ * Count the navigations the document starts, and cancel each so a test page that wrongly follows a
+ * redirect stays put. Returns the running count and a stop function.
+ */
+function watchNavigations() {
+  const nav = (window as unknown as { navigation: EventTarget }).navigation;
+  const seen: string[] = [];
+  const onNavigate = (event: Event) => {
+    seen.push((event as Event & { destination: { url: string } }).destination.url);
+    event.preventDefault();
+  };
+  nav.addEventListener('navigate', onNavigate);
+  return { seen, stop: () => nav.removeEventListener('navigate', onNavigate) };
+}
+
 describe('EditPage failed submit', () => {
   beforeEach(() => resetEnhance());
 
@@ -169,6 +184,29 @@ describe('EditPage failed submit', () => {
     expect(saveButton(screen).disabled).toBe(false);
   });
 
+  it.each([
+    ['an absolute cross-origin URL off the concept', 'https://elsewhere.example/admin/login'],
+    ['an absolute cross-origin URL on the concept path', 'https://elsewhere.example/admin/posts/2026-05-hello'],
+    ['an unparseable location', 'http://['],
+  ])('treats a redirect to %s as a plain failure, never an ended session or a navigation', async (_name, target) => {
+    const screen = await render(EditPage, props());
+    await submitSave(screen);
+    const navigations = watchNavigations();
+    try {
+      settleEnhance({ type: 'redirect', status: 303, location: target });
+      await expect.poll(() => notice(screen)).toBe(NOTICE);
+      // Give a wrongly started navigation time to fire before asserting none did.
+      await new Promise((r) => setTimeout(r, 50));
+
+      expect(screen.container.querySelector('.alert-warning a')).toBeNull();
+      expect(navigations.seen).toEqual([]);
+      expect(applyActionCalls).toEqual([]);
+      expect(saveButton(screen).disabled).toBe(false);
+    } finally {
+      navigations.stop();
+    }
+  });
+
   it('keeps the generic notice and offers no sign-in link for an error result', async () => {
     const screen = await render(EditPage, props());
     await submitSave(screen);
@@ -201,6 +239,42 @@ describe('EditPage failed submit', () => {
 
     settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
     await expect.poll(() => content.contains(document.activeElement)).toBe(true);
+  });
+
+  it('leaves focus on another field the author moved to during the request', async () => {
+    const screen = await render(EditPage, props());
+    await makeDirty(screen);
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    content.focus();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true, cancelable: true }));
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    await expect.poll(() => content.contains(document.activeElement)).toBe(false);
+    const title = screen.container.querySelector<HTMLInputElement>('input[name="title"]')!;
+    title.focus();
+    expect(document.activeElement).toBe(title);
+
+    settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
+    await expect.poll(() => notice(screen)).toBe(NOTICE);
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(document.activeElement).toBe(title);
+    expect(content.contains(document.activeElement)).toBe(false);
+  });
+
+  it('disables the toolbar insert controls while a save is in flight, and enables them after a failure', async () => {
+    const screen = await render(EditPage, props());
+    const insert = (label: string) =>
+      screen.container.querySelector<HTMLButtonElement>(`[role="toolbar"] button[aria-label="${label}"]`)!;
+    const labels = ['Web link (Ctrl+K)', 'Link to page', 'Insert image'];
+    // Precondition: the controls are live before the request.
+    for (const label of labels) expect(insert(label).disabled).toBe(false);
+
+    await submitSave(screen);
+    for (const label of labels) expect(insert(label).disabled).toBe(true);
+
+    settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
+    await expect.poll(() => notice(screen)).toBe(NOTICE);
+    for (const label of labels) expect(insert(label).disabled).toBe(false);
   });
 
   it('clears the working state and the leave-guard bypass when the page is restored from the back-forward cache', async () => {
@@ -258,6 +332,20 @@ describe('EditPage failed submit', () => {
     settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
     await expect.poll(() => notice(screen)).toBe(NOTICE);
     expect(screen.container.querySelector('.cairn-feedback')).toBeNull();
+  });
+
+  it('drops the publish-actions links after a failure in place', async () => {
+    const screen = await render(
+      EditPage,
+      props({ saved: false, publishedFlash: true, publishActions: [{ label: 'View', href: '/x' }] }),
+    );
+    const links = () => screen.container.querySelectorAll('a[href="/x"]');
+    // Precondition: the next-step link renders beside the publish-success strip.
+    expect(links().length).toBe(1);
+    await submitSave(screen);
+    settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
+    await expect.poll(() => notice(screen)).toBe(NOTICE);
+    expect(links().length).toBe(0);
   });
 
   it('stands an earlier refusal down while the newer notice shows, and announces the notice', async () => {

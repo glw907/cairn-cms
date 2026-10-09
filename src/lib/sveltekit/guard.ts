@@ -26,7 +26,10 @@ import type { CairnRuntime } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent, CookieJar, HandleInput } from './types.js';
 
-/** The login page and the magic-link confirm page are the only public admin paths; everything else under /admin, `/admin/auth/*` included, is gated. */
+/**
+ * The login page and the magic-link confirm page are the only public admin paths; everything else
+ * under /admin, `/admin/auth/*` included, is gated.
+ */
 export function isPublicAdminPath(pathname: string): boolean {
   return pathname === '/admin/login' || pathname === '/admin/auth/confirm';
 }
@@ -35,7 +38,10 @@ function isAdminPath(pathname: string): boolean {
   return pathname === '/admin' || pathname.startsWith('/admin/');
 }
 
-/** Configuration for `createAuthGuard`: the composed runtime, plus the guard's own response and identity options. */
+/**
+ * Configuration for `createAuthGuard`: the composed runtime, plus the guard's own response and
+ * identity options.
+ */
 export interface AuthGuardConfig {
   /**
    * The runtime `composeRuntime` returned for the site's adapter. The guard reads two members off
@@ -437,8 +443,9 @@ export function requireEditor(event: CairnEvent): Editor {
  * enforces). A target absent from the map, or no map at all, always admits (`canReach`'s
  * zero-config floor), so a site that declares nothing sees no behavior change. Every denial emits
  * `auth.access.refused` with the editor's email, role, `target`, and `reason: 'role'`, the same
- * shape `requireAccess` emits. Unlike `requireAccess`, an unmapped target is never a fail-closed misconfiguration here:
- * an engine screen's own route is always a legitimate destination, mapped or not.
+ * shape `requireAccess` emits. Unlike `requireAccess`, an unmapped target is never a fail-closed
+ * misconfiguration here: an engine screen's own route is always a legitimate destination, mapped or
+ * not.
  *
  * Posture: permissive, mirroring `canReach`'s own unmapped-target default; an engine screen's
  * mutations (save, publish, upload, and the rest) stay reachable to any editor-capability session

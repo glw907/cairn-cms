@@ -1,8 +1,8 @@
 // cairn-cms: the replace-in-place rewrite transform. Given one entry's raw markdown and an old
 // content-hash, it rewrites every reference to that hash (a body image, a figure-wrapped image, or
-// the frontmatter hero image.src, or an image nested in a container field) to a new asset's canonical
-// `media:` token, and returns a per placement diff. This is the heart of the media-library "replace" action: the same bytes pointed
-// at a new asset, with the surrounding entry left exact.
+// the frontmatter hero image.src, or an image nested in a container field) to a new asset's
+// canonical `media:` token, and returns a per placement diff. This is the heart of the media-library
+// "replace" action: the same bytes pointed at a new asset, with the surrounding entry left exact.
 //
 // The output is byte-for-byte identical to the input except for the `media:` token substrings that
 // are replaced. The transform never round-trips through gray-matter or a markdown serializer (those
@@ -169,10 +169,15 @@ interface ImageKeyHit {
   images: Record<string, unknown>[];
 }
 
+/** Whether a parsed YAML value is a mapping: an object that is not an array. */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
 /** Whether a parsed value is an image value (an object with a string `src`) naming `hash`. */
 function isImageOf(value: unknown, hash: string): value is Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  const src = (value as Record<string, unknown>).src;
+  if (!isPlainObject(value)) return false;
+  const src = value.src;
   if (typeof src !== 'string') return false;
   return parseMediaToken(src)?.hash === hash;
 }
@@ -188,18 +193,19 @@ function isImageOf(value: unknown, hash: string): value is Record<string, unknow
  */
 function imageFieldKeys(data: Record<string, unknown>, hash: string): ImageKeyHit[] {
   const out: ImageKeyHit[] = [];
-  const plain = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
   for (const [key, value] of Object.entries(data)) {
     if (isImageOf(value, hash)) {
       out.push({ key, nested: false, images: [value] });
       continue;
     }
-    const images: Record<string, unknown>[] = [];
     // An object's children are its sub-fields; an array's rows are images or objects of sub-fields.
-    const inside = Array.isArray(value) ? value : plain(value) ? [value] : [];
-    for (const row of inside) {
+    let rows: unknown[] = [];
+    if (Array.isArray(value)) rows = value;
+    else if (isPlainObject(value)) rows = [value];
+    const images: Record<string, unknown>[] = [];
+    for (const row of rows) {
       if (isImageOf(row, hash)) images.push(row);
-      else if (plain(row)) images.push(...Object.values(row).filter((v) => isImageOf(v, hash)));
+      else if (isPlainObject(row)) images.push(...Object.values(row).filter((v) => isImageOf(v, hash)));
     }
     if (images.length > 0) out.push({ key, nested: true, images });
   }

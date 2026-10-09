@@ -3,14 +3,14 @@
 // the runtime, and the guard, the dev backend's handle, and the nav resolver all read that one
 // declaration. defineAccess validates shape and role vocabulary at construction time; canReach is
 // the one authority function every reader applies, so route enforcement and sidebar visibility
-// can never drift apart. Concept-id existence and
-// engine-route collision are not checked here: they need the real concept list and engine-route
-// table, which only composition (createCairnAdmin) has, so that check lands with the composition
-// task. hasAccessRule backs requireAccess's fail-closed contract: a target the map has no key for
-// route-gates as a misconfiguration, distinct from canReach's own unmapped-target reading used for
-// nav visibility. targetFromRouteId is the shared default-target derivation both authorization call
-// sites use, requireAccess (guard.ts) and createSectionAction (section-action.ts), so the load and
-// action halves of one route's authorization story never disagree on what they are checking.
+// can never drift apart. Concept-id existence and engine-route collision are not checked here:
+// they need the real concept list and engine-route table, which only composition
+// (createCairnAdmin) has, so that check lands with the composition task. hasAccessRule backs
+// requireAccess's fail-closed contract: a target the map has no key for route-gates as a
+// misconfiguration, distinct from canReach's own unmapped-target reading used for nav visibility.
+// targetFromRouteId is the shared default-target derivation both authorization call sites use,
+// requireAccess (guard.ts) and createSectionAction (section-action.ts), so the load and action
+// halves of one route's authorization story never disagree on what they are checking.
 import { DEFAULT_ROLES, type RolesDeclaration } from './roles.js';
 import type { Editor } from './types.js';
 
@@ -141,8 +141,9 @@ function resolveHrefMatch(access: AccessMap, target: string): { key: string | un
  * The one authority function every enforcement and visibility point reads: `requireAccess`, the
  * engine route gates, and the nav resolver. `none` capability reaches a route path only when the
  * matched rule names its role explicitly: a screen id, an href no rule matches, and `editors`
- * stay refused for it, and the permissive no-rule reading below never applies to it. Owner capability reaches every target, including the `editors` screen id and any target with no
- * rule. Every other capability's reach stops at `editors`, which stays owner-only no matter what
+ * stay refused for it, and the permissive no-rule reading below never applies to it. Owner
+ * capability reaches every target, including the `editors` screen id and any target with no rule.
+ * Every other capability's reach stops at `editors`, which stays owner-only no matter what
  * the map says (the roster screen's existing floor, restated here so the one authority function
  * covers it too). In practice a site cannot even declare a rule for `editors` and have it
  * silently ignored: composition-time validation (`validateAccessComposition`) admits only a

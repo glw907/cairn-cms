@@ -503,7 +503,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `FileChange`: { path: string; content: string | null }
 - `FragmentResolve`: (id: string) => string | undefined
 - `HandleInput`: { event: CairnEvent; resolve: (event: CairnEvent) => Response | Promise<Response> }
-- `HealthData`: { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail?: string } } }
+- `HealthData`: { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail?: string; fingerprint?: string }; githubAppToken?: { ok: boolean; detail?: string } } }
 - `HelpData`: { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact?: string }
 - `HistoryData`: { entries: HistoryEntry[]; draft: { editor: string; lastSavedAt: string } | null; truncated: boolean; head: string | null }
 - `IconField`: { type: "icon"; label: string; help?: string; required?: boolean; default?: string | boolean }

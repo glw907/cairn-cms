@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { appJwt, installationToken, signingSelfTest } from '../../lib/github/signing.js';
+import {
+  appJwt,
+  InstallationTokenError,
+  installationToken,
+  signingSelfTest,
+} from '../../lib/github/signing.js';
 
 // A throwaway 2048-bit RSA keypair (NOT a real credential). The private key is PKCS#1, the
 // exact form GitHub issues, so verifying a JWT minted from it exercises the in-Worker
@@ -75,10 +80,69 @@ describe('installationToken', () => {
       installationToken({ appId: '1', installationId: '2', privateKeyB64: btoa(PKCS1_PEM) }),
     ).rejects.toThrow(/403/);
   });
+
+  it('throws a typed error carrying the HTTP status', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('not found', { status: 404 }));
+    const error = await installationToken({
+      appId: '1',
+      installationId: '2',
+      privateKeyB64: btoa(PKCS1_PEM),
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(InstallationTokenError);
+    expect((error as InstallationTokenError).status).toBe(404);
+  });
+
+  it('hands an optional abort signal to the token request, and none when the caller passes none', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response(JSON.stringify({ token: 'ghs_install' }), { status: 201 }));
+    const creds = { appId: '1', installationId: '2', privateKeyB64: btoa(PKCS1_PEM) };
+    const signal = new AbortController().signal;
+    await installationToken(creds, signal);
+    await installationToken(creds);
+    expect(fetchMock.mock.calls[0][1]?.signal).toBe(signal);
+    expect(fetchMock.mock.calls[1][1]?.signal).toBeUndefined();
+  });
 });
 
 describe('signingSelfTest', () => {
-  it('reports ok for a valid key (exercises the PKCS#1 to PKCS#8 path)', async () => {
+  it('reports ok and the public key fingerprint for a valid key (exercises the PKCS#1 to PKCS#8 path)', async () => {
+    // The expected value is what `openssl rsa -in KEY -pubout -outform DER | openssl sha256 -binary
+    // | openssl base64` prints for this fixture key.
+    expect(await signingSelfTest('3847496', btoa(PKCS1_PEM))).toEqual({
+      ok: true,
+      fingerprint: 'SHA256:5z5Cept4XNaRREookuldVFx7RXKxMehr+7p4/DWtbeo=',
+    });
+  });
+
+  it('accepts a PKCS#8 key and fingerprints it the same as its PKCS#1 form', async () => {
+    const pair = (await crypto.subtle.generateKey(
+      { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+      true,
+      ['sign', 'verify'],
+    )) as CryptoKeyPair;
+    const pkcs8 = new Uint8Array((await crypto.subtle.exportKey('pkcs8', pair.privateKey)) as ArrayBuffer);
+    const spki = new Uint8Array((await crypto.subtle.exportKey('spki', pair.publicKey)) as ArrayBuffer);
+    const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', ab(spki)));
+    const label = ['PRIVATE', 'KEY'].join(' ');
+    const pem = `-----BEGIN ${label}-----${btoa(String.fromCharCode(...pkcs8))}-----END ${label}-----`;
+    const result = await signingSelfTest('1', btoa(pem));
+    expect(result).toEqual({ ok: true, fingerprint: `SHA256:${btoa(String.fromCharCode(...digest))}` });
+  });
+
+  it('exports only public key material while fingerprinting, and signs with a non-extractable key', async () => {
+    const importSpy = vi.spyOn(crypto.subtle, 'importKey');
+    const exportSpy = vi.spyOn(crypto.subtle, 'exportKey');
+    await signingSelfTest('3847496', btoa(PKCS1_PEM));
+    const pkcs8Imports = importSpy.mock.calls.filter(([format]) => format === 'pkcs8');
+    expect(pkcs8Imports.length).toBeGreaterThan(0);
+    for (const call of pkcs8Imports) expect(call[3]).toBe(false);
+    expect(exportSpy).toHaveBeenCalled();
+    for (const [, key] of exportSpy.mock.calls) expect(key.type).toBe('public');
+  });
+
+  it('omits the fingerprint, with no message, when it cannot be computed', async () => {
+    vi.spyOn(crypto.subtle, 'exportKey').mockRejectedValue(new Error('export unavailable'));
     expect(await signingSelfTest('3847496', btoa(PKCS1_PEM))).toEqual({ ok: true });
   });
 

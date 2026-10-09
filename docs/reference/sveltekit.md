@@ -1573,9 +1573,23 @@ declare function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<H
 
 Run the GitHub App signing self-test against the configured App id and the Worker's key secret.
 A backend that isn't a GitHub App reports the check as `{ ok: true, detail: 'not-applicable' }`.
+A passing signing check carries `fingerprint`, the `SHA256:` fingerprint of the key's public half.
+It matches the fingerprint GitHub shows for the key in the App's settings, so you can confirm which
+key the Worker holds. The check computes it offline and omits it when it can't.
 Mount it at the site root, outside `/admin`, so the auth guard does not gate the deploy health
-check. The event comes first, the runtime second. The payload's `ok` is the signing check alone,
-and the route answers a failing check with a 503 so a deploy gate reads the status code. On a site
+check. The event comes first, the runtime second. The route answers a failing check with a 503 so a
+deploy gate reads the status code.
+
+The plain call makes no network call. A request with `?live=1` also mints one installation token
+from the key and reports the result as `checks.githubAppToken`. The token itself is discarded. A
+failure's `detail` names the class: `key_refused` (GitHub answered 401), `installation_not_found`
+(404), `installation_suspended` (403), or `unreachable` (any other status, a network failure, or no
+answer within 5 seconds). The live mint skips the publishing path's token cache and logs a failure
+as [`github.unreachable`](./log-events.md) with `scope: 'health'`. Each Worker isolate mints at most
+once a minute: parallel requests share one mint, and its result answers every live request for the
+next 60 seconds. With no GitHub App, no key, or a failing signing check, `?live=1` mints nothing and
+leaves `githubAppToken` out. The payload's `ok` is the signing check and, when present, the token
+check. On a site
 that prerenders by default, set `prerender = false` so the check runs at request time rather than freezing a build-time failure.
 
 ```ts
@@ -2038,7 +2052,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `CairnAdminRoutes` | Extension API | `type CairnAdminRoutes` | What `createCairnAdmin` returns: the one `load`, `shellLoad`, and the `actions` vocabulary narrowed against the ten media-janitorial actions (see the note after the actions table in [`createCairnAdmin`](#createcairnadmin)), shown expanded there. |
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'history' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `HistoryData` for the `history` view, `MediaLibraryData`, `NavData`, `VocabularyData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `WelcomeData` | Extension API | `interface WelcomeData { displayName: string; siteName: string }` | The `'welcome'` view's data: the calm, minimal admin-root landing a none-capability role with no declared `home` gets. [`CairnAdmin`](./admin.md#cairnadmin) switches it to a bare internal view inside the shell, so any site-granted nav stays visible. |
-| `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status, which is the signing self-test result alone, and that result. |
+| `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail?; fingerprint? }; githubAppToken?: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status, the signing self-test result with the public key's fingerprint, and the live token check's result on a `?live=1` request. `ok` is false when either check fails. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
 | `HandleInput` | Extension API | `interface HandleInput { event: CairnEvent; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input; `event` is [`CairnEvent`](#the-event-shape). |
 | `AuthGuardConfig` | Scaffold API | `interface AuthGuardConfig { runtime: Pick<CairnRuntime, 'roles' \| 'access'>; includeSubDomains?: boolean; identity?: IdentityResolver }` | Configuration for `createAuthGuard`: the composed runtime (the site's declared role vocabulary and access map ride on it), whether the admin `Strict-Transport-Security` header pins sibling subdomains, and an optional identity gate replacing session-cookie resolution; each optional member omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). `identity` and the types it names are Unstable API inside this otherwise Scaffold-tier interface (see [`createAuthGuard`](#createauthguard)'s tier note). |

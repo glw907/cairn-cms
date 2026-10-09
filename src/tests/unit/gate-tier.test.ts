@@ -1,15 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { matchesGlob, resolve } from 'node:path';
 import {
   classifyPath,
   resolveTier,
   decideGate,
   parseArgs,
+  relatedGate,
+  CREATE_CAIRN_SITE_TRIGGERS,
   TIER_GATES,
   TIER_ORDER,
 } from '../../../scripts/checks/gate-tier.mjs';
+import { COMPONENT_RERUN_TRIGGERS } from '../../../scripts/test/component-rerun-triggers.mjs';
 import { loadDeletionList } from '../../../scripts/checks/arm-state.mjs';
 
 const SCRIPT = resolve(process.cwd(), 'scripts/checks/gate-tier.mjs');
@@ -237,7 +240,12 @@ describe('decideGate', () => {
 
 describe('parseArgs', () => {
   it('parses --range alone, defaulting paint to no and pin to null', () => {
-    expect(parseArgs(['--range', 'abc..HEAD'])).toEqual({ range: 'abc..HEAD', paint: 'no', pin: null });
+    expect(parseArgs(['--range', 'abc..HEAD'])).toEqual({
+      range: 'abc..HEAD',
+      paint: 'no',
+      pin: null,
+      related: false,
+    });
   });
 
   it('parses --paint and --pin alongside --range', () => {
@@ -245,11 +253,16 @@ describe('parseArgs', () => {
       range: 'abc..HEAD',
       paint: 'yes',
       pin: 'full',
+      related: false,
     });
   });
 
+  it('parses --related as a bare flag', () => {
+    expect(parseArgs(['--range', 'abc..HEAD', '--related']).related).toBe(true);
+  });
+
   it('returns a null range when --range is absent', () => {
-    expect(parseArgs([])).toEqual({ range: null, paint: 'no', pin: null });
+    expect(parseArgs([])).toEqual({ range: null, paint: 'no', pin: null, related: false });
   });
 });
 
@@ -473,5 +486,200 @@ describe('the harvest deletion diff', () => {
     const { deleted } = loadDeletionList(resolve(process.cwd()));
     expect(deleted.length).toBeGreaterThan(0);
     expect(decideGate(deleted)).toMatchObject({ tier: 'docs', gate: TIER_GATES.docs });
+  });
+});
+
+// Related mode's legs, spelled out as literals so a change to any leg in the script fails here.
+const STATIC =
+  'npm run check:close:prebuilt && npm run check:tool-heuristics && npm run test:emit && npm --prefix examples/showcase run test:unit';
+const NODE = 'npm run test:node-projects';
+const COMPONENT_FULL = 'npm run test:component -- --no-file-parallelism';
+const COMPONENT_RELATED =
+  'node scripts/test/contained.mjs npx vitest related --run --project component --no-file-parallelism';
+const CREATE_CAIRN_SITE = 'npm test -w packages/create-cairn-site';
+
+describe('decideGate without --related', () => {
+  // Every tier and option shape the runner and older plans pass; none of them may move.
+  const shapes: { paths: string[]; opts: { paint?: 'yes' | 'no'; pin?: string | null } }[] = [
+    { paths: ['docs/reference/core.md'], opts: {} },
+    { paths: ['scripts/checks/check-idioms.mjs'], opts: {} },
+    { paths: ['src/lib/log/index.ts'], opts: {} },
+    { paths: ['src/lib/admin/EditPage.svelte'], opts: {} },
+    { paths: ['src/lib/render/markdown.ts'], opts: {} },
+    { paths: ['tool/main.go'], opts: {} },
+    { paths: ['src/lib/log/index.ts', 'tool/main.go'], opts: {} },
+    { paths: ['docs/reference/core.md'], opts: { paint: 'yes' } },
+    ...[...TIER_ORDER, 'tool'].map((pin) => ({ paths: ['src/lib/log/index.ts'], opts: { pin } })),
+  ];
+
+  for (const { paths, opts } of shapes) {
+    it(`leaves ${paths.join(', ')} ${JSON.stringify(opts)} unchanged`, () => {
+      const plain = decideGate(paths, opts);
+      expect(decideGate(paths, { ...opts, related: false })).toEqual(plain);
+      expect(plain).not.toHaveProperty('related');
+      const base = plain.tier.replace(/\+tool$/, '');
+      const want = plain.tier.endsWith('+tool') ? `${TIER_GATES[base]} && make -C tool check` : TIER_GATES[plain.tier];
+      expect(plain.gate).toBe(want);
+    });
+  }
+
+  it('keeps the engine string byte-identical to the one the runner has always run', () => {
+    expect(TIER_GATES.engine).toBe(
+      'npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site',
+    );
+  });
+});
+
+describe('decideGate with --related', () => {
+  const rows: { name: string; paths: string[]; opts?: { pin?: string; paint?: 'yes'; deleted?: string[] }; gate: string }[] = [
+    {
+      name: 'a one-file src/lib change runs its related component tests and fails on an empty selection',
+      paths: ['src/lib/log/index.ts'],
+      gate: `${STATIC} && ${NODE} && ${COMPONENT_RELATED} --no-passWithNoTests src/lib/log/index.ts`,
+    },
+    {
+      name: 'a component-test-only change runs that test, and an empty selection is not a src/lib failure',
+      paths: ['src/tests/component/EditPage.test.ts'],
+      gate: `${STATIC} && ${NODE} && ${COMPONENT_RELATED} src/tests/component/EditPage.test.ts`,
+    },
+    {
+      name: 'a node-test-only change runs no component command',
+      paths: ['src/tests/unit/gate-tier.test.ts'],
+      gate: `${STATIC} && ${NODE}`,
+    },
+    {
+      name: 'a scripts-only change runs no component command',
+      paths: ['scripts/checks/check-idioms.mjs'],
+      gate: `${STATIC} && ${NODE}`,
+    },
+    {
+      name: 'a mixed src/lib and test change passes every component-reachable path, docs and node tests left out',
+      paths: ['src/lib/log/index.ts', 'src/tests/component/EditPage.test.ts', 'src/tests/unit/log.test.ts', 'CHANGELOG.md'],
+      gate: `${STATIC} && ${NODE} && ${COMPONENT_RELATED} --no-passWithNoTests src/lib/log/index.ts src/tests/component/EditPage.test.ts`,
+    },
+    {
+      name: 'a deleted path stays out of the related file list',
+      paths: ['src/lib/log/old.ts', 'src/tests/component/EditPage.test.ts'],
+      opts: { deleted: ['src/lib/log/old.ts'] },
+      gate: `${STATIC} && ${NODE} && ${COMPONENT_RELATED} src/tests/component/EditPage.test.ts`,
+    },
+    {
+      name: 'a path with shell metacharacters is quoted as one word',
+      paths: ['src/tests/component/(group)/x.test.ts'],
+      opts: { pin: 'engine' },
+      gate: `${STATIC} && ${NODE} && ${COMPONENT_RELATED} 'src/tests/component/(group)/x.test.ts'`,
+    },
+    {
+      name: 'a create-cairn-site change adds its suite',
+      paths: ['packages/create-cairn-site/src/prompts.mjs'],
+      gate: `${STATIC} && ${NODE} && ${CREATE_CAIRN_SITE}`,
+    },
+    {
+      name: 'a pinned engine tier narrows the same way',
+      paths: ['docs/reference/core.md', 'src/lib/log/index.ts'],
+      opts: { pin: 'engine' },
+      gate: `${STATIC} && ${NODE} && ${COMPONENT_RELATED} --no-passWithNoTests src/lib/log/index.ts`,
+    },
+    {
+      name: 'a mixed engine and tool diff narrows the npm half and still runs the tool gate',
+      paths: ['src/lib/log/index.ts', 'tool/main.go'],
+      gate: `${STATIC} && ${NODE} && ${COMPONENT_RELATED} --no-passWithNoTests src/lib/log/index.ts && make -C tool check`,
+    },
+  ];
+
+  for (const row of rows) {
+    it(row.name, () => {
+      expect(decideGate(row.paths, { ...row.opts, related: true }).gate).toBe(row.gate);
+    });
+  }
+
+  it('reports the component mode and the forcing paths', () => {
+    expect(decideGate(['src/lib/log/index.ts'], { related: true }).related).toEqual({ component: 'related', forcing: [] });
+    expect(decideGate(['scripts/checks/check-idioms.mjs'], { related: true }).related).toEqual({
+      component: 'none',
+      forcing: [],
+    });
+  });
+
+  // Tiers outside scripts and engine keep their own string under the flag.
+  const untouched: { paths: string[]; opts?: { pin?: string; paint?: 'yes' } }[] = [
+    { paths: ['docs/reference/core.md'] },
+    { paths: ['src/lib/admin/EditPage.svelte'] },
+    { paths: ['src/lib/render/markdown.ts'] },
+    { paths: ['tool/main.go'] },
+    { paths: ['src/lib/log/index.ts'], opts: { paint: 'yes' } },
+    { paths: ['src/lib/log/index.ts'], opts: { pin: 'full' } },
+  ];
+
+  for (const { paths, opts } of untouched) {
+    it(`leaves ${paths.join(', ')} ${JSON.stringify(opts ?? {})} on its own tier string`, () => {
+      expect(decideGate(paths, { ...opts, related: true })).toEqual(decideGate(paths, opts));
+    });
+  }
+});
+
+describe('relatedGate fallbacks', () => {
+  // One path per COMPONENT_RERUN_TRIGGERS entry; each runs the whole component project.
+  const forcing = [
+    'src/lib/admin/EditPage.svelte',
+    'src/lib/admin-toolkit/AdminTable.svelte',
+    'scripts/build/build-admin-css.mjs',
+    'scripts/build/admin-css.input.css',
+    'migrations/0001_init.sql',
+    'wrangler.test.jsonc',
+    'vitest.config.ts',
+    'svelte.config.js',
+    'src/tests/types/tsconfig.json',
+    'package.json',
+    'package-lock.json',
+    'src/tests/component/_setup.ts',
+    'src/tests/helpers/test-event.ts',
+    'src/tests/component/fixtures/admin-table-baseline.html',
+  ];
+
+  it('names a row for every trigger, so dropping one fails its row', () => {
+    for (const glob of COMPONENT_RERUN_TRIGGERS) {
+      expect(forcing.some((path) => matchesGlob(path, glob)), glob).toBe(true);
+    }
+  });
+
+  for (const path of forcing) {
+    it(`runs the whole component project when ${path} changes`, () => {
+      const result = relatedGate(['src/lib/log/index.ts', path]);
+      expect(result.component).toBe('full');
+      expect(result.forcing).toEqual([path]);
+      expect(result.gate.startsWith(`${STATIC} && ${NODE} && ${COMPONENT_FULL}`)).toBe(true);
+      expect(result.gate).not.toContain('vitest related');
+    });
+  }
+
+  // One path per CREATE_CAIRN_SITE_TRIGGERS entry; each adds the create-cairn-site suite.
+  const scaffolding = [
+    'packages/create-cairn-site/src/prompts.mjs',
+    'examples/showcase/e2e/admin.spec.ts',
+    'scripts/build/emit-template.mjs',
+    'package.json',
+  ];
+
+  it('names a row for every create-cairn-site trigger', () => {
+    for (const glob of CREATE_CAIRN_SITE_TRIGGERS) {
+      expect(scaffolding.some((path) => matchesGlob(path, glob)), glob).toBe(true);
+    }
+  });
+
+  for (const path of scaffolding) {
+    it(`runs the create-cairn-site suite when ${path} changes`, () => {
+      expect(relatedGate([path]).gate.endsWith(` && ${CREATE_CAIRN_SITE}`)).toBe(true);
+    });
+  }
+
+  it('runs no create-cairn-site suite for a templates/ path alone, which the bake writes but never reads', () => {
+    expect(relatedGate(['templates/waymark/src/hooks.server.ts']).gate).toBe(`${STATIC} && ${NODE}`);
+  });
+
+  it('feeds the same trigger list to Vitest as forceRerunTriggers', () => {
+    const config = readFileSync(resolve(process.cwd(), 'vitest.config.ts'), 'utf8');
+    expect(config).toContain("from './scripts/test/component-rerun-triggers.mjs'");
+    expect(config).toMatch(/forceRerunTriggers: FORCE_RERUN_TRIGGERS/);
   });
 });

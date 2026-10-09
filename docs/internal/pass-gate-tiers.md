@@ -6,7 +6,7 @@ this page is that table, copied for a reviewer who wants to reproduce a classifi
 reading the roadmap entry. The classifier itself is `scripts/checks/gate-tier.mjs`; its own header
 comment carries the same rules this page states.
 
-`node scripts/checks/gate-tier.mjs --range <base>..HEAD [--paint yes|no] [--pin <tier>]` prints
+`node scripts/checks/gate-tier.mjs --range <base>..HEAD [--paint yes|no] [--pin <tier>] [--related]` prints
 the chosen gate string on stdout (and nothing else on success), and the chosen tier plus the paths
 that decided it on stderr. It exits non-zero with empty stdout when the range carries no diff or
 git itself fails, so the caller falls back to a fixed gate string.
@@ -83,6 +83,30 @@ wire into a component that does not exist yet). `--pin` beats the paint floor: `
 the floor ranks against. `--pin docs` is the standing escape hatch for a comment-only workflow
 edit (a `.github/workflows/**` file, which otherwise defaults to `full` as an unrecognized path)
 that a task's own review has confirmed changes no behavior.
+
+## Related mode (`--related`)
+
+`--related` is opt-in; without it every string above is unchanged. With it, a diff whose npm half
+resolves to `scripts` or `engine` (computed or pinned) runs a narrower string than the whole
+engine suite, in this order:
+
+1. `npm run check:close:prebuilt` (check:close with `dist` built once instead of 17 times; the
+   runner reads check:close's component list from `package.json`, so it cannot drift),
+   `check:tool-heuristics`, `test:emit`, and the showcase's `test:unit`.
+2. `npm run test:node-projects`, always whole: the node projects hold the guard tests that read
+   files, spawn scripts, or walk trees, which no import graph sees.
+3. The component project narrowed by `vitest related --run` to the diff's paths under `src/`
+   (outside the node-only test trees). A diff touching `src/lib` adds `--no-passWithNoTests`, so
+   an empty selection fails. A path in `scripts/test/component-rerun-triggers.mjs` (admin sources,
+   the admin-sheet build, configs, `package.json`, lockfiles, setup and alias files, fixtures,
+   migrations) runs the whole component project instead; `vitest.config.ts` feeds the same list
+   to Vitest as `forceRerunTriggers` for a related run. A diff with no such path runs no component
+   command.
+4. `npm test -w packages/create-cairn-site` only when the diff touches the package,
+   `examples/showcase/**`, `scripts/build/emit-template*`, or the root `package.json`.
+
+`admin-visual`, `full`, `docs`, and `tool` keep their own strings under the flag. e2e spec
+selection stays with the runner.
 
 ## Verified against the showcase Playwright config (2026-09-15)
 

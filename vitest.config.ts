@@ -1,10 +1,11 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { playwright } from '@vitest/browser-playwright';
 import { statSync } from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from 'vite';
+import { COMPONENT_RERUN_TRIGGERS } from './scripts/test/component-rerun-triggers.mjs';
 
 // Read committed SQL migrations from Node context (workerd cannot read the FS).
 // In 0.16 both `cloudflareTest` and `readD1Migrations` ship from the package
@@ -15,6 +16,20 @@ const CLOUDFLARE_WORKERS_FAKE = path.resolve('./src/tests/helpers/cloudflare-wor
 const CLOUDFLARE_WORKERS_FAKE_SETUP = path.resolve('./src/tests/helpers/cloudflare-workers-fake-setup.ts');
 const SOURCE_ADMIN_SHEET = path.resolve('src/lib/admin/cairn-admin.css');
 const COMPILED_ADMIN_SHEET = path.resolve('dist/admin/cairn-admin.css');
+
+// A `vitest related` or `--changed` run selects tests by their static import graph. The shared
+// trigger list names the paths that reach the component tests outside that graph, so a related
+// run that touches one runs every selected project in full instead of a partial selection. A watch
+// run keeps Vitest's defaults, so editing an admin component reruns only its own tests there.
+// Each glob is anchored at the absolute repo root, not prefixed with a bare double star: a pass
+// worktree lives under `.claude/worktrees/`, and Vitest's matcher never lets a double star cross a
+// dot directory, so a bare double-star pattern silently matches nothing there.
+const RELATED_RUN = process.argv
+  .slice(2)
+  .some((arg) => arg === 'related' || arg.startsWith('--changed'));
+const FORCE_RERUN_TRIGGERS = RELATED_RUN
+  ? [...configDefaults.forceRerunTriggers, ...COMPONENT_RERUN_TRIGGERS.map((glob) => `${path.resolve('.')}/${glob}`)]
+  : [...configDefaults.forceRerunTriggers];
 
 /**
  * Redirects every import that resolves to the source admin partial onto the compiled sheet, for
@@ -50,6 +65,7 @@ export default defineConfig({
     // enumeration) starves and trips its timeout under the full run while passing in seconds alone.
     // Capping the pool at half the cores keeps the run parallel without the thrash.
     maxWorkers: 4,
+    forceRerunTriggers: FORCE_RERUN_TRIGGERS,
     // vi.restoreAllMocks (widely used in this suite's afterEach hooks) does not restore a
     // vi.stubGlobal call; only vi.unstubAllGlobals or this flag do. Every project below repeats
     // it explicitly, since a `projects` entry is its own Vite config and does not inherit this

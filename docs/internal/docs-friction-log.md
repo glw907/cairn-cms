@@ -72,7 +72,7 @@ No open entry.
 
 ### Repo tooling
 
-No open entry.
+- **`ci-e2e`.** The pending-dictionary-word e2e specs are flaky on CI. On pass A's merged head (`b5953af8`, run 37991578654), `e2e/edit-save-failure.spec.ts:207` failed all three attempts with `toHaveCount` reading 0. In the same run, `edit-save-failure.spec.ts:256` and `e2e/publish-pending-word.spec.ts:23` passed only on retry (the latter timed out at `:51` waiting for the underline count). A rerun of the job passed, and the local full gate passed all three. The likely seat is the wait on the spellcheck underline before the save, which CI's slower runner can outpace. Filed by the pass A close conductor, 2026-10-09.
 
 ### Triage record
 

@@ -344,10 +344,14 @@ export function createContentRoutesContext(config: ContentRoutesConfig): Content
   }
   // Validate a declared access map the same fail-loud-at-startup way: a screen-id key that names
   // neither a real concept nor a fixed engine screen, or an href key that collides with a built-in
-  // route, throws here rather than silently never gating (or never being reachable) at request
-  // time. Undeclared (the common case) skips validation entirely, the same as navLayout.
+  // route, or a rule naming a role the runtime's vocabulary does not declare, throws here rather
+  // than silently never gating (or never being reachable) at request time. Undeclared (the common
+  // case) skips validation entirely, the same as navLayout.
   if (runtime.access) {
-    validateAccessComposition(runtime.access, { conceptIds: runtime.concepts.map((concept) => concept.id) });
+    validateAccessComposition(runtime.access, {
+      conceptIds: runtime.concepts.map((concept) => concept.id),
+      roleNames: Object.keys(runtime.roles ?? DEFAULT_ROLES),
+    });
   }
   // Validate the developer's publishActions once at construction, the same fail-loud posture: a
   // blank field or an unknown concept throws here rather than silently rendering no link (or the

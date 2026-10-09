@@ -134,7 +134,8 @@ wired, tightens two access edges, and regenerates the manifest. Do these in orde
    it. Only `/admin/login` and `/admin/auth/confirm` are public now.
 5. Mount `tidyAction` and `dictionaryAddAction` only on a route with a `concept` param.
 6. Review any access rule that names a role of `none` capability. The rule now admits that role to the
-   route it names.
+   route it names. Remove a role you dropped from `defineRoles` from every access rule, or keep it
+   declared: a rule naming an undeclared role now fails at server start.
 7. Key alerting for a missing Turnstile secret on `missing_secret`, not `invalid_input`.
 8. If you passed a full `auth.branding` without `replyTo`, check the adapter's `email` group: the
    runtime's `replyTo` applies now.

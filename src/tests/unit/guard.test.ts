@@ -250,26 +250,19 @@ describe('isPublicAdminPath', () => {
 describe('access for a none-capability session', () => {
   const staffRole = { email: 's@x.test', displayName: 'S', role: 'staff', capability: 'none' as const };
   const access: AccessMap = { '/admin/staff': ['staff'], editors: ['staff'] };
-  const roles = { owner: 'owner' as const, staff: 'none' as const };
 
   it('requireAccess admits a none session on a mapped href that names its role', () => {
-    const fixture = event({ cairnEditor: staffRole, cairnAccess: access, cairnRoles: roles }, new URL('https://x.test/admin/staff'));
+    const fixture = event({ cairnEditor: staffRole, cairnAccess: access }, new URL('https://x.test/admin/staff'));
     expect(requireAccess(fixture)).toBe(staffRole);
   });
 
   it('requireAccess refuses a none session on the editors screen id even with a rule naming its role', () => {
-    const fixture = event({ cairnEditor: staffRole, cairnAccess: access, cairnRoles: roles });
+    const fixture = event({ cairnEditor: staffRole, cairnAccess: access });
     expect(() => requireAccess(fixture, 'editors')).toThrowError(expect.objectContaining({ status: 403 }));
   });
 
   it('requireAccess refuses a none session on a mapped href that names another role', () => {
-    const fixture = event({ cairnEditor: staffRole, cairnAccess: { '/admin/staff': ['publisher'] }, cairnRoles: roles }, new URL('https://x.test/admin/staff'));
-    expect(() => requireAccess(fixture)).toThrowError(expect.objectContaining({ status: 403 }));
-  });
-
-  it('requireAccess refuses a none session whose role the vocabulary no longer declares, though a rule names it', () => {
-    const pruned = { owner: 'owner' as const };
-    const fixture = event({ cairnEditor: staffRole, cairnAccess: access, cairnRoles: pruned }, new URL('https://x.test/admin/staff'));
+    const fixture = event({ cairnEditor: staffRole, cairnAccess: { '/admin/staff': ['publisher'] } }, new URL('https://x.test/admin/staff'));
     expect(() => requireAccess(fixture)).toThrowError(expect.objectContaining({ status: 403 }));
   });
 });

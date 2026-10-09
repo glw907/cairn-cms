@@ -93,15 +93,6 @@ describe('guard identity branch: rostered', () => {
     expect(ev.locals.cairnAccess).toBe(access);
   });
 
-  it('attaches runtime.roles to locals.cairnRoles by identity', async () => {
-    await seedEditor('owner@x.dev', 'Roster Name', 'owner');
-    const roles = { owner: 'owner' as const };
-    const guard = guardWith(async () => resolved('owner@x.dev'), { roles });
-    const ev = event('/admin');
-    await guard({ event: ev, resolve: async () => OK });
-    expect(ev.locals.cairnRoles).toBe(roles);
-  });
-
   it("prefers the roster row's displayName over the resolver's advisory one", async () => {
     await seedEditor('owner@x.dev', 'Roster Name', 'owner');
     const guard = guardWith(async () => resolved('owner@x.dev', 'Resolver Name'));

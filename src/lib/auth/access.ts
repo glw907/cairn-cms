@@ -140,12 +140,8 @@ function resolveHrefMatch(access: AccessMap, target: string): { key: string | un
 /**
  * The one authority function every enforcement and visibility point reads: `requireAccess`, the
  * engine route gates, and the nav resolver. `none` capability reaches a route path only when the
- * matched rule names its role explicitly and `roles` declares that role: a screen id, an href no
- * rule matches, `editors`, and a role the vocabulary no longer declares all stay refused for it,
- * and the permissive no-rule reading below never applies to it. The declared-role check is what
- * makes dropping a role from `defineRoles` revoke it, even where an access rule still names the
- * old string; an `undefined` vocabulary is the implicit owner/editor pair, the same fallback
- * `resolveCapability` reads, so a site with its own none roles passes its declared vocabulary. Owner
+ * matched rule names its role explicitly: a screen id, an href no rule matches, and `editors`
+ * stay refused for it, and the permissive no-rule reading below never applies to it. Owner
  * capability reaches every target, including the `editors` screen id and any target with no rule.
  * Every other capability's reach stops at `editors`, which stays owner-only no matter what
  * the map says (the roster screen's existing floor, restated here so the one authority function
@@ -170,15 +166,9 @@ function resolveHrefMatch(access: AccessMap, target: string): { key: string | un
  * reading gates both an engine screen's own route enforcement and that screen's nav visibility,
  * and every route relies on the zero-config any-editor floor an unmapped target admits.
  */
-export function canReach(
-  access: AccessMap | undefined,
-  editor: Editor,
-  target: string,
-  roles?: RolesDeclaration,
-): boolean {
+export function canReach(access: AccessMap | undefined, editor: Editor, target: string): boolean {
   if (editor.capability === 'none') {
     if (!access || !isHrefKey(target)) return false;
-    if (!Object.hasOwn(roles ?? DEFAULT_ROLES, editor.role)) return false;
     const key = matchHrefKey(access, target);
     return key !== undefined && access[key].includes(editor.role);
   }

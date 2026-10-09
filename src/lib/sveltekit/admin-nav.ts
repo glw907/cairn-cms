@@ -10,7 +10,6 @@ import { log } from '../log/index.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import { canReach, hasAccessRule, type AccessMap } from '../auth/access.js';
-import type { RolesDeclaration } from '../auth/roles.js';
 
 /**
  * The bundled Lucide icon names a navLayout site entry, or a navLayout engine ref's {@link
@@ -283,15 +282,23 @@ const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const
 /**
  * Validate a site's declared access map once at composition (server start), after `defineAccess`'s
  *  own shape/vocabulary check: a screen-id key must name either a real concept or one of the fixed
- *  engine screens ({@link ACCESS_FIXED_SCREENS}), and an href key must not
+ *  engine screens ({@link ACCESS_FIXED_SCREENS}), an href key must not
  *  collide with a built-in admin route (the `parseAdminPath` authority, the same collision check
- *  `validateNavLayout` uses for a site entry's own href). Throws an actionable `access:`-prefixed
+ *  `validateNavLayout` uses for a site entry's own href), and every role a rule names must be one
+ *  the runtime's vocabulary declares. Throws an actionable `access:`-prefixed
  *  error naming the bad key, so a misconfiguration fails at server start rather than silently never
  *  gating (or never even reachable) at request time.
  * @param access - The site's declared access map.
  *
  * The second parameter carries context this validation needs but does not itself derive: the
- *  site's real concept ids, the same role `validateNavLayout`'s own second parameter plays.
+ *  site's real concept ids and its declared role names, the same role `validateNavLayout`'s own
+ *  second parameter plays.
+ *
+ * The role check is what makes dropping a role from `defineRoles` revoke it. An undeclared role
+ *  resolves to `none` capability, and `canReach` admits a `none` session to an href rule naming its
+ *  role, so a leftover roster row would otherwise still reach that route. `defineAccess` checks
+ *  the same thing against whatever vocabulary its caller handed it, which need not be the one the
+ *  runtime carries, so composition checks again against the runtime's own.
  *
  * Non-throwing once the shape checks above pass: logs `config.access_unmapped` when the map
  *  declares at least one screen-id key and leaves a declared concept or fixed screen without a
@@ -301,8 +308,18 @@ const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const
  *  is silent. This never blocks composition; it exists only to surface a screen map a site
  *  believed was exhaustive but is not.
  */
-export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: string[] }): void {
+export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: string[]; roleNames: string[] }): void {
   const knownScreens = new Set<string>([...ctx.conceptIds, ...ACCESS_FIXED_SCREENS]);
+  const declaredRoles = new Set(ctx.roleNames);
+  for (const [key, admitted] of Object.entries(access)) {
+    for (const role of admitted) {
+      if (!declaredRoles.has(role)) {
+        throw new Error(
+          `access: "${key}" names role "${role}", which the role vocabulary does not declare; declare "${role}" in defineRoles, or remove it from this rule`,
+        );
+      }
+    }
+  }
   // parseAdminPath's concept lookup (findConcept) reads only `.id`, mirroring validateNavLayout's
   // own stub above.
   const stubConcepts = ctx.conceptIds.map((id) => ({ id })) as unknown as ConceptDescriptor[];
@@ -406,11 +423,6 @@ interface ResolveNavLayoutOptions {
    */
   access?: AccessMap;
   /**
-   * The site's declared role vocabulary, or undefined for the implicit owner/editor pair. A
-   *  none-capability session sees a mapped href only while this still declares its role.
-   */
-  roles?: RolesDeclaration;
-  /**
    * The signed-in editor whose capability gates every engine screen (row 4 of the design table)
    *  and whose role is matched against a node's declarative `roles` list and against the access
    *  map. Replaces the former loose `capability`/`role` pair so the resolver reads the same
@@ -449,7 +461,7 @@ function engineDefault(screen: string, opts: ResolveNavLayoutOptions): { label: 
  */
 function engineVisible(screen: string, opts: ResolveNavLayoutOptions): boolean {
   if (screen === 'nav' && opts.navMenuLabel === null) return false;
-  return canReach(opts.access, opts.editor, screen, opts.roles);
+  return canReach(opts.access, opts.editor, screen);
 }
 
 /** Resolve one engine screen into its door, applying a declared relabel and icon override when given. */
@@ -486,7 +498,7 @@ function ownerOnlyVisible(entry: { ownerOnly?: boolean }, opts: ResolveNavLayout
  */
 function hrefReachable(href: string, opts: ResolveNavLayoutOptions): boolean {
   if (!opts.access || !hasAccessRule(opts.access, href)) return true;
-  return canReach(opts.access, opts.editor, href, opts.roles);
+  return canReach(opts.access, opts.editor, href);
 }
 
 /**

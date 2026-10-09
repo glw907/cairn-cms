@@ -99,11 +99,11 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 - **Review any access rule that names a role of `none` capability.** `canReach`, `requireAccess`,
   `createSectionAction`, and `createAdminAction`'s `access` option now admit that role to the route
   path the rule names. A screen id, an href no rule matches, and `editors` stay refused for it.
-- **Remove access rules that name a role you dropped from `defineRoles`, or keep the role
-  declared.** A session whose role the vocabulary no longer declares reads `none` capability, and
-  an href rule naming its old role string no longer admits it. The guard attaches the vocabulary to
-  `locals.cairnRoles`. A direct `canReach` call for a site's own `none` role passes the vocabulary
-  as its fourth argument, since an omitted one reads the default owner and editor pair.
+- **Remove a dropped role from every access rule, or keep it declared.** An access rule naming a
+  role the vocabulary doesn't declare now fails at server start, so dropping a role from
+  `defineRoles` can't leave it reachable. The error names the rule's key and the role. A stale
+  roster row with a dropped role reads `none` capability, and without the check an href rule still
+  naming the role would admit it.
 - **Key Turnstile alerting on `missing_secret` for a missing secret.** `turnstile.verify_failed` with
   `reason: 'invalid_input'` now means a bad token only. A blank or non-string secret logs
   `missing_secret`.

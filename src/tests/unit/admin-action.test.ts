@@ -385,6 +385,35 @@ describe('createAdminAction: opt-in authorization', () => {
   });
 });
 
+describe('createAdminAction: a none-capability session under the access option', () => {
+  const noneStaff: Editor = { email: 'none@example.com', displayName: 'None', role: 'staff', capability: 'none' };
+  const target = '/admin/team/events';
+  const csrf = { cookie: 'MATCH', csrfField: 'MATCH' } as const;
+
+  function guarded() {
+    const handler = vi.fn(async ({ ctx }: { ctx: { audit: (r: { action: string; entity: string }) => void } }) => {
+      ctx.audit({ action: 'approve', entity: 'event' });
+      return { ok: true } as const;
+    });
+    return { handler, action: createAdminAction(handler, { access: { target } }) };
+  }
+
+  it('runs the handler on an href rule that names its role', async () => {
+    const { handler, action } = guarded();
+    expect(await action(makeEvent({ ...csrf, editor: noneStaff, access: { [target]: ['staff'] } }))).toEqual({ ok: true });
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  it('audits and throws 403 on an href rule that names only another role', async () => {
+    const sink = vi.fn();
+    const { handler, action } = guarded();
+    const event = makeEvent({ ...csrf, editor: noneStaff, access: { [target]: ['editor'] }, auditSink: sink });
+    expect(await httpErrorStatusOf(action(event))).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: role not admitted' }));
+  });
+});
+
 describe('createAdminAction: the required audit emit', () => {
   afterEach(() => {
     vi.restoreAllMocks();

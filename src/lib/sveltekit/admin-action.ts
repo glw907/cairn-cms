@@ -16,7 +16,6 @@ import { csrfHeaderVerdict, csrfFieldVerdict, csrfSecure } from './csrf.js';
 import { canReach, hasAccessRule, noRuleReason } from '../auth/access.js';
 import { log } from '../log/index.js';
 import type { AccessMap } from '../auth/access.js';
-import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessRefusedReason } from '../log/events.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
@@ -128,10 +127,9 @@ export function authorizeAdminTarget(
   access: AccessMap | undefined,
   editor: Editor,
   opts: { target: string; ownerOnly?: boolean },
-  roles: RolesDeclaration | undefined,
 ): AdminTargetAuthorization {
   if (!hasAccessRule(access, opts.target)) return { outcome: 'no-rule', reason: noRuleReason(access, opts.target) };
-  if (!canReach(access, editor, opts.target, roles)) return { outcome: 'not-admitted' };
+  if (!canReach(access, editor, opts.target)) return { outcome: 'not-admitted' };
   if (opts.ownerOnly && editor.capability !== 'owner') return { outcome: 'not-owner' };
   return { outcome: 'allowed' };
 }
@@ -299,7 +297,7 @@ export function createAdminAction<T>(
     // and then throws error(403): authorization refusals are createAdminAction's own channel, so the
     // wrapper's return type stays the handler's own T.
     if (deps.access) {
-      const authorization = authorizeAdminTarget(event.locals.cairnAccess, editor, deps.access, event.locals.cairnRoles);
+      const authorization = authorizeAdminTarget(event.locals.cairnAccess, editor, deps.access);
       if (authorization.outcome !== 'allowed') {
         ctx.audit({ action: 'deny', entity: 'admin-action', detail: ADMIN_DENIAL_DETAIL[authorization.outcome] });
         log.warn('auth.access.refused', {

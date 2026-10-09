@@ -26,7 +26,7 @@ name here against them.
 Stability tier: Extension API.
 
 ```ts
-import type { Editor, AccessMap, Backend, RolesDeclaration } from '@glw907/cairn-cms';
+import type { Editor, AccessMap, Backend } from '@glw907/cairn-cms';
 import type { CookieJar, AdminActionAuditSink } from '@glw907/cairn-cms/sveltekit';
 
 interface CairnEvent {
@@ -41,7 +41,6 @@ interface CairnEvent {
     cairnBackend?: Backend;
     cairnAuditSink?: AdminActionAuditSink;
     cairnAccess?: AccessMap;
-    cairnRoles?: RolesDeclaration;
     cairnIdentity?: { label: string; logoutUrl: string };
   };
 }
@@ -58,15 +57,13 @@ reading route identity out of a form body: a real kit event always carries both,
 `null`; a matched `load` or form action always sees a real route id. `cookies` and `setHeaders`
 are always present on a real kit server event.
 
-`locals` carries six optional keys, each sharing the flat `cairn` prefix so a grep for one name
+`locals` carries five optional keys, each sharing the flat `cairn` prefix so a grep for one name
 finds every engine read in any repo: `cairnEditor` (the session
 [`createAuthGuard`](#createauthguard) resolved), `cairnBackend` (a dev or test double for the
 content store; a production request leaves it absent and the real GitHub provider connects),
 `cairnAuditSink` (a site's optional [`AdminActionAuditSink`](#adminactionauditsink), wired through
 `createAdminAction`'s audit contract), `cairnAccess` (the site's declared [access
-map](./core.md#access-map), attached by the guard alongside `cairnEditor`), `cairnRoles` (the
-declared role vocabulary, attached beside it so a `none`-capability session reaches an href rule
-only while its role is declared), and `cairnIdentity`
+map](./core.md#access-map), attached by the guard alongside `cairnEditor`), and `cairnIdentity`
 (the [identity seam](#createauthguard)'s snapshot, set on every admin path under identity mode;
 see [Per-route factories](#per-route-factories-advanced) for its shape and readers).
 
@@ -1639,8 +1636,8 @@ import { runtime } from '#lib/cairn.server.js';
 export const prerender = false;
 
 export const GET = async (event) => {
-  const report = await loadHealth(event, runtime);
-  return Response.json(report, { status: report.ok ? 200 : 503 });
+  const health = await loadHealth(event, runtime);
+  return Response.json(health, { status: health.ok ? 200 : 503 });
 };
 ```
 

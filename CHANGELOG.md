@@ -274,13 +274,11 @@
   `requireAccess`, and `createSectionAction` now admit that role to the route the rule names, where
   they refused it before.
 
-- **An undeclared role no longer reaches an href rule that names it.** A `none`-capability session
-  is admitted to an access rule only while the role vocabulary still declares its role, so dropping a
-  role from `defineRoles` revokes it. `canReach` takes the vocabulary as an optional fourth argument,
-  and the guard attaches it to `locals.cairnRoles` for `requireAccess` and the admin action wrappers.
+- **Access rules name only declared roles.** An access rule naming a role the vocabulary does not
+  declare now fails at server start, so dropping a role from `defineRoles` cannot leave it
+  reachable. The error names the rule's key and the role.
 
-  Consumers must: remove access rules that name a role you dropped from `defineRoles`, or keep the
-  role declared.
+  Consumers must: remove the role from every access rule, or keep it declared.
 
 - **`0001_roles.sql` opens with a warning line.** Once the file sits in a site's `migrations`
   directory, any automated `wrangler d1 migrations apply` runs it, and its rebuild keeps only the

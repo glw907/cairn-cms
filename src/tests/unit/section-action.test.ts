@@ -12,7 +12,6 @@ import type { AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js
 import type { CairnEvent, CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 import type { Editor } from '../../lib/auth/types.js';
-import type { RolesDeclaration } from '../../lib/auth/roles.js';
 import type { Action, ActionFailure, RequestEvent } from '@sveltejs/kit';
 import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 
@@ -49,8 +48,6 @@ function makeEvent(opts: {
   csrfField?: string;
   editor?: Editor | null;
   cairnAccess?: AccessMap;
-  /** The declared role vocabulary the guard attaches beside the map. */
-  cairnRoles?: RolesDeclaration;
   /** Installed as the fake Worker env when given, the bindings `resolveDb` reads. */
   env?: TestEnv;
   auditSink?: (record: AdminActionAuditRecord) => void;
@@ -77,7 +74,6 @@ function makeEvent(opts: {
     locals: {
       cairnEditor: opts.editor === undefined ? owner : opts.editor,
       cairnAccess: opts.cairnAccess,
-      cairnRoles: opts.cairnRoles,
       cairnAuditSink: opts.auditSink,
     },
     setHeaders: () => {},
@@ -509,27 +505,17 @@ describe('createSectionAction: ownerOnly stacks on the map check', () => {
 
 describe('createSectionAction: a none-capability session', () => {
   const noneStaff: Editor = { email: 'none@x.test', displayName: 'None', role: 'staff', capability: 'none' };
-  const roles: RolesDeclaration = { owner: 'owner', staff: 'none' };
 
   it('is admitted on a mapped href that names its role', async () => {
     const { handler, action } = approveAction();
-    const result = await action(readyEvent({ editor: noneStaff, cairnAccess: { [mappedTarget]: ['staff'] }, cairnRoles: roles }));
+    const result = await action(readyEvent({ editor: noneStaff, cairnAccess: { [mappedTarget]: ['staff'] } }));
     expect(handler).toHaveBeenCalledOnce();
     expect(isActionFailure(result)).toBe(false);
   });
 
   it('is refused on the editors screen id even with a rule naming its role', async () => {
     const { handler, action } = approveAction(boundDb, { target: 'editors' });
-    const result = await action(readyEvent({ editor: noneStaff, cairnAccess: { editors: ['staff'] }, cairnRoles: roles }));
-    expect(handler).not.toHaveBeenCalled();
-    expect(refusal(result).status).toBe(403);
-  });
-
-  it('is refused on a mapped href naming its role once the vocabulary no longer declares the role', async () => {
-    const { handler, action } = approveAction();
-    const result = await action(
-      readyEvent({ editor: noneStaff, cairnAccess: { [mappedTarget]: ['staff'] }, cairnRoles: { owner: 'owner' } }),
-    );
+    const result = await action(readyEvent({ editor: noneStaff, cairnAccess: { editors: ['staff'] } }));
     expect(handler).not.toHaveBeenCalled();
     expect(refusal(result).status).toBe(403);
   });

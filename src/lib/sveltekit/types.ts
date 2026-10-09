@@ -2,7 +2,6 @@
 // these and more, so the engine never imports a site's generated App.* ambient types.
 import type { Editor } from '../auth/types.js';
 import type { AccessMap } from '../auth/access.js';
-import type { RolesDeclaration } from '../auth/roles.js';
 import type { Backend } from '../github/backend.js';
 import type { AdminActionAuditSink } from './admin-action.js';
 
@@ -54,16 +53,14 @@ export interface CairnEvent {
   // Required so a site cannot silently drop the confirm page's Referrer-Policy header
   // (spec 7.1). A real SvelteKit RequestEvent always supplies it.
   setHeaders(headers: Record<string, string>): void;
-  // The six members share the flat `cairn` prefix, so a grep for one name finds every engine
+  // The five members share the flat `cairn` prefix, so a grep for one name finds every engine
   // read in any repo with no namespace to peel back first.
   // `cairnBackend` is the per-request content store the dev-backend handle injects; the engine
   // resolves it ahead of the real provider, so typing it here makes the seam a checked contract
   // rather than a cast. A production request leaves it absent and the real `createGithubApp` provider
   // connects. `cairnAccess` is the site's declared access map, attached by the guard alongside
   // `cairnEditor`; it is internal (never serialized to a page payload) and exists only so
-  // `requireAccess` needs no extra argument at the call site. `cairnRoles` is the declared role
-  // vocabulary the guard attaches beside it, so a none-capability session reaches an href rule only
-  // while its role is still declared. `cairnAuditSink` is a site's
+  // `requireAccess` needs no extra argument at the call site. `cairnAuditSink` is a site's
   // optional sink for `createAdminAction`'s audit records, wired the same way. `cairnIdentity` is the
   // guard's identity-gate snapshot, set on every admin path under identity mode; the guard is
   // its only writer.
@@ -72,7 +69,6 @@ export interface CairnEvent {
     cairnBackend?: Backend;
     cairnAuditSink?: AdminActionAuditSink;
     cairnAccess?: AccessMap;
-    cairnRoles?: RolesDeclaration;
     cairnIdentity?: { label: string; logoutUrl: string };
   };
 }

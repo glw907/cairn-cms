@@ -292,7 +292,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // option also runs (authorizeAdminTarget, ./admin-action.js). This wrapper keeps its own
       // refusal channel: each refusing outcome audits and returns fail(403), where createAdminAction
       // audits and throws.
-      const authorization = authorizeAdminTarget(access, ctx.editor, { target, ownerOnly: opts.ownerOnly }, event.locals.cairnRoles);
+      const authorization = authorizeAdminTarget(access, ctx.editor, { target, ownerOnly: opts.ownerOnly });
       if (authorization.outcome !== 'allowed') {
         return deny(ADMIN_DENIAL_DETAIL[authorization.outcome], refusalReason(authorization));
       }

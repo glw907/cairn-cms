@@ -1,6 +1,6 @@
 # Ambient types (`/ambient`)
 
-A type-only module whose import side effect augments SvelteKit's `App.Locals` with the six
+A type-only module whose import side effect augments SvelteKit's `App.Locals` with the five
 fields the engine reads and writes on every admin request, and nothing else: a type a site
 consumes directly, `CairnEnv`, `Editor`, and so on, belongs on [Core](./core.md) or
 [SvelteKit](./sveltekit.md) instead, even one this augmentation's own members reference, since
@@ -22,21 +22,19 @@ declare global {
       cairnBackend?: Backend;
       cairnAuditSink?: AdminActionAuditSink;
       cairnAccess?: AccessMap;
-      cairnRoles?: RolesDeclaration;
       cairnIdentity?: { label: string; logoutUrl: string };
     }
   }
 }
 ```
 
-All six members share the flat `cairn` prefix rather than a nested `locals.cairn.{}` namespace:
+All five members share the flat `cairn` prefix rather than a nested `locals.cairn.{}` namespace:
 a flat key costs a site one optional hop (`event.locals.cairnEditor`) instead of two, and a grep
 for `cairnEditor` finds every engine read of the field in any repo, this one included, with no
 namespace to peel back first.
 
-`Editor`, `Backend`, `AdminActionAuditSink`, `AccessMap`, and `RolesDeclaration` are exports of
-the same names: `Editor`, `Backend`, `AccessMap`, and `RolesDeclaration` from [core](./core.md),
-and `AdminActionAuditSink` from
+`Editor`, `Backend`, `AdminActionAuditSink`, and `AccessMap` are exports of the same names:
+`Editor`, `Backend`, and `AccessMap` from [core](./core.md), and `AdminActionAuditSink` from
 [sveltekit](./sveltekit.md#adminactionauditsink). `cairnIdentity`'s shape has no export row of
 its own; it's the inline object [`createAuthGuard`'s `identity` option](./sveltekit.md#createauthguard)
 publishes.
@@ -66,12 +64,6 @@ publishes.
   argument to reach it at the call site. A zero-config site's guard attaches an empty map, which
   admits nothing, so an opted-in action refuses until the site declares a rule for its target;
   `createAdminAction` with no `access` option never reads the field.
-
-- **`cairnRoles`** is the site's declared role vocabulary, attached by `createAuthGuard` beside
-  `cairnAccess`: `runtime.roles`, or the default owner and editor pair when the adapter declares
-  none. `requireAccess`, `createSectionAction`, and an opted-in `createAdminAction` read it so a
-  `none`-capability session reaches an href rule only while the vocabulary still declares its
-  role. A hand-built `locals` that leaves it out reads the default pair.
 
 - **`cairnIdentity`** is the site's identity-gate snapshot, set by
   [`createAuthGuard`](./sveltekit.md#createauthguard)'s `identity` option on every `/admin/**`

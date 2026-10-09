@@ -356,7 +356,6 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
         capability: resolveCapability(vocabulary, row.role),
       };
       event.locals.cairnAccess = access ?? {};
-      event.locals.cairnRoles = vocabulary;
     } else if (!isPublicAdminPath(pathname)) {
       // Same csrfSecure derivation as the hasSession read above: unreachable to differ
       // from the bare protocol check on a guarded admin path, since the https-help-page check
@@ -378,7 +377,6 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
       // locals.cairnAccess then only ever means a route outside every hook's coverage, since the
       // guard and the dev backend's handle both attach a map on every admin path they cover.
       event.locals.cairnAccess = access ?? {};
-      event.locals.cairnRoles = vocabulary;
     }
     const response = await resolve(event);
     applySecurityHeaders(response.headers, { includeSubDomains });
@@ -494,7 +492,7 @@ export function requireAccess(event: CairnEvent, target?: string): Editor {
   const resolvedTarget = target ?? targetFromRouteId(event.route.id);
   const access = event.locals.cairnAccess;
   const ruled = hasAccessRule(access, resolvedTarget);
-  if (!ruled || !canReach(access, editor, resolvedTarget, event.locals.cairnRoles)) {
+  if (!ruled || !canReach(access, editor, resolvedTarget)) {
     const reason: AccessRefusedReason = ruled ? 'role' : noRuleReason(access, resolvedTarget);
     log.warn('auth.access.refused', { email: editor.email, role: editor.role, target: resolvedTarget, reason });
     throw error(403, 'Access denied');

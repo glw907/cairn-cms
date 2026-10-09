@@ -11,6 +11,7 @@ import { applyActionCalls, enhanceRuns, resetEnhance, settleEnhance } from './_a
 // (edit-save-failure.spec.ts), where a real browser and a real kit run them.
 
 const NOTICE = 'That did not go through. Your text is still here; try again.';
+const SESSION_NOTICE = 'Your session ended. Sign in again in a new tab, then save. Your text is still here.';
 
 function props(over = {}) {
   return {
@@ -61,8 +62,15 @@ const publishButton = (screen: Screen) =>
   screen.container.querySelector<HTMLButtonElement>('button[formaction^="?/publish"]')!;
 const saveState = (screen: Screen) =>
   screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '';
-/** The visible notice strip's text; the screen-reader live region repeats it, so it is not the one to read. */
-const notice = (screen: Screen) => screen.container.querySelector('.alert-warning')?.textContent?.trim() ?? '';
+/** The visible notice strip's message; the screen-reader live region repeats it, so it is not the one to read. */
+const notice = (screen: Screen) =>
+  screen.container.querySelector('.alert-warning > span')?.textContent?.trim() ?? '';
+/** The assertive live region's raw text, nonce mark included. */
+const assertive = (screen: Screen) =>
+  screen.container.querySelector('[aria-live="assertive"]')?.textContent ?? '';
+/** Whether the editing surface accepts typing. */
+const editorWritable = (screen: Screen) =>
+  screen.container.querySelector('.cm-content')?.getAttribute('contenteditable') === 'true';
 const bodyValue = (screen: Screen) =>
   screen.container.querySelector<HTMLInputElement>('input[name="body"]')!.value;
 
@@ -141,17 +149,156 @@ describe('EditPage failed submit', () => {
     expect(saveButton(screen).disabled).toBe(false);
   });
 
-  it('treats a redirect to somewhere other than this concept (the login page) as a failure', async () => {
+  it('treats a redirect to the sign-in page as an ended session, with a new-tab sign-in link', async () => {
     const screen = await render(EditPage, props());
     await submitSave(screen);
     const typed = bodyValue(screen);
 
-    settleEnhance({ type: 'redirect', status: 303, location: `${location.origin}/admin/login` });
-    await expect.poll(() => notice(screen)).toBe(NOTICE);
+    settleEnhance({ type: 'redirect', status: 303, location: '/admin/login' });
+    await expect.poll(() => notice(screen)).toBe(SESSION_NOTICE);
 
+    const link = screen.container.querySelector<HTMLAnchorElement>('.alert-warning a')!;
+    expect(link.textContent?.trim()).toBe('Sign in');
+    expect(link.href).toBe(`${location.origin}/admin/login`);
+    expect(link.target).toBe('_blank');
+    expect(link.rel).toBe('noopener');
+    expect(assertive(screen).replace(/\u200b/g, '')).toBe(SESSION_NOTICE);
     expect(applyActionCalls).toEqual([]);
     expect(bodyValue(screen)).toBe(typed);
     expect(saveState(screen)).toBe('Unsaved changes');
+    expect(saveButton(screen).disabled).toBe(false);
+  });
+
+  it('keeps the generic notice and offers no sign-in link for an error result', async () => {
+    const screen = await render(EditPage, props());
+    await submitSave(screen);
+    settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
+    await expect.poll(() => notice(screen)).toBe(NOTICE);
+    expect(screen.container.querySelector('.alert-warning a')).toBeNull();
+  });
+
+  it('holds the editor read-only while the request is in flight, and writable again after a failure', async () => {
+    const screen = await render(EditPage, props());
+    await makeDirty(screen);
+    expect(editorWritable(screen)).toBe(true);
+    saveButton(screen).click();
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    await expect.poll(() => editorWritable(screen)).toBe(false);
+
+    settleEnhance({ type: 'failure', status: 500, data: { error: 'Could not save.' } });
+    await expect.poll(() => editorWritable(screen)).toBe(true);
+  });
+
+  it('gives the caret back to an author who saved from the keyboard when the save fails', async () => {
+    const screen = await render(EditPage, props());
+    await makeDirty(screen);
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    content.focus();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true, cancelable: true }));
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    // Precondition: the read-only surface gave up focus while the request ran.
+    await expect.poll(() => content.contains(document.activeElement)).toBe(false);
+
+    settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
+    await expect.poll(() => content.contains(document.activeElement)).toBe(true);
+  });
+
+  it('clears the working state and the leave-guard bypass when the page is restored from the back-forward cache', async () => {
+    // Calling the registered beforeunload handler directly, as EditPage.test.ts does: dispatching a
+    // real one on window makes the vitest browser orchestrator treat the test page as unloading.
+    const handlers: EventListener[] = [];
+    const originalAdd = window.addEventListener;
+    const callOriginal = originalAdd.bind(window) as (type: string, fn: EventListenerOrEventListenerObject, opts?: unknown) => void;
+    window.addEventListener = ((type: string, fn: EventListenerOrEventListenerObject, opts?: unknown) => {
+      if (type === 'beforeunload' && typeof fn === 'function') handlers.push(fn);
+      callOriginal(type, fn, opts);
+    }) as typeof window.addEventListener;
+    let screen: Screen;
+    try {
+      screen = await render(EditPage, props({ pending: true }));
+      await expect.poll(() => handlers.length).toBe(1);
+    } finally {
+      window.addEventListener = originalAdd;
+    }
+    const leaveBlocked = () => {
+      const event = new Event('beforeunload', { cancelable: true });
+      handlers[0](event);
+      return event.defaultPrevented;
+    };
+
+    await submitSave(screen);
+    expect(saveButton(screen).disabled).toBe(true);
+    // The discard form's submit handler is what sets the leave-guard bypass. A synthetic submit
+    // event runs that handler without sending the form.
+    const discardForm = screen.container.querySelector<HTMLFormElement>('form[action="?/discard"]')!;
+    discardForm.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
+
+    // A pageshow that is not a cache restore changes nothing.
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(saveButton(screen).disabled).toBe(true);
+    expect(publishButton(screen).disabled).toBe(true);
+
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    await expect.poll(() => saveButton(screen).disabled).toBe(false);
+    expect(saveButton(screen).textContent).not.toContain('Saving');
+    expect(publishButton(screen).disabled).toBe(false);
+    expect(leaveBlocked()).toBe(true);
+  });
+
+  it.each([
+    ['publishedFlash', { saved: false, publishedFlash: true }],
+    ['discardedFlash', { saved: false, discardedFlash: true }],
+    ['renamed', { saved: false, renamed: true }],
+  ])('drops the %s strip from the original load after a failure in place', async (_flag, over) => {
+    const screen = await render(EditPage, props(over));
+    // Precondition: the strip the page loaded with is up.
+    expect(screen.container.querySelector('.cairn-feedback')).not.toBeNull();
+    await submitSave(screen);
+    settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
+    await expect.poll(() => notice(screen)).toBe(NOTICE);
+    expect(screen.container.querySelector('.cairn-feedback')).toBeNull();
+  });
+
+  it('stands an earlier refusal down while the newer notice shows, and announces the notice', async () => {
+    const screen = await render(EditPage, { ...props(), form: { error: 'An earlier refusal.' } });
+    // Precondition: the earlier attempt's message is on screen and in the assertive region.
+    expect(screen.container.querySelector('.alert-error')?.textContent).toContain('An earlier refusal.');
+    await submitSave(screen);
+    settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
+    await expect.poll(() => notice(screen)).toBe(NOTICE);
+
+    expect(screen.container.querySelector('.alert-error')).toBeNull();
+    expect(assertive(screen).replace(/\u200b/g, '')).toBe(NOTICE);
+  });
+
+  it('stands an earlier broken-link list down while the newer notice shows', async () => {
+    const form = { error: 'Broken links.', brokenLinks: ['/admin/posts/gone'] };
+    const screen = await render(EditPage, { ...props(), form });
+    expect(screen.container.querySelector('.alert-error')?.textContent).toContain('/admin/posts/gone');
+    await submitSave(screen);
+    settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
+    await expect.poll(() => notice(screen)).toBe(NOTICE);
+
+    expect(screen.container.querySelector('.alert-error')).toBeNull();
+    expect(assertive(screen).replace(/\u200b/g, '')).toBe(NOTICE);
+  });
+
+  it('re-announces an identical failure by changing the assertive text', async () => {
+    const screen = await render(EditPage, props());
+    await submitSave(screen);
+    settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
+    await expect.poll(() => notice(screen)).toBe(NOTICE);
+    const first = assertive(screen);
+
+    saveButton(screen).click();
+    await expect.poll(() => enhanceRuns.length).toBe(2);
+    settleEnhance({ type: 'error', status: 0, error: new Error('Failed to fetch') });
+    await expect.poll(() => notice(screen)).toBe(NOTICE);
+    await expect.poll(() => saveButton(screen).disabled).toBe(false);
+
+    expect(assertive(screen).replace(/\u200b/g, '')).toBe(NOTICE);
+    expect(assertive(screen)).not.toBe(first);
   });
 
   it('re-enables Publish and keeps the text after a failed publish', async () => {

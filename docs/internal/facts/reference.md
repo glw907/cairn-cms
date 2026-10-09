@@ -1205,7 +1205,7 @@ re-sourced to Go on this tree rather than to the page.
   and Svelte's default `{expr}` binding rendering as text. [verified]
 - `f:7sc3pe` The edit page's preview frame is sandboxed (`sandbox=""`), so scripts never run there and the
   island runtime never mounts in the preview; verify a live island on the deployed page. Source:
-  `src/lib/admin/EditPage.svelte:2189` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
+  `src/lib/admin/EditPage.svelte:2243` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
   the empty `sandbox` attribute blocks script execution by the HTML sandboxing spec (no
   `allow-scripts` token). [verified]
 

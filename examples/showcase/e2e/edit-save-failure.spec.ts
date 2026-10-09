@@ -183,12 +183,12 @@ test('a publish answered with a 500 failure leaves Publish enabled and the text 
   await expectWritingKept(page);
 });
 
-test('a pending dictionary word commits before the save or publish request is sent', async ({
-  page,
-}) => {
-  test.setTimeout(90_000);
-  // The seed copy-edit entry carries two real misspellings ("recieve", "teh"), so the underlines
-  // are deterministic. Fixing one makes the page dirty; adding the other leaves a word pending.
+/**
+ * Open the seed copy-edit entry and leave one dictionary word pending on a dirty page. The entry
+ * carries two real misspellings ("recieve", "teh"), so the underlines are deterministic. Fixing one
+ * makes the page dirty; adding the other leaves a word pending.
+ */
+async function stagePendingWord(page: Page): Promise<void> {
   await page.goto('/admin/posts/2026-06-copyedit');
   const underlines = page.locator('.cm-lintRange-info');
   await expect(async () => {
@@ -202,6 +202,13 @@ test('a pending dictionary word commits before the save or publish request is se
   await underlines.filter({ hasText: 'teh' }).click();
   await popover.getByRole('button', { name: 'Add to dictionary' }).click();
   await expect(underlines).toHaveCount(0, { timeout: 10_000 });
+}
+
+test('a pending dictionary word commits before the save or publish request is sent', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await stagePendingWord(page);
 
   // Hold the dictionary commit and record the order of everything that follows. Neither the
   // commit nor the save reaches the real server, so the spellcheck spec's seed stays untouched.
@@ -244,4 +251,116 @@ test('a pending dictionary word commits before the save or publish request is se
   });
   await expect(alertWith(page, 'Held save answered.')).toBeVisible();
   expect(order).toEqual(['dictionaryAdd', 'save']);
+});
+
+test('a dictionary commit that never answers holds the save only until its deadline', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await stagePendingWord(page);
+
+  // The commit is left unanswered for good. The save is answered with a failure so it never
+  // reaches the real server.
+  const sent: Record<string, number> = {};
+  await page.route(actionUrl('dictionaryAdd'), () => {
+    sent.dictionaryAdd = Date.now();
+  });
+  await page.route(actionUrl('save'), (route) => {
+    sent.save = Date.now();
+    return route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: failureEnvelope(500, { error: 'Save answered after the deadline.' }),
+    });
+  });
+
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(alertWith(page, 'Save answered after the deadline.')).toBeVisible({
+    timeout: 15_000,
+  });
+  // The save waited on the stalled commit for most of its five-second deadline, then went out.
+  expect(sent.save - sent.dictionaryAdd).toBeGreaterThanOrEqual(4000);
+});
+
+test('a save that goes through follows the checked address and holds Save and Publish until the reload lands', async ({
+  page,
+}) => {
+  await openAndType(page);
+
+  // The save answers with the redirect a successful save gives, as a relative location. Before it
+  // answers, a <base> element is added to the page: a navigation that followed the raw location
+  // would resolve it against that base and land under /elsewhere/, while the checked, resolved
+  // address lands back on the entry.
+  let saves = 0;
+  let publishes = 0;
+  await page.route(actionUrl('save'), async (route) => {
+    saves++;
+    await page.evaluate(() => {
+      const base = document.createElement('base');
+      base.href = '/elsewhere/';
+      document.head.prepend(base);
+    });
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ type: 'redirect', status: 303, location: '2026-06-hello?saved=1' }),
+    });
+  });
+  await page.route(actionUrl('publish'), (route) => {
+    publishes++;
+    return route.abort();
+  });
+  // Hold the reload the redirect starts, wherever it goes, so the old document stays live meanwhile.
+  let navigated!: (route: Route) => void;
+  const navigation = new Promise<Route>((resolve) => (navigated = resolve));
+  await page.route(
+    (url) =>
+      url.pathname.startsWith('/elsewhere/') ||
+      (url.pathname === '/admin/posts/2026-06-hello' && url.search === '?saved=1'),
+    (route) => (route.request().isNavigationRequest() ? navigated(route) : route.continue()),
+  );
+  // Playwright cannot evaluate in a document whose navigation is held, so the old document reports
+  // through a request instead. Once the navigation starts it records the band's Save and Publish
+  // states, then clicks both and presses both shortcuts, each of which would send a second request.
+  let report!: (states: unknown) => void;
+  const probe = new Promise<unknown>((resolve) => (report = resolve));
+  await page.route('**/__probe', (route) => {
+    report(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
+  await page.evaluate(() => {
+    window.addEventListener('beforeunload', () => {
+      setTimeout(() => {
+        const buttons = [
+          ...document.querySelectorAll<HTMLButtonElement>('.navbar button[form="cairn-edit-form"]'),
+        ].filter((b) => !b.classList.contains('sr-only'));
+        const states = buttons.map((b) => ({
+          label: b.textContent?.trim() ?? '',
+          disabled: b.disabled,
+        }));
+        for (const b of buttons) b.click();
+        const chord = { key: 's', ctrlKey: true, bubbles: true, cancelable: true };
+        window.dispatchEvent(new KeyboardEvent('keydown', chord));
+        window.dispatchEvent(new KeyboardEvent('keydown', { ...chord, shiftKey: true }));
+        setTimeout(
+          () => void fetch('/__probe', { method: 'POST', body: JSON.stringify(states) }),
+          300,
+        );
+      }, 200);
+    });
+  });
+
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  const held = await navigation;
+  expect(new URL(held.request().url()).pathname).toBe('/admin/posts/2026-06-hello');
+
+  expect(await probe).toEqual([
+    { label: 'Publish', disabled: true },
+    { label: 'Saving…', disabled: true },
+  ]);
+  expect(saves).toBe(1);
+  expect(publishes).toBe(0);
+
+  await held.continue();
+  await expect(page.locator('.navbar .cairn-save-state')).toHaveText('Saved');
 });

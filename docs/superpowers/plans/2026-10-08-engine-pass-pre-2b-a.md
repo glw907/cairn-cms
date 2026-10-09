@@ -157,6 +157,20 @@ gate, and its acceptance says "the computed gate green": their Files compute to 
 `engine+tool`, which run no e2e. Per `~/.claude/docs/pass-gate-economy.md`, a paint-neutral task
 keeps the showcase e2e at the boundary, and each segment's boundary F (or the close's) covers it.
 
+**Amended at the S1 checkpoint (Geoff, 2026-10-08; `pass-core` dotfiles `6ce0e5d`, `e9aebc2`).** The
+`full` pins above were defensive and are withdrawn for every task from Task 3 on. Each remaining task
+runs its blast radius: the tier its diff computes, plus the showcase e2e specs its change reaches,
+with the full gate once at each segment boundary and before merge. Mechanism (the runner keeps a
+task's own `gate` only when the task also pins `gateTier`; see the header of
+`~/.claude/workflows/pass-execute.js`): each task's args set `gate` to `export E2E_PORT=4392 && <E>`,
+plus `&& npm --prefix examples/showcase run test:e2e -- <specs>` when its change reaches rendered
+or sign-in behavior, and pin `gateTier` to the matching tier. The segment's pre-flight names each
+task's reachable specs (Task 3: the sign-in specs; Tasks 8 and 10: the edit and publish specs). Task
+2's computed `tool` gate is unchanged. Gate receipts (`cairn-run-gate --receipt`) now let the runner
+skip a rerun on identical content, and a boundary F is skipped only when a receipt for that exact
+string matches the tree. Fix rounds take the reduced gate the runner validates (`auth-data`
+test-only rounds still run the task's gate; ROADMAP "Gate economy follow-ups").
+
 A lone unrelated test-file failure, or a component run printing `Cannot connect to the server in
 60 seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it counts as red.
 
@@ -1433,3 +1447,23 @@ is a dispatch that returns a structured verdict.
   `site-visual.spec.ts`). The runner's gate agent sees only the gate string, so without it every
   F-pinned task would read red. CI runs the 20 on every push against its canonical baselines,
   so S3's CI boundary and the close still cover them.
+
+### 2026-10-08, S1 checkpoint (S1 stopped after Task 2; Task 3 relaunches on the new gate machinery)
+
+- **Task 1:** fix then accept (`37797ff3`, `5cb4a5e7`, `94a3f672`). **Task 2:** fix then accept
+  (`eaa1b7d2`, `92216610`). Task 3 had recorded only its base when the run was stopped
+  (`wf_1cd41eb4-cd7`, stopped by the conductor at Geoff's direction to relaunch on the new infra).
+- **Reports:** every implementer and reviewer result for Tasks 1 and 2 (summaries, mutation ledgers,
+  unspecified decisions, `cairnFriction`, `outOfScope`, non-blocking notes; gate output omitted) is in
+  `docs/superpowers/research/2026-10-08-pass-a-s1-reports.json`. **Owed at the next checkpoint:**
+  verify and file each `cairnFriction` and `outOfScope` item in the friction log on `main`, and carry
+  Task 1's `Consumers must:` draft, affected 2a pages, and fact ids into Task 12's notes.
+- **Infra changed mid-pass (Geoff, 2026-10-08), all reviewed and accepted:** per-task gate sized to
+  the change (`6ce0e5d`, `e9aebc2`); clock time an efficiency target (`89fbc95`); gate receipts and
+  validated reduced fix rounds in both runners (`888d716`, `1d845a7`, `d0d081d`, `af00c34`);
+  `dependency-upgrade` on `npm update --save` (`d7b24d8`, `fc7034e`); CI shadowing (draft PR, push
+  after each accepted task). The pass now pushes after each accepted task.
+- **Friction filed on `main`:** `1ada3718` (worktree setup gap; local visual-drift exclusion).
+- **Spend:** not measured mid-session; the close scores it via `/cost`.
+- **Next:** a fresh session relaunches S1's Task 3 alone on `pass-execute` with the amended gate,
+  then runs the S1 boundary (F and T, a receipt skip where it matches), then S2.

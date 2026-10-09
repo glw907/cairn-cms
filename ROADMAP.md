@@ -363,6 +363,20 @@ The original decision framing, for the record:
   after, and validated by replaying pass A's task ranges. Inputs (the adversarial review, timings,
   open decisions): `docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`; draft branch
   `gate-related`, not merged.
+  Four tooling entries moved here from the friction log at pass A's close (2026-10-09), each an
+  input to the same pass: a fresh worktree fails the full gate on setup alone
+  (`check-public-skill.test.ts` needs `npx svelte-kit sync` in `examples/showcase`, and the
+  `create-cairn-site` resume tests need the baked template CI prepares, so a `setup-worktree`
+  script or gate-tier prep step would carry CI's preparation); the local full gate goes red on 20
+  `site-visual.spec.ts` tests against the CI-canonical baselines, which pass A excluded by hand
+  with `--grep-invert "site home|archive page 2"` (a local `full` variant in
+  `scripts/checks/gate-tier.mjs` would make that standing); `cairn-run-gate`'s light lane caps the
+  scope at 3G, so `npm run check` dies out of memory at about 1 GB unless
+  `NODE_OPTIONS=--max-old-space-size=6144` is set (a lane-level default or a larger cap fixes it);
+  and `cairn-run-gate` prints a finished result once and clears its run state, so a re-issue after
+  a backgrounded call starts a second full gate (about 20 minutes duplicated) and, through a pipe,
+  can drop the `gate exit:` line (about 15 minutes per extra cycle); the `--receipt` lookup exists
+  but a re-issue does not consult it.
 
 - **Engine pass before stage 2b (the boundary test at stage 2a's close, 2026-10-07).** Next after
   Geoff reads the five task 8 pages; a fresh brainstorm sizes it by the test above, so it may take
@@ -1148,6 +1162,18 @@ the named human gates only):**
   Trigger: lands with (a). (c) The docs chain framing-seat A/B at stage 2b's start: two intros, one
   at `xhigh` and one at `high`; keep `xhigh` unless `high` matches.
 
+- **Engine writes to `main` still unguarded (data-loss class; pass A's close, 2026-10-09).** Pass A's
+  C11 head guard covers publish, publish-all, Library delete, metadata, replace, alt, and the
+  dictionary. The security reviewer found two writers it missed: entry delete and entry rename
+  commit to the default branch with no head passed
+  (`src/lib/sveltekit/content-routes-entry-destructive.ts:174-181`, `:392-397`), the stale-write
+  data-loss risk C11 closed elsewhere. The guard
+  itself reads each snapshot by branch name, not at the head SHA it just read
+  (`src/lib/github/repo.ts:72-86`, `contentsUrl` pins `?ref=<branch>`), so replica lag could return
+  a snapshot older than the head and defeat it; the hardening reads each file at the head SHA.
+  Trigger: the final engine batch (path item 7 above) at the latest, and sooner if any engine
+  pass touches these files.
+
 - **Batched engine friction (the boundary test's third class; stage 2a's close, 2026-10-07).** Items
   whose fix changes no extend page's content. Each rides whichever engine pass runs next, and each
   docs-stage close re-tests them, since a later stage's page can move one into the first class.
@@ -1197,6 +1223,25 @@ the named human gates only):**
     each save, in the default branch's history (`content-routes-entry-write.ts:350-353,402-406`).
   - Guidance: the `cairn-extend` skill's router has no row for a `none`-capability role with its own
     screen (`templates/waymark/.claude/skills/cairn-extend/SKILL.md:29-33`).
+  - Added at pass A's close (2026-10-09; source detail in the friction log's Engine group). Head
+    guard residue: four writers still commit with `head ?? undefined`, which skips the guard when
+    the head read returned nothing (`src/lib/sveltekit/nav-routes.ts:161`,
+    `content-routes-settings.ts:308` and `:445`, `content-routes-media-ingest.ts:251`). Health
+    route: anonymous `/healthz?live=1` multiplies across isolates against the App's rate limit,
+    a ruled residual whose mitigations are a shared KV verdict or a monitor token (page:
+    `docs/reference/sveltekit.md`); anonymous health output reveals installation state. Logging:
+    Turnstile logs `missing_secret` on every submission when the secret is absent
+    (`src/lib/cloudflare/turnstile.ts:94-96`; page: `docs/reference/log-events.md`); a refused
+    key logs as `github.unreachable` (`src/lib/sveltekit/health.ts:85`; page:
+    `rotate-the-github-app-key.md`). Owner surface: the warning-severity condition
+    `auth.store-roles-unmigrated` reaches the owner as the generic 500 strip, not its remediation
+    (`src/lib/auth/store.ts:48`; page: `docs/reference/auth-store.md`). Editor: format buttons and
+    chords still dispatch during an in-flight save (`EditPage.svelte`, `EditorToolbar.svelte`; a
+    stage 4 page caveat). Comments: the `logoutAction` docstring says it clears "both cookies"
+    while the action clears the session, CSRF, and pending-login cookies in both name forms
+    (`src/lib/sveltekit/auth-routes.ts:409-412`); `admin-action.ts:120` still says an absent
+    access map means "the guard never ran on this route"; a `// WATCH:` line sits between
+    `createAuthGuard`'s TSDoc and its signature (`guard.ts:179`).
   - Tooling: `tool/internal/doctor`'s package grade left four nits (`ResolvePublicOrigin` in the
     package, a facts-file preamble helper, merging `siteconfigpath.go`, `json.go:82-84`'s comment);
     `scripts/lab/theme-fixture.mjs:59` defaults to port 4393, which `RESERVED_PORTS` omits and the e2e

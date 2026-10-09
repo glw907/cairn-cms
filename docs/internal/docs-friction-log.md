@@ -17,6 +17,19 @@ Svelte-fluent developer building on cairn's seams; formerly tagged `developer`),
 2026-08-14 record's dated note added for the three tool contract pages under
 `docs/reference/`).
 
+Open findings sit in three groups by who clears them (Geoff, 2026-10-08). **Engine** entries feed
+the docs-stage boundary test and are cleared by it at each stage close, riding `ROADMAP.md`'s
+batched engine friction entry or an engine pass. **Docs content** is any way a page fails its
+reader: a wrong claim, a missing working example, step, or failure case, too much or too little
+detail for the task, content in the wrong track or page or unfindable from where a reader looks, or
+drift since writing. The filing test is whether the reader can finish the page's job from the
+page. The pass that meets a small docs item fixes it on the page to its track's brief, except on an
+arm whose stage is in flight or a page the running plan freezes, where it is filed here or in the
+facts container; a larger docs rework moves to a `ROADMAP.md` row in the tier where it bites.
+**Repo tooling** is gates, scripts, fixtures, and tooling comments: a pass that meets a small
+tooling item fixes it there, and anything larger moves to a `ROADMAP.md` row in the tier where it
+bites.
+
 This log holds only live findings and the tombstones below. Resolved findings are pruned here once
 shipped; their detail lives in the per-plan post-mortems and `docs/STATUS.md`, the homes for shipped
 history. The append-only prose that accumulated through 2026-06-26 was pruned on 2026-06-28
@@ -47,42 +60,62 @@ clearings.
 
 ## Open findings
 
-New findings start below this line, one per finding, with its perspective and a short note.
+New findings start in the group they belong to, one per finding, with its perspective and a short note.
 
-- **`tooling`.** A fresh pass worktree fails the full gate on setup alone: `check-public-skill.test.ts`
-  needs `npx svelte-kit sync` in `examples/showcase` (`$app/tsconfig` not found), and the
-  `create-cairn-site` resume tests need the template baked, which `.github/workflows/test.yml`
-  does after `npm run package`. A `setup-worktree` script (or a gate-tier prep step) would carry
-  CI's preparation. Found by the conductor at pass A's Task 0 (engine pass before stage 2b),
-  2026-10-08.
-- **`tooling`.** The local full gate goes red on 20 `site-visual.spec.ts` tests (home and archive
-  page 2, five widths, two schemes): the CI-canonical baselines `durable-gotchas.md` names. Pass A
-  excluded them with `--grep-invert "site home|archive page 2"`, by hand in its plan. A local
-  variant of the `full` tier in `gate-tier.mjs` would make that standing. Found by the conductor at
-  pass A's Task 0, 2026-10-08.
-- **`contributor`.** `src/lib/sveltekit/admin-action.ts:114` still says an absent access map means
+### Engine
+
+- **`contributor`.** Entry delete and entry rename commit to `main` with no head guard
+  (`src/lib/sveltekit/content-routes-entry-destructive.ts:174-181`, `:392-397`; `backend.commit`
+  takes no head argument). A concurrent save can be overwritten, the data-loss class C11 closed on
+  every other writer to `main`. Found by the security reviewer, engine pass pre-2b A close,
+  2026-10-09. Carried in a `ROADMAP.md` Next row of its own.
+- **`contributor`.** Four paths still commit with `head ?? undefined`, which passes no head when the head
+  read returned nothing: `src/lib/sveltekit/nav-routes.ts:161`,
+  `src/lib/sveltekit/content-routes-settings.ts:308` and `:445`, and
+  `src/lib/sveltekit/content-routes-media-ingest.ts:251`. Found by the pass A close review,
+  2026-10-09. Carried in the batched engine friction entry.
+- **`contributor`.** The C11 guard reads each snapshot by branch name, not at the head SHA it just read
+  (`src/lib/github/repo.ts:72-86`; `contentsUrl` pins `?ref=<branch>`), so replica lag could return
+  a snapshot older than the head and defeat it. Found by the pass A close review, 2026-10-09.
+  Carried in the same `ROADMAP.md` row as the first entry.
+- **`contributor`.** Anonymous `/healthz?live=1` multiplies across isolates against the App's rate limit,
+  since the single-flight slot is per isolate (`src/lib/sveltekit/health.ts`). A ruled residual; the mitigations are a shared KV verdict or a monitor token. Found by the pass A close,
+  2026-10-09. Carried in the batched engine friction entry.
+- **`contributor`.** Anonymous health output reveals installation state
+  (`src/lib/sveltekit/health.ts:156-174`). Found by the pass A close, 2026-10-09. Carried in the
+  batched engine friction entry.
+- **`contributor`.** The Turnstile verifier logs `missing_secret` on every submission when the secret is
+  absent (`src/lib/cloudflare/turnstile.ts:94-96`). Found by the pass A close, 2026-10-09. Carried in the batched engine friction entry.
+- **`contributor`.** A warning-severity condition, `auth.store-roles-unmigrated`
+  (`src/lib/auth/store.ts:48`, registered at `src/lib/diagnostics/conditions.ts:159`), reaches the
+  owner as the generic 500 strip, not its remediation text. Found by the pass A close, 2026-10-09.
+  Carried in the batched engine friction entry.
+- **`contributor`.** Format buttons and chords still dispatch during an in-flight save
+  (`src/lib/admin/EditPage.svelte`, `src/lib/admin/EditorToolbar.svelte`). Found by the pass A close, 2026-10-09. Carried in the
+  batched engine friction entry.
+- **`contributor`.** A refused key logs as `github.unreachable` (`src/lib/sveltekit/health.ts:85`). Found by the pass A close live
+  key probe, 2026-10-09. Carried in the batched engine friction entry.
+- **`contributor`.** The `logoutAction` docstring says the action "clears both cookies"
+  (`src/lib/sveltekit/auth-routes.ts:409-412`), while it deletes the session, CSRF, and
+  pending-login cookies in both name forms. Found by the pass A close, 2026-10-09. Carried in the
+  batched engine friction entry.
+- **`contributor`.** `src/lib/sveltekit/admin-action.ts:120` still says an absent access map means
   "the guard never ran on this route". Task 1 of pass A restated the real cause (a route outside every
   hook's coverage) at `guard.ts`, `section-action.ts`, `access.ts`, and `index.ts`, and missed this
   comment, which the stage-2b engine pass entry in `ROADMAP.md` does not list among its cause sites
-  either. Found by the Task 1 implementer and reviewer, engine pass pre-2b A, 2026-10-08.
-- **`tooling`.** `cairn-run-gate` on the light lane caps the scope at 3G
-  (`~/.dotfiles/bin/.local/bin/cairn-run-gate`, the `light)` case), and V8 sizes its default heap from
-  that cgroup limit. `npm run check` (svelte-check) therefore dies with an out-of-memory exit 134 at
-  about 1 GB unless `NODE_OPTIONS=--max-old-space-size=6144` is set, while the dispatch tells
-  implementers to run browserless check scripts on that lane. The entry above records the worktree
-  symptom; this one names the lane as its cause. A lane-level `NODE_OPTIONS` default or a larger
-  light cap would fix both. Found by the Task 1 implementer, engine pass pre-2b A, 2026-10-08.
-- **`tooling`.** `cairn-run-gate` loses a finished result when the harness has backgrounded the call.
-  After a foreground call hits the Bash tool's 600s timeout, a re-issue attached to the running gate
-  consumes the result, and the script then removes its run state
-  (`~/.dotfiles/bin/.local/bin/cairn-run-gate`, the final `rm -f` before `gate exit:`). A re-issue
-  after that starts a second full gate instead of reporting the finished one, which duplicated about
-  20 minutes. The receipt the script already writes could answer a re-issue on the same fingerprint.
-  The Task 4 implementer hit a second form on a gate that outlasts the 600s cap: a later re-issue
-  printed the final tail but, through a pipe, dropped the `gate exit:` line, and a third re-issue
-  started a fresh run that printed the line only when its output went to a file. It cost two extra
-  full gate cycles of about 15 minutes each. Found by the Task 1 implementer, engine pass pre-2b A,
-  and the Task 4 implementer, 2026-10-08.
+  either. Found by the Task 1 implementer and reviewer, engine pass pre-2b A, 2026-10-08. Carried in `ROADMAP.md`'s batched engine friction entry, 2026-10-09.
+- **`contributor`.** In `src/lib/sveltekit/guard.ts:179` a `// WATCH:` line comment sits between
+  `createAuthGuard`'s TSDoc block and the `export function`, so the doc attaches across a comment,
+  which some doc tools handle inconsistently. The placement predates pass A, which kept it because
+  `check:tool-heuristics` greps the signature. Moving the `WATCH:` above the TSDoc block would keep
+  both. Found by the Task 1 fix reviewer, engine pass pre-2b A, 2026-10-08. Carried in the same ROADMAP entry, 2026-10-09 (the line moved to 179 when pass A's guard changes landed).
+
+### Docs content
+
+No open entry.
+
+### Repo tooling
+
 - **`contributor`.** A fact's `Source:` pointer is the only place a path string lives for provenance
   matching (`scripts/checks/check-provenance.mjs`, the path facts). Repairing the pointer after a file
   delete (`templates/waymark/src/access.ts`) broke nine brief sentences that cite the old path, and
@@ -123,11 +156,46 @@ New findings start below this line, one per finding, with its perspective and a 
   gate. Ordering `package` ahead of the dist-importing tests, or having them refuse a `dist` older
   than `src`, would close it. Found by the Task 11 implementer and reviewer, engine pass pre-2b A,
   2026-10-09.
-- **`contributor`.** In `src/lib/sveltekit/guard.ts:171-173` a `// WATCH:` line comment sits between
-  `createAuthGuard`'s TSDoc block and the `export function`, so the doc attaches across a comment,
-  which some doc tools handle inconsistently. The placement predates pass A, which kept it because
-  `check:tool-heuristics` greps the signature. Moving the `WATCH:` above the TSDoc block would keep
-  both. Found by the Task 1 fix reviewer, engine pass pre-2b A, 2026-10-08.
+- **`contributor`.** The workers fake (`src/tests/helpers/cloudflare-workers-fake.ts:50-51, 93-94`)
+  collects `waitUntil` promises but exposes only `flushWaitUntil`, with no way to read what was handed
+  in. Task 6 therefore added a `keepAlive` injection parameter to `createLiveTokenCheck`
+  (`src/lib/sveltekit/health.ts:110`) just to assert that the starter hands the mint to `waitUntil`.
+  A read accessor on the fake would let such a test assert on the fake and keep the factory's
+  signature free of a test-only seam. Found by the Task 6 implementer, engine pass pre-2b A,
+  2026-10-09.
+- **`tooling`.** `docs/internal/admin-smoke-test.md:112-115` says the magic-link login is a manual
+  step. It is scriptable: `wrangler dev` writes the message to `.wrangler/tmp/email/`, and
+  Playwright reads the link from there. Found by the pass A close live smoke, 2026-10-09.
+- **`tooling`.** Adding roles to a local `AUTH_DB` needs a `cairn-manifest` rerun, which
+  `docs/internal/admin-smoke-test.md` omits. Found by the pass A close live smoke, 2026-10-09.
+- **`tooling`.** A scratch showcase copy outside the repo bundles the CommonJS `yaml` package
+  (`createRequire` fails under workerd) unless the engine's runtime dependencies are installed
+  beside it. The smoke and key-probe steps should install them or the doc should say so. Found by
+  the pass A close live smoke, 2026-10-09.
+- **`tooling`.** `cairn-run-gate` reuses one log directory per gate string
+  (`~/.dotfiles/bin/.local/bin/cairn-run-gate`), so a run's duration and lock wait cannot be read
+  back afterward. The gate economy pass's inputs name this gap
+  (`docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`, the closing section). Found
+  by the pass A close clock accounting, 2026-10-09.
+- **`tooling`.** `tool/internal/doctor`'s package grade by the `go-architecture-reader` found
+  structure issues: the exported surface (`Check`, `Result`, `Status`) could be unexported behind an
+  opaque `CheckedResult`; `WranglerFacts` and `ReadWranglerConfig` are exported for one caller;
+  `Catalogue` duplicates `copylist`'s AST walk; `Result.ID` and `Severity` duplicate state;
+  `readSiteFacts`' err and `!found` pair repeats in three checks; the robots URL is recomputed; and
+  a few file-split nits. Found by the `go-architecture-reader`, pass A close, 2026-10-09.
+
+### Triage record
+
+Engine pass pre-2b, pass A's close (2026-10-09) triaged the whole log. It held nine entries, all
+filed by pass A's own tasks on 2026-10-08 and 2026-10-09, none for a pass A fix, so none was deleted
+as fixed. No declined or batched entry was in the log (stage 2a's close had moved them to
+`ROADMAP.md`, and the ledger entries for the declined items live in `docs/internal/engine-rulings.md`
+on the pass branch). Each entry was re-checked against the tree at `e31bc2dd` (and the server fix
+branch for `guard.ts`). Four tooling entries (the fresh-worktree setup gap, the local `site-visual`
+baselines, the light lane's 3G cap, and the lost gate result) moved whole to `ROADMAP.md`'s gate
+economy pass row. Two comment entries (`admin-action.ts:120`, `guard.ts:179`) joined the batched
+engine friction entry and also stay in the Engine group. Ten engine and five tooling entries were
+newly filed, and the log was regrouped by who clears each entry. None is kept for pass B.
 
 Draft docs stage 2a's close (2026-10-07, the 2a unattended run's R7) triaged the whole log and
 found 187 open entries, verified against the tree at `b38ef6b3` (each group's cited lines read or
@@ -315,7 +383,7 @@ promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings b
 - **`docs-gate`.** The header comment in `scripts/checks/docs-gate.mjs` (lines 3 and 17) counts its checks in
   words ("nineteen" on `draft-docs-2a`), so the count goes stale each time a check is added. Drop the count.
   Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
-- **`engine`.** The project `CLAUDE.md` (line 92) names the Cloudflare account id in plaintext, while `check:leaks`
+- **`contributor`.** The project `CLAUDE.md` (line 92) names the Cloudflare account id in plaintext, while `check:leaks`
   on `draft-docs-2a` stores that id only as a SHA-256 digest and `CLAUDE.md` falls outside every check:leaks tier.
   Separately, `docs/internal/credentials.md`'s identifiers (GitHub App id, installation id, D1 UUIDs) remain in git
   history after the untrack. They are identifiers, not keys. Found by the 2a close-finish run (F1/F2 agents),
@@ -324,7 +392,7 @@ promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings b
 - **`docs-gate`.** `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS` in `scripts/checks/check-leaks.mjs`). Its `src` ships in that package's `files`, so it needs coverage before the package's first publish. Found by the 2a close-finish run, 2026-10-07.
 - **`contributor`.** `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt` (lines 52, 69, 678, 825, 945) still holds the maintainer's home path and a `glw907.workers.dev` URL. Fixing them needs a transcript regeneration that `check:transcripts` replays. Found by the 2a close-finish run, 2026-10-07. Pass A adds two more stale spots: line 837 lists the scaffold migrations as `0000` and `0003` with no `0001` (Task 4 ships `0001`), and line 942 still ends the key step with "re-run this step" (Task 7 changed the step to point at the rotation page). Found again by the Task 4 and Task 7 implementers and reviewers, engine pass pre-2b A, 2026-10-08.
 - **`docs-gate`.** `scripts/checks/check-symbols.mjs` (`extractFilePaths`) reads the inline import specifier `#theme/cairn.config.js` as the file path `theme/cairn.config.js`, so prose cannot name the scaffold's real import. Fenced blocks strip import specifiers; inline spans do not. Found by the 2a close-finish run, 2026-10-07.
-- **`engine`.** The tutorial puts the adapter at `src/lib/cairn.config.ts` (`#lib`, `docs/extend/add-cairn-to-a-sveltekit-app.md:294,411`) and the scaffold puts it at `src/theme/cairn.config.ts` (`#theme`, `docs/extend/choose-an-ai-posture.md:29,62`), so every extend page that touches the adapter names two paths. Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** The tutorial puts the adapter at `src/lib/cairn.config.ts` (`#lib`, `docs/extend/add-cairn-to-a-sveltekit-app.md:294,411`) and the scaffold puts it at `src/theme/cairn.config.ts` (`#theme`, `docs/extend/choose-an-ai-posture.md:29,62`), so every extend page that touches the adapter names two paths. Found by the 2a close-finish run, 2026-10-07.
 - **`docs-gate`.** `docs/internal/facts/front-door.md:67` (`f:u705t5`) asserts a forward-looking "Topo is planned"; a fact should state only what ships. Found by the 2a close-finish run, 2026-10-07.
 - **`contributor`.** The task 8 page plans now disagree with their pages after the rulings: `docs/internal/briefs/extend/debug-your-site.plan.md:64,263` (`cairn help agents`) and `docs/internal/briefs/extend/scaffolded-site-files.plan.md:226,252` (the `CLAUDE.md` subsection). Found by the 2a close-finish run, 2026-10-07.
 - **`contributor`.** `npm test` takes about 11 minutes, longer than the 600-second foreground limit, and a re-attached run does not print `gate exit:`. (Reported by the run; the 7-to-11-minute range is also in `pass-gate-economy.md`.) Found by the 2a close-finish run, 2026-10-07.
@@ -372,13 +440,6 @@ promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings b
   spec now builds the matcher once (lines 85-86, 103). `docs/internal/durable-gotchas.md` records
   other Playwright traps (line 195) but not this one. Found by the Task 8 implementer and reviewer,
   engine pass pre-2b A, 2026-10-09.
-- **`contributor`.** The workers fake (`src/tests/helpers/cloudflare-workers-fake.ts:50-51, 93-94`)
-  collects `waitUntil` promises but exposes only `flushWaitUntil`, with no way to read what was handed
-  in. Task 6 therefore added a `keepAlive` injection parameter to `createLiveTokenCheck`
-  (`src/lib/sveltekit/health.ts:110`) just to assert that the starter hands the mint to `waitUntil`.
-  A read accessor on the fake would let such a test assert on the fake and keep the factory's
-  signature free of a test-only seam. Found by the Task 6 implementer, engine pass pre-2b A,
-  2026-10-09.
 
 ## Clearings
 

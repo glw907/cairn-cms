@@ -4,7 +4,7 @@
 // createContentRoutesInternal; the public createContentRoutes only forwards to that internal
 // factory.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
-import { isConflict } from '../github/types.js';
+import { CommitConflictError, isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import type { MediaEntry } from '../media/manifest.js';
@@ -168,6 +168,17 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     const hash = String(form.get('hash') ?? '');
     if (!MEDIA_HASH_RE.test(hash)) throw error(400, 'Invalid media hash');
 
+    // Read the head BEFORE media.json, so this expectedHead is at-or-before the bytes the commit
+    // sends; a concurrent upload or edit fails the update closed rather than being overwritten.
+    const commitFields = { scope: 'media' as const, id: hash, editor: editor.email };
+    const head = await backend.branchHead(backend.defaultBranch);
+    if (head === null) {
+      return ctx.commitFailure(commitFields, new CommitConflictError(`${backend.defaultBranch} (no head)`), {
+        error: MANIFEST_CONFLICT_MESSAGE,
+        hash,
+      } satisfies MediaUpdateFailure);
+    }
+
     const manifest = parseMediaManifest(ctx.parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = manifest[hash];
     if (!row) {
@@ -182,13 +193,13 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     }
 
     const edited: MediaEntry = { ...row, displayName: displayName || slug, slug, alt };
-    const commitFields = { scope: 'media' as const, id: hash, editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
         [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, edited)) }],
         { name: editor.displayName, email: editor.email },
         `Update media: ${edited.slug}`,
+        head,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
@@ -318,6 +329,19 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
       } satisfies MediaReplaceFailure);
     }
 
+    // Read the head BEFORE media.json, the content manifest, or any entry file, so this expectedHead
+    // is at-or-before every byte the rewrite plan and the commit send.
+    const commitFields = { scope: 'media' as const, id: oldHash, editor: editor.email };
+    const head = await backend.branchHead(backend.defaultBranch);
+    if (head === null) {
+      return ctx.commitFailure(commitFields, new CommitConflictError(`${backend.defaultBranch} (no head)`), {
+        error: CONTENT_CONFLICT_MESSAGE,
+        hash: oldHash,
+        usage: [],
+        foundIn: 0,
+      } satisfies MediaReplaceFailure);
+    }
+
     // The old asset must be committed on main to be replaceable here. A branch-only upload has no main
     // row; it is replaced by editing its draft, not here.
     const manifest = parseMediaManifest(ctx.parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
@@ -379,13 +403,13 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     const changes: FileChange[] = plan.entries.map((e) => ({ path: e.path, content: e.newMarkdown }));
     changes.push({ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, record)) });
 
-    const commitFields = { scope: 'media' as const, id: oldHash, editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
         changes,
         { name: editor.displayName, email: editor.email },
         `Replace media: ${row.slug}`,
+        head,
       );
       log.info('media.replaced', { editor: editor.email, oldHash, newHash, affected: plan.affectedCount });
     } catch (err) {
@@ -503,6 +527,17 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     // The opt-in to also overwrite customized alts; absent (the default) leaves custom alts alone.
     const overwrite = form.get('overwrite') === 'on' || form.get('overwrite') === 'true';
 
+    // Read the head BEFORE media.json, the content manifest, or any entry file, so this expectedHead
+    // is at-or-before the default alt and every entry body the commit sends.
+    const commitFields = { scope: 'media' as const, id: hash, editor: editor.email };
+    const head = await backend.branchHead(backend.defaultBranch);
+    if (head === null) {
+      return ctx.commitFailure(commitFields, new CommitConflictError(`${backend.defaultBranch} (no head)`), {
+        error: CONTENT_CONFLICT_MESSAGE,
+        hash,
+      } satisfies MediaAltPropagateFailure);
+    }
+
     const mediaManifest = parseMediaManifest(ctx.parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = mediaManifest[hash];
     if (!row) {
@@ -536,13 +571,13 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     if (changed.length === 0) throw redirect(303, '/admin/media?altPropagated=1');
 
     const changes: FileChange[] = changed.map((e) => ({ path: e.path, content: e.newMarkdown }));
-    const commitFields = { scope: 'media' as const, id: hash, editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
         changes,
         { name: editor.displayName, email: editor.email },
         `Propagate alt: ${row.slug}`,
+        head,
       );
       log.info('media.alt_propagated', { editor: editor.email, hash, overwrite, written: changed.length });
     } catch (err) {

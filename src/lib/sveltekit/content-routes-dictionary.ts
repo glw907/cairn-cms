@@ -3,7 +3,7 @@
 // createContentRoutesInternal; createContentRoutes, the public entry point, is only a thin wrapper
 // around it.
 import { error, fail, type ActionFailure } from '@sveltejs/kit';
-import { isConflict } from '../github/types.js';
+import { CommitConflictError, isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import type { Backend } from '../github/backend.js';
 import { parseDictionary, mergeDictionaryWords, serializeDictionary, isValidDictionaryWord } from '../content/site-dictionary.js';
@@ -51,11 +51,16 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
    *  the canonical file back. Shared by the first attempt and the post-conflict retry, so both re-read
    *  the head and re-merge the same additions; the merge is order-independent, so a concurrent editor's
    *  word that already landed is preserved and the result is the same sorted set regardless of order.
-   *  Returns the merged word list. Throws CommitConflictError (via backend.commit) when the branch
-   *  moves under the commit, which the caller catches to retry once.
+   *  Returns the merged word list. The head is read before the file and passed to the commit as
+   *  `expectedHead`, so a commit that lands between the read and the write fails closed instead of
+   *  being overwritten by the stale file. Throws CommitConflictError when the branch moves under the
+   *  commit, or when the default branch has no head to guard on; the caller catches it to retry once.
    */
   async function mergeAndCommitDictionary(backend: Backend, additions: string[], editor: Editor): Promise<string[]> {
     const path = ctx.dictionaryFilePath();
+    // Read the head BEFORE the file, so this expectedHead is at-or-before the bytes the commit sends.
+    const head = await backend.branchHead(backend.defaultBranch);
+    if (head === null) throw new CommitConflictError(`${backend.defaultBranch} (no head)`);
     // The existing file as its canonical sorted set, so a no-op add is detected against the same
     // normalization the commit would write (an already-sorted file never re-commits just to reorder).
     const canonicalExisting = mergeDictionaryWords(parseDictionary(await backend.readFile(path, backend.defaultBranch)), []);
@@ -69,6 +74,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
       [{ path, content: serializeDictionary(merged) }],
       { name: editor.displayName, email: editor.email },
       `Add to dictionary: ${additions.join(', ')}`,
+      head,
     );
     return merged;
   }
@@ -80,7 +86,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
    *  `{ words }`. It reads the current file from the default branch, inserts the validated words in
    *  sorted order if absent (idempotent), and commits through the GitHub-App pipeline.
    *
-   *  The commit is SHA-guarded with commit-and-retry: backend.commit throws CommitConflictError when the
+   *  The commit is head-guarded with commit-and-retry: backend.commit throws CommitConflictError when the
    *  branch moved under it, which is caught here to re-read the new head, re-merge the same additions
    *  (the sorted insert is order-independent, so a concurrent editor's word is preserved), and retry
    *  once. The response is the merged word list, so the client drops the now-committed words from its

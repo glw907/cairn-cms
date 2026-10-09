@@ -3,6 +3,7 @@
 // (content-routes-context.ts), built once per call by createContentRoutesInternal; the public
 // createContentRoutes only forwards to that internal factory.
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
+import { CommitConflictError } from '../github/types.js';
 import { log } from '../log/index.js';
 import { r2Key } from '../media/naming.js';
 import { r2Store } from '../media/store.js';
@@ -108,10 +109,13 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
    *  uses; a raw git edit that adds a media reference without a save/publish or a manifest regenerate
    *  is not seen, matching the documented "regenerate after a raw edit" contract. The recheck reads
    *  in STRICT mode, so a transient branch-read failure fails the delete closed rather than mistaking
-   *  a referenced asset for an orphan. There is an inherent stale-read window between the recheck and
-   *  the commit (no sha-guard ties them); it is bounded because the resolver and the route key on the
-   *  hash, so a reference added in that window still resolves to bytes that may be gone, the same
-   *  delete-races-an-edit window every safe delete carries.
+   *  a referenced asset for an orphan. The default branch's head is read before the first read of
+   *  media.json or the content manifest and rides the commit as `expectedHead`, so a commit that
+   *  lands after those reads (an upload, a publish that adds a reference) fails the delete closed
+   *  with the manifest conflict answer, with the row and the bytes both left in place. A default
+   *  branch with no head refuses the same way. A branch-only reference added after the strict
+   *  branch read is the one window the guard does not cover; it is bounded because the resolver and
+   *  the route key on the hash.
    */
   async function mediaDeleteAction(event: CairnEvent): Promise<ActionFailure<MediaDeleteFailure>> {
     const editor = requireEditor(event);
@@ -121,6 +125,19 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
     const form = await event.request.formData();
     const hash = String(form.get('hash') ?? '');
     if (!MEDIA_HASH_RE.test(hash)) throw error(400, 'Invalid media hash');
+
+    // Read the head BEFORE any read of media.json or the content manifest, so this expectedHead is
+    // at-or-before every byte the usage gate and the commit rely on.
+    const commitFields = { scope: 'media' as const, id: hash, editor: editor.email };
+    const head = await backend.branchHead(backend.defaultBranch);
+    if (head === null) {
+      return ctx.commitFailure(commitFields, new CommitConflictError(`${backend.defaultBranch} (no head)`), {
+        error: MANIFEST_CONFLICT_MESSAGE,
+        hash,
+        usage: [],
+        foundIn: 0,
+      } satisfies MediaDeleteFailure);
+    }
 
     // The asset must be committed on the default branch to be deletable here. A branch-only upload
     // (the common 2b case before publish) has no main row; removing it is a discard of the draft.
@@ -184,13 +201,13 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
     const objectKey = r2Key(hash, row.ext);
 
     // Commit the manifest row removal FIRST. The order is load-bearing (see the docstring).
-    const commitFields = { scope: 'media' as const, id: hash, editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
         [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(removeMediaEntry(manifest, hash)) }],
         { name: editor.displayName, email: editor.email },
         `Delete media: ${row.slug}`,
+        head,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
@@ -218,8 +235,10 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
    *
    *  The order is load-bearing, mirroring single delete: ONE atomic commit removes every deletable row
    *  FIRST, then the R2 objects are deleted (commit-row-then-delete-R2). A failure after the commit
-   *  leaves bytes with no row (a benign orphan) rather than a row pointing at deleted bytes. Each R2
-   *  delete is best-effort and batch-resilient: a per-object error is reported in `failed` and never
+   *  leaves bytes with no row (a benign orphan) rather than a row pointing at deleted bytes. Like
+   *  single delete, it reads the default branch's head before its first read and commits with it as
+   *  `expectedHead`, so a commit landing after the batch was planned conflicts, deletes no bytes, and
+   *  answers the manifest conflict message. Each R2 delete is best-effort and batch-resilient: a per-object error is reported in `failed` and never
    *  aborts the rest of the batch. The result is an itemized 207-style summary the component renders
    *  (deleted / skipped with reasons / failed); there is no success redirect.
    */
@@ -245,6 +264,16 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
       }
     }
     const selected = raw.filter((h) => MEDIA_HASH_RE.test(h));
+
+    // Read the head BEFORE any read of media.json or the content manifest, so this expectedHead is
+    // at-or-before every byte the usage gate and the commit rely on.
+    const commitFields = { scope: 'media' as const, id: 'bulk', editor: editor.email };
+    const head = await backend.branchHead(backend.defaultBranch);
+    if (head === null) {
+      return ctx.commitFailure(commitFields, new CommitConflictError(`${backend.defaultBranch} (no head)`), {
+        error: MANIFEST_CONFLICT_MESSAGE,
+      } satisfies MediaBulkFailure);
+    }
 
     // Read the fresh media manifest (the deletable rows come from here, by hash).
     const manifest = parseMediaManifest(ctx.parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
@@ -277,13 +306,13 @@ export function createMediaDeleteActions(ctx: ContentRoutesContext) {
     // ONE atomic commit removing EVERY deletable row, folded over removeMediaEntry.
     let next = manifest;
     for (const hash of plan.deletable) next = removeMediaEntry(next, hash);
-    const commitFields = { scope: 'media' as const, id: 'bulk', editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
         [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(next) }],
         { name: editor.displayName, email: editor.email },
         `Delete ${plan.deletable.length} media assets`,
+        head,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {

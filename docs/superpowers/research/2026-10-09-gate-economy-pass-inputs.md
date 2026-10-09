@@ -184,3 +184,30 @@ string (the full gate's `98b67494cb7ba49b/gate.log` spans the whole night), so f
 a run's duration, and lock waits appear only as NOTE lines an agent may or may not relay. The clock
 metric needs `cairn-run-gate` (or its receipts) to record each run's start, end, lock wait, gate
 string, and result in a machine-readable line, so a close can sum gate time and lock wait directly.
+
+## For the brainstorm: is the suite bloated? (Geoff, 2026-10-09)
+
+Geoff asked whether the test suite has grown bloated, and asked that the brainstorm take it up. The
+answer should come from measurement, not judgment, and no test is deleted without evidence.
+
+**Snapshot (`main`, 2026-10-09):** `src/lib` about 74,800 lines; tests about 115,600 lines (unit,
+integration, component, e2e), a 1.5:1 ratio, ordinary for a library with this much auth and commit-path
+logic; 512 test files; 42 `check:*` scripts. Since 2026-08-01, about 73,800 test lines added and about
+29,000 deleted: net growth of about 45,000 lines in ten weeks. Each task adds tests its mutation proofs
+pin, and nothing retires a test whose behavior is covered elsewhere.
+
+**Suspected sources of cost, to test:** the 42 static checks (about 11 minutes even prebuilt; several
+assert doc text, comment wording, or line pointers, which cost mostly when code moves, the class that
+turned S2's boundary red twice); the same behavior likely covered by a unit, an integration, and an e2e
+test, unmeasured; about 1,800 component tests serialized in a real browser, some possibly testing logic a
+node test could cover.
+
+**A measured audit, proposed as a task after the timing instrumentation:**
+1. Per-test and per-check timing (where the minutes go; needs the gate-run records above first).
+2. Mutation-based redundancy: which tests kill only mutants that other tests already kill (Stryker's
+   per-test kill reports, https://stryker-mutator.io/docs/).
+3. Failure history: which tests and checks have never failed on CI or in the gate logs over the window
+   the history covers.
+Output: a ranked list with a recommendation per item (keep, merge, move to a cheaper layer, retire), with
+every guard test (fs, spawn, tree-walk, and auth or data-loss tests) kept by default. Retirement waits
+for Geoff's read of the list.

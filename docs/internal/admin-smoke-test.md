@@ -52,6 +52,8 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
     "INSERT INTO editor (email, display_name, role, created_at) \
      VALUES ('you@example.com', 'Dev Owner', 'owner', 0);"
   ```
+- After changing the adapter's `roles`, rerun the content manifest with `npx cairn-manifest`.
+  `site-facts.json` goes stale when the roles change, and the build then fails.
 
 ## The procedure
 
@@ -109,12 +111,12 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
    Stop the Worker. Every `wrangler d1 execute --local` spawns its own `workerd`, so after a
    smoke run there can be many stray `workerd` processes; `pkill -f workerd` clears them.
 
-5. **The final visual confirmation stays a user step.** A real magic-link login in Firefox
-   (request a link, click it, confirm the POST-confirm page, land authenticated) is the one
-   thing the inserted session row does not cover, since the magic-link token is stored hashed
-   and cannot be replayed from a script. The session row is the no-email shortcut for the smoke
-   itself. Record the curl results in the pass log and leave the Firefox click to the user, the
-   same posture as every prior go-live.
+5. **The magic-link round trip is scriptable.** `wrangler dev` writes each sent message to
+   `.wrangler/tmp/email/`, so a script can request a link, read it from the newest file there, and
+   post the confirm page in headless Chromium with Playwright. The token is stored hashed and
+   cannot be replayed from the database, which is why the inserted session row is the no-email
+   shortcut for the curl smoke itself. Record the results in the pass log. A real login in Firefox
+   stays a user step only for a go-live check of a deployed site.
 
 ## Notes
 

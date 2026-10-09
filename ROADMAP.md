@@ -377,6 +377,8 @@ The original decision framing, for the record:
   a backgrounded call starts a second full gate (about 20 minutes duplicated) and, through a pipe,
   can drop the `gate exit:` line (about 15 minutes per extra cycle); the `--receipt` lookup exists
   but a re-issue does not consult it.
+  A fifth: `cairn-run-gate` reuses one log directory per gate string, so a run's duration and lock
+  wait cannot be read back afterward (the inputs file's closing section names the gap).
 
 - **Engine pass before stage 2b (the boundary test at stage 2a's close, 2026-10-07).** Next after
   Geoff reads the five task 8 pages; a fresh brainstorm sizes it by the test above, so it may take
@@ -563,6 +565,24 @@ The original decision framing, for the record:
   - Workstation tools, filed for the dotfiles: `tellgrader --register docs` flags the proper noun
     "showcase" as `slop-hard`; a `cairn-run-gate` re-issue during a live run once returned "gate
     vanished" instead of attaching (not reproduced).
+  - Added at pass A's close (2026-10-09), fact pointer drift: a fact's `Source:` pointer is the only
+    place a path string lives for provenance matching (`scripts/checks/check-provenance.mjs`), so
+    repairing a pointer after a file delete (`templates/waymark/src/access.ts`) broke nine brief
+    sentences that cite the old path, and the only fix was editing the fact's claim text; a repair
+    that moves a pointer should not force a claim edit. `check:facts` accepts a `path:line` pointer
+    while the line still exists, so a move leaves the fact aimed at the wrong code with no failure:
+    pass A hand-remapped nine pointers into `src/lib/github/signing.ts` and
+    `src/lib/sveltekit/health.ts`, left `f:n0laoh` (`docs/internal/facts/extend.md:271`) citing
+    `src/lib/vite/internal.ts:53-80` (`virtualSource` now starts at 67), and found `check_roles.go`
+    citations marked `[verified]` about 24 lines off. Editing
+    `src/lib/sveltekit/content-routes-entry-write.ts` stranded 43 fact bullets that cite it by line
+    range (23 in `extend.md`, 12 in `editors.md`, 4 in `reference.md`, 3 in `admin.md`, 1 in
+    `front-door.md`), and editing `src/lib/admin/EditPage.svelte` (line form only, since the compiler
+    API cannot parse it) found two anchored pointers (`extend.md:118`, `extend.md:654`) already stale
+    plus anchor-less ones (`f:h483v2`, `f:vti6ws`) that `check:facts` range-checks only. A sweep
+    moving `.ts` line pointers to `path#Symbol` (`scripts/checks/check-facts.mjs:59-71` already
+    resolves it) closes the first half.
+
 
 - **Docs-code sync (Geoff, 2026-09-30; spec `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`).**
   Keep the engine and its docs in sync by catching drift (a fact whose code changed while its
@@ -1243,6 +1263,20 @@ the named human gates only):**
     (`src/lib/sveltekit/auth-routes.ts:409-412`); `admin-action.ts:120` still says an absent
     access map means "the guard never ran on this route"; a `// WATCH:` line sits between
     `createAuthGuard`'s TSDoc and its signature (`guard.ts:179`).
+  - Tooling, added at pass A's close (2026-10-09): `scripts/build/emit-tool-conditions.mjs` reads the
+    built `dist` (`:18`), so run after a `conditions.ts` edit without `npm run package` it writes an
+    unchanged mirror and reports success (it should compare mtimes and refuse);
+    `src/tests/unit/vite-verify-nested-media.test.ts` imports from `dist`, but `npm run package`
+    runs only inside `check:close` (`package.json:85`) after `test:node-projects` (`:86`), so a
+    stale `dist` proves the old engine (order `package` first, or refuse a `dist` older than
+    `src`); the workers fake (`src/tests/helpers/cloudflare-workers-fake.ts:50-51,93-94`) exposes
+    only `flushWaitUntil`, so `createLiveTokenCheck` carries a test-only `keepAlive` parameter
+    (`src/lib/sveltekit/health.ts:110`) (a read accessor on the fake removes it); and the
+    `go-architecture-reader`'s grade of `tool/internal/doctor`: the exported surface (`Check`,
+    `Result`, `Status`) could be unexported behind an opaque `CheckedResult`, `WranglerFacts` and
+    `ReadWranglerConfig` are exported for one caller, `Catalogue` duplicates `copylist`'s AST walk,
+    `Result.ID` and `Severity` duplicate state, `readSiteFacts`' err and `!found` pair repeats in
+    three checks, the robots URL is recomputed, and a few file-split nits.
   - Tooling: `tool/internal/doctor`'s package grade left four nits (`ResolvePublicOrigin` in the
     package, a facts-file preamble helper, merging `siteconfigpath.go`, `json.go:82-84`'s comment);
     `scripts/lab/theme-fixture.mjs:59` defaults to port 4393, which `RESERVED_PORTS` omits and the e2e

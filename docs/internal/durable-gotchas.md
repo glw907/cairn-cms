@@ -205,3 +205,10 @@ tree must exclude `node_modules`, `.wrangler`, `.svelte-kit`, and `test-results`
 every `wrangler dev` run leaves a bundle under `examples/showcase/.wrangler/tmp`, and a corpus test
 that greps one token at a time passed its timeout after about twenty local e2e runs while a clean CI
 checkout never saw it (`check-symbols`'s `envVarInSourceTree` went from 60 s to 3 s).
+
+## A scratch showcase copy outside the repo bundles CommonJS `yaml`
+
+A copy of `examples/showcase` under `$HOME/.cache` links the engine by `file:`, which installs no
+runtime dependencies of the engine beside it. Vite then bundles the CommonJS build of `yaml` with a
+`createRequire` shim, and the shim fails under workerd. Install the engine's runtime dependencies
+into the copy (`npm install` the packages in the engine's `dependencies`) before `wrangler dev`.

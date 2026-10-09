@@ -72,73 +72,7 @@ No open entry.
 
 ### Repo tooling
 
-- **`contributor`.** A fact's `Source:` pointer is the only place a path string lives for provenance
-  matching (`scripts/checks/check-provenance.mjs`, the path facts). Repairing the pointer after a file
-  delete (`templates/waymark/src/access.ts`) broke nine brief sentences that cite the old path, and
-  the only fix was editing the fact's claim text. A repair that moves a pointer should not force a
-  claim edit. The line-drift half, a `path:line` pointer about 24 lines off after the adapter gained
-  the `access` block (`f:tycp7k`), is the `check:facts` off-by-one entry already in `ROADMAP.md`;
-  Task 2 hit it again on three `check_roles.go` citations marked `[verified]`. Found by the Task 1
-  implementer and the Task 2 reviewer, engine pass pre-2b A, 2026-10-08.
-  Tasks 8 and 10 added the cost of a large edit to one cited file. Task 10 edited
-  `src/lib/sveltekit/content-routes-entry-write.ts`, which 43 fact bullets cite by line range across
-  `docs/internal/facts/` (23 in `extend.md`, 12 in `editors.md`, 4 in `reference.md`, 3 in `admin.md`,
-  1 in `front-door.md`). The file is `.ts` under `src/`, so each could cite `path#Symbol`, which
-  `scripts/checks/check-facts.mjs:59-71` already resolves, but none was moved; the implementer
-  re-pointed only the three the gate flagged and reports several of the rest were wrong before the
-  edit. Task 8 edited `src/lib/admin/EditPage.svelte`, which keeps the line form because the
-  compiler API cannot parse it, and found two anchored pointers (`extend.md:118`, `extend.md:654`)
-  already stale, plus anchor-less ones in `editors.md` (`f:h483v2` at `EditPage.svelte:1110`,
-  `f:vti6ws` at `:15,215`) that `check:facts` range-checks only. A sweep that moves the `.ts`
-  line pointers to `path#Symbol` would close the first half. Found by the Task 8 and Task 10
-  implementers and reviewers, engine pass pre-2b A, 2026-10-09.
-  Tasks 6 and 11 hit the same drift. Task 6 hand-remapped nine pointers into
-  `src/lib/github/signing.ts` and `src/lib/sveltekit/health.ts`, because `check:facts` accepts a
-  `path:line` pointer while the line still exists, so a move leaves the fact aimed at the wrong code
-  with no failure. Task 11 left `f:n0laoh` (`docs/internal/facts/extend.md:271`) citing
-  `src/lib/vite/internal.ts:53-80` for `virtualSource`, which now starts at line 67 with the verify
-  `resultExpr` at line 81. Found by the Task 6 implementer and the Task 11 reviewer, engine pass
-  pre-2b A, 2026-10-09.
-- **`contributor`.** `scripts/build/emit-tool-conditions.mjs` reads the built `dist`
-  (`CONDITIONS_JS = 'dist/diagnostics/conditions.js'`, line 18), not `src`. Run right after an edit
-  to `conditions.ts` without `npm run package`, it writes an unchanged mirror and reports success;
-  only `check:tool-conditions` catches it later. The script should compare the `dist` file's mtime
-  against `src` and refuse, or the task prose should name the order. Found by the Task 2 implementer
-  and reviewer, engine pass pre-2b A, 2026-10-08.
-  The same stale-`dist` trap reaches tests: `src/tests/unit/vite-verify-nested-media.test.ts` imports
-  `@glw907/cairn-cms` from `dist`, but `npm run package` runs only inside `check:close`
-  (`package.json:85`), after `test:node-projects` (line 86). On a stale `dist` the test proves the old
-  engine and can pass falsely; the Task 11 implementer ran `npm run package` by hand before the
-  gate. Ordering `package` ahead of the dist-importing tests, or having them refuse a `dist` older
-  than `src`, would close it. Found by the Task 11 implementer and reviewer, engine pass pre-2b A,
-  2026-10-09.
-- **`contributor`.** The workers fake (`src/tests/helpers/cloudflare-workers-fake.ts:50-51, 93-94`)
-  collects `waitUntil` promises but exposes only `flushWaitUntil`, with no way to read what was handed
-  in. Task 6 therefore added a `keepAlive` injection parameter to `createLiveTokenCheck`
-  (`src/lib/sveltekit/health.ts:110`) just to assert that the starter hands the mint to `waitUntil`.
-  A read accessor on the fake would let such a test assert on the fake and keep the factory's
-  signature free of a test-only seam. Found by the Task 6 implementer, engine pass pre-2b A,
-  2026-10-09.
-- **`tooling`.** `docs/internal/admin-smoke-test.md:112-115` says the magic-link login is a manual
-  step. It is scriptable: `wrangler dev` writes the message to `.wrangler/tmp/email/`, and
-  Playwright reads the link from there. Found by the pass A close live smoke, 2026-10-09.
-- **`tooling`.** Adding roles to a local `AUTH_DB` needs a `cairn-manifest` rerun, which
-  `docs/internal/admin-smoke-test.md` omits. Found by the pass A close live smoke, 2026-10-09.
-- **`tooling`.** A scratch showcase copy outside the repo bundles the CommonJS `yaml` package
-  (`createRequire` fails under workerd) unless the engine's runtime dependencies are installed
-  beside it. The smoke and key-probe steps should install them or the doc should say so. Found by
-  the pass A close live smoke, 2026-10-09.
-- **`tooling`.** `cairn-run-gate` reuses one log directory per gate string
-  (`~/.dotfiles/bin/.local/bin/cairn-run-gate`), so a run's duration and lock wait cannot be read
-  back afterward. The gate economy pass's inputs name this gap
-  (`docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`, the closing section). Found
-  by the pass A close clock accounting, 2026-10-09.
-- **`tooling`.** `tool/internal/doctor`'s package grade by the `go-architecture-reader` found
-  structure issues: the exported surface (`Check`, `Result`, `Status`) could be unexported behind an
-  opaque `CheckedResult`; `WranglerFacts` and `ReadWranglerConfig` are exported for one caller;
-  `Catalogue` duplicates `copylist`'s AST walk; `Result.ID` and `Severity` duplicate state;
-  `readSiteFacts`' err and `!found` pair repeats in three checks; the robots URL is recomputed; and
-  a few file-split nits. Found by the `go-architecture-reader`, pass A close, 2026-10-09.
+No open entry.
 
 ### Triage record
 
@@ -147,7 +81,7 @@ filed by pass A's own tasks on 2026-10-08 and 2026-10-09, none for a pass A fix,
 as fixed. No declined or batched entry was in the log (stage 2a's close had moved them to
 `ROADMAP.md`, and the ledger entries for the declined items live in `docs/internal/engine-rulings.md`
 on the pass branch). Each entry was re-checked against the tree at `e31bc2dd` (and the server fix
-branch for `guard.ts`). Four tooling entries (the fresh-worktree setup gap, the local `site-visual` baselines, the light lane's 3G cap, and the lost gate result) moved whole to `ROADMAP.md`'s gate economy pass row. Two comment entries (`admin-action.ts:120`, `guard.ts:179`) and ten newly filed engine findings moved with their file:line evidence to ROADMAP: entry delete and rename plus the read-at-SHA hardening to a Next row of their own, the rest to the batched engine friction entry. Five tooling entries were newly filed and stay open with the three older tooling entries (facts pointer drift, `emit-tool-conditions` reading `dist`, the workers fake accessor). Totals: 9 entries triaged, 0 deleted as fixed, 6 moved to ROADMAP (the four tooling entries and the two comment entries), 3 kept open from the original nine, 12 engine findings filed and moved to ROADMAP, 5 tooling findings filed and kept open, 0 kept for pass B.
+branch for `guard.ts`). Four tooling entries (the fresh-worktree setup gap, the local `site-visual` baselines, the light lane's 3G cap, and the lost gate result) moved whole to `ROADMAP.md`'s gate economy pass row. Two comment entries (`admin-action.ts:120`, `guard.ts:179`) and ten newly filed engine findings moved with their file:line evidence to ROADMAP: entry delete and rename plus the read-at-SHA hardening to a Next row of their own, the rest to the batched engine friction entry. Of the tooling entries, three of the newly filed were fixed on the spot (the smoke doc's magic-link claim and its missing manifest rerun, both in `docs/internal/admin-smoke-test.md`, and a `durable-gotchas.md` entry for the scratch showcase copy's `yaml` bundling), and the log-directory gap and the doctor findings, with the three older entries (facts pointer drift to the "Docs tooling before stage 2b" entry, `emit-tool-conditions` and the workers fake accessor to the batched engine friction entry's tooling bullet), moved to `ROADMAP.md`. Totals: the log held 9 entries and 15 were filed at the close, 24 in all. None was deleted as fixed for a pass A fix. 3 were fixed on the spot, 21 moved to ROADMAP (9 of the original nine, 10 engine findings, and 2 of the new tooling findings), 0 stay open, and 0 are kept for pass B.
 
 Draft docs stage 2a's close (2026-10-07, the 2a unattended run's R7) triaged the whole log and
 found 187 open entries, verified against the tree at `b38ef6b3` (each group's cited lines read or

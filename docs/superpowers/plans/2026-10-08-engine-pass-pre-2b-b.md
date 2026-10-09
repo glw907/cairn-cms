@@ -114,6 +114,23 @@ expected to compute. The conductor uses it as a cross-check, never as a floor. W
 check its tier lacks, its Acceptance quotes the command. Task 0 is conductor-led, outside the
 runner. `auth-data` fix rounds always run the full gate.
 
+**Amended from pass A's S1 (2026-10-08; supersedes the paragraph above where they differ).** Each
+task's gate is its blast radius: the tier its Files compute, plus the showcase e2e specs its change
+reaches, with F once at each segment boundary and before merge. A computed string carries no
+`E2E_PORT` export, so a task whose change reaches an e2e spec pins `gateTier` to its computed tier
+and sets its own `gate`: `export E2E_PORT=4392 && <that tier's string> && npm --prefix
+examples/showcase run test:e2e -- <specs>`. A task that reaches no spec keeps the computed tier.
+Each segment's pre-flight names every task's reachable specs, and the conductor writes them into
+that task's `gate`. The runner now runs a pinned task's own string unchanged on both sides (dotfiles
+`492f584`); before that fix, pass A's Task 3 escalated on a gate-string mismatch alone. Fix rounds
+take the runner's validated reduced gate: under `auth-data`, only a comment-only round reduces.
+
+The local boundary F replaces its last step with `npm --prefix examples/showcase run test:e2e --
+--grep-invert "site home|archive page 2"`. Those are the 20 `site-visual.spec.ts` tests that this
+workstation's Chromium renders off its CI baselines (`durable-gotchas.md`); CI runs them on every
+push. A boundary F is skipped when `cairn-run-gate --receipt '<F>'` matches the tree. Task 0's
+baseline F uses the same local string.
+
 **Models:** implementers `sonnet` (agent pin); `diff-reviewer` on `claude-opus-5-5` at `medium`; the
 close's `web-auth-security-reviewer` at `high`. No task is upshifted at plan time. Each task is
 specified to its acceptance criteria, and ruling 5's overlay semantics are spelled out in the spec.

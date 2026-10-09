@@ -279,23 +279,27 @@ The original decision framing, for the record:
   migration is the complete docs' acceptance test, run as a site pass that follows the docs. Friction
   a migration finds is handled then, by the same test. The expected shape is the conductor's
   forecast, accepted by Geoff (2026-10-07), not a schedule: an engine pass before 2b (below), likely
-  one before stage 4 for the editor screenshots, probably none before stages 3 and 5, and a batch
+  one before stage 4 for the live-reproduction seam, probably none before stages 3 and 5, and a batch
   before the final release.
 
   **The path to the release, with each engine pass in its slot.** Every stage close re-runs the test
   and may add or drop a pass; this list is where each one sits today.
   1. Finish stage 2a's close: `docs/superpowers/plans/2026-10-07-2a-close-finish.md` (leak check,
      cadence rewrite, merge of PR #107). Not an engine pass.
-  2. **Engine passes A and B before stage 2b.** Pass A landed on `main`, unreleased. Pass B (the
-     Now entry below) is next, and whichever "Docs tooling before stage 2b" items ride with it (or run
+  2. **Engine passes A and B before stage 2b.** Pass A landed on `main`, unreleased. The gate economy
+     pass (below) runs next, then pass B (the Now entry below), and whichever "Docs tooling before stage 2b" items ride with it (or run
      as their own dotfiles pass).
   3. Stage 2b: the 14 remaining extend pages. Its close runs the test.
   4. **The Claude Code arm's small stage**, right after 2b (the Now entry below): its facts already
      sit in the container, and the scaffold ships the guidance tree it documents. It registers the arm
      first.
   5. Stage 3: the admin arm. Forecast: no engine pass after it.
-  6. **Engine pass before stage 4** (forecast): the editor screenshots, plus the batched items marked
-     "for the stage 4 boundary" in the Next tier's batched engine friction entry.
+  6. **Engine pass before stage 4** (forecast): the live UI reproduction seam (the docs render the
+     actual admin components, never screenshots; Pass D's 2026-08-14 ruling, reaffirmed by Geoff
+     2026-10-08: "As much as possible, we should be building components live for the docs rather
+     than using screenshots"), plus the batched items marked "for the stage 4 boundary" in the Next
+     tier's batched engine friction entry. Stages 2b and 3 outline any visual half as a live
+     reproduction from the start, and file a need the seam must meet.
   7. Stage 4: the editors arm. Stage 5: the front door. Forecast: no engine pass between them.
   8. **The final engine batch:** every item still in the Next tier's batched engine friction and
      reference-arm corrections entries, the held dependency majors whose tripwires have fired, Phase
@@ -304,12 +308,41 @@ The original decision framing, for the record:
   10. Site migrations, one site pass each, cairn.pub first among equals. Their friction takes the same
      test, so a migration can still produce an engine fix after the release.
 
+- **Gate economy pass (Geoff, 2026-10-09).** A small pass after engine pass pre-2b, pass A merges
+  and before pass B, run in its own fresh session. Pass A's 12 tasks took about 12 hours of clock on
+  about 4.5M subagent tokens, nearly all of it gates. The pass makes gating targeted and evidence-based
+  ("avoid the brute-force approach, unless it's best-practice"): build the package once per gate (today
+  `check:close` rebuilds it about 17 times); narrow only the serialized component project with `vitest
+  related`, with `forceRerunTriggers` in `vitest.config.ts` for what the import graph cannot see; keep
+  the full node projects per task, always under `auth-data`; harden CI (job timeouts, visible retries,
+  one all-workflows-green check) so CI green on the pushed commit is the boundary gate; then carry the
+  rules into `pass-core`, the gate economy doc, the runners, and pass B's plan. Measured before and
+  after, and validated by replaying pass A's task ranges. Inputs (the adversarial review, timings,
+  open decisions): `docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`; draft branch
+  `gate-related`, not merged.
+  Four tooling entries moved here from the friction log at pass A's close (2026-10-09), each an
+  input to the same pass: a fresh worktree fails the full gate on setup alone
+  (`check-public-skill.test.ts` needs `npx svelte-kit sync` in `examples/showcase`, and the
+  `create-cairn-site` resume tests need the baked template CI prepares, so a `setup-worktree`
+  script or gate-tier prep step would carry CI's preparation); the local full gate goes red on 20
+  `site-visual.spec.ts` tests against the CI-canonical baselines, which pass A excluded by hand
+  with `--grep-invert "site home|archive page 2"` (a local `full` variant in
+  `scripts/checks/gate-tier.mjs` would make that standing); `cairn-run-gate`'s light lane caps the
+  scope at 3G, so `npm run check` dies out of memory at about 1 GB unless
+  `NODE_OPTIONS=--max-old-space-size=6144` is set (a lane-level default or a larger cap fixes it);
+  and `cairn-run-gate` prints a finished result once and clears its run state, so a re-issue after
+  a backgrounded call starts a second full gate (about 20 minutes duplicated) and, through a pipe,
+  can drop the `gate exit:` line (about 15 minutes per extra cycle); the `--receipt` lookup exists
+  but a re-issue does not consult it.
+  A fifth: `cairn-run-gate` reuses one log directory per gate string, so a run's duration and lock
+  wait cannot be read back afterward (the inputs file's closing section names the gap).
+
 - **Engine pass B before stage 2b (the boundary test at stage 2a's close, 2026-10-07; narrowed
   2026-10-09).** Pass A landed on `main` unreleased
   ([plan](docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)): the access map and role
   vocabulary as one declaration every reader takes, the access and auth edges, the roles migration,
-  the live key check and fingerprint, the failed save that keeps the writing, the head guard on every
-  write to `main`, and nested images in where-used. Pass B is next
+  the live key check and fingerprint, the failed save that keeps the writing, the head guard on most
+  writes to `main` (two remain, in the Next tier), and nested images in where-used. Pass B follows the gate economy pass
   ([plan](docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md), spec
   `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`, rulings beside it). Each item
   names the extend page its fix changes (2b pages marked); pass B's close removes this entry. Source
@@ -411,6 +444,24 @@ The original decision framing, for the record:
   - Workstation tools, filed for the dotfiles: `tellgrader --register docs` flags the proper noun
     "showcase" as `slop-hard`; a `cairn-run-gate` re-issue during a live run once returned "gate
     vanished" instead of attaching (not reproduced).
+  - Added at pass A's close (2026-10-09), fact pointer drift: a fact's `Source:` pointer is the only
+    place a path string lives for provenance matching (`scripts/checks/check-provenance.mjs`), so
+    repairing a pointer after a file delete (`templates/waymark/src/access.ts`) broke nine brief
+    sentences that cite the old path, and the only fix was editing the fact's claim text; a repair
+    that moves a pointer should not force a claim edit. `check:facts` accepts a `path:line` pointer
+    while the line still exists, so a move leaves the fact aimed at the wrong code with no failure:
+    pass A hand-remapped nine pointers into `src/lib/github/signing.ts` and
+    `src/lib/sveltekit/health.ts`, left `f:n0laoh` (`docs/internal/facts/extend.md:271`) citing
+    `src/lib/vite/internal.ts:53-80` (`virtualSource` now starts at 67), and found `check_roles.go`
+    citations marked `[verified]` about 24 lines off. Editing
+    `src/lib/sveltekit/content-routes-entry-write.ts` stranded 43 fact bullets that cite it by line
+    range (23 in `extend.md`, 12 in `editors.md`, 4 in `reference.md`, 3 in `admin.md`, 1 in
+    `front-door.md`), and editing `src/lib/admin/EditPage.svelte` (line form only, since the compiler
+    API cannot parse it) found two anchored pointers (`extend.md:118`, `extend.md:654`) already stale
+    plus anchor-less ones (`f:h483v2`, `f:vti6ws`) that `check:facts` range-checks only. A sweep
+    moving `.ts` line pointers to `path#Symbol` (`scripts/checks/check-facts.mjs:59-71` already
+    resolves it) closes the first half.
+
 
 - **Docs-code sync (Geoff, 2026-09-30; spec `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`).**
   Keep the engine and its docs in sync by catching drift (a fact whose code changed while its
@@ -1001,6 +1052,27 @@ the named human gates only):**
 
 ## Next
 
+- **Gate economy follow-ups (Geoff, 2026-10-08; audit and adversarial review of the per-task gate).**
+  Three items deferred from the change that made the per-task gate the diff's blast radius. (a)
+  Per-task test selection via `vitest --changed <base>`. Trigger: `forceRerunTriggers` covers
+  fs-read inputs (78 of 513 test files read outside the import graph) and a committed canary proves
+  a broken fs-read fixture turns a selected run red. (b) Auth-data test-only fix rounds taking the
+  touched tests, the tests of touched helpers, and a re-run of the affected named mutations.
+  Trigger: lands with (a). (c) The docs chain framing-seat A/B at stage 2b's start: two intros, one
+  at `xhigh` and one at `high`; keep `xhigh` unless `high` matches.
+
+- **Engine writes to `main` still unguarded (data-loss class; pass A's close, 2026-10-09).** Pass A's
+  C11 head guard covers publish, publish-all, Library delete, metadata, replace, alt, and the
+  dictionary. The security reviewer found two writers it missed: entry delete and entry rename
+  commit to the default branch with no head passed (`backend.commit` takes
+  no head argument; `src/lib/sveltekit/content-routes-entry-destructive.ts:174-181`, `:392-397`), the stale-write
+  data-loss risk C11 closed elsewhere. The guard
+  itself reads each snapshot by branch name, not at the head SHA it just read
+  (`src/lib/github/repo.ts:72-86`, `contentsUrl` pins `?ref=<branch>`), so replica lag could return
+  a snapshot older than the head and defeat it; the hardening reads each file at the head SHA.
+  Trigger: the final engine batch (path item 7 above) at the latest, and sooner if any engine
+  pass touches these files.
+
 - **Batched engine friction (the boundary test's third class; stage 2a's close, 2026-10-07).** Items
   whose fix changes no extend page's content. Each rides the final engine batch unless a stage close
   pulls it forward, and each docs-stage close re-tests them, since a later stage's page can move one
@@ -1080,6 +1152,40 @@ the named human gates only):**
     each save, in the default branch's history (`content-routes-entry-write.ts:350-353,402-406`).
   - Guidance: the `cairn-extend` skill's router has no row for a `none`-capability role with its own
     screen (`templates/waymark/.claude/skills/cairn-extend/SKILL.md:29-33`).
+  - Added at pass A's close (2026-10-09; source detail in the friction log's Engine group). Head
+    guard residue: four writers still commit with `head ?? undefined`, which skips the guard when
+    the head read returned nothing (`src/lib/sveltekit/nav-routes.ts:161`,
+    `content-routes-settings.ts:308` and `:445`, `content-routes-media-ingest.ts:251`). Health
+    route: anonymous `/healthz?live=1` multiplies across isolates against the App's rate limit,
+    a ruled residual (the single-flight slot is per isolate, `src/lib/sveltekit/health.ts`) whose
+    mitigations are a shared KV verdict or a monitor token (page:
+    `docs/reference/sveltekit.md`); anonymous health output reveals installation state (`health.ts:156-174`). Logging:
+    Turnstile logs `missing_secret` on every submission when the secret is absent
+    (`src/lib/cloudflare/turnstile.ts:94-96`; page: `docs/reference/log-events.md`); a refused
+    key logs as `github.unreachable` (`src/lib/sveltekit/health.ts:85`; page:
+    `rotate-the-github-app-key.md`). Owner surface: the warning-severity condition
+    `auth.store-roles-unmigrated` reaches the owner as the generic 500 strip, not its remediation
+    (`src/lib/auth/store.ts:48`; page: `docs/reference/auth-store.md`). Editor: format buttons and
+    chords still dispatch during an in-flight save (`src/lib/admin/EditPage.svelte`, `EditorToolbar.svelte`; a
+    stage 4 page caveat). Comments: the `logoutAction` docstring says it clears "both cookies"
+    while the action clears the session, CSRF, and pending-login cookies in both name forms
+    (`src/lib/sveltekit/auth-routes.ts:409-412`); `admin-action.ts:120` still says an absent
+    access map means "the guard never ran on this route"; a `// WATCH:` line sits between
+    `createAuthGuard`'s TSDoc and its signature (`guard.ts:179`).
+  - Tooling, added at pass A's close (2026-10-09): `scripts/build/emit-tool-conditions.mjs` reads the
+    built `dist` (`:18`), so run after a `conditions.ts` edit without `npm run package` it writes an
+    unchanged mirror and reports success (it should compare mtimes and refuse);
+    `src/tests/unit/vite-verify-nested-media.test.ts` imports from `dist`, but `npm run package`
+    runs only inside `check:close` (`package.json:85`) after `test:node-projects` (`:86`), so a
+    stale `dist` proves the old engine (order `package` first, or refuse a `dist` older than
+    `src`); the workers fake (`src/tests/helpers/cloudflare-workers-fake.ts:50-51,93-94`) exposes
+    only `flushWaitUntil`, so `createLiveTokenCheck` carries a test-only `keepAlive` parameter
+    (`src/lib/sveltekit/health.ts:110`) (a read accessor on the fake removes it); and the
+    `go-architecture-reader`'s grade of `tool/internal/doctor`: the exported surface (`Check`,
+    `Result`, `Status`) could be unexported behind an opaque `CheckedResult`, `WranglerFacts` and
+    `ReadWranglerConfig` are exported for one caller, `Catalogue` duplicates `copylist`'s AST walk,
+    `Result.ID` and `Severity` duplicate state, `readSiteFacts`' err and `!found` pair repeats in
+    three checks, the robots URL is recomputed, and a few file-split nits.
   - Tooling: `tool/internal/doctor`'s package grade left four nits (`ResolvePublicOrigin` in the
     package, a facts-file preamble helper, merging `siteconfigpath.go`, `json.go:82-84`'s comment);
     `scripts/lab/theme-fixture.mjs:59` defaults to port 4393, which `RESERVED_PORTS` omits and the e2e

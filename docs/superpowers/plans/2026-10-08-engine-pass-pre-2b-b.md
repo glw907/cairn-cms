@@ -114,6 +114,23 @@ expected to compute. The conductor uses it as a cross-check, never as a floor. W
 check its tier lacks, its Acceptance quotes the command. Task 0 is conductor-led, outside the
 runner. `auth-data` fix rounds always run the full gate.
 
+**Amended from pass A's S1 (2026-10-08; supersedes the paragraph above where they differ).** Each
+task's gate is its blast radius: the tier its Files compute, plus the showcase e2e specs its change
+reaches, with F once at each segment boundary and before merge. A computed string carries no
+`E2E_PORT` export, so a task whose change reaches an e2e spec pins `gateTier` to its computed tier
+and sets its own `gate`: `export E2E_PORT=4392 && <that tier's string> && npm --prefix
+examples/showcase run test:e2e -- <specs>`. A task that reaches no spec keeps the computed tier.
+Each segment's pre-flight names every task's reachable specs, and the conductor writes them into
+that task's `gate`. The runner now runs a pinned task's own string unchanged on both sides (dotfiles
+`492f584`); before that fix, pass A's Task 3 escalated on a gate-string mismatch alone. Fix rounds
+take the runner's validated reduced gate: under `auth-data`, only a comment-only round reduces.
+
+The local boundary F replaces its last step with `npm --prefix examples/showcase run test:e2e --
+--grep-invert "site home|archive page 2"`. Those are the 20 `site-visual.spec.ts` tests that this
+workstation's Chromium renders off its CI baselines (`durable-gotchas.md`); CI runs them on every
+push. A boundary F is skipped when `cairn-run-gate --receipt '<F>'` matches the tree. Task 0's
+baseline F uses the same local string.
+
 **Models:** implementers `sonnet` (agent pin); `diff-reviewer` on `claude-opus-5-5` at `medium`; the
 close's `web-auth-security-reviewer` at `high`. No task is upshifted at plan time. Each task is
 specified to its acceptance criteria, and ruling 5's overlay semantics are spelled out in the spec.
@@ -327,6 +344,19 @@ backend serves the site's real content, not in fixtures mode (Decision 3). The "
 
 Fork 2 belongs to pass A.
 
+**Copy, ruled (Geoff, 2026-10-08: "They are all OK.").** These strings are used verbatim; the
+conductor pastes each into its task's `notes`.
+
+- **Task 10, the dev-mode notice:** "Edits are held in memory. They're discarded when the dev server
+  stops."
+- **Task 3, A5's 403:** heading "You don't have access to this page."; body "Your role doesn't
+  include this page. Ask the site owner if you need access."; link "Back to the dashboard".
+- **Task 3, A5's 404:** heading "This page doesn't exist."; body "Check the address, or go back to
+  the dashboard."; link "Back to the dashboard".
+
+Geoff struck "the admin" as a noun in this copy ("'the admin' is strange phrasing"), so no string
+in either error page uses it.
+
 **Fork 3, ruled (Geoff, 2026-10-08: "For Fork 3, ceiling at 14M."):** the pass ceiling is 14.0M,
 with the 80 percent stop at 11.2M. The planned basis is 12.1M, priced from the chain rate pass A
 and the SvelteKit 3 pass use (0.55M for a full-tier chain) and that pass's close record (its fix
@@ -368,7 +398,9 @@ Geoff wants this pass to survive a 10-hour unattended run, so every stop is plan
 
 **Owner-gated steps, batched at the end:**
 
-1. The merge to `main` (Geoff's go; the PR leaves draft once CI is green).
+1. The merge to `main` (Geoff's go; the PR leaves draft once CI is green). **Go given in advance
+   (Geoff, 2026-10-08, "Yes"):** the conductor merges once the close's gates, reviewers, live smoke,
+   and CI are green, on the same terms as pass A's merge. A stop under "Unattended run" still stops.
 
 Nothing else waits on Geoff. The live smoke is Claude's (Decision 11). Neither the A5 capture nor
 the notice needs an owner sitting: the main loop reads both captures, and a fresh-context
@@ -412,7 +444,13 @@ The inputs most likely to bite a real user that per-task tests would not exercis
 3. **Worktree.** Create `.claude/worktrees/engine-pre-2b-b` on `engine-pre-2b-b` from `main`'s
    head. Run `npm ci`, then a from-scratch showcase install (`rm -rf examples/showcase/node_modules`,
    then `npm ci --prefix examples/showcase`). `realpath` confirms the engine and the dev package
-   resolve into the worktree.
+   resolve into the worktree. Then make CI's three preparation steps, which a fresh worktree lacks
+   and without which the baseline F goes red on setup alone (pass A's Task 0, 2026-10-08): `npm run
+   package`; bake the `create-cairn-site` template as `.github/workflows/test.yml` does (in
+   `packages/create-cairn-site`, `node scripts/bake-template.mjs --to template --engine-spec
+   "^$VERSION" --dev-spec "^$VERSION"`, with `VERSION` the root `package.json` version); and `npx
+   svelte-kit sync` in `examples/showcase` (`check-public-skill.test.ts` fails on
+   `$app/tsconfig` without it).
 4. **Gate strings.** Print F and E from the module's `TIER_GATES` (under "Gates"; a `--range` on a
    branch equal to `main` is empty, and the script exits 1 before it reads `--pin`) and record both.
 5. **Baseline.** One gate agent runs F in the worktree and returns the `gate exit:` line and its

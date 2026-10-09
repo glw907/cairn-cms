@@ -14,19 +14,20 @@ const (
 	// owner/editor pair is declared, so the guard's own fallback already matches the
 	// vocabulary.
 	skipNoCustomRoles = "no custom roles declared; the guard fallback owner/editor already matches the vocabulary"
-	// infoRoleWiringNoHooksFile is auth.role-wiring's info detail when neither hooks file
-	// spelling exists.
-	infoRoleWiringNoHooksFile = "src/hooks.server.ts not found, so the guard role wiring cannot be checked"
-	// infoRoleWiringAbsent is auth.role-wiring's info detail when no createAuthGuard call is
-	// found at all: the guard may be wired in another module the doctor cannot see.
-	infoRoleWiringAbsent = "no createAuthGuard call found in src/hooks.server.ts (heuristic text read); the guard may be wired in another module"
+	// tmplRoleWiringNoHooksFile is auth.role-wiring's info detail template when neither hooks
+	// file spelling exists, filled with the two spellings it looked for.
+	tmplRoleWiringNoHooksFile = "neither %s nor %s found, so the guard role wiring cannot be checked"
+	// tmplRoleWiringAbsent is auth.role-wiring's info detail template when no createAuthGuard
+	// call is found at all, filled with the hooks path read: the guard may be wired in another
+	// module the doctor cannot see.
+	tmplRoleWiringAbsent = "no createAuthGuard call found in %s (heuristic text read); the guard may be wired in another module"
 	// infoRoleWiringIndirect is auth.role-wiring's info detail when createAuthGuard's argument
 	// is a bare identifier the doctor cannot read into: that object may carry roles, so failing
 	// it would not be a high-confidence positive.
 	infoRoleWiringIndirect = "createAuthGuard is passed an options object the doctor cannot read (heuristic text read); verify the guard receives the declared roles"
 	// tmplRoleWiringUnwired is auth.role-wiring's fail detail template, filled with the joined
-	// custom role names.
-	tmplRoleWiringUnwired = "the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)"
+	// custom role names and the hooks path read.
+	tmplRoleWiringUnwired = "the adapter declares custom roles (%s) but createAuthGuard in %s is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)"
 	// passRoleWiringWired is auth.role-wiring's pass detail.
 	passRoleWiringWired = "createAuthGuard is passed the declared role vocabulary (heuristic text read)"
 )
@@ -114,20 +115,20 @@ var authRoleWiring = Check{
 		if len(custom) == 0 {
 			return skipResult(skipNoCustomRoles)
 		}
-		hooks, _, hooksFound, err := readHooksSource(s)
+		hooks, hooksPath, hooksFound, err := readHooksSource(s)
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
 		if !hooksFound {
-			return infoResult(infoRoleWiringNoHooksFile)
+			return infoResult(fmt.Sprintf(tmplRoleWiringNoHooksFile, hooksCandidatePaths[0], hooksCandidatePaths[1]))
 		}
 		switch guardRoleWiring(hooks) {
 		case guardWiringAbsent:
-			return infoResult(infoRoleWiringAbsent)
+			return infoResult(fmt.Sprintf(tmplRoleWiringAbsent, hooksPath))
 		case guardWiringIndirect:
 			return infoResult(infoRoleWiringIndirect)
 		case guardWiringUnwired:
-			return failResult(fmt.Sprintf(tmplRoleWiringUnwired, strings.Join(custom, ", ")))
+			return failResult(fmt.Sprintf(tmplRoleWiringUnwired, strings.Join(custom, ", "), hooksPath))
 		default:
 			return passResult(passRoleWiringWired)
 		}

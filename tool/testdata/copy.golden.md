@@ -369,9 +369,10 @@ Name the check that entry holds
 - media bucket %s is declared
 - missing %s
 - needs engine 0.97.0 or later, and one build
+- neither %s nor %s found, so the guard role wiring cannot be checked
 - neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked automatically; verify by hand that no site-wide Referrer-Policy: no-referrer is served (%s); see %s
 - no AI posture is stated (aiPosture is unset)
-- no createAuthGuard call found in src/hooks.server.ts (heuristic text read); the guard may be wired in another module
+- no createAuthGuard call found in %s (heuristic text read); the guard may be wired in another module
 - no csrf.trustedOrigins entries in %s, so SvelteKit's default origin check covers every route (heuristic text read)
 - no custom roles declared; the guard fallback owner/editor already matches the vocabulary
 - no directives consistent with it
@@ -393,10 +394,9 @@ Name the check that entry holds
 - parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
 - pnpm-lock.yaml did not parse
 - serve strict-origin-when-cross-origin (or same-origin) as the site default
-- src/hooks.server.ts not found, so the guard role wiring cannot be checked
 - svelte.config.js is still present, so a csrf key in it could not be checked; move the SvelteKit config into the sveltekit() call in the Vite config and delete the file
 - the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
-- the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)
+- the adapter declares custom roles (%s) but createAuthGuard in %s is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)
 - the resolved origin's /robots.txt did not return 200
 - the resolved public origin does not parse as an http or https URL
 - wrangler vars

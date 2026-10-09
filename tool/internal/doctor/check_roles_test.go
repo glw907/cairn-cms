@@ -1,6 +1,9 @@
 package doctor
 
-import "testing"
+import (
+	"maps"
+	"testing"
+)
 
 // TestAuthRoleWiring is table-driven over the no-custom-roles skip plus all four guardRoleWiring
 // outcomes: wired (pass), unwired (fail), indirect (info), and absent (info), five cases in
@@ -29,7 +32,7 @@ func TestAuthRoleWiring(t *testing.T) {
 				"src/content/.cairn/site-facts.json": factsCustomRole,
 			},
 			wantStatus: StatusInfo,
-			wantDetail: infoRoleWiringNoHooksFile,
+			wantDetail: "neither src/hooks.server.ts nor src/hooks.server.js found, so the guard role wiring cannot be checked",
 		},
 		{
 			name: "info: absent, no createAuthGuard call found",
@@ -38,7 +41,7 @@ func TestAuthRoleWiring(t *testing.T) {
 				"src/hooks.server.ts":                `export const handle = () => {};`,
 			},
 			wantStatus: StatusInfo,
-			wantDetail: infoRoleWiringAbsent,
+			wantDetail: "no createAuthGuard call found in src/hooks.server.ts (heuristic text read); the guard may be wired in another module",
 		},
 		{
 			name: "info: indirect, options passed as a bare identifier",
@@ -72,6 +75,51 @@ func TestAuthRoleWiring(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := snapshotWithFiles(t, tt.files)
 			result := authRoleWiring.Run(s)
+			if result.Status != tt.wantStatus {
+				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
+			}
+			if result.Detail != tt.wantDetail {
+				t.Errorf("Detail = %q, want %q", result.Detail, tt.wantDetail)
+			}
+		})
+	}
+}
+
+// TestAuthRoleWiringNamesHooksPath asserts every detail that names the hooks module names the
+// file the doctor actually read, so a .js site is pointed at src/hooks.server.js, and the
+// not-found detail names both spellings it looked for.
+func TestAuthRoleWiringNamesHooksPath(t *testing.T) {
+	facts := `{"version": 1, "roles": {"owner": "owner", "editor": "editor", "contributor": "editor"}}`
+	tests := []struct {
+		name       string
+		files      map[string]string
+		wantStatus Status
+		wantDetail string
+	}{
+		{
+			name:       "info: neither spelling exists",
+			files:      map[string]string{},
+			wantStatus: StatusInfo,
+			wantDetail: "neither src/hooks.server.ts nor src/hooks.server.js found, so the guard role wiring cannot be checked",
+		},
+		{
+			name:       "info: absent in a .js hooks module",
+			files:      map[string]string{"src/hooks.server.js": `export const handle = () => {};`},
+			wantStatus: StatusInfo,
+			wantDetail: "no createAuthGuard call found in src/hooks.server.js (heuristic text read); the guard may be wired in another module",
+		},
+		{
+			name:       "fail: unwired in a .js hooks module",
+			files:      map[string]string{"src/hooks.server.js": `export const handle = createAuthGuard();`},
+			wantStatus: StatusFail,
+			wantDetail: "the adapter declares custom roles (contributor) but createAuthGuard in src/hooks.server.js is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			files := map[string]string{"src/content/.cairn/site-facts.json": facts}
+			maps.Copy(files, tt.files)
+			result := authRoleWiring.Run(snapshotWithFiles(t, files))
 			if result.Status != tt.wantStatus {
 				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}

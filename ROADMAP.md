@@ -351,6 +351,19 @@ The original decision framing, for the record:
   9. Site migrations, one site pass each, cairn.pub first among equals. Their friction takes the same
      test, so a migration can still produce an engine fix after the release.
 
+- **Gate economy pass (Geoff, 2026-10-09).** A small pass after engine pass pre-2b, pass A merges
+  and before pass B, run in its own fresh session. Pass A's 12 tasks took about 12 hours of clock on
+  about 4.5M subagent tokens, nearly all of it gates. The pass makes gating targeted and evidence-based
+  ("avoid the brute-force approach, unless it's best-practice"): build the package once per gate (today
+  `check:close` rebuilds it about 17 times); narrow only the serialized component project with `vitest
+  related`, with `forceRerunTriggers` in `vitest.config.ts` for what the import graph cannot see; keep
+  the full node projects per task, always under `auth-data`; harden CI (job timeouts, visible retries,
+  one all-workflows-green check) so CI green on the pushed commit is the boundary gate; then carry the
+  rules into `pass-core`, the gate economy doc, the runners, and pass B's plan. Measured before and
+  after, and validated by replaying pass A's task ranges. Inputs (the adversarial review, timings,
+  open decisions): `docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`; draft branch
+  `gate-related`, not merged.
+
 - **Engine pass before stage 2b (the boundary test at stage 2a's close, 2026-10-07).** Next after
   Geoff reads the five task 8 pages; a fresh brainstorm sizes it by the test above, so it may take
   only part of this list. Each item names the extend page its fix changes (2b pages marked). Items

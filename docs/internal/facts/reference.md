@@ -664,11 +664,12 @@ re-sourced to Go on this tree rather than to the page.
   Source: `tool/internal/doctor/json.go:41-54,100-129`. [candidate: found during the 2026-09-22
   redraft's Go read, not independently re-verified by a second pass]
 - `f:0ms9c1` `auth.role-wiring` settles `INFO`, not only `PASS`/`FAIL`/`SKIP`/`UNCHECKED`, when
-  `src/hooks.server.ts` is missing, when no `createAuthGuard` call is found in it, or when the
+  neither `src/hooks.server.ts` nor `src/hooks.server.js` exists, when no `createAuthGuard` call is
+  found in the one it read (the detail names that file, as the `FAIL` detail does), or when the
   call's argument is a bare identifier the check cannot read into; none of these is treated as a
   high-confidence `FAIL`. The page's checks table names only this check's `PASS`/`FAIL` condition,
   `SKIP`, and `UNCHECKED` cases, not its `INFO` settlements. Source:
-  `tool/internal/doctor/check_roles.go:117-130`, `tool/internal/doctor/check_roles_test.go:31,40,49`.
+  `tool/internal/doctor/check_roles.go:118-131`, `tool/internal/doctor/check_roles_test.go:31,40,49`.
   [verified]
 
 ## docs/reference/cli-cairn-exit-codes.md
@@ -1685,7 +1686,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `UnauditedActionError(500, ...)` in dev (gated by `esm-env`'s `DEV`, overridable via
   `deps.isDev`), and logs `admin.action.unaudited` in production instead of throwing. A handler
   that returns SvelteKit's `fail()` (detected via `isActionFailure`) is exempt from this check.
-  Source: `src/lib/sveltekit/admin-action.ts:307-309` (`if (emitted === 0 &&
+  Source: `src/lib/sveltekit/admin-action.ts#createAdminAction` (`if (emitted === 0 &&
   !isActionFailure(result)) { if (dev) throw new UnauditedActionError(...); log.error('admin.
   action.unaudited', ...); }`). [verified]
 - `f:e8r5f7` `ctx.audit`'s sink call catches both a synchronous throw and a rejecting promise from the site's

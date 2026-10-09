@@ -59,6 +59,19 @@
   back to the default and branding can't clear it. Remove `replyTo` from the adapter's `email` group,
   or send through a custom `auth.send`, to send no reply-to.
 
+- **A thrown health check logs `health.failed`, and the scaffold's `/healthz` is never cached.**
+  `loadHealth` logs the new `health.failed` event with the error's message before it rethrows, so a
+  route's bare catch keeps the anonymous response's fixed detail without losing the cause. The
+  showcase and scaffold routes send `cache-control: no-store` on both the passing and the failing
+  answer.
+
+  Consumers may: add `headers: { 'cache-control': 'no-store' }` to both `Response.json` calls in
+  `src/routes/healthz/+server.ts`.
+
+- **`admin.action.failed` carries the thrown error's `conditionId`.** An operator can now filter
+  admin action failures by condition id, `auth.store-roles-unmigrated` from an editor add on an
+  unmigrated `AUTH_DB`, say.
+
 ### Changed
 
 - **The shipped examples are generic.** The `cairn` tool's `--help` examples use `my-site` where
@@ -261,6 +274,18 @@
   `requireAccess`, and `createSectionAction` now admit that role to the route the rule names, where
   they refused it before.
 
+- **An undeclared role no longer reaches an href rule that names it.** A `none`-capability session
+  is admitted to an access rule only while the role vocabulary still declares its role, so dropping a
+  role from `defineRoles` revokes it. `canReach` takes the vocabulary as an optional fourth argument,
+  and the guard attaches it to `locals.cairnRoles` for `requireAccess` and the admin action wrappers.
+
+  Consumers must: remove access rules that name a role you dropped from `defineRoles`, or keep the
+  role declared.
+
+- **`0001_roles.sql` opens with a warning line.** Once the file sits in a site's `migrations`
+  directory, any automated `wrangler d1 migrations apply` runs it, and its rebuild keeps only the
+  engine's four `editor` columns, so carry site-added columns across before you copy it in.
+
 - **A Turnstile verification with a missing secret logs `missing_secret`.** `verifyTurnstile` logs
   `turnstile.verify_failed` with `reason: 'missing_secret'` for a blank or non-string `secret`, and
   `invalid_input` now means a bad token only.
@@ -365,6 +390,12 @@
 
 ### Fixed
 
+- **Publish-all now refuses a stale publish.** It reads the default branch's head before any pending
+  branch, so a single publish of the same entry landing mid-batch answers the calm conflict instead
+  of being reverted by the branch's older content.
+- **The roles-migration condition matches only the engine's own CHECK.** `auth.store-roles-unmigrated`
+  keys on `role IN ('owner'`, read off the D1 error and its `cause`, so a site's own CHECK on the
+  column rethrows untouched and a wrapped D1 error is still named.
 - **The admin guard's token check screens the same requests SvelteKit 3's CSRF check does.** It
   covered only the three form content types, so an unsafe `/admin` request with no `Content-Type`
   (a cross-origin `no-cors` fetch of an untyped `Blob`, which sends no preflight) or with

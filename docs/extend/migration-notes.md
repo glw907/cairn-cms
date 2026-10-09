@@ -99,6 +99,11 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 - **Review any access rule that names a role of `none` capability.** `canReach`, `requireAccess`,
   `createSectionAction`, and `createAdminAction`'s `access` option now admit that role to the route
   path the rule names. A screen id, an href no rule matches, and `editors` stay refused for it.
+- **Remove access rules that name a role you dropped from `defineRoles`, or keep the role
+  declared.** A session whose role the vocabulary no longer declares reads `none` capability, and
+  an href rule naming its old role string no longer admits it. The guard attaches the vocabulary to
+  `locals.cairnRoles`. A direct `canReach` call for a site's own `none` role passes the vocabulary
+  as its fourth argument, since an omitted one reads the default owner and editor pair.
 - **Key Turnstile alerting on `missing_secret` for a missing secret.** `turnstile.verify_failed` with
   `reason: 'invalid_input'` now means a bad token only. A blank or non-string secret logs
   `missing_secret`.
@@ -110,15 +115,18 @@ this page carries; read `CHANGELOG.md` directly for anything older.
   the dictionary add, now fail closed when another commit lands on the default branch while they read
   their snapshots. The entry stays held on its branch, and publishing again succeeds.
 - **Optional: answer 503 from `/healthz` when `ok` is false.** Return
-  `Response.json(health, { status: health.ok ? 200 : 503 })`, with a catch branch that answers a fixed
+  `Response.json(report, { status: report.ok ? 200 : 503 })`, with a catch branch that answers a fixed
   detail and never the thrown message. A backend that isn't a GitHub App now reads `ok: true` with
-  `detail: 'not-applicable'`.
+  `detail: 'not-applicable'`. The scaffold's route also sends `cache-control: no-store` on both answers,
+  and `loadHealth` itself now logs a thrown check as `health.failed` before it rethrows.
 - **Optional: apply `0001_roles.sql` when you declare custom roles on a site scaffolded before the
   scaffold shipped it.** Copy it from `node_modules/@glw907/cairn-cms/migrations/` into the site's
   `migrations` directory and run `wrangler d1 migrations apply <auth-db> --remote`. It is safe after
   `0004`, and it rebuilds `editor` with the engine's four columns only, so carry across by hand any
   column the site added. Until it runs, a write that names a custom role fails with
-  `auth.store-roles-unmigrated`.
+  `auth.store-roles-unmigrated`. Once the file sits in the site's `migrations` directory, any
+  automated `wrangler d1 migrations apply`, a deploy pipeline's included, runs it and rebuilds
+  `editor` the same way, so carry site-added columns across before you copy it in.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
 

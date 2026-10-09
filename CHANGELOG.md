@@ -335,7 +335,7 @@
 - **A failed save or publish keeps the writing.** The edit form submits through `use:enhance`. A
   failure the server answers is applied in place with no page load. A network failure, an action that
   throws, an answer that isn't JSON, or a redirect away from the entry (an expired session) leaves the
-  editor alone and shows "That did not go through. Your text is still here; try again." None of them
+  editor alone and shows "That did not go through. Your text is still here; please try again." None of them
   shows "Saved", the dirty baseline stays the loaded body, Save and Publish re-enable, and the leave
   guard still prompts. A pending personal-dictionary commit finishes before the request is sent. A form
   posted without JavaScript is unchanged. Before, a failed save re-ran the entry load, and a load that

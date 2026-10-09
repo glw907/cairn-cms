@@ -10,8 +10,8 @@ import { applyActionCalls, enhanceRuns, resetEnhance, settleEnhance } from './_a
 // and the dictionary commit that must land before the request, are covered by the showcase e2e
 // (edit-save-failure.spec.ts), where a real browser and a real kit run them.
 
-const NOTICE = 'That did not go through. Your text is still here; try again.';
-const SESSION_NOTICE = 'Your session ended. Sign in again in a new tab, then save. Your text is still here.';
+const NOTICE = 'That did not go through. Your text is still here; please try again.';
+const SESSION_NOTICE = 'Your session ended. Please sign in again in a new tab, then save. Your text is still here.';
 
 function props(over = {}) {
   return {

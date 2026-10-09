@@ -329,8 +329,8 @@ With JavaScript, Save and Publish submit through SvelteKit's `use:enhance`, so a
 replaces the page or the author's text. A failure the server answers, a `fail()` result, is applied
 as the page's `form` with no load. A network failure, an action that throws, an answer that isn't
 JSON, or a redirect away from the entry's own concept (the sign-in page after an expired session)
-leaves the page alone and shows the notice "That did not go through. Your text is still here; try
-again." After any of these the "Saved" flash and the "Saved" save state stay off, the dirty baseline
+leaves the page alone and shows the notice "That did not go through. Your text is still here; please
+try again." After any of these the "Saved" flash and the "Saved" save state stay off, the dirty baseline
 is the loaded body even when the refusal echoed the author's text, Save and Publish are enabled
 again, and the leave guard still prompts. A successful save redirects, and the page reloads the
 document at the redirect location. A form posted without JavaScript re-renders the failure through

@@ -8,6 +8,11 @@ every route. No `tool/v2.0.0` tag exists yet.
 
 ### Added
 
+- **The `auth.store-roles-unmigrated` condition id** (a warning) names the fault of an `AUTH_DB`
+  that lacks the engine's `0001_roles.sql`: a write naming a role beyond `owner` and `editor`
+  fails on the old role constraint. The condition is public; a reader that matches on the
+  condition ids sees one more. No tool check raises it, and its docs anchor,
+  `is-it-working.md#provision-the-auth-store`, was already on the shipped list.
 - **The `config.csrf-trusted-origins` check** reads the `csrf` key in `vite.config.js`,
   `vite.config.ts`, or `vite.config.mts` and fails, under the new condition
   `config.csrf-trusted-origins-wildcard` (a warning), on a `trustedOrigins` entry of `'*'` or

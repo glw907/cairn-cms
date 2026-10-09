@@ -32,6 +32,7 @@ const (
 	ConditionAIPostureNotEffective            Condition = "ai.posture-not-effective"
 	ConditionAuthStoreUnreachable             Condition = "auth.store-unreachable"
 	ConditionAuthStoreUnmigrated              Condition = "auth.store-unmigrated"
+	ConditionAuthStoreRolesUnmigrated         Condition = "auth.store-roles-unmigrated"
 	ConditionAuthUnknownRole                  Condition = "auth.unknown-role"
 	ConditionAuthRoleWiringMissing            Condition = "auth.role-wiring-missing"
 	ConditionConfigNoReferrerBlanket          Condition = "config.no-referrer-blanket"
@@ -60,6 +61,7 @@ var conditions = []Condition{
 	ConditionAIPostureNotEffective,
 	ConditionAuthStoreUnreachable,
 	ConditionAuthStoreUnmigrated,
+	ConditionAuthStoreRolesUnmigrated,
 	ConditionAuthUnknownRole,
 	ConditionAuthRoleWiringMissing,
 	ConditionConfigNoReferrerBlanket,

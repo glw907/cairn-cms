@@ -156,6 +156,15 @@ export const REGISTRY: Record<string, CairnCondition> = {
       'Copy migrations/0004_login_nonce.sql from the package into the site\'s own migrations directory and run `wrangler d1 migrations apply <auth-db> --remote`.',
     docsAnchor: 'is-it-working.md#provision-the-auth-store',
   },
+  'auth.store-roles-unmigrated': {
+    id: 'auth.store-roles-unmigrated',
+    severity: 'warning',
+    title: 'Auth store still restricts roles to owner and editor',
+    why: "An AUTH_DB without migrations/0001_roles.sql keeps the original CHECK on editor.role, so adding an editor or changing a role to any name beyond owner and editor fails with a bare D1 constraint fault. Sign-in and publishing still work; only a write that names a custom role is refused.",
+    remediation:
+      "Copy migrations/0001_roles.sql from the package into the site's own migrations directory and run `wrangler d1 migrations apply <auth-db> --remote`. The migration rebuilds the editor table with the engine's four columns only, so a site that added its own column to editor carries it across by hand.",
+    docsAnchor: 'is-it-working.md#provision-the-auth-store',
+  },
   'auth.unknown-role': {
     id: 'auth.unknown-role',
     severity: 'warning',

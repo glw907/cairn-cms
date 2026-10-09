@@ -272,8 +272,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - `f:lml542` `deleteEditor` and `removeOwnerIfNotLast` cascade past session and magic-token rows to also
   delete every `preview_tokens` row the removed editor minted (a separate statement outside the
   atomic batch, swallowing only a "no such table" fault for a site with the preview migration
-  unapplied). Source: `src/lib/auth/store.ts:300-320` (`deleteEditorPreviewTokens`), `:407-411`
-  (`deleteEditor` call), `:446-450` (`removeOwnerIfNotLast` call). [verified]
+  unapplied). Source: `src/lib/auth/store.ts#deleteEditorPreviewTokens`, `src/lib/auth/store.ts:430-434`
+  (`deleteEditor` call), `src/lib/auth/store.ts:469-473` (`removeOwnerIfNotLast` call). [verified]
 - `f:pf69s2` The store's unexported auth-flow set (engine-internal to the magic-link guard, not proven
   consumer surface) is `findEditor`, `issueToken`, `recentlyIssued`, `consumeToken`, `rebindToken`,
   `createSession`, `resolveSession`, `deleteSession`; `insertOwnerIfEmpty` is separately demoted (a

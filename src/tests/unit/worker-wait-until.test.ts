@@ -25,7 +25,7 @@ type ChannelEnv = { CHANNEL_DB?: D1Database };
 
 describe('the auth channel delivers through waitUntil', () => {
   it('returns before the code is delivered, and the delivery lands once waitUntil settles', async () => {
-    setFakeEnv({ CHANNEL_DB: (await createChannelDb(CHANNEL_SCHEMA_SQL)) as unknown as D1Database });
+    setFakeEnv({ CHANNEL_DB: await createChannelDb(CHANNEL_SCHEMA_SQL) });
     const delivered: string[] = [];
     const config: AuthChannelConfig<ChannelEnv> = {
       resolveDb: (env) => env?.CHANNEL_DB,

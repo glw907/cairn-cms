@@ -178,6 +178,29 @@ describe('auth actions', () => {
     await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent', sent: true });
   });
 
+  it('a partial auth.branding merges over the runtime default: the mail keeps the runtime sender and reply-to', async () => {
+    const { db } = fakeD1({ 'FROM editor WHERE': { email: 'ed@t', display_name: 'Ed Editor', role: 'editor' } });
+    const sent: { from: string; replyTo?: string; subject: string }[] = [];
+    const rt = runtime();
+    rt.sender = { from: 'cms@test', replyTo: 'help@test' };
+    const admin = createCairnAdmin({
+      runtime: rt,
+      auth: {
+        branding: { siteName: 'Renamed Site' },
+        send: async (_env, message) => {
+          sent.push({ from: message.from, replyTo: message.replyTo, subject: message.subject });
+        },
+      },
+    });
+    const event = actionEvent('/admin/login', {
+      editor: null,
+      form: { email: 'ed@t' },
+      env: { PUBLIC_ORIGIN: 'https://t.example', AUTH_DB: db },
+    });
+    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent', sent: true });
+    expect(sent).toEqual([{ from: 'cms@test', replyTo: 'help@test', subject: 'Sign in to Renamed Site' }]);
+  });
+
   it('confirm delegates on the confirm view: consumes the token, sets the session cookie, redirects', async () => {
     const { db } = fakeD1({ 'DELETE FROM magic_token': { email: 'ed@t' } });
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });

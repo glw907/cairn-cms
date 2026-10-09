@@ -74,9 +74,10 @@ with no type error and no log. Check your config actually holds a value before y
 Don't trust `opts.hostname` or `opts.action` to be present just because your call site names
 them.
 
-This function logs on every refusal but one. The pre-flight bounds check, a non-string, blank, or
-over-length `token` or `secret`, logs `reason: 'invalid_input'` with the token's length
-(`tokenLength`), never the token itself. A fetch that throws or times out logs
+This function logs on every refusal but one. A non-string or blank `secret` logs
+`reason: 'missing_secret'`, a configuration fault apart from a visitor's input. The pre-flight
+bounds check on the `token`, a non-string, blank, or over-length value, logs
+`reason: 'invalid_input'` with the token's length (`tokenLength`), never the token itself. A fetch that throws or times out logs
 `reason: 'request_failed'` with the error's message. A non-200 response logs
 `reason: 'bad_status'` with the response `status`. A body that fails to parse or fails shape
 validation logs `reason: 'unparseable'` with no other field. A `success: false` response logs

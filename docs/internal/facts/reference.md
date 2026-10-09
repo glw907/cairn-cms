@@ -197,6 +197,12 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `throttle.identityCeiling` 30 (min 10), `throttle.escalationThreshold` 20 (min 10),
   `throttle.liveRowCap` 5 (max 20), `session.ttlMs` 2592000000/30days (max 31536000000/1yr).
   Source: `src/lib/auth-channel/factory.ts:326-482`. [verified]
+- `f:ditn3e` `AuthChannelConfig.resolveDb` returns `ChannelDatabaseLike | undefined`, the structural
+  subset of D1 the channel store calls (`prepare(...).bind(...).first()/run()`, `withSession('first-primary')`,
+  and a session's `prepare` and `batch`); a real `D1Database` and `createChannelDb()`'s result both
+  satisfy it with no cast, and `AuthChannel.revokeSessions` takes the same type. Source:
+  `src/lib/auth-channel/store.ts#ChannelDatabaseLike`, `src/lib/auth-channel/factory.ts#AuthChannelConfig.resolveDb`.
+  [verified]
 - `f:vh76wt` A non-positive `limits` override always throws even where the table states only a ceiling
   (prevents a 0 or negative clamp value from silently passing). Source:
   `src/lib/auth-channel/factory.ts:434-457` (`resolveLimit`). [verified]
@@ -938,12 +944,17 @@ re-sourced to Go on this tree rather than to the page.
   (module comment: "Every failure mode below returns false rather than throwing"), `:17-21`
   (`ip` doc comment: "from `CF-Connecting-IP` and never a client-forwardable header"). [verified]
 - `f:b857di` `MAX_TOKEN_LENGTH` is exactly `2048` characters and the fetch timeout is exactly `5000`ms
-  (`AbortSignal.timeout(5000)`). Source: `src/lib/cloudflare/turnstile.ts:8-10,124`. [verified]
+  (`AbortSignal.timeout(5000)`). Source: `src/lib/cloudflare/turnstile.ts:8-10,127`. [verified]
 - `f:bpk8gc` A `success: false` siteverify response logs nothing when every code is one of the two routine
   causes (`invalid-input-response`, `timeout-or-duplicate`), since that is the function working
   as intended; every other rejection reason does log. Source: `src/lib/cloudflare/turnstile.ts:15`
-  (`ROUTINE_ERROR_CODES`), `:146-156` (`isRoutine` check gates the `log.warn('turnstile.verify_failed',
+  (`ROUTINE_ERROR_CODES`), `:153-158` (`isRoutine` check gates the `log.warn('turnstile.verify_failed',
   { reason: 'rejected', codes })` call). [verified]
+- `f:thbxvf` `verifyTurnstile` logs `reason: 'missing_secret'` for a blank or non-string `secret`
+  and `reason: 'invalid_input'` (with `tokenLength`) for a blank, non-string, or over-length
+  `token`; the secret is checked first, so a call with both bad logs `missing_secret`. Both
+  return `false` without calling fetch. Source: `src/lib/cloudflare/turnstile.ts:93-110`.
+  [verified]
 - `f:ndtmx8` `resolveRateLimit` resolves multiple keys in order, short-circuiting at the first key over
   budget (a later key's counter is never incremented once an earlier one has failed), and returns
   a four-arm outcome (`allowed`, `limited`, `no-binding`, `failed`) rather than the boolean its

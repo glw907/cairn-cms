@@ -1,7 +1,7 @@
 // cairn-cms: the replace-in-place rewrite transform. Given one entry's raw markdown and an old
 // content-hash, it rewrites every reference to that hash (a body image, a figure-wrapped image, or
-// the frontmatter hero image.src) to a new asset's canonical `media:` token, and returns a per
-// placement diff. This is the heart of the media-library "replace" action: the same bytes pointed
+// the frontmatter hero image.src, or an image nested in a container field) to a new asset's canonical
+// `media:` token, and returns a per placement diff. This is the heart of the media-library "replace" action: the same bytes pointed
 // at a new asset, with the surrounding entry left exact.
 //
 // The output is byte-for-byte identical to the input except for the `media:` token substrings that
@@ -35,7 +35,8 @@ import {
 
 /** One repointed reference: which surface it lived on, the old token as written, and the new token. */
 export interface RepointPlacement {
-  kind: 'body' | 'figure' | 'hero';
+  /** `nested` is an image inside a container field (an object, or a row of an array). */
+  kind: 'body' | 'figure' | 'hero' | 'nested';
   /** The old `media:` token exactly as it was written in the source. */
   before: string;
   /** The new asset's canonical `media:` token (the same value for every placement). */
@@ -118,18 +119,21 @@ interface SrcLineHit {
 }
 
 /**
- * Find the block-style `src:` line within `[lo, hi]` whose value token parses to `hash`. The token
- *  is located by the broad scan and validated through parseMediaToken (matching on hash), so a
- *  malformed token is found then rejected. Returns null for a flow-style value (no own `src:` line),
- *  which leaves that shape unanchorable rather than splicing a guessed span.
+ * Find every block-style `src:` line within `[lo, hi]` whose value token parses to `hash`, in source
+ *  order. The key may carry a YAML sequence prefix (`- src: ...`), which is how the first key of an
+ *  array row is written. Each token is located by the broad scan and validated through parseMediaToken
+ *  (matching on hash), so a malformed token is found then rejected. A flow-style value (`{ src: ... }`)
+ *  has no own `src:` line, so it contributes nothing: that shape stays unanchorable rather than
+ *  spliced by a guessed span.
  */
-function findSrcLineInRange(
+function findSrcLinesInRange(
   lines: FmLine[],
   fmBlock: string,
   range: [number, number],
   hash: string,
-): SrcLineHit | null {
-  const srcKeyRe = /^(\s*)src:[ \t]?/;
+): SrcLineHit[] {
+  const srcKeyRe = /^(\s*)(-[ \t]+)?src:[ \t]?/;
+  const hits: SrcLineHit[] = [];
   for (let i = range[0]; i <= range[1]; i += 1) {
     const lineText = fmBlock.slice(lines[i].start, lines[i].end);
     const keyMatch = srcKeyRe.exec(lineText);
@@ -141,57 +145,86 @@ function findSrcLineInRange(
       const ref = parseMediaToken(token);
       if (!ref || ref.hash !== hash) continue;
       const tokenStart = valueStart + m.index;
-      return {
+      hits.push({
         lineStart: lines[i].start,
         lineEnd: lines[i].end,
-        indent: keyMatch[1],
+        // The sequence dash occupies columns the sibling keys indent past, so count it as spaces.
+        indent: keyMatch[1] + ' '.repeat((keyMatch[2] ?? '').length),
         tokenStart,
         tokenEnd: tokenStart + token.length,
         token,
-      };
+      });
+      break;
     }
   }
-  return null;
+  return hits;
+}
+
+/** One top-level frontmatter key that holds the target hash, and the image values it holds it in. */
+interface ImageKeyHit {
+  key: string;
+  /** False for a hero (the key's own value is the image), true for an image inside a container. */
+  nested: boolean;
+  /** The image values at this key whose `src` parses to the hash, in document order. */
+  images: Record<string, unknown>[];
+}
+
+/** Whether a parsed value is an image value (an object with a string `src`) naming `hash`. */
+function isImageOf(value: unknown, hash: string): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const src = (value as Record<string, unknown>).src;
+  if (typeof src !== 'string') return false;
+  return parseMediaToken(src)?.hash === hash;
 }
 
 /**
- * The image-like top-level frontmatter keys whose `src` parses to `hash`, in source order. A key is
- *  image-like when its value is an object carrying a string `src`; this is the same shape
- *  extractMediaRefs reads, so a token in a plain-text value (a `title:`/`note:`) is never treated as a
- *  reference. The bucket-classifying data comes from gray-matter (which handles every quoting form);
- *  the byte edit is located structurally by the caller, keyed back to this key name.
+ * The top-level frontmatter keys whose value holds an image whose `src` parses to `hash`, in source
+ *  order. A key is a hero when its own value is an image (an object carrying a string `src`, the same
+ *  shape extractMediaRefs reads, so a token in a plain-text value is never treated as a reference). A
+ *  key is nested when an image sits one level inside it, in the four shapes `defineFieldset` admits:
+ *  an object holding an image, an array of images, or an array of objects holding an image. The
+ *  bucket-classifying data comes from gray-matter (which handles every quoting form); the byte edit
+ *  is located structurally by the caller, keyed back to this key name.
  */
-function imageFieldKeys(data: Record<string, unknown>, hash: string): { key: string; obj: Record<string, unknown> }[] {
-  const out: { key: string; obj: Record<string, unknown> }[] = [];
+function imageFieldKeys(data: Record<string, unknown>, hash: string): ImageKeyHit[] {
+  const out: ImageKeyHit[] = [];
+  const plain = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
   for (const [key, value] of Object.entries(data)) {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
-    const obj = value as Record<string, unknown>;
-    if (typeof obj.src !== 'string') continue;
-    const ref = parseMediaToken(obj.src);
-    if (!ref || ref.hash !== hash) continue;
-    out.push({ key, obj });
+    if (isImageOf(value, hash)) {
+      out.push({ key, nested: false, images: [value] });
+      continue;
+    }
+    const images: Record<string, unknown>[] = [];
+    // An object's children are its sub-fields; an array's rows are images or objects of sub-fields.
+    const inside = Array.isArray(value) ? value : plain(value) ? [value] : [];
+    for (const row of inside) {
+      if (isImageOf(row, hash)) images.push(row);
+      else if (plain(row)) images.push(...Object.values(row).filter((v) => isImageOf(v, hash)));
+    }
+    if (images.length > 0) out.push({ key, nested: true, images });
   }
   return out;
 }
 
 /**
- * Collect hero src-token edits inside the frontmatter block. Only an image-field `src:` line is
- *  rewritten: the structure is read via gray-matter (image-like keys), and each key's `src:` line is
- *  located structurally within that key's block. A `media:` token sitting in a plain-text value (a
- *  `title:` or `description:`) is on no `src:` line, so it is left untouched, keeping the byte-exact
- *  contract and agreeing with extractMediaRefs. A flow-style hero has no `src:` line and is skipped.
+ * Collect image src-token edits inside the frontmatter block. Only an image `src:` line is rewritten:
+ *  the structure is read via gray-matter (image-bearing keys), and every matching `src:` line is
+ *  located structurally within that key's block, so an asset that appears in several rows of an array
+ *  is repointed everywhere. A `media:` token sitting in a plain-text value (a `title:` or
+ *  `description:`) is on no `src:` line, so it is left untouched, keeping the byte-exact contract and
+ *  agreeing with extractMediaRefs. A flow-style image has no `src:` line and is skipped.
  */
 function frontmatterEdits(markdown: string, fmBlock: string, oldHash: string): Edit[] {
   if (fmBlock === '') return [];
   const data = matter(markdown).data as Record<string, unknown>;
   const lines = fmLines(fmBlock);
   const edits: Edit[] = [];
-  for (const { key } of imageFieldKeys(data, oldHash)) {
+  for (const { key, nested } of imageFieldKeys(data, oldHash)) {
     const range = frontmatterKeyRange(lines, fmBlock, key);
     if (!range) continue;
-    const src = findSrcLineInRange(lines, fmBlock, range, oldHash);
-    if (!src) continue;
-    edits.push({ start: src.tokenStart, end: src.tokenEnd, before: src.token, kind: 'hero' });
+    for (const src of findSrcLinesInRange(lines, fmBlock, range, oldHash)) {
+      edits.push({ start: src.tokenStart, end: src.tokenEnd, before: src.token, kind: nested ? 'nested' : 'hero' });
+    }
   }
   return edits;
 }
@@ -316,7 +349,8 @@ type AltBucket = 'will-fill' | 'customized' | 'decorative-skipped';
  *  is and for a decorative hero).
  */
 export interface AltPlacement {
-  kind: 'body' | 'figure' | 'hero';
+  /** `nested` is an image inside a container field; it is reported and never written. */
+  kind: 'body' | 'figure' | 'hero' | 'nested';
   bucket: AltBucket;
   /** The existing alt, empty string when there is none. */
   before: string;
@@ -439,7 +473,8 @@ function findSiblingKeyValue(
  *  blank line or a nested child) has its value replaced; an absent one is inserted right after the
  *  `src:` line at the same indent. The new value is a JSON-quoted scalar, valid YAML that handles a
  *  colon, a quote, or an empty string. A flow-style hero (`image: { ... }`, no own `src:` line) is
- *  unanchorable, so it is reported from the gray-matter read but never spliced.
+ *  unanchorable, so it is reported from the gray-matter read but never spliced. An image nested in a
+ *  container field is reported with kind `nested` and never spliced either.
  */
 function heroAltEdits(
   markdown: string,
@@ -453,7 +488,24 @@ function heroAltEdits(
   const lines = fmLines(fmBlock);
   const edits: AltEdit[] = [];
   const quoted = JSON.stringify(defaultAlt);
-  for (const { key, obj } of imageFieldKeys(data, hash)) {
+  for (const { key, nested, images } of imageFieldKeys(data, hash)) {
+    if (nested) {
+      // A nested image is reported, never spliced: its mapping sits inside a sequence row, where the
+      // sibling-key anchoring the hero arm relies on does not hold. It carries the skipped bucket so
+      // the counts never promise a write the transform does not make.
+      for (const image of images) {
+        const alt = typeof image.alt === 'string' ? image.alt : '';
+        edits.push({
+          apply: false,
+          start: 0,
+          end: 0,
+          text: '',
+          placement: { kind: 'nested', bucket: 'decorative-skipped', before: alt, after: alt },
+        });
+      }
+      continue;
+    }
+    const obj = images[0];
     const decorative = obj.decorative === true;
     const before = typeof obj.alt === 'string' ? obj.alt : '';
     const bucket: AltBucket = decorative ? 'decorative-skipped' : classifyAlt(before);
@@ -462,7 +514,7 @@ function heroAltEdits(
     const placement: AltPlacement = { kind: 'hero', bucket, before, after };
 
     const range = write ? frontmatterKeyRange(lines, fmBlock, key) : null;
-    const src = range ? findSrcLineInRange(lines, fmBlock, range, hash) : null;
+    const src = range ? (findSrcLinesInRange(lines, fmBlock, range, hash)[0] ?? null) : null;
     if (!write || !range || !src) {
       // Reported but not edited: a kept custom alt, a decorative hero, or an unanchorable flow-style
       // hero (no own `src:` line). It carries a diff entry but no splice, so the bytes stay exact.

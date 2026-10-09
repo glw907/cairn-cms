@@ -851,7 +851,7 @@ Stability tier: Extension API.
 ```ts
 declare function formatManifest(manifest: Manifest): string;
 declare function parseManifest(raw: string): Manifest;
-declare function verifyManifest(built: Manifest, committedRaw: string): void;
+declare function verifyManifest(built: Manifest, committedRaw: string, adapter?: Pick<CairnAdapter, "content">): void;
 declare function verifyReferences(manifest: Manifest): void;
 ```
 
@@ -862,17 +862,24 @@ gets a well-formed graph or a clear error rather than a broken shape fed silentl
 Use it to validate a manifest your own code fetches, such as when building the `before`/`after` pair
 [`buildNewlyPublished`](./delivery-data.md#buildnewlypublished) takes, instead of casting the fetched
 JSON yourself. `verifyManifest` throws when the committed manifest drifts from the corpus, so a
-raw-git edit fails the build loudly. `verifyReferences` throws when any frontmatter reference edge
-points at a missing target, naming the source entry, the field, and the missing target. References
-have no prerender backstop, so this build gate is their only integrity authority.
+raw-git edit fails the build loudly. Pass the site's adapter as the third argument to get the
+nested-image rule. A manifest generated before `mediaRefs` existed carries no `mediaRefs` key, and
+the check tolerates that only when no concept declares an image inside a container field (an object
+holding an image, an array of images, or an array of objects holding an image). With such a shape
+declared, the compare is exact, so a site that has not regenerated fails its build with the
+regenerate message. The `cairnManifest` plugin passes the adapter for you. `verifyReferences` throws
+when any frontmatter reference edge points at a missing target, naming the source entry, the field,
+and the missing target. References have no prerender backstop, so this build gate is their only
+integrity authority.
 
 ```ts
-import { verifyManifest, type Manifest } from '@glw907/cairn-cms';
+import { verifyManifest, type CairnAdapter, type Manifest } from '@glw907/cairn-cms';
 
 declare const built: Manifest;
 declare const committedRaw: string;
+declare const cairn: CairnAdapter;
 
-verifyManifest(built, committedRaw); // throws on drift
+verifyManifest(built, committedRaw, cairn); // throws on drift
 ```
 
 ```ts

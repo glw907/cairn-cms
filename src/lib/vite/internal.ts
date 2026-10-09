@@ -81,7 +81,7 @@ function virtualSource(opts: CairnManifestOptions, mode: 'verify' | 'write'): st
   const resultExpr =
     mode === 'write'
       ? 'formatManifest(built)'
-      : '(verifyManifest(built, committed), verifyReferences(built), "ok")';
+      : '(verifyManifest(built, committed, cairn), verifyReferences(built), "ok")';
   return `
 import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
 import { formatManifest, verifyManifest, verifyReferences } from '@glw907/cairn-cms';

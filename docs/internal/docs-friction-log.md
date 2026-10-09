@@ -103,12 +103,26 @@ New findings start below this line, one per finding, with its perspective and a 
   `f:vti6ws` at `:15,215`) that `check:facts` range-checks only. A sweep that moves the `.ts`
   line pointers to `path#Symbol` would close the first half. Found by the Task 8 and Task 10
   implementers and reviewers, engine pass pre-2b A, 2026-10-09.
+  Tasks 6 and 11 hit the same drift. Task 6 hand-remapped nine pointers into
+  `src/lib/github/signing.ts` and `src/lib/sveltekit/health.ts`, because `check:facts` accepts a
+  `path:line` pointer while the line still exists, so a move leaves the fact aimed at the wrong code
+  with no failure. Task 11 left `f:n0laoh` (`docs/internal/facts/extend.md:271`) citing
+  `src/lib/vite/internal.ts:53-80` for `virtualSource`, which now starts at line 67 with the verify
+  `resultExpr` at line 81. Found by the Task 6 implementer and the Task 11 reviewer, engine pass
+  pre-2b A, 2026-10-09.
 - **`contributor`.** `scripts/build/emit-tool-conditions.mjs` reads the built `dist`
   (`CONDITIONS_JS = 'dist/diagnostics/conditions.js'`, line 18), not `src`. Run right after an edit
   to `conditions.ts` without `npm run package`, it writes an unchanged mirror and reports success;
   only `check:tool-conditions` catches it later. The script should compare the `dist` file's mtime
   against `src` and refuse, or the task prose should name the order. Found by the Task 2 implementer
   and reviewer, engine pass pre-2b A, 2026-10-08.
+  The same stale-`dist` trap reaches tests: `src/tests/unit/vite-verify-nested-media.test.ts` imports
+  `@glw907/cairn-cms` from `dist`, but `npm run package` runs only inside `check:close`
+  (`package.json:85`), after `test:node-projects` (line 86). On a stale `dist` the test proves the old
+  engine and can pass falsely; the Task 11 implementer ran `npm run package` by hand before the
+  gate. Ordering `package` ahead of the dist-importing tests, or having them refuse a `dist` older
+  than `src`, would close it. Found by the Task 11 implementer and reviewer, engine pass pre-2b A,
+  2026-10-09.
 - **`contributor`.** In `src/lib/sveltekit/guard.ts:171-173` a `// WATCH:` line comment sits between
   `createAuthGuard`'s TSDoc block and the `export function`, so the doc attaches across a comment,
   which some doc tools handle inconsistently. The placement predates pass A, which kept it because
@@ -358,6 +372,13 @@ promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings b
   spec now builds the matcher once (lines 85-86, 103). `docs/internal/durable-gotchas.md` records
   other Playwright traps (line 195) but not this one. Found by the Task 8 implementer and reviewer,
   engine pass pre-2b A, 2026-10-09.
+- **`contributor`.** The workers fake (`src/tests/helpers/cloudflare-workers-fake.ts:50-51, 93-94`)
+  collects `waitUntil` promises but exposes only `flushWaitUntil`, with no way to read what was handed
+  in. Task 6 therefore added a `keepAlive` injection parameter to `createLiveTokenCheck`
+  (`src/lib/sveltekit/health.ts:110`) just to assert that the starter hands the mint to `waitUntil`.
+  A read accessor on the fake would let such a test assert on the fake and keep the factory's
+  signature free of a test-only seam. Found by the Task 6 implementer, engine pass pre-2b A,
+  2026-10-09.
 
 ## Clearings
 

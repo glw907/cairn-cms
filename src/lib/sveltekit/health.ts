@@ -57,8 +57,14 @@ const realClock: CheckClock = {
 /** How long a settled verdict answers every later live call in the isolate. */
 const VERDICT_TTL_MS = 60_000;
 
-/** The mint's own abort deadline, each caller's wait, and the age at which an in-flight slot is dead. */
+/** The mint's own abort deadline, and the age at which an in-flight slot is dead. */
 const MINT_TIMEOUT_MS = 5_000;
+
+/**
+ * How long past the mint's own deadline each caller waits. A mint that lands at its deadline, or
+ * aborts there and classifies itself, answers the caller rather than losing a tie to a guess.
+ */
+const CALLER_GRACE_MS = 500;
 
 const UNREACHABLE: TokenCheck = { ok: false, detail: 'unreachable' };
 
@@ -88,7 +94,8 @@ async function mintOnce(creds: AppCredentials): Promise<TokenCheck> {
 }
 
 interface InstallationState {
-  verdict?: { result: TokenCheck; at: number };
+  /** The settled verdict, when it settled, and when the mint that produced it started. */
+  verdict?: { result: TokenCheck; at: number; startedAt: number };
   slot?: { promise: Promise<TokenCheck>; startedAt: number };
 }
 
@@ -102,8 +109,11 @@ interface InstallationState {
  * shared mint's promise never settling. Each caller therefore races it against a timer created in
  * its own request and reads `unreachable` when the timer wins; a slot at or past the timeout counts
  * as empty, so the next caller starts a fresh mint; and only the mint's own settlement writes the
- * verdict or clears the slot, so a caller giving up never caches a guess. The starter hands the mint
- * to `keepAlive` so a settled verdict outlives the starter's response.
+ * verdict or clears the slot, so a caller giving up never caches a guess. A mint that settles after
+ * a newer one replaced it writes nothing, so a late refusal never overwrites a fresher verdict. Each
+ * caller's timer runs a short grace past the mint's own deadline, so the mint's classification wins
+ * when it lands at that deadline. The starter hands the mint to `keepAlive` so a settled verdict
+ * outlives the starter's response.
  */
 export function createLiveTokenCheck(
   clock: CheckClock = realClock,
@@ -124,8 +134,11 @@ export function createLiveTokenCheck(
       const owner = state;
       const started: NonNullable<InstallationState['slot']> = {
         promise: mintOnce(creds).then((result) => {
-          owner.verdict = { result, at: clock.now() };
-          if (owner.slot === started) owner.slot = undefined;
+          const current = owner.slot === started;
+          if (current || !owner.verdict || started.startedAt > owner.verdict.startedAt) {
+            owner.verdict = { result, at: clock.now(), startedAt: started.startedAt };
+          }
+          if (current) owner.slot = undefined;
           return result;
         }),
         startedAt: now,
@@ -134,7 +147,7 @@ export function createLiveTokenCheck(
       keepAlive(started.promise);
       slot = started;
     }
-    const timer = clock.timer(MINT_TIMEOUT_MS);
+    const timer = clock.timer(MINT_TIMEOUT_MS + CALLER_GRACE_MS);
     try {
       return await Promise.race([slot.promise, timer.fired.then(() => UNREACHABLE)]);
     } finally {
@@ -144,6 +157,21 @@ export function createLiveTokenCheck(
 }
 
 const liveTokenCheck = createLiveTokenCheck();
+
+/** The last signing self-test this isolate ran, keyed on the App id and key it tested. */
+let signingMemo: { appId: string; key: string; result: ReturnType<typeof signingSelfTest> } | undefined;
+
+/**
+ * The signing self-test, memoized per isolate on the App id and key string. The test is a pure
+ * function of those two inputs, so a repeat anonymous `/healthz` does no RSA work after the first
+ * call; a rotated key or App id runs the test afresh.
+ */
+function memoizedSigningSelfTest(appId: string, key: string): ReturnType<typeof signingSelfTest> {
+  if (signingMemo?.appId !== appId || signingMemo.key !== key) {
+    signingMemo = { appId, key, result: signingSelfTest(appId, key) };
+  }
+  return signingMemo.result;
+}
 
 /**
  * Run the signing self-test against the configured App id and the Worker's key secret. The self-test
@@ -155,14 +183,27 @@ const liveTokenCheck = createLiveTokenCheck();
  * mint runs only when there is a GitHub App, a key, and a passing signing check to mint with;
  * otherwise the payload leaves `githubAppToken` out, since a missing or unusable key is the signing
  * check's finding and not GitHub's. The plain call makes no network call.
+ *
+ * A throw from the check itself logs `health.failed` with the error's message and rethrows, so the
+ * anonymous route can answer its fixed 503 detail while the operator still sees what broke.
  */
 export async function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<HealthData> {
+  try {
+    return await runHealthChecks(event, runtime);
+  } catch (err) {
+    log.error('health.failed', { error: err instanceof Error ? err.message : String(err) });
+    throw err;
+  }
+}
+
+/** The body of {@link loadHealth}: the signing check, then the live token check when asked for. */
+async function runHealthChecks(event: CairnEvent, runtime: CairnRuntime): Promise<HealthData> {
   const key = env.GITHUB_APP_PRIVATE_KEY_B64;
   const provider = runtime.backend;
   let githubAppSigning: HealthData['checks']['githubAppSigning'];
   if (!isGithubApp(provider)) githubAppSigning = { ok: true, detail: 'not-applicable' };
   else if (!key) githubAppSigning = { ok: false, detail: 'GITHUB_APP_PRIVATE_KEY_B64 is not configured' };
-  else githubAppSigning = await signingSelfTest(provider.appId, key);
+  else githubAppSigning = { ...(await memoizedSigningSelfTest(provider.appId, key)) };
   const checks: HealthData['checks'] = { githubAppSigning };
   if (event.url.searchParams.get('live') === '1' && isGithubApp(provider) && key && githubAppSigning.ok) {
     checks.githubAppToken = await liveTokenCheck({

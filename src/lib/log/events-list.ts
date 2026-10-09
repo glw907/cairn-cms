@@ -34,6 +34,7 @@ export const CAIRN_LOG_EVENTS = Object.freeze([
   'publish.failed',
   'publish.address_collided',
   'github.unreachable',
+  'health.failed',
   'guard.refused',
   'media.uploaded',
   'media.upload_failed',

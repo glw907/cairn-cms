@@ -37,6 +37,14 @@ describe('healthz route', () => {
     expect(await res.json()).toEqual(payload);
   });
 
+  it('answers with cache-control no-store on both the passing and the failing payload', async () => {
+    const { GET } = await import('./+server.js');
+    health.loadHealth.mockResolvedValue({ ok: true, checks: { githubAppSigning: { ok: true } } });
+    expect((await GET(event)).headers.get('cache-control')).toBe('no-store');
+    health.loadHealth.mockRejectedValue(new Error('boom'));
+    expect((await GET(event)).headers.get('cache-control')).toBe('no-store');
+  });
+
   it('answers 503 with a fixed detail when the check throws, never the thrown message', async () => {
     health.loadHealth.mockRejectedValue(new Error('secret-bearing failure text'));
     const { GET } = await import('./+server.js');

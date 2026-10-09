@@ -214,6 +214,118 @@ describe('the live token check is bounded per isolate', () => {
   });
 });
 
+/**
+ * A clock that runs on a scheduled timeline: `advance(ms)` fires every timer due at or before `ms`
+ * first, then runs every action queued for that moment, so a caller timer and a mint landing at
+ * the same instant settle in a fixed order.
+ */
+function scheduledClock(): CheckClock & { advance(ms: number): Promise<void>; at(ms: number, action: () => void): void } {
+  let t = 0;
+  const timers: Array<{ due: number; fire: () => void }> = [];
+  const actions: Array<{ due: number; run: () => void }> = [];
+  return {
+    now: () => t,
+    timer(ms) {
+      let fire = (): void => {};
+      const fired = new Promise<void>((resolve) => {
+        fire = resolve;
+      });
+      timers.push({ due: t + ms, fire });
+      return { fired, clear: () => {} };
+    },
+    at(ms, run) {
+      actions.push({ due: ms, run });
+    },
+    async advance(ms) {
+      t = ms;
+      for (const timer of timers.filter((x) => x.due <= ms)) timer.fire();
+      await tick();
+      for (const action of actions.filter((x) => x.due <= ms)) action.run();
+    },
+  };
+}
+
+describe('the live token check under a late or simultaneous settlement', () => {
+  it('lets a mint landing at its own deadline answer the caller, since the caller waits a grace beyond it', async () => {
+    // GitHub refuses the key at the very moment the mint's own 5 s abort would fire. The caller's
+    // timer must not win that tie with a guessed unreachable.
+    let resolveFetch = (_r: Response): void => {};
+    vi.spyOn(globalThis, 'fetch').mockReturnValue(
+      new Promise<Response>((resolve) => {
+        resolveFetch = resolve;
+      }),
+    );
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const clock = scheduledClock();
+    const check = createLiveTokenCheck(clock, () => {});
+    clock.at(5_000, () => resolveFetch(new Response('{}', { status: 401 })));
+    const pending = check(creds());
+    await tick();
+    await clock.advance(5_000);
+    expect(await within(pending)).toEqual({ ok: false, detail: 'key_refused' });
+  });
+
+  it('never lets a timed-out mint that settles late overwrite the newer verdict', async () => {
+    // Mint A times out and goes stale; mint B starts later and passes. A then lands with a refusal,
+    // which must not replace B's newer verdict.
+    const resolvers: Array<(r: Response) => void> = [];
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolvers.push(resolve);
+        }),
+    );
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const clock = manualClock();
+    const check = createLiveTokenCheck(clock, () => {});
+    const first = check(creds());
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    clock.fire(0);
+    expect(await first).toEqual({ ok: false, detail: 'unreachable' });
+
+    clock.set(5_000);
+    const second = check(creds());
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    resolvers[1](tokenResponse());
+    expect(await second).toEqual({ ok: true });
+
+    clock.set(5_100);
+    resolvers[0](new Response('{}', { status: 401 }));
+    await tick();
+    expect(await check(creds())).toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('the plain signing check is memoized per isolate', () => {
+  async function freshKey(): Promise<string> {
+    const pair = (await crypto.subtle.generateKey(
+      { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+      true,
+      ['sign', 'verify'],
+    )) as CryptoKeyPair;
+    const pkcs8 = new Uint8Array((await crypto.subtle.exportKey('pkcs8', pair.privateKey)) as ArrayBuffer);
+    const label = ['PRIVATE', 'KEY'].join(' ');
+    return btoa(`-----BEGIN ${label}-----${btoa(String.fromCharCode(...pkcs8))}-----END ${label}-----`);
+  }
+
+  it('does no RSA work on a second plain call with the same key, and re-tests a changed key', async () => {
+    const first = await freshKey();
+    const second = await freshKey();
+    const sign = vi.spyOn(crypto.subtle, 'sign');
+    const rt = runtime(nextInstallation());
+
+    const a = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: first }, false), rt);
+    expect(sign).toHaveBeenCalledTimes(1);
+    const b = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: first }, false), rt);
+    expect(sign).toHaveBeenCalledTimes(1);
+    expect(b.checks.githubAppSigning).toEqual(a.checks.githubAppSigning);
+
+    await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: second }, false), rt);
+    expect(sign).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('the live token check never touches the shared token cache', () => {
   it('leaves no entry in cachedInstallationToken after a live mint', async () => {
     const installationId = nextInstallation();

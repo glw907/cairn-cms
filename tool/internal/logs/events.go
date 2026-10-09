@@ -30,6 +30,7 @@ var eventVocabulary = []string{
 	"publish.failed",
 	"publish.address_collided",
 	"github.unreachable",
+	"health.failed",
 	"guard.refused",
 	"media.uploaded",
 	"media.upload_failed",

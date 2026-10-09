@@ -180,93 +180,44 @@ scale heuristic, and switch the numbers to their compatibility meaning (patch = 
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
 `cairn-release-process-and-versioning` memory.
 
-### The pre-beta pass series and the two-release shape (organized 2026-08-01)
+### The pre-beta pass series, now the one-release path (organized 2026-08-01; rewritten 2026-10-09)
 
-**Superseded in part (2026-10-07).** The next release is the one release after docs stage 5, on the
-path in the Now tier's boundary-test entry. The engine pass before stage 2b reconciles this series'
-remaining phases and its two-release shape with that path, and rewrites this section to match.
+The 2026-08-01 series recommended two releases: release one carrying everything that impacts a
+current consumer site, then release two as `1.0.0-beta.1`. Geoff's 2026-10-07 rulings replace that
+shape. **One release follows docs stage 5, and it is a `0.x` minor, the old "release one".**
+`1.0.0-beta.1` cannot be that cut: beta waits for the new ASC site and ecxc by Geoff's 2026-08-26
+ruling ("Toward 1.0"), and no site migrates before the release, so the sites reach the release first
+and the beta follows their migrations. Engine passes land on `main` and never release. The path, with
+each pass in its slot, is the boundary-test entry in the Now tier. "Release one" elsewhere in this file
+means the one release.
 
-The Now and Next tiers' pre-beta entries execute as this series. The release shape is
-RECOMMENDED, not yet ratified: two releases, where release one carries everything that impacts a
-current consumer site and release two is `1.0.0-beta.1` itself. The alternative Geoff weighed
-(bundle everything into `beta.1`) costs the same number of breaking rounds, since the sites absorb
-release one through the ratified Waymark rebuilds and ASC retrofits once either way; two releases
-additionally give the frozen contract production miles before strangers see it (the "seams have
-held" checklist bullet needs runway), give the dress rehearsal and rebuild dogfood a published
-surface to run against, and land `beta.1` already stable. Flipping to single-beta moves only the
-release-one boundary; the passes are invariant.
+What the old series carried, as it stands:
 
-- **In flight:** both ASC seams passes have landed. Pass one shipped as `0.93.0`; pass two (the
-  `./cloudflare` subpath and the packaged D1 audit sink, additive) is done and holds unpublished.
-- **Phase C, settle the contract: done, holds unpublished.** C1 the seam-shape pass (the
-  `check-reference-signatures.mjs` `| undefined` fix, the env-genericity sweep, the function-color
-  and refusal-channel rulings, and the toolchain matrix); C2 the naming pass (a Fable sitting over
-  `api-surface.md` settled the rename set and the `locals` policy, then one execution pass landed
-  every rename in one diff, one `Consumers must:` list — the only genuinely breaking pass in the
-  series); **C2b**, cut out of C2 mid-execution under its pre-approved contingency split, converged
-  every content-action refusal onto `fail()` with a precise `ActionFailure<T>` (R10) and closed the
-  `requireAccess`/`createSectionAction` target-derivation asymmetry C2's post-mortem flagged. All
-  three land in the same unpublished window.
-- **Phase F, the core features:** F1 the history/revert design sitting; F2 the history view
-  pass; F3 the revert pass (the sitting may merge F2/F3); F4 the preview design sitting; F5 the
-  preview pass.
-- **RELEASE ONE cuts here**, the last substantial `0.x`: contract, renames, and the three core
-  features in one window. The standing pipeline consumes it (the Waymark rebuilds, ASC's
-  retrofit) — the one round of breaking changes. **Phase F runs before this cut and phase P after
-  it** (Geoff confirmed the order 2026-08-04, against a STATUS draft that had put P first), which
-  is what keeps P8's ambient-defaults remediation out of the release the consumer sites absorb.
-  One wrinkle the RC introduced: `0.94.0` now carries the contract and the renames ahead of this
-  cut so the migrations can happen, so what release one adds on top is the core features.
-- **Phase P, polish and docs (non-breaking; internal order flexible):** P1 mechanical hardening
-  (ci-parity, the `commitFiles` test, the surface machine artifact, the error-message sweep, and a
-  small showcase route exercising `createAdminAction` and its converged refusal paths end to end, since
-  the showcase exercises neither today and a kit-version drift in action-thrown redirect/error
-  rendering would go uncaught); P2
-  the zero-state pass; P3 viewport extremes; P4 sign-in touchpoints, with the keyboard/SR
-  walkthrough as the attended session at phase end plus a fixes rider; P5 the
-  `CairnMediaLibrary` split; ~~P6 front-door docs (cold-reader, diagnostic-pair)~~ absorbed by
-  Pass D's front-door task (`docs/README.md`, root `README.md`, `docs/why-cairn.md`; see
-  `docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`, ruling 5); ~~P7 the zero-credential
-  quickstart~~ absorbed by Pass D, the tool's chapter 1 plus `docs/admin/create-your-site.md`;
-  **P8 the ambient-defaults remediation**, the phase-P bucket of the
-  2026-08-03 audit, enumerated in
-  [its report](docs/internal/record/2026-08-03-ambient-defaults-audit.md) rather than restated here.
-  Thirteen items, all additive, ordered by consequence in the report: the undetected managed-robots
-  prepend, the silent post-handoff mail path, the absent DNS-authentication check, the missing
-  `Cache-Control` on every admin response, the unverified `prerender` flag, the 307/308
-  trailing-slash divergence across the family, and the stripped `charset` on cairn's one deliberate
-  public-output header, among others. **P9 the `Consumers must:` machine-readable contract** (Geoff,
-  2026-08-13): the changelog convention becomes a parseable shape before the beta cut, so the `cairn`
-  tool's cross-site upgrade verb can read it to drive per-site migrations instead of a human reading
-  98 entries. Today it is a helpful sentence enforced loosely for human readers, which is enough for
-  a reader and not enough for a parser. Scoped forward-only, with no backfill of the historical
-  entries, which is why it has to land before the beta cut rather than after. P8's effective-state
-  checks still overlap the now-absorbed P7's credential story; weigh it alongside the admin arm's
-  rebuild (stage 3) rather than as an open pair. The standing template track (cairn.pub voice, starter set, Topo with the
-  docs-effectiveness infra, the scaffolder with its agent brief, now carrying Cloudflare
-  provisioning in the same tool) runs parallel and feeds the rebuilds.
-- **The pre-RC block, ordered (Geoff, 2026-08-03).** C2b merged, and three items now sit between it
-  and the RC cut, all additive and all riding the same unpublished window:
-
-  1. ~~**The ambient-defaults audit.**~~ **RUN 2026-08-03**, report at
-     [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/record/2026-08-03-ambient-defaults-audit.md).
-     It does not gate the RC: one finding is recommended for this window (the engine's unconditional
-     two-year `includeSubDomains` admin HSTS, which overrides a zone owner's own HSTS decision), and
-     it is a judgment call rather than a forced hand. Everything else went to phase P or to the
-     operator.
-  2. **The auth seam** (ASC seam 1 as `createAuthChannel`): spec v3.1, eight-task plan, three
-     adversarial review rounds. **The factory pass shipped 2026-08-04** (`./auth-channel`, the D1
-     schema and store, request/confirm/logout, the rate limit, the docs arm); **pass 2, the
-     consumer proof (showcase fixture, scaffolder exclusion, e2e), is still open** and files as its
-     own Now-tier entry. Its window closes the session xcathletes runs Task 4, still open as of
-     2026-08-04.
-  3. **The AI-posture pass.** Consumes the audit, and lands before the migrations so each site adopts
-     a posture during the session that migrates it rather than earning a second visit.
-
-  Then the RC cut, the migrations, phase P, phase F. The AI-posture pass was briefly filed as P8 and
-  moved out for the adopt-during-migration reason. See Now for both remaining items.
-- Then the widened **go-public pass**, the **dress rehearsal**, and **RELEASE TWO:
-  `1.0.0-beta.1`**.
+- **Done.** Phase C (the contract and the renames) and phase F (the history and revert views, and
+  public preview) landed in the `0.9x` releases. So did the pre-RC block: the ambient-defaults audit
+  ran on 2026-08-03 (its report enumerates P8), the auth seam shipped as `createAuthChannel`, and the
+  AI-posture pass landed.
+- **Phase P, polish and docs: the open items, each named to a destination.** P6 and P7 were absorbed
+  by Pass D and need none.
+  - **The final engine batch:** P1 mechanical hardening (ci-parity, the `commitFiles` test, the
+    surface machine artifact, the error-message sweep, and a small showcase route exercising
+    `createAdminAction` and its converged refusal paths end to end); **P8 the ambient-defaults
+    remediation**, the phase-P bucket of the 2026-08-03 audit, enumerated in
+    [its report](docs/internal/record/2026-08-03-ambient-defaults-audit.md) rather than restated here,
+    thirteen additive items ordered by consequence in the report (its effective-state checks still
+    overlap the credential story the tool's chapter 1 absorbed, so weigh it alongside the admin arm's
+    rebuild at stage 3); **P9 the `Consumers must:` machine-readable contract** (Geoff, 2026-08-13),
+    which makes the changelog convention a parseable shape so the `cairn` tool's cross-site upgrade verb
+    can read it. It is scoped forward-only with no backfill of the historical entries, which is why it
+    has to land before the release rather than after; and the admin design items P2 the zero-state
+    pass, P3 the admin at the viewport extremes, and P4 the sign-in touchpoints with the
+    keyboard-and-screen-reader walkthrough (the release is now the forcing function the public beta
+    was). The editors arm's screenshots show the zero states and the sign-in screens, so stage 4's
+    close pulls forward whichever of these changes what they show.
+  - **After the release:** P5, the `CairnMediaLibrary` split. It changes no page, and it needs its own
+    designed pass against the `admin-visual` baseline and the e2e media suite.
+- **After the release and the site migrations:** the widened go-public pass, the dress rehearsal, and
+  `1.0.0-beta.1` itself, under the beta gate below.
 
 ### The beta gate — DECIDED (Geoff, 2026-07-02; step 10 is now mechanics)
 
@@ -309,13 +260,16 @@ The original decision framing, for the record:
   engine passes is not fixed: the most efficient path to complete, accurate docs, and to resolving
   the friction gathered on the way, governs it. Every docs-stage close, and every migration, applies
   one test to the open engine friction:
-  1. Fix before the next docs stage any item whose fix would change what a written or outlined page
-     tells the reader: a workaround, a caveat, or a step the page carries only because of the defect.
+  1. After ruling 1's product test (an item earns a place by improving the product; appearing in the
+     friction log earns it nothing; Geoff, 2026-10-07), fix before the next docs stage any item whose
+     fix would change what a written or outlined page tells the reader: a workaround, a caveat, or a
+     step the page carries only because of the defect.
   2. Fix promptly any item that blocks a page or a migration step.
   3. Batch every item that changes no page's content (UX polish, undocumented error copy, internal
-     comments) into whichever engine pass runs next. These sit in the Next tier's batched engine
-     friction entry, never in the friction log, whose header holds only live findings and whose
-     triage is complete-or-move.
+     comments) into the final engine batch, unless a stage close pulls an item forward. A batched item
+     that leaves a page caveat is tagged with that page, so the final batch revises the page in the
+     same pass. These sit in the Next tier's batched engine friction entry, never in the friction log,
+     whose header holds only live findings and whose triage is complete-or-move.
 
   The close reports the verdict to Geoff: whether an engine pass is warranted before the next stage,
   and its scope. The step executes in `cairn-pass`'s close (Documentation step). **Engine passes are
@@ -332,168 +286,93 @@ The original decision framing, for the record:
   and may add or drop a pass; this list is where each one sits today.
   1. Finish stage 2a's close: `docs/superpowers/plans/2026-10-07-2a-close-finish.md` (leak check,
      cadence rewrite, merge of PR #107). Not an engine pass.
-  2. **Engine pass before stage 2b** (the Now entry below): its listed fixes, the placement of the
-     "Using Claude Code with cairn" docs, and whichever "Docs tooling before
-     stage 2b" items ride with it (or run as their own dotfiles pass).
+  2. **Engine passes A and B before stage 2b.** Pass A landed on `main`, unreleased. Pass B (the
+     Now entry below) is next, and whichever "Docs tooling before stage 2b" items ride with it (or run
+     as their own dotfiles pass).
   3. Stage 2b: the 14 remaining extend pages. Its close runs the test.
-  4. Stage 3: the admin arm. Forecast: no engine pass after it.
-  5. **Engine pass before stage 4** (forecast): the editor screenshots, plus the batched items marked
+  4. **The Claude Code arm's small stage**, right after 2b (the Now entry below): its facts already
+     sit in the container, and the scaffold ships the guidance tree it documents. It registers the arm
+     first.
+  5. Stage 3: the admin arm. Forecast: no engine pass after it.
+  6. **Engine pass before stage 4** (forecast): the editor screenshots, plus the batched items marked
      "for the stage 4 boundary" in the Next tier's batched engine friction entry.
-  6. Stage 4: the editors arm. Stage 5: the front door. Forecast: no engine pass between them.
-  7. **The final engine batch:** every item still in the Next tier's batched engine friction and
-     reference-arm corrections entries, the held dependency majors whose tripwires have fired, and
-     the dependency sweep a release starts from.
-  8. **The one release** (`cairn-release`).
-  9. Site migrations, one site pass each, cairn.pub first among equals. Their friction takes the same
+  7. Stage 4: the editors arm. Stage 5: the front door. Forecast: no engine pass between them.
+  8. **The final engine batch:** every item still in the Next tier's batched engine friction and
+     reference-arm corrections entries, the held dependency majors whose tripwires have fired, Phase
+     P's open items (below), and the dependency sweep a release starts from.
+  9. **The one release** (`cairn-release`), a `0.x` minor.
+  10. Site migrations, one site pass each, cairn.pub first among equals. Their friction takes the same
      test, so a migration can still produce an engine fix after the release.
 
-- **Engine pass before stage 2b (the boundary test at stage 2a's close, 2026-10-07).** Next after
-  Geoff reads the five task 8 pages; a fresh brainstorm sizes it by the test above, so it may take
-  only part of this list. Each item names the extend page its fix changes (2b pages marked). Items
-  marked *decide* are design or charter questions for the brainstorm (read
-  `docs/internal/engine-rulings.md` and the charter's premise test first); the rest are defects.
-  Source detail for every item is the friction log at `b38ef6b3` (`git show
+- **Engine pass B before stage 2b (the boundary test at stage 2a's close, 2026-10-07; narrowed
+  2026-10-09).** Pass A landed on `main` unreleased
+  ([plan](docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)): the access map and role
+  vocabulary as one declaration every reader takes, the access and auth edges, the roles migration,
+  the live key check and fingerprint, the failed save that keeps the writing, the head guard on every
+  write to `main`, and nested images in where-used. Pass B is next
+  ([plan](docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md), spec
+  `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`, rulings beside it). Each item
+  names the extend page its fix changes (2b pages marked); pass B's close removes this entry. Source
+  detail for every item is the friction log at `b38ef6b3` (`git show
   b38ef6b3:docs/internal/docs-friction-log.md`).
-  - **Lead: the access map's two readers.** The engine's screens, write actions, and sidebar read
-    the adapter's `access` (`src/lib/content/compose.ts:41`,
-    `src/lib/sveltekit/content-routes-media-library.ts:67`); `requireAccess` and
-    `createSectionAction` read the map the hook attached (`src/lib/sveltekit/guard.ts:479`,
-    `section-action.ts:275`). Nothing checks they agree. The stock scaffold ships the split: it hands
-    the map to its hook handles only (`templates/waymark/src/hooks.server.ts:20,22`), so its
-    adapter's Signups sidebar entry (`templates/waymark/src/theme/cairn.config.ts:214`, resolved at
-    `content-routes-shell.ts:187`) shows to every editor while the route admits owners only. Fix: one
-    declaration both read, or an `auth.access-wiring-missing` condition beside
-    `auth.role-wiring-missing`. The comments that say the two cannot drift
-    (`src/lib/auth/access.ts:3-4`, `src/lib/index.ts:21-23`) and the reference snippets that import
-    `roles` from the adapter module (`docs/reference/core.md:1020`, `sveltekit.md:131,1046`, an
-    import cycle once the adapter carries the map) follow the fix. Read with ruling
-    `access-semantics-documented-divergence`, whose two postures stay. Pages: restrict, security
-    model, scaffolded site files, custom admin screen; 2b arrange-the-admin-sidebar.
-  - *Decide:* a `none`-capability role's own screen cannot use the access map (`canReach`,
-    `src/lib/auth/access.ts:157-159`), so the page hand-rolls a role check; and a deeper route key
-    turns a dynamic sibling route into a refusal for every session, owner included
-    (`access.ts:107-130`), unreported at composition. Pages: second sign-in group, restrict.
-  - **The scaffold omits `0001_roles.sql`** (`templates/waymark/migrations/` ships 0000, 0003, and
-    0004) while its `src/access.ts` invites roles, so a declared role's first roster add meets
-    `CHECK (role IN ('owner', 'editor'))` as an unhandled D1 error (`src/lib/auth/store.ts:263-273`).
-    Fix: ship the migration, and name it on the constraint failure as `store.ts:20-31` does for 0004.
-    Pages: restrict, second sign-in group, scaffolded site files.
-  - **`access_map_not_attached`'s documented cause is wrong, and the tutorial's bare
-    `devBackendHandle()` hits it.** The reference and the comments say "the guard never ran"
-    (`docs/reference/sveltekit.md:825-827`, `log-events.md:80`, `guard.ts:364-367`,
-    `section-action.ts:129-130`); it fires only under `devBackendHandle` without `access`
-    (`packages/cairn-cms-dev/src/handle.ts:64-75`), which
-    `docs/extend/add-cairn-to-a-sveltekit-app.md:532` calls, so every `createSectionAction` fails
-    there. Fix: the dev handle defaults the map as the guard does, and the rows and comments name the
-    real cause. Pages: debug your site, add cairn.
-  - **Dev and scaffold defects the pages work around.** `@glw907/cairn-cms-dev` ships raw `.ts`
-    (`packages/cairn-cms-dev/package.json:20-24`) that a consumer's `svelte-check` fails on
-    (`cloudflare:workers`, `node:sqlite`); the stale-manifest build error names a script a
-    hand-built site lacks (`src/lib/content/manifest.ts:376`, `npm run cairn:manifest`); no scaffold
-    script runs the recorded `wrangler types` command (`templates/waymark/worker-configuration.d.ts:2`;
-    fix: a `cf-typegen` script, Cloudflare's C3 convention, and a tutorial step); the dev flag read
-    misses `1 ` with a trailing space from `cmd.exe` (`src/lib/dev-flag.ts:31`); `/healthz` answers
-    200 when its check fails (`templates/waymark/src/routes/healthz/+server.ts:14-20`); `cairn-guidance
-    check` flags the scaffold's `source(none)` sheet (`src/lib/guidance/check.ts:21,84`) and reads a
-    fresh scaffold as stale because two writers stamp `VERSION` (`bake-template.mjs:213`,
-    `src/lib/guidance/install.ts:52,208`). Pages: add cairn, debug your site, second sign-in
-    group, scaffolded site files, rotate the key.
-  - *Decide (dev and scaffold):* the dev backend never reads the site's content (`seedContent` "has
-    no effect yet", `handle.ts:58-63`); the `__CAIRN_DEV_BUILD__` define is a plugin every site
-    hand-writes (`templates/waymark/vite.config.ts:19-28`); the signups demo ships in every scaffold.
-    Pages: add cairn, custom admin screen, scaffolded site files.
-  - **Admin behavior the pages describe.** No `admin/+error.svelte`, so an admin 403 renders the
-    root error page in public chrome (`templates/waymark/src/routes/+error.svelte`,
-    `guard.ts:442-446`; restrict); the edit page posts full-page, so a load that throws the same
-    GitHub error replaces the calm failure message with a bare 500 (`src/lib/admin/EditPage.svelte:199`,
-    `src/lib/sveltekit/cairn-admin.ts:199-200,236-251`; rotate the key).
-  - **Key rotation signals (rotate the key).** `github.app-unreachable`'s remediation names
-    `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` (`src/lib/diagnostics/conditions.ts:198`,
-    `templates/waymark/.dev.vars.example:7-8`), which no code reads. *Decide:* no signal proves GitHub
-    accepts a new key before the old one goes (`/healthz` makes no network call,
-    `src/lib/github/signing.ts:130-138`; a warm isolate caches a token for 55 minutes, `:105-121`;
-    the confirming publish needs a content edit, `EditPage.svelte:198`), so an opt-in live mint
-    check or a key fingerprint; and the setup command's key step can't take a regenerated `.pem`
-    (`packages/create-cairn-site/src/cloudflare/secret.mjs:25-28,43-46`), so the pages carry a
-    per-platform encode matrix.
-  - **Auth channel (second sign-in group).** A missing Turnstile secret logs the same
-    `invalid_input` as a blank token (`src/lib/cloudflare/turnstile.ts:92-104`).
-    *Decide:* `createChannelDb` has no in-repo consumer and is not assignable to `D1Database`
-    (`packages/cairn-cms-dev/src/channel-db.ts:26-29`), so the page's test casts; the admin toolkit
-    renders unstyled outside the shell (`CairnAdminShell.svelte:43`).
-  - *Decide (security model caveats):* the tidy and dictionary actions gate only with a `concept`
-    param (`content-routes-tidy.ts:124`, `content-routes-dictionary.ts:106`); the CSRF value never
-    rotates under `identity` (`src/lib/sveltekit/csrf.ts#issueCsrfToken`); admin security headers
-    miss the 303 to `/admin/login` (`guard.ts:355`) and every route outside `/admin`; the setup
-    command's bootstrap sign-in row has no nonce
-    (`packages/create-cairn-site/src/cloudflare/bootstrap.mjs:107-109`); `sanitizeSchema`'s callback
-    replaces the floor wholesale (`src/lib/render/sanitize-schema.ts:62`, against its comment at
-    `:22-24`); a roster miss under `identity` logs outside the `guard.refused` filter
-    (`guard.ts:332`); the owner brief names only the sign-in form as anonymous surface while every
-    `/admin/auth/*` path is public (`guard.ts:25-27`).
-  - *Decide (identity, replace magic links):* logout posts to a guarded path under `identity`
-    (`CairnAdminShell.svelte:1189`); `IdentityRefusal.reason` is a free string the guard reads for
-    log level, and `error` means both a throw and a returned reason (`guard.ts:117,290-321`; ruling
-    `identity-seam-access-verifier` keeps the verifier a recipe); no owner bootstrap under
-    `identity` (`auth-routes.ts:44,201-203`).
-  - *Decide (add cairn, custom admin screen):* `auth.branding` replaces the default whole
-    (`cairn-admin.ts:105-110`); one access predicate refuses through three channels with different
-    copy, audit verbs, and target defaults, and the CSRF refusal under `createSectionAction` is never
-    audited (`guard.ts:476-484`, `section-action.ts:216-220`, `admin-action.ts:214-215,306-311`);
-    whether a custom screen exports `prerender = false`.
-  - *Decide (architecture):* media delete and metadata commits are not head-guarded
-    (`content-routes-media-delete.ts:189-193`, `content-routes-media-metadata.ts:187-191`), and the
-    dictionary add takes a third concurrency path (`content-routes-dictionary.ts:133-148`).
-  - *Decide (theme your public site):* the chassis boundary leaks (the daisyUI `exclude` list in
-    `templates/waymark/src/chassis/tokens.css:18-22,57-72`, the date locale in `chassis/date.ts:4-17`,
-    a theme rename across three files, no boundary gate in the scaffold); five spacing keys shadow
-    Tailwind's container suffixes (`tokens.css:113-120`, a breaking rename); the preview frame carries
-    no `data-theme` (`src/lib/admin/preview-doc.ts:101`).
-  - *Decide (debug your site):* a throwing `behavior.validate()` fails open
-    (`src/lib/content/fieldset.ts:458-471`); `checkSiteFacts` returns `ok` silently when the adapter
-    throws (`src/lib/vite/internal.ts#checkSiteFacts`); `CAIRN_FIXED_TODAY` carries the engine prefix
-    though no engine code reads it, with no verified CI route; no promised local sink for records
-    under `vite dev` (`docs/reference/log.md:14-15`).
-  - **2b pages.** An image inside an `array` or `object` field is invisible to where-used, replace,
-    and safe-delete, so a delete can remove an asset in use (`src/lib/content/media-refs.ts:44-51`,
-    `media-rewrite.ts:158-171`; configure-media, a data-loss defect); the scaffold's feed ships
-    `::include` as literal text and `media:` images as root-relative URLs
-    (`templates/waymark/src/chassis/feed.ts:13-20`; build-the-public-routes); `cairn-media-seed`
-    ignores `assets.publicBase` (`src/lib/media-seed/assemble.ts:117-123`; configure-media); a
-    concept id that collides with an engine admin segment is accepted (`normalizeConcepts`;
-    define-an-adapter-and-schema); duplicate publish-action labels crash the edit page's keyed
-    `each` (`EditPage.svelte:1689`; act-on-newly-published-entries). *Decide:*
-    `FieldBehavior.itemLabel` is read nowhere (define-an-adapter-and-schema); the site-config path
-    rides `editor.nav.configPath` (DAD-1, `content-routes-settings.ts:124,198-199`; turn-on-tidy,
-    arrange-the-admin-sidebar); undeclared SEO keys drop silently (EXB-4,
-    `src/lib/delivery/seo-fields.ts:18,27`); `deriveHeroImage` reads `frontmatter.image` only
-    (EXB-5, `public-routes.ts:99`; ruling `audit-adapter-imagefield` keeps the `seo` marker, and the
-    leanest fix may drop the free key choice); `cairn-audit` exits 0 on advisories with no `--json`
-    report and no stable finding codes (`src/lib/audit/report.ts:49`; run-cairn-audit-on-your-site).
+  - **The signups demo leaves the scaffold (ruling 2).** It stays in `examples/showcase` as the worked
+    custom-admin-screen example, the bake excludes it, and `create-cairn-site` stops provisioning
+    `APP_DB`. Pages: add cairn, custom admin screen, restrict, scaffolded site files.
+  - **The dev backend reads the site's real content (ruling 5).** Saves stay in memory with a
+    persistent notice (fork 1). `seedContent` ("has no effect yet", `handle.ts:58-63`) goes. Pages:
+    add cairn, scaffolded site files.
+  - **Dev package and scaffold defects the pages work around.** `@glw907/cairn-cms-dev` ships raw
+    `.ts` (`packages/cairn-cms-dev/package.json:20-24`) that a consumer's `svelte-check` fails on
+    (B1); the stale-manifest build error names a script a hand-built site lacks
+    (`src/lib/content/manifest.ts:376`, B2); no scaffold script runs the recorded `wrangler types`
+    command (B3, a `cf-typegen` script); the `__CAIRN_DEV_BUILD__` define is a plugin every site
+    hand-writes (B7, the engine supplies it); `cairn-guidance check` flags the scaffold's
+    `source(none)` sheet and reads a fresh scaffold as stale (B6). Pages: add cairn, scaffolded site
+    files; `guidance.md`, `vite.md`, and `ambient.md` for B6 and B7.
+  - **The admin error page (A5).** No `admin/+error.svelte`, so an admin 403 renders the root error
+    page in public chrome. Pages: restrict, scaffolded site files.
+  - **Schema and composition.** Duplicate publish-action labels crash the edit page's keyed `each`
+    (A13); a concept id that collides with an engine admin segment is accepted (A14);
+    `FieldBehavior.itemLabel` is read nowhere (D4); undeclared SEO keys drop silently (D6); the
+    site-config path rides `editor.nav.configPath` (D5); `sanitizeSchema`'s callback replaces the
+    floor wholesale (C5, against its comment); `checkSiteFacts` returns `ok` silently when the
+    adapter throws (C13); `cairn-audit` exits 0 on advisories (D8a, `--fail-on advisory`). Pages:
+    security model (C5), debug your site (C13); the outlined 2b pages draft from corrected facts:
+    define-an-adapter-and-schema, act-on-newly-published-entries, build-the-public-routes,
+    turn-on-tidy, arrange-the-admin-sidebar, run-cairn-audit-on-your-site.
+  - **The scaffold's feed (D2).** It ships `::include` as literal text and `media:` images as
+    root-relative URLs (`templates/waymark/src/chassis/feed.ts:13-20`). Page: 2b
+    build-the-public-routes.
 
-  - **Agent guidance stays Claude Code's, and human pages never assume it (rulings, Geoff,
-    2026-10-07).** "You should not assume that an implementor is using Claude." "A page shouldn't
-    even assume that a reader IS using a coding agent." "If we want to address coding agents, we can
-    create separate docs specifically for that." Then, narrowing the engine side: "we don't have to
-    assume any other agent than claude code. It's the only one that either of us is familiar with."
-    So `cairn-guidance` and the scaffold keep shipping guidance in Claude Code's format only, with no
-    `AGENTS.md` or other-tool support planned. What the rulings require is already landed: human pages
-    never address agents, `scaffolded-site-files.md` names `CLAUDE.md` and `.claude/` in one labeled
-    line each, and `docs/reference/guidance.md` states the format. Nothing here needs an engine change.
-  - **A Claude Code section of the docs (Geoff, 2026-10-07: "Having a 'using Claude Code with cairn'
-    would certainly be a useful documentation topic."; "we _should_ assume in the general docs that a
-    user is not using a coding assistance, and then we can write a separate section for claude
-    code.").** A separate section for working on a cairn site with Claude Code, outside the developer
-    and editor tracks, which assume no coding assistant. Its first page is "Using Claude
-    Code with cairn": the guidance tree, the four skills and when each loads, the review agent, the
-    `Stop` hook snippet, and `cairn-guidance install` and `check` with their exit codes and the CI
-    step. It documents Claude Code only (the ruling above). Track and placement are settled in the
-    engine-pass brainstorm. The facts already sit in `docs/internal/facts/extend.md`:
-    `f:0ygumq` (the installed tree), `f:pmmtrm` (Claude Code format only), `f:7ozknm` and
-    `f:o7bkm0` (the four skills), `f:6ro1n9` (the root `CLAUDE.md`), `f:dy5cfj` (`VERSION`),
-    `f:4ax489` (`check` and `--strict`), `f:jd54ph` (the CI step), `f:4h9fz4` and `f:5ohm23`
-    (`install`'s behavior and exit code), and `f:4nccq6` (the `Stop` hook snippet). The page
-    `scaffolded-site-files.md` cited them in a "guidance tree" section it dropped under the rulings.
+- **Agent guidance stays Claude Code's, and human pages never assume it (rulings, Geoff,
+  2026-10-07).** "You should not assume that an implementor is using Claude." "A page shouldn't
+  even assume that a reader IS using a coding agent." "If we want to address coding agents, we can
+  create separate docs specifically for that." Then, narrowing the engine side: "we don't have to
+  assume any other agent than claude code. It's the only one that either of us is familiar with."
+  So `cairn-guidance` and the scaffold keep shipping guidance in Claude Code's format only, with no
+  `AGENTS.md` or other-tool support planned. What the rulings require is already landed: human pages
+  never address agents, `scaffolded-site-files.md` names `CLAUDE.md` and `.claude/` in one labeled
+  line each, and `docs/reference/guidance.md` states the format. Nothing here needs an engine change.
+
+- **The Claude Code arm: a small docs stage right after 2b (Geoff, 2026-10-07: "Having a 'using
+  Claude Code with cairn' would certainly be a useful documentation topic."; "we _should_ assume in
+  the general docs that a user is not using a coding assistance, and then we can write a separate
+  section for claude code."; placed 2026-10-09).** A fifth arm, `docs/claude-code/`, for working on
+  a cairn site with Claude Code, outside the developer and editor tracks, which assume no coding
+  assistant. Its first page is "Using Claude Code with cairn": the guidance tree, the four skills and
+  when each loads, the review agent, the `Stop` hook snippet, and `cairn-guidance install` and `check`
+  with their exit codes and the CI step. It documents Claude Code only (the ruling above). No arm
+  setup belongs in an engine pass: an arm the gates have never seen reads as `absent`
+  (`scripts/checks/arm-state.mjs`), so the stage's first task registers it (`ARM_NAMES`, `ARM_DIRS`, the
+  arm-index, package-files, snippets, symbols, visuals, leaks, and links checks, `package.json`
+  `files`, and the register's track entry) where pages exist to test it against. Pass B's B6 fixes
+  land first, so the page can document `cairn-guidance check` without a false-positive caveat. The
+  facts already sit in `docs/internal/facts/extend.md`: `f:0ygumq` (the installed tree), `f:pmmtrm`
+  (Claude Code format only), `f:7ozknm` and `f:o7bkm0` (the four skills), `f:6ro1n9` (the root
+  `CLAUDE.md`), `f:dy5cfj` (`VERSION`), `f:4ax489` (`check` and `--strict`), `f:jd54ph` (the CI step),
+  `f:4h9fz4` and `f:5ohm23` (`install`'s behavior and exit code), and `f:4nccq6` (the `Stop` hook
+  snippet). The page `scaffolded-site-files.md` cited them in a "guidance tree" section it dropped
+  under the rulings.
 
 - **Docs tooling before stage 2b (stage 2a's close, 2026-10-07).** The page chain and the docs gate
   cost stage 2a rounds in these places; fix them before 2b's run. Lands in `~/.dotfiles` (the chain,
@@ -1123,9 +1002,39 @@ the named human gates only):**
 ## Next
 
 - **Batched engine friction (the boundary test's third class; stage 2a's close, 2026-10-07).** Items
-  whose fix changes no extend page's content. Each rides whichever engine pass runs next, and each
-  docs-stage close re-tests them, since a later stage's page can move one into the first class.
-  Source detail is the friction log at `b38ef6b3`.
+  whose fix changes no extend page's content. Each rides the final engine batch unless a stage close
+  pulls it forward, and each docs-stage close re-tests them, since a later stage's page can move one
+  into the first class. A row that leaves a page caveat names the page, so the final batch revises it
+  in the same pass. Source detail is the friction log at `b38ef6b3`.
+  - Batched by the engine pass before stage 2b (2026-10-09), each tagged with the page that carries its
+    caveat meanwhile:
+    - B11b, the setup command's key step takes no `.pem` input, so a regenerated key can't be fed to
+      it (`packages/create-cairn-site/src/cloudflare/secret.mjs:25-28`). Rotation is rare. Page:
+      rotate-the-github-app-key, which carries one Node encode command meanwhile.
+    - C6, a roster miss under `identity` logs `auth.identity.unknown` outside the `guard.refused`
+      filter (`guard.ts:332`). It is deliberate. Pages: security-model, and `log-events.md`, whose
+      `guard.refused` row takes a sentence.
+    - C8, an identity site's logout posts to a guarded path (`CairnAdminShell.svelte:1189`). It is UX
+      polish, since the gate's own logout works. Page: replace-magic-links-with-cloudflare-access.
+    - C9, `IdentityRefusal.reason` is a free string the guard reads for its log level
+      (`guard.ts:117,290-321`). Name the level words. Pages: replace-magic-links-with-cloudflare-access,
+      and `sveltekit.md`.
+    - D3, `cairn-media-seed` ignores `assets.publicBase` (`src/lib/media-seed/assemble.ts:117-123`).
+      The relocated media route is rare. Pages: `cli-cairn-media-seed.md`, theme-your-public-site.
+    - D7, `deriveHeroImage` reads `frontmatter.image` only (`public-routes.ts:99`). Honor the `seo`
+      marker per `audit-adapter-imagefield` by threading the field name; the leanest fix may drop the
+      free key choice. Page: 2b build-the-public-routes.
+    - D8b, `cairn-audit` has no `--json` report and no stable finding codes
+      (`src/lib/audit/report.ts:49`). The report shape becomes a contract, so design it once. Page: 2b
+      run-cairn-audit-on-your-site.
+    - D9, the chassis boundary leaks: the daisyUI `exclude` list in
+      `templates/waymark/src/chassis/tokens.css:18-22,57-72`, the date locale in `chassis/date.ts:4-17`,
+      a theme rename across three files, and no boundary gate in the scaffold. It is theme-port work on
+      the template. Page: theme-your-public-site.
+    - D10, five spacing keys shadow Tailwind's container suffixes (`tokens.css:113-120`). The rename
+      breaks a theme, so it waits for the final batch. Page: theme-your-public-site.
+    - D11, the preview frame carries no `data-theme` (`src/lib/admin/preview-doc.ts:101`). A new
+      preview option, editor proofing polish. Page: theme-your-public-site.
   - Comments and examples: `src/lib/sveltekit/health.ts:1,10` and `src/lib/github/signing.ts:126`
     name `GET /admin/healthz`, which no engine view serves; `section-action.ts:149` and
     `auth-channel/factory.ts:538` say an uninferred `Env` collapses to `{}` (it is `unknown`);
@@ -1200,9 +1109,12 @@ the named human gates only):**
 - **Docs content the extend rebuild owes (stage 2a's close, 2026-10-07).** Facts and sentences the
   2a pages closed without. Trigger: stage 2b reopens the extend arm, or a pass edits the page. On
   `add-a-custom-admin-screen`: a site-built admin remote function resolves its own session (Kit 3's
-  `/_app/remote/...` paths sit outside `/admin`); facts for the `ExpandableRow` `expanded` and
-  `onToggle` contract, the detail panel's pending and failed states, the `admin-toolkit` import
-  subpath, and whether the site sheet compiles bracketed utilities. On `security-model`: the auth
+  `/_app/remote/...` paths sit outside `/admin`); a custom screen needs no `prerender = false`, since
+  the scaffold sets `prerender = true` per route under `(site)` only
+  (`templates/waymark/src/routes/(site)/+page.server.ts:7`) and an `/admin` screen is dynamic by
+  default (the engine pass before stage 2b declined the engine change); facts for the `ExpandableRow`
+  `expanded` and `onToggle` contract, the detail panel's pending and failed states, the
+  `admin-toolkit` import subpath, and whether the site sheet compiles bracketed utilities. On `security-model`: the auth
   channel's resend cooldown as a residual risk (restores `relink.json` index 59); a fact for the
   channel's purpose; the `build()` facts `f:htxey1` and `f:tg9e0z` in its inputs; where the floor's
   history lives. On `replace-magic-links-with-cloudflare-access`: vendor facts for Access's logout
@@ -1210,12 +1122,13 @@ the named human gates only):**
   `theme-names.ts`, `src/lib/log.ts`, and `PUBLIC_ORIGIN`; `f:3m0oxs` gains the token deletion and
   `f:jd54ph` the default exit code as its cause. On `add-a-second-sign-in-group`: facts for the
   `TURNSTILE_SECRET` name, the `unavailable` outcome, `insecureTestChallenge`, and the blank-secret
-  `invalid_input`. On `rotate-the-github-app-key`: isolate turnover at a version deploy, which bounds
+  `missing_secret` reason. On `rotate-the-github-app-key`: isolate turnover at a version deploy, which bounds
   the 55-minute wait. On `theme-your-public-site`: the heading-case home and the daisyUI block's
   layer. On `add-cairn-to-a-sveltekit-app`: one fact for when Workers Paid applies (`f:t4pwpw` and
   `f:75hawi` disagree). On `debug-your-site`: rows for the recoveries sibling pages route to it
   (including an owner's 403 on an unmapped custom route); a scaffolded site's two redeploy paths as
-  one linkable section.
+  one linkable section; the fixed-date recipe names a site-owned variable, never `CAIRN_FIXED_TODAY`,
+  which no engine code reads.
 
 - **`cairn-audit` and the public theme contract, from the cairn-themes Survey (2026-10-07).** The
   audit has no recipe for a standalone theme package (a contrast-only entry sheet that imports

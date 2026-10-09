@@ -102,9 +102,9 @@ single-source on cairn.pub with every other page: contracts under `docs/referenc
 how-tos under `docs/admin/`, while `tool/docs/` keeps only ADRs and design inputs, since a
 second docs home drifts.
 
-## Threat position (Geoff, 2026-09-30)
+## Threat position (Geoff, 2026-09-30; the sign-in flow named, 2026-10-08)
 
-cairn assumes the likeliest attacker holds an editor's account, through a stolen or phished sign-in link. An anonymous visitor reaches nothing behind `/admin` except the sign-in form.
+cairn assumes the likeliest attacker holds an editor's account, through a stolen or phished sign-in link. An anonymous visitor reaches nothing behind `/admin` except the two pages of the sign-in flow: the form and the confirm page.
 
 ## The failure mode this resists
 

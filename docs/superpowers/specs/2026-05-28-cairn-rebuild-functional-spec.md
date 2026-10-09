@@ -222,7 +222,9 @@ prepared statements and ships hand-written migration SQL that each site applies 
 `editor`. When it matches, the handler deletes any prior tokens for that email, generates a random token,
 stores its SHA-256 with a 10-minute `expires_at`, and emails a confirmation link through Cloudflare Email
 Sending (`env.EMAIL.send`). The response is identical whether or not the email was on the allowlist, so
-the endpoint does not leak membership.
+the endpoint does not leak membership. (Amended 2026-10-09: the request is the sign-in page's own `?/request`
+form action at `/admin/login`, and no route at `/admin/auth/request` is public. A route a site mounts there
+meets the guard like any other `/admin` path.)
 
 **Confirm.** The link points at `GET /admin/auth/confirm?token=...`, which renders a page with a single
 "Confirm sign-in" button and consumes nothing. The page sets `Referrer-Policy: strict-origin` and carries a
@@ -236,7 +238,8 @@ construction on strongly-consistent D1. The handler then creates a session row, 
 (`httpOnly`, `Secure`, `SameSite=Lax`), and redirects to `/admin`. An email scanner that GETs the link
 consumes nothing, because only the POST verifies.
 
-**Guard.** `hooks.server.ts` guards `/admin/**`, excluding the login and auth endpoints. It reads the
+**Guard.** `hooks.server.ts` guards `/admin/**`, excluding the login and auth endpoints (amended 2026-10-09: it excludes exactly two
+paths, `/admin/login` and `/admin/auth/confirm`, so every other path under `/admin/auth/` is guarded). It reads the
 session cookie, looks up the session row, and resolves the editor row by the session's email. A valid
 session populates `locals.editor` with the email, display name, and role. The role is read from the
 editor row on every request, so a role change or removal takes effect immediately. A missing or expired

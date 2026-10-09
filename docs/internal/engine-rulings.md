@@ -1355,6 +1355,11 @@ when the remediation pass lands.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 90.
 - **Any-site case:** A site declares the map once and imports it twice, into createAuthGuard and the adapter, so the shared module's export needs annotating; the keys are a composition-validated vocabulary, not free strings.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
+- **Annotation (2026-10-09, engine pass before stage 2b, pass A):** the keep stands, and the any-site case narrows: a site now declares the
+  map once and imports it once, into the adapter's `access` member, because `createAuthGuard` reads
+  the map from `runtime.access` (`access-map-one-declaration`). A site that declares the map in its own
+  module still annotates the export with `AccessMap`, and the keys remain a composition-validated
+  vocabulary.
 
 ## audit-adapter-rolesdeclaration: `RolesDeclaration`  (keep, 2026-08-26, any-site audit)
 
@@ -1363,6 +1368,11 @@ when the remediation pass lands.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 91.
 - **Any-site case:** Same declare-once-import-twice shape as AccessMap, and it is defineAccess's first parameter, so a site's access module must name it to accept the vocabulary it validates against.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
+- **Annotation (2026-10-09, engine pass before stage 2b, pass A):** the keep stands, and the any-site case narrows the same way: the
+  vocabulary is declared once and imported once, into the adapter's `roles` member, because the guard
+  and the per-route editor routes read it from `runtime.roles` (`access-map-one-declaration`).
+  `defineAccess`'s first parameter still takes a `RolesDeclaration`, so a site's access module still
+  names it to accept the vocabulary it validates against.
 
 ## audit-adapter-resolvecapability: `resolveCapability`  (keep, 2026-08-26, any-site audit)
 
@@ -1379,6 +1389,15 @@ when the remediation pass lands.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 93.
 - **Any-site case:** The single authority every enforcement and visibility point reads, so a site's guard and the engine's sidebar agree. Its owner and editors carve-outs and deepest-prefix href matching are engine policy.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
+- **Annotation (2026-10-09, engine pass before stage 2b, pass A):** the keep stands, and the first sentence of the any-site case is now true
+  by construction. The guard, the dev backend's handle, the engine's screens, the sidebar, and the
+  per-route editor routes all read one map from `runtime.access`, so a site's guard and the sidebar
+  cannot be wired to different maps (`access-map-one-declaration`). The carve-outs gain a third beside
+  the owner and `editors` ones: a `none`-capability session is admitted to a route path whose deepest
+  matching rule names its role explicitly, because `RoleDeclaration.home` and a `navLayout` entry's
+  `roles` admit that role to a screen the map would otherwise refuse. A screen id, an href no rule
+  matches, and `editors` stay refused for it. `requireAccess`, `createSectionAction`, and
+  `createAdminAction`'s `access` option inherit the admit through `canReach`.
 
 ## audit-adapter-defineaccess: `defineAccess`  (keep, 2026-08-26, any-site audit)
 
@@ -2234,6 +2253,9 @@ when the remediation pass lands.
 - **Annotation (conventions pass, Task 2):** renamed `EditorRoutesOptions` → `EditorRoutesConfig`
   (`convention-parameter-bags`); the `opts` parameter renames to `config` on `createEditorRoutes`
   the same way. The shape and behavior are unchanged.
+- **Annotation (2026-10-09, engine pass before stage 2b, pass A):** the keep stands; the `roles` member is removed. A site that hand-mounts
+  the roster screen passes `{ runtime }`, and the routes read the vocabulary from `runtime.roles`, so
+  nothing else tells the screen the vocabulary and nothing needs to (`access-map-one-declaration`).
 
 ## audit-sveltekit-createeditorroutes: `createEditorRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -2714,6 +2736,11 @@ when the remediation pass lands.
 - **Any-site case:** Any site declaring roles or an access map writes this object in hooks.server.ts; each member is a decision only the site can make.
 - **Note (polish-C, Task 4):** renamed to `AuthGuardConfig`, per `convention-parameter-bags`'s
   factory-versus-per-call clause. Verdict unchanged.
+- **Annotation (2026-10-09, engine pass before stage 2b, pass A):** the keep stands; the object's content changes. A site now writes
+  `createAuthGuard({ runtime })` in `hooks.server.ts`, with `runtime` required and no default, and
+  declares `roles` and `access` once on the adapter. `identity` and `includeSubDomains` remain the
+  members only the site can decide. The `roles` and `access` options are gone
+  (`access-map-one-declaration`).
 
 ## audit-sveltekit-requireowner: `requireOwner`  (keep, 2026-08-26, any-site audit)
 
@@ -4850,6 +4877,12 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-log-vocabulary.md](record/2026-08-26-any-site-audit/rank-log-vocabulary.md), rank 60.
 - **Any-site case:** An editor reports the pending-entries count reading zero when drafts exist. Three best-effort reads degrade rather than fail (scope: shell, help, publish_advisories), so without this record the screen is simply, quietly wrong. Listed in docs/admin/troubleshooting.md.
+- **Annotation (2026-10-09, engine pass before stage 2b, pass A):** the keep stands, and the event gains a fourth `scope`. A failed
+  `/healthz?live=1` installation-token mint logs `github.unreachable` with `scope: 'health'` and a
+  `reason` naming the class: `key_refused` (401), `installation_not_found` (404),
+  `installation_suspended` (403), or `unreachable` (any other status, a network failure, or a
+  timeout). The `health` scope is a check verdict beside the three degrading reads, so it carries
+  `reason` and never `error`, and its record carries no token or key byte.
 
 ## audit-log-media-delivery-failed: `media.delivery_failed`  (keep, 2026-08-26, any-site audit)
 
@@ -5865,6 +5898,20 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Verified:** `src/tests/unit/access-composition.test.ts` (the warning fires naming every
   concept and fixed screen a partial map leaves unmapped, stays silent against an exhaustive map,
   and an href key never counts toward coverage).
+- **Annotation (2026-10-09, engine pass before stage 2b, pass A):** the postures stand; two lines above are amended.
+  **Shape (the startup warning, Step 3), amended:** `validateAccessComposition` now logs
+  `config.access_unmapped` only when the map declares at least one screen-id key and leaves another
+  declared concept id or fixed engine screen without a rule. An href key still never counts toward
+  coverage, and a map of href keys alone, such as `{ '/admin/signups': ['owner'] }`, declares nothing
+  about the engine's screens, so it is silent. The change was forced by `access-map-one-declaration`:
+  once the adapter carries every site's map, a route-only map would otherwise warn at every
+  composition for a gap its author never claimed. **Verified, amended:** the line above asserts that
+  an href key "never counts toward coverage" for a warning that then fired on any map. The test is now
+  split in `src/tests/unit/access-composition.test.ts`: an href-only map stays silent, and an href key
+  does not count toward coverage once a screen key makes the map partial. The helpers' postures are
+  unchanged, with one carve-out recorded in `audit-adapter-canreach`: `canReach` admits a
+  `none`-capability session to a route path whose matched rule names its role. This pass changed who
+  supplies the map, never how each helper reads it.
 
 ## exhaustiveness-mechanism: type-level exhaustiveness over FieldDescriptor's five dispatchers  (accept, 2026-09-04, internals-C pass)
 
@@ -6473,6 +6520,13 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `src/lib/github/credentials.ts:20` still raises it at Publish time, the substitute this entry
   names.
 - **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
+- **Annotation (2026-10-09, engine pass before stage 2b, pass A):** the named gap closes. A never-published site now has a signal before its
+  first Publish: `/healthz?live=1` mints one installation token from the deployed key and reports
+  whether GitHub accepts it as `checks.githubAppToken`, and a plain `/healthz` reports the key's
+  `SHA256:` fingerprint with no network call. The doctor stays out of the check, since neither read
+  needs a file on disk, and `github.app-unreachable` is still raised at Publish time as this entry
+  records. The reopen condition is unchanged in form, but a first-publish surprise now has a documented
+  pre-publish probe.
 
 ## doctor-drop-config-tidy-key: `config.tidy-key` check dropped, not ported, from `cairn doctor`  (retire, 2026-09-21, doctor-retirement spec)
 
@@ -6555,3 +6609,95 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Verdict:** accept. The defaults are the value half of a contract the engine already owns (the classes it emits into public markup and the tokens those classes and the chassis read). All five sites' copied defaults froze and missed keys added since, a drift an export prevents and a copy cannot.
 - **Reopens on:** evidence that sites diverge from the engine defaults more often than they track them, or a key in the stylesheet that no engine or chassis file reads.
 - **Record:** [theme identity pass B spec](../superpowers/specs/2026-09-27-theme-identity-pass-b-design.md) and [its review fold](../superpowers/research/2026-09-27-theme-pass-b-fold.md), sixth fold, W3.
+
+## access-map-one-declaration: the adapter's `roles` and `access` are the one declaration every reader takes  (accept, 2026-10-09, engine pass before stage 2b, pass A)
+
+- **Verdict:** accept. `createAuthGuard`, `devBackendHandle`, and `createEditorRoutes` take one bag
+  with a required `runtime` and no default, and read `runtime.roles` and `runtime.access`; their
+  separate `roles` and `access` options are removed. The access map had two readers that nothing made
+  agree: the engine's screens, write actions, and sidebar read the adapter, while `requireAccess`,
+  `createSectionAction`, and `createAdminAction`'s `access` option read what the guard attached from its
+  own option, so a scaffold that wired only the hooks left every engine screen open with no error. The
+  roles had the same shape, and the doctor's `auth.role-wiring` heuristic existed only to catch it. A
+  wiring condition would detect the split after the fact and keep two wiring points; reading the
+  composed runtime removes the bug class. The evidence: `read-from-the-source-rule` (a fact with one
+  source is read from that source), `audit-adapter-canreach` (the single authority, true only when
+  every reader agrees), `convention-parameter-bags` as amended 2026-09-08 (`runtime` is a required
+  member of the bag where a factory needs one, with one parameter and no default), and the import
+  cycle the old three reference snippets carried, which the change removes. `createAuthRoutes` reads
+  neither roles nor access and is unchanged. The cost is that `hooks.server.ts` imports the site's
+  runtime module, so every dynamic route evaluates composition once per isolate and a composition
+  throw fails them; the build is the safety net, because the prerender imports the hooks.
+- **Reopens on:** closed. Executed by pass A, Task 1. It reopens on a recorded outage or cold-start
+  cost where the runtime import or a composition throw reached a dynamic route the guard does not
+  gate, or on a site that must mount the guard before its adapter can be evaluated.
+- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md),
+  "The lead: one access and role declaration", and [pass A's plan](../superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md), Task 1.
+- **Verified:** `src/tests/integration/one-map-five-readers.test.ts` runs one fixture adapter through
+  the guard and the five readers, and `src/tests/unit/runtime-required.test.ts` holds the four
+  `@ts-expect-error` calls. A scratch build whose adapter throws at composition failed `vite build`
+  through the hooks import.
+
+## admin-toolkit-shell-only: the admin toolkit renders only inside the admin shell  (decline, 2026-10-09, engine pass before stage 2b, pass A)
+
+- **Verdict:** decline. The toolkit's components depend on `cairn-admin.css` and the theme wrapper
+  the shell loads (`CairnAdminShell.svelte:43`). A member area or any other surface outside `/admin`
+  is the site's domain under the charter, styled by the site. Shipping the admin sheet for use
+  outside `/admin` would make the admin's internal CSS public surface. The reference states the
+  toolkit is shell-only.
+- **Reopens on:** a second site building a non-admin surface from the toolkit by hand.
+- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md),
+  "Declined, with proposed ledger entries" (A9), and [`admin-toolkit.md`](../reference/admin-toolkit.md).
+
+## refusal-channels-per-call-site: the three refusal channels match their call sites  (decline, 2026-10-09, engine pass before stage 2b, pass A)
+
+- **Verdict:** decline. `requireAccess` throws `error(403)` from a load, `createSectionAction`
+  returns `fail(403)` to its form, and `createAdminAction` audits and throws. Each matches its
+  SvelteKit call site, and `access-semantics-documented-divergence` already keeps the two postures.
+  The inner CSRF check under the action wrappers is defense in depth behind the guard's, and it runs
+  before an editor exists to audit. The reference's "Refusal channels" section already documents the
+  three.
+- **Reopens on:** a site needing a uniform audit trail across the three.
+- **Record:** the pre-beta C1 pass ([plan](../superpowers/plans/2026-08-01-pre-beta-c1-seam-shape.md),
+  Task 5), and [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md) (A11).
+
+## csrf-no-rotation-under-identity: no CSRF rotation runs under `identity`  (decline, 2026-10-09, engine pass before stage 2b, pass A)
+
+- **Verdict:** decline. Under `identity` no cairn sign-in occurs, so the login-moment rotation never
+  runs, and a gate-side identity change is invisible to cairn. A cairn logout still clears the value.
+  The value is a per-browser CSRF token, `HttpOnly`, `SameSite=Lax`, `__Host-` on https, and not a
+  credential.
+- **Reopens on:** a gate that switches identities within one browser session in production.
+- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md)
+  (C2), and `docs/extend/security-model.md`, which states the logout behavior.
+
+## admin-headers-scope: the 303 to the login and public routes carry no admin headers  (decline, 2026-10-09, engine pass before stage 2b, pass A)
+
+- **Verdict:** decline. The 303 to `/admin/login` carries an empty body, and the guard deliberately
+  sends no HSTS on it (`AuthGuardConfig.includeSubDomains`'s doc in `src/lib/sveltekit/guard.ts`). Public routes are the site's output under the charter, so
+  the guard sets no security headers on them. The reference states both.
+- **Reopens on:** a header-scanner finding on the redirect with a real consequence.
+- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md)
+  (C3), and [`sveltekit.md`](../reference/sveltekit.md#createauthguard).
+
+## dev-flag-strict-read: `isDevBackendFlagSet` accepts exactly `'1'` or `true`  (decline, 2026-10-09, engine pass before stage 2b, pass A)
+
+- **Verdict:** decline. `isDevBackendFlagSet` accepts only `'1'` or the boolean `true`
+  (`isDevBackendFlagSet` in `src/lib/dev-flag.ts`), because it is also the production tripwire
+  (`dev-backend-flag-refusal`), and a wider rule turns a typo into an outage. The scaffold's
+  `npm run dev` sets the value through `spawn`, so the `cmd.exe` trailing space cannot reach it. The
+  fact that states the Windows form is corrected: `f:e8dr5r` reads `set "NAME=1" &&`, with the quotes
+  that keep the space out of the value, and no fact states the unquoted form.
+- **Reopens on:** a scaffold path that delivers the flag through a shell.
+- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md)
+  (B4).
+
+## token-cache-no-401-eviction: a 401 does not evict the shared installation-token cache  (decline, 2026-10-09, engine pass before stage 2b, pass A)
+
+- **Verdict:** decline. Evicting the shared token cache on a 401 would make a rotation self-heal in
+  warm isolates. The key fingerprint on `/healthz` and the live check at `/healthz?live=1` give a
+  rotation a verifiable sequence (deploy, read the fingerprint until it equals the new key's, run the
+  live check, delete the old key), so eviction answers no remaining defect.
+- **Reopens on:** a recorded publish failure from a cached token after a completed rotation.
+- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md),
+  "Ruling 3: the opt-in live key check" (B10).

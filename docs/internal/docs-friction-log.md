@@ -49,6 +49,18 @@ clearings.
 
 New findings start below this line, one per finding, with its perspective and a short note.
 
+- **`tooling`.** A fresh pass worktree fails the full gate on setup alone: `check-public-skill.test.ts`
+  needs `npx svelte-kit sync` in `examples/showcase` (`$app/tsconfig` not found), and the
+  `create-cairn-site` resume tests need the template baked, which `.github/workflows/test.yml`
+  does after `npm run package`. A `setup-worktree` script (or a gate-tier prep step) would carry
+  CI's preparation. Found by the conductor at pass A's Task 0 (engine pass before stage 2b),
+  2026-10-08.
+- **`tooling`.** The local full gate goes red on 20 `site-visual.spec.ts` tests (home and archive
+  page 2, five widths, two schemes): the CI-canonical baselines `durable-gotchas.md` names. Pass A
+  excluded them with `--grep-invert "site home|archive page 2"`, by hand in its plan. A local
+  variant of the `full` tier in `gate-tier.mjs` would make that standing. Found by the conductor at
+  pass A's Task 0, 2026-10-08.
+
 Draft docs stage 2a's close (2026-10-07, the 2a unattended run's R7) triaged the whole log and
 found 187 open entries, verified against the tree at `b38ef6b3` (each group's cited lines read or
 grepped there; the entries filed on 2026-10-07 were verified at filing the same day), after reconciling every `frictionFiled` entry in the R4, R5, and R6

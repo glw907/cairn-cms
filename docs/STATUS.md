@@ -28,8 +28,9 @@ The spec and both plans are reviewed, folded, and verified: pass A
 [`superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md`](superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)
 (11.1M), then pass B (`...-pre-2b-b.md`). The three forks are ruled (forks 1 and 2 take the
 recommendations, and pass B's ceiling is 14.0M), and Geoff approved the spec on 2026-10-08. Pass A
-is paused inside Task 0 on worktree `.claude/worktrees/engine-pre-2b-a` (branch `engine-pre-2b-a`);
-the Task 0 entry in the plan's Ledger, on that branch, carries the state and the next step.
+is mid-S1 on worktree `.claude/worktrees/engine-pre-2b-a` (branch `engine-pre-2b-a`, draft PR #108):
+Tasks 1 and 2 are accepted, and Task 3 relaunches on the new gate machinery. The plan's Ledger on that
+branch ("S1 checkpoint") carries the state, the owed filings, and the next step.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
@@ -42,22 +43,27 @@ the Task 0 entry in the plan's Ledger, on that branch, carries the state and the
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
 
-### Resume prompt (engine pass before stage 2b)
+### Resume prompt (engine pass before stage 2b, pass A from S1's Task 3)
 
-> **Goal.** Read the engine-pass spec, settle Geoff's rulings, and execute the plan for the engine
-> pass before draft docs stage 2b.
+> **Goal.** Finish pass A of the engine pass before stage 2b (access, auth, and the commit path),
+> then run pass B.
 >
-> **Scope.** In: the engine-pass spec and its plan, pass A (access, auth, and the commit path) then
-> pass B (scaffold, dev, and schema). Out: stage 2b's pages, any release or tag, any site migration.
+> **Scope.** In: pass A's Tasks 3 through 12 and its close, on `engine-pre-2b-a`; then pass B. Out:
+> stage 2b's pages, any release or tag, any site migration.
 >
-> **Settled:** the spec's rulings file; `ROADMAP.md`'s 2026-10-07 boundary-test rulings (one release
-> after stage 5; engine passes never release; no site migrates first); Geoff's 2026-10-08 fork
-> rulings: fork 1 in-memory dev saves with a persistent notice, fork 2 anonymous `/healthz?live=1`
-> yes, fork 3 pass B ceiling 14.0M.
->
-> **Still open:** nothing; Geoff approved the spec on 2026-10-08 ("Spec is good.").
+> **Settled (do not re-brainstorm):** the spec and its rulings file (spec approved 2026-10-08); the
+> fork rulings (fork 1 in-memory dev saves with a notice, fork 2 anonymous `/healthz?live=1` yes,
+> fork 3 pass B ceiling 14.0M); Geoff's 2026-10-08 infra rulings: the per-task gate is the change's
+> blast radius with the full gate at boundaries and before merge, clock time is an efficiency target,
+> gate receipts and validated reduced rounds in the runners, CI shadowing by pushing after each
+> accepted task; and the friction-log restructure folded into pass A's close step 8.
 >
 > **Approach.** Fresh `claude --model claude-opus-5-5` session at medium effort from
-> `~/Projects/cairn-cms`; invoke `cairn-pass`, read the spec, rulings, and pass A's plan, then resume
-> pass A from the plan's Ledger on the `engine-pre-2b-a` branch (Task 0: baseline, draft PR, guards, then S1). Keep `tool/internal/{spine/conditions,doctor/site-config-path}.json` and
-> `.cairn/site-facts.json`.
+> `~/Projects/cairn-cms`. Invoke `cairn-pass`, then read pass A's plan on the `engine-pre-2b-a` branch,
+> including its amended "Per-task gate" section and the "S1 checkpoint" Ledger entry. First, file
+> the owed S1 items from `docs/superpowers/research/2026-10-08-pass-a-s1-reports.json` (verify, then
+> file on `main`). Then relaunch Task 3 alone on `pass-execute` with its own `gate` (E plus the
+> sign-in specs, with `export E2E_PORT=4392`) and a pinned `gateTier`, then the S1 boundary, then S2.
+> Arm the guards and the `/loop` fallback at each launch. The worktree already holds CI's preparation
+> steps; the local full gate excludes the 20 known site-visual drift tests. Keep
+> `tool/internal/{spine/conditions,doctor/site-config-path}.json` and `.cairn/site-facts.json`.

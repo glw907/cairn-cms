@@ -26,7 +26,9 @@ describe('healthz route', () => {
   it('answers 503 with the payload when the check is not ok', async () => {
     const payload = {
       ok: false,
-      checks: { githubAppSigning: { ok: false, detail: 'GITHUB_APP_PRIVATE_KEY_B64 is not configured' } },
+      checks: {
+        githubAppSigning: { ok: false, detail: 'GITHUB_APP_PRIVATE_KEY_B64 is not configured' },
+      },
     };
     health.loadHealth.mockResolvedValue(payload);
     const { GET } = await import('./+server.js');

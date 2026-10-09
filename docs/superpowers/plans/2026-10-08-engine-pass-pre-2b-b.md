@@ -398,7 +398,9 @@ Geoff wants this pass to survive a 10-hour unattended run, so every stop is plan
 
 **Owner-gated steps, batched at the end:**
 
-1. The merge to `main` (Geoff's go; the PR leaves draft once CI is green).
+1. The merge to `main` (Geoff's go; the PR leaves draft once CI is green). **Go given in advance
+   (Geoff, 2026-10-08, "Yes"):** the conductor merges once the close's gates, reviewers, live smoke,
+   and CI are green, on the same terms as pass A's merge. A stop under "Unattended run" still stops.
 
 Nothing else waits on Geoff. The live smoke is Claude's (Decision 11). Neither the A5 capture nor
 the notice needs an owner sitting: the main loop reads both captures, and a fresh-context

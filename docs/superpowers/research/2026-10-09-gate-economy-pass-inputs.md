@@ -113,3 +113,44 @@ Geoff: the pass ceiling, and whether the close drops the local full gate for CI 
 `pass-execute-chains.js`, `scripts/checks/gate-tier.mjs`, `vitest.config.ts`, `.github/workflows/*.yml`,
 and pass B's plan (`docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md`, its gate section, already
 amended once on `ee62f982`).
+
+## The draft build's results (branch `gate-related`, commit `075bc174`, 2026-10-09)
+
+Built to the amended scope: `check:close:prebuilt` (`scripts/checks/close-prebuilt.mjs`, packages once,
+reads check:close's component list from `package.json` at run time, runs every component and reports all
+failures), the shared trigger list `scripts/test/component-rerun-triggers.mjs` (fed to Vitest as
+`forceRerunTriggers` only under `related`/`--changed`, and to the classifier), and `gate-tier.mjs
+--related` (static list via the prebuilt close, full node projects, `vitest related` over the component
+project or the whole project on a trigger, create-cairn-site on its inputs). Default output is
+byte-identical; 124 tests, every mutation killed.
+
+**Measured (wall time inside the gate, lock waits excluded):**
+
+| Gate leg | Before | After |
+|---|---|---|
+| `check:close` | 1,044 s (17 builds) | 679 s prebuilt (about 35% less) |
+| Component project, range 5549fda8..f655f877 | about 1,800 tests, about 4 min | 6 of 89 files, 129 tests, 26 s (42 s wall) |
+
+The review's build estimate was high: each removed build saved about 22 s on this workstation, not 60
+to 115 s. **Most of the remaining 679 s is in the checks themselves, and no per-step timing exists yet**,
+so the next measurement is a per-check timing of `check:close:prebuilt`. A per-task gate under
+`--related` is now roughly 11 min static + 4 min node + under 1 min component (plus create-cairn-site and
+e2e when reached), against 30 to 50 min before.
+
+**Open concerns from the build (decisions for the brainstorm):**
+
+1. The empty-selection failure (`--no-passWithNoTests`, as the conductor asked) turns a correct
+   server-only change red: `src/lib/cloudflare/turnstile.ts` or `src/lib/auth-channel/store.ts` alone
+   selects 0 of 89 component files. Safer: run the whole component project on an empty selection (a small
+   wrapper).
+2. The `src/tests/**/_*.ts` trigger is wider than needed (a unit-tree helper forced range 666aff41..df8857d9
+   to the full component project); narrowing to `src/tests/_*.ts` and `src/tests/component/**/_*.ts` would
+   keep it a related run.
+3. Bare double-star globs never cross a dot directory in Vitest's matcher, and pass worktrees live under
+   `.claude/`, so Vitest's own default `**/package.json/**` trigger silently matches nothing in a worktree.
+   The draft anchors its triggers at the absolute repo root (probed: each selects all 89 files).
+4. `check:package`'s `attw --pack .` may still trigger a build through npm pack; the new `scripts/` files
+   are outside `lint` and `check:comments`.
+5. Replay of pass A ranges: ranges 1 and 2 ran related component selections; range 3 fell back on the
+   helper trigger; range 4 (an admin diff) kept the admin-visual tier, which `--related` leaves untouched.
+   None of the replayed ranges touched a component test that the selection would have missed.

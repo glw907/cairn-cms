@@ -1520,3 +1520,28 @@ is a dispatch that returns a structured verdict.
   and `healthz.spec.ts`.
 - **Pass B** (on `main`, `ee62f982`): its per-task gate rule is amended the same way.
 - **Next:** S2 launch (Tasks 4, 5, 7, sequential).
+
+### 2026-10-09, S2 boundary (S2 closed) and S3 pre-flight
+
+- **S2 run** `wf_052309d5-e2e` (the runner from a cmp-verified scratchpad copy; by name served a stale
+  copy without dotfiles `492f584`, stopped before any commit). Tasks 4 (`4597aa49`), 5 (`bad014c0`), and
+  7 (`092176c1`) each accepted with no fix round.
+- **Boundary F red twice on static checks the per-task engine tier never runs.** `check:self-use`
+  flagged Task 5's new `ChannelStatementLike` export: a conductor-ruled fix round (`engine-logic`,
+  hand-dispatched Sonnet) added its allowlist entry (`c3d2952c`). Then the showcase's `format:check`
+  flagged Task 7's `healthz/server.test.ts`: formatted (`92325c02`) and the template re-emitted
+  (`12027522`, the conductor's own miss). Then `check:close`, `check:tool-heuristics`, and `test:emit`
+  green, and F green at `12027522`: node 6208, component 1782 (2 skipped), create-cairn-site 852,
+  admin-visual 94, showcase unit 72, showcase e2e 328, no rerun. **Rule from here:** every per-task
+  gate ends with `npm run check:close && npm run check:tool-heuristics && npm run test:emit`.
+- **S2 friction filed on `main`:** `22838140`. Task 12's S2 carry is in
+  `~/.cache/engine-pre-2b-a/task12-carry-s2.md` (Consumers lines for Tasks 4, 5, 7; pages and fact ids;
+  the reviewer's A10 note: a site that left `replyTo` out of a full branding now inherits the runtime's,
+  with no way to clear it, which needs a `Consumers must:` line).
+- **S3 pre-flight** (Haiku at `092176c1`): no outcome-changing claim. Task 8's kit cites moved:
+  `runtime/server/page/actions.js:170,186-191`; the form catch is `runtime/app/forms/client.js:231-240`;
+  `client.js:2980-3007` is `applyAction`; the `client.js:88-109,147-155,182` ranges are unrelated. The
+  dictionary retry is `content-routes-dictionary.ts:131-151`. No spec covers publish-all. The media
+  design's "decision 1" is not literal in that file (Task 12's S4 pre-flight checks it).
+- **Next:** S3 launch (Tasks 8, 9, 10). Owner rulings since: the merge go for PR #108 and pass B's,
+  the charter phrase (option B), and pass B's copy (on `main`, `ed2ef247`, `70719a38`, `0b065649`).

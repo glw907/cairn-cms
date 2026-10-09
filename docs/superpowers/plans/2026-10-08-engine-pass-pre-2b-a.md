@@ -1500,3 +1500,23 @@ is a dispatch that returns a structured verdict.
   f:9exogy, f:p1xmp5, f:8anql1, f:zo034s; minted f:5sx6zl, f:147zhc. Task 3 also edited
   `docs/reference/core.md` (the `canReach` none passage) outside its Files, disclosed and correct.
 - **Next:** the S1 boundary (F and T), then S2's pre-flight and launch.
+
+### 2026-10-08, S1 boundary (S1 closed) and S2 pre-flight
+
+- **Boundary F** (the local string, `E2E_PORT=4392`, the 20 drift tests excluded) green at
+  `a2a88a75` after one rerun under the rerun rule: `docs-review-browsers.test.ts` timed out in
+  Firefox on `page.goto` (the same flake hit Task 3's implementer). Final: node 6194 passed, component
+  1782 passed and 2 skipped, admin-visual 69 passed, showcase e2e 328 passed. **T** green first try.
+- **S2 pre-flight** (Haiku, read-only at `a2a88a75`): no false claim that changes an outcome.
+  Moved: cairn-pub's docs route is `src/routes/(site)/docs/[...path]/+page.server.ts`. Every "Fails
+  today" row naming a test is a test the task adds (no migration-set assertion in
+  `emit-template-tree.test.ts` and no closing-text assertion in `secret.test.mjs` exist yet). The
+  `healthz.spec.ts` 200-to-503 flip is the task's own change. Open for Task 4: how the e2e `AUTH_DB`
+  is migrated was not established (`wrangler.jsonc:33` sets `migrations_dir`).
+- **S2 per-task gates** (the amended rule): each pins `gateTier: "engine"` with its own string,
+  E plus the reachable specs on port 4392. Task 4: plus `check:tool-conditions`, `check:template`,
+  `test:emit`, `make -C tool check`, and `golden-path.spec.ts`. Task 5: plus `members.spec.ts` and
+  `capture-transport.spec.ts`. Task 7: plus `check:tool-conditions`, `check:template`, `test:emit`,
+  and `healthz.spec.ts`.
+- **Pass B** (on `main`, `ee62f982`): its per-task gate rule is amended the same way.
+- **Next:** S2 launch (Tasks 4, 5, 7, sequential).

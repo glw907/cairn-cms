@@ -78,7 +78,11 @@ New findings start below this line, one per finding, with its perspective and a 
   (`~/.dotfiles/bin/.local/bin/cairn-run-gate`, the final `rm -f` before `gate exit:`). A re-issue
   after that starts a second full gate instead of reporting the finished one, which duplicated about
   20 minutes. The receipt the script already writes could answer a re-issue on the same fingerprint.
-  Found by the Task 1 implementer, engine pass pre-2b A, 2026-10-08.
+  The Task 4 implementer hit a second form on a gate that outlasts the 600s cap: a later re-issue
+  printed the final tail but, through a pipe, dropped the `gate exit:` line, and a third re-issue
+  started a fresh run that printed the line only when its output went to a file. It cost two extra
+  full gate cycles of about 15 minutes each. Found by the Task 1 implementer, engine pass pre-2b A,
+  and the Task 4 implementer, 2026-10-08.
 - **`contributor`.** A fact's `Source:` pointer is the only place a path string lives for provenance
   matching (`scripts/checks/check-provenance.mjs`, the path facts). Repairing the pointer after a file
   delete (`templates/waymark/src/access.ts`) broke nine brief sentences that cite the old path, and
@@ -292,13 +296,41 @@ promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings b
   2026-10-07.
 
 - **`docs-gate`.** `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS` in `scripts/checks/check-leaks.mjs`). Its `src` ships in that package's `files`, so it needs coverage before the package's first publish. Found by the 2a close-finish run, 2026-10-07.
-- **`contributor`.** `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt` (lines 52, 69, 678, 825, 945) still holds the maintainer's home path and a `glw907.workers.dev` URL. Fixing them needs a transcript regeneration that `check:transcripts` replays. Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt` (lines 52, 69, 678, 825, 945) still holds the maintainer's home path and a `glw907.workers.dev` URL. Fixing them needs a transcript regeneration that `check:transcripts` replays. Found by the 2a close-finish run, 2026-10-07. Pass A adds two more stale spots: line 837 lists the scaffold migrations as `0000` and `0003` with no `0001` (Task 4 ships `0001`), and line 942 still ends the key step with "re-run this step" (Task 7 changed the step to point at the rotation page). Found again by the Task 4 and Task 7 implementers and reviewers, engine pass pre-2b A, 2026-10-08.
 - **`docs-gate`.** `scripts/checks/check-symbols.mjs` (`extractFilePaths`) reads the inline import specifier `#theme/cairn.config.js` as the file path `theme/cairn.config.js`, so prose cannot name the scaffold's real import. Fenced blocks strip import specifiers; inline spans do not. Found by the 2a close-finish run, 2026-10-07.
 - **`engine`.** The tutorial puts the adapter at `src/lib/cairn.config.ts` (`#lib`, `docs/extend/add-cairn-to-a-sveltekit-app.md:294,411`) and the scaffold puts it at `src/theme/cairn.config.ts` (`#theme`, `docs/extend/choose-an-ai-posture.md:29,62`), so every extend page that touches the adapter names two paths. Found by the 2a close-finish run, 2026-10-07.
 - **`docs-gate`.** `docs/internal/facts/front-door.md:67` (`f:u705t5`) asserts a forward-looking "Topo is planned"; a fact should state only what ships. Found by the 2a close-finish run, 2026-10-07.
 - **`contributor`.** The task 8 page plans now disagree with their pages after the rulings: `docs/internal/briefs/extend/debug-your-site.plan.md:64,263` (`cairn help agents`) and `docs/internal/briefs/extend/scaffolded-site-files.plan.md:226,252` (the `CLAUDE.md` subsection). Found by the 2a close-finish run, 2026-10-07.
 - **`contributor`.** `npm test` takes about 11 minutes, longer than the 600-second foreground limit, and a re-attached run does not print `gate exit:`. (Reported by the run; the 7-to-11-minute range is also in `pass-gate-economy.md`.) Found by the 2a close-finish run, 2026-10-07.
 - **`contributor`.** `packages/create-cairn-site/scripts/bake-template.mjs` requires `--to <dir>` (its usage line says so), and a bare invocation fails. The "create-cairn-site needs baked template" recipe the run followed omitted it; `scaffold.mjs`'s own error names `npm run prepack`, which passes it. Found by the 2a close-finish run, 2026-10-07.
+- **`contributor`.** Reaching an older auth schema in an integration test means slicing statements out of
+  `env.TEST_MIGRATIONS` by hand (`src/tests/integration/_apply-migrations.ts:7`,
+  `vitest.config.ts:131`, `src/tests/integration/auth-store-roles-unmigrated.test.ts:19`). The
+  binding splits each file into per-statement queries and prefixes each with its preceding comment, so
+  a test slices from the `CREATE` keyword to reuse one. A harness helper that applies migrations up to
+  a named file would remove the slicing. Found by the Task 4 implementer and reviewer, engine pass
+  pre-2b A, 2026-10-08.
+- **`contributor`.** `check:surface` reports a new exported type whose members name unexported
+  interfaces as unrecorded closure leaks (`scripts/checks/check-surface-leaks.mjs:480-486`). The
+  failure message offers only the registry entry as the remedy and never says that exporting the
+  named types also clears it, which Task 5 chose (`ChannelSessionLike`, `ChannelStatementLike`). The
+  implementer reports the failure reached only after `check:options` or `package` built `dist`; that
+  ordering was not re-run in verification. Found by the Task 5 implementer, engine pass pre-2b A,
+  2026-10-08.
+- **`docs-gate`.** `check:provenance` couples a frozen page brief to a fact bullet's literal text, and
+  no sanctioned path updates a fact under a stale page. `docs/internal/briefs/extend/scaffolded-site-files.json`
+  still cites `f:nls26c` (`docs/internal/facts/extend.md:908`), so when Task 7 dropped
+  `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` from the scaffold the bullet had to keep naming
+  them as dropped variables, or the frozen page's sentence would become a provenance defect. The
+  entry above on `Source:` pointers is the same coupling through a path; this one runs through claim
+  text. Found by the Task 7 implementer and reviewer, engine pass pre-2b A, 2026-10-08.
+- **`tooling`.** The recorded regeneration command on line 2 of `examples/showcase/worker-configuration.d.ts`
+  (`wrangler types --env-file=... --include-runtime=false`) is not reproducible by hand. The Task 7
+  implementer reports that running it locally with `.svelte-kit` present adds a `GlobalProps { mainModule }`
+  block that the committed file does not carry (verified: the committed file has no `mainModule`), so the
+  result was hand-stripped. The local run itself was not repeated in verification, and no workflow or
+  package script regenerates the file to say which output CI expects. Found by the Task 7 implementer,
+  engine pass pre-2b A, 2026-10-08.
 
 ## Clearings
 

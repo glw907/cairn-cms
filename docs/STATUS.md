@@ -28,9 +28,10 @@ The spec and both plans are reviewed, folded, and verified: pass A
 [`superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md`](superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)
 (11.1M), then pass B (`...-pre-2b-b.md`). The three forks are ruled (forks 1 and 2 take the
 recommendations, and pass B's ceiling is 14.0M), and Geoff approved the spec on 2026-10-08. Pass A
-is mid-S1 on worktree `.claude/worktrees/engine-pre-2b-a` (branch `engine-pre-2b-a`, draft PR #108):
-Tasks 1 and 2 are accepted, and Task 3 relaunches on the new gate machinery. The plan's Ledger on that
-branch ("S1 checkpoint") carries the state, the owed filings, and the next step.
+runs unattended on worktree `.claude/worktrees/engine-pre-2b-a` (branch `engine-pre-2b-a`, draft PR
+#108): S1 is closed (Tasks 1 to 3 accepted, boundary F and T green), and S2 (Tasks 4, 5, 7) is next.
+The plan's Ledger on that branch carries the state and the Task 12 carry. Pass B waits on pass A's
+merge; its gate rule is amended to match (`ee62f982`).
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

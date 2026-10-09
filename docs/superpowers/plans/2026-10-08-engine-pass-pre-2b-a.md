@@ -1578,3 +1578,19 @@ is a dispatch that returns a structured verdict.
 - **S4 runs as two invocations** (conductor ruling): Tasks 11 and 6, then Task 12 alone, because Task 12
   consumes every task's report and a shared run would start it before 11's and 6's reports exist.
 - **Next:** S4a launch (Tasks 11, 6).
+
+### 2026-10-09, S4a (Tasks 11 and 6) accepted
+
+- **Task 11** escalated on `bd614101`: its new `nested` placement kind reached two admin dialogs with the
+  wrong label. Conductor ruling: one hand-dispatched fix round (Sonnet) gave nested placements their own
+  alt bucket (`nested-skipped`), well, and replace count, with the conductor's copy ("In a gallery or
+  card"; "Alt for these images is set where each one sits in the entry. They are left as they are.";
+  "N in a gallery or card"), plus the nested-shape verify rows for all three shapes (`d716ec89`). An Opus
+  `diff-reviewer` over `db174a3d..d716ec89` accepted. Non-blocking, for the close: the well's chip shows
+  the raw kind as an uppercase "NESTED" pill. **For Geoff's read before merge:** the new copy above.
+- **Task 6** (Opus) accepted after one fix round (`c2409fdc`, `a8156613`). Ratified extension of Decision
+  15: a present key that fails signing also skips the live mint (an unusable key is the signing check's
+  finding); a test pins it.
+- **S4 friction filed on `main`:** `0c2f3272`. Task 12's S4 carry:
+  `docs/superpowers/research/2026-10-09-pass-a-s4-task12-carry.md`.
+- **Next:** Task 12 alone, then the S4 boundary (D) and the close.

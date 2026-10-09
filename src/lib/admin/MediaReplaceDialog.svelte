@@ -331,8 +331,8 @@ full-page POST to `?/mediaReplace` navigates away.
     if (body > 0) parts.push(`${body} in the body`);
     if (nested > 0) parts.push(`${nested} in a gallery or card`);
     if (parts.length === 0) return 'Used in this entry';
-    // Two parts read "A and B"; three read "A, B and C".
-    return parts.length < 3 ? parts.join(' and ') : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+    // Two parts read "A and B"; three read "A, B, and C", with the serial comma.
+    return parts.length < 3 ? parts.join(' and ') : `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`;
   }
 
   // The specific unreadable branch named by a fail-closed failure, or null for the generic honest line.

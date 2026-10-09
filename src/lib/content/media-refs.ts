@@ -45,19 +45,24 @@ function addFieldImages(field: FieldDescriptor, value: unknown, add: (href: stri
   }
 }
 
+/** Whether a descriptor is an image or holds one at any depth, walking the shapes `addFieldImages` reads. */
+function holdsImage(field: FieldDescriptor): boolean {
+  if (field.type === 'image') return true;
+  if (field.type === 'object') return Object.values(field.fields).some(holdsImage);
+  if (field.type === 'array') return holdsImage(field.item);
+  return false;
+}
+
 /**
- * Whether any field declares an image inside a container: an `object` holding an image, an `array`
- *  of images, or an `array` of objects holding an image. The shapes a nested-aware manifest check
- *  must treat differently from a top-level hero, since a site whose only image references are nested
- *  commits no `mediaRefs` key until it regenerates.
+ * Whether any field declares an image inside a container, at any depth: an `object` holding an
+ *  image, an `array` of images, an `array` of objects holding an image, and so on down, the same walk
+ *  `addFieldImages` takes. The shapes a nested-aware manifest check must treat differently from a
+ *  top-level hero, since a site whose only image references are nested commits no `mediaRefs` key
+ *  until it regenerates.
  */
 export function declaresNestedImage(fields: Iterable<FieldDescriptor>): boolean {
   for (const field of fields) {
-    if (field.type === 'object' && Object.values(field.fields).some((f) => f.type === 'image')) return true;
-    if (field.type === 'array') {
-      if (field.item.type === 'image') return true;
-      if (field.item.type === 'object' && Object.values(field.item.fields).some((f) => f.type === 'image')) return true;
-    }
+    if ((field.type === 'object' || field.type === 'array') && holdsImage(field)) return true;
   }
   return false;
 }

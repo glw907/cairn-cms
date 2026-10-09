@@ -937,6 +937,35 @@ describe('CairnMediaLibrary Replace impact review', () => {
     expect(text).not.toContain('3 in the body');
   });
 
+  it('joins a hero, a body, and a nested count with the serial comma', async () => {
+    const before = 'media:first-light.aaaa111122223333';
+    const after = 'media:first-light.b42e0d51aaaa0000';
+    const plan: MediaReplacePreviewPlan = {
+      affectedCount: 1,
+      entries: [
+        {
+          concept: 'posts',
+          id: 'every-kind',
+          title: 'Every kind of placement',
+          placements: [
+            { kind: 'hero', before, after },
+            { kind: 'body', before, after },
+            { kind: 'body', before, after },
+            { kind: 'nested', before, after },
+          ],
+        },
+      ],
+      branchDelta: [],
+    };
+    const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+    stubUpload(newRecord());
+    stubPreviewFetch(successBody(plan));
+    const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) });
+    const dialog = await uploadThroughReplace(screen, /first-light/);
+    await expect.poll(() => dialog.textContent ?? '').toContain('Every kind of placement');
+    expect(dialog.textContent ?? '').toContain('Hero, 2 in the body, and 1 in a gallery or card');
+  });
+
   it('gates the apply button until the typed slug matches, and posts the replace form fields', async () => {
     const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
     stubUpload(newRecord());
@@ -1219,6 +1248,9 @@ describe('CairnMediaLibrary Push-alt three buckets', () => {
     expect(well.textContent ?? '').toContain('Alt for these images is set where each one sits in the entry. They are left as they are.');
     expect(well.textContent ?? '').toContain('The gallery post');
     expect(well.querySelector('input')).toBeNull();
+    // The heading already names the kind, so a row carries the entry title and no kind chip.
+    const rows = [...well.querySelectorAll('li')];
+    expect(rows.map((row) => (row.textContent ?? '').trim())).toEqual(['The gallery post']);
 
     // The decorative well keeps its own entry and no longer holds the nested one.
     const skip = dialog.querySelector('[data-cairn-alt-skip]') as HTMLElement;

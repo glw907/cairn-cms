@@ -131,8 +131,8 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
   const altPushed = $derived(altAsset?.alt.trim() ?? '');
 
   // The three buckets, flattened from the plan's entries: each row carries its entry title, the
-  // placement kind (the pill), and the placement's before/after. Grouping by bucket keeps each well
-  // self-contained, the way the mockup lays them out.
+  // placement kind (the pill, left off the nested well, whose heading names it), and the placement's
+  // before/after. Grouping by bucket keeps each well self-contained, the way the mockup lays them out.
   type AltRow = { title: string; kind: AltPlacement['kind']; before: string; after: string; key: string };
   function altRows(bucket: AltPlacement['bucket']): AltRow[] {
     const rows: AltRow[] = [];
@@ -386,7 +386,6 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                   {#each altNestedRows as row (row.key)}
                     <li class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2 type-meta text-muted first:border-t-0">
                       <span class="truncate">{row.title}</span>
-                      <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide">{row.kind}</span>
                     </li>
                   {/each}
                 </ul>

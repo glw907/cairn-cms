@@ -64,51 +64,7 @@ New findings start in the group they belong to, one per finding, with its perspe
 
 ### Engine
 
-- **`contributor`.** Entry delete and entry rename commit to `main` with no head guard
-  (`src/lib/sveltekit/content-routes-entry-destructive.ts:174-181`, `:392-397`; `backend.commit`
-  takes no head argument). A concurrent save can be overwritten, the data-loss class C11 closed on
-  every other writer to `main`. Found by the security reviewer, engine pass pre-2b A close,
-  2026-10-09. Carried in a `ROADMAP.md` Next row of its own.
-- **`contributor`.** Four paths still commit with `head ?? undefined`, which passes no head when the head
-  read returned nothing: `src/lib/sveltekit/nav-routes.ts:161`,
-  `src/lib/sveltekit/content-routes-settings.ts:308` and `:445`, and
-  `src/lib/sveltekit/content-routes-media-ingest.ts:251`. Found by the pass A close review,
-  2026-10-09. Carried in the batched engine friction entry.
-- **`contributor`.** The C11 guard reads each snapshot by branch name, not at the head SHA it just read
-  (`src/lib/github/repo.ts:72-86`; `contentsUrl` pins `?ref=<branch>`), so replica lag could return
-  a snapshot older than the head and defeat it. Found by the pass A close review, 2026-10-09.
-  Carried in the same `ROADMAP.md` row as the first entry.
-- **`contributor`.** Anonymous `/healthz?live=1` multiplies across isolates against the App's rate limit,
-  since the single-flight slot is per isolate (`src/lib/sveltekit/health.ts`). A ruled residual; the mitigations are a shared KV verdict or a monitor token. Found by the pass A close,
-  2026-10-09. Carried in the batched engine friction entry.
-- **`contributor`.** Anonymous health output reveals installation state
-  (`src/lib/sveltekit/health.ts:156-174`). Found by the pass A close, 2026-10-09. Carried in the
-  batched engine friction entry.
-- **`contributor`.** The Turnstile verifier logs `missing_secret` on every submission when the secret is
-  absent (`src/lib/cloudflare/turnstile.ts:94-96`). Found by the pass A close, 2026-10-09. Carried in the batched engine friction entry.
-- **`contributor`.** A warning-severity condition, `auth.store-roles-unmigrated`
-  (`src/lib/auth/store.ts:48`, registered at `src/lib/diagnostics/conditions.ts:159`), reaches the
-  owner as the generic 500 strip, not its remediation text. Found by the pass A close, 2026-10-09.
-  Carried in the batched engine friction entry.
-- **`contributor`.** Format buttons and chords still dispatch during an in-flight save
-  (`src/lib/admin/EditPage.svelte`, `src/lib/admin/EditorToolbar.svelte`). Found by the pass A close, 2026-10-09. Carried in the
-  batched engine friction entry.
-- **`contributor`.** A refused key logs as `github.unreachable` (`src/lib/sveltekit/health.ts:85`). Found by the pass A close live
-  key probe, 2026-10-09. Carried in the batched engine friction entry.
-- **`contributor`.** The `logoutAction` docstring says the action "clears both cookies"
-  (`src/lib/sveltekit/auth-routes.ts:409-412`), while it deletes the session, CSRF, and
-  pending-login cookies in both name forms. Found by the pass A close, 2026-10-09. Carried in the
-  batched engine friction entry.
-- **`contributor`.** `src/lib/sveltekit/admin-action.ts:120` still says an absent access map means
-  "the guard never ran on this route". Task 1 of pass A restated the real cause (a route outside every
-  hook's coverage) at `guard.ts`, `section-action.ts`, `access.ts`, and `index.ts`, and missed this
-  comment, which the stage-2b engine pass entry in `ROADMAP.md` does not list among its cause sites
-  either. Found by the Task 1 implementer and reviewer, engine pass pre-2b A, 2026-10-08. Carried in `ROADMAP.md`'s batched engine friction entry, 2026-10-09.
-- **`contributor`.** In `src/lib/sveltekit/guard.ts:179` a `// WATCH:` line comment sits between
-  `createAuthGuard`'s TSDoc block and the `export function`, so the doc attaches across a comment,
-  which some doc tools handle inconsistently. The placement predates pass A, which kept it because
-  `check:tool-heuristics` greps the signature. Moving the `WATCH:` above the TSDoc block would keep
-  both. Found by the Task 1 fix reviewer, engine pass pre-2b A, 2026-10-08. Carried in the same ROADMAP entry, 2026-10-09 (the line moved to 179 when pass A's guard changes landed).
+No open entry. The pass A close's engine findings moved whole to `ROADMAP.md` (see the Triage record).
 
 ### Docs content
 
@@ -191,11 +147,7 @@ filed by pass A's own tasks on 2026-10-08 and 2026-10-09, none for a pass A fix,
 as fixed. No declined or batched entry was in the log (stage 2a's close had moved them to
 `ROADMAP.md`, and the ledger entries for the declined items live in `docs/internal/engine-rulings.md`
 on the pass branch). Each entry was re-checked against the tree at `e31bc2dd` (and the server fix
-branch for `guard.ts`). Four tooling entries (the fresh-worktree setup gap, the local `site-visual`
-baselines, the light lane's 3G cap, and the lost gate result) moved whole to `ROADMAP.md`'s gate
-economy pass row. Two comment entries (`admin-action.ts:120`, `guard.ts:179`) joined the batched
-engine friction entry and also stay in the Engine group. Ten engine and five tooling entries were
-newly filed, and the log was regrouped by who clears each entry. None is kept for pass B.
+branch for `guard.ts`). Four tooling entries (the fresh-worktree setup gap, the local `site-visual` baselines, the light lane's 3G cap, and the lost gate result) moved whole to `ROADMAP.md`'s gate economy pass row. Two comment entries (`admin-action.ts:120`, `guard.ts:179`) and ten newly filed engine findings moved with their file:line evidence to ROADMAP: entry delete and rename plus the read-at-SHA hardening to a Next row of their own, the rest to the batched engine friction entry. Five tooling entries were newly filed and stay open with the three older tooling entries (facts pointer drift, `emit-tool-conditions` reading `dist`, the workers fake accessor). Totals: 9 entries triaged, 0 deleted as fixed, 6 moved to ROADMAP (the four tooling entries and the two comment entries), 3 kept open from the original nine, 12 engine findings filed and moved to ROADMAP, 5 tooling findings filed and kept open, 0 kept for pass B.
 
 Draft docs stage 2a's close (2026-10-07, the 2a unattended run's R7) triaged the whole log and
 found 187 open entries, verified against the tree at `b38ef6b3` (each group's cited lines read or

@@ -1165,8 +1165,8 @@ the named human gates only):**
 - **Engine writes to `main` still unguarded (data-loss class; pass A's close, 2026-10-09).** Pass A's
   C11 head guard covers publish, publish-all, Library delete, metadata, replace, alt, and the
   dictionary. The security reviewer found two writers it missed: entry delete and entry rename
-  commit to the default branch with no head passed
-  (`src/lib/sveltekit/content-routes-entry-destructive.ts:174-181`, `:392-397`), the stale-write
+  commit to the default branch with no head passed (`backend.commit` takes
+  no head argument; `src/lib/sveltekit/content-routes-entry-destructive.ts:174-181`, `:392-397`), the stale-write
   data-loss risk C11 closed elsewhere. The guard
   itself reads each snapshot by branch name, not at the head SHA it just read
   (`src/lib/github/repo.ts:72-86`, `contentsUrl` pins `?ref=<branch>`), so replica lag could return
@@ -1228,15 +1228,16 @@ the named human gates only):**
     the head read returned nothing (`src/lib/sveltekit/nav-routes.ts:161`,
     `content-routes-settings.ts:308` and `:445`, `content-routes-media-ingest.ts:251`). Health
     route: anonymous `/healthz?live=1` multiplies across isolates against the App's rate limit,
-    a ruled residual whose mitigations are a shared KV verdict or a monitor token (page:
-    `docs/reference/sveltekit.md`); anonymous health output reveals installation state. Logging:
+    a ruled residual (the single-flight slot is per isolate, `src/lib/sveltekit/health.ts`) whose
+    mitigations are a shared KV verdict or a monitor token (page:
+    `docs/reference/sveltekit.md`); anonymous health output reveals installation state (`health.ts:156-174`). Logging:
     Turnstile logs `missing_secret` on every submission when the secret is absent
     (`src/lib/cloudflare/turnstile.ts:94-96`; page: `docs/reference/log-events.md`); a refused
     key logs as `github.unreachable` (`src/lib/sveltekit/health.ts:85`; page:
     `rotate-the-github-app-key.md`). Owner surface: the warning-severity condition
     `auth.store-roles-unmigrated` reaches the owner as the generic 500 strip, not its remediation
     (`src/lib/auth/store.ts:48`; page: `docs/reference/auth-store.md`). Editor: format buttons and
-    chords still dispatch during an in-flight save (`EditPage.svelte`, `EditorToolbar.svelte`; a
+    chords still dispatch during an in-flight save (`src/lib/admin/EditPage.svelte`, `EditorToolbar.svelte`; a
     stage 4 page caveat). Comments: the `logoutAction` docstring says it clears "both cookies"
     while the action clears the session, CSRF, and pending-login cookies in both name forms
     (`src/lib/sveltekit/auth-routes.ts:409-412`); `admin-action.ts:120` still says an absent

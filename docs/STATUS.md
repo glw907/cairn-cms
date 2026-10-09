@@ -32,7 +32,9 @@ runs unattended on worktree `.claude/worktrees/engine-pre-2b-a` (branch `engine-
 #108): S1 is closed (Tasks 1 to 3 accepted, boundary F and T green), and S2 (Tasks 4, 5, 7) is next.
 The plan's Ledger on that branch carries the state and the Task 12 carry. Pass B waits on pass A's
 merge; its gate rule is amended to match (`ee62f982`). Geoff gave the go to merge PR #108 at pass A's
-close (2026-10-08), once its close gates and CI are green; the charter phrase stays his read.
+close (2026-10-08), once its close gates and CI are green. The charter phrase is ruled (Geoff,
+2026-10-08): Task 12 writes `what-cairn-is-and-is-not.md:107` as "An anonymous visitor reaches nothing
+behind `/admin` except the two pages of the sign-in flow: the form and the confirm page."
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

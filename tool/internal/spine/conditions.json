@@ -62,8 +62,8 @@
     "id": "auth.role-wiring-missing",
     "severity": "warning",
     "title": "Guard is missing the declared role vocabulary",
-    "why": "The adapter declares custom roles with defineRoles, but createAuthGuard in src/hooks.server.ts was not passed { roles }, so the running guard falls back to the implicit owner/editor pair. Every editor whose role is outside that pair resolves to none capability: they authenticate but the guard refuses every content and admin-mutation route. This is the second half of a two-part wiring the auth.unknown-role check cannot see, since the editor rows still match the declared vocabulary.",
-    "remediation": "Pass the same declared vocabulary to the guard: createAuthGuard({ roles }) in src/hooks.server.ts, importing the roles the adapter declares with defineRoles.",
+    "why": "The adapter declares custom roles with defineRoles, but createAuthGuard in src/hooks.server.ts was not passed { runtime } (or { roles } on an older engine), so the running guard falls back to the implicit owner/editor pair. Every editor whose role is outside that pair resolves to none capability: they authenticate but the guard refuses every content and admin-mutation route. This is the second half of a two-part wiring the auth.unknown-role check cannot see, since the editor rows still match the declared vocabulary.",
+    "remediation": "Pass the declared vocabulary to the guard in src/hooks.server.ts: createAuthGuard({ runtime }) on this engine, which reads the roles from the runtime, or createAuthGuard({ roles }) on an older engine, importing the roles the adapter declares with defineRoles.",
     "docsAnchor": "is-it-working.md#provision-the-auth-store",
     "logEvent": "auth.role.unknown"
   },

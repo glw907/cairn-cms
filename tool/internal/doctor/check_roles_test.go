@@ -56,7 +56,7 @@ func TestAuthRoleWiring(t *testing.T) {
 				"src/hooks.server.ts":                `export const handle = createAuthGuard({ from: 'x' });`,
 			},
 			wantStatus: StatusFail,
-			wantDetail: "the adapter declares custom roles (contributor) but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)",
+			wantDetail: "the adapter declares custom roles (contributor) but createAuthGuard in src/hooks.server.ts is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)",
 		},
 		{
 			name: "pass: wired, called with a roles argument",
@@ -77,6 +77,35 @@ func TestAuthRoleWiring(t *testing.T) {
 			}
 			if result.Detail != tt.wantDetail {
 				t.Errorf("Detail = %q, want %q", result.Detail, tt.wantDetail)
+			}
+		})
+	}
+}
+
+// TestAuthRoleWiringRuntimeForms runs every createAuthGuard spelling through the whole check with
+// a custom role declared, since the check skips when a site declares none: the runtime forms pass
+// and a bare call still fails.
+func TestAuthRoleWiringRuntimeForms(t *testing.T) {
+	facts := `{"version": 1, "roles": {"owner": "owner", "editor": "editor", "contributor": "editor"}}`
+	tests := []struct {
+		name       string
+		call       string
+		wantStatus Status
+	}{
+		{"runtime shorthand", `createAuthGuard({ runtime })`, StatusPass},
+		{"runtime as a value", `createAuthGuard({ runtime: cairn })`, StatusPass},
+		{"runtime beside identity", `createAuthGuard({ runtime, identity })`, StatusPass},
+		{"bare call", `createAuthGuard()`, StatusFail},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := snapshotWithFiles(t, map[string]string{
+				"src/content/.cairn/site-facts.json": facts,
+				"src/hooks.server.ts":                "export const handle = " + tt.call + ";",
+			})
+			result := authRoleWiring.Run(s)
+			if result.Status != tt.wantStatus {
+				t.Fatalf("Status = %v, want %v (detail %q)", result.Status, tt.wantStatus, result.Detail)
 			}
 		})
 	}
@@ -112,6 +141,10 @@ func TestGuardRoleWiring(t *testing.T) {
 		{"object literal with no roles key", `createAuthGuard({ from: 'x' })`, guardWiringUnwired},
 		{"object literal naming roles", `createAuthGuard({ roles })`, guardWiringWired},
 		{"object literal naming roles as a value", `createAuthGuard({ roles: siteRoles })`, guardWiringWired},
+		{"runtime shorthand", `createAuthGuard({ runtime })`, guardWiringWired},
+		{"runtime as a value", `createAuthGuard({ runtime: cairn })`, guardWiringWired},
+		{"runtime beside identity", `createAuthGuard({ runtime, identity })`, guardWiringWired},
+		{"runtime only as part of a longer word", `createAuthGuard({ runtimeless: 1 })`, guardWiringUnwired},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

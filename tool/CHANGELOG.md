@@ -40,6 +40,12 @@ every route. No `tool/v2.0.0` tag exists yet.
 - **`cairn doctor --help`'s first sentence is split in two.** The text still names every clause
   the original did (the checked-in configuration, that it is read straight off the directory,
   and what it covers), reworded so the sentence carries at most one comma.
+- **`auth.role-wiring` reads `createAuthGuard({ runtime })` as wired.** A `runtime` argument,
+  alone (`{ runtime }`, `{ runtime: cairn }`) or beside others (`{ runtime, identity }`), passes
+  the check on a site that declares custom roles; the engine resolves the roles from the runtime.
+  The bare-call and `{ roles }` readings stay for a site on an older engine. The fail detail and
+  the `auth.role-wiring-missing` remediation name both spellings: `{ runtime }` on this engine,
+  `{ roles }` on an older one.
 - **`config.public-origin` and the `csrf.trustedOrigins` plain-http note now agree on the loopback
   set**, `localhost` and `127.0.0.1`, the hosts the engine's `requireOrigin` treats as local. The
   note no longer exempts the IPv6 loopback `::1`, so an `http://[::1]` entry now carries it.

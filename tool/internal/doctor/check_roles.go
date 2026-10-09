@@ -26,7 +26,7 @@ const (
 	infoRoleWiringIndirect = "createAuthGuard is passed an options object the doctor cannot read (heuristic text read); verify the guard receives the declared roles"
 	// tmplRoleWiringUnwired is auth.role-wiring's fail detail template, filled with the joined
 	// custom role names.
-	tmplRoleWiringUnwired = "the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)"
+	tmplRoleWiringUnwired = "the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)"
 	// passRoleWiringWired is auth.role-wiring's pass detail.
 	passRoleWiringWired = "createAuthGuard is passed the declared role vocabulary (heuristic text read)"
 )
@@ -54,9 +54,10 @@ func customRoleNames(roles []string) []string {
 // second call later in the file does not widen the capture.
 var createAuthGuardCallPattern = regexp.MustCompile(`createAuthGuard\s*\(([\s\S]*?)\)`)
 
-// rolesWordPattern matches a bare `roles` word in createAuthGuard's argument list, the wiring
-// signal a `{ roles }` or `{ roles: siteRoles }` object literal both carry.
-var rolesWordPattern = regexp.MustCompile(`\broles\b`)
+// wiringWordPattern matches a bare `runtime` or `roles` word in createAuthGuard's argument list,
+// the wiring signal an object literal carries: `{ runtime }` on this engine, which resolves the
+// roles from the runtime, and `{ roles }` on an older one.
+var wiringWordPattern = regexp.MustCompile(`\b(?:runtime|roles)\b`)
 
 // guardWiring is guardRoleWiring's own four-value result.
 type guardWiring int
@@ -65,18 +66,18 @@ type guardWiring int
 const (
 	// guardWiringAbsent means no createAuthGuard call was found in the text at all.
 	guardWiringAbsent guardWiring = iota
-	// guardWiringUnwired means createAuthGuard was called with no roles argument: the running
+	// guardWiringUnwired means createAuthGuard was called with no runtime or roles argument: the running
 	// guard falls back to owner/editor, the one outcome this check fails.
 	guardWiringUnwired
 	// guardWiringIndirect means createAuthGuard's argument is a bare identifier the doctor
 	// cannot read into, such as createAuthGuard(guardOpts).
 	guardWiringIndirect
-	// guardWiringWired means the call's argument list mentions roles.
+	// guardWiringWired means the call's argument list mentions runtime or roles.
 	guardWiringWired
 )
 
-// guardRoleWiring reads the createAuthGuard call in text and reports whether it is passed a roles
-// argument. absent and indirect are both reported as info rather than fail, since a wrapped or
+// guardRoleWiring reads the createAuthGuard call in text and reports whether it is passed a runtime
+// or roles argument. absent and indirect are both reported as info rather than fail, since a wrapped or
 // dynamically built guard reading either way is not a high-confidence positive: a positive fail
 // should never be a false red.
 func guardRoleWiring(text string) guardWiring {
@@ -85,7 +86,7 @@ func guardRoleWiring(text string) guardWiring {
 		return guardWiringAbsent
 	}
 	args := strings.TrimSpace(match[1])
-	if rolesWordPattern.MatchString(args) {
+	if wiringWordPattern.MatchString(args) {
 		return guardWiringWired
 	}
 	if args != "" && !strings.Contains(args, "{") {

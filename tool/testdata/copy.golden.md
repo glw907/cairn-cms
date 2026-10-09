@@ -396,7 +396,7 @@ Name the check that entry holds
 - src/hooks.server.ts not found, so the guard role wiring cannot be checked
 - svelte.config.js is still present, so a csrf key in it could not be checked; move the SvelteKit config into the sveltekit() call in the Vite config and delete the file
 - the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
-- the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)
+- the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)
 - the resolved origin's /robots.txt did not return 200
 - the resolved public origin does not parse as an http or https URL
 - wrangler vars

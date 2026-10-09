@@ -1,5 +1,6 @@
 // The head guard on publish and publish-all: each reads branchHead(defaultBranch) before its first
-// read of the media.json or index.json snapshot it commits, and commits with it as expectedHead.
+// read of the media.json or index.json snapshot it commits (publish-all also before every pending
+// branch read), and commits with it as expectedHead.
 // Each race test injects a concurrent commit after the first read of the snapshot and before the
 // action's own commit, so a head read taken after that read would see the injected commit and let
 // the stale snapshot commit cleanly. A conflict answers calmly and the entry stays held on its
@@ -242,6 +243,27 @@ describe('publish-all head guard', () => {
     // Every entry stays held on its branch, so the retry is one click.
     expect(gh.branches.has(BRANCH)).toBe(true);
     expect(gh.branches.has(OTHER_BRANCH)).toBe(true);
+  });
+
+  it('keeps a single publish of the same entry that lands after the branch read, and bounces with the conflict code', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const gh = repo();
+    gh.install();
+    const newer = '---\ntitle: Hi\ndate: 2026-05-01\n---\nnewer body';
+    // A single publish of the same entry: its save moves the branch, then its main commit lands.
+    const fired = injectAfterFirstRead(ENTRY_PATH, () => {
+      gh.commit(BRANCH, ENTRY_PATH, newer);
+      gh.commit('main', ENTRY_PATH, newer);
+    });
+
+    const location = await redirectedTo(createContentRoutes({ runtime: runtime() }).publishAllAction(listEvent()));
+
+    expect(fired()).toBe(true);
+    expect(location).toBe('/admin/posts?error=publish_conflict');
+    // Main keeps the newer content; the stale branch bytes never landed.
+    expect(gh.read('main', ENTRY_PATH)).toBe(newer);
+    expect(gh.branches.has(BRANCH)).toBe(true);
   });
 
   it('refuses with the conflict code and commits nothing when the default branch has no head', async () => {

@@ -440,9 +440,10 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
    *  concept route does: instead each pending entry is filtered by `canReach` against its own
    *  concept id, so a role mapped away from a concept never has that concept's entries published
    *  on its behalf, the same deny-at-the-route guarantee applied per entry instead of per route.
-   *  The default branch's head is read before main's manifest and rides the commit as
-   *  `expectedHead`, so a commit landing after the manifest read bounces to the list with the
-   *  conflict code, every branch still held; a default branch with no head refuses the same way.
+   *  The default branch's head is read before every branch read and main's manifest and rides
+   *  the commit as `expectedHead`, so a commit landing after any of those reads bounces to the
+   *  list with the conflict code, every branch still held; a default branch with no head refuses
+   *  the same way.
    */
   async function publishAllAction(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
@@ -462,6 +463,12 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       return [{ ...entry, branch: name, path: `${entry.concept.dir}/${filenameFromId(entry.id)}` }];
     });
 
+    // Read the default branch's head BEFORE every branch read and main's manifest, so the
+    // commit's expectedHead is at-or-before every byte it sends: a single publish of the same
+    // entry landing after a branch read moves main past this head and bounces the batch, rather
+    // than letting the stale branch content revert it.
+    const mainHead = await backend.branchHead(backend.defaultBranch);
+
     // Read every branch in parallel, capturing each head sha BEFORE its file read: the sha
     // guards the post-publish delete, and probing first fails safe (a save landing between the
     // probe and the read moves the head past the capture, so the delete is skipped and the
@@ -474,10 +481,6 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
         return { ...entry, sha, raw };
       }),
     );
-
-    // Read the default branch's head BEFORE main's manifest, so the commit's expectedHead is
-    // at-or-before every byte of the snapshot it sends.
-    const mainHead = await backend.branchHead(backend.defaultBranch);
 
     // Fold main's manifest once over every row, so the batch lands content and index together,
     // the same shape as a single publish.

@@ -8,6 +8,7 @@ import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import { createSession, resolveSession } from '../../lib/auth/store.js';
 import { sessionCookieName } from '../../lib/auth/crypto.js';
 import { defineRoles } from '../../lib/auth/roles.js';
+import { defineAccess } from '../../lib/auth/access.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
 import type { IdentityResolver, ResolvedIdentity, IdentityRefusal } from '../../lib/sveltekit/guard.js';
 
@@ -46,12 +47,12 @@ function event(pathname: string, cookies = makeCookies()): CairnEvent {
 
 function guardWith(
   resolve: IdentityResolver['resolve'],
-  extra: { roles?: Parameters<typeof defineRoles>[0] } = {},
+  extra: { roles?: Parameters<typeof defineRoles>[0]; access?: ReturnType<typeof defineAccess> } = {},
 ) {
   return asHandle(
     createAuthGuard({
       identity: { resolve, logoutUrl: '/goodbye', label: 'Acme SSO' },
-      runtime: { roles: extra.roles ? defineRoles(extra.roles) : undefined },
+      runtime: { roles: extra.roles ? defineRoles(extra.roles) : undefined, access: extra.access },
     }),
   );
 }
@@ -80,6 +81,16 @@ describe('guard identity branch: rostered', () => {
       capability: 'editor',
     });
     expect(ev.locals.cairnAccess).toEqual({});
+  });
+
+  it('attaches runtime.access to locals.cairnAccess by identity', async () => {
+    await seedEditor('owner@x.dev', 'Roster Name', 'owner');
+    const roles = defineRoles({ owner: 'owner' });
+    const access = defineAccess(roles, { '/admin/x': ['owner'] });
+    const guard = guardWith(async () => resolved('owner@x.dev'), { roles: { owner: 'owner' }, access });
+    const ev = event('/admin');
+    await guard({ event: ev, resolve: async () => OK });
+    expect(ev.locals.cairnAccess).toBe(access);
   });
 
   it("prefers the roster row's displayName over the resolver's advisory one", async () => {

@@ -96,6 +96,7 @@ const sectionAction = createSectionAction<{ AUTH_DB?: unknown }, unknown>({ reso
   entity: 'x',
 });
 const adminAction = createAdminAction(audited, { access: { target: '/admin/x' } });
+const adminActionY = createAdminAction(audited, { access: { target: '/admin/y' } });
 
 describe('one map, five readers', () => {
   it('attaches runtime.access to locals.cairnAccess by identity', async () => {
@@ -157,10 +158,11 @@ describe('one map, five readers', () => {
       expect(await adminAction(await guardedEvent('owner', '/admin/x', true))).toEqual({ ok: true });
     });
 
-    it('a steward on /admin/y through requireAccess and createSectionAction', async () => {
+    it('a steward on /admin/y through requireAccess, createSectionAction, and createAdminAction', async () => {
       const ev = await guardedEvent('steward', '/admin/y');
       expect(requireAccess(ev).email).toBe('steward@x.dev');
       expect(await sectionAction(await guardedEvent('steward', '/admin/y', true))).toEqual({ ok: true });
+      expect(await adminActionY(await guardedEvent('steward', '/admin/y', true))).toEqual({ ok: true });
     });
   });
 });

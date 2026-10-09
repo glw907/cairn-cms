@@ -212,6 +212,20 @@ describe('the access map (Task 2)', () => {
     expect(ev.locals.cairnAccess).toBe(access);
   });
 
+  it('attaches the declared role vocabulary to locals.cairnRoles', async () => {
+    const roles = { owner: 'owner' as const, staff: 'none' as const };
+    const guard = asHandle(createAuthGuard({ runtime: { roles } }));
+    const ev = event('/admin', await seedSession('own3@x.dev'));
+    await guard({ event: ev, resolve: async () => OK });
+    expect(ev.locals.cairnRoles).toBe(roles);
+  });
+
+  it('attaches the default owner/editor pair to locals.cairnRoles when no vocabulary is declared', async () => {
+    const ev = event('/admin', await seedSession('own4@x.dev'));
+    await handle({ event: ev, resolve: async () => OK });
+    expect(ev.locals.cairnRoles).toEqual({ owner: 'owner', editor: 'editor' });
+  });
+
   it('attaches an empty map, not undefined, when no map is declared (Task 3: an absent map then only ever means the guard never ran)', async () => {
     const cookies = await seedSession('own2@x.dev');
     const ev = event('/admin', cookies);

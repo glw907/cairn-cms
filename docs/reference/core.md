@@ -1050,14 +1050,27 @@ is handed, so every reader sees the one declaration.
 Stability tier: Extension API.
 
 ```ts
-declare function canReach(access: AccessMap | undefined, editor: Editor, target: string): boolean;
+declare function canReach(
+  access: AccessMap | undefined,
+  editor: Editor,
+  target: string,
+  roles?: RolesDeclaration,
+): boolean;
 declare function hasAccessRule(access: AccessMap | undefined, target: string): boolean;
 ```
 
 `canReach` is the one decision point every enforcement and visibility check reads. `none`
-capability reaches a route path only when the matched rule names its role explicitly; a screen id
-(even one whose rule names the role), an href no rule matches, and `editors` all stay refused for
-it. Owner capability reaches every target, including
+capability reaches a route path only when the matched rule names its role explicitly and `roles`
+declares that role; a screen id (even one whose rule names the role), an href no rule matches,
+`editors`, and a role the vocabulary no longer declares all stay refused for it.
+
+The `roles` check is what makes dropping a role from `defineRoles` revoke it. An access rule that
+still names the old string no longer admits the session. An omitted `roles` reads the default
+owner and editor pair, as `resolveCapability` does. Pass your declared vocabulary when you check a
+`none` role of your own. The guard attaches it to `locals.cairnRoles` for `requireAccess` and the
+admin action wrappers.
+
+Owner capability reaches every target, including
 the `editors` screen and any target with no rule; every other capability's reach stops at
 `editors`, which stays owner-only no matter what the map says (the roster screen's existing
 floor, restated here so the one authority function covers it too). In practice a site cannot even

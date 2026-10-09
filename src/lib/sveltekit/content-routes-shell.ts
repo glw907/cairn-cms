@@ -185,6 +185,7 @@ export function createShellActions(ctx: ContentRoutesContext) {
       concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label, routing: c.routing })),
       navMenuLabel: runtime.navMenu?.label ?? null,
       access: runtime.access,
+      roles: runtime.roles,
       editor,
     });
     const nav: ResolvedNavLayout = ctx.deps.navFilter

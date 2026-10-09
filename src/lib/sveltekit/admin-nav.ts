@@ -10,6 +10,7 @@ import { log } from '../log/index.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import { canReach, hasAccessRule, type AccessMap } from '../auth/access.js';
+import type { RolesDeclaration } from '../auth/roles.js';
 
 /**
  * The bundled Lucide icon names a navLayout site entry, or a navLayout engine ref's {@link
@@ -405,6 +406,11 @@ interface ResolveNavLayoutOptions {
    */
   access?: AccessMap;
   /**
+   * The site's declared role vocabulary, or undefined for the implicit owner/editor pair. A
+   *  none-capability session sees a mapped href only while this still declares its role.
+   */
+  roles?: RolesDeclaration;
+  /**
    * The signed-in editor whose capability gates every engine screen (row 4 of the design table)
    *  and whose role is matched against a node's declarative `roles` list and against the access
    *  map. Replaces the former loose `capability`/`role` pair so the resolver reads the same
@@ -443,7 +449,7 @@ function engineDefault(screen: string, opts: ResolveNavLayoutOptions): { label: 
  */
 function engineVisible(screen: string, opts: ResolveNavLayoutOptions): boolean {
   if (screen === 'nav' && opts.navMenuLabel === null) return false;
-  return canReach(opts.access, opts.editor, screen);
+  return canReach(opts.access, opts.editor, screen, opts.roles);
 }
 
 /** Resolve one engine screen into its door, applying a declared relabel and icon override when given. */
@@ -480,7 +486,7 @@ function ownerOnlyVisible(entry: { ownerOnly?: boolean }, opts: ResolveNavLayout
  */
 function hrefReachable(href: string, opts: ResolveNavLayoutOptions): boolean {
   if (!opts.access || !hasAccessRule(opts.access, href)) return true;
-  return canReach(opts.access, opts.editor, href);
+  return canReach(opts.access, opts.editor, href, opts.roles);
 }
 
 /**

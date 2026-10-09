@@ -6,7 +6,7 @@
 //
 //   import '@glw907/cairn-cms/ambient';
 //
-// The five members share the flat `cairn` prefix rather than
+// The six members share the flat `cairn` prefix rather than
 // a nested `locals.cairn.{}` namespace: a flat key costs a site one optional hop
 // (`event.locals.cairnEditor`) instead of two, and `grep cairnEditor` finds every engine read of
 // the field in any repo, this one included, with no namespace to peel back first.
@@ -30,6 +30,10 @@
 // `cairnEditor`. Typing it here means a custom route or a `createSectionAction` wrapper reads it
 // with no cast, the same way `cairnEditor` already does.
 //
+// `cairnRoles` is the site's declared role vocabulary, attached by `createAuthGuard` beside
+// `cairnAccess`. `requireAccess` and the admin action wrappers read it so a none-capability
+// session reaches an href rule only while the vocabulary still declares its role.
+//
 // `cairnIdentity` is the site's identity-gate snapshot (`createAuthGuard`'s `identity` option),
 // set on every `/admin/**` path under identity mode, the public login and auth paths included.
 // `createAuthGuard` is the only writer; the value is validated once at construction and never
@@ -38,6 +42,7 @@ import type { Editor } from './auth/types.js';
 import type { Backend } from './github/backend.js';
 import type { AdminActionAuditSink } from './sveltekit/admin-action.js';
 import type { AccessMap } from './auth/access.js';
+import type { RolesDeclaration } from './auth/roles.js';
 
 declare global {
   namespace App {
@@ -46,6 +51,7 @@ declare global {
       cairnBackend?: Backend;
       cairnAuditSink?: AdminActionAuditSink;
       cairnAccess?: AccessMap;
+      cairnRoles?: RolesDeclaration;
       cairnIdentity?: { label: string; logoutUrl: string };
     }
   }

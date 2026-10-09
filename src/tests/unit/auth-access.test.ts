@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defineAccess, canReach, hasAccessRule, noRuleReason } from '../../lib/auth/access.js';
+import { defineAccess, canReach, hasAccessRule, noRuleReason, type AccessMap } from '../../lib/auth/access.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import type { Editor } from '../../lib/auth/types.js';
 
@@ -119,7 +119,27 @@ describe('canReach: none capability', () => {
   ];
 
   it.each(rows)('$name: admitted is $admitted', ({ target, withMap = true, admitted }) => {
-    expect(canReach(withMap ? access : undefined, none, target)).toBe(admitted);
+    expect(canReach(withMap ? access : undefined, none, target, roles)).toBe(admitted);
+  });
+});
+
+describe('canReach: a none session whose role the vocabulary does not declare', () => {
+  // The map still names 'staff', the shape a site leaves behind when it drops the role from
+  // defineRoles but not from its access rules.
+  const access: AccessMap = { '/admin/staff': ['staff'] };
+  const staff = editor('staff', 'none');
+  const pruned = defineRoles({ owner: 'owner', webmaster: 'editor' });
+
+  it('refuses the session on an href rule naming its role when the vocabulary drops the role', () => {
+    expect(canReach(access, staff, '/admin/staff', pruned)).toBe(false);
+  });
+
+  it('refuses the session against the default owner/editor pair when no vocabulary is given', () => {
+    expect(canReach(access, staff, '/admin/staff')).toBe(false);
+  });
+
+  it('still admits a declared none role on the same rule', () => {
+    expect(canReach(access, staff, '/admin/staff', roles)).toBe(true);
   });
 });
 

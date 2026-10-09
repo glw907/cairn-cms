@@ -1636,8 +1636,8 @@ import { runtime } from '#lib/cairn.server.js';
 export const prerender = false;
 
 export const GET = async (event) => {
-  const health = await loadHealth(event, runtime);
-  return Response.json(health, { status: health.ok ? 200 : 503 });
+  const report = await loadHealth(event, runtime);
+  return Response.json(report, { status: report.ok ? 200 : 503 });
 };
 ```
 

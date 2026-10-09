@@ -8,6 +8,7 @@ import {
   findEditor,
 } from '../../lib/auth/store.js';
 import { CairnError } from '../../lib/diagnostics/error.js';
+import type { D1Database } from '@cloudflare/workers-types';
 
 // A scaffolded site that predates the roles migration carries migrations 0000, 0003, and 0004:
 // its `editor.role` column still has the owner/editor CHECK. The shared harness applies every
@@ -134,5 +135,43 @@ describe('after migration 0001', () => {
     expect(await setEditorRole(db, 'new@x.dev', 'writer', ['owner'])).toEqual({ outcome: 'ok' });
     expect(await demoteOwnerIfNotLast(db, 'a@x.dev', ['owner'], 'reviewer')).toEqual({ outcome: 'ok' });
     expect(await roleOf('a@x.dev')).toBe('reviewer');
+  });
+});
+
+/** A database whose every statement fails with `err`, so a test controls the exact fault text. */
+function failingDb(err: unknown): D1Database {
+  const statement = { bind: () => statement, run: () => Promise.reject(err) };
+  return { prepare: () => statement } as unknown as D1Database;
+}
+
+describe('which role-write failures name the roles migration', () => {
+  it('names auth.store-roles-unmigrated when the engine CHECK text rides only on the cause', async () => {
+    const wrapped = new Error('D1_ERROR: statement failed', {
+      cause: new Error("CHECK constraint failed: role IN ('owner', 'editor')"),
+    });
+    const err = await insertEditor(failingDb(wrapped), 'new@x.dev', 'New', 'reviewer', 1).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect(err).toBeInstanceOf(CairnError);
+    expect((err as CairnError).conditionId).toBe('auth.store-roles-unmigrated');
+  });
+
+  it("rethrows a site's own CHECK on another expression starting with role untouched", async () => {
+    const siteCheck = new Error('D1_ERROR: CHECK constraint failed: role_note IS NULL OR length(role_note) < 80');
+    const err = await insertEditor(failingDb(siteCheck), 'new@x.dev', 'New', 'reviewer', 1).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect(err).toBe(siteCheck);
+  });
+
+  it("rethrows a site's own CHECK on the role column that is not the engine's owner/editor list", async () => {
+    const siteCheck = new Error('D1_ERROR: CHECK constraint failed: role <> \'\'');
+    const err = await insertEditor(failingDb(siteCheck), 'new@x.dev', 'New', 'reviewer', 1).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect(err).toBe(siteCheck);
   });
 });

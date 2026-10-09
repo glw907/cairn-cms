@@ -37,14 +37,18 @@ function rethrowStoreFailure(err: unknown): never {
  * Run a statement that writes a caller-chosen role, naming the one fault a correct deployment can
  * still produce. An `AUTH_DB` that never received migrations/0001_roles.sql keeps the original
  * `CHECK (role IN ('owner', 'editor'))`, so a custom role name fails with a bare D1 constraint
- * error. Only that CHECK text is renamed: a primary-key violation or any other fault rethrows
- * untouched, since this module diagnoses nothing it does not recognize.
+ * error. Only the engine's own CHECK text (`role IN ('owner'`) is renamed, read off the error and
+ * its cause: a site's own CHECK on the column, a primary-key violation, or any other fault
+ * rethrows untouched, since this module diagnoses nothing it does not recognize.
  */
 async function runRoleWrite(statement: D1PreparedStatement): Promise<D1Result> {
   try {
     return await statement.run();
   } catch (err) {
-    if (/CHECK constraint failed:\s*role\b/i.test(String(err))) {
+    // D1 may carry the SQLite text on the error itself or only on its cause, so read both.
+    const cause = err instanceof Error ? err.cause : undefined;
+    const text = `${String(err)}\n${String(cause ?? '')}`;
+    if (/CHECK constraint failed:\s*role\s+IN\s*\(\s*'owner'/i.test(text)) {
       throw new CairnError('auth.store-roles-unmigrated', {
         cause: err,
         message:

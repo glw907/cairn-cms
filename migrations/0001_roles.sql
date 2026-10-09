@@ -1,3 +1,4 @@
+-- Once copied into a site migrations directory, any automated `wrangler d1 migrations apply` runs this. It keeps only the four columns below, so carry any site-added editor column across first.
 -- Drop the role CHECK constraint (spec section 7). SQLite has no
 -- ALTER TABLE DROP CONSTRAINT, so this rebuilds the table via the
 -- create-copy-drop-rename sequence, inside the migration's implicit

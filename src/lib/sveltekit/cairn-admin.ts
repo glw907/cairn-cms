@@ -238,6 +238,9 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
       } catch (err) {
         if (isRedirect(err) || isHttpError(err)) throw err;
         const fields: Record<string, unknown> = { action, error: err instanceof Error ? err.message : String(err) };
+        // A named condition (a CairnError, say) carries its id, so an operator can filter on it.
+        const conditionId = err instanceof Error ? (err as { conditionId?: unknown }).conditionId : undefined;
+        if (typeof conditionId === 'string') fields.conditionId = conditionId;
         // `view`, not `narrowed`: it is the concrete AdminView union, so the `in` checks below
         // narrow it cleanly, unlike the generic-parameterized `narrowed`.
         if ('concept' in view) fields.concept = view.concept.id;

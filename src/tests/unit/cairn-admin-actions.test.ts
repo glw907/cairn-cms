@@ -554,6 +554,34 @@ describe('editor actions', () => {
     expect(calls.some((c) => c.sql.includes('INSERT INTO editor') && c.args[0] === 'new@x.dev')).toBe(true);
   });
 
+  it('editorAdd on an AUTH_DB still carrying the role CHECK logs admin.action.failed with the condition id', async () => {
+    // The insert fails the way an unmigrated D1 answers a custom role; the store names the
+    // condition, and the chokepoint's record carries that id beside the message.
+    const { db } = fakeD1();
+    const failing = {
+      ...db,
+      prepare(sql: string) {
+        const stmt = db.prepare(sql);
+        if (!sql.includes('INSERT INTO editor')) return stmt;
+        return { ...stmt, bind: () => ({ run: () => Promise.reject(new Error("D1_ERROR: CHECK constraint failed: role IN ('owner', 'editor')")) }) };
+      },
+    };
+    const roles = { owner: 'owner' as const, editor: 'editor' as const, reviewer: 'editor' as const };
+    const admin = createCairnAdmin({ runtime: { ...runtime(), roles }, ...deps });
+    const event = actionEvent('/admin/editors', {
+      editor: owner,
+      form: { email: 'new@x.dev', name: 'New', role: 'reviewer' },
+      env: { AUTH_DB: failing },
+    });
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = (await admin.actions.editorAdd(event)) as { status?: number };
+    expect(result.status).toBe(500);
+    expect(errorSpy).toHaveBeenCalledWith(
+      'admin.action.failed',
+      expect.objectContaining({ action: 'editorAdd', conditionId: 'auth.store-roles-unmigrated' }),
+    );
+  });
+
   it('editorRemove delegates on the editors view and deletes the row', async () => {
     const { db, calls } = fakeD1({ 'FROM editor': { email: 'gone@t', display_name: 'Gone', role: 'editor' } });
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });

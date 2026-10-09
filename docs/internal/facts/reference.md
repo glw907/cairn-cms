@@ -594,7 +594,7 @@ re-sourced to Go on this tree rather than to the page.
   `admin.mount-incomplete`, `auth.role-wiring-missing`, and `ai.posture-not-effective`. Source:
   `tool/internal/doctor/check_bindings.go:29`, `check_media.go:29`, `check_observability.go:16`,
   `check_csrf.go:214`, `check_siteconfig.go:25`, `check_origin.go:65`, `check_referrer.go:178`,
-  `check_mount.go:75`, `check_floors.go:346`, `check_roles.go:105`, `check_posture.go:284`, with
+  `check_mount.go:75`, `check_floors.go:346`, `check_roles.go:104`, `check_posture.go:284`, with
   each severity at `tool/internal/spine/conditions.json:103-110`. [verified]
 - `f:3sxgcl` `config.site-config` reports presence and parsing only; the per-concept URL policy lives on the
   adapter concepts and is not checkable from a directory preflight. Source:
@@ -656,7 +656,7 @@ re-sourced to Go on this tree rather than to the page.
   call's argument is a bare identifier the check cannot read into; none of these is treated as a
   high-confidence `FAIL`. The page's checks table names only this check's `PASS`/`FAIL` condition,
   `SKIP`, and `UNCHECKED` cases, not its `INFO` settlements. Source:
-  `tool/internal/doctor/check_roles.go:118-131`, `tool/internal/doctor/check_roles_test.go:31,40,49`.
+  `tool/internal/doctor/check_roles.go:117-130`, `tool/internal/doctor/check_roles_test.go:31,40,49`.
   [verified]
 
 ## docs/reference/cli-cairn-exit-codes.md

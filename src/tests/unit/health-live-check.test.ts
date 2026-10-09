@@ -292,6 +292,16 @@ describe('loadHealth with ?live=1', () => {
     expect(data.ok).toBe(true);
   });
 
+  it('makes no fetch and reports no token check for a key that fails the signing check', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const unusable = btoa('not a key');
+    const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: unusable }, true), runtime(nextInstallation()));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(data.checks).not.toHaveProperty('githubAppToken');
+    expect(data.checks.githubAppSigning.ok).toBe(false);
+    expect(data.ok).toBe(data.checks.githubAppSigning.ok);
+  });
+
   it('never serializes any part of the key', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => tokenResponse());
     const data = await loadHealth(healthEvent({ GITHUB_APP_PRIVATE_KEY_B64: keyB64 }, true), runtime(nextInstallation()));

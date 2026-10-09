@@ -60,6 +60,44 @@ New findings start below this line, one per finding, with its perspective and a 
   excluded them with `--grep-invert "site home|archive page 2"`, by hand in its plan. A local
   variant of the `full` tier in `gate-tier.mjs` would make that standing. Found by the conductor at
   pass A's Task 0, 2026-10-08.
+- **`contributor`.** `src/lib/sveltekit/admin-action.ts:114` still says an absent access map means
+  "the guard never ran on this route". Task 1 of pass A restated the real cause (a route outside every
+  hook's coverage) at `guard.ts`, `section-action.ts`, `access.ts`, and `index.ts`, and missed this
+  comment, which the stage-2b engine pass entry in `ROADMAP.md` does not list among its cause sites
+  either. Found by the Task 1 implementer and reviewer, engine pass pre-2b A, 2026-10-08.
+- **`tooling`.** `cairn-run-gate` on the light lane caps the scope at 3G
+  (`~/.dotfiles/bin/.local/bin/cairn-run-gate`, the `light)` case), and V8 sizes its default heap from
+  that cgroup limit. `npm run check` (svelte-check) therefore dies with an out-of-memory exit 134 at
+  about 1 GB unless `NODE_OPTIONS=--max-old-space-size=6144` is set, while the dispatch tells
+  implementers to run browserless check scripts on that lane. The entry above records the worktree
+  symptom; this one names the lane as its cause. A lane-level `NODE_OPTIONS` default or a larger
+  light cap would fix both. Found by the Task 1 implementer, engine pass pre-2b A, 2026-10-08.
+- **`tooling`.** `cairn-run-gate` loses a finished result when the harness has backgrounded the call.
+  After a foreground call hits the Bash tool's 600s timeout, a re-issue attached to the running gate
+  consumes the result, and the script then removes its run state
+  (`~/.dotfiles/bin/.local/bin/cairn-run-gate`, the final `rm -f` before `gate exit:`). A re-issue
+  after that starts a second full gate instead of reporting the finished one, which duplicated about
+  20 minutes. The receipt the script already writes could answer a re-issue on the same fingerprint.
+  Found by the Task 1 implementer, engine pass pre-2b A, 2026-10-08.
+- **`contributor`.** A fact's `Source:` pointer is the only place a path string lives for provenance
+  matching (`scripts/checks/check-provenance.mjs`, the path facts). Repairing the pointer after a file
+  delete (`templates/waymark/src/access.ts`) broke nine brief sentences that cite the old path, and
+  the only fix was editing the fact's claim text. A repair that moves a pointer should not force a
+  claim edit. The line-drift half, a `path:line` pointer about 24 lines off after the adapter gained
+  the `access` block (`f:tycp7k`), is the `check:facts` off-by-one entry already in `ROADMAP.md`;
+  Task 2 hit it again on three `check_roles.go` citations marked `[verified]`. Found by the Task 1
+  implementer and the Task 2 reviewer, engine pass pre-2b A, 2026-10-08.
+- **`contributor`.** `scripts/build/emit-tool-conditions.mjs` reads the built `dist`
+  (`CONDITIONS_JS = 'dist/diagnostics/conditions.js'`, line 18), not `src`. Run right after an edit
+  to `conditions.ts` without `npm run package`, it writes an unchanged mirror and reports success;
+  only `check:tool-conditions` catches it later. The script should compare the `dist` file's mtime
+  against `src` and refuse, or the task prose should name the order. Found by the Task 2 implementer
+  and reviewer, engine pass pre-2b A, 2026-10-08.
+- **`contributor`.** In `src/lib/sveltekit/guard.ts:171-173` a `// WATCH:` line comment sits between
+  `createAuthGuard`'s TSDoc block and the `export function`, so the doc attaches across a comment,
+  which some doc tools handle inconsistently. The placement predates pass A, which kept it because
+  `check:tool-heuristics` greps the signature. Moving the `WATCH:` above the TSDoc block would keep
+  both. Found by the Task 1 fix reviewer, engine pass pre-2b A, 2026-10-08.
 
 Draft docs stage 2a's close (2026-10-07, the 2a unattended run's R7) triaged the whole log and
 found 187 open entries, verified against the tree at `b38ef6b3` (each group's cited lines read or

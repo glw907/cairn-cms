@@ -29,8 +29,8 @@ The spec and both plans are reviewed, folded, and verified: pass A
 (11.1M), then pass B (`...-pre-2b-b.md`). The three forks are ruled (forks 1 and 2 take the
 recommendations, and pass B's ceiling is 14.0M), and Geoff approved the spec on 2026-10-08. Pass A
 runs unattended on worktree `.claude/worktrees/engine-pre-2b-a` (branch `engine-pre-2b-a`, draft PR
-#108): S1 and S2 are closed (Tasks 1 to 5 and 7 accepted, each boundary green), and S3 (Tasks 8, 9, 10)
-runs next.
+#108): S1 to S3 are closed (Tasks 1 to 5 and 7 to 10 accepted, each boundary green), and S4 runs next
+(Tasks 11 and 6, then Task 12 alone).
 The plan's Ledger on that branch carries the state and the Task 12 carry. Pass B waits on pass A's
 merge; its gate rule is amended to match (`ee62f982`). Geoff gave the go to merge PR #108 at pass A's
 close (2026-10-08), once its close gates and CI are green. The charter phrase is ruled (Geoff,

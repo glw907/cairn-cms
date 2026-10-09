@@ -26,6 +26,13 @@ function event(env: Record<string, unknown>) {
 }
 
 describe('loadHealth', () => {
+  it('reports the signing check as not applicable for a non-GitHub provider', async () => {
+    const rt = { ...runtime(), backend: { kind: 'other' } } as unknown as CairnRuntime;
+    const data = await loadHealth(event({}), rt);
+    expect(data.ok).toBe(true);
+    expect(data.checks.githubAppSigning).toEqual({ ok: true, detail: 'not-applicable' });
+  });
+
   it('reports a failure when the key is unset, without throwing', async () => {
     const data = await loadHealth(event({}), runtime());
     expect(data.ok).toBe(false);

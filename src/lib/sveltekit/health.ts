@@ -1,4 +1,4 @@
-// GET /admin/healthz. Signs a dummy JWT through the real App-signing path so a broken
+// GET /healthz, a site-root route outside /admin. Signs a dummy JWT through the real App-signing path so a broken
 // PKCS#1-to-PKCS#8 conversion is caught early (spec §7.8). The payload is pass/fail and a
 // coarse detail only; it never carries the key or a token.
 import { signingSelfTest } from '../github/signing.js';
@@ -7,7 +7,7 @@ import type { CairnRuntime } from '../content/types.js';
 import type { CairnEvent } from './types.js';
 import { env } from './workers-env.js';
 
-/** The `/admin/healthz` payload. */
+/** The `/healthz` payload. */
 export interface HealthData {
   ok: boolean;
   checks: { githubAppSigning: { ok: boolean; detail?: string } };
@@ -16,7 +16,7 @@ export interface HealthData {
 /**
  * Run the signing self-test against the configured App id and the Worker's key secret. The self-test
  * is GitHub-specific, so it narrows the provider on `kind === 'github-app'` for the App id; a
- * non-GitHub backend skips the signing check.
+ * non-GitHub backend reports the check as `not-applicable` and passing.
  *
  * Takes the {@link CairnEvent} the health route serves; the key itself is read from the Worker env,
  * so the event carries nothing this check reads today.
@@ -24,9 +24,9 @@ export interface HealthData {
 export async function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<HealthData> {
   const key = env.GITHUB_APP_PRIVATE_KEY_B64;
   const provider = runtime.backend;
-  const githubAppSigning =
-    isGithubApp(provider) && key
-      ? await signingSelfTest(provider.appId, key)
-      : { ok: false, detail: 'GITHUB_APP_PRIVATE_KEY_B64 is not configured' };
+  let githubAppSigning: { ok: boolean; detail?: string };
+  if (!isGithubApp(provider)) githubAppSigning = { ok: true, detail: 'not-applicable' };
+  else if (!key) githubAppSigning = { ok: false, detail: 'GITHUB_APP_PRIVATE_KEY_B64 is not configured' };
+  else githubAppSigning = await signingSelfTest(provider.appId, key);
   return { ok: githubAppSigning.ok, checks: { githubAppSigning } };
 }

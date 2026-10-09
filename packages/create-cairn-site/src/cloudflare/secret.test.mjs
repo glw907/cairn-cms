@@ -100,6 +100,29 @@ test('moves the PEM to a Worker secret and deletes it from state, keeping siblin
   assert.doesNotMatch(stateFileText, /BEGIN PRIVATE KEY/);
 });
 
+test('the closing message points at the rotation page, not at re-running the step', async (t) => {
+  await freshStateDir(t);
+  const scaffoldDir = tmpdir();
+  await seedSite('alpine-club-000007');
+
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const { movePemToWorkerSecret } = await import('./secret.mjs');
+  const log = [];
+  await movePemToWorkerSecret({
+    siteId: 'alpine-club-000007',
+    dir: scaffoldDir,
+    log: (line) => log.push(line)
+  });
+
+  const closing = log.join('\n');
+  assert.match(closing, /https:\/\/cairn\.pub\/docs\/extend\/rotate-the-github-app-key/);
+  assert.doesNotMatch(closing, /re-run this step/);
+});
+
 test('passes accountId through as CLOUDFLARE_ACCOUNT_ID', async (t) => {
   await freshStateDir(t);
   const scaffoldDir = tmpdir();

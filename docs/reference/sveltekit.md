@@ -1571,9 +1571,11 @@ declare function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<H
 ```
 
 Run the GitHub App signing self-test against the configured App id and the Worker's key secret.
+A backend that isn't a GitHub App reports the check as `{ ok: true, detail: 'not-applicable' }`.
 Mount it at the site root, outside `/admin`, so the auth guard does not gate the deploy health
-check. The event comes first, the runtime second. On a site that prerenders by default, set
-`prerender = false` so the check runs at request time rather than freezing a build-time failure.
+check. The event comes first, the runtime second. The payload's `ok` is the signing check alone,
+and the route answers a failing check with a 503 so a deploy gate reads the status code. On a site
+that prerenders by default, set `prerender = false` so the check runs at request time rather than freezing a build-time failure.
 
 ```ts
 // src/routes/healthz/+server.ts
@@ -1582,7 +1584,10 @@ import { runtime } from '#lib/cairn.server.js';
 
 export const prerender = false;
 
-export const GET = async (event) => Response.json(await loadHealth(event, runtime));
+export const GET = async (event) => {
+  const health = await loadHealth(event, runtime);
+  return Response.json(health, { status: health.ok ? 200 : 503 });
+};
 ```
 
 ---
@@ -2032,7 +2037,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `CairnAdminRoutes` | Extension API | `type CairnAdminRoutes` | What `createCairnAdmin` returns: the one `load`, `shellLoad`, and the `actions` vocabulary narrowed against the ten media-janitorial actions (see the note after the actions table in [`createCairnAdmin`](#createcairnadmin)), shown expanded there. |
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'history' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `HistoryData` for the `history` view, `MediaLibraryData`, `NavData`, `VocabularyData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `WelcomeData` | Extension API | `interface WelcomeData { displayName: string; siteName: string }` | The `'welcome'` view's data: the calm, minimal admin-root landing a none-capability role with no declared `home` gets. [`CairnAdmin`](./admin.md#cairnadmin) switches it to a bare internal view inside the shell, so any site-granted nav stays visible. |
-| `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
+| `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status, which is the signing self-test result alone, and that result. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
 | `HandleInput` | Extension API | `interface HandleInput { event: CairnEvent; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input; `event` is [`CairnEvent`](#the-event-shape). |
 | `AuthGuardConfig` | Scaffold API | `interface AuthGuardConfig { runtime: Pick<CairnRuntime, 'roles' \| 'access'>; includeSubDomains?: boolean; identity?: IdentityResolver }` | Configuration for `createAuthGuard`: the composed runtime (the site's declared role vocabulary and access map ride on it), whether the admin `Strict-Transport-Security` header pins sibling subdomains, and an optional identity gate replacing session-cookie resolution; each optional member omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). `identity` and the types it names are Unstable API inside this otherwise Scaffold-tier interface (see [`createAuthGuard`](#createauthguard)'s tier note). |

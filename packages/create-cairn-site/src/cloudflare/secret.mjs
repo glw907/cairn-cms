@@ -42,7 +42,6 @@ export async function movePemToWorkerSecret({ siteId, dir, log, accountId }) {
   await updateSite(siteId, { github: { pem: undefined } });
   log(
     "The App's private key now lives only in your Worker's secret store, not on this machine. " +
-      "If it is ever lost, regenerate it at the App's settings page on github.com and re-run " +
-      'this step.'
+      'To replace it later, follow https://cairn.pub/docs/extend/rotate-the-github-app-key.'
   );
 }

@@ -1545,3 +1545,36 @@ is a dispatch that returns a structured verdict.
   design's "decision 1" is not literal in that file (Task 12's S4 pre-flight checks it).
 - **Next:** S3 launch (Tasks 8, 9, 10). Owner rulings since: the merge go for PR #108 and pass B's,
   the charter phrase (option B), and pass B's copy (on `main`, `ed2ef247`, `70719a38`, `0b065649`).
+
+### 2026-10-09, S3 boundary (S3 closed) and S4 pre-flight
+
+- **S3 run** `wf_0bd8cb5b-4d6`: Tasks 8 (`666aff41`), 9 (`df8857d9`), and 10 (`a4618437`) each accepted
+  with no fix round. Every per-task gate now ended with the static list, and the boundary's static list
+  and F were green first time at `a4618437`: node 6231, component 1789 (2 skipped), create-cairn-site
+  852, admin-visual 94, showcase unit 72, showcase e2e 335.
+- **Task 8 corrected a plan premise:** the guard's login redirect reaches `use:enhance` as a `redirect`
+  result (kit `forms/client.js:215-217`), not `error`. The implementer treats an off-concept redirect as
+  an in-place failure (`landsOnThisConcept`); only a component test covers it. **For the close's
+  reviewers:** Save re-enables briefly before `location.assign` (a double-click window), and single
+  publish on a null head refuses after the branch save. **For Geoff's read before merge:** Task 8's
+  calm notice copy, "That did not go through. Your text is still here; try again."
+- **CI:** the `tool` workflow had failed on every pass push since `5549fda8` on govulncheck: `setup-go`
+  took a runner's preinstalled go1.26.8 for `1.26.x`, and go1.26.9 fixes all nine stdlib advisories.
+  Fixed on `main` (`8f2fe6da`, `check-latest: true`); `main` would have failed the same way. Every other
+  CI job was green on `a4618437`.
+- **S3 friction filed on `main`:** `ae373ef1`. Task 12's S3 carry:
+  `docs/superpowers/research/2026-10-09-pass-a-s3-task12-carry.md`.
+- **S4 pre-flight** (Haiku at `a4618437`): no outcome-changing claim. Task 11's ":84 passes `cairn` as
+  the third argument" is the change itself (today two arguments); `verifyManifest` spans `:308-378`;
+  `checkContainerNesting` is `src/lib/content/fieldset.ts:388`. Task 6: the `createGithubApp` literal is
+  `cairn.config.ts:150`; `workers-env.ts` is `src/lib/sveltekit/workers-env.ts:43`. Task 12: the media
+  design's decision 1 is item 1 of "Locked decisions" at `:162-168` (true). **Amended:** Task 12's
+  removed-option grep scopes to the published tree (`docs/` minus `docs/internal/` and
+  `docs/superpowers/`, `README.md`, `packages/cairn-cms-dev/README.md`, `skills/`, `claude/`); 14
+  internal planning files still name the options and are never edited. **Amended:** Decision 12 is
+  superseded by Geoff's ruling (option B): Task 12 writes `what-cairn-is-and-is-not.md:107` as "An
+  anonymous visitor reaches nothing behind `/admin` except the two pages of the sign-in flow: the form
+  and the confirm page."
+- **S4 runs as two invocations** (conductor ruling): Tasks 11 and 6, then Task 12 alone, because Task 12
+  consumes every task's report and a shared run would start it before 11's and 6's reports exist.
+- **Next:** S4a launch (Tasks 11, 6).

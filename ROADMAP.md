@@ -1126,6 +1126,15 @@ the named human gates only):**
 
 ## Next
 
+- **Gate economy follow-ups (Geoff, 2026-10-08; audit and adversarial review of the per-task gate).**
+  Three items deferred from the change that made the per-task gate the diff's blast radius. (a)
+  Per-task test selection via `vitest --changed <base>`. Trigger: `forceRerunTriggers` covers
+  fs-read inputs (78 of 513 test files read outside the import graph) and a committed canary proves
+  a broken fs-read fixture turns a selected run red. (b) Auth-data test-only fix rounds taking the
+  touched tests, the tests of touched helpers, and a re-run of the affected named mutations.
+  Trigger: lands with (a). (c) The docs chain framing-seat A/B at stage 2b's start: two intros, one
+  at `xhigh` and one at `high`; keep `xhigh` unless `high` matches.
+
 - **Batched engine friction (the boundary test's third class; stage 2a's close, 2026-10-07).** Items
   whose fix changes no extend page's content. Each rides whichever engine pass runs next, and each
   docs-stage close re-tests them, since a later stage's page can move one into the first class.

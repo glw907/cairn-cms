@@ -70,8 +70,9 @@ durable orientation only.
 ### Tooling for the rebuild
 
 - **Implementer subagent** (user-scoped): `cairn-implementer` drives one plan task test-first and
-  clears the full gate before reporting done (targeted test + `npm run check` 0/0 + `npm test` exit
-  0), with the cairn conventions baked in. Pinned to Sonnet. The `diff-reviewer` agent reads each
+  clears the task's gate before reporting done (the tier its diff computes via
+  `scripts/checks/gate-tier.mjs --range <base>..HEAD`, plus the e2e specs its change reaches), with
+  the cairn conventions baked in. Pinned to Sonnet. The `diff-reviewer` agent reads each
   task's diff and the gate runs inside the chain; the conductor stays thin and rules on reports.
 - **Review subagents** (user-scoped, read-only): `svelte-reviewer`, `cloudflare-workers-reviewer`,
   `web-auth-security-reviewer`, `daisyui-a11y-reviewer`, pinned to `claude-opus-5-5`. Fan them out in

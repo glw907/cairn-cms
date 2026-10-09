@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defineAccess, canReach, hasAccessRule } from '../../lib/auth/access.js';
+import { defineAccess, canReach, hasAccessRule, noRuleReason } from '../../lib/auth/access.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import type { Editor } from '../../lib/auth/types.js';
 
@@ -8,6 +8,7 @@ const roles = defineRoles({
   webmaster: 'editor',
   publisher: 'editor',
   'manager': 'editor',
+  staff: { capability: 'none', home: '/admin/staff' },
 });
 
 function editor(role: string, capability: Editor['capability'] = 'editor'): Editor {
@@ -80,12 +81,6 @@ describe('defineAccess validation', () => {
 describe('canReach: capability floors and owner bypass', () => {
   const access = defineAccess(roles, { pages: ['webmaster'], '/admin/money': ['manager'] });
 
-  it('none capability reaches nothing, mapped or unmapped', () => {
-    expect(canReach(access, editor('ghost', 'none'), 'pages')).toBe(false);
-    expect(canReach(access, editor('ghost', 'none'), 'unmapped-screen')).toBe(false);
-    expect(canReach(access, editor('ghost', 'none'), '/admin/money')).toBe(false);
-  });
-
   it('owner capability reaches every mapped and unmapped target', () => {
     expect(canReach(access, editor('owner', 'owner'), 'pages')).toBe(true);
     expect(canReach(access, editor('owner', 'owner'), '/admin/money')).toBe(true);
@@ -95,6 +90,36 @@ describe('canReach: capability floors and owner bypass', () => {
   it('editors keeps its owner floor regardless of the map', () => {
     expect(canReach(access, editor('webmaster'), 'editors')).toBe(false);
     expect(canReach(access, editor('owner', 'owner'), 'editors')).toBe(true);
+  });
+});
+
+describe('canReach: none capability', () => {
+  const access = defineAccess(roles, {
+    // A screen-id rule that names the none role: still refused, a none session reaches a screen id never.
+    pages: ['webmaster', 'staff'],
+    editors: ['owner', 'staff'],
+    '/admin/money': ['manager'],
+    '/admin/staff': ['staff'],
+    '/admin/shop': ['staff'],
+    '/admin/shop/refunds/audit': ['owner'],
+  });
+  const none = editor('staff', 'none');
+
+  const rows: Array<{ name: string; target: string; withMap?: boolean; admitted: boolean }> = [
+    { name: 'a screen id whose rule names the role', target: 'pages', admitted: false },
+    { name: 'the editors screen id, even with a rule naming the role', target: 'editors', admitted: false },
+    { name: 'an unmapped screen id', target: 'unmapped-screen', admitted: false },
+    { name: 'a mapped href naming the role', target: '/admin/staff', admitted: true },
+    { name: 'a descendant of a mapped href naming the role', target: '/admin/staff/roster', admitted: true },
+    { name: 'a dynamic route under a mapped href with nothing deeper to shadow it', target: '/admin/staff/[id]', admitted: true },
+    { name: 'a mapped href naming a different role', target: '/admin/money', admitted: false },
+    { name: 'an unmapped href', target: '/admin/committees', admitted: false },
+    { name: 'a dynamic route a deeper key shadows', target: '/admin/shop/[id]', admitted: false },
+    { name: 'a mapped href with no map at all', target: '/admin/staff', withMap: false, admitted: false },
+  ];
+
+  it.each(rows)('$name: admitted is $admitted', ({ target, withMap = true, admitted }) => {
+    expect(canReach(withMap ? access : undefined, none, target)).toBe(admitted);
   });
 });
 
@@ -160,5 +185,26 @@ describe('hasAccessRule', () => {
   it('reports false for every target when no map is given', () => {
     expect(hasAccessRule(undefined, 'pages')).toBe(false);
     expect(hasAccessRule(undefined, '/admin/money')).toBe(false);
+  });
+});
+
+describe('noRuleReason', () => {
+  const access = defineAccess(roles, {
+    pages: ['webmaster'],
+    '/admin/x': ['manager'],
+    '/admin/x/y/z': ['owner'],
+  });
+
+  it.each([
+    { name: 'a screen id with no rule', target: 'settings', reason: 'no_rule' },
+    { name: 'an href no key prefixes', target: '/admin/committees', reason: 'no_rule' },
+    { name: 'a dynamic segment a deeper key shadows', target: '/admin/x/[id]', reason: 'shadowed' },
+    { name: 'a dynamic segment with no deeper key beside it', target: '/admin/z/[id]', reason: 'no_rule' },
+  ])('$name reads $reason', ({ target, reason }) => {
+    expect(noRuleReason(access, target)).toBe(reason);
+  });
+
+  it('reads no_rule for an absent map', () => {
+    expect(noRuleReason(undefined, '/admin/x')).toBe('no_rule');
   });
 });

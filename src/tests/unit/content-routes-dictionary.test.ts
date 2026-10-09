@@ -95,6 +95,24 @@ describe('dictionaryAdd transport gates', () => {
   });
 });
 
+describe('dictionaryAdd concept gate', () => {
+  it('answers 404 when the route carries no concept param, for an editor the map denies, committing nothing', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime({ access: { posts: ['owner'] } }) });
+    const event = contentEvent({
+      url: 'https://t.example/admin/posts/2026-05-01-hi',
+      params: {},
+      body: JSON.stringify({ word: 'cairn' }),
+      headers: { 'content-type': 'text/plain', 'x-cairn-csrf': CSRF },
+      cookies: cookieJar(CSRF),
+      editor: { email: 'w@x.test', displayName: 'W', role: 'editor', capability: 'editor' },
+    });
+    await expect(routes.dictionaryAddAction(event)).rejects.toMatchObject({ status: 404 });
+    expect(commitCount(gh)).toBe(0);
+  });
+});
+
 describe('dictionaryAdd read-modify-write', () => {
   it('inserts a new word in sorted order and commits the merged list', async () => {
     const gh = new GithubDouble({ main: { [DICT_PATH]: serializeDictionary(['alpha', 'gamma']) } });

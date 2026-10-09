@@ -2,7 +2,7 @@
 // closes over the shared ContentRoutesContext (content-routes-context.ts), built once per call by
 // createContentRoutesInternal; createContentRoutes, the public entry point, is only a thin wrapper
 // around it.
-import { fail, type ActionFailure } from '@sveltejs/kit';
+import { error, fail, type ActionFailure } from '@sveltejs/kit';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import type { Backend } from '../github/backend.js';
@@ -102,8 +102,12 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
     const editor = requireEditor(event);
     // The edit view always carries the concept in its params (cairn-admin.ts's contentEvent), so
     // this gates the same as editLoad/saveAction on the entry's own concept, closing the deny-at-
-    // the-route gap a mapped-away concept would otherwise leave in this edit-screen action.
-    if (event.params.concept) requireEngineAccess(ctx.runtime.access, editor, event.params.concept);
+    // the-route gap a mapped-away concept would otherwise leave in this edit-screen action. A route
+    // that carries none (a hand-mount off the edit view) has no concept to gate on, so it answers
+    // 404 rather than skip the check.
+    const conceptId = event.params.concept;
+    if (!conceptId) throw error(404, 'Not found');
+    requireEngineAccess(ctx.runtime.access, editor, conceptId);
 
     let payload: { word?: unknown; words?: unknown };
     try {

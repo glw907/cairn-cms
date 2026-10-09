@@ -4,6 +4,7 @@ import {
   requireEditor,
   requireSession,
   requireAccess,
+  requireEngineAccess,
   isPublicAdminPath,
 } from '../../lib/sveltekit/guard.js';
 import type { AccessMap } from '../../lib/auth/access.js';
@@ -231,12 +232,80 @@ describe('requireAccess', () => {
 });
 
 describe('isPublicAdminPath', () => {
-  it('treats the login page and auth endpoints as public', () => {
-    expect(isPublicAdminPath('/admin/login')).toBe(true);
-    expect(isPublicAdminPath('/admin/auth/confirm')).toBe(true);
+  it.each([
+    { path: '/admin/login', expected: true },
+    { path: '/admin/auth/confirm', expected: true },
+    { path: '/admin/auth/request', expected: false },
+    { path: '/admin/auth/x', expected: false },
+    { path: '/admin/auth/confirm/x', expected: false },
+    { path: '/admin/authx', expected: false },
+    { path: '/admin/auth', expected: false },
+    { path: '/admin', expected: false },
+    { path: '/admin/posts', expected: false },
+  ])('$path is public: $expected', ({ path, expected }) => {
+    expect(isPublicAdminPath(path)).toBe(expected);
   });
-  it('treats every other admin path as gated', () => {
-    expect(isPublicAdminPath('/admin')).toBe(false);
-    expect(isPublicAdminPath('/admin/posts')).toBe(false);
+});
+
+describe('access for a none-capability session', () => {
+  const staffRole = { email: 's@x.test', displayName: 'S', role: 'staff', capability: 'none' as const };
+  const access: AccessMap = { '/admin/staff': ['staff'], editors: ['staff'] };
+
+  it('requireAccess admits a none session on a mapped href that names its role', () => {
+    const fixture = event({ cairnEditor: staffRole, cairnAccess: access }, new URL('https://x.test/admin/staff'));
+    expect(requireAccess(fixture)).toBe(staffRole);
+  });
+
+  it('requireAccess refuses a none session on the editors screen id even with a rule naming its role', () => {
+    const fixture = event({ cairnEditor: staffRole, cairnAccess: access });
+    expect(() => requireAccess(fixture, 'editors')).toThrowError(expect.objectContaining({ status: 403 }));
+  });
+
+  it('requireAccess refuses a none session on a mapped href that names another role', () => {
+    const fixture = event({ cairnEditor: staffRole, cairnAccess: { '/admin/staff': ['publisher'] } }, new URL('https://x.test/admin/staff'));
+    expect(() => requireAccess(fixture)).toThrowError(expect.objectContaining({ status: 403 }));
+  });
+});
+
+describe('auth.access.refused reason', () => {
+  const publisher = { email: 'p@x.test', displayName: 'P', role: 'publisher', capability: 'editor' as const };
+  const staffRole = { email: 's@x.test', displayName: 'S', role: 'staff', capability: 'none' as const };
+
+  /** The `reason` of the one auth.access.refused record the call emits, read off the console sink. */
+  function refusedReasons(run: () => void): unknown[] {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(run).toThrowError(expect.objectContaining({ status: 403 }));
+      return warnSpy.mock.calls
+        .map((c) => c[0] as { event?: string; reason?: string })
+        .filter((r) => r.event === 'auth.access.refused')
+        .map((r) => r.reason);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  }
+
+  const shadowMap: AccessMap = { '/admin/x': ['publisher'], '/admin/x/y/z': ['publisher'] };
+
+  it.each([
+    { name: 'no rule for the target', map: { '/admin/other': ['publisher'] }, route: '/admin/x', reason: 'no_rule' },
+    { name: 'a dynamic segment shadowed by a deeper key', map: shadowMap, route: '/admin/x/[id]', reason: 'shadowed' },
+    { name: 'a role the rule does not list', map: { '/admin/x': ['webmaster'] }, route: '/admin/x', reason: 'role' },
+  ])('requireAccess reports $reason for $name', ({ map, route, reason }) => {
+    const fixture = event({ cairnEditor: publisher, cairnAccess: map }, new URL('https://x.test/admin/x'), route);
+    expect(refusedReasons(() => requireAccess(fixture))).toEqual([reason]);
+  });
+
+  it('requireAccess reports role for a none session a mapped href does not name', () => {
+    const fixture = event({ cairnEditor: staffRole, cairnAccess: { '/admin/x': ['publisher'] } }, new URL('https://x.test/admin/x'));
+    expect(refusedReasons(() => requireAccess(fixture))).toEqual(['role']);
+  });
+
+  it.each([
+    { name: 'a role the rule does not list', map: { pages: ['webmaster'] } as AccessMap, who: publisher, target: 'pages' },
+    { name: 'the editors floor', map: {} as AccessMap, who: publisher, target: 'editors' },
+    { name: 'a none capability', map: {} as AccessMap, who: staffRole, target: 'pages' },
+  ])('requireEngineAccess reports role for $name', ({ map, who, target }) => {
+    expect(refusedReasons(() => requireEngineAccess(map, who, target))).toEqual(['role']);
   });
 });

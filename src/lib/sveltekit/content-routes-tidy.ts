@@ -2,7 +2,7 @@
 // ContentRoutesContext (content-routes-context.ts), built once per call by
 // createContentRoutesInternal (the public createContentRoutes is a thin wrapper around it),
 // reusing the context's resolved Anthropic client and request deadline.
-import { fail, type ActionFailure } from '@sveltejs/kit';
+import { error, fail, type ActionFailure } from '@sveltejs/kit';
 import { DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import { log } from '../log/index.js';
 import { requireEditor, requireEngineAccess, requireCookieJar } from './guard.js';
@@ -120,8 +120,12 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     const editor = requireEditor(event);
     // The edit view always carries the concept in its params (cairn-admin.ts's contentEvent), so
     // this gates the same as editLoad/saveAction on the entry's own concept, closing the deny-at-
-    // the-route gap a mapped-away concept would otherwise leave in this edit-screen action.
-    if (event.params.concept) requireEngineAccess(ctx.runtime.access, editor, event.params.concept);
+    // the-route gap a mapped-away concept would otherwise leave in this edit-screen action. A route
+    // that carries none (a hand-mount off the edit view) has no concept to gate on, so it answers
+    // 404 rather than skip the check.
+    const conceptId = event.params.concept;
+    if (!conceptId) throw error(404, 'Not found');
+    requireEngineAccess(ctx.runtime.access, editor, conceptId);
 
     // Fail-fast: refuse before any model call if tidy is off or the key is missing. The model is read
     // from config (a stated fact in this tier); a missing key is the "not enabled" refusal. No secret is

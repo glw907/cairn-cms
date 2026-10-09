@@ -13,9 +13,10 @@ import { error, isActionFailure, isHttpError, isRedirect, redirect } from '@svel
 import { DEV } from 'esm-env';
 import { csrfCookieName } from '../auth/crypto.js';
 import { csrfHeaderVerdict, csrfFieldVerdict, csrfSecure } from './csrf.js';
-import { canReach, hasAccessRule } from '../auth/access.js';
+import { canReach, hasAccessRule, noRuleReason } from '../auth/access.js';
 import { log } from '../log/index.js';
 import type { AccessMap } from '../auth/access.js';
+import type { AccessRefusedReason } from '../log/events.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
 
@@ -89,7 +90,7 @@ export interface AdminActionOptions {
  */
 export type AdminTargetAuthorization =
   | { outcome: 'allowed' }
-  | { outcome: 'no-rule' }
+  | { outcome: 'no-rule'; reason: 'no_rule' | 'shadowed' }
   | { outcome: 'not-admitted' }
   | { outcome: 'not-owner' };
 
@@ -105,6 +106,11 @@ export const ADMIN_DENIAL_DETAIL: Record<Exclude<AdminTargetAuthorization['outco
 
 /** The 403 copy every authorization refusal carries; a refusal must name no gate to the browser. */
 export const DENIED_MESSAGE = 'You do not have access to this action.';
+
+/** The `reason` an `auth.access.refused` record carries for a refusing {@link authorizeAdminTarget} outcome. */
+export function refusalReason(authorization: Exclude<AdminTargetAuthorization, { outcome: 'allowed' }>): AccessRefusedReason {
+  return authorization.outcome === 'no-rule' ? authorization.reason : 'role';
+}
 
 /**
  * Decide whether `editor` may act on `target`, the one authorization sequence both admin action
@@ -122,7 +128,7 @@ export function authorizeAdminTarget(
   editor: Editor,
   opts: { target: string; ownerOnly?: boolean },
 ): AdminTargetAuthorization {
-  if (!hasAccessRule(access, opts.target)) return { outcome: 'no-rule' };
+  if (!hasAccessRule(access, opts.target)) return { outcome: 'no-rule', reason: noRuleReason(access, opts.target) };
   if (!canReach(access, editor, opts.target)) return { outcome: 'not-admitted' };
   if (opts.ownerOnly && editor.capability !== 'owner') return { outcome: 'not-owner' };
   return { outcome: 'allowed' };
@@ -294,7 +300,12 @@ export function createAdminAction<T>(
       const authorization = authorizeAdminTarget(event.locals.cairnAccess, editor, deps.access);
       if (authorization.outcome !== 'allowed') {
         ctx.audit({ action: 'deny', entity: 'admin-action', detail: ADMIN_DENIAL_DETAIL[authorization.outcome] });
-        log.warn('auth.access.refused', { email: editor.email, role: editor.role, target: deps.access.target });
+        log.warn('auth.access.refused', {
+          email: editor.email,
+          role: editor.role,
+          target: deps.access.target,
+          reason: refusalReason(authorization),
+        });
         throw error(403, DENIED_MESSAGE);
       }
     }

@@ -97,3 +97,11 @@ export type CairnLogEvent =
   | 'auth.channel.rate_limited'
   | 'auth.channel.rate_limit_absent'
   | 'auth.channel.rate_limit_failed';
+
+/**
+ * The `reason` an `auth.access.refused` record carries: `'no_rule'` when the map has no rule for
+ * the target, `'shadowed'` when a rule matches but a dynamic route segment hides it behind a
+ * deeper key, and `'role'` for every other refusal (a role the rule does not list, the `editors`
+ * floor, a none capability, `ownerOnly`, a not-owner session).
+ */
+export type AccessRefusedReason = 'no_rule' | 'shadowed' | 'role';

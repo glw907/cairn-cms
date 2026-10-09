@@ -966,11 +966,12 @@ re-sourced to Go on this tree rather than to the page.
   `src/lib/content/concepts.ts:67,190`. [verified]
 - `f:6kdagb` `AssetConfig.maxUploadBytes` defaults to `25 * 1024 * 1024` (25 MB). Source:
   `src/lib/media/config.ts:35,71`. [verified]
-- `f:hazpim` `canReach`: `none` capability reaches nothing; `owner` reaches every target including
-  `editors`; every other capability's reach stops at `editors`, which stays owner-only regardless
-  of what the access map says. Source: `src/lib/auth/access.ts:132-163` (function body checks
-  `editor.capability === 'none'`, `=== 'owner'`, then `target === 'editors'` before any map
-  lookup). [verified]
+- `f:hazpim` `canReach`: `none` capability reaches a route-path target only when the matched map
+  rule names its role, and reaches no screen id, unmapped href, or `editors`; `owner` reaches every
+  target including `editors`; every other capability's reach stops at `editors`, which stays
+  owner-only regardless of what the access map says. Source: `src/lib/auth/access.ts#canReach`
+  (function body checks `editor.capability === 'none'`, `=== 'owner'`, then `target === 'editors'`
+  before any map lookup). [verified]
 - `f:8ia71i` `resolveCapability` returns `'none'` for a role name absent from the vocabulary, so a pruned
   config or a hand-edited row fails closed rather than locking a person out entirely (they lose
   content access but the auth flow itself does not error). Source: `src/lib/auth/roles.ts:83-89`.

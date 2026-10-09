@@ -64,6 +64,8 @@ interface UploadOpts {
   cookieCsrf?: string | undefined;
   contentLength?: string | null;
   hasEditor?: boolean;
+  /** The signed-in session; defaults to the owner. */
+  who?: Editor;
 }
 
 /** Build the CairnEvent for an upload POST. The raw body is the bytes; the metadata travels in
@@ -88,7 +90,7 @@ function uploadEvent(opts: UploadOpts): CairnEvent {
     // A Uint8Array is a valid fetch body at runtime; the DOM lib's BodyInit predates the typed-array
     // overload, so cast through BodyInit to satisfy the constructor type.
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
-    locals: { cairnEditor: opts.hasEditor === false ? null : editor },
+    locals: { cairnEditor: opts.hasEditor === false ? null : (opts.who ?? editor) },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
     setHeaders: () => {},
   };
@@ -281,6 +283,20 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
       'media.upload_failed',
       expect.objectContaining({ reason: 'unsupported_type' }),
     );
+  });
+
+  it('logs auth.access.refused with reason role when the map denies the media screen', async () => {
+    const routes = createContentRoutes({ runtime: runtime({ access: { media: ['publisher'] } }) });
+    const warn = vi.spyOn(log, 'warn');
+    const webmaster: Editor = { email: 'w@b.test', displayName: 'W', role: 'webmaster', capability: 'editor' };
+    const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, who: webmaster }))) as ActionResult;
+    expect(res.status).toBe(403);
+    expect(warn).toHaveBeenCalledWith('auth.access.refused', {
+      email: webmaster.email,
+      role: webmaster.role,
+      target: 'media',
+      reason: 'role',
+    });
   });
 
   it('emits media.uploaded with the editor, hash, bytes, and reused on success', async () => {

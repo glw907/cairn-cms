@@ -21,7 +21,13 @@
 // local `deny` and `misconfigured` helpers below are what make that uniformity structural, rather
 // than a convention five separate branches each have to keep.
 import { fail, isHttpError, isRedirect } from '@sveltejs/kit';
-import { createAdminAction, authorizeAdminTarget, ADMIN_DENIAL_DETAIL, DENIED_MESSAGE } from './admin-action.js';
+import {
+  createAdminAction,
+  authorizeAdminTarget,
+  refusalReason,
+  ADMIN_DENIAL_DETAIL,
+  DENIED_MESSAGE,
+} from './admin-action.js';
 import { targetFromRouteId } from '../auth/access.js';
 import { log } from '../log/index.js';
 import { resolveRateLimit } from '../cloudflare/rate-limit.js';
@@ -29,6 +35,7 @@ import type { AdminActionContext } from './admin-action.js';
 import type { CairnEvent } from './types.js';
 import { siteEnv } from './workers-env.js';
 import type { AccessMap } from '../auth/access.js';
+import type { AccessRefusedReason } from '../log/events.js';
 import type { ActionFailure } from '@sveltejs/kit';
 import type { RateLimitLike } from '../cloudflare/rate-limit.js';
 
@@ -201,9 +208,12 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       }
 
       /** One refused-authorization exit: the audit carries which gate refused, the response never does. */
-      function deny(detail: string): ActionFailure<{ error: string }> {
+      function deny(
+        detail: string,
+        reason: AccessRefusedReason,
+      ): ActionFailure<{ error: string }> {
         ctx.audit({ action: opts.action, entity: opts.entity, detail });
-        log.warn('auth.access.refused', { email: ctx.editor.email, role: ctx.editor.role, target });
+        log.warn('auth.access.refused', { email: ctx.editor.email, role: ctx.editor.role, target, reason });
         return fail(403, { error: opts.deniedMessage ?? DENIED_MESSAGE });
       }
 
@@ -283,7 +293,9 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // refusal channel: each refusing outcome audits and returns fail(403), where createAdminAction
       // audits and throws.
       const authorization = authorizeAdminTarget(access, ctx.editor, { target, ownerOnly: opts.ownerOnly });
-      if (authorization.outcome !== 'allowed') return deny(ADMIN_DENIAL_DETAIL[authorization.outcome]);
+      if (authorization.outcome !== 'allowed') {
+        return deny(ADMIN_DENIAL_DETAIL[authorization.outcome], refusalReason(authorization));
+      }
 
       // resolveDb runs last, after every authorization check, so a session the access map
       // refuses learns nothing about whether the section's binding is deployed: its refusal

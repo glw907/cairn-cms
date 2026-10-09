@@ -157,16 +157,18 @@ function scrubSendError(err: unknown): string {
 
 /**
  * Build the magic-link auth surface: the login and confirm loads, plus the request, confirm,
- * and logout actions, the handlers a site's `/admin/auth/*` routes call directly or
- * `createCairnAdmin` composes into its own dispatch. `config.send` overrides the default
- * Cloudflare Email sender for tests or a custom transport; `config.bootstrapOwner` seeds the
- * very first owner row through the request action, in place of a hand-run D1 insert.
+ * and logout actions, the handlers a site's sign-in routes call directly or `createCairnAdmin`
+ * composes into its own dispatch. The guard serves exactly two public admin paths, `/admin/login`
+ * and `/admin/auth/confirm`; every other path under `/admin/auth/` sits behind the session gate.
+ * `config.send` overrides the default Cloudflare Email sender for tests or a custom transport;
+ * `config.bootstrapOwner` seeds the very first owner row through the request action, in place of
+ * a hand-run D1 insert.
  */
 export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
   const send = config.send ?? cloudflareSend;
 
   /**
-   * POST /admin/auth/request. Looks the email up in the allowlist; on a match, issues a token,
+   * POST /admin/login?/request. Looks the email up in the allowlist; on a match, issues a token,
    * emails the confirmation link, and awaits the send so the status reflects its outcome. The
    * neutral and send-ok responses are identical, so the common case never leaks membership.
    *
@@ -392,7 +394,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // second open admin tab's already-rendered form field keeps matching the cookie. At this
     // instant another open tab holds at most a sign-in form, which is meaningless once this
     // session is signed in, except when an already-signed-in browser re-authenticates through
-    // /admin/auth/confirm (a public admin path): another tab there can hold a real authenticated
+    // /admin/auth/confirm (one of the two public admin paths): another tab there can hold a real authenticated
     // form whose field then mismatches the rotated cookie, taking one generic 403 (detail
     // mismatch, witness field) that a reload recovers from. Rotating at any later point would
     // break a real authenticated form outside that narrow case, and binding the token to
@@ -404,7 +406,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
   }
 
   /**
-   * POST /admin/auth/logout. Clears both cookies first, so a fault below still kills the
+   * POST /admin?/logout. Clears both cookies first, so a fault below still kills the
    *  browser-side credentials rather than leaving the session both server- and client-side valid
    *  (the cookie is the only thing a subsequent request can present); then best-effort deletes
    *  the session row. The CSRF cookie is deleted alongside the session cookie: a persistent
@@ -424,8 +426,8 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  when that one is absent, so a stranded id is found too.
    *
    *  The `auth.session.destroyed` record names the email the deleted row carried, read back from
-   *  the delete's own `RETURNING`: logout is a public admin path, so the guard never resolves an
-   *  editor onto it and the row is the only place the subject exists. It fires only when a row
+   *  the delete's own `RETURNING`: this action reads the session cookie, never `locals.cairnEditor`,
+   *  so the row is the only place the subject exists. It fires only when a row
    *  was actually destroyed AND was still live at the moment of deletion (its `expires_at` in the
    *  future); the delete itself stays unconditional either way, so an already-expired row is
    *  still removed, just not recorded as a sign-out.

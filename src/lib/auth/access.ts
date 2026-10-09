@@ -107,6 +107,15 @@ export function defineAccess<const A extends AccessMap>(roles: RolesDeclaration 
  * `SectionActionOptions.target`'s own doc already asks for a route with a rest parameter.
  */
 function matchHrefKey(access: AccessMap, target: string): string | undefined {
+  return resolveHrefMatch(access, target).key;
+}
+
+/**
+ * The shared body of {@link matchHrefKey}: the matched key (`undefined` when none matches or the
+ * match is refused as shadowed), and whether a refusal was the shadow rule, so a caller that must
+ * tell "no rule" from "a rule the dynamic segment hides" can.
+ */
+function resolveHrefMatch(access: AccessMap, target: string): { key: string | undefined; shadowed: boolean } {
   let best: string | undefined;
   for (const key of Object.keys(access)) {
     if (!isHrefKey(key)) continue;
@@ -122,16 +131,17 @@ function matchHrefKey(access: AccessMap, target: string): string | undefined {
       const shadowed = Object.keys(access).some(
         (key) => isHrefKey(key) && key !== best && key.startsWith(`${best}/`),
       );
-      if (shadowed) return undefined;
+      if (shadowed) return { key: undefined, shadowed: true };
     }
   }
-  return best;
+  return { key: best, shadowed: false };
 }
 
 /**
  * The one authority function every enforcement and visibility point reads: `requireAccess`, the
- * engine route gates, and the nav resolver. `none` capability reaches nothing, mapped or unmapped.
- * Owner capability reaches every target, including the `editors` screen id and any target with no
+ * engine route gates, and the nav resolver. `none` capability reaches a route path only when the
+ * matched rule names its role explicitly: a screen id, an href no rule matches, and `editors`
+ * stay refused for it, and the permissive no-rule reading below never applies to it. Owner capability reaches every target, including the `editors` screen id and any target with no
  * rule. Every other capability's reach stops at `editors`, which stays owner-only no matter what
  * the map says (the roster screen's existing floor, restated here so the one authority function
  * covers it too). In practice a site cannot even declare a rule for `editors` and have it
@@ -157,7 +167,9 @@ function matchHrefKey(access: AccessMap, target: string): string | undefined {
  */
 export function canReach(access: AccessMap | undefined, editor: Editor, target: string): boolean {
   if (editor.capability === 'none') {
-    return false;
+    if (!access || !isHrefKey(target)) return false;
+    const key = matchHrefKey(access, target);
+    return key !== undefined && access[key].includes(editor.role);
   }
   if (editor.capability === 'owner') {
     return true;
@@ -189,6 +201,16 @@ export function hasAccessRule(access: AccessMap | undefined, target: string): bo
     return matchHrefKey(access, target) !== undefined;
   }
   return Object.hasOwn(access, target);
+}
+
+/**
+ * Why `target` has no rule: `'shadowed'` when a dynamic segment's deeper-key ambiguity refused the
+ * match ({@link matchHrefKey}), `'no_rule'` otherwise. Meaningful when {@link hasAccessRule} is
+ * false; it backs the `reason` field of every `auth.access.refused` record.
+ */
+export function noRuleReason(access: AccessMap | undefined, target: string): 'no_rule' | 'shadowed' {
+  if (!access || !isHrefKey(target)) return 'no_rule';
+  return resolveHrefMatch(access, target).shadowed ? 'shadowed' : 'no_rule';
 }
 
 // Guaranteed to equal no real route id or pathname (both always start with `/`), so a null

@@ -103,11 +103,16 @@ describe('guard (scenario 6)', () => {
     expect(ev.locals.cairnEditor).toEqual({ email: 'own@x.dev', displayName: 'Ed', role: 'owner', capability: 'owner' });
   });
 
-  it('lets the login and auth endpoints through without a session', async () => {
+  it('lets the login page and the confirm endpoint through without a session', async () => {
     const res1 = await handle({ event: event('/admin/login'), resolve: async () => OK });
-    const res2 = await handle({ event: event('/admin/auth/request'), resolve: async () => OK });
+    const res2 = await handle({ event: event('/admin/auth/confirm'), resolve: async () => OK });
     expect(res1).toBe(OK);
     expect(res2).toBe(OK);
+  });
+
+  it('redirects an anonymous request to any other /admin/auth path', async () => {
+    const r = await expectRedirect(() => handle({ event: event('/admin/auth/request'), resolve: async () => OK }));
+    expect(r).toEqual({ status: 303, location: '/admin/login' });
   });
 
   it('ignores non-admin paths', async () => {

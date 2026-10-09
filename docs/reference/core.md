@@ -1046,7 +1046,9 @@ declare function hasAccessRule(access: AccessMap | undefined, target: string): b
 ```
 
 `canReach` is the one decision point every enforcement and visibility check reads. `none`
-capability reaches nothing, mapped or unmapped. Owner capability reaches every target, including
+capability reaches a route path only when the matched rule names its role explicitly; a screen id
+(even one whose rule names the role), an href no rule matches, and `editors` all stay refused for
+it. Owner capability reaches every target, including
 the `editors` screen and any target with no rule; every other capability's reach stops at
 `editors`, which stays owner-only no matter what the map says (the roster screen's existing
 floor, restated here so the one authority function covers it too). In practice a site cannot even

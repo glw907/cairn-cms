@@ -166,7 +166,7 @@ list as before, and a none-capability role lands on the calm `'welcome'` view. T
 
 `shellLoad` is the shared `/admin/+layout.server.ts` load. It returns the lean shell payload that
 [`CairnAdminShell`](./admin.md#cairnadminshell) renders: the streamed pending count for an authed
-path, and a bare payload that returns early for the public login and auth paths. The chrome loads
+path, and a bare payload that returns early for the two public paths, `/admin/login` and `/admin/auth/confirm`. The chrome loads
 once for the whole `/admin/**` subtree rather than per view. Stability tier: Extension API, a
 versioned seam a site's own `/admin/` route depends on.
 
@@ -392,8 +392,14 @@ URL shape, and resolves a parameterized route id verbatim (`/admin/posts/[id]`),
 its prefix still matches; a declared `target` is used exactly as given, never normalized. So the
 common call, `const editor = requireAccess(event);`, is still the whole authorization story for a
 route that opts into the map. Every denial, mapped or unmatched, emits `auth.access.refused` (see
-[log events](./log-events.md)) with the editor's email, role, and the resolved (normalized)
-target.
+[log events](./log-events.md)) with the editor's email, role, the resolved (normalized) target, and
+a `reason`: `no_rule` when the map has none for it, `shadowed` when a dynamic segment hides the rule
+behind a deeper key, `role` for every other refusal.
+
+A `none`-capability session is admitted when the matched rule for a route path names its role
+explicitly, and refused otherwise: the `editors` screen id, a screen id, and a path no rule matches
+all stay refused for it. `createSectionAction` and `createAdminAction`'s `access` option read the
+same decision.
 
 The unmatched case, the map has no rule at all for `target`, refuses every session with a 403,
 owner included: the helper's contract is "this route opted into the map and the map has no
@@ -939,7 +945,10 @@ union: `{ siteName, error, csrf }` (the magic-link shape) or, when the request c
 Build the magic-link login flow. `loginLoad` and `requestAction` back the sign-in view at
 `/admin/login`, `confirmLoad` and `confirmAction` back the magic-link landing at
 `/admin/auth/confirm`, and `logoutAction` clears the session; the admin shell posts it as the
-named `?/logout` action on the current URL. The `config.branding` sets the site name and sender
+named `?/logout` action on `/admin`. The guard serves exactly two paths without a session,
+`/admin/login` and `/admin/auth/confirm`; every other path under `/admin/auth/` (for example
+`/admin/auth/request`) redirects an anonymous request to the login page, so a site route mounted
+there sits behind the session gate. The `config.branding` sets the site name and sender
 shown in the email; pass a custom `config.send` to override the default Cloudflare sender.
 
 **Under identity mode** (`locals.cairnIdentity` set): `loginLoad` returns the preceding hand-off

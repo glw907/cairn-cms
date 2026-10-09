@@ -48,27 +48,24 @@ behind `/admin` except the two pages of the sign-in flow: the form and the confi
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
 
-### Resume prompt (engine pass before stage 2b, pass A from S1's Task 3)
+### Resume prompt (finish pass A's close; battery stand-down 2026-10-09 ~12:30)
 
-> **Goal.** Finish pass A of the engine pass before stage 2b (access, auth, and the commit path),
-> then run pass B.
+> **Goal.** Finish engine pass pre-2b, pass A's close and merge PR #108.
 >
-> **Scope.** In: pass A's Tasks 3 through 12 and its close, on `engine-pre-2b-a`; then pass B. Out:
-> stage 2b's pages, any release or tag, any site migration.
+> **State.** Branch `engine-pre-2b-a` at `8e2b7d29` (pushed), worktree `.claude/worktrees/engine-pre-2b-a`,
+> clean. All 12 tasks, the simplifier, four reviewers, the live smoke and key probe, and both close fix
+> chains are accepted (Ledger in the plan; smoke evidence `~/.cache/engine-pre-2b-a/close-smoke-evidence.md`).
+> Friction triage is done on `main`. The final gates were interrupted by the battery stand-down.
 >
-> **Settled (do not re-brainstorm):** the spec and its rulings file (spec approved 2026-10-08); the
-> fork rulings (fork 1 in-memory dev saves with a notice, fork 2 anonymous `/healthz?live=1` yes,
-> fork 3 pass B ceiling 14.0M); Geoff's 2026-10-08 infra rulings: the per-task gate is the change's
-> blast radius with the full gate at boundaries and before merge, clock time is an efficiency target,
-> gate receipts and validated reduced rounds in the runners, CI shadowing by pushing after each
-> accepted task; and the friction-log restructure folded into pass A's close step 8.
->
-> **Approach.** Fresh `claude --model claude-opus-5-5` session at medium effort from
-> `~/Projects/cairn-cms`. Invoke `cairn-pass`, then read pass A's plan on the `engine-pre-2b-a` branch,
-> including its amended "Per-task gate" section and the "S1 checkpoint" Ledger entry. First, file
-> the owed S1 items from `docs/superpowers/research/2026-10-08-pass-a-s1-reports.json` (verify, then
-> file on `main`). Then relaunch Task 3 alone on `pass-execute` with its own `gate` (E plus the
-> sign-in specs, with `export E2E_PORT=4392`) and a pinned `gateTier`, then the S1 boundary, then S2.
-> Arm the guards and the `/loop` fallback at each launch. The worktree already holds CI's preparation
-> steps; the local full gate excludes the 20 known site-visual drift tests. Keep
-> `tool/internal/{spine/conditions,doctor/site-config-path}.json` and `.cairn/site-facts.json`.
+> **Do, in a fresh session, cheaply (Haiku gates, one Sonnet ledger agent):** (1) the final gates on the
+> head: the local full gate (the string in `~/.cache/engine-pre-2b-a/F-local.txt`), `npm run check:close`,
+> `CAIRN_GATE_LANE=light make -C tool check`, and CI green on the PR; (2) the consumer proof (fresh
+> showcase install and build, restore its lockfile); (3) ledgers: the plan's post-mortem with the first
+> clock score (`~/.claude/docs/model-economy.md`, "The pass-end score"; no estimate to compare), the
+> HISTORY entry, and this STATUS pointed at the gate economy pass's brainstorm
+> (`docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`), then pass B; (4) merge PR #108
+> (Geoff pre-approved; leave draft, merge, no version bump). Before merge, show Geoff the new admin copy
+> for a read: Task 8's notice "That did not go through. Your text is still here; try again.", the session
+> notice "Your session ended. Sign in again in a new tab, then save. Your text is still here.", and the
+> gallery copy "In a gallery or card" / "Alt for these images is set where each one sits in the entry.
+> They are left as they are."

@@ -1467,3 +1467,36 @@ is a dispatch that returns a structured verdict.
 - **Spend:** not measured mid-session; the close scores it via `/cost`.
 - **Next:** a fresh session relaunches S1's Task 3 alone on `pass-execute` with the amended gate,
   then runs the S1 boundary (F and T, a receipt skip where it matches), then S2.
+
+### 2026-10-08, S1 Task 3 accepted (relaunch `wf_d8ecf9f4-849`)
+
+- **Task 3:** accepted by conductor ruling at `f655f877`. The reviewer confirmed all four outcomes
+  and 11 of 11 mutations killed, and the runner's independent gate passed the pinned string (E plus
+  access-map, admin-referrer, csrf-origin, golden-path, tidy, vocabulary-admin, spellcheck on port
+  4392). The lone blocker was a runner artifact: the implementer prompt routed a pinned task through
+  the classifier, so the reported string was E alone with the e2e run separately. Fixed in both
+  runners (dotfiles `492f584`); a pinned task now runs its gate string unchanged.
+- **S1 friction filed on `main`:** `0b6867fb` (six entries; eight items dropped as fixed, filed, or
+  Task 12's own). Note for Tasks 4 and 7: `emit-tool-conditions.mjs` reads `dist`, so run `npm run
+  package` before it after a `conditions.ts` edit.
+- **Task 12 carry (Tasks 1 to 3).** Consumers must, Task 1: "pass the composed `runtime` to
+  `createAuthGuard({ runtime })`, `devBackendHandle({ runtime })`, and `createEditorRoutes({ runtime
+  })`; remove any `roles` or `access` options; declare `roles` and `access` once as members of the
+  adapter (`defineAdapter({ roles, access })`). The runtime is `composeRuntime({ adapter, siteConfig
+  })`. A scaffolded site that kept `src/access.ts` should fold its map into the adapter and delete the
+  file. A site with only href keys in its access map will stop seeing `config.access_unmapped`."
+  Task 3: (A1) review any access rule naming a none-capability role, since `canReach`,
+  `requireAccess`, `createSectionAction`, and `createAdminAction`'s `access` now admit it on a
+  route-path rule naming its role; (C1) a hand-mounted tidy or dictionary-add action on a route with
+  no `concept` param now answers 404; (C7) only `/admin/login` and `/admin/auth/confirm` are public, so
+  a route under `/admin/auth/` redirects an anonymous request; (A2, additive) `auth.access.refused`
+  gains `reason`. 2a pages: add-a-custom-admin-screen, add-a-second-sign-in-group,
+  add-cairn-to-a-sveltekit-app, restrict-admin-access, replace-magic-links-with-cloudflare-access,
+  debug-your-site, security-model, architecture, scaffolded-site-files (and migration-notes). Facts,
+  Task 1: f:2sd4if, f:4xrx5f, f:7cv105, f:dqjkci, f:f21bcz, f:eiaqkh, f:q07rd5, f:u78zg6, f:iwf4nu,
+  f:cvzb8z, f:8ciz2s, f:mou1li, f:pfy9cw, f:3z1uxv (claim false), f:hwffph, f:gun084, f:mbx6q1,
+  f:qlgggh, and line cites into the template's `cairn.config.ts` (f:tycp7k, about 24 lines early).
+  Task 2: f:hwffph, f:67pwmj, f:0ms9c1. Task 3: f:v85shm, f:arr13a, f:cvv6to, f:4q8kin, f:vqh4a9,
+  f:9exogy, f:p1xmp5, f:8anql1, f:zo034s; minted f:5sx6zl, f:147zhc. Task 3 also edited
+  `docs/reference/core.md` (the `canReach` none passage) outside its Files, disclosed and correct.
+- **Next:** the S1 boundary (F and T), then S2's pre-flight and launch.

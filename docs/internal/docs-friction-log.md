@@ -91,6 +91,18 @@ New findings start below this line, one per finding, with its perspective and a 
   the `access` block (`f:tycp7k`), is the `check:facts` off-by-one entry already in `ROADMAP.md`;
   Task 2 hit it again on three `check_roles.go` citations marked `[verified]`. Found by the Task 1
   implementer and the Task 2 reviewer, engine pass pre-2b A, 2026-10-08.
+  Tasks 8 and 10 added the cost of a large edit to one cited file. Task 10 edited
+  `src/lib/sveltekit/content-routes-entry-write.ts`, which 43 fact bullets cite by line range across
+  `docs/internal/facts/` (23 in `extend.md`, 12 in `editors.md`, 4 in `reference.md`, 3 in `admin.md`,
+  1 in `front-door.md`). The file is `.ts` under `src/`, so each could cite `path#Symbol`, which
+  `scripts/checks/check-facts.mjs:59-71` already resolves, but none was moved; the implementer
+  re-pointed only the three the gate flagged and reports several of the rest were wrong before the
+  edit. Task 8 edited `src/lib/admin/EditPage.svelte`, which keeps the line form because the
+  compiler API cannot parse it, and found two anchored pointers (`extend.md:118`, `extend.md:654`)
+  already stale, plus anchor-less ones in `editors.md` (`f:h483v2` at `EditPage.svelte:1110`,
+  `f:vti6ws` at `:15,215`) that `check:facts` range-checks only. A sweep that moves the `.ts`
+  line pointers to `path#Symbol` would close the first half. Found by the Task 8 and Task 10
+  implementers and reviewers, engine pass pre-2b A, 2026-10-09.
 - **`contributor`.** `scripts/build/emit-tool-conditions.mjs` reads the built `dist`
   (`CONDITIONS_JS = 'dist/diagnostics/conditions.js'`, line 18), not `src`. Run right after an edit
   to `conditions.ts` without `npm run package`, it writes an unchanged mirror and reports success;
@@ -331,6 +343,21 @@ promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings b
   result was hand-stripped. The local run itself was not repeated in verification, and no workflow or
   package script regenerates the file to say which output CI expects. Found by the Task 7 implementer,
   engine pass pre-2b A, 2026-10-08.
+- **`contributor`.** The `GithubDouble` ref PATCH handler (`src/tests/unit/_github-double.ts:222-231`)
+  lands any staged commit without comparing the commit's parent to the branch head, so it can never
+  answer the real 422 non-fast-forward. A head-guard race test therefore wraps `fetch` to land a
+  competing commit between the code's read and its write; Task 9 added
+  `src/tests/unit/_inject-after-read.ts` (`injectAfterFirstRead`) for the media and dictionary tests.
+  A first-class hook on the double, or a parent check that returns 422 when the head has moved, would
+  let each test stage the race without re-wrapping `fetch`. Found by the Task 9 implementer and
+  reviewer, engine pass pre-2b A, 2026-10-09.
+- **`contributor`.** Playwright's `page.unroute` with a function matcher removes nothing unless it is
+  handed the same function reference that `page.route` received. `actionUrl(name)` in
+  `examples/showcase/e2e/edit-save-failure.spec.ts:24-26` builds a new closure on each call, so
+  `unroute` was a silent no-op and the retry test hung for 30 seconds before the cause was found; the
+  spec now builds the matcher once (lines 85-86, 103). `docs/internal/durable-gotchas.md` records
+  other Playwright traps (line 195) but not this one. Found by the Task 8 implementer and reviewer,
+  engine pass pre-2b A, 2026-10-09.
 
 ## Clearings
 

@@ -116,6 +116,9 @@ Omitted or `false`, the header carries only `max-age`, so a zero-config site see
 change and does not pin any sibling subdomain to HTTPS. Set it to `true` to pin the whole domain,
 a decision that belongs to whoever owns it.
 
+The login redirect is a 303 with an empty body. The guard covers `/admin/**` only, so the headers on
+a public route are the site's own output, set by its handle or its host.
+
 `config.identity` replaces the guard's session-cookie resolution with a site's own identity gate
 (Cloudflare Access, or any reverse proxy that authenticates the request before it reaches this
 Worker). Omitted, the guard resolves the session cookie exactly as today, byte for byte.
@@ -235,6 +238,13 @@ plan from a fresh read, gates every replace behind a typed-slug confirm (`MediaR
 wrong or missing confirm), and rewrites every referencing entry plus the new `media.json` row in
 one commit; it performs no R2 write, since the new bytes are already stored and the old asset's row
 is kept. Both fail closed on an unverifiable usage read.
+
+Where-used, the safe delete's usage check, and replace read an image in every shape a concept can
+declare: a top-level image field, an image inside an object, an array of images, and an array of
+objects that hold an image. A gallery-only asset therefore reads as in use. Replace rewrites every
+occurrence of the old asset in an entry, a sequence item included. The usage index reads the committed
+content manifest, so a site that declares a nested image shape regenerates the manifest with
+`npx cairn-manifest`; [`verifyManifest`](./core.md#manifest-format-parse-and-verify) fails the build on a stale one.
 
 The alt-propagation pair pushes an asset's default alt across the same corpus.
 `mediaAltPreviewAction` plans the fill over that header transport and returns a
@@ -948,7 +958,7 @@ Build the magic-link login flow. `loginLoad` and `requestAction` back the sign-i
 `/admin/login`, `confirmLoad` and `confirmAction` back the magic-link landing at
 `/admin/auth/confirm`, and `logoutAction` clears the session; the admin shell posts it as the
 named `?/logout` action on `/admin`. The guard serves exactly two paths without a session,
-`/admin/login` and `/admin/auth/confirm`; every other path under `/admin/auth/` (for example
+`/admin/login` and `/admin/auth/confirm`; any other route that begins `/admin/auth/` (for example
 `/admin/auth/request`) redirects an anonymous request to the login page, so a site route mounted
 there sits behind the session gate. The `config.branding` sets the site name and sender
 shown in the email; pass a custom `config.send` to override the default Cloudflare sender.
@@ -1148,6 +1158,19 @@ deletes the pending branch, returning to the edit page for a published entry (`?
 to the list for an entry that never published. `renameAction` refuses with a 409 while a pending
 branch exists, and a delete cascades to the pending branch after its own commit lands.
 
+Every action that commits to the default branch from files it read earlier guards the commit on the
+branch's head. `publishAction`, `publishAllAction`, the Media Library's single and bulk delete,
+metadata update, replace-in-place, and alt propagation, and `dictionaryAddAction` each read the
+default branch's head before their first read of `media.json`, the content manifest, or an entry
+file, and commit with that head as the expected head. A commit that lands in between, such as
+another publish, a Library delete, or a dictionary add, makes the commit a conflict, so a stale
+snapshot never overwrites it. Each action answers with its existing conflict message. A publish
+answers the calm conflict and leaves the entry held on its branch, so publishing again succeeds,
+and no merge happens inside a retry. `publishAllAction` bounces to the list with `publish_conflict`
+and every branch still held. Delete, bulk delete, and metadata update answer the manifest conflict
+message, and replace and alt propagation answer the content conflict message. A default branch with
+no readable head refuses these writes rather than committing unguarded.
+
 `historyLoad` and `revertAction` back the `history` view: a version is a publish, reachable from
 the edit screen for any entry that has published or carries an open draft. `historyLoad` reads the
 default branch's commit log for the entry's file through `Backend.listCommits`, bounded to the most
@@ -1237,14 +1260,18 @@ consumer reaches it as `Awaited<ReturnType<ContentRoutes['vocabularySaveAction']
 The editor copy-edit adds two more actions, both fetch-style on the upload transport. `dictionaryAddAction`
 commits an editor's personal-dictionary additions, and `tidyAction` runs the language-model tidy.
 Neither is a form submit; both follow the [admin fetch action](#writing-an-admin-fetch-action) contract
-below. Their request shapes and `fail` payloads:
+below. Both gate on the route's `concept` param, the same entry-scoped check `editLoad` runs, so mount
+each only on a route that carries one: a route with no `concept` param answers 404 once the CSRF and
+session checks pass, and the action does nothing else. Their request shapes and `fail` payloads:
 
 - **`dictionaryAddAction`.** A `text/plain` POST carrying JSON `{ word }` or `{ words: string[] }`, the
   CSRF token in `X-Cairn-CSRF`. It validates CSRF first, then the session, validates each word against
   the one-line dictionary grammar (no whitespace or control bytes, length-bounded, batch-capped),
-  reads `src/content/.cairn/dictionary.txt` from the default branch, inserts the new words in sorted
-  order if absent (idempotent), and commits through the GitHub App pipeline. The commit is SHA-guarded:
-  a stale-SHA conflict re-reads at the new head, re-merges the same additions, and retries once. Success
+  reads the default branch's head and then `src/content/.cairn/dictionary.txt` from the default branch,
+  inserts the new words in sorted order if absent (idempotent), and commits through the GitHub App
+  pipeline with that head as the expected head. The commit is head-guarded: a commit that lands
+  between the read and the write is a conflict, and the action re-reads at the new head, re-merges
+  the same additions, and retries once. Success
   returns `DictionaryAddResult` (`{ words }`, the merged canonical list, so the client drops the
   now-committed words from its pending set). A refusal returns `DictionaryAddFailure` (`{ error }`):
   `fail(403)` on a failed CSRF check, `fail(400)` on a body with no valid word, `fail(409)` when a
@@ -1585,12 +1612,21 @@ from the key and reports the result as `checks.githubAppToken`. The token itself
 failure's `detail` names the class: `key_refused` (GitHub answered 401), `installation_not_found`
 (404), `installation_suspended` (403), or `unreachable` (any other status, a network failure, or no
 answer within 5 seconds). The live mint skips the publishing path's token cache and logs a failure
-as [`github.unreachable`](./log-events.md) with `scope: 'health'`. Each Worker isolate mints at most
-once a minute: parallel requests share one mint, and its result answers every live request for the
-next 60 seconds. With no GitHub App, no key, or a failing signing check, `?live=1` mints nothing and
-leaves `githubAppToken` out. The payload's `ok` is the signing check and, when present, the token
-check. On a site
-that prerenders by default, set `prerender = false` so the check runs at request time rather than freezing a build-time failure.
+as [`github.unreachable`](./log-events.md) with `scope: 'health'`. With no GitHub App, no key, or a
+failing signing check, `?live=1` mints nothing and leaves `githubAppToken` out, because a missing or
+unusable key is the signing check's finding. The payload's `ok` is the signing check and, when
+present, the token check, so a 401 fails `ok` even when the key signs.
+
+Each Worker isolate mints at most once a minute. Parallel requests share one mint, and its result
+answers every live request for the next 60 seconds. That bound holds per isolate and not per site:
+summed over the fleet the route can mint once per isolate per minute. A caller spread across many
+locations reaches many isolates, and each mints on its own. GitHub's secondary rate limits are shared
+with publishing, so a sustained burst of live requests could delay a publish. The entry's branch holds
+each save, so nothing is lost. Each caller waits at most 5 seconds for the shared mint, then reads
+`unreachable`.
+
+On a site that prerenders by default, set `prerender = false` so the check runs at request time rather
+than freezing a build-time failure.
 
 ```ts
 // src/routes/healthz/+server.ts

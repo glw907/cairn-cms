@@ -6,7 +6,7 @@ in for the GitHub App commit pipeline and the magic-link sign-in loop, so you ca
 an owner.
 
 Install it as a `devDependency`, and never in production. The package installs an authentication
-bypass. `devBackendHandle()` mints an owner session with no email loop, and it also runs fake GitHub,
+bypass. `devBackendHandle({ runtime })` mints an owner session with no email loop, and it also runs fake GitHub,
 R2, D1, and Anthropic doubles. The bypass is an authentication breach if it reaches a deployed site,
 so the package ships behind a three-layer fence and must stay out of every production install.
 

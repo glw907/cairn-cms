@@ -280,8 +280,15 @@ import { loadHealth } from '@glw907/cairn-cms/sveltekit';
 import { runtime } from '#lib/cairn.server.js';
 
 export const prerender = false;  // see below
-export const GET = async (event) => Response.json(await loadHealth(event, runtime));
+export const GET = async (event) => {
+  const health = await loadHealth(event, runtime);
+  return Response.json(health, { status: health.ok ? 200 : 503 });
+};
 ```
+
+The route answers 503 when a check fails, so a deploy gate or an uptime monitor reads the status code.
+A request with `?live=1` also asks GitHub whether it accepts the key; see
+[`loadHealth`](./sveltekit.md#loadhealth).
 
 On a site that prerenders by default, the explicit `prerender = false` is required. Without it
 the endpoint prerenders at build time, when the GitHub App key is absent, freezing a permanent

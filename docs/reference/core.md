@@ -867,7 +867,9 @@ nested-image rule. A manifest generated before `mediaRefs` existed carries no `m
 the check tolerates that only when no concept declares an image inside a container field (an object
 holding an image, an array of images, or an array of objects holding an image). With such a shape
 declared, the compare is exact, so a site that has not regenerated fails its build with the
-regenerate message. The `cairnManifest` plugin passes the adapter for you. `verifyReferences` throws
+regenerate message. Called without the adapter, the check always keeps that allowance, so a script
+that calls it with two arguments compiles and behaves as before. The `cairnManifest` plugin passes the
+adapter for you. `verifyReferences` throws
 when any frontmatter reference edge points at a missing target, naming the source entry, the field,
 and the missing target. References have no prerender backstop, so this build gate is their only
 integrity authority.

@@ -112,6 +112,12 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 ## docs/reference/admin-toolkit.md
 
+- `f:54xd6u` The admin toolkit's components render inside the admin shell only: `CairnAdminShell.svelte` imports
+  `cairn-admin.css`, which compiles the daisyUI classes the toolkit assembles, and the admin theme wrapper
+  scopes the tokens they read. A toolkit component mounted outside `/admin` renders without that sheet, so a
+  member area or any other surface outside the admin is the site's own, styled by the site; the engine does
+  not ship the admin sheet for use outside `/admin`. Source: `src/lib/admin/CairnAdminShell.svelte:43`,
+  `docs/reference/admin-toolkit.md` (the shell-only paragraph). [verified]
 - `f:0vgrcx` `TextInput` and `SelectInput` shipped at `0.94.0` (renamed from admin-fields'
   `TextField`/`SelectField`); `FieldRow` was added later, at `0.95.0` (commit `68d622a1`,
   2026-08-07), not alongside the 0.94.0 merge. All three retired together in the retires pass,
@@ -1223,7 +1229,7 @@ re-sourced to Go on this tree rather than to the page.
   carries `path` and `editor`; `admin.action.misconfigured` carries `path` and `reason`;
   `config.access_unmapped` carries `unmapped`, the sorted concept ids and fixed screens with no
   rule. Source: `src/lib/delivery/content-index.ts:101`, `src/lib/sveltekit/admin-action.ts:209,309`,
-  `src/lib/sveltekit/section-action.ts:212`, `src/lib/sveltekit/admin-nav.ts:326-328`. [verified]
+  `src/lib/sveltekit/section-action.ts:212`, `src/lib/sveltekit/admin-nav.ts:330-333`. [verified]
 - `f:rkj7tn` Every log record carries an envelope of `level`, `event`, `timestamp`, plus event-specific
   fields; renaming an `event` name is a breaking change. Source: `src/lib/log/create.ts:10-12`
   (`LogRecord` type), `src/lib/log/events.ts:1-3` (comment: "it is public-observable API: renaming
@@ -1288,7 +1294,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:mou1li` Composition-time event `config.access_unmapped` runs once at module evaluation (composition, not
   per request), so it appears at most once per isolate on a cold start, and a Workers Logs query
   scoped to a live request window can miss it entirely. Source:
-  `src/lib/sveltekit/admin-nav.ts:293-296,321-328` (`validateAccessComposition`'s doc: "Validate a
+  `src/lib/sveltekit/admin-nav.ts:283-297,330-333` (`validateAccessComposition`'s doc: "Validate a
   site's declared access map once at composition (server start)"; `log.warn('config.
   access_unmapped', ...)` fires from that one validation function, not a per-request path).
   [verified]

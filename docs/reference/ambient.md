@@ -67,7 +67,7 @@ publishes.
 
 - **`cairnIdentity`** is the site's identity-gate snapshot, set by
   [`createAuthGuard`](./sveltekit.md#createauthguard)'s `identity` option on every `/admin/**`
-  path, the public login and auth paths included, since the magic-link handlers detect identity
+  path, the two public paths (`/admin/login` and `/admin/auth/confirm`) included, since the magic-link handlers detect identity
   mode by this field alone. `createAuthGuard` is the field's only writer, and the value it
   publishes is the snapshot validated once at construction, never re-read from the option per
   request. Absent under the zero-config magic-link path.

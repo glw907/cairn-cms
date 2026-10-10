@@ -1,8 +1,8 @@
 // cairn-cms: the paths whose change reruns the whole component project instead of the tests
 // `vitest related` selects for it. Two consumers read this one list: vitest.config.ts, which
-// passes it to Vitest as `forceRerunTriggers` for a related or changed-file run, and
-// scripts/checks/gate-tier.mjs, whose `--related` mode emits the full component command when a
-// diff touches one of these paths. Keeping both on one list means the classifier and the tool
+// passes it to Vitest as `forceRerunTriggers` for a run that sets CAIRN_RELATED_RUN=1, and
+// scripts/checks/gate-tier.mjs, which runs the whole component project when a diff touches one of
+// these paths. Keeping both on one list means the classifier and the tool
 // cannot disagree about which change is too wide for a related selection.
 //
 // `vitest related` walks each test file's static import graph. Every entry below reaches the

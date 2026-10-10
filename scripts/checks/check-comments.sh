@@ -7,7 +7,7 @@ set -uo pipefail
 cd "$(dirname "$0")/../.."
 
 echo "== eslint (TSDoc structure + the em-dash ban on src/lib, the showcase, and the named scripts) =="
-if npx --no-install eslint src/lib examples/showcase/src examples/showcase/e2e scripts/checks/close-prebuilt.mjs; then
+if npx --no-install eslint src/lib examples/showcase/src examples/showcase/e2e scripts/checks/close-prebuilt.mjs scripts/checks/gate-tier.mjs scripts/ci/retries-notice.mjs scripts/ci/vitest-retry-reporter.mjs; then
   echo "check:comments OK"
 else
   echo "check:comments FAILED"

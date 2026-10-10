@@ -20,7 +20,6 @@ export default class VitestRetryReporter {
 
   /**
    * Records one finished test.
-   *
    * @param {import('vitest/node').TestCase} testCase - The test that just finished its hooks.
    */
   onTestCaseResult(testCase) {

@@ -43,7 +43,12 @@ const COMMENT_GLOBS = [
 // TypeScript ruleset the globs above use (it forbids `{type}` tags) does not fit; the flavor
 // config accepts them. A new script joins this list by name, never by a `scripts/**` glob, which
 // would sweep in every older script that was never written to this standard.
-const SCRIPT_FILES = ['scripts/checks/close-prebuilt.mjs'];
+const SCRIPT_FILES = [
+  'scripts/checks/close-prebuilt.mjs',
+  'scripts/checks/gate-tier.mjs',
+  'scripts/ci/retries-notice.mjs',
+  'scripts/ci/vitest-retry-reporter.mjs',
+];
 
 export default [
   { files: COMMENT_GLOBS, ...jsdoc.configs['flat/recommended-typescript-error'] },

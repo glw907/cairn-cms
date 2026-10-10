@@ -76,7 +76,7 @@
     "test:theme-fixture": "npm run package && node scripts/lab/theme-fixture.mjs",
     "norms:generate": "npm run package && node scripts/lab/generate-norms-manifest.mjs",
     "norms:check": "npm run package && node scripts/lab/generate-norms-manifest.mjs --check",
-    "lint": "eslint src/lib examples/showcase/src examples/showcase/e2e scripts/checks/close-prebuilt.mjs",
+    "lint": "eslint src/lib examples/showcase/src examples/showcase/e2e scripts/checks/close-prebuilt.mjs scripts/checks/gate-tier.mjs scripts/ci/retries-notice.mjs scripts/ci/vitest-retry-reporter.mjs",
     "check:comments": "bash scripts/checks/check-comments.sh",
     "check:dev-package": "node scripts/checks/check-dev-package.mjs",
     "check:consumers": "npm run package && node scripts/checks/check-consumers.mjs",

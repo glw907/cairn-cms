@@ -16,21 +16,31 @@ import { fileURLToPath } from 'node:url';
 const TITLE = 'retries';
 
 /**
+ * @typedef {object} PlaywrightSuite
+ * @property {string} [title] - The suite title; the file-level suite carries the spec file name.
+ * @property {{ title: string, tests?: { results?: { retry: number }[] }[] }[]} [specs] - The
+ *   specs directly under this suite, each with its tests' attempt results.
+ * @property {PlaywrightSuite[]} [suites] - Nested suites.
+ */
+
+/**
  * Collects the full names of the Playwright tests that ran more than once.
- *
- * @param {{ suites?: unknown[] }} report - A parsed Playwright JSON report.
+ * @param {{ suites?: PlaywrightSuite[] }} report - A parsed Playwright JSON report.
  * @returns {string[]} Names joined with ` › `, as Playwright prints them.
  */
 function playwrightRetries(report) {
   /** @type {string[]} */
   const names = [];
-  /** @param {any} suite @param {string[]} trail */
+  /**
+   * @param {PlaywrightSuite} suite - The suite to walk.
+   * @param {string[]} trail - The titles above it.
+   */
   const walk = (suite, trail) => {
     // The file-level suite carries the spec file name as its title, so the trail starts there.
     const here = suite.title ? [...trail, suite.title] : trail;
     for (const spec of suite.specs ?? []) {
-      const retried = (spec.tests ?? []).some((/** @type {any} */ test) =>
-        (test.results ?? []).some((/** @type {any} */ result) => result.retry > 0),
+      const retried = (spec.tests ?? []).some((test) =>
+        (test.results ?? []).some((result) => result.retry > 0),
       );
       if (retried) names.push([...here, spec.title].join(' › '));
     }
@@ -42,7 +52,6 @@ function playwrightRetries(report) {
 
 /**
  * Collects the full names of the Vitest tests that needed a retry.
- *
  * @param {{ tests: Array<{ fullName: string, retryCount: number, flaky: boolean }> }} report - A
  *   parsed retry-reporter file.
  * @returns {string[]} The tests whose `retryCount` is above zero.
@@ -53,7 +62,6 @@ function vitestRetries(report) {
 
 /**
  * Reads one report file into its retried test names or the reason it is unreadable.
- *
  * @param {string} path - The report file.
  * @returns {{ retried: string[] } | { unknown: string }} The names, or a reason for `unknown (...)`.
  */
@@ -82,7 +90,6 @@ function readReport(path) {
 
 /**
  * Escapes a message for a GitHub workflow command, which treats these three characters as control.
- *
  * @param {string} message - The raw message.
  * @returns {string} The message with `%`, CR, and LF percent-encoded.
  */
@@ -92,7 +99,6 @@ function escapeMessage(message) {
 
 /**
  * Builds the notice line from the retried names and the reasons a report was unreadable.
- *
  * @param {string[]} retried - Retried test names across every readable report.
  * @param {string[]} unknowns - One reason per unreadable report.
  * @returns {string} The `::notice title=retries::` line.
@@ -106,7 +112,6 @@ export function formatNotice(retried, unknowns) {
 
 /**
  * Reads every report and builds the job's one notice line.
- *
  * @param {string[]} paths - The report files the job's test steps wrote.
  * @returns {string} The `::notice title=retries::` line.
  */

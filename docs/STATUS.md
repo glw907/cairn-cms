@@ -22,12 +22,14 @@ plan, score, and replay record: [`superpowers/plans/2026-10-09-gate-economy.md`]
 
 ## Immediate next action
 
-Engine pass B executes next:
-[`superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md`](superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md),
-ceiling 14.0M, its gate section already rewritten to the targeted gate and CI reads. It carries the
-relink re-arm list (the 2a pages and fact ids pass A falsified, in the plan's Ledger and the Task 12
-carry files) and a `Consumers must:` line for `replyTo` inheritance. The release holds until the docs
-are complete.
+Engine pass B is **paused** (Geoff, 2026-10-10) for a brainstorm on pass clock time. Its S1 runner ran
+95 minutes without a commit. A Haiku probe in the runner reported `gate-tier.mjs` absent, so every gate
+fell back to the full F. A working classifier saves only about 9 minutes on that chain, though. Most of
+the clock went to whole-suite selection, two reds caught late, a duplicate gate run, and lock wait.
+Evidence and the projection with the probe fixed: [`superpowers/research/2026-10-10-pass-clock-time-evidence.md`](superpowers/research/2026-10-10-pass-clock-time-evidence.md).
+Pass B's state: worktree `.claude/worktrees/engine-pre-2b-b`, draft PR #111, Task 0 recorded in the
+plan's Ledger (`1ce14d3b`), and WIP commit `dbdc4556` (Tasks 1 and 2 edits, unreviewed, ungated, not
+pushed). The release holds until the docs are complete.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
@@ -40,18 +42,21 @@ are complete.
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
 
-### Next action (engine pass B, execute)
+### Next action (clock-time brainstorm)
 
-> **Goal.** Land engine pass B, the engine work that runs before draft docs stage 2b.
+> **Goal.** Settle why a cairn pass still takes 10+ hours of wall clock after the gate economy pass,
+> and decide the changes that bring engine pass B, and every later pass, to a target Geoff sets.
 >
-> **Scope.** The plan's tasks and close, as written. Out: anything the plan does not name.
+> **Scope.** The pass machinery: `pass-execute.js` (its classifier probe and per-task chain), the
+> targeted gate's whole-suite selections, CI waits, lock sharing, implementer and fix-round time, and
+> plan sizing. Out: pass B's engine content, which stays as planned.
 >
-> **Settled (do not re-brainstorm):** everything in the plan, including its rewritten gate section:
-> the targeted per-task gate, `ci: { pr }` through the sequential runner, CI green at boundaries and
-> the close, and Tasks 1 and 2 dispatched as one `auth-data` runner task.
+> **Settled (do not re-brainstorm):** pass B's tasks and rulings; the targeted gate and CI green as
+> the boundary proof (both stay, the question is why they did not deliver).
 >
-> **Approach.** Plan `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` (class
-> `engine-logic` with per-task overrides), token ceiling 14.0M. Read `pass-core` and
-> `~/.claude/docs/pass-gate-economy.md` first; both changed in the gate economy pass. Unattended run:
-> arm the guards at launch. Invoke `cairn-pass` to start. Launch directory:
-> `/var/home/glw907/Projects/cairn-cms`. Model: `claude --model claude-opus-5-5 --effort medium`.
+> **Still open, brainstorm these:** the clock target per pass; the questions at the end of the
+> evidence doc.
+>
+> **Approach.** Read the evidence doc first, then `superpowers:brainstorming`. Resume pass B only
+> after the fixes land, from WIP `dbdc4556` (review it before building on it). Launch directory:
+> `/var/home/glw907/Projects/cairn-cms`. Model: `claude --model claude-opus-5-5 --effort high`.

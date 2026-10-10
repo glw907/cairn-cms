@@ -57,6 +57,14 @@ pushed). The release holds until the docs are complete.
 > **Still open, brainstorm these:** the clock target per pass; the questions at the end of the
 > evidence doc.
 >
+> **Opus 5.5 at `high` already fell short here.** The gate economy pass was brainstormed, planned,
+> and conducted on `claude-opus-5-5`, and its design did not deliver: its own replay projected 14.8 to
+> 19.0 hours against the 9-hour target, and pass B's first chain then ran 87 minutes uncommitted.
+> This session therefore starts at `xhigh`. Any design question it cannot close with evidence (a
+> projection at or under Geoff's target) escalates per `~/.claude/docs/model-economy.md`: `max`, then
+> one `model: fable` dispatch to design or adversarially critique the proposal. Say which seat
+> produced each part of the final design.
+>
 > **Approach.** Read the evidence doc first, then `superpowers:brainstorming`. Resume pass B only
 > after the fixes land, from WIP `dbdc4556` (review it before building on it). Launch directory:
-> `/var/home/glw907/Projects/cairn-cms`. Model: `claude --model claude-opus-5-5 --effort high`.
+> `/var/home/glw907/Projects/cairn-cms`. Model: `claude --model claude-opus-5-5 --effort xhigh`.

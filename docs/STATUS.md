@@ -18,8 +18,9 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 
 **In flight (2026-10-10):** the gate economy pass is executing. Worktrees `gate-economy` (PR #110,
 draft), `gate-economy-ci` (Task 4a), and dotfiles `~/.cache/worktrees/dotfiles-gate-economy`. Task 0
-is done (plan amended at `148ff15a`; dotfiles `cc118a5` drops a stale ratchet entry). Running:
-Tasks 2, 4a, 1. Ledger notes: `~/.cache/gate-economy/ledger.md`. Resume from the plan's Ledger.
+is done (plan amended at `148ff15a`; dotfiles `cc118a5` drops a stale ratchet entry). S2 closed
+green on dotfiles `35cea09` (Tasks 1, 4b, 5 accepted). Task 4a accepted (`ebc1e048`, pick pending).
+Running: Tasks 2 and 6a. Ledger notes: `~/.cache/gate-economy/ledger.md`.
 
 Pass A is merged and unreleased
 ([plan and post-mortem](superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)). The release holds

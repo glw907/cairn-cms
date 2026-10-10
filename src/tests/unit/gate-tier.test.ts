@@ -22,6 +22,7 @@ import {
 import { CLOSE_COMPONENTS, closeSteps, selectSteps } from '../../../scripts/checks/close-prebuilt.mjs';
 import { COMPONENT_RERUN_TRIGGERS } from '../../../scripts/test/component-rerun-triggers.mjs';
 import { loadDeletionList } from '../../../scripts/checks/arm-state.mjs';
+import { buildSteps } from '../../../scripts/checks/docs-gate.mjs';
 import { RERUN_TRIGGER_PATHS } from './_rerun-trigger-paths.js';
 
 const SCRIPT = resolve(process.cwd(), 'scripts/checks/gate-tier.mjs');
@@ -139,14 +140,14 @@ describe('static check selection', () => {
     for (const label of inherited) expect(labelsFor('src/lib/foo/bar.ts'), label).toContain(label);
   });
 
-  // The six checks whose input is the export surface and its documentation.
+  // The six checks whose input is the shape of the built export surface.
   const distSurface = [
     'check:package',
-    'check:reference',
-    'check:reference:signatures',
-    'check:options',
     'check:surface',
+    'check:self-use',
+    'check:audit-pack',
     'check:consumers',
+    'check:public-skill',
   ];
 
   it('pins the dist-surface checks', () => {
@@ -165,6 +166,13 @@ describe('static check selection', () => {
     }
   });
 
+  it('keeps the option and reference checks on the engine bucket, so a non-index file selects them', () => {
+    const forOther = labelsFor('src/lib/content/types.ts');
+    for (const label of ['check:options', 'check:reference', 'check:reference:signatures']) {
+      expect(forOther, label).toContain(label);
+    }
+  });
+
   it('treats a package.json exports target that is not an index.ts as the export surface too', () => {
     expect(labelsFor('src/lib/render/authoring.ts')).toContain('check:reference');
   });
@@ -174,6 +182,14 @@ describe('static check selection', () => {
     expect(picked).toEqual(expect.arrayContaining(['check:vale', 'check:facts', 'check:tellgrader']));
     expect(picked).not.toContain('check:audit-pack');
     expect(decideGate(['docs/reference/core.md']).gate).toContain('node scripts/checks/check-tellgrader.mjs');
+  });
+
+  it('selects the Cairn rule-case vale test for a .vale or .vale.ini change, with the docs gate\'s own command', () => {
+    for (const path of ['.vale/styles/Cairn/Headings.yml', '.vale.ini']) {
+      expect(labelsFor(path), path).toContain('check:vale-rules');
+    }
+    const step = buildSteps({ page: null, brief: null }).find((entry) => entry.label === 'check:vale-rules');
+    expect(table.extraCommands['check:vale-rules']).toBe([step?.command, ...(step?.args ?? [])].join(' '));
   });
 
   it('selects the checks a script file reaches through its imports, and every check for a file none reach', () => {
@@ -416,6 +432,25 @@ describe('decideGate', () => {
     expect(mixed.tier).toBe('targeted+tool');
     expect(mixed.gate.startsWith('npm run package && ')).toBe(true);
     expect(mixed.gate.endsWith(' && make -C tool check')).toBe(true);
+  });
+
+  it('refuses an empty path list rather than choosing a gate', () => {
+    expect(() => decideGate([])).toThrow(/no changed paths/);
+  });
+
+  it('routes tool/**/*.md to the tool gate, not the docs checks', () => {
+    expect(decideGate(['tool/docs/getting-started.md'])).toMatchObject({ tier: 'tool', gate: 'make -C tool check' });
+  });
+
+  it('matches by prefix, never by substring', () => {
+    // "tooling/" and "docs/tool/" hold "tool/" but are not under it; "administrator/" holds "admin".
+    expect(decideGate(['tooling/x.go']).tier).toBe('targeted');
+    expect(decideGate(['docs/tool/x.md']).gate).not.toContain('make -C tool check');
+    expect(e2eSpecs(['src/lib/administrator/x.ts'], {}, context).specs).not.toContain('admin-visual.spec.ts');
+  });
+
+  it('leaves the create-cairn-site suite out for a templates/ path alone, which the bake writes but never reads', () => {
+    expect(decideGate(['templates/waymark/src/hooks.server.ts']).gate).not.toContain('npm test -w packages/create-cairn-site');
   });
 
   it('classifies the harvest deletion diff as a docs diff with no component or e2e leg', () => {

@@ -53,12 +53,13 @@
   "checks": {
     "check": ["engine", "scripts"],
     "check:package": ["exportSurface"],
-    "check:reference": ["exportSurface", "docs"],
-    "check:reference:signatures": ["exportSurface", "docs"],
-    "check:options": ["exportSurface", "docs"],
+    "check:audit-pack": ["exportSurface"],
+    "check:reference": ["exportSurface", "docs", "engine"],
+    "check:reference:signatures": ["exportSurface", "docs", "engine"],
+    "check:options": ["exportSurface", "docs", "engine"],
     "check:surface": ["exportSurface", "docs"],
     "check:consumers": ["exportSurface", "showcase"],
-    "check:self-use": ["engine", "showcase"],
+    "check:self-use": ["exportSurface", "showcase"],
     "check:custom-surface": ["engine", "showcase"],
     "check:chassis-boundary": ["showcase", "scripts"],
     "check:cm-internals": ["engine", "scripts"],
@@ -85,20 +86,22 @@
     "npm --prefix examples/showcase run check": ["showcase", "engine"],
     "npm --prefix examples/showcase run check:cairn": ["showcase", "engine"],
     "npm --prefix examples/showcase run format:check": ["showcase"],
-    "check:public-skill": ["docs", "engine", "showcase"],
+    "check:public-skill": ["docs", "exportSurface", "showcase"],
     "check:vale": ["docs"],
     "check:comments": ["engine", "showcase", "scripts"],
     "check:public-tokens": ["engine", "showcase"],
     "check:tool-heuristics": ["engine"],
     "test:emit": ["showcase", "engine"],
     "showcase:test:unit": ["showcase", "engine"],
-    "check:tellgrader": ["docs"]
+    "check:tellgrader": ["docs"],
+    "check:vale-rules": ["docs"]
   },
   "extraCommands": {
     "check:tool-heuristics": "npm run check:tool-heuristics",
     "test:emit": "npm run test:emit",
     "showcase:test:unit": "npm --prefix examples/showcase run test:unit",
-    "check:tellgrader": "node scripts/checks/check-tellgrader.mjs"
+    "check:tellgrader": "node scripts/checks/check-tellgrader.mjs",
+    "check:vale-rules": "vale --config=.vale/tests/vale.ini test .vale/styles/Cairn/Headings.test.yml .vale/styles/Cairn/ProseProcedure.test.yml"
   },
   "e2e": {
     "floor": {

@@ -533,6 +533,7 @@ export function decideGate(paths, opts = {}) {
     throw new Error(`gate-tier: unknown --class "${passClass}" (want one of ${PASS_CLASSES.join(', ')})`);
   }
 
+  if (paths.length === 0) throw new Error('gate-tier: no changed paths to size a gate from');
   const toolPaths = paths.filter((path) => path.startsWith('tool/'));
   const npmPaths = paths.filter((path) => !path.startsWith('tool/'));
   if (npmPaths.length === 0) {

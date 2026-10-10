@@ -71,10 +71,15 @@ spell out:
 
 - A close check whose own `package.json` script starts with `npm run package` and that the map
   does not list is selected by the engine bucket.
-- The six dist-surface checks (`check:package`, `check:reference`, `check:reference:signatures`,
-  `check:options`, `check:surface`, `check:consumers`) list the export-surface bucket and no engine
-  bucket, so an `index.ts` change selects them and another `src/lib` file does not. A change to a
-  non-index file that alters an export's type is therefore left to CI for those six.
+- The six dist-surface checks (`check:package`, `check:surface`, `check:self-use`,
+  `check:audit-pack`, `check:consumers`, `check:public-skill`) list the export-surface bucket and
+  no engine bucket, so an `index.ts` change (or a `package.json` export entry) selects them and
+  another `src/lib` file does not. `check:reference`, `check:reference:signatures`, and
+  `check:options` keep the engine bucket beside export surface and docs: a public option or type
+  can change in a non-index file, and they must see it. A non-index change that alters the shape
+  of an export is left to CI for the six.
+- `check:vale-rules` (the Cairn rule cases `vale test` runs inside the docs gate) is a docs-bucket
+  extra, so a `.vale/` or `.vale.ini` change runs it.
 - A `scripts/` file selects the checks whose script reaches it by a relative import, plus the
   bucket's own checks. A `scripts/` file no check reaches (and that is not under
   `scripts/ci/`, `scripts/test/`, or the classifier and its table, which only tests and the comment

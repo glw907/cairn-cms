@@ -38,13 +38,18 @@ jobs:
   check-tsgo:
     name: "check:tsgo (weekly; green means no TS7-only diagnostics)"
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci
+          clean: node_modules
       - name: TypeScript 6 baseline (svelte-check --incremental)
         run: |
           npx svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js --incremental --output machine > ts6.log 2>&1 || true
@@ -66,3 +71,5 @@ jobs:
             exit 1
           fi
           echo "No TS7-only diagnostics: the bump is clear on the checker side."
+      - if: failure() || cancelled()
+        uses: ./.github/actions/install-diagnostics

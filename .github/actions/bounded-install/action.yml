@@ -1,0 +1,45 @@
+name: Bounded install
+description: >-
+  Run an install command under a 10-minute limit and retry it once. If an attempt is still
+  running after 9.5 minutes, snapshot the npm logs, process tree, and sockets before it is killed.
+
+# Why this exists: rare runner stalls (a silent socket or a hung install subprocess) hung five
+# jobs at npm ci and playwright install for 6 hours on 2026-10-08 and 2026-10-09. 80 diagnostic
+# reruns never reproduced it, so the install is bounded and retried instead, and a stall leaves
+# evidence. Call it with a step-level `timeout-minutes: 22`, which covers both attempts.
+
+inputs:
+  command:
+    description: The install command, run through bash.
+    required: true
+  clean:
+    description: A path removed before the retry, so a half-written node_modules cannot poison it.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        INSTALL_CMD: ${{ inputs.command }}
+        INSTALL_CLEAN: ${{ inputs.clean }}
+        DUMP_SCRIPT: ${{ github.action_path }}/dump-state.sh
+      run: |
+        attempt() {
+          # Snapshot just before the 10-minute kill, since the kill removes the stalled processes.
+          # Killing the sleep (below) fails the && chain, so a finished attempt prints nothing.
+          ( sleep 570 && { echo "::warning::install still running after 9.5 minutes; snapshot follows"; bash "$DUMP_SCRIPT"; } ) &
+          local watch=$!
+          local rc=0
+          timeout -k 30s 10m bash -c "$INSTALL_CMD" || rc=$?
+          # The watchdog's sleep holds the step's stdout open if it outlives the step.
+          pkill -P "$watch" 2>/dev/null || true
+          kill "$watch" 2>/dev/null || true
+          return "$rc"
+        }
+        attempt || {
+          echo "::warning::install attempt 1 failed or timed out; retrying: $INSTALL_CMD"
+          if [ -n "$INSTALL_CLEAN" ]; then rm -rf "$INSTALL_CLEAN"; fi
+          attempt
+        }

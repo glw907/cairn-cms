@@ -30,6 +30,7 @@ jobs:
   publish:
     needs: norms
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -46,7 +47,11 @@ jobs:
       # tsgo.yml, tool-conditions.yml), so the published build gets the same reproducibility
       # guarantee: an out-of-sync lockfile fails the install loudly instead of a floating resolve
       # silently drifting the published tarball's dependency tree from what CI proved.
-      - run: npm ci --no-audit --no-fund
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci --no-audit --no-fund
+          clean: node_modules
       # Validate the published package shape before releasing.
       - run: npm run check:package
       # The repo is public, so OIDC trusted publishing attaches build provenance automatically.
@@ -78,6 +83,8 @@ jobs:
           fi
           echo "publishing $VERSION to the '$TAG' dist-tag"
           npm publish --access public --tag "$TAG" --provenance
+      - if: failure() || cancelled()
+        uses: ./.github/actions/install-diagnostics
 
   # The dev backend publishes alongside the engine: a scaffolded site's devDependency needs
   # @glw907/cairn-cms-dev on the registry at the version the bake writes, which is also the spec
@@ -89,6 +96,7 @@ jobs:
   publish-dev:
     needs: norms
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

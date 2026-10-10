@@ -24,6 +24,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     # Only the manual regen dispatch needs to push a commit back to the branch it ran against;
     # the routine push/pull_request runs never reach that step.
     permissions:
@@ -40,13 +41,24 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             examples/showcase/package-lock.json
-      - run: npm ci
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci
+          clean: node_modules
       # The showcase lockfile is committed (not gitignored) and installed with `npm ci` so CI resolves
       # the exact toolchain a developer reproduces locally. A floating `npm install` once drifted CI onto
       # a Vite 8 / Rolldown build that no local run could reproduce; see the post-mortem at
       # docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md.
-      - run: npm ci --prefix examples/showcase
-      - run: npx --prefix examples/showcase playwright install --with-deps chromium
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci --prefix examples/showcase
+          clean: examples/showcase/node_modules
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npx --prefix examples/showcase playwright install --with-deps chromium
       # A DEFAULT build (no VITE_CAIRN_E2E) proves the fence holds: Vite substitutes `false` for
       # __CAIRN_DEV_BUILD__ at every call site, so the dev backend and its owner-session bypass are
       # eliminated from the deployable bundle. test:e2e's own webServer then does the flagged build
@@ -172,3 +184,5 @@ jobs:
             examples/showcase/test-results
           retention-days: 7
           if-no-files-found: ignore
+      - if: failure() || cancelled()
+        uses: ./.github/actions/install-diagnostics

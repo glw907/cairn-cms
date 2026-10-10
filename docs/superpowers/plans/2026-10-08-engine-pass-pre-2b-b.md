@@ -39,13 +39,13 @@ close runs the union: `auth-data`'s security review and live auth smoke, and `sw
 
 | Item | Budget |
 | --- | --- |
-| Task 0 pre-flight and baseline gate | 0.30M |
+| Task 0 pre-flight and baseline CI read | 0.30M |
 | Nine Sonnet chains (Tasks 1 to 9): 0.55M each, the full-tier rate pass A and the SvelteKit 3 pass use, plus 0.10M for each `auth-data` chain (2, 5, 8) and 0.10M for Task 3's four items | 5.35M |
 | Task 10, ruling 5 (overlay, workerd guard, notice, bake marker, its records) | 0.90M |
 | Task 11, docs and records | 1.20M |
 | Three segment pre-flights after Task 0, at 0.10M | 0.30M |
 | One fix round per segment in reserve | 1.10M |
-| Close: simplifier, gates, consumer proof, four reviewer seats and the `visual-verifier` read, one fix chain, smoke, ledgers | 2.95M |
+| Close: simplifier, the CI-green read (local F only on `ci-green` exit 3), consumer proof, four reviewer seats and the `visual-verifier` read, one fix chain, smoke, ledgers | 2.95M |
 | **Total** | **12.10M** |
 
 At 80 percent (11.2M) the conductor finishes the task in flight, writes STATUS, and asks one
@@ -61,11 +61,15 @@ and of S1, S2, S3, and S4, at any split, before any question to Geoff, and befor
 
 | Segment | Tasks | Boundary proof |
 | --- | --- | --- |
-| S0, pre-flight | 0 | the Ledger entry; preconditions hold; baseline F green |
-| S1, scaffold | 1, 2, 3 | F green on the head; pushed; CI `scaffold`, `create-site`, and `e2e` green |
-| S2, dev package and build | 4, 5, 6 | F green; pushed; CI `scaffold`, `create-site`, `e2e`, and `test` green |
-| S3, schema and composition | 7, 8, 9 | F green; `check:close` green |
-| S4, dev backend and records | 10, 11 | F green; `check:close` green; pushed; every CI workflow green |
+| S0, pre-flight | 0 | the Ledger entry; preconditions hold; baseline CI green on the draft PR's first head |
+| S1, scaffold | 1, 2, 3 | pushed; `ci-green` exit 0 on the head (CI `scaffold`, `create-site`, and `e2e` among its expected set) |
+| S2, dev package and build | 4, 5, 6 | pushed; `ci-green` exit 0 on the head (CI `scaffold`, `create-site`, `e2e`, and `test` among its expected set) |
+| S3, schema and composition | 7, 8, 9 | pushed; `ci-green` exit 0 on the head, which carries every `check:close` component |
+| S4, dev backend and records | 10, 11 | pushed; `ci-green` exit 0 on the head, which carries every `check:close` component and every CI workflow |
+
+A boundary's proof is CI green on its pushed head, read by the conductor with `ci-green <head> --pr
+<n> --wait` (below, "CI green"). The local F and `check:close` run at a boundary only on a `ci-green`
+exit 3, on that SHA.
 
 **Disjoint Files seams:** Tasks 1 and 2 have disjoint Files (the showcase, the exemplars, and
 `.cairn-template.json`, against `packages/create-cairn-site/src` and `test`), but they must land
@@ -91,8 +95,9 @@ into the worktree.
 
 **Execution mode:** `pass-execute` by name, one invocation per segment for S1 to S4, sequential
 (`parallel` unset). Args: `repo` the worktree's absolute path, `implementer: "cairn-implementer"`,
-`reviewer: "diff-reviewer"`, `passClass: "engine-logic"`, `gate` the F string, `maxFix: 1`,
-`stopOnEscalate: true`, `commonNotes` carrying "Global constraints" and the pre-flight checklist from
+`reviewer: "diff-reviewer"`, `passClass: "engine-logic"`, `gate` the F string (the runner's fallback
+when the classifier prints nothing), `ci: { pr: <the draft PR's number, from Task 0 item 6> }`,
+`maxFix: 1`, `stopOnEscalate: true`, `commonNotes` carrying "Global constraints" and the pre-flight checklist from
 `~/.claude/docs/pass-gate-economy.md`, and each task's own `passClass` where this plan sets one (Tasks 1, 2, 5, 8, and 11). `commonNotes`
 reaches the implementer only, so a Global constraint no gate checks (no plan, pass, or task numbers
 in shipped comments) binds the implementer and the close's reviewers, who read the whole diff, not
@@ -106,30 +111,50 @@ Each task maps as follows, because neither agent reads this plan (`cairn-impleme
 - `files`: the **Files** block.
 - `notes`: the task's own notes and mutation proofs, if any.
 
-The computed tier rules every task's gate. The runner sizes it from the committed diff with
-`scripts/checks/gate-tier.mjs`, and the runner's fallback is F. No task pins `gateTier` or sets
-`gateLane`. A browser-bearing tier on the light lane would break `pass-gate-economy.md`'s lane rule,
-and S and D are not tiers the script can pin. A task's **Gate** line names the tier its Files are
-expected to compute. The conductor uses it as a cross-check, never as a floor. Where a task needs a
-check its tier lacks, its Acceptance quotes the command. Task 0 is conductor-led, outside the
-runner. `auth-data` fix rounds always run the full gate.
+The computed gate rules every task. The runner sizes it from the committed diff with
+`scripts/checks/gate-tier.mjs --range <base>..HEAD --class <passClass>`, passing each task's own
+`passClass` (an `auth-data` task adds `golden-path`, `access-map`, and `csrf-origin` to its e2e
+selection), and its fallback is F, used only when the classifier prints nothing. The default output
+is the targeted gate (`docs/internal/pass-gate-tiers.md`): `npm run package`; the static checks the
+diff's buckets select, through `npm run check:close -- <labels>`; the node projects; the component
+project (narrowed through `vitest related`, or whole on a trigger, a delete, or an empty selection);
+`create-cairn-site`'s suite when its inputs change; and the e2e specs the map selects, at zero
+retries, behind `export E2E_PORT=4392` and a no-listener guard. The computed gate therefore carries
+its own specs and port, and no task pins `gateTier` or sets `gateLane`. A pin would print an old tier
+string, which selects no specs, and a browser-bearing gate on the light lane would break
+`pass-gate-economy.md`'s lane rule. A task's **Gate** line names the legs its Files are expected to
+compute. The conductor uses it as a cross-check, never as a floor. Where a task needs a check its
+gate lacks, its Acceptance quotes the command. Task 0 is conductor-led, outside the runner. Fix
+rounds take the runner's validated reduced gate: a comment-only round reduces under every class,
+`auth-data` included, and a test-only round reduces under every class but `auth-data`, which keeps
+its targeted gate.
 
-**Amended from pass A's S1 (2026-10-08; supersedes the paragraph above where they differ).** Each
-task's gate is its blast radius: the tier its Files compute, plus the showcase e2e specs its change
-reaches, with F once at each segment boundary and before merge. A computed string carries no
-`E2E_PORT` export, so a task whose change reaches an e2e spec pins `gateTier` to its computed tier
-and sets its own `gate`: `export E2E_PORT=4392 && <that tier's string> && npm --prefix
-examples/showcase run test:e2e -- <specs>`. A task that reaches no spec keeps the computed tier.
-Each segment's pre-flight names every task's reachable specs, and the conductor writes them into
-that task's `gate`. The runner now runs a pinned task's own string unchanged on both sides (dotfiles
-`492f584`); before that fix, pass A's Task 3 escalated on a gate-string mismatch alone. Fix rounds
-take the runner's validated reduced gate: under `auth-data`, only a comment-only round reduces.
+**CI behind the runner.** The runner pushes after every commit, fix rounds included, so CI runs while
+the reviewer reads. It reads `ci-green` on task N's accepted SHA before it dispatches task N+2.
+Every `auth-data` task (Tasks 2, 5, and 8) waits for CI green on its own commit before N+1 starts,
+as does a task whose gate probe reports `ciWait` for a protected path (Task 4 edits
+`.github/workflows/publish.yml`) or that sets `ciWait: true`. A red halts the run with a `ciRed`
+record and an unavailable read halts it with `ciUnavailable`; the conductor then runs F on that SHA.
+Tasks 1 and 2 land as a pair (see "Disjoint Files seams"), so the S1 pre-flight checks whether Task
+1's commit alone leaves CI's `create-site` or `scaffold` red. If it does, the pair is dispatched as
+one commit, since the runner reads CI on Task 1's SHA before Task 3 and would halt on the pair's
+known red.
 
-The local boundary F replaces its last step with `npm --prefix examples/showcase run test:e2e --
---grep-invert "site home|archive page 2"`. Those are the 20 `site-visual.spec.ts` tests that this
-workstation's Chromium renders off its CI baselines (`durable-gotchas.md`); CI runs them on every
-push. A boundary F is skipped when `cairn-run-gate --receipt '<F>'` matches the tree. Task 0's
-baseline F uses the same local string.
+**Amended from pass A's S1 (2026-10-08), replaced by the gate economy pass (2026-10-10); supersedes
+the paragraphs above where they differ.** Each task's gate is its blast radius: the targeted gate,
+whose e2e leg is the specs its change reaches. Nothing is pinned and no task writes its own `gate`
+string. Each segment's pre-flight still names every task's reachable specs, as a cross-check against
+the classifier's selection. A task whose diff touches a protected path (the bucket and e2e-map
+table, the rerun triggers, `gate-tier.mjs`, `.github/ci-green.json`, or `.github/workflows/**`) runs
+its targeted gate, then waits for CI green on its own commit. Per-task gate cost: [PLACEHOLDER:
+timed-range durations from the gate economy replay record, filled at that pass's close].
+
+The local F is the fallback only. It replaces its last step with `npm --prefix examples/showcase run
+test:e2e -- --grep-invert "site home|archive page 2"`. Those are the 20 `site-visual.spec.ts` tests
+that this workstation's Chromium renders off its CI baselines (`durable-gotchas.md`); CI runs them on
+every push, and the targeted gate's own e2e leg carries the same `--grep-invert` whenever it selects
+`site-visual.spec.ts`. F runs where `ci-green` exits 3, and a `cairn-run-gate --receipt '<F>'` match
+on the tree skips it. A boundary that read CI green has no local gate to skip.
 
 **Models:** implementers `sonnet` (agent pin); `diff-reviewer` on `claude-opus-5-5` at `medium`; the
 close's `web-auth-security-reviewer` at `high`. No task is upshifted at plan time. Each task is
@@ -149,15 +174,28 @@ Every gate runs through `cairn-run-gate '<string>'`; on exit 75, re-issue until 
 `gate exit:`, and never poll a log. `CAIRN_GATE_LANE=light` only for a gate that launches no
 browser. The engine's root `npm test` drives Chromium and is never light.
 
-- **Full (F):** the `full` tier, printed by `node scripts/checks/gate-tier.mjs --range <base>..HEAD
-  --pin full` and quoted in Task 0's Ledger entry. It is the engine tier plus the admin-visual run,
-  `check:comments`, `check:surface`, CI's check list, and the whole showcase e2e. The showcase e2e
-  runs on the port convention the pre-flight reads from `examples/showcase/playwright.config.ts` and
-  `durable-gotchas.md`, after `ss -ltnp` shows no listener on that port.
-- **Engine (E):** the `engine` tier of the same script: the docs gate, `npm run check`, the node
-  projects, the serialized component project, and the `create-cairn-site` workspace suite.
+- **Targeted (the per-task gate):** `node scripts/checks/gate-tier.mjs --range <base>..HEAD --class
+  <passClass>`, run by the runner for every task. Its legs and rules are in
+  `docs/internal/pass-gate-tiers.md`.
+- **CI green (the boundary and close proof):** `ci-green <sha> --pr <n> --wait` over the pushed
+  head, run by the conductor with `run_in_background` and re-issued on exit 75. Exit 0 is green:
+  at least one workflow run exists on the SHA, every run concluded `success`, and the expected set is
+  present (`test`, `e2e`, `design`, `scaffold`, and `create-site` whenever the diff has a path
+  outside `tool/**`). Exit 1 is red, 2 is missing, 3 is unavailable. The close's green must be on a
+  run whose base is `origin/main`'s current head; if `main` moved, merge it in and read it again.
+- **Full (F), the fallback:** the `full` tier, printed by `node scripts/checks/gate-tier.mjs --range
+  <base>..HEAD --pin full` and quoted in Task 0's Ledger entry. It runs only where `ci-green` exits 3
+  (or the runner halts with `ciUnavailable`), on that SHA. It is the engine tier plus the
+  admin-visual run, `check:comments`, `check:surface`, CI's check list, and the showcase e2e, with
+  its last step replaced by the `--grep-invert` form above. The showcase e2e runs on the port
+  convention the pre-flight reads from `examples/showcase/playwright.config.ts` and
+  `durable-gotchas.md`, after `ss -ltnp` shows no listener on that port. A local `check:close` runs
+  on the same exit 3.
+- **Engine (E):** the `engine` pin tier of the same script, named by Task 7's Acceptance: the docs
+  gate, `npm run check`, the node projects, the serialized component project, and the
+  `create-cairn-site` workspace suite.
 
-The script's `--range` must name a non-empty range, so Task 0 prints both strings from the module
+The script's `--range` must name a non-empty range, so Task 0 prints both pin strings from the module
 itself: `node -e "import('./scripts/checks/gate-tier.mjs').then(m => console.log(m.TIER_GATES.full))"`,
 and the same with `engine`.
 
@@ -451,11 +489,15 @@ The inputs most likely to bite a real user that per-task tests would not exercis
    "^$VERSION" --dev-spec "^$VERSION"`, with `VERSION` the root `package.json` version); and `npx
    svelte-kit sync` in `examples/showcase` (`check-public-skill.test.ts` fails on
    `$app/tsconfig` without it).
-4. **Gate strings.** Print F and E from the module's `TIER_GATES` (under "Gates"; a `--range` on a
-   branch equal to `main` is empty, and the script exits 1 before it reads `--pin`) and record both.
-5. **Baseline.** One gate agent runs F in the worktree and returns the `gate exit:` line and its
-   tail. The conductor quotes it to Task 1's reviewer as Task 0's gate evidence. A red stops the run
-   with one message to Geoff.
+4. **Gate strings.** Print the F and E pin strings from the module's `TIER_GATES` (under "Gates"; a
+   `--range` on a branch equal to `main` is empty, and the script exits 1 before it reads `--pin`)
+   and record both. F is the fallback only.
+5. **Baseline.** CI is the baseline. Once item 6 has pushed the Ledger commit and opened the draft
+   PR, the conductor runs `ci-green <sha> --pr <n> --wait` on that head, which carries `main`'s tree,
+   and quotes its exit line and output to Task 1's reviewer as Task 0's gate evidence. On exit 3, one
+   gate agent runs F in the worktree instead and returns the `gate exit:` line and its tail. A red
+   stops the run with one message to Geoff, unless `main`'s own head carries it (item 6 records that
+   inherited set).
 6. **Draft PR and inherited CI.** Commit Task 0's Ledger entry (and any item 7 amendment) on
    `engine-pre-2b-b` first, since GitHub refuses a pull request with no commits between base and
    head. Then push, open a draft PR against `main` (so CI runs on every later push), and record
@@ -569,7 +611,12 @@ only per Decision 9). Plus `src/tests/unit/emit-template-tree.test.ts`,
 **Interfaces produced:** a scaffold with no access declaration and one D1 binding, consumed by Task 2
 (provisioning one database) and Task 11 (facts).
 
-**Gate:** computed; expected F (`examples/showcase/src/theme/` and `wrangler.jsonc` compute `full`).
+**Gate:** the targeted gate; expected: the showcase-bucket checks, `create-cairn-site`'s suite, the
+node projects, the whole component project (no `src/` path selects a subset), and the whole e2e
+suite, since `wrangler.jsonc` and `.cairn-template.json` select every spec (with `--grep-invert` for
+`site-visual.spec.ts`). The old F expectation is dropped, and the whole suite stays. Named risk: the
+task removes a route and a binding that every spec's server loads, so a selected subset could miss a
+spec that fails on the missing binding.
 
 ### Task 2: `create-cairn-site` stops provisioning `APP_DB` (ruling 2, provisioning)
 
@@ -609,8 +656,10 @@ works.
 
 **Interfaces produced:** none consumed later.
 
-**Gate:** computed; expected `scripts` (the `create-cairn-site` suite, `npm run check`, and the
-serialized component project), on the heavy lane.
+**Gate:** the targeted gate; expected: the checks of the scripts and showcase buckets, the node
+projects, `create-cairn-site`'s suite, the whole component project (no `src/` path), and the three
+`auth-data` specs (`golden-path`, `access-map`, `csrf-origin`). The lane is heavy. Task 2 is
+`auth-data`, so the runner waits for CI green on its commit before Task 3 starts.
 
 ### Task 3: The admin error page, the manifest message, the types script, and the feed (A5, B2, B3, D2)
 
@@ -661,10 +710,14 @@ task 5. **Decision 4.**
 **Interfaces produced:** the admin error page, named in Task 11's facts and the re-arm list
 (restrict-admin-access, scaffolded-site-files); the A5 captures, read at the close.
 
-**Gate:** computed; expected F (an unclassified `admin/+error.svelte` computes `full`).
+**Gate:** the targeted gate; expected: the specs the map gives `examples/showcase/src/routes/admin/`
+(`admin-visual`, `custom-screen`, `golden-path`, `theme-kit`, `theme-kit-contrast`,
+`vocabulary-admin`) plus those its `src/lib` paths map. The old F expectation is dropped: the error
+page is a mapped path, so the classifier selects its specs, and CI's whole suite runs at the
+boundary.
 
-**S1 boundary:** F green on the segment head; pushed; CI `scaffold`, `create-site`, and `e2e` green;
-STATUS written; S2 pre-flight dispatched.
+**S1 boundary:** pushed; `ci-green` exit 0 on the segment head (it reads `scaffold`, `create-site`,
+and `e2e`, with `test` and `design`); STATUS written; S2 pre-flight dispatched.
 
 ---
 
@@ -720,7 +773,12 @@ only where it names the source export.
 **Interfaces produced:** the built dev package, consumed by Tasks 5 and 10 and by the close's
 consumer proof.
 
-**Gate:** computed; expected F (`publish.yml` computes `full`).
+**Gate:** the targeted gate; expected: the checks the root `package.json` and `.github/` select, the
+dev-package check, `create-cairn-site`'s suite, and the three specs the map gives an unmapped engine
+or dev-package path (`golden-path`, `access-map`, `csrf-origin`). `publish.yml` is a protected path,
+so the gate probe reports `ciWait` and the runner waits for CI green on Task 4's commit before Task 5
+starts. The old F expectation is dropped; the `publish-dev` job and the `exports` map are proven by
+the dev-package check, the showcase e2e build, and CI's `scaffold` and `e2e` runs.
 
 ### Task 5: The engine supplies the dev-build define (B7)
 
@@ -770,7 +828,12 @@ into a deployed Worker. **Spec:** B7; pass B task 7.
 **Interfaces produced:** the engine-supplied define, named in Task 11's `Consumers may:` line and
 the close's smoke.
 
-**Gate:** computed; expected F (`vite.config.ts` computes `full`).
+**Gate:** the targeted gate; expected: the engine and showcase checks, the node projects,
+`create-cairn-site`'s suite, a component selection, and the whole e2e suite, since
+`examples/showcase/vite.config.ts` selects every spec, plus the three `auth-data` specs. Task 5 is
+`auth-data`, so the runner waits for CI green on its commit before Task 6 starts. The old F
+expectation is dropped, and the whole suite stays. Named risk: the define decides whether a handle
+that mints owner sessions compiles into every page's server, so any spec can catch a wrong default.
 
 ### Task 6: `cairn-guidance check` reads a fresh scaffold as fresh (B6)
 
@@ -794,10 +857,13 @@ leaves out `VERSION`, which the bake and `install` stamp differently.
 
 **Interfaces produced:** none consumed later; the Claude Code arm's facts (Task 11).
 
-**Gate:** computed; expected E.
+**Gate:** the targeted gate; expected: the engine-bucket checks, the node projects, a component
+selection, and the `tidy` and `spellcheck` specs (`src/lib/guidance/`). The old E expectation is
+dropped: the targeted gate carries what E ran and the specs that E left out.
 
-**S2 boundary:** F green on the segment head; pushed; CI `scaffold`, `create-site`, `e2e`, and
-`test` green; STATUS written; S3 pre-flight dispatched (including the Task 8 seam check).
+**S2 boundary:** pushed; `ci-green` exit 0 on the segment head (it reads `scaffold`, `create-site`,
+`e2e`, and `test`, with `design`); STATUS written; S3 pre-flight dispatched (including the Task 8
+seam check).
 
 ---
 
@@ -835,7 +901,9 @@ with `check:surface -- --update`.
 
 **Interfaces produced:** the shared reserved-id set; three `Consumers must:` clauses for Task 11.
 
-**Gate:** computed; expected E.
+**Gate:** the targeted gate; expected: the engine-bucket checks, the node projects, a component
+selection, and the specs the `src/lib/content/` and `src/lib/sveltekit/` entries map. The old E
+expectation is dropped. The composition smoke over both adapters stays Acceptance's own command.
 
 ### Task 8: The sanitize floor and two build warnings (C5, C13, D6)
 
@@ -885,7 +953,11 @@ its tests; `docs/reference/render.md` (minimal edit stating the floor).
 
 **Interfaces produced:** one `Consumers must:` clause (C5) for Task 11.
 
-**Gate:** computed; expected F (`src/lib/render/` computes `full`).
+**Gate:** the targeted gate; expected: the engine-bucket checks, the node projects, a component
+selection, the ten specs the `src/lib/render/` entry maps (`site-visual.spec.ts` among them, so the
+leg carries `--grep-invert`), and the three `auth-data` specs. Task 8 is `auth-data`, so the runner
+waits for CI green on its commit before Task 9 starts. The old F expectation is dropped; CI runs the
+`site-visual` tests whole.
 
 ### Task 9: The site-config path is declared once, and `cairn-audit --fail-on advisory` (D5, D8a)
 
@@ -923,10 +995,14 @@ its tests; `docs/reference/render.md` (minimal edit stating the floor).
 
 **Interfaces produced:** two `Consumers must:` clauses (D5) for Task 11.
 
-**Gate:** computed; expected F (`examples/showcase/src/theme/` computes `full`).
+**Gate:** the targeted gate; expected: the engine and showcase checks, the node projects,
+`create-cairn-site`'s suite, a component selection, and the specs the `examples/showcase/src/theme/`,
+`src/lib/content/`, and `src/lib/sveltekit/` paths map, plus the three specs an unmapped `src/lib`
+path (`src/lib/audit/`) takes. The old F expectation is dropped: no path here is unclassified, and
+CI's whole suite runs at the boundary.
 
-**S3 boundary:** F green on the segment head; `check:close` green; STATUS written; S4 pre-flight
-dispatched.
+**S3 boundary:** pushed; `ci-green` exit 0 on the segment head, which carries every `check:close`
+component; STATUS written; S4 pre-flight dispatched.
 
 ---
 
@@ -1028,7 +1104,11 @@ The "No" alternative (publishes written to disk) was not taken.
 **Interfaces produced:** the `content` option and the notice members, with their own facts,
 version records, and re-arm items (above). Task 11 re-reads them when Task 10 ran first.
 
-**Gate:** computed; expected F (`hooks.server.ts` computes `full`).
+**Gate:** the targeted gate; expected: the engine and showcase checks, the node projects,
+`create-cairn-site`'s suite, a component selection, and the whole e2e suite, since
+`examples/showcase/src/hooks.server.ts` selects every spec. The old F expectation is dropped, and the
+whole suite stays. Named risk: the hook wraps every request, so a regression in the dev handle's
+overlay can surface in any spec.
 
 ### Task 11: Docs and records for pass B
 
@@ -1137,11 +1217,14 @@ other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/ap
 
 **Interfaces produced:** none consumed later; the close finalizes STATUS and HISTORY.
 
-**Gate:** computed; expected `docs`, or higher if a `claude/**` or `packages/create-cairn-site/`
-path lands; then `check:close` at the boundary.
+**Gate:** the targeted gate; expected: the docs checks and the node projects. `CHANGELOG.md` and
+`ROADMAP.md` sit in the engine bucket and no `src/` path exists to select from, so the component
+leg runs the whole project; no e2e spec is selected. A `claude/**` or `packages/create-cairn-site/`
+path adds its checks and the `create-cairn-site` suite. The S4 boundary's CI green carries
+`check:close`'s components.
 
-**S4 boundary:** F green on the segment head; `check:close` green; pushed; every CI workflow green;
-STATUS written.
+**S4 boundary:** pushed; `ci-green` exit 0 on the segment head, which carries every `check:close`
+component and every CI workflow; STATUS written.
 
 ---
 
@@ -1151,13 +1234,16 @@ Run `pass-core`'s ritual with the `cairn-pass` specifics, in order. Steps 1 to 1
 Step 11's merge is the one batched owner step.
 
 1. **Simplify, once.** `code-simplifier:code-simplifier` over the pass's changed TypeScript,
-   JavaScript, and Svelte, then the full gate again if it changed code.
-2. **Full gate.** If step 1 changed code, F again; otherwise the S4 boundary's F stands, since a
-   second full run on an unchanged commit is barred (`pass-gate-economy.md`, heavy-lock rule 2).
-   Never the stock `npm test`: its parallel component project hangs on this workstation while it
-   holds the heavy gate lock (`docs/internal/durable-gotchas.md`, "The component project stalls
-   under file parallelism"), and F runs the same projects serialized. Then
-   `cairn-run-gate 'npm run check:close'` (0 errors, 0 warnings).
+   JavaScript, and Svelte, then the targeted gate again if it changed code.
+2. **CI green.** If step 1 changed code, push and read `ci-green <head> --pr <n> --wait` on the new
+   head; otherwise the S4 boundary's CI green stands, since a second full run on an unchanged commit
+   is barred (`pass-gate-economy.md`, heavy-lock rule 2). The read must be on a run whose base is
+   `origin/main`'s current head; if `main` moved, merge it in and read it again. CI's `test` job
+   carries every `check:close` component. On exit 3 only, F runs on that SHA, then
+   `cairn-run-gate 'npm run check:close'` (0 errors, 0 warnings). Never the stock `npm test`: its
+   parallel component project hangs on this workstation while it holds the heavy gate lock
+   (`docs/internal/durable-gotchas.md`, "The component project stalls under file parallelism"), and F
+   runs the same projects serialized.
 3. **Consumer proof**, since the dev package moves to `dist/` and the scaffold changes:
    - A from-scratch showcase build in the worktree (`rm -rf examples/showcase/{node_modules,package-lock.json}`,
      fresh install, `npm run build`), with `realpath` showing both packages resolve into the

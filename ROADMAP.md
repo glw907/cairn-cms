@@ -309,7 +309,7 @@ The original decision framing, for the record:
      test, so a migration can still produce an engine fix after the release.
 
 - **Gate economy pass (Geoff, 2026-10-09).** A small pass after engine pass pre-2b, pass A merges
-  and before pass B, run in its own fresh session. Pass A's 12 tasks took about 12 hours of clock on
+  and before pass B, run in its own fresh session. Pass A's 12 tasks took about 17 hours of clock on
   about 4.5M subagent tokens, nearly all of it gates. The pass makes gating targeted and evidence-based
   ("avoid the brute-force approach, unless it's best-practice"): build the package once per gate (today
   `check:close` rebuilds it about 17 times); narrow only the serialized component project with `vitest
@@ -326,16 +326,22 @@ The original decision framing, for the record:
   `create-cairn-site` resume tests need the baked template CI prepares, so a `setup-worktree`
   script or gate-tier prep step would carry CI's preparation); the local full gate goes red on 20
   `site-visual.spec.ts` tests against the CI-canonical baselines, which pass A excluded by hand
-  with `--grep-invert "site home|archive page 2"` (a local `full` variant in
-  `scripts/checks/gate-tier.mjs` would make that standing); `cairn-run-gate`'s light lane caps the
+  with `--grep-invert "site home|archive page 2"` (live since this pass: the local `full` fallback
+  carries it, and so does the targeted gate's e2e leg whenever the map selects `site-visual.spec.ts`.
+  Reachability forces some map entry to select that spec, and its `site home` and `archive page 2`
+  tests are known local reds (`durable-gotchas.md`); selecting it appends `--grep-invert "site
+  home|archive page 2"`, and CI runs them whole); `cairn-run-gate`'s light lane caps the
   scope at 3G, so `npm run check` dies out of memory at about 1 GB unless
   `NODE_OPTIONS=--max-old-space-size=6144` is set (a lane-level default or a larger cap fixes it);
   and `cairn-run-gate` prints a finished result once and clears its run state, so a re-issue after
   a backgrounded call starts a second full gate (about 20 minutes duplicated) and, through a pipe,
   can drop the `gate exit:` line (about 15 minutes per extra cycle); the `--receipt` lookup exists
   but a re-issue does not consult it.
-  A fifth: `cairn-run-gate` reuses one log directory per gate string, so a run's duration and lock
-  wait cannot be read back afterward (the inputs file's closing section names the gap).
+  A fifth, done: `cairn-run-gate` reused one log directory per gate string, so a run's duration and
+  lock wait could not be read back afterward. It now appends one run record per run, across an
+  exit-75 reattach (the inputs file's closing section named the gap).
+  Of the five, the worktree-setup, light-lane OOM, and re-issue items stay filed; this pass did not
+  take them.
 
 - **Engine pass B before stage 2b (the boundary test at stage 2a's close, 2026-10-07; narrowed
   2026-10-09).** Pass A landed on `main` unreleased
@@ -1056,10 +1062,26 @@ the named human gates only):**
   Three items deferred from the change that made the per-task gate the diff's blast radius. (a)
   Per-task test selection via `vitest --changed <base>`. Trigger: `forceRerunTriggers` covers
   fs-read inputs (78 of 513 test files read outside the import graph) and a committed canary proves
-  a broken fs-read fixture turns a selected run red. (b) Auth-data test-only fix rounds taking the
-  touched tests, the tests of touched helpers, and a re-run of the affected named mutations.
-  Trigger: lands with (a). (c) The docs chain framing-seat A/B at stage 2b's start: two intros, one
-  at `xhigh` and one at `high`; keep `xhigh` unless `high` matches.
+  a broken fs-read fixture turns a selected run red. The precondition is met: the gate economy pass
+  committed the canary (`src/tests/unit/component-trigger-canary.test.ts`), and the component
+  project now runs through `vitest related`. Selection for the node projects stays open. (b)
+  Auth-data test-only fix rounds taking the touched tests, the tests of touched helpers, and a
+  re-run of the affected named mutations. Won't do while the full node projects run on every task:
+  a test-only `auth-data` round keeps its targeted gate, which already runs them. (c) The docs chain
+  framing-seat A/B at stage 2b's start: two intros, one at `xhigh` and one at `high`; keep `xhigh`
+  unless `high` matches.
+
+  Four more, filed from the gate economy pass (2026-10-10), none a defect of the new gate. (d)
+  Chains pipelining: `pass-execute-chains.js` and `pass-execute`'s parallel mode do not push or
+  read CI per task; only the sequential runner pipelines. (e) The CI build-once rewire: CI keeps its
+  per-step checks while `check:close` is the local build-once runner; rewiring CI to build once
+  saves about 2 minutes a cycle, but its check list differs from `check:close`'s and it would lose
+  the per-step timing. (f) A docs-class diff that
+  touches `CHANGELOG.md` or `ROADMAP.md` runs the whole component project, because those paths sit
+  in the engine bucket and no `src/` path exists for the related selection, so the classifier fails
+  closed; a bucket entry for them would make a docs task cheap. (g) The emitted gate builds `dist`
+  twice, once in leg 1 (`npm run package`) and again inside `check:close`, which has no flag to
+  skip its build.
 
 - **Engine writes to `main` still unguarded (data-loss class; pass A's close, 2026-10-09).** Pass A's
   C11 head guard covers publish, publish-all, Library delete, metadata, replace, alt, and the

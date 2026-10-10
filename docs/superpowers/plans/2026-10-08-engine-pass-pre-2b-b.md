@@ -512,8 +512,8 @@ The inputs most likely to bite a real user that per-task tests would not exercis
      `src/routes/admin/signups` or `migrations-app`.
    - `examples/showcase/src/routes/admin/signups/` holds `+page.server.ts`, `+page.svelte`, and
      `actions.test.ts`. `examples/showcase/migrations-app/0000_signups.sql` exists.
-   - The Signups `navLayout` entry sits at `examples/showcase/src/theme/cairn.config.ts:214`, with
-     its comment at `:194`.
+   - The Signups `navLayout` entry sits at `examples/showcase/src/theme/cairn.config.ts:245`, with
+     its comment at `:225`.
    - `examples/showcase/src/lib/log.ts` declares `admin.signups.misconfigured` in its site event
      union.
    - `examples/showcase/src/theme/components/admin-link.test.ts` has an `/admin/signups` case.
@@ -538,7 +538,7 @@ The inputs most likely to bite a real user that per-task tests would not exercis
      friction filing; they are not edited.
    - That the template's `src/theme/cairn.config.ts` `access` member holds only the
      `/admin/signups` rule, and that no `src/access.ts` exists (precondition 3).
-   - `src/lib/content/manifest.ts` stale message (`:373-377` at `2b37ae78`) names
+   - `src/lib/content/manifest.ts` stale message (`:402` at `21ec86a9`) names
      `npm run cairn:manifest`.
    - The bake's `package.json` transform is `transformPackageJson` in `scripts/build/emit-template.mjs`.
      `templates/waymark/worker-configuration.d.ts:2` records
@@ -1329,6 +1329,347 @@ Step 11's merge is the one batched owner step.
 
 (Checkpoint entries go here: Task 0's record, then one entry per segment boundary with the task
 ledger, verdicts, decisions taken, spend against the ceiling, and the next task.)
+
+### Task 0 (2026-10-10)
+
+Run at `main` head `21ec86a9`; worktree `.claude/worktrees/engine-pre-2b-b` on `engine-pre-2b-b`.
+
+**1. No live executor.** `pgrep -af` for the worktree path and for `engine-pre-2b-b` found no process
+(the command's own excluded). No `engine-pre-2b-b` branch or worktree existed before this run
+(`git branch -a`, `git worktree list`). `main`'s `git status --porcelain` was empty.
+
+**2. Preconditions 1 to 7: all hold.**
+
+1. Merges: `53fc5d62` (Merge PR #107, draft-docs-2a) and `0f7aa3a1` (Merge PR #108, engine-pre-2b-a) are on
+   `main`. Pass A's plan carries `## Post-mortem (2026-10-09)` and its Ledger; `docs/STATUS.md` names
+   pass B as the next action.
+2. The lead: `src/lib/sveltekit/guard.ts:60`, `src/lib/sveltekit/editors-routes.ts:42-55`, and
+   `packages/cairn-cms-dev/src/handle.ts:72` each take `runtime`; `DevBackendConfig` carries no `access` or
+   `roles` member; the dev handle sets `event.locals.cairnAccess = config.runtime.access ?? {}`
+   (`handle.ts:169`). `examples/showcase/src/hooks.server.ts:4,20,22` and `templates/waymark/src/hooks.server.ts:4,20,22`
+   pass `{ runtime }` from `#chassis/cairn.server.js`.
+3. Inline access: `access: defineAccess(undefined, {...})` at `examples/showcase/src/theme/cairn.config.ts:171`
+   and `templates/waymark/src/theme/cairn.config.ts:171`; neither `src/access.ts` exists; the showcase's
+   `theme-kit` rule sits inside `cairn-template:exclude-start/-end` (`:173`, `:179`); the template's `access` holds
+   only `'/admin/signups': ['owner']`.
+4. Pass A's edits to shared files: `092176c1` touched `packages/create-cairn-site/src/cloudflare/secret.mjs`
+   (B11a), both `.dev.vars.example` files (B9; the template's file now holds only `GITHUB_APP_PRIVATE_KEY_B64`
+   and `ANTHROPIC_API_KEY`), and both `healthz/+server.ts` (B5: `templates/waymark/src/routes/healthz/+server.ts:3-6`
+   answers 503). D1: `bd614101` changed `src/lib/content/manifest.ts`; the stale message at `:402` still names
+   `npm run cairn:manifest`. A6: `src/lib/admin/EditPage.svelte:1796` still keys
+   `{#each data.publishActions as action (action.label)}`.
+5. Records split (pass A's Decisions 8 to 11), on `main`:
+   - Ledger: seven new entries in `docs/internal/engine-rulings.md` (`access-map-one-declaration` plus six
+     declines: `admin-toolkit-shell-only`, `refusal-channels-per-call-site`, `csrf-no-rotation-under-identity`,
+     `admin-headers-scope`, `dev-flag-strict-read`, `token-cache-no-401-eviction`) and eight dated "Annotation
+     (2026-10-09 ... pass A)" lines. `audit-adapter-navmenuconfig` (`:1154`) carries none (pass B's).
+   - `docs/reference/admin-toolkit.md:30` carries the shell-only sentence; the functional spec carries the C7
+     and `/admin/auth/request` amendments; the media 2a design carries the head-guard amendment.
+   - ROADMAP: the one-release path (`ROADMAP.md:183`, "rewritten 2026-10-09") and the narrowed "Engine pass B
+     before stage 2b" Now entry (`ROADMAP.md:311`). **Plan-text difference, not a failure:** pass B's friction
+     items live in that ROADMAP entry (stage 2a's close moved them out of the log; source detail at
+     `b38ef6b3`), and `docs/internal/docs-friction-log.md` holds no pass A or pass B engine entry ("### Engine:
+     No open entry"). The log's pass A and 2a triage records say so.
+   - Hand-off list: `docs/STATUS.md` no longer carries it (it points at "the plan's Ledger and the Task 12
+     carry files"). Copied verbatim below from pass A's plan Ledger (Task 12 carry, Tasks 1 to 3) and the
+     three carry files.
+   - `docs/internal/record/harvest/relink.json` has 43 `"stage": "2b"` link-repair entries and **zero** entries
+     carrying a `facts` array (expected none).
+6. Fork 2 ruled yes (rulings file, Geoff 2026-10-08: "Recomendations accepted for Fork 1 and 2"), the coalesced
+   per-isolate slot with a per-caller timeout; landed in pass A's Task 6 (`c2409fdc`, `a8156613`).
+7. Fork 1 ruled yes (same rulings file, Geoff 2026-10-08); Task 10 builds as written.
+
+**Pass A's hand-off list, verbatim.**
+
+From pass A's plan Ledger, "Task 12 carry (Tasks 1 to 3)":
+
+```text
+- **Task 12 carry (Tasks 1 to 3).** Consumers must, Task 1: "pass the composed `runtime` to
+  `createAuthGuard({ runtime })`, `devBackendHandle({ runtime })`, and `createEditorRoutes({ runtime
+  })`; remove any `roles` or `access` options; declare `roles` and `access` once as members of the
+  adapter (`defineAdapter({ roles, access })`). The runtime is `composeRuntime({ adapter, siteConfig
+  })`. A scaffolded site that kept `src/access.ts` should fold its map into the adapter and delete the
+  file. A site with only href keys in its access map will stop seeing `config.access_unmapped`."
+  Task 3: (A1) review any access rule naming a none-capability role, since `canReach`,
+  `requireAccess`, `createSectionAction`, and `createAdminAction`'s `access` now admit it on a
+  route-path rule naming its role; (C1) a hand-mounted tidy or dictionary-add action on a route with
+  no `concept` param now answers 404; (C7) only `/admin/login` and `/admin/auth/confirm` are public, so
+  a route under `/admin/auth/` redirects an anonymous request; (A2, additive) `auth.access.refused`
+  gains `reason`. 2a pages: add-a-custom-admin-screen, add-a-second-sign-in-group,
+  add-cairn-to-a-sveltekit-app, restrict-admin-access, replace-magic-links-with-cloudflare-access,
+  debug-your-site, security-model, architecture, scaffolded-site-files (and migration-notes). Facts,
+  Task 1: f:2sd4if, f:4xrx5f, f:7cv105, f:dqjkci, f:f21bcz, f:eiaqkh, f:q07rd5, f:u78zg6, f:iwf4nu,
+  f:cvzb8z, f:8ciz2s, f:mou1li, f:pfy9cw, f:3z1uxv (claim false), f:hwffph, f:gun084, f:mbx6q1,
+  f:qlgggh, and line cites into the template's `cairn.config.ts` (f:tycp7k, about 24 lines early).
+  Task 2: f:hwffph, f:67pwmj, f:0ms9c1. Task 3: f:v85shm, f:arr13a, f:cvv6to, f:4q8kin, f:vqh4a9,
+  f:9exogy, f:p1xmp5, f:8anql1, f:zo034s; minted f:5sx6zl, f:147zhc. Task 3 also edited
+  `docs/reference/core.md` (the `canReach` none passage) outside its Files, disclosed and correct.
+- **Next:** the S1 boundary (F and T), then S2's pre-flight and launch.
+```
+
+#### docs/superpowers/research/2026-10-09-pass-a-s2-task12-carry.md
+
+```text
+# Task 12 carry from S2 (Tasks 4, 5, 7), extracted verbatim from s2-run.json
+
+## Task 4 (commit 4597aa49)
+
+Facts: new f:xffr6i (admin.md); rewritten f:rn62i1, f:gepykz (extend.md); f:bw5uk0 list gained the new id; source pointers repaired on f:5iqvmt and two neighbours (extend.md) and f:lml542 (reference.md, now a declaration anchor).
+
+Draft `Consumers may:` line: apply 0001_roles.sql (copy it from the package's migrations directory and run `wrangler d1 migrations apply <auth-db> --remote`) when declaring custom roles on a site scaffolded before the roles migration shipped; it is safe after 0004. It rebuilds editor with the engine's four columns only, so carry any column the site added across by hand. A scaffolded site created from this version already carries it.
+
+Affected 2a pages:
+The 2a extend pages under docs/extend/ are not edited. Affected pages and the facts they falsify: scaffolded-site-files.md says the scaffold's migrations are 0000, 0003, 0004 and that 0001 and 0002 are absent, which falsifies f:gepykz as it stood and the 0001-absent half of f:rn62i1. restrict-admin-access.md, step 1 of 'add the role', tells the reader to copy 0001_roles.sql into a new scaffold, where it is already present. Its failure line at about :351 says to check whether 0001 was applied remotely, which stays valid and now matches the named condition. add-a-second-sign-in-group.md has the same copy step at about :197 and the same failure advice at about :661. Both pages cite f:rn62i1. All three pages need the 2a stage to restate that the scaffold ships 0001_roles.sql and 0002_audit.sql stays opt-in.
+
+## Task 5 (commit bad014c0)
+
+Facts: minted f:thbxvf, f:ditn3e; rewritten f:2gtftn, f:v72g9z; source pointers repaired on f:b857di, f:bpk8gc, f:2gtftn, f:v72g9z. option-map row CairnAdminConfig.auth.branding points at f:v72g9z.
+
+Consumers must: if alerting keys on turnstile.verify_failed reason invalid_input to catch a missing or blank Turnstile secret, key it on missing_secret instead. invalid_input now means a bad token only.
+Consumers may: pass `auth.branding: { siteName }` alone to createCairnAdmin and keep the runtime sender's from and replyTo. Pass createChannelDb()'s result to a channel's resolveDb with no cast.
+
+Affected 2a pages:
+- add-a-second-sign-in-group.md: any claim that resolveDb must return a D1Database, and any claim that a missing-secret Turnstile failure logs invalid_input. Facts f:u3qhel is untouched; f:ditn3e is new.
+- add-cairn-to-a-sveltekit-app.md: any claim that a supplied auth.branding replaces the default whole or drops replyTo. Falsified facts: f:2gtftn and f:v72g9z (both rewritten in the container).
+
+Carry (reviewer note): a site that passed a full branding without replyTo, on purpose to suppress the adapter's reply-to, now inherits runtime.sender.replyTo, and branding offers no way to clear it (an explicit undefined falls back too). The drafted Consumers lines cover only the siteName-alone benefit. Task 12's Consumers must line could name this case.
+
+## Task 7 (commit 092176c1)
+
+Facts: updated in place, ids unchanged: f:3jpoi3 (admin.md); f:orz556, f:paotzb, f:nls26c, f:5dwnh1 (extend.md). f:qtm9y2 stays true. f:nls26c keeps naming GITHUB_APP_ID and GITHUB_APP_INSTALLATION_ID as dropped names for check:provenance.
+
+Drafted Consumers may: line: answer 503 when loadHealth(...).ok is false, as the site-root /healthz route now does: `Response.json(health, { status: health.ok ? 200 : 503 })`. A site's catch branch should return a fixed detail and never the thrown message.
+Drafted Consumers must: line (optional for the changelog author): none required for engine consumers. A scaffolded site's own .dev.vars no longer needs GITHUB_APP_ID or GITHUB_APP_INSTALLATION_ID; the old lines are harmless. A custom BackendProvider that is not github-app now reads ok: true / not-applicable from loadHealth, where it read ok: false before.
+
+Affected 2a pages:
+- `docs/extend/rotate-the-github-app-key.md`: falsified f:3jpoi3, f:5dwnh1 and f:paotzb. Its "curl /healthz" step and its failure-mode lines (`/healthz` reports the detail ...) now get a 503 status. The body is unchanged, so `curl` without `-f` still works.
+- `docs/extend/scaffolded-site-files.md`: falsified f:nls26c (lines 163-164 name `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` as in `.dev.vars.example`) and f:paotzb (line 365 area describes the route's 200 behavior).
+
+Also noted by the implementer: examples/showcase/README.md health notes (not checked); cairn-pub's own copy of the rotation URL (confirmed read-only only); 01d-resume.txt fixture stale (filed in the friction log).
+
+## Not filed, 2a hand-off pages (all four)
+- scaffolded-site-files (Tasks 4 and 7), rotate-the-github-app-key (Task 7), restrict-admin-access (Task 4), add-a-second-sign-in-group (Tasks 4 and 5); add-cairn-to-a-sveltekit-app (Task 5) also affected.
+```
+
+#### docs/superpowers/research/2026-10-09-pass-a-s3-task12-carry.md
+
+```text
+# Task 12 carry from S3 (Tasks 8, 9, 10), engine pass pre-2b A
+
+Source: s3-run.json `.result.tasks`. Verbatim from the record; nothing here is filed. All three reviewer verdicts: accept.
+
+## Task 8 (edit form on use:enhance; commit 666aff41)
+
+**Consumers must / may**
+- Consumers must: none. Consumers may: a site that overrode or wrapped the edit form's onsubmit handler or relied on a failed save re-running the entry load can now read the failure from the page's form prop; a failed save or publish no longer replaces the page.
+
+**2a extend pages falsified (not edited)**
+- `docs/extend/rotate-the-github-app-key.md` lines 115 and 127 say a failed key "ends each attempt to open or publish an entry on an error page with status 500". With JavaScript, a failed publish now stays in the editor; opening an entry still ends on the error page. Falsifies f:ogokfy. Needs a with/without-JavaScript distinction.
+
+**Fact ids edited or minted**
+- New: f:tqafd9 (editors.md). Narrowed: f:772sb6 ("a page rendered without JavaScript"). Rewritten: f:ogokfy (extend.md). Three anchored EditPage.svelte line pointers repaired (extend.md:118, extend.md:654, reference.md:1202). The 2130 and 1401 pointers were already stale before the task.
+
+**User-facing copy chosen by the implementer (verbatim)**
+- Calm notice: "That did not go through. Your text is still here; try again." Shown in an alert-warning strip and sent to the assertive live region. Shows for any failure the server did not word (an error result, a non-JSON answer, a failure with no error text or broken links). A failure that carries error text shows that text through the existing formError alert instead.
+- The summary also quotes "Something went wrong and your changes were not saved..." as what a failed publish shows in the editor (existing server message, not new copy).
+- Existing note strings the task touches: "Saved. Note:" (the ?drafts= and ?refs= banners, blanked on in-place failure).
+
+**Reviewer nonBlocking**
+- `src/lib/admin/EditPage.svelte:173-185`: landsOnThisConcept corrects a wrong plan premise (the guard's login redirect arrives as a redirect result, not an error result; kit respond.js:458, forms/client.js:215-217). Only the component stand-in covers it; no e2e forges /admin/login. Conductor should record that the plan wording was corrected.
+- `examples/showcase/e2e/edit-save-failure.spec.ts:78-107`: in the 500 case the server's error text shows through formError, not the calm notice; the calm notice is proven by the abort and non-JSON cases and a component test.
+- `src/lib/admin/EditPage.svelte:199-207`: saving is cleared before location.assign, so Save re-enables briefly during the document load; a second click could POST again.
+- `examples/showcase/e2e/edit-save-failure.spec.ts:236`: ordering assertion relies on a fixed waitForTimeout(1000).
+
+## Task 9 (head guard on media and dictionary; commit df8857d9)
+
+**Consumers must / may**
+- Consumers must: none. Consumers may: none.
+- Draft CHANGELOG line: "Media delete, bulk delete, metadata update, replace and alt propagation, and the personal-dictionary add now fail closed when the default branch moves between the read and the commit: the editor sees the existing reload-and-retry message and no stale file is committed. The dictionary add re-reads and retries once after such a conflict."
+
+**2a extend pages falsified (not edited)**
+- `docs/extend/architecture.md`, "Concurrent writes" (about lines 123-129; the review puts the stale phrase at 125-126, "the media delete and metadata commits"). Falsifies f:0gihxq. Media delete (single and bulk), metadata update, replace, alt, and the dictionary add now belong in the head-guard bullet. "The retry makes three further attempts against the moved head" stays true for paths that keep the retry.
+- f:0gihxq is also cited by internal files the conductor may repoint: `docs/internal/briefs/extend/architecture.plan.md`, `architecture.json`, `scaffolded-site-files.framing.md`, `outlines/extend.json`.
+
+**Fact ids edited or minted**
+- f:0gihxq rewritten, id kept (now lists delete, bulk delete, metadata update, replace, alt propagation, and the dictionary add as head-guarded).
+
+**Reviewer nonBlocking**
+- `src/tests/unit/content-routes-dictionary.test.ts:236`: the null-head test checks only status 409 and no commit, not the dictionary's own conflict message or dictionary.add_conflict.
+- `src/lib/sveltekit/content-routes-dictionary.ts:178`: describe names and the action docstring still say "SHA-guarded retry" beside the new "head-guarded" wording (cosmetic).
+
+## Task 10 (head guard on publish and publish-all; commit a4618437)
+
+**Consumers must / may**
+- Consumers may: expect publish and publish-all to answer a conflict when another commit lands on the default branch (a Library delete, another publish, a dictionary add) while the action is reading its snapshots. The entry stays held on its branch and publishing again succeeds; no merge happens inside a retry. A default branch with no readable head refuses to publish rather than committing unguarded. No signature or option change; no `Consumers must:` line.
+
+**2a extend pages falsified (not edited)**
+- `docs/extend/architecture.md` line 123 ("The save and publish commits handle a moved head with a head-merge retry") and line 125 ("The head-merge retry covers entry save, single publish, publish-all, entry delete and rename, and the media delete and metadata commits"). Both tied to f:0gihxq. Line 165 (a commit without expectedHead keeps the retry, f:025q6u) stays true.
+
+**Fact ids edited or minted**
+- f:0gihxq (single publish and publish-all moved to the head-guarded list, head-read order stated); f:0oyrh6 and f:0xxou5 re-pointed; one reference.md pointer re-pointed. Other stale line ranges into content-routes-entry-write.ts left alone.
+
+**Reviewer nonBlocking**
+- `src/lib/sveltekit/content-routes-entry-write.ts:393`: on a null default-branch head, single publish refuses only after saveToBranch has already committed to the entry's own branch, so "refuses without a commit" holds for main only. Consistent with the "Your edits are saved" copy; conductor may want to confirm.
+- `src/tests/unit/content-routes-publish-head-guard.test.ts:213`: publish-all never commits media.json, so the index.json race test stands in for the "Library delete stays deleted" criterion.
+- `src/lib/sveltekit/content-routes-entry-write.ts:393`: the null-head guard checks both null and undefined, so a caller that forgets guardMainHead=true refuses instead of committing unguarded (fails safe, no change).
+
+## Task 12 hand-off summary
+- Rewrite `docs/extend/rotate-the-github-app-key.md:115,127` (f:ogokfy).
+- Rewrite `docs/extend/architecture.md:123-129` (f:0gihxq).
+- Draft CHANGELOG lines above; none carries a Consumers must.
+- Unfiled gap noted by Task 9: no gate compares the prose list on architecture.md to f:0gihxq, so the page went stale unnoticed.
+```
+
+#### docs/superpowers/research/2026-10-09-pass-a-s4-task12-carry.md
+
+```text
+# Task 12 carry from S4 (Tasks 11 and 6), engine pass pre-2b A
+
+Sources: s4a-run.json (Task 11 round 1, escalated on bd614101), task11-fix-notes.md (fix round d716ec89, accepted), s4a-task6-run.json (Task 6, c2409fdc then a8156613, accepted after one fix round). Nothing here is filed in the friction log (its S4 hunks are commit 0c2f3272 on main).
+
+Conductor ratified Task 6's extension of Decision 15: a present key that fails signing also skips the live mint (pinned by a test).
+
+## Task 11 (nested images in where-used, replace, manifest verify; bd614101 then d716ec89)
+
+**Consumers must / may (drafts)**
+- Consumers must: Regenerate the content manifest (`npx cairn-manifest`) and commit it. A site that declares an image nested in an object or an array (array(image), object holding an image, array of objects holding an image) and has not regenerated fails its build at upgrade with the stale-manifest message. A site that calls verifyManifest itself passes its adapter as the third argument to get the nested-shape rule.
+- Consumers may: Pass the adapter to verifyManifest to opt into the nested-image rule in a hand-rolled build script; omitting it keeps the pre-field allowance.
+- CHANGELOG also needs (fix notes): the widened unions (RepointPlacement.kind, AltPlacement.kind and bucket, counts.nestedSkipped).
+
+**Fix round d716ec89 (conductor-ruled after escalate)**
+- New alt bucket `nested-skipped`; `MediaAltPreviewPlan.counts.nestedSkipped`.
+- New `data-cairn-alt-nested` well in MediaAltFillDialog. Copy: "In a gallery or card" / "Alt for these images is set where each one sits in the entry. They are left as they are."
+- MediaReplaceDialog counts "N in a gallery or card" (replaces counting a nested image as "in the body").
+- sveltekit.md got one sentence on the bucket.
+- Round 1 had put a nested image in the "decorative-skipped" bucket with before === after; that is superseded.
+- Review of the fix: accept (Opus).
+
+**2a extend pages falsified (not edited)**
+- None. The implementer's grep over docs/extend, docs/admin, docs/editors, why-cairn.md found no mention of verifyManifest or mediaRefs.
+
+**Fact ids edited or minted**
+- f:n0laoh (docs/internal/facts/extend.md:271) edited in place: text and source ranges for the third argument and the nested rule.
+- f:3vndvj: inboundIncludes line pointer repaired (473 to 499) because check:facts failed on it.
+- No new fact bullet minted; a later docs task owns one.
+- Task 12 repair owed: f:n0laoh cites src/lib/vite/internal.ts:53-80 for virtualSource; it starts at :67 and the verify resultExpr is near :81 (:84 per the fix notes).
+
+**Reference pages edited**
+- docs/reference/core.md (verifyManifest declaration, prose, snippet) and docs/internal/api-surface.md: declaration typed as `Pick<CairnAdapter, "content">` (double quotes; check:reference:signatures normalizes to the compiler's spelling). Fix round added the sveltekit.md sentence above.
+- Owed to a later docs task: the full f:n0laoh-family fact bullet for the nested rule.
+
+**Reviewer nonBlocking (round 1, accepted ones carried)**
+- src/lib/content/media-rewrite.ts:195-205: replace and alt propagation detect images from parsed YAML shape while extractMediaRefs follows declared descriptors, so an undeclared object holding an image-shaped {src} would be rewritten by replace though where-used never counted it. Harmless for the four admitted shapes.
+- src/lib/content/frontmatter-region.ts:62: boundary regex change is shared with the references rewriter; a zero-indent `- key:` line now stays inside the block above it. No test exercises the references rewriter over a zero-indent sequence.
+- src/lib/content/media-rewrite.ts:517: hero arm takes only the first src line in a key's range (`[0]`); correct for a top-level image.
+- Fix-round review: the nested well's chip shows the raw kind as an uppercase "NESTED" pill (close's a11y/copy review; Geoff's read).
+- Round 1 blocking test gap (nested-shape fail rows for object({image}) and array(object({image})) in manifest-verify-nested-media.test.ts:30): carried as a blocking item into the fix; confirm it closed at the Task 12 read.
+
+**Unspecified choices to know**
+- frontmatterKeyRange treats a zero-indent `- ` line as inside its key (frontmatter-region.ts:62), which also changes rewriteFrontmatterReference's range.
+- A top-level key holding both a hero match and nested ones classifies as hero.
+- declaresNestedImage inspects one container level.
+- imageFieldKeys is shape-based; verifyManifest's third argument is Pick<CairnAdapter, 'content'>; the pre-field allowance is whole-manifest and for mediaRefs only (references, tags, includes keep per-entry drops).
+- The showcase manifest needed no regeneration (npm run cairn:manifest produced no diff).
+
+**User-facing copy added**
+- "In a gallery or card"; "Alt for these images is set where each one sits in the entry. They are left as they are."; "N in a gallery or card" (all above).
+- Stale-manifest error still says `npm run cairn:manifest` (manifest.ts:402); ROADMAP.md:396 already tracks the script name, left for a later pass.
+
+## Task 6 (opt-in live key check and fingerprint; c2409fdc then a8156613)
+
+**Consumers must / may**
+- Consumers must: none stated.
+- Consumers may: use the new optional HealthData members (`checks.githubAppToken`, `checks.githubAppSigning.fingerprint`) and the opt-in `/healthz?live=1`.
+
+**2a extend pages falsified (not edited)**
+- docs/extend/rotate-the-github-app-key.md lines 7, 65-67, 85, 125, 129: still prescribes the 55-minute confirming publish and the shell-record diagnosis; the /healthz fingerprint and ?live=1 supersede both. Feeds the 2a stage's inputs.
+- docs/extend/scaffolded-site-files.md:366: names the /healthz payload as `{ ok, checks: { githubAppSigning } }`; incomplete now that ?live=1 adds githubAppToken and signing gains fingerprint.
+
+**Fact ids edited or minted**
+- f:paotzb amended (the /healthz payload).
+- Nine path:line pointers hand-remapped in docs/internal/facts/extend.md: signing.ts:77, :105-121, :130-138, :44,67,132; health.ts:24-32, :10-32, :1-32. Fact ids other than f:paotzb are not named in the record.
+
+**Reference-page sentences a later docs task owes**
+- Fleet residual: at most one mint per isolate per minute, summed over the fleet (health.ts:97-98 says "at most once per isolate per minute however often it is asked").
+- /healthz?live=1 outcomes: `githubAppToken.detail` is `key_refused`, `installation_not_found`, `installation_suspended`, or `unreachable` (health.ts:24-26). Present only on a ?live=1 request that had a GitHub App and a key to mint with.
+- `data.ok` composes the signing check and, when present, the live check (a 401 fails ok even when signing passes).
+
+**GitHub documented status codes (POST installation access token; gh-apps.md:855-863) and the classifier (health.ts:66-73)**
+- Documented: 201 Created; 401 Requires authentication; 403 Forbidden; 404 Resource not found; 422 Validation failed, or the endpoint has been spammed.
+- Classifier: 401 -> key_refused; 404 -> installation_not_found; 403 -> installation_suspended; everything else (including 422, 429, 5xx, network, timeout) -> unreachable. 5 s mint timeout.
+
+**Web Crypto step and fingerprint (signing.ts:187-199)**
+- Fingerprint is `SHA256:` + padded base64 of the SHA-256 of the public key's SPKI DER, matching GitHub's documented `openssl rsa -in PATH_TO_PEM_FILE -pubout -outform DER | openssl sha256 -binary | openssl base64` (gh-keys.md:57).
+- Built by reading only the RSA modulus and exponent from the PKCS#8 DER, `importKey('jwk', ..., { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, true, ['verify'])` as a public key, then `exportKey('spki')` and `digest('SHA-256')`; no private key is ever exported (the pkcs8 private import stays `extractable: false`). The fingerprint is omitted when it cannot be computed.
+- Reviewer checked the fixture: fingerprint 5z5Cept4XNaRREookuldVFx7RXKxMehr+7p4/DWtbeo= matches openssl.
+
+**Fix round a8156613 (test only)**
+- Row under "loadHealth with ?live=1" in src/tests/unit/health-live-check.test.ts: key `btoa('not a key')` with live=1 asserts no fetch, no githubAppToken, githubAppSigning.ok false, data.ok equals githubAppSigning.ok. Mutation (dropping `&& githubAppSigning.ok` at the live guard) fails it.
+
+**Reviewer nonBlocking**
+- src/lib/sveltekit/health.ts:168: the live branch skips when a key is present but fails signing (Decision 15 named only a missing key or non-GitHub provider); ratified, see top.
+- src/tests/unit/health-live-check.test.ts: the independent gate receipt records head c2409fdc while HEAD is a8156613; the implementer's own gate on a8156613 exited 0 and the change is test-only.
+
+**User-facing copy added**
+- None as UI copy. New wire values only: detail classes `key_refused`, `installation_not_found`, `installation_suspended`, `unreachable`; the `SHA256:` fingerprint string.
+```
+
+**3. Worktree.** `git worktree add .claude/worktrees/engine-pre-2b-b -b engine-pre-2b-b main`; root `npm ci`;
+`rm -rf examples/showcase/node_modules && npm ci --prefix examples/showcase`; `npm run package`;
+`node scripts/bake-template.mjs --to template --engine-spec "^0.98.0" --dev-spec "^0.98.0"` (matches
+`.github/workflows/test.yml:86-87`); `npx svelte-kit sync` in `examples/showcase`. All exit 0; `git status` clean after.
+
+```text
+realpath examples/showcase/node_modules/@glw907/cairn-cms     -> /var/home/glw907/Projects/cairn-cms/.claude/worktrees/engine-pre-2b-b
+realpath examples/showcase/node_modules/@glw907/cairn-cms-dev -> /var/home/glw907/Projects/cairn-cms/.claude/worktrees/engine-pre-2b-b/packages/cairn-cms-dev
+```
+
+**4. Gate strings.**
+
+```text
+F=npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts && npm run check:comments && npm run check:surface && npm run test:emit && npm run check:package && npm run check:audit-pack && npm run check:self-use && npm run check:custom-surface && npm run check:chassis-boundary && npm run check:cm-internals && npm run check:idioms && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:rulings-format && npm run check:prose && npm run check:version && npm run check:dev-package && npm run check:template && npm run check:consumers && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run test:unit && npm --prefix examples/showcase run format:check && npm run check:public-skill && npm run check:tool-heuristics && npm --prefix examples/showcase run test:e2e
+E=npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site
+```
+
+**5. Baseline CI, and 6. Draft PR and inherited CI, and 9. Guards:** recorded by the conductor (guards and
+baseline CI: recorded by the conductor). The Ledger commit is item 6's push.
+
+**7. S1 pre-flight (at `21ec86a9`).**
+
+| Bullet | Result |
+|---|---|
+| `.cairn-template.json` `exclude` lacks `src/routes/admin/signups` and `migrations-app` | holds |
+| `src/routes/admin/signups/` holds `+page.server.ts`, `+page.svelte`, `actions.test.ts`; `migrations-app/0000_signups.sql` exists | holds |
+| Signups `navLayout` entry and comment, `examples/showcase/src/theme/cairn.config.ts` | moved: entry `:245`, comment `:225` (plan said `:214`, `:194`); amended |
+| `examples/showcase/src/lib/log.ts` declares `admin.signups.misconfigured` | holds (`:8`) |
+| `admin-link.test.ts` has an `/admin/signups` case | holds (`:7`) |
+| `examples/showcase/wrangler.jsonc` binds `APP_DB`; exclude markers `:44`, `:55` | holds (`APP_DB` at `:39`); the markers wrap the `MEMBER_DB` binding, not `APP_DB` |
+| `emit-template-tree.test.ts:125-130` asserts `['APP_DB', 'AUTH_DB']` | holds (assertion `:130`) |
+| `exemplar-list.md:6-7`, `exemplar-detail.md:6-11` say "the Signups screen every scaffolded site ships"; baked copies match | holds (baked copies under `templates/waymark/.claude/skills/cairn-admin-screens/references/` carry the same lines) |
+| Decision 9: `form-anatomy.md` Signups or every-scaffold claim | **false: none** (grep for `signups` and `scaffold` finds nothing), so Decision 9 holds and it is not edited |
+| Bake writes `.claude/` from `skills/` and `claude/` (`bake-template.mjs:184-233`) | holds (`readMonorepoGuidanceSource` reads `skills/` and `claude/agents/`, `claude/CLAUDE.md`) |
+| `deploy.mjs:175` `MIGRATION_DATABASES`; `chapter.mjs:119`; `config.mjs:115`, comments `:36`, `:48` | holds |
+| `deploy.test.mjs:243,319-336`; `chapter.test.mjs:283`; `config.test.mjs:54-57,105-114`; `README.md:138` | holds |
+| `scaffold.test.mjs:23-26` and `:268`; `repo.test.mjs:67-70` | holds |
+| Transcript fixtures showing the two-database lines | `01c-resume.txt` (1 hit), `01d-resume.txt` (11 hits); also `01-create-cairn-site.txt:9` ("The two databases this site uses") for the friction filing; none edited |
+| Template `access` holds only `/admin/signups`; no `src/access.ts` | holds |
+| `manifest.ts` stale message names `npm run cairn:manifest` | moved: `:402` (plan said `:373-377`); amended |
+| `transformPackageJson` in `scripts/build/emit-template.mjs`; `worker-configuration.d.ts:2`; no `cf-typegen` script | holds (`emit-template.mjs:90`; line 2 records `wrangler types --env-file=.dev.vars.example --include-runtime=false`; zero `cf-typegen` in either `package.json`) |
+| `feed.ts:20` renders via `cairn.rendering.render({ body, resolve })`; `createFragmentResolver` exported where the feed can import | holds; exported from `src/lib/delivery/data.ts:53`, and the feed already imports `@glw907/cairn-cms/delivery` |
+| No `src/routes/admin/+error.svelte` in showcase or template; root `+error.svelte` exists | holds (admin holds `+layout.*`, `[...path]`, `signups`, plus `theme-kit` in the showcase) |
+| Facts candidate set (case-insensitive lines over `docs/internal/facts/`) | `signups` 20 lines (`front-door.md`, `extend.md`); `APP_DB` 6 (`extend.md`, `admin.md`); `seedContent` 1 (`extend.md`); `devBuildDefine` 0; `configPath` 2 (`extend.md`); `cairn:manifest` 1 (`extend.md`); `itemLabel` 3 (`extend.md`); `two (D1 )?databases` 4 (`admin.md`); `-app\b` 31 (`admin.md`, `extend.md`) |
+
+**8. Dependency state** (`npm outdated`, no bump). Root (the workspace packages report the root's tree):
+within-range available: `@anthropic-ai/sdk` 0.132.0 to 0.132.1, `@cloudflare/vitest-plugin` 1.3.7 to 1.4.0,
+`@cloudflare/workers-types` to 5.20261010.1, `@lucide/svelte` 1.52.0 to 1.55.0, `@types/node` 24.19.1 to 24.19.2,
+`eslint-plugin-jsdoc` 65.2.0 to 65.2.4, `svelte-eslint-parser` 1.8.1 to 1.9.0, `vite` 8.3.3 to 8.3.4,
+`wrangler` 4.148.0 to 4.149.0. Majors only (held): `@types/node` 26, `@vitest/browser`, `@vitest/browser-playwright`,
+and `vitest` 5.0.3, `devalue` 6.0.2, `typescript` 7.0.2. `examples/showcase`: `@cloudflare/workers-types`,
+`@types/node`, `prettier` 3.9.9 to 3.9.10, `vite`, `wrangler` (wanted); `devalue`, `typescript`, `vitest`, `@types/node` majors.
+`packages/cairn-cms-dev`: the root's list. `packages/create-cairn-site`: nothing outdated.
+
+**Amendments to this plan from the pre-flight:** Task 0 item 7's Signups `navLayout` lines (`:214`, `:194` to
+`:245`, `:225`) and the stale-manifest message line (`:373-377` at `2b37ae78` to `:402` at `21ec86a9`).
 
 ## Post-mortem
 

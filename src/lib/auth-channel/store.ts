@@ -9,7 +9,30 @@
 // conditional statement, never a read followed by a decide followed by a write: a read-modify-write
 // implementation passes every single-caller test while admitting far more than its cap under
 // concurrency, which is exactly the shape the design's threat model rules out.
-import type { D1Database, D1DatabaseSession } from '@cloudflare/workers-types';
+
+/** One prepared statement, narrowed to the calls the channel store makes on it. */
+export interface ChannelStatementLike {
+  bind(...values: unknown[]): ChannelStatementLike;
+  first<T = unknown>(): Promise<T | null>;
+  run(): Promise<unknown>;
+}
+
+/** A session over the channel database: prepare plus atomic batch, the two calls a flow shares. */
+export interface ChannelSessionLike {
+  prepare(query: string): ChannelStatementLike;
+  batch(statements: ChannelStatementLike[]): Promise<unknown>;
+}
+
+/**
+ * The structural subset of D1 the channel store uses, and the type `resolveDb` returns. A real
+ * `D1Database` satisfies it, and so does the dev package's `createChannelDb()` result, so a test
+ * binds the double to a channel with no cast. The store opens its own session with
+ * `withSession('first-primary')`, the only constraint it passes.
+ */
+export interface ChannelDatabaseLike {
+  prepare(query: string): ChannelStatementLike;
+  withSession(constraint: 'first-primary'): ChannelSessionLike;
+}
 
 /**
  * The schema version the packaged `migrations-channel/0000_channel.sql` seeds, and the value
@@ -45,7 +68,7 @@ function budgetKey(bucket: string, scope: string): string {
  * nothing: a transient D1 error must not pin an isolate into refusing every login for its
  * lifetime, so every call re-queries.
  */
-export async function verifySchema(session: D1DatabaseSession): Promise<boolean> {
+export async function verifySchema(session: ChannelSessionLike): Promise<boolean> {
   try {
     const row = await session
       .prepare('SELECT value FROM cairn_channel_meta WHERE key = ?1')
@@ -58,7 +81,7 @@ export async function verifySchema(session: D1DatabaseSession): Promise<boolean>
 }
 
 /** Read the per-deployment identity salt, or null if it has never been provisioned. */
-export async function readSalt(session: D1DatabaseSession): Promise<string | null> {
+export async function readSalt(session: ChannelSessionLike): Promise<string | null> {
   const row = await session
     .prepare('SELECT value FROM cairn_channel_meta WHERE key = ?1')
     .bind('identity_salt')
@@ -74,7 +97,7 @@ export async function readSalt(session: D1DatabaseSession): Promise<string | nul
  * falling back to an empty string, which would silently reintroduce the unsalted hash the design
  * rejected.
  */
-export async function provisionSalt(session: D1DatabaseSession): Promise<string> {
+export async function provisionSalt(session: ChannelSessionLike): Promise<string> {
   const candidate = randomHex(32);
   await session
     .prepare('INSERT OR IGNORE INTO cairn_channel_meta (key, value) VALUES (?1, ?2)')
@@ -134,7 +157,7 @@ function toCodeRow(row: CodeRowColumns): CodeRow {
  * to write, so two concurrent mints against the same nonce serialize to exactly one write.
  */
 export async function mintCode(
-  session: D1DatabaseSession,
+  session: ChannelSessionLike,
   nonceHash: string,
   identity: string,
   codeHash: string,
@@ -167,7 +190,7 @@ export async function mintCode(
 
 /** Read the unexpired code row for a nonce, or null when absent or expired. */
 export async function readCodeRow(
-  session: D1DatabaseSession,
+  session: ChannelSessionLike,
   nonceHash: string,
   now: number,
 ): Promise<CodeRow | null> {
@@ -188,7 +211,7 @@ export async function readCodeRow(
  * incrementing toward `locked`.
  */
 export async function incrementAndReadCode(
-  session: D1DatabaseSession,
+  session: ChannelSessionLike,
   nonceHash: string,
   now: number,
 ): Promise<{ codeHash: string; attempts: number } | null> {
@@ -211,7 +234,7 @@ export async function incrementAndReadCode(
  * roster data fault's empty subject both delete a row here without ever meaning success.
  */
 export async function consumeCode(
-  session: D1DatabaseSession,
+  session: ChannelSessionLike,
   nonceHash: string,
   codeHash: string,
   now: number,
@@ -232,7 +255,7 @@ export async function consumeCode(
  * created and deleting the rest. Filtered on `requester_bucket`, never `identity`, so an evictor
  * (a cookie-clearing attacker minting many nonces) can only ever destroy rows it created itself.
  */
-export async function pruneRequesterRows(session: D1DatabaseSession, bucket: string, keep: number): Promise<void> {
+export async function pruneRequesterRows(session: ChannelSessionLike, bucket: string, keep: number): Promise<void> {
   await session
     .prepare(
       `DELETE FROM cairn_channel_code
@@ -250,7 +273,7 @@ export async function pruneRequesterRows(session: D1DatabaseSession, bucket: str
 
 /** Create a channel session row. */
 export async function createChannelSession(
-  session: D1DatabaseSession,
+  session: ChannelSessionLike,
   tokenHash: string,
   subject: string,
   now: number,
@@ -269,7 +292,7 @@ export async function createChannelSession(
  * Storage).
  */
 export async function resolveChannelSession(
-  db: D1Database,
+  db: ChannelDatabaseLike,
   tokenHash: string,
   now: number,
 ): Promise<{ subject: string } | null> {
@@ -293,7 +316,7 @@ export type DestroyedChannelSession = { subject: string; expiresAt: number };
  * own `now` to decide whether the row was still live before emitting a destroyed record.
  */
 export async function destroyChannelSession(
-  session: D1DatabaseSession,
+  session: ChannelSessionLike,
   tokenHash: string,
 ): Promise<DestroyedChannelSession | null> {
   const row = await session
@@ -304,7 +327,7 @@ export async function destroyChannelSession(
 }
 
 /** Delete every session for a subject (roster removal, and `revokeSessions`). */
-export async function revokeChannelSessions(session: D1DatabaseSession, subject: string): Promise<void> {
+export async function revokeChannelSessions(session: ChannelSessionLike, subject: string): Promise<void> {
   await session.prepare('DELETE FROM cairn_channel_session WHERE subject = ?1').bind(subject).run();
 }
 
@@ -326,7 +349,7 @@ export async function revokeChannelSessions(session: D1DatabaseSession, subject:
  * elapsed.
  */
 export async function charge(
-  session: D1DatabaseSession,
+  session: ChannelSessionLike,
   bucket: string,
   scope: string,
   now: number,
@@ -387,7 +410,7 @@ export async function charge(
  * would refund the wrong window entirely; the caller only ever refunds within the same request
  * that charged, so this is a defensive floor rather than the common path.
  */
-export async function refund(session: D1DatabaseSession, bucket: string, scope: string, now: number): Promise<void> {
+export async function refund(session: ChannelSessionLike, bucket: string, scope: string, now: number): Promise<void> {
   const key = budgetKey(bucket, scope);
   const windowStart = Math.floor(now / CHANNEL_BUDGET_WINDOW_MS) * CHANNEL_BUDGET_WINDOW_MS;
   await session
@@ -404,7 +427,7 @@ export async function refund(session: D1DatabaseSession, bucket: string, scope: 
  * indexed statements rather than a single `OR`ed one, so each delete uses its own index instead
  * of forcing a table scan.
  */
-export async function sweep(session: D1DatabaseSession, now: number): Promise<void> {
+export async function sweep(session: ChannelSessionLike, now: number): Promise<void> {
   const budgetCutoff = now - 2 * CHANNEL_BUDGET_WINDOW_MS;
   await session.batch([
     session.prepare('DELETE FROM cairn_channel_code WHERE expires_at <= ?1').bind(now),

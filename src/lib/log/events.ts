@@ -40,6 +40,7 @@ export type CairnLogEvent =
   | 'publish.failed'
   | 'publish.address_collided'
   | 'github.unreachable'
+  | 'health.failed'
   | 'guard.refused'
   | 'media.uploaded'
   | 'media.upload_failed'
@@ -97,3 +98,19 @@ export type CairnLogEvent =
   | 'auth.channel.rate_limited'
   | 'auth.channel.rate_limit_absent'
   | 'auth.channel.rate_limit_failed';
+
+/**
+ * The `reason` an `auth.access.refused` record carries: `'no_rule'` when the map has no rule for
+ * the target, `'shadowed'` when a rule matches but a dynamic route segment hides it behind a
+ * deeper key, and `'role'` for every other refusal (a role the rule does not list, the `editors`
+ * floor, a none capability, `ownerOnly`, a not-owner session).
+ */
+export type AccessRefusedReason = 'no_rule' | 'shadowed' | 'role';
+
+/**
+ * The `reason` a `github.unreachable` record with `scope: 'health'` carries, and the `detail` the
+ * live token check reports: `'key_refused'` for a 401 (GitHub rejected the signed App JWT),
+ * `'installation_not_found'` for a 404, `'installation_suspended'` for a 403, and `'unreachable'`
+ * for any other status, a network failure, or a timeout.
+ */
+export type GithubTokenCheckReason = 'key_refused' | 'installation_not_found' | 'installation_suspended' | 'unreachable';

@@ -65,7 +65,7 @@ behind `/admin` except the two pages of the sign-in flow: the form and the confi
 > HISTORY entry, and this STATUS pointed at the gate economy pass's brainstorm
 > (`docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`), then pass B; (4) merge PR #108
 > (Geoff pre-approved; leave draft, merge, no version bump). Before merge, show Geoff the new admin copy
-> for a read: Task 8's notice "That did not go through. Your text is still here; try again.", the session
-> notice "Your session ended. Sign in again in a new tab, then save. Your text is still here.", and the
+> for a read: Task 8's notice "That did not go through. Your text is still here; please try again.", the session
+> notice "Your session ended. Please sign in again in a new tab, then save. Your text is still here.", and the
 > gallery copy "In a gallery or card" / "Alt for these images is set where each one sits in the entry.
 > They are left as they are."

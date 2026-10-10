@@ -157,6 +157,20 @@ gate, and its acceptance says "the computed gate green": their Files compute to 
 `engine+tool`, which run no e2e. Per `~/.claude/docs/pass-gate-economy.md`, a paint-neutral task
 keeps the showcase e2e at the boundary, and each segment's boundary F (or the close's) covers it.
 
+**Amended at the S1 checkpoint (Geoff, 2026-10-08; `pass-core` dotfiles `6ce0e5d`, `e9aebc2`).** The
+`full` pins above were defensive and are withdrawn for every task from Task 3 on. Each remaining task
+runs its blast radius: the tier its diff computes, plus the showcase e2e specs its change reaches,
+with the full gate once at each segment boundary and before merge. Mechanism (the runner keeps a
+task's own `gate` only when the task also pins `gateTier`; see the header of
+`~/.claude/workflows/pass-execute.js`): each task's args set `gate` to `export E2E_PORT=4392 && <E>`,
+plus `&& npm --prefix examples/showcase run test:e2e -- <specs>` when its change reaches rendered
+or sign-in behavior, and pin `gateTier` to the matching tier. The segment's pre-flight names each
+task's reachable specs (Task 3: the sign-in specs; Tasks 8 and 10: the edit and publish specs). Task
+2's computed `tool` gate is unchanged. Gate receipts (`cairn-run-gate --receipt`) now let the runner
+skip a rerun on identical content, and a boundary F is skipped only when a receipt for that exact
+string matches the tree. Fix rounds take the reduced gate the runner validates (`auth-data`
+test-only rounds still run the task's gate; ROADMAP "Gate economy follow-ups").
+
 A lone unrelated test-file failure, or a component run printing `Cannot connect to the server in
 60 seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it counts as red.
 
@@ -1356,6 +1370,23 @@ is a dispatch that returns a structured verdict.
 8. **Friction triage** (Decision 11): every friction-log entry for a pass A fix is deleted after a
    check against the code; every declined or batched entry leaves for its ledger entry or ROADMAP
    row; new friction the pass met is filed. The HISTORY entry counts entries and outcomes.
+   **Log restructure (Geoff, 2026-10-08):** the close triages the whole log per `cairn-pass`, not
+   only pass A's entries, and regroups "Open findings" by who clears an entry, keeping the file
+   path. **Engine** feeds the docs-stage boundary test. **Docs content** is any way a page fails
+   its reader: a wrong claim, a missing working example, step, or failure case, too much or too
+   little detail for the task, content in the wrong track or page or unfindable from where a
+   reader looks, or drift since writing; the filing test is whether the reader can finish the
+   page's job from the page. A small docs item is cleared by the pass that meets it, like tooling
+   (Geoff, 2026-10-08): fixed on the page to its track's brief (the brief updated where the page
+   has one, Vale's error tier run), except on an arm whose stage is in flight or holds no page yet
+   (filed, or filed into the facts container) and on a page the running plan freezes (this pass:
+   the eleven 2a extend pages, whose small fixes join Task 12's hand-off to pass B's re-arm).
+   A larger docs rework moves to a ROADMAP row in the tier where it bites, naming the page and
+   its arm, the same as tooling (Geoff, 2026-10-08). **Repo tooling** (gates,
+   scripts, fixtures, tooling comments) is cleared at every pass close: a small fix lands in the
+   pass, anything larger moves to a ROADMAP row. The log's header states the three groups, and
+   `cairn-pass`'s close step names who clears each. Pass B's own entries stay, grouped, until
+   pass B's close.
 9. **Ledgers:** `docs/STATUS.md` rewritten present tense (≤60 lines): pass A closed unreleased,
    pass B next, the hand-off list (Decision 10), and the charter phrase for Geoff's read. `docs/HISTORY.md` takes the pass entry: what landed, what the gates caught, what a
    later pass would be wrong to rediscover, and whether any refused fold finding (the six standing
@@ -1369,3 +1400,197 @@ is a dispatch that returns a structured verdict.
 ## Ledger
 
 (Checkpoint entries go here: date, segment, task statuses, decisions taken, spend, next task.)
+
+### 2026-10-08, Task 0 (paused mid-task at Geoff's request)
+
+- **Item 1, no live executor:** none; no prior `engine-pre-2b-a` branch or worktree; `main` clean.
+- **Item 2, start state:** PR #107 merged 2026-10-08T08:06Z; spec and plan on `main` at `034f30a0`
+  (spec read approved, all three forks ruled).
+- **Item 3, worktree:** created on `engine-pre-2b-a` from `034f30a0`; `npm ci` and the from-scratch
+  showcase `npm ci` both exit 0; `realpath` resolves the engine and `packages/cairn-cms-dev` into
+  the worktree.
+- **Item 4, gate strings:** F (`--pin full`) and E (`--pin engine`) printed and match "Gates";
+  F carries 31 steps ending in the showcase `test:e2e`.
+- **Item 5, baseline:** a `haiku` gate agent was running F then T at the pause. If no result is
+  recorded below, re-run it on resume before any dispatch.
+- **Item 6, draft PR:** not yet opened; open it after the baseline.
+- **Item 7, S1 pre-flight:** no false claim. Moved lines, outcome unchanged: the regex pin is
+  `check-tool-heuristics.mjs:52`; the dev handle's owner mint is `handle.ts:169-173`; the
+  `access_map_not_attached` literal is `section-action.ts:277`; the required `runtime` fields are
+  `cairn-admin.ts:36`, `content-routes-context.ts:193`, `nav-routes.ts:48`, `media-route.ts:76`;
+  the bare call in `admin-routes.md`'s snippet is `:224`; the `sveltekit.md` snippet calls are
+  `:134` and `:1048`. Caller counts: `createAuthGuard` 1 non-test + 18 test, `devBackendHandle`
+  1 + 15 (plus the template's hooks), `createEditorRoutes` 1 + 4. Fact bullets citing
+  `templates/waymark/src/access.ts`: `f:3z1uxv`, `f:qlgggh`.
+- **Item 8, fork 2:** ruled yes.
+- **Items 9 and 10:** guards not armed (no workflow launched); spend not yet recorded.
+- **Plan amendments on the branch:** `53e3d7de`, `42e4f3d5`, `3bc97946` (Geoff's friction-log
+  restructure, folded into close step 8).
+- **Next:** baseline result, draft PR, guards, then the S1 `pass-execute` launch (Tasks 1, 2, 3)
+  with the moved lines above passed in the task notes.
+
+### 2026-10-08, Task 0 resumed and closed
+
+- **Setup gaps (repo tooling friction, filed at the S1 checkpoint):** a fresh worktree needs
+  CI's preparation steps before F can pass: `npx svelte-kit sync` in `examples/showcase`
+  (`check-public-skill.test.ts` fails on `$app/tsconfig`), `npm run package`, and the
+  `create-cairn-site` template bake from `.github/workflows/test.yml`. All three run here; pass B's
+  Task 0 now carries them (`7a8d5c19` on `main`).
+- **Item 5, baseline:** T green (`gate exit: 0`). F ran the whole chain: every step green through
+  the showcase e2e, which ended 20 failed, 328 passed. The 20 are exactly the
+  `site-visual.spec.ts` home and archive-page-2 files at five widths and two schemes, the drift
+  `durable-gotchas.md` names under "CI-canonical baselines this workstation cannot reproduce". Ruled
+  green under that rule.
+- **Local F amended (conductor ruling):** the per-task and boundary F replaces its last step with
+  `npm --prefix examples/showcase run test:e2e -- --grep-invert "site home|archive page 2"`. The
+  pattern lists exactly those 20 tests (`--list`: 328 kept, 20 excluded, all in
+  `site-visual.spec.ts`). The runner's gate agent sees only the gate string, so without it every
+  F-pinned task would read red. CI runs the 20 on every push against its canonical baselines,
+  so S3's CI boundary and the close still cover them.
+
+### 2026-10-08, S1 checkpoint (S1 stopped after Task 2; Task 3 relaunches on the new gate machinery)
+
+- **Task 1:** fix then accept (`37797ff3`, `5cb4a5e7`, `94a3f672`). **Task 2:** fix then accept
+  (`eaa1b7d2`, `92216610`). Task 3 had recorded only its base when the run was stopped
+  (`wf_1cd41eb4-cd7`, stopped by the conductor at Geoff's direction to relaunch on the new infra).
+- **Reports:** every implementer and reviewer result for Tasks 1 and 2 (summaries, mutation ledgers,
+  unspecified decisions, `cairnFriction`, `outOfScope`, non-blocking notes; gate output omitted) is in
+  `docs/superpowers/research/2026-10-08-pass-a-s1-reports.json`. **Owed at the next checkpoint:**
+  verify and file each `cairnFriction` and `outOfScope` item in the friction log on `main`, and carry
+  Task 1's `Consumers must:` draft, affected 2a pages, and fact ids into Task 12's notes.
+- **Infra changed mid-pass (Geoff, 2026-10-08), all reviewed and accepted:** per-task gate sized to
+  the change (`6ce0e5d`, `e9aebc2`); clock time an efficiency target (`89fbc95`); gate receipts and
+  validated reduced fix rounds in both runners (`888d716`, `1d845a7`, `d0d081d`, `af00c34`);
+  `dependency-upgrade` on `npm update --save` (`d7b24d8`, `fc7034e`); CI shadowing (draft PR, push
+  after each accepted task). The pass now pushes after each accepted task.
+- **Friction filed on `main`:** `1ada3718` (worktree setup gap; local visual-drift exclusion).
+- **Spend:** not measured mid-session; the close scores it via `/cost`.
+- **Next:** a fresh session relaunches S1's Task 3 alone on `pass-execute` with the amended gate,
+  then runs the S1 boundary (F and T, a receipt skip where it matches), then S2.
+
+### 2026-10-08, S1 Task 3 accepted (relaunch `wf_d8ecf9f4-849`)
+
+- **Task 3:** accepted by conductor ruling at `f655f877`. The reviewer confirmed all four outcomes
+  and 11 of 11 mutations killed, and the runner's independent gate passed the pinned string (E plus
+  access-map, admin-referrer, csrf-origin, golden-path, tidy, vocabulary-admin, spellcheck on port
+  4392). The lone blocker was a runner artifact: the implementer prompt routed a pinned task through
+  the classifier, so the reported string was E alone with the e2e run separately. Fixed in both
+  runners (dotfiles `492f584`); a pinned task now runs its gate string unchanged.
+- **S1 friction filed on `main`:** `0b6867fb` (six entries; eight items dropped as fixed, filed, or
+  Task 12's own). Note for Tasks 4 and 7: `emit-tool-conditions.mjs` reads `dist`, so run `npm run
+  package` before it after a `conditions.ts` edit.
+- **Task 12 carry (Tasks 1 to 3).** Consumers must, Task 1: "pass the composed `runtime` to
+  `createAuthGuard({ runtime })`, `devBackendHandle({ runtime })`, and `createEditorRoutes({ runtime
+  })`; remove any `roles` or `access` options; declare `roles` and `access` once as members of the
+  adapter (`defineAdapter({ roles, access })`). The runtime is `composeRuntime({ adapter, siteConfig
+  })`. A scaffolded site that kept `src/access.ts` should fold its map into the adapter and delete the
+  file. A site with only href keys in its access map will stop seeing `config.access_unmapped`."
+  Task 3: (A1) review any access rule naming a none-capability role, since `canReach`,
+  `requireAccess`, `createSectionAction`, and `createAdminAction`'s `access` now admit it on a
+  route-path rule naming its role; (C1) a hand-mounted tidy or dictionary-add action on a route with
+  no `concept` param now answers 404; (C7) only `/admin/login` and `/admin/auth/confirm` are public, so
+  a route under `/admin/auth/` redirects an anonymous request; (A2, additive) `auth.access.refused`
+  gains `reason`. 2a pages: add-a-custom-admin-screen, add-a-second-sign-in-group,
+  add-cairn-to-a-sveltekit-app, restrict-admin-access, replace-magic-links-with-cloudflare-access,
+  debug-your-site, security-model, architecture, scaffolded-site-files (and migration-notes). Facts,
+  Task 1: f:2sd4if, f:4xrx5f, f:7cv105, f:dqjkci, f:f21bcz, f:eiaqkh, f:q07rd5, f:u78zg6, f:iwf4nu,
+  f:cvzb8z, f:8ciz2s, f:mou1li, f:pfy9cw, f:3z1uxv (claim false), f:hwffph, f:gun084, f:mbx6q1,
+  f:qlgggh, and line cites into the template's `cairn.config.ts` (f:tycp7k, about 24 lines early).
+  Task 2: f:hwffph, f:67pwmj, f:0ms9c1. Task 3: f:v85shm, f:arr13a, f:cvv6to, f:4q8kin, f:vqh4a9,
+  f:9exogy, f:p1xmp5, f:8anql1, f:zo034s; minted f:5sx6zl, f:147zhc. Task 3 also edited
+  `docs/reference/core.md` (the `canReach` none passage) outside its Files, disclosed and correct.
+- **Next:** the S1 boundary (F and T), then S2's pre-flight and launch.
+
+### 2026-10-08, S1 boundary (S1 closed) and S2 pre-flight
+
+- **Boundary F** (the local string, `E2E_PORT=4392`, the 20 drift tests excluded) green at
+  `a2a88a75` after one rerun under the rerun rule: `docs-review-browsers.test.ts` timed out in
+  Firefox on `page.goto` (the same flake hit Task 3's implementer). Final: node 6194 passed, component
+  1782 passed and 2 skipped, admin-visual 69 passed, showcase e2e 328 passed. **T** green first try.
+- **S2 pre-flight** (Haiku, read-only at `a2a88a75`): no false claim that changes an outcome.
+  Moved: cairn-pub's docs route is `src/routes/(site)/docs/[...path]/+page.server.ts`. Every "Fails
+  today" row naming a test is a test the task adds (no migration-set assertion in
+  `emit-template-tree.test.ts` and no closing-text assertion in `secret.test.mjs` exist yet). The
+  `healthz.spec.ts` 200-to-503 flip is the task's own change. Open for Task 4: how the e2e `AUTH_DB`
+  is migrated was not established (`wrangler.jsonc:33` sets `migrations_dir`).
+- **S2 per-task gates** (the amended rule): each pins `gateTier: "engine"` with its own string,
+  E plus the reachable specs on port 4392. Task 4: plus `check:tool-conditions`, `check:template`,
+  `test:emit`, `make -C tool check`, and `golden-path.spec.ts`. Task 5: plus `members.spec.ts` and
+  `capture-transport.spec.ts`. Task 7: plus `check:tool-conditions`, `check:template`, `test:emit`,
+  and `healthz.spec.ts`.
+- **Pass B** (on `main`, `ee62f982`): its per-task gate rule is amended the same way.
+- **Next:** S2 launch (Tasks 4, 5, 7, sequential).
+
+### 2026-10-09, S2 boundary (S2 closed) and S3 pre-flight
+
+- **S2 run** `wf_052309d5-e2e` (the runner from a cmp-verified scratchpad copy; by name served a stale
+  copy without dotfiles `492f584`, stopped before any commit). Tasks 4 (`4597aa49`), 5 (`bad014c0`), and
+  7 (`092176c1`) each accepted with no fix round.
+- **Boundary F red twice on static checks the per-task engine tier never runs.** `check:self-use`
+  flagged Task 5's new `ChannelStatementLike` export: a conductor-ruled fix round (`engine-logic`,
+  hand-dispatched Sonnet) added its allowlist entry (`c3d2952c`). Then the showcase's `format:check`
+  flagged Task 7's `healthz/server.test.ts`: formatted (`92325c02`) and the template re-emitted
+  (`12027522`, the conductor's own miss). Then `check:close`, `check:tool-heuristics`, and `test:emit`
+  green, and F green at `12027522`: node 6208, component 1782 (2 skipped), create-cairn-site 852,
+  admin-visual 94, showcase unit 72, showcase e2e 328, no rerun. **Rule from here:** every per-task
+  gate ends with `npm run check:close && npm run check:tool-heuristics && npm run test:emit`.
+- **S2 friction filed on `main`:** `22838140`. Task 12's S2 carry is in
+  `~/.cache/engine-pre-2b-a/task12-carry-s2.md` (Consumers lines for Tasks 4, 5, 7; pages and fact ids;
+  the reviewer's A10 note: a site that left `replyTo` out of a full branding now inherits the runtime's,
+  with no way to clear it, which needs a `Consumers must:` line).
+- **S3 pre-flight** (Haiku at `092176c1`): no outcome-changing claim. Task 8's kit cites moved:
+  `runtime/server/page/actions.js:170,186-191`; the form catch is `runtime/app/forms/client.js:231-240`;
+  `client.js:2980-3007` is `applyAction`; the `client.js:88-109,147-155,182` ranges are unrelated. The
+  dictionary retry is `content-routes-dictionary.ts:131-151`. No spec covers publish-all. The media
+  design's "decision 1" is not literal in that file (Task 12's S4 pre-flight checks it).
+- **Next:** S3 launch (Tasks 8, 9, 10). Owner rulings since: the merge go for PR #108 and pass B's,
+  the charter phrase (option B), and pass B's copy (on `main`, `ed2ef247`, `70719a38`, `0b065649`).
+
+### 2026-10-09, S3 boundary (S3 closed) and S4 pre-flight
+
+- **S3 run** `wf_0bd8cb5b-4d6`: Tasks 8 (`666aff41`), 9 (`df8857d9`), and 10 (`a4618437`) each accepted
+  with no fix round. Every per-task gate now ended with the static list, and the boundary's static list
+  and F were green first time at `a4618437`: node 6231, component 1789 (2 skipped), create-cairn-site
+  852, admin-visual 94, showcase unit 72, showcase e2e 335.
+- **Task 8 corrected a plan premise:** the guard's login redirect reaches `use:enhance` as a `redirect`
+  result (kit `forms/client.js:215-217`), not `error`. The implementer treats an off-concept redirect as
+  an in-place failure (`landsOnThisConcept`); only a component test covers it. **For the close's
+  reviewers:** Save re-enables briefly before `location.assign` (a double-click window), and single
+  publish on a null head refuses after the branch save. **For Geoff's read before merge:** Task 8's
+  calm notice copy, "That did not go through. Your text is still here; try again."
+- **CI:** the `tool` workflow had failed on every pass push since `5549fda8` on govulncheck: `setup-go`
+  took a runner's preinstalled go1.26.8 for `1.26.x`, and go1.26.9 fixes all nine stdlib advisories.
+  Fixed on `main` (`8f2fe6da`, `check-latest: true`); `main` would have failed the same way. Every other
+  CI job was green on `a4618437`.
+- **S3 friction filed on `main`:** `ae373ef1`. Task 12's S3 carry:
+  `docs/superpowers/research/2026-10-09-pass-a-s3-task12-carry.md`.
+- **S4 pre-flight** (Haiku at `a4618437`): no outcome-changing claim. Task 11's ":84 passes `cairn` as
+  the third argument" is the change itself (today two arguments); `verifyManifest` spans `:308-378`;
+  `checkContainerNesting` is `src/lib/content/fieldset.ts:388`. Task 6: the `createGithubApp` literal is
+  `cairn.config.ts:150`; `workers-env.ts` is `src/lib/sveltekit/workers-env.ts:43`. Task 12: the media
+  design's decision 1 is item 1 of "Locked decisions" at `:162-168` (true). **Amended:** Task 12's
+  removed-option grep scopes to the published tree (`docs/` minus `docs/internal/` and
+  `docs/superpowers/`, `README.md`, `packages/cairn-cms-dev/README.md`, `skills/`, `claude/`); 14
+  internal planning files still name the options and are never edited. **Amended:** Decision 12 is
+  superseded by Geoff's ruling (option B): Task 12 writes `what-cairn-is-and-is-not.md:107` as "An
+  anonymous visitor reaches nothing behind `/admin` except the two pages of the sign-in flow: the form
+  and the confirm page."
+- **S4 runs as two invocations** (conductor ruling): Tasks 11 and 6, then Task 12 alone, because Task 12
+  consumes every task's report and a shared run would start it before 11's and 6's reports exist.
+- **Next:** S4a launch (Tasks 11, 6).
+
+### 2026-10-09, S4a (Tasks 11 and 6) accepted
+
+- **Task 11** escalated on `bd614101`: its new `nested` placement kind reached two admin dialogs with the
+  wrong label. Conductor ruling: one hand-dispatched fix round (Sonnet) gave nested placements their own
+  alt bucket (`nested-skipped`), well, and replace count, with the conductor's copy ("In a gallery or
+  card"; "Alt for these images is set where each one sits in the entry. They are left as they are.";
+  "N in a gallery or card"), plus the nested-shape verify rows for all three shapes (`d716ec89`). An Opus
+  `diff-reviewer` over `db174a3d..d716ec89` accepted. Non-blocking, for the close: the well's chip shows
+  the raw kind as an uppercase "NESTED" pill. **For Geoff's read before merge:** the new copy above.
+- **Task 6** (Opus) accepted after one fix round (`c2409fdc`, `a8156613`). Ratified extension of Decision
+  15: a present key that fails signing also skips the live mint (an unusable key is the signing check's
+  finding); a test pins it.
+- **S4 friction filed on `main`:** `0c2f3272`. Task 12's S4 carry:
+  `docs/superpowers/research/2026-10-09-pass-a-s4-task12-carry.md`.
+- **Next:** Task 12 alone, then the S4 boundary (D) and the close.

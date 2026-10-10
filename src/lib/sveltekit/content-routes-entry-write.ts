@@ -31,7 +31,7 @@ import {
   type Manifest,
   type ManifestEntry,
 } from '../content/manifest.js';
-import { isConflict } from '../github/types.js';
+import { CommitConflictError, isConflict } from '../github/types.js';
 import { logCommitFailed } from './commit-log.js';
 import { log } from '../log/index.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
@@ -105,6 +105,12 @@ interface SaveHold {
    *  publish). Absent when media is off or no records were posted.
    */
   mediaChange?: FileChange;
+  /**
+   * The default branch's head, read before any of the main snapshots (media.json, index.json) this
+   *  save took, so publish can commit with it as `expectedHead`. `null` when the default branch has
+   *  no readable head. Absent unless the caller asked for the guard (a save commits nothing to main).
+   */
+  mainHead?: string | null;
 }
 
 /**
@@ -130,13 +136,15 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
    *  with the session editor as author. Returns the held state, or the `fail()` the page renders
    *  in place: a broken-link refusal, a validation refusal (invalid frontmatter, a nested
    *  include, a missing date, an out-of-vocabulary tag), or a branch-commit conflict. Main stays
-   *  untouched.
+   *  untouched. With `guardMainHead`, the default branch's head is read before the first read of
+   *  main's media.json or index.json and returned as `mainHead`; publish commits with it.
    */
   async function saveToBranch(
     event: CairnEvent,
     editor: Editor,
     concept: ConceptDescriptor,
     id: string,
+    guardMainHead = false,
   ): Promise<ActionFailure<ContentFormFailure> | SaveHold> {
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const form = await event.request.formData();
@@ -211,6 +219,10 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     }
 
     const markdown = serializeMarkdown(result.data, body);
+
+    // Read the default branch's head BEFORE any read of main's media.json or index.json, so the
+    // publish commit's expectedHead is at-or-before every byte of those snapshots it sends.
+    const guardedHead = guardMainHead ? await backend.branchHead(backend.defaultBranch) : undefined;
 
     // Merge the editor's optimistic media records into the media manifest, gated on media being on
     // and at least one valid record posted. The base is read from the default branch (never the
@@ -306,7 +318,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
         saveRefusal('This file changed since you opened it. Re-read the draft and save again.', body),
       );
     }
-    return { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, draftLinks, referenceWarnings, backend, mediaChange };
+    return { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, draftLinks, referenceWarnings, backend, mediaChange, mainHead: guardedHead };
   }
 
   /**
@@ -330,14 +342,18 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
    *  same commit), then copy that markdown to main with the manifest row upserted in one atomic
    *  commit. Publish-what-you-see: the posted form is the published content, so text typed
    *  after the last save goes live too, and publish works regardless of prior branch state.
-   *  The branch is deleted only when its head still matches the commit this action made; a
-   *  concurrent save moved it, so the entry stays pending and the next publish picks it up.
+   *  The default branch's head is read before the media.json and index.json snapshots and rides
+   *  the main commit as `expectedHead`: a commit landing after those reads (a Library delete, a
+   *  second publish) answers the calm conflict, with the entry still held on its branch and no
+   *  merge inside a retry. A default branch with no head refuses the same way. The branch is
+   *  deleted only when its head still matches the commit this action made; a concurrent save
+   *  moved it, so the entry stays pending and the next publish picks it up.
    */
   async function publishAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
-    const held = await saveToBranch(event, editor, concept, id);
+    const held = await saveToBranch(event, editor, concept, id, true);
     if (!('branchSha' in held)) return held;
-    const { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange } = held;
+    const { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange, mainHead } = held;
 
     // Stamp the first publish here, not in saveToBranch: a save commits no manifest, so the moment an
     // entry goes live is this commit. The stamped row replaces the unstamped one saveToBranch
@@ -373,11 +389,14 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
 
     const commitFields = { concept: concept.id, id, editor: editor.email };
     try {
+      // A default branch with no head has nothing to guard on; refuse rather than commit unguarded.
+      if (mainHead === null || mainHead === undefined) throw new CommitConflictError(`${backend.defaultBranch} (no head)`);
       await backend.commit(
         backend.defaultBranch,
         changes,
         { name: editor.displayName, email: editor.email },
         `Publish ${concept.label.toLowerCase()}: ${id}`,
+        mainHead,
       );
       log.info('entry.published', { ...commitFields, batch: false });
       // Only after the publish lands: a diagnostic that a live address now has a new owner.
@@ -421,6 +440,10 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
    *  concept route does: instead each pending entry is filtered by `canReach` against its own
    *  concept id, so a role mapped away from a concept never has that concept's entries published
    *  on its behalf, the same deny-at-the-route guarantee applied per entry instead of per route.
+   *  The default branch's head is read before every branch read and main's manifest and rides
+   *  the commit as `expectedHead`, so a commit landing after any of those reads bounces to the
+   *  list with the conflict code, every branch still held; a default branch with no head refuses
+   *  the same way.
    */
   async function publishAllAction(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
@@ -439,6 +462,12 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       if (!entry || !canReach(runtime.access, editor, entry.concept.id)) return [];
       return [{ ...entry, branch: name, path: `${entry.concept.dir}/${filenameFromId(entry.id)}` }];
     });
+
+    // Read the default branch's head BEFORE every branch read and main's manifest, so the
+    // commit's expectedHead is at-or-before every byte it sends: a single publish of the same
+    // entry landing after a branch read moves main past this head and bounces the batch, rather
+    // than letting the stale branch content revert it.
+    const mainHead = await backend.branchHead(backend.defaultBranch);
 
     // Read every branch in parallel, capturing each head sha BEFORE its file read: the sha
     // guards the post-publish delete, and probing first fails safe (a save landing between the
@@ -478,11 +507,14 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
 
     const noun = published.length === 1 ? 'entry' : 'entries';
     try {
+      // A default branch with no head has nothing to guard on; refuse rather than commit unguarded.
+      if (mainHead === null) throw new CommitConflictError(`${backend.defaultBranch} (no head)`);
       await backend.commit(
         backend.defaultBranch,
         changes,
         { name: editor.displayName, email: editor.email },
         `Publish ${published.length} ${noun}`,
+        mainHead,
       );
       for (const entry of published) {
         log.info('entry.published', { concept: entry.concept, id: entry.id, editor: editor.email, batch: true });

@@ -11,6 +11,7 @@ import { listEditors, findEditor, insertEditor, deleteEditor, setEditorRole } fr
 import { resolveCapability, resolveOwnerLevelRoles, DEFAULT_ROLES } from '../auth/roles.js';
 import type { Capability, RolesDeclaration } from '../auth/roles.js';
 import type { Editor } from '../auth/types.js';
+import type { CairnRuntime } from '../content/types.js';
 import type { CairnEvent } from './types.js';
 import { env } from './workers-env.js';
 
@@ -38,18 +39,21 @@ export interface EditorsData {
   vocabulary: { role: string; capability: Capability }[];
 }
 
-/** Configuration for `createEditorRoutes`: the site's declared role vocabulary. */
+/** Configuration for `createEditorRoutes`: the composed runtime. */
 export interface EditorRoutesConfig {
   /**
-   * The site's declared role vocabulary (see `defineRoles`); omitted, the routes validate and
-   *  resolve against the implicit owner/editor pair, so a zero-config site sees no behavior change.
+   * The runtime `composeRuntime` returned for the site's adapter. The routes read its `roles`, the
+   *  declared role vocabulary (see `defineRoles`); with none declared they validate and resolve
+   *  against the implicit owner/editor pair, so a zero-config site sees no behavior change.
+   *  Required with no default, the same member `createAuthGuard` takes, so one declaration on the
+   *  adapter reaches both.
    */
-  roles?: RolesDeclaration;
+  runtime: Pick<CairnRuntime, 'roles'>;
 }
 
 /** Build the owner-gated editor-management routes: list, add, remove, and role-change. */
-export function createEditorRoutes(config: EditorRoutesConfig = {}): EditorRoutes {
-  const vocabulary: RolesDeclaration = config.roles ?? DEFAULT_ROLES;
+export function createEditorRoutes(config: EditorRoutesConfig): EditorRoutes {
+  const vocabulary: RolesDeclaration = config.runtime.roles ?? DEFAULT_ROLES;
   const ownerRoles = resolveOwnerLevelRoles(vocabulary);
 
   /** A posted role, trimmed and checked against the vocabulary; null when blank or unknown. */

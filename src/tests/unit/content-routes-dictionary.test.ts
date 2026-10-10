@@ -7,6 +7,7 @@
 // merged word list so the client reconciles its pending additions; a refusal rides a fail envelope.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
+import { injectAfterFirstRead } from './_inject-after-read.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 // `DictionaryAddResult` retired from the public barrel (4b, Task 1); still exported at its
 // declaring module, which this test imports directly.
@@ -14,7 +15,8 @@ import type { DictionaryAddResult, DictionaryAddFailure } from '../../lib/svelte
 import { parseDictionary, serializeDictionary } from '../../lib/content/site-dictionary.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
-import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
+import type { Backend } from '../../lib/github/backend.js';
+import { runtime as baseRuntime, postsConcept, contentEvent, backend } from './_content-harness.js';
 
 const DICT_PATH = 'src/content/.cairn/dictionary.txt';
 const CSRF = 'csrf-token-value-0123456789abcdef';
@@ -95,6 +97,24 @@ describe('dictionaryAdd transport gates', () => {
   });
 });
 
+describe('dictionaryAdd concept gate', () => {
+  it('answers 404 when the route carries no concept param, for an editor the map denies, committing nothing', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime({ access: { posts: ['owner'] } }) });
+    const event = contentEvent({
+      url: 'https://t.example/admin/posts/2026-05-01-hi',
+      params: {},
+      body: JSON.stringify({ word: 'cairn' }),
+      headers: { 'content-type': 'text/plain', 'x-cairn-csrf': CSRF },
+      cookies: cookieJar(CSRF),
+      editor: { email: 'w@x.test', displayName: 'W', role: 'editor', capability: 'editor' },
+    });
+    await expect(routes.dictionaryAddAction(event)).rejects.toMatchObject({ status: 404 });
+    expect(commitCount(gh)).toBe(0);
+  });
+});
+
 describe('dictionaryAdd read-modify-write', () => {
   it('inserts a new word in sorted order and commits the merged list', async () => {
     const gh = new GithubDouble({ main: { [DICT_PATH]: serializeDictionary(['alpha', 'gamma']) } });
@@ -159,11 +179,10 @@ describe('dictionaryAdd SHA-guarded retry', () => {
   it('re-reads and re-merges on a stale-SHA conflict, then succeeds on the retry', async () => {
     // A hand-rolled GitHub: the dictionary file lives in `file`, the contents read returns it, and the
     // commit sequence (ref read, commit read, trees POST, commits POST, ref PATCH) lands a write. The
-    // first commitFiles ref PATCH fails non-fast-forward until commitFiles exhausts its internal
-    // retries and throws CommitConflictError; the action catches it, re-reads the (now moved) head,
-    // re-merges the same addition, and retries once. The wrapper fails the first 4 PATCHes (commitFiles
-    // tries the initial attempt plus 3 retries), then lands the write. On the first failure a
-    // concurrent editor's word lands in `file`, which the order-independent re-merge must preserve.
+    // head-guarded commit makes one attempt, so the first ref PATCH fails non-fast-forward and the
+    // action catches the CommitConflictError, re-reads the head and the file, re-merges the same
+    // addition, and retries once. On that first failure a concurrent editor's word lands in `file`,
+    // which the order-independent re-merge must preserve.
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     let file = serializeDictionary(['alpha']);
@@ -192,7 +211,7 @@ describe('dictionaryAdd SHA-guarded retry', () => {
       if (method === 'POST' && path.endsWith('/git/commits')) return json({ sha: 'commit1' });
       if (method === 'PATCH' && path.includes('/git/refs/')) {
         patchCount += 1;
-        if (patchCount <= 4) {
+        if (patchCount <= 1) {
           if (!concurrentLanded) {
             // A concurrent editor lands "newword" on main between the two action attempts.
             file = serializeDictionary(['alpha', 'newword']);
@@ -215,11 +234,50 @@ describe('dictionaryAdd SHA-guarded retry', () => {
   });
 });
 
+describe('dictionaryAdd head guard', () => {
+  it('lands both of two concurrent adds: the stale commit conflicts, then the retry re-merges onto the new head', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const gh = new GithubDouble({ main: { [DICT_PATH]: serializeDictionary(['alpha']) } });
+    gh.install();
+    // A second editor's add lands after this action's first read of the dictionary and before its commit.
+    const fired = injectAfterFirstRead(DICT_PATH, () => gh.commit('main', DICT_PATH, serializeDictionary(['alpha', 'newword'])));
+    const routes = createContentRoutes({ runtime: runtime() });
+
+    const result = (await routes.dictionaryAddAction(addEvent({ word: 'beta' }))) as unknown as DictionaryAddResult;
+
+    expect(fired()).toBe(true);
+    expect(result.words).toEqual(['alpha', 'beta', 'newword']);
+    expect(parseDictionary(gh.read('main', DICT_PATH))).toEqual(['alpha', 'beta', 'newword']);
+  });
+
+  it('refuses with the dictionary conflict answer and commits nothing when the default branch has no head', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const gh = new GithubDouble({ main: { [DICT_PATH]: serializeDictionary(['alpha']) } });
+    gh.install();
+    const commit = vi.fn(async () => 'sha');
+    const headless: Backend = { ...backend, branchHead: async () => null, commit };
+    const routes = createContentRoutes({ runtime: runtime() });
+    const event = contentEvent({
+      url: 'https://t.example/admin/posts/2026-05-01-hi',
+      params: { concept: 'posts', id: '2026-05-01-hi' },
+      body: JSON.stringify({ word: 'beta' }),
+      headers: { 'content-type': 'text/plain', 'x-cairn-csrf': CSRF },
+      cookies: cookieJar(CSRF),
+      eventBackend: headless,
+    });
+
+    const result = await routes.dictionaryAddAction(event);
+
+    expect(result).toMatchObject({ status: 409 });
+    expect(commit).not.toHaveBeenCalled();
+  });
+});
+
 describe('dictionaryAdd second-conflict give-up', () => {
   it('logs dictionary.add_conflict with the count of pending words, never the words themselves', async () => {
-    // Every ref PATCH fails non-fast-forward, so both the initial attempt and the retry exhaust
-    // commitFiles' own retries and throw CommitConflictError: the action gives up and the client
-    // keeps the words pending.
+    // Every ref PATCH fails non-fast-forward, so both the initial attempt and the retry throw
+    // CommitConflictError: the action gives up and the client keeps the words pending.
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });

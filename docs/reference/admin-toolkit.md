@@ -27,6 +27,10 @@ wrapper layout live in each component's own scoped `<style>` block rather than a
 Tailwind utility string, since the admin sheet compiles a Tailwind utility only when cairn's own
 source uses it.
 
+The toolkit renders only inside the admin shell, which loads `cairn-admin.css` and the admin theme
+wrapper. A member area or any other surface outside `/admin` is the site's own, styled by the site,
+and a toolkit component mounted there renders without the admin sheet.
+
 ---
 
 ## `format.ts`

@@ -166,6 +166,13 @@ full-size-but-correct thumbnails rather than broken `/cdn-cgi/image` URLs.
    base). A whole-file overwrite of a shared mutable `media.json` through `commitFiles` would
    last-writer-wins and silently drop a concurrent row, so it must never ship; if a global-on-main copy
    is ever required, the merge moves inside the `commitFiles` retry loop.
+   *Amended 2026-10-09 (the engine pass before stage 2b, pass A):* the publish snapshot is no longer
+   last-writer-wins. Publish and publish-all read the default branch's head before the `media.json` and
+   `index.json` snapshots they commit and pass it as `expectedHead`, so a commit that lands between the
+   read and the write fails closed: the editor sees the calm conflict, the entry stays held on its
+   branch, and publishing again succeeds. No merge happens inside a retry, and a default branch with no
+   readable head refuses to publish instead of committing unguarded. The Library's delete, bulk delete,
+   metadata update, replace, and alt propagation, and the dictionary add, take the same head guard.
 2. **Storage is put-first and idempotent; orphans are an expected, bounded, reconcilable state.** A put
    whose entry is never saved leaves R2 bytes with no row. A reconcile read ships in 2a (decision 10).
    No failure path compensates with a delete.

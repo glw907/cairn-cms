@@ -26,6 +26,7 @@ import {
   MANIFEST_CONFLICT_MESSAGE,
 } from './content-routes-media-shared.js';
 import type { ContentRoutesContext } from './content-routes-context.js';
+import type { AccessRefusedReason } from '../log/events.js';
 import type { CairnEvent } from './types.js';
 // R2Bucket is named only to cast the raw binding for r2Store. It is a type-only import that never
 // appears in an exported signature, so it does not reach the public `.d.ts`.
@@ -121,7 +122,8 @@ export function createMediaIngestActions(ctx: ContentRoutesContext) {
     //      restricting `media` restricts it too (the documented media-picker landmine): a role edits
     //      an image-bearing concept only when it also reaches `media`.
     if (!canReach(runtime.access, editor, 'media')) {
-      log.warn('auth.access.refused', { email: editor.email, role: editor.role, target: 'media' });
+      const reason: AccessRefusedReason = 'role';
+      log.warn('auth.access.refused', { email: editor.email, role: editor.role, target: 'media', reason });
       return refuse(403, 'access_denied');
     }
 

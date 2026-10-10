@@ -188,7 +188,7 @@ cast.
 
 ## The guard and the ambient type
 
-The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates the whole
+The engine's auth guard (`createAuthGuard({ runtime })`, wired in `hooks.server.ts`) gates the whole
 `/admin/*` subtree before any load runs. The mount itself does no access control; the guard owns
 it. The guard sets `event.locals.cairnEditor`, and one line in `src/app.d.ts` types it:
 `import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)). The guard
@@ -219,9 +219,10 @@ A site that already has a `handle` hook (for example, injecting a saved theme in
 // src/hooks.server.ts
 import { sequence } from '@sveltejs/kit/hooks';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { runtime } from '#chassis/cairn.server.js';
 import { theme } from './theme-handle.js';
 
-export const handle = sequence(theme, createAuthGuard());
+export const handle = sequence(theme, createAuthGuard({ runtime }));
 ```
 
 The guard owns `/admin` gating and runs last; the site's hook runs first and sees every request.
@@ -279,8 +280,15 @@ import { loadHealth } from '@glw907/cairn-cms/sveltekit';
 import { runtime } from '#lib/cairn.server.js';
 
 export const prerender = false;  // see below
-export const GET = async (event) => Response.json(await loadHealth(event, runtime));
+export const GET = async (event) => {
+  const report = await loadHealth(event, runtime);
+  return Response.json(report, { status: report.ok ? 200 : 503 });
+};
 ```
+
+The route answers 503 when a check fails, so a deploy gate or an uptime monitor reads the status code.
+A request with `?live=1` also asks GitHub whether it accepts the key; see
+[`loadHealth`](./sveltekit.md#loadhealth).
 
 On a site that prerenders by default, the explicit `prerender = false` is required. Without it
 the endpoint prerenders at build time, when the GitHub App key is absent, freezing a permanent

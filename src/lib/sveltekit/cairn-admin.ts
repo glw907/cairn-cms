@@ -35,10 +35,11 @@ export interface CairnAdminConfig {
   /** The composed runtime the admin bundle closes over: concepts, roles, the backend, and every other site-declared seam. */
   runtime: CairnRuntime;
   /**
-   * The magic-link auth seam: the same members `createAuthRoutes` takes, all optional here since
-   *  `branding` defaults from the runtime. See `AuthRoutesConfig`.
+   * The magic-link auth seam: the same members `createAuthRoutes` takes, all optional here.
+   *  `branding` is a partial override merged over the runtime's own site name and sender, so
+   *  `{ siteName }` alone keeps the runtime's `from` and `replyTo`. See `AuthRoutesConfig`.
    */
-  auth?: Partial<AuthRoutesConfig>;
+  auth?: Partial<Omit<AuthRoutesConfig, 'branding'>> & { branding?: Partial<AuthBranding> };
   /**
    * Forwarded to the content routes verbatim; a site that enables tidy injects a stub client here
    *  to avoid a real network call.
@@ -101,11 +102,12 @@ export type AdminData =
 export function createCairnAdminInternal(config: CairnAdminConfig) {
   const { runtime } = config;
   // The runtime already composes the site name and the sender identity, so the magic-link
-  // branding needs no second copy of either unless a site overrides it.
-  const branding: AuthBranding = config.auth?.branding ?? {
-    siteName: runtime.siteName,
-    from: runtime.sender.from,
-    replyTo: runtime.sender.replyTo,
+  // branding needs no second copy of either unless a site overrides a member of it.
+  const override = config.auth?.branding;
+  const branding: AuthBranding = {
+    siteName: override?.siteName ?? runtime.siteName,
+    from: override?.from ?? runtime.sender.from,
+    replyTo: override?.replyTo ?? runtime.sender.replyTo,
   };
   const auth = createAuthRoutes({ branding, send: config.auth?.send, bootstrapOwner: config.auth?.bootstrapOwner });
   const content = createContentRoutesInternal({
@@ -115,7 +117,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
     attention: config.attention,
     preview: config.preview,
   });
-  const editors = createEditorRoutes({ roles: runtime.roles });
+  const editors = createEditorRoutes({ runtime });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
   const nav = runtime.navMenu ? createNavRoutes({ runtime }) : null;
 
@@ -236,6 +238,9 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
       } catch (err) {
         if (isRedirect(err) || isHttpError(err)) throw err;
         const fields: Record<string, unknown> = { action, error: err instanceof Error ? err.message : String(err) };
+        // A named condition (a CairnError, say) carries its id, so an operator can filter on it.
+        const conditionId = err instanceof Error ? (err as { conditionId?: unknown }).conditionId : undefined;
+        if (typeof conditionId === 'string') fields.conditionId = conditionId;
         // `view`, not `narrowed`: it is the concrete AdminView union, so the `in` checks below
         // narrow it cleanly, unlike the generic-parameterized `narrowed`.
         if ('concept' in view) fields.concept = view.concept.id;

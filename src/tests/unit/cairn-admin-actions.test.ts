@@ -178,6 +178,29 @@ describe('auth actions', () => {
     await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent', sent: true });
   });
 
+  it('a partial auth.branding merges over the runtime default: the mail keeps the runtime sender and reply-to', async () => {
+    const { db } = fakeD1({ 'FROM editor WHERE': { email: 'ed@t', display_name: 'Ed Editor', role: 'editor' } });
+    const sent: { from: string; replyTo?: string; subject: string }[] = [];
+    const rt = runtime();
+    rt.sender = { from: 'cms@test', replyTo: 'help@test' };
+    const admin = createCairnAdmin({
+      runtime: rt,
+      auth: {
+        branding: { siteName: 'Renamed Site' },
+        send: async (_env, message) => {
+          sent.push({ from: message.from, replyTo: message.replyTo, subject: message.subject });
+        },
+      },
+    });
+    const event = actionEvent('/admin/login', {
+      editor: null,
+      form: { email: 'ed@t' },
+      env: { PUBLIC_ORIGIN: 'https://t.example', AUTH_DB: db },
+    });
+    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent', sent: true });
+    expect(sent).toEqual([{ from: 'cms@test', replyTo: 'help@test', subject: 'Sign in to Renamed Site' }]);
+  });
+
   it('confirm delegates on the confirm view: consumes the token, sets the session cookie, redirects', async () => {
     const { db } = fakeD1({ 'DELETE FROM magic_token': { email: 'ed@t' } });
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
@@ -529,6 +552,34 @@ describe('editor actions', () => {
     });
     await expect(admin.actions.editorAdd(event)).resolves.toEqual({ ok: true });
     expect(calls.some((c) => c.sql.includes('INSERT INTO editor') && c.args[0] === 'new@x.dev')).toBe(true);
+  });
+
+  it('editorAdd on an AUTH_DB still carrying the role CHECK logs admin.action.failed with the condition id', async () => {
+    // The insert fails the way an unmigrated D1 answers a custom role; the store names the
+    // condition, and the chokepoint's record carries that id beside the message.
+    const { db } = fakeD1();
+    const failing = {
+      ...db,
+      prepare(sql: string) {
+        const stmt = db.prepare(sql);
+        if (!sql.includes('INSERT INTO editor')) return stmt;
+        return { ...stmt, bind: () => ({ run: () => Promise.reject(new Error("D1_ERROR: CHECK constraint failed: role IN ('owner', 'editor')")) }) };
+      },
+    };
+    const roles = { owner: 'owner' as const, editor: 'editor' as const, reviewer: 'editor' as const };
+    const admin = createCairnAdmin({ runtime: { ...runtime(), roles }, ...deps });
+    const event = actionEvent('/admin/editors', {
+      editor: owner,
+      form: { email: 'new@x.dev', name: 'New', role: 'reviewer' },
+      env: { AUTH_DB: failing },
+    });
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = (await admin.actions.editorAdd(event)) as { status?: number };
+    expect(result.status).toBe(500);
+    expect(errorSpy).toHaveBeenCalledWith(
+      'admin.action.failed',
+      expect.objectContaining({ action: 'editorAdd', conditionId: 'auth.store-roles-unmigrated' }),
+    );
   });
 
   it('editorRemove delegates on the editors view and deletes the row', async () => {

@@ -14,19 +14,20 @@ const (
 	// owner/editor pair is declared, so the guard's own fallback already matches the
 	// vocabulary.
 	skipNoCustomRoles = "no custom roles declared; the guard fallback owner/editor already matches the vocabulary"
-	// infoRoleWiringNoHooksFile is auth.role-wiring's info detail when neither hooks file
-	// spelling exists.
-	infoRoleWiringNoHooksFile = "src/hooks.server.ts not found, so the guard role wiring cannot be checked"
-	// infoRoleWiringAbsent is auth.role-wiring's info detail when no createAuthGuard call is
-	// found at all: the guard may be wired in another module the doctor cannot see.
-	infoRoleWiringAbsent = "no createAuthGuard call found in src/hooks.server.ts (heuristic text read); the guard may be wired in another module"
+	// tmplRoleWiringNoHooksFile is auth.role-wiring's info detail template when neither hooks
+	// file spelling exists, filled with the two spellings it looked for.
+	tmplRoleWiringNoHooksFile = "neither %s nor %s found, so the guard role wiring cannot be checked"
+	// tmplRoleWiringAbsent is auth.role-wiring's info detail template when no createAuthGuard
+	// call is found at all, filled with the hooks path read: the guard may be wired in another
+	// module the doctor cannot see.
+	tmplRoleWiringAbsent = "no createAuthGuard call found in %s (heuristic text read); the guard may be wired in another module"
 	// infoRoleWiringIndirect is auth.role-wiring's info detail when createAuthGuard's argument
 	// is a bare identifier the doctor cannot read into: that object may carry roles, so failing
 	// it would not be a high-confidence positive.
 	infoRoleWiringIndirect = "createAuthGuard is passed an options object the doctor cannot read (heuristic text read); verify the guard receives the declared roles"
 	// tmplRoleWiringUnwired is auth.role-wiring's fail detail template, filled with the joined
-	// custom role names.
-	tmplRoleWiringUnwired = "the adapter declares custom roles (%s) but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)"
+	// custom role names and the hooks path read.
+	tmplRoleWiringUnwired = "the adapter declares custom roles (%s) but createAuthGuard in %s is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)"
 	// passRoleWiringWired is auth.role-wiring's pass detail.
 	passRoleWiringWired = "createAuthGuard is passed the declared role vocabulary (heuristic text read)"
 )
@@ -54,9 +55,10 @@ func customRoleNames(roles []string) []string {
 // second call later in the file does not widen the capture.
 var createAuthGuardCallPattern = regexp.MustCompile(`createAuthGuard\s*\(([\s\S]*?)\)`)
 
-// rolesWordPattern matches a bare `roles` word in createAuthGuard's argument list, the wiring
-// signal a `{ roles }` or `{ roles: siteRoles }` object literal both carry.
-var rolesWordPattern = regexp.MustCompile(`\broles\b`)
+// wiringWordPattern matches a bare `runtime` or `roles` word in createAuthGuard's argument list,
+// the wiring signal an object literal carries: `{ runtime }` on this engine, which resolves the
+// roles from the runtime, and `{ roles }` on an older one.
+var wiringWordPattern = regexp.MustCompile(`\b(?:runtime|roles)\b`)
 
 // guardWiring is guardRoleWiring's own four-value result.
 type guardWiring int
@@ -65,18 +67,18 @@ type guardWiring int
 const (
 	// guardWiringAbsent means no createAuthGuard call was found in the text at all.
 	guardWiringAbsent guardWiring = iota
-	// guardWiringUnwired means createAuthGuard was called with no roles argument: the running
+	// guardWiringUnwired means createAuthGuard was called with no runtime or roles argument: the running
 	// guard falls back to owner/editor, the one outcome this check fails.
 	guardWiringUnwired
 	// guardWiringIndirect means createAuthGuard's argument is a bare identifier the doctor
 	// cannot read into, such as createAuthGuard(guardOpts).
 	guardWiringIndirect
-	// guardWiringWired means the call's argument list mentions roles.
+	// guardWiringWired means the call's argument list mentions runtime or roles.
 	guardWiringWired
 )
 
-// guardRoleWiring reads the createAuthGuard call in text and reports whether it is passed a roles
-// argument. absent and indirect are both reported as info rather than fail, since a wrapped or
+// guardRoleWiring reads the createAuthGuard call in text and reports whether it is passed a runtime
+// or roles argument. absent and indirect are both reported as info rather than fail, since a wrapped or
 // dynamically built guard reading either way is not a high-confidence positive: a positive fail
 // should never be a false red.
 func guardRoleWiring(text string) guardWiring {
@@ -85,7 +87,7 @@ func guardRoleWiring(text string) guardWiring {
 		return guardWiringAbsent
 	}
 	args := strings.TrimSpace(match[1])
-	if rolesWordPattern.MatchString(args) {
+	if wiringWordPattern.MatchString(args) {
 		return guardWiringWired
 	}
 	if args != "" && !strings.Contains(args, "{") {
@@ -113,20 +115,20 @@ var authRoleWiring = Check{
 		if len(custom) == 0 {
 			return skipResult(skipNoCustomRoles)
 		}
-		hooks, _, hooksFound, err := readHooksSource(s)
+		hooks, hooksPath, hooksFound, err := readHooksSource(s)
 		if err != nil {
 			return uncheckedResult(err.Error())
 		}
 		if !hooksFound {
-			return infoResult(infoRoleWiringNoHooksFile)
+			return infoResult(fmt.Sprintf(tmplRoleWiringNoHooksFile, hooksCandidatePaths[0], hooksCandidatePaths[1]))
 		}
 		switch guardRoleWiring(hooks) {
 		case guardWiringAbsent:
-			return infoResult(infoRoleWiringAbsent)
+			return infoResult(fmt.Sprintf(tmplRoleWiringAbsent, hooksPath))
 		case guardWiringIndirect:
 			return infoResult(infoRoleWiringIndirect)
 		case guardWiringUnwired:
-			return failResult(fmt.Sprintf(tmplRoleWiringUnwired, strings.Join(custom, ", ")))
+			return failResult(fmt.Sprintf(tmplRoleWiringUnwired, strings.Join(custom, ", "), hooksPath))
 		default:
 			return passResult(passRoleWiringWired)
 		}

@@ -1,5 +1,5 @@
 // The /admin guard, plus the per-load owner/session gates. A site's hooks.server.ts sets
-// `export const handle = createAuthGuard()`. Events are typed structurally, so the engine
+// `export const handle = createAuthGuard({ runtime })`. Events are typed structurally, so the engine
 // stays free of a site's App.* ambient types.
 import { redirect, error } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
@@ -12,7 +12,7 @@ import { log } from '../log/index.js';
 import { env } from './workers-env.js';
 import { isBuilding } from './building.js';
 import { resolveCapability, DEFAULT_ROLES } from '../auth/roles.js';
-import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
+import { canReach, hasAccessRule, noRuleReason, targetFromRouteId } from '../auth/access.js';
 import {
   CAIRN_DEV_BACKEND_FLAG,
   CAIRN_DEV_BACKEND_MESSAGE,
@@ -21,34 +21,43 @@ import {
 } from '../dev-flag.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessMap } from '../auth/access.js';
+import type { AccessRefusedReason } from '../log/events.js';
+import type { CairnRuntime } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent, CookieJar, HandleInput } from './types.js';
 
-/** The login page and the auth endpoints are public; everything else under /admin is gated. */
+/**
+ * The login page and the magic-link confirm page are the only public admin paths; everything else
+ * under /admin, `/admin/auth/*` included, is gated.
+ */
 export function isPublicAdminPath(pathname: string): boolean {
-  return pathname === '/admin/login' || pathname.startsWith('/admin/auth/');
+  return pathname === '/admin/login' || pathname === '/admin/auth/confirm';
 }
 
 function isAdminPath(pathname: string): boolean {
   return pathname === '/admin' || pathname.startsWith('/admin/');
 }
 
-/** Configuration for `createAuthGuard`: the site's declared role vocabulary and access map. */
+/**
+ * Configuration for `createAuthGuard`: the composed runtime, plus the guard's own response and
+ * identity options.
+ */
 export interface AuthGuardConfig {
   /**
-   * The site's declared role vocabulary (see `defineRoles`); omitted, the guard resolves every
-   *  session against the implicit owner/editor pair, so a zero-config site sees no behavior change.
+   * The runtime `composeRuntime` returned for the site's adapter. The guard reads two members off
+   *  it: `roles`, the declared role vocabulary (see `defineRoles`), and `access`, the declared
+   *  access map (see `defineAccess`), so the one declaration on the adapter reaches every reader.
+   *  Required with no default, so a guard cannot be built without the site's vocabulary and map.
+   *
+   * With no `roles` declared, the guard resolves every session against the implicit owner/editor
+   *  pair. With no `access` declared, it attaches an empty map to `locals.cairnAccess`; the
+   *  engine's own screens, gated through {@link requireEngineAccess}'s `canReach` check, then stay
+   *  open to any editor-capability session, so a zero-config site sees no behavior change there. A
+   *  {@link requireAccess} call on a site's own route reads the opposite way: with no rule for its
+   *  target it refuses every session, owner included, since that helper's contract is a route that
+   *  opted in but found nothing.
    */
-  roles?: RolesDeclaration;
-  /**
-   * The site's declared access map (see `defineAccess`); omitted, the two enforcement points read
-   *  it differently. The engine's own screens, gated through {@link requireEngineAccess}'s
-   *  `canReach` check, stay open to any editor-capability session, so a zero-config site sees no
-   *  behavior change there. A `requireAccess` call on a site's own route reads the opposite way:
-   *  with no map at all, it has no opinion on any target and refuses every session, owner
-   *  included, since that helper's contract is a route that opted in but found nothing.
-   */
-  access?: AccessMap;
+  runtime: Pick<CairnRuntime, 'roles' | 'access'>;
   /**
    * Pin every sibling subdomain to HTTPS along with the admin host itself, on the
    * Strict-Transport-Security header the guard attaches to each admin response it returns.
@@ -169,9 +178,10 @@ export function isSafeLogoutUrl(logoutUrl: string): boolean {
  */
 // WATCH: check:tool-heuristics greps this exact signature for the Go tool's auth.role-wiring
 // heuristic, which reads a site's own createAuthGuard call for its argument shape.
-export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
-  const { access, includeSubDomains, identity } = config;
-  const vocabulary: RolesDeclaration = config.roles ?? DEFAULT_ROLES;
+export function createAuthGuard(config: AuthGuardConfig): Handle {
+  const { runtime, includeSubDomains, identity } = config;
+  const vocabulary: RolesDeclaration = runtime.roles ?? DEFAULT_ROLES;
+  const access: AccessMap | undefined = runtime.access;
   // Validated once, at construction, not per request: an invalid logoutUrl is a site
   // misconfiguration, and failing fast here beats admitting an open redirect at request time.
   // The published snapshot below is what every admin path reads; identity.logoutUrl is never
@@ -364,7 +374,8 @@ export function createAuthGuard(config: AuthGuardConfig = {}): Handle {
       // access ?? {}, not access: canReach and hasAccessRule agree on undefined and {} in every
       // branch (both fail closed on an unmapped target the same way), so this is behavior-
       // identical for a zero-config site. It buys section-action.ts a real signal: an absent
-      // locals.cairnAccess then only ever means the guard never ran on this route.
+      // locals.cairnAccess then only ever means a route outside every hook's coverage, since the
+      // guard and the dev backend's handle both attach a map on every admin path they cover.
       event.locals.cairnAccess = access ?? {};
     }
     const response = await resolve(event);
@@ -431,9 +442,10 @@ export function requireEditor(event: CairnEvent): Editor {
  * role for `target` (a concept id or one of the fixed engine screens `validateAccessComposition`
  * enforces). A target absent from the map, or no map at all, always admits (`canReach`'s
  * zero-config floor), so a site that declares nothing sees no behavior change. Every denial emits
- * `auth.access.refused` with the editor's email, role, and `target`, the same shape `requireAccess`
- * emits. Unlike `requireAccess`, an unmapped target is never a fail-closed misconfiguration here:
- * an engine screen's own route is always a legitimate destination, mapped or not.
+ * `auth.access.refused` with the editor's email, role, `target`, and `reason: 'role'`, the same
+ * shape `requireAccess` emits. Unlike `requireAccess`, an unmapped target is never a fail-closed
+ * misconfiguration here: an engine screen's own route is always a legitimate destination, mapped or
+ * not.
  *
  * Posture: permissive, mirroring `canReach`'s own unmapped-target default; an engine screen's
  * mutations (save, publish, upload, and the rest) stay reachable to any editor-capability session
@@ -441,7 +453,8 @@ export function requireEditor(event: CairnEvent): Editor {
  */
 export function requireEngineAccess(access: AccessMap | undefined, editor: Editor, target: string): void {
   if (canReach(access, editor, target)) return;
-  log.warn('auth.access.refused', { email: editor.email, role: editor.role, target });
+  const reason: AccessRefusedReason = 'role';
+  log.warn('auth.access.refused', { email: editor.email, role: editor.role, target, reason });
   throw error(403, 'Access denied');
 }
 
@@ -456,8 +469,9 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  * keyed by URL shape, and resolves a parameterized route id verbatim (`/admin/posts/[id]`), so a
  * map keyed by its prefix still matches; a declared `target` is used exactly as given, never
  * normalized. So the common call is still `const editor = requireAccess(event);`. Every denial,
- * mapped or unmatched, emits `auth.access.refused` with the editor's email, role, and the resolved
- * (normalized) target.
+ * mapped or unmatched, emits `auth.access.refused` with the editor's email, role, the resolved
+ * (normalized) target, and a `reason`: `'no_rule'` when the map has none for it, `'shadowed'` when
+ * a dynamic segment hides the rule behind a deeper key, `'role'` for every other refusal.
  *
  * The unmatched case (the map has no rule at all for `target`) 403s every session, owner
  * included: this helper's contract is "this route opted into the map and the map has no opinion
@@ -477,8 +491,10 @@ export function requireAccess(event: CairnEvent, target?: string): Editor {
   const editor = requireSession(event);
   const resolvedTarget = target ?? targetFromRouteId(event.route.id);
   const access = event.locals.cairnAccess;
-  if (!hasAccessRule(access, resolvedTarget) || !canReach(access, editor, resolvedTarget)) {
-    log.warn('auth.access.refused', { email: editor.email, role: editor.role, target: resolvedTarget });
+  const ruled = hasAccessRule(access, resolvedTarget);
+  if (!ruled || !canReach(access, editor, resolvedTarget)) {
+    const reason: AccessRefusedReason = ruled ? 'role' : noRuleReason(access, resolvedTarget);
+    log.warn('auth.access.refused', { email: editor.email, role: editor.role, target: resolvedTarget, reason });
     throw error(403, 'Access denied');
   }
   return editor;

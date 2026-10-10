@@ -130,6 +130,18 @@ describe('the emitted template tree', () => {
     expect(bindings).toEqual(['APP_DB', 'AUTH_DB']);
   });
 
+  // The scaffold ships the roles migration (a site declaring custom roles writes them at once) and
+  // withholds the opt-in audit table, so its numbering has a deliberate gap at 0002.
+  it('emits exactly the migrations 0000, 0001, 0003, and 0004 for AUTH_DB', async () => {
+    const files = (await readdir(join(emittedTo, 'migrations'))).sort();
+    expect(files).toEqual([
+      '0000_auth.sql',
+      '0001_roles.sql',
+      '0003_preview.sql',
+      '0004_login_nonce.sql',
+    ]);
+  });
+
   // A "secrets.required" declaration makes wrangler 4.125 filter .dev.vars to vars-or-required
   // and turns on ambient process.env reading, which silently starves local dev of every secret
   // it does not name (ROADMAP.md, "Declare required Worker secrets without breaking local dev").

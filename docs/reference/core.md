@@ -750,7 +750,10 @@ declare function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRun
 
 Fold an adapter and its site-config into the composed runtime (seam 2). The per-concept URL policy
 is derived from the site-config, the same source delivery uses, so the runtime and delivery
-permalinks cannot diverge.
+permalinks cannot diverge. It throws when an access rule names a role the adapter's `roles` doesn't
+declare, the default owner/editor pair when `roles` is absent. The error names the rule's key, the
+role, and the fix. Every reader of the map takes this runtime, so the check covers the guard, the
+dev handle, the admin routes, and the nav alike.
 
 ```ts
 // src/lib/cairn.server.ts
@@ -851,7 +854,7 @@ Stability tier: Extension API.
 ```ts
 declare function formatManifest(manifest: Manifest): string;
 declare function parseManifest(raw: string): Manifest;
-declare function verifyManifest(built: Manifest, committedRaw: string): void;
+declare function verifyManifest(built: Manifest, committedRaw: string, adapter?: Pick<CairnAdapter, "content">): void;
 declare function verifyReferences(manifest: Manifest): void;
 ```
 
@@ -862,17 +865,26 @@ gets a well-formed graph or a clear error rather than a broken shape fed silentl
 Use it to validate a manifest your own code fetches, such as when building the `before`/`after` pair
 [`buildNewlyPublished`](./delivery-data.md#buildnewlypublished) takes, instead of casting the fetched
 JSON yourself. `verifyManifest` throws when the committed manifest drifts from the corpus, so a
-raw-git edit fails the build loudly. `verifyReferences` throws when any frontmatter reference edge
-points at a missing target, naming the source entry, the field, and the missing target. References
-have no prerender backstop, so this build gate is their only integrity authority.
+raw-git edit fails the build loudly. Pass the site's adapter as the third argument to get the
+nested-image rule. A manifest generated before `mediaRefs` existed carries no `mediaRefs` key, and
+the check tolerates that only when no concept declares an image inside a container field (an object
+holding an image, an array of images, or an array of objects holding an image). With such a shape
+declared, the compare is exact, so a site that has not regenerated fails its build with the
+regenerate message. Called without the adapter, the check always keeps that allowance, so a script
+that calls it with two arguments compiles and behaves as before. The `cairnManifest` plugin passes the
+adapter for you. `verifyReferences` throws
+when any frontmatter reference edge points at a missing target, naming the source entry, the field,
+and the missing target. References have no prerender backstop, so this build gate is their only
+integrity authority.
 
 ```ts
-import { verifyManifest, type Manifest } from '@glw907/cairn-cms';
+import { verifyManifest, type CairnAdapter, type Manifest } from '@glw907/cairn-cms';
 
 declare const built: Manifest;
 declare const committedRaw: string;
+declare const cairn: CairnAdapter;
 
-verifyManifest(built, committedRaw); // throws on drift
+verifyManifest(built, committedRaw, cairn); // throws on drift
 ```
 
 ```ts
@@ -1012,23 +1024,32 @@ trailing slash, or the bare `/admin` root). `roles` may be `undefined`: the map'
 validate against the same implicit owner/editor vocabulary `resolveCapability` falls back to for a
 site that declares no vocabulary of its own. A screen-id key's existence against the site's real
 concepts, and an href key's collision with a built-in admin route, validate later, at composition,
-once the runtime knows the real concept list.
+once the runtime knows the real concept list. [`composeRuntime`](#composeruntime) also checks every
+role a rule names against the adapter's own `roles` (or the default owner/editor pair) and throws
+on a role it doesn't declare. Dropping a role from `defineRoles` then fails the server start until
+you remove the role from every rule, so a stale roster row can't reach the routes those rules name.
 
+<!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the first worked example above) to focus on the access member -->
 ```ts
-// src/lib/cairn.access.ts
-import { defineAccess } from '@glw907/cairn-cms';
-import { roles } from '#theme/cairn.config.js';
+// src/theme/cairn.config.ts
+import { defineAdapter, defineAccess, defineRoles } from '@glw907/cairn-cms';
 
-export const access = defineAccess(roles, {
-  pages: ['webmaster'],
-  media: ['webmaster', 'publisher'],
-  '/admin/money': ['webmaster'],
+const roles = defineRoles({ owner: 'owner', webmaster: 'editor', publisher: 'editor' });
+
+export const cairn = defineAdapter({
+  roles,
+  access: defineAccess(roles, {
+    pages: ['webmaster'],
+    media: ['webmaster', 'publisher'],
+    '/admin/money': ['webmaster'],
+  }),
+  // content, backend, email, and rendering as usual
 });
 ```
 
-Pass the same map to [`createAuthGuard`](./sveltekit.md#createauthguard)'s `access` option and to
-the adapter's `access` member: declaring it once and importing it twice is the pattern `roles`
-already follows.
+Declare the map on the adapter's `access` member and nowhere else. `composeRuntime` carries it onto
+the runtime, and [`createAuthGuard`](./sveltekit.md#createauthguard) reads it from the `runtime` it
+is handed, so every reader sees the one declaration.
 
 #### `canReach`, `hasAccessRule`
 
@@ -1040,7 +1061,9 @@ declare function hasAccessRule(access: AccessMap | undefined, target: string): b
 ```
 
 `canReach` is the one decision point every enforcement and visibility check reads. `none`
-capability reaches nothing, mapped or unmapped. Owner capability reaches every target, including
+capability reaches a route path only when the matched rule names its role explicitly; a screen id
+(even one whose rule names the role), an href no rule matches, and `editors` all stay refused for
+it. Owner capability reaches every target, including
 the `editors` screen and any target with no rule; every other capability's reach stops at
 `editors`, which stays owner-only no matter what the map says (the roster screen's existing
 floor, restated here so the one authority function covers it too). In practice a site cannot even

@@ -503,6 +503,58 @@ describe('createSectionAction: ownerOnly stacks on the map check', () => {
   });
 });
 
+describe('createSectionAction: a none-capability session', () => {
+  const noneStaff: Editor = { email: 'none@x.test', displayName: 'None', role: 'staff', capability: 'none' };
+
+  it('is admitted on a mapped href that names its role', async () => {
+    const { handler, action } = approveAction();
+    const result = await action(readyEvent({ editor: noneStaff, cairnAccess: { [mappedTarget]: ['staff'] } }));
+    expect(handler).toHaveBeenCalledOnce();
+    expect(isActionFailure(result)).toBe(false);
+  });
+
+  it('is refused on the editors screen id even with a rule naming its role', async () => {
+    const { handler, action } = approveAction(boundDb, { target: 'editors' });
+    const result = await action(readyEvent({ editor: noneStaff, cairnAccess: { editors: ['staff'] } }));
+    expect(handler).not.toHaveBeenCalled();
+    expect(refusal(result).status).toBe(403);
+  });
+});
+
+describe('createSectionAction: the auth.access.refused reason', () => {
+  /** The `reason` the one refusal records, read off the log spy. */
+  async function reasonOf(opts: Parameters<typeof readyEvent>[0], actionOpts: { ownerOnly?: boolean } = {}): Promise<unknown> {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const { action } = approveAction(boundDb, actionOpts);
+    refusal(await action(readyEvent(opts)));
+    const refused = warnSpy.mock.calls.filter((c) => c[0] === 'auth.access.refused');
+    expect(refused).toHaveLength(1);
+    return (refused[0][1] as { reason?: string }).reason;
+  }
+
+  const rows: Array<{ name: string; opts: Parameters<typeof readyEvent>[0]; reason: string }> = [
+    { name: 'no rule for the target', opts: { cairnAccess: { '/admin/other': ['editor'] } }, reason: 'no_rule' },
+    {
+      name: 'a dynamic route a deeper key shadows',
+      opts: {
+        pathname: '/admin/team/events/7',
+        routeId: '/admin/team/[id]',
+        cairnAccess: { '/admin/team': ['editor'], '/admin/team/events/archive': ['editor'] },
+      },
+      reason: 'shadowed',
+    },
+    { name: 'a role the rule does not list', opts: { cairnAccess: { [mappedTarget]: ['owner'] } }, reason: 'role' },
+  ];
+
+  it.each(rows)('reports $reason for $name', async ({ opts, reason }) => {
+    expect(await reasonOf(opts)).toBe(reason);
+  });
+
+  it('reports role for ownerOnly against an admitted non-owner session', async () => {
+    expect(await reasonOf({}, { ownerOnly: true })).toBe('role');
+  });
+});
+
 describe('createSectionAction: check ordering', () => {
   it('an over-limit binding AND an unbound db: the 429 wins', async () => {
     const limiter: RateLimitLike = { limit: async () => ({ success: false }) };

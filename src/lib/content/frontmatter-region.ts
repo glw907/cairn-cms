@@ -58,7 +58,8 @@ export function frontmatterKeyRange(
   key: string,
 ): [number, number] | null {
   const opener = new RegExp(`^${escapeForRegExp(key)}:`);
-  const topLevelKey = /^[^\s#][^:]*:/;
+  // A zero-indent sequence item (`- src: ...`) belongs to the key above it, so it is no boundary.
+  const topLevelKey = /^(?!-[ \t])[^\s#][^:]*:/;
   const isBoundary = (i: number) => {
     const text = fmBlock.slice(lines[i].start, lines[i].end);
     // A new top-level key or the closing `---` fence ends the current key's block.

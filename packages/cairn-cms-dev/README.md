@@ -6,7 +6,7 @@ in for the GitHub App commit pipeline and the magic-link sign-in loop, so you ca
 an owner.
 
 Install it as a `devDependency`, and never in production. The package installs an authentication
-bypass. `devBackendHandle()` mints an owner session with no email loop, and it also runs fake GitHub,
+bypass. `devBackendHandle({ runtime })` mints an owner session with no email loop, and it also runs fake GitHub,
 R2, D1, and Anthropic doubles. The bypass is an authentication breach if it reaches a deployed site,
 so the package ships behind a three-layer fence and must stay out of every production install.
 
@@ -40,13 +40,14 @@ Then name it directly in the branch, and import the package dynamically:
 ```ts
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 import type { Handle } from '@sveltejs/kit/hooks';
+import { runtime } from '#chassis/cairn.server.js';
 
 let handle: Handle;
 if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
   const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
-  handle = devBackendHandle();
+  handle = devBackendHandle({ runtime });
 } else {
-  handle = createAuthGuard();
+  handle = createAuthGuard({ runtime });
 }
 export { handle };
 ```

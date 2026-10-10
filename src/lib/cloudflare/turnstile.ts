@@ -72,7 +72,8 @@ function isSiteverifyBody(value: unknown): value is SiteverifyBody {
  * token is genuine, not which form it was solved for. `hostname` compares case-insensitively,
  * since siteverify reports it lowercased regardless of the sitekey's configured casing.
  *
- * Every refusal logs `turnstile.verify_failed` with a reason, except an ordinary bot rejection
+ * Every refusal logs `turnstile.verify_failed` with a reason (`missing_secret` for a blank or
+ * non-string secret, a configuration fault apart from a bad token's `invalid_input`), except an ordinary bot rejection
  * (`invalid-input-response` or `timeout-or-duplicate`), which is this function working. No record
  * carries the secret, the token, or the response body. A rejection carries siteverify's own error
  * codes, a mismatch carries the expected and actual value, and the pre-flight refusal carries the
@@ -88,13 +89,15 @@ export async function verifyTurnstile(
   secret: string,
   opts: VerifyTurnstileOptions = {},
 ): Promise<boolean> {
-  if (
-    typeof token !== 'string' ||
-    typeof secret !== 'string' ||
-    !token.trim() ||
-    !secret.trim() ||
-    token.length > MAX_TOKEN_LENGTH
-  ) {
+  // A blank or non-string secret is a site configuration fault, not a visitor's input, so it
+  // logs apart from a bad token: an alert on `invalid_input` then means visitor traffic, and an
+  // alert on `missing_secret` means the deploy lost its secret.
+  if (typeof secret !== 'string' || !secret.trim()) {
+    log.warn('turnstile.verify_failed', { reason: 'missing_secret' });
+    return false;
+  }
+
+  if (typeof token !== 'string' || !token.trim() || token.length > MAX_TOKEN_LENGTH) {
     // The only refusal path below this one that logs nothing at all: if Cloudflare ever
     // lengthens the response token past MAX_TOKEN_LENGTH, or a site's own form wrapper
     // concatenates onto it, every submission would otherwise fail for every visitor with a

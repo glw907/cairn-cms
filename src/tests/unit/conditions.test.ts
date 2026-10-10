@@ -102,7 +102,17 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at twenty-four entries', () => {
+  it('resolves the roles-unmigrated condition as a warning that names the migration', () => {
+    const c = condition('auth.store-roles-unmigrated');
+    expect(c.severity).toBe('warning');
+    expect(c.why).toMatch(/editor\.role/);
+    expect(c.remediation).toMatch(/0001_roles\.sql/);
+    expect(c.remediation).toMatch(/four columns/);
+    expect(c.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
+    expect(c.logEvent).toBeUndefined();
+  });
+
+  it('pins the registry at twenty-five entries', () => {
     // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
     // auth.email-not-normalized for the extensible-roles doctor checks, plus
     // auth.role-wiring-missing for the double-wiring doctor check, plus
@@ -115,9 +125,10 @@ describe('condition registry', () => {
     // id, no longer borrowing config.bindings-missing, so the media-bucket check can print its
     // own remediation), minus auth.csrf-origin-mismatch and config.csrf-disable-missing (the
     // framework's own Origin check now covers every route, so neither has a cairn-side failure
-    // to name), plus config.csrf-trusted-origins-wildcard for the doctor's trustedOrigins check.
+    // to name), plus config.csrf-trusted-origins-wildcard for the doctor's trustedOrigins check,
+    // plus auth.store-roles-unmigrated for the role write a pre-0001 AUTH_DB refuses.
     // Grow this count only with a registry change.
-    expect(allConditions()).toHaveLength(24);
+    expect(allConditions()).toHaveLength(25);
   });
 
   it('resolves the trusted-origins condition with its exposure text and anchor', () => {

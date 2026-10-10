@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createGithubApp } from '../../lib/index.js';
 import { loadHealth } from '../../lib/sveltekit/health.js';
 import { testEvent } from '../helpers/test-event.js';
@@ -26,6 +26,13 @@ function event(env: Record<string, unknown>) {
 }
 
 describe('loadHealth', () => {
+  it('reports the signing check as not applicable for a non-GitHub provider', async () => {
+    const rt = { ...runtime(), backend: { kind: 'other' } } as unknown as CairnRuntime;
+    const data = await loadHealth(event({}), rt);
+    expect(data.ok).toBe(true);
+    expect(data.checks.githubAppSigning).toEqual({ ok: true, detail: 'not-applicable' });
+  });
+
   it('reports a failure when the key is unset, without throwing', async () => {
     const data = await loadHealth(event({}), runtime());
     expect(data.ok).toBe(false);
@@ -37,5 +44,23 @@ describe('loadHealth', () => {
     expect(data.ok).toBe(false);
     expect(data.checks.githubAppSigning.detail).toBeTruthy();
     expect(JSON.stringify(data)).not.toContain('bm90LWEta2V5');
+  });
+});
+
+describe('loadHealth when the check itself throws', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('logs health.failed with the error message and rethrows, so the route can answer its fixed detail', async () => {
+    const sink = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const rt = Object.defineProperty({ ...runtime() }, 'backend', {
+      get() {
+        throw new Error('the provider read threw');
+      },
+    }) as CairnRuntime;
+    await expect(loadHealth(event({}), rt)).rejects.toThrow('the provider read threw');
+    expect(sink).toHaveBeenCalledTimes(1);
+    const { timestamp, ...record } = sink.mock.calls[0][0] as Record<string, unknown>;
+    expect(typeof timestamp).toBe('string');
+    expect(record).toEqual({ level: 'error', event: 'health.failed', error: 'the provider read threw' });
   });
 });

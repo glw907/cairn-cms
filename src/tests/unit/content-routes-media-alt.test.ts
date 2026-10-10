@@ -187,7 +187,7 @@ describe('mediaAltPreview', () => {
     )) as MediaAltPreviewPlan;
 
     // One empty-alt body (will-fill), one custom-alt body (customized), one decorative hero (skipped).
-    expect(result.counts).toEqual({ willFill: 1, customized: 1, decorativeSkipped: 1 });
+    expect(result.counts).toEqual({ willFill: 1, customized: 1, decorativeSkipped: 1, nestedSkipped: 0 });
 
     const byId = Object.fromEntries(result.entries.map((e) => [e.id, e]));
     // The OTHER_HASH entry is excluded; the three referencing the target hash are planned.

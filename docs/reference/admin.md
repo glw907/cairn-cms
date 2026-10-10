@@ -325,6 +325,19 @@ for confirmation, through a `beforeunload` prompt and a SvelteKit navigation gua
 submits the save. Ctrl/Cmd+B and Ctrl/Cmd+I format the selection, and Ctrl/Cmd+K opens the
 web-link dialog.
 
+With JavaScript, Save and Publish submit through SvelteKit's `use:enhance`, so a failed request never
+replaces the page or the author's text. A failure the server answers, a `fail()` result, is applied
+as the page's `form` with no load. A network failure, an action that throws, an answer that isn't
+JSON, or a redirect away from the entry's own concept (the sign-in page after an expired session)
+leaves the page alone and shows the notice "That did not go through. Your text is still here; please
+try again." After any of these the "Saved" flash and the "Saved" save state stay off, the dirty baseline
+is the loaded body even when the refusal echoed the author's text, Save and Publish are enabled
+again, and the leave guard still prompts. A successful save redirects, and the page reloads the
+document at the redirect location. A form posted without JavaScript re-renders the failure through
+the page's load, so a failure that the load hits again (a GitHub outage, for example) ends on the
+site's error page. The author's pending personal-dictionary words commit before the save or publish
+request is sent.
+
 ```svelte
 <script lang="ts">
   import { EditPage } from '@glw907/cairn-cms/admin';

@@ -15,7 +15,7 @@ interface EditorLogRecord {
 }
 
 const db = env.AUTH_DB;
-const routes = createEditorRoutes();
+const routes = createEditorRoutes({ runtime: {} });
 
 // A custom role vocabulary: 'owner' plus 'president' (a second owner-level name), 'webmaster'
 // (editor capability under a site-chosen name), and 'staff' (none capability). Every
@@ -26,7 +26,7 @@ const ascRoles = defineRoles({
   'webmaster': 'editor',
   staff: 'none',
 });
-const customRoutes = createEditorRoutes({ roles: ascRoles });
+const customRoutes = createEditorRoutes({ runtime: { roles: ascRoles } });
 
 beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM editor')]);

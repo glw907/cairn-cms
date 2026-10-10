@@ -74,6 +74,60 @@ this page carries; read `CHANGELOG.md` directly for anything older.
   instead. A reinstall replaces your copy of the skill, which still links to the removed pages.
   This page, [Upgrade cairn](./upgrade-cairn.md), and `choose-an-ai-posture.md` stay in place.
 
+- **Pass `{ runtime }` to `createAuthGuard`, `devBackendHandle`, and `createEditorRoutes`, and declare
+  `roles` and `access` once on the adapter.** The three factories take one bag with a required
+  `runtime`, where `runtime` is `composeRuntime({ adapter, siteConfig })` (the scaffold exports it
+  from its runtime module), and a bare call is now a type error. They read `runtime.roles`
+  and `runtime.access`, so their own `roles` and `access` options are gone. Declare both as members
+  of the adapter (`defineAdapter({ roles, access })`). If the hooks and the adapter held different
+  maps, reconcile them first: the adapter's governs every reader now, so a map only the hooks carried
+  starts gating the engine's screens. A scaffolded site that kept `src/access.ts` folds the map into
+  the adapter and deletes the file. `config.access_unmapped` no longer fires for a map of route keys
+  alone.
+- **Regenerate the content manifest and commit it.** Run `npx cairn-manifest`. A site that declares an
+  image inside an object or an array (`array(image)`, an `object` holding an `image`, or an `array`
+  of objects holding an `image`) and has not regenerated fails its build at upgrade with the
+  stale-manifest message, because the verify now compares such a site's manifest exactly. A site with
+  no nested image shape is not forced, since a manifest that predates `mediaRefs` still builds
+  there. A site that calls `verifyManifest` itself passes its adapter as the third argument to get the
+  nested-image rule.
+- **Move any site route mounted under `/admin/auth/` outside `/admin` if anonymous visitors must reach
+  it.** The guard's public paths are exactly `/admin/login` and `/admin/auth/confirm`, so every other
+  route that begins `/admin/auth/` redirects an anonymous request to the login page.
+- **Mount `tidyAction` and `dictionaryAddAction` only on a route with a `concept` param.** Without
+  one, both answer 404. They skipped the access check there before.
+- **Review any access rule that names a role of `none` capability.** `canReach`, `requireAccess`,
+  `createSectionAction`, and `createAdminAction`'s `access` option now admit that role to the route
+  path the rule names. A screen id, an href no rule matches, and `editors` stay refused for it.
+- **Remove a dropped role from every access rule, or keep it declared.** An access rule naming a
+  role the vocabulary doesn't declare now fails at server start, so dropping a role from
+  `defineRoles` can't leave it reachable. `composeRuntime` throws the error, naming the rule's key
+  and the role. A stale roster row with a dropped role reads `none` capability, and without the
+  check an href rule still naming the role would admit it.
+- **Key Turnstile alerting on `missing_secret` for a missing secret.** `turnstile.verify_failed` with
+  `reason: 'invalid_input'` now means a bad token only. A blank or non-string secret logs
+  `missing_secret`.
+- **Expect the runtime's reply address when a full `auth.branding` left it out.** `auth.branding` is a
+  partial merged over the runtime's `siteName`, `from`, and `replyTo`, and branding can't clear a
+  member. To send no reply address, remove it from the adapter's `email` group or send through a custom
+  `auth.send`.
+- **Expect a calm conflict from publish and publish-all.** Both, and the Media Library's writes and
+  the dictionary add, now fail closed when another commit lands on the default branch while they read
+  their snapshots. The entry stays held on its branch, and publishing again succeeds.
+- **Optional: answer 503 from `/healthz` when `ok` is false.** Return
+  `Response.json(report, { status: report.ok ? 200 : 503 })`, with a catch branch that answers a fixed
+  detail and never the thrown message. A backend that isn't a GitHub App now reads `ok: true` with
+  `detail: 'not-applicable'`. The scaffold's route also sends `cache-control: no-store` on both answers,
+  and `loadHealth` itself now logs a thrown check as `health.failed` before it rethrows.
+- **Optional: apply `0001_roles.sql` when you declare custom roles on a site scaffolded before the
+  scaffold shipped it.** Copy it from `node_modules/@glw907/cairn-cms/migrations/` into the site's
+  `migrations` directory and run `wrangler d1 migrations apply <auth-db> --remote`. It is safe after
+  `0004`, and it rebuilds `editor` with the engine's four columns only, so carry across by hand any
+  column the site added. Until it runs, a write that names a custom role fails with
+  `auth.store-roles-unmigrated`. Once the file sits in the site's `migrations` directory, any
+  automated `wrangler d1 migrations apply`, a deploy pipeline's included, runs it and rebuilds
+  `editor` the same way, so carry site-added columns across before you copy it in.
+
 See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
 
 ## 0.98.0

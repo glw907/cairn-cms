@@ -8,6 +8,11 @@ every route. No `tool/v2.0.0` tag exists yet.
 
 ### Added
 
+- **The `auth.store-roles-unmigrated` condition id** (a warning) names the fault of an `AUTH_DB`
+  that lacks the engine's `0001_roles.sql`: a write naming a role beyond `owner` and `editor`
+  fails on the old role constraint. The condition is public; a reader that matches on the
+  condition ids sees one more. No tool check raises it, and its docs anchor,
+  `is-it-working.md#provision-the-auth-store`, was already on the shipped list.
 - **The `config.csrf-trusted-origins` check** reads the `csrf` key in `vite.config.js`,
   `vite.config.ts`, or `vite.config.mts` and fails, under the new condition
   `config.csrf-trusted-origins-wildcard` (a warning), on a `trustedOrigins` entry of `'*'` or
@@ -40,6 +45,12 @@ every route. No `tool/v2.0.0` tag exists yet.
 - **`cairn doctor --help`'s first sentence is split in two.** The text still names every clause
   the original did (the checked-in configuration, that it is read straight off the directory,
   and what it covers), reworded so the sentence carries at most one comma.
+- **`auth.role-wiring` reads `createAuthGuard({ runtime })` as wired.** A `runtime` argument,
+  alone (`{ runtime }`, `{ runtime: cairn }`) or beside others (`{ runtime, identity }`), passes
+  the check on a site that declares custom roles; the engine resolves the roles from the runtime.
+  The bare-call and `{ roles }` readings stay for a site on an older engine. The fail detail and
+  the `auth.role-wiring-missing` remediation name both spellings: `{ runtime }` on this engine,
+  `{ roles }` on an older one.
 - **`config.public-origin` and the `csrf.trustedOrigins` plain-http note now agree on the loopback
   set**, `localhost` and `127.0.0.1`, the hosts the engine's `requireOrigin` treats as local. The
   note no longer exempts the IPv6 loopback `::1`, so an `http://[::1]` entry now carries it.

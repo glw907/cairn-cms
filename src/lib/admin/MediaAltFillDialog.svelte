@@ -5,7 +5,8 @@ The Media Library's Push-alt review dialog (the rev.2 mockup Push-alt flow): a n
 (never the alertdialog register) with no typed-slug gate; apply is always enabled. It relies on
 the native `<dialog>` role and `aria-labelledby`, with no redundant role or `aria-modal` (the
 Replace dialog's `role="alertdialog"` is the deliberate outlier). The review step lists three
-buckets (will-fill always applied, customized behind one opt-in, decorative-skipped reported);
+buckets (will-fill always applied, customized behind one opt-in, decorative-skipped reported)
+plus a reported well for images nested in a gallery or card, which are never written;
 the blocked step is the fail-closed surface (no apply form) for when usage cannot be verified.
 
 The host opens it through the exported `open(asset, origin)`, pinning the asset at that moment so
@@ -130,8 +131,8 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
   const altPushed = $derived(altAsset?.alt.trim() ?? '');
 
   // The three buckets, flattened from the plan's entries: each row carries its entry title, the
-  // placement kind (the pill), and the placement's before/after. Grouping by bucket keeps each well
-  // self-contained, the way the mockup lays them out.
+  // placement kind (the pill, left off the nested well, whose heading names it), and the placement's
+  // before/after. Grouping by bucket keeps each well self-contained, the way the mockup lays them out.
   type AltRow = { title: string; kind: AltPlacement['kind']; before: string; after: string; key: string };
   function altRows(bucket: AltPlacement['bucket']): AltRow[] {
     const rows: AltRow[] = [];
@@ -146,10 +147,11 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
   const altFillRows = $derived(altRows('will-fill'));
   const altCustomRows = $derived(altRows('customized'));
   const altSkipRows = $derived(altRows('decorative-skipped'));
+  const altNestedRows = $derived(altRows('nested-skipped'));
 
   // The committed total: the will-fill placements always, plus the customized placements only on the
   // opt-in. The footer button and the live region read this; the count moves when the opt-in toggles.
-  const altCounts = $derived(altPlan?.counts ?? { willFill: 0, customized: 0, decorativeSkipped: 0 });
+  const altCounts = $derived(altPlan?.counts ?? { willFill: 0, customized: 0, decorativeSkipped: 0, nestedSkipped: 0 });
   const altTotal = $derived(altCounts.willFill + (altOverwrite ? altCounts.customized : 0));
 
   // The will-fill bucket caps past this many rows; "Show all N" reveals the rest (aria-expanded +
@@ -360,6 +362,30 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
                     <li class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2 type-meta text-muted first:border-t-0">
                       <span class="truncate">{row.title}</span>
                       <span class="flex-none rounded-selector bg-base-content/[0.06] px-1.5 py-px type-chip font-semibold uppercase tracking-wide">{row.kind}</span>
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
+
+            <!-- IN A GALLERY OR CARD: listed, muted, never an input. Alt for these is set where each
+                 image sits in the entry, so the push leaves them as they are. -->
+            {#if altNestedRows.length > 0}
+              <div data-cairn-alt-nested class="overflow-hidden card-shell opacity-90">
+                <div class="flex items-center gap-2.5 p-3">
+                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-field bg-base-content/[0.07] text-muted" aria-hidden="true">
+                    <ImageOffIcon class="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <div class="type-meta font-semibold">In a gallery or card</div>
+                    <div class="mt-px type-label leading-snug text-muted">Alt for these images is set where each one sits in the entry. They are left as they are.</div>
+                  </div>
+                  <span class="flex-none type-meta font-bold tabular-nums text-muted">{altNestedRows.length}</span>
+                </div>
+                <ul role="list" class="flex list-none flex-col border-t border-[var(--cairn-card-border)] p-0">
+                  {#each altNestedRows as row (row.key)}
+                    <li class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2 type-meta text-muted first:border-t-0">
+                      <span class="truncate">{row.title}</span>
                     </li>
                   {/each}
                 </ul>

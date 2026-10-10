@@ -2,8 +2,8 @@
 // closes over the shared ContentRoutesContext (content-routes-context.ts), built once per call by
 // createContentRoutesInternal; createContentRoutes, the public entry point, is only a thin wrapper
 // around it.
-import { fail, type ActionFailure } from '@sveltejs/kit';
-import { isConflict } from '../github/types.js';
+import { error, fail, type ActionFailure } from '@sveltejs/kit';
+import { CommitConflictError, isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import type { Backend } from '../github/backend.js';
 import { parseDictionary, mergeDictionaryWords, serializeDictionary, isValidDictionaryWord } from '../content/site-dictionary.js';
@@ -51,11 +51,16 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
    *  the canonical file back. Shared by the first attempt and the post-conflict retry, so both re-read
    *  the head and re-merge the same additions; the merge is order-independent, so a concurrent editor's
    *  word that already landed is preserved and the result is the same sorted set regardless of order.
-   *  Returns the merged word list. Throws CommitConflictError (via backend.commit) when the branch
-   *  moves under the commit, which the caller catches to retry once.
+   *  Returns the merged word list. The head is read before the file and passed to the commit as
+   *  `expectedHead`, so a commit that lands between the read and the write fails closed instead of
+   *  being overwritten by the stale file. Throws CommitConflictError when the branch moves under the
+   *  commit, or when the default branch has no head to guard on; the caller catches it to retry once.
    */
   async function mergeAndCommitDictionary(backend: Backend, additions: string[], editor: Editor): Promise<string[]> {
     const path = ctx.dictionaryFilePath();
+    // Read the head BEFORE the file, so this expectedHead is at-or-before the bytes the commit sends.
+    const head = await backend.branchHead(backend.defaultBranch);
+    if (head === null) throw new CommitConflictError(`${backend.defaultBranch} (no head)`);
     // The existing file as its canonical sorted set, so a no-op add is detected against the same
     // normalization the commit would write (an already-sorted file never re-commits just to reorder).
     const canonicalExisting = mergeDictionaryWords(parseDictionary(await backend.readFile(path, backend.defaultBranch)), []);
@@ -69,6 +74,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
       [{ path, content: serializeDictionary(merged) }],
       { name: editor.displayName, email: editor.email },
       `Add to dictionary: ${additions.join(', ')}`,
+      head,
     );
     return merged;
   }
@@ -80,7 +86,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
    *  `{ words }`. It reads the current file from the default branch, inserts the validated words in
    *  sorted order if absent (idempotent), and commits through the GitHub-App pipeline.
    *
-   *  The commit is SHA-guarded with commit-and-retry: backend.commit throws CommitConflictError when the
+   *  The commit is head-guarded with commit-and-retry: backend.commit throws CommitConflictError when the
    *  branch moved under it, which is caught here to re-read the new head, re-merge the same additions
    *  (the sorted insert is order-independent, so a concurrent editor's word is preserved), and retry
    *  once. The response is the merged word list, so the client drops the now-committed words from its
@@ -102,8 +108,12 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
     const editor = requireEditor(event);
     // The edit view always carries the concept in its params (cairn-admin.ts's contentEvent), so
     // this gates the same as editLoad/saveAction on the entry's own concept, closing the deny-at-
-    // the-route gap a mapped-away concept would otherwise leave in this edit-screen action.
-    if (event.params.concept) requireEngineAccess(ctx.runtime.access, editor, event.params.concept);
+    // the-route gap a mapped-away concept would otherwise leave in this edit-screen action. A route
+    // that carries none (a hand-mount off the edit view) has no concept to gate on, so it answers
+    // 404 rather than skip the check.
+    const conceptId = event.params.concept;
+    if (!conceptId) throw error(404, 'Not found');
+    requireEngineAccess(ctx.runtime.access, editor, conceptId);
 
     let payload: { word?: unknown; words?: unknown };
     try {

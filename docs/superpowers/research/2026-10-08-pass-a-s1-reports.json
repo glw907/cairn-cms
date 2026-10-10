@@ -1,0 +1,352 @@
+{
+ "impl:task-1": {
+  "filesTouched": [
+   "src/lib/sveltekit/guard.ts",
+   "src/lib/sveltekit/editors-routes.ts",
+   "src/lib/sveltekit/cairn-admin.ts",
+   "src/lib/sveltekit/admin-nav.ts",
+   "src/lib/sveltekit/section-action.ts",
+   "src/lib/auth/access.ts",
+   "src/lib/index.ts",
+   "packages/cairn-cms-dev/src/handle.ts",
+   "packages/cairn-cms-dev/src/handle.test.ts",
+   "packages/cairn-cms-dev/README.md",
+   "scripts/checks/check-tool-heuristics.mjs",
+   "examples/showcase/src/hooks.server.ts",
+   "examples/showcase/src/theme/cairn.config.ts",
+   "examples/showcase/src/access.ts (deleted)",
+   "examples/showcase/src/routes/admin/signups/+page.server.ts (comment)",
+   "templates/waymark/** (re-emitted; src/access.ts deleted)",
+   "src/tests/integration/one-map-five-readers.test.ts (new)",
+   "src/tests/unit/runtime-required.test.ts (new)",
+   "src/tests/unit/access-composition.test.ts",
+   "src/tests/integration/auth-guard.test.ts",
+   "src/tests/integration/auth-guard-identity.test.ts",
+   "src/tests/integration/auth-editors.test.ts",
+   "src/tests/integration/auth-routes-identity.test.ts",
+   "src/tests/unit/auth-guard-identity-option.test.ts",
+   "src/tests/unit/env-genericity.test.ts",
+   "src/tests/unit/factory-contracts.test.ts",
+   "src/tests/unit/guard-tripwire-worker-env.test.ts",
+   "docs/reference/sveltekit.md",
+   "docs/reference/core.md",
+   "docs/reference/admin-routes.md",
+   "docs/reference/log-events.md",
+   "docs/internal/option-map.json",
+   "docs/internal/api-surface.md",
+   "docs/internal/facts/extend.md"
+  ],
+  "gate": "pass",
+  "gateTier": "pin",
+  "gateCommand": "export E2E_PORT=4392 && npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts && npm run check:comments && npm run check:surface && npm run test:emit && npm run check:package && npm run check:audit-pack && npm run check:self-use && npm run check:custom-surface && npm run check:chassis-boundary && npm run check:cm-internals && npm run check:idioms && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:rulings-format && npm run check:prose && npm run check:version && npm run check:dev-package && npm run check:template && npm run check:consumers && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run test:unit && npm --prefix examples/showcase run format:check && npm run check:public-skill && npm run check:tool-heuristics && npm --prefix examples/showcase run test:e2e -- --grep-invert \"site home|archive page 2\"",
+  "mutationLedger": [
+   {
+    "mutation": "Guard attaches `{}` whatever the runtime declares (`locals.cairnAccess = {}`)",
+    "fired": true,
+    "site": "src/lib/sveltekit/guard.ts (both attach sites; mutated the session branch)",
+    "provingTest": "src/tests/integration/one-map-five-readers.test.ts: 5 failed / 2 passed (identity `toBe(runtime.access)`, 'on the media screen', 'in the nav resolver', 'an owner on /admin/x through all three readers', 'a steward on /admin/y ...')"
+   },
+   {
+    "mutation": "Guard reads access from anywhere but runtime (`(config as {access}).access`)",
+    "fired": true,
+    "site": "src/lib/sveltekit/guard.ts `const access = ...`",
+    "provingTest": "src/tests/integration/one-map-five-readers.test.ts: 5 failed / 2 passed (same set as the first mutation)"
+   },
+   {
+    "mutation": "Dev handle attaches `undefined` when the adapter declares no map (drop `?? {}`)",
+    "fired": true,
+    "site": "packages/cairn-cms-dev/src/handle.ts `event.locals.cairnAccess = config.runtime.access`",
+    "provingTest": "packages/cairn-cms-dev/src/handle.test.ts > 'a runtime declaring no access map attaches an empty map, the same default the engine guard attaches'"
+   },
+   {
+    "mutation": "Guard falls back to DEFAULT_ROLES beside a declared vocabulary (`vocabulary = DEFAULT_ROLES`)",
+    "fired": true,
+    "site": "src/lib/sveltekit/guard.ts `const vocabulary`",
+    "provingTest": "src/tests/integration/one-map-five-readers.test.ts > 'resolves the adapter-declared role to its capability, in the guard and the roster screen' (steward resolves none), plus the nav resolver and steward-on-/admin/y admit tests (3 failed)"
+   },
+   {
+    "mutation": "`config.access_unmapped` counts href keys toward coverage (declaredScreens = all keys, early return removed)",
+    "fired": true,
+    "site": "src/lib/sveltekit/admin-nav.ts validateAccessComposition",
+    "provingTest": "src/tests/unit/access-composition.test.ts > 'stays silent for a map of href keys alone, which declares nothing about the engine screens'"
+   }
+  ],
+  "unspecifiedDecisions": [
+   "Typed the `runtime` member as `Pick<CairnRuntime, 'roles' | 'access'>` (guard, dev handle) and `Pick<CairnRuntime, 'roles'>` (editor routes) rather than the full `CairnRuntime`. A full composed runtime satisfies it; tests and hand wiring pass `{ runtime: {} }`. check:options walked it cleanly (263 paths). The api-surface lines show `runtime: { roles?: ...; access?: ... }`.",
+   "Reused the existing fact ids f:gun084 and f:mbx6q1 for the new `AuthGuardConfig.runtime` and `EditorRoutesConfig.runtime` option-map rows, and rewrote those two bullets to the new shape, since the option map points at them and they are the facts for these options. The dispatch said facts edits were pointer repairs only; these two are claim edits, flagged here for the reviewer.",
+   "f:qlgggh's claim text changed (not just its pointer): 'it also holds `access.ts`' became 'it no longer holds `src/access.ts` ..., since the map now sits on the adapter'. Reason: nine sentences in the written 2a briefs (restrict-admin-access.json, scaffolded-site-files.json) cite f:qlgggh and carry the literal path `src/access.ts`; check:provenance requires the path in a cited fact, and the dispatch forbids editing the 2a pages and briefs. f:3z1uxv got a pointer repair only; its claim ('The scaffold's `src/access.ts` exports ...') is now false and left for Task 12.",
+   "In the type-only compile test, imported `typeof devBackendHandle` from `../../../packages/cairn-cms-dev/src/handle.js` so all four `@ts-expect-error` calls sit in one file `npm run check` type-checks. svelte-check absorbs the dev package (2093 to 2144 files) and passes.",
+   "Wrote the showcase `access` doc comment with no marker block and one `cairn-template:exclude-start/-end` block around the `/admin/theme-kit` rule and its `//` explanation, per Decision 2; the dev-fold-literal discipline (never name the dev package or its handle in a module that ships in the default build) carried over from the old access.ts comment.",
+   "Used the `#chassis/cairn.server.js` import in the reference snippets (sveltekit.md, admin-routes.md) and the dev README snippet, matching the showcase and template hooks. The core.md adapter snippet carries a snippet-check-skip marker (it elides the adapter's required groups), the same form its neighbours use.",
+   "Left src/lib/sveltekit/admin-action.ts:114 ('the guard never ran on this route') and src/lib/diagnostics/conditions.ts:172-173 (the `{ roles }` remediation) alone: neither is in this task's Files (conditions.ts is Task 2's).",
+   "Build-fail evidence uses a `bogus` screen-id key in the scratch adapter's access map so the throw comes from composition (`validateAccessComposition` via `createCairnAdmin`), not from `defineAccess` at adapter evaluation; I also ran the `defineAccess` role-vocabulary throw, which fails the build too."
+  ],
+  "couldNotDo": [
+   "Did not edit the written 2a extend pages or their provenance briefs (frozen this pass); Task 12 and pass B own them.",
+   "Did not touch the Go tool: tool/internal/doctor/check_roles.go still reads `createAuthGuard(...)` for a bare `roles` word, so a custom-roles site now wired as `createAuthGuard({ runtime })` would read as unwired (a false `auth.role-wiring-missing`). The conditions.ts remediation text has the same stale `{ roles }` form. Both belong to Task 2 and its follow-on; flagged, not fixed.",
+   "`npm run check` run through the light lane OOMs at about 1 GB heap (exit 134, svelte-check). I ran the standalone `check`, `check:*`, and vitest invocations with `NODE_OPTIONS=--max-old-space-size=6144` on the light lane; the full gate on the default lane ran without that."
+  ],
+  "summary": "Status: DONE. Gate green (exit 0, HEAD 5cb4a5e7). Commits 37797ff3 and 5cb4a5e7.\n\n**What changed.** `createAuthGuard`, `devBackendHandle`, and `createEditorRoutes` now take one bag with a required `runtime` and no default. They read `runtime.roles` and `runtime.access`, and the separate `roles` and `access` options are gone. `createAuthRoutes`, `identity`, and `includeSubDomains` are untouched.\n\n- **Access map attached:** the guard and the dev handle always attach `runtime.access ?? {}` to `locals.cairnAccess`.\n- **Comments:** `guard.ts`, `section-action.ts`, `access.ts`, and `index.ts` now state the real cause of `access_map_not_attached` (a route outside every hook's coverage) and describe one declaration on the adapter.\n- **Narrowed warning:** `config.access_unmapped` fires only when the map has at least one screen-id key and leaves another screen unmapped. An href-only map is silent. The doc at `admin-nav.ts` says so. The test that asserted an href key \"does not count toward coverage\" is split in two. One asserts the href-only map is silent, the other asserts the partial-map warning. Task 12 should annotate the ledger's `Verified:` line.\n- **Showcase and template:** both declare `access` on the adapter. Hooks import `runtime` from `#chassis/cairn.server.js` and pass `{ runtime }` to both branches, and the two hooks files are byte-identical. `src/access.ts` is deleted from both. The showcase adapter's `access` member carries exactly one exclude block, around the theme-kit rule. The emitted template holds only `/admin/signups`.\n- **Reference docs and checks:** the three cycle snippets now declare on the adapter, and `rg \"import \\{[^}]*\\broles\\b...\" docs/reference` prints nothing. The `check-tool-heuristics.mjs` pin is updated, with the `WATCH:` comment still above the signature. `option-map.json` has the `AuthGuardConfig.runtime` and `EditorRoutesConfig.runtime` rows, and `api-surface.md` is regenerated.\n\n**Tests and evidence**\n- **Test-first:**\n  - `src/tests/integration/one-map-five-readers.test.ts` (new): a fixture adapter with custom role `steward` and the map from the dispatch, composed through `composeRuntime`.\n  - Before the change it failed 5 of 7. The refuse-half tests passed, as predicted.\n  - It covers identity, the refuse half, the admit half, and roles from the adapter in both the guard and the roster screen.\n- **Compile-only:** `src/tests/unit/runtime-required.test.ts` (new) holds the four `@ts-expect-error` calls, and `npm run check` is green.\n- **Dev handle:** `handle.test.ts` asserts `runtime.access` by identity and `{}` when none is declared.\n- **Build-fail (Decision 7):**\n  - A scratch showcase copy at `$HOME/.cache/engine-pre-2b-a/showcase-throw`, with the two `file:` dependencies rewritten to absolute worktree paths before `npm install`. The control build exited 0.\n  - With `bogus: ['owner']` in the access map, `vite build` exited 1: `Error: access: \"bogus\" is neither a declared concept nor one of the fixed engine screens (media, vocabulary, nav, settings)`, thrown at `validateAccessComposition`, from `createContentRoutesContext` through `createCairnAdmin` in the server chunk `cairn.server.js`, during SvelteKit's `analyse` step.\n  - A `defineAccess` role-vocabulary throw also failed the build. No servers were started.\n- **Port check:** `ss -ltnp 'sport = :4392'` and `:4173` showed no listener before and after the gate.\n\n**Counts.** Found: 3 factories, 18 test callers plus 15 in the dev package, and 1 non-test caller each (showcase hooks, `cairn-admin.ts`, and the template via emit). Changed: all of them. Deferred: the 2a pages and briefs, the claim corrections in the falsified facts below, and the Go tool and `conditions.ts` items (all named under couldNotDo and the sections below).\n\nCAPTURES: none (no paint work)\nINTENDED MOVES: none\nMOVED BASELINES: none (no visual baseline regenerated; the local gate excludes the 20 CI-canonical site-visual tests)\nTILE DIFF: none\nREAD ME: no live admin smoke was run in this task, only the gate's showcase e2e, which uses the dev handle path (328 passed). Pass-end smoke and web-auth-security-reviewer read are the conductor's.\n\n**Consumers must (draft for Task 12):** pass the composed `runtime` to `createAuthGuard({ runtime })`, `devBackendHandle({ runtime })`, and `createEditorRoutes({ runtime })`; remove any `roles` or `access` options; declare `roles` and `access` once as members of the adapter (`defineAdapter({ roles, access })`). The runtime is `composeRuntime({ adapter, siteConfig })`. A scaffolded site that kept `src/access.ts` should fold its map into the adapter and delete the file. A site with only href keys in its access map will stop seeing `config.access_unmapped`.\n\n**2a extend pages affected (not edited):**\n- `add-a-custom-admin-screen.md`\n- `add-a-second-sign-in-group.md`\n- `add-cairn-to-a-sveltekit-app.md`\n- `restrict-admin-access.md`\n- `replace-magic-links-with-cloudflare-access.md`\n- `debug-your-site.md`\n- `security-model.md`\n- `architecture.md`\n- `scaffolded-site-files.md`\n- `migration-notes.md`, a per-version record, which can take the Consumers-must line.\n\n**Fact ids falsified or stale (grep over `docs/internal/facts/`):**\n- `f:2sd4if`: `createAuthGuard()` call form.\n- `f:4xrx5f`: the `createAuthGuard` signature and options.\n- `f:7cv105` and `f:dqjkci`: the `devBackendHandle` config.\n- `f:f21bcz`: hooks module, the `{ access }` call and the optional config.\n- `f:eiaqkh`: showcase hooks line pointer.\n- `f:q07rd5`: the tutorial's bare `createAuthGuard()` and `devBackendHandle()`.\n- `f:u78zg6`: the cause of `access_map_not_attached`.\n- `f:iwf4nu`: \"pass to both\".\n- `f:cvzb8z`: \"two halves read from different places\".\n- `f:8ciz2s`, `f:mou1li`, and `f:pfy9cw` (line cites moved): the `access_unmapped` condition.\n- `f:3z1uxv`: the scaffold's `src/access.ts`. Its pointer is repaired, but the claim is false.\n- `f:hwffph`: the `auth.role-wiring-missing` remediation text (Task 2).\n- `f:gun084`, `f:mbx6q1`, and `f:qlgggh`: rewritten here.\n- Facts that cite `templates/waymark/src/theme/cairn.config.ts` by line (for example `f:tycp7k` at `:199-218`) now point about 24 lines early, because the adapter gained the `access` block. `check:facts` does not catch this.",
+  "cairnFriction": [
+   {
+    "kind": "dx",
+    "location": "cairn-run-gate light lane, `npm run check` (svelte-check)",
+    "finding": "Under the light lane the engine's `npm run check` dies with a V8 OOM (exit 134, about 1 GB heap) in svelte-check. Setting NODE_OPTIONS=--max-old-space-size=6144 makes it pass in seconds. The light lane's memory cap (V8 sizes its heap from the cgroup limit) is too small for the root program, and the dispatch tells implementers to use the light lane for browserless check scripts."
+   },
+   {
+    "kind": "dx",
+    "location": "cairn-run-gate, a foreground call that exceeds the Bash tool's 600s timeout",
+    "finding": "When the first call hit the tool timeout the harness moved it to the background. The next identical call attached to the running gate, but a call issued after the gate had finished started a whole second full gate rather than reporting the finished result (about 20 minutes duplicated). The 'gate exit:' line was not available from the finished run."
+   },
+   {
+    "kind": "docs",
+    "location": "scripts/checks/gate-tier.mjs --pin full output vs the dispatch's Gate command",
+    "finding": "The pinned gate string ends in an unfiltered `test:e2e`, while the dispatch says the local gate excludes the 20 site-visual tests with `--grep-invert`. An implementer has to notice and append the filter by hand."
+   },
+   {
+    "kind": "dx",
+    "location": "docs/internal/facts/README.md pointer grammar, scripts/checks/check-provenance.mjs",
+    "finding": "A fact's Source pointer doubles as the only place a path string lives for provenance matching. Repairing a pointer after a file delete (`templates/waymark/src/access.ts`) silently broke nine brief sentences that cite the old path, and the only fix was editing claim text. check:facts also does not catch moved line numbers in `path:line` pointers (it passed with pointers into the template adapter now about 24 lines off)."
+   },
+   {
+    "kind": "engine",
+    "location": "src/lib/sveltekit/admin-action.ts:114 and src/lib/diagnostics/conditions.ts:172-173",
+    "finding": "Two shipped strings still describe the pre-change model: admin-action.ts says an absent map means 'the guard never ran on this route', and the `auth.role-wiring-missing` remediation tells a site to pass `createAuthGuard({ roles })`, a form that no longer type-checks."
+   }
+  ]
+ },
+ "review:task-1": {
+  "verdict": "fix",
+  "summary": "The diff (commits 37797ff3 and 5cb4a5e7 over 72f8b18c) changes `createAuthGuard`, `devBackendHandle`, and `createEditorRoutes` to take one bag with a required `runtime` (typed `Pick<CairnRuntime, ...>`) and drops their `roles` and `access` options. The guard and the dev handle now attach `runtime.access ?? {}`. `config.access_unmapped` is narrowed so an href-only map stays silent. Both comment sites, both doc sites, and the \"cannot drift\" comments state the new cause. The showcase and the template move `access` onto the adapter: `src/access.ts` is gone from both, the hooks files are byte-identical, the showcase adapter carries exactly one exclude-start, and the template keeps only `/admin/signups`. The heuristics pin is updated with the `WATCH:` comment still above it. I confirmed the acceptance greps myself. The rg call-shape grep prints only the `@ts-expect-error` file, and the cycle-import grep prints nothing. The option-map changes rename two keys onto existing facts, and those facts now name `runtime` and cite the declaring files, with no pendingCount change. The independent gate passed. Two coverage gaps remain under the auth-data bar. First, the admit half of \"one map, five readers\" never runs `createAdminAction` for the steward on `/admin/y`, though the criteria name all three readers. Second, the guard's identity-branch attach site (`guard.ts:351`) is only ever exercised with an empty map. A mutation there that attaches `{}` whatever the runtime declares would survive, and the implementer's ledger mutated only the session branch. Both fixes touch test files only.",
+  "blocking": [
+   {
+    "location": "src/tests/integration/one-map-five-readers.test.ts:155",
+    "finding": "The admit half requires a steward session on /admin/y to be admitted by requireAccess, createSectionAction, AND createAdminAction. The test covers only the first two, as its title admits, because the only adminAction in the file is bound to target '/admin/x'. Severity: blocking-contract.",
+    "fix": "Add a createAdminAction(audited, { access: { target: '/admin/y' } }) instance and assert that it returns { ok: true } for a guarded steward POST on /admin/y. Rename the test to name all three readers.",
+    "testOnly": true,
+    "coverageOnly": true
+   },
+   {
+    "location": "src/lib/sveltekit/guard.ts:351",
+    "finding": "The identity-resolver branch has its own `event.locals.cairnAccess = access ?? {}` attach site, but no test runs it with a non-empty runtime.access. The only assertion there (auth-guard-identity.test.ts:82) checks toEqual({}). A mutation that attaches `{}` on this branch whatever the runtime declares, or reads access from anywhere but runtime, passes the whole suite, and the mutation ledger mutated only the session branch. Under the auth-data bar an untested auth branch is a defect. Severity: blocking-contract.",
+    "fix": "In src/tests/integration/auth-guard-identity.test.ts, add a case where guardWith passes runtime: { access: someMap } and assert that ev.locals.cairnAccess is that map (toBe). Then re-run the first ledger mutation on this branch and quote the test that turns red.",
+    "testOnly": true,
+    "coverageOnly": true
+   }
+  ],
+  "nonBlocking": [
+   {
+    "location": "src/tests/integration/auth-guard-identity.test.ts:68",
+    "finding": "The test title still says 'capability resolved through the roles option'. The guard now reads runtime.roles, and the roles option no longer exists."
+   },
+   {
+    "location": "packages/cairn-cms-dev/src/handle.test.ts:198",
+    "finding": "The empty-map case asserts toEqual({}). That is adequate for the criterion, and the ledger confirms the drop-`?? {}` mutation fires."
+   }
+  ],
+  "gate": "pass",
+  "unspecified": [
+   "The runtime member is typed as Pick<CairnRuntime, 'roles' | 'access'> (guard, dev handle) and Pick<CairnRuntime, 'roles'> (editor routes), not the full CairnRuntime.",
+   "The existing fact ids f:gun084 and f:mbx6q1 are reused for the AuthGuardConfig.runtime and EditorRoutesConfig.runtime rows, and their claim text is rewritten. These are claim edits, not pointer repairs.",
+   "f:qlgggh's claim text is changed so check:provenance stays green against the frozen 2a briefs. f:3z1uxv gets a pointer repair only, and its claim is now false (deferred to Task 12).",
+   "The compile-only test imports typeof devBackendHandle from the dev package source, so svelte-check now also type-checks packages/cairn-cms-dev.",
+   "The reference and README snippets import runtime from '#chassis/cairn.server.js'. The core.md adapter snippet carries a snippet-check-skip marker.",
+   "The build-fail evidence uses a bogus screen-id key, so the throw comes from validateAccessComposition. The report quotes exit 1 and the throw message, which satisfies the Decision 7 evidence criterion."
+  ],
+  "outOfScope": [
+   {
+    "location": "src/lib/sveltekit/admin-action.ts:114",
+    "finding": "The comment still says an absent map means 'the guard never ran on this route'. This task changed the stated cause elsewhere to a route outside every hook's coverage."
+   },
+   {
+    "location": "tool/internal/doctor/check_roles.go:29",
+    "finding": "The auth.role-wiring heuristic looks for a bare `roles` word inside createAuthGuard(...), and its unwired template tells the site to pass { roles }. A custom-roles site now wired as createAuthGuard({ runtime }) would read as unwired, a false positive. The conditions.ts remediation has the same stale advice. Both belong to Task 2."
+   },
+   {
+    "location": "docs/internal/facts/extend.md:839",
+    "finding": "f:3z1uxv still claims the scaffold's src/access.ts exports the access map. That file is deleted, and only the Source pointer was repaired."
+   },
+   {
+    "location": "docs/internal/facts/extend.md",
+    "finding": "Facts that cite templates/waymark/src/theme/cairn.config.ts by line number (for example f:tycp7k) now point about 24 lines early because the adapter gained the access block. check:facts does not catch line drift in path:line pointers.",
+    "cairn": true
+   },
+   {
+    "location": "cairn-run-gate light lane",
+    "finding": "The implementer reports that `npm run check` (svelte-check) OOMs at about 1 GB heap under the light lane unless NODE_OPTIONS raises the heap limit.",
+    "cairn": true
+   },
+   {
+    "location": "scripts/checks/gate-tier.mjs",
+    "finding": "The pinned gate string ends in an unfiltered test:e2e, while the dispatched local gate appends --grep-invert for the CI-canonical visual tests. An implementer has to reconcile them by hand.",
+    "cairn": true
+   }
+  ]
+ },
+ "impl:task-1:fix1": {
+  "filesTouched": [
+   "src/tests/integration/auth-guard-identity.test.ts",
+   "src/tests/integration/one-map-five-readers.test.ts"
+  ],
+  "gate": "pass",
+  "gateTier": "pin",
+  "gateCommand": "export E2E_PORT=4392 && npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts && npm run check:comments && npm run check:surface && npm run test:emit && npm run check:package && npm run check:audit-pack && npm run check:self-use && npm run check:custom-surface && npm run check:chassis-boundary && npm run check:cm-internals && npm run check:idioms && npm run check:invisible-craft && npm run check:admin-css-classes && npm run check:rulings-format && npm run check:prose && npm run check:version && npm run check:dev-package && npm run check:template && npm run check:consumers && npm --prefix examples/showcase run check && npm --prefix examples/showcase run check:cairn && npm --prefix examples/showcase run test:unit && npm --prefix examples/showcase run format:check && npm run check:public-skill && npm run check:tool-heuristics && npm --prefix examples/showcase run test:e2e -- --grep-invert \"site home|archive page 2\"",
+  "mutationLedger": [
+   {
+    "mutation": "Identity branch attaches `{}` to locals.cairnAccess whatever the runtime declares (guard.ts:351, `event.locals.cairnAccess = {}`)",
+    "fired": true,
+    "site": "src/lib/sveltekit/guard.ts:351 (identity-resolver branch)",
+    "provingTest": "auth-guard-identity.test.ts > guard identity branch: rostered > attaches runtime.access to locals.cairnAccess by identity (AssertionError: expected {} to be { '/admin/x': [ 'owner' ] }); 1 failed, 17 passed. Reverted; guard.ts is byte-identical to the committed version."
+   }
+  ],
+  "unspecifiedDecisions": [
+   "Extended the guardWith helper in auth-guard-identity.test.ts with an optional `access` member rather than adding a second helper.",
+   "The identity-branch test builds its map with defineAccess over the same role vocabulary the guard receives, and asserts identity with toBe.",
+   "Appended the dispatch's --grep-invert to the pinned gate string's final unfiltered test:e2e stage, per the dispatch's note about the 20 locally-drifting visual baselines."
+  ],
+  "couldNotDo": [],
+  "summary": "Both blocking findings are fixed in one test-only commit, 94a3f672. No production code changed.\n\n1. `one-map-five-readers.test.ts`: added `adminActionY = createAdminAction(audited, { access: { target: '/admin/y' } })`. The steward-on-`/admin/y` admit test now asserts `{ ok: true }` from `requireAccess`, `createSectionAction`, and `createAdminAction`, and its title names all three.\n2. `auth-guard-identity.test.ts`: added a case where the identity-resolver guard gets `runtime: { roles, access }` with a non-empty map. It asserts `ev.locals.cairnAccess` is that map by identity (`toBe`).\n\nI re-ran the first ledger mutation on the identity branch: `guard.ts:351` attaching `{}`. It turned the new identity test red with \"expected {} to be { '/admin/x': [ 'owner' ] }\". I reverted it afterward.\n\nI did not mutate the \"reads access from anywhere but runtime\" variant on this branch. That test asserts the same attached value, so it would catch that variant, but I did not run it.\n\nCounts: 2 findings found, 2 fixed, 0 deferred. The local server port 4392 had no listener before the e2e run.",
+  "cairnFriction": []
+ },
+ "review:task-1:fix1": {
+  "verdict": "accept",
+  "summary": "This fix round is commit 94a3f672. It changes tests only and resolves both findings from the earlier round. First, `src/tests/integration/one-map-five-readers.test.ts` adds `adminActionY`, a `createAdminAction` targeting `/admin/y`. The steward admit on `/admin/y` now asserts `{ ok: true }` from all three locals readers, so the admit half covers requireAccess, createSectionAction, and createAdminAction as the criteria require. Second, `src/tests/integration/auth-guard-identity.test.ts` adds an identity-resolver case. It passes `runtime: { roles, access }` with a non-empty map and asserts `locals.cairnAccess` is that map by identity (`toBe`). That covers the identity branch's attach at `guard.ts:351`. The ledger records a mutation that set that line to `{}` and turned the new test red. I re-checked the rest of the task diff (72f8b18c..HEAD) against the criteria. The guard and the dev handle take a required `runtime` and attach `runtime.access ?? {}`. `validateAccessComposition` returns early when the map has no screen-id key. `src/access.ts` is gone from both the showcase and the template. The two hooks files are byte-identical. `runtime-required.test.ts` carries the four `@ts-expect-error` calls. I ran both acceptance greps with perl and grep, since rg is not installed here. The call-shape grep matches only inside the `@ts-expect-error` file, and the cycle-import grep prints nothing. The independent gate run passed with exit 0.",
+  "blocking": [],
+  "nonBlocking": [
+   {
+    "location": "src/tests/integration/auth-guard-identity.test.ts:86",
+    "finding": "The implementer states that the 'guard reads access from anywhere but runtime' mutation was not re-run against the new identity-branch test. The test asserts the same attached value by identity, so it would catch that mutation. The earlier round's ledger covered it on the session branch."
+   },
+   {
+    "location": "src/tests/integration/auth-guard-identity.test.ts:50",
+    "finding": "The `guardWith` helper now takes `roles` and `access` separately. The new test builds `access` with `defineAccess` over its own `defineRoles` copy, while `guardWith` re-derives roles from the raw record. This is harmless because the vocabularies are equal, but the two declarations could drift if someone edits one and not the other."
+   }
+  ],
+  "gate": "pass",
+  "unspecified": [
+   "The implementer extended the `guardWith` test helper with an optional `access` member instead of adding a second helper.",
+   "The implementer appended `--grep-invert \"site home|archive page 2\"` to the pinned gate's final e2e stage. The independent run used the same string."
+  ],
+  "outOfScope": [
+   {
+    "location": "src/lib/sveltekit/guard.ts:171",
+    "finding": "The `WATCH:` comment sits between the TSDoc block and `export function createAuthGuard`. The TSDoc therefore attaches across a line comment, which some doc tools handle inconsistently. This placement predates this task, which kept it as the criteria require."
+   }
+  ]
+ },
+ "impl:task-2": {
+  "filesTouched": [
+   "tool/internal/doctor/check_roles.go",
+   "tool/internal/doctor/check_roles_test.go",
+   "src/lib/diagnostics/conditions.ts",
+   "tool/internal/spine/conditions.json",
+   "tool/testdata/copy.golden.md",
+   "tool/CHANGELOG.md",
+   "docs/reference/cli-cairn-doctor.md",
+   "docs/internal/facts/admin.md",
+   "docs/internal/facts/reference.md"
+  ],
+  "gate": "pass",
+  "gateCommand": "npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site && make -C tool check",
+  "gateTier": "computed",
+  "unspecifiedDecisions": [
+   "Matching rule: the argument-list pattern is now \\b(?:runtime|roles)\\b, so a longer word such as runtimeless stays unwired (covered by a test row). A bare identifier argument is still indirect info.",
+   "The fail detail template (tmplRoleWiringUnwired) names both spellings, which changed tool/testdata/copy.golden.md (regenerated with make copy-list). The conditions.ts `why` text got the same both-eras phrasing as the remediation.",
+   "Stale fact bullet f:hwffph (admin.md) was updated in place to the both-eras fix; check_roles.go line pointers in admin.md (f:67pwmj, f:hwffph) and reference.md (:597, f:0ms9c1's 116-129 to 118-131) were shifted for the new line numbers.",
+   "The docs/reference/cli-cairn-doctor.md checks-table row was edited minimally to name both spellings.",
+   "No e2e-bearing tier computed, so no E2E_PORT export or port listener check was needed."
+  ],
+  "couldNotDo": [],
+  "summary": "auth.role-wiring now treats `createAuthGuard({ runtime })`, `({ runtime: cairn })`, and `({ runtime, identity })` as wired. A bare `createAuthGuard()` and `{ roles }` behave as before. The fail detail and the `auth.role-wiring-missing` remediation (and its `why`) name both eras. The tool CHANGELOG `## Unreleased` has a Changed entry, with no tag or version bump. Counts: 9 files changed; found, changed, and deferred 0 (no deferred items). Published extend pages affected: none named; fact f:hwffph was rewritten for Task 12's hand-off. Gotcha: `emit-tool-conditions.mjs` reads `dist`, so run `npm run package` first or the mirror is stale (`check:tool-conditions` catches it); I amended the commit after hitting this. Servers started: none.",
+  "cairnFriction": [
+   {
+    "location": "scripts/build/emit-tool-conditions.mjs",
+    "finding": "The generator reads the built dist, not src, so running it on a fresh edit to conditions.ts without `npm run package` first writes an unchanged mirror and reports 'wrote' with no hint it was stale. The task prose says to run it directly after the edit.",
+    "kind": "dx"
+   }
+  ]
+ },
+ "review:task-2": {
+  "verdict": "fix",
+  "summary": "Commit eaa1b7d2 changes guardRoleWiring's argument-list pattern to \\b(?:runtime|roles)\\b. As a result, `createAuthGuard({ runtime })`, `({ runtime: cairn })`, and `({ runtime, identity })` now read as wired. The bare-call, `{ roles }`, and identifier branches are unchanged. tmplRoleWiringUnwired, the `auth.role-wiring-missing` why and remediation in conditions.ts, the regenerated conditions.json mirror, and copy.golden.md all name both eras. tool/CHANGELOG.md `## Unreleased` has a Changed entry and there is no tag. The tests meet the criterion: TestAuthRoleWiringRuntimeForms runs the three runtime forms and a bare call through the full check with a custom role declared, and TestGuardRoleWiring gains matching rows plus a word-boundary negative. The independent gate passed. One problem keeps this from accept: the implementer shifted the check_roles.go line pointers in the facts container by 2, but the file grew by only 1 line (134 to 135). That leaves three source citations marked [verified] off by one line. The fix touches docs text only.",
+  "blocking": [
+   {
+    "location": "docs/internal/facts/admin.md:114",
+    "finding": "f:67pwmj cites `tool/internal/doctor/check_roles.go:105`, but every sibling citation in that bullet points at the check's `Condition:` line, and that line is now 104 (line 105 is `Run: func`). The edit shifted the pointer by 2 when the file grew by 1. Severity: blocking-contract.",
+    "fix": "Change `check_roles.go:105` to `check_roles.go:104`.",
+    "commentOnly": true
+   },
+   {
+    "location": "docs/internal/facts/admin.md:139",
+    "finding": "f:hwffph cites `tool/internal/doctor/check_roles.go:105`. The Condition line it means is now 104. Severity: blocking-contract.",
+    "fix": "Change `check_roles.go:105` to `check_roles.go:104`.",
+    "commentOnly": true
+   },
+   {
+    "location": "docs/internal/facts/reference.md:597",
+    "finding": "The citation `check_roles.go:105` is off by one. The Condition line is now 104. Severity: blocking-contract.",
+    "fix": "Change `check_roles.go:105` to `check_roles.go:104`.",
+    "commentOnly": true
+   },
+   {
+    "location": "docs/internal/facts/reference.md:659",
+    "finding": "f:0ms9c1 cites `check_roles.go:118-131`. The original range 116-129 ran from the readHooksSource line to the failResult line, which now sit at 117 and 130. The new range cuts off the first line and includes one line past the end. Severity: blocking-contract.",
+    "fix": "Change `check_roles.go:118-131` to `check_roles.go:117-130`.",
+    "commentOnly": true
+   }
+  ],
+  "nonBlocking": [
+   {
+    "location": "tool/internal/doctor/check_roles.go:69",
+    "finding": "The rewritten guardWiringUnwired comment line is 102 characters, and the guardRoleWiring doc comment at line 80 is 104. The file's other wrapped comments stay near 100, so these two could be reflowed. Lint passes, and the file already has longer const-comment lines."
+   },
+   {
+    "location": "tool/internal/doctor/check_roles.go:60",
+    "finding": "This is a heuristic accepted by design. Any whole-word `runtime` inside the call's parentheses reads as wired, for example `createAuthGuard({ from: runtime.x })`. That fits the check's no-false-red posture."
+   }
+  ],
+  "gate": "pass",
+  "unspecified": [
+   "The pattern is now \\b(?:runtime|roles)\\b, with a word-boundary test row for `runtimeless`.",
+   "The conditions.ts `why` text got the same both-eras wording as the remediation.",
+   "The fact bullet f:hwffph was rewritten in place to the both-eras fix, and the check_roles.go line pointers were shifted (incorrectly, see blocking).",
+   "The checks-table row in docs/reference/cli-cairn-doctor.md now names both spellings."
+  ],
+  "outOfScope": [
+   {
+    "location": "scripts/build/emit-tool-conditions.mjs",
+    "finding": "The generator reads the built dist, not src. If you run it right after editing conditions.ts without `npm run package` first, it writes the stale mirror, reports success, and gives no warning. check:tool-conditions catches this later.",
+    "cairn": true
+   },
+   {
+    "location": "docs/internal/facts/README.md",
+    "finding": "check:facts does not check that a `Source:` file:line citation still points at the cited construct, so an off-by-one pointer marked [verified] passes the gate. This review caught three by hand.",
+    "cairn": true
+   }
+  ]
+ },
+ "impl:task-2:fix1": {
+  "filesTouched": [
+   "docs/internal/facts/admin.md",
+   "docs/internal/facts/reference.md"
+  ],
+  "gate": "pass",
+  "gateCommand": "NODE_OPTIONS=--max-old-space-size=6144 npm run check:facts && NODE_OPTIONS=--max-old-space-size=6144 npm run check",
+  "gateTier": "reduced (comment/doc-only fix round)",
+  "unspecifiedDecisions": [],
+  "couldNotDo": [],
+  "summary": "Fixed the four off-by-one fact citations. admin.md f:67pwmj and f:hwffph, and reference.md:597, now cite check_roles.go:104 (the Condition line). reference.md:659 now cites check_roles.go:117-130 (readHooksSource through failResult). Only fact docs changed, no source or tests. Found 4, changed 4, deferred 0. The reduced gate (check:facts plus npm run check) passed. Committed.",
+  "cairnFriction": []
+ },
+ "review:task-2:fix1": {
+  "verdict": "accept",
+  "summary": "This fix round's commit (92216610) changes four citation lines across two fact docs and touches no source or test files, which matches the implementer's report. I checked each new citation against the current /var/home/glw907/Projects/cairn-cms/.claude/worktrees/engine-pre-2b-a/tool/internal/doctor/check_roles.go. Line 104 is the `Condition: spine.ConditionAuthRoleWiringMissing` line, and admin.md f:67pwmj, admin.md f:hwffph, and reference.md:597 now cite it. Lines 117-130 run from the `readHooksSource` call through the `failResult` branch, and reference.md:659 now cites that range. Two other citations into the same area still hold. check_roles.go:16 is still `skipNoCustomRoles`. check_roles_test.go:31,40,49 still land on the three INFO `wantStatus` rows, because the prior commit's test edits begin at line 56. The substantive task work is in the prior commit (eaa1b7d2): the guard change, the table-driven runtime-forms test, the conditions.json and conditions.ts mirror, the tool changelog, and the golden file. This round only repairs the off-by-one citations that commit introduced. The reduced gate fits a docs-only diff, and the implementer reports it passing.",
+  "blocking": [],
+  "nonBlocking": [],
+  "gate": "pass",
+  "unspecified": [
+   "none"
+  ],
+  "outOfScope": []
+ }
+}

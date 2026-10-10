@@ -1,5 +1,77 @@
 ## Unreleased
 
+### Added
+
+- **`/healthz?live=1` mints one installation token and reports whether GitHub accepts the key.** A
+  request with `?live=1` signs a JWT from the deployed key, exchanges it for an installation token,
+  discards the token, and reports the result as `checks.githubAppToken`, with `detail` `key_refused`
+  (GitHub answered 401), `installation_not_found` (404), `installation_suspended` (403), or
+  `unreachable` (any other status, a network failure, or no answer within 5 seconds). The mint skips
+  the publishing path's token cache, so a warm isolate's cached token can't mask a bad key, and a
+  failure logs `github.unreachable` with `scope: 'health'` and the class as `reason`. The plain
+  `/healthz` call still makes no network call. Each Worker isolate mints at most once a minute:
+  parallel requests share one mint and a settled result answers every live request for 60 seconds,
+  so summed over the fleet the route can mint once per isolate per minute, and GitHub's secondary
+  rate limits are shared with publishing. With no GitHub App, no key, or a signing check that fails,
+  `?live=1` mints nothing. `HealthData` gains the optional `checks.githubAppToken` and
+  `checks.githubAppSigning.fingerprint`, and `ok` becomes the signing check and, when present, the
+  token check.
+
+  Consumers may: call `/healthz?live=1` after a key rotation, before deleting the old key.
+
+- **`/healthz` reports the key's `SHA256:` fingerprint.** A passing `githubAppSigning` check carries
+  the fingerprint GitHub shows for the key in the App's settings, computed offline from the key's
+  public half with no private-key export, so a rotation can confirm which key the Worker holds before
+  the old one goes. The check omits it when it can't compute one.
+
+  Consumers may: compare the fingerprint to the one in the App's settings.
+
+- **A role write against a database without `0001_roles.sql` fails with a named condition, and the
+  scaffold ships the migration.** `insertEditor`, `setEditorRole`, and `demoteOwnerIfNotLast` rethrow
+  the `CHECK (role IN ('owner', 'editor'))` failure as `auth.store-roles-unmigrated` (a warning),
+  whose message names `0001_roles.sql`. A `create-cairn-site` tree now carries `0000_auth.sql`,
+  `0001_roles.sql`, `0003_preview.sql`, and `0004_login_nonce.sql`; the opt-in `0002_audit.sql` stays
+  out.
+
+  Consumers may: apply `0001_roles.sql` when declaring custom roles on a site scaffolded before the
+  migration shipped: copy it from `node_modules/@glw907/cairn-cms/migrations/` into the site's
+  `migrations` directory and run `wrangler d1 migrations apply <auth-db> --remote`. Applying it after
+  `0004` is safe. It rebuilds `editor` with the engine's four columns only, so carry across by hand
+  any column the site added. A site scaffolded from this version already has it.
+
+- **`auth.access.refused` carries a `reason`.** The field reads `no_rule` when the map has no rule for
+  the target, `shadowed` when a dynamic route segment hides the matched rule behind a deeper key, and
+  `role` for every other refusal. The refusal itself is unchanged.
+
+- **`createAuthChannel`'s `resolveDb` takes the structural subset of D1 the channel store uses.** The
+  new `ChannelDatabaseLike`, `ChannelSessionLike`, and `ChannelStatementLike` types name it, and a
+  `D1Database` and the dev package's `createChannelDb()` result both satisfy it. `revokeSessions`
+  takes the same type.
+
+  Consumers may: pass `createChannelDb()`'s result to a channel's `resolveDb` with no cast.
+
+- **A site can pass `auth.branding` to `createCairnAdmin` as a partial.** The `branding` member is a
+  `Partial<AuthBranding>` merged over the runtime's `siteName`, `from`, and `replyTo`, so
+  `{ siteName }` alone keeps the adapter's sender.
+
+  Consumers must: if you passed a full `auth.branding` without `replyTo` to suppress the adapter's
+  reply-to, expect the runtime's `replyTo` to apply now, since an omitted or undefined member falls
+  back to the default and branding can't clear it. Remove `replyTo` from the adapter's `email` group,
+  or send through a custom `auth.send`, to send no reply-to.
+
+- **A thrown health check logs `health.failed`, and the scaffold's `/healthz` is never cached.**
+  `loadHealth` logs the new `health.failed` event with the error's message before it rethrows, so a
+  route's bare catch keeps the anonymous response's fixed detail without losing the cause. The
+  showcase and scaffold routes send `cache-control: no-store` on both the passing and the failing
+  answer.
+
+  Consumers may: add `headers: { 'cache-control': 'no-store' }` to both `Response.json` calls in
+  `src/routes/healthz/+server.ts`.
+
+- **`admin.action.failed` carries the thrown error's `conditionId`.** An operator can now filter
+  admin action failures by condition id, `auth.store-roles-unmigrated` from an editor add on an
+  unmigrated `AUTH_DB`, say.
+
 ### Changed
 
 - **The shipped examples are generic.** The `cairn` tool's `--help` examples use `my-site` where
@@ -152,8 +224,148 @@
   Consumers must: upgrade the `cairn` tool to `v2`. `v1`'s doctor recommends `checkOrigin: false`,
   which is now a build error.
 
+- **`createAuthGuard`, `devBackendHandle`, and `createEditorRoutes` take the composed `runtime`, and the
+  adapter's `roles` and `access` are the one declaration every reader uses.** Each takes one bag with
+  a required `runtime` and no default, and reads `runtime.roles` and `runtime.access`. The guard and
+  the dev handle attach `runtime.access ?? {}` to `locals.cairnAccess` on every admin request, so
+  `requireAccess`, `createSectionAction`, and `createAdminAction`'s `access` option read the same
+  map as the engine's screens and the sidebar. Before, the engine read the adapter and the helpers read
+  what the guard's own option attached, so a scaffold that wired only the hooks left every engine
+  screen open to any editor-capability session with no signal. `admin.action.misconfigured`'s
+  `access_map_not_attached` now fires only for a route outside every hook's coverage. The scaffold and
+  the showcase declare `access` on the adapter and delete `src/access.ts`. `config.access_unmapped`
+  fires only when the map declares at least one screen-id key and leaves another screen unmapped, so a
+  map of route keys alone, such as `{ '/admin/signups': ['owner'] }`, no longer logs it.
+
+  Consumers must: pass `{ runtime }` on every `createAuthGuard`, `devBackendHandle`, and per-route
+  `createEditorRoutes` call, bare calls included, where `runtime` is `composeRuntime({ adapter,
+  siteConfig })` or the site's exported runtime (`import { runtime } from '#chassis/cairn.server.js'`
+  in the scaffold). `identity` and `includeSubDomains` are unchanged. Remove any `roles` or `access`
+  option from those calls, and declare `roles` and `access` once, as members of the adapter
+  (`defineAdapter({ roles, access })`). If the hooks and the adapter held different maps, reconcile
+  them first: the adapter's now governs every reader, so a map that only the hooks carried starts
+  gating the engine's screens. A scaffolded site that kept `src/access.ts` folds its map into the
+  adapter and deletes the file. The `cairn` tool's `auth.role-wiring` check accepts
+  `createAuthGuard({ runtime })`.
+
+- **The guard's public paths are exactly `/admin/login` and `/admin/auth/confirm`.** `isPublicAdminPath`
+  admitted every path that began `/admin/auth/`, so a site route mounted there skipped the session
+  check. Any other `/admin/auth/...` route, `/admin/auth/request` included, now redirects an anonymous
+  request to `/admin/login`. The sign-in form posts to `/admin/login`'s own `?/request` action, so
+  the engine's flow is unchanged.
+
+  Consumers must: move any site route mounted under `/admin/auth/` outside `/admin` if anonymous
+  visitors must reach it. It is guarded now.
+
+- **`tidyAction` and `dictionaryAddAction` answer 404 on a route with no `concept` param.** Both
+  skipped the access-map check when the param was absent, so a hand-mount off the edit view ran
+  ungated. They gate on the concept like `editLoad` does, and refuse without one.
+
+  Consumers must: mount `tidyAction` and `dictionaryAddAction` only on a route with a `concept`
+  param, as the engine's edit view does.
+
+- **A `none`-capability role named in an access rule reaches that route.** `canReach` admits a
+  `none`-capability session to a route path whose deepest matching rule names its role, so a role's
+  own screen (a `RoleDeclaration.home` or a `navLayout` entry's `roles`) no longer needs a hand-rolled
+  role check. A screen id, an href no rule matches, and `editors` stay refused for it. `requireAccess`,
+  `createSectionAction`, and `createAdminAction`'s `access` option inherit the change.
+
+  Consumers must: review any access rule that names a role of `none` capability. `canReach`,
+  `requireAccess`, and `createSectionAction` now admit that role to the route the rule names, where
+  they refused it before.
+
+- **Access rules name only declared roles.** An access rule naming a role the vocabulary does not
+  declare now fails at server start, so dropping a role from `defineRoles` cannot leave it
+  reachable. `composeRuntime` throws the error, naming the rule's key and the role.
+
+  Consumers must: remove the role from every access rule, or keep it declared.
+
+- **`0001_roles.sql` opens with a warning line.** Once the file sits in a site's `migrations`
+  directory, any automated `wrangler d1 migrations apply` runs it, and its rebuild keeps only the
+  engine's four `editor` columns, so carry site-added columns across before you copy it in.
+
+- **A Turnstile verification with a missing secret logs `missing_secret`.** `verifyTurnstile` logs
+  `turnstile.verify_failed` with `reason: 'missing_secret'` for a blank or non-string `secret`, and
+  `invalid_input` now means a bad token only.
+
+  Consumers must: if alerting keys on `turnstile.verify_failed` with `reason: 'invalid_input'` to
+  catch a missing or blank Turnstile secret, key it on `missing_secret` instead.
+
+- **`/healthz` answers 503 when `ok` is false, and a non-GitHub backend reads as healthy.** The
+  scaffold's route returns `loadHealth`'s payload with status 503 when `ok` is false and 200 when it is
+  true, and a catch branch answers 503 with the fixed detail `health check failed`, never the thrown
+  message. A backend that isn't a GitHub App reports `{ ok: true, detail: 'not-applicable' }`, where it
+  read `ok: false`. `github.app-unreachable`'s remediation names the key secret and the adapter's
+  `appId` and `installationId`, and the scaffold's `.dev.vars.example` no longer lists
+  `GITHUB_APP_ID` or `GITHUB_APP_INSTALLATION_ID`, which no code reads. The setup command's key step
+  closes by pointing at the rotation page.
+
+  Consumers may: answer 503 when `loadHealth(...).ok` is false, as the site-root `/healthz` route now
+  does: `Response.json(health, { status: health.ok ? 200 : 503 })`. A site's catch branch should
+  return a fixed detail and never the thrown message. The old `GITHUB_APP_ID` and
+  `GITHUB_APP_INSTALLATION_ID` lines in a site's `.dev.vars` are harmless.
+
+- **Where-used, safe delete, bulk delete, replace, and the manifest verify read an image nested in
+  an object or an array.** An image inside an `object`, an `array` of images, and an `array` of
+  objects holding an image now count as references, so a gallery-only asset no longer reads as an
+  orphan and a delete no longer removes an asset in use. The `src:` locator admits a sequence prefix
+  (`- src: ...`), and replace rewrites every occurrence in an entry, not only the first. Alt
+  propagation reports a nested placement in its own bucket and never writes it. `verifyManifest` takes
+  the site's adapter as an optional third argument: given it, the verify drops a built `mediaRefs`
+  only for a manifest no entry of which carries the key and only when no concept declares a nested
+  image shape, and otherwise compares exactly. The generated verify source passes the adapter, so a
+  stale manifest on a nested-shape site fails the build. The public unions widen:
+  `RepointPlacement.kind` and `AltPlacement.kind` gain `'nested'`, `AltPlacement.bucket` gains
+  `'nested-skipped'`, and `MediaAltPreviewPlan.counts` gains `nestedSkipped`. The alt-fill dialog
+  shows these in a well headed "In a gallery or card", and the replace dialog counts them as "N in a
+  gallery or card".
+
+  Consumers must: regenerate the content manifest (`npx cairn-manifest`) and commit it. A site that
+  declares an image nested in an object or an array (`array(image)`, an `object` holding an `image`,
+  or an `array` of objects holding an `image`) and has not regenerated fails its build at upgrade
+  with the stale-manifest message, because such a site's manifest now compares exactly. A site that
+  declares no nested image shape is not forced: a manifest that predates `mediaRefs` still builds
+  there, so it can regenerate on its own schedule. A site that calls `verifyManifest` itself passes
+  its adapter as the third argument to get the nested-image rule; called with two arguments it keeps
+  the pre-field allowance.
+
+  Consumers may: widen a `switch` over `RepointPlacement.kind` or `AltPlacement.bucket` to handle
+  `'nested'` and `'nested-skipped'`.
+
+- **A failed save or publish keeps the writing.** The edit form submits through `use:enhance`. A
+  failure the server answers is applied in place with no page load. A network failure, an action that
+  throws, an answer that isn't JSON, or a redirect away from the entry (an expired session) leaves the
+  editor alone and shows "That did not go through. Your text is still here; please try again." None of them
+  shows "Saved", the dirty baseline stays the loaded body, Save and Publish re-enable, and the leave
+  guard still prompts. A pending personal-dictionary commit finishes before the request is sent. A form
+  posted without JavaScript is unchanged. Before, a failed save re-ran the entry load, and a load that
+  hit the same GitHub error replaced the page and the unsaved text with a bare 500.
+
+  Consumers may: read a failed save or publish from the page's `form` prop if the site overrode or
+  wrapped the edit form's submit handler, or relied on a failed save re-running the entry load.
+
+- **Every write to the default branch from a snapshot it read earlier is head-guarded.** Publish,
+  publish-all, the Media Library's delete, bulk delete, metadata update, replace, and alt
+  propagation, and the personal-dictionary add read the default branch's head before their first read
+  of `media.json`, the content manifest, or an entry file, and commit with it as the expected head. A
+  commit that lands in between used to be re-parented over by the head-merge retry, which could
+  resurrect a deleted media row, drop an upload's row or a dictionary word, or revert a just-published
+  entry's prose. It now makes the commit a conflict. Delete, bulk delete, and metadata update answer
+  the existing manifest conflict message, replace and alt propagation the content conflict message,
+  and the dictionary add re-reads and retries once. **Publish and publish-all can now answer the calm
+  conflict** ("Your edits are saved. Publish again.", and `?error=publish_conflict` for publish-all)
+  when another commit lands while they read their snapshots: the entry stays held on its branch, and
+  publishing again succeeds. No merge happens inside a retry. A default branch with no readable head
+  refuses these writes rather than committing unguarded.
+
+  Consumers may: expect a conflict from publish when a Library delete, another publish, or a
+  dictionary add lands at the same moment, and retry. There is no signature or option change.
+
 ### Removed
 
+- **`AuthGuardConfig.roles` and `access`, `DevBackendConfig.roles` and `access`, and
+  `EditorRoutesConfig.roles`.** `runtime` carries both, so each factory's separate options are gone
+  (see the `{ runtime }` entry under Changed).
 - **`PlatformContext`, `CairnEvent`'s `platform` member and `Env` parameter, and the
   `auth.channel.delivery_inline` log event.** The auth channel hands delivery and its sweep to the
   module's `waitUntil`, which is always defined, so no deployment takes the inline branch. A site that
@@ -176,6 +388,12 @@
 
 ### Fixed
 
+- **Publish-all now refuses a stale publish.** It reads the default branch's head before any pending
+  branch, so a single publish of the same entry landing mid-batch answers the calm conflict instead
+  of being reverted by the branch's older content.
+- **The roles-migration condition matches only the engine's own CHECK.** `auth.store-roles-unmigrated`
+  keys on `role IN ('owner'`, read off the D1 error and its `cause`, so a site's own CHECK on the
+  column rethrows untouched and a wrapped D1 error is still named.
 - **The admin guard's token check screens the same requests SvelteKit 3's CSRF check does.** It
   covered only the three form content types, so an unsafe `/admin` request with no `Content-Type`
   (a cross-origin `no-cors` fetch of an untyped `Blob`, which sends no preflight) or with
@@ -200,6 +418,16 @@
 
 ### Documentation
 
+- **The reference arm states the access, auth, health, and commit-path changes above.**
+  `docs/reference/sveltekit.md` documents the required `runtime`, the two public paths, the 404 on a
+  concept-less tidy or dictionary mount, the head guard, the nested-image reads, the live health check
+  with its per-fleet mint bound, and the edit page's failure handling. `core.md`, `log-events.md`,
+  `cloudflare.md`, `auth-channel.md`, `auth-store.md`, `cli-cairn-doctor.md`, `admin.md`, and
+  `admin-toolkit.md` carry the matching rows, and the toolkit page states that it renders only inside
+  the admin shell. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` carry the same
+  actions.
+
+  Consumers must: nothing.
 - **The extend arm's first 11 rebuilt pages ship, with an interim index.** Each page is drafted
   from that record and checked sentence by sentence against it:
   `docs/extend/security-model.md`, `add-cairn-to-a-sveltekit-app.md`,

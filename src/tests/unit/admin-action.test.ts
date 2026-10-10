@@ -333,7 +333,36 @@ describe('createAdminAction: opt-in authorization', () => {
     const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
     const { action } = guarded({ target });
     await httpErrorStatusOf(action(makeEvent({ ...csrf, editor: staff, access: { [target]: ['owner'] } })));
-    expect(warnSpy).toHaveBeenCalledWith('auth.access.refused', { email: staff.email, role: staff.role, target });
+    expect(warnSpy).toHaveBeenCalledWith('auth.access.refused', {
+      email: staff.email,
+      role: staff.role,
+      target,
+      reason: 'role',
+    });
+    warnSpy.mockRestore();
+  });
+
+  const reasonRows: Array<{ name: string; access: AccessMap; target: string; ownerOnly: boolean; reason: string }> = [
+    { name: 'no rule for the target', access: { '/admin/other': ['editor'] }, target, ownerOnly: false, reason: 'no_rule' },
+    {
+      name: 'a rule shadowed by a deeper key',
+      access: { '/admin/team': ['editor'], '/admin/team/events/archive': ['editor'] },
+      target: '/admin/team/[id]',
+      ownerOnly: false,
+      reason: 'shadowed',
+    },
+    { name: 'a role the rule does not list', access: { [target]: ['owner'] }, target, ownerOnly: false, reason: 'role' },
+    { name: 'ownerOnly on an admitted non-owner', access: { [target]: ['editor'] }, target, ownerOnly: true, reason: 'role' },
+  ];
+
+  it.each(reasonRows)('records reason $reason for $name', async (row) => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const { action } = guarded({ target: row.target, ownerOnly: row.ownerOnly });
+    await httpErrorStatusOf(action(makeEvent({ ...csrf, editor: staff, access: row.access })));
+    expect(warnSpy).toHaveBeenCalledWith(
+      'auth.access.refused',
+      expect.objectContaining({ reason: row.reason }),
+    );
     warnSpy.mockRestore();
   });
 
@@ -353,6 +382,35 @@ describe('createAdminAction: opt-in authorization', () => {
       { access: { target } },
     );
     expect(typeof typed).toBe('function');
+  });
+});
+
+describe('createAdminAction: a none-capability session under the access option', () => {
+  const noneStaff: Editor = { email: 'none@example.com', displayName: 'None', role: 'staff', capability: 'none' };
+  const target = '/admin/team/events';
+  const csrf = { cookie: 'MATCH', csrfField: 'MATCH' } as const;
+
+  function guarded() {
+    const handler = vi.fn(async ({ ctx }: { ctx: { audit: (r: { action: string; entity: string }) => void } }) => {
+      ctx.audit({ action: 'approve', entity: 'event' });
+      return { ok: true } as const;
+    });
+    return { handler, action: createAdminAction(handler, { access: { target } }) };
+  }
+
+  it('runs the handler on an href rule that names its role', async () => {
+    const { handler, action } = guarded();
+    expect(await action(makeEvent({ ...csrf, editor: noneStaff, access: { [target]: ['staff'] } }))).toEqual({ ok: true });
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  it('audits and throws 403 on an href rule that names only another role', async () => {
+    const sink = vi.fn();
+    const { handler, action } = guarded();
+    const event = makeEvent({ ...csrf, editor: noneStaff, access: { [target]: ['editor'] }, auditSink: sink });
+    expect(await httpErrorStatusOf(action(event))).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+    expect(sink).toHaveBeenCalledWith(expect.objectContaining({ detail: 'rejected: role not admitted' }));
   });
 });
 

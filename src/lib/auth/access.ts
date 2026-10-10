@@ -1,14 +1,18 @@
 // cairn-cms: the access map, the single per-site declaration that gates its own admin screens and
-// custom routes by role. defineAccess validates shape and role vocabulary at construction time;
-// canReach is the one authority function the guard, the engine routes, and the nav resolver all
-// read, so route enforcement and sidebar visibility can never drift apart. Concept-id existence and
-// engine-route collision are not checked here: they need the real concept list and engine-route
-// table, which only composition (createCairnAdmin) has, so that check lands with the composition
-// task. hasAccessRule backs requireAccess's fail-closed contract: a target the map has no key for
-// route-gates as a misconfiguration, distinct from canReach's own unmapped-target reading used for
-// nav visibility. targetFromRouteId is the shared default-target derivation both authorization call
-// sites use, requireAccess (guard.ts) and createSectionAction (section-action.ts), so the load and
-// action halves of one route's authorization story never disagree on what they are checking.
+// custom routes by role. A site declares it once, on the adapter; composeRuntime carries it onto
+// the runtime, and the guard, the dev backend's handle, and the nav resolver all read that one
+// declaration. defineAccess validates shape and role vocabulary at construction time; canReach is
+// the one authority function every reader applies, so route enforcement and sidebar visibility
+// can never drift apart. Concept-id existence and engine-route collision are not checked here:
+// they need the real concept list and engine-route table, which only composition
+// (createCairnAdmin) has, so that check lands with the composition task. hasAccessRule backs
+// requireAccess's fail-closed contract: a target the map has no key for route-gates as a
+// misconfiguration, distinct from canReach's own unmapped-target reading used for nav visibility.
+// targetFromRouteId is the shared default-target derivation both authorization call sites use,
+// requireAccess (guard.ts) and createSectionAction (section-action.ts), so the load and action
+// halves of one route's authorization story never disagree on what they are checking.
+// validateAccessRoles is composeRuntime's check that every role a rule names is declared in the
+// adapter's own vocabulary, so a map can't outlive a role the site dropped.
 import { DEFAULT_ROLES, type RolesDeclaration } from './roles.js';
 import type { Editor } from './types.js';
 
@@ -105,6 +109,15 @@ export function defineAccess<const A extends AccessMap>(roles: RolesDeclaration 
  * `SectionActionOptions.target`'s own doc already asks for a route with a rest parameter.
  */
 function matchHrefKey(access: AccessMap, target: string): string | undefined {
+  return resolveHrefMatch(access, target).key;
+}
+
+/**
+ * The shared body of {@link matchHrefKey}: the matched key (`undefined` when none matches or the
+ * match is refused as shadowed), and whether a refusal was the shadow rule, so a caller that must
+ * tell "no rule" from "a rule the dynamic segment hides" can.
+ */
+function resolveHrefMatch(access: AccessMap, target: string): { key: string | undefined; shadowed: boolean } {
   let best: string | undefined;
   for (const key of Object.keys(access)) {
     if (!isHrefKey(key)) continue;
@@ -120,17 +133,19 @@ function matchHrefKey(access: AccessMap, target: string): string | undefined {
       const shadowed = Object.keys(access).some(
         (key) => isHrefKey(key) && key !== best && key.startsWith(`${best}/`),
       );
-      if (shadowed) return undefined;
+      if (shadowed) return { key: undefined, shadowed: true };
     }
   }
-  return best;
+  return { key: best, shadowed: false };
 }
 
 /**
  * The one authority function every enforcement and visibility point reads: `requireAccess`, the
- * engine route gates, and the nav resolver. `none` capability reaches nothing, mapped or unmapped.
- * Owner capability reaches every target, including the `editors` screen id and any target with no
- * rule. Every other capability's reach stops at `editors`, which stays owner-only no matter what
+ * engine route gates, and the nav resolver. `none` capability reaches a route path only when the
+ * matched rule names its role explicitly: a screen id, an href no rule matches, and `editors`
+ * stay refused for it, and the permissive no-rule reading below never applies to it. Owner
+ * capability reaches every target, including the `editors` screen id and any target with no rule.
+ * Every other capability's reach stops at `editors`, which stays owner-only no matter what
  * the map says (the roster screen's existing floor, restated here so the one authority function
  * covers it too). In practice a site cannot even declare a rule for `editors` and have it
  * silently ignored: composition-time validation (`validateAccessComposition`) admits only a
@@ -155,7 +170,9 @@ function matchHrefKey(access: AccessMap, target: string): string | undefined {
  */
 export function canReach(access: AccessMap | undefined, editor: Editor, target: string): boolean {
   if (editor.capability === 'none') {
-    return false;
+    if (!access || !isHrefKey(target)) return false;
+    const key = matchHrefKey(access, target);
+    return key !== undefined && access[key].includes(editor.role);
   }
   if (editor.capability === 'owner') {
     return true;
@@ -187,6 +204,16 @@ export function hasAccessRule(access: AccessMap | undefined, target: string): bo
     return matchHrefKey(access, target) !== undefined;
   }
   return Object.hasOwn(access, target);
+}
+
+/**
+ * Why `target` has no rule: `'shadowed'` when a dynamic segment's deeper-key ambiguity refused the
+ * match ({@link matchHrefKey}), `'no_rule'` otherwise. Meaningful when {@link hasAccessRule} is
+ * false; it backs the `reason` field of every `auth.access.refused` record.
+ */
+export function noRuleReason(access: AccessMap | undefined, target: string): 'no_rule' | 'shadowed' {
+  if (!access || !isHrefKey(target)) return 'no_rule';
+  return resolveHrefMatch(access, target).shadowed ? 'shadowed' : 'no_rule';
 }
 
 // Guaranteed to equal no real route id or pathname (both always start with `/`), so a null
@@ -221,4 +248,28 @@ export function targetFromRouteId(routeId: string | null): string {
   if (routeId === null) return UNRESOLVED_ROUTE_TARGET;
   const stripped = routeId.replace(ROUTE_GROUP_SEGMENT, '');
   return stripped === '' ? UNRESOLVED_ROUTE_TARGET : stripped;
+}
+
+/**
+ * Throw when any rule in `access` names a role `roles` does not declare (`undefined` reads the
+ * implicit owner/editor pair). `composeRuntime` runs this on the adapter's own `roles` and
+ * `access`, so a runtime whose map names an undeclared role is never built. `defineAccess` checks
+ * the same thing against whatever vocabulary its caller handed it, which need not be the adapter's,
+ * and a map written as a plain object skips `defineAccess` entirely.
+ *
+ * This is what makes dropping a role from `defineRoles` revoke it. An undeclared role resolves to
+ * `none` capability, and {@link canReach} admits a `none` session to an href rule naming its role,
+ * so a leftover roster row would otherwise still reach that route.
+ */
+export function validateAccessRoles(access: AccessMap, roles: RolesDeclaration | undefined): void {
+  const declared = roles ?? DEFAULT_ROLES;
+  for (const [key, admitted] of Object.entries(access)) {
+    for (const role of admitted) {
+      if (!Object.hasOwn(declared, role)) {
+        throw new Error(
+          `access: "${key}" names role "${role}", which the role vocabulary does not declare; declare "${role}" in defineRoles, or remove it from this rule`,
+        );
+      }
+    }
+  }
 }

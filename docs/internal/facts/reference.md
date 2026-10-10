@@ -112,6 +112,12 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 ## docs/reference/admin-toolkit.md
 
+- `f:54xd6u` The admin toolkit's components render inside the admin shell only: `CairnAdminShell.svelte` imports
+  `cairn-admin.css`, which compiles the daisyUI classes the toolkit assembles, and the admin theme wrapper
+  scopes the tokens they read. A toolkit component mounted outside `/admin` renders without that sheet, so a
+  member area or any other surface outside the admin is the site's own, styled by the site; the engine does
+  not ship the admin sheet for use outside `/admin`. Source: `src/lib/admin/CairnAdminShell.svelte:43`,
+  `docs/reference/admin-toolkit.md` (the shell-only paragraph). [verified]
 - `f:0vgrcx` `TextInput` and `SelectInput` shipped at `0.94.0` (renamed from admin-fields'
   `TextField`/`SelectField`); `FieldRow` was added later, at `0.95.0` (commit `68d622a1`,
   2026-08-07), not alongside the 0.94.0 merge. All three retired together in the retires pass,
@@ -197,6 +203,12 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `throttle.identityCeiling` 30 (min 10), `throttle.escalationThreshold` 20 (min 10),
   `throttle.liveRowCap` 5 (max 20), `session.ttlMs` 2592000000/30days (max 31536000000/1yr).
   Source: `src/lib/auth-channel/factory.ts:326-482`. [verified]
+- `f:ditn3e` `AuthChannelConfig.resolveDb` returns `ChannelDatabaseLike | undefined`, the structural
+  subset of D1 the channel store calls (`prepare(...).bind(...).first()/run()`, `withSession('first-primary')`,
+  and a session's `prepare` and `batch`); a real `D1Database` and `createChannelDb()`'s result both
+  satisfy it with no cast, and `AuthChannel.revokeSessions` takes the same type. Source:
+  `src/lib/auth-channel/store.ts#ChannelDatabaseLike`, `src/lib/auth-channel/factory.ts#AuthChannelConfig.resolveDb`.
+  [verified]
 - `f:vh76wt` A non-positive `limits` override always throws even where the table states only a ceiling
   (prevents a 0 or negative clamp value from silently passing). Source:
   `src/lib/auth-channel/factory.ts:434-457` (`resolveLimit`). [verified]
@@ -272,8 +284,8 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - `f:lml542` `deleteEditor` and `removeOwnerIfNotLast` cascade past session and magic-token rows to also
   delete every `preview_tokens` row the removed editor minted (a separate statement outside the
   atomic batch, swallowing only a "no such table" fault for a site with the preview migration
-  unapplied). Source: `src/lib/auth/store.ts:300-320` (`deleteEditorPreviewTokens`), `:407-411`
-  (`deleteEditor` call), `:446-450` (`removeOwnerIfNotLast` call). [verified]
+  unapplied). Source: `src/lib/auth/store.ts#deleteEditorPreviewTokens`, `src/lib/auth/store.ts:430-434`
+  (`deleteEditor` call), `src/lib/auth/store.ts:469-473` (`removeOwnerIfNotLast` call). [verified]
 - `f:pf69s2` The store's unexported auth-flow set (engine-internal to the magic-link guard, not proven
   consumer surface) is `findEditor`, `issueToken`, `recentlyIssued`, `consumeToken`, `rebindToken`,
   `createSession`, `resolveSession`, `deleteSession`; `insertOwnerIfEmpty` is separately demoted (a
@@ -594,7 +606,7 @@ re-sourced to Go on this tree rather than to the page.
   `admin.mount-incomplete`, `auth.role-wiring-missing`, and `ai.posture-not-effective`. Source:
   `tool/internal/doctor/check_bindings.go:29`, `check_media.go:29`, `check_observability.go:16`,
   `check_csrf.go:214`, `check_siteconfig.go:25`, `check_origin.go:65`, `check_referrer.go:178`,
-  `check_mount.go:75`, `check_floors.go:346`, `check_roles.go:103`, `check_posture.go:284`, with
+  `check_mount.go:75`, `check_floors.go:346`, `check_roles.go:104`, `check_posture.go:284`, with
   each severity at `tool/internal/spine/conditions.json:103-110`. [verified]
 - `f:3sxgcl` `config.site-config` reports presence and parsing only; the per-concept URL policy lives on the
   adapter concepts and is not checkable from a directory preflight. Source:
@@ -652,11 +664,12 @@ re-sourced to Go on this tree rather than to the page.
   Source: `tool/internal/doctor/json.go:41-54,100-129`. [candidate: found during the 2026-09-22
   redraft's Go read, not independently re-verified by a second pass]
 - `f:0ms9c1` `auth.role-wiring` settles `INFO`, not only `PASS`/`FAIL`/`SKIP`/`UNCHECKED`, when
-  `src/hooks.server.ts` is missing, when no `createAuthGuard` call is found in it, or when the
+  neither `src/hooks.server.ts` nor `src/hooks.server.js` exists, when no `createAuthGuard` call is
+  found in the one it read (the detail names that file, as the `FAIL` detail does), or when the
   call's argument is a bare identifier the check cannot read into; none of these is treated as a
   high-confidence `FAIL`. The page's checks table names only this check's `PASS`/`FAIL` condition,
   `SKIP`, and `UNCHECKED` cases, not its `INFO` settlements. Source:
-  `tool/internal/doctor/check_roles.go:116-129`, `tool/internal/doctor/check_roles_test.go:31,40,49`.
+  `tool/internal/doctor/check_roles.go:118-131`, `tool/internal/doctor/check_roles_test.go:31,40,49`.
   [verified]
 
 ## docs/reference/cli-cairn-exit-codes.md
@@ -938,12 +951,17 @@ re-sourced to Go on this tree rather than to the page.
   (module comment: "Every failure mode below returns false rather than throwing"), `:17-21`
   (`ip` doc comment: "from `CF-Connecting-IP` and never a client-forwardable header"). [verified]
 - `f:b857di` `MAX_TOKEN_LENGTH` is exactly `2048` characters and the fetch timeout is exactly `5000`ms
-  (`AbortSignal.timeout(5000)`). Source: `src/lib/cloudflare/turnstile.ts:8-10,124`. [verified]
+  (`AbortSignal.timeout(5000)`). Source: `src/lib/cloudflare/turnstile.ts:8-10,127`. [verified]
 - `f:bpk8gc` A `success: false` siteverify response logs nothing when every code is one of the two routine
   causes (`invalid-input-response`, `timeout-or-duplicate`), since that is the function working
   as intended; every other rejection reason does log. Source: `src/lib/cloudflare/turnstile.ts:15`
-  (`ROUTINE_ERROR_CODES`), `:146-156` (`isRoutine` check gates the `log.warn('turnstile.verify_failed',
+  (`ROUTINE_ERROR_CODES`), `:153-158` (`isRoutine` check gates the `log.warn('turnstile.verify_failed',
   { reason: 'rejected', codes })` call). [verified]
+- `f:thbxvf` `verifyTurnstile` logs `reason: 'missing_secret'` for a blank or non-string `secret`
+  and `reason: 'invalid_input'` (with `tokenLength`) for a blank, non-string, or over-length
+  `token`; the secret is checked first, so a call with both bad logs `missing_secret`. Both
+  return `false` without calling fetch. Source: `src/lib/cloudflare/turnstile.ts:93-110`.
+  [verified]
 - `f:ndtmx8` `resolveRateLimit` resolves multiple keys in order, short-circuiting at the first key over
   budget (a later key's counter is never incremented once an earlier one has failed), and returns
   a four-arm outcome (`allowed`, `limited`, `no-binding`, `failed`) rather than the boolean its
@@ -966,11 +984,12 @@ re-sourced to Go on this tree rather than to the page.
   `src/lib/content/concepts.ts:67,190`. [verified]
 - `f:6kdagb` `AssetConfig.maxUploadBytes` defaults to `25 * 1024 * 1024` (25 MB). Source:
   `src/lib/media/config.ts:35,71`. [verified]
-- `f:hazpim` `canReach`: `none` capability reaches nothing; `owner` reaches every target including
-  `editors`; every other capability's reach stops at `editors`, which stays owner-only regardless
-  of what the access map says. Source: `src/lib/auth/access.ts:132-163` (function body checks
-  `editor.capability === 'none'`, `=== 'owner'`, then `target === 'editors'` before any map
-  lookup). [verified]
+- `f:hazpim` `canReach`: `none` capability reaches a route-path target only when the matched map
+  rule names its role, and reaches no screen id, unmapped href, or `editors`; `owner` reaches every
+  target including `editors`; every other capability's reach stops at `editors`, which stays
+  owner-only regardless of what the access map says. Source: `src/lib/auth/access.ts#canReach`
+  (function body checks `editor.capability === 'none'`, `=== 'owner'`, then `target === 'editors'`
+  before any map lookup). [verified]
 - `f:8ia71i` `resolveCapability` returns `'none'` for a role name absent from the vocabulary, so a pruned
   config or a hand-edited row fails closed rather than locking a person out entirely (they lose
   content access but the auth flow itself does not error). Source: `src/lib/auth/roles.ts:83-89`.
@@ -1187,7 +1206,7 @@ re-sourced to Go on this tree rather than to the page.
   and Svelte's default `{expr}` binding rendering as text. [verified]
 - `f:7sc3pe` The edit page's preview frame is sandboxed (`sandbox=""`), so scripts never run there and the
   island runtime never mounts in the preview; verify a live island on the deployed page. Source:
-  `src/lib/admin/EditPage.svelte:2128` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
+  `src/lib/admin/EditPage.svelte:2243` (`<iframe sandbox="" ... srcdoc={previewDoc} ...>`);
   the empty `sandbox` attribute blocks script execution by the HTML sandboxing spec (no
   `allow-scripts` token). [verified]
 
@@ -1211,7 +1230,7 @@ re-sourced to Go on this tree rather than to the page.
   carries `path` and `editor`; `admin.action.misconfigured` carries `path` and `reason`;
   `config.access_unmapped` carries `unmapped`, the sorted concept ids and fixed screens with no
   rule. Source: `src/lib/delivery/content-index.ts:101`, `src/lib/sveltekit/admin-action.ts:209,309`,
-  `src/lib/sveltekit/section-action.ts:212`, `src/lib/sveltekit/admin-nav.ts:326-328`. [verified]
+  `src/lib/sveltekit/section-action.ts:212`, `src/lib/sveltekit/admin-nav.ts:330-333`. [verified]
 - `f:rkj7tn` Every log record carries an envelope of `level`, `event`, `timestamp`, plus event-specific
   fields; renaming an `event` name is a breaking change. Source: `src/lib/log/create.ts:10-12`
   (`LogRecord` type), `src/lib/log/events.ts:1-3` (comment: "it is public-observable API: renaming
@@ -1276,7 +1295,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:mou1li` Composition-time event `config.access_unmapped` runs once at module evaluation (composition, not
   per request), so it appears at most once per isolate on a cold start, and a Workers Logs query
   scoped to a live request window can miss it entirely. Source:
-  `src/lib/sveltekit/admin-nav.ts:293-296,321-328` (`validateAccessComposition`'s doc: "Validate a
+  `src/lib/sveltekit/admin-nav.ts:283-297,330-333` (`validateAccessComposition`'s doc: "Validate a
   site's declared access map once at composition (server start)"; `log.warn('config.
   access_unmapped', ...)` fires from that one validation function, not a per-request path).
   [verified]
@@ -1623,7 +1642,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   login) and publish-all's outcome (posted from the topbar on any screen, lands on the first
   reachable concept list). Publish-all carries exactly three `?error=` codes:
   `nothing_to_publish`, `publish_conflict` (validated outcomes), and `publish_failed` (unexpected
-  fault). Source: `src/lib/sveltekit/content-routes-entry-write.ts:475,496,504`
+  fault). Source: `src/lib/sveltekit/content-routes-entry-write.ts:501,525,533`
   (`redirect(303, '${listPage}?error=nothing_to_publish' | '...publish_conflict' |
   '...publish_failed')`) and `src/lib/sveltekit/refusal-codes.ts:17`
   (`RefusalCode = 'expired' | 'nothing_to_publish' | 'publish_conflict' | 'publish_failed'`, four
@@ -1667,7 +1686,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `UnauditedActionError(500, ...)` in dev (gated by `esm-env`'s `DEV`, overridable via
   `deps.isDev`), and logs `admin.action.unaudited` in production instead of throwing. A handler
   that returns SvelteKit's `fail()` (detected via `isActionFailure`) is exempt from this check.
-  Source: `src/lib/sveltekit/admin-action.ts:307-309` (`if (emitted === 0 &&
+  Source: `src/lib/sveltekit/admin-action.ts#createAdminAction` (`if (emitted === 0 &&
   !isActionFailure(result)) { if (dev) throw new UnauditedActionError(...); log.error('admin.
   action.unaudited', ...); }`). [verified]
 - `f:e8r5f7` `ctx.audit`'s sink call catches both a synchronous throw and a rejecting promise from the site's

@@ -8,7 +8,7 @@
 // rather than trusting each caller, keeps that impossible: `/auth-store` is public surface, and a
 // consumer provisioning an editor from an address as a user typed it would otherwise write a shadow
 // row that can never sign in yet still counts toward the last-owner guards.
-import type { D1Database } from '@cloudflare/workers-types';
+import type { D1Database, D1PreparedStatement, D1Result } from '@cloudflare/workers-types';
 import { CairnError } from '../diagnostics/error.js';
 import type { Editor } from './types.js';
 
@@ -31,6 +31,32 @@ function rethrowStoreFailure(err: unknown): never {
     });
   }
   throw err;
+}
+
+/**
+ * Run a statement that writes a caller-chosen role, naming the one fault a correct deployment can
+ * still produce. An `AUTH_DB` that never received migrations/0001_roles.sql keeps the original
+ * `CHECK (role IN ('owner', 'editor'))`, so a custom role name fails with a bare D1 constraint
+ * error. Only the engine's own CHECK text (`role IN ('owner'`) is renamed, read off the error and
+ * its cause: a site's own CHECK on the column, a primary-key violation, or any other fault
+ * rethrows untouched, since this module diagnoses nothing it does not recognize.
+ */
+async function runRoleWrite(statement: D1PreparedStatement): Promise<D1Result> {
+  try {
+    return await statement.run();
+  } catch (err) {
+    // D1 may carry the SQLite text on the error itself or only on its cause, so read both.
+    const cause = err instanceof Error ? err.cause : undefined;
+    const text = `${String(err)}\n${String(cause ?? '')}`;
+    if (/CHECK constraint failed:\s*role\s+IN\s*\(\s*'owner'/i.test(text)) {
+      throw new CairnError('auth.store-roles-unmigrated', {
+        cause: err,
+        message:
+          'cairn: AUTH_DB still restricts editor.role to owner and editor; apply migrations/0001_roles.sql before writing a custom role. The migration rebuilds the editor table with the engine\'s four columns only',
+      });
+    }
+    throw err;
+  }
 }
 
 function normalizeEmail(email: string): string {
@@ -267,10 +293,11 @@ export async function insertEditor(
   role: string,
   now: number,
 ): Promise<void> {
-  await db
-    .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
-    .bind(normalizeEmail(email), displayName, role, now)
-    .run();
+  await runRoleWrite(
+    db
+      .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
+      .bind(normalizeEmail(email), displayName, role, now),
+  );
 }
 
 /** What {@link deleteEditor} returns: removed, refused as the last owner-capability row, or no such editor. */
@@ -463,6 +490,7 @@ export async function insertOwnerIfEmpty(
   displayName: string,
   now: number,
 ): Promise<boolean> {
+  // Unrouted on purpose: it writes only 'owner', which every schema's CHECK admits.
   const res = await db
     .prepare(
       `INSERT INTO editor (email, display_name, role, created_at)
@@ -503,19 +531,20 @@ export async function setEditorRole(
   const placeholders = ownerRoles.map(() => '?').join(', ');
   const res =
     ownerRoles.length === 0
-      ? await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, key).run()
-      : await db
-          .prepare(
-            `UPDATE editor SET role = ?
-             WHERE email = ?
-               AND (
-                 role NOT IN (${placeholders})
-                 OR ? = 1
-                 OR (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1
-               )`,
-          )
-          .bind(role, key, ...ownerRoles, ownerRoles.includes(role) ? 1 : 0, ...ownerRoles)
-          .run();
+      ? await runRoleWrite(db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, key))
+      : await runRoleWrite(
+          db
+            .prepare(
+              `UPDATE editor SET role = ?
+               WHERE email = ?
+                 AND (
+                   role NOT IN (${placeholders})
+                   OR ? = 1
+                   OR (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1
+                 )`,
+            )
+            .bind(role, key, ...ownerRoles, ownerRoles.includes(role) ? 1 : 0, ...ownerRoles),
+        );
   if (res.meta.changes === 0) {
     return (await editorRowStillPresent(db, key)) ? { outcome: 'last-owner' } : { outcome: 'not-found' };
   }
@@ -539,14 +568,15 @@ export async function demoteOwnerIfNotLast(
   if (ownerRoles.length === 0) return { outcome: 'not-eligible' };
   const key = normalizeEmail(email);
   const placeholders = ownerRoles.map(() => '?').join(', ');
-  const res = await db
-    .prepare(
-      `UPDATE editor SET role = ?
-       WHERE email = ? AND role IN (${placeholders})
-         AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`,
-    )
-    .bind(newRole, key, ...ownerRoles, ...ownerRoles)
-    .run();
+  const res = await runRoleWrite(
+    db
+      .prepare(
+        `UPDATE editor SET role = ?
+         WHERE email = ? AND role IN (${placeholders})
+           AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`,
+      )
+      .bind(newRole, key, ...ownerRoles, ...ownerRoles),
+  );
   if (res.meta.changes === 0) {
     return (await editorRowStillPresent(db, key, ownerRoles))
       ? { outcome: 'last-owner' }

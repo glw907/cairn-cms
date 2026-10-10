@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { extractMediaRefs } from '../../lib/content/media-refs.js';
+import { declaresNestedImage, extractMediaRefs } from '../../lib/content/media-refs.js';
+import type { FieldDescriptor } from '../../lib/content/fields.js';
 import type { NamedField } from '../../lib/content/types.js';
 
 const imageField: NamedField = { name: 'image', label: 'Hero', type: 'image' };
@@ -56,5 +57,33 @@ describe('extractMediaRefs', () => {
       'aaaaaaaaaaaaaaaa',
       'bbbbbbbbbbbbbbbb',
     ]);
+  });
+});
+
+describe('declaresNestedImage', () => {
+  // Hand-built descriptors, past what defineFieldset admits, so the walk is proven at any depth.
+  const image: FieldDescriptor = { type: 'image', label: 'Photo' };
+
+  it('counts an image nested two container levels down', () => {
+    const deep: FieldDescriptor = {
+      type: 'object',
+      label: 'Outer',
+      fields: { inner: { type: 'object', label: 'Inner', fields: { photo: image } } },
+    };
+    expect(declaresNestedImage([deep])).toBe(true);
+  });
+
+  it('counts an image inside an object inside an array row', () => {
+    const rows: FieldDescriptor = {
+      type: 'array',
+      label: 'Rows',
+      item: { type: 'object', fields: { card: { type: 'object', fields: { photo: image } } } },
+    };
+    expect(declaresNestedImage([rows])).toBe(true);
+  });
+
+  it('does not count a top-level image or a container holding no image', () => {
+    const plain: FieldDescriptor = { type: 'object', label: 'Group', fields: { note: { type: 'text', label: 'Note' } } };
+    expect(declaresNestedImage([image, plain])).toBe(false);
   });
 });

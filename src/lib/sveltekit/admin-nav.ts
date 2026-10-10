@@ -292,11 +292,13 @@ const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const
  * The second parameter carries context this validation needs but does not itself derive: the
  *  site's real concept ids, the same role `validateNavLayout`'s own second parameter plays.
  *
- * Non-throwing once the shape checks above pass: logs `config.access_unmapped` when a declared
- *  concept or fixed screen carries no rule at all, since that target stays reachable to every
- *  editor-capability session by `canReach`'s own permissive default (see "Access map coverage,"
- *  docs/extend/security-model.md). This never blocks composition; it exists only to
- *  surface a map a site believed was exhaustive but is not.
+ * Non-throwing once the shape checks above pass: logs `config.access_unmapped` when the map
+ *  declares at least one screen-id key and leaves a declared concept or fixed screen without a
+ *  rule, since that target stays reachable to every editor-capability session by `canReach`'s own
+ *  permissive default (see "Access map coverage," docs/extend/security-model.md). A map of href
+ *  keys alone gates only the site's own routes and says nothing about the engine's screens, so it
+ *  is silent. This never blocks composition; it exists only to surface a screen map a site
+ *  believed was exhaustive but is not.
  */
 export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: string[] }): void {
   const knownScreens = new Set<string>([...ctx.conceptIds, ...ACCESS_FIXED_SCREENS]);
@@ -321,8 +323,10 @@ export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: 
     }
   }
   // Only a screen-id key counts as coverage: an href key gates a route, never a screen or concept
-  // id, so it never closes this gap.
+  // id, so it never closes this gap. A map with no screen-id key at all declares no intent about
+  // the engine's screens, so there is no partial map to warn about.
   const declaredScreens = new Set(Object.keys(access).filter((key) => !key.startsWith('/')));
+  if (declaredScreens.size === 0) return;
   const unmapped = [...knownScreens].filter((screen) => !declaredScreens.has(screen)).sort();
   if (unmapped.length > 0) {
     log.warn('config.access_unmapped', { unmapped });

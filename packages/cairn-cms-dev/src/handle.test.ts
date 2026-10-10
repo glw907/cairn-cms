@@ -33,7 +33,7 @@ function eventFor(path: string): { url: URL; locals: Record<string, unknown> } {
 }
 
 test('the handle sets the dev backend, an owner editor, and the AUTH_DB and APP_DB bindings on an /admin request', async () => {
-  const handle = devBackendHandle();
+  const handle = devBackendHandle({ runtime: {} });
   const event = eventFor('/admin') as any;
 
   const seen = await envSeenByRoute(handle, event);
@@ -57,7 +57,7 @@ test('the handle sets the dev backend, an owner editor, and the AUTH_DB and APP_
 
 test('the doubles last only for the request: the env after the handle returns is the one before it', async () => {
   setFakeEnv({ PUBLIC_ORIGIN: 'http://localhost:4173' });
-  const handle = devBackendHandle();
+  const handle = devBackendHandle({ runtime: {} });
 
   await envSeenByRoute(handle, eventFor('/admin'));
 
@@ -65,7 +65,7 @@ test('the doubles last only for the request: the env after the handle returns is
 });
 
 test('the handle does not touch a public (non-admin, non-media) request', async () => {
-  const handle = devBackendHandle();
+  const handle = devBackendHandle({ runtime: {} });
   const event = eventFor('/about') as any;
 
   const seen = await envSeenByRoute(handle, event);
@@ -76,7 +76,7 @@ test('the handle does not touch a public (non-admin, non-media) request', async 
 });
 
 test('the handle wires the dev backend and AUTH_DB onto /preview/[token], but never the owner-editor bypass', async () => {
-  const handle = devBackendHandle();
+  const handle = devBackendHandle({ runtime: {} });
   const event = eventFor('/preview/some-token') as any;
 
   const seen = await envSeenByRoute(handle, event);
@@ -92,7 +92,7 @@ test('the handle wires the dev backend and AUTH_DB onto /preview/[token], but ne
 });
 
 test('the same fakeAuthDb instance serves both /admin and /preview, so a minted row is visible to both', async () => {
-  const handle = devBackendHandle();
+  const handle = devBackendHandle({ runtime: {} });
 
   const admin = await envSeenByRoute(handle, eventFor('/admin'));
   const preview = await envSeenByRoute(handle, eventFor('/preview/x'));
@@ -102,7 +102,7 @@ test('the same fakeAuthDb instance serves both /admin and /preview, so a minted 
 
 test('a plain var already on the Worker env (PUBLIC_ORIGIN) survives onto an /admin request', async () => {
   setFakeEnv({ PUBLIC_ORIGIN: 'http://localhost:4173' });
-  const handle = devBackendHandle();
+  const handle = devBackendHandle({ runtime: {} });
 
   const seen = await envSeenByRoute(handle, eventFor('/admin'));
 
@@ -115,7 +115,7 @@ test('a handle sequenced before it keeps its own double, and the route and the e
   // A site's own handle, ahead of the dev handle, layering one double of its own the same way.
   const siteHandle: Handle = ({ event, resolve }) =>
     withEnv({ ...env, SITE_DB: 'site-double' }, () => resolve(event)) as ReturnType<typeof resolve>;
-  const devHandle = devBackendHandle();
+  const devHandle = devBackendHandle({ runtime: {} });
   // The order `sequence(siteHandle, devHandle)` runs them in, composed by hand: kit's own
   // `sequence` needs the request store a running server provides.
   const handle: Handle = ({ event, resolve }) =>
@@ -144,7 +144,7 @@ test('a handle sequenced before it keeps its own double, and the route and the e
 test('while the build prerenders, the handle passes the request through without touching the Worker env', async () => {
   __setBuilding(true);
   setFakeEnvThrowing();
-  const handle = devBackendHandle();
+  const handle = devBackendHandle({ runtime: {} });
   const event = eventFor('/admin') as any;
 
   const response = await handle({ event, resolve: async () => new Response('prerendered') });
@@ -153,34 +153,31 @@ test('while the build prerenders, the handle passes the request through without 
   expect(event.locals.cairnEditor).toBeUndefined();
 });
 
-test('the handle attaches the supplied access map to locals.cairnAccess on an /admin request', async () => {
+test('the handle attaches the runtime access map to locals.cairnAccess on an /admin request', async () => {
   const access = { '/admin/signups': ['owner'] };
-  const handle = devBackendHandle({ access });
+  const handle = devBackendHandle({ runtime: { access } });
   const event = eventFor('/admin/signups') as any;
 
   await envSeenByRoute(handle, event);
 
-  // The site's own declaration reaches locals verbatim, the same object, never a copy derived
+  // The adapter's declaration reaches locals verbatim, the same object, never a copy derived
   // from the minted owner session.
   expect(event.locals.cairnAccess).toBe(access);
 });
 
-test('a handle given no access map leaves locals.cairnAccess undefined rather than an empty map', async () => {
-  const handle = devBackendHandle();
+test('a runtime declaring no access map attaches an empty map, the same default the engine guard attaches', async () => {
+  const handle = devBackendHandle({ runtime: {} });
   const event = eventFor('/admin/signups') as any;
 
   await envSeenByRoute(handle, event);
 
-  // Undefined, not {}: createSectionAction reads an absent map as a misconfigured wiring and
-  // fails 500, which is the signal a developer needs under the dev backend.
-  expect(event.locals.cairnAccess).toBeUndefined();
-  expect('cairnAccess' in event.locals).toBe(false);
+  expect(event.locals.cairnAccess).toEqual({});
 });
 
 test('neither handle attaches an access map on a non-/admin path', async () => {
   const access = { '/admin/signups': ['owner'] };
-  const withMap = devBackendHandle({ access });
-  const withoutMap = devBackendHandle();
+  const withMap = devBackendHandle({ runtime: { access } });
+  const withoutMap = devBackendHandle({ runtime: {} });
   const withMapEvent = eventFor('/about') as any;
   const withoutMapEvent = eventFor('/about') as any;
 
@@ -193,7 +190,7 @@ test('neither handle attaches an access map on a non-/admin path', async () => {
 
 test('with the dev flag set on a non-local host, the handle refuses with a 503 and never resolves', async () => {
   setFakeEnv({ CAIRN_DEV_BACKEND: '1' });
-  const handle = devBackendHandle();
+  const handle = devBackendHandle({ runtime: {} });
   const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   try {
     for (const path of ['/admin', '/media/x.jpg', '/about']) {
@@ -219,7 +216,7 @@ test('with the dev flag set on a non-local host, the handle refuses with a 503 a
 
 test('the boolean true form of the flag trips the same refusal', async () => {
   setFakeEnv({ CAIRN_DEV_BACKEND: true });
-  const handle = devBackendHandle();
+  const handle = devBackendHandle({ runtime: {} });
   const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   try {
     const res = await handle({
@@ -234,7 +231,7 @@ test('the boolean true form of the flag trips the same refusal', async () => {
 
 test('with the dev flag set on localhost, the handle still mounts the dev backend', async () => {
   setFakeEnv({ CAIRN_DEV_BACKEND: '1' });
-  const handle = devBackendHandle();
+  const handle = devBackendHandle({ runtime: {} });
   const event = eventFor('/admin') as any;
 
   const seen = await envSeenByRoute(handle, event);

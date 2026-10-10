@@ -35,9 +35,10 @@ import {
   charge,
   refund,
   sweep,
+  type ChannelDatabaseLike,
+  type ChannelSessionLike,
 } from './store.js';
 import { canonicalizeCode, deriveIdentity, generateCode, requesterBucket } from './identity.js';
-import type { D1Database, D1DatabaseSession } from '@cloudflare/workers-types';
 import type { RateLimitLike } from '../cloudflare/rate-limit.js';
 import type { CairnEvent } from '../sveltekit/types.js';
 import { env, siteEnv, waitUntil } from '../sveltekit/workers-env.js';
@@ -228,8 +229,13 @@ export type ChannelConfirmOutcome = {
  * transforms respectively and carry no I/O.
  */
 export interface AuthChannelConfig<Env> {
-  /** The channel's own D1 binding, never `AUTH_DB` (spec, decision 1: physical separation). Absent fails an action closed with `{outcome: 'unavailable'}`. */
-  resolveDb: (env: Env | undefined) => D1Database | undefined;
+  /**
+   * The channel's own D1 binding, never `AUTH_DB` (spec, decision 1: physical separation). Absent
+   * fails an action closed with `{outcome: 'unavailable'}`. Typed as {@link ChannelDatabaseLike},
+   * the subset of D1 the store uses, which a real `D1Database` and the dev package's
+   * `createChannelDb()` result both satisfy.
+   */
+  resolveDb: (env: Env | undefined) => ChannelDatabaseLike | undefined;
   /**
    * Send the code to `contact`. A throw is scrubbed, logged, deletes the pending row, and refunds
    * the send charge; called only for a known subject.
@@ -350,7 +356,7 @@ export interface AuthChannel<Env> {
    * and lost to that capability, since an event-taking signature would put the engine's own
    * revocation exemplar out of reach of exactly the callers who need it most.
    */
-  revokeSessions: (db: D1Database, subject: string) => Promise<void>;
+  revokeSessions: (db: ChannelDatabaseLike, subject: string) => Promise<void>;
 }
 
 /** Throws when `value` is not a function, naming the config field that construction requires. */
@@ -466,7 +472,7 @@ function composeRequesterBucketKey(event: ChannelEvent, identity: string): strin
  * `session` and `row` at each call site.
  */
 async function refundGateCharge(
-  session: D1DatabaseSession,
+  session: ChannelSessionLike,
   identity: string,
   gateCharge: { admitted: boolean },
   now: number,
@@ -588,7 +594,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * when the salt already exists (`INSERT OR IGNORE` still round-trips to D1); reading first
    * makes the common, already-provisioned case a pure read.
    */
-  async function resolveSalt(session: D1DatabaseSession): Promise<string> {
+  async function resolveSalt(session: ChannelSessionLike): Promise<string> {
     if (cachedSalt !== null) return cachedSalt;
     const existing = await readSalt(session);
     const salt = existing ?? (await provisionSalt(session));
@@ -610,7 +616,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * retry, and invalidates no cache: a fault-triggered retry would hand an attacker who can
    * induce D1 pressure a lever to spend against. Call it only where a row was actually destroyed.
    */
-  async function logSessionDestroyed(session: D1DatabaseSession, subject: string, path: 'logout' | 'revoke'): Promise<void> {
+  async function logSessionDestroyed(session: ChannelSessionLike, subject: string, path: 'logout' | 'revoke'): Promise<void> {
     let correlationId: string;
     try {
       const salt = await resolveSalt(session);
@@ -627,7 +633,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * shares. Returns null on either an absent binding or a schema mismatch, both of which the
    * caller answers with `{outcome: 'unavailable'}`.
    */
-  async function resolveVerifiedSession(env: Env | undefined): Promise<D1DatabaseSession | null> {
+  async function resolveVerifiedSession(env: Env | undefined): Promise<ChannelSessionLike | null> {
     const database = config.resolveDb(env);
     if (!database) return null;
     const dbSession = database.withSession('first-primary');
@@ -1120,7 +1126,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   }
 
   /** Delete every session for a subject; the roster-removal exemplar calls this. */
-  async function revokeSessions(db: D1Database, subject: string): Promise<void> {
+  async function revokeSessions(db: ChannelDatabaseLike, subject: string): Promise<void> {
     await revokeChannelSessions(db.withSession('first-primary'), subject);
   }
 

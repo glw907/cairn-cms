@@ -12,7 +12,7 @@ import { __setBuilding } from '../_app-env.js';
 // createAuthGuard is annotated `: Handle`, kit's own type (the interop carve-out); the cast below
 // bridges it to the lighter CairnEvent shape this file's fakes build, mirroring
 // auth-guard.test.ts's own note.
-const handle = createAuthGuard() as unknown as (input: {
+const handle = createAuthGuard({ runtime: {} }) as unknown as (input: {
   event: CairnEvent;
   resolve: (event: CairnEvent) => Promise<Response>;
 }) => Promise<Response>;

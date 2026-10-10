@@ -19,8 +19,9 @@ count, the Prose/Wide posture pair, and the focus and typewriter toggles (the to
 persistent "?" carries Markdown help).
 -->
 <script lang="ts">
-  import { flushSync, untrack, getContext } from 'svelte';
+  import { flushSync, tick, untrack, getContext } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
+  import { applyAction, enhance, type SubmitFunction } from '$app/forms';
   import { page } from '$app/state';
   import { building } from '$app/env';
   import BlocksIcon from '@lucide/svelte/icons/blocks';
@@ -153,22 +154,100 @@ persistent "?" carries Markdown help).
   // body, so it falls back to the committed data.body. untrack() captures the initial value without
   // subscribing to future prop changes.
   let body = $state(untrack(() => form?.body ?? data.body));
-  // True from the moment the save form submits until the navigation it triggers replaces the page,
-  // so the Save button shows a calm "Saving…" state instead of looking inert.
+  // True from the moment the save form submits until the server answers, so the Save button shows a
+  // calm "Saving…" state instead of looking inert. A success redirects and reloads the document; every
+  // other answer clears it and leaves the author editing.
   let saving = $state(false);
   // The same working state for the Publish button, which rides the edit form via formaction. The
-  // submit handler reads the submitter to flip the right one, so Save never reads "Saving…" while
+  // submit function reads the submitter to flip the right one, so Save never reads "Saving…" while
   // a publish is in flight.
   let publishing = $state(false);
-  function onEditSubmit(e: SubmitEvent) {
-    const formaction = (e.submitter as HTMLButtonElement | null)?.getAttribute('formaction');
-    if (formaction === '?/publish') publishing = true;
-    else saving = true;
-    // Commit any pending personal-dictionary additions alongside the save. Fire-and-forget: the words
-    // are already live in the Worker, so the in-flight commit never blocks the save navigation; an add
-    // that does not land stays pending for the next save (declared before the navigation reads it).
-    void commitPendingDictionary();
+  // True once a save or publish has failed without leaving the page. The document did not reload, so
+  // the page-load facts it carries (the saved flash, the draft and reference warnings, an echoed body
+  // a refusal returned) describe an earlier request and no longer describe the editor. Cleared only
+  // by the reload a successful save ends in, or by hopping to another entry.
+  let failedInPlace = $state(false);
+  // The editor's own message for a failure the server did not word: a network failure, a non-JSON
+  // answer, a refusal that carries no text, or a redirect that sent the request to sign-in. Cleared
+  // when the next attempt starts.
+  let failureNotice = $state('');
+  // The sign-in page an expired session's redirect pointed at, offered as a new-tab link beside the
+  // notice so the author can sign in again without leaving the unsaved text. Empty otherwise.
+  let signInHref = $state('');
+  const FAILURE_NOTICE = 'That did not go through. Your text is still here; please try again.';
+  const SESSION_ENDED_NOTICE = 'Your session ended. Please sign in again in a new tab, then save. Your text is still here.';
+  /** Resolve a redirect result's location against this page. `href` is the absolute URL the
+   *  navigation must use, so the value checked is the value followed. `onConcept` says whether it
+   *  lands on one of this concept's entries, which is how a save or publish that went through
+   *  answers. Null for a location that does not parse or points off this origin. */
+  function resolveRedirect(location: string): { href: string; onConcept: boolean } | null {
+    try {
+      const destination = new URL(location, window.location.href);
+      if (destination.origin !== window.location.origin) return null;
+      return { href: destination.href, onConcept: destination.pathname.startsWith(`/admin/${data.conceptId}/`) };
+    } catch {
+      return null;
+    }
   }
+  // The edit form submits through the enhanced path, so a failed save answers in place and the
+  // author keeps the text. The request waits for the pending personal-dictionary commit, which
+  // resolves fail-closed (an add that does not land stays pending for the next save) under its own
+  // deadline, so the wait never blocks the save on a dictionary failure or a stalled request.
+  const onEditSubmit: SubmitFunction = async ({ submitter }) => {
+    const formaction = submitter?.getAttribute('formaction');
+    if (formaction?.startsWith('?/publish')) publishing = true;
+    else saving = true;
+    failureNotice = '';
+    signInHref = '';
+    // The surface goes read-only while the request runs, which drops its focus. An author who
+    // saved from the keyboard gets the caret back if the attempt fails.
+    const editorHadFocus = !!editorCard?.querySelector('.cm-editor')?.contains(document.activeElement);
+    await commitPendingDictionary();
+    return async ({ result }) => {
+      const destination = result.type === 'redirect' ? resolveRedirect(result.location) : null;
+      if (destination?.onConcept) {
+        // The save or publish went through: reload the document so the load, the {#key} remount, and
+        // the dirty reset all run as they did when the form posted full-page. `saving` and
+        // `publishing` stay set, so Save, Publish, and their shortcuts stay disabled while the
+        // navigation runs; the pageshow listener clears them if the browser restores this page from
+        // its back-forward cache. `leaving` keeps the leave guard quiet for a navigation the author
+        // just asked for.
+        leaving = true;
+        window.location.assign(destination.href);
+        return;
+      }
+      saving = false;
+      publishing = false;
+      failedInPlace = true;
+      // Focus returns only when it was left on nothing at settle time (the read-only surface dropped
+      // it), so an author who moved to another field while the request ran keeps it there.
+      if (editorHadFocus && (document.activeElement === document.body || document.activeElement === null)) {
+        // Wait for the surface to take edits again before focusing it.
+        await tick();
+        editor?.focus();
+      }
+      if (result.type === 'failure') {
+        const failure = result.data as ContentFormFailure | undefined;
+        if (!failure?.error && !failure?.brokenLinks?.length) failureNotice = FAILURE_NOTICE;
+        // Applies the failure's data as `form` without running a load.
+        await applyAction(result);
+        return;
+      }
+      // An error result (a thrown fetch, an action that threw, a non-JSON answer) or a redirect away
+      // from the entry: nothing to apply, and the error page applyAction would render replaces the
+      // editor. A same-origin redirect off this concept is the guard sending an expired session to
+      // sign in, which a retry here can never get past.
+      if (destination) {
+        failureNotice = SESSION_ENDED_NOTICE;
+        signInHref = destination.href;
+      } else {
+        failureNotice = FAILURE_NOTICE;
+      }
+      // No new `form` arrives on this path, so the nonce effect below would not fire: bump it here
+      // so a repeat of the same failure is announced again.
+      assertiveNonce++;
+    };
+  };
   // Guards the Publish button's own click: aria-disabled blocks nothing by itself (it is not the
   // native disabled attribute), so a guarded click must cancel the button's default action here,
   // before it submits the form via its ?/publish formaction. An actionable click passes through
@@ -177,7 +256,7 @@ persistent "?" carries Markdown help).
     if (!publishActionable) e.preventDefault();
   }
   // Either in-flight submit disables both buttons, so a second click cannot fire a second POST
-  // while the first navigation is still pending.
+  // while the first is still pending.
   const busy = $derived(saving || publishing);
   // True once a non-edit POST (discard, delete, rename) submits. Those forms navigate the
   // document without flipping busy, so without this the leave guard would fire mid-discard while
@@ -185,18 +264,21 @@ persistent "?" carries Markdown help).
   let leaving = $state(false);
 
   // Dirty tracking. The body compares against the text the page loaded with (or the edited body a
-  // blocked save returned, which seeded the editor); the uncontrolled sidebar fields flip a flag
-  // on any input event, and the navigation a save triggers reloads the page, which resets both.
-  const bodyDirty = $derived(body !== (form?.body ?? data.body));
+  // full-page blocked save returned, which seeded the editor); the uncontrolled sidebar fields flip
+  // a flag on any input event, and the navigation a save triggers reloads the page, which resets
+  // both. After a failure answered in place the baseline is the loaded text whatever the refusal
+  // echoed: the echo is the editor's own unsaved text, not something committed.
+  const bodyBaseline = $derived(failedInPlace ? data.body : (form?.body ?? data.body));
+  const bodyDirty = $derived(body !== bodyBaseline);
   let fieldsDirty = $state(false);
   const dirty = $derived(bodyDirty || fieldsDirty);
-  const saveState = $derived(dirty ? 'Unsaved changes' : data.saved ? 'Saved' : '');
+  const saveState = $derived(dirty ? 'Unsaved changes' : data.saved && !failedInPlace ? 'Saved' : '');
   // Whether Publish has anything to take live: a body/field edit, a held draft branch, or a
   // brand-new entry that has never been saved. Otherwise the button is guarded rather than hidden
   // (the grounding survey: six of eight comparable editors keep Publish permanently visible), so
   // the control stays discoverable and its reason reaches assistive technology.
   const publishActionable = $derived(dirty || data.pending || data.isNew);
-  // The edit form posts full-page (no use:enhance), so a validation fail() re-runs editLoad at the
+  // Without JavaScript the edit form posts full-page, so a validation fail() re-runs editLoad at the
   // POST's own URL, not the page's original one. A browser resolves an action of only "?/save"
   // against the current document URL by replacing its whole query (RFC 3986 5.3), so `?new=1` (and
   // the form's hidden field, which the load never reads) would otherwise vanish from the URL a
@@ -254,9 +336,9 @@ persistent "?" carries Markdown help).
   }
 
   // The SvelteKit half of the leave guard. Registered at component init (beforeNavigate wraps
-  // onMount, so it must run synchronously here) and auto-unregistered on destroy. A submit's own
-  // navigation passes through because busy flips before it starts, and a non-edit POST's because
-  // leaving does.
+  // onMount, so it must run synchronously here) and auto-unregistered on destroy. A successful
+  // save's reload passes through because the submit callback sets leaving first, and a non-edit
+  // POST's because leaving does. While the request is in flight busy covers the guard.
   beforeNavigate((navigation) => {
     // A full-page unload (refresh, tab close, external link): per SvelteKit semantics, cancel()
     // on a leave navigation is what asks the browser for its native dialog, so no confirm()
@@ -356,10 +438,21 @@ persistent "?" carries Markdown help).
       if (inDialog) return;
       editForm?.requestSubmit();
     };
+    // A page the browser restores from its back-forward cache comes back exactly as it left, mid
+    // navigation: a successful save kept Save and Publish disabled and the leave guard off for the
+    // reload it started. A restored page is editable again, so clear all three.
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      saving = false;
+      publishing = false;
+      leaving = false;
+    };
     window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pageshow', onPageShow);
     window.addEventListener('keydown', onWindowKeydown);
     return () => {
       window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pageshow', onPageShow);
       window.removeEventListener('keydown', onWindowKeydown);
     };
   });
@@ -411,11 +504,14 @@ persistent "?" carries Markdown help).
   // The CSRF token getter from the admin layout context, for the raw-body dictionary commit.
   const csrf = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);
 
+  // How long a save waits on the dictionary commit before it goes out without it.
+  const DICTIONARY_COMMIT_TIMEOUT_MS = 5000;
   /** Commit the pending personal-dictionary additions through the dictionaryAdd action, then drop
-   *  the words the server confirms from the pending set. Fire-and-forget at save time: the words are
-   *  already live in the Worker's in-memory set, so a slow or failed commit never blocks the save. A
-   *  failure (a network throw, an expired session, a parsed csrf/400/409) leaves the words pending for
-   *  the next save (never dropped); the words stay live in the Worker for the session, so the author
+   *  the words the server confirms from the pending set. The edit form's submit function awaits this
+   *  before the save or publish request is sent, so the dictionary commit and the entry commit never
+   *  race. It resolves rather than throws on every failure (a network throw, an expired session, a
+   *  parsed csrf/400/409 all leave the words pending for the next save, never dropped), so a failed
+   *  commit never blocks the save; the words stay live in the Worker for the session, so the author
    *  sees no regression. The transport mirrors the media raw-body actions: a text/plain POST, the CSRF
    *  token in X-Cairn-CSRF, a JSON `{ words }` body, read back through the S3 round-trip helper. */
   async function commitPendingDictionary(): Promise<void> {
@@ -428,6 +524,9 @@ persistent "?" carries Markdown help).
         redirect: 'manual',
         headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
         body: JSON.stringify({ words }),
+        // The save waits on this request, so it gets a deadline: a stalled commit aborts, resolves
+        // fail-closed, keeps the words pending, and lets the save go out.
+        signal: AbortSignal.timeout(DICTIONARY_COMMIT_TIMEOUT_MS),
       },
     );
     if (!outcome.ok) return;
@@ -585,9 +684,12 @@ persistent "?" carries Markdown help).
     getTidy: () => data.tidy,
     getCsrf: () => csrf?.(),
   });
-  // The insert controls disable in Preview (read-only) and while a tidy review is open (the author
-  // cannot edit underneath a pending review, the same posture Preview takes).
-  const insertDisabled = $derived(mode === 'preview' || tidyController.tidyMode);
+  // The insert controls disable in Preview (read-only), while a tidy review is open (the author
+  // cannot edit underneath a pending review, the same posture Preview takes), and while a save or
+  // publish is in flight. The surface's read-only state does not stop a programmatic transaction,
+  // so an insert dispatched mid-request would land after the text was sent and be dropped by the
+  // reload a success ends in.
+  const insertDisabled = $derived(mode === 'preview' || tidyController.tidyMode || busy);
 
   // The three tidy status dialogs (working, no-op, message). Each is promoted to the top layer with
   // showModal() the way TidyReview does, so the focus trap, Escape, and inert background come from the
@@ -1049,6 +1151,9 @@ persistent "?" carries Markdown help).
       body = form?.body ?? data.body;
       saving = false;
       publishing = false;
+      failedInPlace = false;
+      failureNotice = '';
+      signInHref = '';
       leaving = false;
       fieldsDirty = false;
       mode = 'write';
@@ -1127,17 +1232,18 @@ persistent "?" carries Markdown help).
   }
 
   // After a save that links to a draft target, the redirect carries ?drafts=<tokens>.
-  const draftWarning = $derived(redirectFlagList('drafts'));
+  const draftWarning = $derived(failedInPlace ? '' : redirectFlagList('drafts'));
 
   // A save whose frontmatter references an absent or draft target carries ?refs=<concept/id list>,
   // the advisory reference warning the save threads through (mirroring ?drafts=). It never blocks the
   // save; the build's verifyReferences is the integrity authority, so this is informational only.
-  const referenceWarning = $derived(redirectFlagList('refs'));
+  const referenceWarning = $derived(failedInPlace ? '' : redirectFlagList('refs'));
 
   // The one transient feedback strip under the sticky header. The redirect flags are mutually
   // exclusive in practice; the chain picks one so a surprise overlap still renders a single strip.
   // A saved flash with a draft warning yields to the warning alert below, the prior behavior.
   const flash = $derived.by(() => {
+    if (failedInPlace) return '';
     if (data.saved && !draftWarning)
       return 'Saved. Your site keeps showing the published version until you publish.';
     if (data.publishedFlash) return 'Published. The live site is rebuilding.';
@@ -1157,6 +1263,7 @@ persistent "?" carries Markdown help).
     return flash;
   });
   const assertiveMessage = $derived.by(() => {
+    if (failureNotice) return failureNotice;
     if (formError) return formError;
     if (deleteRefusedLinks.length) {
       const count = deleteRefusedLinks.length;
@@ -1684,14 +1791,23 @@ persistent "?" carries Markdown help).
 <!-- The site's publish-actions next-step links (docs/reference/sveltekit.md#the-publish-actions-seam):
      quiet links beside the publish-success strip, never their own alert. They render only alongside
      publishedFlash, so a mid-edit reload of a previously published entry never shows a stale set. -->
-{#if data.publishedFlash && data.publishActions.length}
+{#if !failedInPlace && data.publishedFlash && data.publishActions.length}
   <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 type-body">
     {#each data.publishActions as action (action.label)}
       <a class="link link-primary" href={action.href}>{action.label}</a>
     {/each}
   </div>
 {/if}
-{#if formError}
+<!-- The editor's own failure notice describes the latest attempt, so while it shows, the earlier
+     attempt's server message and broken-link list stand down rather than read as current. -->
+{#if failureNotice}
+  <div class="alert alert-warning mb-4 type-body">
+    <span>{failureNotice}</span>
+    {#if signInHref}
+      <a class="link" href={signInHref} target="_blank" rel="noopener">Sign in</a>
+    {/if}
+  </div>
+{:else if formError}
   <div class="alert alert-error mb-4 type-body">{formError}</div>
 {/if}
 {#if deleteRefusedLinks.length}
@@ -1711,7 +1827,7 @@ persistent "?" carries Markdown help).
     </ul>
   </div>
 {/if}
-{#if visibleBrokenLinks.length}
+{#if visibleBrokenLinks.length && !failureNotice}
   <div class="alert alert-error mb-4 flex-col items-start type-body">
     <p>This page links to {visibleBrokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {visibleBrokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
     <ul role="list" class="mt-1 w-full">
@@ -1821,7 +1937,7 @@ persistent "?" carries Markdown help).
   action={saveFormAction}
   id="cairn-edit-form"
   bind:this={editForm}
-  onsubmit={onEditSubmit}
+  use:enhance={onEditSubmit}
   oninput={onFormInput}
   oninvalidcapture={onFormInvalid}
 >
@@ -2054,7 +2170,9 @@ persistent "?" carries Markdown help).
       </EditorToolbar>
       {/if}
       <!-- The Write pane stays mounted while Preview shows, so CodeMirror keeps its caret, scroll
-           position, and undo history across the tab switch. -->
+           position, and undo history across the tab switch. The surface takes the read-only posture
+           of an open tidy review while a save or publish is in flight too: a success reloads the
+           document from what was sent, so a keystroke typed meanwhile would be dropped. -->
       <div id="cairn-pane-write" role="tabpanel" aria-labelledby="cairn-tab-write" class:hidden={mode === 'preview'}>
         <MarkdownEditor
           bind:value={body}
@@ -2063,7 +2181,7 @@ persistent "?" carries Markdown help).
           registerEditor={bindEditorGrant()}
           onComponentAtCaret={(info) => (caretComponent = info)}
           onMediaImageAtCaret={(info) => (mediaAtCaret = info)}
-          tidyMode={tidyController.tidyMode}
+          tidyMode={tidyController.tidyMode || busy}
           onImageIngest={(file) => mediaPopover?.open('capture', file)}
           onDiagnosticsCounts={(counts) => (diagnosticsCounts = counts)}
           {completionSources}

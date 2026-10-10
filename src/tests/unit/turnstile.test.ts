@@ -184,6 +184,26 @@ describe('verifyTurnstile', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('logs missing_secret, not invalid_input, for a blank or non-string secret, and invalid_input for a blank token', async () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    for (const secret of ['', '   ', undefined, null, 42]) {
+      spy.mockClear();
+      expect(await verifyTurnstile('tok', secret as any)).toBe(false);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({ event: 'turnstile.verify_failed', reason: 'missing_secret' }),
+      );
+    }
+    spy.mockClear();
+    expect(await verifyTurnstile('', 'sec')).toBe(false);
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'turnstile.verify_failed', reason: 'invalid_input', tokenLength: 0 }),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('returns false without calling fetch for a null token, the shape a widget that never rendered supplies', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

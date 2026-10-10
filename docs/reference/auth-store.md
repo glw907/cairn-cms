@@ -112,6 +112,8 @@ Add an editor to the allowlist. `now` is an epoch-millisecond timestamp. Rejects
 different case: the store normalizes first, so `Backup@Site.com` collides with an existing
 `backup@site.com` row rather than adding a second one.
 
+Rejects with a `CairnError` carrying the condition `auth.store-roles-unmigrated` when the database lacks `0001_roles.sql` and `role` names a role other than `owner` or `editor`.
+
 ### `deleteEditor`
 
 Stability tier: Extension API.
@@ -183,6 +185,8 @@ it (writes nothing), or `{ outcome: 'not-found' }` when no row matched the email
 `ownerRoles: []` for a call site that knows the target can never be owner-capability, which changes
 the role unconditionally with no guard.
 
+Rejects with a `CairnError` carrying the condition `auth.store-roles-unmigrated` when the database lacks `0001_roles.sql` and `role` names a role other than `owner` or `editor`.
+
 ### `demoteOwnerIfNotLast`
 
 Stability tier: Extension API.
@@ -204,6 +208,8 @@ uses, over the same `ownerRoles` set from
 `{ outcome: 'ok' }` on success, `{ outcome: 'last-owner' }` when this is the last owner-capability
 row, or `{ outcome: 'not-eligible' }` when no owner-capability row matched the email; writes
 nothing on either refusal.
+
+Rejects with a `CairnError` carrying the condition `auth.store-roles-unmigrated` when the database lacks `0001_roles.sql` and `newRole` names a role other than `owner` or `editor`.
 
 ---
 

@@ -52,6 +52,10 @@ interface TidyOpts {
   cookieCsrf?: string | undefined;
   hasEditor?: boolean;
   rawBody?: string;
+  /** The route params; defaults to the edit view's `{ concept, id }`. */
+  params?: Record<string, string>;
+  /** The signed-in session; defaults to the owner. */
+  who?: Editor;
 }
 
 /** Build the CairnEvent for a tidy POST: the JSON `{ text, scope }` rides the raw `text/plain` body,
@@ -64,10 +68,10 @@ function tidyEvent(opts: TidyOpts = {}): CairnEvent {
   const url = new URL('https://site.example/admin/posts/my-entry');
   return {
     url,
-    params: { concept: 'posts', id: 'my-entry' },
+    params: opts.params ?? { concept: 'posts', id: 'my-entry' },
     route: { id: '/admin/[concept]/[id]' },
     request: new Request(url, { method: 'POST', body, headers }),
-    locals: { cairnEditor: opts.hasEditor === false ? null : editor },
+    locals: { cairnEditor: opts.hasEditor === false ? null : (opts.who ?? editor) },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
     setHeaders: () => {},
   };
@@ -178,6 +182,17 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     const event = tidyEvent() as unknown as { cookies: unknown };
     event.cookies = undefined;
     await expect(routes.tidyAction(event as never)).rejects.toThrow(/cookie jar/i); // idioms-allow: as-never  simulates an untyped caller passing no cookie jar
+    expect(tidyFn).not.toHaveBeenCalled();
+  });
+
+  it('answers 404 when the route carries no concept param, for an editor the map denies, with no model call', async () => {
+    const tidyFn = vi.fn(async () => cannedResult('x'));
+    const denied: Editor = { email: 'w@b.test', displayName: 'W', role: 'webmaster', capability: 'editor' };
+    const routes = createContentRoutes({
+      runtime: runtime({ roles: { owner: 'owner', webmaster: 'editor', publisher: 'editor' }, access: { media: ['publisher'] } }),
+      tidy: { client: fakeAnthropic(tidyFn) },
+    });
+    await expect(runTidy(routes, tidyEvent({ params: {}, who: denied }))).rejects.toMatchObject({ status: 404 });
     expect(tidyFn).not.toHaveBeenCalled();
   });
 

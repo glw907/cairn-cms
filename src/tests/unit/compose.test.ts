@@ -1,8 +1,13 @@
 import { describe, it, expect } from 'vitest';
+import type { Handle } from '@sveltejs/kit/hooks';
 import { createGithubApp } from '../../lib/index.js';
 import { composeRuntime } from '../../lib/content/compose.js';
+import { createAuthGuard } from '../../lib/sveltekit/guard.js';
+import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import { devBackendHandle } from '../../../packages/cairn-cms-dev/src/handle.js';
 import type { CairnAdapter, PreviewConfig } from '../../lib/content/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
+import type { RolesDeclaration } from '../../lib/auth/roles.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { testSiteConfig } from './_content-fixture.js';
 
@@ -44,6 +49,51 @@ describe('composeRuntime access', () => {
 
   it('leaves access undefined when the adapter omits it', () => {
     expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).access).toBeUndefined();
+  });
+});
+
+describe('composeRuntime: an access rule naming an undeclared role', () => {
+  // The shape a site leaves behind when it drops a role from defineRoles but not from its access
+  // rules: a leftover roster row with the old role would otherwise reach the href rule.
+  it.each([
+    {
+      name: 'a custom vocabulary that no longer declares the role',
+      roles: { owner: 'owner', webmaster: 'editor' } as RolesDeclaration | undefined,
+      access: { '/admin/staff': ['staff'] } as AccessMap,
+      message:
+        'access: "/admin/staff" names role "staff", which the role vocabulary does not declare; declare "staff" in defineRoles, or remove it from this rule',
+    },
+    {
+      name: 'the default owner/editor pair',
+      roles: undefined,
+      access: { pages: ['owner', 'staff'] } as AccessMap,
+      message:
+        'access: "pages" names role "staff", which the role vocabulary does not declare; declare "staff" in defineRoles, or remove it from this rule',
+    },
+  ])('throws for $name', ({ roles, access, message }) => {
+    expect(() => composeRuntime({ adapter: { ...adapter(), roles, access }, siteConfig: testSiteConfig })).toThrow(message);
+  });
+
+  describe('a declared custom none-capability role on an href rule', () => {
+    const roles: RolesDeclaration = { owner: 'owner', staff: 'none' };
+    const access: AccessMap = { '/admin/staff': ['staff'] };
+    const compose = () => composeRuntime({ adapter: { ...adapter(), roles, access }, siteConfig: testSiteConfig });
+
+    it('composes, carrying the vocabulary and the map onto the runtime untouched', () => {
+      const runtime = compose();
+      expect(runtime.roles).toBe(roles);
+      expect(runtime.access).toBe(access);
+    });
+
+    it('builds the guard, the dev handle, and the content routes from that runtime', async () => {
+      const runtime = compose();
+      expect(typeof createAuthGuard({ runtime })).toBe('function');
+      expect(() => createContentRoutes({ runtime })).not.toThrow();
+      const handle: Handle = devBackendHandle({ runtime });
+      const event = { url: new URL('http://localhost/admin/staff'), locals: {} as Record<string, unknown> };
+      await handle({ event: event as unknown as Parameters<Handle>[0]['event'], resolve: async () => new Response('ok') });
+      expect(event.locals.cairnAccess).toBe(access);
+    });
   });
 });
 

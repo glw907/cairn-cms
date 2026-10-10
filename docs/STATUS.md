@@ -7,36 +7,27 @@ Present tense only; the past lives in [`docs/HISTORY.md`](HISTORY.md), orientati
 Published: **`0.98.0`** (npm `latest`, release commit `a84a6853`, with `@glw907/cairn-cms-dev`
 `0.98.0`); the Go tool is `tool/v1.1.0`. Unreleased on `main`: SvelteKit 3 (with an untagged tool
 major), the harvest's page removal, draft docs stage 2a, the October dependency sweep, the doctor
-cleanup, and engine pass A (PR #108). CI is green. cairn.pub pins `0.94.0-rc.1`, its ceiling `0.98.0`
-until the one release below ([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)).
+cleanup, engine pass A (PR #108), and the gate economy pass (PR #110). CI is green. cairn.pub pins
+`0.94.0-rc.1`, its ceiling `0.98.0` until the one release below
+([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)).
 
 **The sequence (Geoff, 2026-10-07).** Docs stages 2b to 5, then one release, then each site
 migrates (cairn.pub included, none before). Engine passes land on `main` and never release; each
 sits in its slot on `ROADMAP.md`'s boundary-test path.
 
+**The per-task gate is now targeted.** `scripts/checks/gate-tier.mjs` prints the gate a diff
+needs (`docs/internal/pass-gate-tiers.md`); CI green, read with the dotfiles `ci-green`, is the
+boundary and close gate, and the local `full` tier runs only when `ci-green` exits 3. The pass's
+plan, score, and replay record: [`superpowers/plans/2026-10-09-gate-economy.md`](superpowers/plans/2026-10-09-gate-economy.md).
+
 ## Immediate next action
 
-**In flight (2026-10-10):** the gate economy pass is at its close, paused at the 80 percent token line
-(about 3.36M of 4.0M) for one owner question. Every task is accepted except 6b, whose comment-only fix
-round is running in `gate-economy`. cairn-cms head `239a4114` (CI green on `b835fe30`); dotfiles head
-`e410972` (simplified; close review asked for one docs fix in pass-core and cairn-pass: the runner
-args template must pass `ci: { pr }`). Remaining close: that dotfiles fix, the cairn-cms simplifier,
-whole-branch review, two timed ranges, ledgers, the final CI read, then both merges and the stow
-(Geoff authorized them, 2026-10-10). Ledger notes: `~/.cache/gate-economy/ledger.md`.
-
-Pass A is merged and unreleased
-([plan and post-mortem](superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)). The release holds
-until the docs are complete.
-The gate economy pass executes next: plan
-[`superpowers/plans/2026-10-09-gate-economy.md`](superpowers/plans/2026-10-09-gate-economy.md)
-(spec, four-lens spec review, three-lens plan review, two folds, and two verification reads done;
-no open rulings). PR #109 (`1841b4db`) already landed CI job timeouts and bounded installs. Engine
-pass B waits on it: plan
+Engine pass B executes next:
 [`superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md`](superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md),
-ceiling 14.0M, its gate section updated by the gate economy pass's Task 6.
-
-Pass B carries the relink re-arm list (the 2a pages and fact ids pass A falsified, in the plan's
-Ledger and the Task 12 carry files) and a `Consumers must:` line for `replyTo` inheritance.
+ceiling 14.0M, its gate section already rewritten to the targeted gate and CI reads. It carries the
+relink re-arm list (the 2a pages and fact ids pass A falsified, in the plan's Ledger and the Task 12
+carry files) and a `Consumers must:` line for `replyTo` inheritance. The release holds until the docs
+are complete.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
@@ -49,22 +40,18 @@ Ledger and the Task 12 carry files) and a `Consumers must:` line for `replyTo` i
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
 
-### Next action (gate economy pass, execute)
+### Next action (engine pass B, execute)
 
-> **Goal.** Cut a pass's gate clock to about half of pass A's with no loss of assurance: run
-> records, a build-once close, a targeted per-task gate, `ci-green`, CI as the boundary and close
-> gate, and sequential-runner pipelining with stop-the-line.
+> **Goal.** Land engine pass B, the engine work that runs before draft docs stage 2b.
 >
-> **Scope.** The plan's Tasks 0 to 7 across the cairn-cms worktrees (`gate-economy`, plus
-> `gate-economy-ci` for Task 4a) and a dotfiles worktree. Out: deleting or moving tests, pass B's
-> tasks, chains pipelining.
+> **Scope.** The plan's tasks and close, as written. Out: anything the plan does not name.
 >
-> **Settled (do not re-brainstorm):** everything in the spec and the plan's "Decisions this plan
-> takes"; no rulings are open. Protected paths force a CI-green wait on that task's commit. Merge
-> order is cairn-cms first, then dotfiles in the same sitting; both merges are owner-gated.
+> **Settled (do not re-brainstorm):** everything in the plan, including its rewritten gate section:
+> the targeted per-task gate, `ci: { pr }` through the sequential runner, CI green at boundaries and
+> the close, and Tasks 1 and 2 dispatched as one `auth-data` runner task.
 >
-> **Approach.** Plan `docs/superpowers/plans/2026-10-09-gate-economy.md`, class `engine-logic`
-> (Task 6b `docs`), token ceiling 4.0M (stop and write STATUS at 3.2M), clock estimate about
-> 4.8 hours. Hand-dispatched chains per the plan. Unattended run: arm the guards at launch. Invoke
-> `cairn-pass` to start. Launch directory: `/var/home/glw907/Projects/cairn-cms`. Model:
-> `claude --model claude-opus-5-5 --effort medium`.
+> **Approach.** Plan `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` (class
+> `engine-logic` with per-task overrides), token ceiling 14.0M. Read `pass-core` and
+> `~/.claude/docs/pass-gate-economy.md` first; both changed in the gate economy pass. Unattended run:
+> arm the guards at launch. Invoke `cairn-pass` to start. Launch directory:
+> `/var/home/glw907/Projects/cairn-cms`. Model: `claude --model claude-opus-5-5 --effort medium`.

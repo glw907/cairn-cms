@@ -24,7 +24,9 @@ of pass A's shape, with no loss of assurance, measured by replaying pass A's tas
   component project is browser-bound (3 of 90 files render nothing), and nothing points at a
   coverage problem. One coverage probe runs in Task 7; a thin module on the auth or commit path is
   the trigger to reopen the audit.
-- **Budget.** Token ceiling 4.0M, clock estimate about 7 hours.
+- **Budget.** Token ceiling 4.0M, clock estimate about 3.5 hours on the critical path (Geoff,
+  2026-10-09: 7 hours was excessive). Tasks 1, 5, and 6 are dotfiles only and run no npm gate; Tasks
+  3 and 4 run in parallel; Task 3 onward runs under the gate Task 2 lands.
 
 ## Measured baseline
 
@@ -123,15 +125,17 @@ files join `lint` and `check:comments`.
 4. CI hardening: timeouts, retry summaries, `ci-green`, install caching.
 5. Pipelining and CI boundaries in both runners (dotfiles).
 6. Rules: `pass-core`, `pass-gate-economy.md`, `cairn-implementer`, pass B's gate section.
-7. Replay and acceptance: pass A's task ranges under the new per-task gate, clock before and after,
-   the miss rate, and one v8 coverage run over `src/lib`.
+7. Replay and acceptance: for each of pass A's task ranges, compute the new gate's selection (a
+   classifier dry run, seconds) and compare it with the failures pass A's logged full gates
+   recorded. Time a targeted run on two representative ranges only. One v8 coverage run over
+   `src/lib`.
 
-Tasks 1, 3, and 4 are independent. Task 5 needs 4's `ci-green`. Task 7 runs last.
+Tasks 1, 3, and 4 are independent. Task 5 needs 4's `ci-green`. Task 7 runs last. Pass A's logged
+gates are not rerun.
 
 ## Acceptance
 
-- A replay of pass A's task ranges shows the per-task gate at 10 minutes or less locally, against 30
-  to 50.
+- The two timed replay ranges show the per-task gate at 10 minutes or less locally, against 30 to 50.
 - Miss rate zero on the replay: no test fails in the full run that the targeted gate skipped. Any
   miss gets a trigger or an input-map entry, and the replay reruns.
 - `ci-green` reports correctly on a green commit, a red one, a pending one, and one missing an

@@ -632,6 +632,7 @@ describe('relatedGate fallbacks', () => {
     'src/tests/types/tsconfig.json',
     'package.json',
     'package-lock.json',
+    'src/tests/_app-env.ts',
     'src/tests/component/_setup.ts',
     'src/tests/helpers/test-event.ts',
     'src/tests/component/fixtures/admin-table-baseline.html',
@@ -675,6 +676,14 @@ describe('relatedGate fallbacks', () => {
 
   it('runs no create-cairn-site suite for a templates/ path alone, which the bake writes but never reads', () => {
     expect(relatedGate(['templates/waymark/src/hooks.server.ts']).gate).toBe(`${STATIC} && ${NODE}`);
+  });
+
+  it('treats a setup helper under src/tests/component as a trigger and a unit-test helper as none', () => {
+    const triggered = (path: string) => COMPONENT_RERUN_TRIGGERS.some((glob) => matchesGlob(path, glob));
+    expect(triggered('src/tests/component/_setup.ts')).toBe(true);
+    expect(triggered('src/tests/component/nested/_probe.ts')).toBe(true);
+    expect(triggered('src/tests/unit/_some-helper.ts')).toBe(false);
+    expect(triggered('src/tests/integration/_auth-harness.ts')).toBe(false);
   });
 
   it('feeds the same trigger list to Vitest as forceRerunTriggers', () => {

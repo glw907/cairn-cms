@@ -34,8 +34,10 @@ export const COMPONENT_RERUN_TRIGGERS = Object.freeze([
   'package.json',
   'package-lock.json',
   // Setup, globalSetup, and module-alias stubs (`_setup.ts`, `_global-setup.ts`, `_app-*.ts`)
-  // that the config wires into every test file outside its imports.
-  'src/tests/**/_*.ts',
+  // that the config wires into every test file outside its imports. The node projects' helpers
+  // under unit/ and integration/ are ordinary imports the graph walk follows, so they are not here.
+  'src/tests/_*.ts',
+  'src/tests/component/**/_*.ts',
   // The fake `cloudflare:workers` module and its reset setup file, wired in by the config.
   'src/tests/helpers/**',
   // Fixture data a test reads as text or fetches, outside its import graph.

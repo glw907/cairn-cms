@@ -4,12 +4,14 @@
 // this list: it checks the tarball's own shape (publint, attw, the file manifest), not a doc
 // arm's content, so it keeps its own CI step.
 //
-// Interface: `node scripts/checks/docs-gate.mjs [--page <path>] [--brief <path>]`. Every component
+// Interface: `node scripts/checks/docs-gate.mjs [--prebuilt] [--page <path>] [--brief <path>]`. Every component
 // reads the whole tree except three: `--page <path>` narrows Vale to that one path in place of the
 // fixed list `check:vale` runs by default, and also narrows check:tellgrader to that page;
 // `--brief <path>` narrows check:provenance to that one brief through check-provenance.mjs's own
 // positional-argument mode. Both flags exist so a page-chain page's gate (npm run check:docs-gate -- --page {page} --brief {brief}) proves only
 // the page and brief it drafted, not every sibling page's in-flight brief or prose.
+//
+// `--prebuilt` skips the build for a caller that already built `dist` in the same run.
 //
 // Tree mode (no `--page`) also runs `vale test` over the Cairn rules' own cases, since a rule's
 // pass and fail cases guard the rule itself, not any one page.
@@ -37,18 +39,21 @@ const VALE_RULE_TESTS = [
 const VALE_RULE_TEST_CONFIG = '.vale/tests/vale.ini';
 
 /**
- * Parse the fixed CLI shape: an optional `--page <path>` and an optional `--brief <path>`.
+ * Parse the fixed CLI shape: an optional `--page <path>`, an optional `--brief <path>`, and the
+ * valueless `--prebuilt`.
  * @param {string[]} argv
- * @returns {{ page: string | null, brief: string | null }}
+ * @returns {{ page: string | null, brief: string | null, prebuilt: boolean }}
  */
 export function parseArgs(argv) {
   let page = null;
   let brief = null;
+  let prebuilt = false;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--page') page = argv[++i] ?? null;
     else if (argv[i] === '--brief') brief = argv[++i] ?? null;
+    else if (argv[i] === '--prebuilt') prebuilt = true;
   }
-  return { page, brief };
+  return { page, brief, prebuilt };
 }
 
 /**
@@ -105,14 +110,16 @@ export function buildSteps({ page, brief }) {
 }
 
 function main() {
-  const { page, brief } = parseArgs(process.argv.slice(2));
+  const { page, brief, prebuilt } = parseArgs(process.argv.slice(2));
 
-  console.log('== npm run package (dist, built once for the whole docs gate) ==');
-  const pkg = spawnSync('npm', ['run', 'package'], { cwd: ROOT, stdio: 'inherit' });
-  if (pkg.status !== 0) {
-    console.error('check:docs-gate: npm run package failed; no component ran');
-    process.exitCode = 1;
-    return;
+  if (!prebuilt) {
+    console.log('== npm run package (dist, built once for the whole docs gate) ==');
+    const pkg = spawnSync('npm', ['run', 'package'], { cwd: ROOT, stdio: 'inherit' });
+    if (pkg.status !== 0) {
+      console.error('check:docs-gate: npm run package failed; no component ran');
+      process.exitCode = 1;
+      return;
+    }
   }
 
   const steps = buildSteps({ page, brief });

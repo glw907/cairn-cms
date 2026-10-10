@@ -39,6 +39,12 @@ const COMMENT_GLOBS = [
   'examples/showcase/e2e/**/*.ts',
 ];
 
+// The build scripts the comment gate names one by one. Each is plain JavaScript with JSDoc, so the
+// TypeScript ruleset the globs above use (it forbids `{type}` tags) does not fit; the flavor
+// config accepts them. A new script joins this list by name, never by a `scripts/**` glob, which
+// would sweep in every older script that was never written to this standard.
+const SCRIPT_FILES = ['scripts/checks/close-prebuilt.mjs'];
+
 export default [
   { files: COMMENT_GLOBS, ...jsdoc.configs['flat/recommended-typescript-error'] },
   {
@@ -70,6 +76,12 @@ export default [
       // generator function describes what it yields in prose instead.
       'jsdoc/require-yields': 'off',
     },
+  },
+  { files: SCRIPT_FILES, ...jsdoc.configs['flat/recommended-typescript-flavor-error'] },
+  {
+    files: SCRIPT_FILES,
+    plugins: { house: houseComments },
+    rules: { 'house/no-em-dash-in-comments': 'error' },
   },
   // The showcase's .svelte files and the engine's own admin components get the same four
   // comment rules the .ts block carries, scoped to these two globs. svelte-eslint-parser hands

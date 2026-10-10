@@ -19,14 +19,14 @@ const COMPILED_ADMIN_SHEET = path.resolve('dist/admin/cairn-admin.css');
 
 // A `vitest related` or `--changed` run selects tests by their static import graph. The shared
 // trigger list names the paths that reach the component tests outside that graph, so a related
-// run that touches one runs every selected project in full instead of a partial selection. A watch
-// run keeps Vitest's defaults, so editing an admin component reruns only its own tests there.
+// run that touches one runs every selected project in full instead of a partial selection. The
+// run opts in with CAIRN_RELATED_RUN=1 because an argv check cannot see a run started in process
+// (the classifier's `createVitest`). A watch run keeps Vitest's defaults, so editing an admin
+// component reruns only its own tests there.
 // Each glob is anchored at the absolute repo root, not prefixed with a bare double star: a pass
 // worktree lives under `.claude/worktrees/`, and Vitest's matcher never lets a double star cross a
 // dot directory, so a bare double-star pattern silently matches nothing there.
-const RELATED_RUN = process.argv
-  .slice(2)
-  .some((arg) => arg === 'related' || arg.startsWith('--changed'));
+const RELATED_RUN = process.env.CAIRN_RELATED_RUN === '1';
 const FORCE_RERUN_TRIGGERS = RELATED_RUN
   ? [...configDefaults.forceRerunTriggers, ...COMPONENT_RERUN_TRIGGERS.map((glob) => `${path.resolve('.')}/${glob}`)]
   : [...configDefaults.forceRerunTriggers];

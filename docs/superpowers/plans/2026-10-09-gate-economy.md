@@ -26,42 +26,43 @@ which adds no class settle step.
 
 | Item | Budget |
 | --- | --- |
-| Task 0: worktrees, baselines, draft PR, S1 and S2 pre-flights | 0.15M |
-| Dotfiles chains: Task 1 (0.25M), Task 4b (0.30M), Task 5 (0.35M), Task 6a (0.30M) | 1.20M |
-| cairn-cms chains: Task 2 (0.30M), Task 4a (0.20M), Task 3 (0.40M), Task 7 (0.30M), Task 6b (0.12M) | 1.32M |
+| Task 0: three worktrees, baselines, draft PR, S1 and S2 pre-flights | 0.18M |
+| Dotfiles chains: Task 1 (0.25M), Task 4b (0.30M), Task 5 (0.38M), Task 6a (0.30M) | 1.23M |
+| cairn-cms chains: Task 2 (0.30M), Task 4a (0.20M), Task 3 (0.44M), Task 7 (0.30M), Task 6b (0.12M) | 1.36M |
 | S3 pre-flight | 0.05M |
 | One fix round per segment in reserve (three segments) | 0.40M |
 | Close: two simplifier runs, two whole-branch `diff-reviewer` reads, the CI wait, one fix chain, ledgers | 0.55M |
-| Plan-review fold: added acceptance cases, three protected-path CI-wait probes | 0.12M |
-| **Total** | **3.79M** |
+| Plan-review fold: added acceptance cases, the protected-path CI-wait probes | 0.12M |
+| **Total** | **3.89M** |
 
-The remaining 0.21M is unallocated reserve. The meter is the conductor's running sum of the usage
+The remaining 0.11M is unallocated reserve. The meter is the conductor's running sum of the usage
 each Agent call returns, kept in the Ledger's Clock column notes (`/cost` is a user-typed command
 the conductor cannot run). **At 80 percent (3.2M)** each track finishes its task in flight, the
 conductor writes STATUS, and asks one combined question at whichever track's boundary comes first.
 It starts no new segment past 3.2M without an answer.
 
-**Clock estimate:** about 6 hours from the first implementer dispatch to merge-ready, re-costed
-from the plan review's measured tally (mechanics M5) and Decision 10. Two tracks run side by side,
-one executor per worktree; the cairn-cms track sets the critical path. Measured inputs: Task 2's
-gate about 21 min, the build-once `check:close` 679 s, the CI test job 663 s, a CI queue of up to
-1,232 s. Each protected-path CI wait starts at the implementer's push, so it overlaps the review;
-about 15 min of it is left after the accept.
+**Clock estimate:** about 4.8 hours from the first implementer dispatch to merge-ready, re-costed
+from the plan review's measured tally (mechanics M5), Decision 10, and the fold verification's Q5
+cuts. Three worktrees run side by side, one executor per worktree; the cairn-cms track sets the
+critical path. Measured inputs: Task 2's gate about 21 min, the build-once `check:close` 679 s,
+the CI test job 663 s, a CI queue of up to 1,232 s. Task 3's strict CI wait starts at the
+implementer's push, so it overlaps the review; about 15 min of it is left after the accept.
 
 | Step | Estimate |
 |---|---|
-| Task 2: implement, its gate (about 21 min), review, then its CI wait | about 70 min |
-| Task 4a: implement, light gate, review, then its CI wait | about 40 min |
-| Task 3: implement, its fixed gate (about 12 min), review, then its CI wait (the S1 read) | about 75 min |
-| Task 7: starts at Task 3's CI green; dry runs, two timed ranges, record | about 55 min |
+| Task 2: implement, its gate (about 21 min), review; CI runs behind (default rule) | about 55 min |
+| Task 4a: second worktree, beside Task 2, light gate, review | about 25 min, off the critical path |
+| Task 3: cherry-pick 4a, implement (with `--protected`), fixed gate (about 12 min), review, strict CI wait (the S1 read) | about 85 min |
+| Task 7: starts at Task 3's CI green; dry runs, miss-rate table, record | about 35 min |
 | Task 6b: pass B's plan and ROADMAP, `git diff --check`, review | about 15 min |
-| Close: simplifier, reviewers beside the ledgers, one CI read on the final head | about 55 min |
-| One fix round, contingency (plus a CI wait if it lands on a protected-path task) | about 45 min |
-| Dotfiles track: 1 (30), 4b (45), 5 (55), 6a (40) | about 2.8 h, under the cairn-cms track |
+| Close: simplifier, then reviewers and the two timed ranges beside the ledgers, one CI read on the final head | about 55 min |
+| One fix round, contingency (plus a CI wait if it lands on Task 3) | about 45 min |
+| Dotfiles track: 1 (30), 4b (45), 5 (60), 6a (40) | about 2.9 h; Task 6a's accept lands about with Task 7's, so either may set Task 6b's start |
 
-Decision 10's three CI waits cost about an hour of this; the same scope without them tallies
-about 4.9 hours. A CI-unavailable exit adds F (about 45 min) on that SHA. CI waits are not
-rework: the score reads them from the CI wait records. Task 0 (about 25 min of worktree setup,
+Only Task 3 keeps the strict post-accept CI wait in this pass (Decision 10, as narrowed); the same
+scope without it tallies about 4.6 hours. A CI-unavailable exit adds F (about 45 min) on that SHA.
+CI waits are not rework: the score reads them from the CI wait records. The tally is 55 + 85 + 35
++ 15 + 55 + 45 minutes on the critical path. Task 0 (about 25 min of worktree setup,
 baselines, and pre-flights) precedes the first dispatch and is scored on its own line, per
 `model-economy.md`'s "from the first execution dispatch". Task 6b runs on the cairn-cms track
 because its files live in this repo's worktree.
@@ -75,11 +76,14 @@ question to Geoff, and before any stop.
 | Segment | Track | Tasks | Boundary proof |
 |---|---|---|---|
 | S0, setup | both | 0 | Ledger entry; both baselines green; draft PR open |
-| S1, close and check buckets | cairn-cms | 2, 4a, 3 | Task 3's gate green on the head; pushed; CI green on the head (expected set, below) |
+| S1, close and check buckets | cairn-cms | 2 beside 4a (two worktrees), then 3 | Task 3's gate green on the head; pushed; CI green on the head (expected set, below) |
 | S2, records, `ci-green`, pipelining | dotfiles | 1, 4b, 5 | `bash scripts/check.sh` green on the dotfiles branch head |
 | S3, rules and replay | both | 6a (dotfiles), 7 then 6b (cairn-cms) | dotfiles `check.sh` green; cairn-cms head's CI read yields to the close's (no merge of `main` in between) |
+| Close | both | simplify; reviewers and Task 7's two timed ranges beside the ledgers; CI read | per "Close" |
 
-S1 and S2 run at the same time. S3's Task 6a starts when Task 5 is accepted. Task 7 starts when
+S1 and S2 run at the same time. Inside S1, Task 2 runs in `gate-economy` and Task 4a in
+`gate-economy-ci` at the same time; Task 3 starts when both are accepted and Task 4a's commits are
+cherry-picked onto `gate-economy`. S3's Task 6a starts when Task 5 is accepted. Task 7 starts when
 Task 3's CI wait (Decision 10), which is also the S1 boundary's CI read, is green. Task 6b starts
 when both Task 7 and Task 6a are accepted.
 
@@ -113,10 +117,11 @@ prompts and names the base SHA in each dispatch.
   `ci-green.json` entry, or workflow test step narrowed or weakened, that the task's criteria do
   not name." Task 6a lands the same rule in the runner; this pass is reviewed under it first.
 - Every cairn-cms dispatch also asks for cairn friction in one line (pass-core's harvest rule).
-- The conductor pushes each cairn-cms task's commits (CI shadows the pass); a protected-path
-  task pushes at the implementer's commit (Decision 10). This pass runs under the pass-core rules
-  live at its start, Decision 7's CI boundary read excepted, because Task 5's pipelining and Task
-  6a's rules reach the live tooling only at the dotfiles merge (owner step).
+- The conductor pushes each `gate-economy` task's commits (CI shadows the pass); a protected-path
+  task pushes at the implementer's commit (Decision 10). Task 4a's commits are never pushed from
+  `gate-economy-ci`; they reach the PR through the cherry-pick before Task 3. This pass runs under
+  the pass-core rules live at its start, Decision 7's CI boundary read excepted, because Task 5's
+  pipelining and Task 6a's rules reach the live tooling only at the dotfiles merge (owner step).
 
 **Models:** implementers `sonnet`; reviewers `claude-opus-5-5` at `medium`; the pre-flights
 `haiku`; the close's simplifier is the plugin agent's own Opus pin. Upshift candidate: Task 5 (the
@@ -141,8 +146,19 @@ state machine). If its one fix round leaves a behavior defect, the conductor re-
   gitleaks leg of `check.sh` (run from the main checkout) sees it. The live tools stay on the main
   checkout's copies until the owner-gated dotfiles merge, so no edit here changes a gate another
   session is running.
-- **One executor per worktree.** Each track has one implementer at a time. The conductor dispatches
-  both tracks' chains in the background and never runs two chains in one worktree.
+- **Task 4a's worktree:** `.claude/worktrees/gate-economy-ci`, branch `gate-economy-ci`, created in
+  Task 0 off `gate-economy` right after the `075bc174` cherry-pick, with `npm ci` only (its gate
+  runs two unit test files and launches no browser). It holds Task 4a alone. When Tasks 2 and 4a
+  are both accepted, the conductor runs `git cherry-pick <4a base>..gate-economy-ci` in the
+  `gate-economy` worktree and pushes. The Files are disjoint, so the pick is clean; a conflict means
+  a task touched a path outside its Files, and that task's chain takes a fix round. The branch is
+  never pushed, and the worktree is removed with the others at owner step 3.
+- **One executor per worktree.** Each worktree has one implementer at a time: Task 2 and Task 4a
+  run at once only because each owns its own worktree. The conductor dispatches every chain in the
+  background and never runs two chains in one worktree. Gates in all three worktrees queue on
+  `cairn-run-gate`'s machine-wide locks: Task 2's heavy gate holds `machine.lock`, which any F
+  fallback also waits on, and Task 4a's light gate shares `machine-light.lock` with the dotfiles
+  track's D. The queue is recorded as lock wait, never as rework.
 - **PR #109** (merged `1841b4db`, 2026-10-09) already landed every job's `timeout-minutes` and the
   bounded install actions. Task 4a keeps only the retry annotation, the job-timeout presence test,
   and the expected-set file that `ci-green` reads; nothing re-lands the timeouts.
@@ -165,10 +181,15 @@ browser. `<base>` is the task's base SHA, filled in by the conductor at dispatch
   runs only where `ci-green` (or the S1 probe below) reports unavailable, on that SHA.
 - **Protected paths (Decision 10):** the bucket and e2e-map table, `scripts/test/component-rerun-triggers.mjs`,
   `scripts/checks/gate-tier.mjs`, `.github/ci-green.json`, and `.github/workflows/**`. A task whose
-  diff touches one runs its targeted gate, never a string its own classifier edit computes, and
-  then waits for CI green on its own commit before the next task starts, the wait an `auth-data`
-  task takes. The conductor pushes at the implementer's commit, so CI runs during the review; on
-  exit 3, F runs on that SHA. This covers Tasks 2, 3, and 4a and any fix round on them.
+  diff touches one runs its targeted gate, never a string its own classifier edit computes. Where
+  the next task builds on the change through the machinery it touched, the task then waits for CI
+  green on its own commit before the next task starts, the wait an `auth-data` task takes. The
+  conductor pushes at the implementer's commit, so CI runs during the review; on exit 3, F runs on
+  that SHA. In this pass only Task 3 (and any fix round on it) takes that strict wait, since Task
+  7's replay runs on its classifier. Tasks 2 and 4a touch protected paths but no successor builds
+  on them through a computed gate, since every gate here is a fixed string, so they take the
+  default rule: N's CI green before N+2 starts. Task 3's strict wait on its own head, which carries
+  both, is that read for each, so Task 7 starts only on CI green over all three.
 - **CI green:** at least one workflow run exists on the SHA, every run concluded `success`, and the
   expected set is present: `test`, `e2e`, `design`, `scaffold`, and `create-site` whenever the diff
   has a path outside `tool/**`; `tool` and `tool-conditions` judged only when present. Zero runs
@@ -243,7 +264,13 @@ These let the two tracks build against each other without waiting.
 5. **The classifier's class flag.** `gate-tier.mjs` accepts `--class <passClass>` for each of the six
    `PASS_CLASSES` names. Under `auth-data` it adds the three auth e2e specs (`golden-path`,
    `access-map`, `csrf-origin`); the other five leave the output unchanged. Both runners pass it
-   whenever a task has a class (Task 5).
+   whenever a task has a class (Task 5). A separate mode, `gate-tier.mjs --range <base>..HEAD
+   --protected`, prints `ciWait` when any path in the range matches the protected list and prints
+   nothing otherwise, exiting 0 in both cases. It reads the list at `<base>` (`git show
+   <base>:<table>`), so a range that deletes its own entry still flags; a table absent or unreadable
+   at `<base>` prints `ciWait` with the reason on stderr (fail closed). A git failure exits non-zero
+   with empty stdout. The default mode's stdout, the gate string, is untouched by this mode, and no
+   protected path changes the gate string (Task 3, Task 5).
 
 ## Decisions this plan takes
 
@@ -294,10 +321,16 @@ These let the two tracks build against each other without waiting.
     2511.21654), and Anthropic's harness guidance forbids it. Under Geoff's settled "CI replaces the
     local full gate", the full gate is CI green: a task touching a protected path (Gates) runs its
     targeted gate, then waits for CI green on its own commit before the next task, and F runs only
-    on `ci-green` exit 3. The rule executes in the runner as a per-task `ciWait: true`, the
-    `auth-data` flag applied to one task (Task 5), which a plan sets on any task whose Files name a
-    protected path; `diff-reviewer` blocks a protected-path touch on a task without it. The
-    removed-lines metric stays refused.
+    on `ci-green` exit 3. The classifier emits the requirement: `gate-tier.mjs --protected`
+    (interface 5, Task 3) prints `ciWait` for a range touching the protected list, which lives in
+    cairn-cms beside the bucket table (Decision 4's principle). The runner's existing gate probe
+    runs it on every task, pinned tasks included, and waits when the probe's `ciWait`, the task's
+    own `ciWait: true`, or the class's `ciWait` holds (Task 5); the plan flag stays as an override,
+    and `diff-reviewer` stays the backstop for a protected-path touch the probe could not see. From
+    pass B the runner waits on every flagged task, since a successor's computed gate runs on the
+    touched machinery. This pass is hand-dispatched with fixed gate strings, so the conductor
+    applies the strict wait only where the next task builds on the change: Task 3 (Gates,
+    "Protected paths"). The removed-lines metric stays refused.
 11. **The emitted e2e leg keeps the `--grep-invert` variant for `site-visual.spec.ts`.**
     Reachability forces some map entry to select that spec, and its `site home` and `archive page
     2` tests are known local reds (`durable-gotchas.md`). Selecting it appends `--grep-invert "site
@@ -325,15 +358,16 @@ listed under "Running unattended", not forks.
   the notes batched to the boundary, or run one more round. On Tasks 2, 3, 4a, and 4b, where the
   tests are the proof a selection fails closed, a `testOnly` second `fix` always runs one more
   round;
-- a `retries` notice absent from a test job at the S1 boundary: a Task 4a fix round;
+- a `retries` notice absent from a test job at the S1 boundary: a Task 4a fix round, run in
+  `gate-economy`;
 - a `cairn-run-gate` exit 75 (re-issue), and a flake the durable-gotchas rerun rule covers;
 - a CI red that `main` also carries (file it, route it to `main`), and one rerun of an
   infrastructure red (a timeout or a failed setup or install step) with `gh run rerun`;
 - a pre-flight finding that a line, count, or path moved (amend this plan in the worktree, commit,
   dispatch);
 - an implementer's unspecified decision inside the task's constraints (recorded in the Ledger);
-- a Task 7 timed range over 10 minutes after one bucket revisit (recorded, carried to pass B; the
-  pass does not block on it);
+- a timed range over 10 minutes at the close after one bucket revisit (recorded, carried to pass
+  B; the pass does not block on it);
 - a Task 7 selection miss: one re-dispatch of Task 3's chain with the missed row as its finding,
   counted as Task 3's fix round, then the replay reruns;
 - the cherry-pick of `075bc174` conflicting: Task 2's implementer resolves it as its first step;
@@ -367,7 +401,8 @@ listed under "Running unattended", not forks.
    live rules read a `ci-green.json` `main` lacks. Cairn-cms first is safe: the old runner never
    passes `--class` or `ci`, and the old rules keep the local full gate. No cairn-cms pass session
    starts between the two merges. Pass B waits for both either way.
-3. Removal of both worktrees after the merges.
+3. Removal of the three worktrees (`gate-economy`, `gate-economy-ci`, and the dotfiles one) after
+   the merges.
 
 The owner message names the rollback lever: a selection that proves wrong in pass B is first met
 by a `gateTier: full` pin in the next plan, with no code change; a full rollback reverts the
@@ -392,13 +427,13 @@ place, using the same idle and size thresholds the guards doc gives for the `imp
 
 ### Task 0: Setup and pre-flight (conductor, no gate of its own)
 
-**Outcome:** both worktrees exist and are sound, both baselines are green, the draft PR is open,
+**Outcome:** all three worktrees exist and are sound, both baselines are green, the draft PR is open,
 and S1's and S2's claims are checked at HEAD.
 
-1. **No live executor.** `pgrep -af` on both worktree paths and on `gate-economy` finds nothing
-   (never a pattern in the command's own text). No `gate-economy` branch or worktree exists in
-   either repo. `git status --porcelain` is clean in the cairn-cms `main` checkout and in
-   `~/.dotfiles`. The `gate-related` worktree has no live executor (it is a draft input only).
+1. **No live executor.** `pgrep -af` on the three worktree paths and on `gate-economy` finds nothing
+   (never a pattern in the command's own text). No `gate-economy` or `gate-economy-ci` branch or
+   worktree exists in either repo. `git status --porcelain` is clean in the cairn-cms `main`
+   checkout and in `~/.dotfiles`. The `gate-related` worktree has no live executor (it is a draft input only).
 2. **Consultations.** `docs/internal/consultations/` holds no unanswered brief.
 3. **cairn-cms worktree.** Create it, `npm ci`, then a from-scratch showcase install (`rm -rf
    examples/showcase/node_modules`, `npm ci --prefix examples/showcase`), and confirm with
@@ -408,7 +443,8 @@ and S1's and S2's claims are checked at HEAD.
    `examples/showcase`.
 4. **Cherry-pick.** `git cherry-pick 075bc174` onto `gate-economy`. If it conflicts, abort and hand
    the cherry-pick to Task 2's implementer as its first step. Push, open the draft PR, and record
-   its number.
+   its number. Then create the `gate-economy-ci` worktree off that head and run `npm ci` in it
+   (`haiku`, beside step 5).
 5. **Dotfiles worktree.** Create it at `~/.cache/worktrees/dotfiles-gate-economy` on branch
    `gate-economy` off dotfiles `main`.
 6. **Baselines.** A `haiku` gate agent runs D in the dotfiles worktree, and, in the cairn-cms
@@ -484,7 +520,8 @@ Protected paths: `scripts/test/component-rerun-triggers.mjs`, `scripts/checks/ga
   `flat/recommended-typescript-flavor-error` config plus `house/no-em-dash-in-comments`. The
   TypeScript ruleset the `src/lib` globs use reports 126 findings on the draft's `.mjs` files,
   since they carry JSDoc `{type}` tags, and no block at all lints them with zero rules (plan
-  review, mechanics M3). Tasks 3 and 4a add their new scripts to the same block.
+  review, mechanics M3). Task 3 adds its own new scripts and Task 4a's two to the same block,
+  since Task 4a runs beside this task and leaves these files to it.
 
 **Acceptance:**
 - The runner's log from one `check:close` run shows exactly one `svelte-package` invocation. Fails
@@ -510,29 +547,51 @@ Protected paths: `scripts/test/component-rerun-triggers.mjs`, `scripts/checks/ga
 **Gate:** `cairn-run-gate 'npm run package && npm run test:node-projects && npm run test:component
 -- --no-file-parallelism && npm run lint && npm run check:close'` (heavy lane). The component
 project runs whole because `vitest.config.ts` changes, the named risk the targeted legs miss.
-Then the protected-path CI wait on the task's commit (Decision 10): CI runs each check as its own
-step, so the build-once runner is also checked by checks it does not drive.
+The conductor pushes at the implementer's commit. CI then takes the default rule, green before
+N+2 (Gates, "Protected paths"), read by Task 3's strict wait on a head that carries this commit:
+CI runs each check as its own step, so the build-once runner is also checked by checks it does not
+drive.
 
 ### Task 4a: Retry annotations, the timeout test, and the expected-set file
 
-**Pass class:** `engine-logic`. **Track:** cairn-cms. **Depends on:** Task 0. **Independent of:**
-Tasks 2 and 3 (disjoint Files; runs after Task 2 only to keep one executor in the worktree, and
-before Task 3 so its CI cycle overlaps Task 3). **Spec:** "CI as the full gate"; Ruling 2.
+**Pass class:** `engine-logic`. **Track:** cairn-cms, in its own worktree `gate-economy-ci`
+(Branch and worktree topology). **Depends on:** Task 0. **Independent of:** Tasks 2 and 3
+(disjoint Files; it runs beside Task 2, and Task 3 starts after its commits are cherry-picked onto
+`gate-economy`). **Spec:** "CI as the full gate"; Ruling 2.
 
-**Files:** `.github/workflows/test.yml`, `e2e.yml`, `design.yml` (a JSON reporter added to each
-test run, the vitest config's CI reporters if the implementer routes it there, and a retries step
-after each test step); a new script under `scripts/ci/` that turns the JSON report into the
+**Files:** `.github/workflows/test.yml`, `e2e.yml`, `design.yml` (the reporters added to each
+test run, and a retries step after each test step); `scripts/ci/vitest-retry-reporter.mjs` (the
+custom Vitest reporter below); a new script under `scripts/ci/` that turns a report into the
 annotation, and its unit test with recorded reporter fixtures; `.github/ci-green.json` (interface
 2); `src/tests/unit/workflow-yaml.test.ts` (the timeout, trigger-shape, and no-weakening
-assertions). Protected paths: all of the workflow files and `ci-green.json`.
+assertions). Not `eslint.config.js`, `package.json`, or `check-comments.sh`: Task 3 joins this
+task's two scripts to Task 2's lint block. Protected paths: all of the workflow files and
+`ci-green.json`.
 
 **Outcome:**
 - Each test run writes a machine-readable report beside its existing console output: today
   `test.yml` runs bare `npm test` with the default reporter and `e2e.yml` passes
-  `--reporter=dot,html`, neither of which records a retry. The script reads Vitest's JSON
-  reporter fields `retryCount` and `flaky` (`vitest/dist/chunks/cli-api.CnMVyzaz.js:11749-11751`)
-  and Playwright's JSON reporter per-result `retry` with test status `flaky`. The node-projects
-  and component runs each keep their own report.
+  `--reporter=dot,html`, neither of which records a retry.
+- **Vitest: a small custom reporter.** Vitest's built-in JSON reporter writes no retry field: its
+  per-test object carries `ancestorTitles`, `fullName`, `status`, `title`, `duration`,
+  `failureMessages`, `location`, `meta`, and `tags` only
+  (`node_modules/vitest/dist/chunks/index.UpGiHP7g.js:3567-3583`, Vitest 4.1.11). The retry
+  fields come from the public Reporter API. `scripts/ci/vitest-retry-reporter.mjs` default-exports
+  a reporter class whose `onTestCaseResult(testCase)` hook (declared at
+  `reporters.d.DtoKVV2s.d.ts:1087`: "Called after the test and its hooks are finished running")
+  reads `testCase.diagnostic()`, which returns
+  `retryCount: result.retryCount ?? 0` and
+  `flaky: !!result.retryCount && result.state === "pass" && result.retryCount > 0`
+  (`cli-api.CnMVyzaz.js:11739-11751`), and writes `fullName`, `retryCount`, and `flaky` per test to
+  its own JSON file at run end, at a path the step names. Vitest loads a reporter name outside its
+  built-in map as a module path and takes its default export (`cli-api.CnMVyzaz.js:11424-11433`,
+  `:11445`), so the step passes `--reporter=default --reporter=./scripts/ci/vitest-retry-reporter.mjs`.
+  `npm test` chains two Vitest runs and forwards no arguments to either (`package.json:87`), so the
+  step splits into `npm run test:node-projects -- <reporters>` and `npm run test:component --
+  <reporters>` (`scripts/test/contained.mjs:41` forwards its argv), each with its own report path.
+- **Playwright:** its JSON reporter's per-result `retry` and test status `flaky`
+  (`playwright/lib/reporters/json.js:186`, `:200` in 1.58.2, per the fold verification's read),
+  added beside `dot,html`.
 - Each test job (the component and node run in `test.yml`, the Playwright runs in `e2e.yml` and
   `design.yml`) emits one `::notice title=retries::` line listing retried tests, `none`, or
   `unknown (<reason>)`, on success and failure alike, from a step under `if: always()` after its
@@ -541,13 +600,18 @@ assertions). Protected paths: all of the workflow files and `ci-green.json`.
 - The workflow suite fails on any job without `timeout-minutes`, a reusable-workflow call (`uses:`)
   excepted, since GitHub rejects the key there, provided every job in the called workflow sets it.
   It fails on any workflow whose trigger shape leaves its class in `ci-green.json`.
-- The test steps' commands change only by an added reporter; no edit can turn CI green on a red.
+- The test steps' commands change only by an added reporter, plus the split of `npm test` into the
+  two scripts it chains; no edit can turn CI green on a red.
 
 **Acceptance:**
 - The retry script's unit test: a recorded Playwright report and a recorded Vitest report, each
   with one test that passed on retry, yield that test's name in the notice; a report with no retry
-  yields `none`. Fails if the script reads the wrong field (mutation: read the final status only;
-  quote the red, then revert).
+  yields `none`. Both fixtures are recorded from real output, never hand-written: the Vitest one
+  from `vitest-retry-reporter.mjs` over a throwaway test that fails its first attempt and passes on
+  retry (`retry: 1`), whose report shows `retryCount: 1` and `flaky: true` (quote it). Fails if the
+  script reads the wrong field (mutation: read the final status only; quote the red, then revert).
+- The two split steps together run exactly the projects `npm test` ran (a `workflow-yaml.test.ts`
+  assertion against `package.json`'s `test` chain). Fails if a project drops out.
 - An absent, empty, or malformed report yields `retries: unknown (<reason>)`. Fails if absence
   yields `none`.
 - `workflow-yaml.test.ts` fails on a job without `timeout-minutes` (mutation: delete one; quote the
@@ -562,24 +626,28 @@ assertions). Protected paths: all of the workflow files and `ci-green.json`.
   `neverOnPullRequest` workflow has no `pull_request`; every workflow file appears in exactly one
   list. Fails on a new workflow or a changed trigger (mutation: drop `e2e.yml` from the file; quote
   the red, then revert).
-- After the push, the draft PR's CI run shows the `retries` notice on each test job, read through
+- After the cherry-pick and push, the draft PR's CI run shows the `retries` notice on each test job, read through
   `gh api repos/{owner}/{repo}/check-runs/<id>/annotations`; the conductor's S1 boundary quotes it.
 
 **Gate:** `CAIRN_GATE_LANE=light cairn-run-gate 'npx vitest run --project unit
-src/tests/unit/workflow-yaml.test.ts <the retry script test path> && npm run lint && npm run
-check:comments'`, then the protected-path CI wait on the task's commit (Decision 10), which also
-proves the workflow edits themselves.
+src/tests/unit/workflow-yaml.test.ts <the retry script test path>'`, run in `gate-economy-ci`.
+`lint` and `check:comments` reach this task's scripts only once Task 3 joins them to the lint
+block, so Task 3's gate lints them. CI proves the workflow edits on Task 3's head, under the default
+rule (Gates, "Protected paths"), since this branch has no PR.
 
 ### Task 3: Check buckets, the e2e map, and the trigger canary
 
 **Pass class:** `engine-logic`. **Track:** cairn-cms. **Depends on:** Task 2 (the runner's subset
-option and the trigger list). **Spec:** "Per-task gate", "Check buckets", "E2e map",
+option and the trigger list), and Task 4a's commits cherry-picked onto `gate-economy` (this task
+lints its scripts). **Spec:** "Per-task gate", "Check buckets", "E2e map",
 "`auth-data`", "Trigger canary". **Decisions 1, 2, 3, 10, 11, 12; interface 5.**
 
 **Files:** `scripts/checks/gate-tier.mjs` and a committed bucket and e2e-map table beside it (the
 implementer picks module or JSON); `src/tests/unit/gate-tier.test.ts`; a trigger canary test in
 the node projects; `vitest.config.ts` (Decision 12's switch); `docs/internal/pass-gate-tiers.md`
-(erratum 10). Protected paths: `gate-tier.mjs` and the table.
+(erratum 10); Task 2's lint block in `eslint.config.js` (and the `lint` and `check-comments.sh`
+paths it added), extended with this task's new scripts and Task 4a's two, named from Task 4a's
+report. Protected paths: `gate-tier.mjs` and the table.
 
 **Outcome:** `node scripts/checks/gate-tier.mjs --range <base>..HEAD` prints one targeted gate
 whose legs run in the spec's order:
@@ -607,7 +675,9 @@ whose legs run in the spec's order:
    `site-visual.spec.ts` carries Decision 11's `--grep-invert`.
 
 `tool/**` keeps its split to `make -C tool check`. `--pin <tier>` prints every old tier string
-unchanged. `pass-gate-tiers.md` describes the targeted gate, the buckets, the map, and the
+unchanged. The table also holds the protected list (Gates, "Protected paths"), and `--protected`
+(interface 5) reads it at `<base>` and prints `ciWait` or nothing; it never alters the default
+mode's stdout. `pass-gate-tiers.md` describes the targeted gate, the buckets, the map, and the
 protected paths, and keeps the pinned tier table.
 
 **Acceptance:**
@@ -640,6 +710,14 @@ protected paths, and keeps the pinned tier table.
 - Each of the six `PASS_CLASSES` names is accepted, and only `auth-data` changes the output; an
   unknown class exits non-zero with empty stdout.
 - `--pin full` output is byte-identical to `main`'s `TIER_GATES.full`.
+- `--protected`, three cases over fixture ranges: a range touching a protected path prints exactly
+  `ciWait`; a range touching none prints nothing and exits 0; a range that removes a path's entry
+  from the protected list and touches that path still prints `ciWait`, because the list is read at
+  `<base>`. A fourth: a `<base>` with no table prints `ciWait`. Each fails if the mode reads the list
+  at HEAD or prints anything else. The default mode's output for the protected-path range carries
+  neither `ciWait` nor F (the first application's removed rule stays removed).
+- Task 4a's two scripts lint under the block: an em dash seeded in a comment in
+  `scripts/ci/vitest-retry-reporter.mjs` turns `npm run check:comments` red (quote, then revert).
 - The classifier's output for this task's own range, quoted, contains leg 1, a static leg naming
   `check:comments`, leg 3, and the whole component project (by empty selection). Evidence only;
   it is not the task's gate.
@@ -647,8 +725,9 @@ protected paths, and keeps the pinned tier table.
 **Gate:** `cairn-run-gate 'npm run package && npm run test:node-projects && npm run
 test:component -- --no-file-parallelism && npm run lint && npm run check:comments && npm run
 check'` (heavy lane), fixed so the classifier never sizes the task that builds it; then the
-protected-path CI wait on the task's commit (Decision 10). A Task 7-triggered fix round takes the
-same gate and wait.
+strict protected-path CI wait on the task's commit (Decision 10), the one this pass keeps. Its head
+carries Tasks 2 and 4a, so the same read is their default-rule CI. A Task 7-triggered fix round
+takes the same gate and wait.
 
 **S1 boundary:** Task 3's gate green on the head; pushed; CI green on the head (the probe, or
 `ci-green` if Task 4b is accepted), which is Task 3's own CI wait, the retries notices
@@ -762,6 +841,13 @@ exit codes). **Upshift candidate** (see Models). **Spec:** "Pipelining in the se
 - Without `ci`, and under `parallel: true`, the runner never pushes and never calls `ci-green`.
 - `PASS_CLASSES.auth-data` gains `ciWait: true` in both runners, identical text. A task's own
   `ciWait: true` field takes the same wait (Decision 10's protected paths).
+- The classifier emits the protected-path wait (Decision 10, interface 5). The existing gate probe
+  (`resolveGate`, `pass-execute.js:815`) also runs `node scripts/checks/gate-tier.mjs --range
+  <base>..HEAD --protected` and reports a `ciWait` field, on every task, pinned tasks included
+  (today a pin skips the probe entirely). When `gate-tier.mjs` is absent the field is false; when it
+  exists and the mode exits non-zero, the field is true (fail closed). The probe runs at the head
+  being accepted, so a fix round's range is covered. The runner waits when the probe's `ciWait`,
+  the task's `ciWait`, or the class's `ciWait` holds. The pinned gate string itself is unchanged.
 - Both runners pass `--class <name>` to the classifier when a task has a class.
 - The header comment documents `ci`, the state machine, and the records.
 
@@ -769,7 +855,9 @@ exit codes). **Upshift candidate** (see Models). **Spec:** "Pipelining in the se
 record after N+1 finishes; missing (exit 2) halts the same way; unavailable halts with the
 `ciUnavailable` record; pending (75, then 0)
 waits then resolves; an `auth-data` task, and a task with its own `ciWait: true`, each block
-N+1's dispatch until green; no `ci` argument never
+N+1's dispatch until green; a task with neither flag whose probe reports `ciWait` blocks N+1 the
+same way; a pinned task is still probed for `--protected` and keeps its pinned gate string; a
+probe whose `--protected` run exits non-zero counts as `ciWait`; no `ci` argument never
 pushes; `parallel: true` never pushes; a fix round's commit is pushed. Each fails if the runner
 dispatches or pushes in the wrong state. The existing "PASS_CLASSES is identical across both
 runners" check stays green, and the classifier command carries `--class` when a class is set.
@@ -801,7 +889,8 @@ items 1 to 8 and 13.
    before-merge cells; the `docs` row's per-task gate (the computed gate, which skips the component
    leg on a docs-only diff, or `--pin docs`); the per-task gate paragraph, with the protected-path
    rule (Decision 10: a task touching the selection machinery runs its targeted gate, then waits
-   for CI green on its own commit, the plan setting `ciWait: true` on it; F only on exit 3); the fix-round reduction text; "CI shadows the pass" (push
+   for CI green on its own commit, flagged by the classifier's `--protected` mode through the
+   runner's probe, the plan's `ciWait: true` an override; F only on exit 3); the fix-round reduction text; "CI shadows the pass" (push
    point and pipelining); the boundary receipt skip in Execution discipline; Closing step 2; step 6 (gate
    time and lock wait from run records).
 2. `cairn-pass`: Gate notes (the targeted gate; the protected paths; paint's full suite at
@@ -843,18 +932,20 @@ items 1 to 8 and 13.
 **Pass class:** measurement, no test mandate (it writes one record and no code; a miss routes a fix
 through Task 3's chain). **Track:** cairn-cms. **Depends on:** Task 3's CI wait green (the S1
 boundary). **Spec:** "Acceptance": timed ranges, miss rate, projection. **Decisions
-8, 9.**
+8, 9.** The two timed ranges and the projection are non-blocking, so they run at the close beside
+the reviewers (Close, step 2); this task keeps the blocking parts.
 
 **Files:** `docs/superpowers/research/2026-10-09-gate-economy-replay.md` (new).
 
-**Outcome:** one committed record holding four parts.
+**Outcome:** one committed record holding four parts; this task writes parts 1 and 3, and the
+close appends parts 2 and 4.
 1. **Classifier and selection dry runs** over every pass A task range: the printed gate, the
    buckets, the e2e specs, and the component selection read from the Node API (never from the gate
    string).
 2. **Two timed ranges** (Decision 9): pass A Task 3, `5549fda8..f655f877`, and pass A Task 11,
    `bd614101^..d716ec89`. Each gate string computed from the historical range, then run through
    `cairn-run-gate` at the `gate-economy` head (Decision 8), with run time and lock wait recorded
-   separately.
+   separately. Run at the close, after the simplifier (Close, step 2).
 3. **The miss-rate table.** One row per known pass A red: its source, the last-green..first-red
    range, the failing test or check, and whether the new selection includes it. Sources: the CI runs
    API on PR #108, `docs/HISTORY.md`'s "What the gates caught", and
@@ -863,27 +954,31 @@ boundary). **Spec:** "Acceptance": timed ranges, miss rate, projection. **Decisi
    the hang) listed as excluded with a reason.
 4. **The projection,** labeled as a model: pass A's gate counts by kind times the newly measured
    durations, plus a CI wait per `auth-data` task at measured CI wall plus queue, plus pass A's
-   unchanged review, fix, and close rows.
+   unchanged review, fix, and close rows. Written at the close from part 2's durations.
 
-**Acceptance:**
-- Each timed range's gate runs in 10 minutes or less, lock wait excluded. On a miss, revisit the
-  bucket table once; if still over, record the number for pass B. The pass does not block on this.
+**Acceptance (this task):**
 - Every included miss-rate row is selected. The included rows plus the excluded rows, each
   excluded row with its reason, account for every item on Task 0's miss-rate floor list, pasted
   into the dispatch; fails if any item is unaccounted for. On a miss, one Task 3 fix round adds
   the bucket entry or trigger, and the replay reruns; the pass does not close on a standing miss.
-- The projection's total is 9 hours or less. On a miss, record it; pass B's scored clock is the real
-  measure.
 - Each row cites its source (a run id, a HISTORY line, or an archive path), so the reviewer can
   check it.
 
-**Gate:** none of its own; its timed runs are its evidence, and its one file is an internal record
+**Acceptance (parts 2 and 4, at the close, non-blocking):**
+- Each timed range's gate runs in 10 minutes or less, lock wait excluded. On a miss, the one bucket
+  revisit rides the close's fix chain under Task 3's gate, its CI wait taken by step 4's read; if
+  still over, record the number for pass B. The pass does not block on this.
+- The projection's total is 9 hours or less. On a miss, record it; pass B's scored clock is the real
+  measure.
+
+**Gate:** none of its own; its dry runs are its evidence, and its one file is an internal record
 no check reads. A Task 3 fix round it triggers takes Task 3's gate.
 
 ### Task 6b: Pass B's plan and ROADMAP (cairn-cms)
 
 **Pass class:** `docs`. **Track:** cairn-cms. **Depends on:** Tasks 5, 6a, and 7 (it quotes the
-landed rules and Task 7's measured durations). **Spec:** "Owed errata" items 9 and 11. The
+landed rules and Task 7's dry runs and miss-rate table; the timed-range durations land in pass B's
+plan at the close, step 3). **Spec:** "Owed errata" items 9 and 11. The
 reviewer is `diff-reviewer`, a deliberate departure from the `docs` class's register chain: both
 files are internal planning documents, which the register does not govern.
 
@@ -940,6 +1035,10 @@ numbering in one way: the ledgers land before the CI read, so one CI read covers
    classification, or protected-path rule that can skip a test or read a red as green. Both run
    while step 3 is written. Blocking findings go through one fix chain, which also amends HISTORY.
    Class settle steps: none (no `auth-data`, `paint`, or `tool` task).
+   **Task 7's timed ranges run here too** (Q5 cut 3 of the fold verification): after step 1, a
+   `haiku` gate agent runs the two timed ranges (Task 7, part 2) through `cairn-run-gate` in the
+   `gate-economy` worktree, beside the reviewers; nothing else gates in that worktree meanwhile. An
+   over-10-minute range's one bucket revisit joins the fix chain above.
 3. **Docs and ledgers,** committed on `gate-economy` in one commit.
    - Docs: no public behavior changes, so no `CHANGELOG.md` entry, no facts bullet, and no
      migration-notes line; `git diff --stat main -- src/lib packages templates
@@ -951,8 +1050,12 @@ numbering in one way: the ledgers land before the CI read, so one CI read covers
      trigger switch, `attw --pack .` running `prepare`), the rollback lever, and whether any refused
      fold finding turned real.
    - `ROADMAP.md`: the gate economy entry leaves its live tier (Task 6b dispositioned the rest).
+   - The replay record takes parts 2 and 4 (the timed ranges and the projection), and pass B's plan
+     takes the two durations where Task 6b's edits cite the per-task gate's cost, once step 2's
+     timed ranges finish. The close's one `diff-reviewer` read over the ledger commit covers that
+     pass B hunk.
    - The post-mortem in this plan, with the pass-end score: tokens against 4.0M from the Ledger's
-     running sum; attended time (planning misses, execution sittings); clock against 6 h as total,
+     running sum; attended time (planning misses, execution sittings); clock against 4.8 h as total,
      gate time, lock wait, CI wait, and rework clock with each red's cause, Task 0 on its own line;
      the selection-miss count (two reopen the bucket table); every retried test from `ci-green`'s
      output. Gate time comes from the `cairn-run-gate` logs and NOTE lines, since run records reach

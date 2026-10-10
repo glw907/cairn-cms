@@ -19,7 +19,7 @@ import {
   selectChecks,
   tableProblems,
 } from '../../../scripts/checks/gate-tier.mjs';
-import { CLOSE_COMPONENTS, closeSteps, selectSteps } from '../../../scripts/checks/close-prebuilt.mjs';
+import { CLOSE_COMPONENTS, PACKAGE_PREFIX, closeSteps, selectSteps } from '../../../scripts/checks/close-prebuilt.mjs';
 import { COMPONENT_RERUN_TRIGGERS } from '../../../scripts/test/component-rerun-triggers.mjs';
 import { loadDeletionList } from '../../../scripts/checks/arm-state.mjs';
 import { buildSteps } from '../../../scripts/checks/docs-gate.mjs';
@@ -134,6 +134,14 @@ describe('static check selection', () => {
     for (const label of Object.keys(table.checks)) expect(context.labels, label).toContain(label);
   });
 
+  it('spells a package-building close component as an npm run script, never as a literal command', () => {
+    // The classifier reads the package prefix off a script's body, so a literal component that
+    // carries the prefix would run without the engine bucket and still pass the guard above.
+    const literal = CLOSE_COMPONENTS.filter((component) => !/^npm run \S+$/.test(component));
+    expect(literal.length).toBeGreaterThan(0);
+    for (const component of literal) expect(component.startsWith(PACKAGE_PREFIX), component).toBe(false);
+  });
+
   it('gives every package-building check the engine bucket unless the table lists it', () => {
     const inherited = [...context.packagePrefixed].filter((label) => !(label in table.checks));
     expect(inherited.length).toBeGreaterThan(0);
@@ -164,6 +172,11 @@ describe('static check selection', () => {
       expect(forIndex, label).toContain(label);
       expect(forOther, label).not.toContain(label);
     }
+  });
+
+  it('leaves check:surface out for a docs page, since it reads the built types and the golden file only', () => {
+    expect(labelsFor('docs/reference/core.md', 'docs/internal/facts/admin.md')).not.toContain('check:surface');
+    expect(labelsFor('docs/internal/api-surface.md')).toContain('check:surface');
   });
 
   it('keeps the option and reference checks on the engine bucket, so a non-index file selects them', () => {

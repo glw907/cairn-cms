@@ -57,7 +57,7 @@
     "check:reference": ["exportSurface", "docs", "engine"],
     "check:reference:signatures": ["exportSurface", "docs", "engine"],
     "check:options": ["exportSurface", "docs", "engine"],
-    "check:surface": ["exportSurface", "docs"],
+    "check:surface": ["exportSurface"],
     "check:consumers": ["exportSurface", "showcase"],
     "check:self-use": ["exportSurface", "showcase"],
     "check:custom-surface": ["engine", "showcase"],

@@ -74,7 +74,9 @@ spell out:
 - The six dist-surface checks (`check:package`, `check:surface`, `check:self-use`,
   `check:audit-pack`, `check:consumers`, `check:public-skill`) list the export-surface bucket and
   no engine bucket, so an `index.ts` change (or a `package.json` export entry) selects them and
-  another `src/lib` file does not. `check:reference`, `check:reference:signatures`, and
+  another `src/lib` file does not. Only `check:public-skill` also lists the docs bucket, because
+  it reads `docs/reference/render.md`; `check:surface` reads the built types and its golden file
+  and no page, so a docs change does not select it. `check:reference`, `check:reference:signatures`, and
   `check:options` keep the engine bucket beside export surface and docs: a public option or type
   can change in a non-index file, and they must see it. A non-index change that alters the shape
   of an export is left to CI for the six.

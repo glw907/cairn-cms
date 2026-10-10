@@ -1063,8 +1063,9 @@ the named human gates only):**
   Per-task test selection via `vitest --changed <base>`. Trigger: `forceRerunTriggers` covers
   fs-read inputs (78 of 513 test files read outside the import graph) and a committed canary proves
   a broken fs-read fixture turns a selected run red. The precondition is met: the gate economy pass
-  committed the canary (`src/tests/unit/component-trigger-canary.test.ts`), and the component
-  project now runs through `vitest related`. Selection for the node projects stays open. (b)
+  committed the canary (`src/tests/unit/component-trigger-canary.test.ts`), and the classifier
+  computes the component project's selection with `createVitest` and runs the selected files as
+  filters. Selection for the node projects stays open. (b)
   Auth-data test-only fix rounds taking the touched tests, the tests of touched helpers, and a
   re-run of the affected named mutations. Won't do while the full node projects run on every task:
   a test-only `auth-data` round keeps its targeted gate, which already runs them. (c) The docs chain
@@ -1082,7 +1083,9 @@ the named human gates only):**
   related selection, so the classifier fails closed; a bucket entry for package READMEs would make
   such a docs task cheap. (g) The emitted gate builds `dist`
   twice, once in leg 1 (`npm run package`) and again inside `check:close`, which has no flag to
-  skip its build.
+  skip its build. (h) `.github/actions/` (bounded-install, install-diagnostics) is CI machinery
+  that is not on the table's protected list, so a change there does not wait for CI green. A pass
+  B candidate.
 
 - **Engine writes to `main` still unguarded (data-loss class; pass A's close, 2026-10-09).** Pass A's
   C11 head guard covers publish, publish-all, Library delete, metadata, replace, alt, and the

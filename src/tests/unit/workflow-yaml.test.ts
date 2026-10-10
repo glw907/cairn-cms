@@ -47,6 +47,7 @@ interface Step {
 }
 
 interface Job {
+  if?: unknown;
   'continue-on-error'?: unknown;
   uses?: string;
   'timeout-minutes'?: unknown;
@@ -154,6 +155,8 @@ describe('.github/ci-green.json classifies every workflow by trigger shape', () 
 
 describe('the test jobs keep their gates and report their retries', () => {
   const TEST_WORKFLOWS = ['test.yml', 'e2e.yml', 'design.yml'];
+  // The workflows that gate a pull_request; the ones above plus the scaffold and create-site gates.
+  const PR_WORKFLOWS = [...TEST_WORKFLOWS, 'scaffold.yml', 'create-site.yml'];
   const TEST_STEP = /\bnpm\b[^\n]*\btest\b/;
   const stepsOf = (name: string): Step[] =>
     Object.values(loadWorkflow(name).jobs ?? {}).flatMap((job) => job.steps ?? []);
@@ -215,6 +218,25 @@ describe('the test jobs keep their gates and report their retries', () => {
       // Naming a reporter replaces Vitest's resolved set, which on Actions would have included this one.
       expect(match[2]).toContain('--reporter=github-actions');
       expect(match[2]).toContain('--reporter=./scripts/ci/vitest-retry-reporter.mjs');
+    }
+  });
+
+  it.each(PR_WORKFLOWS)('%s has no job or step whose if: skips a pull_request run', (name) => {
+    // A condition that names the pull_request event is how a gate gets turned off for exactly the
+    // runs that exist to judge a change before it merges.
+    for (const [jobId, job] of Object.entries(loadWorkflow(name).jobs ?? {})) {
+      expect(String(job.if ?? ''), `${name}:${jobId}`).not.toContain('pull_request');
+      for (const step of job.steps ?? []) {
+        expect(String(step.if ?? ''), `${name}:${jobId}:${step.name ?? step.run ?? step.uses}`).not.toContain('pull_request');
+      }
+    }
+  });
+
+  it.each(PR_WORKFLOWS)('%s ends no test step line in || true', (name) => {
+    for (const step of stepsOf(name).filter((s) => TEST_STEP.test(s.run ?? ''))) {
+      for (const line of (step.run ?? '').split('\n')) {
+        expect(line.trim(), step.name ?? step.run).not.toMatch(/\|\|\s*true\s*$/);
+      }
     }
   });
 

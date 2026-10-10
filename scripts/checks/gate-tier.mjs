@@ -72,11 +72,11 @@ const DOCS_GATE = 'npm run check:docs-gate';
 // Stock `npm test` runs the vitest component project (real Chromium) in parallel with the three
 // node projects, and that parallel component run stalls on the maintainer's workstation. This
 // gate runs the node projects first, then the component project alone with file parallelism off,
-// so the local gate stays reliable. CI's `test.yml` keeps running `npm test` and stays parallel;
-// this serialization is local-gate-only. `npm test` (root) never reaches the create-cairn-site
-// workspace member's own `node --test` suite, so its own invocation is appended here too, to
-// keep the five-tier superset chain intact rather than adding a sixth severity level for one
-// workspace member.
+// so the local gate stays reliable. CI's `test.yml` runs `test:node-projects` and `test:component`
+// as separate steps without `--no-file-parallelism`; this serialization is local-gate-only.
+// `npm test` (root) never reaches the create-cairn-site workspace member's own `node --test`
+// suite, so its own invocation is appended here too, to keep the five-tier superset chain intact
+// rather than adding a sixth severity level for one workspace member.
 const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
 // The CI `test` job's remaining steps, in test.yml's own order, so the full tier proves everything
@@ -268,8 +268,13 @@ export function loadContext(root = ROOT) {
   const closeLabels = steps.map((step) => step.label);
   /** @type {Map<string, string>} */
   const bodies = new Map(steps.map((step, index) => [step.label, closeBody(CLOSE_COMPONENTS[index], pkg.scripts)]));
+  // Only a component that names an npm script can carry the prefix through that script's body; a
+  // literal command that starts with the build is a mistake the unit tests refuse.
   const packagePrefixed = new Set(
-    [...bodies].filter(([, body]) => body.startsWith(PACKAGE_PREFIX)).map(([label]) => label),
+    steps
+      .filter((step, index) => /^npm run \S+$/.test(CLOSE_COMPONENTS[index]))
+      .filter((step) => bodies.get(step.label)?.startsWith(PACKAGE_PREFIX))
+      .map((step) => step.label),
   );
   for (const [label, command] of Object.entries(table.extraCommands)) bodies.set(label, command);
   const closures = new Map([...bodies].map(([label, body]) => [label, scriptClosure(body, root)]));

@@ -22,7 +22,7 @@ plan, score, and replay record: [`superpowers/plans/2026-10-09-gate-economy.md`]
 
 ## Immediate next action
 
-Engine pass B stays **paused** (Geoff, 2026-10-10). The clock-time brainstorm widened into a broader
+Engine pass B stays **paused** (Geoff, 2026-10-10) until the lean pass process lands (below). The clock-time brainstorm widened into a broader
 question: the pass process itself carries too much ceremony for its clock and token cost. Pass B's
 state: worktree `.claude/worktrees/engine-pre-2b-b`, draft PR #111, Task 0 recorded in the plan's
 Ledger (`1ce14d3b`), and WIP commit `dbdc4556` (Tasks 1 and 2, unreviewed, ungated, not pushed).
@@ -39,31 +39,12 @@ The release holds until the docs are complete.
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
 
-### Next action (process-ceremony brainstorm)
+### Next action (lean pass process)
 
-> **Goal.** Cut the pass process to what earns its cost. Every step (plan length, spec and plan
-> review lenses, the per-task chain, the close, the ledgers) keeps its place only if its catch record
-> shows it caught a defect a later step would not, at a cost in clock and tokens worth paying.
-> Clock time is one symptom: pass A ran 28 hours, pass B's plan is 1,676 lines for 11 tasks, and
-> `docs/superpowers/research/` holds 160 review, fold, and verification files.
->
-> **Read first.** Evidence: [`2026-10-10-pass-clock-time-evidence.md`](superpowers/research/2026-10-10-pass-clock-time-evidence.md).
-> Prior art: [`2026-10-10-pass-clock-time-prior-art.md`](superpowers/research/2026-10-10-pass-clock-time-prior-art.md).
-> The Fable critique ([`...-review-fable.md`](superpowers/research/2026-10-10-pass-clock-time-review-fable.md))
-> holds the short list of gate fixes worth keeping (whole suites to CI, concurrent gate legs, review
-> beside the gate, the four `cairn-run-gate` fixes, probes deleted). The parked spec
-> ([`2026-10-10-pass-clock-time-design.md`](superpowers/specs/2026-10-10-pass-clock-time-design.md))
-> is evidence of the ratchet, not a design to build.
->
-> **Geoff's rulings from 2026-10-10 (carry them):** independent items run in pairs by default;
-> load is re-read at every decision; projects coordinate shared resources with each other, any mix
-> of projects; the posture is workstation-wide and on by default for new projects; adopt the
-> published method for each sub-problem and invent nothing already solved.
->
-> **Open:** the scope (execution only, or the whole lifecycle from brainstorm to close); the clock
-> target, which waits on the audit's measured floor (Fable's honest figure is 40 to 45 minutes per
-> task); and whether the first step is a catch-ledger audit of pass A, gate economy, and stage 2a.
->
-> **Approach.** `superpowers:brainstorming` in a fresh session. Start subtractive: propose cuts
-> before additions. Model: `claude --model claude-opus-5-5 --effort xhigh`. Launch directory:
-> `/var/home/glw907/Projects/cairn-cms`. Resume pass B only after the outcome lands.
+> The process-ceremony brainstorm closed 2026-10-10 with an approved design that replaces the pass
+> machinery workstation-wide. It lives in the workstation repo:
+> `~/.dotfiles/docs/superpowers/specs/2026-10-10-lean-pass-process-design.md`, with its resume prompt in
+> `~/.dotfiles/docs/STATUS.md`. Launch that session from `~/.dotfiles`, not here. Its rollout step 2
+> lands a cairn branch (CLAUDE.md, `cairn-pass`, the `gate-tier.mjs` fast lane, sharded CI e2e).
+> Engine pass B resumes as rollout step 5, after steps 1 to 4 merge, as the first pass scored on the
+> new process; its Tasks 1 and 2 WIP (`dbdc4556`) is re-gated through the fast lane.

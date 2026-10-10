@@ -468,7 +468,8 @@ and S1's and S2's claims are checked at HEAD.
      `vitest.config.ts`; the test steps in `test.yml`, `e2e.yml`, and `design.yml` and their
      reporters; the trigger shapes of all ten workflows (five `pull_request` with only
      `paths-ignore: ['tool/**']`, `tool` and `tool-conditions` filtering in, `norms`
-     `workflow_call` only, `tsgo` schedule only, `publish` release only); the runner's classifier
+     `workflow_call` only, `tsgo` schedule only, `publish` release only; Task 0 found each of these three
+     also takes `workflow_dispatch`, which leaves them off `pull_request`); the runner's classifier
      command at `pass-execute.js:449` and `:823`; Vitest 4.1.11's `createVitest` and
      `getRelevantTestSpecifications` at the paths the spec cites; the e2e spec count (43 at plan
      time) and that `golden-path`, `access-map`, and `csrf-origin` exist; the `src/tests/**/_*.ts`
@@ -480,8 +481,8 @@ and S1's and S2's claims are checked at HEAD.
    - S2: `cairn-run-gate`'s lock files (`machine.lock`, `machine-light.lock` under
      `$TMPDIR/cairn-gate-<uid>`), its detached run and vanish path, its receipt directory variable,
      and where the reattaching caller learns the exit; `tests/cairn-run-gate.test.sh`'s fixture
-     isolation; `PASS_CLASSES` at `pass-execute.js:298` and the pin at
-     `pass-execute-runners.test.mjs:290`; the runner's statement that the workflow runtime has no
+     isolation; `PASS_CLASSES` at `pass-execute.js:298` and the pins at
+     `pass-execute-runners.test.mjs:206` (runner identity) and `:290` (pass-core's class table); the runner's statement that the workflow runtime has no
      exec access (`pass-execute.js:65`); `gh run rerun` supports `--failed` and `--job`; the
      fixtures the spec names exist on GitHub (SHAs `8483ca5b`, `92325c02`, `3ef9a8d9`, run
      `37893646318`, PR #107's file count over 300).
@@ -586,12 +587,15 @@ task's two scripts to Task 2's lint block. Protected paths: all of the workflow 
   its own JSON file at run end, at a path the step names. Vitest loads a reporter name outside its
   built-in map as a module path and takes its default export (`cli-api.CnMVyzaz.js:11424-11433`,
   `:11445`), so the step passes `--reporter=default --reporter=./scripts/ci/vitest-retry-reporter.mjs`.
-  `npm test` chains two Vitest runs and forwards no arguments to either (`package.json:87`), so the
+  `npm test` chains two Vitest runs and forwards no arguments to either (`package.json:25`; Task 0 pre-flight), so the
   step splits into `npm run test:node-projects -- <reporters>` and `npm run test:component --
   <reporters>` (`scripts/test/contained.mjs:41` forwards its argv), each with its own report path.
-- **Playwright:** its JSON reporter's per-result `retry` and test status `flaky`
-  (`playwright/lib/reporters/json.js:186`, `:200` in 1.58.2, per the fold verification's read),
-  added beside `dot,html`.
+- **Playwright:** its JSON reporter's per-result `retry` and test `status: test.outcome()`, which
+  reads `flaky` for a test that passed on retry. Task 0 found 1.64.0 installed, which bundles the
+  reporter into `playwright/lib/runner/index.js` (`JSONReporter`, `_serializeTestResult` near line
+  4366); there is no `lib/reporters/json.js`. Added beside `dot,html`.
+- The component project sets `retry: 2` unconditionally (`vitest.config.ts:210`), so a Vitest retry
+  can occur locally as well as on CI.
 - Each test job (the component and node run in `test.yml`, the Playwright runs in `e2e.yml` and
   `design.yml`) emits one `::notice title=retries::` line listing retried tests, `none`, or
   `unknown (<reason>)`, on success and failure alike, from a step under `if: always()` after its

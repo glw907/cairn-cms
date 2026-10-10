@@ -1594,3 +1594,121 @@ is a dispatch that returns a structured verdict.
 - **S4 friction filed on `main`:** `0c2f3272`. Task 12's S4 carry:
   `docs/superpowers/research/2026-10-09-pass-a-s4-task12-carry.md`.
 - **Next:** Task 12 alone, then the S4 boundary (D) and the close.
+
+## Post-mortem (2026-10-09)
+
+Branch `engine-pre-2b-a`, 48 commits off `main`, PR #108. Merged unreleased: no version bump, no
+publish. The pass ran 2026-10-08 and 2026-10-09 on `auth-data` with the overrides in the header.
+
+**What each task landed.**
+
+- **Task 0.** Baseline green. Local F excludes the 20 `site-visual` drift tests the workstation cannot
+  reproduce (`72f8b18c`). Setup gaps for a fresh worktree went to pass B's Task 0.
+- **Task 1** (`37797ff3`, `5cb4a5e7`, `94a3f672`, one fix round). `roles` and `access` are one
+  declaration on the adapter. The guard, the dev handle, and the editor routes take the composed
+  `runtime`.
+- **Task 2** (`eaa1b7d2`, `92216610`, one fix round). The doctor's role-wiring check reads
+  `createAuthGuard({ runtime })`.
+- **Task 3** (`f655f877`). A1, C1, C7, and A2: a none role a mapped href names is admitted, only the
+  sign-in form and its confirm page are public under `/admin/auth/`, and `auth.access.refused` carries
+  `reason`.
+- **Tasks 4, 5, 7** (`4597aa49`, `bad014c0`, `092176c1`, no fix round). The roles migration ships in
+  the scaffold and a refused custom-role write names `auth.store-roles-unmigrated`. A missing Turnstile
+  secret logs apart from a bad token. `/healthz` answers 503 on a failed check.
+- **Tasks 8, 9, 10** (`666aff41`, `df8857d9`, `a4618437`, no fix round). A failed save keeps the
+  writing. Media, dictionary, publish, and publish-all commits sit behind a default-branch head guard.
+- **Task 11** (`bd614101`, then `d716ec89`). Nested images enter where-used, replace, and the manifest
+  verify, which now fails closed at the build for a site that declares a nested shape.
+- **Task 6** (`c2409fdc`, `a8156613`, Opus, one fix round). The opt-in `/healthz?live=1` mints a token
+  and reports the key fingerprint.
+- **Task 12** (`21a6fdc5`, `60ff2c79`, `d675f953`). Reference pages, facts, rulings, roadmap, and the
+  `Consumers must:` lines.
+- **Close.** The simplifier pass (`a4c5e4b9`), four reviewer seats, the live smoke and key probe, and
+  two fix chains (`9f722bb9` through `8e2b7d29`).
+
+**What the gates and reviewers caught.**
+
+- Tasks 1, 2, 6, and 11 each drew a real fix round from the diff reviewer. Task 11's new `nested`
+  placement kind reached two admin dialogs under the wrong label.
+- The S2 boundary went red twice on checks the per-task engine tier never runs: `check:self-use` on
+  Task 5's new `ChannelStatementLike` export, then the showcase `format:check` on Task 7's health route
+  test, plus an un-emitted template. Both were process misses, and every per-task gate has ended with
+  the static list since.
+- Task 8 corrected a plan premise. The guard's login redirect reaches `use:enhance` as a `redirect`
+  result, not `error`.
+- The close reviewers found two blockers no gate had: publish-all could revert `main` by reading its
+  branches before the head, and Save re-enabled during a successful save's reload, so a second click
+  posted again. The fix chains also hardened the health check's verdict and timer, pinned the redirect
+  origin check, and moved the undeclared-role check into `composeRuntime`, where every reader's runtime
+  comes from.
+- The live smoke exercised the real magic-link round trip, the roles migration gap, and a reviewer who
+  reaches `/admin/theme-kit` but not `/admin/signups` (evidence: `~/.cache/engine-pre-2b-a/close-smoke-evidence.md`). It
+  also confirmed one `access_tokens` fetch across eight concurrent `?live=1` calls.
+- CI's `tool` workflow had failed on every push since `5549fda8` on govulncheck, because `setup-go`
+  took a runner's preinstalled go1.26.8. `check-latest: true` fixed it on `main` (`8f2fe6da`).
+
+**The spec-plan-review fold's refusals.** None turned out to be a real defect. The fold refused no
+whole finding, only seven parts of findings whose remainder folded (the A6 fault switch, the mtime yield
+rule, the re-parse invariant, the compose-only module, `paint` for A5, `sweep` for ruling 2's
+provisioning half, and merge-inside-retry). Nothing in the Ledger or the close reviews reopened one.
+Merge-inside-retry was retracted as reasoned before the pass and replaced by sequencing the page's own
+dictionary commit ahead of publish, which held.
+
+**What a later pass would be wrong to rediscover.**
+
+- **A per-task engine gate does not run the static list.** `check:self-use`, `format:check`, and
+  `check:template` stay silent until a boundary. A gate ends with `npm run check:close && npm run
+  check:tool-heuristics && npm run test:emit`.
+- **A fresh worktree needs CI's preparation before F can pass:** `npx svelte-kit sync` in
+  `examples/showcase`, `npm run package`, and the `create-cairn-site` template bake. Twenty
+  `site-visual` tests drift on this workstation by design.
+- **A pinned task must run its own gate string unchanged.** The runners did not until dotfiles
+  `492f584`. Launching `pass-execute` by name served a stale copy after a same-session edit, so a
+  `cmp`-verified scratchpad copy is the fallback.
+- **`emit-tool-conditions.mjs` reads `dist`.** Run `npm run package` before it after a `conditions.ts`
+  edit.
+- **`use:enhance` after a save sits at `?saved=1`,** where the guard's login redirect arrives as a
+  `redirect` result. Only a component test covers the off-concept case.
+- **The live check never touches the shared token cache,** and a present key that fails signing skips
+  the mint (Decision 15, extended).
+- **A nested-shape site fails its build until it runs `npx cairn-manifest`.** That is the intended
+  fail-closed point (Decision 16), not a regression.
+- **The gate economy is the larger finding.** Most of the clock went to repeating broad gates, and
+  `cairn-run-gate` records no per-run duration. Inputs:
+  `docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`.
+
+**Final gates.**
+
+Final gates on `b5953af8` (the branch with `main` merged in, 2026-10-09): the local full gate, `npm run check:close`, `make -C tool check`, and the consumer proof (a fresh showcase install and build) all exited 0. CI went green on all seven jobs after one rerun. The first e2e run failed `edit-save-failure.spec.ts:207` (a pending dictionary word commits before the save) on all three attempts, with two neighbouring dictionary specs flaky. The rerun passed, so the failure is filed as a CI flake in the friction log. Before the merge Geoff read the new admin copy and added "please" to the failed-save and session-ended notices (`8483ca5b`, accepted by `diff-reviewer`, CI green); PR #108 merged as `0f7aa3a1`.
+
+**The pass score.**
+
+- **Output quality, first.** The pass met every task's acceptance. The reviewers and the smoke caught
+  two blockers the gates did not, and the live smoke confirmed the sign-in, role, and health behavior
+  on a real build. Reviews earned their cost. The static-list reds were the one avoidable defect class.
+- **Tokens against the 11.1M ceiling.** About 4.5M subagent tokens from Task 3's relaunch on (the
+  gate economy inputs' figure). Tasks 0 to 2, the conductor sessions, and the close reviewers were not
+  measured, and `/cost` was not read, so the total is not known. The pass stayed under the 80 percent
+  line (8.88M) with room, and no split was needed.
+- **Attended time.** Planning misses: 4. The `redirect` premise Task 8 corrected, the visual drift the
+  baseline exposed after approval, the fresh-worktree setup gaps, and Task 12's removed-option grep
+  scope that would have swept 14 internal planning files. Execution sittings: 4, each Geoff-directed or
+  Geoff-ruled: the Task 0 pause, the S1 stop to rebuild the gate machinery, the owner rulings on the
+  merge go and the charter phrase, and the gate economy direction at the close. The battery stand-down
+  was a machine stop. These counts are reconstructed from the Ledger.
+- **Clock time (first pass scored on clock; the plan carries no clock estimate, so there is nothing to
+  compare against).** Wall time from the first commit (2026-10-08 07:49) to the close's last fix round
+  (2026-10-09 about 11:30) is about 28 hours. Netting the daytime pauses, the executing session from
+  Task 3's relaunch (about 18:45) ran about 17 hours.
+  - *Gate time:* not summed, because `cairn-run-gate` reuses one log directory per gate string and
+    records no run durations. Estimates from the gate economy inputs: per-task gates 30 to 50 minutes
+    each across about 10 chains (about 8 hours with the work), boundary full gates about 45 minutes
+    each (about 3.3 hours with the reds), and each close fix round 30 to 100 minutes.
+  - *Lock wait:* not summed. Single notices of 14 to 33 minutes appeared on close fix rounds.
+  - *Rework clock:* about 5.5 hours. The S2 boundary reds, about 1 hour, were a process miss (checks
+    the per-task gate skipped). Task 11's fix round, about 1 hour, was a defect the review rightly
+    caught. The close fix chains, about 3.5 hours, were real defects, though each paid a full gate and
+    a lock queue for a small change. The S1 boundary's Firefox timeout was a flake that one rerun
+    cleared, and the `tool` workflow's govulncheck red was an environment fault outside the code.
+  - *Where the clock went:* almost all of it to the same broad gates repeated, which is why the gate
+    economy pass follows.

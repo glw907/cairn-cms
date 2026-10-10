@@ -7,6 +7,68 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Engine pass before stage 2b, pass A, 2026-10-08 to 10-09
+
+Branch `engine-pre-2b-a` (PR #108, merged to `main`). Plan and post-mortem:
+`docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md`. Closed unreleased: no version bump, no
+publish. Clock and gate evidence:
+`docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`.
+
+**What landed:**
+
+- **One declaration for roles and access** (Tasks 1 to 3, `37797ff3..f655f877`): the adapter's `roles`
+  and `access` feed the guard, the dev handle, and the editor routes through the composed `runtime`.
+  The doctor's role-wiring check follows. A none role a mapped href names is admitted, and only the
+  sign-in form and its confirm page are public under `/admin/auth/`.
+- **The auth store, the channel, and the health route** (Tasks 4, 5, 7, `4597aa49`, `bad014c0`,
+  `092176c1`): the roles migration ships in the scaffold with a named refusal, a missing Turnstile
+  secret logs apart from a bad token, and `/healthz` answers 503.
+- **The edit page and the commit path** (Tasks 8 to 10, `666aff41`, `df8857d9`, `a4618437`): a failed
+  save keeps the writing, and media, dictionary, publish, and publish-all commits sit behind a
+  default-branch head guard.
+- **Nested media and the live key check** (Tasks 11 and 6, `bd614101..d716ec89`, `c2409fdc`,
+  `a8156613`): nested images enter where-used, replace, and the manifest verify, and the opt-in
+  `/healthz?live=1` mints a token and reports the key fingerprint.
+- **Records** (Task 12, `21a6fdc5`, `60ff2c79`, `d675f953`) and **the close** (`a4c5e4b9`, then
+  `9f722bb9..8e2b7d29`): the simplifier, four reviewers, the live smoke and key probe, and two fix
+  chains.
+
+**What the gates caught:**
+
+- The S2 boundary went red twice on static checks the per-task engine tier skips (`check:self-use`,
+  then the showcase `format:check` and an un-emitted template).
+- Reviewers returned a real fix on Tasks 1, 2, 6, and 11. Task 11's `nested` placement reached two
+  dialogs under the wrong label.
+- The close reviewers found two blockers no gate did: publish-all could revert `main`, and Save
+  re-enabled during a successful save's reload, which allowed a second POST.
+- The `tool` workflow's govulncheck failed on every push from `5549fda8` until `setup-go` took
+  `check-latest: true` (`8f2fe6da`).
+
+**Score.** Output quality: every acceptance met, two blockers caught by review and smoke. Tokens:
+about 4.5M subagent tokens from Task 3 on against the 11.1M ceiling; the rest unmeasured, `/cost` not
+read. Attended time: 4 planning misses, 4 execution sittings. Clock (first scored, no estimate to
+compare): about 28 hours wall, about 17 executing; gate time and lock wait not summed because the gate
+logs record no run durations; rework about 5.5 hours (S2 reds about 1 hour, a process miss; Task 11
+about 1 hour and the close chains about 3.5 hours, real defects).
+
+**Final gates.**
+
+Final gates on `b5953af8` (the branch with `main` merged in, 2026-10-09): the local full gate, `npm run check:close`, `make -C tool check`, and the consumer proof (a fresh showcase install and build) all exited 0. CI went green on all seven jobs after one rerun. The first e2e run failed `edit-save-failure.spec.ts:207` (a pending dictionary word commits before the save) on all three attempts, with two neighbouring dictionary specs flaky. The rerun passed, so the failure is filed as a CI flake in the friction log. Before the merge Geoff read the new admin copy and added "please" to the failed-save and session-ended notices (`8483ca5b`, accepted by `diff-reviewer`, CI green); PR #108 merged as `0f7aa3a1`.
+
+**What a later pass would be wrong to rediscover:**
+
+- **A per-task engine gate runs no static list.** End every gate with `npm run check:close && npm run
+  check:tool-heuristics && npm run test:emit`.
+- **A fresh worktree needs CI's setup before F passes** (`npx svelte-kit sync` in the showcase, `npm
+  run package`, the template bake), and 20 `site-visual` tests drift here by design.
+- **A pinned task runs its own gate string unchanged** (dotfiles `492f584`). A by-name `pass-execute`
+  launch can serve a stale copy after a same-session edit.
+- **`emit-tool-conditions.mjs` reads `dist`.** Package before it.
+- **A nested-shape site fails its build until it runs `npx cairn-manifest`.** That is the fail-closed
+  point by design.
+- **`cairn-run-gate` records no run durations,** so a close cannot sum gate time or lock wait. The
+  gate economy pass closes that first.
+
 ## Stage 2a close finish, 2026-10-07
 
 Branch `draft-docs-2a` (PR #107). Plan and post-mortem:

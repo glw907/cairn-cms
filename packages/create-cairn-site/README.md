@@ -134,8 +134,8 @@ without a prompt.
 ### What gets created, and what it costs
 
 The chapter deploys your site to your own Cloudflare account, on the `workers.dev` domain
-Cloudflare gives every account. It creates one Worker named after your site, two databases
-(`<site>-auth` for sign-ins and `<site>-app` for the site's own data), and one storage bucket for
+Cloudflare gives every account. It creates one Worker named after your site, one database
+(`<site>-auth`, for sign-ins), and one storage bucket for
 media. A cairn site needs Cloudflare's Workers Paid plan, $5 US per month as of 2026-08-11,
 billed once per Cloudflare account rather than once per site, from this first deploy onward; the
 interactive consent names the plan and its cost before doing anything, and declining it stops the

@@ -64,12 +64,26 @@ function isClassShaped(token: string): boolean {
 
 // A hand-authored CSS class an exemplar leaves to the reader's own component, never a class the
 // admin sheet ships: `exemplar-list.md`'s expand panel names its own grid (`signup-panel`,
-// `signup-panel-grid`) and the Signups screen's create button names its scoped sizing class
-// (`signup-create-submit`) the way a component's own scoped `<style>` block would, which
-// `no-uncompiled-class` excludes through `file.styleClassNames`. Markdown carries no such block
-// to check against, so this is the small, commented allowlist the finding anticipates for a
-// genuine placeholder.
-const CONSUMER_DEFINED_CLASSES = new Set(['signup-panel', 'signup-panel-grid', 'signup-create-submit']);
+// `signup-panel-grid`) and the Signups screen's create row names its scoped sizing classes
+// (`signup-create-label`, `signup-create-field`, `signup-create-submit`) the way a component's
+// own scoped `<style>` block would, which `no-uncompiled-class` excludes through
+// `file.styleClassNames`. Markdown carries no such block to check against, so this is the small,
+// commented allowlist the finding anticipates for a genuine placeholder.
+//
+// `my-4` and `scroll-mt-14` are the other kind of exception: utilities the showcase's Signups
+// screen writes verbatim, which its own site admin sheet compiles by scanning `routes/admin`
+// (`@source "./routes/admin"` in the showcase's `src/admin.css`), though the engine's built sheet
+// never ships them. `exemplar-list.md` reproduces that screen's source whole, so the tokens ride
+// along.
+const CONSUMER_DEFINED_CLASSES = new Set([
+  'signup-panel',
+  'signup-panel-grid',
+  'signup-create-label',
+  'signup-create-field',
+  'signup-create-submit',
+  'my-4',
+  'scroll-mt-14',
+]);
 
 // An inline span whose first word is the audit CLI's own binary name is a command example
 // (`` `npx cairn-audit` ``, `` `cairn-audit norms destination` ``), never a class list; every

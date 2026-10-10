@@ -3,12 +3,14 @@
 Load this when building or reviewing a detail (desk) screen: a single record's own full
 picture, its own sections of related data, and the dialogs that mutate it.
 
-Source: the Signups screen every scaffolded site ships at `/admin/signups`
-(`src/routes/admin/signups/+page.svelte`). The scaffold has no detail route; what it does ship
-is one real dialog, the shared delete confirm, and the form-and-outcome wiring a detail screen's
-dialogs reuse. This file annotates that dialog where it applies and shows, under a **Growth**
-label, the detail route a developer builds next: `/admin/signups/<id>`, one signup's own page,
-reached from a list row. Growth snippets are not shipped code. They are written in the Signups
+Source: the Signups screen in `examples/showcase`, the cairn-cms repo's worked custom-screen
+example (`src/routes/admin/signups/+page.svelte`). A scaffolded site ships neither that screen
+nor a detail route; the screen's full source is inline at the end of `exemplar-list.md`. What
+the screen holds that a detail screen reuses is one real dialog, the shared delete confirm,
+reproduced below, and the form-and-outcome wiring a detail screen's dialogs share. This file
+annotates that dialog where it applies and shows, under a **Growth** label, the detail route a
+developer builds next: `/admin/signups/<id>`, one signup's own page, reached from a list row.
+Growth snippets are not shipped code. They are written in the Signups
 vocabulary and assume the developer's own tables carry the related data (guests, payments,
 notes) the cards show. Several annotations translate the markup into the cairn-native call
 (`StatusChip` registers, the `card-shell card-shadow` primitive) rather than transcribing it.
@@ -151,7 +153,7 @@ own register, worth naming because it recurs once per card rather than once:
 
 ## The dialog: one filled action, and the label register in practice
 
-Shipped, the Signups screen's shared delete confirm, one dialog serving every row:
+From the showcase's Signups screen, the shared delete confirm, one dialog serving every row:
 
 ```svelte
 <dialog class="modal" role="alertdialog" aria-modal="true" aria-labelledby="signup-delete-title" bind:this={deleteDialog}>

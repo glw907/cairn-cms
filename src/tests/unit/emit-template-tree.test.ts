@@ -122,12 +122,16 @@ describe('the emitted template tree', () => {
     expect(hits).toEqual([]);
   });
 
-  it('emits a wrangler.jsonc that parses as JSONC with exactly AUTH_DB and APP_DB bound', async () => {
+  it('emits a wrangler.jsonc that parses as JSONC with AUTH_DB as its only D1 binding', async () => {
     const text = await readFile(join(emittedTo, 'wrangler.jsonc'), 'utf8');
     const config = parseJsonc(text);
     const databases = config.d1_databases as Array<{ binding: string }>;
-    const bindings = databases.map((entry) => entry.binding).sort();
-    expect(bindings).toEqual(['APP_DB', 'AUTH_DB']);
+    expect(databases.map((entry) => entry.binding)).toEqual(['AUTH_DB']);
+  });
+
+  it('emits neither the Signups screen nor its migrations', () => {
+    expect(existsSync(join(emittedTo, 'src', 'routes', 'admin', 'signups'))).toBe(false);
+    expect(existsSync(join(emittedTo, 'migrations-app'))).toBe(false);
   });
 
   // The scaffold ships the roles migration (a site declaring custom roles writes them at once) and

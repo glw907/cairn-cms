@@ -5,7 +5,8 @@
 import { createLogger } from '@glw907/cairn-cms/log';
 
 /** The showcase's own event vocabulary, disjoint from the engine's CairnLogEvent union. */
-export type SiteLogEvent = 'admin.signups.misconfigured' | 'members.login.requested';
+export type SiteLogEvent =
+  | 'members.login.requested';
 
 /** The showcase's one logger instance, shared by every route that emits a structured record. */
 export const log = createLogger<SiteLogEvent>();

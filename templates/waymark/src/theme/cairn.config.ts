@@ -11,7 +11,6 @@ import {
   fields,
   defineAdapter,
   defineConcept,
-  defineAccess,
   createGithubApp,
 } from '@glw907/cairn-cms';
 import {
@@ -148,29 +147,6 @@ export const cairn = defineAdapter({
   // finalize.mjs matches this line character for character (TEMPLATE_GITHUB_APP_LITERAL)
   // prettier-ignore
   backend: createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
-  /**
-   * This site's whole access declaration: which roles reach which admin screen or route. It is
-   * declared once, here, on the adapter. `composeRuntime` carries it onto the runtime, and the
-   * production guard and the dev backend's handle each attach that one map to every admin request,
-   * so `hasAccessRule`, `createSectionAction`'s `access_map_not_attached` 500, and the nav's
-   * `hrefReachable` behave the same in dev and in production. The dev backend mints an owner
-   * session, so a role-based refusal cannot be exercised locally; only the attached-versus-absent
-   * map behaves identically.
-   *
-   * This module is live in the DEFAULT build, so its comments ride into the deployable Worker's
-   * sourcemap. Describe the dev branch here, never name its package or its exported handle: the
-   * dev-fold tripwire greps the deploy artifact for those literal names, and a mention alone
-   * fails it. The fence itself lives in hooks.server.ts.
-   *
-   * The custom Signups screen is owner-only. Its load gate and its form actions both resolve
-   * against this rule, and an owner-only list is written out as `['owner']` because
-   * `defineAccess` refuses an empty one. The first argument is the site's role vocabulary;
-   * `undefined` takes the built-in owner/editor roles, which is what a site declaring none of its
-   * own gets.
-   */
-  access: defineAccess(undefined, {
-    '/admin/signups': ['owner'],
-  }),
   // A verified sender literal, not derived from ORIGIN or any other URL host: Cloudflare Email
   // Routing verifies a sender address, not a domain owned by inference, so deriving one from a
   // URL host is exactly what E_SENDER_NOT_VERIFIED punishes on send.
@@ -214,9 +190,8 @@ export const cairn = defineAdapter({
     // by the same razor, what an editor authors versus what the site operates: Library joins
     // Content, since uploaded, described media is
     // the editor's own material the same way posts and pages are (the WordPress-era convention of
-    // Media beside Posts/Pages also matches a volunteer editor's muscle memory), while the custom
-    // Signups screen lands in Site, not Content, since signups are inbound visitor data,
-    // operations rather than manuscript. Tags stays in Site: vocabulary management is
+    // Media beside Posts/Pages also matches a volunteer editor's muscle memory).
+    // Tags stays in Site: vocabulary management is
     // configuration, not authoring. Settings and Editors stay trailing as admin config. Help
     // stays unreferenced, so it falls back to the shell's foot slot exactly where the default
     // arrangement already leaves it.
@@ -235,7 +210,6 @@ export const cairn = defineAdapter({
         children: [
           { screen: 'vocabulary' },
           { screen: 'nav' },
-          { label: 'Signups', icon: 'inbox', href: '/admin/signups' },
           { screen: 'settings', label: 'Site settings' },
           { screen: 'editors' },
         ],

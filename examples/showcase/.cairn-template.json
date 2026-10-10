@@ -3,6 +3,8 @@
     "src/routes/test",
     "src/routes/probe-craft",
     "src/routes/admin/theme-kit",
+    "src/routes/admin/signups",
+    "migrations-app",
     "src/routes/(site)/+layout.server.ts",
     "src/members",
     "src/lib/env-check.ts",

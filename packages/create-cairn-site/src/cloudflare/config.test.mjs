@@ -37,24 +37,13 @@ const BAKED_WRANGLER_JSONC = `{
   // Email Sending binding for magic links (arbitrary recipients). A real site sets remote = true
   // so \`wrangler dev\` sends real mail; the dev backend fakes it locally.
   "send_email": [{ "name": "EMAIL" }],
-  // cairn-cms self-owned magic-link auth store (editor allowlist, sessions, tokens). Each
-  // database gets its own migrations_dir: a channel database sharing the default migrations/
-  // directory with AUTH_DB would cross-apply schemas neither side expects.
+  // cairn-cms self-owned magic-link auth store (editor allowlist, sessions, tokens).
   "d1_databases": [
     {
       "binding": "AUTH_DB",
       "database_name": "cairn-showcase-auth",
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
-    },
-    {
-      // The developer's own database, holding the signups table /admin/signups reads. Its own
-      // migrations_dir, never "migrations": \`wrangler d1 migrations apply\` walks one directory
-      // per database, so a shared directory applies every schema to both.
-      "binding": "APP_DB",
-      "database_name": "cairn-showcase-app",
-      "database_id": "00000000-0000-0000-0000-000000000001",
-      "migrations_dir": "migrations-app"
     }
   ],
   // R2 bucket backing the media library; the /media route streams content-addressed bytes from here.
@@ -95,23 +84,21 @@ function parseJsonc(content) {
   return JSON.parse(stripped);
 }
 
-test('nameWranglerResources renames the worker, both databases, and the bucket, and drops both database ids', async (t) => {
+test('nameWranglerResources renames the worker, the database, and the bucket, and drops the database id', async (t) => {
   const dir = await fixtureDir(t);
   await nameWranglerResources(dir, 'alpine-club');
   const content = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
 
   assert.ok(content.includes('"name": "alpine-club"'));
   assert.ok(content.includes('"database_name": "alpine-club-auth"'));
-  assert.ok(content.includes('"database_name": "alpine-club-app"'));
   assert.ok(content.includes('"bucket_name": "alpine-club-media"'));
-  assert.ok(!content.includes('database_id'), 'both database_id lines must be gone');
+  assert.ok(!content.includes('database_id'), 'the database_id line must be gone');
 
   const parsed = parseJsonc(content);
   assert.equal(parsed.name, 'alpine-club');
   assert.equal(parsed.d1_databases[0].database_name, 'alpine-club-auth');
   assert.equal(parsed.d1_databases[0].migrations_dir, 'migrations');
-  assert.equal(parsed.d1_databases[1].database_name, 'alpine-club-app');
-  assert.equal(parsed.d1_databases[1].migrations_dir, 'migrations-app');
+  assert.equal(parsed.d1_databases.length, 1, 'AUTH_DB is the only D1 database');
   assert.equal(parsed.r2_buckets[0].bucket_name, 'alpine-club-media');
   assert.equal(parsed.vars.PUBLIC_ORIGIN, 'http://localhost:4173', 'PUBLIC_ORIGIN is left for Task 7');
 });
@@ -125,12 +112,12 @@ test('a second call is a no-op', async (t) => {
   assert.equal(twice, once);
 });
 
-test('a site whose slug is cairn-showcase still has both placeholder database ids dropped', async (t) => {
+test('a site whose slug is cairn-showcase still has its placeholder database id dropped', async (t) => {
   // "Cairn Showcase" is a thoroughly plausible name for a site someone builds while trying
   // cairn out, and it slugs to exactly the name the template already carries. Keying
   // idempotence on the name alone reads the untouched template as already personalized and
-  // leaves both placeholder ids in place, and a deploy then binds two databases whose ids
-  // (00000000-...) belong to nothing at all.
+  // leaves the placeholder id in place, and a deploy then binds a database whose id
+  // (00000000-...) belongs to nothing at all.
   const dir = await fixtureDir(t);
 
   await nameWranglerResources(dir, 'cairn-showcase');
@@ -219,7 +206,6 @@ test('a base slug of exactly 57 characters keeps every derived resource name wit
 
   assert.ok(parsed.name.length <= 63);
   assert.ok(parsed.d1_databases[0].database_name.length <= 63);
-  assert.ok(parsed.d1_databases[1].database_name.length <= 63);
   assert.ok(parsed.r2_buckets[0].bucket_name.length <= 63, `bucket name too long: ${parsed.r2_buckets[0].bucket_name}`);
   assert.match(parsed.r2_buckets[0].bucket_name, R2_BUCKET_NAME_PATTERN);
 });
@@ -233,7 +219,6 @@ test('a display name slugging to 58 characters is bounded before any derived res
   const parsed = parseJsonc(await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8'));
 
   assert.ok(parsed.d1_databases[0].database_name.length <= 63);
-  assert.ok(parsed.d1_databases[1].database_name.length <= 63);
   assert.ok(parsed.r2_buckets[0].bucket_name.length <= 63, `bucket name too long: ${parsed.r2_buckets[0].bucket_name}`);
   assert.match(parsed.r2_buckets[0].bucket_name, R2_BUCKET_NAME_PATTERN);
 });

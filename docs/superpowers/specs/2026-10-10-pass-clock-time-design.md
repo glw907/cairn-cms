@@ -1,6 +1,9 @@
 # Pass clock time: design
 
-Status: draft for review, 2026-10-10. Owner: Geoff. Scope: workstation-wide pass machinery, with cairn's own lanes
+Status: **parked, not approved** (2026-10-10). Its review (four lens files and a Fable critique beside it in
+`docs/superpowers/research/`) found it over-built: the staging queue, board, PSI admission, and runner merge cost more
+than they save, and its projection was optimistic. Geoff then widened the question to process ceremony as a whole.
+Kept as evidence for that brainstorm, not as a design to build. Owner: Geoff. Scope: workstation-wide pass machinery, with cairn's own lanes
 as the first consumer.
 
 Inputs: the evidence doc (`docs/superpowers/research/2026-10-10-pass-clock-time-evidence.md`, "Evidence" below) and

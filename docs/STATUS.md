@@ -22,14 +22,11 @@ plan, score, and replay record: [`superpowers/plans/2026-10-09-gate-economy.md`]
 
 ## Immediate next action
 
-Engine pass B is **paused** (Geoff, 2026-10-10) for a brainstorm on pass clock time. Its S1 runner ran
-95 minutes without a commit. A Haiku probe in the runner reported `gate-tier.mjs` absent, so every gate
-fell back to the full F. A working classifier saves only about 9 minutes on that chain, though. Most of
-the clock went to whole-suite selection, two reds caught late, a duplicate gate run, and lock wait.
-Evidence and the projection with the probe fixed: [`superpowers/research/2026-10-10-pass-clock-time-evidence.md`](superpowers/research/2026-10-10-pass-clock-time-evidence.md).
-Pass B's state: worktree `.claude/worktrees/engine-pre-2b-b`, draft PR #111, Task 0 recorded in the
-plan's Ledger (`1ce14d3b`), and WIP commit `dbdc4556` (Tasks 1 and 2 edits, unreviewed, ungated, not
-pushed). The release holds until the docs are complete.
+Engine pass B stays **paused** (Geoff, 2026-10-10). The clock-time brainstorm widened into a broader
+question: the pass process itself carries too much ceremony for its clock and token cost. Pass B's
+state: worktree `.claude/worktrees/engine-pre-2b-b`, draft PR #111, Task 0 recorded in the plan's
+Ledger (`1ce14d3b`), and WIP commit `dbdc4556` (Tasks 1 and 2, unreviewed, ungated, not pushed).
+The release holds until the docs are complete.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
@@ -42,29 +39,31 @@ pushed). The release holds until the docs are complete.
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
 
-### Next action (clock-time brainstorm)
+### Next action (process-ceremony brainstorm)
 
-> **Goal.** Settle why a cairn pass still takes 10+ hours of wall clock after the gate economy pass,
-> and decide the changes that bring engine pass B, and every later pass, to a target Geoff sets.
+> **Goal.** Cut the pass process to what earns its cost. Every step (plan length, spec and plan
+> review lenses, the per-task chain, the close, the ledgers) keeps its place only if its catch record
+> shows it caught a defect a later step would not, at a cost in clock and tokens worth paying.
+> Clock time is one symptom: pass A ran 28 hours, pass B's plan is 1,676 lines for 11 tasks, and
+> `docs/superpowers/research/` holds 160 review, fold, and verification files.
 >
-> **Scope.** The pass machinery: `pass-execute.js` (its classifier probe and per-task chain), the
-> targeted gate's whole-suite selections, CI waits, lock sharing, implementer and fix-round time, and
-> plan sizing. Out: pass B's engine content, which stays as planned.
+> **Read first.** Evidence: [`2026-10-10-pass-clock-time-evidence.md`](superpowers/research/2026-10-10-pass-clock-time-evidence.md).
+> Prior art: [`2026-10-10-pass-clock-time-prior-art.md`](superpowers/research/2026-10-10-pass-clock-time-prior-art.md).
+> The Fable critique ([`...-review-fable.md`](superpowers/research/2026-10-10-pass-clock-time-review-fable.md))
+> holds the short list of gate fixes worth keeping (whole suites to CI, concurrent gate legs, review
+> beside the gate, the four `cairn-run-gate` fixes, probes deleted). The parked spec
+> ([`2026-10-10-pass-clock-time-design.md`](superpowers/specs/2026-10-10-pass-clock-time-design.md))
+> is evidence of the ratchet, not a design to build.
 >
-> **Settled (do not re-brainstorm):** pass B's tasks and rulings; the targeted gate and CI green as
-> the boundary proof (both stay, the question is why they did not deliver).
+> **Geoff's rulings from 2026-10-10 (carry them):** independent items run in pairs by default;
+> load is re-read at every decision; projects coordinate shared resources with each other, any mix
+> of projects; the posture is workstation-wide and on by default for new projects; adopt the
+> published method for each sub-problem and invent nothing already solved.
 >
-> **Still open, brainstorm these:** the clock target per pass; the questions at the end of the
-> evidence doc.
+> **Open:** the scope (execution only, or the whole lifecycle from brainstorm to close); the clock
+> target, which waits on the audit's measured floor (Fable's honest figure is 40 to 45 minutes per
+> task); and whether the first step is a catch-ledger audit of pass A, gate economy, and stage 2a.
 >
-> **Opus 5.5 at `high` already fell short here.** The gate economy pass was brainstormed, planned,
-> and conducted on `claude-opus-5-5`, and its design did not deliver: its own replay projected 14.8 to
-> 19.0 hours against the 9-hour target, and pass B's first chain then ran 87 minutes uncommitted.
-> This session therefore starts at `xhigh`. Any design question it cannot close with evidence (a
-> projection at or under Geoff's target) escalates per `~/.claude/docs/model-economy.md`: `max`, then
-> one `model: fable` dispatch to design or adversarially critique the proposal. Say which seat
-> produced each part of the final design.
->
-> **Approach.** Read the evidence doc first, then `superpowers:brainstorming`. Resume pass B only
-> after the fixes land, from WIP `dbdc4556` (review it before building on it). Launch directory:
-> `/var/home/glw907/Projects/cairn-cms`. Model: `claude --model claude-opus-5-5 --effort xhigh`.
+> **Approach.** `superpowers:brainstorming` in a fresh session. Start subtractive: propose cuts
+> before additions. Model: `claude --model claude-opus-5-5 --effort xhigh`. Launch directory:
+> `/var/home/glw907/Projects/cairn-cms`. Resume pass B only after the outcome lands.

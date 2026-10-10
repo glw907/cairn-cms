@@ -19,12 +19,13 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 Pass A is merged and unreleased
 ([plan and post-mortem](superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)). The release holds
 until the docs are complete.
-The gate economy pass is next, brainstormed in a fresh session. Pass A spent about 17 hours of
-executing clock, mostly on repeated broad gates. Inputs:
-[`superpowers/research/2026-10-09-gate-economy-pass-inputs.md`](superpowers/research/2026-10-09-gate-economy-pass-inputs.md),
-with a draft build on branch `gate-related` (not merged). Engine pass B waits on it: plan
+The gate economy pass executes next: plan
+[`superpowers/plans/2026-10-09-gate-economy.md`](superpowers/plans/2026-10-09-gate-economy.md)
+(spec, four-lens spec review, three-lens plan review, two folds, and two verification reads done;
+no open rulings). PR #109 (`1841b4db`) already landed CI job timeouts and bounded installs. Engine
+pass B waits on it: plan
 [`superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md`](superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md),
-ceiling 14.0M, its gate section to take the new rules.
+ceiling 14.0M, its gate section updated by the gate economy pass's Task 6.
 
 Pass B carries the relink re-arm list (the 2a pages and fact ids pass A falsified, in the plan's
 Ledger and the Task 12 carry files) and a `Consumers must:` line for `replyTo` inheritance.
@@ -40,24 +41,22 @@ Ledger and the Task 12 carry files) and a `Consumers must:` line for `replyTo` i
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
 
-### Next action (gate economy pass, brainstorm)
+### Next action (gate economy pass, execute)
 
-> **Goal.** Brainstorm and plan the gate economy pass: targeted, evidence-based gating.
+> **Goal.** Cut a pass's gate clock to about half of pass A's with no loss of assurance: run
+> records, a build-once close, a targeted per-task gate, `ci-green`, CI as the boundary and close
+> gate, and sequential-runner pipelining with stop-the-line.
 >
-> **Scope.** In: one package build per gate (`check:close` builds about 17 times); `vitest related`
-> for the component project only; CI hardening (timeouts, visible retries, one all-workflows-green
-> check); machine-readable `cairn-run-gate` run records; the measured suite audit; the rules carried
-> into `pass-core`, `pass-gate-economy.md`, both runners, and pass B's plan. Out: deleting a test
-> before Geoff reads the audit, and pass B's tasks.
+> **Scope.** The plan's Tasks 0 to 7 across the cairn-cms worktrees (`gate-economy`, plus
+> `gate-economy-ci` for Task 4a) and a dotfiles worktree. Out: deleting or moving tests, pass B's
+> tasks, chains pipelining.
 >
-> **Settled (do not re-brainstorm):** Geoff (2026-10-09): "avoid the brute-force approach, unless it's
-> best-practice"; a small pass before pass B. `related` never replaces the full node projects, and
-> `auth-data` keeps them per task. Measure before and after, and replay pass A's task ranges.
+> **Settled (do not re-brainstorm):** everything in the spec and the plan's "Decisions this plan
+> takes"; no rulings are open. Protected paths force a CI-green wait on that task's commit. Merge
+> order is cairn-cms first, then dotfiles in the same sitting; both merges are owner-gated.
 >
-> **Still open, brainstorm these:** whether the close drops the local full gate for CI green on the
-> final commit (recommended, local gate as the CI-down fallback); the pass ceiling; what to keep from
-> `gate-related` (the empty-selection wrapper, the narrower helper trigger, per-check timing).
->
-> **Approach.** Read the inputs file, then `gate-related`'s report. Brainstorm at effort `high`, then
-> plan with a clock estimate. Invoke `cairn-pass`. Launch directory: `/var/home/glw907/Projects/cairn-cms`.
-> Model: `claude --model claude-opus-5-5`.
+> **Approach.** Plan `docs/superpowers/plans/2026-10-09-gate-economy.md`, class `engine-logic`
+> (Task 6b `docs`), token ceiling 4.0M (stop and write STATUS at 3.2M), clock estimate about
+> 4.8 hours. Hand-dispatched chains per the plan. Unattended run: arm the guards at launch. Invoke
+> `cairn-pass` to start. Launch directory: `/var/home/glw907/Projects/cairn-cms`. Model:
+> `claude --model claude-opus-5-5 --effort medium`.

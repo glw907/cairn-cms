@@ -27,9 +27,10 @@ and the S2 boundary's three fix rounds, run because part 3 cites the fix rounds 
 real gates over the others.
 
 **Observations that are not misses.** (1) Task 12, a `docs` task, selects the whole component
-project: its diff touches `CHANGELOG.md`, `ROADMAP.md`, and `packages/cairn-cms-dev/README.md`, which
-sit in the engine bucket, so it is not docs-only, and nothing under `src/` exists to select from, so
-the classifier fails closed to the whole project. (2) Task 8, Task 11, and both close fix chains that
+project: its diff touches `packages/cairn-cms-dev/README.md`, which sits in the docs and engine
+buckets, so it is not docs-only, and nothing under `src/` exists to select from, so the classifier
+fails closed to the whole project. (`CHANGELOG.md` and `ROADMAP.md` are docs-only and do not cause
+it.) (2) Task 8, Task 11, and both close fix chains that
 touch admin components select the whole component project through a rerun trigger.
 
 #### Per-range summary
@@ -317,7 +318,7 @@ the failing logs read with `gh run view <id> --log-failed`, `docs/HISTORY.md` on
 No floor item is a TDD red run: those are local and never reached CI or HISTORY, so that excluded
 class is empty.
 
-**Floor wording corrected by the logs.** Three of the floor's failure descriptions do not match the
+**Floor wording corrected by the logs.** Four of the floor's failure descriptions do not match the
 logs, and the rows below carry what the logs show:
 
 - Items 6, 10, and 16 read "missing-package error as item 6". The logs show real findings:
@@ -362,7 +363,7 @@ Selection evidence is in Part 1; the leg named is in that range's printed gate.
 | X20 | 20 | CI run 37875629682 (`tool`, `5549fda8`, the first failing push) | external | govulncheck, below |
 | X24 | 24 | HISTORY bullet 4 | external | The same govulncheck failure, described by HISTORY. Wording verified, below. |
 | X11 | 11 | CI run 37893646318 (`test`, `092176c1`) | external | Cancelled at "Run npx playwright install --with-deps chromium firefox". The job started 06:27:50Z and was cancelled at 12:28:48Z, about six hours, so the install hung and no check ran. Not a diff-caused red. |
-| X14 | 14 | CI run 37892059444 (`e2e`, `bad014c0`) | environmental flake | `e2e/spellcheck.spec.ts:20` failed on all three attempts (`.cm-lintRange-info` stayed at 0 for the 60 s `toPass` window; the worker streams a 1.5 MB dictionary into wasm); 347 passed. Evidence it is not diff-caused: the same spec failed in archive gate log `e153a4bcbf6696e3` (2026-10-06, a full gate on an unrelated pass, 21 failed = 20 `site-visual` drift plus this spec); the next push `092176c1` passed `e2e` (run 37893646527) with a diff that touches nothing the spec reaches; local F at `12027522` passed all 328. See the note below on this row. |
+| X14 | 14 | CI run 37892059444 (`e2e`, `bad014c0`) | environmental flake | `e2e/spellcheck.spec.ts:20` failed on all three attempts (`.cm-lintRange-info` stayed at 0 for the 60 s `toPass` window; the worker streams a 1.5 MB dictionary into wasm); 347 passed. Evidence it is not diff-caused: the same spec failed in archive gate log `e153a4bcbf6696e3` (2026-10-06, a full gate on an unrelated pass, 21 failed = 20 `site-visual` drift plus this spec); the next push `092176c1` passed `e2e` (run 37893646527) with a diff that touches nothing the spec reaches; local F at `12027522` passed all 328; CI on `b835fe30` (run 38071788402) listed `e2e/spellcheck.spec.ts:20` among the 4 flaky tests that passed only on retry. See the note below on this row. |
 | X22 | 22 | HISTORY bullet 2 | reviewer-only | The diff reviewer's fix rounds on Tasks 1, 2, 6, and 11 (Task 11's `nested` placement reached two dialogs under the wrong label). No gate failed and no CI run exists; no test covered the label, so no selection could have caught it. |
 | X23 | 23 | HISTORY bullet 3 | reviewer-only | The close reviewers found publish-all could revert `main` and Save re-enabled during a successful save's reload. No gate or CI run failed; both were found by reading. |
 

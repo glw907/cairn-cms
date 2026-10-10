@@ -1076,10 +1076,11 @@ the named human gates only):**
   read CI per task; only the sequential runner pipelines. (e) The CI build-once rewire: CI keeps its
   per-step checks while `check:close` is the local build-once runner; rewiring CI to build once
   saves about 2 minutes a cycle, but its check list differs from `check:close`'s and it would lose
-  the per-step timing. (f) A docs-class diff that
-  touches `CHANGELOG.md` or `ROADMAP.md` runs the whole component project, because those paths sit
-  in the engine bucket and no `src/` path exists for the related selection, so the classifier fails
-  closed; a bucket entry for them would make a docs task cheap. (g) The emitted gate builds `dist`
+  the per-step timing. (f) A docs task that touches a package README
+  under an engine-bucket prefix (`packages/cairn-cms-dev/README.md`) runs the whole component
+  project, since `**/*.md` does not override the package prefix and no `src/` path exists for the
+  related selection, so the classifier fails closed; a bucket entry for package READMEs would make
+  such a docs task cheap. (g) The emitted gate builds `dist`
   twice, once in leg 1 (`npm run package`) and again inside `check:close`, which has no flag to
   skip its build.
 

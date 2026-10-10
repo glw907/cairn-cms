@@ -133,12 +133,13 @@ its targeted gate.
 the reviewer reads. It reads `ci-green` on task N's accepted SHA before it dispatches task N+2.
 Every `auth-data` task (Tasks 2, 5, and 8) waits for CI green on its own commit before N+1 starts,
 as does a task whose gate probe reports `ciWait` for a protected path (Task 4 edits
-`.github/workflows/publish.yml`) or that sets `ciWait: true`. A red halts the run with a `ciRed`
-record and an unavailable read halts it with `ciUnavailable`; the conductor then runs F on that SHA.
-Tasks 1 and 2 land as a pair (see "Disjoint Files seams"), so the S1 pre-flight checks whether Task
-1's commit alone leaves CI's `create-site` or `scaffold` red. If it does, the pair is dispatched as
-one commit, since the runner reads CI on Task 1's SHA before Task 3 and would halt on the pair's
-known red.
+`.github/workflows/publish.yml`) or that sets `ciWait: true`. A red (exit 1) or missing
+(exit 2) read halts the run with a `ciRed` record. An unavailable read (exit 3) halts it with
+`ciUnavailable`, and only then does the conductor run F on that SHA.
+Tasks 1 and 2 dispatch as one runner task carrying both tasks' Files, Outcomes, and Acceptances,
+with `passClass: "auth-data"`. Task 1 alone breaks `nameWranglerResources` (see "Disjoint Files
+seams"), so a separate Task 1 commit would be red on CI, and the runner reads CI on a task's SHA
+before the task after next.
 
 **Amended from pass A's S1 (2026-10-08), replaced by the gate economy pass (2026-10-10); supersedes
 the paragraphs above where they differ.** Each task's gate is its blast radius: the targeted gate,
@@ -185,7 +186,8 @@ browser. The engine's root `npm test` drives Chromium and is never light.
   run whose base is `origin/main`'s current head; if `main` moved, merge it in and read it again.
 - **Full (F), the fallback:** the `full` tier, printed by `node scripts/checks/gate-tier.mjs --range
   <base>..HEAD --pin full` and quoted in Task 0's Ledger entry. It runs only where `ci-green` exits 3
-  (or the runner halts with `ciUnavailable`), on that SHA. It is the engine tier plus the
+  (the runner halts with `ciUnavailable`), on that SHA. Exit 2 (missing) halts with `ciRed` and F
+  does not follow it. It is the engine tier plus the
   admin-visual run, `check:comments`, `check:surface`, CI's check list, and the showcase e2e, with
   its last step replaced by the `--grep-invert` form above. The showcase e2e runs on the port
   convention the pre-flight reads from `examples/showcase/playwright.config.ts` and
@@ -656,9 +658,10 @@ works.
 
 **Interfaces produced:** none consumed later.
 
-**Gate:** the targeted gate; expected: the checks of the scripts and showcase buckets, the node
-projects, `create-cairn-site`'s suite, the whole component project (no `src/` path), and the three
-`auth-data` specs (`golden-path`, `access-map`, `csrf-origin`). The lane is heavy. Task 2 is
+**Gate:** the targeted gate; expected: the checks of the showcase bucket (its Files sit under
+`packages/create-cairn-site/`) and the README's docs checks, the node projects, `create-cairn-site`'s
+suite, the whole component project (no `src/` path), and the three `auth-data` specs (`golden-path`,
+`access-map`, `csrf-origin`). The lane is heavy. Task 2 is
 `auth-data`, so the runner waits for CI green on its commit before Task 3 starts.
 
 ### Task 3: The admin error page, the manifest message, the types script, and the feed (A5, B2, B3, D2)
@@ -710,11 +713,12 @@ task 5. **Decision 4.**
 **Interfaces produced:** the admin error page, named in Task 11's facts and the re-arm list
 (restrict-admin-access, scaffolded-site-files); the A5 captures, read at the close.
 
-**Gate:** the targeted gate; expected: the specs the map gives `examples/showcase/src/routes/admin/`
-(`admin-visual`, `custom-screen`, `golden-path`, `theme-kit`, `theme-kit-contrast`,
-`vocabulary-admin`) plus those its `src/lib` paths map. The old F expectation is dropped: the error
-page is a mapped path, so the classifier selects its specs, and CI's whole suite runs at the
-boundary.
+**Gate:** the targeted gate; expected: the showcase, engine, and scripts bucket checks, the node
+projects, a component selection (`src/lib/content/manifest.ts` and the files that import it), and the
+whole e2e suite. `examples/showcase/.cairn-template.json` is an unmapped showcase path, so it selects
+every spec (with `--grep-invert` for `site-visual.spec.ts`); the new spec adds itself, and
+`scripts/build/emit-template.mjs` adds the three specs an unmapped engine path gets. The old F
+expectation is dropped; the whole suite is the classifier's own answer.
 
 **S1 boundary:** pushed; `ci-green` exit 0 on the segment head (it reads `scaffold`, `create-site`,
 and `e2e`, with `test` and `design`); STATUS written; S2 pre-flight dispatched.
@@ -775,7 +779,10 @@ consumer proof.
 
 **Gate:** the targeted gate; expected: the checks the root `package.json` and `.github/` select, the
 dev-package check, `create-cairn-site`'s suite, and the three specs the map gives an unmapped engine
-or dev-package path (`golden-path`, `access-map`, `csrf-origin`). `publish.yml` is a protected path,
+or dev-package path (`golden-path`, `access-map`, `csrf-origin`). The dev package's `tsconfig` and the
+root `package.json` match rerun triggers, so the component leg runs the whole project. `.gitignore`
+(touched only if `packages/cairn-cms-dev/dist` is not already ignored) is in no bucket, so it selects
+every static check and the whole e2e suite. `publish.yml` is a protected path,
 so the gate probe reports `ciWait` and the runner waits for CI green on Task 4's commit before Task 5
 starts. The old F expectation is dropped; the `publish-dev` job and the `exports` map are proven by
 the dev-package check, the showcase e2e build, and CI's `scaffold` and `e2e` runs.
@@ -1105,10 +1112,11 @@ The "No" alternative (publishes written to disk) was not taken.
 version records, and re-arm items (above). Task 11 re-reads them when Task 10 ran first.
 
 **Gate:** the targeted gate; expected: the engine and showcase checks, the node projects,
-`create-cairn-site`'s suite, a component selection, and the whole e2e suite, since
-`examples/showcase/src/hooks.server.ts` selects every spec. The old F expectation is dropped, and the
-whole suite stays. Named risk: the hook wraps every request, so a regression in the dev handle's
-overlay can surface in any spec.
+`create-cairn-site`'s suite, the whole component project, and the whole e2e suite. The component leg
+runs whole because `src/lib/admin/CairnAdminShell.svelte` matches the rerun trigger
+`src/lib/admin/**`. The e2e leg runs whole because `examples/showcase/src/hooks.server.ts` selects
+every spec. The old F expectation is dropped, and the whole suite stays. Named risk: the hook wraps
+every request, so a regression in the dev handle's overlay can surface in any spec.
 
 ### Task 11: Docs and records for pass B
 
@@ -1217,11 +1225,15 @@ other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/ap
 
 **Interfaces produced:** none consumed later; the close finalizes STATUS and HISTORY.
 
-**Gate:** the targeted gate; expected: the docs checks and the node projects. `CHANGELOG.md` and
-`ROADMAP.md` sit in the engine bucket and no `src/` path exists to select from, so the component
-leg runs the whole project; no e2e spec is selected. A `claude/**` or `packages/create-cairn-site/`
-path adds its checks and the `create-cairn-site` suite. The S4 boundary's CI green carries
-`check:close`'s components.
+**Gate:** the targeted gate; expected: the docs checks and the node projects. `CHANGELOG.md`,
+`ROADMAP.md`, and the doc pages are docs-only (`*.md`), so on those paths alone the component leg is
+skipped and no e2e spec is selected. Three Files paths change that. `packages/cairn-cms-dev/README.md`
+sits in the docs and engine buckets with no `src/` path, so the component leg runs the whole project
+and the e2e leg takes the three specs an unmapped engine path gets (`golden-path`, `access-map`,
+`csrf-origin`). `packages/create-cairn-site/README.md` also runs the whole component project and adds
+`create-cairn-site`'s suite. A `claude/**` or `skills/**` path adds the export-surface checks, the
+whole component project, and the same three specs, but not the `create-cairn-site` suite. The S4
+boundary's CI green carries `check:close`'s components.
 
 **S4 boundary:** pushed; `ci-green` exit 0 on the segment head, which carries every `check:close`
 component and every CI workflow; STATUS written.

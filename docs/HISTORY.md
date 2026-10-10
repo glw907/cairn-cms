@@ -69,8 +69,8 @@ classifier, the timed ranges, and the projection:
 **Score.** Output quality: every acceptance met, with the fail-open paths above caught before the merge.
 Tokens: about 4.3M against the 4.0M ceiling (about 4.1M at the fold's dispatch; per agent the highest
 reported total plus the conductor); the 80 percent line was crossed at the Task 6b review, and Geoff chose
-to finish the close. Attended time: 0 planning misses and 5 owner interactions (3 the pass's own, 2 Geoff's
-side questions about another project). Clock: 4 h 37 min from the first implementer dispatch to the fold
+to finish the close. Attended time: 0 planning misses and 3 owner pull-ins (the status question, the merge go, the
+ceiling question), plus 2 side questions of Geoff's about another project, counted apart. Clock: 4 h 37 min from the first implementer dispatch to the fold
 against the 4.8 h estimate, Task 0 on its own line at about 13 min; 662 s of lock wait; about 12 min of strict
 CI wait; about 37 min of itemized rework. The projection for pass A on the new gates is 14.8 to 19.0 hours
 against the 9-hour target, a miss recorded without reopening the design (the unchanged review and task rows
@@ -99,8 +99,10 @@ plan's post-mortem.
 - **A fixed light gate skips the type check.** A plan that names a gate string bypasses the classifier;
   the computed gate for a scripts diff includes `npm run check`, and the light lane's 3G cap runs it out of
   memory unless `NODE_OPTIONS=--max-old-space-size=6144` is set.
-- **`--pin` prints the old tier string and ignores `--class`,** so a pinned `auth-data` task loses the
-  class's e2e floor; the dotfiles close fix chain handled the runner side.
+- **`--pin` returns the pinned tier's string before `--class` applies** (`scripts/checks/gate-tier.mjs:535-540`),
+  so a pinned `auth-data` task silently drops the three auth e2e specs. Nothing fixes it in the classifier;
+  dotfiles `c42bbcd` only documents the workaround in `pass-core` (pin `full`, or append the three auth
+  specs). Filed as `ROADMAP.md` follow-up (l).
 - **Piping `cairn-run-gate` through `tail` or `grep` can cut its `gate exit:` line,** which cost the
   cairn-cms simplifier gate two or three full reruns.
 
@@ -113,9 +115,9 @@ mechanisms held through execution; the Task 4a CI red was fixed under the next t
 reasoned.
 
 **Friction triage.** The close triaged the whole log: 23 entries, 3 fixed on the spot, 3 deleted, 17 moved
-whole to `ROADMAP.md`'s Next tier, 0 kept, and 4 new entries filed (the plan-fixed light gate, the missing
-failing-step field, no per-leg timing in `cairn-run-gate`, and the package README that runs the whole
-component project).
+whole to `ROADMAP.md`'s Next tier, 0 kept, and 3 new entries filed (the plan-fixed light gate, the missing
+failing-step field, and no per-leg timing in `cairn-run-gate`). The package README that runs the whole
+component project is `ROADMAP.md` follow-up (f) and is not filed twice.
 
 ## Engine pass before stage 2b, pass A, 2026-10-08 to 10-09
 

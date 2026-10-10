@@ -1062,7 +1062,9 @@ the named human gates only):**
   backgrounded call starts a second full gate (about 20 minutes duplicated) and, through a pipe, can
   drop the `gate exit:` line (about 15 minutes per extra cycle; the close's simplifier gate ran two to
   three times fully after `tail` cut the line); the `--receipt` lookup exists but a re-issue does not
-  consult it.
+  consult it. (l) `gate-tier.mjs --pin` returns `TIER_GATES[pin]` before `--class auth-data` applies
+  (`scripts/checks/gate-tier.mjs:535-540`), so a pinned `auth-data` task silently drops the three auth e2e
+  specs. The workaround is documented in `pass-core` (pin `full`, or append the three auth specs).
 
 - **Repo tooling and docs-gate friction from the friction log (triaged at the gate economy pass's close,
   2026-10-10).** Seventeen entries moved whole, each re-checked against the tree at `4ef0fdbb`; a pass

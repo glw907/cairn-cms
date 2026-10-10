@@ -75,7 +75,6 @@ No open entry.
 - **`contributor`.** A plan that fixes a task's gate string bypasses the classifier, and the fixed string can omit the type check. The gate economy pass's Task 4a ran a plan-fixed light gate with no `npm run check`, so four `svelte-check` implicit-any errors in `scripts/ci/retries-notice.mjs` reached CI (the test job went red on `d2c5164d`, 2026-10-10) and were fixed under Task 3 (`8695229d`). The classifier would have added `check` for a scripts diff. Found by the gate economy pass conductor, 2026-10-10.
 - **`contributor`.** The HISTORY "What the gates caught" bullets name no failing step, so a replay cannot tell which gate leg would have caught a red from the entry alone. The replay's miss-rate floor of 24 items carried failure descriptions that disagreed with the CI logs on 5 of 24 items (it named a missing-package error where the logs show `check:self-use`, `format:check`, and `check:template` findings), and each row had to be re-read from `gh run view --log-failed`. A one-line `failing step` field per caught red would make the next replay a read of HISTORY. Found by the gate economy pass conductor, 2026-10-10.
 - **`contributor`.** `cairn-run-gate` records one duration per run and prints no per-leg timing, so the replay's per-leg tables (`docs/superpowers/research/2026-10-09-gate-economy-replay.md`, part 2) mix printed figures (`check:close`, Vitest, Playwright) with legs derived by subtraction. A per-leg line in the run record (or `time` output between `&&` legs) would make the next measurement a read. Found by the gate economy pass conductor, 2026-10-10.
-- **`contributor`.** A `docs`-class task whose diff touches an engine-prefixed package README (`packages/cairn-cms-dev/README.md`) runs the whole component project, about 235 seconds: the README sits in the docs and engine buckets, no `src/` path exists for the related selection, and the classifier fails closed. Also filed as follow-up (f) in `ROADMAP.md`'s gate economy follow-ups entry; a bucket row for package READMEs would clear it. Found by the gate economy pass's replay (pass A Task 12), 2026-10-10.
 
 ### Triage record
 
@@ -91,8 +90,8 @@ local fallback replaced that gate, and the re-issue row stays filed), and the `@
 safelist comment at `src/lib/admin/admin-css-safelist.ts:62-70` already records it). Seventeen moved whole to
 `ROADMAP.md`'s Next tier, in the entry "Repo tooling and docs-gate friction from the friction log" (16 older
 entries and the `ci-e2e` flake, now carrying the retried-test evidence from this pass's CI reads). None stays open
-from before; four new entries filed by this pass sit in Repo tooling above. Totals: 23 triaged, 3 fixed, 3
-deleted, 17 moved, 0 kept, 4 filed.
+from before; three new entries filed by this pass sit in Repo tooling above. Totals: 23 triaged, 3 fixed, 3
+deleted, 17 moved, 0 kept, 3 filed.
 
 Engine pass pre-2b, pass A's close (2026-10-09) triaged the whole log. It held nine entries, all
 filed by pass A's own tasks on 2026-10-08 and 2026-10-09, none for a pass A fix, so none was deleted
@@ -309,7 +308,7 @@ history holds every pruned entry in full.
 | 2026-09-29 | theme identity pass C's close | one open entry, the media library's orphan purge open to every editor, verified against the tree, then ruled on by Geoff and promoted to `ROADMAP.md` Later (an owner-restrictable purge); the pass's own findings routed to `ROADMAP.md` (the four edge cases to Next, the rule promotion to Toward 1.0, the docs standing order to Next) |
 | 2026-09-30 | the draft docs harvest's close | four open entries, all its own: the `src/lib/islands/index.ts` `/components` comment fixed and deleted; `cli-cairn-media-seed.md`'s `vite dev` claim and `requiredDocsPaths`'s kept-page existence filter promoted whole to `ROADMAP.md`'s Next tier; the `tool/internal/health` package debt promoted whole to Later. The whole-log sweep found no other open finding |
 | 2026-10-07 | draft docs stage 2a's close (R7) | all 187 open entries, under the engine-pass boundary test: 76 to the Now tier's engine pass before stage 2b, 21 to Now's docs tooling before stage 2b, 30 to Next's batched engine friction, 17 to Next's reference-arm corrections, 23 to Next's docs content the extend rebuild owes, 3 to Next's cairn-audit and theme contract entry, 17 fixed and deleted or deleted as overtaken |
-| 2026-10-10 | the gate economy pass's close | 23 open entries: 3 fixed on the spot (the `tool/Makefile` golden comment, the docs-gate header count, a `durable-gotchas.md` entry for Playwright's `unroute`), 3 deleted (a duplicate, an overtaken entry, an already-documented one), 17 moved whole to `ROADMAP.md`'s Next tier; four new gate-economy tooling entries filed |
+| 2026-10-10 | the gate economy pass's close | 23 open entries: 3 fixed on the spot (the `tool/Makefile` golden comment, the docs-gate header count, a `durable-gotchas.md` entry for Playwright's `unroute`), 3 deleted (a duplicate, an overtaken entry, an already-documented one), 17 moved whole to `ROADMAP.md`'s Next tier; three new gate-economy tooling entries filed |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

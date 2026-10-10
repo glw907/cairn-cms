@@ -1099,7 +1099,7 @@ highest reported subagent total, review reads included where noted.
 | 6a | done | accept, then a non-blocking docs round, accept | dotfiles `5a42369`, `eb439c7` | about 4 min plus 2; 0.13M. The dotfiles track was complete here |
 | 7 | done | accept, first round | `239a4114` | about 10 min; 0.15M |
 | 6b | done | fix (the gate forecasts misstated the classifier, and a ROADMAP item named a defect that does not exist, carried from the brief's copy of Task 7's misattribution), then accept | `4bb7b1cf`, `be9442f2` | about 5 min plus a 6-min fix (09:57 to 10:03); 0.15M. All tasks accepted about 10:25 |
-| Close | done | dotfiles review: fix chain accepted (`c42bbcd`); cairn-cms review: fix chain accepted (`4ef0fdbb`) | dotfiles simplifier `e410972`, fix chain `c42bbcd`; cairn-cms simplifier `4a1663f3`, fix `4ef0fdbb`, then this ledger commit | simplifiers about 10:17; timed ranges 10:56 to 11:49; fix `4ef0fdbb` at 11:55; this fold after that |
+| Close | done | dotfiles review: fix chain accepted (`c42bbcd`); cairn-cms review: fix chain accepted (`4ef0fdbb`) | dotfiles simplifier `e410972`, fix chain `c42bbcd`; cairn-cms simplifier `4a1663f3`, fix `4ef0fdbb`, then this ledger commit | dotfiles simplifier 09:56, dotfiles fix chain 10:17, cairn-cms simplifier 10:17; timed ranges 10:56 to 11:49; fix `4ef0fdbb` at 11:55; this fold after that |
 
 Task 0's evidence (items 1 to 9) and the batched notes per task are in the conductor's running ledger, kept
 at `~/.cache/gate-economy/ledger.md` (not committed); its load-bearing contents are carried by this table,
@@ -1137,11 +1137,10 @@ the close. The close (about 0.74M from the question to the fold dispatch, which 
 whole-branch reads) overran its 0.55M budget line; the
 unallocated 0.11M reserve did not cover it.
 
-**Attended time.** Planning misses: 0. Execution sittings: 5 owner interactions after approval. Three were
-the pass's own: the S1 status question (about 09:40), the merge-and-stow authorization (about 09:42, which
+**Attended time.** Planning misses: 0. Execution sittings: 3 owner pull-ins after approval: the S1 status question (about 09:40), the merge-and-stow authorization (about 09:42, which
 let the conductor perform both merges and the stow once the close was green), and the ceiling question at
-80 percent, answered "finish the close" (about 10:10). Two were Geoff's own side questions about another
-project (whether it benefits from the same pass, and a brief for it). No fork surfaced that a planning
+80 percent, answered "finish the close" (about 10:10). Counted apart, Geoff also asked 2 side questions about
+another project (whether it benefits from the same pass, and a brief for it). No fork surfaced that a planning
 question would have caught.
 
 **Clock against the 4.8 h estimate.**

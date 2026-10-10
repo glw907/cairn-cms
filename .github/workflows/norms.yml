@@ -25,6 +25,7 @@ jobs:
   norms:
     name: Norms manifest freshness
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -39,14 +40,25 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             examples/showcase/package-lock.json
-      - run: npm ci
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci
+          clean: node_modules
       # The showcase lockfile is committed and installed with `npm ci`, the same convention e2e.yml
       # follows, so the rendered admin is the exact build a developer reproduces locally.
-      - run: npm ci --prefix examples/showcase
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci --prefix examples/showcase
+          clean: examples/showcase/node_modules
       # Chromium for the ROOT playwright, which is what the generator imports; the version is
       # pinned by the root lockfile, and the manifest's numbers are only reproducible against a
       # pinned engine.
-      - run: npx playwright install --with-deps chromium
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npx playwright install --with-deps chromium
       - run: VITE_CAIRN_E2E=1 npm --prefix examples/showcase run build
       - name: Serve the showcase admin
         run: |
@@ -67,6 +79,8 @@ jobs:
           cat /tmp/showcase-preview.log
           exit 1
       - run: npm run norms:check
+      - if: failure() || cancelled()
+        uses: ./.github/actions/install-diagnostics
 
   # The rendered `motion-reduced-delay` audit. Wired here rather than into a new file: this job
   # reuses the "Serve the showcase admin" recipe two jobs above verbatim, on its own port (4174,
@@ -79,6 +93,7 @@ jobs:
   motion-reduced-delay:
     name: motion-reduced-delay rendered audit
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -88,9 +103,20 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             examples/showcase/package-lock.json
-      - run: npm ci
-      - run: npm ci --prefix examples/showcase
-      - run: npx playwright install --with-deps chromium
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci
+          clean: node_modules
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci --prefix examples/showcase
+          clean: examples/showcase/node_modules
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npx playwright install --with-deps chromium
       - run: VITE_CAIRN_E2E=1 npm --prefix examples/showcase run build
       - name: Serve the showcase admin
         run: |
@@ -108,3 +134,5 @@ jobs:
       # Scoped to motion-reduced-delay alone with --rule: the job exercises one advisory rule and
       # exits 0 unless the run itself fails to start, never a gate on the rule's own findings.
       - run: BASE_URL=http://localhost:4174 npx cairn-audit --rendered --rule motion-reduced-delay
+      - if: failure() || cancelled()
+        uses: ./.github/actions/install-diagnostics

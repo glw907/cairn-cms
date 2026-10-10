@@ -16,6 +16,7 @@ on:
 jobs:
   design:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -29,14 +30,22 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             examples/showcase/package-lock.json
-      - run: npm ci
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci
+          clean: node_modules
       # Build the engine dist the showcase resolves through, so the token gates and the e2e read the
       # current render output (the styleguide renders prose through the packaged engine).
       - run: npm run package
       # The showcase lockfile is committed and installed with `npm ci` so CI resolves the exact
       # toolchain a developer reproduces locally. The token gates below read the showcase's installed
       # engine (cairn-public.css) and daisyUI, so they run after this install.
-      - run: npm ci --prefix examples/showcase
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci --prefix examples/showcase
+          clean: examples/showcase/node_modules
       # The token gates: cairn-audit's public scope over the showcase and the cairn-theme overlay
       # (no literal colors or absolute font sizes, a complete theme with every var() resolved, every
       # text pair at AA in both sRGB and P3), then the re-skin fixture (a hue rotation of the brand
@@ -47,7 +56,10 @@ jobs:
       # The styleguide accessibility e2e. The styleguide spec's own webServer builds
       # (VITE_CAIRN_E2E=1) and serves the showcase, then axe scans /styleguide in both color schemes
       # and a rendered article, and the skip-link and reduced-motion floors are checked.
-      - run: npx --prefix examples/showcase playwright install --with-deps chromium
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npx --prefix examples/showcase playwright install --with-deps chromium
       # The second-theme fixture, both arms: the showcase built with the fixture theme in place of
       # Waymark's and read in Chromium, and the emitted template built under Waymark and under the
       # fixture with the planted sentinel proving the engine stylesheet's @source line. It launches
@@ -55,3 +67,5 @@ jobs:
       # install and stays out of check:close, the way test:reskin does.
       - run: npm run test:theme-fixture
       - run: npm --prefix examples/showcase run test:e2e -- styleguide
+      - if: failure() || cancelled()
+        uses: ./.github/actions/install-diagnostics

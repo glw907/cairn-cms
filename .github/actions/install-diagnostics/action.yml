@@ -1,0 +1,10 @@
+name: Install diagnostics
+description: >-
+  Print the npm debug logs, the process tree, and open sockets. Use it as a final
+  `if: failure() || cancelled()` step in a job that installs dependencies.
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: bash "${{ github.action_path }}/../bounded-install/dump-state.sh"

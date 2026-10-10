@@ -20,13 +20,18 @@ on:
 jobs:
   create-site:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci
+          clean: node_modules
       - run: npm run package
       - name: Pack the engine and dev backend
         id: pack
@@ -378,3 +383,5 @@ jobs:
           process.exit(failed ? 1 : 0);
           PROBE_EOF
           node /tmp/builds-console-probe.mjs
+      - if: failure() || cancelled()
+        uses: ./.github/actions/install-diagnostics

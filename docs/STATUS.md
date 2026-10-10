@@ -16,11 +16,13 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 
 ## Immediate next action
 
-**In flight (2026-10-10):** the gate economy pass is executing. Worktrees `gate-economy` (PR #110,
-draft), `gate-economy-ci` (done), and dotfiles `~/.cache/worktrees/dotfiles-gate-economy`. S1 and
-S2 closed green: cairn-cms head `b835fe30` CI green; dotfiles track done at `d10ad29`. Next: Task 7
-(replay), then Task 6b, then the close. Spend about 2.45M of 4.0M. Ledger notes:
-`~/.cache/gate-economy/ledger.md`.
+**In flight (2026-10-10):** the gate economy pass is at its close, paused at the 80 percent token line
+(about 3.36M of 4.0M) for one owner question. Every task is accepted except 6b, whose comment-only fix
+round is running in `gate-economy`. cairn-cms head `239a4114` (CI green on `b835fe30`); dotfiles head
+`e410972` (simplified; close review asked for one docs fix in pass-core and cairn-pass: the runner
+args template must pass `ci: { pr }`). Remaining close: that dotfiles fix, the cairn-cms simplifier,
+whole-branch review, two timed ranges, ledgers, the final CI read, then both merges and the stow
+(Geoff authorized them, 2026-10-10). Ledger notes: `~/.cache/gate-economy/ledger.md`.
 
 Pass A is merged and unreleased
 ([plan and post-mortem](superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)). The release holds

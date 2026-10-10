@@ -22,14 +22,15 @@ const TITLE = 'retries';
  * @returns {string[]} Names joined with ` › `, as Playwright prints them.
  */
 function playwrightRetries(report) {
+  /** @type {string[]} */
   const names = [];
   /** @param {any} suite @param {string[]} trail */
   const walk = (suite, trail) => {
     // The file-level suite carries the spec file name as its title, so the trail starts there.
     const here = suite.title ? [...trail, suite.title] : trail;
     for (const spec of suite.specs ?? []) {
-      const retried = (spec.tests ?? []).some((test) =>
-        (test.results ?? []).some((result) => result.retry > 0),
+      const retried = (spec.tests ?? []).some((/** @type {any} */ test) =>
+        (test.results ?? []).some((/** @type {any} */ result) => result.retry > 0),
       );
       if (retried) names.push([...here, spec.title].join(' › '));
     }

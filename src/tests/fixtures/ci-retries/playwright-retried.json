@@ -1,0 +1,193 @@
+{
+  "config": {
+    "argv": [
+      "/var/home/glw907/.local/share/mise/installs/node/24.20.0/bin/node",
+      "/var/home/glw907/.cache/gate-economy/fixture-pw/node_modules/playwright/cli.js",
+      "test",
+      "-c",
+      "playwright.config.mjs",
+      "retried.spec.mjs",
+      "--reporter=dot,json"
+    ],
+    "configFile": "/var/home/glw907/.cache/gate-economy/fixture-pw/playwright.config.mjs",
+    "rootDir": "/var/home/glw907/.cache/gate-economy/fixture-pw",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/var/home/glw907/.cache/gate-economy/fixture-pw/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/var/home/glw907/.cache/gate-economy/fixture-pw",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/var/home/glw907/.cache/gate-economy/fixture-pw/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/var/home/glw907/.cache/gate-economy/fixture-pw",
+        "snapshotDir": "/var/home/glw907/.cache/gate-economy/fixture-pw",
+        "testIgnore": [],
+        "testMatch": "*.spec.mjs",
+        "timeout": 30000,
+        "use": {},
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "dot"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.0",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "retried.spec.mjs",
+      "file": "retried.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "throwaway",
+          "file": "retried.spec.mjs",
+          "line": 2,
+          "column": 6,
+          "specs": [
+            {
+              "title": "passes only on its retry",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 22,
+                      "error": {
+                        "message": "Error: first attempt fails",
+                        "stack": "Error: first attempt fails\n    at /var/home/glw907/.cache/gate-economy/fixture-pw/retried.spec.mjs:4:37",
+                        "location": {
+                          "file": "/var/home/glw907/.cache/gate-economy/fixture-pw/retried.spec.mjs",
+                          "column": 37,
+                          "line": 4
+                        },
+                        "snippet": "  2 | test.describe('throwaway', () => {\n  3 |   test('passes only on its retry', async ({}, testInfo) => {\n> 4 |     if (testInfo.retry === 0) throw new Error('first attempt fails');\n    |                                     ^\n  5 |   });\n  6 | });\n  7 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/var/home/glw907/.cache/gate-economy/fixture-pw/retried.spec.mjs",
+                            "column": 37,
+                            "line": 4
+                          },
+                          "message": "Error: first attempt fails\n\n  2 | test.describe('throwaway', () => {\n  3 |   test('passes only on its retry', async ({}, testInfo) => {\n> 4 |     if (testInfo.retry === 0) throw new Error('first attempt fails');\n    |                                     ^\n  5 |   });\n  6 | });\n  7 |\n    at /var/home/glw907/.cache/gate-economy/fixture-pw/retried.spec.mjs:4:37"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-10T15:38:19.775Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/var/home/glw907/.cache/gate-economy/fixture-pw/test-results/retried-throwaway-passes-only-on-its-retry/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/var/home/glw907/.cache/gate-economy/fixture-pw/retried.spec.mjs",
+                        "column": 37,
+                        "line": 4
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-10-10T15:38:22.660Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "flaky"
+                }
+              ],
+              "id": "7cda9f7d42b310b5c7ec-f575fb2957af352e431d",
+              "file": "retried.spec.mjs",
+              "line": 3,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-10T15:38:17.291Z",
+    "duration": 5551.888999999999,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 1
+  }
+}

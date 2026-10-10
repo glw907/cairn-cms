@@ -1,0 +1,9 @@
+{
+  "tests": [
+    {
+      "fullName": "throwaway > passes first time",
+      "retryCount": 0,
+      "flaky": false
+    }
+  ]
+}

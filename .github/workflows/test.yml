@@ -54,7 +54,21 @@ jobs:
       # so running it again ahead of the later check:package/check:reference/etc. steps (which
       # each call it themselves) costs a rebuild, not a correctness risk.
       - run: npm run package
-      - run: npm test
+      # `npm test` is its two Vitest runs spelled out, one step each, so each can write its own retry
+      # report: the node projects, then the component project. The retries step below reads both.
+      - name: Run the node test projects
+        env:
+          VITEST_RETRY_REPORT: ${{ runner.temp }}/vitest-node-retries.json
+        run: npm run test:node-projects -- --reporter=default --reporter=./scripts/ci/vitest-retry-reporter.mjs
+      - name: Run the component test project
+        env:
+          VITEST_RETRY_REPORT: ${{ runner.temp }}/vitest-component-retries.json
+        run: npm run test:component -- --reporter=default --reporter=./scripts/ci/vitest-retry-reporter.mjs
+      # A retried test leaves the job green, so its name goes into the run's annotations. It runs
+      # whether the tests passed or failed; a report the run never wrote reads as unknown.
+      - name: Report retried tests
+        if: always()
+        run: node scripts/ci/retries-notice.mjs "$RUNNER_TEMP/vitest-node-retries.json" "$RUNNER_TEMP/vitest-component-retries.json"
       # Two node:test suites vitest does not reach. The emitter's own tests were never wired into
       # any workflow; the create-cairn-site package is new. Both gate the scaffolded output, so a
       # break here ships a broken first-run experience while every vitest project stays green.

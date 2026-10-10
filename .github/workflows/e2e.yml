@@ -138,8 +138,10 @@ jobs:
         # playwright.config.ts leaves reporter unset, so CI falls back to Playwright's own
         # CI-detected default (`dot`), which writes no HTML report. `dot` still prints pass/fail
         # to the run log; `html` additionally writes playwright-report so the upload step below
-        # has something to attach on failure.
-        run: npm --prefix examples/showcase run test:e2e -- --reporter=dot,html
+        # has something to attach on failure; `json` writes the report the retries step reads.
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-retries.json
+        run: npm --prefix examples/showcase run test:e2e -- --reporter=dot,html,json
       # Manual regen mode: a dispatcher ticks `update_snapshots` after a deliberate rendering
       # change. Runs both visual specs BY FILE PATH (never a title grep, which silently skips
       # any test whose name doesn't match), on the CI runner itself, since baselines are
@@ -149,7 +151,14 @@ jobs:
       # artifact for manual copy-back.
       - name: Regenerate the visual baseline snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true' }}
-        run: npm --prefix examples/showcase run test:e2e -- e2e/admin-visual.spec.ts e2e/site-visual.spec.ts --update-snapshots --reporter=dot,html
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-retries.json
+        run: npm --prefix examples/showcase run test:e2e -- e2e/admin-visual.spec.ts e2e/site-visual.spec.ts --update-snapshots --reporter=dot,html,json
+      # A retried test leaves the job green, so its name goes into the run's annotations. It runs
+      # whether the tests passed or failed, and reads whichever of the two runs above wrote the report.
+      - name: Report retried tests
+        if: always()
+        run: node scripts/ci/retries-notice.mjs "$RUNNER_TEMP/playwright-retries.json"
       - name: Commit the regenerated visual baselines
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true' }}
         run: |

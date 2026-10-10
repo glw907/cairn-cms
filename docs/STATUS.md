@@ -17,10 +17,10 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 ## Immediate next action
 
 **In flight (2026-10-10):** the gate economy pass is executing. Worktrees `gate-economy` (PR #110,
-draft), `gate-economy-ci` (Task 4a), and dotfiles `~/.cache/worktrees/dotfiles-gate-economy`. Task 0
-is done (plan amended at `148ff15a`; dotfiles `cc118a5` drops a stale ratchet entry). S2 closed
-green on dotfiles `35cea09` (Tasks 1, 4b, 5 accepted). Task 4a accepted (`ebc1e048`, pick pending).
-Running: Tasks 2 and 6a. Ledger notes: `~/.cache/gate-economy/ledger.md`.
+draft), `gate-economy-ci` (done), and dotfiles `~/.cache/worktrees/dotfiles-gate-economy`. S1 and
+S2 closed green: cairn-cms head `b835fe30` CI green; dotfiles track done at `d10ad29`. Next: Task 7
+(replay), then Task 6b, then the close. Spend about 2.45M of 4.0M. Ledger notes:
+`~/.cache/gate-economy/ledger.md`.
 
 Pass A is merged and unreleased
 ([plan and post-mortem](superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)). The release holds

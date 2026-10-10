@@ -286,9 +286,9 @@ The original decision framing, for the record:
   and may add or drop a pass; this list is where each one sits today.
   1. Finish stage 2a's close: `docs/superpowers/plans/2026-10-07-2a-close-finish.md` (leak check,
      cadence rewrite, merge of PR #107). Not an engine pass.
-  2. **Engine passes A and B before stage 2b.** Pass A landed on `main`, unreleased. The gate economy
-     pass (below) runs next, then pass B (the Now entry below), and whichever "Docs tooling before stage 2b" items ride with it (or run
-     as their own dotfiles pass).
+  2. **Engine passes A and B before stage 2b.** Pass A landed on `main`, unreleased, and the gate
+     economy pass closed on its branch (`docs/HISTORY.md`). Pass B runs next (the Now entry below),
+     and whichever "Docs tooling before stage 2b" items ride with it (or run as their own dotfiles pass).
   3. Stage 2b: the 14 remaining extend pages. Its close runs the test.
   4. **The Claude Code arm's small stage**, right after 2b (the Now entry below): its facts already
      sit in the container, and the scaffold ships the guidance tree it documents. It registers the arm
@@ -308,47 +308,12 @@ The original decision framing, for the record:
   10. Site migrations, one site pass each, cairn.pub first among equals. Their friction takes the same
      test, so a migration can still produce an engine fix after the release.
 
-- **Gate economy pass (Geoff, 2026-10-09).** A small pass after engine pass pre-2b, pass A merges
-  and before pass B, run in its own fresh session. Pass A's 12 tasks took about 17 hours of clock on
-  about 4.5M subagent tokens, nearly all of it gates. The pass makes gating targeted and evidence-based
-  ("avoid the brute-force approach, unless it's best-practice"): build the package once per gate (today
-  `check:close` rebuilds it about 17 times); narrow only the serialized component project with `vitest
-  related`, with `forceRerunTriggers` in `vitest.config.ts` for what the import graph cannot see; keep
-  the full node projects per task, always under `auth-data`; harden CI (job timeouts, visible retries,
-  one all-workflows-green check) so CI green on the pushed commit is the boundary gate; then carry the
-  rules into `pass-core`, the gate economy doc, the runners, and pass B's plan. Measured before and
-  after, and validated by replaying pass A's task ranges. Inputs (the adversarial review, timings,
-  open decisions): `docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`; draft branch
-  `gate-related`, not merged.
-  Four tooling entries moved here from the friction log at pass A's close (2026-10-09), each an
-  input to the same pass: a fresh worktree fails the full gate on setup alone
-  (`check-public-skill.test.ts` needs `npx svelte-kit sync` in `examples/showcase`, and the
-  `create-cairn-site` resume tests need the baked template CI prepares, so a `setup-worktree`
-  script or gate-tier prep step would carry CI's preparation); the local full gate goes red on 20
-  `site-visual.spec.ts` tests against the CI-canonical baselines, which pass A excluded by hand
-  with `--grep-invert "site home|archive page 2"` (live since this pass: the local `full` fallback
-  carries it, and so does the targeted gate's e2e leg whenever the map selects `site-visual.spec.ts`.
-  Reachability forces some map entry to select that spec, and its `site home` and `archive page 2`
-  tests are known local reds (`durable-gotchas.md`); selecting it appends `--grep-invert "site
-  home|archive page 2"`, and CI runs them whole); `cairn-run-gate`'s light lane caps the
-  scope at 3G, so `npm run check` dies out of memory at about 1 GB unless
-  `NODE_OPTIONS=--max-old-space-size=6144` is set (a lane-level default or a larger cap fixes it);
-  and `cairn-run-gate` prints a finished result once and clears its run state, so a re-issue after
-  a backgrounded call starts a second full gate (about 20 minutes duplicated) and, through a pipe,
-  can drop the `gate exit:` line (about 15 minutes per extra cycle); the `--receipt` lookup exists
-  but a re-issue does not consult it.
-  A fifth, done: `cairn-run-gate` reused one log directory per gate string, so a run's duration and
-  lock wait could not be read back afterward. It now appends one run record per run, across an
-  exit-75 reattach (the inputs file's closing section named the gap).
-  Of the five, the worktree-setup, light-lane OOM, and re-issue items stay filed; this pass did not
-  take them.
-
 - **Engine pass B before stage 2b (the boundary test at stage 2a's close, 2026-10-07; narrowed
   2026-10-09).** Pass A landed on `main` unreleased
   ([plan](docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)): the access map and role
   vocabulary as one declaration every reader takes, the access and auth edges, the roles migration,
   the live key check and fingerprint, the failed save that keeps the writing, the head guard on most
-  writes to `main` (two remain, in the Next tier), and nested images in where-used. Pass B follows the gate economy pass
+  writes to `main` (two remain, in the Next tier), and nested images in where-used. Pass B follows the gate economy pass, which closed on its branch
   ([plan](docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md), spec
   `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`, rulings beside it). Each item
   names the extend page its fix changes (2b pages marked); pass B's close removes this entry. Source
@@ -1085,7 +1050,87 @@ the named human gates only):**
   twice, once in leg 1 (`npm run package`) and again inside `check:close`, which has no flag to
   skip its build. (h) `.github/actions/` (bounded-install, install-diagnostics) is CI machinery
   that is not on the table's protected list, so a change there does not wait for CI green. A pass
-  B candidate.
+  B candidate. Three older tooling items stay filed from the pass's original row, none taken by it.
+  (i) A fresh worktree fails the full gate on setup alone: `check-public-skill.test.ts` needs `npx
+  svelte-kit sync` in `examples/showcase`, and the `create-cairn-site` resume tests need the baked
+  template CI prepares, so a `setup-worktree` script or a gate-tier prep step would carry CI's
+  preparation (Task 0 did it by hand). (j) `cairn-run-gate`'s light lane caps the scope at 3G, so `npm
+  run check` dies out of memory at about 1 GB (1,174 MB seen on Task 2) unless
+  `NODE_OPTIONS=--max-old-space-size=6144` is set; a lane-level default or a larger cap fixes it, and a
+  plan that fixes a light gate string must still name `npm run check` (the Task 4a CI red). (k)
+  `cairn-run-gate` prints a finished result once and clears its run state, so a re-issue after a
+  backgrounded call starts a second full gate (about 20 minutes duplicated) and, through a pipe, can
+  drop the `gate exit:` line (about 15 minutes per extra cycle; the close's simplifier gate ran two to
+  three times fully after `tail` cut the line); the `--receipt` lookup exists but a re-issue does not
+  consult it.
+
+- **Repo tooling and docs-gate friction from the friction log (triaged at the gate economy pass's close,
+  2026-10-10).** Seventeen entries moved whole, each re-checked against the tree at `4ef0fdbb`; a pass
+  that touches the named file clears the entry. Every entry is a `contributor` finding unless marked.
+  - The `ci-e2e` flake. Three pending-dictionary-word specs retry on CI: pass A's merged head
+    (`b5953af8`, run 37991578654) failed `edit-save-failure.spec.ts:207` three times, and this pass's
+    CI reads showed `edit-save-failure.spec.ts` (twice), `publish-pending-word.spec.ts`, and
+    `spellcheck.spec.ts` retrying on `b835fe30`, plus `EditorToolbar` tab sizing in the component
+    project. The likely seat is the wait on the spellcheck underline before the save, which CI's
+    slower runner can outpace. The retry notices from `ci-green` now surface each case. Trigger: a
+    retried test appears on three consecutive CI reads.
+  - No gate checks a `docs/internal/...` path cited in a comment under `src/lib`; the design-arc log
+    moved to `docs/internal/record/` and nothing flagged the stale citations in `EditorToolbar.svelte`
+    and `EditPage.svelte`. A check that every cited path exists would catch the next move.
+  - The sample outputs in `docs/reference/cairn-audit.md` (the `norms card` output near line 598 and
+    the border-contrast exemption sample) are hand-copied from `src/lib/audit/norms.ts` and
+    `src/lib/audit/border-contrast.ts`; nothing ties them, and they drifted once into a merge conflict.
+  - `scripts/checks/check-arm-indexes.mjs` walks the filesystem, not tracked files, so a gitignored
+    page such as `docs/internal/credentials.md` fails it locally and passes in CI; the allowlist entry
+    at `:59` is the workaround.
+  - The project `CLAUDE.md` (line 93) names the Cloudflare account id in plaintext while `check:leaks`
+    stores that id only as a SHA-256 digest and `CLAUDE.md` falls outside every `check:leaks` tier;
+    `docs/internal/credentials.md`'s identifiers (GitHub App id, installation id, D1 UUIDs) also remain
+    in git history after the untrack. They are identifiers, not keys.
+  - `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS`,
+    `scripts/checks/check-leaks.mjs:473`; only `templates/waymark` is a template root), and its `src`
+    ships in the package's `files`. Trigger: before that package's first publish.
+  - `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt` still holds the maintainer's
+    home path and a `glw907.workers.dev` URL (12 matches), lists the scaffold migrations as `0000` and
+    `0003` with no `0001` (line 837), and ends the key step with "re-run this step" (line 942, where
+    the step now points at the rotation page). Fixing them needs a transcript regeneration that
+    `check:transcripts` replays.
+  - `scripts/checks/check-symbols.mjs` (`extractFilePaths`, `:308`) reads the inline import specifier
+    `#theme/cairn.config.js` as the file path `theme/cairn.config.js`, so prose cannot name the
+    scaffold's real import; fenced blocks strip import specifiers and inline spans do not.
+  - Docs content (extend arm, so it feeds stage 2b's page inputs): `add-cairn-to-a-sveltekit-app.md`
+    puts the adapter at `src/lib/cairn.config.ts` (`#lib`, `:294`, `:411`) and the scaffold puts it at
+    `src/theme/cairn.config.ts` (`#theme`, `choose-an-ai-posture.md:29,62`), so every extend page that
+    touches the adapter names two paths.
+  - `docs/internal/facts/front-door.md:67` (`f:u705t5`) says "a second template, Topo, is planned but
+    not shipped"; a fact should state only what ships.
+  - The task 8 page plans disagree with their pages after the rulings:
+    `docs/internal/briefs/extend/debug-your-site.plan.md:64,263` (`cairn help agents`) and
+    `docs/internal/briefs/extend/scaffolded-site-files.plan.md:226,252` (the `CLAUDE.md` subsection).
+  - `packages/create-cairn-site/scripts/bake-template.mjs` requires `--to <dir>` and a bare invocation
+    fails; the "create-cairn-site needs baked template" recipe omitted it, and `scaffold.mjs`'s own
+    error names `npm run prepack`, which passes it.
+  - Reaching an older auth schema in an integration test means slicing statements out of
+    `env.TEST_MIGRATIONS` by hand (`src/tests/integration/_apply-migrations.ts:7`,
+    `vitest.config.ts:131`, `auth-store-roles-unmigrated.test.ts:19`); a harness helper that applies
+    migrations up to a named file would remove the slicing.
+  - `check:surface` reports a new exported type whose members name unexported interfaces as
+    unrecorded closure leaks (`scripts/checks/check-surface-leaks.mjs:480-486`), and the message
+    offers only the registry entry as the remedy; exporting the named types also clears it, which
+    pass A's Task 5 chose (`ChannelSessionLike`, `ChannelStatementLike`).
+  - `check:provenance` couples a frozen page brief to a fact bullet's literal text, and no sanctioned
+    path updates a fact under a stale page: `scaffolded-site-files.json` still cites `f:nls26c`
+    (`facts/extend.md:912`), so the bullet had to keep naming `GITHUB_APP_ID` and
+    `GITHUB_APP_INSTALLATION_ID` as dropped variables.
+  - The regeneration command on line 2 of `examples/showcase/worker-configuration.d.ts` (`wrangler
+    types --env-file=... --include-runtime=false`) was not reproducible by hand on pass A's Task 7:
+    a local run with `.svelte-kit` present added a `GlobalProps { mainModule }` block the committed
+    file does not carry. No workflow or package script regenerates the file to say which output CI
+    expects.
+  - The `GithubDouble` ref PATCH handler (`src/tests/unit/_github-double.ts:222-231`) lands any staged
+    commit without comparing its parent to the branch head, so it can never answer the real 422
+    non-fast-forward; a head-guard race test wraps `fetch` instead (`_inject-after-read.ts`). A
+    parent check that returns 422 when the head moved would let each test stage the race directly.
 
 - **Engine writes to `main` still unguarded (data-loss class; pass A's close, 2026-10-09).** Pass A's
   C11 head guard covers publish, publish-all, Library delete, metadata, replace, alt, and the

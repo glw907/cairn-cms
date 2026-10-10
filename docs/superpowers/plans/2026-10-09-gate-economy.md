@@ -1084,20 +1084,120 @@ numbering in one way: the ledgers land before the CI read, so one CI read covers
 
 ## Ledger
 
+Times are local (AKDT), 2026-10-10. Commits are cairn-cms unless marked `dotfiles`. Spend is each task's
+highest reported subagent total, review reads included where noted.
+
 | Task | Status | Verdict | Commit | Clock |
 |---|---|---|---|---|
-| 0 | | | | |
-| 2 | | | | |
-| 4a | | | | |
-| 3 | | | | |
-| 1 | | | | |
-| 4b | | | | |
-| 5 | | | | |
-| 6a | | | | |
-| 7 | | | | |
-| 6b | | | | |
-| Close | | | | |
+| 0 | done | n/a | `991d152d` (cherry-pick of the draft's related mode), `148ff15a` (plan amended from the pre-flights); dotfiles `cc118a5` (a stale ratchet entry, red on dotfiles `main`) | about 13 min (07:23 to 07:36); 0.44M of subagent spend (four `haiku` pre-flight and gate reads, two baselines, one run twice) |
+| 2 | done | accept, first round | `94c8a4c5` (pushed 08:38) | about 57 min, two heavy gates (the first red on `svelte-check` types); 0.12M |
+| 4a | done | fix (an explicit `--reporter` dropped Vitest's `github-actions` reporter), then accept | `gate-economy-ci` `1c37e1ca`, `ebc1e048`; picked onto `gate-economy` as `3de4b17c`, `d2c5164d` after Task 2 | about 7 min plus a 2-min fix; 0.20M plus about 0.07M of reviews. CI went red on `d2c5164d` (see the post-mortem): fixed under Task 3 (`8695229d`) |
+| 3 | done | fix (the six dist-surface checks swapped for three, dropping the engine inheritance: a fail-open), then accept | `bd9f79c3`, `8695229d` (the 4a type fix), `b835fe30` | about 31 min with a heavy gate and one exit-75 re-issue; the fix round about 16 min (09:10 to 09:26); strict CI wait about 12 min; 0.27M. S1 closed 09:39 with CI green on `b835fe30` |
+| 1 | done | accept, first round | dotfiles `d23f7bd` | about 7 min; 0.10M plus review |
+| 4b | done | fix (an empty file list read as green), then accept; reopened once | dotfiles `ea2b5bb`, `8c2c764`; reopen `d10ad29` (short SHA resolved to a full SHA before the `head_sha` query) | about 9 min plus a 2-min fix plus a 2-min reopen; 0.30M |
+| 5 | done | fix (no test on the `CI_MAX_WAITS` cap fall-through), then accept | dotfiles `a2755d8`, `35cea09` | about 5.5 min plus a 2-min fix; 0.29M. S2 closed about 08:12 with D exit 0 on `35cea09` |
+| 6a | done | accept, then a non-blocking docs round, accept | dotfiles `5a42369`, `eb439c7` | about 4 min plus 2; 0.13M. The dotfiles track was complete here |
+| 7 | done | accept, first round | `239a4114` | about 10 min; 0.15M |
+| 6b | done | fix (the gate forecasts misstated the classifier, and a ROADMAP item named a defect that does not exist, carried from the brief's copy of Task 7's misattribution), then accept | `4bb7b1cf`, `be9442f2` | about 5 min plus a 6-min fix (09:57 to 10:03); 0.15M. All tasks accepted about 10:25 |
+| Close | done | dotfiles review: fix chain accepted (`c42bbcd`); cairn-cms review: fix chain accepted (`4ef0fdbb`) | dotfiles simplifier `e410972`, fix chain `c42bbcd`; cairn-cms simplifier `4a1663f3`, fix `4ef0fdbb`, then this ledger commit | simplifiers about 10:17; timed ranges 10:56 to 11:49; fix `4ef0fdbb` at 11:55; this fold after that |
 
-## Post-mortem
+Task 0's evidence (items 1 to 9) and the batched notes per task are in the conductor's running ledger, kept
+at `~/.cache/gate-economy/ledger.md` (not committed); its load-bearing contents are carried by this table,
+the post-mortem, and `docs/HISTORY.md`.
 
-(Written at the close.)
+## Post-mortem (2026-10-10)
+
+Branch `gate-economy` (draft PR #110) and the dotfiles branch `gate-economy`. Geoff authorized the
+conductor to perform both merges and the stow once the close is green (about 09:42); they follow this
+commit. Closed unreleased: no version bump, no publish, no `CHANGELOG.md` entry, no facts bullet, and `git diff --stat main -- src/lib packages templates
+examples/showcase/src` prints nothing.
+
+**What landed.** `cairn-run-gate` writes one run record per run. `check:close` builds the package once.
+The gate classifier emits a targeted gate: check buckets, an e2e map, and Vitest's related selection for the
+component project (`CAIRN_RELATED_RUN`), failing closed on anything unclassified. CI carries retry
+annotations, job timeouts, and the expected-set file; `ci-green` reads it and reruns an infra red once. The
+sequential runner pipelines CI behind review with stop-the-line. The rules live in `pass-core`,
+`cairn-pass`, the gate economy doc, and the runners, and pass B's plan and the ROADMAP carry the new gate.
+
+### The pass-end score
+
+**Output quality, first.** Every task's acceptance was met. The reviewers earned their clock: five tasks drew
+a real fix round (4a, 4b, 5, 3, 6b) and both whole-branch reads returned blocking findings. Five of the
+findings were fail-open or silent paths (an empty file list read as green, the dist-surface six dropped from
+`auth-data`, a package-prefix guard lost in the simplifier, a dropped `github-actions` reporter, and a runner
+template that skipped every CI wait). One
+defect class reached CI: the plan-fixed light gate that ran no type check (below).
+
+**Tokens against the 4.0M ceiling.** About 4.1M at the fold's dispatch, plus about 0.2M for this fold's reads
+and edits, so about 4.3M, 7 percent over the ceiling (an estimate: the fold's own figure is not reported to
+it). Counted per agent as the highest reported total, summed, plus the conductor; `/cost` is a typed command
+the conductor cannot run. The 80 percent line (3.2M) was crossed at the Task 6b review (about 3.21M); the
+state was written to STATUS and one combined question went to Geoff at about 3.36M, and Geoff chose to finish
+the close. The close (about 0.74M from the question to the fold dispatch, which includes Task 6b's fix round and both
+whole-branch reads) overran its 0.55M budget line; the
+unallocated 0.11M reserve did not cover it.
+
+**Attended time.** Planning misses: 0. Execution sittings: 5 owner interactions after approval. Three were
+the pass's own: the S1 status question (about 09:40), the merge-and-stow authorization (about 09:42, which
+let the conductor perform both merges and the stow once the close was green), and the ceiling question at
+80 percent, answered "finish the close" (about 10:10). Two were Geoff's own side questions about another
+project (whether it benefits from the same pass, and a brief for it). No fork surfaced that a planning
+question would have caught.
+
+**Clock against the 4.8 h estimate.**
+
+| Item | Result |
+|---|---|
+| Total, first implementer dispatch (07:36) to the fold (12:13) | 4 h 37 min (4.6 h), under 4.8 h; this fold and the final CI read add to it, so about 5 h at merge-ready |
+| Task 0 on its own line | about 13 min (07:23 to 07:36), against about 25 min estimated |
+| Gate time, sourced | the two timed ranges, 977 s and 1,506 s (41 min); the rest is inside the task clocks (Task 2's two heavy gates, Task 3's one, the dotfiles D gates) and is not summed |
+| Lock wait | 662 s behind another project's heavy gate (timed range B); no other wait is in the ledger |
+| CI wait | Task 3's strict waits: about 12 min on `b835fe30` (pushed 09:27 local, read green at 09:39), after a first wait on `bd9f79c3` that the fix round superseded. Every other CI read overlapped a review or the next task, so it is not counted as clock |
+| Rework, itemized | about 37 min (below) |
+
+Gate time and lock wait are partial because the run records reach the live tool only at the dotfiles
+merge, and a gate log's mtime gives an end time, not a run. Pass B reads them from the records.
+
+**Rework clock, each red with its cause:**
+
+| Red | Cause | Class | Clock |
+|---|---|---|---|
+| Task 2 first heavy gate | `svelte-check` types | defect the gate rightly caught | one extra heavy gate (the plan prices one at about 21 min); inside Task 2's 57 min |
+| Task 4a fix round | an explicit `--reporter` dropped the `github-actions` reporter, so retries were invisible | defect the review rightly caught | about 2 min |
+| Task 4a CI red on `d2c5164d` | the plan-fixed light gate ran no `npm run check`: four implicit-any errors in `scripts/ci/retries-notice.mjs`, red at 08:41 | process miss (one selection miss) | fixed in `8695229d` at 08:48, about 7 min, carried by Task 3 |
+| Task 4b fix round | an empty file list read as green | defect the review rightly caught | about 2 min |
+| Task 4b reopen | `ci-green` queried `head_sha` with a short SHA and called five existing runs missing (its first live call) | defect the live call rightly caught | about 2 min |
+| Task 5 fix round | no test on the `CI_MAX_WAITS` cap fall-through | defect the review rightly caught | about 2 min |
+| Task 3 fix round | the six dist-surface checks swapped for three, dropping their engine inheritance | defect the review rightly caught | about 16 min including the re-gate and push |
+| Task 6b fix round | the gate forecasts misstated the classifier; one ROADMAP item named a defect that does not exist | defect the review rightly caught | about 6 min |
+| Cairn-cms simplifier gate | `tail` and `grep` cut the `gate exit:` line, so the gate was issued four times and ran fully two or three times | process miss | not itemized; a full run is 16 to 25 min (the timed ranges bound it) |
+| Close fix chains | a package-prefix guard lost in the simplifier (`4ef0fdbb`); a `pass-execute` template that omitted `ci` (dotfiles `c42bbcd`) | defects the whole-branch reads rightly caught | not itemized beyond `4ef0fdbb` landing at 11:55 after the timed ranges freed the worktree |
+
+**Selection misses: 1** (a CI red on a commit whose gate was green): `d2c5164d`. Task 4a's plan-fixed light
+gate was a fixed string, not the classifier's computed gate, and it ran no type check. It did not reopen the
+bucket table, which is for two misses; the cause was a fixed gate, and the classifier's computed gate for a
+scripts diff includes `npm run check`.
+
+**Retried tests, every one `ci-green` reported:**
+
+- `b835fe30`, `test` job: `EditorToolbar > Write/Preview tab sizing (design ratchet D3 item 6) > keeps each
+  tab its own width across the selected/unselected swap`.
+- `b835fe30`, `e2e` job: `edit-save-failure.spec.ts` (two tests: a pending dictionary word commits before the
+  save or publish request is sent, and a dictionary commit that never answers holds the save only until its
+  deadline), `publish-pending-word.spec.ts` (a publish with a pending dictionary word lands without a
+  conflict and commits the word), and `spellcheck.spec.ts` (the worker lints the seeded misspellings, a
+  suggestion applies, and an added word clears its underline).
+- `b835fe30`, `design` job: none.
+- `bd9f79c3`, `test` job: the same `EditorToolbar` test.
+
+The retry notices were present on all three `test` jobs. The conductor ruled `spellcheck.spec.ts` a flake in
+the replay (part 3, X14); it also retried on `b835fe30`. The final head's CI read is in the owner message.
+
+**Refused fold findings.** None turned out to be a real defect. The six refused findings (R-m6, P2, P3, P5,
+P8, S-F1) and the ten refused mechanisms held: the Task 4a CI red went to the next task (P2's reasoning), no
+quarantine list was needed, and the CI build-once rewire is a filed saving, not a defect.
+
+**Not sourced.** Per-run gate times other than the two timed ranges; lock waits other than the 662 s; the
+second dotfiles D gate and the fix chains' clock; and the final head's CI read, which belongs to the owner
+message. The conductor's ledger note puts the close fix as accepted "about 12:30", later than this fold's
+clock; the table uses the commit time, 11:55.

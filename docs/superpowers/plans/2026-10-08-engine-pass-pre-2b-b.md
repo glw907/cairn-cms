@@ -147,8 +147,11 @@ whose e2e leg is the specs its change reaches. Nothing is pinned and no task wri
 string. Each segment's pre-flight still names every task's reachable specs, as a cross-check against
 the classifier's selection. A task whose diff touches a protected path (the bucket and e2e-map
 table, the rerun triggers, `gate-tier.mjs`, `.github/ci-green.json`, or `.github/workflows/**`) runs
-its targeted gate, then waits for CI green on its own commit. Per-task gate cost: [PLACEHOLDER:
-timed-range durations from the gate economy replay record, filled at that pass's close].
+its targeted gate, then waits for CI green on its own commit. Per-task gate cost,
+measured at the gate economy pass's close: 16.3 minutes of run time for a docs-and-engine range that
+selects 6 component files and 56 e2e tests, and 25.2 minutes for one that triggers the whole component
+project and 216 e2e tests (plus any lock wait). The per-leg tables and the pass A projection are in
+`docs/superpowers/research/2026-10-09-gate-economy-replay.md`, parts 2 and 4.
 
 The local F is the fallback only. It replaces its last step with `npm --prefix examples/showcase run
 test:e2e -- --grep-invert "site home|archive page 2"`. Those are the 20 `site-visual.spec.ts` tests

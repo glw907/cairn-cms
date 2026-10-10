@@ -1,6 +1,6 @@
 // cairn-cms: the docs gate. One script runs every docs check, so CI, the gate-tier classifier's
 // `docs` tier, and a page-chain page's own gate all read the identical list from one place
-// instead of nineteen separate steps that can drift apart. `check:package` is deliberately not in
+// instead of a separate step per check that can drift apart. `check:package` is deliberately not in
 // this list: it checks the tarball's own shape (publint, attw, the file manifest), not a doc
 // arm's content, so it keeps its own CI step.
 //
@@ -16,7 +16,7 @@
 // Tree mode (no `--page`) also runs `vale test` over the Cairn rules' own cases, since a rule's
 // pass and fail cases guard the rule itself, not any one page.
 //
-// `dist` is built exactly once, before any component runs. Seven of the nineteen checks
+// `dist` is built exactly once, before any component runs. Seven of the checks
 // (check:snippets, check:visuals, check:readiness, check:tool-conditions, check:reference,
 // check:reference:signatures, check:options) call `npm run package` themselves when run as their own npm script,
 // so this runner calls each component's underlying node script directly and pays that cost once.

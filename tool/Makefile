@@ -91,7 +91,8 @@ check-copy:
 copy-review:
 	tellgrader --register editor testdata/copy.golden.md
 
-# golden recuts every committed render frame from the current renderer. Run it and read the
+# golden recuts every committed render frame and the JSON payloads under testdata/json from the
+# current renderer (the -run pattern also matches TestGoldenJSONPayloads). Run it and read the
 # diff whenever a body changes; `make test` compares the committed frames on every run, so a
 # frame that changed without this step is a failing test rather than a silent drift.
 golden:

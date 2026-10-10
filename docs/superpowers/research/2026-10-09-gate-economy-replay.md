@@ -1,9 +1,10 @@
 # Gate economy replay: pass A against the new classifier
 
-Parts 1 and 3 are written here; parts 2 and 4 are headed placeholders that the close fills in.
+Parts 1 and 3 were written at Task 7; parts 2 and 4 (the timed ranges and the projection) were written at the close.
 
-- **Branch and head:** `gate-economy` at `b835fe30`. Every range runs at this head (Decision 8): the
-  selection is historical, the code is current.
+- **Branch and head:** `gate-economy` at `b835fe30` for parts 1 and 3; the timed ranges in part 2 ran at
+  `4a1663f3`. Every range runs at the head of its part (Decision 8): the selection is historical, the code
+  is current.
 - **Pass measured:** pass A, `engine-pre-2b-a` (PR #108, merged head `8483ca5b`). Task ranges come
   from `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md` (Ledger, Post-mortem) and
   `git log --first-parent` over the branch, which leaves out the `main` commits interleaved into the
@@ -296,12 +297,62 @@ npm run package && npm run check:close -- check:self-use check:custom-surface ch
 
 ## Part 2: the two timed ranges
 
-Written at the close. Pass A Task 3 (`5549fda8..f655f877`) and Task 11 (`bd614101^..d716ec89`),
-each gate string run through `cairn-run-gate` at the `gate-economy` head, run time and lock wait
-recorded separately. The gate strings Part 1 prints for these two ranges (T3 and T11 above) are the
-inputs.
+Written at the close, 2026-10-10, at `gate-economy` head `4a1663f3`. Pass A Task 3 (`5549fda8..f655f877`)
+and Task 11 (`bd614101^..d716ec89`), each gate string (T3 and T11 in part 1) run through `cairn-run-gate`
+in the `gate-economy` worktree, run time and lock wait recorded separately. Task 7's target was ten minutes
+a gate. Both ranges exit 0. Both are over.
 
-_Pending: filled in by the close._
+| Range | Pass A task | Gate exit | Window (UTC) | Elapsed | Lock wait | Run time | Exit-75 re-issues | e2e tests |
+|---|---|---|---|---|---|---|---|---|
+| A | Task 3, `5549fda8..f655f877` | 0 | 18:56:29 to 19:12:49 | 16.3 min | 0 | 977 s (16.3 min) | 1 | 56 |
+| B | Task 11, `bd614101^..d716ec89` | 0 | 19:12:52 to 19:49:02 | 36.2 min | 662 s (11.0 min), behind another project's heavy gate | 1,506 s (25.2 min) | 3 | 216 |
+
+Logs: `/tmp/cairn-gate-1000/2b60f3f8e7ae4a31/gate.log` (A) and `/tmp/cairn-gate-1000/73b44da30705a262/gate.log`
+(B). Run records reach the live tool only at the dotfiles merge, so the live `--records` read was not
+available; the durations come from the logs' own timestamps and the lock NOTE. The basis column says whether
+a leg's time was printed by the tool or derived by subtraction.
+
+**Range A, per leg (977 s):**
+
+| Leg | Seconds | Basis |
+|---|---|---|
+| `check:close` subset (35 checks) | 364 | printed |
+| `package` twice, `check:tool-heuristics`, `test:emit`, showcase unit boot | 53 | derived |
+| showcase `test:unit`, tellgrader, vale rules, node boot | 18 | derived |
+| node projects | 269 | Vitest 264.2 s (443 files, 6,463 tests) |
+| component, 6 related files | 22 | Vitest 21.4 s |
+| `create-cairn-site` | 0 | not triggered |
+| e2e, 56 tests | 252 | Playwright 3.7 min plus the webserver builds |
+
+Five checks took the most time: `check:surface` 84.3 s, `check:reference` 73.4 s, `check` 47.3 s,
+`check:reference:signatures` 34.9 s, `check:comments` 25.8 s.
+
+**Range B, per leg (1,506 s):**
+
+| Leg | Seconds | Basis |
+|---|---|---|
+| `check:close` subset (39 checks) | 490 | printed |
+| `package` twice, `check:tool-heuristics`, `test:emit`, showcase unit boot | 52 | derived |
+| showcase `test:unit`, tellgrader, vale rules, node boot | 19 | derived |
+| node projects | 276 | Vitest 270.9 s |
+| component, whole (90 files; the `src/lib/admin/**` rerun trigger) | 235 | Vitest 234.8 s |
+| `create-cairn-site` | 0 | not triggered |
+| e2e, 216 tests | 435 | Playwright 6.8 min plus overhead |
+
+The heaviest checks: `check:surface` 83.4 s, `check:reference` 71.1 s, `check` 44.9 s, `check:audit-pack`
+42.2 s, `check:self-use` 35.8 s, `check:reference:signatures` 32.5 s, `check:consumers` 32.1 s,
+`check:comments` 26.6 s.
+
+**Where the time goes.** Static checks take 36 to 43 percent of a range (the five heaviest about 265 s of
+it). The node projects are a fixed 265 to 271 s. The e2e leg takes 26 to 29 percent, about 188 s fixed plus
+1.14 s a test (the two ranges fit that line exactly). The whole component project adds 235 s when an admin
+trigger fires. The package is built twice (leg 1 and inside `check:close`), about 20 s each.
+
+**The `check:surface` revisit (one, as Task 7 allowed).** `check:surface` was in the docs bucket, but it
+reads no docs page. The close fix chain (`4ef0fdbb`) removed it from that bucket, which saves about 84 s on
+a range that touches only docs-bucket paths (range A to about 14.9 min, still over ten). The other levers
+are not taken in this pass: the node projects and the five heavy checks are pass B's next measurement, and
+the double build is `ROADMAP.md` follow-up (g).
 
 ## Part 3: the miss-rate table
 
@@ -395,8 +446,63 @@ are flakes, and `b5953af8` is a merge commit outside every task range.
 
 ## Part 4: the projection
 
-Written at the close from Part 2's durations. A model, not a measurement: pass A's gate counts by
-kind times the newly measured durations, plus a CI wait per `auth-data` task at measured CI wall
-plus queue, plus pass A's unchanged review, fix, and close rows.
+Written at the close from part 2's durations. **A model, not a measurement.** Pass A's gate counts by
+kind, priced at the newly measured durations, plus a CI wait per `auth-data` task at the measured CI wall
+plus queue, plus pass A's unchanged review, fix, and close rows. Pass B's scored clock is the real measure.
 
-_Pending: filled in by the close._
+**Inputs.**
+
+- Gate counts: the 18 ranges of part 1 (12 plan tasks, the close's three gates, the S2 boundary's three fix
+  rounds), each at the legs part 1 selected for it. The boundary full gates of pass A (about 45 minutes each
+  and 3.3 hours in all) are not priced, because CI at the pushed commit replaces them.
+- Leg prices, fitted to part 2: a fixed 71 s (package, `test:emit`, tool-heuristics, showcase boot, tellgrader,
+  vale rules), 11.5 s per `check:close` step (the selection's static count minus the five extras), 270 s for the
+  node projects (every range runs them), 22 s for a selected component run and 235 s for the whole project, 10 s
+  for `create-cairn-site` (a 3.3 s Vitest run in the pass A archive), 188 s plus 1.14 s a test for e2e (337
+  tests in the whole suite, per `playwright test --list`; the spec lists use the same listing), and 90 s for
+  `make -C tool check`. Two prices are assumed: the tool check (no pass A log timed it) and the per-test e2e
+  rate outside the two fitted points. The fit prices range A at 1,017 s against 977 s measured (4 percent over)
+  and range B at 1,459 s against 1,506 s (3 percent under).
+- CI wait: the test job's 663 s plus the longest queue seen, 1,232 s, which is 1,895 s (31.6 min) per read, one
+  read per `auth-data` task (Tasks 1, 3, 4, 8, 9, 10, 11, and 6) and one for the close, nine in all.
+- Unchanged rows from pass A's post-mortem and the gate economy inputs. Task work and review: a 60-minute chain
+  less the 40-minute midpoint of its 30-to-50-minute gate, so 20 minutes for each of 12 tasks. Fix-round work
+  (without the gate, which is priced above): 15 minutes for each of pass A's four reviewer rounds and three S2
+  fix rounds. The close's reviewers, smoke, and key probe: 1.5 hours as reported. The close fix chains' work
+  without their gates: 1.0 hour (pass A's 3.5 hours less about 2.5 hours of gates and lock waits).
+
+**Gate rows, priced.**
+
+| Kind | Count | Priced total | Notes |
+|---|---|---|---|
+| Plan-task gates | 12 | 14,697 s (245 min) | 17 to 25 min each; 5 of the 18 ranges run the whole e2e suite and 8 the whole component project |
+| Close gates (simplify, two fix chains) | 3 | 4,033 s (67 min) | |
+| S2 fix-round gates | 3 | 2,930 s (49 min) | |
+| **Gates** | **18** | **21,660 s (361 min, 6.0 h)** | mean 20 min a gate |
+
+**The total.**
+
+| Row | Minutes | Basis |
+|---|---|---|
+| Gates | 361 | priced above |
+| CI wait, 9 reads at 31.6 min | 284 | no overlap with the next task; an upper bound |
+| Task work and review, 12 at 20 min | 240 | pass A, unchanged |
+| Fix-round work, 7 at 15 min | 105 | pass A, unchanged |
+| Close reviewers, smoke, key probe | 90 | pass A, unchanged |
+| Close fix chains, work only | 60 | pass A, unchanged |
+| **Total** | **1,140 (19.0 h)** | |
+
+**Against the 9-hour target: a miss.** The model gives 19.0 hours with a serial CI wait per `auth-data` task.
+Two variants bracket it. With the CI waits hidden behind the next task's work, as the sequential runner
+pipelines them, only the close's read stays on the path: 888 minutes (14.8 h). With no queue at all (663 s a
+read, nine reads): 955 minutes (15.9 h). All three miss. The unchanged non-gate rows alone are 495 minutes
+(8.25 h), so 9 hours was reachable only if gates and CI together stayed under 45 minutes. Gate rows fall,
+from about 12.5 hours in pass A (about ten chains at 30 to 50 minutes, the boundary gates, the close gate
+runs) to 6.0 hours, but this pass's levers do not touch the task work, review, or fix rows. Pass A measured
+about 28 hours of wall time from its first commit; its executing session from Task 3's relaunch was about
+17 hours, and Tasks 1 and 2 ran before the relaunch, so the like-for-like comparison is the 28-hour wall.
+
+**What would close the gap, for pass B's plan to weigh:** the node projects (a fixed 270 s in all 18 ranges,
+81 minutes of the 361), the five heavy checks (about 265 s a range), the five ranges that run the whole e2e
+suite on a fail-closed path (about 26 minutes over a selected run), and the double package build (about 20 s
+a range). None changes the review rows.

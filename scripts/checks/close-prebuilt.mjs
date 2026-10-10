@@ -85,23 +85,25 @@ export const CLOSE_COMPONENTS = Object.freeze([
 export function closeSteps(scripts, components = CLOSE_COMPONENTS) {
   return components.map((component) => {
     const named = component.match(/^npm run (\S+)$/);
-    const body = named ? scripts[named[1]] : undefined;
-    if (named && body === undefined) {
-      throw new Error(`close-prebuilt: the component list names "${named[1]}", which package.json lacks`);
+    if (!named) return { label: component, command: component };
+    const label = named[1];
+    const body = scripts[label];
+    if (body === undefined) {
+      throw new Error(`close-prebuilt: the component list names "${label}", which package.json lacks`);
     }
-    if (body?.startsWith(PACKAGE_PREFIX)) {
+    if (body.startsWith(PACKAGE_PREFIX)) {
       const rest = body.slice(PACKAGE_PREFIX.length);
       // A second build inside the remainder would defeat the point, and would mean the script's
       // shape changed in a way this runner was not written for.
       if (rest.includes('npm run package')) {
-        throw new Error(`close-prebuilt: "${named?.[1]}" builds the package twice`);
+        throw new Error(`close-prebuilt: "${label}" builds the package twice`);
       }
-      return { label: named?.[1] ?? component, command: rest };
+      return { label, command: rest };
     }
-    if (body?.includes('npm run package')) {
-      throw new Error(`close-prebuilt: "${named?.[1]}" builds the package somewhere other than its start`);
+    if (body.includes('npm run package')) {
+      throw new Error(`close-prebuilt: "${label}" builds the package somewhere other than its start`);
     }
-    return { label: named?.[1] ?? component, command: component };
+    return { label, command: component };
   });
 }
 

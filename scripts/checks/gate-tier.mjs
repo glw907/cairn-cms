@@ -168,6 +168,9 @@ const NODE_ONLY_TESTS = ['src/tests/unit/**', 'src/tests/integration/**', 'src/t
  * @property {string[]} protected - Paths whose change waits for CI green.
  */
 
+/** The characters that make a table pattern a glob rather than a prefix or an exact path. */
+const GLOB_CHARS = /[*?[\]{}]/;
+
 /**
  * Whether a path matches one table pattern. A pattern ending in a slash is a literal directory
  * prefix, a pattern with no glob character is an exact path, and anything else is a glob. Dot
@@ -179,7 +182,7 @@ const NODE_ONLY_TESTS = ['src/tests/unit/**', 'src/tests/integration/**', 'src/t
  */
 export function matchesPattern(path, pattern) {
   if (pattern.endsWith('/')) return path.startsWith(pattern);
-  if (!/[*?[\]{}]/.test(pattern)) return path === pattern;
+  if (!GLOB_CHARS.test(pattern)) return path === pattern;
   return posix.matchesGlob(path, pattern);
 }
 
@@ -219,7 +222,7 @@ export function tableProblems(table) {
   return allPatterns(table)
     .filter(
       (pattern) =>
-        /[*?[\]{}]/.test(pattern) && pattern.split('/').some((segment) => segment.length > 1 && segment.startsWith('.')),
+        GLOB_CHARS.test(pattern) && pattern.split('/').some((segment) => segment.length > 1 && segment.startsWith('.')),
     )
     .map((pattern) => `dot pattern "${pattern}" must be a literal prefix, not a glob`);
 }
@@ -263,14 +266,11 @@ export function loadContext(root = ROOT) {
   const table = loadTable(root);
   const steps = closeSteps(pkg.scripts);
   const closeLabels = steps.map((step) => step.label);
-  const packagePrefixed = new Set(
-    CLOSE_COMPONENTS.flatMap((component, index) => {
-      const named = component.match(/^npm run (\S+)$/);
-      return named && pkg.scripts[named[1]]?.startsWith(PACKAGE_PREFIX) ? [steps[index].label] : [];
-    }),
-  );
   /** @type {Map<string, string>} */
   const bodies = new Map(steps.map((step, index) => [step.label, closeBody(CLOSE_COMPONENTS[index], pkg.scripts)]));
+  const packagePrefixed = new Set(
+    [...bodies].filter(([, body]) => body.startsWith(PACKAGE_PREFIX)).map(([label]) => label),
+  );
   for (const [label, command] of Object.entries(table.extraCommands)) bodies.set(label, command);
   const closures = new Map([...bodies].map(([label, body]) => [label, scriptClosure(body, root)]));
   const exportEntries = new Set();
@@ -419,6 +419,17 @@ function staticLeg(labels, context) {
 }
 
 /**
+ * Whether the docs bucket is the only bucket a path belongs to.
+ * @param {string} path - A repo-relative path.
+ * @param {Context} context - The check universe and table.
+ * @returns {boolean} True for a path only the docs checks read.
+ */
+function isDocsOnlyPath(path, context) {
+  const buckets = pathBuckets(path, context);
+  return buckets.size === 1 && buckets.has('docs');
+}
+
+/**
  * How the component project runs for a diff.
  * @param {string[]} paths - The diff's non-tool paths.
  * @param {string[]} deleted - The paths the diff deletes, renames away included.
@@ -427,13 +438,7 @@ function staticLeg(labels, context) {
  *   the caller computes Vitest's related selection over `reach` before the string is built.
  */
 export function componentPlan(paths, deleted, context) {
-  const bucketsOf = (/** @type {string} */ path) => pathBuckets(path, context);
-  const docsOnly = paths.every(
-    (path) => isNoCheck(path, context) || (() => {
-      const buckets = bucketsOf(path);
-      return buckets.size === 1 && buckets.has('docs');
-    })(),
-  );
+  const docsOnly = paths.every((path) => isNoCheck(path, context) || isDocsOnlyPath(path, context));
   if (docsOnly) return { mode: 'skip', reason: 'every path is a docs path or one no check reads', reach: [] };
   const forcing = paths.filter((path) => matchesAny(path, COMPONENT_RERUN_TRIGGERS));
   if (forcing.length > 0) return { mode: 'full', reason: `rerun trigger ${forcing.join(', ')}`, reach: [] };
@@ -547,9 +552,8 @@ export function decideGate(paths, opts = {}) {
 
   const checks = selectChecks(npmPaths, context);
   notes.push(...checks.reasons);
-  const statics = staticLeg(checks.labels, context);
   notes.push(`static checks: ${checks.labels.length === 0 ? 'none' : checks.labels.join(', ')}`);
-  legs.push(...statics);
+  legs.push(...staticLeg(checks.labels, context));
 
   legs.push(NODE_PROJECTS);
 
@@ -727,8 +731,10 @@ async function main() {
   if (protectedMode) {
     const { verdict, reason } = protectedVerdict(range);
     if (verdict === 'error') return fail(`gate-tier: ${reason}`);
-    if (reason && verdict === 'ciWait') console.error(`gate-tier: ${reason}`);
-    if (verdict === 'ciWait') console.log('ciWait');
+    if (verdict === 'ciWait') {
+      if (reason) console.error(`gate-tier: ${reason}`);
+      console.log('ciWait');
+    }
     return;
   }
 

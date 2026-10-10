@@ -54,7 +54,7 @@ function playwrightRetries(report) {
  * Collects the full names of the Vitest tests that needed a retry.
  * @param {{ tests: Array<{ fullName: string, retryCount: number, flaky: boolean }> }} report - A
  *   parsed retry-reporter file.
- * @returns {string[]} The tests whose `retryCount` is above zero.
+ * @returns {string[]} The tests whose `retryCount` is above zero or that Vitest marked flaky.
  */
 function vitestRetries(report) {
   return report.tests.filter((test) => test.retryCount > 0 || test.flaky).map((test) => test.fullName);

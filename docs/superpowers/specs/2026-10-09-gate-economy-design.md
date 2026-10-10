@@ -31,13 +31,14 @@ checked by replaying pass A's task ranges and proven by pass B's scored clock.
 
 ## Rulings for Geoff
 
-1. **Drop the coverage probe from Task 7?** Recommended: yes. The draft spec ran one V8 coverage
-   run as the audit's reopen trigger. V8 cannot measure the `integration` project, which runs in
-   workerd and holds most auth modules (Cloudflare: "Native code coverage via V8 is not supported"),
-   and no coverage provider is installed. The `auth-data` mutation ledger already proves a failing
-   test per auth and commit-path branch, which is stronger evidence than line coverage on the same
-   modules. Yes builds nothing; the audit's reopen signal becomes the selection-miss count below
-   and any reviewer blocker on a branch no test covered. No builds a one-off
+1. **Drop the coverage probe from Task 7?** Recommended: yes. The draft spec ran one V8 coverage run
+   as the audit's reopen trigger. V8 cannot measure the `integration` project, which runs in workerd
+   and holds most auth modules (Cloudflare: "Native code coverage via V8 is not supported"), and no
+   coverage provider is installed. The mutation proof covers the branches each `auth-data` task
+   changed (pass-core's class table: "test-first, a mutation proof"), not untouched modules; "yes"
+   leaves no coverage signal on untouched auth code, which the settled "nothing points at a coverage
+   problem" accepts. Yes builds nothing; the audit's reopen signal becomes the selection-miss count
+   below and any reviewer blocker on a branch no test covered. No builds a one-off
    `@vitest/coverage-istanbul@4.1.11` run (installed `--no-save`, nothing in `package.json`) over
    the unit and integration projects, scored on `src/lib/auth*/**` and `src/lib/github/**` at a line
    threshold the plan names, with dist-only coverage recorded as a known blind spot. About 20
@@ -92,7 +93,7 @@ per-task gate runs, in order:
 3. The full node projects (unit, integration, unit-dist-spawn), about 4 minutes locally, because
    they hold most of the 111 test files whose inputs sit outside the import graph.
 4. The component project narrowed by `vitest related`. The whole project runs on a trigger, on a
-   deleted or renamed path under `src/`, or when `vitest list` reports an empty selection.
+   deleted or renamed path under `src/`, or when the selection (below) is empty.
 5. create-cairn-site's suite when its inputs change (`packages/create-cairn-site/**`,
    `examples/showcase/**`, `scripts/build/emit-template*`, root `package.json`).
 6. The e2e specs the coarse e2e map selects, at zero retries.
@@ -103,8 +104,8 @@ the e2e map, and an unclassified path runs every static check, never the 45-minu
 **Check buckets.** `gate-tier.mjs` reads one committed table of a few path buckets, not a per-check
 map: docs, scripts, showcase, engine (`src/lib/**` and the build inputs), and export surface
 (`src/lib/**/index.ts`, `package.json` `exports`, and their allowlists). Each bucket names the checks
-it selects. Any check whose script starts with `npm run package` inherits the engine bucket
-mechanically. The dist-surface checks (`surface`, `self-use`, `audit-pack`, `consumers`,
+it selects. Every other check whose script starts with `npm run package` inherits the engine
+bucket mechanically. The dist-surface checks (`surface`, `self-use`, `audit-pack`, `consumers`,
 `public-skill`, `package`) select on the export-surface bucket only; CI runs them on the same push.
 The docs bucket selects tellgrader, which skips itself on CI and is therefore local-only. A changed
 path that matches no bucket and is not on an explicit no-check list runs every static check. Bucket
@@ -124,7 +125,12 @@ boundary-only full gate gave, and a local full run beside it would double the ru
 comment-only or test-only otherwise). "Reduced gate" keeps that one meaning.
 
 **Trigger canary.** A committed test asserts that each component rerun trigger, given as the changed
-path, makes `vitest list --related` select every component file. This is the ROADMAP's 2026-10-08
+path, makes the selection pick every component file. The selection is Vitest's Node API, since
+`vitest list` has no `--related` flag: `createVitest('test', { related: [paths], project:
+'component' })`, then `getRelevantTestSpecifications()`
+(`vitest/dist/chunks/cli-api.CnMVyzaz.js:13487` in 4.1.11, filtering through `filterTestsBySource`
+at `:11551`), which selects without running. Probed on `main`: `package.json` selects 90 of 90 files
+in 4 s, `CairnAdminShell.svelte` 9 in 14 s, `README.md` none. This is the ROADMAP's 2026-10-08
 precondition (a) for per-task Vitest selection.
 
 ### One build per local gate
@@ -163,8 +169,11 @@ conductor call it. It reads workflow-run conclusions on the SHA, never raw check
   name, the capped `gh run view --log-failed` tail, and the latest conclusion of the same workflow
   on `main`, so a red that `main` also carries routes its fix to `main`.
 - **Expected set:** the five workflows with `pull_request` and only `paths-ignore: ['tool/**']`
-  (test, e2e, design, scaffold, create-site) when the PR's file list (`gh pr diff --name-only`, the
-  three-dot basis GitHub filters on) has any path outside `tool/**`. `tool` and `tool-conditions`
+  (test, e2e, design, scaffold, create-site) when the SHA's file list has any path outside
+  `tool/**`. The list is `git diff --name-only $(git merge-base origin/main <sha>)...<sha>` after a
+  fetch: the three-dot basis GitHub filters on, exact to the SHA, with no size cap. `gh pr diff
+  --name-only` fails above 300 files or 20,000 lines; the git form matched the files API exactly on
+  PRs #102, #103, and #107 (239, 395, 450 files). `tool` and `tool-conditions`
   filter in and are judged only when present. `norms` runs as jobs inside `e2e`; `tsgo` and
   `publish` never run on a PR. A unit test parses the workflows' `on:` blocks and fails when a
   workflow's trigger shape leaves this classification.
@@ -187,19 +196,21 @@ Exit codes: 0 green, 1 red, 2 missing, 3 unavailable, 75 pending.
 Pipelining is opt-in: `pass-execute` takes `ci: { pr: <n> }`, and an absent argument keeps today's
 behavior, so site repos and any default-branch run never push per task. It applies to sequential
 mode only. `parallel: true` and `pass-execute-chains` keep the per-task targeted gate and read
-`ci-green` at each boundary after the chains merge into the pass branch and push; a plan that runs
-`auth-data` tasks in chains takes that boundary CI only, as pass A did. Chains pipelining is out of
-scope.
+`ci-green` at each boundary after the chains merge into the pass branch and push. Every `auth-data`
+task still waits for CI green, so a plan runs `auth-data` tasks in sequential mode, never in chains,
+whose branches have no PR for `ci-green` to read. Chains pipelining is out of scope.
 
 The state machine, one task deep:
 
-1. Task N's implementer commits after its targeted gate; the runner pushes, so CI overlaps the
-   review.
+1. Task N's implementer commits after its targeted gate; the runner pushes after every implementer
+   commit, fix rounds included, so CI overlaps the review and N's accepted SHA has its own runs.
 2. After N is accepted, the runner dispatches N+1, except under `auth-data`, where it first runs
    `ci-green --wait` on N's SHA through a probe agent that only re-issues on 75.
 3. Before dispatching N+2, the runner runs `ci-green --wait` on N's accepted SHA.
 4. On red or missing, N+1 finishes its chain, and the runner stops and returns a `ciRed` record:
-   SHA, task, failing workflows and steps, and the `main` comparison.
+   SHA, task, failing workflows and steps, and the `main` comparison. On unavailable (exit 3) it
+   stops the same way with a `ciUnavailable` record, and the conductor runs the local full gate
+   fallback on that SHA.
 5. The conductor dispatches one CI-fix chain for task N, which counts as N's one `fix`
    re-dispatch: the implementer gets the `ciRed` record and fetches the log itself, works on HEAD,
    gates with the targeted gate, pushes, and runs `ci-green --wait`. `diff-reviewer` checks it
@@ -268,10 +279,10 @@ Kept: the build-once close runner, the shared trigger list anchored at the absol
 double-star globs never cross the `.claude/` dot directory, so Vitest's own default trigger matches
 nothing in a worktree), and `gate-tier.mjs --related` with its tests.
 
-Changed: an empty `related` selection runs the whole component project, detected with `vitest list`
-before the run (`vitest related` exits 0 on an empty selection by default). The helper trigger
-narrows to `src/tests/_*.ts` and `src/tests/component/**/_*.ts`. The new `scripts/` files join
-`lint` and `check:comments`. `close-prebuilt.mjs`'s header claim that CI runs it is corrected.
+Changed: an empty `related` selection runs the whole component project, detected with the Node API
+selection before the run (`vitest related` exits 0 on an empty selection by default). The helper
+trigger narrows to `src/tests/_*.ts` and `src/tests/component/**/_*.ts`. The new `scripts/` files
+join `lint` and `check:comments`. `close-prebuilt.mjs`'s header claim that CI runs it is corrected.
 
 ## Tasks (outline for the plan)
 
@@ -294,22 +305,25 @@ Dependencies: 2 before 3; 4 before 5; 2 and 3 before 7; 6 after 5 (it extends 5'
 4 are independent of 2. Tasks 1, 4's `ci-green`, and 5 run dotfiles tests only; Task 6 is docs plus
 one cairn-cms plan edit, no npm gate.
 
-**Clock estimate: about 4 hours on the critical path** (2, 3, 7, close), with tasks 1, 4, 5, and 6
-alongside:
+**Clock estimate: about 4.5 hours.** Two tracks run alongside, one executor per worktree:
+cairn-cms (2, 3, Task 4's workflow edits, 7) and dotfiles (1, Task 4's `ci-green`, 5, 6). The
+cairn-cms track is the longer, so it sets the critical path before the close:
 
 | Step | Estimate |
 |---|---|
 | Task 2: implement, targeted gate plus prebuilt close, review | about 45 min |
 | Task 3: implement, new targeted gate, review | about 55 min |
-| Task 7: classifier and `vitest list` dry runs, two timed ranges, record | about 45 min |
+| Task 4's workflow edits and timeout test, plus one CI cycle (663 s job, 1,232 s measured queue) | about 50 min |
+| Task 7: classifier and selection dry runs, two timed ranges, record | about 45 min |
 | Close: simplifier, reviewers, `ci-green` | about 45 min |
 | One fix round, contingency | about 30 min |
-| Side path: 1 (30), 4 (50 with one CI cycle), 5 (55), 6 (30) | about 2.5 h, under the critical path |
+| Dotfiles track: 1 (30), 4's `ci-green` (40), 5 (55), 6 (45, 13 errata over about 10 files) | about 2.8 h, under the cairn-cms track |
 
 The draft estimate was 3.5 hours; the mechanics review tallied 5 to 5.5 hours for the full scope.
 Dropping chains pipelining, install caching, and live-push `ci-green` tests, coarsening the check
-map, and pinning Tasks 2 and 4 to their own gates bring it to about 4. Ruling 1's "no" adds about 20
-minutes.
+map, and pinning Tasks 2 and 4 to their own gates bring it to about 4.5. The first fold's 4 hours
+ran Task 4 whole on a side path with no CI wait on the critical path and gave Task 6 30 minutes.
+Ruling 1's "no" adds about 20 minutes.
 
 ## Acceptance
 
@@ -319,12 +333,13 @@ Each line names what happens on a miss.
   fix and rerun.
 - **`ci-green`:** pure-function tests over saved `gh api .../actions/runs?head_sha=` JSON cover
   green (`8483ca5b`), red (`92325c02`), cancelled after a hang (run 37893646318), tool workflows
-  absent (`3ef9a8d9`), a red in an unexpected workflow, a rerun superseding a red, pending, missing
-  with a conflicted PR, and unavailable; plus one live call on the pass's own draft PR. On a miss,
-  fix and rerun.
+  absent (`3ef9a8d9`), a file list over 300 files (PR #107), a red in an unexpected workflow, a
+  rerun superseding a red, pending, missing with a conflicted PR, and unavailable; plus one live
+  call on the pass's own draft PR. On a miss, fix and rerun.
 - **Runner:** `~/.dotfiles/tests/pass-execute-runners.test.mjs` has one case each: green dispatches
-  N+2; red halts with the `ciRed` record; pending waits then resolves; an `auth-data` task blocks the
-  next dispatch until green; no `ci` argument never pushes; `parallel: true` never pushes. Each fails
+  N+2; red halts with the `ciRed` record; unavailable halts with the `ciUnavailable` record; pending
+  waits then resolves; an `auth-data` task blocks the next dispatch until green; no `ci` argument
+  never pushes; `parallel: true` never pushes. Each fails
   if the runner dispatches or pushes in the wrong state.
 - **Timed ranges:** the plan names two pass A ranges before any timing: the largest `auth-data`
   engine `src/lib` range and an admin range. Each targeted gate runs in 10 minutes or less, lock wait
@@ -337,9 +352,9 @@ Each line names what happens on a miss.
   only the latest log per gate string, so GitHub is the SHA-attributed record). Required rows: S2's
   `check:self-use`, showcase `format:check`, and `check:template` reds. TDD red runs and external
   reds (govulncheck, the hang) are listed as excluded with a reason. Component selection is read
-  from `vitest list`, not the gate string. Every included row is selected; a table with fewer rows
-  than the known events fails. On a miss, add a bucket entry or trigger and rerun the replay. The
-  pass does not close on a miss.
+  from the Node API selection, not the gate string. Every included row is selected; a table with
+  fewer rows than the known events fails. On a miss, add a bucket entry or trigger and rerun the
+  replay. The pass does not close on a miss.
 - **Projection:** a model, labeled as one: gate counts by kind from pass A, times the newly measured
   durations, plus CI waits for the `auth-data` tasks at measured CI wall plus queue, plus pass A's
   unchanged review, fix, and close rows. Pass mark: 9 hours or less. On a miss, record it; pass B's

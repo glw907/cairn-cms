@@ -113,3 +113,75 @@ definitions the lenses found missing, the owed errata list, and two rulings.
 **Ceiling:** 4.0M tokens, unchanged (settled). The cuts (chains pipelining, install caching,
 live-push tests, the per-check map, and the coverage probe if Ruling 1 is yes) lower the expected
 spend. Clock estimate revised from 3.5 to about 4 hours on the critical path.
+
+## Second fold
+
+Input: `2026-10-09-gate-economy-fold-verification.md` (0 blockers, 3 majors, 9 minors). Scope:
+the three majors, minors m1, m4, m5, m7, and m9's clock re-cost; every other minor is owed below
+with no spec edit. Each mechanism was probed on 2026-10-09 before it entered the spec.
+
+**Majors (3), all folded:**
+
+- **M1, folded.** The expected set's file list is now `git diff --name-only $(git merge-base
+  origin/main <sha>)...<sha>` after a fetch. Probe: against each PR's recorded `baseRefOid`, the
+  git form matched `GET /pulls/<n>/files` exactly on #102 (239 files), #103 (395), and #107 (450),
+  the three PRs where `gh pr diff --name-only` exits 1; each call took under 0.1 s. A merged PR
+  needs its recorded base, not today's `origin/main` (against `main`'s first parent, #103 gave
+  380); an open PR's base is `origin/main`, which the spec names. The `ci-green` fixtures gain a
+  case over 300 files (#107).
+- **M2, folded.** The selection is Vitest's Node API: `createVitest('test', { related, project:
+  'component' })` then `getRelevantTestSpecifications()`. Source in the installed 4.1.11:
+  `node_modules/vitest/dist/chunks/cli-api.CnMVyzaz.js:13487` (the `Vitest` method), `:11497`
+  (the specifications method), `:11551` (`filterTestsBySource`: a `forceRerunTriggers` match
+  returns every spec; an empty non-watch selection returns `[]`); the typing at
+  `dist/chunks/reporters.d.DtoKVV2s.d.ts:1368`; `createVitest` exported from `dist/node.js`. `related`
+  is a `cac` subcommand at `cac.uFydS1Z4.js:2262`, not a `list` flag. Probe, on a `git archive`
+  of `main` in the scratchpad with its own `npm ci` (the shared checkout's `node_modules` lacks
+  `@cloudflare/vitest-plugin`, so its config fails to load): `package.json` 90 of 90 component
+  files in 4 s, `src/lib/admin/CairnAdminShell.svelte` 9 files in 14 s, `README.md` 0. Edited at
+  the per-task gate's leg 4, the trigger canary, the draft-branch "Changed" paragraph, the Task 7
+  estimate row, and the miss-rate acceptance. The JSON-reporter fallback is not needed.
+- **M3, folded.** Ruling 1's evidence sentence now reads that the mutation proof covers the
+  branches each `auth-data` task changed, not untouched modules, and that "yes" leaves no coverage
+  signal on untouched auth code, which the settled "nothing points at a coverage problem" accepts.
+  Verified at pass-core's class table (`SKILL.md:96`, "test-first, a mutation proof", per task).
+  The recommendation stands: V8 still cannot see the workerd project, and the settled no-audit
+  decision governs untouched code.
+
+**Minors folded (5):**
+
+- **m1, folded.** "Every other check whose script starts with `npm run package` inherits the
+  engine bucket." Verified: `check:package`, `check:audit-pack`, `check:surface`, `check:self-use`,
+  `check:public-skill`, and `check:consumers` all start with `npm run package`
+  (`package.json:37-82`).
+- **m4, folded.** State-machine step 4: on exit 3 the runner stops with a `ciUnavailable` record
+  and the conductor runs the local full gate fallback on that SHA; the runner acceptance gains the
+  case.
+- **m5, folded.** Step 1: "the runner pushes after every implementer commit, fix rounds included".
+- **m7, folded.** The chains carve-out keeps the settled wait: every `auth-data` task waits for
+  CI green, so a plan runs `auth-data` tasks sequentially, never in chains (a chain branch has no
+  PR). "As pass A did" struck; pass A plan:79 and pass B plan:92 are both sequential, so this
+  costs neither pass anything.
+- **m9 (re-cost), folded.** About 4.5 hours. Task 4 splits by repo under one executor per
+  worktree: its workflow edits and their CI cycle (663 s test job plus the 1,232 s queue measured
+  2026-10-09) join the cairn-cms track (2, 3, 4's workflows, 7: about 195 min), which outruns the
+  dotfiles track (1, 4's `ci-green`, 5, 6 at 45 min: about 170 min). Plus the close (45) and one
+  fix round (30). No side-path cut makes it shorter, since the dotfiles track is not critical.
+
+**Minors owed (one line each, no spec edit):**
+
+- **m2:** infra rerun of a cancelled or timed-out job uses `gh run rerun <run> --job
+  <databaseId>`, `--failed` only on `failure`; "once" means `run_attempt == 1`; the deadline
+  counts from the rerun's creation.
+- **m3:** `ci-green` takes `--pushed-at <iso>` from the runner's push record, falling back to the
+  SHA's committer date, as the input to the 5- and 60-minute clocks.
+- **m6:** the per-task gate's static leg runs through the build-once runner with a check subset.
+- **m8:** Ruling 2's "no" needs its minutes and the place the e2e map lookup runs.
+- **m9 (pin home):** the workflow-shape pin lives in cairn-cms's unit suite, reading the
+  classification `ci-green` exports.
+
+**Spec length:** 352 lines before, 367 after.
+
+**Rulings for Geoff (unchanged in substance):** 1, drop the coverage probe from Task 7,
+recommended yes; 2, a test that passes only on a CI retry counts as green, recommended yes,
+logged.

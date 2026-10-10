@@ -47,6 +47,7 @@ interface Step {
 }
 
 interface Job {
+  'continue-on-error'?: unknown;
   uses?: string;
   'timeout-minutes'?: unknown;
   steps?: Step[];
@@ -164,6 +165,12 @@ describe('the test jobs keep their gates and report their retries', () => {
     }
   });
 
+  it.each(TEST_WORKFLOWS)('%s sets continue-on-error on no job', (name) => {
+    for (const [jobId, job] of Object.entries(loadWorkflow(name).jobs ?? {})) {
+      expect(job, `${name}:${jobId}`).not.toHaveProperty('continue-on-error');
+    }
+  });
+
   it.each(TEST_WORKFLOWS)('%s sets shell: bash on any test step that pipes', (name) => {
     // The default `bash -e {0}` has no pipefail, so a failing test in a pipeline would pass.
     for (const step of stepsOf(name).filter((s) => TEST_STEP.test(s.run ?? '') && (s.run ?? '').includes('|'))) {
@@ -205,6 +212,8 @@ describe('the test jobs keep their gates and report their retries', () => {
     expect(split.map((match) => match[1])).toEqual(chain);
     for (const match of split) {
       expect(match[2]).toContain('--reporter=default');
+      // Naming a reporter replaces Vitest's resolved set, which on Actions would have included this one.
+      expect(match[2]).toContain('--reporter=github-actions');
       expect(match[2]).toContain('--reporter=./scripts/ci/vitest-retry-reporter.mjs');
     }
   });

@@ -75,6 +75,11 @@ describe('retries notice when a report cannot be read', () => {
     expect(noticeForReports([path])).toBe(`${NOTICE}unknown (other.json is neither a Playwright nor a retry-reporter report)`);
   });
 
+  it('reads a path that cannot be read as a file as unknown, and does not throw', () => {
+    const line = noticeForReports([scratchDir()]);
+    expect(line).toMatch(/^::notice title=retries::unknown \(.+ cannot be read: /);
+  });
+
   it('reads a call with no report path as unknown', () => {
     expect(noticeForReports([])).toBe(`${NOTICE}unknown (no report path given)`);
   });

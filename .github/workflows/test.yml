@@ -55,15 +55,16 @@ jobs:
       # each call it themselves) costs a rebuild, not a correctness risk.
       - run: npm run package
       # `npm test` is its two Vitest runs spelled out, one step each, so each can write its own retry
-      # report: the node projects, then the component project. The retries step below reads both.
+      # report: the node projects, then the component project. The retries step below reads both. Naming
+      # reporters replaces Vitest's default set, so `github-actions` (its failure annotations) is named too.
       - name: Run the node test projects
         env:
           VITEST_RETRY_REPORT: ${{ runner.temp }}/vitest-node-retries.json
-        run: npm run test:node-projects -- --reporter=default --reporter=./scripts/ci/vitest-retry-reporter.mjs
+        run: npm run test:node-projects -- --reporter=default --reporter=github-actions --reporter=./scripts/ci/vitest-retry-reporter.mjs
       - name: Run the component test project
         env:
           VITEST_RETRY_REPORT: ${{ runner.temp }}/vitest-component-retries.json
-        run: npm run test:component -- --reporter=default --reporter=./scripts/ci/vitest-retry-reporter.mjs
+        run: npm run test:component -- --reporter=default --reporter=github-actions --reporter=./scripts/ci/vitest-retry-reporter.mjs
       # A retried test leaves the job green, so its name goes into the run's annotations. It runs
       # whether the tests passed or failed; a report the run never wrote reads as unknown.
       - name: Report retried tests

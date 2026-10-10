@@ -59,7 +59,12 @@ function vitestRetries(report) {
 function readReport(path) {
   const label = basename(path);
   if (!existsSync(path)) return { unknown: `${label} is absent` };
-  const text = readFileSync(path, 'utf8');
+  let text;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch (error) {
+    return { unknown: `${label} cannot be read: ${error instanceof Error ? error.message : error}` };
+  }
   if (text.trim() === '') return { unknown: `${label} is empty` };
   let report;
   try {

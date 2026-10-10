@@ -175,7 +175,7 @@ jobs:
           fi
       # examples/showcase/playwright.config.ts sets testDir: 'e2e' and leaves outputDir unset, so
       # Playwright writes test-results (its outputDir default, package-dir-relative) regardless of
-      # reporter; the `--reporter=dot,html` flag on both run steps above additionally writes
+      # reporter; the `--reporter=dot,html,json` flag on both run steps above additionally writes
       # playwright-report (the html reporter's own default path), also package-dir-relative. Both
       # paths are relative to examples/showcase. `if: failure()` catches a failure from any prior
       # step in this job, not only the test run. `if-no-files-found: ignore` keeps the step from

@@ -72,9 +72,26 @@ No open entry.
 
 ### Repo tooling
 
-- **`ci-e2e`.** The pending-dictionary-word e2e specs are flaky on CI. On pass A's merged head (`b5953af8`, run 37991578654), `e2e/edit-save-failure.spec.ts:207` failed all three attempts with `toHaveCount` reading 0. In the same run, `edit-save-failure.spec.ts:256` and `e2e/publish-pending-word.spec.ts:23` passed only on retry (the latter timed out at `:51` waiting for the underline count). A rerun of the job passed, and the local full gate passed all three. The likely seat is the wait on the spellcheck underline before the save, which CI's slower runner can outpace. Filed by the pass A close conductor, 2026-10-09.
+- **`contributor`.** A plan that fixes a task's gate string bypasses the classifier, and the fixed string can omit the type check. The gate economy pass's Task 4a ran a plan-fixed light gate with no `npm run check`, so four `svelte-check` implicit-any errors in `scripts/ci/retries-notice.mjs` reached CI (the test job went red on `d2c5164d`, 2026-10-10) and were fixed under Task 3 (`8695229d`). The classifier would have added `check` for a scripts diff. Found by the gate economy pass conductor, 2026-10-10.
+- **`contributor`.** The HISTORY "What the gates caught" bullets name no failing step, so a replay cannot tell which gate leg would have caught a red from the entry alone. The replay's miss-rate floor of 24 items carried failure descriptions that disagreed with the CI logs on 5 of 24 items (it named a missing-package error where the logs show `check:self-use`, `format:check`, and `check:template` findings), and each row had to be re-read from `gh run view --log-failed`. A one-line `failing step` field per caught red would make the next replay a read of HISTORY. Found by the gate economy pass conductor, 2026-10-10.
+- **`contributor`.** `cairn-run-gate` records one duration per run and prints no per-leg timing, so the replay's per-leg tables (`docs/superpowers/research/2026-10-09-gate-economy-replay.md`, part 2) mix printed figures (`check:close`, Vitest, Playwright) with legs derived by subtraction. A per-leg line in the run record (or `time` output between `&&` legs) would make the next measurement a read. Found by the gate economy pass conductor, 2026-10-10.
 
 ### Triage record
+
+The gate economy pass's close (2026-10-10) triaged the whole log. It held 23 entries: the `ci-e2e` flake in the
+Repo tooling group and 22 older entries (16 from the stage 2a close-finish run of 2026-10-07 and six from
+pass A's tasks) that sat unfiled in this section after pass A's triage. Each was re-checked against the tree at
+`4ef0fdbb`. Three were fixed on the spot: the `tool/Makefile` `golden` comment (the `-run TestGolden` pattern
+also matches `TestGoldenJSONPayloads`, so it recuts `testdata/json`), the spelled-out check count in
+`scripts/checks/docs-gate.mjs`'s header, and a new `durable-gotchas.md` entry for Playwright's `unroute`
+reference rule. Three were deleted without a move: the worktree `svelte-check` heap entry (folded into the
+light-lane OOM follow-up in `ROADMAP.md`), the `npm test` runtime and re-attach entry (the targeted gate and the
+local fallback replaced that gate, and the re-issue row stays filed), and the `@source` comment-scan entry (the
+safelist comment at `src/lib/admin/admin-css-safelist.ts:62-70` already records it). Seventeen moved whole to
+`ROADMAP.md`'s Next tier, in the entry "Repo tooling and docs-gate friction from the friction log" (16 older
+entries and the `ci-e2e` flake, now carrying the retried-test evidence from this pass's CI reads). None stays open
+from before; three new entries filed by this pass sit in Repo tooling above. Totals: 23 triaged, 3 fixed, 3
+deleted, 17 moved, 0 kept, 3 filed.
 
 Engine pass pre-2b, pass A's close (2026-10-09) triaged the whole log. It held nine entries, all
 filed by pass A's own tasks on 2026-10-08 and 2026-10-09, none for a pass A fix, so none was deleted
@@ -244,89 +261,6 @@ shipped; the residual WATCH now lives in `docs/STATUS.md`'s active watches, not 
 `fixtureCsrf`, the rulings-ledger flat-read scaling note, and `presetUrl`/`BUILT_IN_PRESETS` all
 promoted whole to `ROADMAP.md`'s Later tier with their triggers. See Clearings below.
 
-- **`contributor`.** `npm run check` (the `check` script, `svelte-check --tsconfig ./tsconfig.json && tsc ...` in
-  `package.json`) runs svelte-check out of heap at Node's default limit in a worktree; it passes with
-  `NODE_OPTIONS=--max-old-space-size=6144`. Neither `docs/internal/durable-gotchas.md` nor `CLAUDE.md` names the
-  trap. Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
-- **`contributor`.** No gate checks a `docs/internal/...` path cited in a comment under `src/lib`. The design-arc log
-  moved to `docs/internal/record/` and nothing flagged the stale citations in `EditorToolbar.svelte` and
-  `EditPage.svelte` (fixed on `draft-docs-2a`). A gate that requires every cited path to exist would catch the
-  next move. Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
-- **`contributor`.** The sample outputs in `docs/reference/cairn-audit.md` (the border-contrast exemption near line
-  236 and the `norms card` output near line 598) are hand-copied from emitter strings in `src/lib/audit/norms.ts`
-  (line 280) and `src/lib/audit/border-contrast.ts`. Nothing ties the two together; they drifted once and
-  conflicted textually in a merge. Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
-- **`contributor`.** The admin CSS `@source` scan reads comments as well as code
-  (`src/lib/admin/admin-css-safelist.ts`, around lines 62-70, which says so), so a class-like token in a comment
-  can change the built CSS. Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
-- **`tooling`.** The comment on the `golden` target in `tool/Makefile` (line 94) says it recuts the "render
-  frame"; `go test ./internal/render -run TestGolden -update` also regenerates `testdata/json`. Found by the 2a
-  close-finish run (F1/F2 agents), 2026-10-07.
-- **`docs-gate`.** `scripts/checks/check-arm-indexes.mjs` walks the filesystem, not tracked files, so a gitignored
-  local page such as the untracked `docs/internal/credentials.md` fails it locally and passes in CI. Branch
-  `draft-docs-2a` added an allowlist entry (line 59) for that page. Found by the 2a close-finish run (F1/F2
-  agents), 2026-10-07.
-- **`docs-gate`.** The header comment in `scripts/checks/docs-gate.mjs` (lines 3 and 17) counts its checks in
-  words ("nineteen" on `draft-docs-2a`), so the count goes stale each time a check is added. Drop the count.
-  Found by the 2a close-finish run (F1/F2 agents), 2026-10-07.
-- **`contributor`.** The project `CLAUDE.md` (line 92) names the Cloudflare account id in plaintext, while `check:leaks`
-  on `draft-docs-2a` stores that id only as a SHA-256 digest and `CLAUDE.md` falls outside every check:leaks tier.
-  Separately, `docs/internal/credentials.md`'s identifiers (GitHub App id, installation id, D1 UUIDs) remain in git
-  history after the untrack. They are identifiers, not keys. Found by the 2a close-finish run (F1/F2 agents),
-  2026-10-07.
-
-- **`docs-gate`.** `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS` in `scripts/checks/check-leaks.mjs`). Its `src` ships in that package's `files`, so it needs coverage before the package's first publish. Found by the 2a close-finish run, 2026-10-07.
-- **`contributor`.** `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt` (lines 52, 69, 678, 825, 945) still holds the maintainer's home path and a `glw907.workers.dev` URL. Fixing them needs a transcript regeneration that `check:transcripts` replays. Found by the 2a close-finish run, 2026-10-07. Pass A adds two more stale spots: line 837 lists the scaffold migrations as `0000` and `0003` with no `0001` (Task 4 ships `0001`), and line 942 still ends the key step with "re-run this step" (Task 7 changed the step to point at the rotation page). Found again by the Task 4 and Task 7 implementers and reviewers, engine pass pre-2b A, 2026-10-08.
-- **`docs-gate`.** `scripts/checks/check-symbols.mjs` (`extractFilePaths`) reads the inline import specifier `#theme/cairn.config.js` as the file path `theme/cairn.config.js`, so prose cannot name the scaffold's real import. Fenced blocks strip import specifiers; inline spans do not. Found by the 2a close-finish run, 2026-10-07.
-- **`contributor`.** The tutorial puts the adapter at `src/lib/cairn.config.ts` (`#lib`, `docs/extend/add-cairn-to-a-sveltekit-app.md:294,411`) and the scaffold puts it at `src/theme/cairn.config.ts` (`#theme`, `docs/extend/choose-an-ai-posture.md:29,62`), so every extend page that touches the adapter names two paths. Found by the 2a close-finish run, 2026-10-07.
-- **`docs-gate`.** `docs/internal/facts/front-door.md:67` (`f:u705t5`) asserts a forward-looking "Topo is planned"; a fact should state only what ships. Found by the 2a close-finish run, 2026-10-07.
-- **`contributor`.** The task 8 page plans now disagree with their pages after the rulings: `docs/internal/briefs/extend/debug-your-site.plan.md:64,263` (`cairn help agents`) and `docs/internal/briefs/extend/scaffolded-site-files.plan.md:226,252` (the `CLAUDE.md` subsection). Found by the 2a close-finish run, 2026-10-07.
-- **`contributor`.** `npm test` takes about 11 minutes, longer than the 600-second foreground limit, and a re-attached run does not print `gate exit:`. (Reported by the run; the 7-to-11-minute range is also in `pass-gate-economy.md`.) Found by the 2a close-finish run, 2026-10-07.
-- **`contributor`.** `packages/create-cairn-site/scripts/bake-template.mjs` requires `--to <dir>` (its usage line says so), and a bare invocation fails. The "create-cairn-site needs baked template" recipe the run followed omitted it; `scaffold.mjs`'s own error names `npm run prepack`, which passes it. Found by the 2a close-finish run, 2026-10-07.
-- **`contributor`.** Reaching an older auth schema in an integration test means slicing statements out of
-  `env.TEST_MIGRATIONS` by hand (`src/tests/integration/_apply-migrations.ts:7`,
-  `vitest.config.ts:131`, `src/tests/integration/auth-store-roles-unmigrated.test.ts:19`). The
-  binding splits each file into per-statement queries and prefixes each with its preceding comment, so
-  a test slices from the `CREATE` keyword to reuse one. A harness helper that applies migrations up to
-  a named file would remove the slicing. Found by the Task 4 implementer and reviewer, engine pass
-  pre-2b A, 2026-10-08.
-- **`contributor`.** `check:surface` reports a new exported type whose members name unexported
-  interfaces as unrecorded closure leaks (`scripts/checks/check-surface-leaks.mjs:480-486`). The
-  failure message offers only the registry entry as the remedy and never says that exporting the
-  named types also clears it, which Task 5 chose (`ChannelSessionLike`, `ChannelStatementLike`). The
-  implementer reports the failure reached only after `check:options` or `package` built `dist`; that
-  ordering was not re-run in verification. Found by the Task 5 implementer, engine pass pre-2b A,
-  2026-10-08.
-- **`docs-gate`.** `check:provenance` couples a frozen page brief to a fact bullet's literal text, and
-  no sanctioned path updates a fact under a stale page. `docs/internal/briefs/extend/scaffolded-site-files.json`
-  still cites `f:nls26c` (`docs/internal/facts/extend.md:908`), so when Task 7 dropped
-  `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` from the scaffold the bullet had to keep naming
-  them as dropped variables, or the frozen page's sentence would become a provenance defect. The
-  entry above on `Source:` pointers is the same coupling through a path; this one runs through claim
-  text. Found by the Task 7 implementer and reviewer, engine pass pre-2b A, 2026-10-08.
-- **`tooling`.** The recorded regeneration command on line 2 of `examples/showcase/worker-configuration.d.ts`
-  (`wrangler types --env-file=... --include-runtime=false`) is not reproducible by hand. The Task 7
-  implementer reports that running it locally with `.svelte-kit` present adds a `GlobalProps { mainModule }`
-  block that the committed file does not carry (verified: the committed file has no `mainModule`), so the
-  result was hand-stripped. The local run itself was not repeated in verification, and no workflow or
-  package script regenerates the file to say which output CI expects. Found by the Task 7 implementer,
-  engine pass pre-2b A, 2026-10-08.
-- **`contributor`.** The `GithubDouble` ref PATCH handler (`src/tests/unit/_github-double.ts:222-231`)
-  lands any staged commit without comparing the commit's parent to the branch head, so it can never
-  answer the real 422 non-fast-forward. A head-guard race test therefore wraps `fetch` to land a
-  competing commit between the code's read and its write; Task 9 added
-  `src/tests/unit/_inject-after-read.ts` (`injectAfterFirstRead`) for the media and dictionary tests.
-  A first-class hook on the double, or a parent check that returns 422 when the head has moved, would
-  let each test stage the race without re-wrapping `fetch`. Found by the Task 9 implementer and
-  reviewer, engine pass pre-2b A, 2026-10-09.
-- **`contributor`.** Playwright's `page.unroute` with a function matcher removes nothing unless it is
-  handed the same function reference that `page.route` received. `actionUrl(name)` in
-  `examples/showcase/e2e/edit-save-failure.spec.ts:24-26` builds a new closure on each call, so
-  `unroute` was a silent no-op and the retry test hung for 30 seconds before the cause was found; the
-  spec now builds the matcher once (lines 85-86, 103). `docs/internal/durable-gotchas.md` records
-  other Playwright traps (line 195) but not this one. Found by the Task 8 implementer and reviewer,
-  engine pass pre-2b A, 2026-10-09.
-
 ## Clearings
 
 The detail of a cleared finding lives in the pass post-mortem that cleared it and in
@@ -374,6 +308,7 @@ history holds every pruned entry in full.
 | 2026-09-29 | theme identity pass C's close | one open entry, the media library's orphan purge open to every editor, verified against the tree, then ruled on by Geoff and promoted to `ROADMAP.md` Later (an owner-restrictable purge); the pass's own findings routed to `ROADMAP.md` (the four edge cases to Next, the rule promotion to Toward 1.0, the docs standing order to Next) |
 | 2026-09-30 | the draft docs harvest's close | four open entries, all its own: the `src/lib/islands/index.ts` `/components` comment fixed and deleted; `cli-cairn-media-seed.md`'s `vite dev` claim and `requiredDocsPaths`'s kept-page existence filter promoted whole to `ROADMAP.md`'s Next tier; the `tool/internal/health` package debt promoted whole to Later. The whole-log sweep found no other open finding |
 | 2026-10-07 | draft docs stage 2a's close (R7) | all 187 open entries, under the engine-pass boundary test: 76 to the Now tier's engine pass before stage 2b, 21 to Now's docs tooling before stage 2b, 30 to Next's batched engine friction, 17 to Next's reference-arm corrections, 23 to Next's docs content the extend rebuild owes, 3 to Next's cairn-audit and theme contract entry, 17 fixed and deleted or deleted as overtaken |
+| 2026-10-10 | the gate economy pass's close | 23 open entries: 3 fixed on the spot (the `tool/Makefile` golden comment, the docs-gate header count, a `durable-gotchas.md` entry for Playwright's `unroute`), 3 deleted (a duplicate, an overtaken entry, an already-documented one), 17 moved whole to `ROADMAP.md`'s Next tier; three new gate-economy tooling entries filed |
 
 **Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
 are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package

@@ -197,6 +197,14 @@ mounts client-side after hydration. The server-rendered heading shows about 130 
 attaches `EditPage`'s window `keydown` listener, so a press in that gap is dropped (the zen-mode
 tests failed 3 of 36 isolated runs until they waited, and failed 15 of 15 under a 600 ms chunk delay).
 
+## Playwright `page.unroute` needs the same function reference `page.route` received
+
+`page.unroute(matcher)` with a function matcher removes nothing unless it is handed the very function
+that `page.route` registered. A helper that builds a fresh closure per call (`actionUrl(name)` in
+`examples/showcase/e2e/edit-save-failure.spec.ts`) makes `unroute` a silent no-op, and the retry test
+hangs until its timeout (30 seconds before the cause was found). Build the matcher once, keep it in a
+variable, and pass that variable to both calls.
+
 ## The full gate tier mirrors `test.yml`, and a tree-grepping helper skips generated directories
 
 `scripts/checks/gate-tier.mjs` pins its `full` tier against the steps of `test.yml`'s test job, so the

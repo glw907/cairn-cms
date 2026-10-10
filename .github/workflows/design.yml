@@ -66,6 +66,14 @@ jobs:
       # Chromium and installs the template's registry dependencies, so it runs after the browser
       # install and stays out of check:close, the way test:reskin does.
       - run: npm run test:theme-fixture
-      - run: npm --prefix examples/showcase run test:e2e -- styleguide
+      - name: Run the styleguide e2e
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-retries.json
+        run: npm --prefix examples/showcase run test:e2e -- styleguide --reporter=dot,json
+      # A retried test leaves the job green, so its name goes into the run's annotations. It runs
+      # whether the tests passed or failed; a report the run never wrote reads as unknown.
+      - name: Report retried tests
+        if: always()
+        run: node scripts/ci/retries-notice.mjs "$RUNNER_TEMP/playwright-retries.json"
       - if: failure() || cancelled()
         uses: ./.github/actions/install-diagnostics

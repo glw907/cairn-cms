@@ -3,13 +3,22 @@ import { parseArgs, buildSteps } from '../../../scripts/checks/docs-gate.mjs';
 
 describe('parseArgs', () => {
   it('defaults page and brief to null when neither flag is given', () => {
-    expect(parseArgs([])).toEqual({ page: null, brief: null });
+    expect(parseArgs([])).toEqual({ page: null, brief: null, prebuilt: false });
+  });
+
+  it('parses --prebuilt as a flag that takes no value', () => {
+    expect(parseArgs(['--prebuilt', '--page', 'docs/a.md'])).toEqual({
+      page: 'docs/a.md',
+      brief: null,
+      prebuilt: true,
+    });
   });
 
   it('parses --page and --brief together', () => {
     expect(parseArgs(['--page', 'docs/extend/choose-an-ai-posture.md', '--brief', 'docs/internal/briefs/extend/choose-an-ai-posture.json'])).toEqual({
       page: 'docs/extend/choose-an-ai-posture.md',
       brief: 'docs/internal/briefs/extend/choose-an-ai-posture.json',
+      prebuilt: false,
     });
   });
 });

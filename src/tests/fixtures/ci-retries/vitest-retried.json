@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "fullName": "throwaway > passes only on its retry",
+      "retryCount": 1,
+      "flaky": true
+    },
+    {
+      "fullName": "throwaway > passes first time",
+      "retryCount": 0,
+      "flaky": false
+    }
+  ]
+}

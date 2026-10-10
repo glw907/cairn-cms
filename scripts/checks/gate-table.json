@@ -1,0 +1,295 @@
+{
+  "buckets": {
+    "docs": [
+      "docs/",
+      "*.md",
+      "**/*.md",
+      ".vale/",
+      ".vale.ini",
+      ".tellgrader.json",
+      "skills/",
+      "claude/"
+    ],
+    "scripts": [
+      "scripts/",
+      "src/tests/",
+      ".github/",
+      "eslint.config.js",
+      "vitest.config.ts",
+      "wrangler.test.jsonc"
+    ],
+    "showcase": ["examples/showcase/", "templates/", "packages/create-cairn-site/"],
+    "engine": [
+      "src/lib/",
+      "scripts/build/",
+      "packages/cairn-cms-dev/",
+      "migrations/",
+      "migrations-channel/",
+      "package.json",
+      "package-lock.json",
+      "svelte.config.js",
+      "tsconfig.json"
+    ],
+    "exportSurface": [
+      "src/lib/**/index.ts",
+      "package.json",
+      "scripts/checks/check-surface-leaks.json",
+      "scripts/checks/check-surface-reexports.json",
+      "scripts/checks/check-self-use-allowlist.json",
+      "scripts/checks/check-symbols-allowlist.mjs",
+      "docs/internal/api-surface.md",
+      "docs/internal/option-map.json",
+      "skills/",
+      "claude/"
+    ]
+  },
+  "noCheck": [".gitattributes", "knip.jsonc"],
+  "scriptsTestOnly": [
+    "scripts/ci/",
+    "scripts/test/",
+    "scripts/checks/gate-table.json",
+    "scripts/checks/gate-tier.mjs"
+  ],
+  "checks": {
+    "check": ["engine", "scripts"],
+    "check:package": ["exportSurface"],
+    "check:audit-pack": ["exportSurface"],
+    "check:reference": ["exportSurface", "docs", "engine"],
+    "check:reference:signatures": ["exportSurface", "docs", "engine"],
+    "check:options": ["exportSurface", "docs", "engine"],
+    "check:surface": ["exportSurface"],
+    "check:consumers": ["exportSurface", "showcase"],
+    "check:self-use": ["exportSurface", "showcase"],
+    "check:custom-surface": ["engine", "showcase"],
+    "check:chassis-boundary": ["showcase", "scripts"],
+    "check:cm-internals": ["engine", "scripts"],
+    "check:idioms": ["engine", "scripts"],
+    "check:invisible-craft": ["engine", "showcase"],
+    "check:readiness": ["docs", "engine"],
+    "check:tool-conditions": ["docs", "engine"],
+    "check:docs": ["docs"],
+    "check:rulings-format": ["docs"],
+    "check:target-stack": ["docs", "engine", "showcase"],
+    "check:arm-indexes": ["docs"],
+    "check:editor-quotes": ["docs", "engine"],
+    "check:facts": ["docs", "engine"],
+    "check:provenance": ["docs"],
+    "check:leaks": ["docs", "engine", "showcase"],
+    "check:visuals": ["docs", "engine"],
+    "check:transcripts": ["docs", "showcase"],
+    "check:symbols": ["docs", "engine", "showcase"],
+    "check:snippets": ["docs", "engine"],
+    "check:prose": ["engine"],
+    "check:version": ["docs", "engine"],
+    "check:dev-package": ["engine"],
+    "check:template": ["showcase", "engine"],
+    "npm --prefix examples/showcase run check": ["showcase", "engine"],
+    "npm --prefix examples/showcase run check:cairn": ["showcase", "engine"],
+    "npm --prefix examples/showcase run format:check": ["showcase"],
+    "check:public-skill": ["docs", "exportSurface", "showcase"],
+    "check:vale": ["docs"],
+    "check:comments": ["engine", "showcase", "scripts"],
+    "check:public-tokens": ["engine", "showcase"],
+    "check:tool-heuristics": ["engine"],
+    "test:emit": ["showcase", "engine"],
+    "showcase:test:unit": ["showcase", "engine"],
+    "check:tellgrader": ["docs"],
+    "check:vale-rules": ["docs"]
+  },
+  "extraCommands": {
+    "check:tool-heuristics": "npm run check:tool-heuristics",
+    "test:emit": "npm run test:emit",
+    "showcase:test:unit": "npm --prefix examples/showcase run test:unit",
+    "check:tellgrader": "node scripts/checks/check-tellgrader.mjs",
+    "check:vale-rules": "vale --config=.vale/tests/vale.ini test .vale/styles/Cairn/Headings.test.yml .vale/styles/Cairn/ProseProcedure.test.yml"
+  },
+  "e2e": {
+    "floor": {
+      "prefixes": ["src/lib/admin/", "src/lib/admin-toolkit/"],
+      "specs": ["admin-visual.spec.ts"]
+    },
+    "unmappedLib": ["golden-path.spec.ts", "access-map.spec.ts", "csrf-origin.spec.ts"],
+    "authData": ["golden-path.spec.ts", "access-map.spec.ts", "csrf-origin.spec.ts"],
+    "paint": ["admin-visual.spec.ts"],
+    "map": [
+      {
+        "prefixes": ["src/lib/admin/"],
+        "specs": [
+          "golden-path.spec.ts",
+          "edit-save-failure.spec.ts",
+          "admin-shell-sidebar.spec.ts",
+          "admin-nav-layout.spec.ts",
+          "admin-referrer.spec.ts",
+          "admin-sheet.spec.ts",
+          "theme-kit.spec.ts"
+        ]
+      },
+      {
+        "prefixes": ["src/lib/admin-toolkit/"],
+        "specs": [
+          "custom-screen.spec.ts",
+          "theme-kit.spec.ts",
+          "theme-kit-contrast.spec.ts",
+          "vocabulary-admin.spec.ts"
+        ]
+      },
+      {
+        "prefixes": ["src/lib/render/"],
+        "specs": [
+          "site-visual.spec.ts",
+          "prose-flow-rhythm.spec.ts",
+          "prose-table.spec.ts",
+          "reading-surface-edge-cases.spec.ts",
+          "markdown-twin.spec.ts",
+          "islands.spec.ts",
+          "fragments.spec.ts",
+          "styleguide.spec.ts",
+          "public-theme-equivalence.spec.ts",
+          "preview.spec.ts"
+        ]
+      },
+      {
+        "prefixes": ["src/lib/public/"],
+        "specs": [
+          "site-visual.spec.ts",
+          "preview.spec.ts",
+          "public-preview-tokens.spec.ts",
+          "styleguide.spec.ts",
+          "islands.spec.ts",
+          "public-theme-equivalence.spec.ts"
+        ]
+      },
+      { "prefixes": ["src/lib/islands/"], "specs": ["islands.spec.ts", "styleguide.spec.ts"] },
+      {
+        "prefixes": ["src/lib/delivery/"],
+        "specs": [
+          "markdown-twin.spec.ts",
+          "tag-filter.spec.ts",
+          "nav-from-config.spec.ts",
+          "fragments.spec.ts",
+          "site-visual.spec.ts",
+          "preview.spec.ts",
+          "healthz.spec.ts"
+        ]
+      },
+      {
+        "prefixes": ["src/lib/media/", "src/lib/media-seed/"],
+        "specs": [
+          "media-figure.spec.ts",
+          "media-hero.spec.ts",
+          "media-insert.spec.ts",
+          "media-library.spec.ts",
+          "media-pass-b.spec.ts",
+          "media-pass-c.spec.ts",
+          "media-slice.spec.ts"
+        ]
+      },
+      { "prefixes": ["src/lib/auth-channel/"], "specs": ["members.spec.ts"] },
+      {
+        "prefixes": ["src/lib/design/"],
+        "specs": [
+          "theme-kit.spec.ts",
+          "theme-kit-contrast.spec.ts",
+          "admin-sheet.spec.ts",
+          "public-theme-equivalence.spec.ts",
+          "starter-outline-pin.spec.ts",
+          "styleguide.spec.ts"
+        ]
+      },
+      { "prefixes": ["src/lib/nav/"], "specs": ["admin-nav-layout.spec.ts", "nav-from-config.spec.ts"] },
+      { "prefixes": ["src/lib/guidance/"], "specs": ["tidy.spec.ts", "spellcheck.spec.ts"] },
+      {
+        "prefixes": ["src/lib/github/"],
+        "specs": [
+          "golden-path.spec.ts",
+          "edit-save-failure.spec.ts",
+          "publish-pending-word.spec.ts",
+          "container-fields.spec.ts"
+        ]
+      },
+      {
+        "prefixes": ["src/lib/content/"],
+        "specs": [
+          "golden-path.spec.ts",
+          "container-fields.spec.ts",
+          "vocabulary-admin.spec.ts",
+          "fragments.spec.ts",
+          "tag-filter.spec.ts",
+          "publish-pending-word.spec.ts",
+          "edit-save-failure.spec.ts"
+        ]
+      },
+      {
+        "prefixes": ["src/lib/sveltekit/"],
+        "specs": [
+          "golden-path.spec.ts",
+          "access-map.spec.ts",
+          "csrf-origin.spec.ts",
+          "custom-screen.spec.ts",
+          "edit-save-failure.spec.ts",
+          "publish-pending-word.spec.ts",
+          "healthz.spec.ts",
+          "admin-referrer.spec.ts",
+          "preview.spec.ts",
+          "capture-transport.spec.ts"
+        ]
+      },
+      { "prefixes": ["src/lib/diagnostics/"], "specs": ["healthz.spec.ts", "golden-path.spec.ts"] },
+      {
+        "prefixes": [
+          "examples/showcase/src/routes/(site)/",
+          "examples/showcase/src/chassis/",
+          "examples/showcase/src/theme/"
+        ],
+        "specs": [
+          "site-visual.spec.ts",
+          "masthead-responsive.spec.ts",
+          "nav-from-config.spec.ts",
+          "prose-flow-rhythm.spec.ts",
+          "prose-table.spec.ts",
+          "reading-surface-edge-cases.spec.ts",
+          "theme-toggle.spec.ts",
+          "tag-filter.spec.ts",
+          "styleguide.spec.ts",
+          "islands.spec.ts",
+          "markdown-twin.spec.ts",
+          "preview.spec.ts",
+          "public-preview-tokens.spec.ts",
+          "starter-outline-pin.spec.ts",
+          "public-theme-equivalence.spec.ts",
+          "fragments.spec.ts"
+        ]
+      },
+      {
+        "prefixes": ["examples/showcase/src/routes/admin/"],
+        "specs": [
+          "admin-visual.spec.ts",
+          "custom-screen.spec.ts",
+          "theme-kit.spec.ts",
+          "theme-kit-contrast.spec.ts",
+          "vocabulary-admin.spec.ts",
+          "golden-path.spec.ts"
+        ]
+      },
+      { "prefixes": ["examples/showcase/src/members/"], "specs": ["members.spec.ts"] },
+      {
+        "prefixes": ["examples/showcase/src/content/"],
+        "specs": [
+          "golden-path.spec.ts",
+          "site-visual.spec.ts",
+          "tag-filter.spec.ts",
+          "markdown-twin.spec.ts",
+          "preview.spec.ts",
+          "fragments.spec.ts"
+        ]
+      }
+    ]
+  },
+  "protected": [
+    "scripts/checks/gate-table.json",
+    "scripts/checks/gate-tier.mjs",
+    "scripts/test/component-rerun-triggers.mjs",
+    ".github/ci-green.json",
+    ".github/workflows/"
+  ]
+}

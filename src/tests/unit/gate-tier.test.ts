@@ -1,285 +1,559 @@
-import { describe, it, expect } from 'vitest';
+import { afterAll, describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import {
-  classifyPath,
-  resolveTier,
-  decideGate,
-  parseArgs,
+  CREATE_CAIRN_SITE_TRIGGERS,
+  PASS_CLASSES,
   TIER_GATES,
   TIER_ORDER,
+  componentPlan,
+  decideGate,
+  e2eSpecs,
+  loadContext,
+  matchesPattern,
+  parseArgs,
+  pathBuckets,
+  protectedVerdict,
+  selectChecks,
+  tableProblems,
 } from '../../../scripts/checks/gate-tier.mjs';
+import { CLOSE_COMPONENTS, PACKAGE_PREFIX, closeSteps, selectSteps } from '../../../scripts/checks/close-prebuilt.mjs';
+import { COMPONENT_RERUN_TRIGGERS } from '../../../scripts/test/component-rerun-triggers.mjs';
 import { loadDeletionList } from '../../../scripts/checks/arm-state.mjs';
+import { buildSteps } from '../../../scripts/checks/docs-gate.mjs';
+import { RERUN_TRIGGER_PATHS } from './_rerun-trigger-paths.js';
 
 const SCRIPT = resolve(process.cwd(), 'scripts/checks/gate-tier.mjs');
+const context = loadContext();
+const { table } = context;
 
-describe('classifyPath', () => {
-  it('classifies a docs page, a bare markdown file, and CHANGELOG.md as docs', () => {
-    expect(classifyPath('docs/reference/core.md')).toBe('docs');
-    expect(classifyPath('ROADMAP.md')).toBe('docs');
-    expect(classifyPath('CHANGELOG.md')).toBe('docs');
+/** The static check labels a path set selects. */
+const labelsFor = (...paths: string[]) => selectChecks(paths, context).labels;
+
+describe('the table', () => {
+  // One real path per pattern, so a pattern that matches nothing fails its own row. The dot
+  // patterns are literal prefixes or exact paths.
+  const rows: [bucket: string, pattern: string, path: string][] = [
+    ['docs', 'docs/', 'docs/internal/pass-gate-tiers.md'],
+    ['docs', '*.md', 'README.md'],
+    ['docs', '**/*.md', 'examples/showcase/README.md'],
+    ['docs', '.vale/', '.vale/tests/vale.ini'],
+    ['docs', '.vale.ini', '.vale.ini'],
+    ['docs', '.tellgrader.json', '.tellgrader.json'],
+    ['docs', 'skills/', 'skills/cairn-consult/SKILL.md'],
+    ['docs', 'claude/', 'claude/CLAUDE.md'],
+    ['scripts', 'scripts/', 'scripts/checks/check-idioms.mjs'],
+    ['scripts', 'src/tests/', 'src/tests/unit/gate-tier.test.ts'],
+    ['scripts', '.github/', '.github/workflows/test.yml'],
+    ['scripts', 'eslint.config.js', 'eslint.config.js'],
+    ['scripts', 'vitest.config.ts', 'vitest.config.ts'],
+    ['scripts', 'wrangler.test.jsonc', 'wrangler.test.jsonc'],
+    ['showcase', 'examples/showcase/', 'examples/showcase/playwright.config.ts'],
+    ['showcase', 'templates/', 'templates/waymark/package.json'],
+    ['showcase', 'packages/create-cairn-site/', 'packages/create-cairn-site/package.json'],
+    ['engine', 'src/lib/', 'src/lib/log/index.ts'],
+    ['engine', 'scripts/build/', 'scripts/build/build-admin-css.mjs'],
+    ['engine', 'packages/cairn-cms-dev/', 'packages/cairn-cms-dev/package.json'],
+    ['engine', 'migrations/', 'migrations/0001_roles.sql'],
+    ['engine', 'migrations-channel/', 'migrations-channel/0000_channel.sql'],
+    ['engine', 'package.json', 'package.json'],
+    ['engine', 'package-lock.json', 'package-lock.json'],
+    ['engine', 'svelte.config.js', 'svelte.config.js'],
+    ['engine', 'tsconfig.json', 'tsconfig.json'],
+    ['exportSurface', 'src/lib/**/index.ts', 'src/lib/log/index.ts'],
+    ['exportSurface', 'package.json', 'package.json'],
+    ['exportSurface', 'scripts/checks/check-surface-leaks.json', 'scripts/checks/check-surface-leaks.json'],
+    ['exportSurface', 'scripts/checks/check-surface-reexports.json', 'scripts/checks/check-surface-reexports.json'],
+    ['exportSurface', 'scripts/checks/check-self-use-allowlist.json', 'scripts/checks/check-self-use-allowlist.json'],
+    ['exportSurface', 'scripts/checks/check-symbols-allowlist.mjs', 'scripts/checks/check-symbols-allowlist.mjs'],
+    ['exportSurface', 'docs/internal/api-surface.md', 'docs/internal/api-surface.md'],
+    ['exportSurface', 'docs/internal/option-map.json', 'docs/internal/option-map.json'],
+    ['exportSurface', 'skills/', 'skills/cairn-consult/SKILL.md'],
+    ['exportSurface', 'claude/', 'claude/CLAUDE.md'],
+  ];
+
+  it('names a row for every bucket pattern', () => {
+    for (const [bucket, patterns] of Object.entries(table.buckets)) {
+      for (const pattern of patterns) {
+        expect(rows.some((row) => row[0] === bucket && row[1] === pattern), `${bucket} ${pattern}`).toBe(true);
+      }
+    }
+    expect(rows.length).toBe(Object.values(table.buckets).flat().length);
   });
 
-  it('classifies a check script and a test file as scripts', () => {
-    expect(classifyPath('scripts/checks/check-facts.mjs')).toBe('scripts');
-    expect(classifyPath('src/tests/unit/gate-tier.test.ts')).toBe('scripts');
-    expect(classifyPath('examples/showcase/e2e/admin-visual.spec.ts')).toBe('scripts');
+  for (const [bucket, pattern, path] of rows) {
+    it(`${bucket}: ${pattern} matches the real path ${path}`, () => {
+      expect(existsSync(path)).toBe(true);
+      expect(matchesPattern(path, pattern)).toBe(true);
+      expect(pathBuckets(path, context).has(bucket)).toBe(true);
+    });
+  }
+
+  it('writes every dot pattern as a literal prefix or path, never a glob', () => {
+    expect(tableProblems(table)).toEqual([]);
+    const bad = structuredClone(table);
+    bad.buckets.docs = ['**/.vale/**'];
+    expect(tableProblems(bad)).toHaveLength(1);
   });
 
-  it('classifies a create-cairn-site workspace file as scripts, the Node-only tier that runs its own test suite', () => {
-    expect(classifyPath('packages/create-cairn-site/src/prompts.mjs')).toBe('scripts');
-    expect(classifyPath('packages/create-cairn-site/src/prompts.test.mjs')).toBe('scripts');
+  it('pins the no-check list to the paths no check and no test reads', () => {
+    expect(table.noCheck).toEqual(['.gitattributes', 'knip.jsonc']);
   });
 
-  it('classifies src/lib TypeScript outside components as engine', () => {
-    expect(classifyPath('src/lib/log/index.ts')).toBe('engine');
-  });
-
-  it('classifies a src/lib component and the admin stylesheet as admin-visual', () => {
-    expect(classifyPath('src/lib/admin/EditPage.svelte')).toBe('admin-visual');
-    expect(classifyPath('src/lib/admin/cairn-admin.css')).toBe('admin-visual');
-  });
-
-  it('classifies a shared admin-toolkit component as admin-visual', () => {
-    expect(classifyPath('src/lib/admin-toolkit/OfficeList.svelte')).toBe('admin-visual');
-  });
-
-  it('matches each rule by path prefix only, not by a substring anywhere in the path', () => {
-    // "admin-toolkit" contains "tool" but classifies on its own admin-visual prefix; "docs/tool/"
-    // sits under docs/ so stays docs, never the standalone tool tier; "tooling/" is not "tool/"
-    // so classifyPath finds no match and the caller-side unclassified default (full) applies.
-    expect(classifyPath('src/lib/admin-toolkit/x.ts')).toBe('admin-visual');
-    expect(classifyPath('docs/tool/x.md')).toBe('docs');
-    expect(classifyPath('tooling/x.go')).toBeNull();
-    expect(decideGate(['tooling/x.go']).tier).toBe('full');
-  });
-
-  it('classifies the render seam, theme/chassis CSS, a public route, and a snapshot as full', () => {
-    expect(classifyPath('src/lib/render/markdown.ts')).toBe('full');
-    expect(classifyPath('src/lib/public/PreviewBanner.svelte')).toBe('full');
-    expect(classifyPath('examples/showcase/src/chassis/tokens.css')).toBe('full');
-    expect(classifyPath('examples/showcase/src/theme/site.css')).toBe('full');
-    expect(classifyPath('examples/showcase/src/routes/(site)/archive/+page.svelte')).toBe('full');
-    expect(classifyPath('examples/showcase/e2e/site-visual.spec.ts-snapshots/home-320.png')).toBe('full');
-  });
-
-  it('returns null for a path none of the five triggers names, including a showcase src/lib path (the directory does not exist; a public-page component there would fall to the caller-side full default)', () => {
-    expect(classifyPath('package.json')).toBeNull();
-    expect(classifyPath('.github/workflows/test.yml')).toBeNull();
-    expect(classifyPath('examples/showcase/src/lib/PostCard.svelte')).toBeNull();
-    expect(classifyPath('templates/waymark/src/hooks.server.ts')).toBeNull();
+  it('lists the protected paths the gate rules name', () => {
+    expect(table.protected).toEqual([
+      'scripts/checks/gate-table.json',
+      'scripts/checks/gate-tier.mjs',
+      'scripts/test/component-rerun-triggers.mjs',
+      '.github/ci-green.json',
+      '.github/workflows/',
+    ]);
   });
 });
 
-describe('resolveTier', () => {
-  it('resolves a docs-only diff to docs', () => {
-    expect(resolveTier(['docs/reference/render.md', 'CHANGELOG.md'])).toEqual({
-      tier: 'docs',
-      decidingPaths: ['docs/reference/render.md', 'CHANGELOG.md'],
-    });
+describe('static check selection', () => {
+  it('selects every static check for a path no bucket places', () => {
+    const picked = selectChecks(['new-root.config.js'], context);
+    expect(picked.all).toBe(true);
+    expect(picked.labels).toEqual(context.labels);
+    expect(decideGate(['new-root.config.js']).gate.startsWith('npm run package && npm run check:close && ')).toBe(true);
   });
 
-  it('resolves a scripts-only diff to scripts', () => {
-    expect(resolveTier(['scripts/checks/check-idioms.mjs'])).toEqual({
-      tier: 'scripts',
-      decidingPaths: ['scripts/checks/check-idioms.mjs'],
-    });
+  it('selects no check for a path on the no-check list', () => {
+    expect(labelsFor('.gitattributes', 'knip.jsonc')).toEqual([]);
+    expect(decideGate(['knip.jsonc']).gate).not.toContain('check:close');
   });
 
-  it('resolves an engine-only diff to engine', () => {
-    expect(resolveTier(['src/lib/log/index.ts'])).toEqual({
-      tier: 'engine',
-      decidingPaths: ['src/lib/log/index.ts'],
-    });
+  it('leaves no close component unclassified, so a new one is placed on purpose', () => {
+    const unlisted = context.closeLabels.filter(
+      (label) => !(label in table.checks) && !context.packagePrefixed.has(label),
+    );
+    expect(unlisted).toEqual([]);
+    for (const label of Object.keys(table.checks)) expect(context.labels, label).toContain(label);
   });
 
-  it('resolves an admin-component-only diff to admin-visual', () => {
-    expect(resolveTier(['src/lib/admin/EditPage.svelte'])).toEqual({
-      tier: 'admin-visual',
-      decidingPaths: ['src/lib/admin/EditPage.svelte'],
-    });
+  it('spells a package-building close component as an npm run script, never as a literal command', () => {
+    // The classifier reads the package prefix off a script's body, so a literal component that
+    // carries the prefix would run without the engine bucket and still pass the guard above.
+    const literal = CLOSE_COMPONENTS.filter((component) => !/^npm run \S+$/.test(component));
+    expect(literal.length).toBeGreaterThan(0);
+    for (const component of literal) expect(component.startsWith(PACKAGE_PREFIX), component).toBe(false);
   });
 
-  it('resolves a render-seam-only diff to full', () => {
-    expect(resolveTier(['src/lib/render/markdown.ts'])).toEqual({
-      tier: 'full',
-      decidingPaths: ['src/lib/render/markdown.ts'],
-    });
+  it('gives every package-building check the engine bucket unless the table lists it', () => {
+    const inherited = [...context.packagePrefixed].filter((label) => !(label in table.checks));
+    expect(inherited.length).toBeGreaterThan(0);
+    for (const label of inherited) expect(labelsFor('src/lib/foo/bar.ts'), label).toContain(label);
   });
 
-  it('resolves a mixed diff to the highest tier present, naming only the deciding paths', () => {
-    const result = resolveTier([
-      'docs/reference/README.md',
-      'src/lib/log/index.ts',
-      'src/lib/admin/EditPage.svelte',
+  // The six checks whose input is the shape of the built export surface.
+  const distSurface = [
+    'check:package',
+    'check:surface',
+    'check:self-use',
+    'check:audit-pack',
+    'check:consumers',
+    'check:public-skill',
+  ];
+
+  it('pins the dist-surface checks', () => {
+    const listed = Object.keys(table.checks).filter(
+      (label) => context.packagePrefixed.has(label) && !table.checks[label].includes('engine'),
+    );
+    expect(listed.sort()).toEqual([...distSurface].sort());
+  });
+
+  it('selects each dist-surface check for an index.ts change and not for another src/lib file', () => {
+    const forIndex = labelsFor('src/lib/foo/index.ts');
+    const forOther = labelsFor('src/lib/foo/bar.ts');
+    for (const label of distSurface) {
+      expect(forIndex, label).toContain(label);
+      expect(forOther, label).not.toContain(label);
+    }
+  });
+
+  it('leaves check:surface out for a docs page, since it reads the built types and the golden file only', () => {
+    expect(labelsFor('docs/reference/core.md', 'docs/internal/facts/admin.md')).not.toContain('check:surface');
+    expect(labelsFor('docs/internal/api-surface.md')).toContain('check:surface');
+  });
+
+  it('keeps the option and reference checks on the engine bucket, so a non-index file selects them', () => {
+    const forOther = labelsFor('src/lib/content/types.ts');
+    for (const label of ['check:options', 'check:reference', 'check:reference:signatures']) {
+      expect(forOther, label).toContain(label);
+    }
+  });
+
+  it('treats a package.json exports target that is not an index.ts as the export surface too', () => {
+    expect(labelsFor('src/lib/render/authoring.ts')).toContain('check:reference');
+  });
+
+  it('selects the docs checks and tellgrader for a docs page, and no package-building engine check', () => {
+    const picked = labelsFor('docs/reference/core.md');
+    expect(picked).toEqual(expect.arrayContaining(['check:vale', 'check:facts', 'check:tellgrader']));
+    expect(picked).not.toContain('check:audit-pack');
+    expect(decideGate(['docs/reference/core.md']).gate).toContain('node scripts/checks/check-tellgrader.mjs');
+  });
+
+  it('selects the Cairn rule-case vale test for a .vale or .vale.ini change, with the docs gate\'s own command', () => {
+    for (const path of ['.vale/styles/Cairn/Headings.yml', '.vale.ini']) {
+      expect(labelsFor(path), path).toContain('check:vale-rules');
+    }
+    const step = buildSteps({ page: null, brief: null }).find((entry) => entry.label === 'check:vale-rules');
+    expect(table.extraCommands['check:vale-rules']).toBe([step?.command, ...(step?.args ?? [])].join(' '));
+  });
+
+  it('selects the checks a script file reaches through its imports, and every check for a file none reach', () => {
+    expect(labelsFor('scripts/checks/check-surface.mjs')).toContain('check:surface');
+    expect(labelsFor('scripts/checks/reference-coverage.mjs')).toEqual(
+      expect.arrayContaining(['check:reference', 'check:surface']),
+    );
+    expect(selectChecks(['scripts/checks/orphaned-new-script.mjs'], context).all).toBe(true);
+    expect(selectChecks(['scripts/ci/retries-notice.mjs'], context).all).toBe(false);
+  });
+
+  it('hands the runner labels it accepts', () => {
+    const scripts = JSON.parse(readFileSync('package.json', 'utf8')).scripts;
+    const steps = closeSteps(scripts);
+    const picked = labelsFor('src/lib/foo/bar.ts', 'examples/showcase/package.json').filter((label) =>
+      context.closeLabels.includes(label),
+    );
+    expect(() => selectSteps(steps, picked)).not.toThrow();
+    expect(steps.map((step) => step.label)).toEqual(context.closeLabels);
+    expect(CLOSE_COMPONENTS.length).toBe(context.closeLabels.length);
+  });
+
+  it('quotes a label that holds spaces', () => {
+    expect(decideGate(['examples/showcase/package.json']).gate).toContain("'npm --prefix examples/showcase run check'");
+  });
+});
+
+describe('the component leg', () => {
+  const COMPONENT_FULL = 'npm run test:component -- --no-file-parallelism';
+  const plan = (paths: string[], deleted: string[] = []) => componentPlan(paths, deleted, context);
+
+  it('skips for a docs-only diff and says why', () => {
+    expect(plan(['README.md', 'docs/reference/core.md']).mode).toBe('skip');
+    expect(plan(['README.md', 'knip.jsonc']).mode).toBe('skip');
+    expect(decideGate(['README.md']).gate).not.toContain('test:component');
+    expect(decideGate(['README.md']).notes.join('\n')).toContain('component project skipped');
+  });
+
+  it('runs a path in docs and another bucket through the ordinary rule', () => {
+    expect(plan(['skills/cairn-consult/SKILL.md']).mode).not.toBe('skip');
+  });
+
+  it('runs the whole project when the selection is empty or was not computed', () => {
+    expect(plan(['src/lib/cloudflare/turnstile.ts']).mode).toBe('select');
+    for (const selected of [[], null, undefined]) {
+      const gate = decideGate(['src/lib/cloudflare/turnstile.ts'], { selected }).gate;
+      expect(gate).toContain(` && ${COMPONENT_FULL}`);
+      expect(gate).not.toContain('CAIRN_RELATED_RUN');
+    }
+  });
+
+  it('runs the whole project for a diff with nothing under src/ to select from', () => {
+    expect(plan(['scripts/checks/check-idioms.mjs']).mode).toBe('full');
+  });
+
+  it('runs the selected files, with the trigger switch, when the selection is not empty', () => {
+    const gate = decideGate(['src/lib/content/ids.ts'], { selected: ['src/tests/component/EditPage.test.ts'] }).gate;
+    expect(gate).toContain(`CAIRN_RELATED_RUN=1 ${COMPONENT_FULL} src/tests/component/EditPage.test.ts`);
+  });
+
+  it('runs the whole project when a path was deleted or renamed away under src/, and never selects from it', () => {
+    const deleted = ['src/lib/log/old.ts'];
+    const decided = plan(['src/lib/log/old.ts', 'src/lib/log/index.ts'], deleted);
+    expect(decided.mode).toBe('full');
+    expect(decided.reach).toEqual([]);
+    const gate = decideGate(['src/lib/log/old.ts'], { deleted, selected: ['src/tests/component/x.test.ts'] }).gate;
+    expect(gate).toContain(` && ${COMPONENT_FULL}`);
+    expect(gate).not.toContain('x.test.ts');
+  });
+
+  it('keeps a deleted path out of the selection inputs for a mixed diff without a src/ delete', () => {
+    expect(plan(['src/lib/log/index.ts', 'scripts/old.mjs'], ['scripts/old.mjs']).reach).toEqual(['src/lib/log/index.ts']);
+  });
+
+  it('names a real path for every rerun trigger and runs the whole project for each', () => {
+    for (const glob of COMPONENT_RERUN_TRIGGERS) {
+      expect(RERUN_TRIGGER_PATHS.some((path) => matchesPattern(path, glob)), glob).toBe(true);
+    }
+    for (const path of RERUN_TRIGGER_PATHS) {
+      const decided = plan(['src/lib/log/index.ts', path]);
+      expect(decided.mode, path).toBe('full');
+      expect(decided.reason, path).toContain(path);
+    }
+  });
+
+  it('keeps node-only test trees out of the selection inputs', () => {
+    expect(plan(['src/tests/unit/gate-tier.test.ts', 'src/lib/log/index.ts']).reach).toEqual(['src/lib/log/index.ts']);
+  });
+});
+
+describe('the create-cairn-site leg', () => {
+  const SUITE = 'npm test -w packages/create-cairn-site';
+  // One path per trigger entry.
+  const scaffolding = [
+    'packages/create-cairn-site/src/prompts.mjs',
+    'examples/showcase/package.json',
+    'scripts/build/emit-template.mjs',
+    'package.json',
+  ];
+
+  it('names a row for every trigger', () => {
+    for (const glob of CREATE_CAIRN_SITE_TRIGGERS) {
+      expect(scaffolding.some((path) => matchesPattern(path, glob)), glob).toBe(true);
+    }
+  });
+
+  for (const path of scaffolding) {
+    it(`runs the suite when ${path} changes`, () => {
+      expect(decideGate([path]).gate).toContain(` && ${SUITE}`);
+    });
+  }
+
+  it('leaves the suite out for a library path', () => {
+    expect(decideGate(['src/lib/foo/bar.ts']).gate).not.toContain(SUITE);
+  });
+});
+
+describe('the e2e leg', () => {
+  const AUTH = ['access-map.spec.ts', 'csrf-origin.spec.ts', 'golden-path.spec.ts'];
+  const specs = (paths: string[], options: { passClass?: string | null; paint?: 'yes' | 'no' } = {}) =>
+    e2eSpecs(paths, options, context);
+
+  it('reaches every showcase spec from some map entry', () => {
+    const named = new Set([
+      ...table.e2e.map.flatMap((entry) => entry.specs),
+      ...table.e2e.floor.specs,
+      ...table.e2e.unmappedLib,
+      ...table.e2e.authData,
+      ...table.e2e.paint,
     ]);
-    expect(result.tier).toBe('admin-visual');
-    expect(result.decidingPaths).toEqual(['src/lib/admin/EditPage.svelte']);
+    const onDisk = readdirSync('examples/showcase/e2e').filter((name) => name.endsWith('.spec.ts'));
+    expect(onDisk.length).toBeGreaterThan(40);
+    expect(onDisk.filter((name) => !named.has(name))).toEqual([]);
+    expect([...named].filter((name) => !onDisk.includes(name))).toEqual([]);
   });
 
-  it('treats an unclassified path as full in the overall resolution', () => {
-    expect(resolveTier(['package.json'])).toEqual({ tier: 'full', decidingPaths: ['package.json'] });
+  it('selects exactly the three auth specs for an unmapped library path', () => {
+    expect(specs(['src/lib/cloudflare/turnstile.ts'])).toEqual({ all: false, specs: AUTH });
   });
 
-  it('treats a non-tool unclassified path as full even alongside tool/** in the diff (resolveTier itself is unaware of the tool tier; decideGate is the one that splits tool/** off first)', () => {
-    expect(resolveTier(['package.json', 'tool/main.go'])).toEqual({
-      tier: 'full',
-      decidingPaths: ['package.json', 'tool/main.go'],
+  it('adds the admin-visual spec for an admin component, through the floor', () => {
+    expect(specs(['src/lib/admin/CairnAdminShell.svelte']).specs).toContain('admin-visual.spec.ts');
+    expect(specs(['src/lib/admin-toolkit/AdminTable.svelte']).specs).toContain('admin-visual.spec.ts');
+  });
+
+  it('adds the admin-visual spec under --paint yes and not otherwise', () => {
+    expect(specs(['README.md'], { paint: 'yes' }).specs).toEqual(['admin-visual.spec.ts']);
+    expect(specs(['README.md']).specs).toEqual([]);
+  });
+
+  it('adds the three auth specs under auth-data and changes nothing under the other classes', () => {
+    expect(specs(['README.md'], { passClass: 'auth-data' }).specs).toEqual(AUTH);
+    const plain = decideGate(['src/lib/media/index.ts']).gate;
+    for (const passClass of PASS_CLASSES.filter((name) => name !== 'auth-data')) {
+      expect(decideGate(['src/lib/media/index.ts'], { passClass }).gate, passClass).toBe(plain);
+    }
+    expect(decideGate(['src/lib/media/index.ts'], { passClass: 'auth-data' }).gate).not.toBe(plain);
+  });
+
+  it('accepts each pass class and refuses an unknown one', () => {
+    expect(PASS_CLASSES).toEqual(['auth-data', 'engine-logic', 'paint', 'sweep', 'docs', 'tool']);
+    for (const passClass of PASS_CLASSES) expect(() => decideGate(['README.md'], { passClass })).not.toThrow();
+    expect(() => decideGate(['README.md'], { passClass: 'nope' })).toThrow(/unknown --class/);
+  });
+
+  it('selects the specs a mapped directory names, and no auth default beside them', () => {
+    expect(specs(['src/lib/media/upload.ts']).specs).toContain('media-slice.spec.ts');
+    expect(specs(['src/lib/media/upload.ts']).specs).not.toContain('csrf-origin.spec.ts');
+  });
+
+  it('selects a changed spec itself, its snapshots included, and the whole suite for a helper or fixture', () => {
+    expect(specs(['examples/showcase/e2e/tidy.spec.ts']).specs).toEqual(['tidy.spec.ts']);
+    expect(specs(['examples/showcase/e2e/admin-visual.spec.ts-snapshots/x.png']).specs).toEqual(['admin-visual.spec.ts']);
+    expect(specs(['examples/showcase/e2e/editor-helpers.ts']).all).toBe(true);
+  });
+
+  it('runs the whole suite for a showcase config file or a path no bucket places', () => {
+    expect(specs(['examples/showcase/playwright.config.ts']).all).toBe(true);
+    expect(specs(['new-root.config.js']).all).toBe(true);
+  });
+
+  it('selects no spec for docs, tests, and scripts', () => {
+    expect(specs(['docs/reference/core.md', 'src/tests/unit/gate-tier.test.ts', 'scripts/checks/check-idioms.mjs'])).toEqual({
+      all: false,
+      specs: [],
     });
+    expect(decideGate(['README.md']).gate).not.toContain('test:e2e');
   });
 
-  it('treats an unclassified showcase src/lib path as full too, with no dedicated rule for it', () => {
-    expect(resolveTier(['examples/showcase/src/lib/PostCard.svelte'])).toEqual({
-      tier: 'full',
-      decidingPaths: ['examples/showcase/src/lib/PostCard.svelte'],
-    });
+  it('sets the port and the no-listener guard ahead of every emitted e2e leg', () => {
+    const gates = [
+      decideGate(['src/lib/cloudflare/turnstile.ts']).gate,
+      decideGate(['README.md'], { paint: 'yes' }).gate,
+      decideGate(['examples/showcase/playwright.config.ts']).gate,
+      decideGate(['README.md'], { passClass: 'auth-data' }).gate,
+    ];
+    for (const gate of gates) {
+      const leg = gate.split(' && ').findIndex((part) => part.startsWith('export E2E_PORT=4392'));
+      const parts = gate.split(' && ');
+      expect(leg, gate).toBeGreaterThan(-1);
+      expect(parts[leg + 1]).toBe("! ss -Htln 'sport = :4392' | grep -q .");
+      expect(parts[leg + 2]).toContain('test:e2e -- --retries=0');
+    }
+  });
+
+  it('carries the visual-test invert when site-visual is selected, and only then', () => {
+    const invert = '--grep-invert "site home|archive page 2"';
+    expect(decideGate(['examples/showcase/e2e/site-visual.spec.ts']).gate).toContain(invert);
+    expect(decideGate(['examples/showcase/playwright.config.ts']).gate).toContain(invert);
+    expect(decideGate(['src/lib/cloudflare/turnstile.ts']).gate).not.toContain('--grep-invert');
   });
 });
 
 describe('decideGate', () => {
-  it('reports the computed tier and its gate string with no floor or pin', () => {
-    const decision = decideGate(['scripts/checks/check-idioms.mjs']);
-    expect(decision).toEqual({
-      tier: 'scripts',
-      reason: 'computed',
-      decidingPaths: ['scripts/checks/check-idioms.mjs'],
-      gate: TIER_GATES.scripts,
-    });
+  it('orders the legs: package, static checks, node projects, component, scaffold suite, e2e', () => {
+    const gate = decideGate(['examples/showcase/src/routes/(site)/+page.svelte'], { selected: ['a.test.ts'] }).gate;
+    const marks = [
+      'npm run package',
+      'npm run check:close',
+      'npm run test:node-projects',
+      'npm run test:component',
+      'npm test -w packages/create-cairn-site',
+      'export E2E_PORT=4392',
+    ].map((mark) => gate.indexOf(mark));
+    expect(marks.every((at) => at >= 0)).toBe(true);
+    expect([...marks].sort((a, b) => a - b)).toEqual(marks);
+    expect(gate.startsWith('npm run package && ')).toBe(true);
   });
 
-  it('floors a docs diff at admin-visual when paint is yes', () => {
-    const decision = decideGate(['docs/reference/README.md'], { paint: 'yes' });
-    expect(decision.tier).toBe('admin-visual');
-    expect(decision.reason).toBe('paint floor');
-    expect(decision.gate).toBe(TIER_GATES['admin-visual']);
+  it('runs the node projects even for a docs-only diff', () => {
+    expect(decideGate(['README.md']).gate).toContain('npm run test:node-projects');
   });
 
-  it('does not lower an already-higher tier when paint is yes', () => {
-    const decision = decideGate(['src/lib/render/markdown.ts'], { paint: 'yes' });
-    expect(decision.tier).toBe('full');
-    expect(decision.reason).toBe('computed');
-  });
-
-  it('overrides the computed tier with --pin and reports reason "pin"', () => {
-    const decision = decideGate(['docs/reference/README.md'], { pin: 'full' });
-    expect(decision).toEqual({ tier: 'full', reason: 'pin', decidingPaths: [], gate: TIER_GATES.full });
-  });
-
-  it('pin wins even when it names a lower tier than the diff would compute', () => {
-    const decision = decideGate(['src/lib/render/markdown.ts'], { pin: 'scripts' });
-    expect(decision.tier).toBe('scripts');
-    expect(decision.reason).toBe('pin');
-  });
-
-  it('throws on an unknown --pin tier', () => {
-    expect(() => decideGate(['docs/reference/README.md'], { pin: 'nope' })).toThrow(/unknown --pin tier/);
-  });
-
-  it('throws on a prototype-chain pin like "toString", never returning it as a gate', () => {
-    expect(() => decideGate(['docs/reference/README.md'], { pin: 'toString' })).toThrow(/unknown --pin tier/);
-  });
-
-  it('throws on a prototype-chain pin like "constructor"', () => {
-    expect(() => decideGate(['docs/reference/README.md'], { pin: 'constructor' })).toThrow(/unknown --pin tier/);
-  });
-
-  it('does not resolve to the tool tier when both npmPaths and toolPaths are empty', () => {
-    // Pins the prior (pre-fix) behavior for an empty path list: resolveTier([]) has no path to
-    // rank, so TIER_ORDER[Math.max(...[])] is undefined and TIER_GATES[undefined] is undefined.
-    const decision = decideGate([]);
-    expect(decision).toEqual({ tier: undefined, reason: 'computed', decidingPaths: [], gate: undefined });
-  });
-
-  it('resolves a tool-only diff to the tool tier and its standalone gate string', () => {
-    const decision = decideGate(['tool/internal/spine/chapter.go']);
-    expect(decision).toEqual({
+  it('resolves a tool-only diff to the tool gate and a mixed diff to the targeted gate then the tool gate', () => {
+    expect(decideGate(['tool/internal/spine/chapter.go'])).toMatchObject({
       tier: 'tool',
-      reason: 'computed',
-      decidingPaths: ['tool/internal/spine/chapter.go'],
       gate: 'make -C tool check',
     });
+    const mixed = decideGate(['src/lib/log/index.ts', 'tool/main.go']);
+    expect(mixed.tier).toBe('targeted+tool');
+    expect(mixed.gate.startsWith('npm run package && ')).toBe(true);
+    expect(mixed.gate.endsWith(' && make -C tool check')).toBe(true);
   });
 
-  it('counts a tool/**/*.md path as tool, not docs', () => {
-    const decision = decideGate(['tool/docs/getting-started.md']);
-    expect(decision.tier).toBe('tool');
-    expect(decision.gate).toBe('make -C tool check');
+  it('refuses an empty path list rather than choosing a gate', () => {
+    expect(() => decideGate([])).toThrow(/no changed paths/);
   });
 
-  it('resolves a mixed tool and npm diff to "<npm tier>+tool" and runs both gate strings', () => {
-    const decision = decideGate(['src/lib/log/index.ts', 'tool/internal/spine/chapter.go']);
-    expect(decision.tier).toBe('engine+tool');
-    expect(decision.reason).toBe('computed');
-    expect(decision.decidingPaths).toEqual(['src/lib/log/index.ts', 'tool/internal/spine/chapter.go']);
-    expect(decision.gate).toBe(`${TIER_GATES.engine} && make -C tool check`);
+  it('routes tool/**/*.md to the tool gate, not the docs checks', () => {
+    expect(decideGate(['tool/docs/getting-started.md'])).toMatchObject({ tier: 'tool', gate: 'make -C tool check' });
   });
 
-  it('applies the paint floor to the npm half of a mixed diff, then still appends the tool gate', () => {
-    const decision = decideGate(['scripts/checks/check-idioms.mjs', 'tool/main.go'], { paint: 'yes' });
-    expect(decision.tier).toBe('admin-visual+tool');
-    expect(decision.reason).toBe('paint floor');
-    expect(decision.gate).toBe(`${TIER_GATES['admin-visual']} && make -C tool check`);
+  it('matches by prefix, never by substring', () => {
+    // "tooling/" and "docs/tool/" hold "tool/" but are not under it; "administrator/" holds "admin".
+    expect(decideGate(['tooling/x.go']).tier).toBe('targeted');
+    expect(decideGate(['docs/tool/x.md']).gate).not.toContain('make -C tool check');
+    expect(e2eSpecs(['src/lib/administrator/x.ts'], {}, context).specs).not.toContain('admin-visual.spec.ts');
   });
 
-  it('does not apply the paint floor to a tool-only diff, since paint is an npm-admin concept', () => {
-    const decision = decideGate(['tool/main.go'], { paint: 'yes' });
-    expect(decision.tier).toBe('tool');
-    expect(decision.reason).toBe('computed');
-    expect(decision.gate).toBe('make -C tool check');
+  it('leaves the create-cairn-site suite out for a templates/ path alone, which the bake writes but never reads', () => {
+    expect(decideGate(['templates/waymark/src/hooks.server.ts']).gate).not.toContain('npm test -w packages/create-cairn-site');
   });
 
-  it('accepts --pin tool and prints its gate string', () => {
-    const decision = decideGate(['docs/reference/README.md'], { pin: 'tool' });
-    expect(decision).toEqual({ tier: 'tool', reason: 'pin', decidingPaths: [], gate: 'make -C tool check' });
+  it('classifies the harvest deletion diff as a docs diff with no component or e2e leg', () => {
+    const { deleted } = loadDeletionList(resolve(process.cwd()));
+    expect(deleted.length).toBeGreaterThan(0);
+    const gate = decideGate(deleted, { deleted }).gate;
+    expect(gate).not.toContain('test:component');
+    expect(gate).not.toContain('test:e2e');
+  });
+
+  it('adds neither ciWait nor the full local gate for a protected-path range', () => {
+    const gate = decideGate(table.protected.filter((path) => !path.endsWith('/'))).gate;
+    expect(gate).not.toContain('ciWait');
+    expect(gate).not.toContain(TIER_GATES.full);
+    expect(gate).not.toContain('test:e2e');
+  });
+});
+
+describe('--pin', () => {
+  it('prints each old tier string unchanged, whatever the diff', () => {
+    expect(TIER_ORDER).toEqual(['docs', 'scripts', 'engine', 'admin-visual', 'full']);
+    for (const tier of [...TIER_ORDER, 'tool']) {
+      expect(decideGate(['src/lib/log/index.ts'], { pin: tier })).toEqual({
+        tier,
+        reason: 'pin',
+        decidingPaths: [],
+        gate: TIER_GATES[tier],
+        notes: [],
+      });
+    }
+  });
+
+  it('beats the pass class and the paint flag', () => {
+    expect(decideGate(['README.md'], { pin: 'docs', paint: 'yes', passClass: 'auth-data' }).gate).toBe(TIER_GATES.docs);
+  });
+
+  it('throws on an unknown or prototype-chain pin, never returning it as a gate', () => {
+    for (const pin of ['nope', 'toString', 'constructor']) {
+      expect(() => decideGate(['README.md'], { pin }), pin).toThrow(/unknown --pin tier/);
+    }
+  });
+
+  it('keeps the engine string byte-identical to the one the runner has always run', () => {
+    expect(TIER_GATES.engine).toBe(
+      'npm run check:docs-gate && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site',
+    );
   });
 });
 
 describe('parseArgs', () => {
-  it('parses --range alone, defaulting paint to no and pin to null', () => {
-    expect(parseArgs(['--range', 'abc..HEAD'])).toEqual({ range: 'abc..HEAD', paint: 'no', pin: null });
-  });
-
-  it('parses --paint and --pin alongside --range', () => {
-    expect(parseArgs(['--range', 'abc..HEAD', '--paint', 'yes', '--pin', 'full'])).toEqual({
+  it('defaults paint to no and everything else to absent', () => {
+    expect(parseArgs(['--range', 'abc..HEAD'])).toEqual({
       range: 'abc..HEAD',
-      paint: 'yes',
-      pin: 'full',
+      paint: 'no',
+      pin: null,
+      passClass: null,
+      protectedMode: false,
     });
   });
 
+  it('parses every flag', () => {
+    expect(
+      parseArgs(['--range', 'abc..HEAD', '--paint', 'yes', '--pin', 'full', '--class', 'paint', '--protected']),
+    ).toEqual({ range: 'abc..HEAD', paint: 'yes', pin: 'full', passClass: 'paint', protectedMode: true });
+  });
+
+  it('reads a --class with no value as an empty, invalid class', () => {
+    expect(parseArgs(['--range', 'a..b', '--class']).passClass).toBe('');
+  });
+
   it('returns a null range when --range is absent', () => {
-    expect(parseArgs([])).toEqual({ range: null, paint: 'no', pin: null });
+    expect(parseArgs([]).range).toBeNull();
   });
 });
 
-describe('TIER_ORDER and TIER_GATES', () => {
-  it('names all five tiers, ascending severity, each with its own gate string', () => {
-    expect(TIER_ORDER).toEqual(['docs', 'scripts', 'engine', 'admin-visual', 'full']);
+describe('TIER_GATES', () => {
+  it('names the five npm tiers and the tool tier, each with its own gate string', () => {
     for (const tier of TIER_ORDER) expect(typeof TIER_GATES[tier]).toBe('string');
+    expect(TIER_GATES.tool).toBe('make -C tool check');
   });
 
   it('scripts and engine share the identical gate string', () => {
     expect(TIER_GATES.scripts).toBe(TIER_GATES.engine);
   });
 
-  it('the scripts gate runs the create-cairn-site workspace test suite root `npm test` never reaches', () => {
-    expect(TIER_GATES.scripts).toContain('npm test -w packages/create-cairn-site');
-  });
-
   it('every npm tier above docs is a strict superset of the npm tier below it', () => {
     expect(TIER_GATES.scripts.startsWith(TIER_GATES.docs)).toBe(true);
-    expect(TIER_GATES.scripts.length).toBeGreaterThan(TIER_GATES.docs.length);
     expect(TIER_GATES['admin-visual'].startsWith(TIER_GATES.scripts)).toBe(true);
-    expect(TIER_GATES['admin-visual'].length).toBeGreaterThan(TIER_GATES.scripts.length);
     expect(TIER_GATES.full.startsWith(TIER_GATES['admin-visual'])).toBe(true);
     expect(TIER_GATES.full.length).toBeGreaterThan(TIER_GATES['admin-visual'].length);
-  });
-
-  it('the tool gate stands outside the npm superset chain, sharing no prefix with any npm tier', () => {
-    expect(TIER_GATES.tool).toBe('make -C tool check');
-    expect(TIER_GATES.full.startsWith(TIER_GATES.tool)).toBe(false);
-    expect(TIER_GATES.docs.startsWith(TIER_GATES.tool)).toBe(false);
   });
 
   it('the docs tier is the one docs-gate script', () => {
@@ -289,13 +563,6 @@ describe('TIER_ORDER and TIER_GATES', () => {
   it('the full gate runs the admin-visual spec once inside the admin-visual string, then the whole showcase suite', () => {
     expect(TIER_GATES.full).toContain('test:e2e -- admin-visual.spec.ts && npm run check:comments');
     expect(TIER_GATES.full.endsWith('npm --prefix examples/showcase run test:e2e')).toBe(true);
-  });
-
-  it('the engine gate runs the node projects, then the serialized component run, then the create-cairn-site suite', () => {
-    expect(TIER_GATES.engine).toContain(
-      'npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site',
-    );
-    expect(TIER_GATES.engine.endsWith('npm test -w packages/create-cairn-site')).toBe(true);
   });
 
   it('runs no npm check script twice in the full tier, since check:docs-gate already carries the docs-gate components', () => {
@@ -312,8 +579,12 @@ describe('TIER_ORDER and TIER_GATES', () => {
 // A CI command the full gate runs under another spelling names its stand-in tokens here; each
 // stand-in must be a whole `&&`-separated command of the full gate.
 const CI_EQUIVALENTS: Record<string, string[]> = {
-  // `npm test` is the node projects plus the component project; the gate serializes the component run.
-  'npm test': ['npm run test:node-projects', 'npm run test:component -- --no-file-parallelism'],
+  // CI spells the two Vitest runs as separate steps with the retry reporter; the gate runs the same
+  // projects (serialized for the component one) without it.
+  'npm run test:node-projects -- --reporter=default --reporter=github-actions --reporter=./scripts/ci/vitest-retry-reporter.mjs':
+    ['npm run test:node-projects'],
+  'npm run test:component -- --reporter=default --reporter=github-actions --reporter=./scripts/ci/vitest-retry-reporter.mjs':
+    ['npm run test:component -- --no-file-parallelism'],
   // The same suite, reached by workspace flag instead of `--prefix`.
   'npm --prefix packages/create-cairn-site test': ['npm test -w packages/create-cairn-site'],
 };
@@ -324,6 +595,8 @@ const CI_NOT_LOCAL: Record<string, string> = {
   'npm ci --prefix examples/showcase': 'installs the showcase dependencies; the showcase gates need them installed',
   'npx playwright install --with-deps chromium firefox': 'installs browsers on the CI runner',
   'npm run package': 'builds dist; every check script that needs dist builds it itself',
+  'node scripts/ci/retries-notice.mjs "$RUNNER_TEMP/vitest-node-retries.json" "$RUNNER_TEMP/vitest-component-retries.json"':
+    'annotates the CI run with the retried tests; the reports it reads exist only after a CI run',
   'name:Install Vale 3.23.0': 'installs Vale on the CI runner; the docs gate runs the workstation Vale',
   'name:Bake the create-cairn-site template':
     'bakes the gitignored template with an engine spec only CI can substitute; the workspace suite reads the baked copy on disk',
@@ -427,51 +700,148 @@ describe('the full tier against CI', () => {
   });
 });
 
-// CLI integration: exercises the empty-range and git-failure exits, which decideGate alone cannot
-// prove since they happen before any path classification runs.
+// CLI integration: the empty-range and git-failure exits happen before any classification, so the
+// pure functions above cannot prove them.
 describe('the CLI (spawned)', () => {
+  const run = (...args: string[]) => spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8' });
+
   it('exits non-zero with empty stdout on an empty range (HEAD..HEAD carries no diff)', () => {
-    const out = spawnSync(process.execPath, [SCRIPT, '--range', 'HEAD..HEAD'], { encoding: 'utf8' });
+    const out = run('--range', 'HEAD..HEAD');
     expect(out.status).not.toBe(0);
     expect(out.stdout).toBe('');
   });
 
   it('exits non-zero with empty stdout when git fails on a malformed range', () => {
-    const out = spawnSync(process.execPath, [SCRIPT, '--range', 'not-a-real-ref..HEAD'], {
-      encoding: 'utf8',
-    });
+    const out = run('--range', 'not-a-real-ref..HEAD');
     expect(out.status).not.toBe(0);
     expect(out.stdout).toBe('');
   });
 
   it('exits non-zero with empty stdout when --range is missing', () => {
-    const out = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' });
+    const out = run();
     expect(out.status).not.toBe(0);
     expect(out.stdout).toBe('');
   });
 
-  it('prints only the gate string on stdout for a real range, plus the tier on stderr', () => {
-    // Confirms the stdout/stderr split contract against a range this repo always has: HEAD against
-    // git's empty tree, which exists in every clone, shallow CI checkouts included (HEAD^ does
-    // not). The exact tier is not asserted; a whole-tree diff resolves to full, and that is fine.
-    const head = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
-    const parent = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
-    const real = spawnSync(process.execPath, [SCRIPT, '--range', `${parent}..${head}`], {
-      encoding: 'utf8',
-    });
-    expect(real.status).toBe(0);
-    expect(real.stdout.trim().length).toBeGreaterThan(0);
-    expect(real.stdout.trim().split('\n')).toHaveLength(1);
-    expect(real.stderr).toMatch(/gate-tier: (docs|scripts|engine|admin-visual|full)/);
+  it('exits non-zero with empty stdout for an unknown class, and for a class with no value', () => {
+    for (const args of [['--class', 'nope'], ['--class']]) {
+      const out = run('--range', '4b825dc642cb6eb9a060e54bf8d69288fbee4904..HEAD', ...args);
+      expect(out.status, args.join(' ')).not.toBe(0);
+      expect(out.stdout).toBe('');
+    }
+  });
+
+  // HEAD against git's empty tree exists in every clone, shallow CI checkouts included (HEAD^ does
+  // not). A whole-tree diff reaches the trigger list, so no related selection runs.
+  const wholeTree = `4b825dc642cb6eb9a060e54bf8d69288fbee4904..${spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim()}`;
+
+  it('prints only the gate on stdout for a real range, the legs on stderr', () => {
+    const out = run('--range', wholeTree);
+    expect(out.status).toBe(0);
+    expect(out.stdout.trim().split('\n')).toHaveLength(1);
+    expect(out.stdout.startsWith('npm run package && ')).toBe(true);
+    expect(out.stderr).toMatch(/gate-tier: targeted/);
+  });
+
+  it('prints the pinned full string byte for byte', () => {
+    const out = run('--range', wholeTree, '--pin', 'full');
+    expect(out.stdout).toBe(`${TIER_GATES.full}\n`);
+  });
+
+  it('exits non-zero with empty stdout for an unknown pin', () => {
+    const out = run('--range', wholeTree, '--pin', 'nope');
+    expect(out.status).not.toBe(0);
+    expect(out.stdout).toBe('');
   });
 });
 
-// The harvest deletes every page on the deletion list at once. That diff names only docs paths, so
-// it runs the docs gate, whose arm-aware checks (arm-state.mjs) are what prove the empty arms.
-describe('the harvest deletion diff', () => {
-  it('classifies the deletion of every deletion-list page to the docs tier', () => {
-    const { deleted } = loadDeletionList(resolve(process.cwd()));
-    expect(deleted.length).toBeGreaterThan(0);
-    expect(decideGate(deleted)).toMatchObject({ tier: 'docs', gate: TIER_GATES.docs });
+// A fixture repo whose first commit carries a table with a chosen protected list. The range
+// base..HEAD is what the mode reads; `touch` writes the files the second commit changes.
+describe('--protected', () => {
+  const git = (cwd: string, ...args: string[]) =>
+    spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], {
+      cwd,
+      encoding: 'utf8',
+    });
+
+  /** Build a repo: a base commit with the table text (or none), then a head commit writing `edits`. */
+  function fixture(baseTable: string | undefined, edits: Record<string, string>) {
+    const dir = mkdtempSync(join(tmpdir(), 'cairn-gate-protected-'));
+    git(dir, 'init', '-q');
+    const write = (path: string, text: string) => {
+      mkdirSync(join(dir, path, '..'), { recursive: true });
+      writeFileSync(join(dir, path), text);
+    };
+    write('guarded.txt', 'one\n');
+    write('free.txt', 'one\n');
+    if (baseTable !== undefined) write('scripts/checks/gate-table.json', baseTable);
+    git(dir, 'add', '.');
+    git(dir, 'commit', '-q', '-m', 'base');
+    const base = git(dir, 'rev-parse', 'HEAD').stdout.trim();
+    for (const [path, text] of Object.entries(edits)) write(path, text);
+    git(dir, 'add', '.');
+    git(dir, 'commit', '-q', '-m', 'head');
+    return { dir, range: `${base}..HEAD` };
+  }
+
+  const cleanup: string[] = [];
+  const make = (baseTable: string | undefined, edits: Record<string, string>) => {
+    const made = fixture(baseTable, edits);
+    cleanup.push(made.dir);
+    return made;
+  };
+  afterAll(() => {
+    for (const dir of cleanup) rmSync(dir, { recursive: true, force: true });
+  });
+
+  const list = JSON.stringify({ protected: ['guarded.txt'] });
+
+  it('prints ciWait for a range that touches a protected path', () => {
+    const { dir, range } = make(list, { 'guarded.txt': 'two\n' });
+    expect(protectedVerdict(range, dir)).toMatchObject({ verdict: 'ciWait' });
+  });
+
+  it('prints nothing and exits 0 for a range that touches none', () => {
+    const { dir, range } = make(list, { 'free.txt': 'two\n' });
+    expect(protectedVerdict(range, dir)).toEqual({ verdict: 'none' });
+  });
+
+  it('still prints ciWait when the range removes the path from the list, since the list is read at the base', () => {
+    const { dir, range } = make(list, {
+      'guarded.txt': 'two\n',
+      'scripts/checks/gate-table.json': JSON.stringify({ protected: [] }),
+    });
+    expect(protectedVerdict(range, dir)).toMatchObject({ verdict: 'ciWait' });
+  });
+
+  it('prints ciWait when the base has no table, or an unusable one', () => {
+    for (const baseTable of [undefined, 'not json', '{}']) {
+      const { dir, range } = make(baseTable, { 'free.txt': 'two\n' });
+      expect(protectedVerdict(range, dir), String(baseTable)).toMatchObject({ verdict: 'ciWait' });
+    }
+  });
+
+  it('reads a directory entry as a prefix', () => {
+    const { dir, range } = make(JSON.stringify({ protected: ['guarded/'] }), { 'guarded/new.txt': 'x\n' });
+    expect(protectedVerdict(range, dir)).toMatchObject({ verdict: 'ciWait' });
+  });
+
+  it('reports a git failure as an error', () => {
+    const { dir } = make(list, { 'free.txt': 'two\n' });
+    expect(protectedVerdict('no-such-ref..HEAD', dir).verdict).toBe('error');
+  });
+
+  it('prints exactly ciWait through the CLI, and the default mode never prints it', () => {
+    const touching = spawnSync(
+      process.execPath,
+      [SCRIPT, '--range', '4b825dc642cb6eb9a060e54bf8d69288fbee4904..HEAD', '--protected'],
+      { encoding: 'utf8' },
+    );
+    expect(touching.status).toBe(0);
+    expect(touching.stdout).toBe('ciWait\n');
+    const gate = spawnSync(process.execPath, [SCRIPT, '--range', '4b825dc642cb6eb9a060e54bf8d69288fbee4904..HEAD'], {
+      encoding: 'utf8',
+    });
+    expect(gate.stdout).not.toContain('ciWait');
   });
 });

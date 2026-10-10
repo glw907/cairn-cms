@@ -7,6 +7,118 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## Gate economy pass, 2026-10-10
+
+Branch `gate-economy` (draft PR #110) and the dotfiles branch of the same name, both closed unreleased:
+no version bump, no publish, no `CHANGELOG.md` entry (no public behavior changed). Plan, ledger, and
+post-mortem with the score: `docs/superpowers/plans/2026-10-09-gate-economy.md`. Spec and fold:
+`docs/superpowers/specs/2026-10-09-gate-economy-design.md`,
+`docs/superpowers/research/2026-10-09-gate-economy-spec-fold.md`. The replay of pass A against the new
+classifier, the timed ranges, and the projection:
+`docs/superpowers/research/2026-10-09-gate-economy-replay.md`.
+
+**What landed:**
+
+- **Run records** (dotfiles Task 1, `d23f7bd`): `cairn-run-gate` writes one record per run, across an
+  exit-75 reattach, with its duration, lock wait, gate string, and result.
+- **A build-once close and the related mode** (Tasks 0 and 2, `991d152d`, `94c8a4c5`): `npm run check:close`
+  builds `dist` once and takes a subset of its checks. The classifier computes Vitest's related selection
+  for the component project at classification time.
+- **The targeted gate** (Task 3, `bd9f79c3..b835fe30`): the classifier's default output is the gate sized to
+  the diff by check buckets (`scripts/checks/gate-table.json`), an e2e map, and the related component
+  selection. It fails closed on an unclassified path, an empty selection, or a rerun trigger.
+  `docs/internal/pass-gate-tiers.md` describes it.
+- **CI as the boundary gate** (Tasks 4a, 4b, `3de4b17c`, `d2c5164d`; dotfiles `ea2b5bb`, `8c2c764`,
+  `d10ad29`): retried tests become a CI annotation, jobs carry timeouts, and `ci-green` reads every
+  workflow's result for a SHA, reruns an infra red once, and exits 0 green, 1 red, 2 missing, 3 unavailable.
+- **Pipelining** (dotfiles Task 5, `a2755d8`, `35cea09`): the sequential runner reads CI behind review and
+  stops the line on a red.
+- **The rules, where they execute** (dotfiles Task 6a, `5a42369`, `eb439c7`; cairn-cms Task 6b, `4bb7b1cf`,
+  `be9442f2`): `pass-core`, `cairn-pass`, the gate economy doc, and the runners carry the new gate; pass B's
+  plan and the ROADMAP follow-ups say so.
+- **The replay** (Task 7, `239a4114`, and the close): 18 pass A ranges dry-run through the classifier, a
+  miss-rate table (0 of 5 included reds missed), two timed ranges (16.3 and 25.2 min), and a projection.
+- **The close:** simplifier passes on both branches (cairn-cms `4a1663f3`, dotfiles `e410972`), two
+  whole-branch reviews, their fix chains (cairn-cms `4ef0fdbb`, dotfiles `c42bbcd`), and these ledgers.
+
+**What the gates caught:**
+
+- Task 2: the first heavy gate went red on `svelte-check` types.
+- Task 4a: the review found an explicit `--reporter` dropped Vitest's `github-actions` reporter. CI then
+  went red on `d2c5164d` on four `svelte-check` implicit-any errors in `scripts/ci/retries-notice.mjs`,
+  because the plan's fixed light gate ran no type check (the pass's one selection miss; fixed in
+  `8695229d` under Task 3).
+- Task 4b: the review found an empty file list read as green, a fail-open. The first live call then
+  returned "missing" for five runs that existed, because `ci-green` queried `head_sha` with a short SHA.
+- Task 5: no test pinned the `CI_MAX_WAITS` cap fall-through.
+- Task 3: the review found the six dist-surface checks swapped for three, dropping their engine
+  inheritance: a fail-open that would have let a surface break pass the gate.
+- Task 6b: the gate forecasts misstated the classifier, and a ROADMAP item named a defect that does not
+  exist (carried from a brief that copied Task 7's misattribution).
+- The dotfiles close review: `pass-core`'s `pass-execute` args template omitted `ci`, so the documented
+  invocation skipped every CI wait, and the hand-dispatch path had no push, `--protected`, or `ci-green`
+  step.
+- The cairn-cms close review: the simplifier's package-prefix set dropped the `^npm run` guard, so a future
+  literal package-prefixed close component would silently pass the unclassified guard; the workflow pins
+  missed a `pull_request`-skipping `if:` and a test step ending in `|| true`; and `.github/actions/` is not
+  on the protected list (filed). The timed ranges also showed `check:surface` wrongly in the docs bucket
+  (about 84 s of a docs-only range).
+- Task 7: the miss-rate floor's wording was wrong for 5 of 24 items against the CI logs, which is why the
+  record carries the logs' truth. The friction log has an entry for the missing failing-step field.
+
+**Score.** Output quality: every acceptance met, with the fail-open paths above caught before the merge.
+Tokens: about 4.3M against the 4.0M ceiling (about 4.1M at the fold's dispatch; per agent the highest
+reported total plus the conductor); the 80 percent line was crossed at the Task 6b review, and Geoff chose
+to finish the close. Attended time: 0 planning misses and 3 owner pull-ins (the status question, the merge go, the
+ceiling question), plus 2 side questions of Geoff's about another project, counted apart. Clock: 4 h 37 min from the first implementer dispatch to the fold
+against the 4.8 h estimate, Task 0 on its own line at about 13 min; 662 s of lock wait; about 12 min of strict
+CI wait; about 37 min of itemized rework. The projection for pass A on the new gates is 14.8 to 19.0 hours
+against the 9-hour target, a miss recorded without reopening the design (the unchanged review and task rows
+alone are 8.25 hours); pass B's clock is the real measure. Retried tests and per-red causes are in the
+plan's post-mortem.
+
+**What a later pass would be wrong to rediscover:**
+
+- **A glob with a dot segment matches nothing under a dot directory.** A gate-table pattern such as a double
+  star before `.vale` is dead, and `tableProblems` rejects it: a dot path is a literal prefix or an exact
+  path. Worktrees live under `.claude/`, so Vitest's own default rerun triggers match nothing there; the
+  triggers are anchored at the absolute repo root.
+- **An empty selection is a failure to select, never a pass.** An empty, uncomputed, or non-`src/` component
+  selection runs the whole project (a docs-only diff skips the leg), `decideGate([])` fails closed, and an
+  empty file list in `ci-green` is red.
+- **The rerun triggers apply only when `CAIRN_RELATED_RUN=1` is set,** by the emitted leg and by the
+  classifier's own `createVitest` call. An argv check cannot see a run started in process, so the draft's
+  argv switch was replaced by the environment variable. The trigger canary (`src/tests/unit/component-trigger-canary.test.ts`) proves a broken fs-read
+  fixture turns a selected run red.
+- **`attw --pack .` runs `prepare`,** which is `npm run package`: a hidden rebuild inside `check:package`.
+  Inside `check:close` it packs with `--ignore-scripts` into a temp directory and points `attw` at the
+  tarball.
+- **`ci-green` needs a full SHA for `head_sha`.** A short SHA matches no run and reads as "missing".
+- **An explicit `--reporter` drops Vitest's `github-actions` reporter,** so a CI run with a custom reporter
+  must list `github-actions` beside it.
+- **A fixed light gate skips the type check.** A plan that names a gate string bypasses the classifier;
+  the computed gate for a scripts diff includes `npm run check`, and the light lane's 3G cap runs it out of
+  memory unless `NODE_OPTIONS=--max-old-space-size=6144` is set.
+- **`--pin` returns the pinned tier's string before `--class` applies** (`scripts/checks/gate-tier.mjs:535-540`),
+  so a pinned `auth-data` task silently drops the three auth e2e specs. Nothing fixes it in the classifier;
+  dotfiles `c42bbcd` only documents the workaround in `pass-core` (pin `full`, or append the three auth
+  specs). Filed as `ROADMAP.md` follow-up (l).
+- **Piping `cairn-run-gate` through `tail` or `grep` can cut its `gate exit:` line,** which cost the
+  cairn-cms simplifier gate two or three full reruns.
+
+**Rollback lever.** The first step is a `gateTier: full` pin in the next plan's task args, which restores the
+old whole-tier gate per task with no revert. A full rollback reverts the dotfiles merge, then the cairn-cms
+merge.
+
+**Refused fold findings.** None turned out to be a real defect. The six refused findings and ten refused
+mechanisms held through execution; the Task 4a CI red was fixed under the next task, as P2's refusal
+reasoned.
+
+**Friction triage.** The close triaged the whole log: 23 entries, 3 fixed on the spot, 3 deleted, 17 moved
+whole to `ROADMAP.md`'s Next tier, 0 kept, and 3 new entries filed (the plan-fixed light gate, the missing
+failing-step field, and no per-leg timing in `cairn-run-gate`). The package README that runs the whole
+component project is `ROADMAP.md` follow-up (f) and is not filed twice.
+
 ## Engine pass before stage 2b, pass A, 2026-10-08 to 10-09
 
 Branch `engine-pre-2b-a` (PR #108, merged to `main`). Plan and post-mortem:

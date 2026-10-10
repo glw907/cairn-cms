@@ -150,11 +150,15 @@ would lose per-step timing. A test asserts that every `check:close` component ru
 
 ### CI as the full gate
 
-- Every job sets `timeout-minutes` (test 25, e2e 20, the rest 15). Each `npm ci` and `playwright
-  install` step sets a 10-minute step timeout. `norms` takes its timeouts inside `norms.yml`, since
-  a job that calls a reusable workflow cannot set `timeout-minutes`. One unit test parses every
-  workflow and fails on a job without a timeout. Measured: five runs since 2026-09-30 hung about six
-  hours, three on `npm ci` and one on `playwright install`.
+- **Landed ahead of the pass (PR #109, merged `1841b4db`, 2026-10-09).** Every job sets
+  `timeout-minutes` (about 3x its median, minimum 15). Every `npm ci` and `playwright install` runs
+  through the composite action `.github/actions/bounded-install`: a 10-minute limit, one in-step
+  retry, and a state dump before the kill; `.github/actions/install-diagnostics` dumps npm logs, the
+  process tree, and sockets on a failed or cancelled job. Measured: five runs hung about six hours on
+  2026-10-08/09 (four `npm ci`, one `playwright install`); 80 diagnostic reproductions (runs
+  38021122983, 38021383791) never hung, and no npm, GitHub, or runner-image cause was found, so the
+  root cause is a rare runner-side stall that the next dump will name. Task 4 keeps one item from
+  this bullet: a unit test that parses every workflow and fails on a job without a timeout.
 - Each test job emits a `::notice title=retries::` annotation listing retried tests, readable through
   the check-runs annotations API (no API reads a job summary).
 - Install caching is already in place (`actions/setup-node` `cache: npm` on every workflow), and
@@ -297,7 +301,8 @@ join `lint` and `check:comments`. `close-prebuilt.mjs`'s header claim that CI ru
    the prebuilt close once.
 3. Check buckets, the e2e map, the unconditional build leg, the empty-selection and delete
    handling, and the trigger canary in `gate-tier.mjs`.
-4. CI hardening (cairn-cms workflows plus the workflow test) and `ci-green` (dotfiles) with
+4. CI hardening (the retry annotation and the job-timeout test; timeouts and bounded installs landed
+   in PR #109) and `ci-green` (dotfiles) with
    recorded-JSON fixtures. Gate: its unit tests; the draft PR's CI proves the workflow edits.
 5. Pipelining in sequential `pass-execute` (dotfiles), with stubbed-agent harness cases.
 6. Rules: the errata list above, the `diff-reviewer` finding, the PASS_CLASSES pin extended to the
@@ -308,7 +313,8 @@ Dependencies: 2 before 3; 4 before 5; 2 and 3 before 7; 6 after 5 (it extends 5'
 4 are independent of 2. Tasks 1, 4's `ci-green`, and 5 run dotfiles tests only; Task 6 is docs plus
 one cairn-cms plan edit, no npm gate.
 
-**Clock estimate: about 4.5 hours.** Two tracks run alongside, one executor per worktree:
+**Clock estimate: about 4.25 hours** (4.5 before PR #109 landed Task 4's timeouts and bounded
+installs). Two tracks run alongside, one executor per worktree:
 cairn-cms (2, 3, Task 4's workflow edits, 7) and dotfiles (1, Task 4's `ci-green`, 5, 6). The
 cairn-cms track is the longer, so it sets the critical path before the close:
 
@@ -316,7 +322,7 @@ cairn-cms track is the longer, so it sets the critical path before the close:
 |---|---|
 | Task 2: implement, targeted gate plus prebuilt close, review | about 45 min |
 | Task 3: implement, new targeted gate, review | about 55 min |
-| Task 4's workflow edits and timeout test, plus one CI cycle (663 s job, 1,232 s measured queue) | about 50 min |
+| Task 4's retry annotation and timeout test, plus one CI cycle (663 s job, 1,232 s measured queue) | about 35 min |
 | Task 7: classifier and selection dry runs, two timed ranges, record | about 45 min |
 | Close: simplifier, reviewers, `ci-green` | about 45 min |
 | One fix round, contingency | about 30 min |

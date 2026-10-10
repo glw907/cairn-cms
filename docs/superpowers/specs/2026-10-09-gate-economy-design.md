@@ -1,8 +1,8 @@
 # Gate economy pass: design
 
 Status: approved in conversation 2026-10-09, revised by the spec review fold
-(`docs/superpowers/research/2026-10-09-gate-economy-spec-fold.md`); awaiting Geoff's two rulings
-below. Inputs: `docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md` (pass A's clock,
+(`docs/superpowers/research/2026-10-09-gate-economy-spec-fold.md`); both rulings below
+taken by Geoff on 2026-10-09. Inputs: `docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md` (pass A's clock,
 the adversarial review, the draft build's results) and the draft branch `gate-related` at
 `075bc174`.
 
@@ -30,6 +30,9 @@ checked by replaying pass A's task ranges and proven by pass B's scored clock.
 - **Token ceiling 4.0M.** Geoff: 7 hours of clock was excessive for this pass.
 
 ## Rulings for Geoff
+
+Both ruled by Geoff on 2026-10-09, each as recommended: (1) yes, the coverage probe is dropped; (2) yes,
+a retry-pass is green and logged.
 
 1. **Drop the coverage probe from Task 7?** Recommended: yes. The draft spec ran one V8 coverage run
    as the audit's reopen trigger. V8 cannot measure the `integration` project, which runs in workerd

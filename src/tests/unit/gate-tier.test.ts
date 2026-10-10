@@ -306,8 +306,8 @@ describe('TIER_ORDER and TIER_GATES', () => {
 });
 
 // The full tier runs every check the CI `test` job runs that a local gate can run. The list is
-// pinned against test.yml's own steps: a `run:` step added to CI that the full gate neither runs
-// nor names below fails this test.
+// pinned against test.yml's own steps: a `run:` step (or a bounded-install `command:`) added to CI
+// that the full gate neither runs nor names below fails this test.
 //
 // A CI command the full gate runs under another spelling names its stand-in tokens here; each
 // stand-in must be a whole `&&`-separated command of the full gate.
@@ -332,6 +332,7 @@ const CI_NOT_LOCAL: Record<string, string> = {
 /**
  * Every `run:` step of the CI `test` job in a workflow file's text: a one-line `run: <cmd>` as
  * the command, a block `run: |` as `name:<step name>` (the block body is shell, not one command).
+ * A bounded-install step's `command: <cmd>` input reads as that command, the same as a `run:`.
  * Steps of any other job are not read, and a step's name never carries over to the next step.
  * @param text - The workflow file's contents.
  * @returns The `test` job's run steps, in file order.
@@ -357,7 +358,7 @@ function ciStepsOf(text: string): string[] {
     }
     const named = line.match(/^\s*(?:- )?name:\s*(.+?)\s*$/);
     if (named) name = named[1];
-    const run = line.match(/^\s*(?:- )?run:\s*(.+?)\s*$/);
+    const run = line.match(/^\s*(?:- )?(?:run|command):\s*(.+?)\s*$/);
     if (!run) continue;
     steps.push(run[1] === '|' ? `name:${name}` : run[1]);
   }

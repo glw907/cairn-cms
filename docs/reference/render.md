@@ -18,6 +18,21 @@ Stability tier: Extension API.
   node). Its `attr(key)` reads a declared string attribute, returning `undefined` for a boolean or
   absent value.
 
+## The sanitize floor
+
+Stability tier: Extension API.
+
+`createRenderer`'s `sanitizeSchema` callback receives a fresh copy of cairn's default schema, so a
+change to that copy never reaches another renderer. After the callback returns, cairn removes
+`script` from `tagNames` and merges the default `strip` list into the callback's own `strip`
+entries. The floor a callback can't lower is exactly that: no `<script>` element survives, and
+neither does the body text of any element on the default `strip` list, which holds `script`.
+Attributes and URL protocols are the callback's
+responsibility, so a callback that admits an unsafe attribute or protocol keeps it.
+
+`createRenderer` throws when the callback returns no `tagNames` array, because an absent allowlist
+admits every element. To turn the floor off, set `unsafeDisableSanitize` instead.
+
 ## Emitted classes
 
 Stability tier: Extension API.

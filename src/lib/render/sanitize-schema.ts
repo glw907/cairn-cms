@@ -12,6 +12,11 @@ import { dataAttrProp, type ComponentRegistry } from './registry.js';
 // attributes, never a script vector, and must survive the floor so the dispatch still runs.
 const FIXED_MARKERS = ['dataPrimitive', 'dataSlot', 'dataRole', 'dataRise'];
 
+// The floor a site's `sanitizeSchema` callback cannot lower. Both are copied at module load, so
+// neither reads the shared defaultSchema object when a schema is built.
+const FLOOR_TAGS: readonly string[] = Object.freeze(['script']);
+const CORE_STRIP: readonly string[] = Object.freeze([...(defaultSchema.strip ?? [])]);
+
 /**
  * Build the delivery sanitize schema. Starts from hast-util-sanitize's defaultSchema, the
  * GitHub-lineage allowlist that strips scripts, inline event handlers, and javascript:/data: URLs,
@@ -19,9 +24,17 @@ const FIXED_MARKERS = ['dataPrimitive', 'dataSlot', 'dataRole', 'dataRise'];
  * dataAttr<Key> markers derived from the registry) survive so the dispatch reads its stamps after
  * the floor. The benign author tags real content uses (nav, details, summary) and class/target/rel
  * on anchors are admitted. figure/figcaption join the base so the engine's placed figure survives
- * the floor on every site, including one that supplies its own `sanitizeSchema` extension. A site
- * extends the result through `extend`, always starting from this safe base, so it can add to the
- * allowlist but not weaken the core strip.
+ * the floor on every site, including one that supplies its own `sanitizeSchema` extension.
+ *
+ * A site extends the result through `extend`, which receives a fresh deep copy of this safe base, so
+ * no mutation it makes reaches the module default or a later build. After it returns, the engine
+ * reapplies a fixed floor: `script` is removed from `tagNames`, and `strip` becomes the union of the
+ * core list and the callback's own. That floor is exactly `script` plus the core `strip` entries.
+ * Attributes and protocols stay the callback's responsibility: a callback that admits an unsafe
+ * attribute or URL scheme gets it.
+ * @throws When `extend` returns a schema with no `tagNames` array. hast-util-sanitize reads an
+ *  absent allowlist as every element allowed, and applies `strip` only to a disallowed element, so
+ *  no floor holds without one. `unsafeDisableSanitize` is the way to turn the floor off.
  */
 export function buildSanitizeSchema(
   registry: ComponentRegistry,
@@ -59,7 +72,22 @@ export function buildSanitizeSchema(
       href: [...(protocols.href ?? []), 'cairn'],
     },
   };
-  return extend ? extend(schema) : schema;
+  if (!extend) return schema;
+  const result: unknown = extend(structuredClone(schema));
+  const tagNames = (result as Schema | undefined)?.tagNames;
+  if (!Array.isArray(tagNames)) {
+    throw new Error(
+      'cairn-cms: the renderer sanitizeSchema callback must return a schema with a tagNames array. ' +
+        'Start from the schema it receives and add to it; use unsafeDisableSanitize to turn the floor off.',
+    );
+  }
+  const extended = result as Schema;
+  const strip = Array.isArray(extended.strip) ? extended.strip : [];
+  return {
+    ...extended,
+    tagNames: tagNames.filter((tag) => !FLOOR_TAGS.includes(tag)),
+    strip: [...new Set([...CORE_STRIP, ...strip])],
+  };
 }
 
 /**

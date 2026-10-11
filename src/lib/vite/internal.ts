@@ -305,6 +305,8 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
       if ('manifestError' in checks) this.error(checks.manifestError);
       if (checks.siteFacts.status === 'absent') {
         this.warn(siteFactsAbsentWarning(siteFactsRelPath(opts)));
+      } else if (checks.siteFacts.status === 'skipped') {
+        this.warn(checks.siteFacts.message);
       } else if (checks.siteFacts.status === 'stale') {
         this.error(checks.siteFacts.message);
       }
@@ -586,8 +588,24 @@ export function siteFactsAbsentWarning(path: string): string {
   return `cairn-cms: ${path} is missing. Run \`npx cairn-manifest\` to create it.`;
 }
 
-/** The three outcomes {@link checkSiteFacts} distinguishes: current, not yet created, or drifted. */
-export type SiteFactsCheck = { status: 'ok' } | { status: 'absent' } | { status: 'stale'; message: string };
+/**
+ * Build the build-log warning `checkSiteFacts` reports once when it could not derive the facts from
+ *  the adapter, so the committed file at `path` went unchecked. `reason` is the derivation's error
+ *  message.
+ */
+export function siteFactsSkippedWarning(path: string, reason: string): string {
+  return `cairn-cms: the ${path} check was skipped: the site facts could not be derived from the adapter (${reason}).`;
+}
+
+/**
+ * The four outcomes {@link checkSiteFacts} distinguishes: current, not yet created, drifted, or not
+ *  checked because the derivation threw (`message` is the warning to report).
+ */
+export type SiteFactsCheck =
+  | { status: 'ok' }
+  | { status: 'absent' }
+  | { status: 'stale'; message: string }
+  | { status: 'skipped'; message: string };
 
 /**
  * Check the committed `site-facts.json` against the adapter, without importing the committed file
@@ -596,11 +614,11 @@ export type SiteFactsCheck = { status: 'ok' } | { status: 'absent' } | { status:
  *  it runs `cairn-manifest`, and no site's `build` script runs that bin, so a fresh install or an
  *  upgrading consumer must still build. A present file that no longer matches the adapter is drift
  *  and fails the build in the manifest's own shape. A derivation failure (the adapter throwing for a
- *  reason unrelated to these three fields) degrades to `ok` rather than reporting stale, the same
- *  best-effort contract `readAdapterFacts` already keeps: the manifest verify immediately before this
- *  check already evaluates the same config module and is the build's real gate on an adapter that
- *  cannot load at all, so failing this specific comparison for an unrelated reason would be a false
- *  positive, not a real site-facts drift.
+ *  reason unrelated to these three fields) reports `skipped` rather than stale, and the build warns
+ *  once and continues: the manifest verify immediately before this check already evaluates the same
+ *  config module and is the build's real gate on an adapter that cannot load at all, so failing this
+ *  specific comparison for an unrelated reason would be a false positive, not a real site-facts
+ *  drift. The warning keeps the unchecked file visible.
  */
 export async function checkSiteFacts(
   opts: CairnManifestOptions,
@@ -613,8 +631,9 @@ export async function checkSiteFacts(
   let expected: string;
   try {
     expected = await buildSiteFactsFromVite(opts, root, server);
-  } catch {
-    return { status: 'ok' };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return { status: 'skipped', message: siteFactsSkippedWarning(relPath, reason) };
   }
   if (expected === committed) return { status: 'ok' };
   return {

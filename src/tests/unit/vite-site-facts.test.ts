@@ -68,7 +68,14 @@ export const cairn = defineAdapter({
 export const siteConfig = parseSiteConfig('siteName: Test\\n');
 `;
 
-const ADAPTER_FULL_DRIFTED = ADAPTER_FULL.replace("bucketBinding: 'MEDIA_BUCKET'", "bucketBinding: 'OTHER_BUCKET'");
+// The facts derivation reads aiPosture and the manifest build does not, so a throwing getter there
+// fails only the site-facts derivation while the manifest verify still passes.
+const ADAPTER_FACTS_THROW = ADAPTER_NO_FACTS.replace('export const cairn = defineAdapter({', 'const base = defineAdapter({').replace(
+  'export const siteConfig',
+  "export const cairn = { ...base, get aiPosture() { throw new Error('posture unavailable'); } };\nexport const siteConfig",
+);
+
+const ADAPTER_FULL_DRIFTED =ADAPTER_FULL.replace("bucketBinding: 'MEDIA_BUCKET'", "bucketBinding: 'OTHER_BUCKET'");
 
 const made: string[] = [];
 
@@ -227,5 +234,29 @@ describe('cairnManifest buildStart, the site-facts arms', () => {
     await expect((plugin.buildStart as (this: unknown) => Promise<void>).call(ctx)).rejects.toThrow(
       /site-facts\.json is stale/,
     );
+  }, 30000);
+});
+
+describe('a site-facts derivation that throws', () => {
+  it('checkSiteFacts reports the skip rather than ok', async () => {
+    const dir = tempProject(ADAPTER_FACTS_THROW);
+    mkdirSync(join(dir, 'src/content/.cairn'), { recursive: true });
+    writeFileSync(join(dir, 'src/content/.cairn/site-facts.json'), formatSiteFacts({}));
+    const result = await checkSiteFacts(OPTS, dir);
+    expect(result.status).toBe('skipped');
+    if (result.status === 'skipped') expect(result.message).toMatch(/posture unavailable/);
+  }, 30000);
+
+  it('the build succeeds with exactly one warning naming the skipped check', async () => {
+    const dir = tempProject(ADAPTER_FACTS_THROW);
+    await seedManifest(dir);
+    writeFileSync(join(dir, 'src/content/.cairn/site-facts.json'), formatSiteFacts({}));
+    const plugin = cairnManifest(OPTS);
+    (plugin.configResolved as (c: { root: string }) => void)({ root: dir });
+    const ctx = fakeContext();
+    await expect((plugin.buildStart as (this: unknown) => Promise<void>).call(ctx)).resolves.toBeUndefined();
+    expect(ctx.warnings).toHaveLength(1);
+    expect(ctx.warnings[0]).toMatch(/site-facts\.json check was skipped/);
+    expect(ctx.warnings[0]).toMatch(/posture unavailable/);
   }, 30000);
 });

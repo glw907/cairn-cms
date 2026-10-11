@@ -211,7 +211,7 @@ jobs:
       - if: failure() || cancelled()
         uses: ./.github/actions/install-diagnostics
 
-  # Merges the shards' blob reports into the one HTML report. It needs only the showcase's
+  # Merges the shards' blob reports into the one HTML report. It needs the installs and the showcase's
   # @playwright/test (no browsers, no build), and is skipped for the regen dispatch, which has no blobs.
   e2e-report:
     name: e2e report
@@ -225,7 +225,16 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: examples/showcase/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            examples/showcase/package-lock.json
+      # The showcase installs the engine from `file:../..`, whose install runs the root package build,
+      # so the root dependencies come first, as in the e2e job.
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 8
+        with:
+          command: npm ci
+          clean: node_modules
       - uses: ./.github/actions/bounded-install
         timeout-minutes: 8
         with:

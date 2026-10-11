@@ -29,6 +29,11 @@ reuses the filename, and a later plain `npm install` can serve the OLD build fro
 printing "up to date." The script content-hashes each pack and verifies every installed file
 against it.
 
+A site pinned to a released engine cannot be linked and measured while `main`'s unreleased window
+renames exports the site's own code calls: `npx cairn-manifest` failed with `extractMenu is not a
+function` on one production site this way. Run a pre-flight against the site's pinned version first,
+and measure on a scratch copy with the call sites edited, or release first.
+
 ## A worktree showcase e2e proves MAIN's engine
 
 In a feature worktree, `examples/showcase/node_modules` symlinks back to the main checkout, so
@@ -220,3 +225,49 @@ A copy of `examples/showcase` under `$HOME/.cache` links the engine by `file:`, 
 runtime dependencies of the engine beside it. Vite then bundles the CommonJS build of `yaml` with a
 `createRequire` shim, and the shim fails under workerd. Install the engine's runtime dependencies
 into the copy (`npm install` the packages in the engine's `dependencies`) before `wrangler dev`.
+
+## A fresh worktree needs CI's setup before a full gate means anything
+
+A new worktree starts with no install and no build output, and several checks pass, skip, or fail
+for that reason alone. Run the setup before trusting a red or a green:
+
+- `npm ci` at the root, then `npm ci --prefix examples/showcase`. Without the root install, Vitest
+  resolves the main checkout's `node_modules` through the parent directories and tests the wrong
+  tree. `check-public-skill.test.ts` skips itself when the showcase has no `tailwindcss` binary.
+- `npm run package`, which builds `dist`. The same test skips without `dist/audit/index.js`, and
+  `emit-tool-conditions.mjs` and `check-readiness.mjs` read `dist` rather than the TypeScript source.
+- The baked create-cairn-site template (`test.yml`, the "Bake the create-cairn-site template" step),
+  which two `packages/create-cairn-site` tests read.
+- `npx svelte-kit sync` in the showcase, which its `npm run check` script runs first.
+
+The 20 `site-visual` failures a local e2e run reports are the expected drift described in the
+CI-canonical baselines entry above, and the symlinked showcase `node_modules` has its own entry
+("A worktree showcase e2e proves MAIN's engine").
+
+## `npm run check` runs out of memory in the light gate lane
+
+`cairn-run-gate`'s light lane caps its scope at about 3 GB, and V8 sizes its heap from that limit.
+`svelte-check` over the root program then dies near 1 GB (exit 134, V8 out of memory), on a gate that
+passes in seconds with room to spare. Set `NODE_OPTIONS=--max-old-space-size=6144` on the command
+(`NODE_OPTIONS=--max-old-space-size=6144 npm run check`). A gate string that names a scripts or
+config change must still include `npm run check`, since `svelte-check` also type-checks the JSDoc in
+plain `.mjs` files. The measurement is in
+`docs/superpowers/research/2026-10-08-pass-a-s1-reports.json`; a lane-level default is the lasting
+fix and belongs to the runner, not to this repo.
+
+## Tailwind scans every file under the project, specs included
+
+Tailwind v4 walks up from a stylesheet to the project root and treats every string it finds in a
+scanned file as a candidate class, so a class literal in an e2e spec or a doc compiles into the
+sheet when it names a real utility. The admin sheet turns automatic detection off for this reason
+(`scripts/build/admin-css.input.css`, `source(none)` plus explicit `@source` roots), and the
+showcase's `tokens.css` excludes `.claude` with `@source not`. Keep a test fixture's class-like
+strings out of any scanned root, or exclude the directory.
+
+## `/tmp` is a size-limited tmpfs
+
+On this workstation `/tmp` is a tmpfs of about 8 GB shared with every other session. A Go link step
+that fails with a quota error is the machine, not the code: check `df -h /tmp` before reading it as
+a build break. The theme fixture's template arm installs a whole site under `os.tmpdir()`, so set
+`TMPDIR` to a directory on disk (`TMPDIR=$HOME/.cache/cairn-tmp`) before running it
+(`scripts/lab/theme-fixture.mjs`, header).

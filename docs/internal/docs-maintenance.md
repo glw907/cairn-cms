@@ -36,9 +36,17 @@ The machine layer only catches what's mechanically checkable. The rest is one hu
 already standing in `cairn-cms/CLAUDE.md`: **a change is not done until its docs match.**
 A pass that changes a public behavior files its fact in `docs/internal/facts/`, and one that adds,
 renames, or removes a public option also files its row in the option map. Concretely, when a pass renames or removes something, grep the docs tree for the old name
+(and the rest of the repository, since a citation can sit outside every docs arm, as one did in
+`packages/create-cairn-site/test/fixtures/transcripts/README.md`)
 before calling the pass finished, and prune `ROADMAP.md` and
 `docs/internal/docs-friction-log.md` of whatever the pass resolved, in the same pass, not
 later. No gate replaces this rule; it's the discipline the gates assume.
+
+A rename sweep leaves the sentences that describe a released version alone. The
+`docs/extend/migration-notes.md` sections below `## Unreleased` and the prose of a released
+`CHANGELOG.md` entry record what was true at that version, so a whole-tree replace gets them wrong.
+Repair only a link anchor a gate resolves. A link inside `## Unreleased` is live guidance and
+needs a live target.
 
 ## The drift layer
 

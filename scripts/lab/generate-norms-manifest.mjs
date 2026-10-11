@@ -7,6 +7,10 @@
 // error instead of a mystery. And Playwright is imported dynamically, the same contract rendered
 // audit mode carries, so cairn takes no browser dependency for anyone who never generates.
 //
+// Run it against a showcase installed fresh with `npm ci --prefix examples/showcase`. A stale local
+// install of the packed engine (npm's `file:` cache trap, see docs/internal/durable-gotchas.md)
+// renders an older admin and masks norms drift.
+//
 // Everything that is not the browser lives in src/lib/audit/norms.ts: the role vocabulary, the band
 // derivation, the provenance rules, and the three disciplines. This file renders, measures, and
 // hands the raw observations over.

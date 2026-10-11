@@ -12,7 +12,7 @@ import type { Backend } from '@glw907/cairn-cms';
 import { devBackendHandle } from './handle.js';
 import { SEED_FRAGMENTS, SEED_VOCABULARY } from './fake-github.js';
 
-const SCRATCH = join(homedir(), '.cache', 'engine-pre-2b-b');
+const SCRATCH = join(homedir(), '.cache', 'cairn-dev-tests');
 const AUTHOR = { name: 'Ed Editor', email: 'ed@t' };
 const MANIFEST = 'src/content/.cairn/index.json';
 const MEDIA = 'src/content/.cairn/media.json';
@@ -30,6 +30,7 @@ const DISK: Record<string, string> = {
 let root = '';
 
 beforeEach(() => {
+  mkdirSync(SCRATCH, { recursive: true });
   root = mkdtempSync(join(SCRATCH, 'repo-'));
   for (const [path, content] of Object.entries(DISK)) {
     mkdirSync(join(root, path, '..'), { recursive: true });
@@ -168,6 +169,12 @@ test('the manifest list is the disk manifest until a publish commits an overlay 
   await backend.commit('main', [{ path: MANIFEST, content: '{"version":1,"entries":[]}\n' }], AUTHOR, 'publish');
   expect(await backend.readFile(MANIFEST, 'main')).toBe('{"version":1,"entries":[]}\n');
   expect(readFileSync(join(root, MANIFEST), 'utf8')).toBe(DISK[MANIFEST]);
+});
+
+test('a repo path that escapes the working tree is refused, never read', async () => {
+  const backend = await backendFor('repository');
+  await expect(backend.readFile('../outside.md', 'main')).rejects.toThrow(/outside the working tree/);
+  await expect(backend.readFile('/etc/passwd', 'main')).rejects.toThrow(/outside the working tree/);
 });
 
 test('a head-guarded commit on a moved head throws, and an empty change set is refused', async () => {

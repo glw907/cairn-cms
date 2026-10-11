@@ -900,7 +900,7 @@ describe('the fast lane', () => {
   });
 
   it('joins its legs so they run concurrently and the group fails when any one fails', () => {
-    const [line1] = decideFastGate([SRC_PATH], { selected: [] }).lines;
+    const [line1] = decideFastGate([DOCS_PATH], { selected: [] }).lines;
     expect(line1).toMatch(/^pids=''; \{ .+ \} & pids="\$pids \$!"/);
     const bash = (command: string) => spawnSync('bash', ['-c', command], { encoding: 'utf8' }).status;
     expect(bash(concurrently(['true', 'false', 'true']))).not.toBe(0);
@@ -916,12 +916,14 @@ describe('the fast lane', () => {
     expect(line1.slice(marks[0], marks[2])).toContain(' && ');
   });
 
-  it('runs the type check once, as its own concurrent leg, never inside the close runner', () => {
+  it('runs the type check once, in the dist chain after the close runner, never beside a rebuild', () => {
     for (const path of [SRC_PATH, 'scripts/checks/gate-tier.mjs', DOCS_PATH]) {
       const [line1] = decideFastGate([path], { selected: [] }).lines;
-      expect(line1.match(/\{ npm run check; \}/g), path).toHaveLength(1);
+      expect(line1.match(/npm run check(?![:\w-])/g), path).toHaveLength(1);
       const subset = line1.match(/npm run check:close -- ([^&;]+)/)?.[1].trim().split(' ') ?? [];
       expect(subset, path).not.toContain('check');
+      // The type check follows the close runner inside one `&&` chain, so the rebuild has finished.
+      expect(line1, path).toMatch(/npm run check:close -- [^;]+ && npm run check(?: &&|;)/);
     }
   });
 

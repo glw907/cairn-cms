@@ -11,10 +11,11 @@
 // nothing on stdout.
 //
 // `--fast` is the inner-loop lane, the legs a pass session runs after each task while CI carries
-// the whole suites. Line 1 runs the non-browser legs concurrently and fails if any fails: the
-// type check, the unit tests related to the diff, the static checks the
-// diff's buckets select, the docs gate when a docs path changed, and the Go tool gate when
-// `tool/**` changed. Line 2 appears only when the diff reaches component tests; it runs the
+// the whole suites. Line 1 runs the non-browser legs and fails if any fails: the static checks the
+// diff's buckets select, the type check, the unit tests related to the diff, the docs gate when a
+// docs path changed, and the Go tool gate when `tool/**` changed. The legs that build or read dist
+// run in one chain; the rest run beside it. `--fast` ignores `--class` and `--paint`, which only
+// shape the e2e leg the fast lane leaves to CI. Line 2 appears only when the diff reaches component tests; it runs the
 // related component tests alone and is always heavy (a browser). The fast lane runs no whole node
 // project and no e2e. Line 1 runs on the heavy lane (see FAST_LINE_1_LANE).
 //
@@ -621,7 +622,9 @@ export function decideGate(paths, opts = {}) {
  */
 
 /**
- * Join commands so they run concurrently and the group fails when any one fails.
+ * Join commands so they run concurrently and the group fails when any one fails. The legs are
+ * backgrounded in the caller's shell, so cancelling the gate must kill the caller's whole process
+ * group; `cairn-run-gate`'s transient scope does, and a bare `bash -c` killed by a timeout does not.
  * @param {string[]} commands - Independent commands.
  * @returns {string} One shell command.
  */
@@ -680,11 +683,13 @@ export function decideFastGate(paths, opts = {}) {
     const checks = selectChecks(npmPaths, context);
     notes.push(...checks.reasons);
     notes.push(`static checks: ${checks.labels.length === 0 ? 'none' : checks.labels.join(', ')}`);
-    // The type check always runs on its own, so the close runner never repeats it.
-    parallel.push('npm run check');
     const closeLabels = checks.labels.filter((label) => label !== 'check' && context.closeLabels.includes(label));
     const extraLabels = checks.labels.filter((label) => context.table.extraCommands[label]);
     chain.push(...staticLeg(closeLabels, context));
+    // The type check always runs, after the close runner: the root program loads dist through the
+    // package's self-import, so it must not read dist while the runner rebuilds it. The close runner
+    // never repeats it.
+    chain.push('npm run check');
     for (const label of extraLabels) {
       (DIST_FREE_EXTRAS.has(label) ? parallel : chain).push(context.table.extraCommands[label]);
     }

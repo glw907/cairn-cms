@@ -82,10 +82,9 @@ and `check:package` checks the entry points.
 The public docs are four audience tracks under `docs/`, one reader each: `admin/` (running the
 default site, no code), `editors/` (writing in `/admin`, no terminal), `extend/` (building on the
 seams), and [`reference/`](docs/reference/README.md) (one page per export subpath, gated), plus
-`why-cairn.md` for an evaluator. A page serves one track or it is two pages. The admin, editors,
-and extend arms and the front door hold no page until their stages rebuild them; `extend/` keeps
-only the per-version records and `choose-an-ai-posture.md`. No pass drafts an arm's prose ahead of
-its stage.
+`why-cairn.md` for an evaluator. A page serves one track or it is two pages. The admin and editors
+arms and the front door hold no page until their stages rebuild them; `extend/` holds the stage 2a
+pages and stage 2b finishes it. No pass drafts an arm's prose ahead of its stage.
 
 - **Facts container.** A pass that changes a public behavior files a bullet in
   [`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`; each arm's stage

@@ -1253,7 +1253,7 @@ the named human gates only):**
     stale `dist` proves the old engine (order `package` first, or refuse a `dist` older than
     `src`); the workers fake (`src/tests/helpers/cloudflare-workers-fake.ts:50-51,93-94`) exposes
     only `flushWaitUntil`, so `createLiveTokenCheck` carries a test-only `keepAlive` parameter
-    (`src/lib/sveltekit/health.ts:110`) (a read accessor on the fake removes it); and the
+    (`src/lib/sveltekit/health.ts:110`) (a read accessor on the fake removes it); and
     the Go architecture read of `tool/internal/doctor`: the exported surface (`Check`,
     `Result`, `Status`) could be unexported behind an opaque `CheckedResult`, `WranglerFacts` and
     `ReadWranglerConfig` are exported for one caller, `Catalogue` duplicates `copylist`'s AST walk,

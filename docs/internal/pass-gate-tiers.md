@@ -122,14 +122,17 @@ combine with `--pin` or `--protected`.
 default, with no lane prefix.
 
 - A serial chain, because each of its parts builds or reads `dist` and a build beside a reader
-  races: `npm run check:close -- <labels>` for the diff's static checks (minus the type check),
+  races: `npm run check:close -- <labels>` for the diff's static checks (minus the type check), then
+  the type check (`npm run check`, whose program loads `dist` through the package's self-import),
   then `check:tool-heuristics`, `test:emit`, and the showcase's `test:unit` where the diff selects
   them, then `npm run check:docs-gate` when a docs path changed, then the unit tests related to the
   diff (`npx vitest related --run --passWithNoTests --project unit <paths>`; the whole `unit`
   project when the diff deletes or renames a path under `src/` or `scripts/`).
-- Beside the chain, concurrently: the type check (`npm run check`), tellgrader, the Cairn Vale
-  rule-case tests, and `make -C tool check` when the diff holds a `tool/**` path. A tool-only diff
-  prints just the tool gate.
+- Beside the chain, concurrently: tellgrader, the Cairn Vale rule-case tests, and `make -C tool
+  check` when the diff holds a `tool/**` path. A tool-only diff prints just the tool gate.
+
+`--fast` accepts `--class` and `--paint` and ignores them, since they only shape the e2e leg that
+CI carries.
 
 **Line 2**, only when the diff reaches component tests: the related component tests,
 `CAIRN_RELATED_RUN=1 npm run test:component -- --no-file-parallelism <files>`, selected as in

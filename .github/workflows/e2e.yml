@@ -25,7 +25,11 @@ jobs:
   # The suite runs as a Playwright shard matrix (playwright.dev/docs/test-sharding): each leg builds
   # the showcase, runs its `--shard=i/N` slice, and uploads a blob report; the e2e-report job below
   # merges them into one HTML report. SHARD_TOTAL is the one place the count lives, and the matrix
-  # legs are the matching indexes; keep the two in step. The regen dispatch runs one unsharded leg.
+  # legs are the matching indexes; keep the two in step. The count is 1: on 2026-10-10 the unsharded
+  # job's median (5m16s to 6m17s over main's recent runs) was already under the `test` job's median
+  # (7m39s to 11m27s), so a second shard only added a runner and the report job's minute. To raise
+  # it, set SHARD_TOTAL to N, list 1..N in the matrix, and make the regen dispatch run `[1]` only,
+  # as `fromJSON(<regen> && '[1]' || '[1, 2]')`. The regen dispatch always runs one unsharded leg.
   e2e:
     name: e2e (shard ${{ matrix.shardIndex }})
     runs-on: ubuntu-latest
@@ -33,9 +37,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shardIndex: ${{ fromJSON(github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true' && '[1]' || '[1, 2]') }}
+        shardIndex: [1]
     env:
-      SHARD_TOTAL: 2
+      SHARD_TOTAL: 1
     # Only the manual regen dispatch needs to push a commit back to the branch it ran against;
     # the routine push/pull_request runs never reach that step.
     permissions:
@@ -195,7 +199,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ matrix.shardIndex }}
-          path: examples/showcase/test-results
+          path: |
+            examples/showcase/test-results
+            examples/showcase/playwright-report
           retention-days: 7
           if-no-files-found: ignore
       # Runs on failure too, so the merged report shows the failing shard. The regen dispatch writes

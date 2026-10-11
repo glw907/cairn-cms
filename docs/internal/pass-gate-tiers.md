@@ -1,17 +1,19 @@
 # Pass gate tiers
 
 The per-task gate a diff demands. The classifier is `scripts/checks/gate-tier.mjs`; its own header
-carries the same rules this page states. The runner calls
+carries the same rules this page states. A pass session calls
 
-`node scripts/checks/gate-tier.mjs --range <base>..HEAD [--paint yes|no] [--class <passClass>] [--pin <tier>]`
+`node scripts/checks/gate-tier.mjs --range <base>..HEAD [--fast] [--paint yes|no] [--class <passClass>] [--pin <tier>]`
 
-and takes the gate string from stdout (the only line there). The legs, and the paths and rules
-behind each, print to stderr. An empty range, a git failure, an unknown `--class`, or an unknown
-`--pin` prints nothing on stdout and exits non-zero, so the caller falls back to the plan's gate.
+and takes the gate string from stdout (the only line there; `--fast` prints one or two). The legs,
+and the paths and rules behind each, print to stderr. An empty range, a git failure, an unknown
+`--class`, or an unknown `--pin` prints nothing on stdout and exits non-zero, so the caller falls
+back to the plan's gate. An unknown flag exits 2 with nothing on stdout.
 
-The default output is the targeted gate below. `--pin <tier>` prints one of the old tier strings
-(kept under "The pinned tiers") unchanged, and `--protected` is a separate mode (see "Protected
-paths").
+The default output is the targeted gate below, which a pass runs when CI is not its full-suite
+home. `--fast` prints the fast lane, the inner-loop gate a pass runs after each task. `--pin <tier>`
+prints one of the old tier strings (kept under "The pinned tiers") unchanged, and `--protected` is a
+separate mode (see "Protected paths").
 
 ## The targeted gate
 
@@ -107,6 +109,38 @@ The table's `e2e` block selects specs per path:
 - `--class auth-data` adds the three auth specs, and `--paint yes` adds `admin-visual.spec.ts`.
   The other five classes change nothing. A unit test requires every spec in
   `examples/showcase/e2e` to appear in some entry.
+
+## The fast lane
+
+`--fast` prints the legs a pass session runs after each task while CI carries the whole suites. It
+prints one or two lines, each a complete gate string for `cairn-run-gate`. It runs no whole node
+project and no e2e, and its output holds no bare `npm run package` and no bare `npm run check:close`
+(the close runner is only ever given a label subset, and it builds `dist` itself). `--fast` cannot
+combine with `--pin` or `--protected`.
+
+**Line 1**, the non-browser legs, fails if any leg fails. It runs under `CAIRN_GATE_LANE=light`.
+
+- A serial chain, because each of its parts builds or reads `dist` and a build beside a reader
+  races: `npm run check:close -- <labels>` for the diff's static checks (minus the type check),
+  then `check:tool-heuristics`, `test:emit`, and the showcase's `test:unit` where the diff selects
+  them, then `npm run check:docs-gate` when a docs path changed, then the unit tests related to the
+  diff (`npx vitest related --run --passWithNoTests --project unit <paths>`; the whole `unit`
+  project when the diff deletes or renames a path under `src/` or `scripts/`).
+- Beside the chain, concurrently: the type check (`npm run check`), tellgrader, the Cairn Vale
+  rule-case tests, and `make -C tool check` when the diff holds a `tool/**` path. A tool-only diff
+  prints just the tool gate.
+
+**Line 2**, only when the diff reaches component tests: the related component tests,
+`CAIRN_RELATED_RUN=1 npm run test:component -- --no-file-parallelism <files>`, selected as in
+leg 4 above. It is always heavy (a browser), so it runs alone after line 1. No line 2 prints when no
+component test relates to the diff or every path is a docs path; the whole project runs when a
+rerun trigger or a deletion forces it, or when the selection cannot be computed.
+
+**Measured lane.** Line 1 ran three times on 2026-10-10 over `c495ed11~1..8e2b7d29`, a 19-path
+`src/lib` range, each under the heavy lock inside `systemd-run --user --wait -P -d`. The three
+`Memory peak` values were 2G, 2G, and 2G (systemd rounds to the nearest 0.1G), under the light lane's
+3G cap, so line 1 takes the light lane. The light lane's `MemoryHigh` is 2G, so a peak this close
+throttles rather than fails; a range that peaks higher moves the measurement, and the lane, here.
 
 ## Protected paths
 

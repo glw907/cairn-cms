@@ -5,10 +5,13 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
   CREATE_CAIRN_SITE_TRIGGERS,
+  FAST_LINE_1_LANE,
   PASS_CLASSES,
   TIER_GATES,
   TIER_ORDER,
   componentPlan,
+  concurrently,
+  decideFastGate,
   decideGate,
   e2eSpecs,
   loadContext,
@@ -521,13 +524,28 @@ describe('parseArgs', () => {
       pin: null,
       passClass: null,
       protectedMode: false,
+      fast: false,
+      unknown: [],
     });
   });
 
   it('parses every flag', () => {
     expect(
       parseArgs(['--range', 'abc..HEAD', '--paint', 'yes', '--pin', 'full', '--class', 'paint', '--protected']),
-    ).toEqual({ range: 'abc..HEAD', paint: 'yes', pin: 'full', passClass: 'paint', protectedMode: true });
+    ).toEqual({
+      range: 'abc..HEAD',
+      paint: 'yes',
+      pin: 'full',
+      passClass: 'paint',
+      protectedMode: true,
+      fast: false,
+      unknown: [],
+    });
+  });
+
+  it('reads --fast, and collects every argument it does not know', () => {
+    expect(parseArgs(['--fast', '--range', 'a..b'])).toMatchObject({ fast: true, unknown: [] });
+    expect(parseArgs(['--range', 'a..b', '--bogus', 'stray'])).toMatchObject({ unknown: ['--bogus', 'stray'] });
   });
 
   it('reads a --class with no value as an empty, invalid class', () => {
@@ -843,5 +861,145 @@ describe('--protected', () => {
       encoding: 'utf8',
     });
     expect(gate.stdout).not.toContain('ciWait');
+  });
+});
+
+// The fast lane (--fast): the inner-loop legs a pass session runs after each task. Line 1 is the
+// non-browser legs run concurrently, line 2 the related component tests, and CI carries the rest.
+describe('the fast lane', () => {
+  const SRC_PATH = 'src/lib/log/index.ts';
+  const DOCS_PATH = 'docs/internal/pass-gate-tiers.md';
+
+  it('prints one line for a docs-only diff: the docs gate and the static checks, no unit or component leg', () => {
+    const { lines, notes } = decideFastGate([DOCS_PATH]);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('npm run check:docs-gate');
+    expect(lines[0]).not.toContain('vitest');
+    expect(lines[0]).not.toContain('test:component');
+    expect(notes.join('\n')).toMatch(/component tests skipped/);
+  });
+
+  it('prints the related unit tests on line 1 and the related component tests on line 2 for a src/lib diff', () => {
+    const { lines } = decideFastGate([SRC_PATH], { selected: ['src/tests/component/a.test.ts'] });
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain(`npx vitest related --run --passWithNoTests --project unit ${SRC_PATH}`);
+    expect(lines[1]).toBe('CAIRN_RELATED_RUN=1 npm run test:component -- --no-file-parallelism src/tests/component/a.test.ts');
+  });
+
+  it('prints no second line when no component test relates to the diff, and the whole project when the selection failed', () => {
+    expect(decideFastGate([SRC_PATH], { selected: [] }).lines).toHaveLength(1);
+    expect(decideFastGate([SRC_PATH], { selected: null }).lines[1]).toBe(
+      'npm run test:component -- --no-file-parallelism',
+    );
+  });
+
+  it('runs the whole unit project when a src path was deleted, and never selects from the deleted path', () => {
+    const { lines } = decideFastGate([SRC_PATH, 'src/lib/gone.ts'], { deleted: ['src/lib/gone.ts'], selected: [] });
+    expect(lines[0]).toContain('npx vitest run --project unit');
+    expect(lines[0]).not.toContain('vitest related');
+  });
+
+  it('joins its legs so they run concurrently and the group fails when any one fails', () => {
+    const [line1] = decideFastGate([SRC_PATH], { selected: [] }).lines;
+    expect(line1).toMatch(/^CAIRN_GATE_LANE=light pids=''; \{ .+ \} & pids="\$pids \$!"/);
+    const bash = (command: string) => spawnSync('bash', ['-c', command], { encoding: 'utf8' }).status;
+    expect(bash(concurrently(['true', 'false', 'true']))).not.toBe(0);
+    expect(bash(concurrently(['true', 'true']))).toBe(0);
+    expect(bash(concurrently(['sleep 0.2 && false', 'true']))).not.toBe(0);
+  });
+
+  it('runs the legs that build or read dist one after another: close runner, docs gate, then the unit tests', () => {
+    const [line1] = decideFastGate([DOCS_PATH, SRC_PATH], { selected: [] }).lines;
+    const marks = ['npm run check:close -- ', 'npm run check:docs-gate', 'npx vitest related'].map((m) => line1.indexOf(m));
+    expect(marks.every((at) => at >= 0)).toBe(true);
+    expect([...marks].sort((a, b) => a - b)).toEqual(marks);
+    expect(line1.slice(marks[0], marks[2])).toContain(' && ');
+  });
+
+  it('runs the type check once, as its own concurrent leg, never inside the close runner', () => {
+    for (const path of [SRC_PATH, 'scripts/checks/gate-tier.mjs', DOCS_PATH]) {
+      const [line1] = decideFastGate([path], { selected: [] }).lines;
+      expect(line1.match(/\{ npm run check; \}/g), path).toHaveLength(1);
+      const subset = line1.match(/npm run check:close -- ([^&;]+)/)?.[1].trim().split(' ') ?? [];
+      expect(subset, path).not.toContain('check');
+    }
+  });
+
+  it('adds the Go tool gate to line 1 for a tool path and runs a tool-only diff as that gate alone', () => {
+    expect(decideFastGate(['tool/internal/spine/chapter.go'], { selected: [] }).lines).toEqual([
+      `${FAST_LINE_1_LANE} make -C tool check`,
+    ]);
+    expect(decideFastGate([SRC_PATH, 'tool/internal/spine/chapter.go'], { selected: [] }).lines[0]).toContain(
+      'make -C tool check',
+    );
+  });
+
+  it('prints neither a bare npm run package nor the whole close runner, whatever the diff', () => {
+    for (const paths of [[DOCS_PATH], [SRC_PATH], ['src/lib/admin/EditPage.svelte']]) {
+      for (const line of decideFastGate(paths, { selected: ['src/tests/component/a.test.ts'] }).lines) {
+        expect(line, paths.join(' ')).not.toContain('npm run package');
+        expect(line, paths.join(' ')).not.toMatch(/npm run check:close(?! --)/);
+      }
+    }
+  });
+
+  it('runs no e2e and no whole node project', () => {
+    for (const line of decideFastGate([SRC_PATH, 'examples/showcase/e2e/a.spec.ts'], { selected: [] }).lines) {
+      expect(line).not.toContain('test:e2e');
+      expect(line).not.toContain('test:node-projects');
+    }
+  });
+
+  // The measured lane (pass-gate-tiers.md, "The fast lane"): three peaks of 2G, under the light cap.
+  // A change to the lane is a new measurement, so the constant is pinned here.
+  it('puts the measured light-lane prefix on line 1 and never on line 2', () => {
+    expect(FAST_LINE_1_LANE).toBe('CAIRN_GATE_LANE=light');
+    const { lines } = decideFastGate([SRC_PATH], { selected: ['src/tests/component/a.test.ts'] });
+    expect(lines[0].startsWith(`${FAST_LINE_1_LANE} `)).toBe(true);
+    expect(lines[1].startsWith('CAIRN_GATE_LANE=')).toBe(false);
+  });
+
+  it('refuses an empty path list', () => {
+    expect(() => decideFastGate([])).toThrow(/no changed paths/);
+  });
+});
+
+describe('the CLI fast lane (spawned)', () => {
+  const run = (...args: string[]) => spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8' });
+  const head = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
+  const emptyTree = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+
+  it('exits 2 with empty stdout for an unknown flag, with or without --fast', () => {
+    for (const args of [['--bogus'], ['--fast', '--bogus'], ['--fast', '--nope', 'x']]) {
+      const out = run('--range', `${emptyTree}..${head}`, ...args);
+      expect(out.status, args.join(' ')).toBe(2);
+      expect(out.stdout).toBe('');
+    }
+  });
+
+  it('exits 2 with empty stdout when --fast combines with --pin or --protected', () => {
+    for (const extra of [['--pin', 'full'], ['--protected']]) {
+      const out = run('--range', `${emptyTree}..${head}`, '--fast', ...extra);
+      expect(out.status, extra.join(' ')).toBe(2);
+      expect(out.stdout).toBe('');
+    }
+  });
+
+  it('fails closed on an empty range or a git failure, printing nothing on stdout', () => {
+    for (const range of ['HEAD..HEAD', 'not-a-real-ref..HEAD']) {
+      const out = run('--fast', '--range', range);
+      expect(out.status, range).not.toBe(0);
+      expect(out.stdout).toBe('');
+    }
+  });
+
+  it('prints complete gate lines for a real range and the legs on stderr', () => {
+    const out = run('--fast', '--range', `${emptyTree}..${head}`);
+    expect(out.status).toBe(0);
+    const lines = out.stdout.trim().split('\n');
+    expect(lines.length).toBeGreaterThanOrEqual(1);
+    expect(lines.length).toBeLessThanOrEqual(2);
+    expect(out.stdout).not.toContain('npm run package');
+    expect(out.stderr).toMatch(/gate-tier: fast lane/);
   });
 });

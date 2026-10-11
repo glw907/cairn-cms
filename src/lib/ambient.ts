@@ -1,5 +1,6 @@
-// cairn-cms: the public `/ambient` barrel. The one-line App.Locals augmentation a consumer site
-// imports from src/app.d.ts, and nothing else: a type a site consumes directly (CairnEnv, Editor,
+// cairn-cms: the public `/ambient` barrel. The one-line augmentation a consumer site imports
+// from src/app.d.ts: the App.Locals members and the `__CAIRN_DEV_BUILD__` global, and nothing
+// else. A type a site consumes directly (CairnEnv, Editor,
 // and so on) belongs on the root barrel or /sveltekit instead, even one this augmentation's own
 // members reference, since this module's whole contract is its import side effect, not a name a
 // site imports from it.
@@ -40,6 +41,14 @@ import type { AdminActionAuditSink } from './sveltekit/admin-action.js';
 import type { AccessMap } from './auth/access.js';
 
 declare global {
+  /**
+   * The build-time half of the dev-backend gate. The `cairnManifest()` Vite plugin defines it as a
+   *  literal: `true` under `vite dev` and under a `VITE_CAIRN_E2E=1` build, `false` in a default
+   *  production build. Every call site names it directly, which is what lets each guarded branch
+   *  fold where it is written.
+   */
+  const __CAIRN_DEV_BUILD__: boolean;
+
   namespace App {
     interface Locals {
       cairnEditor?: Editor | null;

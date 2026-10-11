@@ -2,7 +2,7 @@
 // cairn.server.ts, and the three /test fixture routes. The gate has two halves and they live
 // apart on purpose.
 //
-// The build-time half is `__CAIRN_DEV_BUILD__`, a Vite `define` (see vite.config.ts). Vite
+// The build-time half is `__CAIRN_DEV_BUILD__`, a Vite `define` the `cairnManifest()` plugin supplies. Vite
 // substitutes it as a literal into the text of every module that names it, so `if
 // (__CAIRN_DEV_BUILD__ && devBackendOptIn())` folds at the call site itself and Rollup drops the
 // dead branch with its dynamic `@glw907/cairn-cms-dev` import. Keep every call site naming the

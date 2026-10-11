@@ -29,7 +29,7 @@ function cairnManifest(opts: CairnManifestOptions): Plugin;
 The build plugin. In `buildStart` it evaluates a verify virtual module through a nested Vite SSR
 load, so a manifest that has drifted from the corpus fails the build. Add it to the `plugins` array,
 after `sveltekit()`. The showcase wires it in its `vite.config.ts`, alongside its own build-time
-plugins (a `__CAIRN_DEV_BUILD__` define and `@tailwindcss/vite`) this excerpt omits:
+plugin (`@tailwindcss/vite`) this excerpt omits:
 
 ```ts
 import { sveltekit } from '@sveltejs/kit/vite';
@@ -52,6 +52,12 @@ export default defineConfig({
   ssr: { noExternal: ['@glw907/cairn-cms'] },
 });
 ```
+
+The plugin's `config` hook also defines the global `__CAIRN_DEV_BUILD__`, the build-time half of the
+dev-backend gate. It is `true` under `vite dev` and in a build that sets `VITE_CAIRN_E2E=1`, and
+`false` in a default build, so a guarded branch and its `@glw907/cairn-cms-dev` import fold out of a
+deployed Worker. The flag reads from the process environment and from the `.env` files in the working
+directory. A `define` your own config or plugin sets for the name wins.
 
 To regenerate the manifest after editing content, run the [`cairn-manifest`](./cli-cairn-manifest.md)
 CLI, which pairs with this plugin.

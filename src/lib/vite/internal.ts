@@ -179,6 +179,9 @@ export function resolveConsumerVite(root: string): string {
  *  would recurse, and adapter-cloudflare's virtual-workers plugin, whose configureServer starts a
  *  platform proxy (a workerd process) the verify never reads.
  */
+// WATCH: stripping 'cairn-manifest' also drops its `config` hook, so the nested server does not
+// define __CAIRN_DEV_BUILD__. That is harmless while nothing in the config module's graph reads the
+// global; revisit if one does.
 const NESTED_SERVER_STRIPPED = new Set([
   'cairn-manifest',
   'vite-plugin-sveltekit-adapter-cloudflare-virtual-workers-module',
@@ -238,6 +241,20 @@ function siteFactsRelPath(opts: CairnManifestOptions): string {
   return (opts.siteFactsPath ?? DEFAULT_SITE_FACTS_PATH).replace(/^\//, '');
 }
 
+/** The global the dev-backend gate reads at every call site, defined by the plugin's `config` hook. */
+const DEV_BUILD_DEFINE = '__CAIRN_DEV_BUILD__';
+
+/**
+ * Whether a build opts in to the dev backend with `VITE_CAIRN_E2E=1`, read the way Vite reads its
+ *  own env: the process env plus `.env`, `.env.local`, `.env.<mode>`, and `.env.<mode>.local` in the
+ *  working directory. It loads the site's own Vite, so the engine never imports a second copy.
+ */
+async function e2eFlagSet(mode: string): Promise<boolean> {
+  const root = process.cwd();
+  const vite = await importConsumerVite(root);
+  return vite.loadEnv(mode, root, 'VITE_').VITE_CAIRN_E2E === '1';
+}
+
 /**
  * The cairnManifest plugin. It serves the verify and adapter-facts virtual modules to the app graph
  *  and evaluates them in buildStart, so a manifest or site-facts drift fails the build, or the dev
@@ -252,6 +269,17 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
   let buildChecks: Promise<StartChecks> | undefined;
   const plugin: CairnManifestPlugin = {
     name: 'cairn-manifest',
+    // Supplies `__CAIRN_DEV_BUILD__`, the build-time half of the dev-backend gate (a handle that
+    // mints owner sessions must never compile into a deployed Worker). Vite substitutes the name as
+    // a literal into each module that reads it, so each guarded branch folds where it is written.
+    // A define the site already set wins in either plugin order: Vite merges a hook's result over
+    // the config so far, so the hook returns nothing once the name is present. The hook starts no
+    // nested server, only reads the flag through the site's own `loadEnv`.
+    async config(config, { command, mode }) {
+      if (config.define && DEV_BUILD_DEFINE in config.define) return;
+      const flagged = command === 'serve' || (await e2eFlagSet(mode));
+      return { define: { [DEV_BUILD_DEFINE]: JSON.stringify(flagged) } };
+    },
     configResolved(config) {
       // Capture the resolved app root so the nested server loads the same config the build did.
       root = config.root;

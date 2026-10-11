@@ -286,9 +286,9 @@ The original decision framing, for the record:
   and may add or drop a pass; this list is where each one sits today.
   1. Finish stage 2a's close: `docs/superpowers/plans/2026-10-07-2a-close-finish.md` (leak check,
      cadence rewrite, merge of PR #107). Not an engine pass.
-  2. **Engine passes A and B before stage 2b.** Pass A landed on `main`, unreleased, and the gate
-     economy pass closed on its branch (`docs/HISTORY.md`). Pass B runs next (the Now entry below),
-     and whichever "Docs tooling before stage 2b" items ride with it (or run as their own dotfiles pass).
+  2. **Engine passes A and B before stage 2b.** Both landed on `main`, unreleased: pass A (PR #108),
+     the gate economy pass (PR #110), and pass B (PR #113, the first pass scored on the lean
+     process). Whichever "Docs tooling before stage 2b" items remain run as their own dotfiles pass.
   3. Stage 2b: the 14 remaining extend pages. Its close runs the test.
   4. **The Claude Code arm's small stage**, right after 2b (the Now entry below): its facts already
      sit in the container, and the scaffold ships the guidance tree it documents. It registers the arm
@@ -307,43 +307,6 @@ The original decision framing, for the record:
   9. **The one release** (`cairn-release`), a `0.x` minor.
   10. Site migrations, one site pass each, cairn.pub first among equals. Their friction takes the same
      test, so a migration can still produce an engine fix after the release.
-
-- **Engine pass B before stage 2b (the boundary test at stage 2a's close, 2026-10-07; narrowed
-  2026-10-09).** Pass A landed on `main` unreleased
-  ([plan](docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md)): the access map and role
-  vocabulary as one declaration every reader takes, the access and auth edges, the roles migration,
-  the live key check and fingerprint, the failed save that keeps the writing, the head guard on most
-  writes to `main` (two remain, in the Next tier), and nested images in where-used. Pass B follows the gate economy pass, which closed on its branch
-  ([plan](docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md), spec
-  `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`, rulings beside it). Each item
-  names the extend page its fix changes (2b pages marked); pass B's close removes this entry. Source
-  detail for every item is the friction log at `b38ef6b3` (`git show
-  b38ef6b3:docs/internal/docs-friction-log.md`).
-  - **The signups demo leaves the scaffold (ruling 2).** It stays in `examples/showcase` as the worked
-    custom-admin-screen example, the bake excludes it, and `create-cairn-site` stops provisioning
-    `APP_DB`. Pages: add cairn, custom admin screen, restrict, scaffolded site files.
-  - **Dev package and scaffold defects the pages work around.** `@glw907/cairn-cms-dev` ships raw
-    `.ts` (`packages/cairn-cms-dev/package.json:20-24`) that a consumer's `svelte-check` fails on
-    (B1); the stale-manifest build error names a script a hand-built site lacks
-    (`src/lib/content/manifest.ts:376`, B2); no scaffold script runs the recorded `wrangler types`
-    command (B3, a `cf-typegen` script); the `__CAIRN_DEV_BUILD__` define is a plugin every site
-    hand-writes (B7, the engine supplies it); `cairn-guidance check` flags the scaffold's
-    `source(none)` sheet and reads a fresh scaffold as stale (B6). Pages: add cairn, scaffolded site
-    files; `guidance.md`, `vite.md`, and `ambient.md` for B6 and B7.
-  - **The admin error page (A5).** No `admin/+error.svelte`, so an admin 403 renders the root error
-    page in public chrome. Pages: restrict, scaffolded site files.
-  - **Schema and composition.** Duplicate publish-action labels crash the edit page's keyed `each`
-    (A13); a concept id that collides with an engine admin segment is accepted (A14);
-    `FieldBehavior.itemLabel` is read nowhere (D4); undeclared SEO keys drop silently (D6); the
-    site-config path rides `editor.nav.configPath` (D5); `sanitizeSchema`'s callback replaces the
-    floor wholesale (C5, against its comment); `checkSiteFacts` returns `ok` silently when the
-    adapter throws (C13); `cairn-audit` exits 0 on advisories (D8a, `--fail-on advisory`). Pages:
-    security model (C5), debug your site (C13); the outlined 2b pages draft from corrected facts:
-    define-an-adapter-and-schema, act-on-newly-published-entries, build-the-public-routes,
-    turn-on-tidy, arrange-the-admin-sidebar, run-cairn-audit-on-your-site.
-  - **The scaffold's feed (D2).** It ships `::include` as literal text and `media:` images as
-    root-relative URLs (`templates/waymark/src/chassis/feed.ts:13-20`). Page: 2b
-    build-the-public-routes.
 
 - **Agent guidance stays Claude Code's, and human pages never assume it (rulings, Geoff,
   2026-10-07).** "You should not assume that an implementor is using Claude." "A page shouldn't

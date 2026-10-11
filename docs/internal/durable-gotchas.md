@@ -342,7 +342,7 @@ The Bash tool's own default foreground timeout is 120 seconds, so a call without
 `timeout: 600000` is auto-backgrounded before the runner can answer. Pass the timeout on the first
 call. When a call returns `gate still running`, issue the same command again with the same timeout
 rather than polling the log; each reattach waits only for the remaining time. Reissue only while it
-says `still running`, since a command issued after the gate finished starts a fresh run.
+says `still running`, since a re-issue after the tree changes starts a fresh run.
 
 If the harness backgrounded the call anyway, the background notification and the last lines of the
 gate log (`gate exit: N`) are authoritative over a racing second call. A light-lane gate under

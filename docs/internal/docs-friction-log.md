@@ -31,7 +31,7 @@ tooling item fixes it there, and anything larger moves to a `ROADMAP.md` row in 
 bites.
 
 This log holds only live findings and the tombstones below. Resolved findings are pruned here once
-shipped; their detail lives in the git, PR bodies, and `docs/STATUS.md`, the homes for shipped
+shipped; their detail lives in git, PR bodies, and `docs/STATUS.md`, the homes for shipped
 history. The append-only prose that accumulated through 2026-06-26 was pruned on 2026-06-28
 (extensibility Plan 1), and the full backlog was cleared on 2026-07-16 by the friction-triage pass:
 every open finding was verified against the code and then either shipped, filed into `ROADMAP.md`

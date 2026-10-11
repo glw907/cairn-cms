@@ -26,8 +26,8 @@ and `APP_DB` left the scaffold, the dev package ships built `dist/`, the engine 
 define, and the dev backend serves the site's own content. The release holds until the docs are
 complete.
 
-In flight: the alignment pass, session `cairn-alignment` (id `bcabc73b`), on branch
-`worktree-alignment-pass`.
+The alignment PR (#114) and its dotfiles PR (glw907/workstation#12) wait for Geoff's read; the
+dotfiles PR merges first.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

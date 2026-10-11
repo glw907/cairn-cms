@@ -1,16 +1,24 @@
 You are executing engine pass B, rollout step 5 of the lean pass cutover, an `auth-data`-class pass
-started from the cairn-cms main checkout `~/Projects/cairn-cms`. Before any other act, call
-EnterWorktree with the name `engine-pass-b`: it creates a worktree under `.claude/worktrees/` on a
-new branch from local `HEAD`. Your first act there is the adapter's setup command, `npm ci && npm ci
---prefix examples/showcase`. Load `cairn-pass` (it loads `pass-core`) and follow it. Read the plan at
-`.claude/worktrees/engine-pre-2b-b/docs/superpowers/plans/2026-10-10-engine-pass-b-lean.md` whole,
-then the sections of `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` it names as binding.
-After PB-T0's merge, both files are also in your own worktree. Arm the API-drop wake-up and the
-lid-switch hold. Execute PB-T0 through PB-C in the plan's Order, with PB-T4 and PB-T6 as one pair
-and PB-T7 and PB-T8 as another: two Agent-tool subagents with worktree isolation, each prompt
-quoting its task verbatim. Each task's first act writes its task-clock file, and a fired clock stop
-writes STATUS, notifies Geoff, and waits. Push after each task. The first push opens a draft PR
-against `main` in `glw907/cairn-cms`, and `ci-green <sha> --pr <n> --wait` watches each push as a
-background Bash task. You may commit on your worktree's branch, push it to `glw907/cairn-cms`, close
-PR #111 as superseded in PB-T0, and merge your own PR at PB-C item 9, a merge Geoff ruled on
-2026-10-10. Never push `main` and never write `~/.dotfiles`. At PB-C's end, notify Geoff and end.
+started from the cairn-cms main checkout `/var/home/glw907/Projects/cairn-cms`. Before any other
+act, enter your worktree: if `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/engine-pass-b`
+appears in `git worktree list`, this is a relaunch, so call EnterWorktree with that `path`;
+otherwise call EnterWorktree with the name `engine-pass-b`, which creates a worktree under
+`.claude/worktrees/` on branch `worktree-engine-pass-b` from local `HEAD`. Then run `test -e
+"$(git rev-parse --absolute-git-dir)/pass-stop"`: if the file exists, a stop is open, so end your
+turn without another act until Geoff tells you to go on. On a new worktree, run the adapter's setup
+command, `npm ci && npm ci --prefix examples/showcase`. Load `cairn-pass` (it loads `pass-core`) and
+follow it. Read the plan whole: before PB-T0's commit, at
+`/var/home/glw907/Projects/cairn-cms/.claude/worktrees/engine-pre-2b-b/docs/superpowers/plans/2026-10-10-engine-pass-b-lean.md`;
+after it, the same path in your own worktree. Then read the sections of
+`docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` (same directory) that it names as
+binding. On a relaunch, follow the plan's Resume convention. Arm the API-drop wake-up (`/loop` with
+no interval) and the lid-switch hold (`systemd-inhibit --what=handle-lid-switch
+--who=engine-pass-b sleep 43200`, as a background Bash task). Each wake-up tick runs the stop check
+first. Execute PB-T0 through PB-C in the plan's Order, with PB-T4 and PB-T6 as one pair and PB-T7
+and PB-T8 as another, dispatched per the plan's Pairs convention. Each task's first act writes its
+task-clock file, and every stop follows the plan's Stops convention. Push after each task. The
+first push opens a draft PR against `main` in `glw907/cairn-cms`, and `ci-green <sha> --pr <n>
+--wait` watches each push as a background Bash task. You may commit on your worktree's branch, push
+it to `glw907/cairn-cms`, close PR #111 as superseded in PB-T0, and merge your own PR through PB-C
+item 7's merge sequence, a merge Geoff ruled on 2026-10-10. Never push `main` and never write
+`~/.dotfiles`. At PB-C's end, notify Geoff and end.

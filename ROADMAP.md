@@ -322,9 +322,6 @@ The original decision framing, for the record:
   - **The signups demo leaves the scaffold (ruling 2).** It stays in `examples/showcase` as the worked
     custom-admin-screen example, the bake excludes it, and `create-cairn-site` stops provisioning
     `APP_DB`. Pages: add cairn, custom admin screen, restrict, scaffolded site files.
-  - **The dev backend reads the site's real content (ruling 5).** Saves stay in memory with a
-    persistent notice (fork 1). `seedContent` ("has no effect yet", `handle.ts:58-63`) goes. Pages:
-    add cairn, scaffolded site files.
   - **Dev package and scaffold defects the pages work around.** `@glw907/cairn-cms-dev` ships raw
     `.ts` (`packages/cairn-cms-dev/package.json:20-24`) that a consumer's `svelte-check` fails on
     (B1); the stale-manifest build error names a script a hand-built site lacks
@@ -1354,7 +1351,8 @@ the named human gates only):**
   in-memory fake (`packages/cairn-cms-dev/src/handle.ts`), so seeded objects show only under bare
   `vite dev` or `wrangler dev`, not the command a scaffolded site runs. Doc bug or engine bug is
   undecided, and the reading is from code only. Fix: say so on the page, or let the dev backend
-  read through to a seeded bucket. Trigger: the next pass touching `media-seed` or
+  read through to a seeded bucket. Verdict (engine pass B, ruling 5): the in-memory R2 double stays, the
+  dev package README states the limit, and reading local R2 through is batched, tagged add-cairn. Trigger: the next pass touching `media-seed` or
   `packages/cairn-cms-dev`, or a site that seeds media and sees none. The SvelteKit 3 move changed how
   the doubles reach the Worker (`withEnv` over the Worker env) and not which exist, so this defers,
   re-armed to the next pass that changes the dev package's double set or `DevBackendConfig`.

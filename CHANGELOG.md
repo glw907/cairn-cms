@@ -124,7 +124,7 @@
   publishes, and `check:dev-package` now fails on any `exports` target or `files` entry outside
   `dist/`.
 
-  Consumers must: nothing, unless a site imports a file from the package's `src/` directly.
+  Consumers must: add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`, beside the engine, so `vite dev` processes the package's `cloudflare:workers` import instead of handing it to Node. Nothing else, unless a site imports a file from the package's `src/` directly.
 
 - **The `sanitizeSchema` callback gets a copy, and a floor holds after it returns.** The callback
   receives a deep copy of cairn's safe base schema. Once it returns, the engine removes `script` from
@@ -158,6 +158,23 @@
   Consumers must: delete `configPath` from `editor.nav`. If your site config does not live at
   `src/theme/site.config.yaml`, set `editor.siteConfigPath` to its path. A site that builds a
   `CairnRuntime` by hand instead of calling `composeRuntime` adds `siteConfigPath` to it.
+
+- **The dev backend serves your site's own content, and `seedContent` is gone.**
+  `devBackendHandle({ runtime, content })` takes `content: 'repository' | 'fixtures'`, defaulting to
+  `'repository'`. In `'repository'` each branch is an in-memory overlay over the working tree, so the
+  dev admin lists your real entries, and an edit lives only until the dev server stops: nothing is
+  written to disk. `'fixtures'` is the seeded in-memory repo the dev backend served before. The
+  `'repository'` mode needs a filesystem and throws under `wrangler dev`'s workerd, naming
+  `content: 'fixtures'`. While it serves your content, the admin shows one persistent notice that edits
+  are held in memory and discarded when the dev server stops. `Backend` gains the optional
+  `ephemeral` member the notice reads, and `AdminShellData` the optional `contentEphemeral` member.
+  A scaffolded site's hooks pass no `content` option.
+
+  Consumers must: drop `seedContent`, and pass `content: 'fixtures'` when the dev backend runs under
+  `wrangler dev`.
+
+  Consumers may: pass `content: 'fixtures'` to keep the seeded dev content, which a site that runs
+  the dev backend without ever naming `seedContent` gets by adding the one option.
 
 - **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
   `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer

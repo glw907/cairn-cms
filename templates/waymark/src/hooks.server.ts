@@ -17,7 +17,9 @@ import { runtime } from '#chassis/cairn.server.js';
 let handle: Handle;
 if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
   const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
-  handle = devBackendHandle({ runtime });
+  handle = devBackendHandle({
+    runtime,
+  });
 } else {
   handle = createAuthGuard({ runtime });
 }

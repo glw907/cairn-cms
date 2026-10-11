@@ -11,6 +11,9 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`.** The package ships built JavaScript that imports `cloudflare:workers`. Without the entry, `vite dev` hands it to Node, which rejects the scheme, and `/admin` answers 500.
+- **Drop `seedContent` from `devBackendHandle`, and pass `content: 'fixtures'` when the dev backend runs under `wrangler dev`.** The option never did anything, and the dev backend now serves your site's own content from the working tree by default. That mode needs a filesystem, so it throws under workerd.
+- **Pass `content: 'fixtures'` to keep the seeded dev content.** A site that runs the dev backend without ever naming `seedContent` now sees its own entries instead of the sample posts. Edits stay in memory either way, and the admin says so in one persistent notice.
 - **Upgrade to SvelteKit 3, `@sveltejs/adapter-cloudflare` 8, Svelte 5.57.1, and Wrangler 4.118.**
   The engine's peer ranges become `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and a SvelteKit 2 site
   can't run it. The site also needs Vite `^8.0.12`, `@sveltejs/vite-plugin-svelte` `^7`, and Node

@@ -17,7 +17,15 @@ import { runtime } from '#chassis/cairn.server.js';
 let handle: Handle;
 if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
   const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
-  handle = devBackendHandle({ runtime });
+  handle = devBackendHandle({
+    runtime,
+    // cairn-template:exclude-start
+    // This example site serves the package's seeded fixtures: its e2e runs under `wrangler dev`,
+    // whose workerd cannot read the working tree, and its specs assert the fixture content. A new
+    // site takes the default, which serves its own content from the working tree.
+    content: 'fixtures',
+    // cairn-template:exclude-end
+  });
 } else {
   handle = createAuthGuard({ runtime });
 }

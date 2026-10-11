@@ -74,6 +74,13 @@ export type AdminShellData =
        */
       pendingEntries: Promise<{ concept: string; id: string }[] | null>;
       /**
+       * Present only while the dev backend serves the site's own content from memory (its backend
+       *  sets `ephemeral`), so the shell can say edits are discarded when the dev server stops.
+       *  Absent on a production request, which carries no per-request backend, and under the
+       *  seeded fixtures.
+       */
+      contentEphemeral?: true;
+      /**
        * Per-session pending-work counts from the site's own `deps.attention`, keyed by the visible
        *  nav href they decorate; an entry absent from the resolved-and-filtered `nav` (an engine
        *  door or a site entry alike) never appears here, so a count cannot leak to a role that
@@ -223,6 +230,7 @@ export function createShellActions(ctx: ContentRoutesContext) {
         // back a silent empty token that leaves every form permanently 403 with no readable cause.
         csrf: issueCsrfToken(event),
         pendingEntries,
+        ...(event.locals.cairnBackend?.ephemeral ? { contentEphemeral: true as const } : {}),
         attention,
         mediaBase: runtime.resolvedAssets.enabled ? runtime.resolvedAssets.publicBase : DEFAULT_MEDIA_BASE,
       },

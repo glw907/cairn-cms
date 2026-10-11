@@ -209,6 +209,19 @@ describe('CairnAdminShell', () => {
     expect(document.querySelector('[data-theme="cairn-admin"]')).not.toBeNull();
   });
 
+  // The notice answers one risk: real writing that a dev-server restart drops. It renders only when
+  // the shell payload carries the ephemeral-content member, in the admin voice, as a status alert.
+  it('renders the in-memory edits notice only when the payload says the content is ephemeral', async () => {
+    const screen = await render(CairnAdminShell, { data: { ...data(true), contentEphemeral: true as const }, children: child });
+    const notice = screen.getByRole('status').filter({ hasText: "Edits are held in memory. They're discarded when the dev server stops." });
+    await expect.element(notice).toBeVisible();
+    expect(notice.element().classList.contains('alert')).toBe(true);
+    await screen.unmount();
+
+    const plain = await render(CairnAdminShell, { data: data(true), children: child });
+    await expect.element(plain.getByText('Edits are held in memory.')).not.toBeInTheDocument();
+  });
+
   it('carries a CSRF field in every POST form', async () => {
     const screen = await render(CairnAdminShell, { data: data(true), children: child });
     const postForms = screen.container.querySelectorAll('form[method="POST"]');

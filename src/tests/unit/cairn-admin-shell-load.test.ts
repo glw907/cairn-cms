@@ -72,6 +72,30 @@ describe('createCairnAdmin shellLoad', () => {
     expect(typeof shell.pendingEntries.then).toBe('function');
   });
 
+  // The dev backend's repository mode marks its backend `ephemeral`, and the shell load reads that
+  // straight off locals.cairnBackend: a production request carries no per-request backend, and the
+  // GitHub backend and the seeded fixtures backend never set it.
+  it('carries the ephemeral-content member only when the request backend is ephemeral', async () => {
+    new GithubDouble({ main: {} }).install();
+    const { shellLoad } = createCairnAdmin({ runtime: runtime(), ...deps });
+    const ephemeral = eventFor('/admin/posts');
+    ephemeral.locals.cairnBackend = Object.assign(Object.create(backend), { ephemeral: true as const });
+    const withMember = await shellLoad(ephemeral);
+    if (withMember.shell.public) throw new Error('expected authed shell');
+    expect(withMember.shell.contentEphemeral).toBe(true);
+
+    const github = await shellLoad(eventFor('/admin/posts'));
+    if (github.shell.public) throw new Error('expected authed shell');
+    expect(github.shell.contentEphemeral).toBeUndefined();
+    expect('contentEphemeral' in github.shell).toBe(false);
+
+    const none = eventFor('/admin/posts');
+    delete none.locals.cairnBackend;
+    const withoutBackend = await shellLoad(none);
+    if (withoutBackend.shell.public) throw new Error('expected authed shell');
+    expect('contentEphemeral' in withoutBackend.shell).toBe(false);
+  });
+
   it('returns a public payload for /admin/login and never calls listBranches', async () => {
     const spy = vi.spyOn(backend, 'listBranches');
     const { shellLoad } = createCairnAdmin({ runtime: runtime(), ...deps });

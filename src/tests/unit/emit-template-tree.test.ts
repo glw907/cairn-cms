@@ -147,6 +147,13 @@ describe('the emitted template tree', () => {
     expect(existsSync(join(emittedTo, 'migrations-app'))).toBe(false);
   });
 
+  it('emits hooks that pass no content option to the dev backend, so a new site serves its own content', async () => {
+    const hooks = await readFile(join(emittedTo, 'src', 'hooks.server.ts'), 'utf8');
+    expect(hooks).toContain('devBackendHandle({');
+    expect(hooks).not.toMatch(/content\s*:/);
+    expect(hooks).not.toContain('cairn-template:');
+  });
+
   it('emits the admin error page and leaves the 403 fixture route behind', () => {
     expect(existsSync(join(emittedTo, 'src', 'routes', 'admin', '+error.svelte'))).toBe(true);
     expect(existsSync(join(emittedTo, 'src', 'routes', 'admin', 'error-fixture'))).toBe(false);

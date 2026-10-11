@@ -118,7 +118,8 @@ project and no e2e, and its output holds no bare `npm run package` and no bare `
 (the close runner is only ever given a label subset, and it builds `dist` itself). `--fast` cannot
 combine with `--pin` or `--protected`.
 
-**Line 1**, the non-browser legs, fails if any leg fails. It runs under `CAIRN_GATE_LANE=light`.
+**Line 1**, the non-browser legs, fails if any leg fails. It runs on the heavy lane, cairn-run-gate's
+default, with no lane prefix.
 
 - A serial chain, because each of its parts builds or reads `dist` and a build beside a reader
   races: `npm run check:close -- <labels>` for the diff's static checks (minus the type check),
@@ -139,8 +140,12 @@ rerun trigger or a deletion forces it, or when the selection cannot be computed.
 **Measured lane.** Line 1 ran three times on 2026-10-10 over `c495ed11~1..8e2b7d29`, a 19-path
 `src/lib` range, each under the heavy lock inside `systemd-run --user --wait -P -d`. The three
 `Memory peak` values were 2G, 2G, and 2G (systemd rounds to the nearest 0.1G), under the light lane's
-3G cap, so line 1 takes the light lane. The light lane's `MemoryHigh` is 2G, so a peak this close
-throttles rather than fails; a range that peaks higher moves the measurement, and the lane, here.
+3G cap. That measurement ran without a cgroup limit, and it did not carry over: the same line, run
+through `CAIRN_GATE_LANE=light cairn-run-gate` over `origin/main..HEAD`, exited 1 with `JavaScript
+heap out of memory` in `check:reference`. Node sizes its default heap from the cgroup limit, about
+1GB under the light cap, so a leg that peaks at 2G uncapped can still run out of heap there. Line 1
+therefore stays on the heavy lane. Prove a lane by a run under that lane's own cap, never by a peak
+measured outside it.
 
 ## Protected paths
 

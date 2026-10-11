@@ -16,7 +16,7 @@
 // diff's buckets select, the docs gate when a docs path changed, and the Go tool gate when
 // `tool/**` changed. Line 2 appears only when the diff reaches component tests; it runs the
 // related component tests alone and is always heavy (a browser). The fast lane runs no whole node
-// project and no e2e. Line 1's lane comes from a measured peak (see FAST_LINE_1_LANE).
+// project and no e2e. Line 1 runs on the heavy lane (see FAST_LINE_1_LANE).
 //
 // The default output is the targeted gate. Its legs run in this order:
 //
@@ -137,7 +137,7 @@ export const TIER_GATES = {
 /** The five npm tier names, ascending severity; `--pin` accepts these and `tool`. */
 export const TIER_ORDER = ['docs', 'scripts', 'engine', 'admin-visual', 'full'];
 
-/** The pass classes `--class` accepts; only `auth-data` changes the output. */
+/** The values `--class` accepts; only `auth-data` changes the output. */
 export const PASS_CLASSES = ['auth-data', 'engine-logic', 'paint', 'sweep', 'docs', 'tool'];
 
 const NODE_PROJECTS = 'npm run test:node-projects';
@@ -151,12 +151,15 @@ const E2E_VISUAL_INVERT = ' --grep-invert "site home|archive page 2"';
 const SITE_VISUAL = 'site-visual.spec.ts';
 
 /**
- * The lane prefix on fast-lane line 1, from the measured peak of its legs (docs/internal/
- * pass-gate-tiers.md, "The fast lane"). Measured 2026-10-10 over c495ed11~1..8e2b7d29: three
- * `Memory peak` values of 2G, under the light lane's 3G cap. Empty means the heavy lane,
- * cairn-run-gate's default. A new measurement changes this value and its pinned unit test together.
+ * The lane prefix on fast-lane line 1 (docs/internal/pass-gate-tiers.md, "The fast lane"). Empty
+ * means the heavy lane, cairn-run-gate's default. Measured 2026-10-10 over c495ed11~1..8e2b7d29:
+ * three `Memory peak` values of 2G, under the light lane's 3G cap, yet the leg failed there. Node
+ * sizes its default heap from the cgroup limit, about 1GB under the light cap, and `check:reference`
+ * ran out of heap (`gate exit: 1`, `JavaScript heap out of memory`), so a peak measured outside the
+ * cap does not prove the lane. A new lane changes this value and its pinned unit test together, and
+ * is proven by a run under the lane's own cap.
  */
-export const FAST_LINE_1_LANE = 'CAIRN_GATE_LANE=light';
+export const FAST_LINE_1_LANE = '';
 
 /** The extra static checks that never touch dist, so they run beside the dist chain. */
 const DIST_FREE_EXTRAS = new Set(['check:tellgrader', 'check:vale-rules']);
@@ -479,7 +482,7 @@ export function componentPlan(paths, deleted, context) {
 /**
  * The e2e specs a diff reaches.
  * @param {string[]} paths - The diff's non-tool paths.
- * @param {{ passClass?: string | null, paint?: 'yes' | 'no' }} options - Pass class and paint flag.
+ * @param {{ passClass?: string | null, paint?: 'yes' | 'no' }} options - The `--class` value and the paint flag.
  * @param {Context} context - The check universe and table.
  * @returns {{ all: boolean, specs: string[] }} The whole suite, or the sorted spec names.
  */
@@ -547,7 +550,7 @@ function e2eLeg(selection) {
  *   `selected` is Vitest's related selection over `componentPlan(...).reach`; absent means the
  *   whole component project runs.
  * @returns {Decision} The decision.
- * @throws {Error} On an unknown pin tier or pass class.
+ * @throws {Error} On an unknown pin tier or `--class` value.
  */
 export function decideGate(paths, opts = {}) {
   const { paint = 'no', pin = null, passClass = null, deleted = [], selected = null, root = ROOT } = opts;

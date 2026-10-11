@@ -901,7 +901,7 @@ describe('the fast lane', () => {
 
   it('joins its legs so they run concurrently and the group fails when any one fails', () => {
     const [line1] = decideFastGate([SRC_PATH], { selected: [] }).lines;
-    expect(line1).toMatch(/^CAIRN_GATE_LANE=light pids=''; \{ .+ \} & pids="\$pids \$!"/);
+    expect(line1).toMatch(/^pids=''; \{ .+ \} & pids="\$pids \$!"/);
     const bash = (command: string) => spawnSync('bash', ['-c', command], { encoding: 'utf8' }).status;
     expect(bash(concurrently(['true', 'false', 'true']))).not.toBe(0);
     expect(bash(concurrently(['true', 'true']))).toBe(0);
@@ -926,9 +926,7 @@ describe('the fast lane', () => {
   });
 
   it('adds the Go tool gate to line 1 for a tool path and runs a tool-only diff as that gate alone', () => {
-    expect(decideFastGate(['tool/internal/spine/chapter.go'], { selected: [] }).lines).toEqual([
-      `${FAST_LINE_1_LANE} make -C tool check`,
-    ]);
+    expect(decideFastGate(['tool/internal/spine/chapter.go'], { selected: [] }).lines).toEqual(['make -C tool check']);
     expect(decideFastGate([SRC_PATH, 'tool/internal/spine/chapter.go'], { selected: [] }).lines[0]).toContain(
       'make -C tool check',
     );
@@ -950,13 +948,13 @@ describe('the fast lane', () => {
     }
   });
 
-  // The measured lane (pass-gate-tiers.md, "The fast lane"): three peaks of 2G, under the light cap.
-  // A change to the lane is a new measurement, so the constant is pinned here.
-  it('puts the measured light-lane prefix on line 1 and never on line 2', () => {
-    expect(FAST_LINE_1_LANE).toBe('CAIRN_GATE_LANE=light');
+  // The lane (pass-gate-tiers.md, "The fast lane"): the light lane's cap starves Node's default heap
+  // and check:reference fails there, so line 1 stays on the heavy lane. A lane change is proven by a
+  // run under its own cap, and the constant is pinned here.
+  it('leaves line 1 and line 2 on the heavy lane, with no lane prefix', () => {
+    expect(FAST_LINE_1_LANE).toBe('');
     const { lines } = decideFastGate([SRC_PATH], { selected: ['src/tests/component/a.test.ts'] });
-    expect(lines[0].startsWith(`${FAST_LINE_1_LANE} `)).toBe(true);
-    expect(lines[1].startsWith('CAIRN_GATE_LANE=')).toBe(false);
+    for (const line of lines) expect(line).not.toMatch(/CAIRN_GATE_LANE=/);
   });
 
   it('refuses an empty path list', () => {

@@ -171,7 +171,11 @@ export async function deployWorker({ dir, log, accountId }) {
   return { url };
 }
 
-/** The bindings, in the order migrations run, matching wrangler.jsonc's binding names. */
+/**
+ * The bindings, in the order migrations run, matching wrangler.jsonc's binding names. A site
+ * scaffolded with a second D1 binding and resumed here gets that database provisioned but never
+ * migrated; the window is accepted rather than derived from the site's own wrangler.jsonc.
+ */
 const MIGRATION_DATABASES = ['AUTH_DB'];
 
 /**

@@ -89,6 +89,20 @@
 
   Consumers must: nothing, unless a script matches on the old message or `norms` text.
 
+- **A new scaffold ships without the Signups demo, and `create-cairn-site` provisions one database.**
+  The scaffold no longer carries `/admin/signups`, its `migrations-app/` migration, the `APP_DB`
+  binding, the Signups sidebar entry, or the `admin.signups.misconfigured` log event, and it declares
+  no `access` map (the zero-config floor). The `cairn-admin-screens` skill's list exemplar carries the
+  Signups source inline, and `examples/showcase` keeps the screen as the worked custom-screen example.
+  The setup command provisions and migrates `AUTH_DB` only, so its summary and cost preamble name one
+  database. A site scaffolded before this change, whose setup stopped before its migrations ran, and
+  which is then resumed with the new `create-cairn-site`, gets an `APP_DB` that the deploy provisions
+  and never migrates, so its Signups route reads a database with no table. Only a setup interrupted
+  across this one release reaches that case.
+
+  Consumers must: nothing for a site that finished its setup. For a resumed setup in that window, run
+  `npx wrangler d1 migrations apply APP_DB --remote` from the affected site.
+
 - **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
   `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer
   becomes `^3`. A site also needs `@sveltejs/adapter-cloudflare` `^8`, `vite` `^8.0.12`,

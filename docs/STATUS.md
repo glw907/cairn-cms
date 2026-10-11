@@ -31,6 +31,9 @@ and `APP_DB` left the scaffold, the dev package ships built `dist/`, the engine 
 define, and the dev backend serves the site's own content. The release holds until the docs are
 complete.
 
+In flight: the alignment pass, session `cairn-alignment` (id `bcabc73b`), on branch
+`worktree-alignment-pass`.
+
 Cleanup for the planning session: after confirming PR #113 merged, remove the `engine-pass-b` and
 `engine-pre-2b-b` worktrees and their branches.
 

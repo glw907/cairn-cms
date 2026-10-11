@@ -1160,7 +1160,7 @@ function signatures above reference these.
 | `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's permanent id. |
 | `ArrayField` | Extension API | `interface ArrayField` | A repeatable field whose stored value is a list of its `item`'s values. |
 | `BehaviorTable` | Extension API | `type BehaviorTable = Record<string, FieldBehavior>` | The behavior table co-bundled with a fieldset, keyed by field name. Empty for a behavior-free fieldset. |
-| `FieldBehavior` | Extension API | `interface FieldBehavior { validate?; itemLabel? }` | Function-valued behavior a field descriptor cannot carry as plain data: a cross-field `validate` and an array row's `itemLabel` deriver. Resident in the app bundle, never the `load` payload. |
+| `FieldBehavior` | Extension API | `interface FieldBehavior { validate? }` | Function-valued behavior a field descriptor cannot carry as plain data: a cross-field `validate`. Resident in the app bundle, never the `load` payload. |
 | `DatePrefix` | Extension API | `type DatePrefix = 'year' \| 'month' \| 'day'` | Filename date-prefix granularity for a dated concept: the leading `YYYY[-MM[-DD]]-` on the stem. |
 | `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept (spec §7.2). Posts are dated feed entries; pages are plain navigable structure. |
 | `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. `title` and `body` are special: `title` serializes to the directive `[label]`, `body` to the unmarked content. |

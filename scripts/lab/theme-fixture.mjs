@@ -330,6 +330,14 @@ async function templateArm({ themeFile, themeDir, probe }) {
     const dev = pack(join(ROOT, 'packages/cairn-cms-dev'), packs);
     const site = join(tmp, 'site');
     run('node', ['scripts/build/emit-template.mjs', site, `file:${engine}`, `file:${dev}`, 'fixture-template'], { cwd: ROOT });
+    // The preview serves the built site under `wrangler dev`, whose workerd cannot read a working
+    // tree, and the dev backend's default content mode refuses there. The copy opts into the seeded
+    // fixtures, the way the example site's own hooks do.
+    const hooks = join(site, 'src/hooks.server.ts');
+    const hooksSource = readFileSync(hooks, 'utf8');
+    const withFixtures = hooksSource.replace(/devBackendHandle\(\{\s*runtime,?\s*\}\)/, "devBackendHandle({ runtime, content: 'fixtures' })");
+    if (withFixtures === hooksSource) throw new HarnessFailure('the emitted hooks hold no devBackendHandle({ runtime }) call to opt into fixtures');
+    writeFileSync(hooks, withFixtures);
     run('npm', ['install', '--no-audit', '--no-fund'], { cwd: site });
     const nodeModules = join(site, 'node_modules');
     const engineFiles = verifyInstalled(engine, join(nodeModules, ...PACKAGE.split('/')), join(tmp, 'verify-engine'));

@@ -277,7 +277,7 @@ The original decision framing, for the record:
   **One release** follows the complete docs (after stage 5) and carries SvelteKit 3, every engine
   fix, and the complete docs. **No consumer site migrates before it**, cairn.pub included: each site
   migration is the complete docs' acceptance test, run as a site pass that follows the docs. Friction
-  a migration finds is handled then, by the same test. The expected shape is the conductor's
+  a migration finds is handled then, by the same test. The expected shape is the session's
   forecast, accepted by Geoff (2026-10-07), not a schedule: an engine pass before 2b (below), likely
   one before stage 4 for the live-reproduction seam, probably none before stages 3 and 5, and a batch
   before the final release.
@@ -385,7 +385,7 @@ The original decision framing, for the record:
     seat), which drove `scaffolded-site-files` to its round cap. Give hand-offs one owner, the plan,
     and tell the register seat a planned hand-off is not a tell.
   - The register's 26-word cap reads as a whole-item cap (`docs/internal/docs-register.md:90`, the
-    overlay row near `:1041`). Google's rule, and the R5 conductor's ruling, is per sentence, in list
+    overlay row near `:1041`). Google's rule, and the R5 ruling, is per sentence, in list
     items and task sections only, with introduction and explanation sentences exempt. State it there
     and in the chain's plan and structural prompts; plans also wrote 40-word Before-you-begin items.
   - Scoped-review dispatches state the cap's scope in the register's exact words: a broader wording
@@ -460,7 +460,7 @@ The original decision framing, for the record:
   after this one that edits `cairn-admin.css` or the named component (retargeted past the
   `0.98.0` cut at pass C's close, because the items are cosmetic and the scoping fix moves the
   pinned Waymark render).
-  - Coverage notes the `paint` class batched rather than blocked on (conductor ruling, pass C
+  - Coverage notes the `paint` class batched rather than blocked on (ruling at pass C
     close: cosmetic, so they ride past the `0.98.0` cut): the destructive-edge contrast
     test proves the ratio but not that `border-error` wins the cascade over the 55% field edge;
     the disabled-stock switch test covers the `:checked` form only; `::before` carries no
@@ -849,7 +849,7 @@ The original decision framing, for the record:
   StatusChip regrammar (dot removed, register renamed, grounds retuned) because no captured
   screen renders a chip within the 120px diff budget (`playwright.config`'s
   `maxDiffPixels: 120`). That pass's visual verification had to be a hand-built probe read by the
-  conductor. Candidate fix, riding the same regeneration-and-human-read work the corpus gap above
+  session. Candidate fix, riding the same regeneration-and-human-read work the corpus gap above
   already owes: a chip-bearing admin screen (a list with status rows, or a dedicated probe route)
   joins `admin-visual.spec.ts` in both themes.
 
@@ -1038,7 +1038,7 @@ the named human gates only):**
   unless `high` matches.
 
   Four more, filed from the gate economy pass (2026-10-10), none a defect of the new gate. (d)
-  Chains pipelining: `pass-execute-chains.js` and `pass-execute`'s parallel mode do not push or
+  Chains pipelining: the pass runner's parallel mode does not push or
   read CI per task; only the sequential runner pipelines. (e) The CI build-once rewire: CI keeps its
   per-step checks while `check:close` is the local build-once runner; rewiring CI to build once
   saves about 2 minutes a cycle, but its check list differs from `check:close`'s and it would lose
@@ -1253,8 +1253,8 @@ the named human gates only):**
     stale `dist` proves the old engine (order `package` first, or refuse a `dist` older than
     `src`); the workers fake (`src/tests/helpers/cloudflare-workers-fake.ts:50-51,93-94`) exposes
     only `flushWaitUntil`, so `createLiveTokenCheck` carries a test-only `keepAlive` parameter
-    (`src/lib/sveltekit/health.ts:110`) (a read accessor on the fake removes it); and the
-    `go-architecture-reader`'s grade of `tool/internal/doctor`: the exported surface (`Check`,
+    (`src/lib/sveltekit/health.ts:110`) (a read accessor on the fake removes it); and
+    the Go architecture read of `tool/internal/doctor`: the exported surface (`Check`,
     `Result`, `Status`) could be unexported behind an opaque `CheckedResult`, `WranglerFacts` and
     `ReadWranglerConfig` are exported for one caller, `Catalogue` duplicates `copylist`'s AST walk,
     `Result.ID` and `Severity` duplicate state, `readSiteFacts`' err and `!found` pair repeats in
@@ -1843,7 +1843,7 @@ the named human gates only):**
     before this pass (Decision 12): `docs/internal/record/2026-09-21-go-tool-b2-architecture-reads.md`.
     None of it blocks a release. **Trigger:** the next pass touching that package.
 
-- **Go tool architecture, round 2 (2026-09-27).** The chores pass's ten `go-architecture-reader`
+- **Go tool architecture, round 2 (2026-09-27).** The chores pass's ten Go architecture
   reads, full findings and best passages at
   `docs/superpowers/research/2026-09-27-go-chores-architecture-reads.md`. Nine of ten packages read
   sound with nits; most findings predate this pass, since the reader grades a whole package rather
@@ -3089,7 +3089,7 @@ the named human gates only):**
 ## Later
 
 - **`tool/internal/health` carries package debt (the harvest's close Go read, 2026-09-30; all
-  predating the harvest).** The `go-architecture-reader` graded it sound with nits.
+  predating the harvest).** The Go architecture read graded it sound with nits.
   `Options.Validate` and `ActorProviderConsole` are exported with no outside caller. The three fix
   tables are walked by hand in three places, and the anchor and actor tests skip `fixesByReason`;
   one `allFixes` iterator would cover all three. `check_creds.go:143-144` prints a raw Reason code
@@ -3242,7 +3242,7 @@ the named human gates only):**
 
 - **Make the local showcase e2e render match the CI runner (Geoff, 2026-09-09).** After a CI
   baseline regen, this workstation's Chromium renders home and archive2 a few pixels off (the 20
-  files in `4de378ec`), so every local gate reports those failures and needed a conductor ruling
+  files in `4de378ec`), so every local gate reports those failures and needed a ruling
   to pass. Pin the local Playwright Chromium build and font set to the runner's, or run the e2e
   in a matching container, so local baselines are canonical again. Chore, not a pass; the gotcha
   is recorded in `CLAUDE.md`.
@@ -3400,7 +3400,7 @@ the named human gates only):**
   report](docs/internal/feedback/2026-08-05-cairn-pub-migration.md)).
 
 - **Should `PreviewBanner` be a declared palette site rather than a 17-suppression cluster
-  (docs friction log, triaged 2026-08-14; raised by the code-simplifier on the preview pass,
+  (docs friction log, triaged 2026-08-14; raised by the simplifier review on the preview pass,
   2026-08-07)?** `PreviewBanner` mounts on public pages where neither `cairn-admin.css` nor
   Tailwind may exist, so it deliberately carries its own fallback palette
   (`src/lib/public/PreviewBanner.svelte:62-75`), and `token-colors` still needs a

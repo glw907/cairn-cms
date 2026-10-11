@@ -194,7 +194,7 @@ export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cair
   // artifacts; the manifest file itself is consumed by the emitter, not shipped. These are matched
   // by top-level name only; a local dev-secrets file or a stray build log can land at any depth, so
   // isAlwaysSkippedPath matches those by basename instead, below.
-  const alwaysSkip = ['node_modules', '.svelte-kit', 'build', '.wrangler', 'test-results', 'playwright-report', '.cairn-template.json'];
+  const alwaysSkip = ['node_modules', '.svelte-kit', 'build', '.wrangler', 'test-results', 'playwright-report', 'blob-report', '.cairn-template.json'];
   await rm(to, { recursive: true, force: true });
   await mkdir(to, { recursive: true });
   await cp(from, to, {

@@ -125,6 +125,10 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
 - This smokes the package behavior through the site shims. Because the two sites' `admin/**`
   routes are byte-identical shims (the F2 invariant), a clean run on one site plus a build and
   type-check on the other is strong; running the checklist on both is the thorough form.
+- A site on a placeholder GitHub App key fails a Save at the key import (`src/lib/github/signing.ts`),
+  before any commit is attempted. The log then shows `admin.action.failed`, never `commit.failed`,
+  and over local http the real commit stays unexercised. Prove the commit path against a deployed
+  site with a real App.
 
 ## Appendix: Media actions
 

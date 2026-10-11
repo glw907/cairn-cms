@@ -22,11 +22,12 @@ plan, score, and replay record: [`superpowers/plans/2026-10-09-gate-economy.md`]
 
 ## Immediate next action
 
-Engine pass B stays **paused** (Geoff, 2026-10-10) until the lean pass process lands (below). The clock-time brainstorm widened into a broader
-question: the pass process itself carries too much ceremony for its clock and token cost. Pass B's
-state: worktree `.claude/worktrees/engine-pre-2b-b`, draft PR #111, Task 0 recorded in the plan's
-Ledger (`1ce14d3b`), and WIP commit `dbdc4556` (Tasks 1 and 2, unreviewed, ungated, not pushed).
-The release holds until the docs are complete.
+PR #112 (the lean pass process, step 2) merges first. It lands the trimmed `CLAUDE.md`, the
+`gate-tier.mjs --fast` lane, the sharded e2e job, and the HISTORY freeze. Engine pass B resumes as
+rollout step 5 once it merges, as the first pass scored on the lean process: worktree
+`.claude/worktrees/engine-pre-2b-b`, draft PR #111, Task 0 in the plan's Ledger (`1ce14d3b`), and WIP
+commit `dbdc4556` (Tasks 1 and 2, unreviewed, ungated, not pushed). Its branch merges `main` first
+and re-gates Tasks 1 and 2 through the fast lane. The release holds until the docs are complete.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
@@ -38,13 +39,3 @@ The release holds until the docs are complete.
 - Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; `radius-scale` and the retired
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
-
-### Next action (lean pass process)
-
-> The process-ceremony brainstorm closed 2026-10-10 with an approved design that replaces the pass
-> machinery workstation-wide. It lives in the workstation repo:
-> `~/.dotfiles/docs/superpowers/specs/2026-10-10-lean-pass-process-design.md`, with its resume prompt in
-> `~/.dotfiles/docs/STATUS.md`. Launch that session from `~/.dotfiles`, not here. Its rollout step 2
-> lands a cairn branch (CLAUDE.md, `cairn-pass`, the `gate-tier.mjs` fast lane, sharded CI e2e).
-> Engine pass B resumes as rollout step 5, after steps 1 to 4 merge, as the first pass scored on the
-> new process; its Tasks 1 and 2 WIP (`dbdc4556`) is re-gated through the fast lane.

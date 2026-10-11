@@ -1,14 +1,23 @@
-// cairn-cms: the per-task gate classifier. The dotfiles chain runner
-// (~/.claude/workflows/pass-execute.js) calls this after an implementer commits and before the
-// gate, so the gate string a task runs is sized to its committed diff, not the plan's forecast.
+// cairn-cms: the per-task gate classifier. A pass session runs it after a task commits and before
+// the gate, so the gate string a task runs is sized to its committed diff, not the plan's forecast.
 // docs/internal/pass-gate-tiers.md is the page a reviewer reads to reproduce a classification.
 //
-// Interface: `node scripts/checks/gate-tier.mjs --range <base>..HEAD [--paint yes|no] [--class
-// <passClass>] [--pin <tier>]`. On success the gate string is the ONLY line on stdout; the legs and
-// the reasons behind them print to stderr. On an empty range, a git failure, an unknown class, or an
-// unknown pin, nothing prints to stdout and the process exits non-zero, so a caller that captures
-// only stdout gets a shell-safe empty string rather than a bogus gate command; the runner's own
-// prompt falls back to the plan's gate string in that case.
+// Interface: `node scripts/checks/gate-tier.mjs --range <base>..HEAD [--fast] [--paint yes|no]
+// [--class <passClass>] [--pin <tier>]`. On success the gate string is the ONLY line on stdout (the
+// fast lane prints one or two lines, each a complete gate string); the legs and the reasons behind
+// them print to stderr. On an empty range, a git failure, an unknown class, or an unknown pin,
+// nothing prints to stdout and the process exits non-zero, so a caller that captures only stdout
+// gets a shell-safe empty string rather than a bogus gate command. An unknown flag exits 2 with
+// nothing on stdout.
+//
+// `--fast` is the inner-loop lane, the legs a pass session runs after each task while CI carries
+// the whole suites. Line 1 runs the non-browser legs and fails if any fails: the static checks the
+// diff's buckets select, the type check, the unit tests related to the diff, the docs gate when a
+// docs path changed, and the Go tool gate when `tool/**` changed. The legs that build or read dist
+// run in one chain; the rest run beside it. `--fast` ignores `--class` and `--paint`, which only
+// shape the e2e leg the fast lane leaves to CI. Line 2 appears only when the diff reaches component tests; it runs the
+// related component tests alone and is always heavy (a browser). The fast lane runs no whole node
+// project and no e2e. Line 1 runs on the heavy lane (see FAST_LINE_1_LANE).
 //
 // The default output is the targeted gate. Its legs run in this order:
 //
@@ -129,7 +138,7 @@ export const TIER_GATES = {
 /** The five npm tier names, ascending severity; `--pin` accepts these and `tool`. */
 export const TIER_ORDER = ['docs', 'scripts', 'engine', 'admin-visual', 'full'];
 
-/** The pass classes `--class` accepts; only `auth-data` changes the output. */
+/** The values `--class` accepts; only `auth-data` changes the output. */
 export const PASS_CLASSES = ['auth-data', 'engine-logic', 'paint', 'sweep', 'docs', 'tool'];
 
 const NODE_PROJECTS = 'npm run test:node-projects';
@@ -141,6 +150,20 @@ const E2E_GUARD = `export E2E_PORT=${E2E_PORT} && ! ss -Htln 'sport = :${E2E_POR
 const E2E_RUN = 'npm --prefix examples/showcase run test:e2e -- --retries=0';
 const E2E_VISUAL_INVERT = ' --grep-invert "site home|archive page 2"';
 const SITE_VISUAL = 'site-visual.spec.ts';
+
+/**
+ * The lane prefix on fast-lane line 1 (docs/internal/pass-gate-tiers.md, "The fast lane"). Empty
+ * means the heavy lane, cairn-run-gate's default. Measured 2026-10-10 over c495ed11~1..8e2b7d29:
+ * three `Memory peak` values of 2G, under the light lane's 3G cap, yet the leg failed there. Node
+ * sizes its default heap from the cgroup limit, about 1GB under the light cap, and `check:reference`
+ * ran out of heap (`gate exit: 1`, `JavaScript heap out of memory`), so a peak measured outside the
+ * cap does not prove the lane. A new lane changes this value and its pinned unit test together, and
+ * is proven by a run under the lane's own cap.
+ */
+export const FAST_LINE_1_LANE = '';
+
+/** The extra static checks that never touch dist, so they run beside the dist chain. */
+const DIST_FREE_EXTRAS = new Set(['check:tellgrader', 'check:vale-rules']);
 
 /**
  * Repo-relative globs whose change reaches the create-cairn-site suite: the package itself, the
@@ -460,7 +483,7 @@ export function componentPlan(paths, deleted, context) {
 /**
  * The e2e specs a diff reaches.
  * @param {string[]} paths - The diff's non-tool paths.
- * @param {{ passClass?: string | null, paint?: 'yes' | 'no' }} options - Pass class and paint flag.
+ * @param {{ passClass?: string | null, paint?: 'yes' | 'no' }} options - The `--class` value and the paint flag.
  * @param {Context} context - The check universe and table.
  * @returns {{ all: boolean, specs: string[] }} The whole suite, or the sorted spec names.
  */
@@ -528,7 +551,7 @@ function e2eLeg(selection) {
  *   `selected` is Vitest's related selection over `componentPlan(...).reach`; absent means the
  *   whole component project runs.
  * @returns {Decision} The decision.
- * @throws {Error} On an unknown pin tier or pass class.
+ * @throws {Error} On an unknown pin tier or `--class` value.
  */
 export function decideGate(paths, opts = {}) {
   const { paint = 'no', pin = null, passClass = null, deleted = [], selected = null, root = ROOT } = opts;
@@ -593,6 +616,109 @@ export function decideGate(paths, opts = {}) {
 }
 
 /**
+ * @typedef {object} FastDecision
+ * @property {string[]} lines - One or two complete gate strings; line 1 is the non-browser legs.
+ * @property {string[]} notes - Why each leg is what it is, for stderr.
+ */
+
+/**
+ * Join commands so they run concurrently and the group fails when any one fails. The legs are
+ * backgrounded in the caller's shell, so cancelling the gate must kill the caller's whole process
+ * group; `cairn-run-gate`'s transient scope does, and a bare `bash -c` killed by a timeout does not.
+ * @param {string[]} commands - Independent commands.
+ * @returns {string} One shell command.
+ */
+export function concurrently(commands) {
+  if (commands.length === 1) return commands[0];
+  const starts = commands.map((command) => `{ ${command}; } & pids="$pids $!"`).join('; ');
+  return `pids=''; ${starts}; rc=0; for p in $pids; do wait $p || rc=1; done; [ $rc = 0 ]`;
+}
+
+/**
+ * Resolve a diff into the fast lane (spec Execution item 3): the non-browser legs as line 1 and
+ * the related component tests as line 2, never a whole node project and never e2e.
+ * @param {string[]} paths - Every changed path, deleted ones included.
+ * @param {{ deleted?: string[], selected?: string[] | null, root?: string }} [opts] - `selected` is
+ *   Vitest's related component selection over `componentPlan(...).reach`; null means it could not
+ *   be computed, and an empty array means no component test relates to the diff.
+ * @returns {FastDecision} The gate lines and the notes.
+ * @throws {Error} When the diff has no paths.
+ */
+export function decideFastGate(paths, opts = {}) {
+  const { deleted = [], selected = null, root = ROOT } = opts;
+  if (paths.length === 0) throw new Error('gate-tier: no changed paths to size a gate from');
+  const toolPaths = paths.filter((path) => path.startsWith('tool/'));
+  const npmPaths = paths.filter((path) => !path.startsWith('tool/'));
+  /** @type {string[]} */
+  const notes = [];
+  // Legs that read or rebuild dist (the close runner and the docs gate build it, the unit tests and
+  // the showcase suites read it) run one after another in `chain`; a build beside a reader races.
+  // Everything else runs beside the chain in `parallel`.
+  /** @type {string[]} */
+  const parallel = [];
+  /** @type {string[]} */
+  const chain = [];
+  /** @type {string[]} */
+  const lines = [];
+  /** @type {string | null} */
+  let unit = null;
+
+  if (npmPaths.length > 0) {
+    const context = loadContext(root);
+    const live = npmPaths.filter((path) => !isNoCheck(path, context));
+    const goneSet = new Set(deleted);
+    const unitInputs = npmPaths.filter(
+      (path) => /^(?:src|scripts)\//.test(path) && !goneSet.has(path) && /\.(?:ts|js|mjs|svelte)$/.test(path),
+    );
+    if (deleted.some((path) => /^(?:src|scripts)\//.test(path))) {
+      unit = 'npx vitest run --project unit';
+      notes.push('unit tests: whole project (a src or scripts path was deleted or renamed away)');
+    } else if (unitInputs.length > 0) {
+      unit = `npx vitest related --run --passWithNoTests --project unit ${unitInputs.map(shellQuote).join(' ')}`;
+      notes.push(`unit tests: related to ${unitInputs.length} path(s)`);
+    } else {
+      notes.push('unit tests: none (no src or scripts source path changed)');
+    }
+
+    const checks = selectChecks(npmPaths, context);
+    notes.push(...checks.reasons);
+    notes.push(`static checks: ${checks.labels.length === 0 ? 'none' : checks.labels.join(', ')}`);
+    const closeLabels = checks.labels.filter((label) => label !== 'check' && context.closeLabels.includes(label));
+    const extraLabels = checks.labels.filter((label) => context.table.extraCommands[label]);
+    chain.push(...staticLeg(closeLabels, context));
+    // The type check always runs, after the close runner: the root program loads dist through the
+    // package's self-import, so it must not read dist while the runner rebuilds it. The close runner
+    // never repeats it.
+    chain.push('npm run check');
+    for (const label of extraLabels) {
+      (DIST_FREE_EXTRAS.has(label) ? parallel : chain).push(context.table.extraCommands[label]);
+    }
+    if (live.some((path) => pathBuckets(path, context).has('docs'))) chain.push(DOCS_GATE);
+    if (unit) chain.push(unit);
+
+    const plan = componentPlan(npmPaths, deleted, context);
+    if (plan.mode === 'skip') {
+      notes.push(`component tests skipped: ${plan.reason}`);
+    } else if (plan.mode === 'select' && selected !== null && selected.length === 0) {
+      notes.push('component tests: none relate to the diff');
+    } else if (plan.mode === 'select' && selected !== null) {
+      notes.push(`component tests: ${selected.length} related test file(s)`);
+      lines.push(`${COMPONENT_SELECTED} ${selected.map(shellQuote).join(' ')}`);
+    } else {
+      const why = plan.mode === 'select' ? 'selection could not be computed' : plan.reason;
+      notes.push(`component tests: whole project (${why})`);
+      lines.push(COMPONENT_FULL);
+    }
+  }
+  if (toolPaths.length > 0) parallel.push(TOOL_GATE);
+
+  // The chain's close runner builds dist once itself, so line 1 carries no `npm run package`.
+  const body = concurrently([...(chain.length > 0 ? [chain.join(' && ')] : []), ...parallel]);
+  lines.unshift(FAST_LINE_1_LANE ? `${FAST_LINE_1_LANE} ${body}` : body);
+  return { lines, notes };
+}
+
+/**
  * Vitest's related selection for the component project over a set of changed files, with the
  * trigger switch on so a rerun trigger selects every file.
  * @param {string[]} reach - Repo-relative changed files.
@@ -627,10 +753,11 @@ export async function selectComponentTests(reach, root = ROOT) {
 
 /**
  * Parse the fixed CLI shape: `--range <spec>`, an optional `--paint yes|no`, an optional
- * `--class <passClass>`, an optional `--pin <tier>`, and the bare `--protected`.
+ * `--class <passClass>`, an optional `--pin <tier>`, and the bare `--protected` and `--fast`.
  * @param {string[]} argv - Arguments after the script path.
- * @returns {{ range: string | null, paint: 'yes' | 'no', pin: string | null, passClass: string | null, protectedMode: boolean }}
- *   The parsed flags; `passClass` is null when the flag is absent and empty when it lacks a value.
+ * @returns {{ range: string | null, paint: 'yes' | 'no', pin: string | null, passClass: string | null, protectedMode: boolean, fast: boolean, unknown: string[] }}
+ *   The parsed flags; `passClass` is null when the flag is absent and empty when it lacks a value;
+ *   `unknown` lists every argument the parser does not know.
  */
 export function parseArgs(argv) {
   let range = null;
@@ -639,6 +766,9 @@ export function parseArgs(argv) {
   let pin = null;
   let passClass = null;
   let protectedMode = false;
+  let fast = false;
+  /** @type {string[]} */
+  const unknown = [];
   for (let i = 0; i < argv.length; i++) {
     switch (argv[i]) {
       case '--range':
@@ -656,9 +786,14 @@ export function parseArgs(argv) {
       case '--protected':
         protectedMode = true;
         break;
+      case '--fast':
+        fast = true;
+        break;
+      default:
+        unknown.push(argv[i]);
     }
   }
-  return { range, paint, pin, passClass, protectedMode };
+  return { range, paint, pin, passClass, protectedMode, fast, unknown };
 }
 
 /**
@@ -727,7 +862,17 @@ function fail(message) {
  * @returns {Promise<void>} Resolves once the output is printed or the refusal reported.
  */
 async function main() {
-  const { range, paint, pin, passClass, protectedMode } = parseArgs(process.argv.slice(2));
+  const { range, paint, pin, passClass, protectedMode, fast, unknown } = parseArgs(process.argv.slice(2));
+  if (unknown.length > 0) {
+    console.error(`gate-tier: unknown argument ${unknown.map((arg) => `"${arg}"`).join(', ')}`);
+    process.exitCode = 2;
+    return;
+  }
+  if (fast && (pin || protectedMode)) {
+    console.error('gate-tier: --fast cannot combine with --pin or --protected');
+    process.exitCode = 2;
+    return;
+  }
   if (!range) return fail('gate-tier: --range <base>..HEAD is required');
   if (passClass !== null && !PASS_CLASSES.includes(passClass)) {
     return fail(`gate-tier: unknown --class "${passClass}" (want one of ${PASS_CLASSES.join(', ')})`);
@@ -748,6 +893,21 @@ async function main() {
   if (entries.length === 0) return fail(`gate-tier: range "${range}" carries no changed paths`);
   const paths = entries.map((entry) => entry.path);
   const deleted = entries.filter((entry) => entry.status === 'D').map((entry) => entry.path);
+
+  if (fast) {
+    try {
+      const npmPaths = paths.filter((path) => !path.startsWith('tool/'));
+      const plan = npmPaths.length > 0 ? componentPlan(npmPaths, deleted, loadContext()) : null;
+      const selected = plan?.mode === 'select' ? await selectComponentTests(plan.reach) : null;
+      const decision = decideFastGate(paths, { deleted, selected });
+      console.error('gate-tier: fast lane');
+      for (const note of decision.notes) console.error(`gate-tier: ${note}`);
+      for (const line of decision.lines) console.log(line);
+    } catch (err) {
+      fail(err instanceof Error ? err.message : String(err));
+    }
+    return;
+  }
 
   try {
     let selected = null;

@@ -9,5 +9,6 @@ build
 *.b64
 test-results
 playwright-report
+blob-report
 .claude/agent-memory/
 !.dev.vars.example

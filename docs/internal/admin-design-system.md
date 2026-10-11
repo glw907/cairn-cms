@@ -98,6 +98,25 @@ Calibration (Geoff, 2026-07-15):
   base` block (the UA-reset floor for form controls, `dialog`, `fieldset`/`legend`, and `.list`,
   sorted below `components` so DaisyUI's own classes still win), which is not an override home
   and never grows a fourth entry in this list.
+- **DaisyUI 5 quirks an override meets (checked against daisyUI 5.7.47).** A few declarations sit
+  unnested in `@layer utilities`, outside the `daisyui` sublayers, so a `cairn-idiom` rule cannot
+  outrank them: `.alert`'s `border-color`, `.kbd`'s `box-shadow`, and `.collapse`'s `visibility`.
+  Override one through the variable DaisyUI exposes for it (`--alert-border-color` for the alert).
+  `.alert` is a grid, so `flex-col` does nothing on it. A `.modal-box` rendered statically open
+  paints nothing, because `.modal` stays `visibility: hidden` until it carries `[open]`. `.list`
+  sets only a flex column and a font size, so it does not remove list markers. `.menu` sets
+  `display: flex`, which beats the browser's `[hidden]` rule, so hiding a menu needs an explicit
+  scoped rule. DaisyUI's option parser drops a comma-bearing value inside a `@plugin
+  "daisyui/theme"` block, so such a value goes in the scheme's `:root` block.
+- **A reduced-motion restatement ties the blanket block, and source order decides.** The floor's
+  selector, `[data-theme='cairn-admin'] *`, has specificity (0,1,0), the same as a class-bearing
+  restatement, and both carry `!important`. Whichever rule the built sheet places later wins. A
+  consumer's sheet loads after the engine's and wins by default; an engine-authored restatement
+  must sit after the blanket block in `cairn-admin.css`. Measure the order in the built sheet.
+- **`outline-hidden` removes the admin's whole focus indicator.** The admin's `:focus-visible` rule
+  is an outline (`outline: 2px solid var(--color-primary)`), not a ring, so an `outline-hidden`
+  utility on a control leaves nothing behind. Reserve it for a programmatically focused heading
+  (`tabindex="-1"`), as `MediaOrphanTools` does, and give any other control its own visible state.
 - **The build flattens CSS nesting before scoping.** `build-admin-css.mjs` runs lightningcss with
   `Features.Nesting` between the Tailwind compile and `postcss-prefix-selector`, because the prefixer
   prepends the scope to the front of every rule and would sever a nested combinator selector

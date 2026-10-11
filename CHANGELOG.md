@@ -15,7 +15,7 @@
   with no `robots` field) was lost without a word. `CairnLogEvent` and `CAIRN_LOG_EVENTS` gain the
   member, and the event table in `docs/reference/log-events.md` its row.
 
-  Consumers may: filter Workers Logs on `content.field_undeclared` after a build to find the keys.
+  Consumers may: read the build output for `content.field_undeclared` to find the keys.
 
 - **`/healthz?live=1` mints one installation token and reports whether GitHub accepts the key.** A
   request with `?live=1` signs a JWT from the deployed key, exchanges it for an installation token,
@@ -187,6 +187,18 @@
 
   Consumers may: copy `src/routes/admin/+error.svelte` into a hand-built site, and run `npx
   cairn-manifest` when the build reports a stale manifest.
+
+- **The engine supplies the dev-build define, `__CAIRN_DEV_BUILD__`.** The `cairnManifest()` plugin's
+  `config` hook defines it as `true` under `vite dev` and in a build that sets `VITE_CAIRN_E2E=1`
+  (read from the process environment and the `.env` files in the working directory), and as `false`
+  in a default build, so a guarded branch and its `@glw907/cairn-cms-dev` import fold out of a
+  deployed Worker. A define the site already sets wins in either plugin order. `@glw907/cairn-cms/ambient`
+  declares the global. The scaffold and the example site drop their own `devBuildDefine()` plugin and
+  `app.d.ts` declaration.
+
+  Consumers may: delete the site's own `devBuildDefine` plugin and its `__CAIRN_DEV_BUILD__`
+  declaration. A site with `skipLibCheck` off that keeps the declaration in `app.d.ts` hits TS2451 against
+  `/ambient` and must delete it.
 
 - **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
   `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer
@@ -496,6 +508,7 @@
 - **`cairn-guidance check` reads a fresh scaffold as fresh.** A stylesheet whose Tailwind import uses
   `source(none)` now counts as excluding `.claude/`, and the guidance tree hash leaves out the
   `VERSION` stamp, which the bake and `install` stamp differently.
+
 - **Publish-all now refuses a stale publish.** It reads the default branch's head before any pending
   branch, so a single publish of the same entry landing mid-batch answers the calm conflict instead
   of being reverted by the branch's older content.

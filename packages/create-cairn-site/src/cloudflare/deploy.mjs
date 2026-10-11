@@ -179,7 +179,7 @@ export async function deployWorker({ dir, log, accountId }) {
 const MIGRATION_DATABASES = ['AUTH_DB'];
 
 /**
- * Apply pending migrations to the D1 database, by binding name. The T3 spike confirmed
+ * Apply pending migrations to the D1 database, by binding name. A spike confirmed
  * `wrangler d1 migrations apply <binding> --remote` resolves the binding against an id-less
  * config, so this takes no database-name fallback.
  * @param {object} args

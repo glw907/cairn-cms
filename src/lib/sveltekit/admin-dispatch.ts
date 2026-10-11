@@ -61,8 +61,8 @@ export function parseAdminPath(
     if (head === 'login') return { view: 'login' };
     if (head === 'editors') return { view: 'editors' };
     if (head === 'nav') return { view: 'nav' };
-    // media is its own view, a peer of editors and nav, so it is decided here, not added to the
-    // reserved-no-view set. /admin/media/<anything> 404s naturally (media is not a configured
+    // media is its own view, a peer of editors and nav, so it is decided here before the
+    // reserved-no-view check. /admin/media/<anything> 404s naturally (media is not a configured
     // concept), which is the correct shape.
     if (head === 'media') return { view: 'media' };
     // settings is its own view, a peer of editors and nav. /admin/settings/<anything> 404s naturally

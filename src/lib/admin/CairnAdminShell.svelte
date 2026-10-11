@@ -903,7 +903,7 @@ discriminant, not the fields, gates the chrome).
       <main class="flex-1 p-4 lg:px-10 lg:py-8">
         {#snippet ephemeralNotice()}
           {#if data.contentEphemeral}
-            <div role="status" class="alert alert-info mb-4 type-body">
+            <div role="status" class="alert alert-info mx-auto mb-8 w-full max-w-3xl type-body">
               Edits are held in memory. They're discarded when the dev server stops.
             </div>
           {/if}

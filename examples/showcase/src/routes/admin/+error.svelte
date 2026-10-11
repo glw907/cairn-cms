@@ -32,6 +32,6 @@ inside, so it falls to the root error page. SvelteKit requires that, and this fi
 
 <EmptyState heading={copy.heading} headingLevel="h1" message={copy.message}>
   {#snippet action()}
-    <a href="/admin" class="btn btn-ghost btn-sm">Back to the dashboard</a>
+    <a href="/admin" class="btn btn-neutral btn-sm">Back to the dashboard</a>
   {/snippet}
 </EmptyState>

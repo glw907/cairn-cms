@@ -20,12 +20,12 @@ export const IMPORT_LINE = '@.claude/cairn/CLAUDE.md';
 /** The directive that excludes `.claude/` from a Tailwind build's automatic source detection. */
 export const SOURCE_EXCLUSION_LINE = '@source not "./.claude";';
 
-// The scaffold's own admin stylesheet path first (packages/create-cairn-site/scripts/bake-template.mjs),
-// then one common alternative; `judgeSourceExclusion` reports unknown and names every path it
-// looked at, including these, when it identifies neither.
 /** The Tailwind import modifier that turns off automatic source detection, so `.claude/` is never scanned. */
 const SOURCE_NONE = 'source(none)';
 
+// The scaffold's own admin stylesheet path first (packages/create-cairn-site/scripts/bake-template.mjs),
+// then one common alternative; `judgeSourceExclusion` reports unknown and names every path it
+// looked at, including these, when it identifies neither.
 const SOURCE_CSS_CANDIDATES = ['src/admin.css', 'src/theme/admin.css'];
 
 /** One reported line's verdict; `stale` and `missing` are what `--strict` can fail on. */

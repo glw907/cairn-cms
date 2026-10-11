@@ -384,6 +384,11 @@ describe('verifyManifest', () => {
     const stale = formatManifest({ version: 1, entries: [entryA] });
     expect(() => verifyManifest(built, stale)).toThrow(/stale|regenerate/i);
   });
+  it('names the shipped bin, npx cairn-manifest, as the regeneration command', () => {
+    const built = { version: 1 as const, entries: [entryA, entryB] };
+    const stale = formatManifest({ version: 1, entries: [entryA] });
+    expect(() => verifyManifest(built, stale)).toThrow(/Regenerate it \(npx cairn-manifest\)/);
+  });
   it('fails a committed manifest that lacks a now-built summary', () => {
     const built = { version: 1 as const, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], summary: 'Blurb.' },

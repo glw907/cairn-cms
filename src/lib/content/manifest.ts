@@ -399,7 +399,7 @@ export function verifyManifest(built: Manifest, committedRaw: string, adapter?: 
   throw new Error(
     'content manifest is stale: the committed file does not match the corpus.\n' +
       formatDiff(diff) +
-      '\nRegenerate it (npm run cairn:manifest) and commit the result.',
+      '\nRegenerate it (npx cairn-manifest) and commit the result.',
   );
 }
 

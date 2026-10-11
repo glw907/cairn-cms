@@ -4,6 +4,7 @@
     "src/routes/probe-craft",
     "src/routes/admin/theme-kit",
     "src/routes/admin/signups",
+    "src/routes/admin/error-fixture",
     "migrations-app",
     "src/routes/(site)/+layout.server.ts",
     "src/members",

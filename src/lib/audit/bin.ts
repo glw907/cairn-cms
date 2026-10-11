@@ -3,7 +3,8 @@
 // the logic): parse the flags, load the config from the directory the command runs in, run the
 // static rules or, under `--rendered`, the rendered ones against a running server, print the
 // report. Bad flags and a run that cannot start go to stderr with exit 2; an unsuppressed
-// error-tier finding exits 1; a clean run exits 0. The codes go through process.exitCode, never
+// error-tier finding exits 1, and under `--fail-on advisory` so does an unsuppressed advisory; a
+// clean run exits 0. The codes go through process.exitCode, never
 // process.exit, so a piped stdout flushes the whole report first.
 import {
   exitCodeFor,
@@ -70,7 +71,7 @@ async function main(): Promise<void> {
       ? await runRendered(config, selectRules(renderedRules(), args.rule))
       : runStatic(config, selectRules(staticRules(), args.rule));
     console.log(formatReport(report));
-    process.exitCode = exitCodeFor(report);
+    process.exitCode = exitCodeFor(report, args.failOn);
   } catch (err) {
     console.error(`cairn-audit: ${err instanceof Error ? err.message : String(err)}`);
     process.exitCode = 2;

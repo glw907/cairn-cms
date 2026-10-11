@@ -105,6 +105,13 @@ jobs:
           registry-url: https://registry.npmjs.org
       # Same npm pin as the engine job above; see its WATCH comment.
       - run: npm install -g npm@11
+      # The package ships dist/, which the root `package` script builds (after the engine's own
+      # dist/, whose types the dev declarations import). `npm ci` runs it through the root prepare.
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci --no-audit --no-fund
+          clean: node_modules
       - name: Publish @glw907/cairn-cms-dev to npm
         working-directory: packages/cairn-cms-dev
         run: |

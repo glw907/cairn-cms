@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { defineFieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset, type FieldBehavior } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 import { log } from '../../lib/log/index.js';
 
@@ -51,5 +51,13 @@ describe('fieldset behavior.validate', () => {
       owner: 'about-box',
       error: 'boom',
     });
+  });
+});
+
+describe('FieldBehavior shape', () => {
+  it('does not accept an itemLabel member', () => {
+    // @ts-expect-error itemLabel is not a FieldBehavior member (ArrayField carries it instead)
+    const behavior: FieldBehavior = { itemLabel: () => 'x' };
+    expect(behavior).toBeDefined();
   });
 });

@@ -3,6 +3,7 @@ import { h } from 'hastscript';
 import { defaultSchema } from 'hast-util-sanitize';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
+import { buildSanitizeSchema } from '../../lib/render/sanitize-schema.js';
 import { fields } from '../../lib/content/fields.js';
 import { manifestMediaResolver } from '../../lib/render/resolve-media.js';
 import type { Schema } from 'hast-util-sanitize';
@@ -90,6 +91,45 @@ describe('render sanitize floor', () => {
     const html = await r.renderMarkdown('<figure>cap</figure>\n\n<script>alert(1)<\/script>');
     expect(html).toContain('<figure>');
     expect(html).not.toContain('alert');
+  });
+
+  it('keeps the floor when a callback admits script and empties strip in place', async () => {
+    const extend = (s: Schema): Schema => {
+      s.tagNames?.push('script');
+      s.strip?.splice(0);
+      return s;
+    };
+    const r = createRenderer(defineRegistry({ components: [] }), { sanitizeSchema: extend });
+    const html = await r.renderMarkdown('ok\n\n<script>alert("floor-body")<\/script>');
+    expect(html).not.toContain('<script');
+    expect(html).not.toContain('floor-body');
+  });
+
+  it('hands the callback a copy, so a nested mutation never reaches a later build', () => {
+    const registry = defineRegistry({ components: [] });
+    buildSanitizeSchema(registry, (s) => {
+      s.protocols?.src?.push('cairn-test-scheme');
+      return s;
+    });
+    expect(buildSanitizeSchema(registry).protocols?.src).not.toContain('cairn-test-scheme');
+    expect(defaultSchema.protocols?.src).not.toContain('cairn-test-scheme');
+  });
+
+  it('keeps a strip entry the callback adds', async () => {
+    const extend = (s: Schema): Schema => ({ ...s, strip: [...(s.strip ?? []), 'marquee'] });
+    const r = createRenderer(defineRegistry({ components: [] }), { sanitizeSchema: extend });
+    const html = await r.renderMarkdown('ok\n\n<marquee>marquee-body</marquee>');
+    expect(html).not.toContain('marquee-body');
+  });
+
+  it.each([
+    ['an undefined tagNames', (s: Schema): Schema => ({ ...s, tagNames: undefined })],
+    ['a null tagNames', (s: Schema): Schema => ({ ...s, tagNames: null })],
+    ['no schema at all', (() => undefined) as unknown as (s: Schema) => Schema],
+  ])('throws at construction, naming sanitizeSchema, on %s', (_label, extend) => {
+    expect(() => createRenderer(defineRegistry({ components: [] }), { sanitizeSchema: extend })).toThrow(
+      /sanitizeSchema/,
+    );
   });
 
   it('unsafeDisableSanitize lets raw HTML through (developer-only hatch)', async () => {

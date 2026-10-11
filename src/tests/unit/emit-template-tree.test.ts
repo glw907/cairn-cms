@@ -122,12 +122,41 @@ describe('the emitted template tree', () => {
     expect(hits).toEqual([]);
   });
 
-  it('emits a wrangler.jsonc that parses as JSONC with exactly AUTH_DB and APP_DB bound', async () => {
+  it('emits a wrangler.jsonc that parses as JSONC with AUTH_DB as its only D1 binding', async () => {
     const text = await readFile(join(emittedTo, 'wrangler.jsonc'), 'utf8');
     const config = parseJsonc(text);
     const databases = config.d1_databases as Array<{ binding: string }>;
-    const bindings = databases.map((entry) => entry.binding).sort();
-    expect(bindings).toEqual(['APP_DB', 'AUTH_DB']);
+    expect(databases.map((entry) => entry.binding)).toEqual(['AUTH_DB']);
+  });
+
+  it('emits a cf-typegen script equal to the command the emitted worker-configuration.d.ts records', async () => {
+    const pkg = JSON.parse(await readFile(join(emittedTo, 'package.json'), 'utf8'));
+    const types = await readFile(join(emittedTo, 'worker-configuration.d.ts'), 'utf8');
+    const recorded = types.split('\n')[1]?.match(/running `([^`]+)`/)?.[1];
+    expect(recorded).toMatch(/^wrangler types /);
+    expect(pkg.scripts['cf-typegen']).toBe(recorded);
+  });
+
+  it('commits a cf-typegen script that carries the template-only --env-file argument', () => {
+    const pkg = JSON.parse(readFileSync(resolve(ROOT, 'templates/waymark/package.json'), 'utf8'));
+    expect(pkg.scripts['cf-typegen']).toBe('wrangler types --env-file=.dev.vars.example --include-runtime=false');
+  });
+
+  it('emits neither the Signups screen nor its migrations', () => {
+    expect(existsSync(join(emittedTo, 'src', 'routes', 'admin', 'signups'))).toBe(false);
+    expect(existsSync(join(emittedTo, 'migrations-app'))).toBe(false);
+  });
+
+  it('emits hooks that pass no content option to the dev backend, so a new site serves its own content', async () => {
+    const hooks = await readFile(join(emittedTo, 'src', 'hooks.server.ts'), 'utf8');
+    expect(hooks).toContain('devBackendHandle({');
+    expect(hooks).not.toMatch(/content\s*:/);
+    expect(hooks).not.toContain('cairn-template:');
+  });
+
+  it('emits the admin error page and leaves the 403 fixture route behind', () => {
+    expect(existsSync(join(emittedTo, 'src', 'routes', 'admin', '+error.svelte'))).toBe(true);
+    expect(existsSync(join(emittedTo, 'src', 'routes', 'admin', 'error-fixture'))).toBe(false);
   });
 
   // The scaffold ships the roles migration (a site declaring custom roles writes them at once) and

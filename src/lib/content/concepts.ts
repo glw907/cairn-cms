@@ -12,6 +12,23 @@ function namedFields(schema: Fieldset): NamedField[] {
   return Object.entries(schema.fields).map(([name, descriptor]) => ({ name, ...descriptor }));
 }
 
+/**
+ * The admin's fixed first path segments that never resolve as concepts: the no-view segments the
+ *  dispatcher refuses outright, plus the fixed engine screens it decides as views. One set, read by
+ *  the dispatcher (`parseAdminPath`) and by `normalizeConcepts`, so a segment added here is refused
+ *  on both sides. Internal: not part of the public surface.
+ */
+export const FIXED_SCREEN_IDS = ['media', 'vocabulary', 'nav', 'settings'] as const;
+
+/** Every segment under `/admin` an engine view owns, so no concept id may take it. */
+export const RESERVED_VIEW_IDS: ReadonlySet<string> = new Set([
+  'login',
+  'auth',
+  'editors',
+  'help',
+  ...FIXED_SCREEN_IDS,
+]);
+
 /** The named routing shorthands, each expanding to a concrete rule. */
 const ROUTING_SHORTHANDS: Readonly<Record<'feed' | 'page' | 'embedded', RoutingRule>> = {
   feed: { routable: true, dated: true, inFeeds: true },
@@ -141,6 +158,11 @@ export function normalizeConcepts(
   );
   for (const [id, config] of Object.entries(content)) {
     if (!config) continue;
+    if (RESERVED_VIEW_IDS.has(id)) {
+      throw new Error(
+        `cairn: concept id "${id}" names an engine view under /admin; choose another id (reserved: ${[...RESERVED_VIEW_IDS].join(', ')})`,
+      );
+    }
     const fs = config.fields;
     const summaryFields = config.summaryFields ?? [];
     const declared = new Set(Object.keys(fs.fields));

@@ -39,7 +39,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
   return baseRuntime({
     concepts: [POSTS],
     manifestPath: MANIFEST_PATH,
-    navMenu: { configPath: CONFIG_PATH, menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
+    navMenu: { menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
     tidy: { enabled: false },
     ...over,
   });

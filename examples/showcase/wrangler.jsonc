@@ -31,7 +31,9 @@
       "database_name": "cairn-showcase-auth",
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
-    },
+    }
+    // cairn-template:exclude-start
+    ,
     {
       // The developer's own database, holding the signups table /admin/signups reads. Its own
       // migrations_dir, never "migrations": `wrangler d1 migrations apply` walks one directory
@@ -41,6 +43,7 @@
       "database_id": "00000000-0000-0000-0000-000000000001",
       "migrations_dir": "migrations-app"
     }
+    // cairn-template:exclude-end
     // cairn-template:exclude-start
     ,
     {

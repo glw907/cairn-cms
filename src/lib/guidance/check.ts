@@ -20,6 +20,9 @@ export const IMPORT_LINE = '@.claude/cairn/CLAUDE.md';
 /** The directive that excludes `.claude/` from a Tailwind build's automatic source detection. */
 export const SOURCE_EXCLUSION_LINE = '@source not "./.claude";';
 
+/** The Tailwind import modifier that turns off automatic source detection, so `.claude/` is never scanned. */
+const SOURCE_NONE = 'source(none)';
+
 // The scaffold's own admin stylesheet path first (packages/create-cairn-site/scripts/bake-template.mjs),
 // then one common alternative; `judgeSourceExclusion` reports unknown and names every path it
 // looked at, including these, when it identifies neither.
@@ -65,7 +68,8 @@ export function gitignoreExcludesClaude(gitignore: string): boolean {
 
 /**
  * Judge whether `.claude/` is excluded from the site's own Tailwind build: a gitignored
- *  `.claude` passes outright (Tailwind's own scanner skips it), otherwise the candidate admin
+ *  `.claude` passes outright (Tailwind's own scanner skips it), a stylesheet whose Tailwind import
+ *  uses `source(none)` passes as well, otherwise the candidate admin
  *  stylesheets are read in order and the first one that carries any `@source` directive at all
  *  decides the verdict; when neither signal is found the item reports unknown, naming every path
  *  it looked at.
@@ -81,8 +85,8 @@ export async function judgeSourceExclusion(
   for (const candidate of SOURCE_CSS_CANDIDATES) {
     checked.push(candidate);
     const content = await readFile(candidate);
-    if (content === null || !content.includes('@source')) continue;
-    return { status: content.includes(SOURCE_EXCLUSION_LINE) ? 'excluded' : 'not-excluded', checked };
+    if (content === null || !(content.includes('@source') || content.includes(SOURCE_NONE))) continue;
+    return { status: content.includes(SOURCE_EXCLUSION_LINE) || content.includes(SOURCE_NONE) ? 'excluded' : 'not-excluded', checked };
   }
   return { status: 'unknown', checked };
 }

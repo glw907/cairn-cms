@@ -237,7 +237,6 @@ export const cairn = defineAdapter({
 
 ```ts
 interface NavMenuConfig {
-  configPath: string;
   menuName: string;
   label: string;
   maxDepth?: number;
@@ -245,8 +244,8 @@ interface NavMenuConfig {
 ```
 
 A site turns on the built-in nav tree editor by declaring `editor.nav`; omitting it leaves
-`/admin/nav` a 404. `configPath` names the site-config YAML file the nav editor reads and writes
-(a repo-relative path, for example `'src/lib/site.config.yaml'`). `menuName` is the key inside
+`/admin/nav` a 404. The editor reads and writes the site-config YAML file that
+[`editor.siteConfigPath`](#siteconfigpath-adapter-editor-member) names. `menuName` is the key inside
 that file's `menus` map the editor manages (for example `'primary'`). `label` is the sidebar
 label for the nav-editor screen. `maxDepth` (default `2`) bounds how deep the editor lets a site
 nest menu items.
@@ -254,7 +253,25 @@ nest menu items.
 <!-- snippet-check-skip: illustrates the adapter editor member's nav value in isolation -->
 ```ts
 editor: {
-  nav: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation' },
+  nav: { menuName: 'primary', label: 'Navigation' },
+},
+```
+
+#### `siteConfigPath` (adapter `editor` member)
+
+<!-- snippet-check-skip: the member's type in isolation, outside the adapter object it belongs to -->
+```ts
+siteConfigPath?: string;
+```
+
+The repo-relative path of the committed site-config YAML. The nav editor, Settings, and the tag
+vocabulary all read and write that one file, so the adapter names it once. Unset, it defaults to
+`'src/theme/site.config.yaml'`, the path a scaffolded site uses.
+
+<!-- snippet-check-skip: illustrates the adapter editor member's siteConfigPath value in isolation -->
+```ts
+editor: {
+  siteConfigPath: 'src/lib/site.config.yaml',
 },
 ```
 
@@ -1100,13 +1117,13 @@ function signatures above reference these.
 | `CairnAdapter` | Extension API | `interface CairnAdapter` | The one seam the engine consumes, declared at `src/theme/cairn.config.ts`. |
 | `ConceptConfig` | Extension API | `interface ConceptConfig<S>` | Per-site configuration for one content concept: dir, label, singular, fields, routing, permalink, datePrefix, summaryFields. The optional `singular` names the create affordances ("New post") and defaults to `label`; `routing`/`permalink`/`datePrefix` set the concept's URL policy. |
 | `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
-| `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request: read, commit, and branch operations over files, never a query. |
+| `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request: read, commit, and branch operations over files, never a query. The optional `ephemeral` member marks a development backend whose commits are held in memory and lost when the dev server stops; a production backend never sets it. |
 | `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
 | `GithubAppProvider` | Extension API | `interface GithubAppProvider` | What `createGithubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |
 | `FileChange` | Extension API | `interface FileChange` | One path change in a commit: write `content`, or delete the path when `content` is null. |
 | `BackendCommit` | Extension API | `interface BackendCommit { ref: string; author: { name: string; email: string }; date: string }` | One entry in `Backend.listCommits`'s answer, newest first: the commit's full sha (`ref`), the git commit-author trailer (`author`, never the matched GitHub account, which is null for a magic-link editor), and `date` (ISO 8601, when the commit landed on the read ref). A file's log can hold commits made outside cairn, so `author` renders whoever git recorded, not necessarily a cairn editor. |
 | `SenderConfig` | Extension API | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
-| `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. See the preceding [`nav` adapter `editor` member](#nav-adapter-editor-member). |
+| `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A menu in the site-config YAML that the nav editor manages. See the preceding [`nav` adapter `editor` member](#nav-adapter-editor-member). |
 | `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
 | `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, and the upload limits. Omitting it leaves media off. See the preceding [`media` adapter member](#media-adapter-member). |
 | `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, named by `CairnAdapter.aiPosture` and read by [`buildRobots`](delivery-data.md#buildrobots). Unset states nothing. Declining is a request that named crawlers say they honor, not enforcement. [`buildRobots`](delivery-data.md#buildrobots) records each posture's output and the limits of declining, and [Choose an AI posture](../extend/choose-an-ai-posture.md) wires the posture through a site. |
@@ -1160,7 +1177,7 @@ function signatures above reference these.
 | `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's permanent id. |
 | `ArrayField` | Extension API | `interface ArrayField` | A repeatable field whose stored value is a list of its `item`'s values. |
 | `BehaviorTable` | Extension API | `type BehaviorTable = Record<string, FieldBehavior>` | The behavior table co-bundled with a fieldset, keyed by field name. Empty for a behavior-free fieldset. |
-| `FieldBehavior` | Extension API | `interface FieldBehavior { validate?; itemLabel? }` | Function-valued behavior a field descriptor cannot carry as plain data: a cross-field `validate` and an array row's `itemLabel` deriver. Resident in the app bundle, never the `load` payload. |
+| `FieldBehavior` | Extension API | `interface FieldBehavior { validate? }` | Function-valued behavior a field descriptor cannot carry as plain data: a cross-field `validate`. Resident in the app bundle, never the `load` payload. |
 | `DatePrefix` | Extension API | `type DatePrefix = 'year' \| 'month' \| 'day'` | Filename date-prefix granularity for a dated concept: the leading `YYYY[-MM[-DD]]-` on the stem. |
 | `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept (spec §7.2). Posts are dated feed entries; pages are plain navigable structure. |
 | `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. `title` and `body` are special: `title` serializes to the directive `[label]`, `body` to the unmarked content. |

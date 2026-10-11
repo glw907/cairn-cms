@@ -18,14 +18,12 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /**
  * Function-valued behavior a field descriptor cannot carry as plain data, keyed by field name. A
- *  `validate` runs cross-field after per-field coercion; an `itemLabel` derives an array row's label.
+ *  `validate` runs cross-field after per-field coercion.
  *  Resident in the app bundle, never in the `load` payload.
  */
 export interface FieldBehavior {
   /** A cross-field validator: returns an error string, or null when valid. `siblings` is the raw input record. */
   validate?(value: unknown, siblings: Record<string, unknown>): string | null;
-  /** Derive an array row's label from its item value and zero-based index. */
-  itemLabel?(item: Record<string, unknown>, index: number): string | undefined;
 }
 
 /** The behavior table co-bundled with a fieldset, keyed by field name. Empty for a behavior-free fieldset. */

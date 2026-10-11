@@ -901,7 +901,15 @@ discriminant, not the fields, gates the chrome).
       {/if}
 
       <main class="flex-1 p-4 lg:px-10 lg:py-8">
+        {#snippet ephemeralNotice()}
+          {#if data.contentEphemeral}
+            <div role="status" class="alert alert-info mx-auto mb-8 w-full max-w-3xl type-body">
+              Edits are held in memory. They're discarded when the dev server stops.
+            </div>
+          {/if}
+        {/snippet}
         {#if isDeskRoute}
+          {@render ephemeralNotice()}
           {@render children()}
         {:else}
           <!-- Office screens (posts, media, editors, settings, help) share one content-width cap,
@@ -909,6 +917,7 @@ discriminant, not the fields, gates the chrome).
                The desk manages its own manuscript width (EditPage's own max-w-[49rem]/[56rem]), so
                the cap applies only off the desk route. -->
           <div class="mx-auto w-full max-w-5xl">
+            {@render ephemeralNotice()}
             {@render children()}
           </div>
         {/if}

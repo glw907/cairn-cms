@@ -7,7 +7,8 @@ Present tense only; the past lives in [`docs/HISTORY.md`](HISTORY.md), orientati
 Published: **`0.98.0`** (npm `latest`, release commit `a84a6853`, with `@glw907/cairn-cms-dev`
 `0.98.0`); the Go tool is `tool/v1.1.0`. Unreleased on `main`: SvelteKit 3 (with an untagged tool
 major), the harvest's page removal, draft docs stage 2a, the October dependency sweep, the doctor
-cleanup, engine pass A (PR #108), and the gate economy pass (PR #110). CI is green. cairn.pub pins
+cleanup, engine pass A (PR #108), the gate economy pass (PR #110), the lean pass process (PR #112),
+and engine pass B (PR #113). cairn.pub pins
 `0.94.0-rc.1`, its ceiling `0.98.0` until the one release below
 ([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)).
 
@@ -22,12 +23,16 @@ plan, score, and replay record: [`superpowers/plans/2026-10-09-gate-economy.md`]
 
 ## Immediate next action
 
-PR #112 (the lean pass process, step 2) merges first. It lands the trimmed `CLAUDE.md`, the
-`gate-tier.mjs --fast` lane, the sharded e2e job, and the HISTORY freeze. Engine pass B resumes as
-rollout step 5 once it merges, as the first pass scored on the lean process: worktree
-`.claude/worktrees/engine-pre-2b-b`, draft PR #111, Task 0 in the plan's Ledger (`1ce14d3b`), and WIP
-commit `dbdc4556` (Tasks 1 and 2, unreviewed, ungated, not pushed). Its branch merges `main` first
-and re-gates Tasks 1 and 2 through the fast lane. The release holds until the docs are complete.
+Draft docs stage 2b is next: the 14 remaining extend pages, drafted from corrected facts. The re-arm
+list is pass B's, in `docs/internal/record/harvest/relink.json`: every `"stage": "2b"` entry that
+carries a `facts` array, ten extend pages with the fact ids that changed. Engine pass B closed
+unreleased (PR #113; plan `superpowers/plans/2026-10-10-engine-pass-b-lean.md`): the signups demo
+and `APP_DB` left the scaffold, the dev package ships built `dist/`, the engine supplies the dev-build
+define, and the dev backend serves the site's own content. The release holds until the docs are
+complete.
+
+Cleanup for the planning session: after confirming PR #113 merged, remove the `engine-pass-b` and
+`engine-pre-2b-b` worktrees and their branches.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

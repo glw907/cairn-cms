@@ -53,6 +53,7 @@ function runtime(): CairnRuntime {
   };
   return {
     siteName: 'T',
+    siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [posts, pages],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },

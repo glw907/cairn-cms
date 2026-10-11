@@ -20,6 +20,7 @@ export const ALLOWLIST = new Set([
   'cli-flag:--var', // wrangler dev's own flag, shown after `npm run preview --`
   'cli-flag:--rendered', // cairn-audit's own flag, not create-cairn-site's
   'cli-flag:--rule', // cairn-audit's own flag, not create-cairn-site's
+  'cli-flag:--fail-on', // cairn-audit's own flag, not create-cairn-site's
   'cli-flag:--from', // cairn-media-seed's own flag, not create-cairn-site's
   'cli-flag:--header', // cairn-media-seed's own flag, not create-cairn-site's
   'cli-flag:--help', // cairn-audit's, cairn-media-seed's, and cairn-manifest's own flag, not create-cairn-site's
@@ -120,6 +121,7 @@ export const ALLOWLIST = new Set([
   // is gone; docs/reference/cli-cairn-doctor.md is its Go-tool successor); the citation stays
   // unedited, since a release record is immutable and does not chase a later reorganization.
   'file-path:docs/reference/doctor.md',
+  'file-path:src/theme/site.config.yaml', // the scaffolded site's site-config file, the engine's default for editor.siteConfigPath (templates/waymark/src/theme/site.config.yaml)
   'file-path:src/theme/cairn.config.ts', // docs/reference/vite.md's illustrative adapter location
   'file-path:src/theme/theme.css', // docs/extend/theme-your-public-site.md's own convention path, the reader's re-skin file
   'file-path:src/theme/site.css', // docs/extend/scaffolded-site-files.md's scaffolded site's page styles (templates/waymark/src/theme/site.css)

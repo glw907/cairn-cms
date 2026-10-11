@@ -83,13 +83,17 @@ function guidanceFences(): Fence[] {
     .flatMap((file) => extractFences(file));
 }
 
-/** The two fence normalizations, applied before the script-tag prefix. */
+/**
+ * The two fence normalizations, applied before the script-tag prefix. A fence that already opens
+ * with its own `<script>` is a whole component (the shipped Signups screen) and takes no prefix.
+ */
 function normalizeFence(content: string): string {
   const withoutEllipsisLines = content
     .split('\n')
     .filter((line) => line.trim() !== '...')
     .join('\n');
-  return `<script lang="ts"></script>\n${withoutEllipsisLines.replace(/\{\.\.\.\}/g, '{_}')}`;
+  const body = withoutEllipsisLines.replace(/\{\.\.\.\}/g, '{_}');
+  return /^\s*(<!--[\s\S]*?-->\s*)?<script[\s>]/.test(body) ? body : `<script lang="ts"></script>\n${body}`;
 }
 
 /** A fence parsed as a component, or a test failure naming the fence's own file and line. */

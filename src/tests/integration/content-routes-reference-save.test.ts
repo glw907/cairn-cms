@@ -27,6 +27,7 @@ function runtime(): CairnRuntime {
   });
   return {
     siteName: 'T',
+    siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [
       {
         id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',

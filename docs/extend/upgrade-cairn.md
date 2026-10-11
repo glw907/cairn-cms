@@ -146,6 +146,28 @@ wired, tightens two access edges, and regenerates the manifest. Do these in orde
 
 [Migration notes](./migration-notes.md) carries each item with its reason.
 
+## When your range crosses the scaffold and dev-backend change
+
+The window that moves the site-config path, tightens composition, and changes the dev backend asks for
+these steps, in order, after step 3:
+
+1. Delete `configPath` from `editor.nav`. If your site config does not live at
+   `src/theme/site.config.yaml`, set `editor.siteConfigPath` to its path. A site that builds a
+   `CairnRuntime` by hand adds `siteConfigPath` to it.
+2. Remove `itemLabel` from any `behavior` table and set it on the `array` field descriptor. Rename a
+   concept whose id is `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, or `settings`.
+   Give every `publishActions` entry a distinct `label`.
+3. Make every `sanitizeSchema` callback return a schema with a `tagNames` array. Move any markup that
+   needed `<script>` into a registered component or an island.
+4. Delete your own `devBuildDefine` plugin and the `__CAIRN_DEV_BUILD__` declaration in `app.d.ts`.
+   The `cairnManifest()` plugin defines the flag, and `@glw907/cairn-cms/ambient` declares it.
+5. Add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`, beside the engine.
+6. Drop `seedContent` from `devBackendHandle`. Pass `content: 'fixtures'` when the dev backend runs
+   under `wrangler dev`, or to keep the seeded dev content.
+7. Run `npm run check`, then `npm run build`, and expect both to exit 0.
+
+[Migration notes](./migration-notes.md) carries each item with its reason.
+
 ## You know it worked when
 
 `npm run check` (or your site's own type-check script) passes, `cairn doctor` reports every check

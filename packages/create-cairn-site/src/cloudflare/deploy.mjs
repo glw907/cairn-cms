@@ -171,11 +171,15 @@ export async function deployWorker({ dir, log, accountId }) {
   return { url };
 }
 
-/** The bindings, in the order migrations run, matching wrangler.jsonc's binding names. */
-const MIGRATION_DATABASES = ['AUTH_DB', 'APP_DB'];
+/**
+ * The bindings, in the order migrations run, matching wrangler.jsonc's binding names. A site
+ * scaffolded with a second D1 binding and resumed here gets that database provisioned but never
+ * migrated; the window is accepted rather than derived from the site's own wrangler.jsonc.
+ */
+const MIGRATION_DATABASES = ['AUTH_DB'];
 
 /**
- * Apply pending migrations to both D1 databases, by binding name. The T3 spike confirmed
+ * Apply pending migrations to the D1 database, by binding name. A spike confirmed
  * `wrangler d1 migrations apply <binding> --remote` resolves the binding against an id-less
  * config, so this takes no database-name fallback.
  * @param {object} args

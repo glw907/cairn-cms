@@ -383,6 +383,11 @@ interface AuditFlags {
    * never passed, so a caller runs the full registry the same way it did before this flag existed.
    */
   rule?: string[];
+  /**
+   * The lowest tier that makes the run exit nonzero, from `--fail-on`. Undefined when the flag was
+   * never passed, which keeps the original rule: only an error-tier finding gates.
+   */
+  failOn?: 'error' | 'advisory';
 }
 
 /**
@@ -395,7 +400,7 @@ export type AuditArgs =
 
 /** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
 export const USAGE = [
-  'Usage: cairn-audit [--rendered] [--config <path>] [--rule <id>]... [--help]',
+  'Usage: cairn-audit [--rendered] [--config <path>] [--rule <id>]... [--fail-on error|advisory] [--help]',
   '       cairn-audit norms <selector-or-role>',
 ].join('\n');
 
@@ -437,6 +442,18 @@ export function parseArgs(argv: string[]): AuditArgs {
         throw new Error(`--rule needs a value\n${USAGE}`);
       }
       flags.rule = [...(flags.rule ?? []), value];
+      i += 2;
+      continue;
+    }
+    if (flag === '--fail-on') {
+      const value = rest[i + 1];
+      if (value === undefined || value.startsWith('--')) {
+        throw new Error(`--fail-on needs a value\n${USAGE}`);
+      }
+      if (value !== 'error' && value !== 'advisory') {
+        throw new Error(`--fail-on takes error or advisory, not ${value}\n${USAGE}`);
+      }
+      flags.failOn = value;
       i += 2;
       continue;
     }

@@ -58,6 +58,7 @@ function concept(id: string) {
 function runtime(): CairnRuntime {
   return {
     siteName: 'Access Site',
+    siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [concept('posts'), concept('pages')],
     backend: createGithubApp(REPO),
     sender: { from: 'cms@test' },

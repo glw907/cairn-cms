@@ -26,6 +26,12 @@ export interface Backend {
   /** The site's default branch, for example "main". Callers reading published state pass it as the ref. */
   readonly defaultBranch: string;
 
+  /**
+   * Set only by a development backend that holds commits in memory and loses them when the dev
+   *  server stops, so the admin can say so. A production backend never sets it.
+   */
+  readonly ephemeral?: true;
+
   /** Raw file contents at a ref, or null when the path does not exist. */
   readFile(path: string, ref: string): Promise<string | null>;
 

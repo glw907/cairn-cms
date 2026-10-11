@@ -117,13 +117,6 @@ export interface VocabularySaveFailure {
 }
 
 /**
- * The fallback site-config path when no nav menu names one: the convention every scaffolded site
- *  uses. The settings save edits the same committed YAML the nav editor does, so it resolves the path
- *  from the configured nav menu first and falls back to this default.
- */
-const DEFAULT_SITE_CONFIG_PATH = 'src/lib/site.config.yaml';
-
-/**
  * Plain-language labels for the known tidy models, so the read-only model fact reads as a name rather
  *  than a bare id. An unknown id falls back to itself.
  */
@@ -192,12 +185,11 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   const { runtime } = ctx;
 
   /**
-   * The repo-relative site-config path the settings save reads and commits. It is the same committed
-   *  YAML the nav editor edits, so it comes from the configured nav menu first and falls back to the
-   *  scaffold default when no menu is configured.
+   * The repo-relative site-config path the settings save reads and commits: the same committed
+   *  YAML the nav editor edits, named once by `editor.siteConfigPath`.
    */
   function siteConfigPath(): string {
-    return runtime.navMenu?.configPath ?? DEFAULT_SITE_CONFIG_PATH;
+    return runtime.siteConfigPath;
   }
 
   /**

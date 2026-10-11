@@ -17,6 +17,7 @@ function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
   return {
     siteName: 'Test Site',
+    siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
       { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
@@ -526,7 +527,7 @@ describe('save on the nav view', () => {
     const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary: []\n' } });
     gh.install();
     const rt = runtime();
-    rt.navMenu = { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
+    rt.navMenu = { menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
     const admin = createCairnAdmin({ runtime: rt, ...deps });
     const event = actionEvent('/admin/nav', { form: { tree: JSON.stringify([{ label: 'Home', url: '/' }]) } });
     await expectRedirect(admin.actions.save(event), '/admin/nav?saved=1');
@@ -605,7 +606,7 @@ describe('settings view', () => {
   function tidyRuntime(): CairnRuntime {
     return {
       ...runtime(),
-      navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Nav', maxDepth: 2 },
+      navMenu: { menuName: 'primary', label: 'Nav', maxDepth: 2 },
       tidy: { enabled: true, model: 'claude-sonnet-5' },
     };
   }

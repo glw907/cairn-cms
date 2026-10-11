@@ -116,6 +116,7 @@
         "prefixes": ["src/lib/admin/"],
         "specs": [
           "golden-path.spec.ts",
+          "admin-error-page.spec.ts",
           "edit-save-failure.spec.ts",
           "admin-shell-sidebar.spec.ts",
           "admin-nav-layout.spec.ts",
@@ -264,6 +265,7 @@
         "prefixes": ["examples/showcase/src/routes/admin/"],
         "specs": [
           "admin-visual.spec.ts",
+          "admin-error-page.spec.ts",
           "custom-screen.spec.ts",
           "theme-kit.spec.ts",
           "theme-kit-contrast.spec.ts",

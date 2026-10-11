@@ -2,6 +2,21 @@
 
 ### Added
 
+- **`cairn-audit --fail-on advisory`.** The audit exits nonzero when any unsuppressed advisory
+  survives, for a pipeline that wants the compositional checks to fail the build. A bare call keeps
+  the rule that only an error-tier finding gates, `--fail-on error` states that default, and any other
+  value is a usage error. `exitCodeFor` takes the tier as an optional second argument.
+
+  Consumers may: add `--fail-on advisory` to the audit step in CI.
+
+- **A `content.field_undeclared` log event.** The manifest build warns once per concept, naming
+  each frontmatter key on that concept's entries that the concept's schema does not declare.
+  Validation drops such a key, so a value an author wrote there (a `robots: noindex` on a concept
+  with no `robots` field) was lost without a word. `CairnLogEvent` and `CAIRN_LOG_EVENTS` gain the
+  member, and the event table in `docs/reference/log-events.md` its row.
+
+  Consumers may: read the build output for `content.field_undeclared` to find the keys.
+
 - **`/healthz?live=1` mints one installation token and reports whether GitHub accepts the key.** A
   request with `?live=1` signs a JWT from the deployed key, exchanges it for an installation token,
   discards the token, and reports the result as `checks.githubAppToken`, with `detail` `key_refused`
@@ -88,6 +103,114 @@
   noun phrase that opens "the card-shell hairline decision: ...".
 
   Consumers must: nothing, unless a script matches on the old message or `norms` text.
+
+- **A new scaffold ships without the Signups demo, and `create-cairn-site` provisions one database.**
+  The scaffold no longer carries `/admin/signups`, its `migrations-app/` migration, the `APP_DB`
+  binding, the Signups sidebar entry, or the `admin.signups.misconfigured` log event, and it declares
+  no `access` map (the zero-config floor). The `cairn-admin-screens` skill's list exemplar carries the
+  Signups source inline, and `examples/showcase` keeps the screen as the worked custom-screen example.
+  The setup command provisions and migrates `AUTH_DB` only, so its summary and cost preamble name one
+  database. A site scaffolded before this change, whose setup stopped before its migrations ran, and
+  which is then resumed with the new `create-cairn-site`, gets an `APP_DB` that the deploy provisions
+  and never migrates, so its Signups route reads a database with no table. Only a setup interrupted
+  across this one release reaches that case.
+
+  Consumers must: nothing for a site that finished its setup. For a resumed setup in that window, run
+  `npx wrangler d1 migrations apply APP_DB --remote` from the affected site.
+
+- **`@glw907/cairn-cms-dev` publishes built output.** The package ships `dist/` JavaScript and
+  declarations in place of TypeScript source, drops its `svelte` export condition, and builds
+  through the root `package` script. The release job installs, which builds `dist/`, before it
+  publishes, and `check:dev-package` now fails on any `exports` target or `files` entry outside
+  `dist/`.
+
+  Consumers must: add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`, beside the engine, so `vite dev` processes the package's `cloudflare:workers` import instead of handing it to Node. Nothing else, unless a site imports a file from the package's `src/` directly.
+
+- **The `sanitizeSchema` callback gets a copy, and a floor holds after it returns.** The callback
+  receives a deep copy of cairn's safe base schema. Once it returns, the engine removes `script` from
+  `tagNames` and sets `strip` to the union of the core list and the callback's, so no callback
+  result admits an author `<script>` or its body text. A callback that returns no `tagNames` array
+  (nothing, `undefined`, or `null`) now makes `createRenderer` throw at construction, naming
+  `sanitizeSchema`. Attributes and protocols stay the callback's responsibility.
+
+  Consumers must: return a schema with a `tagNames` array from every `sanitizeSchema` callback, and
+  use `unsafeDisableSanitize` to turn the floor off. A callback that relied on admitting `script`
+  now has it stripped.
+
+- **Composition refuses a duplicate publish-action label and a concept id that names an engine
+  view.** Two `publishActions` entries with the same label throw, naming it. A concept id of
+  `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, or `settings` throws, from one
+  reserved set the admin dispatcher and the validator both read.
+
+  Consumers must: give each `publishActions` entry a distinct `label`, and rename any concept whose
+  id is one of those eight.
+
+- **The build warns when it skips the `site-facts.json` check.** When the adapter's facts cannot be
+  derived, the Vite plugin warns once, naming the skipped check and the error, and the build
+  continues. It passed silently before.
+
+- **The site-config path is declared once, by `editor.siteConfigPath`.** The nav editor, Settings,
+  and the tag vocabulary all read and commit the file it names, which defaults to the scaffold's
+  `src/theme/site.config.yaml`. Settings and Tags used to fall back to `src/lib/site.config.yaml` and
+  answered 404 for a site that declared no `editor.nav`. `NavMenuConfig.configPath` is removed.
+  `CairnRuntime` gains the required `siteConfigPath` that `composeRuntime` fills.
+
+  Consumers must: delete `configPath` from `editor.nav`. If your site config does not live at
+  `src/theme/site.config.yaml`, set `editor.siteConfigPath` to its path. A site that builds a
+  `CairnRuntime` by hand instead of calling `composeRuntime` adds `siteConfigPath` to it.
+
+- **The dev backend serves your site's own content, and `seedContent` is gone.**
+  `devBackendHandle({ runtime, content })` takes `content: 'repository' | 'fixtures'`, defaulting to
+  `'repository'`. In `'repository'` each branch is an in-memory overlay over the working tree, so the
+  dev admin lists your real entries, and an edit lives only until the dev server stops: nothing is
+  written to disk. `'fixtures'` is the seeded in-memory repo the dev backend served before. The
+  `'repository'` mode needs a filesystem and throws under `wrangler dev`'s workerd, naming
+  `content: 'fixtures'`. While it serves your content, the admin shows one persistent notice that edits
+  are held in memory and discarded when the dev server stops. `Backend` gains the optional
+  `ephemeral` member the notice reads, and `AdminShellData` the optional `contentEphemeral` member.
+  A scaffolded site's hooks pass no `content` option.
+
+  Consumers must: drop `seedContent`, and pass `content: 'fixtures'` when the dev backend runs under
+  `wrangler dev`.
+
+  Consumers may: pass `content: 'fixtures'` to keep the seeded dev content, which a site that runs
+  the dev backend without ever naming `seedContent` gets by adding the one option.
+
+- **A scaffolded site gets an admin error page, a `cf-typegen` script, and a feed that renders
+  includes and absolute media URLs.** An error inside `/admin` now renders `src/routes/admin/+error.svelte`
+  inside the shell and its theme wrapper, with calm copy for a 403 and a 404, where the public site's
+  error page answered before. A failure in the admin layout's own load still falls to the root error
+  page, which SvelteKit requires. The scaffold's `package.json` gains `cf-typegen`, the exact `wrangler
+  types` command its `worker-configuration.d.ts` records. The feed resolves `::include{...}` fragments
+  and writes `https://<origin>/media/...` image URLs. The stale-manifest build error names `npx
+  cairn-manifest`.
+
+  Consumers may: copy `src/routes/admin/+error.svelte` into a hand-built site, and run `npx
+  cairn-manifest` when the build reports a stale manifest.
+
+- **The admin toolkit's `EmptyState` renders an `h1` heading in the page-heading style.** With
+  `headingLevel="h1"` the heading takes the display face at the title size that `PageHeader` uses, in
+  place of the browser's default heading size in the body face. The other levels are unchanged. The
+  welcome view and the admin error page are the engine's two `h1` callers.
+
+  Consumers may: pass `headingLevel="h1"` to `EmptyState` on a screen with no `PageHeader` and expect
+  the page-heading look.
+
+- **The shipped admin stylesheet gains two utility classes.** `mb-8` and `mt-0` join the compiled
+  `cairn-admin.css`, which the admin error page's heading and the in-memory notice now use. No class
+  leaves the sheet.
+
+- **The engine supplies the dev-build define, `__CAIRN_DEV_BUILD__`.** The `cairnManifest()` plugin's
+  `config` hook defines it as `true` under `vite dev` and in a build that sets `VITE_CAIRN_E2E=1`
+  (read from the process environment and the `.env` files in the working directory), and as `false`
+  in a default build, so a guarded branch and its `@glw907/cairn-cms-dev` import fold out of a
+  deployed Worker. A define the site already sets wins in either plugin order. `@glw907/cairn-cms/ambient`
+  declares the global. The scaffold and the example site drop their own `devBuildDefine()` plugin and
+  `app.d.ts` declaration.
+
+  Consumers may: delete the site's own `devBuildDefine` plugin and its `__CAIRN_DEV_BUILD__`
+  declaration. A site with `skipLibCheck` off that keeps the declaration in `app.d.ts` hits TS2451 against
+  `/ambient` and must delete it.
 
 - **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
   `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer
@@ -363,6 +486,12 @@
 
 ### Removed
 
+- **`FieldBehavior.itemLabel`.** A field's `behavior` table carries only `validate`. An array row's
+  label comes from `itemLabel` on the `array` field descriptor, which is unchanged.
+
+  Consumers must: delete any `itemLabel` from a `behavior` table and set it on the `array` field
+  descriptor instead.
+
 - **`AuthGuardConfig.roles` and `access`, `DevBackendConfig.roles` and `access`, and
   `EditorRoutesConfig.roles`.** `runtime` carries both, so each factory's separate options are gone
   (see the `{ runtime }` entry under Changed).
@@ -387,6 +516,10 @@
   `npx cairn-guidance install`, so its copy of the skill drops the links to the removed pages.
 
 ### Fixed
+
+- **`cairn-guidance check` reads a fresh scaffold as fresh.** A stylesheet whose Tailwind import uses
+  `source(none)` now counts as excluding `.claude/`, and the guidance tree hash leaves out the
+  `VERSION` stamp, which the bake and `install` stamp differently.
 
 - **Publish-all now refuses a stale publish.** It reads the default branch's head before any pending
   branch, so a single publish of the same entry landing mid-batch answers the calm conflict instead

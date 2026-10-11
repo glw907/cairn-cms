@@ -22,6 +22,7 @@ import {
   seedPreviewTwin,
   SEED_MEDIA_KEYS,
 } from './fake-github.js';
+import { createRepositoryBackend } from './repository-backend.js';
 import { createFakeAuthDb } from './fake-auth-db.js';
 import { createFakeAppDb } from './fake-app-db.js';
 import { createFakeR2 } from './fake-r2.js';
@@ -52,15 +53,22 @@ function isLocalHost(hostname: string): boolean {
   );
 }
 
+/** True under Cloudflare's workerd runtime, where the working tree has no filesystem to read. */
+function underWorkerd(): boolean {
+  return typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
+}
+
 /** Options for the dev-backend handle. */
 export interface DevBackendConfig {
   /**
-   * The Part B seam for seeding the consumer's own committed starter content into the in-memory
-   * repo, so the template ships realistic posts instead of the showcase's hard-coded seed. Part A
-   * keeps the media-only seed and leaves this a typed hook for Part B to fill; setting it has no
-   * effect yet.
+   * Where the dev admin's content comes from. `'repository'` (the default) serves the site's own
+   * working tree: each branch is an in-memory overlay over the files on disk, so the admin lists
+   * the developer's real entries and an edit lives only until the dev server stops; nothing is
+   * written to disk. It needs a filesystem, so it throws under `wrangler dev`'s workerd. `'fixtures'`
+   * serves the package's seeded in-memory repo (sample posts, media, fragments, and a vocabulary)
+   * and runs anywhere, which is what a site's end-to-end suite and a `wrangler dev` session use.
    */
-  seedContent?: boolean;
+  content?: 'repository' | 'fixtures';
   /**
    * The runtime `composeRuntime` returned for the site's adapter, the same one the production
    * guard takes. Its `access` is attached to `event.locals.cairnAccess` on every /admin request
@@ -83,33 +91,48 @@ export interface DevBackendConfig {
  * to a non-local host, it refuses every path with a 503 and logs `guard.refused`, the same record
  * the engine guard writes for the same condition.
  * @param config - {@link DevBackendConfig}; `runtime` carries the site's access map, attached to
- * `locals.cairnAccess` beside the minted editor, and `seedContent` is the Part B content-seeding
- * hook.
+ * `locals.cairnAccess` beside the minted editor, and `content` picks the working tree or the seeded
+ * fixtures.
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
+ * @throws when `content` is `'repository'` (the default) under workerd, naming `content: 'fixtures'`.
  */
 export function devBackendHandle(config: DevBackendConfig): Handle {
-  // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.
-  seedMediaLibrary();
+  const content = config.content ?? 'repository';
+  if (content === 'repository' && underWorkerd()) {
+    throw new Error(
+      "cairn-cms-dev: the dev backend's default content mode reads the working tree, which workerd cannot. " +
+        "Pass content: 'fixtures' to devBackendHandle when the site runs under wrangler dev.",
+    );
+  }
 
-  // Seed two published fragments (a committed body plus a manifest row each) so /admin/fragments
-  // lists a real set and the include picker on every other concept's edit screen has candidates.
-  // Runs after the media seed because it appends rows to the manifest that seed writes.
-  seedFragments();
+  // Every seed runs only in fixtures mode, so no fixture reaches a real site's admin: the seeded
+  // media, fragments, vocabulary, and preview twin would otherwise shadow the developer's own
+  // manifest, media.json, and site config in Settings, Tags, the nav editor, and the Library.
+  if (content === 'fixtures') {
+    // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.
+    seedMediaLibrary();
 
-  // Seed the tag-vocabulary fixtures (a committed site config, in-use tags, an unlisted seed
-  // candidate) so /admin/vocabulary renders populated rather than empty. Runs after the media seed
-  // because it patches `tags:` onto the manifest that seed writes.
-  seedVocabulary();
+    // Seed two published fragments (a committed body plus a manifest row each) so /admin/fragments
+    // lists a real set and the include picker on every other concept's edit screen has candidates.
+    // Runs after the media seed because it appends rows to the manifest that seed writes.
+    seedFragments();
 
-  // Seed the preview twin-render fixture (spec part 3, "Public preview for a non-editor"): the one
-  // entry this in-memory repo shares byte-for-byte with the real on-disk corpus, so an admin draft
-  // against it and its prerendered public page are comparable. Runs after the media seed for the
-  // same reason seedFragments and seedVocabulary do.
-  seedPreviewTwin();
+    // Seed the tag-vocabulary fixtures (a committed site config, in-use tags, an unlisted seed
+    // candidate) so /admin/vocabulary renders populated rather than empty. Runs after the media
+    // seed because it patches `tags:` onto the manifest that seed writes.
+    seedVocabulary();
 
-  // One dev Backend over the module-level store, built at handle-build time so every request shares
-  // the same singleton repo (a commit on one request is visible to the recorder route on the next).
-  const backend = createDevBackend();
+    // Seed the preview twin-render fixture (spec part 3, "Public preview for a non-editor"): the one
+    // entry this in-memory repo shares byte-for-byte with the real on-disk corpus, so an admin draft
+    // against it and its prerendered public page are comparable. Runs after the media seed for the
+    // same reason seedFragments and seedVocabulary do.
+    seedPreviewTwin();
+  }
+
+  // One dev Backend, built at handle-build time so every request shares the same store (a commit on
+  // one request is visible on the next). Fixtures mode shares the module-level in-memory repo, so
+  // the recorder route sees its commits; repository mode keeps its overlay in its own closure.
+  const backend = content === 'fixtures' ? createDevBackend() : createRepositoryBackend(process.cwd());
 
   // One instance each for the server's lifetime, like the in-memory repo, so editors added through
   // /admin/editors and an asset uploaded through /admin persist across requests.
@@ -119,7 +142,7 @@ export function devBackendHandle(config: DevBackendConfig): Handle {
 
   // Seed the R2 bytes for the Media Library fixtures, so each seeded asset's thumbnail resolves
   // through /media and the orphan delete removes a real object.
-  for (const key of SEED_MEDIA_KEYS) fakeR2.seedObject(key);
+  if (content === 'fixtures') for (const key of SEED_MEDIA_KEYS) fakeR2.seedObject(key);
 
   return async ({ event, resolve }) => {
     // While the build prerenders, every Worker env read and every withEnv call throws, and a

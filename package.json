@@ -33,7 +33,7 @@
     "markdown"
   ],
   "scripts": {
-    "package": "svelte-package && node scripts/build/build-admin-css.mjs && node scripts/build/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/media-seed/bin.js dist/audit/bin.js dist/guidance/bin.js",
+    "package": "svelte-package && node scripts/build/build-admin-css.mjs && node scripts/build/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/media-seed/bin.js dist/audit/bin.js dist/guidance/bin.js && tsc -p packages/cairn-cms-dev/tsconfig.build.json",
     "check:package": "npm run package && publint --strict && T=$(mktemp -d) && trap 'rm -rf \"$T\"' EXIT && npm pack --ignore-scripts --silent --pack-destination \"$T\" && attw \"$T\"/*.tgz --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error && node scripts/checks/check-package-files.mjs && node scripts/checks/check-skill-budget.mjs",
     "check:audit-pack": "npm run package && node scripts/checks/check-audit-pack.mjs",
     "check:reference": "npm run package && node scripts/checks/reference-coverage.mjs",

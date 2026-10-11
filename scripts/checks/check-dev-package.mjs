@@ -8,6 +8,8 @@
 //       with the same TSDoc structure rules and the house/no-em-dash-in-comments ban as src/lib.
 //   (3) the manifest fields the OIDC publish depends on.
 //   (4) the dev-package's version against the root package's, since no release step aligns them.
+//   (5) every `exports` condition and `files` entry points into dist/ (or is README.md), so a
+//       registry install never resolves a source path the tarball does not carry.
 //
 // Wired as `npm run check:dev-package`. Exits non-zero if any check fails.
 import { spawnSync } from 'node:child_process';
@@ -64,6 +66,53 @@ export function checkVersionMatch(rootVersion, devVersion) {
 }
 
 /**
+ * Collect every string leaf of an `exports` value, however deeply the conditions nest.
+ * @param {unknown} value an `exports` subtree
+ * @returns {string[]} every condition target string
+ */
+function exportTargets(value) {
+  if (typeof value === 'string') return [value];
+  if (value && typeof value === 'object') return Object.values(value).flatMap(exportTargets);
+  return [];
+}
+
+/**
+ * Check that every `exports` condition target and every `files` entry of the manifest points into
+ * dist/ (or is README.md). Vite resolves the `svelte` condition first, so a leftover source path
+ * breaks every registry install while the monorepo symlink hides it.
+ * @param {{ exports?: unknown, files?: string[] }} manifest the parsed dev-package manifest
+ * @returns {{ ok: true } | { ok: false, errors: string[] }}
+ */
+export function checkDistOnly(manifest) {
+  const errors = [];
+  for (const target of exportTargets(manifest.exports)) {
+    if (!target.startsWith('./dist/')) errors.push(`exports target ${target} is outside dist/`);
+  }
+  for (const entry of manifest.files ?? []) {
+    if (entry !== 'README.md' && entry !== 'dist' && !entry.startsWith('dist/')) {
+      errors.push(`files entry ${entry} is outside dist/`);
+    }
+  }
+  return errors.length === 0 ? { ok: true } : { ok: false, errors };
+}
+
+/**
+ * Read the manifest and run {@link checkDistOnly} against it.
+ * @returns {boolean} true when every exports target and files entry points into dist/
+ */
+function checkDist() {
+  console.log('== dev-package ships dist/ only (exports and files) ==');
+  const manifest = JSON.parse(readFileSync(resolve(ROOT, MANIFEST), 'utf8'));
+  const result = checkDistOnly(manifest);
+  if (!result.ok) {
+    for (const error of result.errors) console.log(error);
+    return false;
+  }
+  console.log('every exports target and files entry points into dist/');
+  return true;
+}
+
+/**
  * Read both manifests and run {@link checkVersionMatch} against them.
  * @returns {boolean} true when the two versions match
  */
@@ -98,8 +147,9 @@ function main() {
   const lintOk = run('eslint (TSDoc structure + the em-dash ban on the dev-package)', ['eslint', ESLINT_PATH]);
   const manifestOk = checkManifest();
   const versionOk = checkVersion();
+  const distOk = checkDist();
 
-  if (tscOk && lintOk && manifestOk && versionOk) {
+  if (tscOk && lintOk && manifestOk && versionOk && distOk) {
     console.log('check:dev-package OK');
   } else {
     console.log('check:dev-package FAILED');

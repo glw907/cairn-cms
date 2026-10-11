@@ -126,10 +126,11 @@ export interface SenderConfig {
   replyTo?: string;
 }
 
-/** A git-committed YAML menu this site's nav editor manages. */
+/**
+ * A menu in the site-config YAML (the file `editor.siteConfigPath` names) that this site's nav
+ *  editor manages.
+ */
 export interface NavMenuConfig {
-  /** Repo-relative path to the site-config YAML, e.g. "src/lib/site.config.yaml". */
-  configPath: string;
   /** Key within the file's menus map, e.g. "primary". */
   menuName: string;
   /** Sidebar label for the menu. */
@@ -280,8 +281,14 @@ export interface CairnAdapter {
      *  the site's CSS out of the admin document, so the preview frame links these instead.
      */
     preview?: PreviewConfig;
-    /** Which git-committed YAML menu the nav editor manages. */
+    /** Which menu in the site-config YAML the nav editor manages. */
     nav?: NavMenuConfig;
+    /**
+     * The repo-relative path of the committed site-config YAML, which the nav editor, Settings,
+     *  and the tag vocabulary all read and write. Unset, it defaults to the scaffold's
+     *  `src/theme/site.config.yaml`.
+     */
+    siteConfigPath?: string;
     /**
      * Optional contact a stuck editor is pointed to from the in-admin help (an email address, a URL,
      *  or a name and instruction). Unset, `composeRuntime` defaults it to cairn's hosted help
@@ -410,6 +417,11 @@ export interface CairnRuntime {
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
   icons?: IconSet;
   navMenu?: NavMenuConfig;
+  /**
+   * The repo-relative path of the site-config YAML the nav editor, Settings, and Tags read and
+   *  write, resolved once at compose from `editor.siteConfigPath`.
+   */
+  siteConfigPath: string;
   /**
    * The raw navLayout config, passed through from the adapter unvalidated (validation needs
    *  parseAdminPath, a sveltekit symbol, so it runs at admin construction, not here, checking

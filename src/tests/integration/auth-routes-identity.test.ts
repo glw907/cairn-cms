@@ -29,6 +29,7 @@ function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
   return {
     siteName: 'Test Site',
+    siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
     ],

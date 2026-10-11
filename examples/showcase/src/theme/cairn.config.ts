@@ -11,7 +11,9 @@ import {
   fields,
   defineAdapter,
   defineConcept,
+  // cairn-template:exclude-start
   defineAccess,
+  // cairn-template:exclude-end
   createGithubApp,
 } from '@glw907/cairn-cms';
 import {
@@ -148,6 +150,7 @@ export const cairn = defineAdapter({
   // finalize.mjs matches this line character for character (TEMPLATE_GITHUB_APP_LITERAL)
   // prettier-ignore
   backend: createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
+  // cairn-template:exclude-start
   /**
    * This site's whole access declaration: which roles reach which admin screen or route. It is
    * declared once, here, on the adapter. `composeRuntime` carries it onto the runtime, and the
@@ -170,14 +173,12 @@ export const cairn = defineAdapter({
    */
   access: defineAccess(undefined, {
     '/admin/signups': ['owner'],
-    // cairn-template:exclude-start
     // The theme-kit fixture screen is owner-only for the same reason and carries no nav entry
     // (navLayout below never mentions it): it is a CSS proof for the theme-kit e2e specs, not a
-    // screen an editor should ever land on. The route is excluded from the template copy, and
-    // this rule rides along with it.
+    // screen an editor should ever land on.
     '/admin/theme-kit': ['owner'],
-    // cairn-template:exclude-end
   }),
+  // cairn-template:exclude-end
   // A verified sender literal, not derived from ORIGIN or any other URL host: Cloudflare Email
   // Routing verifies a sender address, not a domain owned by inference, so deriving one from a
   // URL host is exactly what E_SENDER_NOT_VERIFIED punishes on send.
@@ -210,7 +211,6 @@ export const cairn = defineAdapter({
   },
   editor: {
     nav: {
-      configPath: 'src/theme/site.config.yaml',
       menuName: 'primary',
       label: 'Navigation',
       maxDepth: 2,
@@ -221,9 +221,12 @@ export const cairn = defineAdapter({
     // by the same razor, what an editor authors versus what the site operates: Library joins
     // Content, since uploaded, described media is
     // the editor's own material the same way posts and pages are (the WordPress-era convention of
-    // Media beside Posts/Pages also matches a volunteer editor's muscle memory), while the custom
-    // Signups screen lands in Site, not Content, since signups are inbound visitor data,
-    // operations rather than manuscript. Tags stays in Site: vocabulary management is
+    // Media beside Posts/Pages also matches a volunteer editor's muscle memory).
+    // cairn-template:exclude-start
+    // The custom Signups screen lands in Site, not Content, since signups are inbound visitor
+    // data, operations rather than manuscript.
+    // cairn-template:exclude-end
+    // Tags stays in Site: vocabulary management is
     // configuration, not authoring. Settings and Editors stay trailing as admin config. Help
     // stays unreferenced, so it falls back to the shell's foot slot exactly where the default
     // arrangement already leaves it.
@@ -242,7 +245,9 @@ export const cairn = defineAdapter({
         children: [
           { screen: 'vocabulary' },
           { screen: 'nav' },
+          // cairn-template:exclude-start
           { label: 'Signups', icon: 'inbox', href: '/admin/signups' },
+          // cairn-template:exclude-end
           { screen: 'settings', label: 'Site settings' },
           { screen: 'editors' },
         ],

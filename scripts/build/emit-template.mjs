@@ -178,6 +178,26 @@ const WORKER_TYPES_FILE = 'worker-configuration.d.ts';
 export async function regenerateWorkerTypes(tree, extraArgs = []) {
   if (!existsSync(path.join(tree, WORKER_TYPES_FILE))) return;
   await promisify(execFile)(WRANGLER_BIN, ['types', ...extraArgs, '--include-runtime=false'], { cwd: tree });
+  await writeTypegenScript(tree);
+}
+
+/**
+ * Give the emitted `package.json` a `cf-typegen` script holding the command the freshly written
+ * `worker-configuration.d.ts` records on its second line, so a site regenerates its `Env` with the
+ * exact arguments that produced the committed file. The command comes from the file because the
+ * bake and the composed template differ: only the template carries the `.dev.vars.example` that
+ * `--env-file` names.
+ * @param {string} tree the emitted tree's root, holding a `package.json` and the types file
+ * @returns {Promise<void>}
+ */
+async function writeTypegenScript(tree) {
+  const types = await readFile(path.join(tree, WORKER_TYPES_FILE), 'utf8');
+  const command = types.split('\n')[1]?.match(/running `(wrangler types [^`]+)`/)?.[1];
+  if (!command) throw new Error(`${WORKER_TYPES_FILE} records no wrangler types command on its second line`);
+  const pkgPath = path.join(tree, 'package.json');
+  const pkg = JSON.parse(await readFile(pkgPath, 'utf8'));
+  pkg.scripts = { ...pkg.scripts, 'cf-typegen': command };
+  await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 }
 
 /**

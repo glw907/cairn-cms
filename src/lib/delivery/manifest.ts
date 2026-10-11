@@ -5,6 +5,7 @@
 import { buildSiteDescriptors } from './site-descriptors.js';
 import { fromGlob } from './content-index.js';
 import { parseMarkdown } from '../content/frontmatter.js';
+import { log } from '../log/index.js';
 import { emptyManifest, manifestEntryFromFile } from '../content/manifest.js';
 import type { Manifest, ManifestEntry } from '../content/manifest.js';
 import type { SiteConfig } from '../nav/site-config.js';
@@ -20,13 +21,21 @@ export function buildSiteManifest<A extends CairnAdapter>(adapter: A, config: Si
   const manifest = emptyManifest();
   for (const descriptor of buildSiteDescriptors(adapter, config)) {
     const record = globRecord[descriptor.id] ?? {};
+    const declared = new Set(descriptor.fields.map((f) => f.name));
+    const undeclared = new Set<string>();
     for (const file of fromGlob(record)) {
       // Validate the same way createContentIndex does, so the manifest and the site resolver agree on
       // which entries exist. A validation failure is excluded from both; otherwise the preview would
       // resolve a link the build then rejects as a missing target.
       const { frontmatter, body } = parseMarkdown(file.raw);
+      for (const key of Object.keys(frontmatter)) if (!declared.has(key)) undeclared.add(key);
       if (!descriptor.validate(frontmatter, body).ok) continue;
       manifest.entries.push(manifestEntryFromFile(descriptor, file));
+    }
+    // Validation drops an undeclared key from the frontmatter a page reads, so a value an author
+    // wrote there is silently lost. Name each one once per concept rather than once per entry.
+    if (undeclared.size > 0) {
+      log.warn('content.field_undeclared', { concept: descriptor.id, keys: [...undeclared].sort() });
     }
   }
   return manifest;

@@ -227,7 +227,7 @@ test('deployWorker maps a urlless zero-exit success to deploy-failed', async (t)
   );
 });
 
-test('applyMigrations invokes both databases in order, by binding name', async (t) => {
+test('applyMigrations invokes AUTH_DB alone, by binding name', async (t) => {
   const dir = tmpdir();
   const fake = await makeFakeBin('wrangler');
   t.after(() => fake.close());
@@ -239,8 +239,7 @@ test('applyMigrations invokes both databases in order, by binding name', async (
 
   const invocations = await fake.invocations();
   assert.deepEqual(invocations.map((i) => i.argv), [
-    ['d1', 'migrations', 'apply', 'AUTH_DB', '--remote'],
-    ['d1', 'migrations', 'apply', 'APP_DB', '--remote']
+    ['d1', 'migrations', 'apply', 'AUTH_DB', '--remote']
   ]);
 });
 
@@ -276,7 +275,7 @@ test('deployWorker called with no accountId shows no CLOUDFLARE_ACCOUNT_ID in th
   assert.equal(invocation.env.CLOUDFLARE_ACCOUNT_ID, undefined);
 });
 
-test('applyMigrations passes accountId through as CLOUDFLARE_ACCOUNT_ID on both databases', async (t) => {
+test('applyMigrations passes accountId through as CLOUDFLARE_ACCOUNT_ID on its migration call', async (t) => {
   const dir = tmpdir();
   const fake = await makeFakeBin('wrangler');
   t.after(() => fake.close());
@@ -289,7 +288,7 @@ test('applyMigrations passes accountId through as CLOUDFLARE_ACCOUNT_ID on both 
   const invocations = await fake.invocations();
   assert.deepEqual(
     invocations.map((i) => i.env.CLOUDFLARE_ACCOUNT_ID),
-    ['planted-account-id', 'planted-account-id'],
+    ['planted-account-id'],
   );
 });
 
@@ -308,7 +307,7 @@ test('applyMigrations called with no accountId shows no CLOUDFLARE_ACCOUNT_ID in
   const invocations = await fake.invocations();
   assert.deepEqual(
     invocations.map((i) => i.env.CLOUDFLARE_ACCOUNT_ID),
-    [undefined, undefined],
+    [undefined],
   );
 });
 
@@ -316,7 +315,7 @@ test('applyMigrations names the failing database in migrations-failed', async (t
   const dir = tmpdir();
   const fake = await makeFakeBin('wrangler');
   t.after(() => fake.close());
-  await fake.respond('APP_DB', { code: 1, stderr: 'D1_ERROR: no such table editor' });
+  await fake.respond('AUTH_DB', { code: 1, stderr: 'D1_ERROR: no such table editor' });
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
 
@@ -326,12 +325,12 @@ test('applyMigrations names the failing database in migrations-failed', async (t
     () => applyMigrations({ dir, log: () => {} }),
     (err) => {
       assert.equal(err.catalogue.code, 'migrations-failed');
-      assert.match(err.message, /APP_DB/);
+      assert.match(err.message, /AUTH_DB/);
       assert.match(err.message, /no such table editor/);
       return true;
     }
   );
 
   const invocations = await fake.invocations();
-  assert.deepEqual(invocations.map((i) => i.argv[3]), ['AUTH_DB', 'APP_DB']);
+  assert.deepEqual(invocations.map((i) => i.argv[3]), ['AUTH_DB']);
 });

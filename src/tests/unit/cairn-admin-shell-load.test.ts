@@ -14,6 +14,7 @@ function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
   return {
     siteName: 'Test Site',
+    siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
       { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
@@ -69,6 +70,30 @@ describe('createCairnAdmin shellLoad', () => {
     expect(shell.concepts.map((c) => c.id)).toContain('posts');
     // pendingEntries is a streamed promise, not an awaited array.
     expect(typeof shell.pendingEntries.then).toBe('function');
+  });
+
+  // The dev backend's repository mode marks its backend `ephemeral`, and the shell load reads that
+  // straight off locals.cairnBackend: a production request carries no per-request backend, and the
+  // GitHub backend and the seeded fixtures backend never set it.
+  it('carries the ephemeral-content member only when the request backend is ephemeral', async () => {
+    new GithubDouble({ main: {} }).install();
+    const { shellLoad } = createCairnAdmin({ runtime: runtime(), ...deps });
+    const ephemeral = eventFor('/admin/posts');
+    ephemeral.locals.cairnBackend = Object.assign(Object.create(backend), { ephemeral: true as const });
+    const withMember = await shellLoad(ephemeral);
+    if (withMember.shell.public) throw new Error('expected authed shell');
+    expect(withMember.shell.contentEphemeral).toBe(true);
+
+    const github = await shellLoad(eventFor('/admin/posts'));
+    if (github.shell.public) throw new Error('expected authed shell');
+    expect(github.shell.contentEphemeral).toBeUndefined();
+    expect('contentEphemeral' in github.shell).toBe(false);
+
+    const none = eventFor('/admin/posts');
+    delete none.locals.cairnBackend;
+    const withoutBackend = await shellLoad(none);
+    if (withoutBackend.shell.public) throw new Error('expected authed shell');
+    expect('contentEphemeral' in withoutBackend.shell).toBe(false);
   });
 
   it('returns a public payload for /admin/login and never calls listBranches', async () => {

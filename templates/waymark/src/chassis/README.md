@@ -28,7 +28,7 @@ the mechanism.
 | `public-routes.ts` | The one `PublicRoutesConfig` literal, shared by the prerendered entry route, the raw-markdown route, and the preview route so their rendering config can never drift apart. |
 | `entry-data.ts` | The reference-edge resolution layered onto `EntryData`/`PreviewData`, shared the same way as `public-routes.ts`. |
 | `cairn.server.ts` | The one server-side runtime composition point (`composeRuntime`, `createCairnAdmin`); every server route that needs the runtime imports it from here. |
-| `dev-gate.ts` | The runtime half of the dev-backend gate (`CAIRN_DEV_BACKEND=1`), read by hooks and the runtime composition; its build-time half is the `__CAIRN_DEV_BUILD__` define in `vite.config.ts`. |
+| `dev-gate.ts` | The runtime half of the dev-backend gate (`CAIRN_DEV_BACKEND=1`), read by hooks and the runtime composition; its build-time half is the `__CAIRN_DEV_BUILD__` define the `cairnManifest()` plugin supplies. |
 | `render.ts` | The component-grammar wiring (a theme's icon set into the engine's glyph-rendering helpers) and the prose-typography remark plugin seam. |
 | `archive.ts` | The archive shape: year-grouped, paginated segments over the posts index, shared by the home page (page one) and the `/archive/[page]` route so the slicing rule never drifts between them. |
 | `date.ts` | The site's one date vocabulary: every date-bearing surface formats through the single `formatDate` helper. |

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createGithubApp } from '../../lib/index.js';
 import { buildSiteManifest } from '../../lib/delivery/manifest.js';
 import { createLinkResolver } from '../../lib/delivery/site-resolver.js';
@@ -94,5 +94,36 @@ describe('createLinkResolver', () => {
     });
     const resolve = createLinkResolver(site);
     expect(() => resolve({ concept: 'fragments', id: 'address' })).toThrow(/cairn:fragments\/address/);
+  });
+});
+
+describe('buildSiteManifest undeclared frontmatter keys', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  /** The `content.field_undeclared` records the build wrote through the log chokepoint. */
+  function undeclaredWarnings(spy: { mock: { calls: unknown[][] } }): Record<string, unknown>[] {
+    return spy.mock.calls
+      .map((call) => call[0] as Record<string, unknown>)
+      .filter((record) => record.event === 'content.field_undeclared');
+  }
+
+  it('warns once for a concept whose entries carry a key its schema does not declare', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    buildSiteManifest(adapter, config, {
+      posts: globs.posts,
+      pages: {
+        '/src/content/pages/a.md': '---\ntitle: A\nrobots: noindex\n---\n\nA.\n',
+        '/src/content/pages/b.md': '---\ntitle: B\nrobots: noindex\n---\n\nB.\n',
+      },
+    });
+    const records = undeclaredWarnings(warn);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ level: 'warn', concept: 'pages', keys: ['robots'] });
+  });
+
+  it('stays silent for a concept with no undeclared keys', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    buildSiteManifest(adapter, config, globs);
+    expect(undeclaredWarnings(warn)).toEqual([]);
   });
 });

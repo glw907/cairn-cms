@@ -179,6 +179,9 @@ export function resolveConsumerVite(root: string): string {
  *  would recurse, and adapter-cloudflare's virtual-workers plugin, whose configureServer starts a
  *  platform proxy (a workerd process) the verify never reads.
  */
+// WATCH: stripping 'cairn-manifest' also drops its `config` hook, so the nested server does not
+// define __CAIRN_DEV_BUILD__. That is harmless while nothing in the config module's graph reads the
+// global; revisit if one does.
 const NESTED_SERVER_STRIPPED = new Set([
   'cairn-manifest',
   'vite-plugin-sveltekit-adapter-cloudflare-virtual-workers-module',
@@ -238,6 +241,20 @@ function siteFactsRelPath(opts: CairnManifestOptions): string {
   return (opts.siteFactsPath ?? DEFAULT_SITE_FACTS_PATH).replace(/^\//, '');
 }
 
+/** The global the dev-backend gate reads at every call site, defined by the plugin's `config` hook. */
+const DEV_BUILD_DEFINE = '__CAIRN_DEV_BUILD__';
+
+/**
+ * Whether a build opts in to the dev backend with `VITE_CAIRN_E2E=1`, read the way Vite reads its
+ *  own env: the process env plus `.env`, `.env.local`, `.env.<mode>`, and `.env.<mode>.local` in the
+ *  working directory. It loads the site's own Vite, so the engine never imports a second copy.
+ */
+async function e2eFlagSet(mode: string): Promise<boolean> {
+  const root = process.cwd();
+  const vite = await importConsumerVite(root);
+  return vite.loadEnv(mode, root, 'VITE_').VITE_CAIRN_E2E === '1';
+}
+
 /**
  * The cairnManifest plugin. It serves the verify and adapter-facts virtual modules to the app graph
  *  and evaluates them in buildStart, so a manifest or site-facts drift fails the build, or the dev
@@ -252,6 +269,17 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
   let buildChecks: Promise<StartChecks> | undefined;
   const plugin: CairnManifestPlugin = {
     name: 'cairn-manifest',
+    // Supplies `__CAIRN_DEV_BUILD__`, the build-time half of the dev-backend gate (a handle that
+    // mints owner sessions must never compile into a deployed Worker). Vite substitutes the name as
+    // a literal into each module that reads it, so each guarded branch folds where it is written.
+    // A define the site already set wins in either plugin order: Vite merges a hook's result over
+    // the config so far, so the hook returns nothing once the name is present. The hook starts no
+    // nested server, only reads the flag through the site's own `loadEnv`.
+    async config(config, { command, mode }) {
+      if (config.define && DEV_BUILD_DEFINE in config.define) return;
+      const flagged = command === 'serve' || (await e2eFlagSet(mode));
+      return { define: { [DEV_BUILD_DEFINE]: JSON.stringify(flagged) } };
+    },
     configResolved(config) {
       // Capture the resolved app root so the nested server loads the same config the build did.
       root = config.root;
@@ -277,6 +305,8 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
       if ('manifestError' in checks) this.error(checks.manifestError);
       if (checks.siteFacts.status === 'absent') {
         this.warn(siteFactsAbsentWarning(siteFactsRelPath(opts)));
+      } else if (checks.siteFacts.status === 'skipped') {
+        this.warn(checks.siteFacts.message);
       } else if (checks.siteFacts.status === 'stale') {
         this.error(checks.siteFacts.message);
       }
@@ -558,8 +588,24 @@ export function siteFactsAbsentWarning(path: string): string {
   return `cairn-cms: ${path} is missing. Run \`npx cairn-manifest\` to create it.`;
 }
 
-/** The three outcomes {@link checkSiteFacts} distinguishes: current, not yet created, or drifted. */
-export type SiteFactsCheck = { status: 'ok' } | { status: 'absent' } | { status: 'stale'; message: string };
+/**
+ * Build the build-log warning `checkSiteFacts` reports once when it could not derive the facts from
+ *  the adapter, so the committed file at `path` went unchecked. `reason` is the derivation's error
+ *  message.
+ */
+export function siteFactsSkippedWarning(path: string, reason: string): string {
+  return `cairn-cms: the ${path} check was skipped: the site facts could not be derived from the adapter (${reason}).`;
+}
+
+/**
+ * The four outcomes {@link checkSiteFacts} distinguishes: current, not yet created, drifted, or not
+ *  checked because the derivation threw (`message` is the warning to report).
+ */
+export type SiteFactsCheck =
+  | { status: 'ok' }
+  | { status: 'absent' }
+  | { status: 'stale'; message: string }
+  | { status: 'skipped'; message: string };
 
 /**
  * Check the committed `site-facts.json` against the adapter, without importing the committed file
@@ -568,11 +614,11 @@ export type SiteFactsCheck = { status: 'ok' } | { status: 'absent' } | { status:
  *  it runs `cairn-manifest`, and no site's `build` script runs that bin, so a fresh install or an
  *  upgrading consumer must still build. A present file that no longer matches the adapter is drift
  *  and fails the build in the manifest's own shape. A derivation failure (the adapter throwing for a
- *  reason unrelated to these three fields) degrades to `ok` rather than reporting stale, the same
- *  best-effort contract `readAdapterFacts` already keeps: the manifest verify immediately before this
- *  check already evaluates the same config module and is the build's real gate on an adapter that
- *  cannot load at all, so failing this specific comparison for an unrelated reason would be a false
- *  positive, not a real site-facts drift.
+ *  reason unrelated to these three fields) reports `skipped` rather than stale, and the build warns
+ *  once and continues: the manifest verify immediately before this check already evaluates the same
+ *  config module and is the build's real gate on an adapter that cannot load at all, so failing this
+ *  specific comparison for an unrelated reason would be a false positive, not a real site-facts
+ *  drift. The warning keeps the unchecked file visible.
  */
 export async function checkSiteFacts(
   opts: CairnManifestOptions,
@@ -585,8 +631,9 @@ export async function checkSiteFacts(
   let expected: string;
   try {
     expected = await buildSiteFactsFromVite(opts, root, server);
-  } catch {
-    return { status: 'ok' };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return { status: 'skipped', message: siteFactsSkippedWarning(relPath, reason) };
   }
   if (expected === committed) return { status: 'ok' };
   return {

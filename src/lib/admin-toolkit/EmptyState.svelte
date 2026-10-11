@@ -17,8 +17,11 @@ or what the action does.
 `headingLevel` (additive, defaults `'p'`, the original contract unchanged) selects the heading's
 own element: a screen that sits under a `PageHeader` (whose own `h1` already names the page) keeps
 the default `<p>`, while a screen that renders this component as its ONLY content, with no
-`PageHeader` of its own (`WelcomeView`, the none-capability landing), passes `'h1'` so the page
-still carries a real heading in its accessible tree.
+`PageHeader` of its own (`WelcomeView`, the none-capability landing, and the admin error page),
+passes `'h1'` so the page still carries a real heading in its accessible tree. An `'h1'` heading
+takes the page-heading recipe `PageHeader` uses (the display face at the title size), so the level
+changes the semantics and never leaves the browser's default heading size; every other level keeps
+its semibold heading as it was.
 
 Typography and layout classes only, no daisyUI component class. The tokens here match
 `ConceptList.svelte`'s and `WelcomeView.svelte`'s own empty-state markup, which is where this
@@ -60,7 +63,12 @@ now, so a class used only here compiles.
     <CairnLogo class="h-12 w-12 text-primary opacity-30" />
   {/if}
   <div class="space-y-1">
-    <svelte:element this={headingLevel} class="font-semibold text-base-content">{heading}</svelte:element>
+    <svelte:element
+      this={headingLevel}
+      class={headingLevel === 'h1'
+        ? 'mt-0 mb-1 type-title font-[550] font-[family-name:var(--font-display)] text-base-content'
+        : 'font-semibold text-base-content'}>{heading}</svelte:element
+    >
     <p class="mx-auto max-w-[40ch] type-body text-muted">{message}</p>
   </div>
   {#if action}{@render action()}{/if}

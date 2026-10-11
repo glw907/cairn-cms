@@ -26,6 +26,14 @@ describe('normalizePublishActions: validates a publish-actions config at constru
     expect(() => normalizePublishActions([{ label: '', href: '/x' }], concepts)).toThrow(/label/);
   });
 
+  it('rejects two entries that share a label, naming it', () => {
+    const entries = [
+      { label: 'Announce', href: '/a' },
+      { label: 'Announce', href: '/b' },
+    ];
+    expect(() => normalizePublishActions(entries, concepts)).toThrow(/"Announce"/);
+  });
+
   it('rejects an entry missing an href', () => {
     expect(() => normalizePublishActions([{ label: 'X', href: '' }], concepts)).toThrow(/href/);
   });

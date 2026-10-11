@@ -1,5 +1,8 @@
 # Engine pass B before stage 2b: scaffold, dev, and schema
 
+**Execution superseded (2026-10-10)** by `2026-10-10-engine-pass-b-lean.md`, which names the
+sections of this plan that still bind.
+
 **Goal:** Land pass B of the engine pass that runs before draft docs stage 2b. The signups demo
 leaves the scaffold, `create-cairn-site` stops provisioning `APP_DB`, and the dev backend reads the
 site's real content. The dev package ships built `dist/`, and the engine supplies the dev-build

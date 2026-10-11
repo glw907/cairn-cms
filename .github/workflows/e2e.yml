@@ -22,9 +22,20 @@ jobs:
   norms:
     uses: ./.github/workflows/norms.yml
 
+  # The suite runs as a Playwright shard matrix (playwright.dev/docs/test-sharding): each leg builds
+  # the showcase, runs its `--shard=i/N` slice, and uploads a blob report; the e2e-report job below
+  # merges them into one HTML report. SHARD_TOTAL is the one place the count lives, and the matrix
+  # legs are the matching indexes; keep the two in step. The regen dispatch runs one unsharded leg.
   e2e:
+    name: e2e (shard ${{ matrix.shardIndex }})
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: ${{ fromJSON(github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true' && '[1]' || '[1, 2]') }}
+    env:
+      SHARD_TOTAL: 2
     # Only the manual regen dispatch needs to push a commit back to the branch it ran against;
     # the routine push/pull_request runs never reach that step.
     permissions:
@@ -135,13 +146,13 @@ jobs:
           echo "OK: gate self-test: markers present in the flagged build's deployable bundle"
       - name: Run the e2e suite
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true') }}
-        # playwright.config.ts leaves reporter unset, so CI falls back to Playwright's own
-        # CI-detected default (`dot`), which writes no HTML report. `dot` still prints pass/fail
-        # to the run log; `html` additionally writes playwright-report so the upload step below
-        # has something to attach on failure; `json` writes the report the retries step reads.
+        # playwright.config.ts leaves reporter unset, so the flag chooses: `dot` prints pass/fail
+        # to the run log; `blob` writes this shard's blob-report (named by shard number, so legs
+        # never clash) for the e2e-report job to merge into the HTML report; `json` writes the
+        # per-shard report the retries step reads.
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-retries.json
-        run: npm --prefix examples/showcase run test:e2e -- --reporter=dot,html,json
+        run: npm --prefix examples/showcase run test:e2e -- --shard=${{ matrix.shardIndex }}/${{ env.SHARD_TOTAL }} --reporter=dot,blob,json
       # Manual regen mode: a dispatcher ticks `update_snapshots` after a deliberate rendering
       # change. Runs both visual specs BY FILE PATH (never a title grep, which silently skips
       # any test whose name doesn't match), on the CI runner itself, since baselines are
@@ -173,25 +184,74 @@ jobs:
             git pull --rebase
             git push
           fi
-      # examples/showcase/playwright.config.ts sets testDir: 'e2e' and leaves outputDir unset, so
-      # Playwright writes test-results (its outputDir default, package-dir-relative) regardless of
-      # reporter; the `--reporter=dot,html,json` flag on both run steps above additionally writes
-      # playwright-report (the html reporter's own default path), also package-dir-relative. Both
-      # paths are relative to examples/showcase. `if: failure()` catches a failure from any prior
-      # step in this job, not only the test run. `if-no-files-found: ignore` keeps the step from
-      # failing the job itself when a path has nothing to upload (a failure before the run step,
-      # such as the build or bundle-budget checks above, leaves neither directory written). The
-      # name is job-scoped so a future matrix leg gets its own artifact instead of two legs
-      # colliding on one name.
-      - name: Upload the Playwright report on failure
+      # Both paths are relative to examples/showcase: Playwright writes test-results (its outputDir
+      # default) regardless of reporter, and the blob reporter writes blob-report. `if: failure()`
+      # catches a failure from any prior step in this job, not only the test run.
+      # `if-no-files-found: ignore` keeps the step from failing the job itself when a path has
+      # nothing to upload (a failure before the run step leaves neither directory written). Names
+      # carry the shard index so legs never collide on one artifact.
+      - name: Upload the test results on failure
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report-${{ github.job }}
-          path: |
-            examples/showcase/playwright-report
-            examples/showcase/test-results
+          name: test-results-${{ matrix.shardIndex }}
+          path: examples/showcase/test-results
           retention-days: 7
+          if-no-files-found: ignore
+      # Runs on failure too, so the merged report shows the failing shard. The regen dispatch writes
+      # no blob (its step uses the html reporter), so the step finds nothing and is ignored.
+      - name: Upload this shard's blob report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: blob-report-${{ matrix.shardIndex }}
+          path: examples/showcase/blob-report
+          retention-days: 1
           if-no-files-found: ignore
       - if: failure() || cancelled()
         uses: ./.github/actions/install-diagnostics
+
+  # Merges the shards' blob reports into the one HTML report. It needs the installs and the showcase's
+  # @playwright/test (no browsers, no build), and is skipped for the regen dispatch, which has no blobs.
+  e2e-report:
+    name: e2e report
+    needs: e2e
+    if: ${{ !cancelled() && !(github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/showcase/package-lock.json
+      # The showcase installs the engine from `file:../..`, whose install runs the root package build,
+      # so the root dependencies come first, as in the e2e job.
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 8
+        with:
+          command: npm ci
+          clean: node_modules
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 8
+        with:
+          command: npm ci --prefix examples/showcase
+          clean: examples/showcase/node_modules
+      - uses: actions/download-artifact@v8
+        with:
+          path: ${{ runner.temp }}/all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+      - name: Merge the blob reports into the HTML report
+        working-directory: examples/showcase
+        run: npx playwright merge-reports --reporter html "$RUNNER_TEMP/all-blob-reports"
+      - name: Upload the merged Playwright report
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: examples/showcase/playwright-report
+          retention-days: 7
+          if-no-files-found: ignore

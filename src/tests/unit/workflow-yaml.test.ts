@@ -245,6 +245,6 @@ describe('the test jobs keep their gates and report their retries', () => {
       .map((s) => s.run ?? '')
       .filter((run) => run.includes('test:e2e'));
     expect(runs.length).toBeGreaterThanOrEqual(3);
-    for (const run of runs) expect(run).toMatch(/--reporter=dot(,html)?,json\b/);
+    for (const run of runs) expect(run).toMatch(/--reporter=dot(,html|,blob)?,json\b/);
   });
 });

@@ -28,8 +28,13 @@ rollout step 5 once it merges, as the first pass scored on the lean process: wor
 `.claude/worktrees/engine-pre-2b-b`, draft PR #111, Task 0 in the plan's Ledger (`1ce14d3b`), and WIP
 commit `dbdc4556` (Tasks 1 and 2, unreviewed, ungated, not pushed). Its branch merges `main` first
 and re-gates Tasks 1 and 2 through the fast lane. The release holds until the docs are complete.
-Running now: session `engine-pass-b` (id `0d52ae78`) on branch `worktree-engine-pass-b`, plan
-`superpowers/plans/2026-10-10-engine-pass-b-lean.md`.
+Engine pass B is stopped at PB-T8, draft PR #113: session `engine-pass-b` (id `0d52ae78`), branch
+`worktree-engine-pass-b`, plan `superpowers/plans/2026-10-10-engine-pass-b-lean.md`. PB-T0 to PB-T6
+are pushed and CI green. The PB-T7 and PB-T8 pair branches are committed and unmerged
+(`worktree-agent-aff085eae3e809eab`, `worktree-agent-a92dbb6a48122d5d0`). D6 needs a new public log
+event, `content.field_undeclared`, which changes `docs/internal/api-surface.md`, and the plan rules
+that out. The question for Geoff: may the pass add that event (recommended), drop D6 to a plain
+build warning, or cut it? Resume: `claude attach engine-pass-b`.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

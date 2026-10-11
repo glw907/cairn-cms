@@ -1,6 +1,6 @@
 # cairn-cms alignment (design)
 
-**Status:** draft for Geoff, 2026-10-11. The pass itself is approved (Geoff, 2026-10-11) to run
+**Status:** approved by Geoff, 2026-10-11, with the class-C recommendation, for unattended planning. The pass runs
 before docs stage 2b. Evidence: the alignment audit at `~/.dotfiles/docs/superpowers/research/2026-10-11-cairn-cms-alignment-audit.md`,
 read at `b4cc338`, which is still `main`.
 
@@ -62,4 +62,4 @@ other docs about 40, worktrees about 20, close about 30.
 
 ## Contestable
 
-Class C's three worktrees fall outside Geoff's ruling; the disposition above is a recommendation.
+Class C: Geoff accepted the recommendation above with the design (2026-10-11).

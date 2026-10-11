@@ -7,6 +7,10 @@
 // over every published docs page and fails when any file gates, printing each gating finding as
 // `file:line: excerpt`.
 //
+// The hinge-run count resets at a paragraph break, so a run of hinged sentences split across two
+// paragraphs gates in neither. A clean result is necessary and never sufficient: the register read
+// stays mandatory.
+//
 // CI has no tellgrader. When the binary is absent the check prints one skip line and passes, so
 // absence never fails a build.
 //

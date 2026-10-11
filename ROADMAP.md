@@ -1414,6 +1414,10 @@ the named human gates only):**
   Trigger: the next pass that changes the dev package's double set or `DevBackendConfig`, and before any
   site is told to build a D1-backed screen against the dev backend. The SvelteKit 3 move changed how the
   doubles reach the Worker (`withEnv` over the Worker env), not which exist, so this defers.
+  Verdict (engine pass B, 2026-10-11): batched, tagged add-cairn and the custom admin screen page. The scaffold
+  no longer binds `APP_DB`, so only the example site ships a D1-backed screen; the one-line fix (keep a binding
+  the site provides) would change the example site's e2e, which runs on the fake, so it waits for a pass that
+  owns that spec. Pass B changed `DevBackendConfig` (`content`, no `seedContent`) and left the double set alone.
 
 - **Promote `radius-scale` and the three retired-patch arms to error tier at `0.99.0` (theme
   identity pass B, 2026-09-29).** They ship at advisory tier in `0.98.0` and every finding names
@@ -2040,7 +2044,10 @@ the named human gates only):**
   package's double set or `DevBackendConfig`, or touches the showcase's `cairn-audit.config.json` or
   the skill, or the extend stage that outlines the custom-screen page. Defect 1 (the missing
   `cairnAccess`) defers with the dev package's other watches: the SvelteKit 3 move changed how the
-  doubles reach the Worker, not which exist.
+  doubles reach the Worker, not which exist. Verdict (engine pass B, 2026-10-11): defect 1 is closed, since the dev
+  handle attaches `runtime.access ?? {}` to `locals.cairnAccess` on every `/admin` request
+  (`packages/cairn-cms-dev/src/handle.ts`); defects 3 and 4 and the two untracked traps re-arm to the extend stage
+  that outlines the custom-screen page.
 
 - **The `ec-*` -> `cairn-*` rename ships a `/render` output break the four consumer sites have
   not taken yet (release decision owed at the next cut, filed 2026-09-05 from internals-C's

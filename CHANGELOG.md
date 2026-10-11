@@ -176,6 +176,18 @@
   Consumers may: pass `content: 'fixtures'` to keep the seeded dev content, which a site that runs
   the dev backend without ever naming `seedContent` gets by adding the one option.
 
+- **A scaffolded site gets an admin error page, a `cf-typegen` script, and a feed that renders
+  includes and absolute media URLs.** An error inside `/admin` now renders `src/routes/admin/+error.svelte`
+  inside the shell and its theme wrapper, with calm copy for a 403 and a 404, where the public site's
+  error page answered before. A failure in the admin layout's own load still falls to the root error
+  page, which SvelteKit requires. The scaffold's `package.json` gains `cf-typegen`, the exact `wrangler
+  types` command its `worker-configuration.d.ts` records. The feed resolves `::include{...}` fragments
+  and writes `https://<origin>/media/...` image URLs. The stale-manifest build error names `npx
+  cairn-manifest`.
+
+  Consumers may: copy `src/routes/admin/+error.svelte` into a hand-built site, and run `npx
+  cairn-manifest` when the build reports a stale manifest.
+
 - **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
   `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer
   becomes `^3`. A site also needs `@sveltejs/adapter-cloudflare` `^8`, `vite` `^8.0.12`,

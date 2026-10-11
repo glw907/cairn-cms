@@ -388,9 +388,10 @@ interface CairnAdapter {
   // Directive component registry; renderer and future palette derive from it (seam 3).
   registry?: ComponentRegistry;
 
-  // The git-committed YAML menu this site's nav editor manages.
+  // The git-committed YAML menu this site's nav editor manages. The file is `editor.siteConfigPath`
+  // (amended 2026-10-11, engine pass B), declared once and read by the nav editor, Settings, and
+  // Tags; it defaults to "src/theme/site.config.yaml".
   navMenu?: {
-    configPath: string;   // e.g. "src/lib/site.config.yaml"
     menuName: string;     // e.g. "primary"
     label: string;
     maxDepth?: number;

@@ -11,6 +11,10 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Move `editor.nav.configPath` to `editor.siteConfigPath`.** The nav editor, Settings, and Tags all read the one site-config file the adapter names, which defaults to `src/theme/site.config.yaml`. Set the member when your file lives elsewhere. A site that builds a `CairnRuntime` by hand adds `siteConfigPath` to it.
+- **Remove `itemLabel` from any `behavior` table, rename any concept whose id names an engine view, and make publish-action labels unique.** `itemLabel` stays on the `array` field descriptor. Composition now throws on a concept id of `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, or `settings`, and on two publish actions that share a label.
+- **Return a `tagNames` array from every `sanitizeSchema` callback.** The callback now gets a copy of the safe schema, and the engine strips `script` after it returns, so a callback can no longer admit author script. Use a registered component or island for that markup, or `unsafeDisableSanitize` to turn the floor off.
+- **Delete your own `devBuildDefine` plugin and `__CAIRN_DEV_BUILD__` declaration.** The `cairnManifest()` plugin defines the flag now and `/ambient` declares it. A site that keeps both still builds, because a define the site sets wins.
 - **Add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`.** The package ships built JavaScript that imports `cloudflare:workers`. Without the entry, `vite dev` hands it to Node, which rejects the scheme, and `/admin` answers 500.
 - **Drop `seedContent` from `devBackendHandle`, and pass `content: 'fixtures'` when the dev backend runs under `wrangler dev`.** The option never did anything, and the dev backend now serves your site's own content from the working tree by default. That mode needs a filesystem, so it throws under workerd.
 - **Pass `content: 'fixtures'` to keep the seeded dev content.** A site that runs the dev backend without ever naming `seedContent` now sees its own entries instead of the sample posts. Edits stay in memory either way, and the admin says so in one persistent notice.

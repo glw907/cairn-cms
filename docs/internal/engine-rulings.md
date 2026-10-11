@@ -1157,6 +1157,7 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 64.
 - **Any-site case:** Declaring editor.nav is what turns /admin/nav from a 404 into a working screen, an engine route a site cannot otherwise reach; configPath and menuName bind it to YAML the site also reads with extractMenu.
+- **Annotation (2026-10-11, engine pass before stage 2b, pass B):** the keep stands, and `configPath` leaves the member. The site-config path is declared once, as `editor.siteConfigPath`, so the nav editor, Settings, and Tags read one file; `menuName`, `label`, and `maxDepth` still bind the nav editor to its menu.
 
 ## audit-adapter-previewconfig: `PreviewConfig`  (keep, 2026-08-26, any-site audit)
 

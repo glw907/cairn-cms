@@ -2,6 +2,14 @@
 
 ### Added
 
+- **A `content.field_undeclared` log event.** The manifest build warns once per concept, naming
+  each frontmatter key on that concept's entries that the concept's schema does not declare.
+  Validation drops such a key, so a value an author wrote there (a `robots: noindex` on a concept
+  with no `robots` field) was lost without a word. `CairnLogEvent` and `CAIRN_LOG_EVENTS` gain the
+  member, and the event table in `docs/reference/log-events.md` its row.
+
+  Consumers may: filter Workers Logs on `content.field_undeclared` after a build to find the keys.
+
 - **`/healthz?live=1` mints one installation token and reports whether GitHub accepts the key.** A
   request with `?live=1` signs a JWT from the deployed key, exchanges it for an installation token,
   discards the token, and reports the result as `checks.githubAppToken`, with `detail` `key_refused`
@@ -110,6 +118,29 @@
   `dist/`.
 
   Consumers must: nothing, unless a site imports a file from the package's `src/` directly.
+
+- **The `sanitizeSchema` callback gets a copy, and a floor holds after it returns.** The callback
+  receives a deep copy of cairn's safe base schema. Once it returns, the engine removes `script` from
+  `tagNames` and sets `strip` to the union of the core list and the callback's, so no callback
+  result admits an author `<script>` or its body text. A callback that returns no `tagNames` array
+  (nothing, `undefined`, or `null`) now makes `createRenderer` throw at construction, naming
+  `sanitizeSchema`. Attributes and protocols stay the callback's responsibility.
+
+  Consumers must: return a schema with a `tagNames` array from every `sanitizeSchema` callback, and
+  use `unsafeDisableSanitize` to turn the floor off. A callback that relied on admitting `script`
+  now has it stripped.
+
+- **Composition refuses a duplicate publish-action label and a concept id that names an engine
+  view.** Two `publishActions` entries with the same label throw, naming it. A concept id of
+  `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, or `settings` throws, from one
+  reserved set the admin dispatcher and the validator both read.
+
+  Consumers must: give each `publishActions` entry a distinct `label`, and rename any concept whose
+  id is one of those eight.
+
+- **The build warns when it skips the `site-facts.json` check.** When the adapter's facts cannot be
+  derived, the Vite plugin warns once, naming the skipped check and the error, and the build
+  continues. It passed silently before.
 
 - **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
   `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer
@@ -384,6 +415,12 @@
   dictionary add lands at the same moment, and retry. There is no signature or option change.
 
 ### Removed
+
+- **`FieldBehavior.itemLabel`.** A field's `behavior` table carries only `validate`. An array row's
+  label comes from `itemLabel` on the `array` field descriptor, which is unchanged.
+
+  Consumers must: delete any `itemLabel` from a `behavior` table and set it on the `array` field
+  descriptor instead.
 
 - **`AuthGuardConfig.roles` and `access`, `DevBackendConfig.roles` and `access`, and
   `EditorRoutesConfig.roles`.** `runtime` carries both, so each factory's separate options are gone

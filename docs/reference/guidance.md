@@ -62,7 +62,7 @@ ships is reported as removable, left for the site to remove by hand.
 `check` reports seven lines, then a recommendation block that is never counted:
 
 1. The guidance tree's freshness against the installed package (fresh, stale, or missing), by the
-   same content hash `install` uses, with any removable path named.
+   same content hash `install` uses (the `VERSION` stamp left out), with any removable path named.
 2. Whether the root `CLAUDE.md` carries the `@.claude/cairn/CLAUDE.md` import line.
 3. Whether `package.json` declares a `check:cairn` script.
 4. Whether `cairn-audit.config.json` is present.
@@ -138,7 +138,8 @@ directive, available from Tailwind 4.1, or the equivalent of a `.gitignore` excl
 toolchain in use) so those examples never compile into the site's own shipped CSS. Tailwind
 resolves the path in that directive relative to the stylesheet that carries it, so a stylesheet
 under `src/chassis/` writes `../../.claude`, and a stylesheet at the project root writes
-`./.claude`. A gitignored `.claude` passes `check`'s item 6 outright, since Tailwind's own scanner already skips it.
+`./.claude`. A gitignored `.claude` passes `check`'s item 6 outright, since Tailwind's own scanner already skips it. So does a stylesheet
+whose Tailwind import uses `source(none)`, which turns off automatic source detection.
 
 ## The trust boundary
 

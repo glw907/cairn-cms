@@ -26,11 +26,13 @@ export const MANIFEST_DEST = `${CAIRN_DIR}/MANIFEST`;
 /**
  * Hash a file tree keyed by relative path. Sorted before hashing, so an unrelated directory-walk
  *  order never changes the digest; pure, so the freshness judgment in check.ts is unit-testable
- *  without touching a real filesystem.
+ *  without touching a real filesystem. The {@link VERSION_DEST} stamp is left out, since the
+ *  bake and `install` stamp it differently and it says nothing about the guidance content.
  */
 export function hashFileTree(files: Record<string, string>): string {
   const hash = createHash('sha256');
   for (const relPath of Object.keys(files).sort()) {
+    if (relPath === VERSION_DEST) continue;
     hash.update(relPath);
     hash.update('\0');
     hash.update(files[relPath]);

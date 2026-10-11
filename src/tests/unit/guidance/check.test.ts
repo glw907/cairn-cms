@@ -41,6 +41,16 @@ describe('judgeTree', () => {
     expect(judgeTree({ '.claude/skills/foo/SKILL.md': 'stale' }, packaged)).toBe('stale');
   });
 
+  it('reads fresh when only the stamped VERSION differs', () => {
+    expect(judgeTree({ ...packaged, '.claude/cairn/VERSION': '9.9.9' }, packaged)).toBe('fresh');
+  });
+
+  it('still reads stale when a real guidance file differs beside a differing VERSION', () => {
+    expect(
+      judgeTree({ ...packaged, '.claude/cairn/VERSION': '9.9.9', '.claude/cairn/CLAUDE.md': 'edited' }, packaged)
+    ).toBe('stale');
+  });
+
   it('reports fresh when the installed tree matches byte for byte', () => {
     expect(judgeTree({ ...packaged }, packaged)).toBe('fresh');
   });
@@ -69,6 +79,15 @@ describe('judgeSourceExclusion', () => {
   it('reads the exclusion line off the scaffold\'s admin.css when .claude is not gitignored', async () => {
     const result = await judgeSourceExclusion(
       readFileFrom({ '.gitignore': 'dist\n', 'src/admin.css': `@source "./routes/admin";\n${SOURCE_EXCLUSION_LINE}\n` })
+    );
+    expect(result.status).toBe('excluded');
+  });
+
+  it('counts a Tailwind import with source(none) as excluded, as the emitted admin.css writes it', async () => {
+    const result = await judgeSourceExclusion(
+      readFileFrom({
+        'src/admin.css': '@import "tailwindcss/utilities.css" layer(utilities) source(none);\n@source "./routes/admin";\n',
+      })
     );
     expect(result.status).toBe('excluded');
   });

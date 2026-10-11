@@ -103,6 +103,14 @@
   Consumers must: nothing for a site that finished its setup. For a resumed setup in that window, run
   `npx wrangler d1 migrations apply APP_DB --remote` from the affected site.
 
+- **`@glw907/cairn-cms-dev` publishes built output.** The package ships `dist/` JavaScript and
+  declarations in place of TypeScript source, drops its `svelte` export condition, and builds
+  through the root `package` script. The release job installs, which builds `dist/`, before it
+  publishes, and `check:dev-package` now fails on any `exports` target or `files` entry outside
+  `dist/`.
+
+  Consumers must: nothing, unless a site imports a file from the package's `src/` directly.
+
 - **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
   `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer
   becomes `^3`. A site also needs `@sveltejs/adapter-cloudflare` `^8`, `vite` `^8.0.12`,
@@ -402,6 +410,9 @@
 
 ### Fixed
 
+- **`cairn-guidance check` reads a fresh scaffold as fresh.** A stylesheet whose Tailwind import uses
+  `source(none)` now counts as excluding `.claude/`, and the guidance tree hash leaves out the
+  `VERSION` stamp, which the bake and `install` stamp differently.
 - **Publish-all now refuses a stale publish.** It reads the default branch's head before any pending
   branch, so a single publish of the same entry landing mid-batch answers the calm conflict instead
   of being reverted by the branch's older content.

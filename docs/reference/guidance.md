@@ -138,8 +138,8 @@ directive, available from Tailwind 4.1, or the equivalent of a `.gitignore` excl
 toolchain in use) so those examples never compile into the site's own shipped CSS. Tailwind
 resolves the path in that directive relative to the stylesheet that carries it, so a stylesheet
 under `src/chassis/` writes `../../.claude`, and a stylesheet at the project root writes
-`./.claude`. A gitignored `.claude` passes `check`'s item 6 outright, since Tailwind's own scanner already skips it. So does a stylesheet
-whose Tailwind import uses `source(none)`, which turns off automatic source detection.
+`./.claude`. A gitignored `.claude` passes `check`'s item 6 outright, since Tailwind's own scanner already skips it. A stylesheet whose
+Tailwind import uses `source(none)` passes too. That option turns off automatic source detection.
 
 ## The trust boundary
 

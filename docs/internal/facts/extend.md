@@ -1096,6 +1096,8 @@ order; the record is `docs/superpowers/research/2026-09-30-extend-gap-sweep.md`.
 - `f:xj180v` A rendered `cairn-audit` run reads its session cookie from `CAIRN_AUDIT_COOKIES`; without one every admin route redirects to the sign-in card, and the run refuses with an error naming that variable and exits 2 rather than reporting a clean result. Source: `src/lib/audit/rendered.ts:126-135,162`, `src/lib/audit/bin.ts:72-76`. [verified]
 - `f:xjp2mx` `cairn-audit.config.json`'s `static.sourceScope` (default `src`) names the directories the `log-event-grammar` and `log-secret-field` rules walk for `.ts` and `.svelte` files. Source: `src/lib/audit/config.ts:21,115-119,310`. [verified]
 - `f:y1mjsk` `cairn-audit.config.json`'s `sheet` accepts one path or a list of compiled stylesheets the class checks resolve against, and a listed sheet that does not exist fails the run with an error naming it. Source: `src/lib/audit/config.ts:152-159,324-326`, `src/lib/audit/run.ts:155-173`. [verified]
+- `f:47v0r9` `@glw907/cairn-cms-dev` ships built `dist/` JavaScript and declarations, never TypeScript source: its `files` are `dist` and `README.md`, its `exports` carry only `types` and `default` conditions pointing into `dist/`, and it declares no `svelte` condition. The root `package` script builds it after `svelte-package`, and the release job installs, which builds it, before it publishes. Source: `packages/cairn-cms-dev/package.json:15-25`, `packages/cairn-cms-dev/tsconfig.build.json:1`. [verified]
+- `f:35s2dk` `check:dev-package` asserts that every `exports` target and every `files` entry of the dev package points into `dist/` or is `README.md`. Source: `scripts/checks/check-dev-package.mjs:86-97`. [verified]
 
 ## Harvest record
 

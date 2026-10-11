@@ -6,7 +6,8 @@ plan (`2026-10-08-engine-pass-pre-2b-b.md`) was not edited: every finding was fi
 plan.
 
 Counts: 76 findings. 74 folded (nine in part, with the refused part stated), 1 refused, 1 owner
-fork. Integrity M2 is folded and carries a second owner fork. Two rulings for Geoff follow the table.
+fork. Integrity M2 is folded and carried a second owner fork. Geoff ruled both on 2026-10-10 ("Ruled"
+below), and the verification read's findings are folded under "Verification fold".
 
 ## Probes behind the fold
 
@@ -107,7 +108,7 @@ Each new mechanism was quoted or probed (scratch under `$HOME/.cache/plan-fold/`
 | m12 | Folded | Prompt: `sleep 43200`. |
 | m13 | Folded in part | PB-T0 to 30; PB-T10 to 80, not 90: estimates are expected durations, and the stop already fires at twice them. Pair merges carry 10 each. |
 | m14 | Folded | PB-T0 STATUS line. |
-| OF1 | Owner fork | Ruling 2 below. |
+| OF1 | Owner fork, ruled | Ruled 2 below: normal urgency. |
 
 ### Integrity lens
 
@@ -116,7 +117,7 @@ Each new mechanism was quoted or probed (scratch under `$HOME/.cache/plan-fold/`
 | B1 | Folded | Conventions, "Stops" (`pass-stop` marker, checked first by every turn and resume, cleared only on Geoff's word) and merge sequence step 1. |
 | B2 | Folded | Same root as mechanics B1; PB-T1. |
 | M1 | Folded | PB-C item 7's merge sequence, with `--match-head-commit`. |
-| M2 | Folded, plus owner fork | Conventions, "Merging `main`" (STATUS by hand, other conflicts stop); PB-C item 6 edits only pass B's STATUS lines; merge-ins bounded at two. The auth-data question is Ruling 1. |
+| M2 | Folded, plus owner fork | Conventions, "Merging `main`" (STATUS by hand, other conflicts stop); PB-C item 6 edits only pass B's STATUS lines; merge-ins bounded at two. The auth-data question is Ruled 1 below. |
 | M3 | Folded | Resume steps 1 to 6; PB-C item marks are the PR body sections, which live on GitHub, instead of PR comments. |
 | M4 | Folded in part | Launch: pre-launch push, clean worktree, local equals origin; the prompt reads the plan by absolute path. Refused `pgrep -af engine-pre-2b-b`: the launch shell's own command line holds that path, so it would refuse every launch; the `claude agents --json` `cwd` check covers a live session there. |
 | M5 | Folded | Conventions, "Proofs on a clean tree". |
@@ -140,17 +141,46 @@ Each new mechanism was quoted or probed (scratch under `$HOME/.cache/plan-fold/`
 
 Re-totaled: 605 minutes of estimates; critical path 550 minutes (9.2 hours). The success-test clock
 (PB-T0's commit to `gh pr ready`) covers about 525 minutes (8.75 hours), about 15 minutes under the
-9-hour test before any fix round. The plan says so.
+9-hour test before any fix round. At the spec's price for fix rounds and reds, 40 to 90 minutes, the
+expected clock is 9.4 to 10.3 hours, a miss: the test passes only with zero fix rounds and no red.
+Each stop's wait for Geoff is excluded from the clock and reported as its own Score line (planner's
+ruling, below). The plan's "Clock total" says so.
 
-## Rulings for Geoff
+## Ruled
 
-1. **On a clean merge of `main` during the close that touches `cairn-pass`'s `auth-data` globs, is
-   CI green on the merged head enough to merge?** Recommendation: yes. `main`'s change was reviewed
-   in its own PR, the branch's diff is unchanged, and CI's e2e carries the three auth specs. Yes
-   builds the plan as written (merge sequence step 3). No builds: the session re-runs the live smoke
-   and the whole-branch review on the merged head before merging, about 40 more minutes on the
-   critical path. A conflicting merge-in stops in either case.
-2. **Do stops keep `notify-send -u normal`?** Recommendation: yes. Ruling 13 set normal urgency for
-   the clock stop, `pass-core` repeats it, and the calm-desktop rule keeps one level; a stop costs
-   clock time, never data. Yes builds the plan as written. No builds `-u critical` for every stop
-   other than the clock stop, which breaks through Do Not Disturb.
+1. **A clean merge of `main` during the close that touches `cairn-pass`'s `auth-data` globs needs
+   only CI green on the merged head; a conflicting merge-in stops.** Geoff, 2026-10-10: "Yes, CI
+   green is enough." Folded at PB-C merge sequence step 3. For the record: integrity M2 had
+   recommended re-running the review and the smoke on such a merge-in (its option b), a cheaper
+   middle option was to re-run both over the merged-in range only, and CI's e2e runs under
+   `CAIRN_DEV_BACKEND:1`, so it never drives the real magic-link round trip the smoke drives.
+2. **Stops keep `notify-send -u normal`.** Geoff, 2026-10-10: "Normal urgency." Folded at Stops.
+   Mechanics OF1 had recommended `-u critical` for stops.
+3. **Planner's ruling, not Geoff's: the wait between a stop's notification and Geoff's reply is
+   excluded from the success-test clock,** as a pause under ruling 13 and the spec's exclusion of
+   "pauses he orders". The score reports each stop's wait as its own line. Folded at Stops, PB-C
+   item 7, and "Clock total".
+
+## Verification fold
+
+Folded from `2026-10-10-engine-pass-b-lean-fold-verification.md` (0 blockers, 1 major, 12 minors).
+Each was checked before folding; the new commands were probed under `$HOME/.cache/plan-fold/v1/` (the
+stop-or-reset call reset `start=` on a stale clock and printed the marker without touching `start=`
+when `pass-stop` existed; `! ss -Htln "sport = :4392" | grep -q .` exits 0 on a free port; a `sleep`
+inside a Bash loop runs).
+
+| # | Disposition | Where |
+| --- | --- | --- |
+| V1 | Folded | Prompt and Resume step 2: the stop check and the clock reset are one Bash call, the first after EnterWorktree; a clock-stop line before it is stale. Stops: the "go on" turn removes `pass-stop` and rewrites the clock in one call. A wake-up tick runs only the stop check, so a live overrun still fires. |
+| V2 | Folded | Conventions, "CI reads", and merge sequence step 5: exit 3 at the merge is a stop. |
+| V3 | Folded | Merge sequence step 8: the base check again after the CI wait. |
+| V4 | Folded | Merge sequence step 7: up to three re-reads, 10 seconds apart, while `UNKNOWN`. |
+| V5 | Folded | Stops: notify text names `claude attach engine-pass-b`; the commit is `Record a stop in STATUS (<task>)`, and Resume step 6 skips that subject. |
+| V6 | Folded | Pairs: the sleep exiting is the pair's clock stop; the transcript-mtime check is gone. |
+| V7 | Folded | PB-C Acceptance: `git show origin/main:CHANGELOG.md` carries pass B's `## Unreleased` lines. |
+| V8 | Folded | Merge sequence step 3 quotes Geoff's ruling; "Ruled" records each reviewer's dissent. |
+| V9 | Folded | "Clock total" and the Clock section above: the expected miss and the stop-wait exclusion. |
+| V10 | Folded | The e2e extra command leads with the port guard; PB-T3's capture server runs on `E2E_PORT=4394` and is stopped after. |
+| V11 | Folded | Retired phrases table: every `/tmp/dev-fold-<x>` (the `rm`, `--outdir`, and `grep`). |
+| V12 | Folded | PB-T0: the re-check covers this plan's own text; each task re-checks the old bodies it reads. |
+| V13 | Folded | Pairs step 3: `--allow-empty` when no record moved. |

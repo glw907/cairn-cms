@@ -51,7 +51,7 @@ suite reads a bake in `packages/create-cairn-site/template/` (gitignored), as CI
 | "CI `create-site` on the segment push green" (T2) | CI `create-site` green on PB-T1's pushed head, read by the watch. PB-T3 does not wait for it. |
 | "The showcase e2e build resolves `dist/`" (T4) | `npm --prefix examples/showcase run build` after `npm run package`, with `realpath` of both packages quoted. |
 | "Confirm on CI at the boundary" (T4) | CI's `e2e` and `scaffold` green on PB-T4's pushed head. |
-| `--outdir=/tmp/dev-fold-*` in the replayed `e2e.yml` steps (T4, T5) | `--outdir="$HOME/.cache/engine-pre-2b-b/dev-fold-default"` and `.../dev-fold-flagged`. |
+| Every `/tmp/dev-fold-<x>` in the replayed `e2e.yml` steps (T4, T5): the `rm -rf`, the `--outdir`, and the `grep` | `$HOME/.cache/engine-pre-2b-b/dev-fold-<x>`, for `default` and `flagged`. |
 | "The S3 pre-flight names it" (T7 Files) | `src/lib/sveltekit/publish-actions.ts` (`normalizePublishActions`). |
 | "Wherever the fixed screen ids live" (T7 Files) | `src/lib/sveltekit/admin-nav.ts` (`ACCESS_FIXED_SCREENS`, `:280`). |
 | "The S3 pre-flight names the file" (T8 Files) | `src/lib/delivery/manifest.ts` (`buildSiteManifest`, `:18`). See PB-T8. |
@@ -74,6 +74,11 @@ suite reads a bake in `packages/create-cairn-site/template/` (gitignored), as CI
   (`src/lib/github/**` and `**/hooks.server.ts`). PB-T4 is `runner`, and the rest are `ordinary`. No
   `live-account` flag: no task provisions a real Cloudflare, GitHub, or npm resource, and the smoke
   runs under local `wrangler dev`.
+- **A moved `main` at the close (Geoff, 2026-10-10: "Yes, CI green is enough").** A clean merge-in
+  that touches `auth-data` paths needs only CI green on the merged head; a conflicting one stops.
+- **Stop notifications (Geoff, 2026-10-10: "Normal urgency").** Every stop uses `notify-send -u
+  normal`. Planner's ruling beside it: a stop's wait for Geoff is excluded from the success-test
+  clock, as a pause under ruling 13 and the spec's "pauses he orders", and the score reports it.
 - **Decision 12's resume window** goes into PB-T1's `CHANGELOG.md` entry and the PR body, since
   HISTORY is frozen.
 
@@ -118,11 +123,14 @@ suite reads a bake in `packages/create-cairn-site/template/` (gitignored), as CI
     `CAIRN_GATE_LANE=light cairn-run-gate 'V=$(node -p "require(\"./package.json\").version") && (cd packages/create-cairn-site && node scripts/bake-template.mjs --to template --engine-spec "^$V" --dev-spec "^$V") && npm --prefix packages/create-cairn-site test'`
   - The dev package tests, heavy (the default lane): `cairn-run-gate 'npx vitest run --project unit packages/cairn-cms-dev/src'`
   - The integration project, heavy: `cairn-run-gate 'npm run test:integration'`
-  - One e2e spec, heavy (its `pretest:e2e` builds the package; `E2E_PORT` keeps it off 4173):
-    `cairn-run-gate 'export E2E_PORT=4392 && npm --prefix examples/showcase run test:e2e -- e2e/<spec>.spec.ts --retries=0'`
+  - One e2e spec, heavy (its `pretest:e2e` builds the package; `E2E_PORT` keeps it off 4173). The
+    port guard comes first because `playwright.config.ts` sets `reuseExistingServer: !process.env.CI`,
+    so a leftover server on 4392 would be reused and a stale build tested:
+    `cairn-run-gate '! ss -Htln "sport = :4392" | grep -q . && export E2E_PORT=4392 && npm --prefix examples/showcase run test:e2e -- e2e/<spec>.spec.ts --retries=0'`
 - **CI reads.** `ci-green` exit 1 is a red. Exit 2 is a red unless one re-push clears it. Exit 3 is
-  re-read at the next push and does not stop a task; at PB-C it means the local full gate per
-  `cairn-pass`. PB-T0's run is informational, since it carries the ungated WIP; PB-T1's push is the
+  re-read at the next push and does not stop a task; inside PB-C's fix chain it means the local full
+  gate per `cairn-pass`. At the merge sequence, exit 3 is a stop: the session never merges without
+  CI green on the head. PB-T0's run is informational, since it carries the ungated WIP; PB-T1's push is the
   first binding read. A red that PB-T0's baseline already shows on `main` does not stop the line, and
   the PR body lists it.
 - **`auth-data` tasks.** The test-first lines bind. `diff-reviewer` (Agent tool, `subagent_type:
@@ -144,13 +152,15 @@ suite reads a bake in `packages/create-cairn-site/template/` (gitignored), as CI
   - "Put your evidence in your commit body, per the plan's Evidence rule. Edit only your Files."
 
   At dispatch the session records `date +%s` and starts a background Bash `sleep` of twice the pair
-  estimate, in seconds. If the sleep exits before both agents return, the session reads the agents'
-  transcript mtimes, and an agent idle past 25 minutes is a stop. When both return, the session:
+  estimate, in seconds. If the sleep exits before both agents return, that is the pair's clock stop
+  (pair worktrees hold no clock file, so this sleep stands in for the hook). When both return, the
+  session:
   1. Merges each branch: `git merge --no-ff -m "<task>: Merge the pair branch" <branch>`.
   2. Files both reports' records, and runs `npm run check:surface -- --update` and `npm run
      check:facts` if a record or typed export moved.
   3. Runs the fast lane with `<base>` the dispatch commit, and commits the records as `<task>,
-     <task>: File the pair's records`, with the pair's `Pass-Clock:` trailer.
+     <task>: File the pair's records`, with the pair's `Pass-Clock:` trailer. If no record moved, the
+     commit is `--allow-empty`, with the same subject and trailer.
   4. Reads `cairn-run-gate --records <pair worktree> <pair branch>` for each pair worktree into the
      score notes, then `git worktree remove` both and `git branch -d` their branches.
   5. Pushes.
@@ -162,12 +172,20 @@ suite reads a bake in `packages/create-cairn-site/template/` (gitignored), as CI
   `estimate=` the pair estimate.
 - **Stops.** A stop does these, in order: it writes `$(git rev-parse --absolute-git-dir)/pass-stop`
   (the task, what failed, the one question); rewrites pass B's lines in the branch's
-  `docs/STATUS.md` with the same three facts; commits that as `Record the <task> stop in STATUS` and
-  pushes; runs `notify-send -u normal "engine pass B stopped at <task>: PR #<n>, <worktree path>"`;
-  and ends its turn. Every turn, each wake-up tick included, and every resume first runs `test -e
-  "$(git rev-parse --absolute-git-dir)/pass-stop"`. While the file exists, the turn ends with no other
-  act. The session removes the file only in a turn that answers a message from Geoff saying to go on,
-  and that turn rewrites the clock's `start=`, or `estimate=` to Geoff's figure. A resumed
+  `docs/STATUS.md` with the same three facts; commits that as `Record a stop in STATUS (<task>)` and
+  pushes; runs `notify-send -u normal "engine pass B stopped at <task>: PR #<n>, <worktree path>;
+  resume: claude attach engine-pass-b"` (Geoff, 2026-10-10: "Normal urgency"); and ends its turn.
+  Every wake-up tick first runs `test -e "$(git rev-parse --absolute-git-dir)/pass-stop"`, and a
+  relaunch runs Resume step 2. While the file exists, the turn ends with no other act. The session
+  removes the file only in a turn that answers a message from Geoff saying to go on, and that turn's
+  first tool call is one Bash call that removes the file and rewrites the clock: `g=$(git rev-parse
+  --absolute-git-dir) && rm "$g/pass-stop" && { test ! -f "$g/pass-task-clock" || sed -i
+  "s/^start=.*/start=$(date +%s)/" "$g/pass-task-clock"; }` (or `estimate=` to Geoff's figure). A
+  clock-stop line that arrives before that call, or in the same turn as it, is stale and is not a
+  stop: the hook fires after every tool call and reads the old `start=`. The wait between a stop's
+  notification and Geoff's reply is excluded from the success-test clock (planner's ruling: a pause
+  under ruling 13 and the spec's exclusion of "pauses he orders"), and the score reports it as its own
+  line. A resumed
   `auth-data` task never re-dispatches `diff-reviewer` on an unchanged commit to overturn a standing
   verdict. These stop the line:
   - A fired clock stop.
@@ -176,8 +194,8 @@ suite reads a bake in `packages/create-cairn-site/template/` (gitignored), as CI
   - An `auth-data` `fix` that still stands after one fix round, or an `escalate`.
   - A task needing public surface the old plan does not name (old Global constraints, "No new public
     surface"), or a finding that would change the approved design.
-  - A stalled pair agent (above), or a merge conflict, except a STATUS conflict under "Merging
-    `main`".
+  - A pair's sleep exiting before both agents return (above), or a merge conflict, except a STATUS
+    conflict under "Merging `main`".
   - At PB-C, a blocking finding the session would overrule (item 3), or a third merge-in of `main`.
   - On battery with no mains supply online, at 11 percent: commit the work in progress, then stop
     (`unattended-work-guards.md`, "Battery floor").
@@ -190,7 +208,11 @@ suite reads a bake in `packages/create-cairn-site/template/` (gitignored), as CI
   1. If `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/engine-pass-b` appears in `git worktree
      list`, call EnterWorktree with that `path`. Otherwise call it with `name: engine-pass-b`, which
      creates the worktree on branch `worktree-engine-pass-b`.
-  2. The stop check above.
+  2. One Bash call, the first after EnterWorktree, checks the stop and resets the clock: `g=$(git
+     rev-parse --absolute-git-dir); if test -e "$g/pass-stop"; then cat "$g/pass-stop"; elif test
+     -f "$g/pass-task-clock"; then sed -i "s/^start=.*/start=$(date +%s)/" "$g/pass-task-clock"; fi`.
+     If it prints the stop, end the turn. A clock-stop line that arrives before this call, or in the
+     same turn as it, is stale and is not a stop.
   3. `gh pr list --head worktree-engine-pass-b --state all` finds the PR; never open a second one. If
      it shows `MERGED`, run only PB-C item 8.
   4. If `git status --porcelain` prints anything, run `git stash push -u -m resume-<task>`, never a
@@ -198,9 +220,10 @@ suite reads a bake in `packages/create-cairn-site/template/` (gitignored), as CI
      stashed and name it in the PR body.
   5. `git branch --list 'worktree-agent-*'`: merge any branch whose commits carry a pair task id
      before re-dispatching that task.
-  6. Find the done tasks with `git log --oneline` (task ids in subjects), start at the first task
-     whose acceptance fails, and rewrite its clock file's `start=`. Inside PB-C, start at the first
-     item whose PR body section is missing.
+  6. Find the done tasks with `git log --oneline` (task ids in subjects; skip subjects that start
+     with `Record a stop`), and start at the first task whose acceptance fails. If its clock file was
+     not reset in step 2, write it fresh. Inside PB-C, start at the first item whose PR body section
+     is missing.
 
   A live session that is waiting resumes with `claude attach engine-pass-b`. A dead one is relaunched
   with the Launch block, which runs its checks again.
@@ -235,8 +258,9 @@ PB-T3, PB-T5, PB-T9, PB-T10) stays serial, since each rewrites `templates/waymar
   2's merge, with the pushed `engine-pre-2b-b` merged in by `git merge --no-ff --no-commit
   origin/engine-pre-2b-b`. That brings this plan, the old plan's Task 0 Ledger, and WIP `dbdc4556`.
   A conflict follows "Merging `main`". Before the commit:
-  - Re-check the plan's line claims at the merged tree: every path, line number, symbol, and script
-    that PB-T1 to PB-T11, "Order", and the Retired phrases table name, and old Task 0 item 7. Add one
+  - Re-check the line claims in this plan's own text at the merged tree: every path, line number,
+    symbol, and script that PB-T1 to PB-T11, "Order", and the Retired phrases table name, and old
+    Task 0 item 7. The old task bodies' lines are re-checked by each task as it reads them. Add one
     dated line per task under "Re-check" below: `PB-Tn: holds at <sha>`, or the moved fact. Record
     there the line ranges of both dev-fold replay steps in `e2e.yml` and `scaffold.yml` (on step 2's
     branch the sharded `e2e.yml` holds them at `:83-101` and `:136-150`).
@@ -304,7 +328,8 @@ PB-T3, PB-T5, PB-T9, PB-T10) stays serial, since each rewrites `templates/waymar
   the dashboard". The A5 spec runs once red before the page exists and once green after. The
   captures (the 403 page under the light and dark admin themes) come from a scratch Playwright script
   under `$HOME/.cache/engine-pre-2b-b/captures/` against the fixture route, not from the committed
-  spec, which would also write them on CI.
+  spec, which would also write them on CI. The script's server runs the config's `webServer` command
+  with `E2E_PORT=4394`, and the session stops it after the captures.
 - **Files.** Old Task 3's Files.
 - **Risk.** `ordinary`. B2 and D2 are test-first, as the old task says.
 - **Acceptance.** Old Task 3's Acceptance.
@@ -469,24 +494,30 @@ PB-T3, PB-T5, PB-T9, PB-T10) stays serial, since each rewrites `templates/waymar
      each pair merge. CI time from `--records` is labeled the total; only the waits that blocked a
      task count as on the path. The task rows come from the `Pass-Clock:` trailers (`git log
      --format=%B origin/main..HEAD`). The clock runs from PB-T0's commit time (`git log -1
-     --format=%ct <PB-T0>`) to `gh pr ready`, stated against the 9-hour success test, with the
-     attended events (the design, each stop) and any escape. Then run the merge sequence immediately
+     --format=%ct <PB-T0>`) to `gh pr ready`, minus each stop's wait for Geoff, stated against the
+     9-hour success test. Each stop's wait is its own line, beside the attended events (the design,
+     each stop) and any escape. Then run the merge sequence immediately
      before the merge, after the last code change, stopping at the first failure:
      1. `test ! -e "$(git rev-parse --absolute-git-dir)/pass-stop"`.
      2. `[ -z "$(git status --porcelain)" ]`.
      3. `git fetch origin && [ "$(git merge-base origin/main HEAD)" = "$(git rev-parse origin/main)"
         ]`. On a failure, merge `origin/main` per "Merging `main`", run the fast lane over the merge,
         push, and start the sequence again; a third merge-in is a stop. A clean merge-in that touches
-        `cairn-pass`'s `auth-data` globs is carried by CI green on the merged head (Ruling 1 in the
-        fold record, pending Geoff).
+        `cairn-pass`'s `auth-data` globs needs only CI green on the merged head (Geoff, 2026-10-10:
+        "Yes, CI green is enough"); a conflicting merge-in stops.
      4. `sha=$(git rev-parse HEAD)` equals `gh pr view <n> --json headRefOid -q .headRefOid`.
-     5. `ci-green "$sha" --pr <n> --wait` exits 0, re-issued on 75.
+     5. `ci-green "$sha" --pr <n> --wait` exits 0, re-issued on 75. Exit 3 here is a stop: no
+        self-merge without CI on the head.
      6. Each `##` section from Conventions appears in `gh pr view <n> --json body -q .body`, and the
         body holds the line `Blocking findings open: 0`.
      7. `gh pr ready <n>` (the clock's end; record `date +%s` into `Score` with one `gh pr edit`),
         then `gh pr view <n> --json isDraft,mergeable -q '[.isDraft,.mergeable]|@tsv'` prints `false`
-        and `MERGEABLE`.
-     8. `gh pr merge <n> --merge --match-head-commit "$sha"` (Geoff's ruling above).
+        and `MERGEABLE`. GitHub computes `mergeable` lazily, so while it prints `UNKNOWN`, re-read up
+        to three times, 10 seconds apart.
+     8. The base check again, since `main` can move during step 5's wait: `git fetch origin && [
+        "$(git merge-base origin/main HEAD)" = "$(git rev-parse origin/main)" ]`. On a failure, return
+        to step 3.
+     9. `gh pr merge <n> --merge --match-head-commit "$sha"` (Geoff's ruling above).
   8. **After the merge.** `gh pr view <n> --json state -q .state` prints `MERGED`. Remove the
      task-clock file, run `notify-send -u normal "engine pass B: merged as PR #<n>"`, call
      ExitWorktree with `action: "keep"`, and end. The planning session removes the worktrees.
@@ -496,7 +527,8 @@ PB-T3, PB-T5, PB-T9, PB-T10) stays serial, since each rewrites `templates/waymar
 - **Acceptance.** Every step of item 7's sequence passed in order; the PR body quotes the consumer
   proof's three results, the smoke's evidence, a `visual-verifier` verdict with no unfixed STRUCTURAL
   item, and the six score rows; `git show origin/main:ROADMAP.md` no longer holds the "Engine pass B
-  before stage 2b" entry; `git show origin/main:docs/STATUS.md | wc -l` prints 60 or less; `test ! -e
+  before stage 2b" entry; `git show origin/main:CHANGELOG.md` carries pass B's `## Unreleased`
+  lines; `git show origin/main:docs/STATUS.md | wc -l` prints 60 or less; `test ! -e
   "$(git rev-parse --absolute-git-dir)/pass-task-clock"`.
 - **Test.** CI and the smoke.
 - **Clock.** 100.
@@ -512,9 +544,11 @@ The task estimates sum to 605 minutes: PB-T0 30, PB-T1 55, PB-T3 55, the PB-T4 a
 PB-T9 45, PB-T10 80, PB-T11 45, and PB-C 100. The critical path is 550 minutes (9.2 hours). The
 success test's clock starts at PB-T0's commit, after most of PB-T0's work, and ends at `gh pr
 ready`, before the merge, so it covers about 525 minutes (8.75 hours). That leaves about 15 minutes
-under the 9-hour test before any fix round, and the spec prices fix rounds and reds at 40 to 90
-minutes. The test holds only if the close review lands near zero fix rounds. The clock stop fires
-at twice a task's estimate.
+under the 9-hour test before any fix round. At the spec's price for fix rounds and reds, 40 to 90
+minutes, the expected clock is 9.4 to 10.3 hours, a miss: the test passes only with zero fix rounds
+and no red. The wait between a stop's notification and Geoff's reply is excluded from the clock
+(see Stops), and the Score states each stop's wait separately. The clock stop fires at twice a
+task's estimate.
 
 ## Launch
 

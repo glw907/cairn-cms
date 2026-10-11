@@ -4,274 +4,161 @@ An embedded, **magic-link**, GitHub-committing CMS for SvelteKit/Cloudflare site
 authors log in by email (no GitHub account, no password), edit raw markdown in a CodeMirror 6
 editor (client-only, behind the `MarkdownEditor` seam) with a live preview. Saving holds the edit
 on a per-entry `cairn/<concept>/<id>` branch, and a deliberate Publish copies it to `main` via a
-**GitHub App** (committer = `cairn-cms[bot]`, author = the editor), which auto-deploys. The library is design-agnostic. Each site supplies an adapter: its GitHub and email
-config, the frontmatter field schema for each concept, and its own `render(md)`, the one renderer the
-editor preview and every public page call. Content has one
-fixed concept shape; the set is the site's to declare (Posts and Pages out of the box), never an
-open-ended collection model.
+**GitHub App** (committer = `cairn-cms[bot]`, author = the editor), which auto-deploys. The library
+is design-agnostic. Each site supplies an adapter: its GitHub and email config, the frontmatter
+field schema for each concept, and its own `render(md)`, the one renderer the editor preview and
+every public page call. Content has one fixed concept shape; the set is the site's to declare
+(Posts and Pages out of the box), never an open-ended collection model.
 
 This is a standalone repo at `~/Projects/cairn-cms`. It publishes to public npm as
 `@glw907/cairn-cms` (MIT), and consumer sites install it from the registry by version range. The
 library's own development proves changes against `examples/showcase`, a self-contained SvelteKit
 site that consumes the package through the relative `file:../..` path.
 
-## What cairn is (canonical scope — read before any scope-affecting change)
+## What cairn is (canonical scope: read before any scope-affecting change)
 
 cairn is a lean, opinionated markdown CMS for SvelteKit + Cloudflare: magic-link editor login,
-raw-markdown editing with live preview, and GitHub-App publishing, over site-declared content concepts
-of one fixed shape (Posts and Pages out of the box). Its admin skeleton and getting-started scaffold are built with **DaisyUI + Tailwind**,
-the idiom a developer extends the admin in, while public output stays design-agnostic (each site brings
-its own `render`). cairn does its one job well and gets out of the way.
+raw-markdown editing with live preview, and GitHub-App publishing, over site-declared content
+concepts of one fixed shape. Its admin skeleton and getting-started scaffold are built with
+**DaisyUI + Tailwind**, the idiom a developer extends the admin in, while public output stays
+design-agnostic (each site brings its own `render`). cairn does its one job well and gets out of
+the way.
 
 The governing boundary, which adjudicates any scope question:
 
 **cairn owns its core job, managing markdown content and the editor/admin frame, and little else.
-Everything a site needs beyond that, its own functionality, actors, auth, data, and domain logic, belongs
-to the developer, and cairn serves it with a thin seam, not a built-in feature.** The seams are a narrow,
-versioned contract with every break disclosed, so a developer's work survives engine updates with the
-changes named; from 1.0, breaking it is a deliberate
-major-version event, not an everyday one, and the surface stays narrow precisely to keep that promise
-cheap to keep. Owner/editor and magic-link are the zero-config defaults, not ceilings: a developer can
-replace the auth and override the authorization through documented seams.
+Everything a site needs beyond that, its own functionality, actors, auth, data, and domain logic,
+belongs to the developer, and cairn serves it with a thin seam, not a built-in feature.** The
+seams are a narrow, versioned contract with every break disclosed, so a developer's work survives
+engine updates with the changes named; from 1.0, breaking it is a deliberate major-version event.
+Owner/editor and magic-link are the zero-config defaults, not ceilings: a developer can replace
+the auth and override the authorization through documented seams.
 
-Leanness is the point, not an accident. "Out of scope" and "we don't accommodate that universe" are
-valid, often correct, answers; add to the engine only when it demonstrably serves the core job, and
-prefer the leanest seam over a general feature. Before adding an abstraction, a subsystem, an actor, or
-new surface, ask whether it is cairn's job or the developer's domain, then read
+Leanness is the point. "Out of scope" and "we don't accommodate that universe" are valid, often
+correct, answers; add to the engine only when it demonstrably serves the core job, and prefer the
+leanest seam over a general feature. Before adding an abstraction, a subsystem, an actor, or new
+surface, ask whether it is cairn's job or the developer's domain, then read
 `docs/internal/what-cairn-is-and-is-not.md`.
 
-## Engine consultation (pre-pass, from consuming sites)
+## Engine consultation (from consuming sites)
 
-Consuming sites consult the engine before a pass builds against it; the `engine-consult` skill is
-the canonical protocol, and briefs arrive at `docs/internal/consultations/`, one document per
-consulting pass, brief and verdicts together. Rulings live in `docs/internal/engine-rulings.md`,
-the record of rulings the charter has produced and the evidence that would reopen each; read it
-before re-arguing a settled item, never in place of the charter's own test.
+Consuming sites consult the engine before a pass builds against it (the `engine-consult` skill is
+the protocol; briefs arrive at `docs/internal/consultations/`). Rulings live in
+`docs/internal/engine-rulings.md`; read it before re-arguing a settled item, never in place of the
+charter's own test.
 
 ## How to run this project
 
 The canonical source of truth is the functional spec at
-`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`; read it at the start of a
-rebuild session (the older writeups under `docs/internal/history/` are history only). The numbered
-rebuild plans (00 through 08, under `docs/superpowers/plans/`) have all landed; later engine work
-runs on feature worktrees off `main`, one per pass, so `main` stays releasable. The published
-version, the unpublished window, and the next action live in `docs/STATUS.md`.
+`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`; the older writeups under
+`docs/internal/history/` are history only. Engine work runs on feature worktrees off `main`, one
+per pass, so `main` stays releasable. The published version, the unpublished window, and the next
+action live in `docs/STATUS.md` (rolling, canonical on `main`); shipped history lives in git,
+`docs/STATUS.md`, and `ROADMAP.md`, and `docs/HISTORY.md` is a frozen record, not updated.
 
-Execute a plan task-by-task through the `cairn-implementer` chain (details under Tooling below).
-A plan header declares `Pass class:`, which sets each task's gate, review bar, test mandate, and
-close steps; the class table lives in the `pass-core` skill.
-The **`cairn-pass`** skill marks pass start and the pass-end ritual. Honor this repo's own skills
-and conventions while working in it.
+Pass mechanics live in the `cairn-pass` and `pass-core` skills, not here.
 
-The rolling status lives in `docs/STATUS.md` (read and written by `cairn-pass`, canonical on
-`main`). Per-plan post-mortems live with the plans in `docs/superpowers/plans/`. This file stays
-durable orientation only.
+### Tooling
 
-### Tooling for the rebuild
-
-- **Implementer subagent** (user-scoped): `cairn-implementer` drives one plan task test-first and
-  clears the task's gate before reporting done (the tier its diff computes via
-  `scripts/checks/gate-tier.mjs --range <base>..HEAD`, plus the e2e specs its change reaches), with
-  the cairn conventions baked in. Pinned to Sonnet. The `diff-reviewer` agent reads each
-  task's diff and the gate runs inside the chain; the conductor stays thin and rules on reports.
 - **Review subagents** (user-scoped, read-only): `svelte-reviewer`, `cloudflare-workers-reviewer`,
-  `web-auth-security-reviewer`, `daisyui-a11y-reviewer`, pinned to `claude-opus-5-5`. Fan them out in
-  parallel at a review gate to complement `/code-review`.
-- **Subagent models:** seats, efforts, and the dispatch default follow the global "Conducting a
-  pass" rule. Sonnet implements, Opus 5.5 reviews, and model diversity is part of the gate; the
-  `code-simplifier` plugin agent pins Opus. Upshift a single correctness-critical task with
-  `model: opus`; `model: fable` only after Opus 5.5 at `xhigh` falls short. A pass's executing
-  session runs on `claude-opus-5-5` and never reads diffs itself; the `diff-reviewer` agent does.
-- **Claude tooling for this stack** lives at user scope, not in this repo: the official DaisyUI
-  skill (the component reference every implementer and reviewer reads; prefer a stock DaisyUI
-  component over a home-grown one unless `docs/internal/engine-rulings.md` records the defect
-  that forced it; the admin design system wins over the skill on conflict), the
-  licensed daisyUI Blueprint server (its rules enforcer and quality inspector are the pre-cut admin
-  audit), the official Svelte server, and Microsoft's Playwright server. Inventory:
-  `~/.claude/docs/claude-tooling.md`. Without that setup, use the free DaisyUI mirror
-  `https://gitmcp.io/saadeghi/daisyui` and `https://mcp.svelte.dev/mcp`.
-- **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1
-  for the auth store. Prefer it over the dashboard.
-- **The Go `cairn` tool** (`tool/`) is a separate module with its own gate; `go-conventions` is
-  mandatory for every file under `tool/`, and `golang-spf13-cobra` is mandatory for
-  `tool/cmd/cairn`. See `tool/docs/adr/0001-the-spine-is-the-product.md` for the tool's
-  architecture.
+  `web-auth-security-reviewer`, `daisyui-a11y-reviewer`.
+- **User-scoped tooling:** the official DaisyUI skill (prefer a stock component over a home-grown
+  one unless `docs/internal/engine-rulings.md` records the defect; the admin design system wins
+  over the skill), the licensed daisyUI Blueprint server (the pre-cut admin audit), the Svelte and
+  Playwright servers. Inventory: `~/.claude/docs/claude-tooling.md`.
+- **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries
+  D1 for the auth store. Prefer it over the dashboard.
+- **The Go `cairn` tool** (`tool/`) is a separate module with its own gate; `go-conventions`
+  applies to every file under `tool/`, and `golang-spf13-cobra` loads once a Go file under
+  `tool/cmd/cairn` is open. Architecture: `tool/docs/adr/0001-the-spine-is-the-product.md`.
 
 ## Documentation is a pass dimension
 
 Every pass updates the docs for what it changed, and a public-API change is not done until its
-reference page matches. The `cairn-pass` ritual carries the step; `check:reference` fails on an
-undocumented export, `check:options` is its option counterpart (every member of a public option
-type needs a row in the committed option map), and `check:package` checks the entry points.
+reference page matches. `check:reference` fails on an undocumented export, `check:options` is its
+option counterpart (every member of a public option type needs a row in the committed option map),
+and `check:package` checks the entry points.
 
-The public docs are four audience tracks under `docs/`, one reader each:
-`admin/` (running the default site, no code), `editors/` (writing in `/admin`, no terminal),
-`extend/` (building on the seams), and
-[`reference/`](docs/reference/README.md) (one page per export subpath, gated), plus
+The public docs are four audience tracks under `docs/`, one reader each: `admin/` (running the
+default site, no code), `editors/` (writing in `/admin`, no terminal), `extend/` (building on the
+seams), and [`reference/`](docs/reference/README.md) (one page per export subpath, gated), plus
 `why-cairn.md` for an evaluator. A page serves one track or it is two pages. The admin, editors,
 and extend arms and the front door hold no page until their stages rebuild them; `extend/` keeps
-only the per-version records and `choose-an-ai-posture.md`.
-[`docs/internal/docs-friction-log.md`](docs/internal/docs-friction-log.md) collects the design
-friction that writing a doc surfaces, triaged into [`ROADMAP.md`](ROADMAP.md) and
-[`docs/STATUS.md`](docs/STATUS.md). This repo keeps no separate backlog file. A hole the facts
-container surfaces (see below) is filed here too, same as any other friction.
+only the per-version records and `choose-an-ai-posture.md`. No pass drafts an arm's prose ahead of
+its stage.
 
-**The reference arm is maintained every pass and gated by `check:reference`.** The three
-narrative arms (admin, editors, extend) and `why-cairn.md` are empty until each arm's own stage
-rebuilds them (extend's at 2a and 2b), except the per-version extend records below. The harvest
-deleted every old page after its facts landed in the container, so no pass has an old page to
-rewrite, and no pass drafts an arm's prose ahead of its stage. A deficiency a pass
-discovers on a page (a missing step, a wrong warning, a stale command) is fixed on the page in
-the same pass, gated by that page's own gates, per the facts container's fix rule
-(`docs/internal/facts/README.md`, "How this container grows"), except a site edit to an arm whose
-stage is in flight, which is filed, never fixed, and feeds that stage's page inputs instead.
-Every pass that changes a public behavior files a bullet in
-[`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`. Each arm's own
-stage rebuilds it from the container. The order was harvest, then delete, then draft: every old
-narrative page's facts landed in the container, the old arms and front door were deleted, and
-only then does drafting start, so a writer never sees an old page (the
-2026-09-29 amendment in `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`);
-the site round that follows tests and fixes the rebuilt arms. The site pass's own agents edit
-cairn-cms on a `site-docs/<site>-<pass>` branch off `main`, merged by PR under the docs gate
-before the site pass closes. `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md`
-are per-version records kept through the deletion, maintained every pass like the reference arm.
+- **Facts container.** A pass that changes a public behavior files a bullet in
+  [`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`; each arm's stage
+  rebuilds from it.
+- **Fix rule.** A deficiency found on a published page is fixed on the page in the same pass,
+  except a site edit to an arm whose stage is in flight, which is filed for that stage.
+- **Per-version records** (`docs/extend/migration-notes.md`, `docs/extend/upgrade-cairn.md`) are
+  maintained every pass like the reference arm.
+- **Friction and roadmap.** [`docs/internal/docs-friction-log.md`](docs/internal/docs-friction-log.md)
+  is a staging area, never a backlog: fixed, promoted to [`ROADMAP.md`](ROADMAP.md), or deleted.
+  A pass that ships a roadmap item removes it from the live tiers.
+- **Docs versioning.** cairn.pub renders the doc arms from its installed engine version, so docs on
+  `main` go public at the next release and pin bump.
 
-**Maintaining it:** a staging area, never a backlog, measured by what leaves it. Triage is
-complete-or-move: fixed and deleted, promoted to the `ROADMAP.md` tier where it bites, or deleted
-as no longer true, verified against the code first. The log's own header carries the full rules.
-
-[`ROADMAP.md`](ROADMAP.md) is itself a pass dimension, not a write-once file: a pass that ships an
-item marks it done and removes it from the live tiers, and a pass that surfaces a new direction
-files it into the right tier, the same way the pass updates its reference docs. Like the
-friction log, it drifts heavy when work is only ever added, so a pass that removes or renames a
-backlog item is not done until the roadmap stops listing it. Shipped history lives in
-`docs/STATUS.md` and the per-plan post-mortems, not in the roadmap.
-
-Consumer sites depend on the package, each on its own version range, so a stale doc costs the
-developers who build on it. cairn.pub renders the doc arms shipped inside the
-npm tarball from its installed engine version, so its dependency pin is the docs version selector:
-docs on `main` describe `main`'s engine and go public at the next release and pin bump. No
-separate docs deploy, no dev-docs channel (record: cairn-pub `docs/architecture.md`, "Docs
-versioning").
+Consumer sites depend on the package by version range, so a stale doc costs the developers who
+build on it.
 
 ## Releases (cadence and scheme)
 
 **A pass does not end with a version bump or a publish.** A finished pass finalizes its
-`CHANGELOG.md` entry under `## Unreleased`, leaves `package.json` untouched, and stops. No `npm
-version`, no `gh release create`, no publish, unless a release is independently warranted. New
-versions are meaningful, not a per-pass reflex.
-
-**Publishing is a separate, deliberate act with two triggers, never a calendar or a finished
-pass.** Cut a release only when (1) a consumer site needs the change now (which also resolves the
-publish-before-push ordering), or (2) a coherent
-capability or initiative has landed and is worth making available, at its natural boundary.
-Default to holding: `main` is always releasable, so completed passes accumulate unpublished, and
-breaking changes batch so a site upgrades across one `Consumers must:` list, not five. The
-admin re-expression sweep is the live example: it changes the admin's internal CSS and
-components, which a consumer never imports, so it holds unpublished until consumer-facing
-work accumulates with it, and may warrant no release of its own.
-
-**When a release is cut, the number tracks the publish, not the passes.** One publish, one
-increment, sized to what the window contains. Keep the work under `## Unreleased` and set the
-number only at the cut (pre-numbering a held pass produces phantoms, as `0.77.0` did when it
-rolled into `0.78.0`). The scheme is SemVer, not CalVer; in `0.x` a minor is a new subsystem or
-public surface and everything else is a patch, and the number signals scale, not compatibility
-(the changelog carries compatibility via `Consumers must:`). Published numbers are immutable and
-every sub-`0.68` number is taken, so verify the next number is free with
-`npm view @glw907/cairn-cms versions --json` before promising it. The release body is the
-changelog window since the last published tag, carrying every
-`Consumers must:` line, cut with `gh release create v<x.y.z> --target main` (fires the OIDC
-publish workflow).
-
-The path to `1.0` and its readiness checklist live in [`ROADMAP.md`](ROADMAP.md) ("Toward 1.0");
-the release procedure is the `cairn-release` skill.
+`CHANGELOG.md` entry under `## Unreleased`, leaves `package.json` untouched, and stops. Publishing
+is a separate, deliberate act with two triggers: (1) a consumer site needs the change now, or (2)
+a coherent capability has landed and is worth making available. Default to holding; breaking
+changes batch into one `Consumers must:` list. The procedure and numbering rules live in the
+`cairn-release` skill; the path to `1.0` lives in [`ROADMAP.md`](ROADMAP.md) ("Toward 1.0").
 
 ## The extending-developer lens (subordinate to the charter)
 
-The charter governs: the premise check, "is this cairn's job, and is it the leanest form?", runs
-before correctness checks on every spec. The persona beneath it: a developer who launches a
-content-managed site fast on cairn, builds their own functionality on top, and keeps pulling engine
-updates without rework. The lean extensibility redesign (shipped `0.77.0`) answered that: the
-`CairnAdminShell` custom-route seam, the `navLayout` seam, admin-scoped `locals.cairnEditor`, and
-the `check:surface`-enforced boundary. The diagnostic questions and pre-redesign inputs live in
+The premise check, "is this cairn's job, and is it the leanest form?", runs before correctness
+checks on every spec. The persona beneath it: a developer who launches a content-managed site fast,
+builds their own functionality on top, and keeps pulling engine updates without rework. The seams
+are the `CairnAdminShell` custom-route seam, `navLayout`, admin-scoped `locals.cairnEditor`, and
+the `check:surface`-enforced boundary. Diagnostic questions:
 [`docs/internal/extending-developer-lens.md`](docs/internal/extending-developer-lens.md), a
-point-in-time brief; verify its baseline before acting on it. Seam stability is tracked as `1.0`
-readiness in [`ROADMAP.md`](ROADMAP.md).
+point-in-time brief; verify its baseline before acting on it.
 
 ## Watch items (conditional follow-ups)
 
-A watch item is a follow-up defined by its trigger, not its action, so manage it by what can detect that
-trigger, and promote it to an automated tripwire whenever the trigger is machine-detectable. Claude cannot
-self-trigger between sessions; only a gate, a hook, or a scheduled routine can, so prose in a backlog is the
-weakest form and the fallback, never the default. Match the mechanism to the trigger:
-
-- A **code condition** ("a banned API reappears", "a structure grows past a bound") becomes a gate
-  or test (`check:reference`, `check:version`, ...) or a `settings.json` hook; a failing test is
-  the gold standard, since it cannot be forgotten.
-- An **external or time trigger** (an upstream deprecation, a dependency major) becomes a scheduled
-  cloud agent through the `schedule` skill, pinging only when the condition trips. Standing
-  example: the routine that watches SvelteKit's remote functions reach stable and opens an issue to
-  evaluate them.
-- A **next-time-you-touch-X** note becomes a co-located `// WATCH:` comment, so the next editor
-  sees it in context; mirror it to a memory only when it must survive a file move.
-- A **trend tied to a milestone** becomes a ROADMAP entry in the tier where it bites, not floating
-  in "someday".
-
-STATUS carry-forwards hold only the active initiative's watches and must churn, not accumulate (the
-append-only-backlog rot this file warns about elsewhere).
+Manage a follow-up by what can detect its trigger. A code condition becomes a gate, test, or hook;
+an external or time trigger becomes a scheduled agent (`schedule` skill); a next-time-you-touch-X
+note becomes a co-located `// WATCH:` comment; a milestone trend becomes a `ROADMAP.md` entry.
+Prose in a backlog is the weakest form.
 
 ## Visual work (family-wide; the method lives in the `visual-fidelity` skill)
 
-Any rebuild, theme port, or design migration invokes the **`visual-fidelity` skill at the
-START** — it owns the method: the original manifest, verify against the manifest never the plan,
-image identity = asset + crop, the standing defect sanction, reference capture before any plan,
-the build loop, the fresh-context `visual-verifier` gate (the builder's own "matches" is never
-accepted), the one-check deploy rule, the pixel-diff CI rider, and the per-use chassis harvest.
-The official frontend-design skill is for ORIGINAL aesthetics, no reference comparison; never use
-it alone for a port. What is cairn-specific, not in the skill:
-
-- **Fidelity tiers:** SITE REBUILDS (ecxc.ski, 907.life) are quite-close-and-improved; THEME
-  PORTS are GLANCE-INDISTINGUISHABLE, the licensed differences behavioral (the responsive
-  standard at the extremes) and structural (cairn underneath), never the visible design language.
-  Typography-forward work verifies at the detail level (wordmark, flow spacing, blockquote scale,
-  link conventions) with side-by-side crops.
-- **The one-check rule:** nothing deploys without a full-page render READ by the main loop's own
-  eyes; a member-facing site additionally gets Geoff's before/after.
-- **The responsive standard:** every family artifact (themes, showcase, consumer sites, cairn.pub,
-  Topo) meets the five-viewport bar (320, 390, 768, 1440, 2560), composed at the extremes, never
-  merely unbroken. Gated by the showcase's CI width matrix (baselines regenerate on CI, the
-  canonical renderer); a ported
-  theme beats its original at 320 and 2560. Authored docs diagrams are exempt: containment plus a
-  text alternative (docs-register.md, Visuals; reasoning docs/internal/public-design-system.md).
-- **The harvest:** every theme or site built on the chassis banks its harvest before the pass
-  closes, in the CHASSIS first (the showcase copy is the starting chassis every next theme
-  receives), the engine where deeper. Not done until the harvest is banked.
+Any rebuild, theme port, or design migration invokes the `visual-fidelity` skill at the start. What
+is cairn-specific: site rebuilds are quite-close-and-improved, theme ports glance-indistinguishable
+(the licensed differences behavioral and structural, never the visible design language); nothing
+deploys without a full-page render read by the main loop's own eyes; every family artifact meets
+the five-viewport bar (320, 390, 768, 1440, 2560), gated by the showcase's CI width matrix
+(baselines regenerate on CI); every theme or site banks its chassis harvest before the pass closes.
 
 ## Admin interface design
 
-Before any work on the `/admin` interface (the `src/lib/admin/*.svelte` admin components or
-`cairn-admin.css`), read and follow [`docs/internal/admin-design-system.md`](docs/internal/admin-design-system.md).
-It is the agent-facing design system: the Warm Stone tokens, the Bricolage Grotesque display and IBM Plex Sans body type, the component
-recipes (cards, eyebrow groups, the brand tile, the CTA, empty states, the command palette), the voice,
-and the load-bearing rules that are not visible in the markup (most importantly: `data-theme` goes on a
-bare wrapper, never on a styled element, and a scoped override picks one of three homes: `@layer
-components`, the `cairn-idiom` sublayer, or a pinned unlayered exception). Keep the doc
-current when the design language changes, the same as any other doc.
+Before any work on the `/admin` interface (the `src/lib/admin/*.svelte` components or
+`cairn-admin.css`), read and follow
+[`docs/internal/admin-design-system.md`](docs/internal/admin-design-system.md): the Warm Stone
+tokens, the type, the component recipes, the voice, and the load-bearing rules the markup does not
+show (most importantly: `data-theme` goes on a bare wrapper, never on a styled element). Keep the
+doc current when the design language changes.
 
 ## Diagnosing a running site (look to the logs first)
 
-When troubleshooting a deployed or local cairn site's runtime behavior, read the structured logs
-before reaching for `console.log` or guesswork. The engine emits a JSON record for every
-operationally meaningful event through one internal chokepoint, `src/lib/log/` (envelope
+Read the structured logs before reaching for `console.log`. The engine emits a JSON record for
+every operationally meaningful event through one internal chokepoint, `src/lib/log/` (envelope
 `level`/`event`/`timestamp` plus event-specific fields). Full table:
 [`docs/reference/log-events.md`](docs/reference/log-events.md).
 
-Map the symptom to its event: a sign-in failure points at a send-failure or guard rejection
-(check `reason`); a save that does nothing points at a commit failure (`conflict` is a stale-edit
+Map the symptom to its event: a sign-in failure points at a send-failure or guard rejection (check
+`reason`); a save that does nothing points at a commit failure (`conflict` is a stale-edit
 collision, `error` is the GitHub failure). On Cloudflare, Workers Logs is the query surface
-(`observability.enabled = true` in `wrangler.jsonc`; filter by `event` or `editor`). Records carry
-an editor's email, never a token or session id, so a log is safe to read; check a record before
-pasting it in public, since the email identifies the editor.
+(filter by `event` or `editor`). Records carry an editor's email, never a token or session id;
+check a record before pasting it in public.
 
 A pass adding a diagnosable code path gives it an event in the vocabulary, not a bare `console`
 call, and updates the reference table in the same pass. `createLogger` is public from the `/log`
@@ -279,57 +166,34 @@ subpath; `docs/reference/log.md` states its narrowed promise.
 
 ## Durable gotchas (quick index)
 
-Five recurring traps, one line each; full detail per anchor in
-[`docs/internal/durable-gotchas.md`](docs/internal/durable-gotchas.md).
+Full detail per anchor in [`docs/internal/durable-gotchas.md`](docs/internal/durable-gotchas.md):
+Cloudflare email (`E_SENDER_NOT_VERIFIED` also means an unverified destination), the consumer
+engine pin (`link:consumer`), a worktree showcase e2e proving MAIN's engine until reinstalled, CI
+baselines this workstation's Chromium cannot reproduce, and Vite 8 parsing dist `.svelte`
+TypeScript as JS.
 
-- **Cloudflare email:** `E_SENDER_NOT_VERIFIED` is also Routing's string for an unverified
-  destination, how the ecxc outage hid ([detail](docs/internal/durable-gotchas.md#cloudflare-email)).
-- **Consumer engine pin** (`link:consumer`): guards `npm pack`'s stale-cache trap
-  ([detail](docs/internal/durable-gotchas.md#pointing-a-consumer-at-unreleased-engine-work)).
-- **Worktree e2e:** a worktree showcase silently proves MAIN's engine until reinstalled
-  ([detail](docs/internal/durable-gotchas.md#a-worktree-showcase-e2e-proves-mains-engine)).
-- **CI baselines:** this workstation's Chromium renders them slightly off
-  ([detail](docs/internal/durable-gotchas.md#ci-canonical-baselines-this-workstation-cannot-reproduce)).
-- **Vite 8 dist TypeScript:** parses dist `.svelte` TypeScript as JS; keep the transpile step
-  ([detail](docs/internal/durable-gotchas.md#vite-8-ships-typescript-in-dist-svelte)).
+## Credentials (machine-local, not in git)
 
-## Credentials (machine-local, intentionally not in git)
-
-GitHub App and D1 `AUTH_DB` credentials:
-`docs/internal/credentials.md` (gitignored, present only on the maintainer's workstation), reference data, not orientation.
+GitHub App and D1 `AUTH_DB` credentials: `docs/internal/credentials.md` (gitignored, maintainer's
+workstation only).
 
 ## Authoring
 
 Claude's drafting on this repo follows the workstation authoring charter at
-`~/.claude/docs/authoring-charter.md`: every audience writes to a published external standard as
-its base, with a recorded house voice overlay. Code comments follow TSDoc, enforced by ESLint (`eslint.config.js`, run by
-`npm run check:comments` over `src/lib` plus the showcase's `.ts`/`e2e`/`.svelte`):
-`eslint-plugin-tsdoc` validates syntax, `eslint-plugin-jsdoc` holds the doc-block shape and
-forbids `{type}` tags, `jsdoc/informative-docs` flags a comment that only restates the symbol
-name, and a local `house/no-em-dash-in-comments` rule bans the em dash in comments. Write the
-contract and the why, never the type the signature already states, and never a paraphrase.
+`~/.claude/docs/authoring-charter.md`. Code comments follow TSDoc, enforced by ESLint
+(`npm run check:comments` over `src/lib` plus the showcase's `.ts`/`e2e`/`.svelte`, including the
+engine's `.svelte` sources): write the contract and the why, never the type the signature already
+states, and never a paraphrase. The em dash is banned in code comments. An exported symbol keeps
+its minimal one-line doc even when self-evident, since `check:reference` and
+`jsdoc/require-jsdoc` want every export documented.
 
 Developer documentation follows the Google Developer Documentation Style Guide, enforced by
-Vale's vendored Google package over the published doc arms only (`.vale.ini` globs `docs/**/*.md`
-onto Google, overrides `docs/editors/**` to Microsoft for its plainer editor voice, and excludes
-internal planning docs, since the Google standard governs published documentation, not
-write-once specs, plans, post-mortems, the rolling STATUS, or the friction log); the global
-`vale-hook` surfaces findings on save and skips `superpowers/`, where the em dash is allowed
-(Google's own recommendation, no surrounding spaces). Every published docs page is drafted from the brief for its track in the register at
+Vale's vendored Google package over the published doc arms (`docs/**/*.md`; `docs/editors/**` uses
+Microsoft's plainer editor voice; internal planning docs are excluded). Every published docs page
+is drafted from the brief for its track in
 [`docs/internal/docs-register.md`](docs/internal/docs-register.md), "Drafting brief: developer
-docs" (Google base) or "Drafting brief: editor docs" (Microsoft base); read it before writing or
-reviewing docs prose.
-Separate from `check:prose`, spellcheck, and tidy, which serve editors, not Claude.
-
-Svelte components follow the same TSDoc standard for their `<script>` comments and the Svelte
-`@component` convention. ESLint's `svelte-eslint-parser` reaches both the showcase's and the engine's own `.svelte`
-sources (`src/lib/admin/**/*.svelte` and `src/lib/public/**/*.svelte`), gated by the same four comment rules.
-
-One calibration holds: `check:reference` and `jsdoc/require-jsdoc` want every export documented,
-so an exported symbol keeps its minimal one-line doc even when self-evident; write-only-when-it-helps
-applies to internal symbols.
+docs" or "Drafting brief: editor docs"; read it before writing or reviewing docs prose.
 
 Every part of the system has one sanctioned name: the "Names" section of
-[`docs/internal/docs-register.md`](docs/internal/docs-register.md#names) (the engine, the
-`cairn` CLI with its verb, `create-cairn-site` then "the setup command," lowercase cairn except
-in a quoted UI string), enforced by the `Cairn.Names`/`Cairn.NamesRetired` Vale rules.
+[`docs/internal/docs-register.md`](docs/internal/docs-register.md#names), enforced by the
+`Cairn.Names`/`Cairn.NamesRetired` Vale rules.

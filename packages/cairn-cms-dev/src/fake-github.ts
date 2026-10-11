@@ -488,8 +488,8 @@ export function seedFragments(): void {
 // manifest back and patches `tags:` onto its entries rather than racing the rewrite.
 
 /**
- * The site-config path the vocabulary route reads and commits. It mirrors the showcase adapter's
- * `editor.nav.configPath`, the default the route resolves through `runtime.navMenu?.configPath`.
+ * The site-config path the vocabulary route reads and commits. It mirrors the engine's default for
+ * `editor.siteConfigPath`, which the route resolves through `runtime.siteConfigPath`.
  */
 const SEED_SITE_CONFIG_PATH = 'src/theme/site.config.yaml';
 

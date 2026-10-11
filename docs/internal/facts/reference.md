@@ -545,6 +545,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   appears. Source: `src/lib/audit/rules/rendered/viewport-overflow.ts#waitForStableLayout`,
   `src/lib/audit/rules/rendered/viewport-overflow.ts#SETTLE_TIMEOUT_MS`,
   `src/lib/audit/rules/rendered/viewport-overflow.ts#findOverflowOrigins`. [verified]
+- `f:52glgy` `cairn-audit --fail-on advisory` exits 1 when any unsuppressed finding of either tier survives, `--fail-on error` states the default (only an error-tier finding gates), and any other value or a missing value is a usage error that exits 2. A suppressed finding never reaches the gate. Source: `src/lib/audit/report.ts#exitCodeFor`, `src/lib/audit/config.ts#parseArgs`. [verified]
 
 ## docs/reference/cli-cairn-doctor.md
 

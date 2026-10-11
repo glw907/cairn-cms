@@ -24,7 +24,7 @@ function loadEvent(search = '') {
   return contentEvent({ url: `https://t.example/admin/nav${search}`, editor: { email: 'e@t', displayName: 'E', role: 'editor', capability: 'editor' } });
 }
 
-const NAV = { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
+const NAV = { menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
 
 afterEach(() => vi.restoreAllMocks());
 

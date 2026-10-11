@@ -31,6 +31,7 @@ const CSRF = 'csrf-token-value-0123456789abcdef';
 function runtime(): CairnRuntime {
   return {
     siteName: 'Test Site',
+    siteConfigPath: 'src/lib/site.config.yaml',
     sender: { from: 'noreply@test', replyTo: 'noreply@test' },
     concepts: [],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),

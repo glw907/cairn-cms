@@ -2,6 +2,13 @@
 
 ### Added
 
+- **`cairn-audit --fail-on advisory`.** The audit exits nonzero when any unsuppressed advisory
+  survives, for a pipeline that wants the compositional checks to fail the build. A bare call keeps
+  the rule that only an error-tier finding gates, `--fail-on error` states that default, and any other
+  value is a usage error. `exitCodeFor` takes the tier as an optional second argument.
+
+  Consumers may: add `--fail-on advisory` to the audit step in CI.
+
 - **A `content.field_undeclared` log event.** The manifest build warns once per concept, naming
   each frontmatter key on that concept's entries that the concept's schema does not declare.
   Validation drops such a key, so a value an author wrote there (a `robots: noindex` on a concept
@@ -141,6 +148,16 @@
 - **The build warns when it skips the `site-facts.json` check.** When the adapter's facts cannot be
   derived, the Vite plugin warns once, naming the skipped check and the error, and the build
   continues. It passed silently before.
+
+- **The site-config path is declared once, by `editor.siteConfigPath`.** The nav editor, Settings,
+  and the tag vocabulary all read and commit the file it names, which defaults to the scaffold's
+  `src/theme/site.config.yaml`. Settings and Tags used to fall back to `src/lib/site.config.yaml` and
+  answered 404 for a site that declared no `editor.nav`. `NavMenuConfig.configPath` is removed.
+  `CairnRuntime` gains the required `siteConfigPath` that `composeRuntime` fills.
+
+  Consumers must: delete `configPath` from `editor.nav`. If your site config does not live at
+  `src/theme/site.config.yaml`, set `editor.siteConfigPath` to its path. A site that builds a
+  `CairnRuntime` by hand instead of calling `composeRuntime` adds `siteConfigPath` to it.
 
 - **The engine moves to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8.** The peer ranges become
   `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and `@glw907/cairn-cms-dev`'s `@sveltejs/kit` peer

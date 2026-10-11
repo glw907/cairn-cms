@@ -8,6 +8,7 @@ import type { CairnRuntime } from '../../lib/content/types.js';
 function runtime(): CairnRuntime {
   return {
     siteName: 'T',
+    siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '123', installationId: '2' }),
     sender: { from: 'cms@test' },

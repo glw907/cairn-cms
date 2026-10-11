@@ -37,6 +37,7 @@ function nextInstallation(): string {
 function runtime(installationId: string): CairnRuntime {
   return {
     siteName: 'T',
+    siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '123', installationId }),
     sender: { from: 'cms@test' },

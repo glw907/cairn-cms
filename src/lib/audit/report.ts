@@ -51,7 +51,12 @@ export function formatReport(report: AuditReport): string {
   return lines.join('\n');
 }
 
-/** The bin's exit code: nonzero if and only if an unsuppressed error-tier finding survived. */
-export function exitCodeFor(report: AuditReport): number {
-  return report.findings.some((finding) => finding.tier === 'error') ? 1 : 0;
+/**
+ * The bin's exit code. A bare call is nonzero if and only if an unsuppressed error-tier finding
+ * survived. `failOn: 'advisory'` also gates on an unsuppressed advisory, for a pipeline that wants
+ * the compositional checks to fail the build.
+ */
+export function exitCodeFor(report: AuditReport, failOn: 'error' | 'advisory' = 'error'): number {
+  const gating = report.findings.some((finding) => finding.tier === 'error' || failOn === 'advisory');
+  return gating ? 1 : 0;
 }

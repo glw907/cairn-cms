@@ -57,6 +57,7 @@ const NAV_LAYOUT: NavLayout = [
 function runtime(): CairnRuntime {
   return {
     siteName: 'Team Site',
+    siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [
       {
         id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
@@ -155,6 +156,7 @@ const ACCESS_MAP = defineAccess(ACCESS_ROLES, {
 function accessRuntime(): CairnRuntime {
   return {
     siteName: 'Access Site',
+    siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [
       {
         id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',

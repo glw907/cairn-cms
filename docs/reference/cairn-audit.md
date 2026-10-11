@@ -8,6 +8,7 @@ npx cairn-audit                          # run the static rules over the admin s
 npx cairn-audit --rendered               # run the rendered rules against a running admin
 npx cairn-audit --rule motion-reduced-delay --rendered  # run only the named rule
 npx cairn-audit --rule public-literals --rule theme-conformance --rule theme-contrast  # audit the public files alone
+npx cairn-audit --fail-on advisory       # exit nonzero on an advisory too
 npx cairn-audit norms <selector-or-role> # look up a measured norm
 npx cairn-audit --help                   # print usage and exit
 ```
@@ -46,13 +47,15 @@ document can't drift apart.
 ## Tiers and exit codes
 
 Every finding carries a tier. An error-tier finding gates: it exits the command nonzero, and only a
-suppression takes it out of that count. An advisory-tier finding reports and can never change the
-exit code, because each advisory rule measures a compositional question a legitimately novel
-component can answer differently on purpose.
+suppression takes it out of that count. An advisory-tier finding reports and, on a bare call, never
+changes the exit code, because each advisory rule measures a compositional question a legitimately
+novel component can answer differently on purpose. A pipeline that wants advisories to fail the
+build passes `--fail-on advisory`, which exits nonzero on any unsuppressed finding of either tier.
+`--fail-on error` states the default. Any other value is a usage error and exits 2.
 
 | Code | What happened |
 |---|---|
-| 0 | No unsuppressed error-tier finding survived |
+| 0 | No unsuppressed finding at the gating tier survived |
 | 1 | At least one did |
 | 2 | The run couldn't start or couldn't finish: a bad flag, a malformed config, no server, no browser, or the [redirect-trap refusal](#the-redirect-trap-refusal) |
 

@@ -1252,8 +1252,8 @@ branch unioned with every open `cairn/*` branch), and the in-use-but-unlisted ta
 on the save, not the load. `vocabularySaveAction` validates the posted vocabulary JSON, gates a delete on
 that strict cross-branch usage (an in-use value cannot be removed, failing closed), then
 read-modify-commits the `vocabulary` key into the committed site-config YAML that the tidy settings
-write, at the path `editor.nav.configPath` names or at `src/lib/site.config.yaml` when the adapter
-declares no nav menu. The commit is head-guarded, and a stale-head conflict bounces back to the screen.
+write, at the path `editor.siteConfigPath` names (`src/theme/site.config.yaml` when the adapter
+sets none). The commit is head-guarded, and a stale-head conflict bounces back to the screen.
 `VocabularySaveFailure`, shown in the preceding signature, carries no export row of its own: a
 consumer reaches it as `Awaited<ReturnType<ContentRoutes['vocabularySaveAction']>>['data']`.
 

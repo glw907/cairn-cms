@@ -90,7 +90,7 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
     let tree: NavNode[] = [];
     let raw: string | null = null;
     try {
-      raw = await backend.readFile(navMenu.configPath, backend.defaultBranch);
+      raw = await backend.readFile(runtime.siteConfigPath, backend.defaultBranch);
     } catch {
       // An unreadable config degrades to an empty tree; the first save writes a clean menu.
       raw = null;
@@ -148,14 +148,14 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
     // a concurrent commit to the config moves the head off this value and the commit throws a
     // conflict, surfacing the reload-and-reapply prompt below rather than a silent last-writer-wins.
     const head = await backend.branchHead(backend.defaultBranch);
-    const raw = await backend.readFile(navMenu.configPath, backend.defaultBranch);
+    const raw = await backend.readFile(runtime.siteConfigPath, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
 
     const commitFields = { scope: 'nav' as const, id: 'site-config', editor: editor.email };
     try {
       await backend.commit(
         backend.defaultBranch,
-        [{ path: navMenu.configPath, content: setMenu(raw, navMenu.menuName, tree) }],
+        [{ path: runtime.siteConfigPath, content: setMenu(raw, navMenu.menuName, tree) }],
         { name: editor.displayName, email: editor.email },
         `Update ${navMenu.label.toLowerCase()}`,
         head ?? undefined,

@@ -40,7 +40,7 @@ const CONFIG_PATH = 'src/lib/site.config.yaml';
 function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
   return baseRuntime({
     concepts: [],
-    navMenu: { configPath: CONFIG_PATH, menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
+    navMenu: { menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
     tidy: { enabled: true, model: 'claude-sonnet-5' },
     ...over,
   });

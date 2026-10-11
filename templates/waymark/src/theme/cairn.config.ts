@@ -179,7 +179,6 @@ export const cairn = defineAdapter({
   },
   editor: {
     nav: {
-      configPath: 'src/theme/site.config.yaml',
       menuName: 'primary',
       label: 'Navigation',
       maxDepth: 2,

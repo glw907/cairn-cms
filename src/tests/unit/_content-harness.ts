@@ -50,6 +50,7 @@ export function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },
     vocabulary: [],
+    siteConfigPath: 'src/lib/site.config.yaml',
     ...overrides,
   };
 }

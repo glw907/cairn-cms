@@ -5,6 +5,7 @@
 import { createLogger } from '@glw907/cairn-cms/log';
 
 /** The showcase's own event vocabulary, disjoint from the engine's CairnLogEvent union. */
+// prettier-ignore
 export type SiteLogEvent =
   | 'members.login.requested';
 

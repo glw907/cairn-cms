@@ -21,6 +21,7 @@ var eventVocabulary = []string{
 	"config.access_unmapped",
 	"content.field_behavior_failed",
 	"content.field_unmarked",
+	"content.field_undeclared",
 	"entry.published",
 	"entry.discarded",
 	"preview.token.minted",

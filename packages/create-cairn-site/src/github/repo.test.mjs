@@ -62,12 +62,6 @@ const WRANGLER_JSONC_FIXTURE = `{
       "database_name": "cairn-showcase-auth",
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
-    },
-    {
-      "binding": "APP_DB",
-      "database_name": "cairn-showcase-app",
-      "database_id": "00000000-0000-0000-0000-000000000001",
-      "migrations_dir": "migrations-app"
     }
   ],
   "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "cairn-showcase-media" }],

@@ -1,6 +1,6 @@
 // The Cloudflare chapter: the guided path from a pushed scaffold to a live, signed-in site. It
 // installs the site's own dependencies, signs wrangler in, builds and deploys the Worker,
-// migrates both D1 databases, moves the GitHub App's private key from local state into a Worker
+// migrates the D1 database, moves the GitHub App's private key from local state into a Worker
 // secret, and seeds the owner's first sign-in straight into the deployed database. Every side
 // effect, including every prompt, runs as an Action through T1's runActions, so --dry-run prints
 // every step's title and detail and touches neither the network nor the state store.
@@ -116,7 +116,7 @@ export async function runCloudflareChapter({
       "account rather than once per site: a cairn site runs on it from its first deploy. Turn it " +
       "on first if it is not already, then the tool installs your site's dependencies, builds " +
       `it, and deploys it to your account: one Worker named ${workerName} (deploying again ` +
-      `later updates it), two databases (${workerName}-auth, ${workerName}-app), and one ` +
+      `later updates it), one database (${workerName}-auth), and one ` +
       `storage bucket (${workerName}-media). One browser trip to sign in to Cloudflare if you ` +
       'are not already, then one click to sign in to your own site.';
 
@@ -235,7 +235,7 @@ export async function runCloudflareChapter({
     await runStep(
       frame,
       'Deploy to workers.dev',
-      "Deploys the Worker, writes its URL as PUBLIC_ORIGIN, applies both databases' migrations, " +
+      "Deploys the Worker, writes its URL as PUBLIC_ORIGIN, applies the database's migrations, " +
         'then deploys again so the running site carries its own real origin.',
       async () => {
         const first = await deployWorker({ dir, log, accountId });

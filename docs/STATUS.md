@@ -28,6 +28,8 @@ rollout step 5 once it merges, as the first pass scored on the lean process: wor
 `.claude/worktrees/engine-pre-2b-b`, draft PR #111, Task 0 in the plan's Ledger (`1ce14d3b`), and WIP
 commit `dbdc4556` (Tasks 1 and 2, unreviewed, ungated, not pushed). Its branch merges `main` first
 and re-gates Tasks 1 and 2 through the fast lane. The release holds until the docs are complete.
+Running now: session `engine-pass-b` (id `0d52ae78`) on branch `worktree-engine-pass-b`, plan
+`superpowers/plans/2026-10-10-engine-pass-b-lean.md`.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

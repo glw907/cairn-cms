@@ -18,12 +18,6 @@ const WRANGLER_JSONC_FIXTURE = `{
       "database_name": "cairn-showcase-auth",
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
-    },
-    {
-      "binding": "APP_DB",
-      "database_name": "cairn-showcase-app",
-      "database_id": "00000000-0000-0000-0000-000000000001",
-      "migrations_dir": "migrations-app"
     }
   ],
   "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "cairn-showcase-media" }],
@@ -265,9 +259,8 @@ test('a real scaffold run names its wrangler.jsonc resources after the slug and 
   const wrangler = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
   assert.ok(wrangler.includes('"name": "alpine-club"'));
   assert.ok(wrangler.includes('"database_name": "alpine-club-auth"'));
-  assert.ok(wrangler.includes('"database_name": "alpine-club-app"'));
   assert.ok(wrangler.includes('"bucket_name": "alpine-club-media"'));
-  assert.ok(!wrangler.includes('database_id'), 'both database_id lines must be gone');
+  assert.ok(!wrangler.includes('database_id'), 'the database_id line must be gone');
 });
 
 test('scaffold returns the siteId the state record was saved under', async (t) => {

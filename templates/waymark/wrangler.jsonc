@@ -31,15 +31,6 @@
       "database_name": "cairn-showcase-auth",
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
-    },
-    {
-      // The developer's own database, holding the signups table /admin/signups reads. Its own
-      // migrations_dir, never "migrations": `wrangler d1 migrations apply` walks one directory
-      // per database, so a shared directory applies every schema to both.
-      "binding": "APP_DB",
-      "database_name": "cairn-showcase-app",
-      "database_id": "00000000-0000-0000-0000-000000000001",
-      "migrations_dir": "migrations-app"
     }
   ],
   // R2 bucket backing the media library; the /media route streams content-addressed bytes from here.

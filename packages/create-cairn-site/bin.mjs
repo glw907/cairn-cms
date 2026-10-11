@@ -111,7 +111,7 @@ async function printLiveInfo(siteId) {
       `Your site is live at: ${state.cloudflare.url}`,
       `Sign in at: ${state.cloudflare.url}/admin`,
       '',
-      "What exists now: one Worker, two databases, one storage bucket, and the GitHub App's " +
+      "What exists now: one Worker, one database, one storage bucket, and the GitHub App's " +
         'private key, stored as a Worker secret.',
       '',
       `Connect your own domain any time by re-running npx create-cairn-site --dir ${state.dir}. ` +

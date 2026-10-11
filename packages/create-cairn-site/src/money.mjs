@@ -38,8 +38,8 @@ export function costPreamble() {
       `domains at cost, and shows you the exact price before you pay (${AS_OF}, ` +
       `${REGISTRAR_URL}).`,
     '',
-    'Those two together come to about $6 a month for a small site on its own domain. The two ' +
-      'databases this site uses, its storage bucket, and its GitHub repository cost nothing at ' +
+    'Those two together come to about $6 a month for a small site on its own domain. The ' +
+      'database this site uses, its storage bucket, and its GitHub repository cost nothing at ' +
       'this size, and stay free.',
     '',
     'One more item is not confirmed. Putting your site on your own domain issues a certificate ' +

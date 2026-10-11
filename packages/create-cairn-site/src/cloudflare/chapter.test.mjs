@@ -266,7 +266,6 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
     'run build',
     'deploy',
     'd1 migrations',
-    'd1 migrations',
     'deploy',
     'secret put',
     'd1 execute',
@@ -280,25 +279,24 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
       ['run', 'build'],
       ['deploy'],
       ['d1', 'migrations', 'apply', 'AUTH_DB', '--remote'],
-      ['d1', 'migrations', 'apply', 'APP_DB', '--remote'],
       ['deploy'],
       ['secret', 'put', 'GITHUB_APP_PRIVATE_KEY_B64'],
-      invocations[9].argv,
+      invocations[8].argv,
     ],
   );
-  assert.deepEqual(invocations[9].argv.slice(0, 4), ['d1', 'execute', 'AUTH_DB', '--remote']);
-  assert.equal(invocations[9].argv[4], '--command');
-  assert.match(invocations[9].argv[5], /'t3@example\.com'/, 'the seeded SQL must carry the lowercased email');
+  assert.deepEqual(invocations[8].argv.slice(0, 4), ['d1', 'execute', 'AUTH_DB', '--remote']);
+  assert.equal(invocations[8].argv[4], '--command');
+  assert.match(invocations[8].argv[5], /'t3@example\.com'/, 'the seeded SQL must carry the lowercased email');
 
   // Every wrangler call made after the account was resolved must carry it as
-  // CLOUDFLARE_ACCOUNT_ID: both deploys, both migrations, the secret put, and the seed. install
+  // CLOUDFLARE_ACCOUNT_ID: both deploys, the migration, the secret put, and the seed. install
   // and run build are npm, not wrangler, and the two whoami calls resolve the account rather
   // than needing it, so all four are exempt.
   const ACCOUNT_EXEMPT_SHAPES = new Set(['install', 'run build', 'whoami', 'whoami --json']);
   const accountScoped = invocations.filter(
     (i) => !ACCOUNT_EXEMPT_SHAPES.has(i.argv.slice(0, 2).join(' ')),
   );
-  assert.equal(accountScoped.length, 6, 'expected six account-scoped wrangler calls');
+  assert.equal(accountScoped.length, 5, 'expected five account-scoped wrangler calls');
   assert.ok(
     accountScoped.every((i) => i.env.CLOUDFLARE_ACCOUNT_ID === 'test-account-id'),
     'expected every account-scoped wrangler call to carry the resolved account id',
@@ -464,6 +462,40 @@ test('runCloudflareChapter: the deploy consent states Workers Paid, never a free
     false,
     'must never claim this step costs nothing',
   );
+});
+
+test('runCloudflareChapter: the deploy consent announces one database, named for the worker, and no -app name', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedPushedSite('alpine-club-db-copy', dir);
+
+  process.env.CAIRN_WRANGLER_BIN = '/no/such/wrangler-binary-anywhere';
+  process.env.CAIRN_NPM_BIN = '/no/such/npm-binary-anywhere';
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  const logs = [];
+  await runCloudflareChapter({
+    siteId: 'alpine-club-db-copy',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: false, deploy: true },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: async () => false,
+    openBrowser: async () => {
+      throw new Error('openBrowser must never be called when consent is declined');
+    },
+  });
+
+  const printed = logs.join('\n');
+  assert.ok(
+    printed.includes('one database (alpine-club-auth)'),
+    `expected the consent to name one database, got: ${printed}`,
+  );
+  assert.equal(printed.includes('alpine-club-app'), false, 'must not name a second database');
 });
 
 test('runCloudflareChapter: declining Workers Paid stops before any deploy, with a clear message and a re-run instruction', async (t) => {

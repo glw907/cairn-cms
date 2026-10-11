@@ -1,6 +1,6 @@
 # cairn-cms status
 
-Present tense only; the past lives in [`docs/HISTORY.md`](HISTORY.md), orientation in `CLAUDE.md`.
+Present tense only; history lives in git and PR bodies, orientation in `CLAUDE.md`.
 
 ## Current state
 
@@ -16,11 +16,6 @@ and engine pass B (PR #113). cairn.pub pins
 migrates (cairn.pub included, none before). Engine passes land on `main` and never release; each
 sits in its slot on `ROADMAP.md`'s boundary-test path.
 
-**The per-task gate is now targeted.** `scripts/checks/gate-tier.mjs` prints the gate a diff
-needs (`docs/internal/pass-gate-tiers.md`); CI green, read with the dotfiles `ci-green`, is the
-boundary and close gate, and the local `full` tier runs only when `ci-green` exits 3. The pass's
-plan, score, and replay record: [`superpowers/plans/2026-10-09-gate-economy.md`](superpowers/plans/2026-10-09-gate-economy.md).
-
 ## Immediate next action
 
 Draft docs stage 2b is next: the 14 remaining extend pages, drafted from corrected facts. The re-arm
@@ -34,16 +29,11 @@ complete.
 In flight: the alignment pass, session `cairn-alignment` (id `bcabc73b`), on branch
 `worktree-alignment-pass`.
 
-Cleanup for the planning session: after confirming PR #113 merged, remove the `engine-pass-b` and
-`engine-pre-2b-b` worktrees and their branches.
-
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
   majors (`trig_01UCoKqxRXVwAfMdnF913E4v`); remote functions reaching stable
   (`trig_0193pPNoyxsTGeUhF1xx7woa`); the monthly drift sample (`trig_015UPQostYVisXuExTHTH2vu`),
   which widens at stage 4's merge.
-- Dotfiles: simplify `cairn-docs-outline`'s lock; fix `gateMatches`' stale doc comment. Moving a
-  per-version record updates `cairn-pass`, `CLAUDE.md`, and the facts README.
 - Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; `radius-scale` and the retired
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.

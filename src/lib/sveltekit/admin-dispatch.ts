@@ -4,7 +4,7 @@
 // returns a discriminated AdminView, or null for any shape it does not recognize, and the
 // caller maps null to a 404.
 import type { ConceptDescriptor } from '../content/types.js';
-import { findConcept } from '../content/concepts.js';
+import { findConcept, RESERVED_VIEW_IDS } from '../content/concepts.js';
 import { isValidId } from '../content/ids.js';
 
 /** The views the single-mount admin can render, discriminated for the dispatcher's switch. */
@@ -23,14 +23,11 @@ export type AdminView =
   | { view: 'help' };
 
 /**
- * Fixed first segments that never resolve as concepts. The engine only allows posts and pages
- * today, so no collision is possible, but the parser does not depend on that: a reserved
- * segment wins before concept lookup. `nav` and `media` are decided as views below, so they are
- * not in this no-view set. `settings` and `help` are decided as views below AND kept here, so a
- * deeper path (or a future concept claiming the segment) can never reach the two-segment edit
- * branch through them.
+ * Fixed first segments that never resolve as concepts: the shared set `normalizeConcepts` also
+ * refuses as a concept id. A reserved segment wins before concept lookup, so a deeper path (or a
+ * concept claiming the segment) can never reach the two-segment edit branch through one.
  */
-const RESERVED_SEGMENTS = new Set(['login', 'auth', 'editors', 'nav', 'settings', 'vocabulary', 'help']);
+const RESERVED_SEGMENTS = RESERVED_VIEW_IDS;
 
 /**
  * Parse a raw `URL.pathname` (the caller passes `event.url.pathname`, never a SvelteKit rest

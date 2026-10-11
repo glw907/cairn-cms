@@ -128,7 +128,6 @@
     "FieldBase.help": "pending content-model",
     "FieldBase.label": "pending content-model",
     "FieldBase.required": "pending content-model",
-    "FieldBehavior.itemLabel": "pending define-an-adapter-and-schema",
     "FieldBehavior.validate": "pending define-an-adapter-and-schema",
     "Fieldset.behavior": "exclude the returned value of defineFieldset; the options a developer passes are FieldsetConfig.behavior and FieldsetConfig.refine",
     "Fieldset.fields": "exclude the returned value of defineFieldset; the options a developer passes are FieldsetConfig.behavior and FieldsetConfig.refine",

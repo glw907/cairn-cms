@@ -27,8 +27,8 @@ export interface PublishActionLink {
 
 /**
  * Validate a site's raw publishActions config once at construction (server start): every entry
- *  needs a non-empty label and href, and a `concepts` filter must name only concepts the site
- *  actually configures. Throws an actionable error naming the bad entry, so a typo'd concept id or a
+ *  needs a non-empty label and href, and a label is unique across entries, and a `concepts` filter
+ *  must name only concepts the site actually configures. Throws an actionable error naming the bad entry, so a typo'd concept id or a
  *  blank field fails at server start rather than silently rendering no link, or the wrong one, after
  *  a publish.
  * @param entries - The raw config, or undefined when the site declares none.
@@ -41,8 +41,13 @@ export function normalizePublishActions(
 ): PublishActionEntry[] {
   if (!entries) return [];
   const known = new Set(concepts.map((c) => c.id));
+  const seen = new Set<string>();
   return entries.map((entry) => {
     if (!entry.label) throw new Error('publishActions entry is missing a label');
+    if (seen.has(entry.label)) {
+      throw new Error(`publishActions entry label "${entry.label}" is declared twice; each label must be unique`);
+    }
+    seen.add(entry.label);
     if (!entry.href) throw new Error(`publishActions entry "${entry.label}" is missing an href`);
     for (const id of entry.concepts ?? []) {
       if (!known.has(id)) {

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { normalizeConcepts, findConcept } from '../../lib/content/concepts.js';
+import { normalizeConcepts, findConcept, RESERVED_VIEW_IDS } from '../../lib/content/concepts.js';
+import { parseAdminPath } from '../../lib/sveltekit/admin-dispatch.js';
 import { composeRuntime } from '../../lib/content/compose.js';
 import { buildSiteDescriptors } from '../../lib/delivery/site-descriptors.js';
 import type { ConceptConfig } from '../../lib/content/types.js';
@@ -333,6 +334,34 @@ describe("a concept's validate names itself as the field-behavior owner", () => 
       });
     } finally {
       warn.mockRestore();
+    }
+  });
+});
+
+describe('reserved concept ids', () => {
+  const posts = testAdapter.content.posts!;
+
+  it.each([...RESERVED_VIEW_IDS])('refuses the engine view id "%s" as a concept id', (id) => {
+    expect(() => normalizeConcepts({ [id]: posts })).toThrow(new RegExp(`concept id "${id}" names an engine view`));
+  });
+
+  it('covers the fixed screens and the no-view segments', () => {
+    for (const id of ['login', 'auth', 'editors', 'help', 'media', 'vocabulary', 'nav', 'settings']) {
+      expect(RESERVED_VIEW_IDS.has(id)).toBe(true);
+    }
+  });
+
+  it('shares one set with the dispatcher: a member added to it is refused by both', () => {
+    const probeConcept = () => normalizeConcepts({ posts }).map((c) => ({ ...c, id: 'sharedprobe' }))[0];
+    const mutable = RESERVED_VIEW_IDS as Set<string>;
+    expect(parseAdminPath('/admin/sharedprobe/entry', [probeConcept()])).not.toBeNull();
+    mutable.add('sharedprobe');
+    try {
+      expect(() => normalizeConcepts({ sharedprobe: posts })).toThrow(/engine view/);
+      expect(parseAdminPath('/admin/sharedprobe', [probeConcept()])).toBeNull();
+      expect(parseAdminPath('/admin/sharedprobe/entry', [probeConcept()])).toBeNull();
+    } finally {
+      mutable.delete('sharedprobe');
     }
   });
 });

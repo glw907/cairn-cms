@@ -6,6 +6,7 @@
 // segment, the media or index view, or a concept route), so a partial reserved-segment list is never
 // reimplemented here.
 import { parseAdminPath } from './admin-dispatch.js';
+import { FIXED_SCREEN_IDS } from '../content/concepts.js';
 import { log } from '../log/index.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
@@ -277,7 +278,7 @@ export function validateNavLayout(
  *  `editors` stays owner-only regardless of the map (canReach's own floor) and `help` stays open
  *  to any editor capability; neither route reads the map, so the map cannot name them.
  */
-const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const;
+const ACCESS_FIXED_SCREENS = FIXED_SCREEN_IDS;
 
 /**
  * Validate a site's declared access map once at composition (server start), after `defineAccess`'s

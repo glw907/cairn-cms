@@ -188,6 +188,18 @@
   Consumers may: copy `src/routes/admin/+error.svelte` into a hand-built site, and run `npx
   cairn-manifest` when the build reports a stale manifest.
 
+- **The admin toolkit's `EmptyState` renders an `h1` heading in the page-heading style.** With
+  `headingLevel="h1"` the heading takes the display face at the title size that `PageHeader` uses, in
+  place of the browser's default heading size in the body face. The other levels are unchanged. The
+  welcome view and the admin error page are the engine's two `h1` callers.
+
+  Consumers may: pass `headingLevel="h1"` to `EmptyState` on a screen with no `PageHeader` and expect
+  the page-heading look.
+
+- **The shipped admin stylesheet gains two utility classes.** `mb-8` and `mt-0` join the compiled
+  `cairn-admin.css`, which the admin error page's heading and the in-memory notice now use. No class
+  leaves the sheet.
+
 - **The engine supplies the dev-build define, `__CAIRN_DEV_BUILD__`.** The `cairnManifest()` plugin's
   `config` hook defines it as `true` under `vite dev` and in a build that sets `VITE_CAIRN_E2E=1`
   (read from the process environment and the `.env` files in the working directory), and as `false`

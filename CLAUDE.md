@@ -91,7 +91,9 @@ its stage.
   [`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`; each arm's stage
   rebuilds from it.
 - **Fix rule.** A deficiency found on a published page is fixed on the page in the same pass,
-  except a site edit to an arm whose stage is in flight, which is filed for that stage.
+  except a site edit to an arm whose stage is in flight, which is filed for that stage. A site
+  pass's docs edits land here on a `site-docs/<site>-<pass>` branch off `main`, merged by PR under
+  the docs gate before that pass closes.
 - **Per-version records** (`docs/extend/migration-notes.md`, `docs/extend/upgrade-cairn.md`) are
   maintained every pass like the reference arm.
 - **Friction and roadmap.** [`docs/internal/docs-friction-log.md`](docs/internal/docs-friction-log.md)

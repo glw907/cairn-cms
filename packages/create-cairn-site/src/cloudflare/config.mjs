@@ -79,7 +79,7 @@ function replaceExact(content, target, replacement, relativePath) {
  * database's `database_name`, and the R2 bucket's `bucket_name`, and drop the showcase
  * placeholder `database_id` line whole (id-less bindings resolve by name; wrangler provisions
  * and binds them without ever writing an id back into this file). `PUBLIC_ORIGIN` and the
- * `migrations_dir` entry are left untouched: Task 7 owns the origin, once the site has a real
+ * `migrations_dir` entry are left untouched: the deploy step owns the origin, once the site has a real
  * deploy URL. Idempotent: a file that already carries `"name": "<slug>"` **and** has lost its
  * placeholder database id is one this function has already rewritten, so it returns without
  * touching it and a resumed run does not trip the rot gate on its own output. Both halves are

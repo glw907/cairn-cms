@@ -67,9 +67,14 @@ from its page's.
   reference arm is a cut whose reason names the reference link. Each entry needs a fact id and a
   non-empty reason, and the id must resolve to a fact bullet in the container (any tag is allowed,
   since a cut cites nothing).
+- `local` is optional: an array of non-empty strings, the paths and names the page invents for the
+  reader to create (`src/members/channel.ts`, `MemberChannel`). A `path` or `name` the extractor
+  finds that equals an entry passes, in a cited sentence and in a `no-claim` sentence alike. `[]`
+  is valid and changes nothing. The drafter is its one writer.
 
-Headings, fenced code blocks, images, HTML comments, and front matter are not sentences and stay
-out of the list. Table cells and list items are sentences.
+Headings, fenced code blocks, images, HTML comments, the `<details>`, `</details>`, `<summary>`,
+and `</summary>` tags, and front matter are not sentences and stay out of the list. A summary's
+text, table cells, and list items are sentences.
 
 ## The page plan
 
@@ -94,6 +99,9 @@ page-inputs step first, because a claim with no fact is the defect this check ex
   characters nor `"no-claim"`.
 - A `cuts` entry that is not an object, whose `id` is not a fact id, or that has no `reason`.
 - A `cuts` entry whose `id` resolves to no fact bullet.
+- A `local` that is not an array, an entry that is not a non-empty string, or an entry that names
+  an engine export (any name in `docs/internal/api-surface.md`), since an engine export is never
+  site-invented.
 - A sentence on the page that the brief leaves out, or a brief sentence the page does not carry.
 - An `id` (any id of an array) that resolves to no fact bullet.
 - A cited bullet tagged `[candidate]` (any qualifier, `[candidate: excluded, ...]` included),
@@ -107,3 +115,10 @@ page-inputs step first, because a claim with no fact is the defect this check ex
 The extractor's classes and the list of what it cannot see are in the header of
 `scripts/checks/check-provenance.mjs`. Whatever it cannot see, a reviewer reads with the brief
 open beside the page.
+
+## Checking a draft sentence by sentence
+
+`node scripts/checks/check-provenance.mjs --extract <file>` is not a gate. It reads one sentence
+per line and prints a `<line>`, `<kind>`, and `<value>` row, tab-separated, for each fact the
+extractor finds, with the container's key phrases applied as the gate applies them. A clean line
+prints nothing. It exits 0, or 2 when the file argument is missing or unreadable.

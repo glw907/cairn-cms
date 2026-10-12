@@ -288,7 +288,7 @@ The original decision framing, for the record:
      cadence rewrite, merge of PR #107). Not an engine pass.
   2. **Engine passes A and B before stage 2b.** Both landed on `main`, unreleased: pass A (PR #108),
      the gate economy pass (PR #110), and pass B (PR #113, the first pass scored on the lean
-     process). Whichever "Docs tooling before stage 2b" items remain run as their own dotfiles pass.
+     process). The rest of "Docs tooling before stage 2b" is the residue entry below.
   3. Stage 2b: the 14 remaining extend pages. Its close runs the test.
   4. **The Claude Code arm's small stage**, right after 2b (the Now entry below): its facts already
      sit in the container, and the scaffold ships the guidance tree it documents. It registers the arm
@@ -338,60 +338,28 @@ The original decision framing, for the record:
   snippet). The page `scaffolded-site-files.md` cited them in a "guidance tree" section it dropped
   under the rulings.
 
-- **Docs tooling before stage 2b (stage 2a's close, 2026-10-07).** The page chain and the docs gate
-  cost stage 2a rounds in these places; fix them before 2b's run. Lands in `~/.dotfiles` (the chain,
-  its seats, and its prompts) and in `scripts/checks/`.
-  - Section hand-offs have three owners who disagree (the plan, the register seat, the structural
-    seat), which drove `scaffolded-site-files` to its round cap. Give hand-offs one owner, the plan,
-    and tell the register seat a planned hand-off is not a tell.
-  - The register's 26-word cap reads as a whole-item cap (`docs/internal/docs-register.md:90`, the
-    overlay row near `:1041`). Google's rule, and the R5 ruling, is per sentence, in list
-    items and task sections only, with introduction and explanation sentences exempt. State it there
-    and in the chain's plan and structural prompts; plans also wrote 40-word Before-you-begin items.
-  - Scoped-review dispatches state the cap's scope in the register's exact words: a broader wording
-    drew three false blocking findings on `restrict-admin-access`.
-  - `check:snippets` passes a `$lib` import, which SvelteKit 3 refuses
-    (`scripts/checks/check-snippets.mjs:21-23,69-70`); never checks a fence indented under a list
-    item (`FENCE_OPEN_RE`, `:59`); and typechecks against the repo's own types, so a snippet that
-    fails on a fresh scaffold (no `@types/node`) passes.
-  - `check:provenance` gives a site-invented path or name no citable form (`check-provenance.mjs:46-55`;
-    a brief could declare page-local names), fails a planned `no-claim` lead-in that names a path
-    (the plan step should run the extractor), and cannot carry a `<details>` disclosure block
-    (`pageProse` keeps HTML tags; `PROSE_PATH_RE` reads `</details>` as a path).
-  - `check:facts` resolves no `.go` pointer (`POINTER_RE`, `check-facts.mjs:350-351`) and cannot see
-    in-range drift: an unanchored `package.json` or `CHANGELOG.md` pointer drifts silently (about 45
-    did before stage 2a's close, all repointed). Add `go`, and anchor those pointers.
-  - `check:symbols` strips a leading dot-directory (`check-symbols.mjs:319`), reads
-    `@glw907/cairn-cms-dev` as a `-dev` subpath (`:290-292`), and resolves no site-relative path
-    against `templates/waymark/`.
-  - `link:consumer` refuses a fresh site that declares neither engine package, so a re-test of the
-    add-cairn tutorial hand-adds both first (`scripts/lab/link-consumer.mjs:146`).
-  - The register: the symptom-row anatomy names no closing section, and the people a channel signs
-    in carry three names ("second audience", "second sign-in group", "second population"); sanction
-    one in "Names" and bring the reference, TSDoc, and guidance to it.
-  - `tellgrader` now gates `check:docs-gate` locally (the `check:tellgrader` component, failing on
-    `trailing-hinge-run` under the docs-register profile) and is skipped in CI, where the binary is
-    absent. A follow-up could vendor it for CI.
-  - Workstation tools, filed for the dotfiles: `tellgrader --register docs` flags the proper noun
-    "showcase" as `slop-hard`; a `cairn-run-gate` re-issue during a live run once returned "gate
-    vanished" instead of attaching (not reproduced).
-  - Added at pass A's close (2026-10-09), fact pointer drift: a fact's `Source:` pointer is the only
-    place a path string lives for provenance matching (`scripts/checks/check-provenance.mjs`), so
-    repairing a pointer after a file delete (`templates/waymark/src/access.ts`) broke nine brief
-    sentences that cite the old path, and the only fix was editing the fact's claim text; a repair
-    that moves a pointer should not force a claim edit. `check:facts` accepts a `path:line` pointer
-    while the line still exists, so a move leaves the fact aimed at the wrong code with no failure:
-    pass A hand-remapped nine pointers into `src/lib/github/signing.ts` and
-    `src/lib/sveltekit/health.ts`, left `f:n0laoh` (`docs/internal/facts/extend.md:271`) citing
-    `src/lib/vite/internal.ts:53-80` (`virtualSource` now starts at 67), and found `check_roles.go`
-    citations marked `[verified]` about 24 lines off. Editing
-    `src/lib/sveltekit/content-routes-entry-write.ts` stranded 43 fact bullets that cite it by line
-    range (23 in `extend.md`, 12 in `editors.md`, 4 in `reference.md`, 3 in `admin.md`, 1 in
-    `front-door.md`), and editing `src/lib/admin/EditPage.svelte` (line form only, since the compiler
-    API cannot parse it) found two anchored pointers (`extend.md:118`, `extend.md:654`) already stale
-    plus anchor-less ones (`f:h483v2`, `f:vti6ws`) that `check:facts` range-checks only. A sweep
-    moving `.ts` line pointers to `path#Symbol` (`scripts/checks/check-facts.mjs:59-71` already
-    resolves it) closes the first half.
+- **Docs tooling before stage 2b: the residue (pre-2b tooling pass, 2026-10-12).** The pass fixed
+  the register, `check:snippets`, `check:provenance`, `check:symbols`, `link:consumer`, and
+  `check:facts`, moved `.ts` fact pointers to `path#Symbol`, and fixed the chain's prompts and the
+  showcase tell in the dotfiles repo. What stays, each with its trigger:
+  - The second-sign-in-group rename in `src/lib/auth-channel/factory.ts:1` and `:537`,
+    `src/lib/auth-crypto/index.ts:2`, and `examples/showcase/src/members/channel.ts:53`, with
+    `f:qqy4uq`'s anchor: the next engine pass, since those comments sit on the `auth-data` path map.
+  - Anchored `CHANGELOG.md` pointers: new entries go at the top, so every edit shifts the lines past
+    the 10-line anchor window. A fix checks the anchor within its version section, or anywhere in
+    the file.
+  - `path#Symbol` outside `src/`, for `.go`, and for `.svelte`; and latent drift in unanchored
+    pointers that the conversion moved from a stale line.
+  - The pointer-repair half of pass A's finding: a moved `Source:` path should not force a claim
+    edit for provenance matching.
+  - A `Cairn.NamesRetired` Vale entry for "second audience" and "second population".
+  - A per-unit type environment in `check:snippets`, for a reader on a create-cairn-site scaffold,
+    which names `node`: all units share one program, so a vite-importing block exposes Node's
+    globals to every unit.
+  - HTML tags other than `<details>` and `<summary>` in `pageProse`.
+  - Resolving `@glw907/cairn-cms-dev` import identifiers in `check:symbols`, which has no surface
+    snapshot for the dev package.
+  - `tellgrader` in CI (vendoring the binary), and the unreproduced `cairn-run-gate` "gate vanished".
 
 
 - **Docs-code sync (Geoff, 2026-09-30; spec `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`).**

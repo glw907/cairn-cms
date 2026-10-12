@@ -131,16 +131,12 @@ export const ALLOWLIST = new Set([
   'file-path:src/content/.cairn/media.json', // a site's own generated media manifest, by convention
   'file-path:src/content/.cairn/site-facts.json', // a site's own generated site-facts contract, by convention
   'file-path:src/content/.cairn/dictionary.txt', // a site's own spellcheck dictionary, by convention
-  'file-path:cairn/admin.css', // a scaffolded site's gitignored compiled admin sheet, `.cairn/admin.css` (the extractor drops the leading dot)
+  'file-path:.cairn/admin.css', // a scaffolded site's gitignored compiled admin sheet
   'file-path:src/lib/today.ts', // docs/extend/debug-your-site.md's illustrative fixed-today helper module
   'file-path:src/lib/server/member-channel.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative auth-channel module
   'file-path:src/lib/server/members.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative roster-lookup and code-delivery module
   'file-path:src/lib/server/member-channel.test.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative channel test
   'file-path:migrations-members/0000_channel.sql', // a site's copy of the packaged channel migration, the directory docs/extend/add-a-second-sign-in-group.md creates (examples/showcase/migrations-members/ carries the same file)
-  // `@glw907/cairn-cms-dev` is a separate package, but the export extractor's specifier regex
-  // reads its name as a `-dev` subpath of the engine and finds no such subpath in the API
-  // surface snapshot. The dev package's own `src/index.ts` exports it.
-  'export:createChannelDb', // docs/extend/add-a-second-sign-in-group.md's channel test imports it from @glw907/cairn-cms-dev
   'file-path:src/lib/content.ts', // docs/extend/add-cairn-to-a-sveltekit-app.md's illustrative content-index module, by convention
   'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
   'file-path:old-site/content/posts/my-post.md', // docs/extend/migrate-existing-content.md's illustrative pre-migration source path
@@ -158,21 +154,19 @@ export const ALLOWLIST = new Set([
   'file-path:src/params/md.ts', // examples/showcase/src/params/md.ts's own convention path
   'file-path:src/chassis/README.md', // examples/showcase/src/chassis/README.md's own convention path
   'file-path:src/routes/robots.txt', // examples/showcase/src/routes/robots.txt/+server.ts; the `+server.ts` filename splits the extractor's run at the `+`, leaving this bare directory-shaped remainder as its own candidate
-  // A leading-dot directory name (`.svelte-kit`) is stripped by the extractor's own
-  // leading-dot/slash trim, so the literal `main` value from a Cloudflare `wrangler.jsonc`
-  // (`.svelte-kit/cloudflare/_worker.js`) is checked here as the token the trim actually produces.
-  'file-path:svelte-kit/cloudflare/_worker.js', // docs/extend/add-cairn-to-a-sveltekit-app.md's wrangler.jsonc `main` field, mangled by the leading-dot trim
+  // The literal `main` value from a Cloudflare `wrangler.jsonc`, a build output rather than a
+  // tracked file.
+  'file-path:.svelte-kit/cloudflare/_worker.js', // docs/extend/add-cairn-to-a-sveltekit-app.md's wrangler.jsonc `main` field
   'file-path:src/lib/access-identity.ts', // docs/extend/replace-magic-links-with-cloudflare-access.md's illustrative Access-verifier module, by convention
   'file-path:admin/__data.json', // docs/extend/replace-magic-links-with-cloudflare-access.md, SvelteKit's own data-only fetch path, never a file on disk
   // docs/reference/guidance.md's own destination paths inside a CONSUMER repo's .claude/ and
   // .github/ trees, never a path in this repo: cairn-guidance writes them, it does not ship them.
-  // The extractor's leading-dot trim strips the leading `.` off `.claude` and `.github` before
-  // this class resolves against the filesystem, which is why the token here carries neither.
-  'file-path:claude/agents/cairn-extension-reviewer.md',
-  'file-path:claude/cairn/CLAUDE.md',
-  'file-path:claude/settings.json',
+  // `.claude` and `.github` keep their leading dot, so the tokens carry it.
+  'file-path:.claude/agents/cairn-extension-reviewer.md',
+  'file-path:.claude/cairn/CLAUDE.md',
+  'file-path:.claude/settings.json',
   'file-path:@.claude/cairn/CLAUDE.md', // the literal import-line value quoted in guidance.md's prose
-  'file-path:github/workflows/check.yml',
+  'file-path:.github/workflows/check.yml',
 
   // Real paths in a named production consumer site's own repo, not this repo's tree.
   // docs/extend/migration-notes.md's closing "upgrade order" subsection names them so a site

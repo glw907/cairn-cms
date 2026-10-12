@@ -289,7 +289,7 @@ export function extractImportedIdentifiers(segments) {
   for (const seg of segments) {
     if (!seg.fenced) continue;
     const m = seg.text.match(
-      /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+['"]@glw907\/cairn-cms([^'"]*)['"]/,
+      /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+['"]@glw907\/cairn-cms((?:\/[^'"]*)?)['"]/,
     );
     if (!m) continue;
     const [, names, suffix] = m;
@@ -316,7 +316,7 @@ export function extractFilePaths(segments) {
     const text = seg.fenced ? stripImportSpecifiers(seg.text) : seg.text;
     if (text.includes('://')) continue;
     for (const m of text.matchAll(pattern)) {
-      const token = m[0].replace(/^[./]+|[./]+$/g, '');
+      const token = m[0].replace(/^(?:\.{0,2}\/)+|[./]+$/g, '');
       if (!token.includes('/')) continue;
       const ext = token.slice(token.lastIndexOf('.') + 1).toLowerCase();
       if (!PATH_EXTENSIONS.has(ext)) continue;
@@ -602,12 +602,14 @@ const PACKAGE_PATH_PREFIXES = ['node_modules/@glw907/cairn-cms/', '@glw907/cairn
 
 /**
  * Whether a literal repository-relative path exists on disk, resolving an installed-package
- * path against its source first.
+ * path against its source first. A site-relative path (`src/access.ts`) also resolves against
+ * the scaffolded site in `templates/waymark/`, since the pages describe a reader's fresh site.
  * @param {string} path
  * @param {string} root
  */
-function pathExists(path, root = ROOT) {
+export function pathExists(path, root = ROOT) {
   if (existsSync(join(root, path))) return true;
+  if (existsSync(join(root, 'templates/waymark', path))) return true;
   for (const prefix of PACKAGE_PATH_PREFIXES) {
     if (path.startsWith(prefix)) return existsSync(join(root, path.slice(prefix.length)));
   }

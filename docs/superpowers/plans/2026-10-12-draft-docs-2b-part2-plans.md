@@ -33,11 +33,14 @@ desk.
   with the format will be helpful"; "This is live collaborative development, so provide liberal
   input. In balance, more input is better than less."). Send freely: friction, a workaround you
   used, a field that would have helped, or a rule that's merely unclear. drafter-conductor filters.
-  The planning session sent a first batch of 11 predicted findings on 2026-10-12: subsections, a
-  stepless `failure`, a `code` kind, a `figure` kind, `use` on `fact`, `facts` on `sentence`, item
-  order, unused `produces`, preconditions against "Before you begin", a `rework` block, and
-  exemplars and crossLinks. Confirm or refute each one as a real page hits it, and don't resend it
-  unconfirmed. Send each finding with `SendMessage` when it is hit: an
+  The planning session's first batch of 11 predicted findings was folded into the sheet before
+  launch (Geoff approved, 2026-10-12). The sheet now has section `level`, a `failure` with no
+  `from` plus `cause`, the `code` and `figure` kinds, `use` on `fact`, and `facts` on `sentence`.
+  It states that items run in prose order, that `preconditions` holds the tokens while "Before you
+  begin" describes them (a reader action there is a `step`), and that exemplars and crossLinks stay
+  out of the plan. Two findings were rejected and are settled: no unused-`produces` warning, and no
+  `rework` block, so carry the re-arm change set as a `constraints` entry. Don't resend these.
+  Report how the new fields work on real pages. Send each finding with `SendMessage` when it is hit: an
   ambiguity in the sheet, a field a real page needed and the format lacks, or a rule that fought a
   real page. Each message names the page, quotes the plan excerpt the problem hit, and says what
   was needed. Also log it in the pass record. Findings that hold up go into drafter Pass 0 itself

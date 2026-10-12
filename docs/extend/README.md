@@ -21,6 +21,7 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 
 - [Choose an AI posture](./choose-an-ai-posture.md)
 - [Theme your public site](./theme-your-public-site.md)
+- [Build the public routes](./build-the-public-routes.md)
 - [Share a draft preview](./share-a-draft-preview.md)
 - [Act on newly published entries](./act-on-newly-published-entries.md)
 - [Add an island](./add-an-island.md)
@@ -29,6 +30,7 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 
 - [Add a custom admin screen](./add-a-custom-admin-screen.md)
 - [Arrange the admin sidebar](./arrange-the-admin-sidebar.md)
+- [Turn on tidy](./turn-on-tidy.md)
 
 ## Auth and access
 

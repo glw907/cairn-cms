@@ -39,11 +39,13 @@ Tidy is a switch the developer throws and a tool the editor runs. The engine own
 the SDK package, the switch, the key, and, optionally, the model and the house style. The page's
 spine is the developer's half in the order a site turns it on: three changes and a deploy, then the
 two choices that have working defaults (the model and the conventions), then the editors' side of
-the conventions, which lands in a file the developer owns. The limits and the dev stub follow as
-the explanation a developer needs before handing tidy over and before checking it. The `tidy` block
-of `createCairnAdmin` comes last among the tasks: the call's deadline, which every site has and may
-change, and the optional seam for a site's own client. Verification and the refusal table close the
-page, so the reader checks the whole setup once, on the deployed site, after every choice is made.
+the conventions, which lands in a file the developer owns. The `tidy` block of `createCairnAdmin`
+comes last among the tasks, directly after the editors' side, so the tasks run as one unbroken
+block: the call's deadline, which every site has and may change, and the optional seam for a site's
+own client. The limits and the dev stub follow as the explanation a developer needs before handing
+tidy over and before checking it, and the dev stub refers back to the `tidy` block the reader has
+already met. Verification and the refusal table close the page, so the reader checks the whole
+setup once, on the deployed site, after every choice is made.
 
 The page serves three readers with one spine. The developer turning tidy on runs every step. The
 developer whose editors report a refusal, a Tidy button that vanished, or calls that time out comes
@@ -69,8 +71,8 @@ Each section holds what the next one depends on.
    reader who keeps the default model and conventions past the two variant sections to "Let editors
    change the conventions", so only the variants are skippable. The skip never reaches the
    verification: the sections after the variants hold a step the tutorial's site needs whatever
-   conventions it keeps (item 6), the limits a developer knows before handing tidy over (item 7),
-   and the deadline every site has (item 9).
+   conventions it keeps (item 6), the deadline every site has (item 7), and the limits a developer
+   knows before handing tidy over (item 8).
 4. **Choose a model** (cover 3) is the first variant, the Django exemplar's take ("variants after the
    main path as their own sections"). It precedes the conventions because it is developer-only (an
    editor can't change it, `f:0j54bd`) and because its rule bites at verification: an unsupported id
@@ -86,25 +88,31 @@ Each section holds what the next one depends on.
    It is also where the main path resumes after the variants: editors can save conventions on
    `/admin/settings` whether or not the developer set any, so the tutorial site's
    `editor.siteConfigPath` step is on every reader's path, and a save without it answers 404.
-7. **What tidy can change in a draft** (cover 5), the page's first explanation section, follows the
-   conventions because `f:s6av65` ties the two together: the conventions' prompt is what protects an
-   author's voice, and the structural check is only a rewrite and injection backstop. It precedes the
+7. **Configure the tidy call's deadline and client** (cover 9) is the last task, and every reader
+   passes through it. It directly follows "Let editors change the conventions", so the tasks run as
+   one contiguous block (Turn on, Choose a model, Set the conventions, Let editors change the
+   conventions, Configure) with no explanation section between two tasks, and the `tidy` block is
+   introduced before "Tidy in local development" refers to it. Both settings live in the one `tidy`
+   block of `createCairnAdmin` (`f:w5h8rn`), so they share a section, but they reach different
+   readers: the 30-second deadline and `tidy.timeoutMs` apply to every site, so the deadline comes
+   first and unconditional, and the gateway condition opens only the client sub-steps that follow
+   it, where a reader with no gateway and no dev stub to wire stops. The section sits ahead of the
+   verification, so the page keeps one task anatomy (steps, one verification, one failure path), and
+   the refusal table's timeout row points into a part of it no reader was told to skip. It needs no
+   verification of its own: the verification's tidy run exercises whatever deadline and client are
+   set.
+8. **What tidy can change in a draft** (cover 5), the page's first explanation section, follows the
+   last task and ties back to the conventions, because `f:s6av65` ties the two together: the
+   conventions' prompt is what protects an author's voice, and the structural check is only a
+   rewrite and injection backstop (the back-reference sentence in the section). It precedes the
    verification because two of its limits produce refusals the table lists; the section names those
    outcomes and leaves their exact messages to the table, so each message is quoted once. Its lead-in
    (the previous hand-off) ties it to the task: handing tidy to editors.
-8. **Tidy in local development** (cover 7), the second explanation section, precedes the
+9. **Tidy in local development** (cover 7), the second explanation section, sits directly before the
    verification because it is the reason the verification runs on the deployed site: under the dev
    backend, the scaffold's tidy calls a canned stub, so a local run proves the review but never the
-   key or the model (`f:mbw7mk`).
-9. **Configure the tidy call's deadline and client** (cover 9) is the last task, and every reader
-   passes through it. Both settings live in the one `tidy` block of `createCairnAdmin`
-   (`f:w5h8rn`), so they share a section, but they reach different readers: the 30-second deadline
-   and `tidy.timeoutMs` apply to every site, so the deadline comes first and unconditional, and the
-   gateway condition opens only the client sub-steps that follow it, where a reader without a gateway
-   stops. The section sits ahead of the verification, so the page keeps one task anatomy (steps, one
-   verification, one failure path), and the refusal table's timeout row points into a part of it no
-   reader was told to skip. It needs no verification of its own: the verification's tidy run
-   exercises whatever deadline and client are set.
+   key or the model (`f:mbw7mk`). Its instruction for the tutorial's site refers back to the
+   `tidy.client` the reader met in "Configure the tidy call's deadline and client".
 10. **Verify tidy on the deployed site** (cover 6, first half) is the anatomy's item 4: the Settings
     screen's three states, then one tidy run, since the screen probes only the key.
 11. **Diagnose a refusal** (cover 6, second half) is the anatomy's item 5 and the last body section.
@@ -116,12 +124,13 @@ Each section holds what the next one depends on.
 
 - Cover 1 (opt-in, editor-triggered) moves into the introduction, the model the page sits in.
 - Cover 8 (where conventions are stored) moves up to follow cover 4 (item 6), for the reason above.
-- Covers 5 and 7 stay in the outline's relative order but become explanation sections between the
-  last configuration task and the verification (items 7 and 8).
-- Cover 9 (the client seam and the deadline) moves ahead of the verification (item 9), so every
-  task, the optional one included, comes before the one verification. Within it, the outline's order
+- Cover 9 (the client seam and the deadline) moves up to directly follow cover 8 (item 7), ahead of
+  covers 5 and 7, so every task, the optional one included, runs in one contiguous block before the
+  explanation sections and the one verification. Within it, the outline's order
   flips: the deadline, which applies to every site, comes before the client, which applies only to a
   site with its own gateway.
+- Covers 5 and 7 stay in the outline's relative order but become explanation sections between the
+  last task and the verification (items 8 and 9).
 - Cover 6 splits into the verification section and the failure-path section, the anatomy's items 4
   and 5 (items 10 and 11). This keeps the anatomy's fixed order: every step comes before the one
   verification, and nothing but See also follows the failure path.
@@ -355,6 +364,60 @@ Content:
   site that deploys on push to the default branch, that is the next deploy; claim nothing about the
   screen's success message (friction filed).
 
+**Hand-off (no-claim):** "Next, set the deadline for a tidy call and, if you need one, your own
+client."
+
+### Configure the tidy call's deadline and client
+
+**First sentence:** The `tidy` block of `createCairnAdmin` sets each tidy call's deadline and, for a
+site with its own gateway, the client it calls.
+
+No condition opens the section: the deadline applies to every site, so it comes first, and the
+gateway condition opens only the client part (the order's item 7).
+
+**Facts:** `f:w5h8rn`, `f:tcvrgk`, `f:tcadyk`. Cited again: `f:s4prb0` (scoped: the scaffold's server
+module), `f:mbw7mk` (the scaffold's module already passes `tidy: { client }`).
+
+Content, in this order:
+
+- Where the block lives, one sentence: in the server module that calls `createCairnAdmin`, which
+  takes the block as `CairnAdminConfig.tidy` and forwards it to the content routes (`f:w5h8rn`).
+  Name the module per site:
+  `src/chassis/cairn.server.ts` on a scaffolded site (`f:s4prb0`), and on the tutorial's site the
+  module its "Compose the runtime and the admin" step creates; link
+  `docs/extend/add-cairn-to-a-sveltekit-app.md#compose-the-runtime-and-the-admin`. One clause for the
+  scaffold: its module already passes `tidy: { client }`, with `client` set only under the dev gate
+  (`f:mbw7mk`; the drafter confirms against `templates/waymark/src/chassis/cairn.server.ts:22-28`).
+- The deadline, unconditional, two sentences then one step. The tidy action ends a call after 30
+  seconds unless `tidy.timeoutMs` sets another deadline in milliseconds (`f:tcvrgk`, `f:w5h8rn`). An
+  overrun becomes a retryable refusal logged as `tidy.failed` with `reason: 'timeout'`, rather than a
+  platform timeout (`f:tcvrgk`); its message is in "Diagnose a refusal", not quoted here. The step,
+  a single bulleted item, location first: in the server module, add `timeoutMs` to the `tidy` block,
+  for example `tidy: { client, timeoutMs: 60_000 }` on the scaffold and `tidy: { timeoutMs: 60_000 }`
+  on a tutorial site that passes no `tidy` block yet (`f:w5h8rn`). Claim no recommended value: no
+  fact states one.
+- The client, opened by its condition, one sentence: if your site reaches Anthropic through its own
+  gateway, pass a `tidy.client` factory that takes `{ apiKey }` and returns a `TidyClient`
+  (`f:tcadyk`). The dev stub is passed the same way, so one clause names that second user of the
+  seam: a tutorial-site reader who wants it wires it as "Tidy in local development" shows. A reader
+  with no gateway and no dev stub to wire stops here and goes on to "What tidy can change in a
+  draft".
+- One sentence on the contract: `TidyClient`'s `tidy(request, options)` resolves
+  `{ corrected, refused, tokens: { input, output } }`, so the site's code never touches an Anthropic
+  SDK type (`f:tcadyk`). Link `docs/reference/sveltekit.md#types` for the `TidyClient` row and
+  `docs/reference/sveltekit.md#contentroutesconfig` for the block (opened and confirmed: the rows
+  state the factory signature and the result shape). Claim no stability tier on the page (friction
+  filed: the seam's tiers disagree).
+- One sentence on the default: unset, `client` is the real Anthropic SDK client, built lazily from
+  the key (`f:w5h8rn`).
+- A numbered list, lead-in "To route tidy through your own client, follow these steps:" (no-claim):
+  1. In the server module, write the factory (`f:tcadyk`).
+  2. In the same module, pass it to `createCairnAdmin` as `tidy: { client }` (`f:tcadyk`, `f:w5h8rn`).
+     One clause for the scaffold: the gateway factory replaces the dev-gated assignment outside the
+     gate (`f:mbw7mk`).
+  The code block shows the tutorial site's module with a factory whose `tidy` method calls the site's
+  gateway, the body elided with a comment; no gateway URL or vendor shape.
+
 **Hand-off (no-claim):** "Before editors run tidy, know what it can and can't change."
 
 ### What tidy can change in a draft
@@ -401,63 +464,12 @@ Content:
   and the dev-backend opt-in are both true, and a default production build drops that block
   (`f:mbw7mk`, `f:s4prb0`). The dev backend's handle sets a dummy `ANTHROPIC_API_KEY` so the tidy
   action doesn't refuse for a missing key (`f:mbw7mk`).
-- For the tutorial's site, one sentence, an instruction only: to get the same stub, gate
-  `createFakeAnthropic()` into `tidy.client` in its server module the way the scaffold's module does;
-  "Configure the tidy call's deadline and client" shows where the `tidy` block goes. Link
+- For the tutorial's site, one sentence, an instruction only, referring back to a block the reader
+  has already met: to get the same stub, gate `createFakeAnthropic()` into the `tidy.client` you met
+  in "Configure the tidy call's deadline and client", the way the scaffold's module does. Link
   `docs/extend/add-cairn-to-a-sveltekit-app.md#wire-the-dev-backend` for the dev backend and its
   opt-in. Claim nothing about what that site does without the stub (no fact; friction filed).
 - Never say the dev server always uses a stub: `f:38qxp3` is rejected for exactly that.
-
-**Hand-off (no-claim):** "Next, set the deadline for a tidy call and, if you need one, your own
-client."
-
-### Configure the tidy call's deadline and client
-
-**First sentence:** The `tidy` block of `createCairnAdmin` sets each tidy call's deadline and, for a
-site with its own gateway, the client it calls.
-
-No condition opens the section: the deadline applies to every site, so it comes first, and the
-gateway condition opens only the client part (the order's item 9).
-
-**Facts:** `f:w5h8rn`, `f:tcvrgk`, `f:tcadyk`. Cited again: `f:s4prb0` (scoped: the scaffold's server
-module), `f:mbw7mk` (the scaffold's module already passes `tidy: { client }`).
-
-Content, in this order:
-
-- Where the block lives, one sentence: in the server module that calls `createCairnAdmin`, which
-  takes the block as `CairnAdminConfig.tidy` and forwards it to the content routes (`f:w5h8rn`).
-  Name the module per site:
-  `src/chassis/cairn.server.ts` on a scaffolded site (`f:s4prb0`), and on the tutorial's site the
-  module its "Compose the runtime and the admin" step creates; link
-  `docs/extend/add-cairn-to-a-sveltekit-app.md#compose-the-runtime-and-the-admin`. One clause for the
-  scaffold: its module already passes `tidy: { client }`, with `client` set only under the dev gate
-  (`f:mbw7mk`; the drafter confirms against `templates/waymark/src/chassis/cairn.server.ts:22-28`).
-- The deadline, unconditional, two sentences then one step. The tidy action ends a call after 30
-  seconds unless `tidy.timeoutMs` sets another deadline in milliseconds (`f:tcvrgk`, `f:w5h8rn`). An
-  overrun becomes a retryable refusal logged as `tidy.failed` with `reason: 'timeout'`, rather than a
-  platform timeout (`f:tcvrgk`); its message is in "Diagnose a refusal", not quoted here. The step,
-  a single bulleted item, location first: in the server module, add `timeoutMs` to the `tidy` block,
-  for example `tidy: { client, timeoutMs: 60_000 }` on the scaffold and `tidy: { timeoutMs: 60_000 }`
-  on a tutorial site that passes no `tidy` block yet (`f:w5h8rn`). Claim no recommended value: no
-  fact states one.
-- The client, opened by its condition, one sentence: if your site reaches Anthropic through its own
-  gateway, pass a `tidy.client` factory that takes `{ apiKey }` and returns a `TidyClient`
-  (`f:tcadyk`). A reader without a gateway stops here and goes on to the verification.
-- One sentence on the contract: `TidyClient`'s `tidy(request, options)` resolves
-  `{ corrected, refused, tokens: { input, output } }`, so the site's code never touches an Anthropic
-  SDK type (`f:tcadyk`). Link `docs/reference/sveltekit.md#types` for the `TidyClient` row and
-  `docs/reference/sveltekit.md#contentroutesconfig` for the block (opened and confirmed: the rows
-  state the factory signature and the result shape). Claim no stability tier on the page (friction
-  filed: the seam's tiers disagree).
-- One sentence on the default: unset, `client` is the real Anthropic SDK client, built lazily from
-  the key (`f:w5h8rn`).
-- A numbered list, lead-in "To route tidy through your own client, follow these steps:" (no-claim):
-  1. In the server module, write the factory (`f:tcadyk`).
-  2. In the same module, pass it to `createCairnAdmin` as `tidy: { client }` (`f:tcadyk`, `f:w5h8rn`).
-     One clause for the scaffold: the gateway factory replaces the dev-gated assignment outside the
-     gate (`f:mbw7mk`).
-  The code block shows the tutorial site's module with a factory whose `tidy` method calls the site's
-  gateway, the body elided with a comment; no gateway URL or vendor shape.
 
 **Hand-off (no-claim):** "With every piece in place, check tidy on the deployed site."
 

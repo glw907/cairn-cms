@@ -315,8 +315,9 @@ Content, in order:
      `routes.entries()`, and a `load` that returns `routes.entryLoad({ url })` (`f:pkt8i6`).
   3. In the same directory's `+page.svelte`, render `CairnHead` with `seo={data.seo}`, then the
      entry's `html` (`f:fvi8rk`).
-- One `ts` block for the config module: the five required members plus `defaultImage` and `feeds`
-  left out (they arrive in later sections). Marked `snippet-check-skip` (scaffold aliases).
+- One `ts` block for the config module: the five required members, with `defaultImage` and `feeds`
+  left out. `defaultImage` arrives in "Declare the fields the head reads" step 3, and `feeds` in
+  "Serve the feeds" step 5. Marked `snippet-check-skip` (scaffold aliases).
 - One `ts` block for the route module, in the minimal form the reference's `createPublicRoutes`
   example shows without `withReferences`. One sentence after it: a scaffolded site's catch-all
   also resolves reference fields, which
@@ -358,8 +359,10 @@ Content:
      `f:k5uws5`).
   2. In the same fieldset, declare `robots` and `author` as text fields if entries set them
      (`f:jsh6ae`).
-  3. If you keep the scaffold's `defaultImage`, add the file at `static/og/default.png`, or point
-     `defaultImage` in the shared config at an image the site serves (`f:nnup2g`).
+  3. In the shared `PublicRoutesConfig`, set `defaultImage` to an image the site serves; a
+     scaffolded site already names `/og/default.png`, so add that file under `static/og/`
+     (`f:nnup2g`, `f:jguiox`). This step applies to both readers: the add-cairn tutorial's site has
+     no `defaultImage` until this step sets it, and it is the social image's last fallback below.
 - One sentence after step 1 (`f:k5uws5`, `f:u41mw4`): delivery reads the hero and the social image
   only from the frontmatter key `image`, so an `seo` image under another name validates and shows
   in the editor but never reaches the head. One clause: a concept may mark one top-level image

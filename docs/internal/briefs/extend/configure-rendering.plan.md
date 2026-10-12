@@ -529,13 +529,13 @@ Content:
 **First sentence:** `defineRegistry({ components })` builds the one registry that the render pipeline
 and the editor's component picker both read.
 
-**Facts:** `f:uqytbb`, `f:cgwyp6`, `f:u4cfvv` (scoped: the scaffold passes the registry to
+**Facts:** `f:uqytbb`, `f:cgwyp6`, `f:rrvh33`, `f:u4cfvv` (scoped: the scaffold passes the registry to
 `createRenderer` and sets `components: registry` beside `render`). Cited again: `f:c7ruij` (the
 `defaultIconByRole` throw), `f:qnf469` (the scaffold's component module), `f:qvj951`.
 
 Content:
 
-- A numbered list of three steps, one action each, the location first, lead-in "To register the
+- A numbered list of four steps, one action each, the location first, lead-in "To register the
   component, follow these steps:" (no-claim):
   1. In the adapter file, build the registry from the component list:
      `const registry = defineRegistry({ components: [takeaways] })` (`f:uqytbb`). On a scaffolded
@@ -545,6 +545,11 @@ Content:
      tutorial's empty registry (`f:uqytbb`, `f:qvj951`).
   3. In the adapter's `rendering` group, set `components: registry`, as the scaffold does
      (`f:u4cfvv`).
+  4. In `src/routes/admin/[...path]/+page.svelte`, pass `registry={cairn.rendering.components}` to
+     `CairnAdmin`; the scaffold's admin page already passes it (`f:rrvh33`).
+- Two sentences after the first sentence: the pipeline receives the registry through
+  `createRenderer` (`f:uqytbb`), and the picker only through `CairnAdmin`'s `registry` prop
+  (`f:rrvh33`), two separate hand-offs, so no sentence implies one registration reaches both.
 - One sentence after the steps, claim-scoped: the scaffold hands the same registry to both
   `createRenderer` and `rendering.components` (`f:u4cfvv`). State no consequence of skipping step 3:
   no fact states that the picker reads `rendering.components` (friction filed).
@@ -618,7 +623,7 @@ steps:" (no-claim):
 **First sentence:** Each failed check points at one declaration: an attribute type, a reserved name,
 the picker members, the directive's form, or a fence's language.
 
-**Facts:** `f:cxhx8w`, `f:cgwyp6`, `f:c7ruij`, `f:fqdknx`, `f:dni13r`.
+**Facts:** `f:cxhx8w`, `f:cgwyp6`, `f:c7ruij`, `f:rrvh33`, `f:fqdknx`, `f:dni13r`.
 
 A numbered list of ordered checks (anatomy item 5), in the order of the "Verify the render" steps that
 reach them. Each item names what the reader sees, then the cause, then the fix or the link:
@@ -628,12 +633,11 @@ reach them. Each item names what the reader sees, then the cause, then the fix o
    (`f:cxhx8w`); a component named `figure` or `include` throws with the remove-or-rename message
    (`f:cgwyp6`); a `defaultIconByRole` with no `type: 'icon'` attribute throws (`f:c7ruij`). Name
    "Declare a component" and "Register the component" by heading.
-2. The component is missing from the picker (Verify step 2): `hidden` is set, which leaves it out
-   of the top-level picker (`f:c7ruij`). Name "Shape the picker entry" by heading. This item names
-   no other cause: no fact states that the picker reads `rendering.components`, so pairing this
-   symptom with a `rendering.components` mismatch would make the consequence claim "Register the
-   component" forbids. The pairing waits on friction 1 (`docs/internal/docs-friction-log.md`, the
-   two-seams entry) until a fact states what the picker reads.
+2. The component is missing from the picker (Verify step 3). First cause: the admin catch-all page
+   passes `CairnAdmin` no `registry` prop, so the editor shows no insert trigger (`f:rrvh33`, which
+   now states what the picker reads); name "Register the component" by heading. Second cause:
+   `hidden` is set, which leaves it out of the top-level picker (`f:c7ruij`); name "Shape the
+   picker entry" by heading.
 3. The directive shows as literal text in the preview (Verify step 4): it was written as a leaf
    `::name` or text `:name` form, which always restores to its source (`f:fqdknx`).
 4. A code block in the preview or on the page shows no token colors (Verify steps 4 and 5): its fence
@@ -711,6 +715,7 @@ page inputs disposed it. The plan adds two container facts, each scoped and name
 | f:21by9u | cut | What a site's own `build()` can bypass, and where the render-safety guarantees stop, is `docs/extend/security-model.md#limits-of-render-safety`'s, which states it ("A registered `build()` can bypass every render-safety protection"); out of scope here |
 | f:qnf469 | carried (added, scoped) | Before you begin (`src/theme/markdown-components.ts`, nine declarations); cited again in Introduction, Declare a component, and Register the component. The rest of the `src/theme/` listing is not used |
 | f:u4cfvv | carried (added, scoped) | Register the component (the scaffold passes the registry to `createRenderer` and sets `components: registry`); cited again in Before you begin and Build the render function (the media-resolver fallback). Not cited in Diagnose a failed check: the revision dropped the `rendering.components` cause there, since no fact supports it. The concepts, backend, and email clauses are not used |
+| f:rrvh33 | carried (added, closing round) | Register the component (the picker reads only `CairnAdmin`'s `registry` prop; step 4 passes it, the scaffold's admin page already does); cited again in Diagnose a failed check (the first picker cause) |
 The page-inputs claim inventory carried forty rows, disposed as it recorded them: the absent prior
 page (no claims), `f:21by9u` (cut, above), `SlotDef.help` (cut, no engine surface reads it), and the
 "filed" rows for `f:7fw82j`, `f:w7c3i6`, `f:t4px7i`, and `f:uqytbb` (with their option rows), each

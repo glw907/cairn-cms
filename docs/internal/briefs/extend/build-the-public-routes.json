@@ -1,0 +1,1421 @@
+{
+  "page": "docs/extend/build-the-public-routes.md",
+  "sentences": [
+    {
+      "text": "A cairn site's public side is a set of routes in the site's SvelteKit app.",
+      "id": "f:j0ut9n"
+    },
+    {
+      "text": "The entry pages and their raw-markdown twins, the archive, the RSS and JSON feeds, the sitemap, and `robots.txt` are each a few lines around a function the engine exports.",
+      "id": [
+        "f:pkt8i6",
+        "f:pvk6h5",
+        "f:70uh8b",
+        "f:8k9xwm"
+      ]
+    },
+    {
+      "text": "The app builds with `@sveltejs/adapter-cloudflare` into the site's one Worker.",
+      "id": "f:j0ut9n"
+    },
+    {
+      "text": "The routes prerender: at build time they read the markdown in the commit being deployed and write each page and file, and no public request reads the GitHub repository.",
+      "id": [
+        "f:1mkckz",
+        "f:8k9xwm"
+      ]
+    },
+    {
+      "text": "Every route reads the same two inputs: one typed index of the content, built by `createSiteIndexes`, and one origin literal.",
+      "id": [
+        "f:yef4lo",
+        "f:niuzzg"
+      ]
+    },
+    {
+      "text": "Because the build runs the routes, the origin is written into every canonical URL, feed, and sitemap row, and it has to name the deployed origin before a production build.",
+      "id": "f:k16chc"
+    },
+    {
+      "text": "A scaffolded site already has every route this page covers except a tag page.",
+      "id": [
+        "f:qtm9y2",
+        "f:8k9xwm",
+        "f:70uh8b",
+        "f:f9aayq",
+        "f:ri06xw"
+      ]
+    },
+    {
+      "text": "Its developer arrives to learn what each route does and where to change it, starting with the origin, which the scaffold ships as a placeholder.",
+      "id": "f:ioh6uj"
+    },
+    {
+      "text": "A site built through [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) has the index and the entry route from that tutorial's [Render the entry](add-cairn-to-a-sveltekit-app.md#render-the-entry) step, and it gains the rest here.",
+      "id": "no-claim"
+    },
+    {
+      "text": "You build the index and the origin, compose one `PublicRoutesConfig`, and wire the entry pages and their twins, the feeds, the sitemap, `robots.txt`, the archive, a tag page, and the public menu behind the admin's `nav` screen, then read the prerendered files after a build.",
+      "id": [
+        "f:pkt8i6",
+        "f:8k9xwm",
+        "f:f9aayq"
+      ]
+    },
+    {
+      "text": "Two engine limits apply to every site: the engine builds a head only for entry pages, and it takes the hero and the share image only from a frontmatter field named `image`, whatever image field a concept marks for SEO.",
+      "id": [
+        "f:k7nln3",
+        "f:k5uws5"
+      ]
+    },
+    {
+      "text": "[Give other pages a head](#give-other-pages-a-head) and [Declare the fields the head reads](#declare-the-fields-the-head-reads) cover those limits, and [Diagnose a failed build](#diagnose-a-failed-build) covers a build that stops on content.",
+      "id": [
+        "f:kv3qen",
+        "f:n07oiu"
+      ]
+    },
+    {
+      "text": "This page assumes you know SvelteKit routing, including rest parameters, param matchers, route groups, server endpoints, and layout loads, along with its prerendering exports and Vite's glob imports.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Beyond the adapter that declares your site's concepts, it assumes no cairn knowledge.",
+      "id": "no-claim"
+    },
+    {
+      "text": "It leaves out the following topics, each with the page that covers it:",
+      "id": "no-claim"
+    },
+    {
+      "text": "A stance toward AI training crawlers: [Choose an AI posture](choose-an-ai-posture.md).",
+      "id": "f:xafwcw"
+    },
+    {
+      "text": "The draft preview route: [Share a draft preview](share-a-draft-preview.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "Announcing newly published entries, as opposed to the feeds that subscribers pull: [Act on newly published entries](act-on-newly-published-entries.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "Resolving `media:` images: [Resolve media on public pages](configure-media.md#resolve-media-on-public-pages).",
+      "id": "f:83gbov"
+    },
+    {
+      "text": "Styling the pages: [Theme your public site](theme-your-public-site.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "Arranging the admin's sidebar, which shares the word \"nav\": [Arrange the admin sidebar](arrange-the-admin-sidebar.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The public routes read your adapter and your parsed site config, and they prerender on a SvelteKit site built with `@sveltejs/adapter-cloudflare`.",
+      "id": [
+        "f:yef4lo",
+        "f:j0ut9n"
+      ]
+    },
+    {
+      "text": "Before you start, your site needs the following:",
+      "id": "no-claim"
+    },
+    {
+      "text": "An adapter that declares the site's concepts, at `src/theme/cairn.config.ts` on a scaffolded site and at `src/lib/cairn.config.ts` on the add-cairn tutorial's site.",
+      "id": "f:q07rd5"
+    },
+    {
+      "text": "[Define an adapter and schema](define-an-adapter-and-schema.md) covers it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A site config, parsed as the [site config reference](../reference/core.md#parsesiteconfig) describes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A SvelteKit site on `@sveltejs/adapter-cloudflare`.",
+      "id": "f:j0ut9n"
+    },
+    {
+      "text": "A scaffolded site has one, and [Deploy a bare SvelteKit site](add-cairn-to-a-sveltekit-app.md#deploy-a-bare-sveltekit-site) sets one up from scratch.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Optionally, for hero images, a media resolver, which [Resolve media on public pages](configure-media.md#resolve-media-on-public-pages) sets up.",
+      "id": "f:bnt2wh"
+    },
+    {
+      "text": "With those in place, start from a map of the files.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Every public route is a file under `src/routes/`, and on a scaffolded site the modules they share sit in `src/chassis/`.",
+      "id": [
+        "f:qtm9y2",
+        "f:s4prb0"
+      ]
+    },
+    {
+      "text": "The scaffold's public files are as follows:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Each file belongs to one section of this page:",
+      "id": "no-claim"
+    },
+    {
+      "text": "`src/chassis/content.ts` builds the index and holds the origin, as [Build one typed index](#build-one-typed-index) and [Name the origin once](#name-the-origin-once) show.",
+      "id": [
+        "f:s4prb0",
+        "f:ioh6uj"
+      ]
+    },
+    {
+      "text": "`src/chassis/public-routes.ts` holds the shared `PublicRoutesConfig` that [Wire the entry pages](#wire-the-entry-pages) composes.",
+      "id": [
+        "f:s4prb0",
+        "f:9xy8j9",
+        "f:pkt8i6"
+      ]
+    },
+    {
+      "text": "`(site)/[...path]` is the entry catch-all, also in [Wire the entry pages](#wire-the-entry-pages).",
+      "id": "f:03lbjg"
+    },
+    {
+      "text": "`(site)/[...path=md]` and `src/params.ts` serve the twin in [Serve the markdown twin](#serve-the-markdown-twin).",
+      "id": [
+        "f:03lbjg",
+        "f:qtm9y2"
+      ]
+    },
+    {
+      "text": "`feed.xml/`, `feed.json/`, and `src/chassis/feed.ts` serve the feeds in [Serve the feeds](#serve-the-feeds).",
+      "id": [
+        "f:qtm9y2",
+        "f:70uh8b"
+      ]
+    },
+    {
+      "text": "`sitemap.xml/` serves the sitemap in [Serve the sitemap](#serve-the-sitemap).",
+      "id": "f:qtm9y2"
+    },
+    {
+      "text": "`robots.txt/` serves the crawl rules in [Serve robots.txt](#serve-robotstxt).",
+      "id": "f:qtm9y2"
+    },
+    {
+      "text": "`(site)/archive/[page]/` serves the archive in [Build the archive](#build-the-archive).",
+      "id": "f:38pjqy"
+    },
+    {
+      "text": "`(site)/+page.svelte` is the home page, which [Give other pages a head](#give-other-pages-a-head) covers.",
+      "id": "f:k7nln3"
+    },
+    {
+      "text": "The root `src/routes/+layout.server.ts` returns the menu in [Add an editable menu](#add-an-editable-menu).",
+      "id": "f:ri06xw"
+    },
+    {
+      "text": "The tree leaves out the admin's routes and the scaffold's other public routes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The `preview/[token]/` route under `(site)/` serves draft previews, which [Share a draft preview](share-a-draft-preview.md) covers.",
+      "id": "f:qtm9y2"
+    },
+    {
+      "text": "[Routes and the server hook](scaffolded-site-files.md#routes-and-the-server-hook) lists every scaffold route, the admin's included.",
+      "id": "no-claim"
+    },
+    {
+      "text": "On the add-cairn tutorial's site, the same modules and routes sit where that tutorial put them.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Index the content and commit its manifest](add-cairn-to-a-sveltekit-app.md#index-the-content-and-commit-its-manifest) writes the content module, and [Render the entry](add-cairn-to-a-sveltekit-app.md#render-the-entry) writes the entry route.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Where a section names a scaffold path, use the matching file in your tree.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Start with the content module.",
+      "id": "no-claim"
+    },
+    {
+      "text": "`createSiteIndexes` builds one typed index per concept from one literal `import.meta.glob` per concept, and every public route reads through it.",
+      "id": [
+        "f:yef4lo",
+        "f:hv8qs9",
+        "f:n07oiu"
+      ]
+    },
+    {
+      "text": "Vite needs each glob pattern written literally at the call site, so the globs can't be generated in a loop over the concept list.",
+      "id": "f:yef4lo"
+    },
+    {
+      "text": "To build the index, make one call:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the content module (`src/chassis/content.ts` on a scaffolded site), pass `createSiteIndexes` the adapter, the site config, and one raw, eager glob per concept.",
+      "id": [
+        "f:yef4lo",
+        "f:n07oiu"
+      ]
+    },
+    {
+      "text": "The scaffold's content module makes the call with one glob for each of its three concepts:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The result holds one index per concept, keyed by concept id, plus `site`, the cross-concept resolver.",
+      "id": "f:hv8qs9"
+    },
+    {
+      "text": "Because `site` is reserved, no concept can be named `site`.",
+      "id": "f:hv8qs9"
+    },
+    {
+      "text": "A lazy glob, or one without `query: '?raw'` and `import: 'default'`, fails the build with the message that [Diagnose a failed build](#diagnose-a-failed-build) lists.",
+      "id": "f:n07oiu"
+    },
+    {
+      "text": "The site config doesn't change the indexes, and `createSiteIndexes` takes it anyway, so pass the parsed config.",
+      "id": "f:n33lwb"
+    },
+    {
+      "text": "Each index's `all()` already returns entries in the engine's order, which [Build the archive](#build-the-archive) relies on.",
+      "id": "f:upec9v"
+    },
+    {
+      "text": "`all()` and `byTag()` leave out an entry marked `draft: true` unless called with `{ includeDrafts: true }`, and `allTags()` and `adjacent()` always leave it out.",
+      "id": "f:m9z6sr"
+    },
+    {
+      "text": "Because the resolver builds its permalink lookup from `all()`, a draft never resolves or prerenders.",
+      "id": "f:m9z6sr"
+    },
+    {
+      "text": "`byId` still returns a draft.",
+      "id": "f:m9z6sr"
+    },
+    {
+      "text": "A route that looks an entry up by id checks the entry's `draft` field itself.",
+      "id": "f:m9z6sr"
+    },
+    {
+      "text": "Next, name the origin every absolute URL starts from.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Keep the site's origin in one string literal with no trailing slash, and set it to the deployed origin before a production build.",
+      "id": [
+        "f:niuzzg",
+        "f:mtltw7",
+        "f:k16chc"
+      ]
+    },
+    {
+      "text": "The engine accepts any string as `origin`.",
+      "id": "f:niuzzg"
+    },
+    {
+      "text": "A literal is the recommended form because it keeps the origin the same on every build, locally and in CI.",
+      "id": "f:niuzzg"
+    },
+    {
+      "text": "A site with several environments commits a config for each one rather than branching the literal on an environment variable.",
+      "id": "f:niuzzg"
+    },
+    {
+      "text": "The engine joins the origin and a leading-slash path without normalizing, so a trailing slash doubles the slash in every canonical URL and sitemap `loc`.",
+      "id": "f:mtltw7"
+    },
+    {
+      "text": "Because the prerendered routes run at build time, the literal is written into every canonical URL, `og:url`, feed, and sitemap.",
+      "id": "f:k16chc"
+    },
+    {
+      "text": "To set the origin, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the content module, set the origin literal to your deployed origin, replacing the scaffold's placeholder `'https://showcase.test'`.",
+      "id": "f:ioh6uj"
+    },
+    {
+      "text": "In `wrangler.jsonc`, set `PUBLIC_ORIGIN` to the same origin.",
+      "id": "f:ioh6uj"
+    },
+    {
+      "text": "The build reads the literal, and the Worker reads `PUBLIC_ORIGIN` as its runtime value for the same origin.",
+      "id": "f:ioh6uj"
+    },
+    {
+      "text": "The scaffold ships it as `http://localhost:4173`.",
+      "id": "f:ioh6uj"
+    },
+    {
+      "text": "The scaffold composes `siteMeta` once from the literal, with `title`, `description`, and `origin`.",
+      "id": "f:ioh6uj"
+    },
+    {
+      "text": "Its feeds, sitemap, and robots route read that object.",
+      "id": "f:niuzzg"
+    },
+    {
+      "text": "With the index and the origin defined, wire the entry pages.",
+      "id": "no-claim"
+    },
+    {
+      "text": "`createPublicRoutes` turns the index and the origin into the entry catch-all's `entries`, which lists every routable entry for the prerenderer, and `entryLoad`, which loads one.",
+      "id": "f:pkt8i6"
+    },
+    {
+      "text": "To wire the entry pages, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a module of its own (`src/chassis/public-routes.ts` on a scaffolded site), export one `PublicRoutesConfig` with `site`, `render`, `origin`, `siteName`, and `description`.",
+      "id": [
+        "f:pkt8i6",
+        "f:s4prb0",
+        "f:9xy8j9"
+      ]
+    },
+    {
+      "text": "In `src/routes/(site)/[...path]/+page.server.ts`, export `prerender = true`, the factory's `entries`, and a load that returns the result of `entryLoad`.",
+      "id": [
+        "f:pkt8i6",
+        "f:1mkckz"
+      ]
+    },
+    {
+      "text": "In the same directory's `+page.svelte`, render `CairnHead` with `seo={data.seo}`, then the entry's `html`.",
+      "id": [
+        "f:fvi8rk",
+        "f:qtm9y2"
+      ]
+    },
+    {
+      "text": "The config module needs only those five members.",
+      "id": "f:pkt8i6"
+    },
+    {
+      "text": "Later sections add `defaultImage` and `feeds`.",
+      "id": [
+        "f:nnup2g",
+        "f:9xy8j9"
+      ]
+    },
+    {
+      "text": "The catch-all's server module calls the factory once and hands its two functions to SvelteKit:",
+      "id": "f:pkt8i6"
+    },
+    {
+      "text": "To resolve reference fields in the same load, see [Resolve the targets on the entry route](link-content-with-references.md#resolve-the-targets-on-the-entry-route).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The page component renders the head, then the entry's body:",
+      "id": "f:fvi8rk"
+    },
+    {
+      "text": "Your entry page renders from the data that `entryLoad` returns.",
+      "id": "f:pkt8i6"
+    },
+    {
+      "text": "For a path that no entry claims, `entryLoad` answers 404.",
+      "id": "f:pkt8i6"
+    },
+    {
+      "text": "Otherwise the data carries `entry` with its frontmatter, body, and title, and `html` with the body already run through the site's `render`.",
+      "id": "f:fvi8rk"
+    },
+    {
+      "text": "It also carries `canonicalUrl` and `seo`.",
+      "id": "f:fvi8rk"
+    },
+    {
+      "text": "The canonical URL is the origin plus the entry's permalink, and the same origin anchors `og:url`.",
+      "id": "f:k16chc"
+    },
+    {
+      "text": "The [`EntryData`](../reference/delivery.md#entrydata) entry gives the full shape.",
+      "id": "f:83gbov"
+    },
+    {
+      "text": "The hero arrives as `heroImage`, which is undefined when no hero is set, media is off, or the `media:` reference doesn't resolve.",
+      "id": "f:83gbov"
+    },
+    {
+      "text": "Whether or not the hero resolves, `entry.frontmatter.image.src` stays the raw token.",
+      "id": "f:83gbov"
+    },
+    {
+      "text": "Setting `resolveMedia` alone turns hero resolution on.",
+      "id": "f:bnt2wh"
+    },
+    {
+      "text": "`assetsEnabled` only makes the engine log `media.resolver_absent` once when `resolveMedia` is missing.",
+      "id": "f:bnt2wh"
+    },
+    {
+      "text": "Both are members of the shared `PublicRoutesConfig`, where the scaffold sets `assetsEnabled` from its media config's `enabled` flag.",
+      "id": [
+        "f:bnt2wh",
+        "f:qifl9g"
+      ]
+    },
+    {
+      "text": "[Resolve media on public pages](configure-media.md#resolve-media-on-public-pages) builds the resolver.",
+      "id": "no-claim"
+    },
+    {
+      "text": "`CairnHead` applies `titleTemplate` only when `title` is left undefined.",
+      "id": "f:dvg5gn"
+    },
+    {
+      "text": "An explicit `title`, or `title={false}`, wins.",
+      "id": "f:dvg5gn"
+    },
+    {
+      "text": "Next, make sure each entry's fields reach that head.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The head reads `description`, `image`, `robots`, and `author` from the frontmatter, and it reads the last three only when the concept's fieldset declares them.",
+      "id": "f:jsh6ae"
+    },
+    {
+      "text": "To give the head every field it reads, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the adapter, declare the hero as an image field named `image` with `seo: true`.",
+      "id": [
+        "f:u41mw4",
+        "f:k5uws5"
+      ]
+    },
+    {
+      "text": "The scaffold declares `image: fields.image({ label: 'Hero image', seo: true })`.",
+      "id": "f:u41mw4"
+    },
+    {
+      "text": "Delivery reads the hero and the social image only from the frontmatter key `image`, whatever image field the concept marks `seo: true`.",
+      "id": [
+        "f:k5uws5",
+        "f:u41mw4"
+      ]
+    },
+    {
+      "text": "An `seo` image under another name validates and shows in the editor, but it never reaches the head.",
+      "id": "f:k5uws5"
+    },
+    {
+      "text": "A concept may mark one top-level image `seo: true`.",
+      "id": "f:u41mw4"
+    },
+    {
+      "text": "`defineFieldset` throws on a second one, or on one inside an `object` field or an `array` item.",
+      "id": "f:u41mw4"
+    },
+    {
+      "text": "If entries set `robots` or `author`, declare each in the same fieldset.",
+      "id": "f:jsh6ae"
+    },
+    {
+      "text": "In the shared `PublicRoutesConfig`, set `defaultImage` to the URL of an image the site serves.",
+      "id": [
+        "f:jguiox",
+        "f:nnup2g"
+      ]
+    },
+    {
+      "text": "A scaffolded site already points `defaultImage` at `/og/default.png` under its origin, but the scaffold ships no `static/` directory and no such file.",
+      "id": "f:nnup2g"
+    },
+    {
+      "text": "Until you add `static/og/default.png`, the scaffold's fallback `og:image` answers 404.",
+      "id": "f:nnup2g"
+    },
+    {
+      "text": "The head falls back in a fixed order when an entry leaves a field empty.",
+      "id": [
+        "f:j2rndg",
+        "f:jguiox"
+      ]
+    },
+    {
+      "text": "Description: the frontmatter `description`, else the entry's excerpt, else the config's `description`.",
+      "id": "f:j2rndg"
+    },
+    {
+      "text": "The excerpt is the body's stripped text, cut at a word boundary near 200 characters.",
+      "id": "f:nbn6j0"
+    },
+    {
+      "text": "Social image: the resolved hero's absolute URL, else a string `image`, else `defaultImage`, each anchored to the origin.",
+      "id": "f:jguiox"
+    },
+    {
+      "text": "`twitter:card` is `summary_large_image` only when an image exists, and `twitter:image:alt` is the hero's alt when it has one.",
+      "id": "f:jguiox"
+    },
+    {
+      "text": "Page type: a dated entry is an `article` with `article:published_time`, `article:author`, the feed alternate links, and `article:modified_time` when `updated` is set.",
+      "id": "f:j81xye"
+    },
+    {
+      "text": "An undated entry is a `website`.",
+      "id": "f:j81xye"
+    },
+    {
+      "text": "JSON-LD: one `Article` or `WebSite` object, which never carries the author.",
+      "id": "f:kdo96n"
+    },
+    {
+      "text": "To add a richer schema.org type, replace `seo.jsonLd` before `CairnHead` renders it.",
+      "id": "f:kdo96n"
+    },
+    {
+      "text": "With the entry pages complete, give each one its raw-markdown twin.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The markdown twin serves each entry's stored markdown, unrendered, at the entry's permalink followed by `.md`, from a prerendered route beside the catch-all.",
+      "id": "f:03lbjg"
+    },
+    {
+      "text": "To serve the twin, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `src/params.ts`, use SvelteKit's `defineParams` to define an `md` matcher that accepts a segment ending in `.md`.",
+      "id": [
+        "f:03lbjg",
+        "f:qtm9y2"
+      ]
+    },
+    {
+      "text": "In the `(site)/[...path=md]` route's `+server.ts`, export `prerender = true` and `entries` from the factory's `markdownEntries`.",
+      "id": [
+        "f:03lbjg",
+        "f:8k9xwm",
+        "f:pkt8i6"
+      ]
+    },
+    {
+      "text": "In the same file, add a request handler that returns `markdownResponse({ body })` with the body from `markdownLoad`.",
+      "id": [
+        "f:03lbjg",
+        "f:gwpffe"
+      ]
+    },
+    {
+      "text": "In the entry page, pass `CairnHead` a `markdownUrl` of the canonical URL plus `.md`.",
+      "id": [
+        "f:dvg5gn",
+        "f:03lbjg"
+      ]
+    },
+    {
+      "text": "SvelteKit prefers the more specific matched route, so `[...path=md]` takes the `.md` paths and `[...path]` keeps every other one.",
+      "id": "f:03lbjg"
+    },
+    {
+      "text": "SvelteKit's [route sorting rules](https://svelte.dev/docs/kit/advanced-routing#Sorting) set that precedence.",
+      "id": "no-claim"
+    },
+    {
+      "text": "An entry whose `robots` field carries `noindex` has no twin: `markdownEntries` skips it and `markdownLoad` answers 404.",
+      "id": "f:3r08v1"
+    },
+    {
+      "text": "For such an entry, pass no `markdownUrl`, and `CairnHead` leaves the link out.",
+      "id": "f:dvg5gn"
+    },
+    {
+      "text": "**Note:** `markdownResponse` sets `Content-Type: text/markdown; charset=utf-8`, but `@sveltejs/adapter-cloudflare` doesn't carry a prerendered route's response headers into the build.",
+      "id": "f:gwpffe"
+    },
+    {
+      "text": "Under `wrangler dev`, the file still arrives as `text/markdown; charset=utf-8`, apparently because Cloudflare derives the type from the `.md` extension.",
+      "id": "f:gwpffe"
+    },
+    {
+      "text": "That was measured locally, not on a deployed zone.",
+      "id": "f:gwpffe"
+    },
+    {
+      "text": "Next, publish the posts as feeds.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Each feed route maps a concept's entries to `FeedItem`s and passes them, with a `FeedChannel`, to `rssResponse` or `jsonFeedResponse`.",
+      "id": "f:pvk6h5"
+    },
+    {
+      "text": "To serve the feeds, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a shared module (`src/chassis/feed.ts` on a scaffolded site), map the posts index's `all()` to `FeedItem`s.",
+      "id": "f:70uh8b"
+    },
+    {
+      "text": "Give each item an origin-anchored URL, the excerpt as `summary`, and the rendered body as `contentHtml`.",
+      "id": "f:70uh8b"
+    },
+    {
+      "text": "In that mapping, render each body with the adapter's `rendering.render`, passing `resolve`, `resolveMedia`, and `resolveFragment` as the scaffold's mapping below does.",
+      "id": [
+        "f:cu48t5",
+        "f:70uh8b"
+      ]
+    },
+    {
+      "text": "In `src/routes/feed.xml/+server.ts`, export `prerender = true` and return `rssResponse` with the channel and the items.",
+      "id": [
+        "f:8k9xwm",
+        "f:pvk6h5"
+      ]
+    },
+    {
+      "text": "In `src/routes/feed.json/+server.ts`, do the same with `jsonFeedResponse`.",
+      "id": "f:70uh8b"
+    },
+    {
+      "text": "In the shared `PublicRoutesConfig`, set `feeds` to the two feed URLs.",
+      "id": "f:9xy8j9"
+    },
+    {
+      "text": "`feeds` only adds `rel=\"alternate\"` links to a dated entry's head, and it serves no feed.",
+      "id": "f:9xy8j9"
+    },
+    {
+      "text": "Readers fetch the feeds from the two feed routes.",
+      "id": "f:9xy8j9"
+    },
+    {
+      "text": "The scaffold's `src/chassis/feed-items.ts` builds the three resolvers from the site and the origin, then renders each post:",
+      "id": "f:cu48t5"
+    },
+    {
+      "text": "`resolve` turns a `cairn:` link into an absolute URL, `resolveMedia` does the same for a `media:` image, and `resolveFragment` returns the markdown of the fragment an `::include` names.",
+      "id": [
+        "f:cu48t5",
+        "f:d7v5cg"
+      ]
+    },
+    {
+      "text": "A feed reader then shows each fragment's text and a working image.",
+      "id": "f:2dqwmu"
+    },
+    {
+      "text": "The scaffold's RSS route reads the shared mapping and the site's identity:",
+      "id": [
+        "f:70uh8b",
+        "f:ioh6uj"
+      ]
+    },
+    {
+      "text": "A `FeedChannel` is `title`, `description`, `siteUrl`, and `feedUrl`, with optional `language` and `author`.",
+      "id": "f:pvk6h5"
+    },
+    {
+      "text": "A `FeedItem` needs `title`, `url`, and `summary`, with optional `date`, `updated`, `contentHtml`, and `tags`.",
+      "id": "f:pvk6h5"
+    },
+    {
+      "text": "[Feeds, sitemap, and robots](../reference/delivery-data.md#feeds-sitemap-and-robots) covers each builder.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A dangling `cairn:` link fails the build: the link resolver throws when the target is missing or belongs to a non-routable concept.",
+      "id": "f:d7v5cg"
+    },
+    {
+      "text": "Next, list every entry page in the sitemap.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The sitemap route passes `sitemapResponse` one `SitemapUrl` per page, each a `loc` built from the origin and an optional `lastmod`.",
+      "id": [
+        "f:pvk6h5",
+        "f:mtltw7"
+      ]
+    },
+    {
+      "text": "The scaffold builds its rows by hand from `site.all()` plus the site root, with `lastmod` taken from `date` alone.",
+      "id": "f:mt7qcl"
+    },
+    {
+      "text": "To serve the sitemap, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `src/routes/sitemap.xml/+server.ts`, export `prerender = true`.",
+      "id": "f:8k9xwm"
+    },
+    {
+      "text": "If the sitemap should take `lastmod` from `updated` or list pages that aren't entries, build the rows with `buildSitemapView`.",
+      "id": "f:mc3n4w"
+    },
+    {
+      "text": "If you use `buildSitemapView`, pass the index `site`, the descriptors from `buildSiteDescriptors(cairn, siteConfig)`, the origin, and your other paths as `extraRoutes`.",
+      "id": [
+        "f:mc3n4w",
+        "f:nibegw"
+      ]
+    },
+    {
+      "text": "In the route's request handler, return `sitemapResponse` with the rows.",
+      "id": "f:pvk6h5"
+    },
+    {
+      "text": "The `buildSitemapView` form, with the site root and one more page, reads as follows:",
+      "id": "f:mc3n4w"
+    },
+    {
+      "text": "The `extraRoutes` paths come first, with no `lastmod`, and each entry's `lastmod` is its `updated` date, else its `date`.",
+      "id": "f:mc3n4w"
+    },
+    {
+      "text": "In the `buildSitemapView` form, a page that isn't an entry appears only through `extraRoutes`.",
+      "id": "f:mc3n4w"
+    },
+    {
+      "text": "Both builders are pure functions on `@glw907/cairn-cms/delivery/data`, as are `renderJsonLdScript` and `buildExcerpt`.",
+      "id": "f:nibegw"
+    },
+    {
+      "text": "The [`buildSitemapView`](../reference/delivery-data.md#buildsitemapview) entry gives each parameter.",
+      "id": "f:mc3n4w"
+    },
+    {
+      "text": "An entry marked `noindex` still gets a row, as [Keep noindex entries out of the sitemap and feeds](#keep-noindex-entries-out-of-the-sitemap-and-feeds) explains.",
+      "id": "f:ms7l5u"
+    },
+    {
+      "text": "Next, point crawlers at the sitemap and keep them out of the admin.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The robots route returns `robotsResponse` with the sitemap's URL and `disallow: ['/admin']`.",
+      "id": "f:0elmiu"
+    },
+    {
+      "text": "To serve the file, add one route:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `src/routes/robots.txt/+server.ts`, export `prerender = true` and return `robotsResponse({ sitemapUrl, disallow: ['/admin'] })`.",
+      "id": [
+        "f:8k9xwm",
+        "f:0elmiu"
+      ]
+    },
+    {
+      "text": "A site that leaves out `/admin` lets a crawler index its sign-in page.",
+      "id": "f:0elmiu"
+    },
+    {
+      "text": "`robotsResponse` also takes a `posture` option that states a stance toward AI training crawlers.",
+      "id": "f:xafwcw"
+    },
+    {
+      "text": "[Pass the posture to the robots route](choose-an-ai-posture.md#pass-the-posture-to-the-robots-route) sets it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Next, decide whether noindex entries belong in the sitemap and feeds.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A draft never reaches the sitemap or the feeds, but an entry whose `robots` field carries `noindex` still appears in the sitemap and both feeds.",
+      "id": [
+        "f:m9z6sr",
+        "f:ms7l5u",
+        "f:mt7qcl",
+        "f:70uh8b"
+      ]
+    },
+    {
+      "text": "[Build one typed index](#build-one-typed-index) sets out the draft rules.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Only the head's robots meta tag and the markdown twin read the `robots` field.",
+      "id": [
+        "f:ms7l5u",
+        "f:3r08v1"
+      ]
+    },
+    {
+      "text": "To keep `noindex` entries out, filter them in both places:",
+      "id": "f:ms7l5u"
+    },
+    {
+      "text": "In the sitemap route and the feed mapping, skip each entry whose `robots` field, read with `readSeoFields`, includes `noindex`.",
+      "id": [
+        "f:ms7l5u",
+        "f:jsh6ae"
+      ]
+    },
+    {
+      "text": "A helper over the concept index can make that check:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The `robots` field reaches the frontmatter only when the fieldset declares it, as [Declare the fields the head reads](#declare-the-fields-the-head-reads) shows.",
+      "id": "f:jsh6ae"
+    },
+    {
+      "text": "The next sections cover pages that aren't entries, starting with the archive.",
+      "id": "no-claim"
+    },
+    {
+      "text": "An archive reads a dated concept's `all()`, which already returns entries newest first, so the route paginates the list without sorting it.",
+      "id": "f:upec9v"
+    },
+    {
+      "text": "An undated entry sorts last, and an undated concept sorts by `title`.",
+      "id": "f:upec9v"
+    },
+    {
+      "text": "The scaffold's `src/chassis/archive.ts` sets `ARCHIVE_PAGE_SIZE` to 13 for both the home page and `/archive/[page]`.",
+      "id": "f:38pjqy"
+    },
+    {
+      "text": "Both paginate every post after the newest, which the home page shows as its lead.",
+      "id": "f:38pjqy"
+    },
+    {
+      "text": "As a result, `/archive/2` exists only once more than 14 posts are published.",
+      "id": "f:38pjqy"
+    },
+    {
+      "text": "To build the archive, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `src/routes/(site)/archive/[page]/+page.server.ts`, export `prerender = true` and an `entries` generator that lists the real page numbers.",
+      "id": [
+        "f:38pjqy",
+        "f:upec9v"
+      ]
+    },
+    {
+      "text": "In `vite.config.ts`, in the `prerender` option's `handleUnseenRoutes` handler, exempt the archive route by its id.",
+      "id": "f:2zl3qz"
+    },
+    {
+      "text": "A corpus that fits on one page gives the route no entries, and SvelteKit's crawl check would otherwise fail the build.",
+      "id": "f:2zl3qz"
+    },
+    {
+      "text": "The scaffold exempts `/(site)/archive/[page]` and nothing else, and any other unseen prerenderable route still fails the build.",
+      "id": "f:2zl3qz"
+    },
+    {
+      "text": "[Crawl rules](scaffolded-site-files.md#crawl-rules) describes the scaffold's handler, and SvelteKit's [Vite plugin reference](https://svelte.dev/docs/kit/@sveltejs-kit-vite) documents the option.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Like the home page, the archive gets no SEO head from the engine.",
+      "id": "f:k7nln3"
+    },
+    {
+      "text": "Next, give pages like the archive a head.",
+      "id": "no-claim"
+    },
+    {
+      "text": "`createPublicRoutes` builds a head only for entry pages.",
+      "id": "f:k7nln3"
+    },
+    {
+      "text": "A home, archive, or tag page gets a description, canonical link, or Open Graph tags only when your route builds one.",
+      "id": "f:k7nln3"
+    },
+    {
+      "text": "The scaffold's home page sets only a `<title>`.",
+      "id": "f:k7nln3"
+    },
+    {
+      "text": "To give a page a head, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the page's server load, return the result of `buildSeoMeta` with the page's title, a description, its canonical URL, and the site name.",
+      "id": "f:k7nln3"
+    },
+    {
+      "text": "The canonical URL is the origin plus the page's path.",
+      "id": [
+        "f:k16chc",
+        "f:mtltw7"
+      ]
+    },
+    {
+      "text": "In the page's component, render `CairnHead` with that `seo`.",
+      "id": "f:fvi8rk"
+    },
+    {
+      "text": "For an about page, the two files read as follows:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The [`buildSeoMeta`](../reference/delivery-data.md#buildseometa) entry lists every input.",
+      "id": "f:k7nln3"
+    },
+    {
+      "text": "A page that writes its own `<script>` in place of `CairnHead` serializes its JSON-LD with `renderJsonLdScript`.",
+      "id": [
+        "f:nibegw",
+        "f:fvi8rk"
+      ]
+    },
+    {
+      "text": "`buildExcerpt` cuts a description from a markdown body.",
+      "id": [
+        "f:nibegw",
+        "f:nbn6j0"
+      ]
+    },
+    {
+      "text": "The `titleTemplate` rule from [Wire the entry pages](#wire-the-entry-pages) applies here too.",
+      "id": "f:dvg5gn"
+    },
+    {
+      "text": "A tag page is one such page.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A tag page lists one tag's entries with `byTag()` and enumerates its paths with `allTags()`, and both leave drafts out.",
+      "id": "f:m9z6sr"
+    },
+    {
+      "text": "This section assumes the concept marks its tag field `taxonomy: true`, as [Mark the tag field](define-an-adapter-and-schema.md#mark-the-tag-field) shows.",
+      "id": "no-claim"
+    },
+    {
+      "text": "To add a tag page, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `src/routes/(site)/tags/[tag]/+page.server.ts`, export `prerender = true` and an `entries` that maps the concept index's `allTags()` to `{ tag }`.",
+      "id": "f:m9z6sr"
+    },
+    {
+      "text": "In the same file's load, return `byTag(params.tag)` and a head from `buildSeoMeta`.",
+      "id": [
+        "f:m9z6sr",
+        "f:k7nln3"
+      ]
+    },
+    {
+      "text": "In `src/routes/(site)/tags/[tag]/+page.svelte`, render `CairnHead` and the list of entries.",
+      "id": "f:fvi8rk"
+    },
+    {
+      "text": "If the sitemap route uses `buildSitemapView`, add each tag page's path to `extraRoutes`.",
+      "id": "f:mc3n4w"
+    },
+    {
+      "text": "If the sitemap route builds rows by hand like the scaffold's, add a row per tag page with `loc` set to the origin plus its path.",
+      "id": [
+        "f:mt7qcl",
+        "f:pvk6h5"
+      ]
+    },
+    {
+      "text": "If the site may have no tags yet, in `vite.config.ts`, exempt the tag route in `handleUnseenRoutes` the same way as the archive.",
+      "id": "f:2zl3qz"
+    },
+    {
+      "text": "Because `allTags()` always leaves drafts out, a tag that only a draft carries gets no page.",
+      "id": "f:m9z6sr"
+    },
+    {
+      "text": "Last, let editors change the site's menu.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Declaring `editor.nav` on the adapter turns on the menu editor at `/admin/nav`, and the public layout reads the same menu with `readMenu`.",
+      "id": "f:rnwver"
+    },
+    {
+      "text": "To add the menu, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the adapter's `editor` group, declare `nav` with `menuName`, `label`, and an optional `maxDepth`, which is 2 when unset.",
+      "id": "f:f9aayq"
+    },
+    {
+      "text": "The scaffold declares `nav: { menuName: 'primary', label: 'Navigation', maxDepth: 2 }`.",
+      "id": "f:f9aayq"
+    },
+    {
+      "text": "The `label` names the nav screen in the admin sidebar.",
+      "id": "f:f9aayq"
+    },
+    {
+      "text": "Without `editor.nav`, `/admin/nav` answers 404, and a `navLayout` that references the `nav` screen throws at server start.",
+      "id": "f:rnwver"
+    },
+    {
+      "text": "[Arrange the admin sidebar](arrange-the-admin-sidebar.md) covers the sidebar.",
+      "id": "no-claim"
+    },
+    {
+      "text": "If your site config isn't at `src/theme/site.config.yaml`, set `editor.siteConfigPath` to its path.",
+      "id": "f:shv6wv"
+    },
+    {
+      "text": "The menu editor reads and commits that file, and the **Settings** screen saves tidy's conventions to the same file.",
+      "id": "f:shv6wv"
+    },
+    {
+      "text": "For the default and every reader of the file, see the [`siteConfigPath` reference entry](../reference/core.md#siteconfigpath-adapter-editor-member).",
+      "id": "f:shv6wv"
+    },
+    {
+      "text": "In the site config, under `menus`, add the menu that `menuName` names as a list of nodes.",
+      "id": [
+        "f:t895qz",
+        "f:rzfdqw"
+      ]
+    },
+    {
+      "text": "In a module the layout load imports, read the menu with `readMenu(siteConfig, name, maxDepth)`, passing the `maxDepth` that `editor.nav` declares.",
+      "id": [
+        "f:rnwver",
+        "f:ri06xw"
+      ]
+    },
+    {
+      "text": "In the root `src/routes/+layout.server.ts`, return the menu from the `load`.",
+      "id": "f:ri06xw"
+    },
+    {
+      "text": "The scaffold reads its menus once in `src/theme/site-config.ts`.",
+      "id": "f:ri06xw"
+    },
+    {
+      "text": "The layout load imports that lean module, not the full adapter, so it skips the renderer's cost on every request.",
+      "id": "f:ri06xw"
+    },
+    {
+      "text": "A menu with a group header and one link under it reads as follows in the site config:",
+      "id": "f:rzfdqw"
+    },
+    {
+      "text": "A menu node follows these rules:",
+      "id": "no-claim"
+    },
+    {
+      "text": "A node is `{ label, url?, children? }`, and a node with no `url` is a group header.",
+      "id": "f:rzfdqw"
+    },
+    {
+      "text": "A label is non-empty and at most 500 characters.",
+      "id": "f:rzfdqw"
+    },
+    {
+      "text": "A URL is at most 2048 characters and starts with `/`, `#`, `http(s)://`, `mailto:`, or `tel:`.",
+      "id": "f:rzfdqw"
+    },
+    {
+      "text": "The tree holds at most 200 nodes and nests no deeper than `maxDepth`.",
+      "id": "f:rzfdqw"
+    },
+    {
+      "text": "Any other key is dropped.",
+      "id": "f:rzfdqw"
+    },
+    {
+      "text": "`readMenu` returns an empty list for an absent menu and throws a `NavValidationError` on any violation.",
+      "id": "f:rzfdqw"
+    },
+    {
+      "text": "Only the menu that `menuName` names is editable at `/admin/nav`.",
+      "id": "f:t895qz"
+    },
+    {
+      "text": "The scaffold's `menus.footer` is a flat list that the developer edits in `site.config.yaml`, read with `readMenu(siteConfig, 'footer', 1)`.",
+      "id": "f:2s8u70"
+    },
+    {
+      "text": "The [`readMenu`](../reference/core.md#readmenu) entry gives its signature.",
+      "id": "f:rzfdqw"
+    },
+    {
+      "text": "With every route in place, build the site and read what it serves.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Build the site, serve the build, and check that each prerendered file carries your origin.",
+      "id": "f:k16chc"
+    },
+    {
+      "text": "To check the build, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, run `npm run build`.",
+      "id": [
+        "f:o47i0q",
+        "f:jzm5ef"
+      ]
+    },
+    {
+      "text": "If the build stops, see [Diagnose a failed build](#diagnose-a-failed-build).",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory of a scaffolded site, run `npm run preview` to serve the build.",
+      "id": "f:8k9xwm"
+    },
+    {
+      "text": "On any other site, serve it with `wrangler dev`, because `vite preview` can't serve `@sveltejs/adapter-cloudflare` 8 output.",
+      "id": "f:gwpffe"
+    },
+    {
+      "text": "In a terminal, fetch `/sitemap.xml` from the preview address.",
+      "id": "f:8k9xwm"
+    },
+    {
+      "text": "Every `loc` starts with your origin literal, not the preview's address.",
+      "id": [
+        "f:k16chc",
+        "f:mtltw7"
+      ]
+    },
+    {
+      "text": "On an unedited scaffold, that origin is `https://showcase.test`.",
+      "id": "f:ioh6uj"
+    },
+    {
+      "text": "From the preview address, fetch `/feed.xml` and `/feed.json`.",
+      "id": [
+        "f:8k9xwm",
+        "f:70uh8b"
+      ]
+    },
+    {
+      "text": "Each lists the published posts with absolute URLs.",
+      "id": "f:70uh8b"
+    },
+    {
+      "text": "From the preview address, fetch `/robots.txt`.",
+      "id": "f:8k9xwm"
+    },
+    {
+      "text": "The file has a `Disallow: /admin` line and a sitemap line that names your origin's `/sitemap.xml`.",
+      "id": "f:0elmiu"
+    },
+    {
+      "text": "From the preview address, request an entry's twin and read its response headers.",
+      "id": "f:gwpffe"
+    },
+    {
+      "text": "The `Content-Type` header is `text/markdown; charset=utf-8`.",
+      "id": "f:gwpffe"
+    },
+    {
+      "text": "In a browser, view the source of an entry page.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The canonical link and `og:url` are your origin plus the entry's permalink.",
+      "id": "f:k16chc"
+    },
+    {
+      "text": "If the build stops, its message names the cause.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The public routes fail the build on content they can't serve, and each failure names its cause in the error.",
+      "id": [
+        "f:kv3qen",
+        "f:ky39tz",
+        "f:n07oiu"
+      ]
+    },
+    {
+      "text": "For a concept with no glob or a manifest that has drifted, see [Resolve a content build failure](add-cairn-to-a-sveltekit-app.md#resolve-a-content-build-failure).",
+      "id": "no-claim"
+    },
+    {
+      "text": "For the logs, see [Debug your site](debug-your-site.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The following table maps each build message to its cause and its fix.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Build message",
+      "id": "no-claim"
+    },
+    {
+      "text": "Cause",
+      "id": "no-claim"
+    },
+    {
+      "text": "Fix",
+      "id": "no-claim"
+    },
+    {
+      "text": "`expected input to be a string or buffer`",
+      "id": "f:n07oiu"
+    },
+    {
+      "text": "A glob is lazy, or it lacks `query: '?raw'` and `import: 'default'`.",
+      "id": "f:n07oiu"
+    },
+    {
+      "text": "Write the glob as [Build one typed index](#build-one-typed-index) shows.",
+      "id": "no-claim"
+    },
+    {
+      "text": "One line per invalid field, each `<dir>/<id>: <field>: <message>`",
+      "id": "f:kv3qen"
+    },
+    {
+      "text": "A published entry's frontmatter fails its concept's validation.",
+      "id": "f:kv3qen"
+    },
+    {
+      "text": "Fix the field, or mark the entry `draft: true`, since an invalid draft never fails the build.",
+      "id": "f:kv3qen"
+    },
+    {
+      "text": "`permalink \"<p>\" resolves to both \"<a>\" and \"<b>\"`",
+      "id": "f:ky39tz"
+    },
+    {
+      "text": "Two published entries share a permalink.",
+      "id": "f:ky39tz"
+    },
+    {
+      "text": "Change one entry's slug or permalink.",
+      "id": "no-claim"
+    },
+    {
+      "text": "An error thrown by the link resolver",
+      "id": "f:d7v5cg"
+    },
+    {
+      "text": "A `cairn:` link in a rendered body points at a missing entry or a non-routable concept.",
+      "id": "f:d7v5cg"
+    },
+    {
+      "text": "Fix or remove the link.",
+      "id": "no-claim"
+    },
+    {
+      "text": "An unseen-route error that names a prerenderable route",
+      "id": "f:2zl3qz"
+    },
+    {
+      "text": "The route's `entries` returned nothing.",
+      "id": "f:2zl3qz"
+    },
+    {
+      "text": "Exempt the route as [Build the archive](#build-the-archive) shows.",
+      "id": "no-claim"
+    },
+    {
+      "text": "`NavValidationError`",
+      "id": "f:rzfdqw"
+    },
+    {
+      "text": "A menu in the site config breaks a node rule.",
+      "id": "f:rzfdqw"
+    },
+    {
+      "text": "Fix the node as [Add an editable menu](#add-an-editable-menu) lists.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Every invalid entry, draft or not, is left out of the index and listed by the index's `problems()`.",
+      "id": "f:kv3qen"
+    },
+    {
+      "text": "To skip the validation, pass `createSiteIndexes` the option `{ validate: false }`.",
+      "id": "f:kv3qen"
+    },
+    {
+      "text": "The following pages cover the pieces this page links to.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Delivery reference](../reference/delivery.md): `createPublicRoutes`, `PublicRoutesConfig`, `EntryData`, and `CairnHead`.",
+      "id": [
+        "f:pkt8i6",
+        "f:83gbov",
+        "f:fvi8rk"
+      ]
+    },
+    {
+      "text": "[Delivery data reference](../reference/delivery-data.md): the index, feed, sitemap, robots, and SEO builders.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Choose an AI posture](choose-an-ai-posture.md): the robots route's `posture` option.",
+      "id": "f:xafwcw"
+    },
+    {
+      "text": "[Share a draft preview](share-a-draft-preview.md): the draft preview route.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Act on newly published entries](act-on-newly-published-entries.md): announcing entries after a deploy.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Configure media](configure-media.md): hero and body images on public pages.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Theme your public site](theme-your-public-site.md): styling the routes this page wires.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Scaffolded site files](scaffolded-site-files.md): every scaffold file, the admin's included.",
+      "id": "no-claim"
+    }
+  ],
+  "cuts": [
+    {
+      "id": "f:em69ru",
+      "reason": "Subordinated: that `menus` is one of the site config's allowed top-level keys is stated by `docs/reference/core.md#parsesiteconfig` (opened and confirmed: it lists `siteName`, `description`, `author`, `locale`, `menus`, `spellcheck`, `tidy`, `vocabulary`). Its doctor search-path clause is not needed for this page's job"
+    },
+    {
+      "id": "f:qzcpzc",
+      "reason": "As the page inputs disposed it: showcase internals; the scaffold's routes, sourced by `f:8k9xwm`, `f:70uh8b`, and `f:0elmiu`, show the same builders"
+    },
+    {
+      "id": "f:g030q0",
+      "reason": "As the page inputs disposed it: showcase wiring. The page shows the minimal catch-all and names the reference-resolution step by heading on `docs/extend/link-content-with-references.md`"
+    }
+  ],
+  "local": [
+    "src/routes/(site)/tags/[tag]/+page.server.ts",
+    "src/routes/(site)/tags/[tag]/+page.svelte",
+    "static/og/default.png",
+    "isNoindex",
+    "/about"
+  ]
+}

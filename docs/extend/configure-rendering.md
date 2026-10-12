@@ -539,9 +539,10 @@ With the component declared, register it.
 ## Register the component
 
 `defineRegistry({ components })` builds the one registry that the render pipeline and the editor's
-component picker both read.
+component picker both read. The render pipeline receives it through `createRenderer`. The picker
+receives it only through the `registry` prop that the admin page passes to `CairnAdmin`.
 
-To register the component with the render pipeline, follow these steps:
+To register the component, follow these steps:
 
 1. In the adapter file, build the registry from the module's component list with
    `defineRegistry`. On a scaffolded site, add `takeaways` to the `components` list in
@@ -550,6 +551,8 @@ To register the component with the render pipeline, follow these steps:
 2. In the same file, pass `registry` as the first argument of `createRenderer`, in place of the
    empty registry.
 3. In the adapter's `rendering` group, set `components: registry`, as the scaffold does.
+4. In `src/routes/admin/[...path]/+page.svelte`, pass the registry to `CairnAdmin` as
+   `registry={cairn.rendering.components}`. The scaffold's admin page already passes it.
 
 <!-- snippet-check-skip: elides the adapter's required content, backend, and email groups -->
 ```ts
@@ -637,8 +640,8 @@ order of these steps.
 
 ## Diagnose a failed check
 
-Each failed check traces to a declaration or to the markdown an author wrote, and the causes
-follow the order of the verification steps:
+Each failed check traces to a declaration, the admin page's wiring, or the markdown an author
+wrote, and the causes follow the order of the verification steps:
 
 1. The dev server stops at startup with an error that names the component. An attribute of a
    type outside the ten throws `a directive attribute must be a single-value scalar ...`. A
@@ -646,8 +649,11 @@ follow the order of the verification steps:
    `defaultIconByRole` with no `type: 'icon'` attribute throws as well. Correct the
    declaration as [Declare a component](#declare-a-component) and
    [Register the component](#register-the-component) describe.
-2. The component is missing from the picker. A component whose declaration sets `hidden` is
-   left out of the top-level picker, as [Shape the picker entry](#shape-the-picker-entry) states.
+2. The component is missing from the picker, or the editor shows no insert trigger. If the
+   trigger is missing, the admin page passes `CairnAdmin` no `registry` prop. Pass it as
+   [Register the component](#register-the-component) describes. If only this component is
+   missing, its declaration sets `hidden`, as [Shape the picker entry](#shape-the-picker-entry)
+   states.
 3. The directive shows as literal text in the preview. It was written in the leaf `::name` or
    text `:name` form, which always restores to its source text.
    Rewrite it as a container directive.

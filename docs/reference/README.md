@@ -49,8 +49,8 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
 - [Delivery data (`/delivery/data`)](./delivery-data.md): the node-safe pure projections.
 - [Media (`/media`)](./media.md): the node-safe media surface: the config normalizer, the manifest functions, the naming and transform-URL helpers, the `media:` codec, and the render resolver.
 - [Auth store (`/auth-store`)](./auth-store.md): the server-only editor-provisioning functions backing D1.
-- [Auth channel (`/auth-channel`)](./auth-channel.md): the server-only factory for a site's own second-audience login channel, request/confirm/logout over a site-owned D1 binding.
-- [Auth crypto (`/auth-crypto`)](./auth-crypto.md): the server-only token, hash, compare, and cookie-naming primitives for a site's own second-audience auth flow.
+- [Auth channel (`/auth-channel`)](./auth-channel.md): the server-only factory for a site's own login channel for a second sign-in group, request/confirm/logout over a site-owned D1 binding.
+- [Auth crypto (`/auth-crypto`)](./auth-crypto.md): the server-only token, hash, compare, and cookie-naming primitives for a site's own auth flow for a second sign-in group.
 - [Cloudflare (`/cloudflare`)](./cloudflare.md): the server-only Turnstile verification and rate-limit wrapper for Cloudflare-native platform primitives.
 - [Vite (`/vite`)](./vite.md): the `cairnManifest()` build plugin.
 - [Ambient types (`/ambient`)](./ambient.md): the `App.Locals` augmentation for a site's `app.d.ts`, naming `cairnEditor`, `cairnBackend`, `cairnAuditSink`, `cairnAccess`, and `cairnIdentity`.

@@ -47,7 +47,7 @@ two are public, and nothing about the alphabetical listing signals which.
 - `auth-channel` (`/auth-channel`): a second, generic login factory, not the engine's own magic
   link, for a site that needs a second authenticated audience.
 - `auth-crypto` (`/auth-crypto`): a re-export of stateless Web Crypto primitives from
-  `auth/crypto.ts` (tokens, hashes, cookie names), for a second-audience flow that would otherwise
+  `auth/crypto.ts` (tokens, hashes, cookie names), for a second sign-in group's flow that would otherwise
   hand-copy them.
 - `cloudflare` (`/cloudflare`): Cloudflare-native platform primitives, Turnstile and `RateLimit`,
   that two sites already copied by hand.
@@ -83,7 +83,7 @@ and `media-seed`, still carry a reference page, since each backs a `bin` command
 
 The auth cluster is the sharpest instance of the public/internal split cutting across a naming
 family: `auth` (internal, the real implementation) sits beside `auth-channel` (public, a separate
-second-audience factory), `auth-crypto` (public, a 12-line re-export of `auth/crypto.ts` plus a
+second sign-in group's factory), `auth-crypto` (public, a 12-line re-export of `auth/crypto.ts` plus a
 4-line `browser.ts`), and `auth-store` (public, a 23-line re-export of `auth/store.ts`). Two of the
 four are export shims over the first, one is the engine's own auth, and one is an unrelated
 subsystem.

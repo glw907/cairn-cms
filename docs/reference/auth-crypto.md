@@ -12,10 +12,10 @@ A Cloudflare Workers build activates `worker` and `browser` together, and the ex
 lives. A Workers deploy resolves the real module.
 
 This subpath carries the stateless Web Crypto primitives, token, hash, compare, and cookie-name
-functions, a second-audience login flow would otherwise copy by hand. It re-exports the token
+functions, a login flow for a second sign-in group would otherwise copy by hand. It re-exports the token
 generator, the token hash, the constant-time compare, and the `__Host-` cookie-name primitive the
 engine's own magic-link guard uses, for a site that
-authenticates a second audience: member magic-link sessions, offer tokens, an OTP flow. A site
+authenticates a second sign-in group: member magic-link sessions, offer tokens, an OTP flow. A site
 building that flow stops copying the engine's cryptography by hand and reuses the same primitives
 the engine's own login proves in production. A stateful provisioning read or write belongs on
 [`/auth-store`](./auth-store.md) instead, even one built on the same hashes this subpath produces.
@@ -24,7 +24,7 @@ What stays out: the TTL constants and the send-cooldown constant, since a token 
 lifetime is the site's own ruling, not the engine's; the engine's own cookie-name functions,
 which stay internal because no site needs the engine's exact cookie names and colliding with
 them is the two-stores blur the `cairn_` reservation below warns against; and every auth-flow
-and store function. Audience semantics, the store schema, and the rule that a second audience's
+and store function. Audience semantics, the store schema, and the rule that a second sign-in group's
 session store never blurs with the engine's own stay entirely site-owned.
 
 ```ts
@@ -119,7 +119,7 @@ that value and a configured origin can't be spoofed by an intermediate hop the w
 forwarded-proto header can. It never downgrades an `https` request, whatever that value says. Both
 cookies route through this one derivation (`csrfSecure`, internal to `/sveltekit`), so they can no
 longer resolve different `secure` values on the same request; see [The session
-cookie](../extend/security-model.md#the-session-cookie). A site building its own second-audience
+cookie](../extend/security-model.md#the-session-cookie). A site building its own second sign-in group's
 cookie without an equivalent configured origin reaches for the preceding header-based derivation
 instead.
 
@@ -167,10 +167,10 @@ login flow needs the surrounding discipline the engine's own magic-link guard fo
 - Set `Referrer-Policy: same-origin` on the landing page that consumes the token, not
   `no-referrer`. The engine's own `/admin` responses use `strict-origin`, which keeps `Origin`
   on a same-origin POST and sends no path in a `Referer`. SvelteKit's origin check covers a
-  second audience's own routes, so they need `Origin` to survive a same-origin POST, and
+  second sign-in group's own routes, so they need `Origin` to survive a same-origin POST, and
   `same-origin` still keeps it out of a cross-origin `Referer`.
   The engine's own admin guard applies a fuller security-header set, but only under `/admin`; a
-  second audience's own routes are the site's responsibility to head the same way.
+  second sign-in group's own routes are the site's responsibility to head the same way.
 - Pair `generateToken` with `tokensMatch` for double-submit CSRF protection on the second
   audience's own form routes, the same double-submit pattern the engine's own admin actions use.
 - Rate limit both by email and by IP, so a token-request endpoint cannot be used to flood one

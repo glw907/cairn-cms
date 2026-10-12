@@ -30,7 +30,7 @@ source repository, not in the installed package: [the extend facts](https://gith
 | Building | Atom | Seam | Reference |
 |---|---|---|---|
 | A custom admin screen over your own data | `createSectionAction` + `requireAccess` | `@glw907/cairn-cms/sveltekit`'s admin-scoped `locals.cairnEditor` | `node_modules/@glw907/cairn-cms/docs/reference/sveltekit.md` |
-| A second audience's own login channel | `createAuthChannel` (the exemplar's own `memberChannel`) | `/auth-channel`'s factory, on its own D1 binding, never `AUTH_DB` | `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md` |
+| A second sign-in group's own login channel | `createAuthChannel` (the exemplar's own `memberChannel`) | `/auth-channel`'s factory, on its own D1 binding, never `AUTH_DB` | `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md` |
 
 **A custom admin screen over your own data.** `createSectionAction<Env, Db>({ resolveDb })`
 builds a reusable per-section action wrapper that resolves a binding from the site's own `Env`
@@ -40,7 +40,7 @@ SvelteKit form action dispatches directly and never re-runs an ancestor `load`, 
 looks gated is not a gated POST: wire both `createSectionAction` and `requireAccess`, never one
 alone.
 
-**A second audience's own login channel.** `createAuthChannel` builds request, confirm, and
+**A second sign-in group's own login channel.** `createAuthChannel` builds request, confirm, and
 logout actions over a numeric code (8 digits by default, configurable to 10), each action taking
 the raw SvelteKit `RequestEvent` and switching on its own outcome, never a boolean.
 

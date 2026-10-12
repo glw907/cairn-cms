@@ -289,7 +289,8 @@ The original decision framing, for the record:
   2. **Engine passes A and B before stage 2b.** Both landed on `main`, unreleased: pass A (PR #108),
      the gate economy pass (PR #110), and pass B (PR #113, the first pass scored on the lean
      process). The rest of "Docs tooling before stage 2b" is the residue entry below.
-  3. Stage 2b: the 14 remaining extend pages. Its close runs the test.
+  3. Stage 2b: the 14 remaining extend pages. Part 1 drafted all 14 (PR #117, merged 2026-10-12);
+     part 2 and its close, which runs the test, remain (the carried items entry below).
   4. **The Claude Code arm's small stage**, right after 2b (the Now entry below): its facts already
      sit in the container, and the scaffold ships the guidance tree it documents. It registers the arm
      first.
@@ -337,6 +338,40 @@ The original decision framing, for the record:
   `f:4h9fz4` and `f:5ohm23` (`install`'s behavior and exit code), and `f:4nccq6` (the `Stop` hook
   snippet). The page `scaffolded-site-files.md` cited them in a "guidance tree" section it dropped
   under the rulings.
+
+- **Stage 2b part 2: the items part 1 carried (PR #117 triage, Geoff, 2026-10-12).** Part 1's
+  "Found, not done" table (`docs/superpowers/research/2026-10-11-draft-docs-2b-part1-record.md`,
+  "Rulings for Geoff") filed these as defers; Geoff submitted the triage unchanged. Part 2 also owns
+  its own scope from the plan (the 10 fact re-arms, the relink and `LEGACY_PATH_MAP` repoints, the
+  reference-arm corrections, the final arm index, the outline deletion, the boundary test, 2b's
+  close, the Claude Code arm). Each item names its trigger:
+  - The sidebar figure's fixture: `nav/worked-navlayout` (`src/lib/reproductions/stories/site.ts:76-86`,
+    `fixtures.ts:262-275`) relabels `media` to its own default, "Library", so the figure on
+    `arrange-the-admin-sidebar` cannot show a real relabel; the page was reworded to match. Trigger:
+    the next engine pass, which owns `src/lib/reproductions/`.
+  - Outline crossLinks from `share-a-draft-preview` and `act-on-newly-published-entries` to
+    `build-the-public-routes` (the pages name it as plain text). Trigger: part 2's outline step.
+  - The `siteConfigPath` and glob explanations repeat across `define-an-adapter-and-schema`,
+    `turn-on-tidy`, `build-the-public-routes`, and `reuse-content-across-entries`. Trigger: part 2's
+    consistency read.
+  - Fact Source drift: `f:hsk70g` (quoted line), `f:x84fah` (range ends before the tier logic),
+    `f:smbsa6` and `f:zyjzeg` (line numbers). Trigger: part 2's fact re-arm.
+  - `act-on-newly-published-entries`: one read found `buildNewlyPublished` in npm 0.98.0, an earlier
+    read did not, so the page's unreleased-engine disposition is unsettled. Trigger: check the
+    registry before the page's claims about it are final.
+  - The add-cairn tutorial (a 2a page) imports `#lib/...` without declaring the subpath import in
+    `package.json`, and never mentions the root `+layout.svelte` that `sv create` writes. Trigger: a
+    pass that edits the tutorial page, or part 2's fix-rule step.
+  - The tutorial site has no media block, R2 binding or resolver, so `configure-media`'s
+    tutorial-site coverage rests on a doc-only source. Trigger: a [verified] source for it.
+  - `docs/internal/option-map.json`'s `pendingCount` reads 2 against 0 pending rows;
+    `check:options` fails only above the count. Trigger: part 2 settles the field.
+  - One whole-tree gate run failed `check:reference` on `admin-toolkit.md` (28 stale exports) and
+    passed on rerun; unexplained and not reproduced. Trigger: a second occurrence.
+  - The 2a pages say "hand-built site" differently from the 2b pages. Trigger: part 2's
+    consistency read.
+  - The friction entries the chain filed in `docs/internal/docs-friction-log.md` are untriaged.
+    Trigger: 2b's close.
 
 - **Docs tooling before stage 2b: the residue (pre-2b tooling pass, 2026-10-12).** The pass fixed
   the register, `check:snippets`, `check:provenance`, `check:symbols`, `link:consumer`, and

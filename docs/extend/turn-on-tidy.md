@@ -134,7 +134,7 @@ the effort setting only to models matched by these prefixes: `claude-sonnet-5`, 
 `claude-sonnet-4-6`, and `claude-opus-4-<n>` from 6 up. Any other model, `claude-haiku-4-5`
 included, gets no effort setting.
 
-The Settings screen shows the model read-only, by a plain label such as **Claude Sonnet 5**. An
+The **Settings** screen shows the model read-only, by a plain label such as **Claude Sonnet 5**. An
 editor sees the model there but can't change it.
 
 Next, set the house style tidy applies.
@@ -196,7 +196,7 @@ applies it only after that commit deploys.
 
 The save writes only the `tidy.conventions` block and leaves `tidy.enabled` and `tidy.model` as you
 set them. The file is the one the adapter's `editor.siteConfigPath` names, with
-`src/theme/site.config.yaml` as the default. The navigation editor and **Tags** read and commit the
+`src/theme/site.config.yaml` as the default. The [menu editor](build-the-public-routes.md#add-an-editable-menu) and **Tags** read and commit the
 same file. The [`siteConfigPath`](../reference/core.md#siteconfigpath-adapter-editor-member) entry
 records the default. [Mark the tag field](define-an-adapter-and-schema.md#mark-the-tag-field) covers
 the vocabulary that shares the file.
@@ -213,7 +213,7 @@ file.
 A save rewrites only its own block and keeps every other key, comment, and key order. A comment
 inside `tidy.conventions` is lost, so notes about the conventions belong outside that block.
 
-The save commits to the default branch as `Update tidy settings`. Tidy calls and the Settings screen
+The save commits to the default branch as `Update tidy settings`. Tidy calls and the **Settings** screen
 read the runtime's copy of the site config, never the committed file. A saved change reaches tidy
 only once that commit deploys. On a site that deploys on every push to the default branch, that is
 the next deploy.
@@ -373,7 +373,7 @@ With every piece in place, check tidy on the deployed site.
 On the deployed site, `/admin/settings` checks the key, and one tidy run on a draft checks the SDK
 and the model.
 
-No command-line check reads `ANTHROPIC_API_KEY`, so the Settings screen is the only check of the
+No command-line check reads `ANTHROPIC_API_KEY`, so the **Settings** screen is the only check of the
 key.
 
 To verify tidy, follow these steps:
@@ -429,7 +429,7 @@ The following pages cover the pieces this page links to:
   for the tidy action's request and refusal shapes and the Settings load.
 - [The core reference's types](../reference/core.md#types), for the `TidyConfig` and
   `TidyConventions` rows.
-- [`CairnTidySettings`](../reference/admin.md#cairntidysettings), for the Settings screen component.
+- [`CairnTidySettings`](../reference/admin.md#cairntidysettings), for the **Settings** screen component.
 - [Log events](../reference/log-events.md), for the `tidy.*` records.
 - [Mark the tag field](define-an-adapter-and-schema.md#mark-the-tag-field), for the tag vocabulary
   that shares the site-config file.

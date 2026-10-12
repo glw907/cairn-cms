@@ -262,7 +262,7 @@
       "id": "f:kldwss"
     },
     {
-      "text": "A site built by hand from `sv create` starts with neither Waymark nor the chassis, as [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) describes.",
+      "text": "A hand-built site from `sv create` starts with neither Waymark nor the chassis, as [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) describes.",
       "id": "f:rxj43c"
     },
     {

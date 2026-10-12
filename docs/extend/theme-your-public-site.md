@@ -18,7 +18,7 @@ of how far a change reaches.
 A developer who wants a scaffolded site in a brand's colors and type, with Waymark's layouts kept,
 re-skins it by changing about fourteen color and type values, which suits a site whose content those
 layouts already fit. A developer with a design the site already has ports it onto the same chassis
-in Waymark's place. A site built by hand from `sv create`, as in [Add cairn to a SvelteKit
+in Waymark's place. A hand-built site from `sv create`, as in [Add cairn to a SvelteKit
 app](add-cairn-to-a-sveltekit-app.md), starts with neither Waymark nor the chassis and brings its
 own theme, so after the preconditions its work begins at [Theme a hand-built
 site](#theme-a-hand-built-site). A scaffolded site skips that section and works through the chassis

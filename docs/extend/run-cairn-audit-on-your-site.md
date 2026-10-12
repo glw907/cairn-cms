@@ -13,7 +13,7 @@ The rendered half ships only as the `check:cairn:rendered` script, and it cannot
 The site carries no Playwright dependency, the workflow installs no browser, and a run with no signed-in session refuses with exit 2.
 Making the audit your site's gate means scoping both passes to your sources, stylesheets, and admin pages, signing the rendered pass in, recording each exemption with its reason, and running the audit in the workflow's `check` job.
 The steps follow a scaffolded site and run its `check:cairn` and `check:cairn:rendered` scripts.
-A site built by hand without those scripts runs the commands they wrap, `cairn-audit` for the static pass and `cairn-audit --rendered` for the rendered one.
+A hand-built site without those scripts runs the commands they wrap, `cairn-audit` for the static pass and `cairn-audit --rendered` for the rendered one.
 With no `cairn-audit.config.json`, the audit runs on its defaults.
 
 Developers also arrive here with a narrower question, and the following sections answer the common ones:

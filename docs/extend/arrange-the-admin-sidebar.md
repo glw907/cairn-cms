@@ -99,7 +99,7 @@ export const cairn = defineAdapter({
           { label: 'Members', icon: 'users', href: '/admin/team/members' }, // a site entry
         ],
       },
-      { screen: 'media', label: 'Library' }, // relabeled: renders as Library
+      { screen: 'media', label: 'Library' }, // keeps its default label, Library
       { screen: 'settings', label: 'Site settings' }, // relabeled: renders as Site settings
     ],
   },
@@ -110,7 +110,7 @@ export const cairn = defineAdapter({
 story: nav/worked-navlayout
 width: wide
 alt: Reproduction of the admin sidebar the example layout resolves to, with a Team section and three unreferenced screens below a divider.
-caption: Posts and Pages render outside any section, then the Team section holds Events and Members, then Library and Site settings show their new labels. Tags, Editors, and Help follow the divider, because the layout never references them.
+caption: Posts and Pages render outside any section, then the Team section holds Events and Members, then Library, which keeps its default label, and Site settings, which shows its new label. Tags, Editors, and Help follow the divider, because the layout never references them.
 ```
 
 The next section covers the screens a layout leaves out.

@@ -65,7 +65,7 @@
       "id": "f:u4cfvv"
     },
     {
-      "text": "On a site built by hand with [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md), you open it to grow the tutorial's minimal adapter.",
+      "text": "On a hand-built site with [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md), you open it to grow the tutorial's minimal adapter.",
       "id": "f:q07rd5"
     },
     {
@@ -148,7 +148,7 @@
       "id": "no-claim"
     },
     {
-      "text": "A site built by hand gets one from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).",
+      "text": "A hand-built site gets one from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).",
       "id": "no-claim"
     },
     {
@@ -637,7 +637,7 @@
       "id": "f:shv6wv"
     },
     {
-      "text": "The **Tags**, **Settings**, and navigation editor screens all read and commit that one file.",
+      "text": "The **Tags**, **Settings**, and menu editor screens all read and commit that one file.",
       "id": "f:shv6wv"
     },
     {

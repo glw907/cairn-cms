@@ -273,7 +273,23 @@ See `docs/superpowers/research/2026-10-11-draft-docs-2b-part1-ab/README.md` once
 
 ## Consistency read
 
-Added at T10.
+Consistency read findings (T10). Applied unless noted.
+
+1. Applied to the page only. The engine already labels `media` "Library" by default (`f:gponkz`, `admin-nav.ts` `ENGINE_SCREEN_DEFAULTS`), so the code comment and caption now say Library keeps its default label and Site settings is the relabeled entry. The repro fence, story id, and fixture are unchanged; the fixture change is deferred (Found, not done).
+2. Applied: "menu editor" links to build-the-public-routes.md#add-an-editable-menu in turn-on-tidy.
+3. Applied: "tidy's conventions" links to turn-on-tidy.md#let-editors-change-the-conventions in build-the-public-routes.
+4. Refused: needs two outline crossLinks and the outline is out of scope. Deferred (Found, not done).
+5. Applied: "menu editor" in define-an-adapter-and-schema, turn-on-tidy, and build-the-public-routes ("nav screen" became "menu editor").
+6. Applied: **Settings** bolded in turn-on-tidy at the four named lines plus the one in the Where next list.
+7. Applied: "holding branch" in share-a-draft-preview at the three lines.
+8. Applied: "hand-built site" throughout; act-on-newly-published-entries now reads "on the Add cairn to a SvelteKit app tutorial's site".
+9. Applied: "a private preview link" in share-a-draft-preview.
+10. Applied at configure-media ("literal `media:` reference"). Not applied at build-the-public-routes:305, where the sentence says "raw token" for the src value and no `media:` phrase is involved.
+11. Deferred: structural cut.
+12. Deferred: structural cut.
+13. Refused: check:visuals requires a repro alt to match /^reproduction\b/i, so "Reproduction of" stays.
+
+Scoped register and fact verdicts: pending
 
 ## Rulings for Geoff
 

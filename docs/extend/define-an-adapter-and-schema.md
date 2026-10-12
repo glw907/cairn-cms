@@ -22,7 +22,7 @@ adding field checks and options, and confirming that the declaration typechecks 
 
 On a scaffolded site, the adapter already declares the `posts`, `pages`, and `fragments` concepts, a
 backend, and a sender, and you open it to add a kind of content or to change a concept's fields,
-address, or tags. On a site built by hand with
+address, or tags. On a hand-built site with
 [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md), you open it to grow the tutorial's
 minimal adapter. The steps use the scaffold's files, and each section names the hand-built site's
 difference where one exists. A developer about to build a custom admin screen for another kind of
@@ -49,7 +49,7 @@ Declaring an adapter takes a site with the engine installed and a working knowle
 model. Before you start, have the following in place:
 
 - An installed engine. A scaffolded site has one, and
-  [Scaffolded site files](scaffolded-site-files.md) shows where its files sit. A site built by hand
+  [Scaffolded site files](scaffolded-site-files.md) shows where its files sit. A hand-built site
   gets one from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).
 - The content model, from [Content model](content-model.md).
 - For the backend and sender section only, a registered GitHub App and Cloudflare Email Sending
@@ -321,7 +321,7 @@ the open multiselect it was declared as. To list a concept's entries by tag on p
 
 The vocabulary lives under the `vocabulary` key of the site-config file. The adapter's
 `editor.siteConfigPath` names that file, and it defaults to `src/theme/site.config.yaml`. The
-**Tags**, **Settings**, and navigation editor screens all read and commit that one file.
+**Tags**, **Settings**, and menu editor screens all read and commit that one file.
 
 To point the tutorial's adapter at its site config, follow this step:
 

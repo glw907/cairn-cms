@@ -4,7 +4,7 @@ Until an editor publishes it, a draft has no page on the public site. Each save 
 entry's [holding branch](architecture.md#the-holding-branch), `cairn/<concept>/<id>`, and the public
 pages are built from the published commit when the site deploys. A reviewer outside the editor
 group, such as a board member signing off on a post, therefore has no way to read the draft as the
-site would show it. A preview gives that reviewer a private link to the draft. The link opens it as
+site would show it. A preview gives that reviewer a private preview link to the draft. The link opens it as
 a page of the site at `/preview/<token>`, a route outside the admin, with no sign-in. The page behind
 the link reads the draft from its holding branch on every request, and a reviewer who reloads sees
 the editor's latest save. It renders the draft through the same composition the public entry pages
@@ -19,7 +19,7 @@ pages because that group's layouts carry the site's style sheets and chrome. You
 migration, mount the preview route inside your entry pages' layout group, render the banner, and
 check that a minted link opens the draft in your site's styles. A site scaffolded by
 `create-cairn-site`, the setup command, already carries the migration file, the route, and the
-banner page. Its developer applies the migration and goes on to verify, and a site built by hand
+banner page. Its developer applies the migration and goes on to verify, and a hand-built site
 takes every step.
 
 Because `createCairnAdmin` always wires the group's two actions, the group appears by default. On a
@@ -54,14 +54,14 @@ from one config object.
 
 Before you start, confirm that your site has each of the following:
 
-- An `AUTH_DB` D1 binding with a `migrations_dir`, where the preview's table goes. A site built by
-  hand creates it as [Create the auth database](add-cairn-to-a-sveltekit-app.md#create-the-auth-database)
+- An `AUTH_DB` D1 binding with a `migrations_dir`, where the preview's table goes. A hand-built
+  site creates it as [Create the auth database](add-cairn-to-a-sveltekit-app.md#create-the-auth-database)
   shows.
 - `PUBLIC_ORIGIN` set on the Worker, because every minted link is built from the configured origin
   and never from the request's host. [Add the Email Sending binding and name the origin](add-cairn-to-a-sveltekit-app.md#add-the-email-sending-binding-and-name-the-origin)
   sets it.
 - Public entry routes built by `createPublicRoutes` from one `PublicRoutesConfig` object. A
-  scaffolded site keeps that object in `src/chassis/public-routes.ts`. A site built by hand builds
+  scaffolded site keeps that object in `src/chassis/public-routes.ts`. A hand-built site builds
   them as Build the public routes describes.
 - A deployed site, and an editor sign-in that can edit an entry. The checks in
   [Verify the preview](#verify-the-preview) use both.
@@ -94,7 +94,7 @@ is missing. Apply migrations/0003_preview.sql to AUTH_DB, then try again."
 
 To apply the migration, follow these steps:
 
-1. If your site was built by hand, in the project directory, copy `0003_preview.sql` from the
+1. If your site is hand-built, in the project directory, copy `0003_preview.sql` from the
    package's `migrations/` into your `migrations_dir`:
 
    ```sh
@@ -318,7 +318,7 @@ other case.
 
 The following cases decide what a link shows:
 
-- While the entry's pending branch exists, the link renders the draft.
+- While the entry's holding branch exists, the link renders the draft.
 - Publishing the entry, or discarding an edit of an entry that is already live, ends the draft. The
   link keeps its row and shows "This preview has ended." with a link to the published page. The
   banner never claims the draft went live, because a discarded edit reaches the same state.
@@ -349,8 +349,8 @@ Find the record's reason in the following table.
 | `unknown` | No stored link matches, as after a revoke, a delete, a rename, or a never-published discard | Mint a new link |
 | `expired` | The link outlived its lifetime | Mint a new link, or lengthen the lifetime as [Set the link's lifetime](#set-the-links-lifetime) shows |
 | `row_invalid` | The stored concept or id no longer matches the site | Mint a new link from the entry as it stands |
-| `draft_invalid` | The draft on the entry's pending branch fails the concept's validation | In the admin, correct the entry's draft and save it, then reload the link |
-| `branch_gone` | The pending branch is gone and no published file exists | None, since the draft the link shared no longer exists |
+| `draft_invalid` | The draft on the entry's holding branch fails the concept's validation | In the admin, correct the entry's draft and save it, then reload the link |
+| `branch_gone` | The holding branch is gone and no published file exists | None, since the draft the link shared no longer exists |
 
 The `preview.refused` row of [Log events](../reference/log-events.md) lists the fields each reason carries.
 

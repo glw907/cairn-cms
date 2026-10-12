@@ -15,7 +15,7 @@ A developer reaches for an island to make a declared component respond in the br
 client script, which the render strips from an entry body by default. A scaffolded site keeps its
 adapter at `src/theme/cairn.config.ts` and already ships the island wiring around its `banner`
 island. Adding an island there takes a new component, one registry entry, and the `hydrate`
-declaration. A site built by hand, such as the one the
+declaration. A hand-built site, such as the one the
 [add-cairn tutorial](add-cairn-to-a-sveltekit-app.md) builds, keeps its adapter at
 `src/lib/cairn.config.ts`. Because `rendering.islands` is optional on the adapter, that site starts
 without the wiring. On that site you write the live component, register it under its directive name,

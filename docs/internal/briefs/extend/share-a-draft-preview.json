@@ -21,7 +21,7 @@
       "id": "f:1mkckz"
     },
     {
-      "text": "A preview gives that reviewer a private link to the draft.",
+      "text": "A preview gives that reviewer a private preview link to the draft.",
       "id": [
         "f:bydgww",
         "f:afkvsb"
@@ -83,7 +83,7 @@
       ]
     },
     {
-      "text": "Its developer applies the migration and goes on to verify, and a site built by hand takes every step.",
+      "text": "Its developer applies the migration and goes on to verify, and a hand-built site takes every step.",
       "id": "no-claim"
     },
     {
@@ -177,7 +177,7 @@
       ]
     },
     {
-      "text": "A site built by hand creates it as [Create the auth database](add-cairn-to-a-sveltekit-app.md#create-the-auth-database) shows.",
+      "text": "A hand-built site creates it as [Create the auth database](add-cairn-to-a-sveltekit-app.md#create-the-auth-database) shows.",
       "id": "no-claim"
     },
     {
@@ -203,7 +203,7 @@
       ]
     },
     {
-      "text": "A site built by hand builds them as Build the public routes describes.",
+      "text": "A hand-built site builds them as Build the public routes describes.",
       "id": "no-claim"
     },
     {
@@ -270,7 +270,7 @@
       "id": "no-claim"
     },
     {
-      "text": "If your site was built by hand, in the project directory, copy `0003_preview.sql` from the package's `migrations/` into your `migrations_dir`:",
+      "text": "If your site is hand-built, in the project directory, copy `0003_preview.sql` from the package's `migrations/` into your `migrations_dir`:",
       "id": [
         "f:xxtooz",
         "f:049lo2"
@@ -646,7 +646,7 @@
       "id": "no-claim"
     },
     {
-      "text": "While the entry's pending branch exists, the link renders the draft.",
+      "text": "While the entry's holding branch exists, the link renders the draft.",
       "id": "f:l4waby"
     },
     {
@@ -803,7 +803,7 @@
       "id": "f:2awy1w"
     },
     {
-      "text": "The draft on the entry's pending branch fails the concept's validation",
+      "text": "The draft on the entry's holding branch fails the concept's validation",
       "id": "f:546jja"
     },
     {
@@ -815,7 +815,7 @@
       "id": "f:2awy1w"
     },
     {
-      "text": "The pending branch is gone and no published file exists",
+      "text": "The holding branch is gone and no published file exists",
       "id": "f:l4waby"
     },
     {

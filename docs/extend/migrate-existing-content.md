@@ -1,7 +1,7 @@
 # Migrate existing content
 
 A site built with a static site generator such as Jekyll, Hugo, or Eleventy keeps each page as a
-markdown file that opens with a frontmatter block. So does a markdown site built by hand whose
+markdown file that opens with a frontmatter block. So does a hand-built markdown site whose
 files open with that block. A cairn entry has the same shape: a markdown file in one concept's
 directory, whose YAML frontmatter the concept's declared fields describe. The differences sit in
 three parts of each file. The filename becomes the entry's id, verbatim, and cairn gives the entry

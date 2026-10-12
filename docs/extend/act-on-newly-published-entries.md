@@ -229,7 +229,7 @@ An editor who needs a next step at the moment of publishing is served by a diffe
 An `editor.publishActions` list on the adapter shows next-step links beside the publish-success strip, for the entry just published.
 The list is plain data that the admin resolves on the server, and no site code runs when an editor publishes.
 An adapter without it shows no links at the publish-success moment.
-The adapter file is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on a site built by [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).
+The adapter file is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) tutorial's site.
 
 - In your adapter file, add `publishActions` to the `editor` block.
 

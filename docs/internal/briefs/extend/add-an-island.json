@@ -48,7 +48,7 @@
       "id": "f:mcxxpp"
     },
     {
-      "text": "A site built by hand, such as the one the [add-cairn tutorial](add-cairn-to-a-sveltekit-app.md) builds, keeps its adapter at `src/lib/cairn.config.ts`.",
+      "text": "A hand-built site, such as the one the [add-cairn tutorial](add-cairn-to-a-sveltekit-app.md) builds, keeps its adapter at `src/lib/cairn.config.ts`.",
       "id": "f:q07rd5"
     },
     {

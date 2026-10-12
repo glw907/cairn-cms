@@ -2,7 +2,7 @@
   "page": "docs/extend/migrate-existing-content.md",
   "sentences": [
     {"text": "A site built with a static site generator such as Jekyll, Hugo, or Eleventy keeps each page as a markdown file that opens with a frontmatter block.", "id": "f:ht7tdd"},
-    {"text": "So does a markdown site built by hand whose files open with that block.", "id": "no-claim"},
+    {"text": "So does a hand-built markdown site whose files open with that block.", "id": "no-claim"},
     {"text": "A cairn entry has the same shape: a markdown file in one concept's directory, whose YAML frontmatter the concept's declared fields describe.", "id": ["f:5eum60", "f:phdgof"]},
     {"text": "The differences sit in three parts of each file.", "id": "no-claim"},
     {"text": "The filename becomes the entry's id, verbatim, and cairn gives the entry no other identity.", "id": "f:z68na4"},

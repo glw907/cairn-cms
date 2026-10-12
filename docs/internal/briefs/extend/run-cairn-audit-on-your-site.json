@@ -84,7 +84,7 @@
       ]
     },
     {
-      "text": "A site built by hand without those scripts runs the commands they wrap, `cairn-audit` for the static pass and `cairn-audit --rendered` for the rendered one.",
+      "text": "A hand-built site without those scripts runs the commands they wrap, `cairn-audit` for the static pass and `cairn-audit --rendered` for the rendered one.",
       "id": [
         "f:mrv24k",
         "f:j7fha2"

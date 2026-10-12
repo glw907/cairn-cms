@@ -771,14 +771,14 @@ To add the menu, follow these steps:
    `maxDepth`, which is 2 when unset.
 
    The scaffold declares `nav: { menuName: 'primary', label: 'Navigation', maxDepth: 2 }`. The
-   `label` names the nav screen in the admin sidebar. Without `editor.nav`, `/admin/nav` answers 404,
+   `label` names the menu editor in the admin sidebar. Without `editor.nav`, `/admin/nav` answers 404,
    and a `navLayout` that references the `nav` screen throws at server start.
    [Arrange the admin sidebar](arrange-the-admin-sidebar.md) covers the sidebar.
 
 2. If your site config isn't at `src/theme/site.config.yaml`, set `editor.siteConfigPath` to its
    path.
 
-   The menu editor reads and commits that file, and the **Settings** screen saves tidy's conventions
+   The menu editor reads and commits that file, and the **Settings** screen saves [tidy's conventions](turn-on-tidy.md#let-editors-change-the-conventions)
    to the same file. For the default and every reader of the file, see the
    [`siteConfigPath` reference entry](../reference/core.md#siteconfigpath-adapter-editor-member).
 

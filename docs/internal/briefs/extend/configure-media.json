@@ -191,7 +191,7 @@
     { "text": "A `too_large` refusal points at `maxUploadBytes` in [Set the options](#set-the-options) and at the plan's request-body cap.", "id": ["f:ett331", "f:9awije"] },
     { "text": "A `length_required` refusal points at the `Content-Length` header in [Upload from your own screen](#upload-from-your-own-screen).", "id": "f:ett331" },
     { "text": "An `unsupported_type` refusal points at `allowedTypes` and the five types the engine stores.", "id": "f:enuyhg" },
-    { "text": "The page shows a literal `media:` token.", "id": "f:twqb0s" },
+    { "text": "The page shows a literal `media:` reference.", "id": "f:twqb0s" },
     { "text": "The entry route has no resolver, and the [`media.resolver_absent`](debug-your-site.md#mediaresolver_absent) entry covers the fix.", "id": "f:twqb0s" },
     { "text": "The image renders broken, with the class `cairn-broken-media`.", "id": "f:frgg7d" },
     { "text": "The asset has no manifest row.", "id": "f:frgg7d" },

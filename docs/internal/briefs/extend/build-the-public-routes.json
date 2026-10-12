@@ -1066,7 +1066,7 @@
       "id": "f:f9aayq"
     },
     {
-      "text": "The `label` names the nav screen in the admin sidebar.",
+      "text": "The `label` names the menu editor in the admin sidebar.",
       "id": "f:f9aayq"
     },
     {
@@ -1082,7 +1082,7 @@
       "id": "f:shv6wv"
     },
     {
-      "text": "The menu editor reads and commits that file, and the **Settings** screen saves tidy's conventions to the same file.",
+      "text": "The menu editor reads and commits that file, and the **Settings** screen saves [tidy's conventions](turn-on-tidy.md#let-editors-change-the-conventions) to the same file.",
       "id": "f:shv6wv"
     },
     {

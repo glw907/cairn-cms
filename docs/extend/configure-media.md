@@ -422,7 +422,7 @@ verification reaches them:
    refusal points at the `Content-Length` header in
    [Upload from your own screen](#upload-from-your-own-screen). An `unsupported_type` refusal points
    at `allowedTypes` and the five types the engine stores.
-2. The page shows a literal `media:` token. The entry route has no resolver, and the
+2. The page shows a literal `media:` reference. The entry route has no resolver, and the
    [`media.resolver_absent`](debug-your-site.md#mediaresolver_absent) entry covers the fix.
 3. The image renders broken, with the class `cairn-broken-media`. The asset has no manifest row.
    [Fail the build on a missing asset](#fail-the-build-on-a-missing-asset) shows how to catch it at

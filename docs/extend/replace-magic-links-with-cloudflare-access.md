@@ -406,7 +406,7 @@ The following pages cover the seams and limits around identity mode:
   screens.
 - [Share a draft preview](share-a-draft-preview.md) sets up the `/preview/<token>` route that the
   Access application leaves uncovered.
-- [Add a second sign-in group](add-a-second-sign-in-group.md) signs a second sign-in group in beside
-  the editors.
+- [Add a second sign-in group](add-a-second-sign-in-group.md) signs its members in beside the
+  editors.
 - [`createAuthGuard`](../reference/sveltekit.md#createauthguard) documents the `identity` option,
   the three types it names, and their stability tier.

@@ -141,11 +141,6 @@ function namedDecls(inner, wholeTypeOnly) {
 const SIDE_EFFECT_IMPORT_RE = /^(\s*)import\s+['"]([^'"]+)['"]\s*;?\s*$/;
 const FROM_IMPORT_RE = /^(\s*)import\s+(type\s+)?(.*?)\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/;
 
-// Rewrite every LOCAL import statement (see `isRealSpecifier`) to an untyped `any` stand-in,
-// one line in, one line out, so a diagnostic's line number still lines up with the source block.
-// A real-specifier import (the package, or a resolvable dependency) is left untouched, so the
-// compiler checks it for real. Only single-line import statements are recognized; the doc corpus
-// carries none that wrap, and a block that needs one gets the opt-out annotation instead.
 /**
  * Every import in `code` whose specifier is `$lib` or under it, with its 1-based line in `code`.
  * SvelteKit 3 removes the alias, so the gate refuses it rather than stubbing it.
@@ -164,6 +159,11 @@ export function findLibImports(code) {
   return found;
 }
 
+// Rewrite every LOCAL import statement (see `isRealSpecifier`) to an untyped `any` stand-in,
+// one line in, one line out, so a diagnostic's line number still lines up with the source block.
+// A real-specifier import (the package, or a resolvable dependency) is left untouched, so the
+// compiler checks it for real. Only single-line import statements are recognized; the doc corpus
+// carries none that wrap, and a block that needs one gets the opt-out annotation instead.
 /** @param {string} code */
 export function rewriteLocalImports(code) {
   /** @type {Set<string>} */

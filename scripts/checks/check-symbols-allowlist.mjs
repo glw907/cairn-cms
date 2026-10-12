@@ -159,14 +159,11 @@ export const ALLOWLIST = new Set([
   'file-path:.svelte-kit/cloudflare/_worker.js', // docs/extend/add-cairn-to-a-sveltekit-app.md's wrangler.jsonc `main` field
   'file-path:src/lib/access-identity.ts', // docs/extend/replace-magic-links-with-cloudflare-access.md's illustrative Access-verifier module, by convention
   'file-path:admin/__data.json', // docs/extend/replace-magic-links-with-cloudflare-access.md, SvelteKit's own data-only fetch path, never a file on disk
-  // docs/reference/guidance.md's own destination paths inside a CONSUMER repo's .claude/ and
-  // .github/ trees, never a path in this repo: cairn-guidance writes them, it does not ship them.
-  // `.claude` and `.github` keep their leading dot, so the tokens carry it.
-  'file-path:.claude/agents/cairn-extension-reviewer.md',
-  'file-path:.claude/cairn/CLAUDE.md',
+  // docs/reference/guidance.md's own destination paths inside a CONSUMER repo's .claude/ tree,
+  // never a path in this repo: cairn-guidance writes them, it does not ship them. `.claude` keeps
+  // its leading dot, so the tokens carry it.
   'file-path:.claude/settings.json',
   'file-path:@.claude/cairn/CLAUDE.md', // the literal import-line value quoted in guidance.md's prose
-  'file-path:.github/workflows/check.yml',
 
   // Real paths in a named production consumer site's own repo, not this repo's tree.
   // docs/extend/migration-notes.md's closing "upgrade order" subsection names them so a site

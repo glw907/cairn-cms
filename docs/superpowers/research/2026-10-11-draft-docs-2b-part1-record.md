@@ -40,7 +40,8 @@ Plan: `docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md`. The executor i
 | T3 (run 1 closes) | | `2b1-T3` | about 3.5M (closes) plus 0.4M executor loop (`<total_tokens>` 15.0M to 14.59M since T0) | about 13.5M |
 | T4 (run 2, 4 pages) | `wf_56a8b4d2-660` | `83591a74d` (WIP) | 3.20M | |
 | T5 (run 2 closes) | | `64c689ea4` | about 4.5M (closes) plus 0.2M executor loop | about 21.4M |
-| T6 (run 3, 3 pages) | `wf_8abfb19a-064` | | | |
+| T6 (run 3, 3 pages) | `wf_8abfb19a-064` | `888906cd6` (WIP) | 3.23M | |
+| T7 (run 3 closes) | | `518ee1e77` | about 4.5M (closes) plus 0.15M executor loop | about 29.4M |
 
 ## Runs
 
@@ -187,6 +188,56 @@ its `pendingCount` field reads 32, so the two figures disagree by one.
 - Pages that name `cairn.config.ts` name the site beside it: reuse-content-across-entries (lines 27, 29, 56), link-content-with-references (lines 22, 25, 54), add-an-island (lines 16, 20, 42, 118), and define-an-adapter-and-schema (lines 96, 193, 263, 328). Two sites in define-an-adapter-and-schema name the file without a site: line 4 (the `defineAdapter` call "in the site's `cairn.config.ts`", generic by design) and line 442 (the engine's own rejection message). Code-comment path labels name no site by design.
 - The pending rows above went to define-an-adapter-and-schema (15) and link-content-with-references (1); the remaining 31 belong to later pages.
 
+### Run 3 (`wf_8abfb19a-064`, three pages, run base `6d5586716`)
+
+The chain accepted none of the three pages (0/3): every record ended `escalate`. T7 closed each
+page, one by a targeted close after the round cap and two by hand-run seats after an escalation on
+the plan read. The whole-tree gate (`CAIRN_GATE_LANE=light cairn-run-gate 'npm run
+check:docs-gate'`) exits 0 with `check:docs-gate: OK (19 check(s))`, `check:options: OK (263 option
+paths)`, and `check:tellgrader: OK (60 page(s))`.
+
+Pending option-map rows, run base against now: all 31 rows the run received are disposed, and 0
+`pending <slug>` rows remain in `docs/internal/option-map.json`. Its `pendingCount` field reads 2,
+so the field and the row count disagree by two (stale field; flag for part 2).
+
+| Page | rowsReceived | rowsDisposed | End state |
+| --- | --- | --- | --- |
+| configure-rendering | 7 | 7 | accepted, targeted close |
+| turn-on-tidy | 16 | 16 | accepted, hand-run |
+| build-the-public-routes | 8 | 8 | accepted, hand-run |
+
+#### configure-rendering
+
+- Status: chain `escalate` ("second fix verdict or red gate"), rounds 2. End state: accepted by targeted close.
+- Plan read: structural fix, revised, then accept.
+- Round 1: gate pass; structural fix, register fix, fact fix. Round 2 (scoped, changed sentences): gate pass; structural fix, register fix, fact fix. crossRegression: false.
+- Escalation and close: the drafter fixed two blocking fact-read findings (the component picker gets the registry only through CairnAdmin's `registry` prop, f:rrvh33; Diagnose item 2). Scoped register FIX (blocking: Diagnose item 2 stated one possible cause as settled fact); the executor applied the register editor's own rewrite (Rulings, item 7). Scoped fact accept. Final reader accept.
+- frictionFiled (plan step): the component registry goes to two untied seams (`createRenderer`'s argument and `rendering.components`); `ComponentDef.insertTemplate` is read only for a component with no attributes and no slots; the scaffold's alert component reuses DaisyUI's `.alert` class names; `debug-your-site.md` has no render or component row. Facts filed: none recorded.
+- Unexercised: the unreleased engine for the sanitize floor and the scaffold excerpts.
+
+#### turn-on-tidy
+
+- Status: chain `escalate` ("second fix verdict on the plan read"), rounds 0. End state: accepted by hand-run.
+- Plan read: structural fix, revised, fix again (escalated).
+- Hand-run seats: plan revised (one blocking: the local-development explanation section sent the tutorial reader forward to a later task section). Framing filed f:4gnt5j and f:9y46v0; friction: tidy has two `tidy` blocks in two files.
+- Round 1: structural accept, register FIX (four blocking: a teaser heading renamed "Limits on a tidy result"; a one-step procedure as prose; one-step bullets with no introducing sentence; a positional reference), fact accept. Round 2 redraft; scoped register FIX (blocking: the table lead-in separated from the table) and fact FIX (f:avtt69's source line pointer stale), both applied by the executor with the reviewers' own rewrites (Rulings, item 7).
+- Final reader: FIX (one blocking: the add-cairn reader had no scaffold module to copy for the local-development gate). One scoped redraft showed the scaffold's gate excerpt and the tutorial's own hooks test; facts f:qx13ec and f:dqnblw filed. Scoped reads accept, re-test accept.
+- crossRegression: not run (no chain rounds). frictionFiled (plan step): tidy is off by default in the engine but the scaffold ships `tidy.enabled: true` with no SDK and an empty key; the key probe reads a missing SDK as unknown; the tidy client seam carries two stability tiers; a Settings save says "Tidy settings saved." but changes nothing. Unexercised: none recorded.
+
+#### build-the-public-routes
+
+- Status: chain `escalate` ("second fix verdict on the plan read"), rounds 0. End state: accepted by hand-run.
+- Plan read: structural fix, revised, fix again (escalated).
+- Hand-run seats: plan revised (one blocking: a promised `defaultImage` member never shown). Framing.
+- Round 1: structural accept, register FIX (one blocking: a UI label not bold), fact FIX (one blocking: f:rnwver no longer matched its source; rewritten and restored to [verified]). Round 2 redraft; scoped register FIX (blocking: a repeated "also" sentence) and fact FIX (blocking: the `markdownUrl` snippet advertised a twin for noindex entries), both applied with the executor's own rewrites (the engine's own noindex test, `readSeoFields(...).robots`; Rulings, item 7).
+- Final reader: FIX (one blocking: the feeds step never showed the render input shape, so the add-cairn reader could not write it). One scoped redraft; fact f:cu48t5 filed. Scoped reads accept, re-test accept.
+- crossRegression: not run. frictionFiled (plan step): a site's public origin has two homes (the `ORIGIN` literal and `PUBLIC_ORIGIN`) that the scaffold ships different; `markdownResponse`'s Content-Type never reaches production from a prerendered twin on adapter-cloudflare; `PublicRoutesConfig.feeds` only adds head alternate links; `createSiteIndexes` requires a site-config argument it ignores; `createPublicRoutes` builds no head for non-entry pages. Unexercised: none recorded.
+
+#### Caveat check
+
+- D7 on build-the-public-routes: the page states that delivery reads the hero and the share image only from the frontmatter key `image` in the introduction (line 22) and in "Declare the fields the head reads" (line 327). The claim is f:k5uws5 in `docs/internal/facts/extend.md` (line 1043), tagged [verified], with source `public-routes.ts#deriveHeroImage`. The page itself carries no fact id and does not name `deriveHeroImage`; the citation lives in the facts container.
+- Pages that name `cairn.config.ts` name the site beside it: configure-rendering (lines 17-18, 52, 97, 256, 275, 279, 559), turn-on-tidy (lines 54-55, 207) and build-the-public-routes (lines 49-50). Exceptions: none found. configure-rendering lines 275 and 559 and turn-on-tidy line 207 give the tutorial path in a step or comment under a section whose lead-in already names the site.
+
 ## Framing A/B
 
 See `docs/superpowers/research/2026-10-11-draft-docs-2b-part1-ab/README.md` once T2 lands.
@@ -209,3 +260,9 @@ Run 2 rulings and findings:
 4. The reuse page's introduction: the register read demanded a list and the structural read demanded prose. The executor overruled the register finding in favor of the framing record's three-prose-paragraph plan.
 5. `configure-rendering` is linked from add-an-island as a forward link and lands in run 3.
 6. Found, not done: the add-cairn tutorial imports from `#lib/...` but never declares a `#lib` subpath import in package.json (found by the define fact read); sv's current minimal template ships a root `+layout.svelte` the tutorial does not mention; f:6a32oy's source line moved; the register read flagged "whatever the type's doc comment says" as a defect in a TSDoc comment on a type (the clause was cut from the page); CI flakes on the e2e suite retried per the rerun rule (they also fail on main).
+
+Run 3 rulings and findings:
+
+7. The executor applied the reviewers' own rewrites without a further round for the final-round fact and register findings on configure-rendering, turn-on-tidy, and build-the-public-routes (R5 ruling 3).
+8. Found, not done: the add-cairn tutorial site has no media block, R2 binding or resolver, so configure-media's tutorial-site coverage rests on a doc-only source; the file tree in build-the-public-routes omits `src/chassis/feed-items.ts`; the turn-on-tidy refusal table omits the 422 and empty-result refusals; the fact f:ssdn1f said "by default" for effort (corrected).
+9. The first whole-tree gate run on build-the-public-routes' redraft failed `check:reference` on `admin-toolkit.md` (28 stale exports) and passed on rerun, a stale reference artifact; flag for part 2.

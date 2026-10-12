@@ -34,7 +34,8 @@ Plan: `docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md`. The executor i
 | Task | Run id | Commits | Tokens | Count after |
 | --- | --- | --- | --- | --- |
 | S0 (night before launch) | | | 2.67M | 2.67M |
-| T0 | | | 0.11M (loop drop) | 2.78M |
+| T0 | | `2b1-T0` | 0.11M (loop drop) | 2.78M |
+| T1 (run 1, 6 pages) | `wf_7016a184-bd0` | | | |
 
 ## Runs
 

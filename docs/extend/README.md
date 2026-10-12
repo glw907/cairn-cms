@@ -11,6 +11,7 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 ## Model content
 
 - [Content model](./content-model.md)
+- [Configure media](./configure-media.md)
 
 ## Public site
 
@@ -22,6 +23,7 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 ## Extend the admin
 
 - [Add a custom admin screen](./add-a-custom-admin-screen.md)
+- [Arrange the admin sidebar](./arrange-the-admin-sidebar.md)
 
 ## Auth and access
 
@@ -36,3 +38,4 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 - [Migration notes](./migration-notes.md)
 - [Debug your site](./debug-your-site.md)
 - [Rotate the GitHub App key](./rotate-the-github-app-key.md)
+- [Run cairn-audit on your site](./run-cairn-audit-on-your-site.md)

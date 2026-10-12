@@ -87,7 +87,11 @@ To add the job to your site, complete the following steps:
    });
    ```
 
-2. In your deploy pipeline, add the script as a step that runs after the deploy, from the site's root.
+2. In `scripts/announce-new-posts.ts`, replace the three `declare function` lines with your storage and send functions.
+3. In your deploy pipeline, add a step after the deploy that runs `node scripts/announce-new-posts.ts` from the site's root.
+
+   Node 22.18 or later runs TypeScript directly.
+   On older Node, use a runner such as `tsx`.
 
 The file does four things, in the order the code runs them:
 
@@ -96,6 +100,8 @@ The file does four things, in the order the code runs them:
   Passing `null` as `before` there would send every live post instead, as [Backfill on the first run](#backfill-on-the-first-run) explains.
 - It diffs the two manifests and keeps the entries whose `concept` is `posts`.
 - It calls your send code once for each entry, then saves the deployed manifest for the next run.
+  If a send throws, the job exits before that save.
+  The next run diffs against the older stored manifest and sends every post from the failed run again, including those already sent.
 
 A site whose posts concept has another id filters on that id.
 
@@ -139,38 +145,44 @@ With the first run settled, check the job before it emails anyone.
 Check the job in two passes, first offline and then against a real publish.
 
 `buildNewlyPublished` does no I/O and reads no clock, and two literal manifests give it the same result on every run.
-The following check builds a `before` with one post still in draft and an `after` with that post live and stamped:
+The offline check builds a `before` with one post still in draft and an `after` with that post live and stamped.
 
-```ts
-/// <reference types="node" />
-import { strictEqual } from 'node:assert';
-import { buildNewlyPublished, type Manifest } from '@glw907/cairn-cms/delivery/data';
+To run the offline check, complete the following steps:
 
-const draftPost = {
-  id: 'hello-world',
-  concept: 'posts',
-  title: 'Hello world',
-  permalink: '/posts/hello-world',
-  draft: true,
-  links: [],
-};
+1. In your site, save the following code as `scripts/check-announce.ts`:
 
-const before: Manifest = { version: 1, entries: [draftPost] };
-const after: Manifest = {
-  version: 1,
-  entries: [{ ...draftPost, draft: false, publishedAt: '2026-10-12T09:00:00.000Z' }],
-};
+   ```ts
+   /// <reference types="node" />
+   import { strictEqual } from 'node:assert';
+   import { buildNewlyPublished, type Manifest } from '@glw907/cairn-cms/delivery/data';
 
-strictEqual(buildNewlyPublished(before, after).length, 1);
-strictEqual(buildNewlyPublished(after, after).length, 0);
-```
+   const draftPost = {
+     id: 'hello-world',
+     concept: 'posts',
+     title: 'Hello world',
+     permalink: '/posts/hello-world',
+     draft: true,
+     links: [],
+   };
 
-Both assertions pass: the first diff returns the post, and a manifest diffed against itself returns nothing.
+   const before: Manifest = { version: 1, entries: [draftPost] };
+   const after: Manifest = {
+     version: 1,
+     entries: [{ ...draftPost, draft: false, publishedAt: '2026-10-12T09:00:00.000Z' }],
+   };
+
+   strictEqual(buildNewlyPublished(before, after).length, 1);
+   strictEqual(buildNewlyPublished(after, after).length, 0);
+   ```
+
+2. From the site's root, run `node scripts/check-announce.ts`.
+
+   It exits silently when both assertions pass: the first diff returns the post, and a manifest diffed against itself returns nothing.
 
 After the job has run once and its storage holds a manifest, check it against a real publish:
 
 1. In the admin, publish a new post.
-2. After the deploy, in the repository, open `src/content/.cairn/index.json`.
+2. After the deploy, in a checkout pulled from the default branch, open `src/content/.cairn/index.json`.
 
    The post's row carries `publishedAt`.
 

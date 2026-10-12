@@ -93,7 +93,7 @@ Each section holds what the next one depends on.
 9. **Upload from your own screen** (cover 6) is an optional task for a site with its own admin
    screen. It sits ahead of the verification, so the page keeps one task anatomy: steps, then one
    verification, then one failure path. It needs no verification of its own: its refusals are
-   "Diagnose a failed check" item 4, and the image it uploads is checked the same way the Library's
+   "Diagnose a failed check" item 1, and the image it uploads is checked the same way the Library's
    is. Its first sentence states its condition, so the reader without such a screen skips it.
 10. **Verify media** (cover 7) exercises the four pieces: an upload through the Library, the
     rendered image URL, and the route's headers. It is the first of the anatomy's two closing body
@@ -430,7 +430,7 @@ admin's `mediaUpload` action as a `text/plain` body.
 The condition comes first, so a reader with no such screen skips the section (the anatomy's
 conditional-step rule, and the optional task the order argues for in item 9). The section has no
 verification of its own: an image it uploads is checked by "Verify media" steps 4 and 5 once an
-entry references it, and its refusals are "Diagnose a failed check" item 4.
+entry references it, and its refusals are "Diagnose a failed check" item 1.
 
 **Facts:** `f:g4cwcw`, `f:1mgfhj` (scoped: `mediaUpload` is on the typed admin contract and wraps the
 same upload action, gated to the media view), `f:joo5f2` (scoped: the media view is `/admin/media`),
@@ -492,29 +492,32 @@ steps:" (no-claim):
 
 ### Diagnose a failed check
 
-**First sentence:** Each failed check points at one piece: the public resolver, the route's location,
-the bucket binding, or the upload's limits.
+**First sentence:** Each failed check points at one piece: the upload's limits, the public resolver,
+the asset's manifest row, the route's location, or the bucket binding.
 
 **Facts:** `f:twqb0s`, `f:ex4hss`, `f:9hchnv`, `f:6e22v1`, `f:ett331`, `f:enuyhg`. Cited again:
 `f:frgg7d` (the broken-image marker).
 
-A numbered list of ordered checks (anatomy item 5), each naming what the reader sees, then the cause,
-then the fix or the link:
+A numbered list of ordered checks (anatomy item 5) in the order of the "Verify media" steps that
+reach them, so the reader whose first check fails reads their cause first: item 1 is Verify step 1,
+items 2 and 3 are step 4, items 4 and 5 are step 5. Each item names what the reader sees, then the
+cause, then the fix or the link:
 
-1. The page shows a literal `media:` token: the entry route has no resolver. Link
-   `docs/extend/debug-your-site.md#mediaresolver_absent` and do not restate its fix (`f:twqb0s`).
-2. The `<img>` URL answers 404: the route is not at `<publicBase>/[...path]`, or its param is not
-   named `path` (`f:ex4hss`).
-3. The URL answers 503 and the Worker logs `media.delivery_failed` with `reason: 'binding_missing'`:
-   the Worker has no binding under the block's `bucketBinding` name. `cairn doctor` reports the
-   mismatch before a deploy as `config.media-bucket-missing` (`f:9hchnv`, `f:6e22v1`).
-4. The upload fails and the Worker logs `media.upload_failed`: its `reason` names the refusal.
-   `too_large` and `length_required` point at "Set the options" (the size cap) and
-   `unsupported_type` at `allowedTypes` (`f:ett331`, `f:enuyhg`). Link
+1. The upload fails and the Worker logs `media.upload_failed`: its `reason` names the refusal.
+   `too_large` points at `maxUploadBytes` in "Set the options" and the plan's request-body limit;
+   `length_required` points at "Upload from your own screen", the required `Content-Length` header;
+   `unsupported_type` points at `allowedTypes` in "Set the options" (`f:ett331`, `f:enuyhg`). Link
    `docs/reference/log-events.md` for the other reasons (opened and confirmed: the
    `media.upload_failed` row lists all nine).
-5. The image renders broken, with the class `cairn-broken-media`: the asset has no manifest row. Name
+2. The page shows a literal `media:` token: the entry route has no resolver. Link
+   `docs/extend/debug-your-site.md#mediaresolver_absent` and do not restate its fix (`f:twqb0s`).
+3. The image renders broken, with the class `cairn-broken-media`: the asset has no manifest row. Name
    "Fail the build on a missing asset" by heading (`f:frgg7d`).
+4. The `<img>` URL answers 404: the route is not at `<publicBase>/[...path]`, or its param is not
+   named `path` (`f:ex4hss`).
+5. The URL answers 503 and the Worker logs `media.delivery_failed` with `reason: 'binding_missing'`:
+   the Worker has no binding under the block's `bucketBinding` name. `cairn doctor` reports the
+   mismatch before a deploy as `config.media-bucket-missing` (`f:9hchnv`, `f:6e22v1`).
 
 **Hand-off:** none; "See also" follows.
 

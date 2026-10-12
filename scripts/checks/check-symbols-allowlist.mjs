@@ -138,6 +138,7 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/server/members.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative roster-lookup and code-delivery module
   'file-path:src/lib/server/member-channel.test.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative channel test
   'file-path:scripts/announce-new-posts.ts', // docs/extend/act-on-newly-published-entries.md's illustrative post-deploy job, a file the reader creates
+  'file-path:scripts/check-announce.ts', // docs/extend/act-on-newly-published-entries.md's offline check of the job's diff, a file the reader creates
   'file-path:migrations-members/0000_channel.sql', // a site's copy of the packaged channel migration, the directory docs/extend/add-a-second-sign-in-group.md creates (examples/showcase/migrations-members/ carries the same file)
   'file-path:src/lib/content.ts', // docs/extend/add-cairn-to-a-sveltekit-app.md's illustrative content-index module, by convention
   'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
@@ -8,6 +9,7 @@ import {
   loadFactIndex,
   checkSentences,
   checkCuts,
+  checkLocal,
   checkBrief,
   checkPageCoverage,
   checkProvenance,
@@ -437,5 +439,90 @@ describe('checkBriefCoverage', () => {
     const root = join(FIXTURES, 'site-coverage');
     const briefs = [join(root, 'docs/internal/briefs/front-door/README.json')];
     expect(checkBriefCoverage(['docs/README.md'], briefs, root)).toEqual([]);
+  });
+});
+
+describe('local, the page-local paths and names', () => {
+  const index = loadFactIndex(FACTS);
+  const sentence = { text: 'Create `src/members/channel.ts` first.', id: 'no-claim' };
+
+  it('passes a no-claim sentence naming a local path, and fails it without the entry', () => {
+    expect(checkSentences([sentence], index, ['src/members/channel.ts'])).toEqual([]);
+    expect(checkSentences([sentence], index)).toEqual([
+      expect.stringContaining('marked no-claim but states the path "src/members/channel.ts"'),
+    ]);
+  });
+
+  it('passes a local name in a cited sentence', () => {
+    const cited = { text: 'Run `cairn doctor --json` to see `MemberChannel`.', id: 'f:pv0001' };
+    expect(checkSentences([cited], index)).toEqual([
+      expect.stringContaining('the name "MemberChannel" is in no cited fact'),
+    ]);
+    expect(checkSentences([cited], index, ['MemberChannel'])).toEqual([]);
+  });
+
+  it('accepts an absent list and an empty one', () => {
+    expect(checkLocal(undefined)).toEqual([]);
+    expect(checkLocal([])).toEqual([]);
+    expect(checkLocal(['src/members/channel.ts', 'MemberChannel'])).toEqual([]);
+  });
+
+  it.each([
+    ['a list that is not an array', 'src/x.ts', 'not an array'],
+    ['an entry that is not a string', [7], 'entry 1: not a non-empty string'],
+    ['an empty entry', ['  '], 'entry 1: not a non-empty string'],
+    ['an engine export', ['createAuthChannel'], 'entry 1: "createAuthChannel" is an engine export'],
+  ])('rejects %s', (_name, local, message) => {
+    expect(checkLocal(local)).toEqual([expect.stringContaining(message)]);
+  });
+
+  it('fails a brief whose local entry is an engine export', () => {
+    const root = mkdtempSync(join(tmpdir(), 'cairn-provenance-'));
+    mkdirSync(join(root, 'docs/admin'), { recursive: true });
+    mkdirSync(join(root, 'docs/internal/briefs/admin'), { recursive: true });
+    writeFileSync(join(root, 'docs/admin/p.md'), 'The next section walks through it.\n');
+    const briefPath = join(root, 'docs/internal/briefs/admin/p.json');
+    writeFileSync(
+      briefPath,
+      JSON.stringify({
+        page: 'docs/admin/p.md',
+        sentences: [{ text: 'The next section walks through it.', id: 'no-claim' }],
+        local: ['createAuthChannel'],
+      }),
+    );
+    expect(checkBrief(briefPath, index, root).defects).toEqual([
+      expect.stringContaining('local: entry 1: "createAuthChannel" is an engine export'),
+    ]);
+  });
+});
+
+describe('details blocks', () => {
+  it('passes coverage when the summary and body sentences are in the brief', () => {
+    const root = join(FIXTURES, 'site-details');
+    const result = checkProvenance(join(root, 'docs/internal/briefs'), FACTS, root, [], NO_REBUILT_ENTRIES);
+    expect(result.defects).toEqual([]);
+  });
+
+  it('extracts no path from a sentence ending at the closing tag', () => {
+    expect(facts('The body sentence is here.</details>')).toEqual([]);
+  });
+});
+
+describe('--extract', () => {
+  const script = join(ROOT, 'scripts/checks/check-provenance.mjs');
+
+  it('prints one row per fact and nothing for a clean line', () => {
+    const out = execFileSync('node', [script, '--extract', join(FIXTURES, 'extract.txt')], { encoding: 'utf8' });
+    expect(out.trimEnd().split('\n')).toEqual([
+      '1\tcommand\tcairn doctor',
+      '1\tflag\t--json',
+      '2\tdate\t2026-09-23',
+      '2\tnumeral\t0',
+    ]);
+  });
+
+  it('exits 2 when the file argument is missing or unreadable', () => {
+    expect(spawnSync('node', [script, '--extract'], { encoding: 'utf8' }).status).toBe(2);
+    expect(spawnSync('node', [script, '--extract', join(FIXTURES, 'no-such.txt')], { encoding: 'utf8' }).status).toBe(2);
   });
 });

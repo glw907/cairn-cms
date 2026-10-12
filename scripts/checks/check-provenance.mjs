@@ -13,6 +13,22 @@
 // and a non-empty reason; `cuts` is optional, and a cut id must resolve to a fact bullet in the
 // container, with any tag allowed, since a cut cites nothing.
 //
+// A brief may also carry a top-level `local` array of non-empty strings: the site-invented paths and
+// names the page has the reader create (`src/members/channel.ts`, `MemberChannel`). An extracted
+// `path` or `name` fact whose value equals an entry passes, in a cited sentence and in a `no-claim`
+// sentence alike. `local` is optional and `[]` is valid. A `local` that is not an array, an entry
+// that is not a non-empty string, and an entry that names an engine export (any name
+// docs/internal/api-surface.md lists under any subpath) are defects, since an engine export is never
+// site-invented. The drafter is the one writer of `local`.
+//
+// `node scripts/checks/check-provenance.mjs --extract <file>` is not a gate. It reads one sentence
+// per line and prints a `<line>\t<kind>\t<value>` row for each fact the extractor finds, with the
+// container's key phrases applied as the gate applies them, and nothing for a clean line. It exits
+// 0, or 2 when the file argument is missing or unreadable.
+//
+// A page's `<details>`, `</details>`, `<summary>`, and `</summary>` tags are set aside, in the page
+// coverage and in the extractor alike; a summary's text stays prose the brief carries.
+//
 // Run it over every brief with `node scripts/checks/check-provenance.mjs`, or over just the
 // briefs a page chain drafted with `node scripts/checks/check-provenance.mjs <brief path>...`
 // (each path must exist and sit under docs/internal/briefs/), so one page's gate does not fail
@@ -75,6 +91,7 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { basename, isAbsolute, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
+import { parseApiSurface } from './check-symbols.mjs';
 import {
   extractBullets,
   extractFactId,
@@ -135,6 +152,7 @@ const PROSE_COMMAND_RE = /(?<![\w-])(?:npm|npx|pnpm|yarn)\s+(?:run\s+)?[a-z][\w:
 const PROSE_PATH_RE =
   /(?<![\w./@~-])(?:(?:~|\.{1,2})?\/[\w.@[\]-]+(?:\/[\w.@[\]-]*)*|[\w.@-]+(?:\/[\w.@[\]-]*)+)/g;
 const NAME_RE = /^@?[A-Za-z_$][\w$:[\]-]*(?:\.[A-Za-z_$][\w$-]*)*$/;
+const DETAILS_TAG_RE = /<\/?(?:details|summary)>/g;
 const PACKAGE_NAME_RE = /^@[\w-]+\/[\w.-]+$/;
 
 /**
@@ -223,7 +241,7 @@ function codeSpanFacts(span) {
  * @returns {ExtractedFact[]}
  */
 export function extractFacts(text, keyPhrases) {
-  const withoutLinks = text.replace(IMAGE_RE, ' ').replace(LINK_TARGET_RE, ']');
+  const withoutLinks = text.replace(DETAILS_TAG_RE, ' ').replace(IMAGE_RE, ' ').replace(LINK_TARGET_RE, ']');
   /** @type {ExtractedFact[]} */
   const found = [];
   for (const m of withoutLinks.matchAll(CODE_SPAN_RE)) found.push(...codeSpanFacts(m[1]));
@@ -264,6 +282,17 @@ export function extractFacts(text, keyPhrases) {
     seen.add(key);
     return true;
   });
+}
+
+/**
+ * The extracted facts a brief's `local` list does not vouch for. A `path` or `name` fact equal to a
+ * `local` entry is the page's own invention, so no bullet is expected to contain it.
+ * @param {ExtractedFact[]} found
+ * @param {string[]} local
+ * @returns {ExtractedFact[]}
+ */
+function withoutLocal(found, local) {
+  return found.filter((fact) => !((fact.kind === 'path' || fact.kind === 'name') && local.includes(fact.value)));
 }
 
 /**
@@ -392,6 +421,32 @@ export function checkCuts(cuts, index) {
 }
 
 /**
+ * The defects in a brief's top-level `local` list: an array of non-empty strings, none of which is
+ * an engine export, since an export is the engine's name and never one the page invents. An absent
+ * list has no defects.
+ * @param {unknown} local
+ * @returns {string[]}
+ */
+export function checkLocal(local) {
+  if (local === undefined) return [];
+  if (!Array.isArray(local)) return ['local: not an array of non-empty strings'];
+  /** @type {Set<string> | null} */
+  let exported = null;
+  /** @type {string[]} */
+  const defects = [];
+  local.forEach((entry, i) => {
+    const label = `local: entry ${i + 1}`;
+    if (typeof entry !== 'string' || entry.trim().length === 0) {
+      defects.push(`${label}: not a non-empty string`);
+      return;
+    }
+    exported ??= new Set([...parseApiSurface().values()].flatMap((names) => [...names]));
+    if (exported.has(entry)) defects.push(`${label}: "${entry}" is an engine export, never site-invented`);
+  });
+  return defects;
+}
+
+/**
  * A short, one-line preview of a sentence for a defect message.
  * @param {string} text
  * @returns {string}
@@ -409,9 +464,10 @@ function preview(text) {
  * @param {unknown[]} ids The cited ids; a list of one is a single citation.
  * @param {string} text The sentence text.
  * @param {FactIndex} index
+ * @param {string[]} local The brief's page-local paths and names.
  * @returns {string[]}
  */
-function checkCitedIds(label, ids, text, index) {
+function checkCitedIds(label, ids, text, index, local) {
   /** @type {string[]} */
   const defects = [];
   if (ids.length === 0) {
@@ -444,7 +500,7 @@ function checkCitedIds(label, ids, text, index) {
   if (resolved.length === 0) return defects;
 
   const where = resolved.map((fact) => `${fact.id}, ${fact.file}:${fact.line}`).join('; ');
-  for (const fact of extractFacts(text, index.keyPhrases)) {
+  for (const fact of withoutLocal(extractFacts(text, index.keyPhrases), local)) {
     if (!resolved.some((bullet) => bulletContainsFact(bullet.text, fact))) {
       defects.push(`${label}: the ${fact.kind} "${fact.value}" is in no cited fact (cites ${where})`);
     }
@@ -457,9 +513,10 @@ function checkCitedIds(label, ids, text, index) {
  * extractable fact against the sentence's own cited bullet. Page coverage is checked separately.
  * @param {BriefSentence[]} sentences
  * @param {FactIndex} index
+ * @param {string[]} [local] The brief's page-local paths and names, already validated.
  * @returns {string[]}
  */
-export function checkSentences(sentences, index) {
+export function checkSentences(sentences, index, local = []) {
   /** @type {string[]} */
   const defects = [];
   sentences.forEach((sentence, i) => {
@@ -475,7 +532,7 @@ export function checkSentences(sentences, index) {
       return;
     }
     if (Array.isArray(id)) {
-      defects.push(...checkCitedIds(label, id, text, index));
+      defects.push(...checkCitedIds(label, id, text, index, local));
       return;
     }
     if (id !== NO_CLAIM && !BRIEF_ID_RE.test(id)) {
@@ -483,12 +540,12 @@ export function checkSentences(sentences, index) {
       return;
     }
 
-    const extracted = extractFacts(text, index.keyPhrases);
+    const extracted = withoutLocal(extractFacts(text, index.keyPhrases), local);
     if (id === NO_CLAIM) {
       for (const fact of extracted) defects.push(`${label}: marked ${NO_CLAIM} but states the ${fact.kind} "${fact.value}"`);
       return;
     }
-    defects.push(...checkCitedIds(label, [id], text, index));
+    defects.push(...checkCitedIds(label, [id], text, index, local));
   });
   return defects;
 }
@@ -496,7 +553,7 @@ export function checkSentences(sentences, index) {
 /**
  * A page's prose with everything the brief does not classify set aside: YAML front matter,
  * fenced code blocks (indented under a list item too, closed by the same fence run), HTML
- * comments, images, and heading lines. Whitespace is collapsed.
+ * comments, the `<details>` and `<summary>` tags (their text stays), images, and heading lines. Whitespace is collapsed.
  * @param {string} markdown
  * @returns {string}
  */
@@ -505,6 +562,7 @@ function pageProse(markdown) {
     .replace(/^---\n[\s\S]*?\n---\n/, '')
     .replace(/^[ \t]*(`{3,}|~{3,})[^\n]*\n[\s\S]*?^[ \t]*\1[^\n]*$/gm, ' ')
     .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(DETAILS_TAG_RE, ' ')
     .replace(IMAGE_RE, ' ')
     .replace(/^#{1,6}\s.*$/gm, ' ')
     .replace(/\s+/g, ' ');
@@ -635,7 +693,7 @@ export function checkBrief(briefPath, index, root) {
     result.defects.push('not a JSON object');
     return result;
   }
-  const { page, sentences, cuts } = /** @type {{ page?: unknown, sentences?: unknown, cuts?: unknown }} */ (brief);
+  const { page, sentences, cuts, local } = /** @type {{ page?: unknown, sentences?: unknown, cuts?: unknown, local?: unknown }} */ (brief);
   if (typeof page !== 'string') {
     result.defects.push('missing a "page" path');
     return result;
@@ -659,7 +717,9 @@ export function checkBrief(briefPath, index, root) {
   const pageExists = existsSync(pagePath);
   if (!pageExists) result.defects.push(`page "${page}" does not exist`);
 
-  result.defects.push(...checkSentences(list, index));
+  const localDefects = checkLocal(local);
+  const localNames = Array.isArray(local) ? local.filter((e) => typeof e === 'string') : [];
+  result.defects.push(...localDefects, ...checkSentences(list, index, localNames));
   result.defects.push(...checkCuts(cuts, index));
   if (pageExists) result.defects.push(...checkPageCoverage(readFileSync(pagePath, 'utf8'), list));
   return result;
@@ -823,8 +883,36 @@ export function checkProvenance(briefsDir, factsDir, root, briefArgs, rebuiltLis
   return { defects, report };
 }
 
+/**
+ * The `--extract` rows for a file of one-sentence lines: `<line>\t<kind>\t<value>` per fact.
+ * @param {string} text
+ * @param {string[]} keyPhrases
+ * @returns {string[]}
+ */
+export function extractRows(text, keyPhrases) {
+  return text.split('\n').flatMap((line, i) =>
+    extractFacts(line, keyPhrases).map((fact) => `${i + 1}\t${fact.kind}\t${fact.value}`),
+  );
+}
+
 function main() {
-  const { defects, report } = checkProvenance(BRIEFS_DIR, FACTS_DIR, ROOT, process.argv.slice(2), REBUILT_LIST_PATH);
+  const args = process.argv.slice(2);
+  if (args[0] === '--extract') {
+    const file = args[1];
+    let text;
+    try {
+      if (!file) throw new Error('no file argument');
+      text = readFileSync(file, 'utf8');
+    } catch {
+      console.error('check-provenance --extract: needs a readable <file> of one sentence per line');
+      process.exitCode = 2;
+      return;
+    }
+    const rows = extractRows(text, loadFactIndex(FACTS_DIR).keyPhrases);
+    if (rows.length > 0) console.log(rows.join('\n'));
+    return;
+  }
+  const { defects, report } = checkProvenance(BRIEFS_DIR, FACTS_DIR, ROOT, args, REBUILT_LIST_PATH);
   if (defects.length === 0) {
     console.log('check-provenance: OK');
     console.log(report.join('\n'));

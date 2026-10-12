@@ -85,7 +85,7 @@ Each section holds what the next one depends on.
    successful build), then the one-step wrapper around the resolver just built, then the wrapper's
    caveat, which sits on the step it qualifies. It is an optional step of the same task, so it sits
    before the verification, not after it.
-8. **What the Library counts as a use** (cover 5), the page's one explanation section, follows the
+8. **Asset references the Library counts** (cover 5), the page's one explanation section, follows the
    missing-asset section because it explains the usual way a page gets a missing asset: an asset
    deleted while an uncounted reference still names it. Its first sentence ties it to a task,
    deleting an asset, per the anatomy's lead-in rule. It precedes the verification, since it shapes
@@ -134,7 +134,7 @@ Each section holds what the next one depends on.
 ### Heading policy
 
 Task headings start with a bare infinitive; "Before you begin" and "See also" are the anatomy's fixed
-headings; "What the Library counts as a use" is the one explanation section and takes a noun clause.
+headings; "Asset references the Library counts" is the one explanation section and takes a noun phrase.
 `docs/extend/add-cairn-to-a-sveltekit-app.md:1223` and `docs/extend/architecture.md:75` link the page
 itself, with no anchor, so every heading is free.
 
@@ -396,7 +396,7 @@ Content:
 
 **Hand-off (no-claim):** "Before you delete an asset, know what the Library can see."
 
-### What the Library counts as a use
+### Asset references the Library counts
 
 **First sentence:** The Library counts a `media:` reference only in an image field's `src` and in a
 body image, so "no references found" never proves an asset unused.
@@ -552,7 +552,7 @@ named where it lands. `f:fxit31` is cut, as the page inputs disposed it.
 | f:ex4hss | carried | Mount the media route (route at `<publicBase>/[...path]`, param `path`, else 404); scoped in Set the options; cited again in Verify media and Diagnose a failed check |
 | f:f4ulxz | carried | Mount the media route (last segment only); scoped in Set the options (`urlForm` both served) |
 | f:fjnszk | carried | Mount the media route (the four headers, `application/octet-stream`); cited again in Verify media |
-| f:frgg7d | carried | Fail the build on a missing asset (marker, log, build succeeds, wrapper); scoped in Introduction (the missing-asset boundary the page covers); cited again in What the Library counts as a use and Diagnose a failed check |
+| f:frgg7d | carried | Fail the build on a missing asset (marker, log, build succeeds, wrapper); scoped in Introduction (the missing-asset boundary the page covers); cited again in Asset references the Library counts and Diagnose a failed check |
 | f:g4cwcw | carried | Upload from your own screen (body, required and optional headers, alt cap, envelope) |
 | f:69rw88 | carried | Declare the bucket on the adapter (the resolved config the route and upload read); cited again in Mount the media route |
 | f:2hnxsr | carried (scoped) | Declare the bucket on the adapter (binding resolved at request time by name); scoped in Set the options and Resolve media on public pages |
@@ -566,7 +566,7 @@ named where it lands. `f:fxit31` is cut, as the page inputs disposed it.
 | f:s1n77t | carried | Set the options (the two URL shapes, the throw); cited again in Verify media |
 | f:fnat1w | carried | Set the options (the three defaults); cited again in Mount the media route |
 | f:kp50li | carried | Set the options (`transformations`, the zone setting, `srcset`); cited again in Verify media |
-| f:fn4zb7 | carried | What the Library counts as a use (in place of `f:fxit31`) |
+| f:fn4zb7 | carried | Asset references the Library counts (in place of `f:fxit31`) |
 | f:nlkgag | carried | Fail the build on a missing asset (the `imageDetail` caveat and its copy) |
 | f:q07rd5 | carried (scoped) | Before you begin (the two adapter paths); cited again in Introduction. Its tutorial-hooks clause is not used |
 | f:qtvesq | carried (scoped) | Mount the media route (the scaffold's `GET`, hash and extension validation, own headers); scoped in Before you begin and Introduction. Its R2 key clause is not used |

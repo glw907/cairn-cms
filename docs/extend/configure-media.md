@@ -10,8 +10,8 @@ reference into a URL. The site supplies the bucket's binding in `wrangler.jsonc`
 `media` block that names it, the SvelteKit route file the handler runs in, and the resolver its
 public entry route receives. Media stays off until the adapter declares that block.
 
-What the work involves depends on the site. On the site the add-cairn tutorial builds, whose adapter
-is `src/lib/cairn.config.ts`, a developer comes to turn media on. On a scaffolded site, whose adapter
+What the work involves depends on the site. The add-cairn tutorial's site keeps its adapter in
+`src/lib/cairn.config.ts`, and its developer comes to turn media on. On a scaffolded site, whose adapter
 is `src/theme/cairn.config.ts`, the binding, the block, the route, and the resolver are already in
 place. That site's developer comes to change an option, or to learn what the engine refuses at
 upload, what the media route serves, and what the Library counts as a use of an asset. A missing
@@ -40,8 +40,7 @@ public entry route. The page doesn't cover the following topics, each of which a
 
 ## Before you begin
 
-Media needs an R2 bucket bound to your Worker and the adapter file of the site you are changing.
-The steps on this page rest on the following:
+The steps on this page need the following:
 
 - An R2 bucket, bound to the Worker by an `r2_buckets` entry in `wrangler.jsonc`. Cloudflare's
   [Use R2 from Workers](https://developers.cloudflare.com/r2/api/workers/workers-api-usage/) page
@@ -79,7 +78,8 @@ To declare the bucket, follow these steps:
    ```
 
 2. In the adapter file, declare the block as a constant named `media`, and pass it to
-   `defineAdapter` as its `media` member:
+   `defineAdapter` as its `media` member.
+   On the tutorial's site, the adapter is `src/lib/cairn.config.ts`:
 
    <!-- snippet-check-skip: elides the adapter's required content, backend, email, and rendering groups -->
    ```ts
@@ -149,7 +149,7 @@ and serves either form.
 
 `transformations` tells the engine that Cloudflare
 [Image Transformations](https://developers.cloudflare.com/images/optimization/transformations/overview/)
-is on for the zone. That is a zone setting the dashboard or API turns on, and a Worker can't flip it.
+is on for the zone. That is a zone setting the dashboard or API turns on, and a Worker can't change it.
 Set `transformations` to `true` only after you turn the zone setting on. With it `false`, an image
 gets the bare full-size path. With it `true`, an image whose width is known also gets a `srcset`
 built from Cloudflare transform URLs. Either way, an image whose dimensions are known carries
@@ -166,7 +166,7 @@ With the options chosen, mount the route that serves the files.
 
 ## Mount the media route
 
-Mount `createMediaRoute` at `<publicBase>/[...path]`, which is `src/routes/media/[...path]/+server.ts`
+The route must sit at `<publicBase>/[...path]`, which is `src/routes/media/[...path]/+server.ts`
 under the default base, with the catch-all param named `path`. A route anywhere else, or a param
 under another name, makes every generated image URL 404.
 
@@ -200,14 +200,14 @@ A different `publicBase` renames the `media` directory.
 The route reads only the last path segment's hash and extension, and it ignores the slug and any
 fan-out directory. It checks for a 16-character hex hash and an allow-listed image extension before
 it reads the bucket. Because it sits outside `/admin`, it sets its own security headers on every
-response other than a 404:
+response that serves an object:
 
 - `X-Content-Type-Options: nosniff`
 - `Content-Disposition: inline`
 - `Content-Security-Policy: default-src 'none'; sandbox`
 - `Cache-Control: public, max-age=31536000, immutable`
 
-An object stored with no content type is served as `application/octet-stream`. The
+An object stored with no media type is served as `application/octet-stream`. The
 [`createMediaRoute`](../reference/sveltekit.md#createmediaroute) entry covers the route's full
 behavior.
 
@@ -224,17 +224,16 @@ To wire the public pages, follow these steps:
 1. In `src/lib/cairn.config.ts`, export a resolver built from the committed manifest and the same
    `media` constant:
 
+   <!-- snippet-check-skip: continues the adapter file that declares media in Declare the bucket on the adapter -->
    ```ts
    // src/lib/cairn.config.ts
    import {
      createMediaResolver,
      normalizeAssets,
      readCommittedManifest,
-     type AssetConfig,
    } from '@glw907/cairn-cms/media';
 
-   // The same constant the adapter's media member takes.
-   const media: AssetConfig = { bucketBinding: 'MEDIA_BUCKET' };
+   // uses the media constant from Declare the bucket on the adapter
 
    export const mediaResolver = createMediaResolver(
      readCommittedManifest(
@@ -290,20 +289,21 @@ the build still succeeds. The image gets `src="#"`, the class `cairn-broken-medi
 `Missing media asset`, and it keeps its alt text. A dangling `cairn:` link fails the prerender
 instead.
 
-- In `src/lib/cairn.config.ts`, replace the `mediaResolver` export with a wrapper that throws when the
-  resolver returns `undefined`:
+- In the adapter file, wrap the resolver so it throws when it returns `undefined`. On the tutorial's
+  site, replace `mediaResolver` in `src/lib/cairn.config.ts`. On a scaffolded site, wrap
+  `publicMediaResolver` in `src/theme/cairn.config.ts`.
 
+  <!-- snippet-check-skip: continues the adapter file that declares media in Declare the bucket on the adapter -->
   ```ts
   // src/lib/cairn.config.ts
   import {
     createMediaResolver,
     normalizeAssets,
     readCommittedManifest,
-    type AssetConfig,
     type MediaResolve,
   } from '@glw907/cairn-cms/media';
 
-  const media: AssetConfig = { bucketBinding: 'MEDIA_BUCKET' };
+  // uses the media constant from Declare the bucket on the adapter
 
   const baseResolver = createMediaResolver(
     readCommittedManifest(
@@ -324,20 +324,17 @@ instead.
 
   > **Caution:** The built-in resolver carries an `imageDetail` property that the render step reads for each image's intrinsic size and `srcset`. The property isn't on the public `MediaResolve` type. A new function drops it, and the wrapped resolver's images then render with neither, unless the wrapper copies `imageDetail` across.
 
-On a scaffolded site, wrap `publicMediaResolver` in `src/theme/cairn.config.ts` the same way.
-
 Before you delete an asset, know what the Library can see.
 
-## What the Library counts as a use
+## Asset references the Library counts
 
 The Library counts a `media:` reference only in an image field's `src` and in a body image, so "no
 references found" never proves that an asset is unused. It counts the `src` of every `image`-typed
 field, at the top level or nested at any depth in `object` and `array` fields, and every body image
 node, a `:::figure`'s inner image included. It looks in the published manifest on `main` and in every
 open `cairn/*` branch. A reference in a text field, a link, a directive or component attribute, a raw
-HTML block, or a code span is not counted. The Library never calls an asset "unused" and can show
-"no references found" for an asset a page still renders. Deleting such an asset leaves that
-page with a missing asset, the case [Fail the build on a missing asset](#fail-the-build-on-a-missing-asset)
+HTML block, or a code span is not counted. Deleting an asset that only an uncounted reference names
+leaves its page with a missing asset, the case [Fail the build on a missing asset](#fail-the-build-on-a-missing-asset)
 covers.
 
 If your site uploads from a screen of its own, build that request next; otherwise, go on to the
@@ -345,9 +342,9 @@ verification.
 
 ## Upload from your own screen
 
-If you build an upload screen of your own, post the file's raw bytes to the admin's `mediaUpload`
-action as a `text/plain` body. The action belongs to the `/admin/media` view, and the request needs
-`Content-Length` and `X-Cairn-CSRF` headers. The
+The `mediaUpload` action takes the file's raw bytes as a `text/plain` body. The action
+belongs to the `/admin/media` view, and the request needs `Content-Length` and `X-Cairn-CSRF`
+headers. The
 [admin shell's reference entry](../reference/admin.md#cairnadminshell) says where a screen reads the
 `X-Cairn-CSRF` value.
 
@@ -371,7 +368,7 @@ Three refusals depend on the request your screen sends:
 | Reason | When the action refuses |
 | --- | --- |
 | `length_required` | The request has no positive integer `Content-Length` |
-| `too_large` | The declared or actual size is above `maxUploadBytes` |
+| `too_large` | The declared or actual size is greater than `maxUploadBytes` |
 | `unsupported_type` | The sniffed bytes aren't an allowed type, whatever type the request declares |
 
 In the envelope, `length_required` carries status 411 and `too_large` carries status 413. A body over
@@ -408,9 +405,9 @@ To verify media, follow these steps:
    ```
 
 7. In the output, confirm the four headers from [Mount the media route](#mount-the-media-route) and a
-   content type of `image/jpeg`.
+   media type of `image/jpeg`.
 
-   The route serves the content type stored at upload.
+   The route serves the media type stored at upload.
 
 When a check fails, work through [Diagnose a failed check](#diagnose-a-failed-check) in order.
 
@@ -419,7 +416,8 @@ When a check fails, work through [Diagnose a failed check](#diagnose-a-failed-ch
 Each failed check points at one piece of the setup, and the following causes run in the order the
 verification reaches them:
 
-1. The upload is refused. A `too_large` refusal points at `maxUploadBytes` in
+1. The upload is refused, and the Worker logs `media.upload_failed`, whose `reason` names the
+   refusal. A `too_large` refusal points at `maxUploadBytes` in
    [Set the options](#set-the-options) and at the plan's request-body cap. A `length_required`
    refusal points at the `Content-Length` header in
    [Upload from your own screen](#upload-from-your-own-screen). An `unsupported_type` refusal points

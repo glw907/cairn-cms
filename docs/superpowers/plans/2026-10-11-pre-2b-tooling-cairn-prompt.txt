@@ -7,11 +7,12 @@ Before any other act, enter your worktree:
 - If `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/pre2b-tooling` appears in `git worktree list`, this is a relaunch: call EnterWorktree with that `path`.
 - Otherwise call EnterWorktree with the name `pre2b-tooling`, which creates branch `worktree-pre2b-tooling` from local `HEAD`.
 
-Your first act after EnterWorktree is this one Bash call:
+Your git dir is `/var/home/glw907/Projects/cairn-cms/.git/worktrees/pre2b-tooling`. The worktree-isolation guard refuses a git dir computed at runtime (`$(git rev-parse ...)` or a shell variable), so every command in this pass names it literally; the plan writes it as `<gitdir>`. Your first acts after EnterWorktree are these plain Bash calls, one per call:
+1. `git rev-parse --absolute-git-dir`. If it prints a path other than `/var/home/glw907/Projects/cairn-cms/.git/worktrees/pre2b-tooling`, use the printed path wherever this prompt and the plan name the git dir.
+2. `test -e /var/home/glw907/Projects/cairn-cms/.git/worktrees/pre2b-tooling/pass-stop && cat /var/home/glw907/Projects/cairn-cms/.git/worktrees/pre2b-tooling/pass-stop`. If it prints a stop, end your turn without another act until Geoff tells you to go on.
+3. `test -f /var/home/glw907/Projects/cairn-cms/.git/worktrees/pre2b-tooling/pass-task-clock` and, if it exits 0, `date +%s`, then `sed -i 's/^start=.*/start=<that number>/' /var/home/glw907/Projects/cairn-cms/.git/worktrees/pre2b-tooling/pass-task-clock` with the number written literally.
 
-`g=$(git rev-parse --absolute-git-dir); if test -e "$g/pass-stop"; then cat "$g/pass-stop"; elif test -f "$g/pass-task-clock"; then sed -i "s/^start=.*/start=$(date +%s)/" "$g/pass-task-clock"; fi`
-
-A clock-stop line that arrives before that call, or in the same turn as it, is stale. If the call prints a stop, end your turn without another act until Geoff tells you to go on.
+A clock-stop line that arrives before those calls, or in the same turn as them, is stale.
 
 On a new worktree:
 1. Run `git merge --no-edit overnight-2b-plan`.
@@ -20,7 +21,7 @@ On a new worktree:
 
 Load `cairn-pass` (it loads `pass-core`) and follow it. Read the plan whole, in your own worktree, after the merge. On a relaunch, follow its Resume convention.
 
-Arm the API-drop wake-up (`/loop` with no interval). Each tick first runs `test -e "$(git rev-parse --absolute-git-dir)/pass-stop"` and ends the turn if the file exists. The laptop is on AC with the lid open, so arm no lid hold. No workflow runs in this pass, so `claude-wf-guard` stays unarmed. If you ever launch one, first arm `claude-wf-guard <transcript-dir> implementer <run-id>`.
+Arm the API-drop wake-up (`/loop` with no interval). Each tick first runs `test -e /var/home/glw907/Projects/cairn-cms/.git/worktrees/pre2b-tooling/pass-stop` and ends the turn if the file exists. A subagent error that names a usage limit is not a red and not a stop: let the tick wait past the reset and re-dispatch. The laptop is on AC with the lid open, so arm no lid hold. No workflow runs in this pass, so `claude-wf-guard` stays unarmed. If you ever launch one, first arm `claude-wf-guard <transcript-dir> implementer <run-id>`.
 
 Skip agent-memory maintenance: read and write no agent memory, and put that line in every subagent prompt.
 
@@ -29,12 +30,12 @@ Scope, from Anthropic, applies to every step and every dispatch, and each pair p
 "Deliver what was asked, at the scope intended. Make routine judgment calls yourself, and check in only when different readings of the request would lead to materially different work. If the request seems mistaken or a better approach exists, say so in a sentence and continue with the task as asked rather than quietly narrowing, widening, or transforming it. Finish the whole task, and stop short of actions that are clearly beyond what was asked." (https://platform.claude.com/docs/en/prompt-engineering/prompting-claude-opus-5)
 Anything the plan does not name goes in the PR body's "Found, not done", never into a task.
 
-Execute CT1 through CT-C in the plan's Order. CT3 with CT4, and CT5 with CT6, run as pairs per the plan's Pairs convention, and you run CT2 while the first pair works. Each task's first act writes its task-clock file in `git rev-parse --absolute-git-dir` per `pass-core` (`task=`, `start=`, `estimate=`, `base=`), and you remove the file at the task's end. Every command follows the plan's Command forms.
+Execute CT1 through CT-C in the plan's Order. CT3 with CT4, and CT5 with CT6, run as pairs per the plan's Pairs convention, and you run CT2 while the first pair works. Each task's first act writes its task-clock file, `<gitdir>/pass-task-clock`, per `pass-core` (`task=`, `start=`, `estimate=`, `base=`), with `start=` taken from a separate `date +%s` call and written literally, and you remove the file at the task's end. CT-C's clock file is removed at `gh pr ready`, before `review-desk`, so the wait for Geoff is never clocked; from then on a stop never commits or pushes. Every command follows the plan's Command forms.
 
 Push after each commit. You may commit on your worktree's branch and push it to `glw907/cairn-cms`. The first push opens a draft PR against `main` there. Watch each push with `ci-green <sha> --pr <n> --wait`, redirected to a file under `/var/home/glw907/.cache/pre2b-tooling/` and never piped, as a background Bash task. Never push `main`. Write nothing under `~/.dotfiles`; at CT-C you only read the dotfiles branch's chain through `gh api`.
 
-Stop rule: stop on a fired clock stop, a red you cannot fix in two attempts, a merge conflict, a page fix that would change what the page teaches, a finding that changes the approved design, or the battery at 11 percent off mains. The planning session meters this track's 7M-token ceiling and stops you there. Every stop follows the plan's Stops convention and notifies with `notify-send -u normal`.
+Stop rule: stop on a fired clock stop, a red you cannot fix in two attempts, a merge conflict, a page fix that would change what the page teaches, a finding that changes the approved design, or the battery at 11 percent off mains. The planning session meters this track's 7M-token ceiling (input + output + cache-creation tokens, excluding cache reads; the meter ends at hand-over) and stops you there. Every stop follows the plan's Stops convention and notifies with `notify-send -u normal`.
 
 Hand-over: when `ci-green` exits 0 on the final head, run `gh pr ready <n>`. Then run `review-desk pr glw907/cairn-cms "Pre-2b docs tooling: register, checks, and fact pointers" <n>` as a background Bash command, hand the PR body's "Found, not done" items over as one `review-desk triage` item, and stay open until each command exits with Geoff's decision as JSON.
-- On approve, merge with `gh pr merge <n> --merge --match-head-commit <head>`, taking `<head>` from the decision. Pull the main checkout as `pass-core` "Close" says, act on each triage row, notify Geoff, call ExitWorktree with `action: "keep"`, and end after acting on the decision.
+- On approve, merge with `gh pr merge <n> --merge --match-head-commit <head>`, taking `<head>` from the decision. Then call ExitWorktree with `action: "keep"` first, because the isolation guard blocks git commands aimed at the main checkout from inside a worktree. Then pull the main checkout as `pass-core` "Close" says (`git -C /var/home/glw907/Projects/cairn-cms pull --ff-only`), or report it stale if another live session sits there. Then act on each triage row, notify Geoff, and end.
 - On reject, fix forward from the note and hand over again.

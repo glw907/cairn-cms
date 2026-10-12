@@ -7,17 +7,18 @@ Before any other act, enter your worktree:
 - If `/var/home/glw907/.dotfiles/.claude/worktrees/pre2b-tooling` appears in `git worktree list`, this is a relaunch: call EnterWorktree with that `path`.
 - Otherwise call EnterWorktree with the name `pre2b-tooling`, which creates branch `worktree-pre2b-tooling` from local `HEAD`.
 
-Your first act after EnterWorktree is this one Bash call:
+Your git dir is `/var/home/glw907/.dotfiles/.git/worktrees/pre2b-tooling`. The worktree-isolation guard refuses a git dir computed at runtime (`$(git rev-parse ...)` or a shell variable), so every command in this pass names it literally; the plan writes it as `<gitdir>`. Your first acts after EnterWorktree are these plain Bash calls, one per call:
+1. `git rev-parse --absolute-git-dir`. If it prints a path other than `/var/home/glw907/.dotfiles/.git/worktrees/pre2b-tooling`, use the printed path wherever this prompt and the plan name the git dir.
+2. `test -e /var/home/glw907/.dotfiles/.git/worktrees/pre2b-tooling/pass-stop && cat /var/home/glw907/.dotfiles/.git/worktrees/pre2b-tooling/pass-stop`. If it prints a stop, end your turn without another act until Geoff tells you to go on.
+3. `test -f /var/home/glw907/.dotfiles/.git/worktrees/pre2b-tooling/pass-task-clock` and, if it exits 0, `date +%s`, then `sed -i 's/^start=.*/start=<that number>/' /var/home/glw907/.dotfiles/.git/worktrees/pre2b-tooling/pass-task-clock` with the number written literally.
 
-`g=$(git rev-parse --absolute-git-dir); if test -e "$g/pass-stop"; then cat "$g/pass-stop"; elif test -f "$g/pass-task-clock"; then sed -i "s/^start=.*/start=$(date +%s)/" "$g/pass-task-clock"; fi`
-
-A clock-stop line that arrives before that call, or in the same turn as it, is stale. If the call prints a stop, end your turn without another act until Geoff tells you to go on.
+A clock-stop line that arrives before those calls, or in the same turn as them, is stale.
 
 The adapter has no setup command. Run `mkdir -p /var/home/glw907/.cache/pre2b-tooling-dotfiles/tmp`, and prefix every gate and test command with `TMPDIR=/var/home/glw907/.cache/pre2b-tooling-dotfiles/tmp`.
 
 Load `dotfiles-pass` (it loads `pass-core`) and follow it. The gate is `bash scripts/gate.sh`. On a relaunch, find your PR with `gh pr list -R glw907/workstation --head worktree-pre2b-tooling --state all`, and start at the first task with no commit carrying its id.
 
-Arm the API-drop wake-up (`/loop` with no interval). Each tick first runs `test -e "$(git rev-parse --absolute-git-dir)/pass-stop"` and ends the turn if the file exists. The laptop is on AC with the lid open, so arm no lid hold. No workflow runs in this pass, so `claude-wf-guard` stays unarmed. If you ever launch one, first arm `claude-wf-guard <transcript-dir> implementer <run-id>`.
+Arm the API-drop wake-up (`/loop` with no interval). Each tick first runs `test -e /var/home/glw907/.dotfiles/.git/worktrees/pre2b-tooling/pass-stop` and ends the turn if the file exists. A subagent error that names a usage limit is not a red and not a stop: let the tick wait past the reset and re-dispatch. The laptop is on AC with the lid open, so arm no lid hold. No workflow runs in this pass, so `claude-wf-guard` stays unarmed. If you ever launch one, first arm `claude-wf-guard <transcript-dir> implementer <run-id>`.
 
 Skip agent-memory maintenance: read and write no agent memory, and put that line in every subagent prompt.
 
@@ -26,12 +27,12 @@ Scope, from Anthropic, applies to every step and every dispatch:
 "Deliver what was asked, at the scope intended. Make routine judgment calls yourself, and check in only when different readings of the request would lead to materially different work. If the request seems mistaken or a better approach exists, say so in a sentence and continue with the task as asked rather than quietly narrowing, widening, or transforming it. Finish the whole task, and stop short of actions that are clearly beyond what was asked." (https://platform.claude.com/docs/en/prompt-engineering/prompting-claude-opus-5)
 Anything the plan does not name goes in the PR body's "Found, not done", never into a task.
 
-Execute DT1, then DT-C. Each task's first act writes its task-clock file in `git rev-parse --absolute-git-dir` per `pass-core` (`task=`, `start=`, `estimate=`), and you remove the file at the task's end. Use one plain command per Bash call, with literal absolute paths.
+Execute DT1, then DT-C. Each task's first act writes its task-clock file, `<gitdir>/pass-task-clock`, per `pass-core` (`task=`, `start=`, `estimate=`), with `start=` taken from a separate `date +%s` call and written literally, and you remove the file at the task's end. DT-C's clock file is removed once the PR is open, before `review-desk`, so the wait for Geoff is never clocked; from then on a stop never pushes. Use one plain command per Bash call, with literal absolute paths.
 
 You may commit on your worktree's branch, push it to `glw907/workstation` (the `origin` of `~/.dotfiles`), and open its PR there against `main`. Never push `main`. Write nothing in cairn-cms; read its files by path only.
 
-Stop rule: stop on a fired clock stop, a red gate you cannot fix in two attempts, a merge conflict, a finding that changes the approved design, or the battery at 11 percent off mains. The planning session meters this track's 3M-token ceiling and stops you there. A stop writes `$(git rev-parse --absolute-git-dir)/pass-stop` (the task, what failed, the one question), runs `notify-send -u normal "pre-2b tooling (dotfiles) stopped at <task>; resume: claude attach pre2b-tooling-dotfiles"`, and ends the turn.
+Stop rule: stop on a fired clock stop, a red gate you cannot fix in two attempts, a merge conflict, a finding that changes the approved design, or the battery at 11 percent off mains. The planning session meters this track's 3M-token ceiling (input + output + cache-creation tokens, excluding cache reads; the meter ends at hand-over) and stops you there. A stop writes `/var/home/glw907/.dotfiles/.git/worktrees/pre2b-tooling/pass-stop` (the task, what failed, the one question), runs `notify-send -u normal "pre-2b tooling (dotfiles) stopped at <task>; resume: claude attach pre2b-tooling-dotfiles"`, and ends the turn.
 
 Hand-over: when the gate is green on the final head and the PR exists, run `review-desk pr glw907/workstation "Pre-2b docs tooling: chain prompts and the showcase tell" <n>` as a background Bash command. Hand the PR body's "Found, not done" items over as one `review-desk triage` item, and stay open until each command exits with Geoff's decision as JSON.
-- On approve, merge with `gh pr merge <n> --merge --match-head-commit <head>`, taking `<head>` from the decision. Pull `~/.dotfiles` as `pass-core` "Close" says, run `make -C /var/home/glw907/.dotfiles/claude/.claude/skills/writing-voice/evals/tellgrader install`, act on each triage row, notify Geoff, call ExitWorktree with `action: "keep"`, and end after acting on the decision.
+- On approve, merge with `gh pr merge <n> --merge --match-head-commit <head>`, taking `<head>` from the decision. Then, in this order: call ExitWorktree with `action: "keep"`, because the isolation guard blocks git commands aimed at the main checkout from inside a worktree; pull `~/.dotfiles` as `pass-core` "Close" says (`git -C /var/home/glw907/.dotfiles pull --ff-only`), or report it stale and skip the install if another live session sits there; run `make -C /var/home/glw907/.dotfiles/claude/.claude/skills/writing-voice/evals/tellgrader install` and confirm per the plan's DT-C; act on each triage row, notify Geoff, and end.
 - On reject, fix forward from the note and hand over again.

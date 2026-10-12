@@ -12,6 +12,7 @@
     {"text": "The site's build then checks the result.", "id": "f:kv3qen"},
     {"text": "It fails on a committed manifest that no longer matches the content files, and on any entry not marked as a draft whose frontmatter does not fit its concept, listing each invalid field.", "id": ["f:fdtgh5", "f:kv3qen"]},
     {"text": "A deploy builds the public pages from the committed files, so an entry that fails the check locally fails the next deploy as well.", "id": ["f:1mkckz", "f:kv3qen"]},
+    {"text": "A migrated file outlives the script that wrote it.", "id": "no-claim"},
     {"text": "A `cairn:` link and the admin's rename and delete guards key on an entry's id, and none of them can resolve a stem outside the id shape.", "id": "f:nhjraz"},
     {"text": "The first time an editor saves the entry, the admin rewrites its frontmatter from the declared fields and deletes every other key.", "id": "f:ggzzur"},
     {"text": "A developer moving an organization's existing site onto cairn writes one script that converts each old file, so that every migrated entry keeps a stable id from its filename, validates against its concept's fields, and can be the target of a `cairn:` link.", "id": ["f:z68na4", "f:nhjraz", "f:kv3qen"]},

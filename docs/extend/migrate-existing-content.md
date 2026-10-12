@@ -15,8 +15,8 @@ not marked as a draft whose frontmatter does not fit its concept, listing each i
 deploy builds the public pages from the committed files, so an entry that fails the check locally
 fails the next deploy as well.
 
-A `cairn:` link and the admin's rename and delete guards key on an entry's id, and none of them can
-resolve a stem outside the id shape. The first time an editor saves the entry, the admin rewrites
+A migrated file outlives the script that wrote it. A `cairn:` link and the admin's rename and
+delete guards key on an entry's id, and none of them can resolve a stem outside the id shape. The first time an editor saves the entry, the admin rewrites
 its frontmatter from the declared fields and deletes every other key. A developer moving an
 organization's existing site onto cairn writes one script that converts each old file, so that
 every migrated entry keeps a stable id from its filename, validates against its concept's fields,
@@ -137,7 +137,7 @@ To write the script, follow these steps:
    function toFrontmatter(old, filename) {
      const fm = {};
      if (old.title != null) fm.title = String(old.title);
-     fm.date = toDay(old.date) ?? toDay(filename);
+     const day = toDay(old.date) ?? toDay(filename); if (day) fm.date = day;
      const description = old.description ?? old.summary;
      if (description != null) fm.description = String(description);
      if (old.draft === true || old.published === false) fm.draft = true;

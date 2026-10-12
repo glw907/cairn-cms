@@ -181,10 +181,8 @@ function tarballSlug(name) {
 function packToScratch(name, packageDir) {
   mkdirSync(SCRATCH, { recursive: true });
   const version = readJson(path.join(packageDir, 'package.json')).version;
-  const packed = capture('npm', ['pack', '--pack-destination', SCRATCH, '--silent'], packageDir)
-    .split('\n')
-    .pop()
-    .trim();
+  const lines = capture('npm', ['pack', '--pack-destination', SCRATCH, '--silent'], packageDir).split('\n');
+  const packed = /** @type {string} */ (lines.pop()).trim();
   const packedPath = path.join(SCRATCH, packed);
   const digest = createHash('sha256').update(readFileSync(packedPath)).digest('hex').slice(0, 12);
   const tarball = path.join(SCRATCH, `${tarballSlug(name)}-${version}-${digest}.tgz`);
@@ -227,7 +225,7 @@ function verifyInstalled(name, tarball, consumerDir) {
     const counterpart = path.join(installed, relative);
     const there = statSync(counterpart, { throwIfNoEntry: false });
     if (!there) fail(`${name}: ${relative} is in the tarball but missing from the install`);
-    if (!readFileSync(counterpart).equals(readFileSync(file))) {
+    if (Buffer.compare(readFileSync(counterpart), readFileSync(file)) !== 0) {
       fail(
         `${name}: ${relative} differs between the tarball and the install. ` +
           'npm served a cached build; delete node_modules in the consumer and rerun.'

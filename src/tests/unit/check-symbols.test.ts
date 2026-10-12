@@ -23,6 +23,7 @@ import {
   findUnresolvedSymbols,
   filesInScope,
   envVarInSourceTree,
+  pathExists,
 } from '../../../scripts/checks/check-symbols.mjs';
 import { ALLOWLIST } from '../../../scripts/checks/check-symbols-allowlist.mjs';
 import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
@@ -308,9 +309,45 @@ describe('extractImportedIdentifiers', () => {
     expect(apiSurface.get('.')?.has('defineAdapter')).toBe(true);
     expect(apiSurface.get('.')?.has('NotARealExport')).toBe(false);
   });
+
+  it('reads a subpath import but never the dev package as a `-dev` subpath', () => {
+    const segments = codeVoiceSegments(
+      [
+        '```ts',
+        "import { createChannelDb } from '@glw907/cairn-cms-dev';",
+        "import { sveltekitThing } from '@glw907/cairn-cms/sveltekit';",
+        '```',
+      ].join('\n'),
+    );
+    const found = extractImportedIdentifiers(segments);
+    expect(found.map((c) => c.subpath)).not.toContain('-dev');
+    expect(found).toContainEqual({ line: 3, token: 'sveltekitThing', subpath: '/sveltekit' });
+  });
+});
+
+describe('pathExists', () => {
+  it('resolves a site-relative path against the scaffolded site', () => {
+    const root = mkdtempSync(join(tmpdir(), 'check-symbols-path-'));
+    try {
+      mkdirSync(join(root, 'templates/waymark/src'), { recursive: true });
+      writeFileSync(join(root, 'templates/waymark/src/access.ts'), '');
+      expect(pathExists('src/access.ts', root)).toBe(true);
+      expect(pathExists('src/missing.ts', root)).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('extractFilePaths', () => {
+  it('keeps a leading dot-directory whole and still drops a parent-relative bare name', () => {
+    const tokens = extractFilePaths(
+      codeVoiceSegments('see `.cairn/index.json` and `../worker-configuration.d.ts`'),
+    ).map((c) => c.token);
+    expect(tokens).toContain('.cairn/index.json');
+    expect(tokens).not.toContain('worker-configuration.d.ts');
+  });
+
   it('extracts a real and a fake repository path, both halves', () => {
     const segments = codeVoiceSegments(
       'see `src/lib/log/events.ts` and `src/lib/nonexistent-module.ts`',

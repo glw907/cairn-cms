@@ -18,29 +18,22 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 
 ## Immediate next action
 
-Draft docs stage 2b part 1 is drafted on branch `draft-docs-2b-part1` (draft PR #117, stacked on
-`worktree-pre2b-tooling`, PR #116). The extend arm's 14 new pages each reached a final reader accept
-through `docs-page-chain` on the fixed pre-2b tools: `act-on-newly-published-entries`,
-`add-an-island`, `arrange-the-admin-sidebar`, `build-the-public-routes`, `configure-media`,
-`configure-rendering`, `content-model`, `define-an-adapter-and-schema`,
-`link-content-with-references`, `migrate-existing-content`, `reuse-content-across-entries`,
-`run-cairn-audit-on-your-site`, `share-a-draft-preview`, `turn-on-tidy`. The whole-tree docs gate
-passes. The pass is `runner` class because `scripts/checks/check-symbols-allowlist.mjs` gained
-entries for the paths and script constants the pages create.
+Stage 2b part 2 begins with its page plans, written in drafter's plan format v1
+(`superpowers/plans/2026-10-12-draft-docs-2b-part2-plans.md`). There are 11: the ten extend pages
+pass B re-armed, and "Using Claude Code with cairn" for the new `claude-code` arm. `conductor-cairn-cms`
+runs the pass. It launched from the main checkout with `claude --bg --model claude-opus-5-5 --effort
+medium --name conductor-cairn-cms "$(cat docs/superpowers/plans/2026-10-12-draft-docs-2b-part2-plans-conductor-prompt.txt)"`,
+and it starts the executor `draft-docs-2b-part2-plans`. The pass battle-tests the format with
+drafter-conductor: findings go into drafter Pass 0 before it merges, and the conductor runs
+`drafter check-plan` on all 11 plans afterward. Drafting the pages through drafter follows. Then
+comes the rest of part 2: the relinks and `LEGACY_PATH_MAP` repoints, the reference-arm corrections,
+the final arm index, the outline deletion, the boundary test, and 2b's close. Part 1's carried items
+are the ROADMAP entry "Stage 2b part 2". The re-arm list is `docs/internal/record/harvest/relink.json`.
+The release holds until the docs are complete.
 
-Next: Geoff reads and merges PR #117, after PR #116 merges and the base retargets to `main`. Then
-stage 2b part 2: the ten fact re-arms of drafted pages, the 32 link restorations and
-`LEGACY_PATH_MAP` repoints, the reference-arm corrections, the final arm index, the outline
-deletion, the boundary test, 2b's close, and the claude-code arm. The part 1 "Found, not done"
-items live in the PR body and the stage record
-(`superpowers/research/2026-10-11-draft-docs-2b-part1-record.md`). The re-arm list is engine pass
-B's, in `docs/internal/record/harvest/relink.json`. The release holds until the docs are complete.
-
-PR #116 (the register, the `check:*` scripts, `link:consumer`, and the fact pointers) and its
-workstation PR (the chain's prompts and the showcase tell) wait for the same desk read. cairn-cms
-merges first, then workstation, then `make -C ~/.dotfiles/claude/.claude/skills/writing-voice/evals/tellgrader install`
-rebuilds `tellgrader`. The residue is the "Docs tooling before stage 2b: the residue" entry in
-`ROADMAP.md`.
+The pre-2b tooling PRs are merged: cairn-cms #116 and workstation #25. If `tellgrader` predates
+#25, rebuild it with `make -C ~/.dotfiles/claude/.claude/skills/writing-voice/evals/tellgrader install`.
+The residue is the "Docs tooling before stage 2b: the residue" entry in `ROADMAP.md`.
 
 ## Open decisions and watches
 - Stage 2b part 1, for Geoff: the framing A/B

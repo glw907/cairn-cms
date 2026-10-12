@@ -1110,21 +1110,22 @@ re-sourced to Go on this tree rather than to the page.
   prior deployed manifest itself, since the engine keeps no cross-deploy state. Renaming a
   published entry changes its `concept`/`id` key (cairn's identity model), so a rename reads as a
   newly-published entry to this helper (the old key's stamped row disappears from `after`; the new
-  key has no stamped counterpart in `before`). Source: `src/lib/delivery/manifest.ts:40-44` (doc
+  key has no stamped counterpart in `before`). Source: `src/lib/delivery/manifest.ts:47-64` (doc
   comment: "currently live (non-draft), `publishedAt` is set, and the same concept+id entry in
   `before` was [absent or unstamped]... `upsertEntry` preserves a prior `publishedAt` through an
-  ordinary save") and `:59-62` (`priorStamps` keyed by `keyOf(e)` = concept+id; `if (!e.publishedAt)
+  ordinary save") and `:68-72` (`priorStamps` keyed by `keyOf(e)` = concept+id; `if (!e.publishedAt)
   return false`). [verified]
 - `f:wv457z` `buildNewlyPublished`'s draft exclusion is a separate, necessary check, not implied by
   the stamp comparison: a drafted entry can carry a `publishedAt` stamp forward from a prior
   publish (`upsertEntry` preserves it through a re-draft), so without the explicit
   `if (e.draft) return false` check such an entry could read as newly published even though its
-  stamp differs from `before`. Source: `src/lib/delivery/manifest.ts:38-46` (doc comment) and
-  `:60-64` (draft check precedes the stamp comparison). [verified]
+  stamp differs from `before`. Source: `src/lib/delivery/manifest.ts:47-56` (doc comment) and
+  `:70-72` (draft check precedes the stamp comparison). [verified]
 - `f:gkrell` `ManifestEntry.publishedAt` (ISO 8601 UTC) is set once, at the publish commit that first lands
   the entry non-draft, and never overwritten or cleared afterward; `upsertEntry` preserves a prior
-  `publishedAt` through an ordinary save. Source: `src/lib/delivery/manifest.ts:44` (doc comment,
-  quoted above) matching the Types-table row in `docs/reference/delivery-data.md:549`. [verified]
+  `publishedAt` through an ordinary save. Source: `src/lib/content/manifest.ts:53-61` (the `publishedAt` doc
+  comment) and `src/lib/content/manifest.ts#stampFirstPublish`, matching the Types-table row in
+  `docs/reference/delivery-data.md:595`. [verified]
 - `f:445jgb` `/delivery/data`'s own charter forbids importing from `github`, `auth`, or `email`, enforced by a
   source-boundary test, so the delivery layer never pulls the backend or magic-link auth surface
   into a public bundle; `CairnAdapter` is the one deliberate exception, since its own body reaches
@@ -1827,9 +1828,11 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   authorization sequence first, before touching the draft: signed-in editor from
   `event.locals.cairnEditor`, concept lookup, concept-scoped access check against `runtime.access`,
   entry-id shape rule, and only then (for mint) the pending-draft check. A refusal never reveals
-  whether an entry exists. Both come back as an `outcome` discriminant value, never a throw.
-  Source: `src/lib/sveltekit/preview.ts:128-151` (`mintPreview`: `requireEditor`, `findConcept`,
-  `requireEngineAccess`, `isValidId`, then the pending-draft check), `:184-210` (`revokePreview`:
+  whether an entry exists. A session or access refusal throws (a 403, or a redirect to sign-in);
+  an unknown concept, a bad id, and (mint only) a missing draft come back as an `outcome`
+  discriminant value. Source: `src/lib/sveltekit/preview.ts:130-152` (`mintPreview`:
+  `requireEditor`, `findConcept`, `requireEngineAccess`, `isValidId`, then the pending-draft
+  check; its `@throws` names the 403 and the 303 redirect), `:198-212` (`revokePreview`:
   doc comment states it "mirrors `mintPreview`'s authorization sequence exactly", same four checks,
   no draft check). [verified]
 - `f:n0xz8f` `mintPreview`'s `config.ttlMs` defaults to seven days and must be finite, positive, and between

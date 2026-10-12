@@ -72,6 +72,7 @@ export const ALLOWLIST = new Set([
   'log-event:admin.load', // docs/reference/admin-routes.md and sveltekit.md, the `admin.load` re-export property
   'log-event:admin.actions', // docs/reference/admin-routes.md and sveltekit.md, the `admin.actions` re-export property
   'log-event:editor.nav', // docs/reference/admin-routes.md, the adapter's `editor.nav` config field
+  'log-event:editor.preview', // docs/extend/share-a-draft-preview.md, the adapter's `editor.preview` config field (PreviewConfig)
   'log-event:editor.email', // docs/reference/doctor.md, an `editor` table row's `email` column
   'log-event:editor.role', // docs/reference/sveltekit.md, a variable's own `.role` field access
   'log-event:config.limits', // docs/reference/auth-channel.md, createAuthChannel's `config.limits` bag
@@ -136,6 +137,7 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/server/member-channel.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative auth-channel module
   'file-path:src/lib/server/members.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative roster-lookup and code-delivery module
   'file-path:src/lib/server/member-channel.test.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative channel test
+  'file-path:scripts/announce-new-posts.ts', // docs/extend/act-on-newly-published-entries.md's illustrative post-deploy job, a file the reader creates
   'file-path:migrations-members/0000_channel.sql', // a site's copy of the packaged channel migration, the directory docs/extend/add-a-second-sign-in-group.md creates (examples/showcase/migrations-members/ carries the same file)
   'file-path:src/lib/content.ts', // docs/extend/add-cairn-to-a-sveltekit-app.md's illustrative content-index module, by convention
   'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location

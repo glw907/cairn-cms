@@ -12,6 +12,8 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 
 - [Choose an AI posture](./choose-an-ai-posture.md)
 - [Theme your public site](./theme-your-public-site.md)
+- [Share a draft preview](./share-a-draft-preview.md)
+- [Act on newly published entries](./act-on-newly-published-entries.md)
 
 ## Extend the admin
 

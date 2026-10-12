@@ -42,6 +42,7 @@ Plan: `docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md`. The executor i
 | T5 (run 2 closes) | | `64c689ea4` | about 4.5M (closes) plus 0.2M executor loop | about 21.4M |
 | T6 (run 3, 3 pages) | `wf_8abfb19a-064` | `888906cd6` (WIP) | 3.23M | |
 | T7 (run 3 closes) | | `518ee1e77` | about 4.5M (closes) plus 0.15M executor loop | about 29.4M |
+| T8 (run 4, 1 page) | `wf_7ef2ce8f-59b` | | | |
 
 ## Runs
 

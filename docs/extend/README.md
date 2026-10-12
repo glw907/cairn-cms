@@ -8,6 +8,10 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 - [Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md)
 - [Scaffolded site files](./scaffolded-site-files.md)
 
+## Model content
+
+- [Content model](./content-model.md)
+
 ## Public site
 
 - [Choose an AI posture](./choose-an-ai-posture.md)

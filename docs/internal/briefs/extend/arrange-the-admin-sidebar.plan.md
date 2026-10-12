@@ -59,10 +59,12 @@ Three paragraphs.
    on what a role sees (`f:ys1iq1`, `f:18d9so`). Two readers arrive: a developer who has built a
    custom screen and needs a link to it, and a developer regrouping the engine's own screens for an
    organization's editors. The one-line contract sits here: the guide groups screens into sections,
-   relabels, re-icons, or hides engine screens, links site screens, narrows a section by role, and
-   adds the two per-request seams, `navFilter` and `attention`. What the page covers (Google's first
-   part): those tasks, the startup validation that catches a malformed tree, and a check in the
-   running admin.
+   relabels, re-icons, or hides engine screens, links site screens, narrows a section by role, sets
+   whether a section starts collapsed, and adds the two per-request seams, `navFilter` and
+   `attention`. The starting-state clause stays that short; its cookie detail belongs to Set a
+   section's starting state, not the introduction. What the page covers (Google's first part):
+   those tasks, the startup validation that catches a malformed tree, and a check in the running
+   admin.
 2. Para 2, the line and what the page does not cover (Google's third part). Every way the sidebar
    hides a link removes a door without locking it, so `hidden`, `ownerOnly`, `roles`, and
    `navFilter` leave the route open, and real denial is the access map's job (`f:bvfs3e`,
@@ -150,7 +152,12 @@ Content, in this order.
    5. On an engine reference, set `label` to relabel it or `icon` to change its glyph. Under it: a
       relabel leaves the engine's icon and href alone, and an `icon` override is checked against
       the same allowlist (`f:rwefuj`).
-4. The snippet, introduced by "The following layout produces the sidebar the figure shows."
+4. Validation, one explanation sentence after the steps and before the snippet, so the snippet and
+   the figure its lead-in points to sit next to each other: the engine validates the whole tree once
+   when the runtime composes, so a bad icon, a colliding `href`, an unknown screen, or an unknown
+   role fails at server start with a `navLayout:`-prefixed message, and Resolve a sidebar error
+   lists every trigger (`f:ld6xam`).
+5. The snippet, introduced by "The following layout produces the sidebar the figure shows."
    (no-claim). It shows only the `editor` group inside `defineAdapter` (a `snippet-check-skip`
    comment for the elided groups, as the reference's own adapter snippets carry) and matches the
    figure's resolved tree exactly: `{ screen: 'posts' }`, `{ screen: 'pages' }`, a `Team` section
@@ -161,11 +168,8 @@ Content, in this order.
    renders as Library`. The snippet is written for a site whose concepts are posts and pages, and
    the drafter says so in the lead-in's following sentence, since the reader's other screens land
    in the trailing group the next section explains.
-5. Validation, one explanation sentence after the snippet: the engine validates the whole tree once
-   when the runtime composes, so a bad icon, a colliding `href`, an unknown screen, or an unknown
-   role fails at server start with a `navLayout:`-prefixed message, and Resolve a sidebar error
-   lists every trigger (`f:ld6xam`).
-6. The figure, after the validation sentence: a `repro` fence for `nav/worked-navlayout`, the live
+6. The figure, directly after the snippet and last in the section, so it sits right before Hide an
+   engine screen: a `repro` fence for `nav/worked-navlayout`, the live
    reproduction of `fixtureNavLayout`, never a screenshot. Alt text and caption name what it shows:
    Posts and Pages loose, a Team section with Events and Members, Library and Site settings, then,
    after a divider, Tags, Editors, and Help, which the layout never references. The figure carries

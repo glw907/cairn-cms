@@ -803,8 +803,8 @@
       "id": "f:2awy1w"
     },
     {
-      "text": "The draft on the entry's pending branch, as the `preview.refused` row of [Log events](../reference/log-events.md) defines the reason",
-      "id": "f:2awy1w"
+      "text": "The draft on the entry's pending branch fails the concept's validation",
+      "id": "f:546jja"
     },
     {
       "text": "In the admin, correct the entry's draft and save it, then reload the link",
@@ -823,8 +823,8 @@
       "id": "f:l4waby"
     },
     {
-      "text": "The `preview.refused` row also lists the fields each reason carries.",
-      "id": "f:2awy1w"
+      "text": "The `preview.refused` row of [Log events](../reference/log-events.md) lists the fields each reason carries.",
+      "id": "f:r2qi1y"
     },
     {
       "text": "A site with a review workflow of its own can mint and revoke links from a custom admin route.",

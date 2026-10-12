@@ -119,7 +119,8 @@ A backfill changes that run so it sends every live post once.
 
 ## Backfill on the first run
 
-Pass `null` as `before` only for a first backfill: with `before: null`, every stamped, non-draft entry in `after` comes back as newly published, and the job sends every live post once.
+Pass `null` as `before` only for a first backfill.
+With `before: null`, every stamped, non-draft entry in `after` comes back as newly published.
 On every later run, pass the stored manifest: `null` on an ordinary run sends every live post again.
 
 - In `scripts/announce-new-posts.ts`, replace the first-run branch and the `parseManifest(prior)` line after it with the following line.
@@ -201,8 +202,9 @@ When a post published from the admin never reaches your send code, check its man
 
 1. In the deployed `src/content/.cairn/index.json`, check that the post's row carries `publishedAt` and that the post is not a draft.
 
-   A row still marked as a draft means the post was published as a draft.
+   A row still marked as a draft was committed with its draft flag set, or taken back to draft.
    A missing row means the publish commit is not in that deploy.
+   A non-draft row without the stamp was published before cairn recorded `publishedAt`, and the job never sends it.
 
 2. For a publish that never committed, read the commit records in [Debug your site](debug-your-site.md#commitsucceeded-and-commitfailed).
 

@@ -349,10 +349,10 @@ Find the record's reason in the following table.
 | `unknown` | No stored link matches, as after a revoke, a delete, a rename, or a never-published discard | Mint a new link |
 | `expired` | The link outlived its lifetime | Mint a new link, or lengthen the lifetime as [Set the link's lifetime](#set-the-links-lifetime) shows |
 | `row_invalid` | The stored concept or id no longer matches the site | Mint a new link from the entry as it stands |
-| `draft_invalid` | The draft on the entry's pending branch, as the `preview.refused` row of [Log events](../reference/log-events.md) defines the reason | In the admin, correct the entry's draft and save it, then reload the link |
+| `draft_invalid` | The draft on the entry's pending branch fails the concept's validation | In the admin, correct the entry's draft and save it, then reload the link |
 | `branch_gone` | The pending branch is gone and no published file exists | None, since the draft the link shared no longer exists |
 
-The `preview.refused` row also lists the fields each reason carries.
+The `preview.refused` row of [Log events](../reference/log-events.md) lists the fields each reason carries.
 
 A site with a review workflow of its own can mint and revoke links from a custom admin route.
 

@@ -656,6 +656,18 @@
       "id": "f:t5ebsr"
     },
     {
+      "text": "A `reference` field holds a typed `{ concept, id }` pointer, and the manifest carries both sides of that edge.",
+      "id": "f:a8ecm0"
+    },
+    {
+      "text": "The engine uses those edges to know what still points at an entry.",
+      "id": "f:a8ecm0"
+    },
+    {
+      "text": "It refuses a delete while any entry references it, and a rename repoints every published reference to the new id.",
+      "id": "f:a8ecm0"
+    },
+    {
       "text": "A build regenerates and verifies the manifest.",
       "id": "f:t5ebsr"
     },
@@ -676,11 +688,18 @@
       "id": "f:z4j689"
     },
     {
-      "text": "The engine refuses a rename with a 409 in several cases, including a new id that collides with an existing entry and an entry that has pending edits.",
-      "id": "f:z4j689"
+      "text": "The engine refuses a rename with a 409 when the new id collides with an existing entry, while the entry has pending edits, while another editor's open branch holds a reference to it, or when it can't build the reference index.",
+      "id": [
+        "f:z4j689",
+        "f:a8ecm0"
+      ]
     },
     {
-      "text": "Link content with references covers how a rename treats the reference fields that point at an entry.",
+      "text": "In the same commit, the rename repoints every published reference field that points at the entry.",
+      "id": "f:a8ecm0"
+    },
+    {
+      "text": "[Link content with references](link-content-with-references.md) covers reference fields in use.",
       "id": "no-claim"
     },
     {

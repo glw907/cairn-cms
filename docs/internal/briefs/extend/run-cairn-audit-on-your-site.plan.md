@@ -304,13 +304,13 @@ Content:
 
 - One sentence (`f:j7fha2`, `f:vwpewl`): the scaffold carries no Playwright dependency, and the
   rendered run loads it from the site's own install, so a static-only site never takes it.
-- A numbered list of three steps, one action each, the location first:
+- A numbered list of four steps, one action each, the location first:
   1. In the project root, install Playwright and Chromium with
      `npm i -D playwright && npx playwright install chromium` (`f:vwpewl`: the command the run
      prints when Playwright is missing).
-  2. In a second shell in the project root, run `npm run build`, then `npm run preview`
-     (`f:vh5aw8`).
-  3. In a browser, open `http://localhost:4173/admin` to check that the site answers.
+  2. In a second shell in the project root, run `npm run build`.
+  3. In the same shell, run `npm run preview` (`f:vh5aw8`).
+  4. In a browser, open `http://localhost:4173/admin` to check that the site answers.
 - One or two sentences (`f:vh5aw8`): the run reads `BASE_URL`, default `http://localhost:4173`, the
   port the scaffold's `preview` script serves on, so a scaffolded site sets nothing. A site served
   elsewhere sets `BASE_URL` to its origin. Nothing answering there fails the run, naming the URL.
@@ -457,20 +457,22 @@ still counted.
 The lead-in, quoted: "Run the following checks in order." Then a numbered list, one action each,
 the location first, with the result beneath each:
 
-1. In the project root, run `npm run check:cairn`, then `echo $?`. Result: exit 0, and a count line
-   reading zero errors (`f:1md5oj`, `f:5y3prw`).
-2. In a second shell, with `npm run preview` running, confirm the site answers at `BASE_URL`
-   (`f:vh5aw8`).
-3. In the first shell, with `CAIRN_AUDIT_COOKIES` exported, run `npm run check:cairn:rendered`, then
-   `echo $?`. Result: exit 0, and a count line of the form `0 errors, <n> advisories, <n>
-   suppressed` (`f:1md5oj`, `f:5y3prw`, `f:xj180v`). With `--fail-on advisory`, the advisory count
-   is also zero (`f:52glgy`).
-4. From the project root, push a commit. Result: the workflow's `check` job passes; it runs the
+1. In the project root, run `npm run check:cairn`. Result: a count line reading zero errors
+   (`f:5y3prw`).
+2. In the same shell, print the exit code with `echo $?`. Result: `0` (`f:1md5oj`).
+3. In a browser, open `BASE_URL`/admin and confirm the admin loads, with `npm run preview` still
+   running in the second shell (`f:vh5aw8`).
+4. In the first shell, with `CAIRN_AUDIT_COOKIES` exported, run `npm run check:cairn:rendered`.
+   Result: a count line of the form `0 errors, <n> advisories, <n> suppressed` (`f:5y3prw`,
+   `f:xj180v`). With `--fail-on advisory`, the advisory count is also zero (`f:52glgy`).
+5. In the same shell, print the exit code with `echo $?`. Result: `0` (`f:1md5oj`).
+6. From the project root, push a commit. Result: the workflow's `check` job passes; it runs the
    rendered step too if you added it (`f:guiavc`).
 
-The page's task content ends on step 4, the workflow's `check` job passing: the gate the job sets
-out to build. It sits after the three local checks, so the reader pushes only once both passes run
-clean, and the outline's clean `check:cairn:rendered` run (step 3) still precedes it.
+Each run and its exit-code print are separate steps, the same split "Run the static pass" uses.
+The page's task content ends on step 6, the workflow's `check` job passing: the gate the job sets
+out to build. It sits after the local checks, so the reader pushes only once both passes run
+clean, and the outline's clean `check:cairn:rendered` run (steps 4 and 5) still precedes it.
 
 **Hand-off:** "If a run breaks instead, the next section maps its message to a fix."
 
@@ -590,7 +592,11 @@ session, `f:j7fha2`), and this plan does not refile them. This plan filed four e
 - Never say naming a file under `static.cssFiles` puts it under every CSS-family rule; state the
   admin-root exception (friction 1).
 - Never say `--json`, a machine-readable report, or a stable line format exists; gate on the exit
-  code (`f:5y3prw`).
+  code (`f:5y3prw`). The report's line shape is not yet a designed contract (ROADMAP D8b), so the
+  page may say the line format can change and claims nothing that contradicts it.
+- The page names no adapter module (`f:q07rd5` is cut). A sentence that does name it says which
+  site: `src/theme/cairn.config.ts` on a scaffolded site, `src/lib/cairn.config.ts` on the add-cairn
+  tutorial's site.
 - Never restate the rule list, the selector signature, the directive's reach, or the exit-code
   table; link the reference entry each section names.
 - Never call the public-scope rules anything but advisories here, and give them no section; link

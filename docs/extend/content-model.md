@@ -186,11 +186,13 @@ Each row records the following about one entry:
 - Its tags
 - Its included fragments
 
+A `reference` field holds a typed `{ concept, id }` pointer, and the manifest carries both sides of that edge. The engine uses those edges to know what still points at an entry. It refuses a delete while any entry references it, and a rename repoints every published reference to the new id.
+
 A build regenerates and verifies the manifest. A publish, not a save, patches the changed entry's row in the same commit as the content change. The manifest's format and verify functions are in [Content and manifest](../reference/core.md#content-and-manifest) in the reference. Inbound links matter most when an entry changes its id.
 
 ## Renames
 
-A rename moves the entry's file to a new id, which changes its slug, and rewrites every inbound `cairn:` token in the same atomic commit on `main`. The engine refuses a rename with a 409 in several cases, including a new id that collides with an existing entry and an entry that has pending edits. Link content with references covers how a rename treats the reference fields that point at an entry.
+A rename moves the entry's file to a new id, which changes its slug, and rewrites every inbound `cairn:` token in the same atomic commit on `main`. The engine refuses a rename with a 409 when the new id collides with an existing entry, while the entry has pending edits, while another editor's open branch holds a reference to it, or when it can't build the reference index. In the same commit, the rename repoints every published reference field that points at the entry. [Link content with references](link-content-with-references.md) covers reference fields in use.
 
 A concept's form, its save-time checks, the type of its entries, their public addresses, and their manifest rows all come from its one declaration in the adapter.
 

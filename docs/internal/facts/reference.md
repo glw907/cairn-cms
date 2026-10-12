@@ -1271,6 +1271,25 @@ re-sourced to Go on this tree rather than to the page.
   `bindings_missing`, which answers 503. Source: `src/lib/sveltekit/preview.ts#rejectPreview`
   (`rejectPreview` always `throw error(404, ...)`) and `:454-457` (`bindings_missing` branch
   `throw error(503, 'Service unavailable')`). [verified]
+- `f:546jja` `preview.refused` `reason: "draft_invalid"` means the file on the entry's pending
+  branch exists but fails the concept's descriptor validation: the per-field checks on its
+  frontmatter, then the concept's optional `refine(data, body)` hook, which can reject an entry on
+  its body. The content index leaves a failing entry out, so the draft lookup comes back empty.
+  Source: `src/lib/sveltekit/preview.ts:500-501` (`createContentIndex([{ path, raw: draftRaw }],
+  concept).byId(row.entryId)`; `if (!draftEntry) rejectPreview('draft_invalid', ...)`),
+  `src/lib/delivery/content-index.ts:111-115` (`descriptor.validate(raw, body)`; on `!result.ok`
+  the entry is pushed to `problems` and skipped), and `src/lib/content/fieldset.ts:450-487`
+  (`validateField` per field, then `config.refine?.(data, body)` returning `ok: false` on any
+  error). [verified]
+- `f:r2qi1y` The fields each `preview.refused` reason carries: `binding` (`AUTH_DB`) on
+  `bindings_missing`; `concept` and `id` on `row_invalid`, `branch_gone`, and `draft_invalid`; no
+  entry fields on `table_missing`, `unknown`, or `expired`. Source:
+  `src/lib/sveltekit/preview.ts:439,450,459,462,467,485,501` (`{ reason: 'bindings_missing',
+  binding: 'AUTH_DB' }`; `rejectPreview('table_missing')` x2 and `rejectPreview(reason)` with no
+  fields; `rejectPreview('row_invalid', { concept: row.concept, id: row.entryId })`;
+  `rejectPreview('branch_gone', ...)` and `rejectPreview('draft_invalid', ...)` with `{ concept:
+  concept.id, id: row.entryId }`) and `src/lib/sveltekit/preview.ts:265-266` (`rejectPreview`
+  spreads `fields` into the log record). [verified]
 - `f:vrdrrb` `commit.reverted` fires alongside the ordinary `commit.succeeded` for the same branch commit
   (two log lines per successful revert). Source:
   `src/lib/sveltekit/content-routes-entry-revert.ts:176-177` (`log.info('commit.succeeded', ...)`

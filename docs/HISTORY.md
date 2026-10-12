@@ -3,8 +3,8 @@
 Frozen as of 2026-10-10 (ruling 8): git, `docs/STATUS.md`, and `ROADMAP.md` hold history from here; this file is a read-only record.
 
 The per-pass ledger for the cairn-cms engine, newest first. `docs/STATUS.md` holds only the
-current state; a finished pass's detail moves here per the ledger rule (`~/.claude/CLAUDE.md`,
-"Project ledgers"). Each entry condenses to what a later pass needs: what landed, what a gate
+current state; a finished pass's detail moves here per the ledger rule (`pass-core`,
+"Ledgers"). Each entry condenses to what a later pass needs: what landed, what a gate
 caught, and what would be wrong to rediscover. Read on demand, not at every session start.
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.

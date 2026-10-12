@@ -54,8 +54,6 @@ subdirectories, each of which keeps its own filing rule and its own index.
 - [`durable-gotchas.md`](durable-gotchas.md): non-obvious operational traps (Cloudflare email's
   two error vocabularies, the CI-canonical visual baselines, Vite 8 shipping TypeScript in dist
   `.svelte`), moved out of `CLAUDE.md` to keep that file inside its context budget.
-- [`dx-backlog-ecnordic-migration.md`](dx-backlog-ecnordic-migration.md): the DX backlog from
-  the ecnordic migration.
 - [`engine-harvest-candidates.md`](engine-harvest-candidates.md): engine harvest candidates
   evidenced from two consumer sites, an input to the pre-beta harvest triage rather than a
   decision of its own.

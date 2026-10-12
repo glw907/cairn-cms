@@ -145,7 +145,8 @@ Before any work on the `/admin` interface (the `src/lib/admin/*.svelte` componen
 [`docs/internal/admin-design-system.md`](docs/internal/admin-design-system.md): the Warm Stone
 tokens, the type, the component recipes, the voice, and the load-bearing rules the markup does not
 show (most importantly: `data-theme` goes on a bare wrapper, never on a styled element). Keep the
-doc current when the design language changes.
+doc current when the design language changes. For public theme work, read
+[`docs/internal/public-design-system.md`](docs/internal/public-design-system.md).
 
 ## Diagnosing a running site (look to the logs first)
 
@@ -185,7 +186,8 @@ Claude's drafting on this repo follows the workstation authoring charter at
 engine's `.svelte` sources): write the contract and the why, never the type the signature already
 states, and never a paraphrase. The em dash is banned in code comments. An exported symbol keeps
 its minimal one-line doc even when self-evident, since `check:reference` and
-`jsdoc/require-jsdoc` want every export documented.
+`jsdoc/require-jsdoc` want every export documented. For code idioms, read
+[`docs/internal/code-idioms.md`](docs/internal/code-idioms.md).
 
 Developer documentation follows the Google Developer Documentation Style Guide, enforced by
 Vale's vendored Google package over the published doc arms (`docs/**/*.md`; `docs/editors/**` uses

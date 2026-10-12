@@ -9,7 +9,7 @@ and items move up from lower tiers as the core fills in.
 
 **This file is a pass dimension.** A pass that ships a roadmap item marks it done and removes it from the
 live tiers, and a pass that surfaces a new direction files it into the right tier, the same way a pass
-updates its reference docs. Shipped history lives in `docs/STATUS.md` and the per-plan post-mortems, not
+updates its reference docs. Shipped history lives in git, PR bodies, and `docs/STATUS.md`, not
 here, so this file stays a forward view.
 
 ## Toward 1.0
@@ -442,9 +442,8 @@ The original decision framing, for the record:
   briefs and exemplars. The reference arm stays, with `extend/`'s three kept pages. cairn.pub's
   pin ceiling is `0.98.0` until the one release after stage 5 (the standing rule above).
   **Stage 2a closed (2026-10-07):** the first 11 extend pages and the interim index are on `main`
-  (`docs/HISTORY.md`, "Draft docs stage 2a"). **Current step:** finishing stage 2a's close
-  (`docs/superpowers/plans/2026-10-07-2a-close-finish.md`), then the sequence in the boundary-test
-  entry above: the engine pass before stage 2b, stage 2b's 14 pages from the committed outline
+  (`docs/HISTORY.md`, "Draft docs stage 2a"). **Current step:** stage 2b is next, per the sequence in the
+  boundary-test entry above: stage 2b's 14 pages from the committed outline
   `docs/internal/outlines/extend.json`, admin (stage 3), editors (stage 4), and the front door
   (stage 5), with each engine pass in its slot. `docs/internal/record/harvest/relink.json` names what each stage re-arms. The
   style-guide sync (2026-09-28 to 29) settled the drafting inputs: each track's brief in

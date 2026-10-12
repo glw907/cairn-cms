@@ -13,7 +13,7 @@ from that site's own repo, which is where the evidence is. The distillate belong
 measures engine DX, and its reader is whoever changes the engine next. Keep the full per-task detail
 in the site repo and commit the report here as a docs-only change on cairn `main`. The ecnordic
 migration already split it that way; its engine-side half is
-[`../dx-backlog-ecnordic-migration.md`](../dx-backlog-ecnordic-migration.md).
+[`../docs-friction-log.md`](../docs-friction-log.md).
 
 **Every finding leaves the report.** Fix it in the session, file it to
 [the friction log](../docs-friction-log.md) or the [ROADMAP](../../../ROADMAP.md) tier where it

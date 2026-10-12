@@ -13,16 +13,24 @@
 // than fighting the compiler to stand it up alone.
 //
 // A doc snippet is not a standalone program: it imports fictional site-local modules
-// ($lib/cairn.config.js, ./$types, and the like) that only exist in the consuming site a page
+// (./cairn.config.js, ./$types, and the like) that only exist in the consuming site a page
 // imagines, never in this repo. Resolving those for real is not this gate's job, so before
 // typechecking, every import whose specifier is NOT `@glw907/cairn-cms` (or a subpath) and does
 // not resolve to a real dependency of this package is rewritten to an untyped `any` stand-in
-// (`rewriteLocalImports`). This keeps the gate's teeth on the one thing it exists to catch: a
+// (`rewriteLocalImports`). `$lib` is the exception: SvelteKit 3 removes it, so an import from it is
+// a problem (`findLibImports`), never a stub; a snippet imports from `#lib`. This keeps the gate's teeth on the one thing it exists to catch: a
 // snippet's use of the PACKAGE's real exports, names, and signatures. A relative import or a
-// SvelteKit alias ($lib, $app, $env, ...) is always treated as local, even if a same-named file
+// SvelteKit alias ($app, $env, ...) is always treated as local, even if a same-named file
 // happens to exist on disk, since the snippet's paths are fictional, not real filesystem targets.
 // A ```svelte block is reduced to its `<script>` body before the same treatment; a block with no
 // `<script>` tag (pure markup) carries nothing to typecheck and is silently excluded.
+//
+// Type environment: TypeScript 6 already defaults `types` to `[]`, so no ambient `@types/*` package
+// is pulled in and the options below set nothing for it. The leak is that every unit shares one
+// program, and `vite`'s `.d.ts` carries `/// <reference types="node" />`, so any block that imports
+// vite exposes Node's globals to every other unit. A block that really needs Node's types still
+// carries its own `/// <reference types="node" />`, as the hooks sample does. A per-unit
+// environment is deferred.
 //
 // Per-block opt-out: a snippet that is a deliberate fragment (a partial diff continuing an earlier
 // block, or markup-only prose that is not valid top-level TypeScript on its own) cannot typecheck
@@ -56,8 +64,9 @@ const DOC_DIRS = [
 const PACKAGE_NAME = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).name;
 
 const SKIP_RE = /^<!--\s*snippet-check-skip:\s*(.+?)\s*-->$/;
-const FENCE_OPEN_RE = /^```(ts|typescript|svelte)\s*$/;
-const FENCE_CLOSE_RE = /^```\s*$/;
+// A fence may sit indented under a list item; the indent is captured so the body can be dedented.
+const FENCE_OPEN_RE = /^(\s*)```(ts|typescript|svelte)\s*$/;
+const FENCE_CLOSE_RE = /^\s*```\s*$/;
 
 // Whether `spec` is the package itself or one of its subpaths (`@glw907/cairn-cms/sveltekit`).
 /** @param {string} spec */
@@ -66,7 +75,7 @@ export function isPackageSpecifier(spec) {
 }
 
 // Whether an import specifier should typecheck against a REAL module rather than an `any` stub.
-// The package itself always does. A relative specifier or a SvelteKit alias ($lib, $app, $env,
+// The package itself always does. A relative specifier or a SvelteKit alias ($app, $env,
 // ...) never does, since a doc snippet's local paths are fictional, not real filesystem targets,
 // even when a same-named file happens to exist. Any other bare specifier is real exactly when
 // it resolves as an actual dependency of this package (so a devDependency a doc page mentions
@@ -137,6 +146,24 @@ const FROM_IMPORT_RE = /^(\s*)import\s+(type\s+)?(.*?)\s+from\s+['"]([^'"]+)['"]
 // A real-specifier import (the package, or a resolvable dependency) is left untouched, so the
 // compiler checks it for real. Only single-line import statements are recognized; the doc corpus
 // carries none that wrap, and a block that needs one gets the opt-out annotation instead.
+/**
+ * Every import in `code` whose specifier is `$lib` or under it, with its 1-based line in `code`.
+ * SvelteKit 3 removes the alias, so the gate refuses it rather than stubbing it.
+ * @param {string} code
+ */
+export function findLibImports(code) {
+  /** @type {{ line: number, message: string }[]} */
+  const found = [];
+  code.split('\n').forEach((line, idx) => {
+    const m = line.match(SIDE_EFFECT_IMPORT_RE) ?? line.match(FROM_IMPORT_RE);
+    const spec = m?.[m.length - 1];
+    if (spec === '$lib' || spec?.startsWith('$lib/')) {
+      found.push({ line: idx + 1, message: 'SvelteKit 3 removes `$lib`; import from `#lib`' });
+    }
+  });
+  return found;
+}
+
 /** @param {string} code */
 export function rewriteLocalImports(code) {
   /** @type {Set<string>} */
@@ -223,13 +250,17 @@ export function extractBlocks(markdown) {
   for (let i = 0; i < lines.length; i++) {
     const open = lines[i].match(FENCE_OPEN_RE);
     if (!open) continue;
+    const indent = open[1].length;
     let j = i + 1;
     while (j < lines.length && !FENCE_CLOSE_RE.test(lines[j])) j++;
-    const body = lines.slice(i + 1, j).join('\n');
+    const body = lines
+      .slice(i + 1, j)
+      .map((l) => l.replace(new RegExp(`^[ \\t]{0,${indent}}`), ''))
+      .join('\n');
     let k = i - 1;
     while (k >= 0 && lines[k].trim() === '') k--;
-    const skip = k >= 0 ? lines[k].match(SKIP_RE) : null;
-    blocks.push({ lang: open[1], fenceLine: i + 1, body, skipReason: skip ? skip[1] : null });
+    const skip = k >= 0 ? lines[k].trim().match(SKIP_RE) : null;
+    blocks.push({ lang: open[2], fenceLine: i + 1, body, skipReason: skip ? skip[1] : null });
     i = j;
   }
   return blocks;
@@ -315,6 +346,8 @@ export function docFiles(root = ROOT) {
 export function collectUnits() {
   /** @type {{ file: string, lineBase: number, code: string }[]} */
   const units = [];
+  /** @type {{ file: string, line: number, message: string }[]} */
+  const libProblems = [];
   /** @type {{ file: string, fenceLine: number, reason: string }[]} */
   const skipped = [];
   let excluded = 0;
@@ -335,6 +368,9 @@ export function collectUnits() {
           excluded++;
           continue;
         }
+        for (const p of findLibImports(script.code)) {
+          libProblems.push({ file, line: block.fenceLine + script.lineOffset + p.line, message: p.message });
+        }
         units.push({
           file,
           lineBase: block.fenceLine + script.lineOffset,
@@ -345,11 +381,14 @@ export function collectUnits() {
           excluded++;
           continue;
         }
+        for (const p of findLibImports(block.body)) {
+          libProblems.push({ file, line: block.fenceLine + p.line, message: p.message });
+        }
         units.push({ file, lineBase: block.fenceLine, code: rewriteLocalImports(stripGlobalAugmentations(block.body)) });
       }
     }
   }
-  return { units, skipped, excluded };
+  return { units, libProblems, skipped, excluded };
 }
 
 // The `paths` map from each package subpath to its built `.d.ts`, shared with the reference
@@ -433,8 +472,10 @@ export function typecheckUnits(units) {
 }
 
 function main() {
-  const { units, skipped, excluded } = collectUnits();
-  const problems = typecheckUnits(units);
+  const { units, libProblems, skipped, excluded } = collectUnits();
+  const problems = [...libProblems, ...typecheckUnits(units)].sort(
+    (a, b) => a.file.localeCompare(b.file) || a.line - b.line,
+  );
 
   if (skipped.length) {
     console.log(`check:snippets: ${skipped.length} opted-out block(s):`);

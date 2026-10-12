@@ -76,7 +76,7 @@ copy leaves out the example site's Playwright suite, its design-review routes (`
 command ships. The same run created the site's GitHub App, its repository, and its Cloudflare
 bindings, and deployed the site, so the site arrives already live.
 
-A hand-built site from `sv create` starts with neither Waymark nor the chassis, as
+A site built by hand from `sv create` starts with neither Waymark nor the chassis, as
 [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) describes. A file the site owns can
 still carry a contract that engine code or a gate reads, and the file tree marks each such file.
 

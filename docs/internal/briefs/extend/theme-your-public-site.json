@@ -70,7 +70,7 @@
       "id": "f:s4prb0"
     },
     {
-      "text": "A hand-built site from `sv create`, as in [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md), starts with neither Waymark nor the chassis and brings its own theme, so after the preconditions its work begins at [Theme a hand-built site](#theme-a-hand-built-site).",
+      "text": "A site built by hand from `sv create`, as in [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md), starts with neither Waymark nor the chassis and brings its own theme, so after the preconditions its work begins at [Theme a hand-built site](#theme-a-hand-built-site).",
       "id": "f:rxj43c"
     },
     {

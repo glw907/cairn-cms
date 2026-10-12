@@ -42,7 +42,8 @@ Plan: `docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md`. The executor i
 | T5 (run 2 closes) | | `64c689ea4` | about 4.5M (closes) plus 0.2M executor loop | about 21.4M |
 | T6 (run 3, 3 pages) | `wf_8abfb19a-064` | `888906cd6` (WIP) | 3.23M | |
 | T7 (run 3 closes) | | `518ee1e77` | about 4.5M (closes) plus 0.15M executor loop | about 29.4M |
-| T8 (run 4, 1 page) | `wf_7ef2ce8f-59b` | | | |
+| T8 (run 4, 1 page) | `wf_7ef2ce8f-59b` | `4f3b437a2` (WIP) | 1.82M | |
+| T9 (run 4 closes) | | `41aea1d3a` | about 0.45M (close) plus 0.1M executor loop | about 32.2M |
 
 ## Runs
 
@@ -239,6 +240,33 @@ so the field and the row count disagree by two (stale field; flag for part 2).
 - D7 on build-the-public-routes: the page states that delivery reads the hero and the share image only from the frontmatter key `image` in the introduction (line 22) and in "Declare the fields the head reads" (line 327). The claim is f:k5uws5 in `docs/internal/facts/extend.md` (line 1043), tagged [verified], with source `public-routes.ts#deriveHeroImage`. The page itself carries no fact id and does not name `deriveHeroImage`; the citation lives in the facts container.
 - Pages that name `cairn.config.ts` name the site beside it: configure-rendering (lines 17-18, 52, 97, 256, 275, 279, 559), turn-on-tidy (lines 54-55, 207) and build-the-public-routes (lines 49-50). Exceptions: none found. configure-rendering lines 275 and 559 and turn-on-tidy line 207 give the tutorial path in a step or comment under a section whose lead-in already names the site.
 
+### Run 4 (`wf_7ef2ce8f-59b`, one page, run base `812cf9c44`)
+
+The chain accepted no page (0/1): the record ended `escalate`. T9 closed the page by a targeted
+close after the round cap. The whole-tree gate (`CAIRN_GATE_LANE=light cairn-run-gate 'npm run
+check:docs-gate'`) exits 0 with `check:docs-gate: OK (19 check(s))`, `check:options: OK (263 option
+paths)`, and `check:tellgrader: OK (61 page(s))`.
+
+Pending option-map rows, run base against now: the run received 0 `pending <slug>` rows and
+disposed 0; none remain in `docs/internal/option-map.json`.
+
+| Page | rowsReceived | rowsDisposed | End state |
+| --- | --- | --- | --- |
+| migrate-existing-content | 0 | 0 | accepted, targeted close |
+
+#### migrate-existing-content
+
+- Status: chain `escalate` ("second fix verdict or red gate"), rounds 2. End state: accepted by targeted close.
+- Plan read: structural fix, revised, then accept.
+- Round 1: gate red only on `check:facts` (f:g8rbmt's Source line named `editLoad`, which has two declarations at the same level); structural fix, register fix, fact accept. Round 2 (scoped): gate pass; structural fix (blocking: the redraft cut "A migrated file outlives the script that wrote it."), register accept (advisories), fact accept. crossRegression: false.
+- Escalation and close: one drafter repointed f:g8rbmt's Source to `content-routes-entry-read.ts:313` and restored the cut sentence. Scoped register accept (advisories) and scoped fact accept. The final reader ran the page's script on sample files and found one blocking defect: an undated file for an undated concept with an optional `date` produced `date: undefined`, because `JSON.stringify(undefined)` is the text `undefined`, which fails the build with "must be a valid date". One scoped redraft replaced the date line with `const day = toDay(old.date) ?? toDay(filename); if (day) fm.date = day;` (reproduced, fixed, rerun). No prose changed, so the scoped register and fact reads were skipped for the one-line script change (Rulings, item 10). The re-test reader ran the script on dated, undated, malformed-date and offset-timestamp files and accepts.
+- frictionFiled (plan step): an invalid migrated draft disappears with no signal from the build or the admin (the build's manifest skips invalid entries and logs nothing); f:qd7iat's Source pointed at the `ComposeInput` export and nothing backed its "same parser" clause. Facts filed: f:g8rbmt (parseMarkdown's three readers) and f:ht7tdd (Jekyll, Hugo, and Eleventy front matter, [external]).
+- Unexercised: the `content.field_undeclared` warning (CHANGELOG Unreleased; not in 0.98.0).
+
+#### Caveat check
+
+- The page names `cairn.config.ts` at lines 24-25 and 63. Both sentences name the site beside the path (`src/theme/cairn.config.ts` on a scaffolded site, `src/lib/cairn.config.ts` on the add-cairn tutorial's site). Exceptions: none found.
+
 ## Framing A/B
 
 See `docs/superpowers/research/2026-10-11-draft-docs-2b-part1-ab/README.md` once T2 lands.
@@ -267,3 +295,9 @@ Run 3 rulings and findings:
 7. The executor applied the reviewers' own rewrites without a further round for the final-round fact and register findings on configure-rendering, turn-on-tidy, and build-the-public-routes (R5 ruling 3).
 8. Found, not done: the add-cairn tutorial site has no media block, R2 binding or resolver, so configure-media's tutorial-site coverage rests on a doc-only source; the file tree in build-the-public-routes omits `src/chassis/feed-items.ts`; the turn-on-tidy refusal table omits the 422 and empty-result refusals; the fact f:ssdn1f said "by default" for effort (corrected).
 9. The first whole-tree gate run on build-the-public-routes' redraft failed `check:reference` on `admin-toolkit.md` (28 stale exports) and passed on rerun, a stale reference artifact; flag for part 2.
+
+Run 4 rulings and findings:
+
+10. The one-line script fix on migrate-existing-content (the date line) was re-tested by the re-test reader only; the scoped register and fact reads were skipped because no prose changed.
+11. The whole-tree `check:facts` was red in round 1 from a fact filed by the framing step (f:g8rbmt's Source named `editLoad`, two declarations at the same level); the close repointed it and it cleared.
+12. The first drafter edited `scripts/checks/check-symbols-allowlist.mjs` (runner class) to add `scripts/migrate-content.mjs` and its three script constants and to remove two stale entries.

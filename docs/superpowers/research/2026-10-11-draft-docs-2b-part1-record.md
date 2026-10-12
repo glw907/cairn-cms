@@ -37,7 +37,8 @@ Plan: `docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md`. The executor i
 | T0 | | `2b1-T0` | 0.11M (loop drop) | 2.78M |
 | T1 (run 1, 6 pages) | `wf_7016a184-bd0` | `5b50978b7` (WIP) | 6.63M | 9.41M |
 | T2 (framing A/B) | | `d6e6c5c2e` | about 0.24M (framing at high 0.14M, intros 0.09M) | 9.65M |
-| T3 (run 1 closes) | | `2b1-T3` | about 3.5M (closes), measured at T3's end | about 13.1M |
+| T3 (run 1 closes) | | `2b1-T3` | about 3.5M (closes) plus 0.4M executor loop (`<total_tokens>` 15.0M to 14.59M since T0) | about 13.5M |
+| T4 (run 2, 4 pages) | `wf_56a8b4d2-660` | | | |
 
 ## Runs
 

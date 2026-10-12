@@ -26,6 +26,9 @@ and `APP_DB` left the scaffold, the dev package ships built `dist/`, the engine 
 define, and the dev backend serves the site's own content. The release holds until the docs are
 complete.
 
+The pre-2b tooling pass runs in session `pre2b-tooling-cairn` (id `4a9e8395`) on branch
+`worktree-pre2b-tooling`.
+
 The alignment PR (#114) and its dotfiles PR (glw907/workstation#12) wait for Geoff's read; the
 dotfiles PR merges first.
 

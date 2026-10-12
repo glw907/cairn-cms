@@ -27,7 +27,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   no longer exist, and `package.json` carries no `./components` key. The source folder is
   `src/lib/admin/`, and `docs/reference/admin.md` replaced `components.md`. A consumer changes
   every `@glw907/cairn-cms/components` import to `/admin` and any config or script path from
-  `dist/components/` to `dist/admin/`. Source: `package.json:109-113` (the `./admin` export),
+  `dist/components/` to `dist/admin/`. Source: `package.json:110-114` (`"./admin"`), the `./admin` export,
   `src/lib/audit/config.ts#DEFAULT_SHEET_CANDIDATES` (the sheet path), `src/tests/unit/admin-barrel-prune.test.ts`
   (the assertion that `./components` is gone). [verified]
 - `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
@@ -240,7 +240,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 - `f:exqnwj` The subpath enforces server-only isolation via export conditions: a named import from the
   browser stub fails at build time (no such export), while a bare side-effect import passes the
-  build and throws only at runtime when executed in a browser. Source: `package.json:170-181`
+  build and throws only at runtime when executed in a browser. Source: `package.json:171-182` (`"./auth-crypto"`)
   (`./auth-crypto` and `./cloudflare` export conditions each declare `worker`/`browser`/`default`),
   `src/lib/auth-crypto/browser.ts:1-4`, `src/lib/cloudflare/browser.ts:1-4` (both files are a bare
   module-level `throw new Error(...)` with no named export). [verified]
@@ -1155,8 +1155,8 @@ re-sourced to Go on this tree rather than to the page.
 - `f:h2wtin` The package ships exactly 4 bins total (`cairn-manifest`, `cairn-media-seed`, `cairn-audit`,
   `cairn-guidance`) plus a separate `./vite` export (the Vite plugin, `dist/vite/index.js`,
   distinct from the `cairn-manifest` bin at `dist/vite/bin.js`); relative to `cairn-guidance`
-  itself, that is three other bins. Source: `package.json:198-203` (`bin` field),
-  `package.json:182-185` (`./vite` export). [verified]
+  itself, that is three other bins. Source: `package.json:199-204` (`"bin"`),
+  `package.json:183-186` (`"./vite"`). [verified]
 - `f:hiif6u` `cairn-guidance install` ships a fourth skill, `cairn-public`, for the public side of a site: a router `SKILL.md` within the 3,500-token packaged budget, and `references/` holding one catalogue page per public piece (each registry directive plus the built-in `figure` and `include`, each island, `CairnHead`, `PreviewBanner`, each `cairn-*` class the chassis `composition.css` defines, and six prose pages). `npm run check:public-skill` fails a source with no page, a snippet class absent from the showcase's compiled public sheet and the emitted-class registry, a named token that resolves nowhere, and a parser that matches nothing. Source: `skills/cairn-public/SKILL.md:1`, `scripts/checks/check-public-skill.mjs:1`. [verified]
 - `f:qzsspl` The chassis `tokens.css` excludes the project-root `.claude/` from Tailwind's automatic source detection with `@source not "../../.claude"`. Tailwind resolves that path against the stylesheet that carries it, so the earlier `./.claude` excluded only a directory beside `src/chassis/`, and a utility used only in an installed skill's files reached a scaffolded site's compiled CSS. `check:public-skill` compiles a standalone copy to prove the exclusion. Source: `examples/showcase/src/chassis/tokens.css:55`, `scripts/checks/check-public-skill.mjs:1`. [verified]
 - `f:1kwkl0` `cairn-guidance check` counts an admin stylesheet whose Tailwind import uses `source(none)` as excluding `.claude/`, beside the literal `@source not "./.claude";` line, and the guidance tree hash leaves out the `.claude/cairn/VERSION` stamp, so an installed and a packaged tree that differ only in that stamp compare fresh. Source: `src/lib/guidance/check.ts#judgeSourceExclusion`, `src/lib/guidance/install.ts#hashFileTree`. [verified]
@@ -1417,7 +1417,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   never on `/admin`; a loader or a type belongs on `/sveltekit` or another data-only subpath; and
   `CairnHead` stays at `./delivery/head` because it renders only document-head tags. The compiled
   admin sheet's input scans `src/lib/admin` and `src/lib/admin-toolkit` but not `src/lib/public`, since the banner writes no utility class of its own.
-  Source: `package.json:114-118` (the `./public` export), `src/lib/public/index.ts:1-6` (the
+  Source: `package.json:115-119` (`"./public"`), `src/lib/public/index.ts:1-6` (the
   membership rule and the one export), `scripts/build/admin-css.input.css:14,22` (the `@source` roots, `src/lib/admin` and `src/lib/admin-toolkit`).
   [verified]
 
@@ -1558,7 +1558,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:z61ibp` `cairn-manifest`, the package's `bin`, uses the current working directory as the
   project root, so it runs from the directory holding `vite.config.ts`; the build's
   stale-`site-facts.json` error names the fix as ``Run `npx cairn-manifest` and commit the
-  result.`` Source: `package.json:198-199`, `src/lib/vite/bin.ts:28-29`,
+  result.`` Source: `package.json:199-200` (`"cairn-manifest"`), `src/lib/vite/bin.ts:28-29`,
   `src/lib/vite/internal.ts:319-324,592-597`. [verified]
 
 ## docs/reference/supported-toolchain.md
@@ -1568,12 +1568,12 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   cell disagrees; it checks only that column. Source: `scripts/checks/check-target-stack.mjs:1-30`
   (header comment plus `targetCell()`, which matches each row's "Target today" cell against a
   computed expected value). [verified]
-- `f:buh7cc` `engines.node` in the package's own `package.json` is `>=24`. Source: `package.json:7`.
+- `f:buh7cc` `engines.node` in the package's own `package.json` is `>=24`. Source: `package.json:7` (`"node"`).
   [verified]
 - `f:xg1per` `svelte` peerDependency is `^5.57.1`; `@sveltejs/kit` is `^3`; `@cloudflare/workers-types` is
-  `^5`. Source: `package.json:220-223`. [verified]
+  `^5`. Source: `package.json:221,222,224` (`"peerDependencies"`). [verified]
 - `f:gjyk0p` The showcase's own devDependency pins `typescript` to `^6` and `@cloudflare/workers-types` to
-  `^5.20261007.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:37,57`.
+  `^5.20261007.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:37,57` (`"typescript"`).
   [verified]
 - `f:isd7vq` TypeScript floor for a consumer's own `tsc` is `5.0`, driven by `const` type parameters on
   `defineAdapter`/`defineConcept`/`defineFieldset`/`fields.*`; the package's own code and shipped
@@ -1589,8 +1589,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   ("TypeScript 7 is held on the toolchain") corroborate the hold and its trigger. [verified]
 - `f:5c9bwx` `attw --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error` is run in
   `check:package`, muting three rules that are structural limitations of `svelte-package`'s output
-  against `attw`'s resolver, not masked defects. Source: `package.json:37` (`check:package` script:
-  `attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error`).
+  against `attw`'s resolver, not masked defects. Source: `package.json:37` (`"check:package"`), `check:package` script:
+  `attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error`.
   [verified]
 - `f:256utj` SvelteKit's `csrf.checkOrigin` is deprecated (2.61) in favor of `csrf.trustedOrigins` but not
   removed (sveltejs/kit#15992); cairn's admin CSRF ownership still depends on disabling

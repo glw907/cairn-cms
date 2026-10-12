@@ -11,6 +11,7 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 ## Model content
 
 - [Content model](./content-model.md)
+- [Reuse content across entries](./reuse-content-across-entries.md)
 - [Configure media](./configure-media.md)
 
 ## Public site

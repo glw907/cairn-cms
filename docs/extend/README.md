@@ -16,6 +16,7 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 - [Link content with references](./link-content-with-references.md)
 - [Reuse content across entries](./reuse-content-across-entries.md)
 - [Configure media](./configure-media.md)
+- [Migrate existing content](./migrate-existing-content.md)
 
 ## Public site
 

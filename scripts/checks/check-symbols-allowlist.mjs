@@ -38,6 +38,9 @@ export const ALLOWLIST = new Set([
   'env-var:TURNSTILE_SECRET', // docs/reference/auth-channel.md's illustrative Turnstile secret binding
   'env-var:SOME_UNSET_VAR', // docs/reference/cloudflare.md's illustrative name for an omitted config key
   'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
+  'env-var:DATE_PREFIX', // docs/extend/migrate-existing-content.md's migration-script constant, never an environment variable
+  'env-var:PREFIX_LENGTH', // docs/extend/migrate-existing-content.md's migration-script constant, never an environment variable
+  'env-var:ID_SHAPE', // docs/extend/migrate-existing-content.md's migration-script constant, never an environment variable
   'env-var:ERR_UNSUPPORTED_ESM_URL_SCHEME', // docs/extend/migration-notes.md, Node's own error code for `vite preview` serving adapter 8 output (sveltejs/kit#17271), never a cairn variable
 
   // The Go `cairn` CLI's own credential environment variables, defined in
@@ -145,8 +148,7 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component on the tutorial's site, a file the reader creates
   'file-path:src/lib/islands/registry.ts', // docs/extend/add-an-island.md's island registry module on the tutorial's site, a file the reader creates
   'file-path:src/lib/markdown-components.ts', // docs/extend/configure-rendering.md's component module on the tutorial's site, a file the reader creates
-  'file-path:old-site/content/posts/my-post.md', // docs/extend/migrate-existing-content.md's illustrative pre-migration source path
-  'file-path:src/content/posts/2024-01-15-my-post.md', // docs/extend/migrate-existing-content.md's illustrative migrated output path
+  'file-path:scripts/migrate-content.mjs', // docs/extend/migrate-existing-content.md's migration script, a file the reader creates
   'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
   'file-path:dist/site.css', // docs/reference/cairn-audit.md's illustrative site-compiled stylesheet in a list-valued `sheet`
   'file-path:node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css', // docs/reference/cairn-audit.md's real installed-package sheet path, cited literally rather than resolved against this repo's own tree

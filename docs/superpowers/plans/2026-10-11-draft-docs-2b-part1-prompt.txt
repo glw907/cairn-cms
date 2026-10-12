@@ -3,14 +3,19 @@ through docs-page-chain on the fixed pre-2b tools. It is an ordinary-class docs 
 the symbols allowlist changes), started from the main checkout /var/home/glw907/Projects/cairn-cms.
 Geoff approved its design on 2026-10-11. Before any other act, call EnterWorktree with the path
 /var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1, which the conductor
-created on branch draft-docs-2b-part1. Your first act after EnterWorktree is this one Bash call:
+created on branch draft-docs-2b-part1. The worktree's git dir is
+/var/home/glw907/Projects/cairn-cms/.git/worktrees/draft-docs-2b-part1. Always name it by that
+literal path: the worktree guard refuses a git dir computed at runtime. Your first act after
+EnterWorktree is this one Bash call:
 
-`g=$(git rev-parse --absolute-git-dir); if test -e "$g/pass-stop"; then cat "$g/pass-stop"; elif test -f "$g/pass-task-clock"; then sed -i "s/^start=.*/start=$(date +%s)/" "$g/pass-task-clock"; fi`
+`ls /var/home/glw907/Projects/cairn-cms/.git/worktrees/draft-docs-2b-part1/`
 
-A clock-stop line that arrives before this call, or in the same turn, is stale. If the call prints
-a stop, end your turn without another act until Geoff tells you to go on. Then arm the API-drop
-wake-up (/loop with no interval); each tick first runs
-`test -e "$(git rev-parse --absolute-git-dir)/pass-stop"` and ends the turn if the file exists.
+A clock-stop line that arrives before this call, or in the same turn, is stale. If the listing
+shows pass-stop, run `cat` on that file, then end your turn without another act until Geoff tells
+you to go on. If it shows pass-task-clock, run `date +%s` in one call. Then, in another call, run
+`sed -i 's/^start=.*/start=<that number>/' /var/home/glw907/Projects/cairn-cms/.git/worktrees/draft-docs-2b-part1/pass-task-clock`.
+Then arm the API-drop wake-up (/loop with no interval). Each tick first runs that same `ls` and
+ends the turn if the listing shows pass-stop.
 
 Load cairn-pass (it loads pass-core) and follow it. Read the plan whole:
 /var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1/docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md.
@@ -18,8 +23,8 @@ Read /var/home/glw907/.cache/draft-docs-2b-part1/launch-facts.txt for the toolin
 numbers, and the night's token count at launch. If no commit subject on this branch starts with
 2b1-T0, this is a fresh start: run T0, whose setup is
 `npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync)`.
-Otherwise follow the plan's Resume rule. TMPDIR and NODE_OPTIONS are already set by the launch
-line; check them at T0. Every dispatch puts scratch under /var/home/glw907/.cache/draft-docs-2b-part1/.
+Otherwise follow the plan's Resume rule. TMPDIR and NODE_OPTIONS (through --settings) and the
+tellgrader directory on PATH are set by the launch line; check them at T0, where a miss is a stop. Every dispatch puts scratch under /var/home/glw907/.cache/draft-docs-2b-part1/.
 
 Scope, from Anthropic, applies to every step and every dispatch, and each dispatch prompt quotes it:
 "Avoid over-engineering. Only make changes that are directly requested or clearly necessary. Keep
@@ -43,12 +48,15 @@ a task.
 
 You are thin: you read per-page records, reports, and verdicts, never a page, a diff, or a gate
 log. Execute T0 through T11 in the plan's order, with T2 beside T3's closes. Each task's first act
-writes its task-clock file. Every stop follows the plan's stop procedure, and the token count
+writes its task-clock file (T2 excepted: it runs under T3's clock). Every stop follows the plan's stop procedure, and the token count
 follows its Counting section. Run each chain with the Workflow tool, scriptPath
-/var/home/glw907/.dotfiles/.claude/worktrees/pre2b-tooling/claude/.claude/workflows/docs-page-chain.js
-and the plan's args for that run, never by name. Record each runId in the stage record before
-waiting, cmp the persisted script, and arm claude-wf-guard at tier writer on every run. Use one
-plain command per Bash call, with literal absolute paths. Read the dotfiles worktree only through
+/var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1/.superpowers/draft-docs-2b-part1/docs-page-chain.js
+(the conductor's pinned copy of the tooling branch's script) and the plan's args for that run,
+never by name and never from the dotfiles worktree, which the Workflow tool cannot read. Record
+each runId in the stage record before waiting, cmp the persisted script against the pinned copy,
+and arm claude-wf-guard at tier writer on every run. A run's saved results live only in this
+session, so resumeFromRunId works only here; STATUS names `claude attach <session id>` as the
+relaunch. Use one plain command per Bash call, with literal absolute paths. Read the dotfiles worktree only through
 git -C, and write nothing under ~/.dotfiles.
 
 You may commit on draft-docs-2b-part1 and push it to glw907/cairn-cms. The first push opens a draft

@@ -1,0 +1,557 @@
+{
+  "page": "docs/extend/add-an-island.md",
+  "sentences": [
+    {
+      "text": "A markdown component on a cairn site's public page renders as markup only.",
+      "id": "f:4hd2vg"
+    },
+    {
+      "text": "SvelteKit server-renders each page by default and then hydrates it in the browser, but an entry's body reaches the page as the HTML string the site's `render` function returns.",
+      "id": [
+        "f:tf4vfb",
+        "f:ps54gh"
+      ]
+    },
+    {
+      "text": "The public routes produce that string on the server, at build when the route is prerendered and per request otherwise.",
+      "id": "f:my6ci3"
+    },
+    {
+      "text": "A markdown component inside the body is the static markup its `build()` returns, with no client JavaScript.",
+      "id": "f:4hd2vg"
+    },
+    {
+      "text": "Declaring `hydrate` on the component changes that default: the pipeline wraps the same `build()` output in an island boundary that carries the directive name and a JSON payload of the component's props, and a live Svelte component registered under that name mounts over it in the browser.",
+      "id": "f:4hd2vg"
+    },
+    {
+      "text": "The `build()` output stays as the fallback, shown before JavaScript runs and the only content a reader without JavaScript sees.",
+      "id": "f:1uk9sw"
+    },
+    {
+      "text": "An island gives one component behavior in the browser while the entry body around it stays static.",
+      "id": "f:4hd2vg"
+    },
+    {
+      "text": "A developer reaches for an island to make a declared component respond in the browser, or to run client script, which the render strips from an entry body by default.",
+      "id": "f:z3a58a"
+    },
+    {
+      "text": "A scaffolded site keeps its adapter at `src/theme/cairn.config.ts` and already ships the island wiring around its `banner` island.",
+      "id": [
+        "f:q07rd5",
+        "f:mcxxpp"
+      ]
+    },
+    {
+      "text": "Adding an island there takes a new component, one registry entry, and the `hydrate` declaration.",
+      "id": "f:mcxxpp"
+    },
+    {
+      "text": "A hand-built site, such as the one the [add-cairn tutorial](add-cairn-to-a-sveltekit-app.md) builds, keeps its adapter at `src/lib/cairn.config.ts`.",
+      "id": "f:q07rd5"
+    },
+    {
+      "text": "Because `rendering.islands` is optional on the adapter, that site starts without the wiring.",
+      "id": [
+        "f:5vjwlc",
+        "f:mcxxpp"
+      ]
+    },
+    {
+      "text": "On that site you write the live component, register it under its directive name, mount it from the root layout, and check the result on the public page.",
+      "id": [
+        "f:thjrvl",
+        "f:drsabs"
+      ]
+    },
+    {
+      "text": "The steps assume familiarity with Svelte runes, SvelteKit layouts, server load functions, `afterNavigate`, and dynamic imports.",
+      "id": "f:drsabs"
+    },
+    {
+      "text": "Declaring the component, its attributes, and the `build()` output that becomes its fallback belongs to [Configure rendering](configure-rendering.md), and a component that only renders markup needs that page alone.",
+      "id": "f:1uk9sw"
+    },
+    {
+      "text": "A widget in a route or layout the site writes in Svelte needs no island, because SvelteKit already hydrates those pages.",
+      "id": "f:tf4vfb"
+    },
+    {
+      "text": "An island starts from a markdown component your site already declares, an entry that uses it, and the adapter file of the site you are changing.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Each of the following must be in place before the first step:",
+      "id": "no-claim"
+    },
+    {
+      "text": "A markdown component in the component registry the adapter passes as `rendering.components`.",
+      "id": "f:5vjwlc"
+    },
+    {
+      "text": "[Configure rendering](configure-rendering.md) declares one, and its `build()` output becomes the fallback.",
+      "id": "f:1uk9sw"
+    },
+    {
+      "text": "An entry whose body uses the component's directive, written as [Configure rendering](configure-rendering.md) describes.",
+      "id": "no-claim"
+    },
+    {
+      "text": "This page's example uses a `converter` directive.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The adapter module at `src/theme/cairn.config.ts` on a scaffolded site, or at `src/lib/cairn.config.ts` on the add-cairn tutorial's site.",
+      "id": "f:q07rd5"
+    },
+    {
+      "text": "[Write the site config and a minimal adapter](add-cairn-to-a-sveltekit-app.md#write-the-site-config-and-a-minimal-adapter) creates the tutorial's adapter.",
+      "id": "no-claim"
+    },
+    {
+      "text": "On a scaffolded site, the registry module `src/theme/islands/registry.ts`, the adapter's `rendering.islands`, the root load's `hasIslands`, and the root layout's `hydrateIslands` call already exist.",
+      "id": "f:mcxxpp"
+    },
+    {
+      "text": "On that site, write the live component, add its entry to the existing registry, and set `hydrate` on its declaration.",
+      "id": "f:mcxxpp"
+    },
+    {
+      "text": "Then go to [Verify the island on the public page](#verify-the-island-on-the-public-page).",
+      "id": "no-claim"
+    },
+    {
+      "text": "Start with the live component, the piece the browser mounts.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The live component is an ordinary Svelte component that the runtime mounts with Svelte's `mount()`, and its props are the directive's declared attributes.",
+      "id": [
+        "f:bwaj5c",
+        "f:hje4zb"
+      ]
+    },
+    {
+      "text": "The runtime puts no framework abstraction between Svelte and the component.",
+      "id": "f:bwaj5c"
+    },
+    {
+      "text": "In `src/lib/islands/`, or `src/theme/islands/` on a scaffolded site, create `Converter.svelte` with its props typed from the directive's attributes:",
+      "id": "f:mcxxpp"
+    },
+    {
+      "text": "A `number` attribute arrives as a JSON number and a `boolean` attribute as a JSON boolean.",
+      "id": "f:hje4zb"
+    },
+    {
+      "text": "Every other attribute arrives as the literal string the author wrote.",
+      "id": "f:hje4zb"
+    },
+    {
+      "text": "**Caution:** Every prop is written by an author and untrusted.",
+      "id": "f:jz4qka"
+    },
+    {
+      "text": "The pipeline escapes it into an attribute and the runtime parses it inside a `try`/`catch`, which is safe only because the value never enters a script context.",
+      "id": "f:jz4qka"
+    },
+    {
+      "text": "The runtime passes the parsed values to the component unchanged, with no sanitizing or URL filtering.",
+      "id": "f:8356mn"
+    },
+    {
+      "text": "A component that routes a prop into `{@html}`, an `href` or `src`, or an inline `style` owns that injection risk.",
+      "id": "f:8356mn"
+    },
+    {
+      "text": "Bind props to text only.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Props are untrusted](../reference/islands.md#props-are-untrusted) states the full contract.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The mount clears the fallback and mounts the component into the same element, so a first render whose size differs from the fallback shifts the layout.",
+      "id": "f:9zxml1"
+    },
+    {
+      "text": "The `banner` island avoids the shift because its fallback states the same message its live component shows.",
+      "id": [
+        "f:9zxml1",
+        "f:mcxxpp"
+      ]
+    },
+    {
+      "text": "The runtime moves no focus either.",
+      "id": "f:s080jg"
+    },
+    {
+      "text": "When the fallback holds a focusable control, the component restores focus itself.",
+      "id": "f:s080jg"
+    },
+    {
+      "text": "Next, register the component under its directive name.",
+      "id": "no-claim"
+    },
+    {
+      "text": "An island registers on the adapter's `rendering.islands` under its directive name, and the component's declaration sets `hydrate` to say when it mounts.",
+      "id": [
+        "f:thjrvl",
+        "f:nm3bbo",
+        "f:htxey1"
+      ]
+    },
+    {
+      "text": "To register the island, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "On the tutorial's site, create `src/lib/islands/registry.ts` and export an `IslandRegistry` named `siteIslands` that maps `converter` to the component:",
+      "id": "f:thjrvl"
+    },
+    {
+      "text": "On a scaffolded site, add the `converter` entry beside `banner` in the existing `src/theme/islands/registry.ts` instead.",
+      "id": "f:mcxxpp"
+    },
+    {
+      "text": "The engine reads `rendering.islands` only to check it, and the runtime mounts from whatever map the layout passes.",
+      "id": "f:ni5lm7"
+    },
+    {
+      "text": "The adapter and the layout therefore import this one `siteIslands` export.",
+      "id": "f:ni5lm7"
+    },
+    {
+      "text": "On the tutorial's site, in `src/lib/cairn.config.ts`, pass `siteIslands` as `rendering.islands` beside `rendering.render`:",
+      "id": [
+        "f:thjrvl",
+        "f:q07rd5"
+      ]
+    },
+    {
+      "text": "A scaffolded site's adapter passes it already.",
+      "id": "f:mcxxpp"
+    },
+    {
+      "text": "In the component's `defineComponent` declaration, add `hydrate: true` to mount on first load and every client navigation, or `hydrate: 'visible'` to defer the mount.",
+      "id": [
+        "f:nm3bbo",
+        "f:htxey1"
+      ]
+    },
+    {
+      "text": "A `'visible'` island mounts once, the first time its boundary meets the viewport, so an island a reader never scrolls to never mounts.",
+      "id": "f:mynt0l"
+    },
+    {
+      "text": "An island the reader sees on first load suits `true`.",
+      "id": "f:nm3bbo"
+    },
+    {
+      "text": "`defineAdapter` checks the declarations against the registry when the adapter is declared, and it fails closed on a mismatch in either direction.",
+      "id": "f:mv684d"
+    },
+    {
+      "text": "Each of its two errors names the directive:",
+      "id": [
+        "f:mv684d",
+        "f:bb4ah3"
+      ]
+    },
+    {
+      "text": "After all three steps, the check passes.",
+      "id": "f:mv684d"
+    },
+    {
+      "text": "The [`rendering.islands`](../reference/core.md#renderingislands-adapter-member) entry describes the member and its check.",
+      "id": "f:thjrvl"
+    },
+    {
+      "text": "The registered island still needs the root layout that mounts it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The root layout mounts islands by calling `hydrateIslands` from `afterNavigate`, behind a `hasIslands` flag, so a site without islands loads no runtime.",
+      "id": [
+        "f:drsabs",
+        "f:lv29ox",
+        "f:59u3b9"
+      ]
+    },
+    {
+      "text": "On a scaffolded site, the root layout already makes this call, so go to [Verify the island on the public page](#verify-the-island-on-the-public-page).",
+      "id": "f:mcxxpp"
+    },
+    {
+      "text": "On the tutorial's site, `sv create` already wrote the root layout at the top of `src/routes/`.",
+      "id": "f:ibis7z"
+    },
+    {
+      "text": "The new root load goes beside it:",
+      "id": "f:mcxxpp"
+    },
+    {
+      "text": "To wire the root layout, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Create `src/routes/+layout.server.ts` and return `hasIslands` computed from the registry module:",
+      "id": [
+        "f:ofex2m",
+        "f:mcxxpp"
+      ]
+    },
+    {
+      "text": "In the `src/routes/+layout.svelte` that `sv create` wrote, call `hydrateIslands(siteIslands)` from `afterNavigate` when the `hasIslands` flag is set:",
+      "id": [
+        "f:drsabs",
+        "f:lv29ox",
+        "f:mcxxpp",
+        "f:ibis7z"
+      ]
+    },
+    {
+      "text": "The flag and the dynamic imports keep the runtime out of a site whose registry is empty.",
+      "id": "f:59u3b9"
+    },
+    {
+      "text": "Both the load and the layout read the lean registry module, never the adapter.",
+      "id": [
+        "f:ofex2m",
+        "f:lv29ox"
+      ]
+    },
+    {
+      "text": "Importing the adapter in the layout would ship the adapter's renderer, icon set, and media manifest to every public page.",
+      "id": "f:lv29ox"
+    },
+    {
+      "text": "`hydrateIslands` runs after each client navigation, once the new DOM is in place, and it tears down the previous pass first.",
+      "id": [
+        "f:drsabs",
+        "f:rmlwca"
+      ]
+    },
+    {
+      "text": "Returning to a page therefore mounts one instance of each island, never a duplicate.",
+      "id": "f:rmlwca"
+    },
+    {
+      "text": "Teardown is synchronous on navigation: the runtime unmounts with `outro: false`.",
+      "id": "f:w8oe1v"
+    },
+    {
+      "text": "A narrower element passed as the second argument, `root`, limits the scan to that region, and `root` defaults to `document`.",
+      "id": "f:bh6css"
+    },
+    {
+      "text": "The [`hydrateIslands`](../reference/islands.md#hydrateislands) entry states the function's contract.",
+      "id": "f:drsabs"
+    },
+    {
+      "text": "With the layout in place, check the island where your readers see it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Check the island under `npm run preview` or on the deployed site, because the edit page's sandboxed preview frame always shows the fallback.",
+      "id": "f:8o2gbl"
+    },
+    {
+      "text": "To verify the island, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, build the site and serve it with `npm run preview`, or deploy it.",
+      "id": "f:8o2gbl"
+    },
+    {
+      "text": "In the browser, open the public page of the entry from [Before you begin](#before-you-begin) that uses the `converter` directive.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the browser's element inspector, find the boundary: a `<div>` with `data-cairn-island=\"converter\"` and a `data-cairn-props` JSON payload.",
+      "id": "f:4kmm3i"
+    },
+    {
+      "text": "A `'visible'` island also carries `data-cairn-hydrate=\"visible\"`.",
+      "id": "f:4kmm3i"
+    },
+    {
+      "text": "On the page, scroll to the island if it is `'visible'`, and confirm that the converter responds to input where the fallback was.",
+      "id": [
+        "f:mynt0l",
+        "f:9zxml1"
+      ]
+    },
+    {
+      "text": "With JavaScript turned off in the browser, reload the page: the fallback shows inside the boundary.",
+      "id": "f:1uk9sw"
+    },
+    {
+      "text": "If a check fails, [Diagnose a failed check](#diagnose-a-failed-check) traces it to its cause.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Each failed check traces to one piece of the chain, from the adapter's island check and the `hydrate` declaration to the layout and the component's mount.",
+      "id": "f:4hd2vg"
+    },
+    {
+      "text": "One bad island keeps its fallback, and every other island still mounts.",
+      "id": "f:urw3z7"
+    },
+    {
+      "text": "That holds whether its name is missing from the map, its props fail to parse, or its component throws on mount.",
+      "id": "f:urw3z7"
+    },
+    {
+      "text": "A throwing mount puts back the fallback it cleared.",
+      "id": "f:9zxml1"
+    },
+    {
+      "text": "[Error isolation](../reference/islands.md#error-isolation) lists the isolated cases.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Work through the following checks in order:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The adapter throws one of the two errors from [Register the island](#register-the-island) when it is declared.",
+      "id": [
+        "f:bb4ah3",
+        "f:mv684d"
+      ]
+    },
+    {
+      "text": "For the first error, add the registry entry.",
+      "id": "no-claim"
+    },
+    {
+      "text": "For the second, check that the declaration sets `hydrate` and that the component sits in the registry the adapter passes as `rendering.components`.",
+      "id": [
+        "f:5vjwlc",
+        "f:mv684d"
+      ]
+    },
+    {
+      "text": "The page shows the component's markup with no `data-cairn-island` boundary.",
+      "id": "f:4kmm3i"
+    },
+    {
+      "text": "The declaration lacks `hydrate`, so the component renders as static server markup.",
+      "id": "f:4hd2vg"
+    },
+    {
+      "text": "The boundary is there and a `'visible'` island keeps its fallback.",
+      "id": "f:mynt0l"
+    },
+    {
+      "text": "The island mounts only when its boundary first meets the viewport, so scroll to it.",
+      "id": "f:mynt0l"
+    },
+    {
+      "text": "The boundary is there, the fallback stays, and the islands runtime never loads.",
+      "id": "f:lv29ox"
+    },
+    {
+      "text": "The root load returned a false `hasIslands`, and the layout returned before its imports.",
+      "id": [
+        "f:ofex2m",
+        "f:lv29ox"
+      ]
+    },
+    {
+      "text": "Check that `src/routes/+layout.server.ts` reads the registry module.",
+      "id": [
+        "f:ofex2m",
+        "f:mcxxpp"
+      ]
+    },
+    {
+      "text": "The runtime loads and the fallback stays.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The map the layout passes lacks the directive name.",
+      "id": "f:urw3z7"
+    },
+    {
+      "text": "Check that the layout and the adapter import the same `siteIslands` export.",
+      "id": "f:ni5lm7"
+    },
+    {
+      "text": "The name is in the map and the fallback stays.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The component threw on mount, and the runtime put the fallback back.",
+      "id": [
+        "f:9zxml1",
+        "f:urw3z7"
+      ]
+    },
+    {
+      "text": "The fix is in the component.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The following pages cover the pieces this page links to:",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Configure rendering](configure-rendering.md) declares the component, its attributes, and its `build()` fallback.",
+      "id": "f:1uk9sw"
+    },
+    {
+      "text": "[Islands](../reference/islands.md) documents the runtime, the boundary contract, and the props trust boundary.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[`rendering.islands`](../reference/core.md#renderingislands-adapter-member) documents the adapter member and its consistency check.",
+      "id": [
+        "f:thjrvl",
+        "f:mv684d"
+      ]
+    },
+    {
+      "text": "[Hydrate and the island boundary](../reference/admin.md#hydrate-and-the-island-boundary) documents `hydrate` on the component's declaration.",
+      "id": "f:nm3bbo"
+    },
+    {
+      "text": "[Scaffolded site files](scaffolded-site-files.md) shows where the scaffold's island files sit.",
+      "id": "no-claim"
+    }
+  ],
+  "cuts": [
+    {
+      "id": "f:n52h8f",
+      "reason": "The layout reads `data.hasIslands` through its own generated `LayoutData`, so typing `App.PageData` is not a step of this task. `docs/extend/scaffolded-site-files.md` \"`src/app.d.ts`\" states it (opened and confirmed, lines 240-241). Note: the scaffold's `src/app.d.ts` declares `PageData` itself; `@glw907/cairn-cms/ambient` augments only `App.Locals` and the `__CAIRN_DEV_BUILD__` global (`src/lib/ambient.ts`), so the page-inputs summary \"through /ambient\" was wrong"
+    },
+    {
+      "id": "f:keo8ze",
+      "reason": "Duplicates `f:thjrvl` and `f:4hd2vg`, which the page cites instead (as the page inputs disposed it)"
+    },
+    {
+      "id": "f:42mh10",
+      "reason": "Duplicates `f:rmlwca` for this page; the observer-disconnect detail is reference depth, stated by `docs/reference/islands.md#hydrateislands` (opened and confirmed: \"unmounting live instances and disconnecting any pending observers\")"
+    }
+  ],
+  "local": [
+    "converter",
+    "Converter.svelte",
+    "from",
+    "to",
+    "rate",
+    "src/lib/islands/",
+    "src/lib/islands/Converter.svelte",
+    "src/lib/islands/registry.ts",
+    "#lib/islands/registry.js",
+    "src/theme/islands/Converter.svelte",
+    "src/routes/+layout.server.ts",
+    "src/routes/+layout.svelte",
+    "siteIslands",
+    "<name>"
+  ]
+}

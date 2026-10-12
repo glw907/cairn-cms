@@ -1,0 +1,724 @@
+{
+  "page": "docs/extend/reuse-content-across-entries.md",
+  "sentences": [
+    {
+      "text": "A passage that several entries share, such as a safety notice, can live in one file instead of a copy in each entry.",
+      "id": "f:880bg6"
+    },
+    {
+      "text": "On a scaffolded site, the trail safety notice on the about page and in a post is one such file.",
+      "id": [
+        "f:kcm3gf",
+        "f:rolr87"
+      ]
+    },
+    {
+      "text": "That file is a fragment.",
+      "id": "f:880bg6"
+    },
+    {
+      "text": "A fragment is an entry of the reserved `fragments` concept, and any entry pulls one into its body with `::include{fragment=\"<id>\"}`.",
+      "id": [
+        "f:880bg6",
+        "f:0w7xeu"
+      ]
+    },
+    {
+      "text": "Editors keep fragments on a **Fragments** screen like other content, but a fragment has no public page and reaches a reader only inside an entry that includes it.",
+      "id": [
+        "f:vs77a6",
+        "f:n5d65u",
+        "f:880bg6"
+      ]
+    },
+    {
+      "text": "The including entry's file keeps only the include line.",
+      "id": "f:72pqil"
+    },
+    {
+      "text": "The engine splices in the fragment's body each time that entry renders, so one edit to the fragment changes every entry that includes it.",
+      "id": "f:72pqil"
+    },
+    {
+      "text": "On the public site, that render reads the markdown in the deployed commit, and a fragment's edit reaches its including pages in the deploy that the fragment's publish starts.",
+      "id": [
+        "f:my6ci3",
+        "f:1mkckz",
+        "f:cjonmm"
+      ]
+    },
+    {
+      "text": "The engine does the splice and builds the resolver that each public entry page hands to the site's render, and it gives editors an **Include a fragment** control.",
+      "id": [
+        "f:72pqil",
+        "f:xjkgtp",
+        "f:0w7xeu"
+      ]
+    },
+    {
+      "text": "It also guards a named include.",
+      "id": [
+        "f:xlgfqm",
+        "f:3vndvj"
+      ]
+    },
+    {
+      "text": "An include that names a missing fragment fails the build, as a dangling `cairn:` link does, and the admin refuses to delete a fragment that a published entry still includes.",
+      "id": [
+        "f:xlgfqm",
+        "f:3vndvj",
+        "f:t5ebsr"
+      ]
+    },
+    {
+      "text": "The site supplies three wiring points and a render.",
+      "id": [
+        "f:n5d65u",
+        "f:k84qwy"
+      ]
+    },
+    {
+      "text": "Its adapter declares the `fragments` concept with `routing: 'embedded'`.",
+      "id": [
+        "f:ojydmz",
+        "f:7wiuwr"
+      ]
+    },
+    {
+      "text": "Its content module passes a glob for the fragment files to `createSiteIndexes`.",
+      "id": "f:60zw5n"
+    },
+    {
+      "text": "The `cairnManifest` Vite plugin takes the same glob in its `content` option.",
+      "id": "f:i6zyab"
+    },
+    {
+      "text": "The adapter's `rendering.render` forwards `resolveFragment`.",
+      "id": "f:k84qwy"
+    },
+    {
+      "text": "Two of those four pieces fail with no error.",
+      "id": [
+        "f:i6zyab",
+        "f:k84qwy"
+      ]
+    },
+    {
+      "text": "A plugin entry left out gives the fragments no manifest rows, and a render that drops the resolver prints each include line on the page as literal text.",
+      "id": [
+        "f:i6zyab",
+        "f:7az6m2",
+        "f:k84qwy"
+      ]
+    },
+    {
+      "text": "A missing content-module glob stops the build instead.",
+      "id": "f:60zw5n"
+    },
+    {
+      "text": "On the site that [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) builds, whose adapter is `src/lib/cairn.config.ts`, you turn fragments on: you declare the fragments concept, index its files, confirm that your render forwards `resolveFragment`, write a fragment and include it in an entry, and check that it renders.",
+      "id": [
+        "f:q07rd5",
+        "f:k84qwy"
+      ]
+    },
+    {
+      "text": "A scaffolded site, whose adapter is `src/theme/cairn.config.ts`, already has all four pieces and the `trail-safety-notice` fragment.",
+      "id": [
+        "f:q07rd5",
+        "f:n5d65u",
+        "f:xjkgtp",
+        "f:kcm3gf"
+      ]
+    },
+    {
+      "text": "Its developer comes to add a fragment, to check a render they replaced, or to learn what the engine refuses, such as deleting that fragment while the about page and a post still include it.",
+      "id": [
+        "f:3vndvj",
+        "f:rolr87"
+      ]
+    },
+    {
+      "text": "A developer chasing a build error that names a fragment, an include line printed on a page, or an `include.missing` record in the logs can start at [Diagnose an include that does not render](#diagnose-an-include-that-does-not-render).",
+      "id": [
+        "f:xjkgtp",
+        "f:k84qwy",
+        "f:bfiuem"
+      ]
+    },
+    {
+      "text": "The page assumes you know markdown with YAML frontmatter, Vite's `import.meta.glob`, and the `::name{key=\"value\"}` leaf-directive form.",
+      "id": "f:1mkckz"
+    },
+    {
+      "text": "It assumes no knowledge of cairn beyond the adapter file, the content module, and `vite.config.ts`.",
+      "id": "f:n5d65u"
+    },
+    {
+      "text": "The page leaves two topics to other documentation:",
+      "id": "no-claim"
+    },
+    {
+      "text": "Reference fields, in [Link content with references](link-content-with-references.md).",
+      "id": "no-claim"
+    },
+    {
+      "text": "A reference field points at another entry, such as a scaffolded post's `author`, by storing its id in frontmatter for the site's template to render.",
+      "id": [
+        "f:563h9u",
+        "f:wyrefs"
+      ]
+    },
+    {
+      "text": "Using the **Include a fragment** control as an editor, which belongs to the editor documentation.",
+      "id": "f:0w7xeu"
+    },
+    {
+      "text": "**Note:** A fragment's text is the same in every entry that includes it, and an include takes the fragment's id and nothing else.",
+      "id": [
+        "f:880bg6",
+        "f:0w7xeu"
+      ]
+    },
+    {
+      "text": "When a block should differ on each use, register a custom public component instead, because a component declares the attributes each use sets.",
+      "id": "f:htxey1"
+    },
+    {
+      "text": "[Configure rendering](configure-rendering.md) covers custom public components.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Fragments take wiring in three files on your site: the adapter, the content module, and `vite.config.ts`.",
+      "id": "f:n5d65u"
+    },
+    {
+      "text": "Before you start, check that your site has the following:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The adapter file, which is `src/lib/cairn.config.ts` on the tutorial's site and `src/theme/cairn.config.ts` on a scaffolded one.",
+      "id": "f:q07rd5"
+    },
+    {
+      "text": "The tutorial writes it in [Write the site config and a minimal adapter](add-cairn-to-a-sveltekit-app.md#write-the-site-config-and-a-minimal-adapter).",
+      "id": "no-claim"
+    },
+    {
+      "text": "The content module that calls `createSiteIndexes`, and `vite.config.ts` with the `cairnManifest` plugin.",
+      "id": [
+        "f:60zw5n",
+        "f:n5d65u"
+      ]
+    },
+    {
+      "text": "The content module is `src/lib/content.ts` on the tutorial's site and `src/chassis/content.ts` on a scaffolded one.",
+      "id": [
+        "f:60zw5n",
+        "f:n5d65u"
+      ]
+    },
+    {
+      "text": "The tutorial writes both files in [Index the content and commit its manifest](add-cairn-to-a-sveltekit-app.md#index-the-content-and-commit-its-manifest).",
+      "id": "no-claim"
+    },
+    {
+      "text": "A public entry route built on `createPublicRoutes`, which the tutorial writes in [Render the entry](add-cairn-to-a-sveltekit-app.md#render-the-entry).",
+      "id": "f:xjkgtp"
+    },
+    {
+      "text": "A scaffolded site already declares the concept, globs its files in both places, and forwards the resolver.",
+      "id": [
+        "f:n5d65u",
+        "f:xjkgtp"
+      ]
+    },
+    {
+      "text": "Its developer can start at [Write a fragment and include it](#write-a-fragment-and-include-it) to add a fragment, or at [How an include resolves](#how-an-include-resolves) for what the engine does with one.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A developer who replaced the scaffold's render starts at [Forward resolveFragment from your render](#forward-resolvefragment-from-your-render).",
+      "id": "no-claim"
+    },
+    {
+      "text": "Declaring a concept under the reserved key `fragments` turns on the `::include` directive, and that concept must use `routing: 'embedded'`.",
+      "id": [
+        "f:ojydmz",
+        "f:7wiuwr"
+      ]
+    },
+    {
+      "text": "With that routing, a fragment has no permalink and reaches a reader only through an entry that includes it.",
+      "id": "f:880bg6"
+    },
+    {
+      "text": "[Routing](content-model.md#routing) in Content model sets out what each routing shorthand turns on or off.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the adapter file, add a `fragments` concept to the `content` group:",
+      "id": [
+        "f:ojydmz",
+        "f:n5d65u"
+      ]
+    },
+    {
+      "text": "A scaffolded site declares the same concept right after `pages`.",
+      "id": "f:n5d65u"
+    },
+    {
+      "text": "Any other `routing` value throws when the engine composes the site's content runtime, not when `defineConcept` runs, with the message `cairn: concept \"fragments\" requires routing: 'embedded' (the include directive resolves against it)`.",
+      "id": "f:7wiuwr"
+    },
+    {
+      "text": "With the concept declared, hand its files to the build.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The build reads fragment files through two globs, one passed to `createSiteIndexes` in the content module and one in the `cairnManifest` plugin's `content` option.",
+      "id": [
+        "f:60zw5n",
+        "f:i6zyab",
+        "f:n5d65u"
+      ]
+    },
+    {
+      "text": "To index the fragment files, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the content module, glob `/src/content/fragments/*.md` and pass the result to `createSiteIndexes` as `fragments`:",
+      "id": "f:n5d65u"
+    },
+    {
+      "text": "Without this glob, `createSiteIndexes` throws at build with an error that starts `cairn: concept \"fragments\" has no glob passed`.",
+      "id": "f:60zw5n"
+    },
+    {
+      "text": "In `vite.config.ts`, add `fragments` to the `cairnManifest` plugin's `content` option, with the same glob:",
+      "id": "f:n5d65u"
+    },
+    {
+      "text": "A missing entry here fails silently.",
+      "id": "f:i6zyab"
+    },
+    {
+      "text": "The plugin builds no manifest rows for the concept and neither throws nor warns.",
+      "id": "f:7az6m2"
+    },
+    {
+      "text": "The [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes) entry and the [`CairnManifestOptions`](../reference/vite.md#cairnmanifestoptions) entry document both calls.",
+      "id": [
+        "f:60zw5n",
+        "f:i6zyab"
+      ]
+    },
+    {
+      "text": "Next, check that your render passes the resolver through.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The adapter's `rendering.render` must forward `resolveFragment` beside `resolve` and `resolveMedia`, or every include publishes as literal text with no error.",
+      "id": "f:k84qwy"
+    },
+    {
+      "text": "The render never builds that resolver.",
+      "id": "f:xjkgtp"
+    },
+    {
+      "text": "For each public entry page, `createPublicRoutes` builds one with `createFragmentResolver` and hands it to the render, and the admin preview passes a separate one.",
+      "id": "f:xjkgtp"
+    },
+    {
+      "text": "`SiteRender`'s `resolveFragment` option takes it as a `FragmentResolve`.",
+      "id": "f:zv3q45"
+    },
+    {
+      "text": "In the adapter file, confirm that `render` takes `resolveFragment` and passes it to the renderer:",
+      "id": "f:k84qwy"
+    },
+    {
+      "text": "The tutorial's render and the scaffold's already forward it.",
+      "id": "f:xjkgtp"
+    },
+    {
+      "text": "A render path that the site writes outside `createPublicRoutes` builds its resolver with [`createFragmentResolver`](../reference/delivery-data.md#createfragmentresolver), exported from `@glw907/cairn-cms/delivery/data`.",
+      "id": "f:xjkgtp"
+    },
+    {
+      "text": "The scaffold's feed resolves its fragments that way.",
+      "id": "f:2dqwmu"
+    },
+    {
+      "text": "For an unknown id, or on a site with no fragments concept, that resolver throws `cairn: fragment \"<id>\" not found`.",
+      "id": "f:xjkgtp"
+    },
+    {
+      "text": "The [`SiteRender`](../reference/core.md#siterender) entry lists the render's full input.",
+      "id": "f:zv3q45"
+    },
+    {
+      "text": "With the wiring in place, write a fragment and include it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A fragment is a markdown file in `src/content/fragments/`, and an include names it by its id, the filename without `.md`.",
+      "id": [
+        "f:n5d65u",
+        "f:z68na4",
+        "f:0w7xeu"
+      ]
+    },
+    {
+      "text": "On the tutorial's site, the fragment and the entry that includes it sit in sibling directories:",
+      "id": "no-claim"
+    },
+    {
+      "text": "On a scaffolded site, the fragment is already in place, and `src/content/pages/about.md` includes it.",
+      "id": [
+        "f:kcm3gf",
+        "f:rolr87"
+      ]
+    },
+    {
+      "text": "To write a fragment and include it, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In `src/content/fragments`, create `trail-safety-notice.md` with a `title` and a one-paragraph body, as the scaffold's copy has:",
+      "id": "f:kcm3gf"
+    },
+    {
+      "text": "In the entry's body, add `::include{fragment=\"trail-safety-notice\"}` on a line of its own:",
+      "id": [
+        "f:0w7xeu",
+        "f:rolr87"
+      ]
+    },
+    {
+      "text": "On a scaffolded site, the about page carries the same line.",
+      "id": "f:rolr87"
+    },
+    {
+      "text": "In the project directory, rewrite the manifest:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The manifest records each entry's included fragments, so a new fragment and a new include both change it.",
+      "id": "f:t5ebsr"
+    },
+    {
+      "text": "A build fails on a manifest that has drifted from the markdown, and its error names `npx cairn-manifest`.",
+      "id": [
+        "f:n0laoh",
+        "f:fdtgh5"
+      ]
+    },
+    {
+      "text": "In the admin, an editor writes the same line with the **Include a fragment** control in the editor's insert palette.",
+      "id": "f:0w7xeu"
+    },
+    {
+      "text": "The control appears only when the site declares a fragments concept, and never while the editor edits a fragment.",
+      "id": "f:tj3h4c"
+    },
+    {
+      "text": "With no published fragment, its picker says to create one on the **Fragments** screen and publish it.",
+      "id": "f:tj3h4c"
+    },
+    {
+      "text": "Using the control belongs to the editor documentation.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Before you put a component, a link, or an image in a fragment, read how an include resolves.",
+      "id": "no-claim"
+    },
+    {
+      "text": "A fragment's body takes the same markdown as an entry's, because at render time the engine splices it into the including entry before it resolves components, `cairn:` links, and `media:` references.",
+      "id": "f:72pqil"
+    },
+    {
+      "text": "A registered component directive, a `cairn:` link, or a `media:` reference inside a fragment resolves as if it were typed into the including entry.",
+      "id": "f:72pqil"
+    },
+    {
+      "text": "Because the engine reads the fragment's body at each render, an edit shows in an including entry at that entry's next render.",
+      "id": "f:72pqil"
+    },
+    {
+      "text": "Resolution runs one pass deep, so a fragment can't include another fragment, and the engine refuses such a save with `A fragment can't include another fragment.`",
+      "id": "f:82eo9p"
+    },
+    {
+      "text": "Next, see what keeps each include valid.",
+      "id": "no-claim"
+    },
+    {
+      "text": "An include whose id names no fragment fails the build, the same way a dangling `cairn:` link does.",
+      "id": "f:xlgfqm"
+    },
+    {
+      "text": "The resolver the public build uses throws `cairn: fragment \"<id>\" not found`, and on a prerendered entry route that throw stops the build.",
+      "id": [
+        "f:xjkgtp",
+        "f:xlgfqm",
+        "f:my6ci3"
+      ]
+    },
+    {
+      "text": "An include with no `fragment` attribute never reaches the resolver, so the build doesn't catch it.",
+      "id": "f:bfiuem"
+    },
+    {
+      "text": "[Diagnose an include that does not render](#diagnose-an-include-that-does-not-render) covers that case.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The admin refuses to delete a fragment while a published entry still includes it, with a guard shaped like a reference field's.",
+      "id": [
+        "f:3vndvj",
+        "f:t5ebsr"
+      ]
+    },
+    {
+      "text": "A fragment's edit screen lists the entries that include it in an **Included in** group with a count.",
+      "id": "f:7250yh"
+    },
+    {
+      "text": "While any entry includes the fragment, the edit screen also shows a status line, ahead of a publish, that names how many including entries a publish updates.",
+      "id": "f:7250yh"
+    },
+    {
+      "text": "On a scaffolded site, `trail-safety-notice` lists two entries, the about page and a post.",
+      "id": "f:rolr87"
+    },
+    {
+      "text": "Both the guard and the list read the includes each entry records in the content manifest.",
+      "id": [
+        "f:3vndvj",
+        "f:7250yh",
+        "f:t5ebsr"
+      ]
+    },
+    {
+      "text": "A publish updates that record and a save doesn't, so an include counts once its entry is published.",
+      "id": "f:t5ebsr"
+    },
+    {
+      "text": "[The content manifest](content-model.md#the-content-manifest) in Content model describes the rows.",
+      "id": "no-claim"
+    },
+    {
+      "text": "With the fragment included, check the result end to end.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The including entry renders the fragment's paragraph where the directive was, and the fragment's edit screen lists that entry under **Included in**.",
+      "id": [
+        "f:72pqil",
+        "f:7250yh"
+      ]
+    },
+    {
+      "text": "To verify the include, follow these steps:",
+      "id": "no-claim"
+    },
+    {
+      "text": "In the project directory, run the build, and confirm that it completes:",
+      "id": "no-claim"
+    },
+    {
+      "text": "A dangling include or a missing content-index glob fails this build.",
+      "id": [
+        "f:xlgfqm",
+        "f:60zw5n"
+      ]
+    },
+    {
+      "text": "In the project directory, start the dev server.",
+      "id": "no-claim"
+    },
+    {
+      "text": "On the tutorial's site, set `CAIRN_DEV_BACKEND` in the form that [Verify the dev sign-in](add-cairn-to-a-sveltekit-app.md#verify-the-dev-sign-in) gives for your shell.",
+      "id": "no-claim"
+    },
+    {
+      "text": "In a browser, open the including entry: `/posts/first-light` on the tutorial's site, or `/about` on a scaffolded one.",
+      "id": [
+        "f:6ebew3",
+        "f:rolr87"
+      ]
+    },
+    {
+      "text": "Confirm that the fragment's paragraph appears where the directive was, with no `::include` text left.",
+      "id": "f:72pqil"
+    },
+    {
+      "text": "In the admin, open **Fragments**, then **Trail safety notice**.",
+      "id": [
+        "f:n5d65u",
+        "f:kcm3gf"
+      ]
+    },
+    {
+      "text": "Confirm that the **Included in** group lists the including entry, with a count of one on the tutorial's site and two on a scaffolded one.",
+      "id": [
+        "f:7250yh",
+        "f:rolr87"
+      ]
+    },
+    {
+      "text": "A failed include either stops the build with a `cairn:` error or leaves text on the page where the fragment belongs.",
+      "id": [
+        "f:xjkgtp",
+        "f:k84qwy",
+        "f:bfiuem"
+      ]
+    },
+    {
+      "text": "When a check fails, work through the following causes in order:",
+      "id": "no-claim"
+    },
+    {
+      "text": "The build stops with a setup error.",
+      "id": [
+        "f:7wiuwr",
+        "f:60zw5n",
+        "f:n0laoh"
+      ]
+    },
+    {
+      "text": "Each one names the piece to fix:",
+      "id": "no-claim"
+    },
+    {
+      "text": "`cairn: concept \"fragments\" requires routing: 'embedded'` points at [Declare the fragments concept](#declare-the-fragments-concept).",
+      "id": "f:7wiuwr"
+    },
+    {
+      "text": "`cairn: concept \"fragments\" has no glob passed` points at the content-module step of [Index the fragment files](#index-the-fragment-files).",
+      "id": "f:60zw5n"
+    },
+    {
+      "text": "A stale-manifest error names `npx cairn-manifest`, the last step of [Write a fragment and include it](#write-a-fragment-and-include-it).",
+      "id": "f:fdtgh5"
+    },
+    {
+      "text": "The build stops with `cairn: fragment \"<id>\" not found`.",
+      "id": [
+        "f:xjkgtp",
+        "f:xlgfqm"
+      ]
+    },
+    {
+      "text": "An include names an id with no file in `src/content/fragments`, or the site declares no fragments concept.",
+      "id": [
+        "f:xjkgtp",
+        "f:n5d65u"
+      ]
+    },
+    {
+      "text": "Set the id to the fragment's filename without `.md`, or declare the concept and add the fragment.",
+      "id": "f:z68na4"
+    },
+    {
+      "text": "The page shows the literal `::include{fragment=\"...\"}` text.",
+      "id": "f:k84qwy"
+    },
+    {
+      "text": "The render doesn't forward `resolveFragment`.",
+      "id": "f:k84qwy"
+    },
+    {
+      "text": "Forward it as [Forward resolveFragment from your render](#forward-resolvefragment-from-your-render) shows.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The page shows a notice in place of the include, and the log carries an `include.missing` record with `reason: 'empty_fragment'`.",
+      "id": "f:bfiuem"
+    },
+    {
+      "text": "The directive has no `fragment` attribute.",
+      "id": "f:bfiuem"
+    },
+    {
+      "text": "Add the fragment's id to it.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The build passes this case, so the notice can reach the live site.",
+      "id": "f:bfiuem"
+    },
+    {
+      "text": "The page shows a `Missing fragment` notice, and the log carries `include.missing` with `reason: 'not_found'`.",
+      "id": "f:bfiuem"
+    },
+    {
+      "text": "A resolver other than the public build's returned nothing for the id, where the public build's resolver would have thrown.",
+      "id": [
+        "f:bfiuem",
+        "f:xjkgtp"
+      ]
+    },
+    {
+      "text": "Check the id against the fragment's filename.",
+      "id": "f:z68na4"
+    },
+    {
+      "text": "The [Log events](../reference/log-events.md) reference lists the `include.missing` record's fields, and [Read the structured logs](debug-your-site.md#read-the-structured-logs) shows how to find the records.",
+      "id": "f:bfiuem"
+    },
+    {
+      "text": "The following pages and reference entries cover related topics:",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Configure rendering](configure-rendering.md) covers custom public components with attributes and the render seam.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Link content with references](link-content-with-references.md) covers reference fields and their delete guard.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[Content model](content-model.md) covers the routing shorthands and the content manifest.",
+      "id": "no-claim"
+    },
+    {
+      "text": "[`createFragmentResolver`](../reference/delivery-data.md#createfragmentresolver) documents the resolver the build uses.",
+      "id": "f:zv3q45"
+    },
+    {
+      "text": "[`SiteRender`](../reference/core.md#siterender) documents the input the adapter's render takes.",
+      "id": "f:zv3q45"
+    }
+  ],
+  "cuts": [
+    {
+      "id": "f:y3s3t9",
+      "reason": "Duplicates f:880bg6 and f:ojydmz from the same source lines, as the page inputs disposed it."
+    },
+    {
+      "id": "f:2g0v8u",
+      "reason": "The delete action's whole check order (links, includes, the cross-branch reference index, references) exceeds this page's job; its include clause is f:3vndvj's, placed in Guards, and the reference-edge order belongs to link-content-with-references, out of scope."
+    },
+    {
+      "id": "f:cgwyp6",
+      "reason": "defineRegistry's refusal of a component named figure or include is the component registry's rule, owned by configure-rendering (out of scope); this page registers no component."
+    },
+    {
+      "id": "f:ps54gh",
+      "reason": "Subordinated: docs/reference/core.md#siterender states SiteRender's input object (with resolveFragment) and its Promise<string> return, and docs/reference/core.md#createrenderer states that renderDocument returns headings; both opened and confirmed. The page needs only the resolveFragment member, which f:zv3q45 carries."
+    }
+  ],
+  "local": [
+    "fragmentsRaw",
+    "postsRaw",
+    "field-notes",
+    "/posts/first-light",
+    "2026-08-14-first-light.md",
+    "CAIRN_DEV_BACKEND"
+  ]
+}

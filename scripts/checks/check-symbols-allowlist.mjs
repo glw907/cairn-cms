@@ -38,6 +38,9 @@ export const ALLOWLIST = new Set([
   'env-var:TURNSTILE_SECRET', // docs/reference/auth-channel.md's illustrative Turnstile secret binding
   'env-var:SOME_UNSET_VAR', // docs/reference/cloudflare.md's illustrative name for an omitted config key
   'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
+  'env-var:DATE_PREFIX', // docs/extend/migrate-existing-content.md's migration-script constant, never an environment variable
+  'env-var:PREFIX_LENGTH', // docs/extend/migrate-existing-content.md's migration-script constant, never an environment variable
+  'env-var:ID_SHAPE', // docs/extend/migrate-existing-content.md's migration-script constant, never an environment variable
   'env-var:ERR_UNSUPPORTED_ESM_URL_SCHEME', // docs/extend/migration-notes.md, Node's own error code for `vite preview` serving adapter 8 output (sveltejs/kit#17271), never a cairn variable
 
   // The Go `cairn` CLI's own credential environment variables, defined in
@@ -72,6 +75,7 @@ export const ALLOWLIST = new Set([
   'log-event:admin.load', // docs/reference/admin-routes.md and sveltekit.md, the `admin.load` re-export property
   'log-event:admin.actions', // docs/reference/admin-routes.md and sveltekit.md, the `admin.actions` re-export property
   'log-event:editor.nav', // docs/reference/admin-routes.md, the adapter's `editor.nav` config field
+  'log-event:editor.preview', // docs/extend/share-a-draft-preview.md, the adapter's `editor.preview` config field (PreviewConfig)
   'log-event:editor.email', // docs/reference/doctor.md, an `editor` table row's `email` column
   'log-event:editor.role', // docs/reference/sveltekit.md, a variable's own `.role` field access
   'log-event:config.limits', // docs/reference/auth-channel.md, createAuthChannel's `config.limits` bag
@@ -136,11 +140,15 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/server/member-channel.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative auth-channel module
   'file-path:src/lib/server/members.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative roster-lookup and code-delivery module
   'file-path:src/lib/server/member-channel.test.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative channel test
+  'file-path:scripts/announce-new-posts.ts', // docs/extend/act-on-newly-published-entries.md's illustrative post-deploy job, a file the reader creates
+  'file-path:scripts/check-announce.ts', // docs/extend/act-on-newly-published-entries.md's offline check of the job's diff, a file the reader creates
   'file-path:migrations-members/0000_channel.sql', // a site's copy of the packaged channel migration, the directory docs/extend/add-a-second-sign-in-group.md creates (examples/showcase/migrations-members/ carries the same file)
   'file-path:src/lib/content.ts', // docs/extend/add-cairn-to-a-sveltekit-app.md's illustrative content-index module, by convention
   'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
-  'file-path:old-site/content/posts/my-post.md', // docs/extend/migrate-existing-content.md's illustrative pre-migration source path
-  'file-path:src/content/posts/2024-01-15-my-post.md', // docs/extend/migrate-existing-content.md's illustrative migrated output path
+  'file-path:src/lib/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component on the tutorial's site, a file the reader creates
+  'file-path:src/lib/islands/registry.ts', // docs/extend/add-an-island.md's island registry module on the tutorial's site, a file the reader creates
+  'file-path:src/lib/markdown-components.ts', // docs/extend/configure-rendering.md's component module on the tutorial's site, a file the reader creates
+  'file-path:scripts/migrate-content.mjs', // docs/extend/migrate-existing-content.md's migration script, a file the reader creates
   'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
   'file-path:dist/site.css', // docs/reference/cairn-audit.md's illustrative site-compiled stylesheet in a list-valued `sheet`
   'file-path:node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css', // docs/reference/cairn-audit.md's real installed-package sheet path, cited literally rather than resolved against this repo's own tree

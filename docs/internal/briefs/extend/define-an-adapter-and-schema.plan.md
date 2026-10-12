@@ -33,8 +33,9 @@ names one of them. The introduction is the untitled text under the H1 and is nam
 
 A site tells the engine everything about itself through one module, the adapter, and the page's
 spine is that module filled in from the outside in: find the file and its four required groups,
-close out the two small required groups that hold no content (backend and sender), then spend the
-rest of the page on the one group that does, `content`, building a single concept from declaration
+close out the two small required groups that hold no content (backend and sender), as a
+conditional section a reader skips until the site has a GitHub App and an email sender, then spend
+the rest of the page on the one group that does, `content`, building a single concept from declaration
 to address to tags to checks to what a save writes. The page closes on the one file outside the
 adapter that a reader might mistake for a second home, and then on the two commands that confirm
 the whole declaration.
@@ -52,7 +53,8 @@ Each section holds what the next one depends on.
 1. **The introduction** frames the adapter from above: one object the engine reads a site from,
    with concepts as its content keys, so "write the call, add a concept, register its glob" reads
    as one job rather than three chores.
-2. **Before you begin** (cover 1) names the two preconditions with their links.
+2. **Before you begin** (cover 1) names the two preconditions with their links, and a third,
+   conditional one for the backend and sender section only.
 3. **Start from the adapter file** merges covers 2 and 3. The Sanity take lands here: the four
    required groups are named in prose before any code, so the reader meets the scaffold's call
    knowing what to look for. The Django take lands here too: the file tree places the adapter
@@ -63,7 +65,12 @@ Each section holds what the next one depends on.
    completes the required groups the previous section named (the third, `rendering`, belongs to
    configure-rendering), and it is short and content-free, so placing it here lets the concept work
    that follows run without interruption from declaration through options. In the outline's place,
-   it would split the field-check sections from the tag section for no dependency.
+   it would split the field-check sections from the tag section for no dependency. Its values need a
+   registered GitHub App and Email Sending onboarding, which a reader who came to add a concept may
+   not have yet, so the section is conditional on its own reader: its first sentence states the
+   condition first, the hand-off into it offers the skip, and "Before you begin" lists its
+   preconditions as a conditional item. A reader without them goes straight to "Add a concept" and
+   misses nothing a later section depends on.
 5. **Add a concept** (cover 4) opens the content work. It precedes every other concept section
    because each of them edits the declaration this section creates. The three-place wiring and the
    silent-omission trap sit on the steps they govern.
@@ -94,7 +101,8 @@ Each section holds what the next one depends on.
 
 - Covers 2 and 3 merge into "Start from the adapter file": the scaffold's call is the worked example
   of the `defineAdapter` call, and two sections would show the same object twice.
-- Cover 7 moves from seventh to second among the body sections (item 4), for the reason item 4 gives.
+- Cover 7 moves from seventh to second among the body sections (item 4), as a conditional section,
+  for the reason item 4 gives.
 - The outline's cover 6 wording on the vocabulary's storage (`editor.nav.configPath`, else
   `src/lib/site.config.yaml`) is retired and is not stated; the section states `editor.siteConfigPath`
   and its `src/theme/site.config.yaml` default (`f:shv6wv`).
@@ -149,7 +157,7 @@ final wording. Content items, in order:
    (`f:5eum60`, scoped), and the build reads its markdown only through globs the site registers in
    two other files (`f:n5d65u`, scoped). The contract sentence, inside the framing: this guide walks
    through writing the `defineAdapter` call, adding a concept with its fields, address, and tag
-   field, adding checks of your own, and confirming that the declaration typechecks and builds.
+   field, adding checks and options of your own, and confirming that the declaration typechecks and builds.
 2. **When, why, and for whom.** The reader adds a kind of content, changes a concept's fields or
    address, or fills in the production backend and sender. The reader is a Svelte-fluent developer
    with the engine installed, on either a scaffolded site or a site built by hand with the add-cairn
@@ -182,7 +190,8 @@ passed the provenance extractor with no row.
 **First sentence:** Declaring an adapter takes a site with the engine installed and a working
 knowledge of the content model.
 
-**Facts:** none; the preconditions are links.
+**Facts:** none for the first two items; they are links. Cited again: `f:z7lprs` (the third item's
+Email Sending onboarding).
 
 A bulleted list, each item with a link to what produces it (anatomy item 2):
 
@@ -190,6 +199,10 @@ A bulleted list, each item with a link to what produces it (anatomy item 2):
   by hand. A scaffolded site has it already; link `docs/extend/scaffolded-site-files.md` for where
   the scaffold's files sit.
 - The content model: link `docs/extend/content-model.md`.
+- A conditional item, condition first, for "Set the backend identity and the email sender" only: to
+  set the production backend and sender, a registered GitHub App (link the tutorial's
+  `#register-the-github-app`) and Cloudflare Email Sending onboarded for the sender's domain
+  (`f:z7lprs`; link the tutorial's `#add-the-email-sending-binding-and-name-the-origin`).
 
 **Hand-off (no-claim):** "With the engine installed, open the adapter file."
 
@@ -227,12 +240,17 @@ Content:
 - The closing sentence: `defineAdapter` narrows its return type to the site's own concepts and
   fields, so a read through the adapter carries the declared field types with no cast (`f:68w9k9`).
 
-**Hand-off (no-claim):** "Fill in the backend and the sender next."
+**Hand-off (no-claim):** "If the site has a GitHub App and an email sender, fill in the backend and
+the sender next; otherwise, skip to adding a concept."
 
 ### Set the backend identity and the email sender
 
-**First sentence:** The `backend` and `email` groups name the repository commits land on and the
-address sign-in emails come from, and neither holds a secret.
+**First sentence:** If the site publishes through a GitHub App and sends sign-in email, set the
+`backend` and `email` groups, neither of which holds a secret.
+
+The condition comes first because the section is conditional on its own reader (argued-order item
+4). The section claims nothing about what the scaffold's placeholder values build to: no fact states
+it.
 
 **Facts:** `f:twcsgm`, `f:z7lprs`. Cited again: `f:2zytgf`, `f:u4cfvv` (the scaffold's placeholder
 values).
@@ -253,7 +271,7 @@ Content:
 - One sentence on the sender: a send needs Cloudflare Email Sending onboarded for the sender's domain
   (`f:z7lprs`). Link the tutorial's `#add-the-email-sending-binding-and-name-the-origin`.
 
-**Hand-off (no-claim):** "With the required groups in place, add a concept to the content map."
+**Hand-off (no-claim):** "Next, add a concept to the content map."
 
 ### Add a concept
 
@@ -349,12 +367,8 @@ Content:
   (`f:u4cfvv`).
 - One sentence on the marker: the content index reads the marked field's values as each entry's
   `ContentSummary.tags`, with no fallback to a field named `tags` (`f:g9q627`); a marker inside an
-  `object` or `array` throws too (`f:sz71ur`). Directly after it, one linking sentence (no-claim),
-  the outline's cross-link for listing entries by tag: "To list a concept's entries by tag on
-  public pages, see Build the public routes." Link `docs/extend/build-the-public-routes.md`, which is
-  not on disk yet, the way `docs/extend/content-model.md` links its not-yet-written pages: a plain
-  relative link to the slug's file. A multiselect named `tags`, `freetags`, or
-  `categories` with nothing marked logs `content.field_unmarked` as a warning (`f:lbeeak`). Link
+  `object` or `array` throws too (`f:sz71ur`). Directly after it, the rule's other half: a
+  multiselect named `tags`, `freetags`, or `categories` with nothing marked logs `content.field_unmarked` as a warning (`f:lbeeak`). Link
   `docs/extend/debug-your-site.md#contentfield_unmarked`.
 - Two or three sentences on the vocabulary, framed as what the editor's Tags screen does to the
   field: a vocabulary entry is a `value`, a lowercase hyphenated slug stored in frontmatter, and a
@@ -362,6 +376,11 @@ Content:
   vocabulary values to the marked field, and an entry's existing tags outside it are kept as orphans
   (`f:2p519o`, `f:grvcbv`); with no vocabulary, the field stays the open multiselect it was declared
   as (`f:grvcbv`).
+- After the vocabulary sentences, one linking sentence (no-claim), the outline's cross-link for
+  listing entries by tag: "To list a concept's entries by tag on public pages, see Build the public
+  routes." Link `docs/extend/build-the-public-routes.md`, which is not on disk yet, the way
+  `docs/extend/content-model.md` links its not-yet-written pages: a plain relative link to the
+  slug's file.
 - One sentence on where it is stored: the vocabulary lives under `vocabulary` in the site-config file
   that `editor.siteConfigPath` names, `src/theme/site.config.yaml` by default, which the Tags,
   Settings, and nav editor screens read and commit (`f:shv6wv`).
@@ -497,7 +516,7 @@ these steps:" (no-claim):
 4. In the admin under `npm run dev`, confirm that the sidebar lists **Events** and the create button
    reads **New event** (`f:gwmmkx`).
 
-**Hand-off (no-claim):** "When a check fails, work through the following causes in order:"
+**Hand-off (no-claim):** "If a check fails, the next section traces it to its cause."
 
 ### Diagnose a failed check
 
@@ -507,7 +526,8 @@ URL policy, the manifest, or the tag marker.
 **Facts:** `f:n07oiu`, `f:4mz4tp`, `f:lkgubp`, `f:n0laoh`, `f:fdtgh5`, `f:7az6m2`, `f:lbeeak`,
 `f:dccnyu`. All cited again.
 
-A numbered list of ordered checks (anatomy item 5), in the order of the "Verify the declaration"
+After the first sentence, the lead-in "Work through the following causes in order:" (no-claim) sits
+directly before the list. A numbered list of ordered checks (anatomy item 5), in the order of the "Verify the declaration"
 steps that reach them. Each item names what the reader sees, then the cause, then the fix or the
 link:
 
@@ -588,7 +608,7 @@ navigation, not subordination.
 | f:68w9k9 | carried | Start from the adapter file (narrowed return type) |
 | f:g39nkp | carried | Set the permalink and date prefix (default permalinks) |
 | f:sz71ur | carried | Mark the tag field (one top-level marker) |
-| f:z7lprs | carried | Set the backend identity and the email sender (`from`, `replyTo`, Email Sending) |
+| f:z7lprs | carried | Set the backend identity and the email sender (`from`, `replyTo`, Email Sending); cited again in Before you begin (the conditional precondition) |
 | f:u4cfvv | carried | Start from the adapter file (the scaffold's call); cited again in Set the backend identity and the email sender and Mark the tag field |
 | f:2zytgf | carried | Start from the adapter file (what each group holds); scoped in Introduction |
 | f:93iwom | carried | Add field checks (when each hook runs, the undeclared-key throw) |

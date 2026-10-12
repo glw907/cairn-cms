@@ -269,9 +269,11 @@ Content:
 - One sentence after the first: opening the button shows an entry picker scoped to the field's
   declared concept, and picking sets the stored id (`f:bbovmp`); each chip shows the target's
   resolved title (`f:3zswxq`, its source comment).
-- One step, a single bulleted item, location first: in the admin, open a post and pick an author and
-  at least one related post, then save. This step sets the data the verification checks; name
-  "Verify the rendered link" by heading.
+- One step, a single bulleted item, location first, with the precondition in the step itself: "In
+  the admin, open a post, pick a published page as its author and at least one published post as
+  related, then save." This step sets the data the verification checks; name "Verify the rendered
+  link" by heading. The step only requires published targets; it never says what a draft target
+  does (Drafting constraints, friction 1).
 - No editor walkthrough beyond that step: picking from the editor's seat belongs to the editor
   documentation, which has no page yet; name it in words, with no link.
 
@@ -363,8 +365,8 @@ steps:" (no-claim):
 4. On the same page, select the author link and confirm the author's page opens at its permalink
    (`f:jxgm4i`).
 
-Never say a link to a draft target is dropped or works (friction filed); the verification picks
-published targets. When a check fails, the causes are in "Diagnose a failed check", which follows
+Never say a link to a draft target is dropped or works (friction filed); the verification checks
+the published targets the reader picked in "Pick a target in the editor", whose step requires them. When a check fails, the causes are in "Diagnose a failed check", which follows
 the explanation sections; the drafter names it by heading in one closing sentence (no-claim):
 "If a check fails, see "Diagnose a failed check"."
 
@@ -600,7 +602,7 @@ not refile them. This plan filed three entries in `docs/internal/docs-friction-l
 - Never restate the `cairn:` link model, the manifest's row format, or fragments: link
   `docs/extend/content-model.md` and `docs/extend/reuse-content-across-entries.md`.
 - Never describe picking from the editor's seat beyond the one step in "Pick a target in the editor"
-  and Verify step 1; that is the editors arm.
+  and Verify step 1; that is the editors arm. That one step picks published targets only.
 - `fields.reference`, `fields.array`, `normalizeConcepts`, `resolveReferences`, `ResolvedReference`,
   `buildSiteDescriptors`, `withReferences`, `verifyReferences`, `cairnManifest`, every member name,
   class name, and quoted refusal message in code spans.

@@ -15,16 +15,13 @@ The engine does the splice and builds the resolver that each public entry page h
 render, and it gives editors an **Include a fragment** control. It also guards a named include. An
 include that names a missing fragment fails the build, as a dangling `cairn:` link does, and the
 admin refuses to delete a fragment that a published entry still includes. The site supplies three
-wiring points and a render:
-
-- Its adapter declares the `fragments` concept with `routing: 'embedded'`.
-- Its content module passes a glob for the fragment files to `createSiteIndexes`.
-- The `cairnManifest` Vite plugin takes the same glob in its `content` option.
-- The adapter's `rendering.render` forwards `resolveFragment`.
-
-Two of those four pieces fail with no error. A plugin entry left out gives the fragments no
-manifest rows, and a render that drops the resolver prints each include line on the page as
-literal text. A missing content-module glob stops the build instead.
+wiring points and a render. Its adapter declares the `fragments` concept with
+`routing: 'embedded'`. Its content module passes a glob for the fragment files to
+`createSiteIndexes`. The `cairnManifest` Vite plugin takes the same glob in its `content` option.
+The adapter's `rendering.render` forwards `resolveFragment`. Two of those four pieces fail with no
+error. A plugin entry left out gives the fragments no manifest rows, and a render that drops the
+resolver prints each include line on the page as literal text. A missing content-module glob stops
+the build instead.
 
 On the site that [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) builds, whose
 adapter is `src/lib/cairn.config.ts`, you turn fragments on: you declare the fragments concept, index its files, confirm that your render forwards

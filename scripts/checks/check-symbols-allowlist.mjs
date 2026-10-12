@@ -142,6 +142,8 @@ export const ALLOWLIST = new Set([
   'file-path:migrations-members/0000_channel.sql', // a site's copy of the packaged channel migration, the directory docs/extend/add-a-second-sign-in-group.md creates (examples/showcase/migrations-members/ carries the same file)
   'file-path:src/lib/content.ts', // docs/extend/add-cairn-to-a-sveltekit-app.md's illustrative content-index module, by convention
   'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
+  'file-path:src/lib/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component on the tutorial's site, a file the reader creates
+  'file-path:src/lib/islands/registry.ts', // docs/extend/add-an-island.md's island registry module on the tutorial's site, a file the reader creates
   'file-path:old-site/content/posts/my-post.md', // docs/extend/migrate-existing-content.md's illustrative pre-migration source path
   'file-path:src/content/posts/2024-01-15-my-post.md', // docs/extend/migrate-existing-content.md's illustrative migrated output path
   'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry

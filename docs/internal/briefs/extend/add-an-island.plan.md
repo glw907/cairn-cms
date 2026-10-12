@@ -62,7 +62,8 @@ Each section holds what the next one depends on.
    chores. The model sits in the introduction, not in an explanation section, because the anatomy
    lets the introduction say why the thing exists and keeps explanation subordinate to the steps.
 2. **Before you begin** names the component the reader already declared (configure-rendering's
-   job), the adapter file per site, and routes the scaffolded reader past the wiring they have.
+   job), an entry whose body uses that component's directive (so verification has a page to open),
+   the adapter file per site, and routes the scaffolded reader past the wiring they have.
 3. **Write the live component** (cover 4, props) comes first among the steps because the registry
    module imports it. The props are part of the component's own code (its `$props()` interface), so
    the props cover lands here, ahead of registration, with its trust rule stated where the reader
@@ -166,8 +167,8 @@ prop typing (`f:hje4zb`). The drafter writes the markup; the names are the brief
 
 ### Before you begin
 
-**First sentence:** An island starts from a markdown component your site already declares, and from
-the adapter file of the site you are changing.
+**First sentence:** An island starts from a markdown component your site already declares, an entry
+that uses it, and the adapter file of the site you are changing.
 
 **Facts:** `f:5vjwlc` (added, scoped: `rendering.components` is an optional adapter member),
 `f:q07rd5` (scoped: the two adapter paths and their `#theme` and `#lib` imports), `f:mcxxpp`
@@ -180,6 +181,10 @@ A bulleted list of preconditions, each with a link to what produces it (anatomy 
   `build()` output becomes the fallback, so it already renders what a reader without JavaScript
   needs. State the precondition only; never state why the check needs `rendering.components`
   (no fact; friction filed).
+- An entry whose body uses the component's directive (`converter` in the worked example), so the
+  verification steps have a public page to open. Link `docs/extend/configure-rendering.md` for the
+  authoring grammar; show no directive syntax here beyond one line if the drafter needs it. No fact;
+  the bullet states only what the reader brings.
 - The adapter file: `src/theme/cairn.config.ts` on a scaffolded site, imported as
   `#theme/cairn.config.js`; `src/lib/cairn.config.ts` on the add-cairn tutorial's site, imported as
   `#lib/cairn.config.js` (`f:q07rd5`). Link
@@ -327,9 +332,9 @@ A numbered list, one check to a step, the location first, lead-in "To verify the
 steps:" (no-claim):
 
 1. In the project directory, build the site and run `npm run preview`, or deploy it (`f:8o2gbl`).
-2. In the browser, open a public page whose entry body uses the `converter` directive. The authoring
-   grammar is configure-rendering's: link it, show no directive syntax beyond one line if the drafter
-   needs it.
+2. In the browser, open the public page of the entry from "Before you begin", the one whose body uses
+   the `converter` directive. The precondition carries the authoring-grammar link; this step repeats
+   no directive syntax.
 3. In the browser's element inspector, find the boundary: a `<div>` with `data-cairn-island="converter"`
    and a `data-cairn-props` JSON payload, plus `data-cairn-hydrate="visible"` only on a `'visible'`
    island (`f:4kmm3i`).

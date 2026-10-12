@@ -11,6 +11,8 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 ## Model content
 
 - [Content model](./content-model.md)
+- [Define an adapter and schema](./define-an-adapter-and-schema.md)
+- [Link content with references](./link-content-with-references.md)
 - [Reuse content across entries](./reuse-content-across-entries.md)
 - [Configure media](./configure-media.md)
 
@@ -20,6 +22,7 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 - [Theme your public site](./theme-your-public-site.md)
 - [Share a draft preview](./share-a-draft-preview.md)
 - [Act on newly published entries](./act-on-newly-published-entries.md)
+- [Add an island](./add-an-island.md)
 
 ## Extend the admin
 

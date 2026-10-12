@@ -224,6 +224,23 @@ describe('validateBullet, against the check-facts fixtures', () => {
   });
 });
 
+describe('validateBullet, .go and package.json pointers', () => {
+  const index = buildBasenameIndex(FIXTURES_DIR);
+  const defectsOf = (source: string) =>
+    validateBullet(extractBullets(`## x\n- \`f:go0001\` A claim. Source: ${source}. [verified]`)[0], FIXTURES_DIR, index)
+      .defects;
+
+  it('accepts an in-range .go pointer and fails an out-of-range one', () => {
+    expect(defectsOf('`target.go:3`')).toEqual([]);
+    expect(defectsOf('`target.go:99`')).toEqual([expect.stringContaining('out of range')]);
+  });
+
+  it('fails an unanchored package.json pointer and accepts an anchored one', () => {
+    expect(defectsOf('`pkg/package.json:3`')).toEqual([expect.stringContaining('no parseable anchor')]);
+    expect(defectsOf('`pkg/package.json:3` (`"bin"`)')).toEqual([]);
+  });
+});
+
 describe('the anchor window, against the check-facts fixtures', () => {
   const index = buildBasenameIndex(FIXTURES_DIR);
 

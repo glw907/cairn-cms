@@ -168,8 +168,12 @@ facts here is a manual, reviewed step, the same as editing any other doc.
 grammar above: a leading id, a source, exactly one vocabulary tag in colon form at the end of the
 bullet, every `path:line` pointer resolved against the real file, every `path#Symbol` pointer
 resolved to its declaration, and a verbatim key phrase on every owner-tier bullet, plus that no id
-repeats anywhere in the container. It prints per-file counts by tag on success, replacing what used to be
-a hand-maintained index table in this README.
+repeats anywhere in the container. A `path:line` pointer to a `.go` file resolves and range-checks
+like any other. A pointer to a `package.json` must carry an anchor, the cited line's key in
+backticks and parentheses, such as `` `package.json:7` (`"node"`) ``: a manifest's lines shift
+with every dependency or script edit, so a bare line number goes stale without notice, and a
+pointer without an anchor fails with "no parseable anchor". The gate prints per-file counts by
+tag on success, replacing what used to be a hand-maintained index table in this README.
 
 A `Source:` pointer into `docs/internal/record/` is the one exception: the directory is skipped,
 not failed, exactly when it is absent. That never happens on a normal checkout; the rule exists

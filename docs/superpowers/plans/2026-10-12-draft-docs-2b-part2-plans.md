@@ -30,7 +30,14 @@ desk.
   then deletes it once the `.plan.yaml` is written. Expect the old files to disappear as the chain
   runs over their pages.
 - Format feedback goes to the `drafter-conductor` session (Geoff: "any direct experience you have
-  with the format will be helpful"). Send each finding with `SendMessage` when it is hit: an
+  with the format will be helpful"; "This is live collaborative development, so provide liberal
+  input. In balance, more input is better than less."). Send freely: friction, a workaround you
+  used, a field that would have helped, or a rule that's merely unclear. drafter-conductor filters.
+  The planning session sent a first batch of 11 predicted findings on 2026-10-12: subsections, a
+  stepless `failure`, a `code` kind, a `figure` kind, `use` on `fact`, `facts` on `sentence`, item
+  order, unused `produces`, preconditions against "Before you begin", a `rework` block, and
+  exemplars and crossLinks. Confirm or refute each one as a real page hits it, and don't resend it
+  unconfirmed. Send each finding with `SendMessage` when it is hit: an
   ambiguity in the sheet, a field a real page needed and the format lacks, or a rule that fought a
   real page. Each message names the page, quotes the plan excerpt the problem hit, and says what
   was needed. Also log it in the pass record. Findings that hold up go into drafter Pass 0 itself

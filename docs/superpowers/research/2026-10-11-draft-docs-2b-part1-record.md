@@ -38,7 +38,8 @@ Plan: `docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md`. The executor i
 | T1 (run 1, 6 pages) | `wf_7016a184-bd0` | `5b50978b7` (WIP) | 6.63M | 9.41M |
 | T2 (framing A/B) | | `d6e6c5c2e` | about 0.24M (framing at high 0.14M, intros 0.09M) | 9.65M |
 | T3 (run 1 closes) | | `2b1-T3` | about 3.5M (closes) plus 0.4M executor loop (`<total_tokens>` 15.0M to 14.59M since T0) | about 13.5M |
-| T4 (run 2, 4 pages) | `wf_56a8b4d2-660` | | | |
+| T4 (run 2, 4 pages) | `wf_56a8b4d2-660` | `83591a74d` (WIP) | 3.20M | |
+| T5 (run 2 closes) | | `64c689ea4` | about 4.5M (closes) plus 0.2M executor loop | about 21.4M |
 
 ## Runs
 
@@ -125,6 +126,66 @@ figures disagree by one.
 - The sidebar figure is a `repro` fence on story `nav/worked-navlayout` (`docs/extend/arrange-the-admin-sidebar.md` line 109).
 - The build-the-public-routes D7 caveat is not in this run.
 
+### Run 2 (`wf_56a8b4d2-660`, four pages, run base `cc442ffc3`)
+
+The chain accepted none of the four pages (0/4): every record ended `escalate`. T5 closed each page,
+one by a targeted close after the round cap and three by hand-run seats after an escalation on the
+plan read. The whole-tree gate (`CAIRN_GATE_LANE=light cairn-run-gate 'npm run check:docs-gate'`)
+exits 0 with `check:docs-gate: OK (19 check(s))`, `check:options: OK (263 option paths)`, and
+`check:tellgrader: OK (57 page(s))`.
+
+Pending option-map rows, run base against now: 31 `pending` rows remain in
+`docs/internal/option-map.json` (8 build-the-public-routes, 7 configure-rendering, 16 turn-on-tidy);
+its `pendingCount` field reads 32, so the two figures disagree by one.
+
+| Page | rowsReceived | rowsDisposed | End state |
+| --- | --- | --- | --- |
+| reuse-content-across-entries | 0 | 0 | accepted, targeted close |
+| link-content-with-references | 1 | 1 | accepted, hand-run |
+| define-an-adapter-and-schema | 15 | 15 | accepted, hand-run |
+| add-an-island | 0 | 0 | accepted, hand-run |
+
+#### reuse-content-across-entries
+
+- Status: chain `escalate` ("second fix verdict or red gate"), rounds 2; its plan read accepted. End state: accepted by targeted close.
+- Plan read: structural accept, not revised.
+- Round 1: structural fix, register fix, fact fix. Round 2 (scoped): structural fix, register accept, fact accept. crossRegression: false.
+- Escalation and close: the drafter fixed the one blocking structural finding (restore the introduction's second paragraph as prose per the framing record's three-paragraph plan; it had become a four-item list). The scoped register read returned FIX (blocking: restore the list, because parallel items need a list per the guide), which conflicted with the structural finding. The executor overruled the register finding on the introduction's form, because the framing record plans three prose paragraphs and the structural read had demanded prose (Rulings, item 1). Scoped fact accept; final reader accept (advisories).
+- frictionFiled: none recorded. Facts filed: none new.
+- Unexercised: the unreleased engine for the fragments surface.
+
+#### link-content-with-references
+
+- Status: chain `escalate` ("second fix verdict on the plan read"), rounds 0. End state: accepted by hand-run.
+- Plan read: structural fix, revised, fix again (escalated).
+- Hand-run seats: plan revised (one blocking: the Pick-a-target step never said targets must be published). Framing; frictionFiled: 'permanent id' contradicts rename.
+- Round 1: structural FIX (one blocking: a three-action step), register FIX (three blocking: a three-action step, a two-action step, a wh-clause heading renamed to "`cairn:` body links and reference fields"), fact accept. Round 2 redraft; scoped register FIX (blocking: a false contrast between a cairn: link and a reference at prerender), applied the register editor's rewrite; scoped fact accept.
+- Final reader: FIX (one blocking: the introduction still carried the false contrast); one scoped redraft. Scoped fact read FIX (blocking: 'a stored id can outlive its target' was backed by no fact); the executor applied the fact reader's own rewrite (Rulings, item 3 of the close) plus the register's naming advisory. Re-test accept.
+- crossRegression: not run (no chain rounds). Facts filed: none new. Unexercised: none recorded.
+
+#### define-an-adapter-and-schema
+
+- Status: chain `escalate` ("second fix verdict on the plan read"), rounds 0. End state: accepted by hand-run.
+- Plan read: structural fix, revised, fix again (escalated).
+- Hand-run seats: plan revised (one blocking: the identity and sender section was unconditional). Framing; frictionFiled: 'Adapter' names two things in one file.
+- Round 1: structural FIX (two blocking: a misleading cross-reference; an adapter path not naming its site), register FIX (blocking: two one-step procedures lacked an introducing sentence), fact FIX (two blocking: f:6a32oy's source file moved; a missing fact id on the GitHub App precondition). Round 2 redraft; scoped register accept; scoped fact FIX (one blocking: the configModule sentence needed a clause on f:q07rd5), applied.
+- Final reader: FIX (one blocking: no step said where a `behavior` entry goes); one scoped redraft, fact f:k7v2qe filed. Scoped register accept, scoped fact accept, re-test accept.
+- crossRegression: not run. Facts filed: f:k7v2qe. Unexercised: none recorded.
+
+#### add-an-island
+
+- Status: chain `escalate` ("second fix verdict on the plan read"), rounds 0. End state: accepted by hand-run.
+- Plan read: structural fix, revised, fix again (escalated).
+- Hand-run seats: plan revised (one blocking: the verify step assumed an entry using the directive that nothing earlier produced). Framing; frictionFiled: the tutorial's and a scaffolded site's modules sit at different paths.
+- Round 1: the first gate run failed `check:symbols` and the drafter added entries to the allowlist. Reads: structural FIX (one blocking: a precondition lacked its link), register FIX (two blocking: a positional step reference; condition after instruction), fact FIX (one blocking: the tutorial has no root layout files). Round 2 redraft; scoped register accept; scoped fact FIX (one blocking: sv's root layout exists on the tutorial's site). The drafter applied the fact reader's rewrite and cut the import-specifier sentence, removing the two allowlist entries for `#theme/cairn.config.js` and `#lib/cairn.config.js`.
+- Final reader: accept.
+- crossRegression: not run. Facts filed: none new. Unexercised: none.
+
+#### Caveat check
+
+- Pages that name `cairn.config.ts` name the site beside it: reuse-content-across-entries (lines 27, 29, 56), link-content-with-references (lines 22, 25, 54), add-an-island (lines 16, 20, 42, 118), and define-an-adapter-and-schema (lines 96, 193, 263, 328). Two sites in define-an-adapter-and-schema name the file without a site: line 4 (the `defineAdapter` call "in the site's `cairn.config.ts`", generic by design) and line 442 (the engine's own rejection message). Code-comment path labels name no site by design.
+- The pending rows above went to define-an-adapter-and-schema (15) and link-content-with-references (1); the remaining 31 belong to later pages.
+
 ## Framing A/B
 
 See `docs/superpowers/research/2026-10-11-draft-docs-2b-part1-ab/README.md` once T2 lands.
@@ -141,3 +202,9 @@ Added at T10.
    - Fact sources drifted: f:6a32oy's source file moved to `examples/showcase/src/routes/admin/signups/`; f:hsk70g's quoted `ACCESS_FIXED_SCREENS` line; f:x84fah's Source range `findings.ts:214-245` ends before the tier logic at line 274 (repoint to `findings.ts#resolveRenderedFindings`); f:smbsa6 and f:zyjzeg line numbers drifted about five lines.
    - The act-on page reader found `buildNewlyPublished` in npm 0.98.0's delivery/data while an earlier read found it absent. The unreleased-engine disposition for that page is unsettled; Geoff should check.
    - CI flakes on the e2e suite (dictionary-word specs; main's latest e2e run is also red), retried per the rerun rule.
+
+Run 2 rulings and findings:
+
+4. The reuse page's introduction: the register read demanded a list and the structural read demanded prose. The executor overruled the register finding in favor of the framing record's three-prose-paragraph plan.
+5. `configure-rendering` is linked from add-an-island as a forward link and lands in run 3.
+6. Found, not done: the add-cairn tutorial imports from `#lib/...` but never declares a `#lib` subpath import in package.json (found by the define fact read); sv's current minimal template ships a root `+layout.svelte` the tutorial does not mention; f:6a32oy's source line moved; the register read flagged "whatever the type's doc comment says" as a defect in a TSDoc comment on a type (the clause was cut from the page); CI flakes on the e2e suite retried per the rerun rule (they also fail on main).

@@ -1,0 +1,61 @@
+You are executing draft docs stage 2b part 1 for cairn-cms: the extend arm's 14 new pages, drafted
+through docs-page-chain on the fixed pre-2b tools. It is an ordinary-class docs pass (runner where
+the symbols allowlist changes), started from the main checkout /var/home/glw907/Projects/cairn-cms.
+Geoff approved its design on 2026-10-11. Before any other act, call EnterWorktree with the path
+/var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1, which the conductor
+created on branch draft-docs-2b-part1. Your first act after EnterWorktree is this one Bash call:
+
+`g=$(git rev-parse --absolute-git-dir); if test -e "$g/pass-stop"; then cat "$g/pass-stop"; elif test -f "$g/pass-task-clock"; then sed -i "s/^start=.*/start=$(date +%s)/" "$g/pass-task-clock"; fi`
+
+A clock-stop line that arrives before this call, or in the same turn, is stale. If the call prints
+a stop, end your turn without another act until Geoff tells you to go on. Then arm the API-drop
+wake-up (/loop with no interval); each tick first runs
+`test -e "$(git rev-parse --absolute-git-dir)/pass-stop"` and ends the turn if the file exists.
+
+Load cairn-pass (it loads pass-core) and follow it. Read the plan whole:
+/var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1/docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md.
+Read /var/home/glw907/.cache/draft-docs-2b-part1/launch-facts.txt for the tooling heads, PR
+numbers, and the night's token count at launch. If no commit subject on this branch starts with
+2b1-T0, this is a fresh start: run T0, whose setup is
+`npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync)`.
+Otherwise follow the plan's Resume rule. TMPDIR and NODE_OPTIONS are already set by the launch
+line; check them at T0. Every dispatch puts scratch under /var/home/glw907/.cache/draft-docs-2b-part1/.
+
+Scope, from Anthropic, applies to every step and every dispatch, and each dispatch prompt quotes it:
+"Avoid over-engineering. Only make changes that are directly requested or clearly necessary. Keep
+solutions simple and focused: - Scope: Don't add features, refactor code, or make "improvements"
+beyond what was asked. A bug fix doesn't need surrounding code cleaned up. A simple feature doesn't
+need extra configurability. ... - Defensive coding: Don't add error handling, fallbacks, or
+validation for scenarios that can't happen. Trust internal code and framework guarantees. Only
+validate at system boundaries (user input, external APIs). - Abstractions: Don't create helpers,
+utilities, or abstractions for one-time operations. Don't design for hypothetical future
+requirements. The right amount of complexity is the minimum needed for the current task."
+(https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)
+"Deliver what was asked, at the scope intended. Make routine judgment calls yourself, and check in
+only when different readings of the request would lead to materially different work. If the request
+seems mistaken or a better approach exists, say so in a sentence and continue with the task as asked
+rather than quietly narrowing, widening, or transforming it. Finish the whole task, and stop short of
+actions that are clearly beyond what was asked."
+(https://platform.claude.com/docs/en/prompt-engineering/prompting-claude-opus-5)
+Every dispatch prompt you write also carries: "Skip agent-memory maintenance; do not read or write
+agent memory." Anything the plan does not name goes in the PR body's "Found, not done", never into
+a task.
+
+You are thin: you read per-page records, reports, and verdicts, never a page, a diff, or a gate
+log. Execute T0 through T11 in the plan's order, with T2 beside T3's closes. Each task's first act
+writes its task-clock file. Every stop follows the plan's stop procedure, and the token count
+follows its Counting section. Run each chain with the Workflow tool, scriptPath
+/var/home/glw907/.dotfiles/.claude/worktrees/pre2b-tooling/claude/.claude/workflows/docs-page-chain.js
+and the plan's args for that run, never by name. Record each runId in the stage record before
+waiting, cmp the persisted script, and arm claude-wf-guard at tier writer on every run. Use one
+plain command per Bash call, with literal absolute paths. Read the dotfiles worktree only through
+git -C, and write nothing under ~/.dotfiles.
+
+You may commit on draft-docs-2b-part1 and push it to glw907/cairn-cms. The first push opens a draft
+PR against base worktree-pre2b-tooling. After every push, run
+`ci-green <sha> --pr <n> --wait > /var/home/glw907/.cache/draft-docs-2b-part1/ci-<sha>.log 2>&1`
+as a background Bash task, re-issued on 75 and never piped. Never push main. At T11, hand the PR
+over with review-desk pr and the found items with review-desk triage, both as background tasks.
+Wait for Geoff's decisions. Merge only on his desk approve, under T11's merge conditions, with
+`gh pr merge <n> --merge --match-head-commit <head>` taking <head> from the decision. On reject,
+fix forward from his note. Act on each triage row, and end after acting on the decisions.

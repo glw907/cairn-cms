@@ -31,7 +31,7 @@ that wants only a different sign-in email keeps magic links and follows
 The guard's `identity` option takes any
 [`IdentityResolver`](../reference/sveltekit.md#identityresolver), so a site behind a different
 authenticating reverse proxy writes the same kind of resolver for that proxy's token and configures
-that proxy in place of the Cloudflare steps. A site that needs a second population with a separate
+that proxy in place of the Cloudflare steps. A site that needs a second sign-in group, with a separate
 sign-in, beside editors who keep magic links, follows
 [Add a second sign-in group](add-a-second-sign-in-group.md) instead.
 
@@ -406,7 +406,7 @@ The following pages cover the seams and limits around identity mode:
   screens.
 - [Share a draft preview](share-a-draft-preview.md) sets up the `/preview/<token>` route that the
   Access application leaves uncovered.
-- [Add a second sign-in group](add-a-second-sign-in-group.md) signs a second population in beside
-  the editors.
+- [Add a second sign-in group](add-a-second-sign-in-group.md) signs its members in beside the
+  editors.
 - [`createAuthGuard`](../reference/sveltekit.md#createauthguard) documents the `identity` option,
   the three types it names, and their stability tier.

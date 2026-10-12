@@ -23,7 +23,7 @@ link this file can follow.
   `node_modules/@glw907/cairn-cms/docs/reference/admin.md`.
 - The field, screen-scaffold, and formatter primitives a custom `/admin/` screen composes. See
   `node_modules/@glw907/cairn-cms/docs/reference/admin-toolkit.md`.
-- `createAuthChannel`: a site's own second-audience login channel (request, confirm, logout) over
+- `createAuthChannel`: a site's own login channel for a second sign-in group (request, confirm, logout) over
   a site-owned database. See `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md`.
 - `createLogger`: structured logs in the engine's own record shape, with the same redaction
   rules. See `node_modules/@glw907/cairn-cms/docs/reference/log.md`.

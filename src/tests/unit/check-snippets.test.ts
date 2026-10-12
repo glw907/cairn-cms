@@ -6,6 +6,7 @@ import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 import {
   docFiles,
   extractBlocks,
+  findLibImports,
   isPackageSpecifier,
   isRealSpecifier,
   rewriteLocalImports,
@@ -44,6 +45,39 @@ describe('extractBlocks', () => {
   it('leaves skipReason null with no comment above the fence', () => {
     const blocks = extractBlocks('some prose\n```ts\nx;\n```\n');
     expect(blocks[0].skipReason).toBeNull();
+  });
+});
+
+describe('extractBlocks under a list item', () => {
+  it('extracts an indented fence with a dedented body and the doc fence line', () => {
+    const blocks = extractBlocks('1. Step:\n\n   ```ts\n   const x = 1;\n     const y = 2;\n   ```\n');
+    expect(blocks).toEqual([{ lang: 'ts', fenceLine: 3, body: 'const x = 1;\n  const y = 2;', skipReason: null }]);
+  });
+
+  it('reads an indented skip comment', () => {
+    const blocks = extractBlocks('   <!-- snippet-check-skip: why -->\n   ```ts\n   x;\n   ```\n');
+    expect(blocks[0].skipReason).toBe('why');
+  });
+});
+
+describe('findLibImports', () => {
+  it('flags a $lib import at its line and accepts #lib', () => {
+    const code = "import { a } from '$lib/x.js';\nimport { b } from '#lib/x.js';\nimport '$lib';";
+    expect(findLibImports(code)).toEqual([
+      { line: 1, message: 'SvelteKit 3 removes `$lib`; import from `#lib`' },
+      { line: 3, message: 'SvelteKit 3 removes `$lib`; import from `#lib`' },
+    ]);
+  });
+
+  it('leaves other $ aliases alone', () => {
+    expect(findLibImports("import { e } from '$app/environment';")).toEqual([]);
+  });
+});
+
+describe('Node globals under the type environment', () => {
+  it('typechecks a node:fs call that carries the reference directive', () => {
+    const code = '/// <reference types="node" />\nimport { readFileSync } from \'node:fs\';\nreadFileSync(\'x\', \'utf8\');';
+    expect(typecheckUnits([{ file: 'a.md', lineBase: 1, code }])).toEqual([]);
   });
 });
 

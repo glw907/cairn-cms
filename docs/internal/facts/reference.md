@@ -27,7 +27,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   no longer exist, and `package.json` carries no `./components` key. The source folder is
   `src/lib/admin/`, and `docs/reference/admin.md` replaced `components.md`. A consumer changes
   every `@glw907/cairn-cms/components` import to `/admin` and any config or script path from
-  `dist/components/` to `dist/admin/`. Source: `package.json:109-113` (the `./admin` export),
+  `dist/components/` to `dist/admin/`. Source: `package.json:110-114` (`"./admin"`), the `./admin` export,
   `src/lib/audit/config.ts#DEFAULT_SHEET_CANDIDATES` (the sheet path), `src/tests/unit/admin-barrel-prune.test.ts`
   (the assertion that `./components` is gone). [verified]
 - `f:mkx75z` `CsrfField` explicitly sets the hidden input's `defaultValue` DOM property alongside `value`, a
@@ -74,11 +74,11 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 - `f:29mwht` `createCairnAdmin`'s load dispatch parses `event.url.pathname` directly, never the SvelteKit
   rest param, specifically so an encoded path segment cannot desync the dispatch from the actual
-  request. Source: `src/lib/sveltekit/admin-dispatch.ts:36` (doc comment), `src/lib/sveltekit/cairn-admin.ts:149,231`.
+  request. Source: `src/lib/sveltekit/admin-dispatch.ts:36` (doc comment), `src/lib/sveltekit/cairn-admin.ts#createCairnAdminInternal`.
   [verified]
 - `f:yixepm` The none-capability landing view is literally named `'welcome'` in the discriminated `AdminData`
   union, and `indexLoad` returns `{ view: 'welcome', page: { displayName, siteName } }` for that
-  case. Source: `src/lib/sveltekit/content-routes-shell.ts:301-315`. [verified]
+  case. Source: `src/lib/sveltekit/content-routes-shell.ts#createShellActions`. [verified]
 - `f:po1p8w` The dev-only chrome-boundary guard (an ancestor walk logging one `console.error` when a
   width-constraining ancestor sits between the admin root and `<body>`) is implemented in
   `src/lib/admin/chrome-guard.ts`, described in its own header as compiling out of
@@ -145,7 +145,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `touch-targets` enforces). [verified]
 - `f:0tr2zx` `MediaPicker`'s thumbnail base falls back to `/media` (via `DEFAULT_MEDIA_BASE`) when mounted
   with no `MEDIA_BASE_CONTEXT_KEY` provider in context; `CairnAdminShell` is the provider that
-  supplies the site's real `assets.publicBase`. Source: `src/lib/admin/media-base-context.ts:5`,
+  supplies the site's real `assets.publicBase`. Source: `src/lib/admin/media-base-context.ts#DEFAULT_MEDIA_BASE`,
   `src/lib/admin/CairnAdminShell.svelte:76`, `src/lib/admin/MediaPicker.svelte:65`.
   [verified]
 - `f:lmgnn2` `AdminTable`'s `emptyColspan` defaults to `100`, relying on HTML's own `colspan` clamp to the
@@ -214,7 +214,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `src/lib/auth-channel/factory.ts:434-457` (`resolveLimit`). [verified]
 - `f:mk0zd8` `deliver`'s throw path is fully compensating: the pending code row is deleted and the
   requester's send charge is refunded on any thrown error, so a delivery-provider outage costs a
-  member only a retry, never a lost budget slot. Source: `src/lib/auth-channel/factory.ts:271-274`
+  member only a retry, never a lost budget slot. Source: `src/lib/auth-channel/factory.ts#AuthChannelConfig`
   (`deliver`'s doc comment: "A throw is scrubbed, logged, deletes the pending row, and refunds the
   send charge"), `:880-887` (the `deliverPromise` catch calls `consumeCode(...)` then
   `refund(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, now)`). [verified]
@@ -240,12 +240,12 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 
 - `f:exqnwj` The subpath enforces server-only isolation via export conditions: a named import from the
   browser stub fails at build time (no such export), while a bare side-effect import passes the
-  build and throws only at runtime when executed in a browser. Source: `package.json:170-181`
+  build and throws only at runtime when executed in a browser. Source: `package.json:171-182` (`"./auth-crypto"`)
   (`./auth-crypto` and `./cloudflare` export conditions each declare `worker`/`browser`/`default`),
   `src/lib/auth-crypto/browser.ts:1-4`, `src/lib/cloudflare/browser.ts:1-4` (both files are a bare
   module-level `throw new Error(...)` with no named export). [verified]
 - `f:m41mez` `tokensMatch('', '')` is deliberately `false`, so an unset expected value can never match an
-  unset submitted one. Source: `src/lib/auth/crypto.ts:118` (function `tokensMatch`), consistent
+  unset submitted one. Source: `src/lib/auth/crypto.ts#tokensMatch` (function `tokensMatch`), consistent
   with the stated four properties (length leaks, empty-never-matches, CSPRNG-only intent,
   UTF-8-byte comparison). [verified]
 - `f:bz7q3b` `buildCookieName` throws when `base` already carries a `__Host-`/`__Secure-` prefix (prevents
@@ -284,7 +284,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
 - `f:lml542` `deleteEditor` and `removeOwnerIfNotLast` cascade past session and magic-token rows to also
   delete every `preview_tokens` row the removed editor minted (a separate statement outside the
   atomic batch, swallowing only a "no such table" fault for a site with the preview migration
-  unapplied). Source: `src/lib/auth/store.ts#deleteEditorPreviewTokens`, `src/lib/auth/store.ts:430-434`
+  unapplied). Source: `src/lib/auth/store.ts#deleteEditorPreviewTokens`, `src/lib/auth/store.ts#deleteEditor`
   (`deleteEditor` call), `src/lib/auth/store.ts:469-473` (`removeOwnerIfNotLast` call). [verified]
 - `f:pf69s2` The store's unexported auth-flow set (engine-internal to the magic-link guard, not proven
   consumer surface) is `findEditor`, `issueToken`, `recentlyIssued`, `consumeToken`, `rebindToken`,
@@ -955,13 +955,13 @@ re-sourced to Go on this tree rather than to the page.
   (`AbortSignal.timeout(5000)`). Source: `src/lib/cloudflare/turnstile.ts:8-10,127`. [verified]
 - `f:bpk8gc` A `success: false` siteverify response logs nothing when every code is one of the two routine
   causes (`invalid-input-response`, `timeout-or-duplicate`), since that is the function working
-  as intended; every other rejection reason does log. Source: `src/lib/cloudflare/turnstile.ts:15`
+  as intended; every other rejection reason does log. Source: `src/lib/cloudflare/turnstile.ts#ROUTINE_ERROR_CODES`
   (`ROUTINE_ERROR_CODES`), `:153-158` (`isRoutine` check gates the `log.warn('turnstile.verify_failed',
   { reason: 'rejected', codes })` call). [verified]
 - `f:thbxvf` `verifyTurnstile` logs `reason: 'missing_secret'` for a blank or non-string `secret`
   and `reason: 'invalid_input'` (with `tokenLength`) for a blank, non-string, or over-length
   `token`; the secret is checked first, so a call with both bad logs `missing_secret`. Both
-  return `false` without calling fetch. Source: `src/lib/cloudflare/turnstile.ts:93-110`.
+  return `false` without calling fetch. Source: `src/lib/cloudflare/turnstile.ts#verifyTurnstile`.
   [verified]
 - `f:ndtmx8` `resolveRateLimit` resolves multiple keys in order, short-circuiting at the first key over
   budget (a later key's counter is never incremented once an earlier one has failed), and returns
@@ -978,7 +978,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:eooeqm` `defineFieldset`'s Standard Schema `~standard.validate` returns `result.issues`
   unchanged, not a single-segment remap; a nested `object`/`array` field failure carries a
   multi-segment path (leaf key or row index appended), the same `ValidationIssue[]` `validate()`
-  itself returns. Source: `src/lib/content/fieldset.ts:150-181` (`validateField` appends nested
+  itself returns. Source: `src/lib/content/fieldset.ts#validateField` (`validateField` appends nested
   segments), `:491-499` (`~standard.validate` passes `result.issues` through). [verified]
 - `f:1to3po` `defineConcept`'s permalink default is `/:slug` when the concept id is exactly `pages`, and
   `/<concept-id>/:slug` for any other id; `datePrefix` defaults to `'day'`. Source:
@@ -993,7 +993,7 @@ re-sourced to Go on this tree rather than to the page.
   before any map lookup). [verified]
 - `f:8ia71i` `resolveCapability` returns `'none'` for a role name absent from the vocabulary, so a pruned
   config or a hand-edited row fails closed rather than locking a person out entirely (they lose
-  content access but the auth flow itself does not error). Source: `src/lib/auth/roles.ts:83-89`.
+  content access but the auth flow itself does not error). Source: `src/lib/auth/roles.ts#resolveCapability`.
   [verified]
 - `f:rue4tl` `roleHome` (the function documented as "retired from this subpath" on the `/` barrel) still
   exists as an internal function in `src/lib/auth/roles.ts` and is used internally; it is simply
@@ -1003,7 +1003,7 @@ re-sourced to Go on this tree rather than to the page.
   other top-level export files searched. [verified]
 - `f:qi5zbj` `CommitConflictError`/`BranchExistsError` are thrown identically by both the GitHub App backend
   and the packaged dev backend from `Backend.createBranch`, so a caller catches the collision as
-  one typed refusal regardless of which backend is active. Source: `src/lib/github/backend.ts:141-147`
+  one typed refusal regardless of which backend is active. Source: `src/lib/github/backend.ts#makeGithubBackend`
   (`createBranch` throws `CommitConflictError` on an unreadable source), `src/lib/github/branches.ts:53`
   (`createBranch` throws `BranchExistsError` on a name collision), `packages/cairn-cms-dev/src/fake-github.ts:805-811`
   (the dev backend's `createBranch` throws both, importing the same classes from
@@ -1011,7 +1011,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:dbaklx` `defineRoles` throws on an empty record, empty role name, malformed declaration, a non-
   `/admin`-prefixed `home`, a missing `owner` key, or an `owner` mapped to non-owner capability;
   `owner` is the one reserved name because the last-owner guard and bootstrap owner both anchor
-  on it. Source: `src/lib/auth/roles.ts:34-49` (`validateDeclaration`), `:58-74` (`defineRoles`:
+  on it. Source: `src/lib/auth/roles.ts#validateDeclaration` (`validateDeclaration`), `:58-74` (`defineRoles`:
   empty-record, empty-name, missing-owner, and owner-capability throws), `:108`
   (`resolveOwnerLevelRoles`), `src/lib/sveltekit/auth-routes.ts:45,202-203` (`bootstrapOwner`).
   [verified]
@@ -1045,7 +1045,7 @@ re-sourced to Go on this tree rather than to the page.
   (`loadPreview`: `composeEntryData(config, ..., resolvers)`). [verified]
 - `f:83gbov` `EntryData.heroImage` is undefined when no hero is set, media is off, or the frontmatter `media:`
   reference does not resolve; the canonical token itself (`entry.frontmatter.image.src`) is left
-  untouched as the raw `media:` token regardless. Source: `src/lib/delivery/public-routes.ts:73-76`
+  untouched as the raw `media:` token regardless. Source: `src/lib/delivery/public-routes.ts#EntryData`
   (doc comment), `:93-112` (`deriveHeroImage`: returns `undefined` when `resolveMedia` is absent,
   no `image` object, no `src`, an unparseable token, or an unresolved reference). [verified]
 - `f:dvg5gn` `CairnHead`'s `titleTemplate` applies to `seo.title` only when `title` is left undefined, so an
@@ -1155,8 +1155,8 @@ re-sourced to Go on this tree rather than to the page.
 - `f:h2wtin` The package ships exactly 4 bins total (`cairn-manifest`, `cairn-media-seed`, `cairn-audit`,
   `cairn-guidance`) plus a separate `./vite` export (the Vite plugin, `dist/vite/index.js`,
   distinct from the `cairn-manifest` bin at `dist/vite/bin.js`); relative to `cairn-guidance`
-  itself, that is three other bins. Source: `package.json:198-203` (`bin` field),
-  `package.json:182-185` (`./vite` export). [verified]
+  itself, that is three other bins. Source: `package.json:199-204` (`"bin"`),
+  `package.json:183-186` (`"./vite"`). [verified]
 - `f:hiif6u` `cairn-guidance install` ships a fourth skill, `cairn-public`, for the public side of a site: a router `SKILL.md` within the 3,500-token packaged budget, and `references/` holding one catalogue page per public piece (each registry directive plus the built-in `figure` and `include`, each island, `CairnHead`, `PreviewBanner`, each `cairn-*` class the chassis `composition.css` defines, and six prose pages). `npm run check:public-skill` fails a source with no page, a snippet class absent from the showcase's compiled public sheet and the emitted-class registry, a named token that resolves nowhere, and a parser that matches nothing. Source: `skills/cairn-public/SKILL.md:1`, `scripts/checks/check-public-skill.mjs:1`. [verified]
 - `f:qzsspl` The chassis `tokens.css` excludes the project-root `.claude/` from Tailwind's automatic source detection with `@source not "../../.claude"`. Tailwind resolves that path against the stylesheet that carries it, so the earlier `./.claude` excluded only a directory beside `src/chassis/`, and a utility used only in an installed skill's files reached a scaffolded site's compiled CSS. `check:public-skill` compiles a standalone copy to prove the exclusion. Source: `examples/showcase/src/chassis/tokens.css:55`, `scripts/checks/check-public-skill.mjs:1`. [verified]
 - `f:1kwkl0` `cairn-guidance check` counts an admin stylesheet whose Tailwind import uses `source(none)` as excluding `.claude/`, beside the literal `@source not "./.claude";` line, and the guidance tree hash leaves out the `.claude/cairn/VERSION` stamp, so an installed and a packaged tree that differ only in that stamp compare fresh. Source: `src/lib/guidance/check.ts#judgeSourceExclusion`, `src/lib/guidance/install.ts#hashFileTree`. [verified]
@@ -1174,9 +1174,9 @@ re-sourced to Go on this tree rather than to the page.
 - `f:0tsan7` `unmount` runs with `outro: false` so teardown is synchronous and deterministic on navigation.
   Source: `src/lib/islands/index.ts:20`. [verified]
 - `f:nyuzyz` A component that throws on teardown must not block the rest (each unmount call is isolated).
-  Source: `src/lib/islands/index.ts:29`. [verified]
+  Source: `src/lib/islands/index.ts#teardown`. [verified]
 - `f:bh6css` `root` for `hydrateIslands` defaults to `document`; passing a narrower `ParentNode` scopes the
-  scan to one region. Source: `src/lib/islands/index.ts:78`
+  scan to one region. Source: `src/lib/islands/index.ts#hydrateIslands`
   (`export function hydrateIslands(islands: IslandRegistry, root: ParentNode = document)`).
   [verified]
 - `f:exr3dd` A `hydrate: 'visible'` island defers to first intersection via `IntersectionObserver`, mounting
@@ -1185,7 +1185,7 @@ re-sourced to Go on this tree rather than to the page.
   `self.disconnect()` before `mountIsland(node, Comp)`). [verified]
 - `f:54yivg` One bad island never breaks the page: `hydrateIslands` leaves the static fallback in place when
   a boundary names an unregistered directive, the prop payload fails to parse, or the component
-  throws on mount; each case is caught and isolated. Source: `src/lib/islands/index.ts:78-86`
+  throws on mount; each case is caught and isolated. Source: `src/lib/islands/index.ts#hydrateIslands`
   (`if (!Comp) continue`, unregistered directive) and `:39-53` (`mountIsland`: a `JSON.parse`
   failure `return`s before touching the DOM; a `mount()` throw restores the saved `fallback`
   nodes). [verified]
@@ -1201,7 +1201,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:j390f9` Island props are HTML-attribute-escaped on emit and `JSON.parse`-d in a try/catch on the client,
   safe against breakout only because the value never enters a script context; an island component
   must bind props to text only and never route a prop into `{@html}`, an `href`/`src` that could
-  carry `javascript:`, or an inline `style`. Source: `src/lib/islands/index.ts:39-45` (`mountIsland`
+  carry `javascript:`, or an inline `style`. Source: `src/lib/islands/index.ts#mountIsland` (`mountIsland`
   reads `data-cairn-props` via `JSON.parse` inside a try/catch); the sink-avoidance rule itself is
   authoring guidance for a site's own component code, not an engine-enforced check, stated at
   `docs/reference/islands.md:125-127`, and is consistent with `JSON.parse` never executing code
@@ -1231,10 +1231,10 @@ re-sourced to Go on this tree rather than to the page.
   multiselect's name); `admin.action.session_absent` carries `path`; `admin.action.unaudited`
   carries `path` and `editor`; `admin.action.misconfigured` carries `path` and `reason`;
   `config.access_unmapped` carries `unmapped`, the sorted concept ids and fixed screens with no
-  rule. Source: `src/lib/delivery/content-index.ts:101`, `src/lib/sveltekit/admin-action.ts:209,309`,
+  rule. Source: `src/lib/delivery/content-index.ts#createContentIndex`, `src/lib/sveltekit/admin-action.ts#createAdminAction`,
   `src/lib/sveltekit/section-action.ts:212`, `src/lib/sveltekit/admin-nav.ts:330-333`. [verified]
 - `f:rkj7tn` Every log record carries an envelope of `level`, `event`, `timestamp`, plus event-specific
-  fields; renaming an `event` name is a breaking change. Source: `src/lib/log/create.ts:10-12`
+  fields; renaming an `event` name is a breaking change. Source: `src/lib/log/create.ts#LogRecord`
   (`LogRecord` type), `src/lib/log/events.ts:1-3` (comment: "it is public-observable API: renaming
   one is a breaking change"). [verified]
 - `f:k085q0` The only event whose `actor` field is not necessarily an editor's email is
@@ -1267,7 +1267,7 @@ re-sourced to Go on this tree rather than to the page.
   sites in that order: `bindings_missing`, `table_missing` x2, `row_invalid`, `branch_gone`,
   `draft_invalid`). [verified]
 - `f:rdwesf` Every outward response to a `preview.refused` case is an identical 404, except
-  `bindings_missing`, which answers 503. Source: `src/lib/sveltekit/preview.ts:265-268`
+  `bindings_missing`, which answers 503. Source: `src/lib/sveltekit/preview.ts#rejectPreview`
   (`rejectPreview` always `throw error(404, ...)`) and `:454-457` (`bindings_missing` branch
   `throw error(503, 'Service unavailable')`). [verified]
 - `f:vrdrrb` `commit.reverted` fires alongside the ordinary `commit.succeeded` for the same branch commit
@@ -1290,7 +1290,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:yauo4m` `audit.sink.call_failed` omits `record.detail` to avoid duplication (the full record already
   logged one line earlier as `admin.action.audited`), while `audit.sink.write_failed` persists the
   whole truncated record since it is the only surviving trace of a row the packaged sink itself
-  failed to write. Source: `src/lib/sveltekit/admin-action.ts:263-271` (`audit.sink.call_failed`
+  failed to write. Source: `src/lib/sveltekit/admin-action.ts#createAdminAction` (`audit.sink.call_failed`
   logs `path, action, entity, entityId, editor, error`, no `detail`) and
   `src/lib/sveltekit/audit-sink.ts:122-129` (`audit.sink.write_failed` logs `reason, actor, action,
   entity, entityId, detail, error`). [verified]
@@ -1303,7 +1303,7 @@ re-sourced to Go on this tree rather than to the page.
   [verified]
 - `f:hdw91h` `branch` (`cairn/<concept>/<id>`) appears on `commit.succeeded`, `commit.failed`, and
   `publish.failed` only on the save path; deletes, renames, and nav saves commit to the default
-  branch and omit it. Source: `src/lib/sveltekit/content-routes-entry-write.ts:292` and
+  branch and omit it. Source: `src/lib/sveltekit/content-routes-entry-write.ts#createEntryWriteActions.saveToBranch` and
   `content-routes-entry-revert.ts:150` (`commitFields` includes `branch`) versus
   `content-routes-entry-destructive.ts:172,390`, `nav-routes.ts:153`,
   `content-routes-media-*.ts`, and `content-routes-settings.ts:302,439` (`commitFields` omits it).
@@ -1314,13 +1314,13 @@ re-sourced to Go on this tree rather than to the page.
   `:488` (`batch: true`, inside the publish-all loop) and `:493` (`logCommitFailed(..., err,
   'publish.failed')` called per entry inside that same loop). [verified]
 - `f:na2bn6` Across the `media.*` family, `hash` is the asset's content hash and stable identity from upload
-  through delete. Source: `src/lib/sveltekit/content-routes-media-ingest.ts:204` (`media.uploaded`
+  through delete. Source: `src/lib/sveltekit/content-routes-media-ingest.ts#createMediaIngestActions.ingestAndStore` (`media.uploaded`
   carries `hash`), `content-routes-media-delete.ts:164,201` (`media.delete_refused`/`media.deleted`
   carry `hash`), `content-routes-media-metadata.ts:368,390` (`media.replace_refused`/`media.
   replaced` carry `oldHash`/`newHash`), and `src/lib/render/resolve-media.ts:99` (`media.
   resolve_missing` carries `hash`). [verified]
 - `f:z2joe0` `dictionary.*` and `tidy.*` records never carry document content or an API key, only the editor,
-  the model, and the outcome. Source: `src/lib/sveltekit/content-routes-dictionary.ts:131,140,146`
+  the model, and the outcome. Source: `src/lib/sveltekit/content-routes-dictionary.ts#createDictionaryActions`
   (`editor`, `wordCount`, `retried`) and `content-routes-tidy.ts:195-252` (every `tidy.*` call
   logs only `editor`, `model`, `reason`/`tokens`, never body text or a key). [verified]
 
@@ -1351,14 +1351,14 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 
 - `f:r8vksa` `normalizeAssets` with an absent `assets` block returns `{ enabled: false }` rather than
   throwing; a declared block must name its bucket binding and a known `urlForm`, else throws a
-  `cairn:`-prefixed error. Source: `src/lib/media/config.ts:56-63` (`if (assets === undefined)
+  `cairn:`-prefixed error. Source: `src/lib/media/config.ts#normalizeAssets` (`if (assets === undefined)
   return { enabled: false }`; `throw new Error('cairn: a media assets block must name its R2
   bucket binding')`; `throw new Error('cairn: media urlForm must be "slug" or "opaque" ...')`).
   [verified]
 - `f:ckuow3` The built-in transform presets are exactly `thumb`, `inline`, `card`, and `hero`; a site cannot
   declare its own named presets and must build a Cloudflare `/cdn-cgi/image/<options>/<path>` URL
   directly for a size beyond the four. `variantUrl`/`presetUrl` are engine-internal, not public
-  surface. Source: `src/lib/media/config.ts:44-49` (`BUILT_IN_PRESETS = Object.freeze({ thumb,
+  surface. Source: `src/lib/media/config.ts#BUILT_IN_PRESETS` (`BUILT_IN_PRESETS = Object.freeze({ thumb,
   inline, card, hero })`); the site-declared `variants` field and `validateVariant` were retired
   per `src/lib/media/transform-url.ts:52-58` ("validateVariant was retired alongside the
   site-declared `variants` field (ruling 4, 2026-09-01)"); `variantUrl`/`presetUrl` are exported
@@ -1417,7 +1417,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   never on `/admin`; a loader or a type belongs on `/sveltekit` or another data-only subpath; and
   `CairnHead` stays at `./delivery/head` because it renders only document-head tags. The compiled
   admin sheet's input scans `src/lib/admin` and `src/lib/admin-toolkit` but not `src/lib/public`, since the banner writes no utility class of its own.
-  Source: `package.json:114-118` (the `./public` export), `src/lib/public/index.ts:1-6` (the
+  Source: `package.json:115-119` (`"./public"`), `src/lib/public/index.ts:1-6` (the
   membership rule and the one export), `scripts/build/admin-css.input.css:14,22` (the `@source` roots, `src/lib/admin` and `src/lib/admin-toolkit`).
   [verified]
 
@@ -1478,7 +1478,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   ['cairn-glyph']`), `examples/showcase/src/chassis/render.ts:20-23,28-33` (`makeIconRenderer`,
   `headRow` building `cairn-head`/`cairn-icon`). [verified]
 
-- `f:5vw8k1` The emitted-class registry on `render.md` names `pre.shiki`, the six `cairn-tok-*` token classes, `cairn-place-center`, `cairn-place-wide`, `cairn-place-full`, and `table-scroll`, each with who styles it. The sheet styles `pre.shiki`, `cairn-tok-*`, and `table-scroll`'s structural pair; a theme must style `cairn-place-*`. `cairn-focus-ring` is styled by the sheet and is not in the registry, because the engine never writes it into markup. `cairn-public-surface.test.ts` asserts every class the sheet's component-layer rules style is in the registry, apart from that one. Source: `src/lib/render/highlight.ts:1-25` (the `pre.shiki` wrapper and token classes), `src/lib/render/remark-figure.ts:20,83-86` (the three placement roles), `src/lib/render/table-scroll.ts:52-58` (the `table-scroll` wrapper). [verified]
+- `f:5vw8k1` The emitted-class registry on `render.md` names `pre.shiki`, the six `cairn-tok-*` token classes, `cairn-place-center`, `cairn-place-wide`, `cairn-place-full`, and `table-scroll`, each with who styles it. The sheet styles `pre.shiki`, `cairn-tok-*`, and `table-scroll`'s structural pair; a theme must style `cairn-place-*`. `cairn-focus-ring` is styled by the sheet and is not in the registry, because the engine never writes it into markup. `cairn-public-surface.test.ts` asserts every class the sheet's component-layer rules style is in the registry, apart from that one. Source: `src/lib/render/highlight.ts:1-25` (the `pre.shiki` wrapper and token classes), `src/lib/render/remark-figure.ts:20,83-86` (the three placement roles), `src/lib/render/table-scroll.ts#rehypeTableScroll` (the `table-scroll` wrapper). [verified]
 
 ## docs/reference/reproductions.md
 
@@ -1553,12 +1553,12 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   the committed bytes and returns `{ status: 'stale', message }`; `buildStart` calls `this.error`
   with that message). [verified]
 - `f:yio35u` The `cairn-manifest` CLI writes `site-facts.json` in the same run that writes the content
-  manifest. Source: `src/lib/vite/bin.ts:28-29` (`main` calls `writeManifest` then
+  manifest. Source: `src/lib/vite/bin.ts#main` (`main` calls `writeManifest` then
   `writeSiteFacts`). [verified]
 - `f:z61ibp` `cairn-manifest`, the package's `bin`, uses the current working directory as the
   project root, so it runs from the directory holding `vite.config.ts`; the build's
   stale-`site-facts.json` error names the fix as ``Run `npx cairn-manifest` and commit the
-  result.`` Source: `package.json:198-199`, `src/lib/vite/bin.ts:28-29`,
+  result.`` Source: `package.json:199-200` (`"cairn-manifest"`), `src/lib/vite/bin.ts#main`,
   `src/lib/vite/internal.ts:319-324,592-597`. [verified]
 
 ## docs/reference/supported-toolchain.md
@@ -1568,19 +1568,19 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   cell disagrees; it checks only that column. Source: `scripts/checks/check-target-stack.mjs:1-30`
   (header comment plus `targetCell()`, which matches each row's "Target today" cell against a
   computed expected value). [verified]
-- `f:buh7cc` `engines.node` in the package's own `package.json` is `>=24`. Source: `package.json:7`.
+- `f:buh7cc` `engines.node` in the package's own `package.json` is `>=24`. Source: `package.json:7` (`"node"`).
   [verified]
 - `f:xg1per` `svelte` peerDependency is `^5.57.1`; `@sveltejs/kit` is `^3`; `@cloudflare/workers-types` is
-  `^5`. Source: `package.json:220-223`. [verified]
+  `^5`. Source: `package.json:221,222,224` (`"peerDependencies"`). [verified]
 - `f:gjyk0p` The showcase's own devDependency pins `typescript` to `^6` and `@cloudflare/workers-types` to
-  `^5.20261007.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:37,57`.
+  `^5.20261007.1` (a concrete build, not just the range). Source: `examples/showcase/package.json:37,57` (`"typescript"`).
   [verified]
 - `f:isd7vq` TypeScript floor for a consumer's own `tsc` is `5.0`, driven by `const` type parameters on
   `defineAdapter`/`defineConcept`/`defineFieldset`/`fields.*`; the package's own code and shipped
   `.d.ts` are TypeScript 7-clean, but the scaffolded template still installs `^6` because
   `svelte-check`, `svelte2tsx` (under `@sveltejs/package`), and `typescript-estree` (under
   `eslint-plugin-tsdoc`) pin TypeScript to 6; TypeScript 7.1 (the first release with a
-  programmatic compiler API) is expected October 2026. Source: `src/lib/content/adapter.ts:28`,
+  programmatic compiler API) is expected October 2026. Source: `src/lib/content/adapter.ts#defineAdapter`,
   `fields.ts:147-180`, `fieldset.ts:423`, `concepts.ts:49` (`<const ...>` type params confirm the
   5.0 floor); `node_modules/svelte-check` and `.../svelte2tsx` peerDependencies cap at `^6.0.0`,
   `@typescript-eslint/typescript-estree` (pulled in by `eslint-plugin-tsdoc`) caps at `<6.1.0` (a
@@ -1589,8 +1589,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   ("TypeScript 7 is held on the toolchain") corroborate the hold and its trigger. [verified]
 - `f:5c9bwx` `attw --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error` is run in
   `check:package`, muting three rules that are structural limitations of `svelte-package`'s output
-  against `attw`'s resolver, not masked defects. Source: `package.json:37` (`check:package` script:
-  `attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error`).
+  against `attw`'s resolver, not masked defects. Source: `package.json:37` (`"check:package"`), `check:package` script:
+  `attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error`.
   [verified]
 - `f:256utj` SvelteKit's `csrf.checkOrigin` is deprecated (2.61) in favor of `csrf.trustedOrigins` but not
   removed (sveltejs/kit#15992); cairn's admin CSRF ownership still depends on disabling
@@ -1632,7 +1632,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:r6cz7z` `fail()` is the shape for every refusal that can answer the request that raised it (form
   validation, commit conflicts, `createSectionAction`'s own authorization/rate-limit/binding
   branches); the editor's unsaved input survives in the returned payload rather than navigating
-  away. Source: `src/lib/sveltekit/section-action.ts:206,213,264` (`fail(403, ...)`,
+  away. Source: `src/lib/sveltekit/section-action.ts#createSectionAction.wrap` (`fail(403, ...)`,
   `fail(500, ...)`, `fail(429, ...)`). [verified]
 - `f:ge9vwl` A site defining its own `handleError` replaces SvelteKit's default `console.error` of every
   server error rather than layering on top of it; log first unconditionally or default
@@ -1644,7 +1644,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   login) and publish-all's outcome (posted from the topbar on any screen, lands on the first
   reachable concept list). Publish-all carries exactly three `?error=` codes:
   `nothing_to_publish`, `publish_conflict` (validated outcomes), and `publish_failed` (unexpected
-  fault). Source: `src/lib/sveltekit/content-routes-entry-write.ts:501,525,533`
+  fault). Source: `src/lib/sveltekit/content-routes-entry-write.ts#createEntryWriteActions`
   (`redirect(303, '${listPage}?error=nothing_to_publish' | '...publish_conflict' |
   '...publish_failed')`) and `src/lib/sveltekit/refusal-codes.ts:17`
   (`RefusalCode = 'expired' | 'nothing_to_publish' | 'publish_conflict' | 'publish_failed'`, four
@@ -1657,7 +1657,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:0wvvih` `createAuthGuard`'s own `Handle` refuses at the pre-routing layer, before any route's load or
   action runs, with a raw branded `Response` for CSRF, origin, HTTPS, missing-binding, or
   dev-backend-in-production failures. The dev-backend-in-production case is a 503, triggered when
-  `CAIRN_DEV_BACKEND` is set in a deployed runtime. Source: `src/lib/sveltekit/guard.ts:198-201`
+  `CAIRN_DEV_BACKEND` is set in a deployed runtime. Source: `src/lib/sveltekit/guard.ts#createAuthGuard.handle`
   (`CAIRN_DEV_BACKEND_FLAG` check, `log.error('guard.refused', { reason: 'dev_backend_in_prod' })`,
   `return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 })`). [verified]
 - `f:hrvhnz` The guard's pre-routing CSRF check screens the requests SvelteKit 3's own CSRF check
@@ -1675,13 +1675,13 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 - `f:suk99b` `createAdminAction`'s CSRF check order: a valid `X-Cairn-CSRF` header clears the step outright
   (checked first); only with no valid header must the posted `csrf` form field match the CSRF
   cookie, constant-time, else `error(403, ...)`. A fetch-based action that sets the header and
-  posts `FormData` with no `csrf` field still passes. Source: `src/lib/sveltekit/guard.ts:265-287`
+  posts `FormData` with no `csrf` field still passes. Source: `src/lib/sveltekit/guard.ts#createAuthGuard.handle`
   (`headerSent = ... !== null`, header checked before the field fallback) mirrored in
   `admin-action.ts` per its own doc comment at lines 158-162. [verified]
 - `f:yi9vag` `createAdminAction` runs its CSRF check right after its session check, and a request
   that fails it logs `admin.action.csrf_refused` as a warning and gets SvelteKit's own
   `error(403, ...)`; `createSectionAction` composes onto `createAdminAction`, so its actions take
-  the same check first. Source: `src/lib/sveltekit/admin-action.ts:207-240` (`log.warn(
+  the same check first. Source: `src/lib/sveltekit/admin-action.ts#createAdminAction` (`log.warn(
   'admin.action.csrf_refused', ...); throw error(403, ...)`), `src/lib/sveltekit/section-action.ts:116-119,180`.
   [verified]
 - `f:8yb3r1` A handler that returns normally and emits zero `ctx.audit` records throws
@@ -1695,7 +1695,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   own `AdminActionAuditSink`, so the handler's result returns exactly as if the sink succeeded
   either way; the failure logs `audit.sink.call_failed`. A thrown `redirect()`/`error()` from
   inside a hand-rolled sink is rethrown untouched rather than logged, since both are plain classes
-  rather than `Error` instances. Source: `src/lib/sveltekit/admin-action.ts:266-282`
+  rather than `Error` instances. Source: `src/lib/sveltekit/admin-action.ts#createAdminAction`
   (`Promise.resolve(outcome).catch(logSinkFailure)`; `catch (error) { if (isRedirect(error) ||
   isHttpError(error)) throw error; ... }`). [verified]
 - `f:5ba9q8` `ctx.audit` calls the site's `event.locals.cairnAuditSink` synchronously inside the
@@ -1703,7 +1703,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   handler, so an async sink's later work is fire-and-forget. A site handler's audit therefore starts
   the sink while the handler runs. The one call outside the handler is the wrapper's own `deny`
   audit on a `deps.access` refusal, before the handler. Only the unaudited check runs after the
-  handler returns. Source: `src/lib/sveltekit/admin-action.ts:245-283` (`audit(record) { ... const
+  handler returns. Source: `src/lib/sveltekit/admin-action.ts#createAdminAction` (`audit(record) { ... const
   outcome = event.locals.cairnAuditSink?.(full); ... }`), `:296` (`ctx.audit({ action: 'deny', ...
   })`), `:302-310` (`const result = await handler(...)`, then the `emitted === 0` check). [verified]
 - `f:1b3ye3` `createSectionAction`'s full check order, fail-closed at every step except the rate limit
@@ -1843,7 +1843,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   leaves its rows alone). All three close the same id-reuse collision, where a stale link could
   later resolve to a different entry's draft; publishing deliberately leaves the rows in place
   since `loadPreview` needs them to answer a stale link with "this preview has ended" rather than a
-  bare 404. Source: `src/lib/sveltekit/content-routes-entry-destructive.ts:167,205` (`deleteEntry`,
+  bare 404. Source: `src/lib/sveltekit/content-routes-entry-destructive.ts#createEntryDestructiveActions.deleteEntry` (`deleteEntry`,
   shared by `deleteAction`/`listDeleteAction`, calls `clearPreviewTokens` unconditionally on both
   the never-published and the published-then-committed exit), `:407` (`renameAction` calls
   `clearPreviewTokens` unconditionally, no never-published check),
@@ -1854,7 +1854,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `keyStatus` (`missing`/`invalid`/`valid`/`unknown`) distinct from the presence-only
   `keyConfigured`, feeding the same key-health cache `editLoad`'s Tidy control reads (a
   confirmed-invalid key hides the control on the next edit load with no separate check); the cache
-  holds a verdict for a ten-minute window. Source: `src/lib/sveltekit/content-routes-settings.ts:52-64`
+  holds a verdict for a ten-minute window. Source: `src/lib/sveltekit/content-routes-settings.ts#SettingsData`
   (`keyConfigured`/`keyStatus` doc), `:234-256` (`settingsLoad`: `probeTidyKey`,
   `cachedProbeResult`), `src/lib/sveltekit/tidy-key-health.ts:5,19` (`TTL_MS = 10 * 60 * 1000`;
   "editLoad's tidy projection reads this cache only"). [verified]
@@ -1864,7 +1864,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   model error, or empty result is retryable (`fail(502)`); a missing `@anthropic-ai/sdk` peer and
   an Anthropic 400 `invalid_request_error` (typically an unsupported `tidy.model`) are two more
   non-retryable `fail(503)` causes, distinct from the disabled/missing-key and 401/403 cases
-  already named. Source: `src/lib/sveltekit/content-routes-tidy.ts:111,130,135` (`tidyAction`:
+  already named. Source: `src/lib/sveltekit/content-routes-tidy.ts#createTidyActions` (`tidyAction`:
   `fail(503)` before any model call when disabled or key missing), `:190-199` (`TidySdkMissingError`,
   `fail(503)`), `:200-211` (401/403 calls `markKeyUnhealthy()`, `fail(503)`, not retryable),
   `:212-222` (400 `invalid_request_error`, `fail(503)`, not retryable), `:223-231,249` (other

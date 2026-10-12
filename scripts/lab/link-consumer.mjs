@@ -25,6 +25,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, 
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import { runIfMain } from '../checks/reference-coverage.mjs';
 import { repoRoot } from '../repo-root.mjs';
 import { walk } from '../walk-files.mjs';
 
@@ -134,16 +135,18 @@ function expandHome(target) {
 
 /**
  * Which of the engine packages a consumer actually depends on, so pointing a site at a local build
- * never adds a dependency it had not declared for itself.
+ * never adds a dependency it had not declared for itself. A consumer declaring neither is a fresh
+ * site that has not installed cairn yet, so both packages are added, with one line saying so.
  * @param {string} consumerDir
  * @returns {string[]} package names, in `PACKAGES` order
  */
-function consumerPackages(consumerDir) {
+export function consumerPackages(consumerDir) {
   const pkg = readJson(path.join(consumerDir, 'package.json'));
   const declared = { ...pkg.dependencies, ...pkg.devDependencies };
   const found = PACKAGES.filter((name) => name in declared);
   if (found.length === 0) {
-    fail(`${consumerDir} declares neither ${PACKAGES.join(' nor ')}; is it a cairn consumer?`);
+    console.log(`link-consumer: ${consumerDir} declares neither package, adding both`);
+    return [...PACKAGES];
   }
   return found;
 }
@@ -178,10 +181,8 @@ function tarballSlug(name) {
 function packToScratch(name, packageDir) {
   mkdirSync(SCRATCH, { recursive: true });
   const version = readJson(path.join(packageDir, 'package.json')).version;
-  const packed = capture('npm', ['pack', '--pack-destination', SCRATCH, '--silent'], packageDir)
-    .split('\n')
-    .pop()
-    .trim();
+  const lines = capture('npm', ['pack', '--pack-destination', SCRATCH, '--silent'], packageDir).split('\n');
+  const packed = /** @type {string} */ (lines.pop()).trim();
   const packedPath = path.join(SCRATCH, packed);
   const digest = createHash('sha256').update(readFileSync(packedPath)).digest('hex').slice(0, 12);
   const tarball = path.join(SCRATCH, `${tarballSlug(name)}-${version}-${digest}.tgz`);
@@ -224,7 +225,7 @@ function verifyInstalled(name, tarball, consumerDir) {
     const counterpart = path.join(installed, relative);
     const there = statSync(counterpart, { throwIfNoEntry: false });
     if (!there) fail(`${name}: ${relative} is in the tarball but missing from the install`);
-    if (!readFileSync(counterpart).equals(readFileSync(file))) {
+    if (Buffer.compare(readFileSync(counterpart), readFileSync(file)) !== 0) {
       fail(
         `${name}: ${relative} differs between the tarball and the install. ` +
           'npm served a cached build; delete node_modules in the consumer and rerun.'
@@ -306,28 +307,36 @@ function restore(consumerDir, names) {
   console.log('link-consumer: OK, every cairn dependency resolves from the registry and the branch can merge');
 }
 
-const { values, positionals } = parseArgs({
-  args: process.argv.slice(2),
-  allowPositionals: true,
-  options: {
-    restore: { type: 'boolean', default: false },
-    'skip-build': { type: 'boolean', default: false },
-  },
-});
+/**
+ * Parse the command line and run the link or restore it names.
+ * @returns {void}
+ */
+function main() {
+  const { values, positionals } = parseArgs({
+    args: process.argv.slice(2),
+    allowPositionals: true,
+    options: {
+      restore: { type: 'boolean', default: false },
+      'skip-build': { type: 'boolean', default: false },
+    },
+  });
 
-const [consumerArg] = positionals;
-if (!consumerArg) {
-  fail('a consumer directory is required, for example: npm run link:consumer -- ~/Projects/cairn-pub');
-}
-const consumerDir = path.resolve(expandHome(consumerArg));
-if (!statSync(path.join(consumerDir, 'package.json'), { throwIfNoEntry: false })) {
-  fail(`${consumerDir} has no package.json`);
+  const [consumerArg] = positionals;
+  if (!consumerArg) {
+    fail('a consumer directory is required, for example: npm run link:consumer -- ~/Projects/cairn-pub');
+  }
+  const consumerDir = path.resolve(expandHome(consumerArg));
+  if (!statSync(path.join(consumerDir, 'package.json'), { throwIfNoEntry: false })) {
+    fail(`${consumerDir} has no package.json`);
+  }
+
+  const names = consumerPackages(consumerDir);
+
+  if (values.restore) {
+    restore(consumerDir, names);
+  } else {
+    link(consumerDir, names, values['skip-build']);
+  }
 }
 
-const names = consumerPackages(consumerDir);
-
-if (values.restore) {
-  restore(consumerDir, names);
-} else {
-  link(consumerDir, names, values['skip-build']);
-}
+runIfMain(main, import.meta.url);

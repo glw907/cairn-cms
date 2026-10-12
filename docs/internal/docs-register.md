@@ -87,8 +87,10 @@ that states it.
 - Every item in a list shares one form ([lists](https://developers.google.com/style/lists)).
 - Every list item opens on a capital letter unless case carries meaning, as in a glossary
   ([lists](https://developers.google.com/style/lists)).
-- A step, a list item, and each sentence in a task section stay under 26 words
-  ([accessibility](https://developers.google.com/style/accessibility)).
+- A sentence in a step, a list item, or a task section stays under 26 words
+  ([accessibility](https://developers.google.com/style/accessibility)). The 26-word cap counts each
+  sentence on its own and applies only to a step, a list item, or a sentence in a task section; an
+  introduction or explanation sentence is exempt.
 - Titles and headings take sentence case
   ([highlights](https://developers.google.com/style/highlights)).
 - A task section's heading starts with a bare infinitive
@@ -171,7 +173,9 @@ guide is silent.
   heading, the one sentence a reader takes from it, the fact ids it draws on, and its hand-off;
   and the ending the page's anatomy requires. Every fact in the page's inventory is placed in a
   section, subordinated to a named reference link, or cut with a reason. The draft follows the
-  plan's order, and the plan is kept beside the page's brief.
+  plan's order, and the plan is kept beside the page's brief. Section hand-offs belong to the page
+  plan: a hand-off the plan places is not a tell, and a read of the page grades its wording, never
+  whether it is there or where it sits.
 
 ### Voice
 
@@ -512,7 +516,8 @@ guide is silent.
   heading, the one sentence a reader takes from it, the fact ids it draws on, and its hand-off;
   and the ending the page's anatomy requires. Every fact in the page's inventory is placed in a
   section, subordinated to a named reference link, or cut with a reason. The draft follows the
-  plan's order.
+  plan's order. Section hand-offs belong to the page plan: a hand-off the plan places is not a
+  tell, and a read of the page grades its wording, never whether it is there or where it sits.
 
 ### Voice
 
@@ -629,7 +634,8 @@ cannot: which sense of "the package" or "the tool" is meant.
 | The docs | the docs for the content; cairn.pub for the rendered site; the shipped docs for the copy in the tarball | |
 | The consumer's site | your site, or a cairn site | |
 | Also named | the GitHub App; the Worker | |
-| Retired as names | the library (the word stays for the media library and the content library); the Go tool; the binary, except for the install artifact itself; a bare "the tool" | |
+| The people an auth channel signs in beside the editors | a second sign-in group | Never "second audience" or "second population"; the page "Add a second sign-in group" fixes the name. |
+| Retired as names | the library (the word stays for the media library and the content library); the Go tool; the binary, except for the install artifact itself; a bare "the tool"; "second audience"; "second population" | |
 <!-- vale Google.Quotes = YES -->
 
 **Admin or public, built-in or custom.** cairn has two surfaces, the admin and the public site. A
@@ -812,7 +818,8 @@ type adds what its template asks of the opening, as the following anatomies stat
 - **Symptom row** (`admin/troubleshooting.md`, `extend/debug-your-site.md`): what the reader
   sees, the log event that correlates (linking `reference/log-events.md`), what it means, and
   the fix, with a row that needs code changed saying so and pointing at the extend track's
-  debugging page instead of a false promise of a purely operational fix.
+  debugging page instead of a false promise of a purely operational fix. A page of symptom rows
+  ends with a see-also section, as `docs/extend/debug-your-site.md:405` does.
 
 ## The four tracks
 
@@ -1099,7 +1106,7 @@ no page today, and its "What cairn does instead" cell says so.
 | Base rule | What cairn does instead | Evidence | Ruling |
 |---|---|---|---|
 | [Voice and tone](https://developers.google.com/style/tone): "Use a voice that's casual, natural, and approachable, not pedantic or pushy." and "But, aim for a conversational tone rather than a formal one." | Pages read as a measured, precise technical report. Google's friendly and respectful manner stays, with no slang and no jokes. | Geoff's 2026-09-08 voice ruling; the 2026-09-28 draft docs proof, whose tone succeeded while its defects were structural | Geoff, 2026-09-28 (rulings 3 and 10) |
-| [Accessibility](https://developers.google.com/style/accessibility): "Use shorter sentences. Try to use fewer than 26 words per sentence." | An explanatory sentence may run past 26 words when splitting it would separate a claim from its qualification. Steps, list items, and task sections stay under 26 words, and a step or list item over that length is a blocking guide finding. | The same ruling and proof; the guidance is an accessibility rule, so it holds wherever the reader acts | Geoff, 2026-09-28 (rulings 3 and 10) |
+| [Accessibility](https://developers.google.com/style/accessibility): "Use shorter sentences. Try to use fewer than 26 words per sentence." | An explanatory sentence may run past 26 words when splitting it would separate a claim from its qualification. The 26-word cap counts each sentence on its own and applies only to a step, a list item, or a sentence in a task section; an introduction or explanation sentence is exempt. A sentence over the cap in a step, list item, or task section is a blocking guide finding. | The same ruling and proof; the guidance is an accessibility rule, so it holds wherever the reader acts | Geoff, 2026-09-28 (rulings 3 and 10); per-sentence scope, Geoff, 2026-10-11 (pre-2b tooling scope) |
 | [Pronouns](https://developers.google.com/style/pronouns): "Avoid first-person pronouns (I, we, us, our, and ours) except in the following contexts:" | The author uses a restrained first person where a sentence states the author's evidence, and `.vale.ini` turns off `Google.FirstPerson` on every Google surface. Google's list admits a document whose author comments in the first person, and the row records the rule's removal from the gate. | The authorial first person is the register for design decisions | Geoff, 2026-07-02 |
 | [Periods and other end punctuation](https://developers.google.com/style/exclamation-points): "In general, avoid exclamation points." | The root README may carry Geoff's voiced headings, such as `Love your editors!`, and `.vale.ini` holds `Google.Exclamation` at warning for `README.md`. The README carries no such heading today. | Geoff's sanction of his voiced headings | Geoff, 2026-07-02 |
 
@@ -1207,3 +1214,7 @@ The exemplar captures carry their source URLs and licenses in
   merely paraphrases is not a finding.
 - The keystone cuts both ways: flag marketing register, and also flag prose so flat or
   perfunctory that it fails the quality-of-thought bar.
+- A dispatch that scopes a review quotes this sentence verbatim: The 26-word cap counts each
+  sentence on its own and applies only to a step, a list item, or a sentence in a task section; an
+  introduction or explanation sentence is exempt. A broader wording drew three false blocking
+  findings on a scoped read (2026-10-07).

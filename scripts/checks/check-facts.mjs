@@ -348,7 +348,7 @@ export function resolvePointerPath(pointerPath, root, basenameIndex) {
 // A backtick-quoted `path:line[,line|-line]...` pointer, path carrying a recognized source
 // extension, optionally followed by a backtick-quoted anchor snippet in parens.
 const POINTER_RE =
-  /`([A-Za-z0-9_.\/-]+\.(?:ts|js|mjs|cjs|mts|svelte|css|json|sql|ya?ml|md))((?::\d+(?:-\d+)?)(?:,\d+(?:-\d+)?)*)`(?:\s*\(`([^`]*)`\))?/g;
+  /`([A-Za-z0-9_.\/-]+\.(?:ts|js|mjs|cjs|mts|svelte|css|json|sql|go|ya?ml|md))((?::\d+(?:-\d+)?)(?:,\d+(?:-\d+)?)*)`(?:\s*\(`([^`]*)`\))?/g;
 
 /**
  * Every `path:line` style pointer inside a bullet's `Source:` field.
@@ -701,7 +701,13 @@ function validatePointer(pointer, root, basenameIndex) {
     return `"${pointer.path}:${pointer.lineSpec}" is out of range (file has ${fileLines.length} lines)`;
   }
 
-  if (!pointer.anchor) return null;
+  if (!pointer.anchor) {
+    // A manifest's lines shift with every dependency or script edit, so a bare line number rots.
+    if (resolved.split('/').pop() === 'package.json') {
+      return `"${pointer.path}:${pointer.lineSpec}" has no parseable anchor: add the cited line's key as the anchor, e.g. (\`"bin"\`)`;
+    }
+    return null;
+  }
   const [windowStart, windowEnd] = anchorWindow(citedLines, fileLines.length);
   const window = fileLines.slice(windowStart - 1, windowEnd).join('\n');
   const missing = anchorTokens(pointer.anchor).filter((t) => !window.includes(t));

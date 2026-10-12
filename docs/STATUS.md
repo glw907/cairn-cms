@@ -26,8 +26,12 @@ and `APP_DB` left the scaffold, the dev package ships built `dist/`, the engine 
 define, and the dev backend serves the site's own content. The release holds until the docs are
 complete.
 
-The alignment PR (#114) and its dotfiles PR (glw907/workstation#12) wait for Geoff's read; the
-dotfiles PR merges first.
+The two pre-2b tooling PRs wait for Geoff's desk read: this one (PR #116, the register, the
+`check:*` scripts, `link:consumer`, and the fact pointers) and its workstation PR (the chain's
+prompts and the showcase tell). cairn-cms merges first, then workstation, then `make -C
+~/.dotfiles/claude/.claude/skills/writing-voice/evals/tellgrader install` rebuilds `tellgrader`.
+Stage 2b follows. The pass's residue is the "Docs tooling before stage 2b: the residue" entry in
+`ROADMAP.md`.
 
 ## Open decisions and watches
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

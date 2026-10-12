@@ -48,7 +48,7 @@ The steps need a cairn site with a custom admin screen, and the checks need a de
 The access map admits roles by name, so the site first declares its role vocabulary, mapping each role name to the capability it resolves to.
 Each declaration is either a bare capability name (`'owner'`, `'editor'`, or `'none'`) or an object with a `capability` member.
 A role with `none` capability signs in through the same flow as every editor, while the engine's content and roster screens refuse it.
-The object form's `home` member and the `none` capability serve a second audience, which [Add a second sign-in group](add-a-second-sign-in-group.md) covers.
+The object form's `home` member and the `none` capability serve a second sign-in group, which [Add a second sign-in group](add-a-second-sign-in-group.md) covers.
 
 The vocabulary must declare `owner` with owner capability, or `defineRoles` throws.
 That name is the one reserved name, since the last-owner guard and the bootstrap owner both anchor on it.
@@ -360,7 +360,7 @@ The following pages cover the reasoning and the tasks around the access map:
 - [Security model](security-model.md) explains why the map only narrows and where its coverage stops.
 - [Add a custom admin screen](add-a-custom-admin-screen.md) builds a screen and its section actions in full.
 - [Arrange the admin sidebar](arrange-the-admin-sidebar.md) describes how to arrange and hide sidebar entries.
-- [Add a second sign-in group](add-a-second-sign-in-group.md) declares a role with `none` capability for a second audience.
+- [Add a second sign-in group](add-a-second-sign-in-group.md) declares a role with `none` capability for a second sign-in group.
 - The [Access map](../reference/core.md#access-map) reference documents `defineAccess` and `canReach`.
 - The [`requireAccess`](../reference/sveltekit.md#requireaccess) entry documents the route check.
 - The [log events](../reference/log-events.md) reference lists the `auth.access.refused` and `config.access_unmapped` records.

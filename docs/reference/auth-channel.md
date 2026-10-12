@@ -1,13 +1,13 @@
 # Auth channel (`@glw907/cairn-cms/auth-channel`)
 
-This subpath holds `createAuthChannel`, a factory for a site's own second-audience login channel:
+This subpath holds `createAuthChannel`, a factory for a site's own login channel for a second sign-in group:
 an 8-digit-by-default OTP code, requested and confirmed over any transport the site's own `deliver`
 function sends (SMS, email, or another channel), backed by the site's own D1 binding rather than
 `AUTH_DB`. It is server-only surface (no `svelte` export condition), for a site building a login
 flow for an audience other than cairn editors: members, customers, or any roster the
 engine's own owner/editor auth was never meant to model.
 
-This subpath carries the second-audience login discipline the factory owns: code generation and
+This subpath carries the login discipline for a second sign-in group the factory owns: code generation and
 canonicalization, identity derivation and salting, the atomic budget and lockout mechanics,
 session issuance and revocation, and the D1 schema underneath all of it. The email magic-link
 stays the zero-config default and the documented primary path for cairn editors. A general-purpose
@@ -30,7 +30,7 @@ Stability tier: Extension API.
 declare function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChannel<Env>;
 ```
 
-Build a second-audience login channel: request, confirm, and logout actions, session resolution,
+Build a login channel for a second sign-in group: request, confirm, and logout actions, session resolution,
 and roster-removal revocation, all backed by the D1 binding `config.resolveDb` names. Construction
 validates every clamp in [Defaults and clamps](#defaults-and-clamps), the required `challenge`, the
 `kind` restriction, and the cookie-name discipline, throwing an `Error` on any misconfiguration
@@ -76,7 +76,7 @@ const channel = createAuthChannel<Env>({
 - **`resolveDb(env)`**: the channel's own D1 binding, read off the Worker env, typed as
   [`ChannelDatabaseLike`](#channeldatabaselike), which a `D1Database` and the dev package's
   `createChannelDb()` result both satisfy. Never `AUTH_DB`: a
-  second audience's roster and sessions live in their own database, physically separate from the
+  second sign-in group's roster and sessions live in their own database, physically separate from the
   engine's own editor store. An action whose binding resolves to `undefined`, or whose schema
   version does not match the schema the packaged migration installs (see [Storage](#storage)),
   answers `{outcome: 'unavailable'}` without touching a row.

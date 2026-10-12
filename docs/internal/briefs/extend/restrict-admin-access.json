@@ -184,7 +184,7 @@
       "id": "f:4673n6"
     },
     {
-      "text": "The object form's `home` member and the `none` capability serve a second audience, which [Add a second sign-in group](add-a-second-sign-in-group.md) covers.",
+      "text": "The object form's `home` member and the `none` capability serve a second sign-in group, which [Add a second sign-in group](add-a-second-sign-in-group.md) covers.",
       "id": "f:4673n6"
     },
     {
@@ -967,7 +967,7 @@
       "id": "no-claim"
     },
     {
-      "text": "[Add a second sign-in group](add-a-second-sign-in-group.md) declares a role with `none` capability for a second audience.",
+      "text": "[Add a second sign-in group](add-a-second-sign-in-group.md) declares a role with `none` capability for a second sign-in group.",
       "id": "f:4673n6"
     },
     {

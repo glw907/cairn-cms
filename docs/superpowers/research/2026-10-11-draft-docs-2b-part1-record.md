@@ -289,7 +289,22 @@ Consistency read findings (T10). Applied unless noted.
 12. Deferred: structural cut.
 13. Refused: check:visuals requires a repro alt to match /^reproduction\b/i, so "Reproduction of" stays.
 
-Scoped register and fact verdicts: pending
+Scoped register and fact verdicts: the one prose change (arrange-the-admin-sidebar's snippet comment and
+figure caption, finding 1) got one scoped register read that also checked the claim: accept, with
+two advisories not applied (`// same as the default label, Library` and a caption recast). The
+claim holds: `admin-nav.ts:419` labels the media screen "Library" and `f:gponkz` states it. Every
+other applied finding is a term or link substitution. The batch's global "hand-built site"
+substitution also touched `scaffolded-site-files` and `theme-your-public-site` (2a pages outside
+the 14); the executor reverted both and their briefs in `ce2c00e15`, so the two phrasings
+("hand-built site" on the 2b pages, the 2a pages' own wording) stay different until part 2. The
+T10 change's `diff-reviewer` read folds into T11's whole-branch review.
+
+Left for the PR's "Found, not done": finding 1's fixture (the `nav/worked-navlayout` story relabels
+`media` to the engine's own default, so the figure cannot show a real relabel of Library; the
+fixture is engine code under `src/lib/reproductions/`); finding 4 (the outline needs crossLinks
+from `share-a-draft-preview` and `act-on-newly-published-entries` to `build-the-public-routes`);
+findings 11 and 12 (the `siteConfigPath` and glob explanations repeat across define, tidy, build,
+and reuse); finding 13 (`check:visuals` requires repro alt text to start with "Reproduction").
 
 ## Rulings for Geoff
 

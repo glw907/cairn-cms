@@ -1,0 +1,99 @@
+{
+  "arm": "claude-code",
+  "track": "claude-code",
+  "crossLinks": [
+    {
+      "from": "using-claude-code-with-cairn",
+      "to": "scaffolded-site-files",
+      "why": "The scaffolded tree outside .claude/, file by file."
+    },
+    {
+      "from": "using-claude-code-with-cairn",
+      "to": "run-cairn-audit-on-your-site",
+      "why": "What the Stop hook's check:cairn runs and how to read it."
+    },
+    {
+      "from": "using-claude-code-with-cairn",
+      "to": "upgrade-cairn",
+      "why": "When to refresh the guidance tree after an upgrade."
+    },
+    {
+      "from": "using-claude-code-with-cairn",
+      "to": "docs/reference/guidance.md",
+      "why": "The CLI's full output and the trust boundary."
+    }
+  ],
+  "pages": [
+    {
+      "slug": "using-claude-code-with-cairn",
+      "title": "Using Claude Code with cairn",
+      "path": "docs/claude-code/using-claude-code-with-cairn.md",
+      "job": "Work on a cairn site with Claude Code: know which guidance cairn installs under .claude/, which of the four skills loads for which task, what the review agent reviews, how to wire the Stop hook that runs the audit after each turn, and how to adopt, refresh, and check the guidance tree with cairn-guidance install and check, including their exit codes and the CI step. For the extend track's reader (a Svelte-fluent web developer building an organization's site on cairn's seams) who has chosen Claude Code as their coding assistant. The general docs assume no coding assistant; this page is the one that teaches working with Claude Code.",
+      "pageType": "task guide",
+      "exemplars": [
+        {
+          "source": "operators/gh-exit-codes/",
+          "slice": "Operators",
+          "manifestType": "Reference entry (exit codes)",
+          "take": "Take the exit code stated flat beside the condition that produces it, and the closing caution that a command may carry codes the table does not list; leave the gh-specific codes and the page's bare list shape."
+        },
+        {
+          "source": "extenders/sveltekit-hooks/",
+          "slice": "Extenders",
+          "manifestType": "Reference entry (hooks)",
+          "take": "Take the one-hook-at-a-time rhythm where each hook gets a signature-sized snippet and one sentence on when it runs; leave the SvelteKit hook inventory."
+        },
+        {
+          "source": "core/workers-sdk-agents-md/",
+          "slice": "Core",
+          "manifestType": "Agent-facing contributor file",
+          "take": "Take the idea of pointing at the authoritative source instead of copying it (the guidance tree states this about its own VERSION and MANIFEST); leave the monorepo commands and the file's own agent-addressed voice, which this human page never uses."
+        }
+      ],
+      "figure": false,
+      "figureNote": "",
+      "absorbs": [],
+      "factSections": [
+        "docs/extend/scaffolded-site-files.md"
+      ],
+      "factIds": [
+        "f:0ygumq",
+        "f:pmmtrm",
+        "f:7ozknm",
+        "f:o7bkm0",
+        "f:6ro1n9",
+        "f:dy5cfj",
+        "f:4ax489",
+        "f:jd54ph",
+        "f:4h9fz4",
+        "f:5ohm23",
+        "f:4nccq6",
+        "f:hiif6u",
+        "f:x5grdm",
+        "f:vhxkab",
+        "f:1kwkl0",
+        "f:mrv24k",
+        "f:guiavc"
+      ],
+      "covers": [
+        "The introduction: the task (set up and work with Claude Code on a cairn site), who it is for (the extend track's developer who has chosen Claude Code), that the general docs assume no coding assistant and this page is the one that does not, and that cairn ships guidance in Claude Code's format only (no AGENTS.md, no file for another agent).",
+        "The guidance tree a scaffolded site is born with and that cairn-guidance install writes: .claude/skills/<skill>/, .claude/agents/cairn-extension-reviewer.md, .claude/cairn/CLAUDE.md, .claude/cairn/VERSION, .claude/cairn/MANIFEST, and the root CLAUDE.md that imports the fragment with one @ line followed by the site's own section; what VERSION stamps (the caret-stripped engine spec at bake time).",
+        "The four skills and when each loads: cairn-admin-screens (build or review a screen inside /admin), cairn-consult (write a consultation brief after working around an engine behavior twice or wanting something the seams do not reach), cairn-extend (change anything that touches /admin, a form action, logging, or an engine seam), and cairn-public (restyle or extend the public side, with its catalogue pages).",
+        "The review agent, cairn-extension-reviewer: where it sits (.claude/agents/), what it is for, and how it relates to the audit gate.",
+        "The Stop hook: cairn-guidance install never writes .claude/settings.json, so the hook that runs npm run check:cairn --if-present is a snippet (claude/snippets/settings-hook.json) the developer pastes in deliberately; what check:cairn runs.",
+        "cairn-guidance install: adopting the tree on an existing site and refreshing it after an upgrade; it never deletes (a path an earlier MANIFEST listed that the package no longer ships is printed as removable); it never rewrites the root CLAUDE.md; it refuses a symlinked or directory destination by name and continues; a write failure prints the errno code on stderr; it exits 0 even on a refusal or write failure, so a script reads stderr, not the exit code.",
+        "cairn-guidance check: the seven report lines, exit 0 by default, --strict exits 1 only when the guidance tree is stale or missing, the root CLAUDE.md import check, the .claude/ Tailwind exclusion check, and that the VERSION stamp does not count toward staleness.",
+        "The CI step: the scaffold's check.yml runs npx cairn-guidance check without --strict under continue-on-error: true, so a stale tree surfaces in the job log without failing the build; how to make it gate (add --strict) as a choice the reader makes."
+      ],
+      "outOfScope": [
+        "Any coding assistant other than Claude Code: cairn ships no guidance for another agent, and this page says so in one line without teaching one.",
+        "The scaffolded tree outside .claude/, file by file (scaffolded-site-files); that page names CLAUDE.md and .claude/ in one labeled line each and links here.",
+        "Running the audit and reading its findings (run-cairn-audit-on-your-site); this page wires the Stop hook that runs it and links there.",
+        "The upgrade procedure and when to refresh the tree (upgrade-cairn); this page covers the install command that refreshes it.",
+        "Writing a consultation brief and what the engine does with it (the protocol lives in the cairn-consult skill itself, not in the published docs).",
+        "The CLI's full option and output listing (the guidance reference page); this page links it.",
+        "The general docs' rule stands: no other page carries Claude Code teaching, and this page does not rewrite another page's prose."
+      ]
+    }
+  ]
+}

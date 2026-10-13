@@ -1,0 +1,867 @@
+version: 1
+page:
+  path: docs/extend/rotate-the-github-app-key.md
+  title: Rotate the GitHub App key
+  type: task guide
+argument: |
+  A GitHub App holds more than one private key at once, and a new key does not invalidate the old
+  one, so a rotation without a publishing outage runs on overlap: generate the new key beside the
+  old one, push it to the Worker, prove it, and only then delete the old key. The proof is
+  immediate and needs no publish: `/healthz` shows that the Worker's secret signs and, through its
+  fingerprint, which key the Worker holds, and `/healthz?live=1` mints a token straight from that
+  key, past the 55-minute token cache, so a 200 proves GitHub accepts it. The overlap also leaves a
+  rollback, which lasts exactly until the deletion; after it, GitHub restores nothing and the
+  recovery is a third key. A key that fails later shows to editors as a publish that fails while
+  the editor stays up, and the same `/healthz` signals name the cause.
+introduction:
+  covers: |
+    The introduction frames the page from above and opens on a statement, never on the page
+    itself. The model first: the site's Worker signs every request for an installation token with
+    the App's private key, held as the Worker secret `GITHUB_APP_PRIVATE_KEY_B64`; GitHub's keys
+    never expire and leave the App only when deleted by hand, so a key is replaced only when the
+    developer chooses to replace it. An App holds several keys at once and a new key does not
+    invalidate the old, which allows an order with no gap: generate, push, confirm, and only then
+    delete. The contract sentence: the steps replace the App's private key without a publishing
+    outage, confirm at once that GitHub accepts the new key, and recover if it fails, by rollback
+    while the old key remains and by a third key after it is gone. It names the two readers who
+    arrive: one rotating on purpose, who follows the page top to bottom, and one whose new key
+    already fails, whom it sends to Recover from a failed key. Who it is for: a developer with a
+    terminal, Wrangler, and edit access to the App's settings on GitHub. The facts behind the
+    model are the fact items placed first under Before you begin.
+  priorKnowledge: |
+    A developer comfortable in a terminal on their platform, with `npx wrangler` commands, and with
+    querying Workers Logs in the Cloudflare dashboard. The page explains none of these, and it
+    leaves GitHub's settings navigation to GitHub's page.
+  notCovered: |
+    Each out-of-scope subject names its page, subject first: registering the App and storing its
+    first key (Add cairn to a SvelteKit app, or the setup command for a scaffolded site); why the
+    key lives only as a Worker secret and what its installation token can write (Security model).
+    A scope sentence may name the page.
+orderReason: |
+  The order follows what each step depends on and what cannot be undone, not the outline's covers
+  inventory. The two-key model and the zero-downtime order (cover 1) move into the introduction,
+  because without them "leave the old key in place" reads as an omission. Before you begin names
+  the access, the `/healthz` route, Workers Logs, and whether the old key's PEM file exists, so a
+  reader learns before any step whether a rollback will be open to them. Generate a new key comes
+  first among the steps, because nothing can be pushed before it exists and GitHub deletes no
+  App's only key. Push the new key to the Worker merges the outline's encode and push covers into
+  one section, since each platform's command encodes and pipes in one line. Verify the new key
+  comes before the deletion, a departure from the anatomy's verification-last slot: the deletion
+  is the one step GitHub cannot reverse, so confirm-before-delete is the zero-downtime order
+  itself. The 55-minute isolate token cache (the outline's last cover) moves up into Verify's
+  opening, because it is the reason the proof is the live token check and not a publish: a
+  publish in that window can run on a token the old key minted, so it may lag the key the Worker
+  now holds. Delete the old key follows the checks it depends on. Recover from a failed key is
+  the anatomy's failure path and the Ghost exemplar's named recovery section: an ordered
+  diagnostic list reads the Verify signals, then Roll back to the old key (open only before the
+  deletion) and Generate a third key (the only route after it) separate the interrupted run from
+  the total failure. The Workers Logs and `github.unreachable` signals of the outline's verify
+  cover move into that diagnostic list, since `/healthz?live=1` now proves acceptance at once and
+  the logs serve to explain a failure, not to confirm a success. See also closes the page.
+preconditions:
+  - deployed-site
+  - app-settings-access
+  - wrangler-access
+  - healthz-route
+  - workers-logs-on
+sections:
+  - heading: Before you begin
+    opens: |
+      The rotation needs a deployed site, edit access to the App's keys on GitHub, Wrangler signed
+      in to the Worker's account, the `/healthz` route, and Workers Logs.
+    items:
+      - id: intro-two-keys
+        kind: fact
+        fact: "f:ixr3ny"
+        use: |
+          Backs the introduction's model only: an App holds more than one private key at once, a
+          new key does not invalidate the old, and the App keeps signing with any key until it is
+          deleted by hand. Not restated in this section.
+      - id: intro-no-expiry
+        kind: fact
+        fact: "f:zoekqt"
+        use: |
+          Backs the introduction's sentence that keys do not expire and are removed only by hand,
+          so a key is replaced only when the developer chooses. Only that clause; omit the settings
+          navigation, the 25-key limit, and the PKCS#1 form.
+      - id: intro-order
+        kind: fact
+        fact: "f:ejuoh6"
+        use: |
+          Backs the introduction's order only: the new key is pushed while the old key stays
+          undeleted, it is confirmed, and only then is the old key deleted; an undeleted old key
+          can be re-pushed to roll back, and a deleted key has no restore path. Omit the clause
+          that names a real publish as the confirming signal: on this page the live token check
+          confirms the key.
+      - id: intro-recover-link
+        kind: link
+        target: "#recover-from-a-failed-key"
+      - id: bb-lead
+        kind: sentence
+        mode: claim
+        text: |
+          A complete sentence introduces a bulleted list of five preconditions, each with a link to
+          what produces it: the deployed site whose Worker holds the key; GitHub access to the
+          App's settings; Wrangler signed in, with a terminal in the site's directory; the
+          `/healthz` route; and Workers Logs on.
+      - id: bb-access
+        kind: fact
+        fact: "f:3jpoi3"
+        use: |
+          The access preconditions: rotating the key requires a terminal, `wrangler secret put`,
+          and access to the App's GitHub settings page. Omit the parenthetical about two keys,
+          which the introduction carries.
+      - id: bb-secret-name
+        kind: fact
+        fact: "f:i4fg3o"
+        use: |
+          The deployed-site precondition: the site's Worker reads the key as the secret
+          `GITHUB_APP_PRIVATE_KEY_B64`. Only the name; the one-line base64 encoding waits for Push
+          the new key to the Worker.
+      - id: bb-credentials-link
+        kind: link
+        target: add-cairn-to-a-sveltekit-app.md#store-the-apps-credentials
+      - id: bb-github-keys-link
+        kind: link
+        target: https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps
+      - id: bb-wrangler-login-link
+        kind: link
+        target: https://developers.cloudflare.com/workers/wrangler/commands/general/#login
+      - id: bb-healthz
+        kind: fact
+        fact: "f:paotzb"
+        use: |
+          The route precondition: `/healthz` sits at the site root, outside `/admin`, so the auth
+          guard does not gate it, and the scaffold ships it. Only the placement and that the
+          scaffold ships it; the status codes wait for Verify the new key.
+      - id: bb-healthz-link
+        kind: link
+        target: ../reference/sveltekit.md#loadhealth
+      - id: bb-logs
+        kind: fact
+        fact: "f:prb2os"
+        use: |
+          The Workers Logs precondition: the Worker writes to Workers Logs only when
+          `observability.enabled` is `true` in its Wrangler config, and the scaffold's
+          `wrangler.jsonc` sets it. Omit the empty-log clause, which Recover from a failed key
+          carries.
+      - id: bb-logs-link
+        kind: link
+        target: debug-your-site.md#find-the-records
+      - id: bb-workers-logs-link
+        kind: link
+        target: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
+      - id: bb-old-key
+        kind: fact
+        fact: "f:72yc97"
+        use: |
+          The note after the list, on the old key's PEM file: the key lives only in the Worker's
+          secret store and the repo tracks no copy, so a scaffolded site keeps no copy of the
+          current key, and its recovery from a failed new key is a third key. Only that
+          consequence; omit the "no version" clause.
+      - id: bb-old-key-claim
+        kind: sentence
+        mode: claim
+        text: |
+          A developer who still holds the current key's PEM file keeps it until the rotation ends,
+          since a rollback re-pushes that key.
+        facts: ["f:72yc97", "f:sszb7b"]
+      - id: bb-handoff
+        kind: handoff
+        text: |
+          Turn to the first step: the new key has to exist on the App before anything can be
+          pushed.
+  - heading: Generate a new key
+    opens: |
+      Generating a new key changes nothing on the site, because the key joins the App beside the
+      old one and the Worker keeps signing with the old key until the push.
+    items:
+      - id: s-generate
+        kind: step
+        text: |
+          On the App's settings page on GitHub, generate a private key and download its PEM file.
+        requires: [app-settings-access]
+        produces: [new-key-file]
+      - id: gen-vendor-link
+        kind: link
+        target: https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps
+      - id: gen-only-copy
+        kind: fact
+        fact: "f:zoekqt"
+        use: |
+          The Warning at this step: GitHub keeps only the public portion of a key, so the
+          downloaded file is the only copy of the new private key. In the same section, outside the
+          Warning: with only one key on the App, a new key must exist before the old one can be
+          deleted. Omit the settings navigation, the 25-key limit, the PKCS#1 form, and the
+          no-expiry clause the introduction carries.
+      - id: gen-handoff
+        kind: handoff
+        text: |
+          Carry the downloaded file to the next section, which puts it in the Worker.
+  - heading: Push the new key to the Worker
+    opens: |
+      The Worker reads `GITHUB_APP_PRIVATE_KEY_B64` as the PEM file encoded in base64 on one line,
+      and each command here produces that line and pipes it to `wrangler secret put`.
+    items:
+      - id: push-encoding
+        kind: fact
+        fact: "f:i4fg3o"
+        use: |
+          Backs the opening sentence: the Worker reads the key as a base64 encoding of the PEM with
+          no line breaks.
+      - id: push-lead
+        kind: sentence
+        mode: claim
+        text: |
+          A complete sentence introduces the two platform forms as alternatives: run the one for
+          your platform in the site's directory, with the path replaced by the new PEM file's
+          location.
+      - id: s-push-node
+        kind: step
+        text: |
+          On Linux or macOS, in the site's directory, run the Node form to encode the new PEM file
+          and pipe it to `npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`.
+        requires: [new-key-file, wrangler-access, deployed-site]
+        produces: [new-key-pushed]
+      - id: push-node-fact
+        kind: fact
+        fact: "f:olofdb"
+        use: |
+          Backs the Node form: it is the same encoding the setup command writes,
+          `Buffer.from(pem).toString('base64')` (equivalently `readFileSync(...).toString('base64')`),
+          one unwrapped line piped to `wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`.
+      - id: push-node-code
+        kind: code
+        source: ../../packages/create-cairn-site/src/cloudflare/secret.mjs
+        text: |
+          Illustrative, modeled on the setup command's encode and push: a bash block running
+          `node -e "process.stdout.write(require('fs').readFileSync('path/to/new-key.pem').toString('base64'))"`
+          piped to `npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`.
+      - id: s-push-ps
+        kind: step
+        text: |
+          On Windows, in the site's directory, run the PowerShell form to encode the new PEM file
+          and pipe it to `npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`.
+        requires: [new-key-file, wrangler-access, deployed-site]
+        produces: [new-key-pushed]
+      - id: push-ps-fact
+        kind: fact
+        fact: "f:dbue4k"
+        use: |
+          Backs the PowerShell form and the note after it: `[Convert]::ToBase64String` returns
+          unwrapped base64, and the form pipes the value to Wrangler and writes no file. The note
+          states only the version difference: under Windows PowerShell 5.1 a file written with
+          `Out-File` holds UTF-16LE text, two bytes per character, while PowerShell 7 writes
+          `utf8NoBOM`.
+      - id: push-ps-code
+        kind: code
+        source: ../../packages/create-cairn-site/src/cloudflare/secret.mjs
+        text: |
+          Illustrative, modeled on Microsoft's `[Convert]::ToBase64String` and
+          `[IO.File]::ReadAllBytes` samples (the .NET `Convert.ToBase64String` reference): a
+          powershell block running
+          `[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\path\to\new-key.pem'))` piped to
+          `npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`. The cairn file is the setup
+          command's encode and push that the form matches.
+      - id: push-deploys
+        kind: fact
+        fact: "f:86h9o6"
+        use: |
+          The result of either form: `wrangler secret put` creates a new version of the Worker and
+          deploys it immediately, with no build; a site on gradual deployments uses
+          `wrangler versions secret put` instead, and the page assumes `wrangler secret put`. In
+          the same section's close: local `wrangler dev` reads secrets from `.dev.vars` beside the
+          Wrangler config and never from the deployed secret.
+      - id: push-dev-vars-claim
+        kind: sentence
+        mode: claim
+        text: |
+          A key kept in a local `.dev.vars` is not touched by the push, so it needs the same
+          replacement before local development signs with the new key.
+        facts: ["f:86h9o6"]
+      - id: push-secrets-link
+        kind: link
+        target: https://developers.cloudflare.com/workers/configuration/secrets/
+      - id: push-ids
+        kind: fact
+        fact: "f:9xqudi"
+        use: |
+          Only the clause that the App id and installation id are non-secret values in the adapter's
+          `createGithubApp` call and stay as they are, so no source file changes. Omit the
+          missing-key error clause.
+      - id: push-handoff
+        kind: handoff
+        text: |
+          The Worker now holds the new key while GitHub still holds both; turn to proving the new
+          key before anything is deleted.
+  - heading: Verify the new key
+    opens: |
+      Two requests to `/healthz` prove the new key at once: the plain request shows that the
+      Worker's secret signs and which key it is, and `?live=1` shows that GitHub accepts it.
+    items:
+      - id: ver-cache
+        kind: fact
+        fact: "f:vg42j3"
+        use: |
+          The paragraph after the opening, tying the check to the task: the installation token is
+          cached per isolate for 55 minutes and minted only on a miss, and a secret change does not
+          clear the cache, so a warm isolate keeps a token minted with the old key until its entry
+          expires.
+      - id: ver-cache-claim
+        kind: sentence
+        mode: claim
+        text: |
+          A publish in the first 55 minutes after the push can therefore succeed on a token the old
+          key minted, so it proves nothing about the new key, and the page does not use a publish
+          as the check.
+        facts: ["f:vg42j3"]
+      - id: ver-live-bypass
+        kind: fact
+        fact: "f:1pb077"
+        use: |
+          The same paragraph's close: `/healthz?live=1` mints one installation token straight from
+          the key, bypassing the 55-minute cache, and discards it. Only that clause here.
+      - id: ver-lead
+        kind: sentence
+        mode: claim
+        text: |
+          A complete sentence introduces the checks as a numbered list, run in order.
+      - id: s-healthz
+        kind: step
+        text: |
+          In a terminal, request the deployed site's `/healthz` route with `curl`.
+        requires: [new-key-pushed, healthz-route]
+        produces: [signing-checked]
+        canFail: true
+      - id: ver-healthz-code
+        kind: code
+        source: ../../templates/waymark/src/routes/healthz/+server.ts
+        text: |
+          Illustrative: a bash block, `curl https://<your-site>/healthz`, then a json block of the
+          expected answer, `{"ok":true,"checks":{"githubAppSigning":{"ok":true,"fingerprint":"SHA256:<base64>"}}}`.
+      - id: ver-healthz-result
+        kind: sentence
+        mode: claim
+        text: |
+          The expected result: status 200 with `ok: true` and a `fingerprint`. A pass proves the
+          secret decodes, imports, and signs, never that GitHub accepts the key.
+        facts: ["f:paotzb", "f:5dwnh1", "f:h252kb"]
+      - id: ver-status
+        kind: fact
+        fact: "f:paotzb"
+        use: |
+          The status codes only: the route answers JSON with status 200 when `ok` is true and 503
+          when it is false, and sends `cache-control: no-store`, so a repeated request reads a
+          fresh verdict. Omit the thrown-error clause, which Recover from a failed key carries.
+      - id: ver-signing
+        kind: fact
+        fact: "f:5dwnh1"
+        use: |
+          Only the plain request's limit: the `githubAppSigning` check signs a dummy JWT with the
+          Worker's current key and makes no network call, so `ok: true` proves the secret decodes,
+          imports, and signs, never that GitHub accepts the key. The detail strings wait for
+          Recover from a failed key.
+      - id: x-healthz
+        kind: failure
+        from: s-healthz
+        symptom: |
+          The route answers 503 with `ok: false`.
+        cause: |
+          The Worker's secret is missing or is not a usable private key, or the check threw.
+        handledBy: ver-recover-link
+      - id: s-fingerprint
+        kind: step
+        text: |
+          On the App's settings page on GitHub, compare the fingerprint GitHub shows for the new key
+          with the response's `fingerprint` value.
+        requires: [signing-checked, app-settings-access]
+        produces: [key-identified]
+        canFail: true
+      - id: ver-fingerprint
+        kind: fact
+        fact: "f:h252kb"
+        use: |
+          Backs the step: a passing check carries `fingerprint`, `SHA256:` and the base64 SHA-256
+          digest of the key's public half, the same value GitHub shows for the key, so a match
+          names the key the Worker holds. Omit the openssl pipeline, the SubjectPublicKeyInfo and
+          `spki` mechanics, and the omitted-fingerprint clause.
+      - id: x-fingerprint
+        kind: failure
+        from: s-fingerprint
+        symptom: |
+          The fingerprint matches the old key, or no key on the App.
+        cause: |
+          The Worker holds a key other than the one just generated.
+        handledBy: ver-recover-link
+      - id: s-live
+        kind: step
+        text: |
+          In the terminal, request `/healthz?live=1` with `curl`.
+        requires: [key-identified]
+        produces: [new-key-confirmed]
+        canFail: true
+      - id: ver-live-result
+        kind: fact
+        fact: "f:1pb077"
+        use: |
+          The step's expected result: status 200 with `checks.githubAppToken` as `{ ok: true }`,
+          and `ok` is then the signing check and the token check together, so a 200 here proves
+          GitHub accepts the key. Omit the failure classes (Recover from a failed key carries
+          them), the per-isolate rate bound, the shared in-flight mint, and the timeouts; tell the
+          reader nothing about polling.
+      - id: x-live
+        kind: failure
+        from: s-live
+        symptom: |
+          The route answers 503 and `githubAppToken` carries `ok: false` with a `detail`.
+        cause: |
+          GitHub did not issue a token for the key, or could not be reached.
+        handledBy: ver-recover-link
+      - id: ver-recover-link
+        kind: link
+        target: "#recover-from-a-failed-key"
+      - id: ver-handoff
+        kind: handoff
+        text: |
+          With all three checks passed, the new key is proven and the old key can go; say that this
+          is the last point at which a rollback stays open.
+  - heading: Delete the old key
+    opens: |
+      The old key is deleted on GitHub only after every check in Verify the new key passes,
+      because GitHub offers no restore for a deleted key.
+    items:
+      - id: del-no-restore
+        kind: fact
+        fact: "f:lg2ae8"
+        use: |
+          The consequence, stated before the step: GitHub does not restore a deleted key, so from
+          the deletion on, a failure of the new key is recovered with a third key.
+      - id: del-third-link
+        kind: link
+        target: "#generate-a-third-key"
+      - id: s-delete
+        kind: step
+        text: |
+          On the App's settings page on GitHub, delete the private key whose fingerprint differs
+          from the `fingerprint` that `/healthz` returned.
+        requires: [new-key-confirmed]
+        produces: [old-key-deleted]
+      - id: del-fingerprint
+        kind: fact
+        fact: "f:h252kb"
+        use: |
+          Only: GitHub shows the same fingerprint for each key, so the non-matching key is the old
+          one. Omit the openssl pipeline, the SubjectPublicKeyInfo and `spki` mechanics, and the
+          omitted-fingerprint clause.
+      - id: del-vendor-link
+        kind: link
+        target: https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps
+      - id: del-handoff
+        kind: handoff
+        text: |
+          Say that the rotation is complete, and that Recover from a failed key applies only when a
+          check or a publish fails.
+  - heading: Recover from a failed key
+    opens: |
+      A failed key is recovered by rolling back while the old key is still on GitHub and its PEM
+      file is at hand, and by a third key otherwise.
+    items:
+      - id: rec-route-claim
+        kind: sentence
+        mode: claim
+        text: |
+          The opening's two routes, with their condition first: before the deletion and with the
+          old key's file, roll back; after the deletion, or with no copy of the old key, generate a
+          third key.
+        facts: ["f:sszb7b", "f:lg2ae8", "f:72yc97"]
+      - id: x-editor
+        kind: failure
+        symptom: |
+          An editor reports that Publish failed while the editor stayed open with the message
+          `Something went wrong and your changes were not saved. Your writing is still here. Try
+          again, and if it keeps failing, let your site developer know.` and the text intact, or
+          that opening an entry ends on the site's error page with status 500.
+        cause: |
+          A request reached an isolate holding no cached installation token, and the mint from the
+          Worker's key failed (the key missing, unusable, or refused by GitHub). It fires after the
+          push, whenever an isolate mints from the new key, including after the old key's
+          deletion, so it can show on some requests and not others for up to 55 minutes.
+        handledBy: rec-lead
+      - id: rec-editor-fact
+        kind: fact
+        fact: "f:ogokfy"
+        use: |
+          Backs the editor symptom: with JavaScript a failed publish keeps the editor up with that
+          message and the text; opening an entry, or publishing from a page rendered without
+          JavaScript, ends on the error page with status 500; the action wrapper logs
+          `admin.action.failed` with `action: 'publish'` and the error's message
+          (`GitHub installation token failed: <status>` for a refused key). Omit the load and
+          `use:enhance` mechanics.
+      - id: rec-editor-timing
+        kind: fact
+        fact: "f:vg42j3"
+        use: |
+          Backs the cause's timing only: a cold isolate mints from the current key, and a warm one
+          keeps its cached token until the entry expires, up to 55 minutes.
+      - id: rec-logs
+        kind: reason
+        text: |
+          Why the logs are read by these events: the failed publish is recorded as
+          `admin.action.failed`, and the admin shell's best-effort read records
+          `github.unreachable` with `scope: 'shell'`; `commit.failed` and `publish.failed` come only
+          from the commit step, so neither is the query for a key GitHub refuses.
+      - id: rec-logs-fact
+        kind: fact
+        fact: "f:7u49xs"
+        use: |
+          Only two clauses: the admin shell's pending count logs `github.unreachable` with
+          `scope: 'shell'` and degrades instead of failing, and `commit.failed` and
+          `publish.failed` come only from the commit catch. Omit the count of read sites and the
+          help and advisories scopes (the log events reference lists them).
+      - id: rec-logs-observability
+        kind: fact
+        fact: "f:prb2os"
+        use: |
+          Only the empty-log clause: without `observability.enabled` the Worker writes nothing to
+          Workers Logs, so an empty query on such a site proves nothing.
+      - id: rec-log-events-link
+        kind: link
+        target: ../reference/log-events.md
+      - id: rec-lead
+        kind: sentence
+        mode: verbatim
+        text: |
+          Work through these in order.
+      - id: x-not-configured
+        kind: failure
+        symptom: |
+          `/healthz` answers 503 with the `githubAppSigning` detail
+          `GITHUB_APP_PRIVATE_KEY_B64 is not configured`.
+        cause: |
+          The Worker holds no key.
+        handledBy: rec-push-link
+      - id: rec-details
+        kind: fact
+        fact: "f:5dwnh1"
+        use: |
+          Only the failure details: a failing signing check reports `detail` as
+          `GITHUB_APP_PRIVATE_KEY_B64 is not configured`, `key import or sign failed`, or
+          `malformed JWT`. Backs this row and the next.
+      - id: x-unusable
+        kind: failure
+        symptom: |
+          `/healthz` answers 503 with the detail `key import or sign failed` or `malformed JWT`.
+        cause: |
+          The secret is not a usable private key, for instance a file other than the new PEM file
+          was encoded.
+        handledBy: rec-push-link
+      - id: x-check-threw
+        kind: failure
+        symptom: |
+          `/healthz` answers 503 with the detail `health check failed`.
+        cause: |
+          The check itself threw; the anonymous route never shows the thrown message.
+        handledBy: rec-health-failed
+      - id: rec-health-failed
+        kind: fact
+        fact: "f:paotzb"
+        use: |
+          The handler for that row: the route catches a thrown error into a 503 with the fixed
+          detail `health check failed`, and `loadHealth` logs the thrown message as
+          `health.failed`, which the reader queries in Workers Logs. Only the thrown-error clause.
+      - id: x-wrong-key
+        kind: failure
+        symptom: |
+          `/healthz` answers 200, but its `fingerprint` does not match the one GitHub shows for the
+          new key.
+        cause: |
+          The Worker holds a different key from the one just generated.
+        handledBy: rec-push-link
+      - id: x-refused
+        kind: failure
+        symptom: |
+          `/healthz?live=1` answers 503 with the `githubAppToken` detail `key_refused`.
+        cause: |
+          GitHub refused the key (it answered 401).
+        handledBy: rec-route-claim
+      - id: rec-live-details
+        kind: fact
+        fact: "f:1pb077"
+        use: |
+          Backs this row and the next: a failed live mint reports `detail` as `key_refused` (401),
+          `installation_not_found` (404), `installation_suspended` (403), or `unreachable` (any
+          other status, a network failure, or a timeout), and logs `github.unreachable` with
+          `scope: 'health'` and the class as `reason`. Omit the rate bound and the shared mint.
+      - id: x-not-key
+        kind: failure
+        symptom: |
+          `/healthz?live=1` answers 503 with the detail `installation_not_found`,
+          `installation_suspended`, or `unreachable`.
+        cause: |
+          The failure lies with the App's installation or with reaching GitHub, not with the key.
+        handledBy: rec-loadhealth-link
+      - id: rec-loadhealth-link
+        kind: link
+        target: ../reference/sveltekit.md#loadhealth
+      - id: x-not-key-failure
+        kind: failure
+        symptom: |
+          Both checks pass and the fingerprint matches, but a publish still fails.
+        cause: |
+          The failure is not the key's.
+        handledBy: rec-debug-link
+      - id: rec-debug-link
+        kind: link
+        target: debug-your-site.md#read-the-structured-logs
+      - id: rec-push-link
+        kind: link
+        target: "#push-the-new-key-to-the-worker"
+      - id: rec-handoff
+        kind: handoff
+        text: |
+          Lead into the two recovery routes, naming the condition that picks each.
+  - heading: Roll back to the old key
+    level: 3
+    opens: |
+      Until the old key is deleted, pushing it again with the same command restores signing with
+      it immediately.
+    items:
+      - id: rb-fact
+        kind: fact
+        fact: "f:sszb7b"
+        use: |
+          Backs the opening: re-pushing the old key's base64 value with the same
+          `wrangler secret put` command restores signing with it at once, as long as the old key is
+          undeleted.
+      - id: s-rollback
+        kind: step
+        text: |
+          If the old key is still on the App and you hold its PEM file, in the site's directory
+          run the push command for your platform with the old key's file.
+        requires: [new-key-pushed]
+        produces: [old-key-restored]
+      - id: rb-push-link
+        kind: link
+        target: "#push-the-new-key-to-the-worker"
+      - id: s-rollback-delete
+        kind: step
+        text: |
+          On the App's settings page on GitHub, delete the failed key.
+        requires: [old-key-restored]
+        produces: [failed-key-removed]
+      - id: rb-restart
+        kind: handoff
+        text: |
+          Say that the site now publishes on the old key, and that the rotation starts again at
+          Generate a new key once the failure is understood.
+      - id: rb-restart-link
+        kind: link
+        target: "#generate-a-new-key"
+  - heading: Generate a third key
+    level: 3
+    opens: |
+      A third key replaces a failed key after the old key's deletion, or before it when no copy of
+      the old key's PEM file exists.
+    items:
+      - id: third-fact
+        kind: fact
+        fact: "f:lg2ae8"
+        use: |
+          Backs the opening: GitHub does not restore a deleted key, so with the old key gone and the
+          new one failing, a third key is generated instead.
+      - id: s-third-generate
+        kind: step
+        text: |
+          Generate another key, as Generate a new key describes.
+        requires: [app-settings-access]
+        produces: [third-key-file]
+      - id: s-third-push
+        kind: step
+        text: |
+          Push it, as Push the new key to the Worker describes.
+        requires: [third-key-file]
+        produces: [third-key-pushed]
+      - id: s-third-verify
+        kind: step
+        text: |
+          Run the checks in Verify the new key.
+        requires: [third-key-pushed]
+        produces: [third-key-confirmed]
+        canFail: true
+      - id: x-third-verify
+        kind: failure
+        from: s-third-verify
+        symptom: |
+          A check fails for the third key.
+        cause: |
+          The same causes as for the first new key.
+        handledBy: rec-lead
+      - id: s-third-delete-failed
+        kind: step
+        text: |
+          On the App's settings page on GitHub, delete the key that failed.
+        requires: [third-key-confirmed]
+        produces: [failed-key-deleted]
+      - id: s-third-delete-old
+        kind: step
+        text: |
+          If the old key is still on the App, delete it as Delete the old key describes.
+        requires: [failed-key-deleted]
+        produces: [rotation-complete]
+  - heading: See also
+    opens: |
+      The following pages cover the App's registration, the key's custody, and the references and
+      vendor pages behind the steps.
+    items:
+      - id: sa-register
+        kind: link
+        target: add-cairn-to-a-sveltekit-app.md#register-the-github-app
+      - id: sa-reach
+        kind: link
+        target: security-model.md#the-github-apps-reach
+      - id: sa-loadhealth
+        kind: link
+        target: ../reference/sveltekit.md#loadhealth
+      - id: sa-log-events
+        kind: link
+        target: ../reference/log-events.md
+      - id: sa-github
+        kind: link
+        target: https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps
+      - id: sa-secrets
+        kind: link
+        target: https://developers.cloudflare.com/workers/configuration/secrets/
+dispositions:
+  - fact: "f:nls26c"
+    disposition: subordinated
+    reference: scaffolded-site-files.md#devvarsexample
+    reason: |
+      The contents of the scaffold's `.dev.vars.example` belong to the scaffold's file reference.
+      This page needs only that local `wrangler dev` reads `.dev.vars` (`f:86h9o6`), and the
+      target section states the file's purpose but still lists the retired `GITHUB_APP_ID` and
+      `GITHUB_APP_INSTALLATION_ID` (filed in friction).
+  - fact: "f:772sb6"
+    disposition: cut
+    reason: |
+      Off this page's job: the reseed of a refused save's body on a page rendered without
+      JavaScript governs validation refusals, and for this page's token failure the no-JavaScript
+      path ends on the error page instead (`f:ogokfy`). Its home is the editors arm (the editor's
+      failed-save behavior), which no outline lists yet.
+  - fact: "f:tqafd9"
+    disposition: cut
+    reason: |
+      Off this page's job: the enhanced form's handling of a network failure, a throw, or an
+      expired session is the editor's general failure behavior, and the token failure's JavaScript
+      path is carried by `f:ogokfy`. Its home is the editors arm, which no outline lists yet.
+  - fact: "f:orz556"
+    disposition: cut
+    reason: |
+      Tagged [rejected]: `/healthz` is not a bare liveness check; it runs the signing self-test and
+      answers 503 on a failure, which `f:paotzb` and `f:5dwnh1` carry. Never placed.
+constraints:
+  - |
+    Re-arm (stage 2b, context healthz): The `/healthz` 503 and fingerprint, `?live=1`, and a
+    failed publish that stays in the editor.
+  - |
+    Write the route's status as 200 on a pass and 503 on a failure. Never say the route answers
+    200 when the check fails; the earlier page and `docs/extend/scaffolded-site-files.md` still
+    say so, and both are stale.
+  - |
+    Never use a publish as the verification signal, and never tell the reader to wait 55 minutes
+    before deleting the old key: the live check bypasses the cache. The cache explains why a
+    publish proves nothing in that window and why an editor-visible failure can lag the push.
+  - |
+    Never claim whether deleting a key on GitHub affects an installation token already minted with
+    it; no fact states it (gap filed in friction).
+  - |
+    Never claim how PowerShell encodes a string piped to a native command, never say a PowerShell
+    `Out-File` file matches or fails against the Node form's output, and never give a reason for
+    the one-line form beyond what the Worker reads. State `f:dbue4k`'s version difference only.
+  - |
+    Never say the GNU `base64 -w 0` form, or any form, works on macOS other than the Node form;
+    the page shows the Node form for Linux and macOS and the PowerShell form for Windows.
+  - |
+    Never describe polling `/healthz?live=1` from an uptime monitor; the rate bound lives on the
+    `loadHealth` reference entry.
+  - |
+    Vendor specifics get a link, never a copy: GitHub's settings navigation, where GitHub shows a
+    key's fingerprint, the key limit, and the PEM form; Cloudflare's Workers Logs interface and
+    the gradual-deployments command's details.
+  - |
+    The Warning notice sits at the Generate step and carries only that the downloaded file is the
+    only copy of the private key; the one-key ordering rule is prose outside the notice.
+  - |
+    Placeholders: `path/to/new-key.pem` in the Node form (no `~` inside the JavaScript string),
+    a full Windows path in the PowerShell form, and `<your-site>` for the address. Every command
+    uses `npx wrangler`.
+  - |
+    Write the route as `/healthz` at the site root, never `/admin/healthz`. Name the setup command
+    `create-cairn-site` on first mention, then the setup command.
+  - |
+    The editor's failure message is quoted exactly as `f:ogokfy` gives it, in a code span or as
+    screen text.
+  - |
+    Each step names its location before its action and holds one action; a conditional step
+    states its condition first; Verify's three checks and Recover's diagnostic rows are numbered
+    lists. A reference names its target by heading, never by position.
+  - |
+    The two not-covered pages (add-cairn, security-model) also appear in See also. The recovery
+    link to `docs/extend/debug-your-site.md` stays in Recover from a failed key and is not
+    repeated in See also.
+  - |
+    The verbatim lead-in "Work through these in order." carries no extractable fact.
+friction:
+  - |
+    f:orz556 is tagged [rejected] (`/healthz` as a bare liveness check); cut, never placed. Plan
+    excerpt: `- fact: "f:orz556"` under dispositions.
+  - |
+    Added beyond the outline list, each [verified] and on this page's job: f:h252kb (the
+    `fingerprint` the re-arm's done text names), f:1pb077 (`?live=1`, the immediate proof of
+    acceptance), and f:72yc97 (a scaffolded site keeps no copy of the key, so its recovery is a
+    third key). The outline's factIds predate the fingerprint and live check.
+  - |
+    gap: the introduction's "when and why" has no occasion beyond "keys never expire, so the
+    developer chooses". The container's f:s90j7l (GitHub names a compromised key as the occasion)
+    is [external] and outside the outline list, and the project rule names only [verified]
+    additions, so the plan does not place it. The facts pass should add it to the outline's list.
+  - |
+    gap: whether deleting a key on GitHub invalidates an installation token already minted with it
+    is in no fact, so the page cannot say whether the deletion disturbs a warm isolate's cached
+    token in the 55-minute window.
+  - |
+    gap: no fact verifies the PowerShell form end to end (how Windows PowerShell 5.1 and 7 encode a
+    string piped to a native command such as `npx`).
+  - |
+    departure: the outline's verify cover ("Verify signing: /healthz, Workers Logs with
+    observability on, github.unreachable") is split. `/healthz`, the fingerprint, and `?live=1` form
+    Verify; Workers Logs and `github.unreachable` move to Recover's diagnostics, since the live
+    check now proves acceptance at once. The covers' GNU `base64` form is dropped (the Node form
+    serves Linux and macOS, and f:z97ilc is outside the list).
+  - |
+    docs drift: f:ejuoh6 names "a real publish from the deployed Worker" as the confirming signal;
+    `/healthz?live=1` (f:1pb077) now confirms acceptance without the 55-minute wait. The plan's
+    `use` takes only the order (intro-order).
+  - |
+    docs drift: f:7u49xs says `github.unreachable` is logged from "exactly three" read sites; the
+    live check adds a fourth, `scope: 'health'` (`src/lib/sveltekit/health.ts:91`). The plan's
+    `use` omits the count (rec-logs-fact).
+  - |
+    reference-arm friction: `docs/extend/scaffolded-site-files.md` "`.dev.vars.example`" (lines
+    160-166) still lists `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID`, contradicting
+    f:nls26c, to which f:nls26c is subordinated; and its "Endpoints at the root" section (lines
+    366-371) says `/healthz` answers 200 even on failure, contradicting f:paotzb.
+  - |
+    reference-arm friction: `docs/reference/sveltekit.md` `loadHealth` says a caller waits "at most
+    5 seconds" for the shared mint; f:1pb077 and `src/lib/sveltekit/health.ts:61,67` give 5.5
+    seconds (5-second abort plus 500 ms grace).
+  - |
+    crossLink: `docs/extend/debug-your-site.md` carries no row for a signing failure after a
+    rotation (the crossLink's stated purpose), so the plan links its "Read the structured logs"
+    section from Recover's last row and keeps the key diagnostics on this page.
+  - |
+    format: the rollback step needs the old key's PEM file, a state only some readers hold. With
+    no conditional token or optional step, the plan states the condition in s-rollback's text and
+    has it require only `new-key-pushed`.
+  - |
+    format: x-refused has two handlers (roll back or a third key) and `handledBy` takes one id, so
+    it points at the claim sentence rec-route-claim that names both routes.

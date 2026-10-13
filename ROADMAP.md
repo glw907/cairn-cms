@@ -373,6 +373,13 @@ The original decision framing, for the record:
   - The friction entries the chain filed in `docs/internal/docs-friction-log.md` are untriaged.
     Trigger: 2b's close.
 
+- **The docs review page can't show a YAML page plan (drafter Pass 0 triage, Geoff, 2026-10-12;
+  "now", glw907/workstation#36).** `scripts/docs-review/embed.mjs#planPathFor` builds only
+  `<slug>.plan.md`, so a page whose plan is `<slug>.plan.yaml` reaches the review page with no plan.
+  The chain's YAML plan default ships when drafter Pass 0 merges, and stage 2b part 2 writes all 11
+  extend plans as `.plan.yaml`. Trigger (Geoff's ruling): this lands before the next chain run that
+  uses YAML plans. Fix: resolve `.plan.yaml` first, fall back to `.plan.md`, and render the YAML
+  readably on the review page.
 - **Docs tooling before stage 2b: the residue (pre-2b tooling pass, 2026-10-12).** The pass fixed
   the register, `check:snippets`, `check:provenance`, `check:symbols`, `link:consumer`, and
   `check:facts`, moved `.ts` fact pointers to `path#Symbol`, and fixed the chain's prompts and the

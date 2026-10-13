@@ -6,7 +6,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 ## docs/why-cairn.md
 - `f:wvediq` cairn is a lean, opinionated CMS that makes a non-technical author productive editing raw markdown on a SvelteKit + Cloudflare site, and it is also a starting framework and an admin skeleton, a developer's base for appending their own functionality. Key phrase: "lean, opinionated CMS". Source: `docs/internal/what-cairn-is-and-is-not.md:11-14`. [verified]
 - `f:0ij7do` With the zero-config default, an editor signs in from an emailed link, no GitHub account, no
-  password. Source: `src/lib/auth-channel/`, `src/lib/env.ts` (AUTH_DB binding backs the magic-link
+  password. Source: `src/lib/auth/store.ts`, `src/lib/env.ts` (AUTH_DB binding backs the magic-link
   session store); CLAUDE.md, "magic-link". [verified]
 - `f:8289h7` Behind Cloudflare Access, or any reverse proxy that authenticates the request before it reaches the Worker, an editor signs in through the site's own identity gate instead of magic-link: a site sets the guard's `identity` resolver, which replaces session-cookie resolution. Source: `src/lib/sveltekit/guard.ts#AuthGuardConfig`, "Replace magic-link session resolution with the site's own identity gate (Cloudflare Access". [verified]
 - `f:dl1trb` The live preview renders through the exact function the public site uses. Source:

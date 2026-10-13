@@ -372,6 +372,23 @@ The original decision framing, for the record:
     consistency read.
   - The friction entries the chain filed in `docs/internal/docs-friction-log.md` are untriaged.
     Trigger: 2b's close.
+  - The page plans' deferrals (PR #122 triage, Geoff, 2026-10-12; submitted unchanged):
+    - Pages that contradict corrected facts (restrict-admin-access, scaffolded-site-files,
+      debug-your-site, security-model, add-a-second-sign-in-group, add-cairn, upgrade-cairn, and
+      three reference pages). The plans carry each as `drift:` friction. Trigger: each page's
+      rebuild in part 2, the reference pages through the reference-arm corrections.
+    - The outline's `debug-your-site` cover 8 says the site-facts check reports `current`; the code
+      returns `skipped`. Trigger: part 2's outline step.
+    - Facts the plans need and the container lacks (the plans' `gap:` friction entries, and
+      `f:s90j7l` and `f:z97ilc` as outline ids). Trigger: a facts pass before the drafting run.
+    - Mixed-vendor `[verified]` bullets `f:0gltjq`, `f:2glcaf`, and `f:33upyd`; each plan restricts
+      them with `use`. Trigger: the same facts pass.
+    - Non-blocking plan-read findings left unfolded (for example the signups markup in
+      `add-a-custom-admin-screen`). Trigger: the drafting run's plan read.
+    - Admin-track facts cut rather than subordinated, since no outline lists an admin page.
+      Trigger: the admin arm's outline.
+    - Cross-plan anchor and crossLink-purpose checks, which `check-plan` does not run. Trigger:
+      part 2's consistency read.
 
 - **The docs review page can't show a YAML page plan (drafter Pass 0 triage, Geoff, 2026-10-12;
   "now", glw907/workstation#36).** `scripts/docs-review/embed.mjs#planPathFor` builds only

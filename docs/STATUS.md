@@ -20,9 +20,9 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 
 Stage 2b part 2 continues with drafting. The 11 page plans exist, written in drafter's plan format v1
 under `internal/briefs/extend/` and `internal/briefs/claude-code/` (ten extend pages and "Using Claude
-Code with cairn"), each with 0 errors from `drafter check-plan`. The pass record is
-`superpowers/research/2026-10-12-2b-part2-plans-record.md`. `conductor-cairn-cms` runs
-`drafter check-plan` on all 11 plans again once drafter's next release is installed. The drafting run
+Code with cairn"), each with 0 errors from `drafter check-plan` (drafter F1, both outlines). The pass record is
+`superpowers/research/2026-10-12-2b-part2-plans-record.md`, and the plans' deferrals sit in the
+ROADMAP entry "Stage 2b part 2". The drafting run
 that follows, through drafter, retires the 10 `.plan.md` files, registers the `claude-code` arm in the
 gates, and adds that arm's track entry to `docs-register.md`. Then comes the rest of part 2: the
 relinks and `LEGACY_PATH_MAP` repoints, the reference-arm corrections, the final arm index, the

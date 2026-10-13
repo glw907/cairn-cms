@@ -26,8 +26,7 @@ introduction:
     while the old key remains and by a third key after it is gone. It names the two readers who
     arrive: one rotating on purpose, who follows the page top to bottom, and one whose new key
     already fails, whom it sends to Recover from a failed key. Who it is for: a developer with a
-    terminal, Wrangler, and edit access to the App's settings on GitHub. The facts behind the
-    model are the fact items placed first under Before you begin.
+    terminal, Wrangler, and edit access to the App's settings on GitHub.
   priorKnowledge: |
     A developer comfortable in a terminal on their platform, with `npx wrangler` commands, and with
     querying Workers Logs in the Cloudflare dashboard. The page explains none of these, and it
@@ -37,6 +36,7 @@ introduction:
     first key (Add cairn to a SvelteKit app, or the setup command for a scaffolded site); why the
     key lives only as a Worker secret and what its installation token can write (Security model).
     A scope sentence may name the page.
+  facts: ["f:ixr3ny", "f:zoekqt", "f:ejuoh6"]
 orderReason: |
   The order follows what each step depends on and what cannot be undone, not the outline's covers
   inventory. The two-key model and the zero-downtime order (cover 1) move into the introduction,
@@ -77,13 +77,6 @@ sections:
           Backs the introduction's model only: an App holds more than one private key at once, a
           new key does not invalidate the old, and the App keeps signing with any key until it is
           deleted by hand. Not restated in this section.
-      - id: intro-no-expiry
-        kind: fact
-        fact: "f:zoekqt"
-        use: |
-          Backs the introduction's sentence that keys do not expire and are removed only by hand,
-          so a key is replaced only when the developer chooses. Only that clause; omit the settings
-          navigation, the 25-key limit, and the PKCS#1 form.
       - id: intro-order
         kind: fact
         fact: "f:ejuoh6"
@@ -232,7 +225,6 @@ sections:
           one unwrapped line piped to `wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`.
       - id: push-node-code
         kind: code
-        source: ../../packages/create-cairn-site/src/cloudflare/secret.mjs
         text: |
           Illustrative, modeled on the setup command's encode and push: a bash block running
           `node -e "process.stdout.write(require('fs').readFileSync('path/to/new-key.pem').toString('base64'))"`
@@ -255,7 +247,6 @@ sections:
           `utf8NoBOM`.
       - id: push-ps-code
         kind: code
-        source: ../../packages/create-cairn-site/src/cloudflare/secret.mjs
         text: |
           Illustrative, modeled on Microsoft's `[Convert]::ToBase64String` and
           `[IO.File]::ReadAllBytes` samples (the .NET `Convert.ToBase64String` reference): a
@@ -335,7 +326,6 @@ sections:
         canFail: true
       - id: ver-healthz-code
         kind: code
-        source: ../../templates/waymark/src/routes/healthz/+server.ts
         text: |
           Illustrative: a bash block, `curl https://<your-site>/healthz`, then a json block of the
           expected answer, `{"ok":true,"checks":{"githubAppSigning":{"ok":true,"fingerprint":"SHA256:<base64>"}}}`.
@@ -510,6 +500,7 @@ sections:
           `admin.action.failed`, and the admin shell's best-effort read records
           `github.unreachable` with `scope: 'shell'`; `commit.failed` and `publish.failed` come only
           from the commit step, so neither is the query for a key GitHub refuses.
+        facts: ["f:ogokfy", "f:7u49xs"]
       - id: rec-logs-fact
         kind: fact
         fact: "f:7u49xs"
@@ -640,6 +631,7 @@ sections:
           run the push command for your platform with the old key's file.
         requires: [new-key-pushed]
         produces: [old-key-restored]
+        optional: true
       - id: rb-push-link
         kind: link
         target: "#push-the-new-key-to-the-worker"
@@ -649,6 +641,7 @@ sections:
           On the App's settings page on GitHub, delete the failed key.
         requires: [old-key-restored]
         produces: [failed-key-removed]
+        optional: true
       - id: rb-restart
         kind: handoff
         text: |
@@ -708,6 +701,7 @@ sections:
           If the old key is still on the App, delete it as Delete the old key describes.
         requires: [failed-key-deleted]
         produces: [rotation-complete]
+        optional: true
   - heading: See also
     opens: |
       The following pages cover the App's registration, the key's custody, and the references and
@@ -838,30 +832,26 @@ friction:
     check now proves acceptance at once. The covers' GNU `base64` form is dropped (the Node form
     serves Linux and macOS, and f:z97ilc is outside the list).
   - |
-    docs drift: f:ejuoh6 names "a real publish from the deployed Worker" as the confirming signal;
+    drift: f:ejuoh6 names "a real publish from the deployed Worker" as the confirming signal;
     `/healthz?live=1` (f:1pb077) now confirms acceptance without the 55-minute wait. The plan's
     `use` takes only the order (intro-order).
   - |
-    docs drift: f:7u49xs says `github.unreachable` is logged from "exactly three" read sites; the
+    drift: f:7u49xs says `github.unreachable` is logged from "exactly three" read sites; the
     live check adds a fourth, `scope: 'health'` (`src/lib/sveltekit/health.ts:91`). The plan's
     `use` omits the count (rec-logs-fact).
   - |
-    reference-arm friction: `docs/extend/scaffolded-site-files.md` "`.dev.vars.example`" (lines
+    drift: `docs/extend/scaffolded-site-files.md` "`.dev.vars.example`" (lines
     160-166) still lists `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID`, contradicting
     f:nls26c, to which f:nls26c is subordinated; and its "Endpoints at the root" section (lines
     366-371) says `/healthz` answers 200 even on failure, contradicting f:paotzb.
   - |
-    reference-arm friction: `docs/reference/sveltekit.md` `loadHealth` says a caller waits "at most
+    drift: `docs/reference/sveltekit.md` `loadHealth` says a caller waits "at most
     5 seconds" for the shared mint; f:1pb077 and `src/lib/sveltekit/health.ts:61,67` give 5.5
     seconds (5-second abort plus 500 ms grace).
   - |
     crossLink: `docs/extend/debug-your-site.md` carries no row for a signing failure after a
     rotation (the crossLink's stated purpose), so the plan links its "Read the structured logs"
     section from Recover's last row and keeps the key diagnostics on this page.
-  - |
-    format: the rollback step needs the old key's PEM file, a state only some readers hold. With
-    no conditional token or optional step, the plan states the condition in s-rollback's text and
-    has it require only `new-key-pushed`.
   - |
     format: x-refused has two handlers (roll back or a third key) and `handledBy` takes one id, so
     it points at the claim sentence rec-route-claim that names both routes.

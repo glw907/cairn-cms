@@ -35,7 +35,7 @@ introduction:
     media library and the example site's signups screen). It names the readers who arrive: one
     gating a custom screen's route, one closing an engine screen such as the media library to most
     editors, and one who wants the map to admit named roles alone, whom it points to Make the map
-    exhaustive. The facts behind the model are the intro fact items placed under Before you begin.
+    exhaustive.
   priorKnowledge: |
     A Svelte-fluent developer: SvelteKit server hooks, `load` functions, form actions, and route
     ids with their groups and parameters; the site's adapter module; and a Workers Logs query, for
@@ -47,6 +47,7 @@ introduction:
     (Arrange the admin sidebar); a role that signs in but reaches no engine content, a `none` role
     for a second sign-in group (Add a second sign-in group); and moving an older site's map off its
     hooks onto the adapter (Upgrade cairn). A scope sentence may name the page.
+  facts: ["f:p1xmp5", "f:zjglk8", "f:cvzb8z"]
 orderReason: |
   The order follows what each step depends on, not the outline's covers inventory. The capability
   floor and the narrowing model move into the introduction, because the reader needs the model
@@ -83,19 +84,6 @@ sections:
       The steps need a site with a custom admin screen, and the checks need a deployed site you can
       redeploy and a second person to sign in as.
     items:
-      - id: intro-floor
-        kind: fact
-        fact: "f:p1xmp5"
-        use: |
-          Backs the introduction's model only: capability is the floor cairn enforces, the map
-          narrows what an owner or editor capability permits, and the one widening is a `none`
-          role that a route rule naming it admits. Not restated in this section.
-      - id: intro-role-capability
-        kind: fact
-        fact: "f:zjglk8"
-        use: |
-          Backs the introduction's sentence that each role resolves to one capability, `owner`,
-          `editor`, or `none`. Not restated in this section.
       - id: intro-one-declaration
         kind: fact
         fact: "f:cvzb8z"
@@ -335,7 +323,6 @@ sections:
           route half; the comparison waits for Decide what the map leaves open.
       - id: map-code
         kind: code
-        source: ../../examples/showcase/src/theme/cairn.config.ts
         text: |
           An illustrative excerpt of the adapter module, marked as an excerpt for the snippet
           check: `defineAdapter`, `defineAccess`, and `defineRoles` imported from
@@ -482,6 +469,7 @@ sections:
           route with no such action skips this step.
         requires: [actions-gated]
         produces: [owner-gated]
+        optional: true
       - id: enf-handoff
         kind: handoff
         text: |
@@ -521,6 +509,7 @@ sections:
           names.
   - heading: Make the map exhaustive
     level: 3
+    anchor: make-the-map-exhaustive
     opens: |
       To admit only named roles to every engine screen, map every concept and fixed screen until
       `config.access_unmapped` no longer fires.
@@ -533,6 +522,7 @@ sections:
           skips this step.
         requires: [map-declared]
         produces: [map-exhaustive]
+        optional: true
       - id: exh-exceptions
         kind: fact
         fact: "f:cvv6to"
@@ -580,12 +570,14 @@ sections:
           Any other route skips this step and the next.
         requires: [load-gated]
         produces: [load-target-declared]
+        optional: true
       - id: s-nest-action-target
         kind: step
         text: |
           In the same file, set `target` to the same key in each section action's options.
         requires: [load-target-declared, actions-gated]
         produces: [action-target-declared]
+        optional: true
       - id: nest-handoff
         kind: handoff
         text: |
@@ -657,6 +649,7 @@ sections:
           file skips this step.
         requires: [deployed-site]
         produces: [roles-migration-present]
+        optional: true
       - id: dep-copy-apply
         kind: fact
         fact: "f:xxtooz"
@@ -669,7 +662,7 @@ sections:
         text: |
           In the project directory, apply pending migrations to the auth database with
           `npx wrangler d1 migrations apply <auth-database-name> --remote`.
-        requires: [roles-migration-present]
+        requires: [deployed-site]
         produces: [roles-migrated]
       - id: dep-paths
         kind: sentence
@@ -1219,7 +1212,7 @@ constraints:
     starting map in Declare the access map.
   - |
     Keep the heading "Make the map exhaustive" stable: `docs/extend/security-model.md` sends a
-    reader here for the steps of an exhaustive map, and a later edit may anchor there.
+    reader here for the steps of an exhaustive map.
   - |
     No manufactured scenario beyond the running example: the introduction states who arrives and
     why without inventing an organization or its people.
@@ -1275,12 +1268,3 @@ friction:
     Not placed, flagged for the facts pass: `f:a9zcj9` (a scaffolded site has no `+error.svelte`
     under `src/routes/admin`) contradicts `f:ty4ehh` and `f:qtm9y2`;
     `templates/waymark/src/routes/admin/+error.svelte` exists. The plan uses `f:ty4ehh`.
-  - |
-    The intro facts sit in Before you begin as fact items whose `use` names the introduction,
-    since `introduction.facts` does not exist; `f:p1xmp5`, `f:zjglk8`, and `f:cvzb8z` are each
-    placed twice for that reason.
-  - |
-    Conditional steps (the owner-only flag, the exhaustive map, the nested-route target, the
-    migration copy, the two redeploy paths) carry their skip in step prose, since steps cannot be
-    marked optional; the two redeploy paths both produce `changes-deployed`, and the Workers
-    Builds step's text sends the Wrangler reader to the next two steps.

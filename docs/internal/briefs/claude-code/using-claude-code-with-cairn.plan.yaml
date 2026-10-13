@@ -13,6 +13,7 @@ argument: |
   `Stop` hook and, if they want it, a CI gate), and how `cairn-guidance install` and
   `cairn-guidance check` report what they did, since `install` exits 0 even on a partial run.
 introduction:
+  facts: ["f:pmmtrm"]
   covers: |
     How to work on a cairn site with Claude Code: the guidance tree cairn installs under
     `.claude/` and the root `CLAUDE.md` that imports it, which of the four packaged skills loads
@@ -63,6 +64,8 @@ orderReason: |
 preconditions:
   - cairn-site
   - claude-code
+  - guidance-tree
+  - import-line
 sections:
   - heading: Before you begin
     opens: |
@@ -125,6 +128,7 @@ sections:
           The site's own guidance for Claude Code belongs under `# Your site` in the root
           `CLAUDE.md`, because that file is the site's and the fragment under `.claude/cairn/` is
           the package's to refresh.
+        facts: ["f:6ro1n9"]
       - id: f-tree-version
         kind: fact
         fact: "f:dy5cfj"
@@ -200,6 +204,7 @@ sections:
         requires: [cairn-site]
         produces: [guidance-tree]
         canFail: true
+        optional: true
       - id: f-install-root
         kind: fact
         fact: "f:6ro1n9"
@@ -212,6 +217,7 @@ sections:
           If the root `CLAUDE.md` lacks it, add `@.claude/cairn/CLAUDE.md` as its first line.
         requires: [guidance-tree]
         produces: [import-line]
+        optional: true
       - id: c-import
         kind: code
         source: ../../claude/snippets/claude-md-import.txt
@@ -342,6 +348,7 @@ sections:
           remove its `continue-on-error: true` line.
         requires: [guidance-tree]
         produces: [ci-gate]
+        optional: true
       - id: r-ci-both
         kind: reason
         text: |
@@ -356,6 +363,7 @@ sections:
         text: |
           Removing `continue-on-error: true` is a trade: beside a stale or missing tree, a crash
           or a resolution failure of the check then fails the build too.
+        facts: ["f:jd54ph"]
       - id: h-ci
         kind: handoff
         text: |
@@ -417,6 +425,7 @@ sections:
           If you gated CI, push a commit from the project root, and read the guidance check's
           line in the `check` job's log.
         requires: [ci-gate]
+        optional: true
       - id: h-verify
         kind: handoff
         text: |
@@ -576,11 +585,11 @@ constraints:
     a fact; the drafter words them no wider than that page states.
 friction:
   - |
-    Register: `docs/internal/docs-register.md` has no `claude-code` track entry (profile, base
+    gap: `docs/internal/docs-register.md` has no `claude-code` track entry (profile, base
     guide, vocabulary, arrival state). This plan takes the extend track's reader profile as the
     baseline, per the outline's `job`. The entry lands with the page's drafting, not this pass.
   - |
-    Gates: no gate registers the `claude-code` arm yet. ARM_NAMES, ARM_DIRS, the arm-index
+    gap: no gate registers the `claude-code` arm yet. ARM_NAMES, ARM_DIRS, the arm-index
     check, package-files, snippets, symbols, visuals, leaks, the links check, and `package.json`
     `files` all need the new `docs/claude-code/` directory before the page can ship. These land
     with the page's drafting.
@@ -645,12 +654,3 @@ friction:
     no `cairn-guidance` row. Plan items `x-refused`, `x-write`, `x-wiring`, `x-orig`, and
     `x-tailwind` are handled by links to `docs/reference/guidance.md` instead, and `x-stale` and
     `x-import` by this page's own steps.
-  - |
-    Format: the `introduction` mapping has no fact slot, so the introduction's one line on other
-    agents (f:pmmtrm) cannot be placed there. The plan places f:pmmtrm in "The guidance tree" as
-    `f-tree-only-claude`, with a `use` saying it also backs the introduction.
-  - |
-    Format: `preconditions` cannot express an either-or state. A scaffolded site arrives with
-    `guidance-tree` and `import-line` already true, but the plan must have `s-install` and
-    `s-import` produce them, so the install section's `opens` tells a scaffolded reader to skip
-    it.

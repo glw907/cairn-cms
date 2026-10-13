@@ -16,6 +16,7 @@ argument: |
   promises across versions. The reader leaves knowing which code is theirs, which contracts they
   lean on, and what an engine update can move.
 introduction:
+  facts: ["f:i74t7g", "f:3rb362", "f:cjonmm", "f:pgy0mr", "f:bhyvqg", "f:gknz29"]
   covers: |
     The introduction starts from the general model before any part of it. A cairn site is built to
     run on Cloudflare Workers; its admin and public pages are SvelteKit route files whose behavior
@@ -109,6 +110,18 @@ sections:
           data, and domain logic a site needs beyond that belong to the developer, who hands them
           to the engine through a thin seam rather than a built-in feature.
         facts: ["f:bhyvqg", "f:99f221"]
+      - id: ad-boundary-governing
+        kind: fact
+        fact: "f:bhyvqg"
+        use: |
+          Only the boundary claim that backs the sentence above: what the engine owns and what
+          belongs to the developer.
+      - id: ad-boundary-scope
+        kind: fact
+        fact: "f:99f221"
+        use: |
+          Only the claim that cairn is a CMS and an admin toolkit, not a platform, as the second
+          support for the sentence above.
       - id: ad-runtime
         kind: sentence
         mode: claim
@@ -118,6 +131,13 @@ sections:
           the same runtime to `createAuthGuard` or to the dev backend's `devBackendHandle`, so one
           declaration on the adapter serves every server handle.
         facts: ["f:3rb362", "f:f21bcz", "f:7cv105"]
+      - id: ad-runtime-dev
+        kind: fact
+        fact: "f:7cv105"
+        use: |
+          Only the claim that the dev backend's config takes the same composed runtime a site
+          hands `createAuthGuard`, so one declaration serves both handles. Omit the "earlier
+          versions" clause.
       - id: ad-handoff
         kind: handoff
         text: |
@@ -352,6 +372,7 @@ sections:
         text: |
           Because the engine's own screens and a site's own routes read one declaration, the two
           cannot be gated by different maps.
+        facts: ["f:cvzb8z"]
       - id: ra-editors
         kind: fact
         fact: "f:mbx6q1"
@@ -515,6 +536,7 @@ sections:
         text: |
           A guarded commit reads the head before any file its new contents are computed from, so a
           commit that lands in between makes it refuse rather than overwrite what it never read.
+        facts: ["f:0gihxq"]
       - id: cw-handoff
         kind: handoff
         text: |
@@ -956,9 +978,7 @@ constraints:
   - |
     f:0xxou5 is stated whole, condition and consequence, in one sentence.
   - |
-    The introduction has no items, so it states only facts that a body section places, and the
-    drafter's brief cites the same ids there: f:i74t7g, f:3rb362, f:cjonmm, f:pgy0mr, f:bhyvqg,
-    and f:gknz29. The introduction does not claim that the engine runs inside the site's one
+    The introduction states only facts that a body section places. It does not claim that the engine runs inside the site's one
     Worker, that it ships no CMS server, or that the setup command is the usual route, since no
     fact in this page's inventory carries those claims.
   - |
@@ -974,11 +994,6 @@ constraints:
   - |
     The seams table states no count of seams.
 friction:
-  - |
-    The `introduction` mapping holds only prose fields and no items, so facts the introduction
-    states (f:i74t7g, f:3rb362, f:cjonmm, f:pgy0mr, f:bhyvqg, f:gknz29) cannot be placed there. Workaround:
-    each is placed in a body section and a constraints entry names the ids the introduction
-    reuses.
   - |
     The outline's covers and the anatomy's introduction need facts the container holds but this
     page's inventory lacks, so the plan does not claim them: f:j0ut9n and f:4zpvor [verified]

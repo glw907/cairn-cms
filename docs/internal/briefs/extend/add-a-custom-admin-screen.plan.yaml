@@ -34,8 +34,7 @@ introduction:
     dialog-form, row-detail, and animation sections apply only to a screen with that feature. It
     routes a reader with another kind of markdown content to a concept instead (Define an adapter
     and schema), right after the model, since that is the decision the first reader may be
-    weighing. The facts behind these claims are the intro fact items placed under Before you
-    begin.
+    weighing.
   priorKnowledge: |
     A Svelte-fluent developer: SvelteKit routes, `load` functions, form actions, `enhance`, and
     server hooks (`handle` and `sequence`); Svelte 5 snippets and runes; Cloudflare D1 bindings in
@@ -49,6 +48,7 @@ introduction:
     your site); and the media upload protocol (Configure media). The first two are named
     sentences in the introduction; the remaining three are folded into one sentence that defers to
     See also. The audit norms' former values are not covered anywhere on the page.
+  facts: ["f:bhyvqg", "f:9xthnq", "f:2sd4if", "f:hcydfe", "f:326755", "f:onqm6k"]
 orderReason: |
   The order follows the build's dependencies, not the outline's covers inventory. Before you begin
   states the preconditions and draws the admin directory first (the Django exemplar's file tree
@@ -88,13 +88,6 @@ sections:
       The steps assume a scaffolded site, an access-map rule for the screen's route, a D1 database
       bound for the screen's data, and a D1 database prepared for the audit trail.
     items:
-      - id: intro-boundary
-        kind: fact
-        fact: "f:bhyvqg"
-        use: |
-          Backs the introduction's opening statement only: cairn owns markdown content and the
-          admin frame, and a site's own data and domain logic belong to the developer, served
-          through a thin seam rather than a built-in feature. Not restated in this section.
       - id: intro-toolkit
         kind: fact
         fact: "f:9xthnq"
@@ -102,26 +95,6 @@ sections:
           Backs the introduction's model sentence only: a developer's route under `/admin` renders
           as a child of `CairnAdminShell`, can adopt the admin toolkit, and sits behind the same
           `/admin` sign-in guard. Not restated in this section.
-      - id: intro-guard-split
-        kind: fact
-        fact: "f:2sd4if"
-        use: |
-          Backs the introduction's first "why" only: the guard gates the whole `/admin` subtree
-          and decides no per-route authorization.
-      - id: intro-git-history
-        kind: fact
-        fact: "f:hcydfe"
-        use: |
-          Backs the introduction's audit "why" only: an entry's history and attribution come from
-          git, which is why a screen's writes to its own database need the audit trail as their
-          record. State only the git-history half; the history screen and Revert stay off the
-          page.
-      - id: intro-audit-scope
-        kind: fact
-        fact: "f:326755"
-        use: |
-          Backs the introduction's audit-scope "why" only: the default scan scope names
-          `src/routes/admin`, so `cairn-audit` applies the engine's rules to a custom screen.
       - id: intro-worked-example
         kind: fact
         fact: "f:onqm6k"
@@ -193,6 +166,7 @@ sections:
         text: |
           The first step creates that directory.
   - heading: Place the route
+    anchor: place-the-route
     opens: |
       A route directory under `src/routes/admin/` is the whole registration: SvelteKit resolves it
       ahead of the engine's `[...path]` catch-all, and the shared admin layout renders it inside
@@ -260,6 +234,7 @@ sections:
           Listing the screen in the sidebar is a separate task; the route now needs its access
           check.
   - heading: Gate it
+    anchor: gate-it
     opens: |
       The screen enforces the site's access map itself, with `requireAccess` in its `load` and an
       access-checking wrapper around every action, because the auth guard admits a session to the
@@ -474,6 +449,7 @@ sections:
         text: |
           A `ctx.audit` call persists nothing until the site wires an audit sink.
   - heading: Wire the audit sink
+    anchor: wire-the-audit-sink
     opens: |
       A `ctx.audit` call persists a record only when `hooks.server.ts` sets an audit sink on
       `event.locals.cairnAuditSink`, composed with the auth guard through `sequence`.
@@ -528,7 +504,6 @@ sections:
         produces: [sink-wired]
       - id: sink-code
         kind: code
-        source: ../reference/sveltekit.md#created1auditsink
         text: |
           An excerpt of `src/hooks.server.ts`: the `wireAuditSink` handle from the
           `createD1AuditSink` entry's example (the `building` guard, `env.AUDIT_DB`, and the
@@ -674,6 +649,7 @@ sections:
           admin components reference lists the engine's components a screen can mount beside the
           toolkit, with each one's props.
   - heading: Style the screen
+    anchor: style-the-screen
     opens: |
       The screen's utility classes compile only through the site admin sheet, `src/admin.css`,
       which a scaffolded site already builds, and the admin's design reaches the screen through
@@ -814,6 +790,7 @@ sections:
           the dialog's heading.
         requires: [screen-markup]
         produces: [dialog]
+        optional: true
       - id: dialog-name
         kind: fact
         fact: "f:tskfz1"
@@ -826,6 +803,7 @@ sections:
           In the handler of the button that opens the dialog, call `showModal()`.
         requires: [dialog]
         produces: [dialog-opens]
+        optional: true
       - id: dialog-native
         kind: fact
         fact: "f:ho6dxa"
@@ -840,6 +818,7 @@ sections:
           and never inside a `<form method="dialog">`.
         requires: [dialog, forms-csrf]
         produces: [dialog-form]
+        optional: true
       - id: s-dialog-callback
         kind: step
         text: |
@@ -847,6 +826,7 @@ sections:
           `update()` on `'error'`.
         requires: [dialog-form]
         produces: [dialog-callback]
+        optional: true
       - id: dialog-error-reason
         kind: fact
         fact: "f:9fwsz5"
@@ -859,6 +839,7 @@ sections:
           In the form, mount an empty `role="alert"` paragraph for the failure message.
         requires: [dialog-form]
         produces: [dialog-alert]
+        optional: true
       - id: dialog-live-region
         kind: fact
         fact: "f:tkqoia"
@@ -872,18 +853,21 @@ sections:
           On the input, point `aria-describedby` at the alert paragraph.
         requires: [dialog-alert]
         produces: [input-described]
+        optional: true
       - id: s-dialog-invalid
         kind: step
         text: |
           On the same input, set `aria-invalid="true"` while its value is the failed one.
         requires: [input-described]
         produces: [input-invalid-state]
+        optional: true
       - id: s-dialog-pending
         kind: step
         text: |
           On the submit button, set `disabled` while the request is pending.
         requires: [dialog-form]
         produces: [submit-guarded]
+        optional: true
       - id: dialog-a11y
         kind: fact
         fact: "f:5vn194"
@@ -895,7 +879,6 @@ sections:
           since the message is visible in the dialog.
       - id: dialog-code
         kind: code
-        source: ../../examples/showcase/src/routes/admin/signups/+page.svelte
         text: |
           An illustrative create dialog that posts to the signups screen's `?/create` action: a
           `SubmitFunction` callback with the four branches, a pending flag, `<CsrfField />`, the
@@ -932,12 +915,14 @@ sections:
           row's detail as JSON.
         requires: [route-files]
         produces: [detail-route]
+        optional: true
       - id: s-detail-access
         kind: step
         text: |
           In that route's server file, call `requireAccess`.
         requires: [detail-route]
         produces: [detail-gated]
+        optional: true
       - id: row-nested
         kind: fact
         fact: "f:lmtfkt"
@@ -951,6 +936,7 @@ sections:
           describes.
         requires: [detail-route, access-rule]
         produces: [detail-mapped]
+        optional: true
       - id: row-restrict-link
         kind: link
         target: restrict-admin-access.md
@@ -960,6 +946,7 @@ sections:
           In the screen's markup, render each row as an `ExpandableRow` inside the `AdminTable`.
         requires: [screen-markup]
         produces: [expandable-rows]
+        optional: true
       - id: row-entry-link
         kind: link
         target: ../reference/admin-toolkit.md#expandablerow
@@ -991,6 +978,7 @@ sections:
           In the same file, write an open handler for the rows.
         requires: [expandable-rows]
         produces: [open-handler]
+        optional: true
       - id: s-connect-handler
         kind: step
         text: |
@@ -998,18 +986,21 @@ sections:
           shows. The step names no prop.
         requires: [open-handler]
         produces: [handler-connected]
+        optional: true
       - id: s-cache-hit
         kind: step
         text: |
           In the open handler, return the cached detail when the row already has one.
         requires: [open-handler]
         produces: [cache-read]
+        optional: true
       - id: s-fetch-try
         kind: step
         text: |
           Otherwise, in the same handler, call `fetch` for the row's detail inside a `try` block.
         requires: [cache-read, detail-gated, detail-mapped]
         produces: [detail-fetch]
+        optional: true
       - id: row-fetch-errors
         kind: fact
         fact: "f:od9mww"
@@ -1024,12 +1015,14 @@ sections:
           Inside the `try` block, check `response.ok`.
         requires: [detail-fetch]
         produces: [status-checked]
+        optional: true
       - id: s-parse-json
         kind: step
         text: |
           In the same block, parse the body with `Response.json()`.
         requires: [status-checked]
         produces: [detail-parsed]
+        optional: true
       - id: s-cache-store
         kind: step
         text: |
@@ -1037,15 +1030,16 @@ sections:
           succeed.
         requires: [detail-parsed]
         produces: [detail-cached]
+        optional: true
       - id: s-render-panel
         kind: step
         text: |
           In the row's panel snippet, render the cached detail.
         requires: [detail-cached, handler-connected]
         produces: [detail-shown]
+        optional: true
       - id: row-code
         kind: code
-        source: ../reference/admin-toolkit.md#expandablerow
         text: |
           An illustrative open handler covering the cache-hit, fetch, status, parse, and cache
           steps: a `SvelteMap` keyed by row id, and an async function that returns the cached
@@ -1070,6 +1064,7 @@ sections:
           written as a single bulleted item.
         requires: [screen-markup]
         produces: [motion-tokenized]
+        optional: true
       - id: motion-tokens
         kind: fact
         fact: "f:017qss"
@@ -1140,6 +1135,7 @@ sections:
           For what each rule checks, the static rules table is the reference; the exemptions and
           the frame-offset allowance sit under its coverage limits.
   - heading: Verify the screen
+    anchor: verify-the-screen
     opens: |
       The screen passes when it renders inside the shell, its `load` refuses a session the map does
       not admit, it leaves an audit row for each write, and it clears the error tier of
@@ -1335,6 +1331,7 @@ sections:
           A rendered run for the custom screen is set up on Run cairn-audit on your site; a missing
           audit row is traced next.
   - heading: Resolve a missing audit record
+    anchor: resolve-a-missing-audit-record
     opens: |
       A missing audit record means the request ran under the dev backend, a handler skipped
       `ctx.audit`, no handle set the sink, or the sink's insert failed.
@@ -1567,7 +1564,8 @@ dispositions:
       admin sidebar. See friction: that page does not yet state the scaffold's `navLayout` or the
       example site's Signups entry. Re-arm fact.
   - fact: "f:7cv105"
-    disposition: cut
+    disposition: subordinated
+    reference: add-cairn-to-a-sveltekit-app.md
     reason: |
       The dev backend's config shape is off this page's job; the page shows only the production
       branch, and `f:f21bcz` says both handles take `runtime`. It belongs on Scaffolded site files
@@ -1588,7 +1586,8 @@ dispositions:
       A doctor condition about custom roles, off this page's job; it belongs on the admin track's
       condition page and on Restrict admin access. Re-arm fact.
   - fact: "f:l3cxgc"
-    disposition: cut
+    disposition: subordinated
+    reference: scaffolded-site-files.md
     reason: |
       The scaffold's full binding list and doctor report are off this page's job; `f:n7t4bn`
       carries the one clause needed. It belongs on Scaffolded site files. Re-arm fact.
@@ -1627,9 +1626,7 @@ constraints:
     `examples/showcase` as the signups screen's home; the hooks snippet calls
     `createAuthGuard({ runtime })` and imports no access map.
   - |
-    Keep these headings exactly, since other pages link their slugs: "Place the route", "Gate it",
-    "Wire the audit sink", "Style the screen", "Verify the screen", and "Resolve a missing audit
-    record".
+    Keep the headings that carry an `anchor` exactly, since other pages link their slugs.
   - |
     The page states the norms' current bands only; the former values never appear (outline
     out-of-scope, kept in the migration notes).
@@ -1659,18 +1656,6 @@ constraints:
     Verification runs `npm run check:cairn`, not a bare `npx cairn-audit`, because the script
     compiles the site admin sheet first.
 friction:
-  - |
-    No `introduction.facts` field: the six facts behind the introduction's claims are `fact` items
-    at the top of Before you begin, each `use` naming the introduction sentence it backs (for
-    example `intro-git-history`: "Backs the introduction's audit why only"). A drafter could
-    misread them as content for Before you begin; an `introduction.facts` list would remove the
-    ambiguity.
-  - |
-    No `optional` field on a step or a section: three whole sections (Build the dialog form, Load
-    row detail on demand, Animate the screen) are conditional, so their skip lives in `opens` and a
-    constraint, and their steps carry `requires` tokens that a reader skipping them never
-    produces. Nothing downstream requires them, which is the only reason reader-state still
-    passes.
   - |
     Facts placed beyond the outline's list, each verified and on this page's job: `f:bhyvqg`
     (the boundary, introduction), `f:hcydfe` (git history, the introduction's audit why),
@@ -1705,7 +1690,7 @@ friction:
     its `locals.cairnAccess` attachment but not that `devBackendHandle` takes the same `runtime`
     and attaches the same map.
   - |
-    Reference tension: the `createAuthGuard` entry says a site with its own hook keeps it "by
+    drift: the `createAuthGuard` entry says a site with its own hook keeps it "by
     sequencing the guard last", while `f:6quvqm` and this page's hooks excerpt place the sink's
     handle after the guard. Both orders work for a handle that only sets `locals`, but the page and
     the entry read as contradicting each other.
@@ -1713,16 +1698,12 @@ friction:
     Subordination target `arrange-the-admin-sidebar.md` (for `f:tycp7k`) states how to add a site
     entry but not the scaffold's `navLayout` groups or the example site's Signups entry.
   - |
-    Docs drift on disk: `docs/extend/restrict-admin-access.md` ("Pass the map to the adapter and
+    drift: `docs/extend/restrict-admin-access.md` ("Pass the map to the adapter and
     the guard", line 111 on) still tells a site to pass `access` to the hook handles from
     `src/access.ts`, which contradicts `f:iwf4nu`, and `docs/extend/scaffolded-site-files.md`
     still lists `APP_DB`, `migrations-app/`, `signups/`, and `src/access.ts`. This plan links
     both pages and cuts several re-arm facts toward Scaffolded site files, so both rebuilds must
     land before or with this page.
-  - |
-    The `code` kind requires a `source` that exists, but three snippets are written for the page
-    (`sink-code`, `dialog-code`, `row-code`); each points at the nearest real file or reference
-    entry and says so in `text`. A source value for "written for the page" would be clearer.
   - |
     The outline's figure note asks for the signups screen with its dialog; the only shell-hosted
     reproduction story is `toolkit/custom-screen`, the Events snippet, so `compose-figure` uses it.

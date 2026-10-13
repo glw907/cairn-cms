@@ -37,8 +37,7 @@ introduction:
     arrive: one undecided between the two, one sent from Restrict admin access with a `none` role,
     one sent from the security model to build the channel, and one sent from Replace magic links
     who wants a group beside magic-link editors. The paths share no steps, so a reader who has
-    chosen follows one. The facts behind the framing are the intro fact items under Before you
-    begin.
+    chosen follows one.
   priorKnowledge: |
     A site built through Add cairn to a SvelteKit app or scaffolded by `create-cairn-site`, so its
     hooks file, its adapter module, its Wrangler bindings, and applying a D1 migration are
@@ -52,6 +51,7 @@ introduction:
     organization's identity provider (Replace magic links with Cloudflare Access). The channel's
     threat surface and the hazards a site's delivery function can introduce (the security model's
     auth channel section). A scope sentence may name the page.
+  facts: ["f:zxdoaf", "f:nz890r", "f:b3l3t0", "f:nguseg", "f:qqy4uq", "f:4673n6"]
 orderReason: |
   The sections follow the task-guide anatomy and the dependency between steps, not the outline's
   covers inventory. Before you begin comes first, as the anatomy requires, and its channel items (a
@@ -106,18 +106,6 @@ sections:
           Only, for the introduction: a site that declares no roles gets the owner and editor
           pair, signed in by the email magic link, and `createAuthChannel` is the login factory for
           a second sign-in group. Not restated in this section.
-      - id: intro-mechanisms
-        kind: fact
-        fact: "f:b3l3t0"
-        use: |
-          Only, for the introduction: the two mechanisms and where each sits. Not restated in this
-          section.
-      - id: intro-domain
-        kind: fact
-        fact: "f:nguseg"
-        use: |
-          Only, for the introduction: the sentence that what a staff member or a member is, and the
-          records kept about them, stay the site's code. Not restated in this section.
       - id: intro-channel-purpose
         kind: fact
         fact: "f:qqy4uq"
@@ -127,13 +115,6 @@ sections:
           identifier shape, and a bot challenge, and the factory owns code minting and consumption,
           budgets, sessions, and revocation. Omit the subpath wording. Not restated in this
           section.
-      - id: intro-content-group
-        kind: fact
-        fact: "f:4673n6"
-        use: |
-          Only, for the introduction's not-covered item: `none` capability closes the engine's
-          content screens, so a group that writes content needs editor capability. Not restated in
-          this section.
       - id: bb-owner
         kind: fact
         fact: "f:nj0nfm"
@@ -304,9 +285,9 @@ sections:
           that keeps `owner` and `editor` beside the `staff` entry.
         requires: [mechanism-chosen]
         produces: [role-declared]
+        optional: true
       - id: c-declare
         kind: code
-        source: ../../src/lib/auth/roles.ts#defineRoles
         text: |
           Illustrative adapter excerpt: a `defineRoles` vocabulary of `owner: 'owner'`,
           `editor: 'editor'`, and `staff: { capability: 'none', home: '/admin/staff' }`, passed as
@@ -320,6 +301,7 @@ sections:
           `{ runtime }`. An older site whose hooks pass `roles` follows Upgrade cairn instead.
         requires: [role-declared]
         produces: [role-wired]
+        optional: true
       - id: dr-hooks
         kind: fact
         fact: "f:f21bcz"
@@ -336,6 +318,7 @@ sections:
           Why the vocabulary keeps `owner` and `editor`: `defineRoles` throws without an `owner`
           key mapped to owner capability, and a roster row whose role the vocabulary omits resolves
           to `none`, so dropping `editor` would close the content screens to every existing editor.
+        facts: ["f:dbaklx", "f:zjglk8"]
       - id: dr-owner
         kind: fact
         fact: "f:dbaklx"
@@ -386,6 +369,7 @@ sections:
           screen describes.
         requires: [role-declared]
         produces: [home-route]
+        optional: true
       - id: hs-route-link
         kind: link
         target: add-a-custom-admin-screen.md#place-the-route
@@ -396,6 +380,7 @@ sections:
           answer 403 to any session whose `role` is not `staff`.
         requires: [home-route]
         produces: [home-screen]
+        optional: true
       - id: c-gate
         kind: code
         source: ../../src/lib/sveltekit/guard.ts#requireSession
@@ -415,6 +400,7 @@ sections:
           Why the screen checks the role in place of `requireAccess`: the check works whether or not
           the site declares an access map, while `requireAccess` refuses a `none` session unless a
           route rule in the map names its role.
+        facts: ["f:8anql1", "f:5sx6zl"]
       - id: hs-map-alt
         kind: fact
         fact: "f:5sx6zl"
@@ -464,9 +450,9 @@ sections:
           `editor` group, with `roles` set to the `staff` role.
         requires: [home-screen]
         produces: [nav-entry]
+        optional: true
       - id: c-nav
         kind: code
-        source: ../../examples/showcase/src/theme/cairn.config.ts
         text: |
           Illustrative adapter excerpt: the `editor` group's `navLayout` holding one entry with a
           `label`, an `icon` from the `NavIcon` set, `href: '/admin/staff'`, and
@@ -514,6 +500,7 @@ sections:
           the file skips this step.
         requires: [role-declared]
         produces: [roles-migration-file]
+        optional: true
       - id: s-apply-roles
         kind: step
         text: |
@@ -521,6 +508,7 @@ sections:
           `wrangler d1 migrations apply` and the `--remote` flag.
         requires: [roles-migration-file]
         produces: [roles-migrated]
+        optional: true
       - id: ap-apply
         kind: fact
         fact: "f:xxtooz"
@@ -534,6 +522,7 @@ sections:
           that it reports no `auth.role-wiring-missing` warning.
         requires: [role-wired, home-screen, nav-entry]
         produces: [wiring-checked]
+        optional: true
         canFail: true
       - id: vr-doctor
         kind: fact
@@ -566,6 +555,7 @@ sections:
           screen that adds editors offers the new role.
         requires: [roles-migrated, wiring-checked]
         produces: [role-deployed]
+        optional: true
       - id: ap-deploy-link
         kind: link
         target: add-cairn-to-a-sveltekit-app.md#deploy-a-change
@@ -599,18 +589,21 @@ sections:
           On `/admin/editors`, enter the person's name and email.
         requires: [role-deployed, owner-sign-in]
         produces: [person-entered]
+        optional: true
       - id: s-choose-role
         kind: step
         text: |
           In the **Role** list, choose the `staff` role.
         requires: [person-entered]
         produces: [role-picked]
+        optional: true
       - id: s-submit
         kind: step
         text: |
           Select **Add editor**.
         requires: [role-picked]
         produces: [person-added]
+        optional: true
         canFail: true
       - id: ap-no-email
         kind: fact
@@ -624,6 +617,7 @@ sections:
           Tell the person to sign in at `/admin`, since adding them sends no email.
         requires: [person-added]
         produces: [person-told]
+        optional: true
       - id: ap-handoff
         kind: handoff
         text: |
@@ -653,12 +647,14 @@ sections:
           emailed link.
         requires: [person-told]
         produces: [staff-signed-in]
+        optional: true
       - id: v-lands
         kind: step
         text: |
           Confirm that `/admin` lands on `/admin/staff`.
         requires: [staff-signed-in]
         produces: [home-confirmed]
+        optional: true
         canFail: true
       - id: v-sidebar
         kind: step
@@ -666,12 +662,14 @@ sections:
           In the sidebar, confirm that the screen's link shows.
         requires: [home-confirmed]
         produces: [link-confirmed]
+        optional: true
       - id: v-refused
         kind: step
         text: |
           Open one of the engine's content screens, and confirm that it refuses the person.
         requires: [link-confirmed]
         produces: [role-verified]
+        optional: true
       - id: vr-resolve-link
         kind: link
         target: "#resolve-a-failed-setup"
@@ -727,6 +725,7 @@ sections:
         text: |
           Turns to the channel's database, which comes first.
   - heading: Provision the channel database
+    anchor: provision-the-channel-database
     level: 3
     opens: |
       The channel keeps its codes and sessions in a separate D1 database, bound beside `AUTH_DB`
@@ -772,7 +771,6 @@ sections:
         produces: [channel-binding]
       - id: c-bind
         kind: code
-        source: ../../examples/showcase/wrangler.jsonc
         text: |
           Illustrative `d1_databases` array: the existing `AUTH_DB` entry on `migrations` and the
           new `MEMBER_DB` entry on `migrations-members`, with placeholders for the database names
@@ -811,6 +809,7 @@ sections:
           Turns to the module, whose `resolveDb` returns this binding; the remote database takes the
           migration in Deploy the channel.
   - heading: Write the channel module
+    anchor: write-the-channel-module
     level: 3
     opens: |
       A channel is one `createAuthChannel` call in a server-only module, and it takes four
@@ -856,7 +855,6 @@ sections:
         canFail: true
       - id: c-channel
         kind: code
-        source: ../../examples/showcase/src/members/channel.ts
         text: |
           Illustrative module modeled on the example site's channel, never copying its
           `captureDeliver` or `insecureTestChallenge`: an import of `env` from
@@ -1087,7 +1085,6 @@ sections:
           the outcome; it imports the channel from the server-only module.
       - id: c-login-svelte
         kind: code
-        source: ../../examples/showcase/src/routes/members/login/+page.svelte
         text: |
           Illustrative page component: a request form with a `contact` input and a comment marking
           where the Turnstile widget renders, a confirm form with a `code` input, and an alert line
@@ -1170,7 +1167,6 @@ sections:
           `actions.logout` and redirects to the login page.
       - id: c-area-svelte
         kind: code
-        source: ../../examples/showcase/src/routes/members/+page.svelte
         text: |
           Illustrative page component: a heading, a line naming the signed-in subject, and a
           sign-out form posting to `?/logout`.
@@ -1215,6 +1211,7 @@ sections:
           `verify` function that returns `false` for a subject no longer on the roster.
         requires: [channel-module]
         produces: [removal-handled]
+        optional: true
       - id: e-revoke
         kind: step
         text: |
@@ -1222,6 +1219,7 @@ sections:
           `revokeSessions` with the binding and the subject.
         requires: [channel-module]
         produces: [removal-handled]
+        optional: true
       - id: er-verify
         kind: fact
         fact: "f:dtz8oa"
@@ -1292,7 +1290,6 @@ sections:
         produces: [channel-test]
       - id: c-test
         kind: code
-        source: ../../src/tests/unit/auth-channel-resolve-db-type.test.ts
         text: |
           Illustrative test, modeled on the engine's own run of the double: `vi.hoisted` holds a
           mocked Worker env and a `waitUntil` that collects promises; `vi.mock('cloudflare:workers')`
@@ -1852,8 +1849,8 @@ constraints:
     `insecureTestChallenge`. Its `challenge` reads `TURNSTILE_SECRET`, the one name the
     `.dev.vars`, `.dev.vars.example`, and `wrangler secret put` steps store.
   - |
-    Keep the headings "Provision the channel database" and "Write the channel module" stable:
-    `docs/reference/auth-channel.md` links both anchors (lines 161 and 216).
+    Keep these two headings stable: `docs/reference/auth-channel.md` links both anchors (lines 161
+    and 216).
   - |
     The See also links to the security model's channel section, Restrict admin access, and Replace
     magic links with Cloudflare Access also render in the introduction's not-covered list.
@@ -1929,7 +1926,7 @@ friction:
     `branding` replaces the default whole (contradicts `f:v72g9z`), and its hooks sample calls
     `createAuthGuard()` with no config (`f:q07rd5`).
   - |
-    Reference-arm friction: `docs/reference/cli-cairn-doctor.md` does not list the conditions no
+    drift: `docs/reference/cli-cairn-doctor.md` does not list the conditions no
     tool check raises (`f:bw5uk0`); `docs/reference/admin-toolkit.md` says the toolkit renders only
     inside the admin shell but not that no component reads an editor session (`f:mfmmof`, partial);
     `docs/reference/auth-crypto.md` states that `nonce_hash IS NULL` keeps an old row confirmable
@@ -1943,11 +1940,5 @@ friction:
     covers' channel order (config members, then binding) is reversed; and the plan adds the home
     screen, removal, deploy, and verification sections the covers do not name.
   - |
-    Format: the introduction's facts sit in Before you begin as fact items whose `use` names the
-    introduction, since `introduction.facts` does not exist; `f:b3l3t0`, `f:nguseg`, `f:4673n6`,
-    `f:cf1avu`, and `f:ez788q` are each placed more than once for that reason or for a second
-    section.
-  - |
-    Format: the comparison table is a `sentence` item describing the table, since no table kind
-    exists; the two removal alternatives both produce `removal-handled`, since steps cannot be
-    marked optional; the copy-the-roles-migration step says its skip in step prose.
+    format: the comparison table is a `sentence` item describing the table, since no table kind
+    exists.

@@ -36,8 +36,8 @@ introduction:
     cap left to Cloudflare's plans page. It names the readers who arrive: the developer switching
     an organization's site, the developer still deciding, and the developer behind a different
     authenticating reverse proxy, who learns that the seam is not Cloudflare-specific, so the
-    resolver carries over and the Cloudflare steps are replaced. The facts behind each sentence
-    are the intro fact items placed under Before you begin. The figure closes the introduction.
+    resolver carries over and the Cloudflare steps are replaced. The figure closes the
+    introduction.
   priorKnowledge: |
     A Svelte-fluent developer who has edited a SvelteKit server hooks file, deployed a Worker with
     Wrangler, can query Workers Logs, and can read a JWT verification sample closely enough to own
@@ -49,6 +49,7 @@ introduction:
     magic-link sign-in itself, and staying on magic links with a rebranded sign-in email (Add
     cairn to a SvelteKit app); and signing a second sign-in group in beside editors who keep magic
     links (Add a second sign-in group). A scope sentence may name the page.
+  facts: ["f:zxdoaf", "f:u77pea", "f:2sd4if", "f:agif8l", "f:gw1oas", "f:8289h7", "f:k40l86", "f:v5ndhs", "f:fhit7f", "f:4olp4u", "f:3p8yu8"]
 orderReason: |
   The order follows what each step consumes, not the outline's covers inventory. The decision
   input (all-or-nothing, the plan cap) moves into the introduction as the exemplar's early
@@ -104,14 +105,6 @@ sections:
           Backs the introduction's sentence on where the guard sits only: the guard
           `createAuthGuard({ runtime })` returns gates the whole `/admin` subtree before any load
           runs. Omit the per-route authorization clause.
-      - id: intro-access
-        kind: fact
-        fact: "f:agif8l"
-        use: |
-          Backs the introduction's second paragraph only: Cloudflare Access is a self-hosted
-          application layer in front of a Worker, only users who match the application's
-          policies reach it, and an application connects to an identity provider. Omit the
-          one-time PIN.
       - id: intro-providers
         kind: fact
         fact: "f:gw1oas"
@@ -126,13 +119,6 @@ sections:
           Backs the introduction's contract sentence only: behind Cloudflare Access, or any
           reverse proxy that authenticates the request before it reaches the Worker, a site sets
           the guard's `identity` resolver, which replaces session-cookie resolution.
-      - id: intro-two-lists
-        kind: fact
-        fact: "f:k40l86"
-        use: |
-          Backs the introduction's what-stays sentence only: the roster stays in cairn, the
-          application deciding who reaches `/admin` and the roster deciding who among them may
-          edit. The full two-lists statement belongs to Prepare the roster.
       - id: intro-all-or-nothing
         kind: fact
         fact: "f:v5ndhs"
@@ -169,14 +155,6 @@ sections:
       - id: intro-guard-ref-link
         kind: link
         target: ../reference/sveltekit.md#createauthguard
-      - id: intro-other-proxy
-        kind: fact
-        fact: "f:3p8yu8"
-        use: |
-          Backs the introduction's sentence for a reader behind another proxy only: `identity`
-          takes any `IdentityResolver`, a plain interface with no Cloudflare type in it, so a
-          different authenticating reverse proxy implements the same resolver for its own token
-          and replaces the Cloudflare steps.
       - id: intro-figure
         kind: figure
         source: mermaid
@@ -474,6 +452,7 @@ sections:
           such rule skips this step.
         requires: [magic-link-site, custom-domain]
         produces: [cache-clear]
+        optional: true
       - id: exp-cache
         kind: fact
         fact: "f:zt0oag"
@@ -646,7 +625,7 @@ sections:
           header, and `jwtVerify(token, JWKS, { issuer: teamDomain, audience: audTag })`.
       - id: ver-code
         kind: code
-        source: ../../src/lib/sveltekit/guard.ts#IdentityResolver
+        source: https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/
         text: |
           An illustrative `src/lib/access-identity.ts` implementing the `IdentityResolver`
           interface, adapted from Cloudflare's Workers sample: imports `createRemoteJWKSet` and
@@ -760,7 +739,7 @@ sections:
         kind: step
         text: |
           In the project directory, deploy the site the way you deploy any change.
-        requires: [identity-wired, preview-urls-closed, cache-clear, roster-matched, paths-covered, policy-set, login-methods-set, cors-off]
+        requires: [identity-wired, preview-urls-closed, roster-matched, paths-covered, policy-set, login-methods-set, cors-off]
         produces: [identity-live]
       - id: dep-change-link
         kind: link
@@ -959,6 +938,7 @@ sections:
           again.
         requires: [identity-live]
         produces: [stale-tab-checked]
+        optional: true
       - id: res-stale
         kind: fact
         fact: "f:ig5pn3"
@@ -972,6 +952,7 @@ sections:
           policy.
         requires: [stale-tab-checked]
         produces: [block-checked]
+        optional: true
       - id: res-block
         kind: sentence
         mode: claim
@@ -986,6 +967,7 @@ sections:
           request.
         requires: [block-checked]
         produces: [unknown-checked]
+        optional: true
       - id: res-unknown
         kind: fact
         fact: "f:mjedcx"
@@ -999,6 +981,7 @@ sections:
           matches the record's `email` field.
         requires: [unknown-checked]
         produces: [roster-corrected]
+        optional: true
       - id: res-next
         kind: fact
         fact: "f:hilyos"
@@ -1011,6 +994,7 @@ sections:
           with `reason: identity`.
         requires: [unknown-checked]
         produces: [reason-read]
+        optional: true
       - id: res-levels
         kind: fact
         fact: "f:fu4uis"
@@ -1025,12 +1009,14 @@ sections:
           the application's **Additional settings**.
         requires: [reason-read]
         produces: [audience-checked]
+        optional: true
       - id: r-issuer
         kind: step
         text: |
           If the reason is `issuer` or `keys`, check the team domain in the config module.
         requires: [reason-read]
         produces: [issuer-checked]
+        optional: true
       - id: res-issuer
         kind: fact
         fact: "f:s9s8mw"
@@ -1044,18 +1030,21 @@ sections:
           path and that the request arrived on the primary hostname.
         requires: [reason-read]
         produces: [missing-checked]
+        optional: true
       - id: r-error
         kind: step
         text: |
           If the reason is `error`, fix the resolver module, which threw.
         requires: [reason-read]
         produces: [error-checked]
+        optional: true
       - id: r-expired
         kind: step
         text: |
           If the reason is `expired`, have the editor sign in through the gate again.
         requires: [reason-read]
         produces: [expired-checked]
+        optional: true
       - id: res-expired
         kind: fact
         fact: "f:sbv5xj"
@@ -1068,6 +1057,7 @@ sections:
           browser rather than a service token, then check the login method.
         requires: [reason-read]
         produces: [invalid-checked]
+        optional: true
       - id: res-invalid
         kind: fact
         fact: "f:zas1dk"
@@ -1319,20 +1309,9 @@ friction:
     map leaves open" states `f:8ciz2s` only in part (no screen-key condition, no href rule). Its
     2b plan places all three.
   - |
-    Partial subordination: `upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change`
+    drift: `upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change`
     states that `devBackendHandle` takes `{ runtime }` but not that `runtime.roles` changes no
     decision under the dev backend (`f:7cv105`). `arrange-the-admin-sidebar.md#before-you-begin`
     states the scaffold's `Content` and `Site` sections but not the example site's Signups entry
     (`f:tycp7k`). `add-cairn-to-a-sveltekit-app.md#deploy-a-change` shows the build and
     `npx wrangler deploy` (`f:9ug9mo`) but not the Workers Builds push path (`f:qca0t0`).
-  - |
-    The intro facts sit in Before you begin as fact items whose `use` names the introduction,
-    since `introduction.facts` does not exist; `f:agif8l`, `f:k40l86`, and `f:vnm1p5` are placed
-    there and again in the body for that reason.
-  - |
-    Conditional steps (the cache-rule removal, every check in Resolve a refused sign-in) carry
-    their skip in step prose, since steps cannot be marked optional.
-  - |
-    The resolver sample has no repository file to name as its `code.source`: it is modeled on
-    Cloudflare's external sample, so the source points at the interface it implements,
-    `src/lib/sveltekit/guard.ts#IdentityResolver`, and the `text` names the external origin.

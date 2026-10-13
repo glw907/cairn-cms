@@ -52,6 +52,7 @@ introduction:
     which belongs to Cloudflare's Workers security model. The history of when the sanitize floor
     shipped is out of scope: the page states the floor as it is now and names no release that
     added it.
+  facts: ["f:u77pea", "f:kkp5bi", "f:2sd4if", "f:y3ljm0"]
 orderReason: |
   The body follows the likeliest attacker's path through the built-in design, then turns to the
   two seams that change that design, then closes with the anatomy's ending. Five departures from
@@ -149,21 +150,6 @@ sections:
           magic-link sign-in with the proof an external gate supplies, and an auth channel adds a
           second sign-in group whose request form any unauthenticated caller can post.
         facts: ["f:y3ljm0", "f:fhit7f", "f:wuwk2q"]
-      - id: sc-out-access
-        kind: link
-        target: restrict-admin-access.md
-      - id: sc-out-identity
-        kind: link
-        target: replace-magic-links-with-cloudflare-access.md
-      - id: sc-out-channel
-        kind: link
-        target: add-a-second-sign-in-group.md
-      - id: sc-out-render
-        kind: link
-        target: configure-rendering.md
-      - id: sc-out-key
-        kind: link
-        target: rotate-the-github-app-key.md
       - id: sc-handoff
         kind: handoff
         text: |
@@ -171,6 +157,7 @@ sections:
           heading Magic-link sign-in.
 
   - heading: Magic-link sign-in
+    anchor: magic-link-sign-in
     opens: |
       A sign-in link carries a single-use token that only a roster address receives, that lives 10
       minutes, and that the auth store holds only as a hash.
@@ -239,6 +226,7 @@ sections:
           it; turn to Browser binding for sign-in, which closes that path.
 
   - heading: Browser binding for sign-in
+    anchor: browser-binding-for-sign-in
     opens: |
       A bound sign-in completes only in the browser that requested it, and a confirm from any
       other browser refuses without consuming the token.
@@ -290,6 +278,7 @@ sections:
         target: ../reference/sveltekit.md#no_pending_request_error
 
   - heading: Limits of the browser binding
+    anchor: limits-of-the-browser-binding
     level: 3
     opens: |
       A token row with no binding still matches a confirm from a browser that holds no cookie.
@@ -328,6 +317,7 @@ sections:
           which carries it on every later admin request.
 
   - heading: The session cookie
+    anchor: the-session-cookie
     opens: |
       A confirmed sign-in becomes a session cookie that carries the `__Host-` prefix on every
       https deploy, so the browser binds it to the site's origin.
@@ -380,6 +370,7 @@ sections:
           never meant to send; turn to CSRF protection, which answers that post.
 
   - heading: CSRF protection
+    anchor: csrf-protection
     opens: |
       A forged form post would act with the editor's session, and SvelteKit's origin check and the
       guard's double-submit token divide the defense against it.
@@ -513,6 +504,7 @@ sections:
           order on every admin request.
 
   - heading: The auth guard
+    anchor: the-auth-guard
     opens: |
       The guard handles every `/admin` request in a fixed order, and every refusing step before
       the session resolve logs a named `guard.refused` reason.
@@ -601,6 +593,7 @@ sections:
           leaves open.
 
   - heading: The dev-backend flag's two refusals
+    anchor: the-dev-backend-flags-two-refusals
     opens: |
       A deployed Worker must never carry the `CAIRN_DEV_BACKEND` flag, because the dev backend it
       enables signs `/admin` in as an owner against in-memory fakes, so the engine refuses the
@@ -673,6 +666,7 @@ sections:
           which decides what that editor reaches.
 
   - heading: Access map coverage
+    anchor: access-map-coverage
     opens: |
       An access map narrows only the targets it names, so a screen or concept the map never
       mentions stays reachable to any editor-capability session.
@@ -733,6 +727,7 @@ sections:
         target: ../reference/sveltekit.md#createadminaction
 
   - heading: Limits of access map coverage
+    anchor: limits-of-access-map-coverage
     level: 3
     opens: |
       The site-wide publish spans every concept, so it makes no single access check, and any
@@ -761,6 +756,7 @@ sections:
           screen-id key, only when the map declares at least one screen-id key.
 
   - heading: Allowlist semantics from an exhaustive map
+    anchor: allowlist-semantics-from-an-exhaustive-map
     level: 3
     opens: |
       A map behaves as an allowlist only when it names every concept id and every fixed engine
@@ -787,6 +783,7 @@ sections:
           renders; turn to Render safety, which covers what the engine does with it.
 
   - heading: Render safety
+    anchor: render-safety
     opens: |
       Every renderer that `createRenderer` builds runs a sanitize floor by default, seeded from
       GitHub's `defaultSchema`, before the `build()` dispatch or any later stage touches the tree.
@@ -856,6 +853,7 @@ sections:
           emits.
 
   - heading: Limits of render safety
+    anchor: limits-of-render-safety
     level: 3
     opens: |
       The floor guarantees that author script cannot pass, and the attributes and URL schemes a
@@ -899,6 +897,7 @@ sections:
           GitHub App's reach, which sets out what that credential can write.
 
   - heading: The GitHub App's reach
+    anchor: the-github-apps-reach
     opens: |
       Every save and publish commits through the site's GitHub App, so the App's permissions set
       what its private key and installation token can write.
@@ -913,6 +912,7 @@ sections:
           to disk in the deployed runtime and never logged.
 
   - heading: Limits of the installation token
+    anchor: limits-of-the-installation-token
     level: 3
     opens: |
       The App's **Contents** permission at **Read and write** is repository-wide, so the
@@ -941,6 +941,7 @@ sections:
           mode's threat surface and The auth channel's threat surface.
 
   - heading: Identity mode's threat surface
+    anchor: identity-modes-threat-surface
     opens: |
       A site that replaces magic-link sign-in with an identity gate leaves every sign-in defense
       to the gate, and cairn's part in sign-in reduces to the roster lookup.
@@ -1026,6 +1027,7 @@ sections:
           The auth channel's threat surface.
 
   - heading: The auth channel's threat surface
+    anchor: the-auth-channels-threat-surface
     opens: |
       An auth channel's sign-in form takes a contact from an unauthenticated caller, so the channel
       rests on one rule: no control keyed on the victim's identity may deny, delay, or destroy
@@ -1268,13 +1270,7 @@ sections:
     opens: |
       The following resources cover the tasks, the system, and the standards behind these
       defenses.
-    items:
-      - id: rr-groups
-        kind: sentence
-        mode: claim
-        text: |
-          The resources fall into three groups: how-to guides, a linked concept page, and
-          external standards and platform pages.
+    items: []
 
   - heading: How-to guides
     level: 3
@@ -1454,6 +1450,10 @@ dispositions:
       coverage.
 constraints:
   - |
+    The introduction's not-covered list renders the same links as Related resources
+    (`rr-access`, `rr-identity`, `rr-channel`, `rr-render`, `rr-key`); each target appears as one
+    `link` item only, in Related resources.
+  - |
     Re-arm (stage 2b, context `sanitizeSchema`), the change this rebuild carries: "The
     one-declaration change and the sanitize floor: the callback gets a copy, `script` is stripped
     after it returns, and a missing `tagNames` throws." The sanitize half is placed in Render
@@ -1469,12 +1469,8 @@ constraints:
     and that a `sanitizeSchema` callback's return replaces the floor's schema with nothing
     checking it, so a callback can admit `<script>`.
   - |
-    Keep these headings verbatim, because live links in other pages and sibling plans point at
-    their slugs: Magic-link sign-in, Browser binding for sign-in, Limits of the browser binding,
-    The session cookie, CSRF protection, The auth guard, The dev-backend flag's two refusals,
-    Access map coverage, Limits of access map coverage, Allowlist semantics from an exhaustive
-    map, Render safety, Limits of render safety, The GitHub App's reach, Limits of the
-    installation token, Identity mode's threat surface, and The auth channel's threat surface.
+    Keep the headings that carry an `anchor` verbatim, because live links in other pages and
+    sibling plans point at their slugs.
   - |
     The outline's suggested headings are not used. "Sign-in binds to the browser that asked" and
     "An access map is not a whitelist" are sentences, not the register's noun-phrase concept
@@ -1560,19 +1556,11 @@ friction:
     earlier-versions history those bullets carry; `docs/extend/migration-notes.md#unreleased`
     carries the history.
   - |
-    Format: `introduction` has no `facts` field, so the facts the introduction's framing rests on
-    (`f:u77pea`, `f:kkp5bi`, `f:2sd4if`, `f:y3ljm0`) sit as `fact` items in the first section,
-    Scope and threat position, with `use` naming the introduction where it applies.
+    format: the links the introduction's out-of-scope list needs are the Related resources link
+    items (`rr-access`, `rr-identity`, `rr-channel`, `rr-render`, `rr-key`); a constraint carries
+    the introduction's use of them, because a link item has no field saying which part of the page
+    it serves.
   - |
-    Format: the links the introduction's out-of-scope list needs (`sc-out-access` and four more)
-    sit in the first section as `link` items and repeat in Related resources, because a link item
-    has no field saying which part of the section (or the introduction) it serves.
-  - |
-    Format: Related resources needs an item before its level-3 groups, so `rr-groups` is a
-    `claim` sentence that largely restates the section's `opens`.
-  - |
-    Format: no `table` or `list` kind, so list form for the guard's steps, the pipeline's stages,
+    format: no `table` or `list` kind, so list form for the guard's steps, the pipeline's stages,
     the headers, the channel's controls, and the responsibilities is carried in `use` text and a
     constraints entry.
-  - |
-    Format: no `anchor` field, so the headings fixed by inbound links are a constraints entry.

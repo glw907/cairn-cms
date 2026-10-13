@@ -43,6 +43,7 @@ introduction:
     repository-wide write and the CSRF design (Security model); the delivery routes beyond the entry
     catch-all (Build the public routes); rotating the App's private key later (Rotate the GitHub App
     key). The retired JavaScript doctor and the removed `/components` subpath are not named at all.
+  facts: ["f:kldwss", "f:9slxqf", "f:rxj43c", "f:dqe7ij", "f:f21bcz", "f:xluud1", "f:lbetsq", "f:5f4kmk", "f:ntdafg"]
 orderReason: |
   The outline's covers are an inventory, and the page re-sequences them so every step's
   prerequisite exists before the step. Before you begin comes first because every milestone draws on
@@ -72,35 +73,18 @@ preconditions:
   - cloudflare-account
   - workers-paid-plan
   - domain-zone
+  - project
+  - local-repo
+  - repo-pushed
 sections:
   - heading: Before you begin
     opens: |
       You need Node 24 or later, a GitHub account, a Cloudflare account on the Workers Paid plan,
       and a domain whose zone is on that account.
     items:
-      - id: intro-setup-command
-        kind: fact
-        fact: "f:kldwss"
-        use: |
-          Backs the introduction's sentence that the setup command creates the GitHub App, the
-          repository, and the Cloudflare bindings and deploys in one run. Not stated again in this
-          section.
       - id: intro-scaffold-link
         kind: link
         target: scaffolded-site-files.md
-      - id: intro-empty-dir
-        kind: fact
-        fact: "f:9slxqf"
-        use: |
-          Backs the introduction's sentence that the setup command never adds cairn to an existing
-          app, since it scaffolds only into a missing or empty directory. Not stated again in this
-          section.
-      - id: intro-no-template
-        kind: fact
-        fact: "f:rxj43c"
-        use: |
-          Backs the introduction's sentence that the npm package carries no template, so a site
-          built by hand brings its own theme. Not stated again in this section.
       - id: pre-lead
         kind: sentence
         mode: verbatim
@@ -235,6 +219,7 @@ sections:
           then change into its directory. An existing app skips this step.
         requires: [node-24]
         produces: [project]
+        optional: true
       - id: m1-create-flags
         kind: fact
         fact: "f:7e1t0j"
@@ -248,6 +233,7 @@ sections:
           scaffold. An app that is already a repository skips this step.
         requires: [project]
         produces: [local-repo]
+        optional: true
       - id: m1-main-reason
         kind: reason
         text: |
@@ -1489,6 +1475,7 @@ sections:
           routes, the hooks module, and the dev-backend wiring.
         requires: [content-committed, hooks, admin-page, admin-layout, entry-route]
         produces: [work-committed]
+        optional: true
       - id: s-create-repo
         kind: step
         text: |
@@ -1496,6 +1483,7 @@ sections:
           GitHub's guide.
         requires: [github-account]
         produces: [github-repo]
+        optional: true
       - id: g-new-repo-link
         kind: link
         target: https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository
@@ -1506,6 +1494,7 @@ sections:
           branch, replacing the account name in the remote URL with yours.
         requires: [github-repo, work-committed]
         produces: [repo-pushed]
+        optional: true
       - id: s-confirm-push
         kind: step
         text: |
@@ -1513,6 +1502,7 @@ sections:
           manifest at `src/content/.cairn/index.json`.
         requires: [repo-pushed]
         produces: [push-verified]
+        optional: true
   - heading: Deploy the production build and read the refusal
     level: 3
     opens: |
@@ -2548,16 +2538,8 @@ constraints:
   - |
     The introduction's model paragraph draws only on facts the body places (`f:dqe7ij`,
     `f:f21bcz`, `f:xluud1`, `f:lbetsq`, `f:5f4kmk`, `f:ntdafg`), and its setup-command sentences on
-    `f:kldwss`, `f:9slxqf`, and `f:rxj43c`, placed in Before you begin with a `use` that names the
-    introduction.
+    `f:kldwss`, `f:9slxqf`, and `f:rxj43c`, all listed in `introduction.facts`.
 friction:
-  - |
-    `introduction.facts` does not exist, so the three facts behind the introduction's reader
-    framing (`f:kldwss`, `f:9slxqf`, `f:rxj43c`) sit as `fact` items in Before you begin with a
-    `use` that says "backs the introduction" and "not stated again in this section". A drafter
-    could still restate them there; an `introduction.facts` list would remove the ambiguity. The
-    introduction's link to Scaffolded site files sits there for the same reason, as the `link`
-    item `intro-scaffold-link`, since the introduction takes no items.
   - |
     `s-email-deploy` should follow either `s-branding` (`branding-set`) or `s-custom-send`
     (`sender-custom`), since the verification checks whichever change the reader made, but
@@ -2569,16 +2551,12 @@ friction:
     `sentence` (`t1-disclosure`, `t2-disclosure`, `t3-disclosure`, `t4-disclosure`) and a
     constraint describing the `<details>` block.
   - |
-    Re-arm gap: the `done` text names "the cf-typegen script", but the only fact, `f:n0fg3w`, gives
+    gap: the `done` text names "the cf-typegen script", but the only fact, `f:n0fg3w`, gives
     the scaffold's `wrangler types --env-file=.dev.vars.example --include-runtime=false`, which
     reads a file the hand-built site never writes. No fact gives a hand-built site's `wrangler
     types` command or says whether its `src/app.d.ts` should reference the generated file, so the
     plan places no `cf-typegen` step. A fact stating the hand-built command would let the page add
     one.
-  - |
-    The existing-app route is an either-or arrival (skip `s-create` and `s-git-init`, or run them)
-    that `preconditions` and `requires` cannot express; the skips live in step prose and in
-    `m1-start`.
   - |
     No citable fact says the admin shell styles itself. `CairnAdminShell.svelte:43` imports
     `./cairn-admin.css`, and `docs/reference/admin-routes.md` "The root layout must be chrome-free"

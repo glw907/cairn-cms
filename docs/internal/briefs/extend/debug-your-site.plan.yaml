@@ -45,6 +45,7 @@ introduction:
     named without a link); the full event table with every event's fields (the log events
     reference); configuring cairn-audit for a whole site (Run cairn-audit on your site); and an
     error that began with an engine upgrade (Upgrade cairn and the migration notes).
+  facts: ["f:gy2h7p", "f:eywrq8"]
 orderReason: |
   The page runs from reaching a record, to the rows a record names, to the failures that leave no
   record, then to the material a reader building a query, alert, or records of their own needs,
@@ -396,6 +397,13 @@ sections:
           open and logs `admin.action.rate_limit_absent` or `admin.action.rate_limit_failed`
           respectively; an over-limit call logs `admin.action.rate_limited` and answers
           `fail(429)`, which is the limit working.
+      - id: f-rate-events
+        kind: fact
+        fact: "f:i1dayf"
+        use: |
+          Only the two events' triggers and that both degrade to open: `rate_limit_absent` when
+          the configured binding resolves to nothing, `rate_limit_failed` when the site's `key()`
+          call or the limiter's `limit()` call throws, which carries the `error` field.
       - id: s-rate-absent-fix
         kind: sentence
         mode: claim
@@ -411,6 +419,7 @@ sections:
           limiter, wherever the throw began.
         facts: ["f:1b3ye3"]
   - heading: "`admin.action.misconfigured`"
+    anchor: adminactionmisconfigured
     level: 3
     opens: |
       `createSectionAction` answers `fail(500)` and logs `admin.action.misconfigured` when the
@@ -640,6 +649,7 @@ sections:
           using the message in `error`, and commits it.
         facts: ["f:8fyoha"]
   - heading: "`config.access_unmapped`"
+    anchor: configaccess_unmapped
     level: 3
     opens: |
       The engine checks the access map once, at composition, so `config.access_unmapped` appears
@@ -951,11 +961,6 @@ sections:
         kind: link
         target: add-a-custom-admin-screen.md
 dispositions:
-  - fact: "f:i1dayf"
-    disposition: cut
-    reason: |
-      Tagged [docs-drift], so it cannot be placed. The rate-limit rows rest on `f:1b3ye3` step 2
-      instead, which states the same triggers and is [verified].
   - fact: "f:pfy9cw"
     disposition: subordinated
     reference: ../reference/log-events.md
@@ -1049,9 +1054,8 @@ constraints:
     Each event row's heading is the literal event string. Each event row also links the log events
     reference (`../reference/log-events.md`) for its record's fields: the plan carries that target
     once, as `l-see-log-events` in See also, and the drafter writes the per-row link in every event
-    row from this constraint. The headings `admin.action.misconfigured` and
-    `config.access_unmapped` keep their exact text: sibling plans subordinate facts to
-    `debug-your-site.md#adminactionmisconfigured` and `#configaccess_unmapped`.
+    row from this constraint. The two headings that carry an `anchor` keep their exact text:
+    sibling plans subordinate facts to their anchors.
   - |
     Each row holds, in order, what the reader sees, the event or error, what it means, and the fix
     (or that none is needed), or for a record row how a query allows for it; a fix that needs code
@@ -1074,10 +1078,6 @@ constraints:
     plan carries one link item per target, in See also, and none in the first section.
 friction:
   - |
-    `f:i1dayf` is tagged [docs-drift] and cut. Its bullet text now matches
-    `src/lib/sveltekit/section-action.ts:228-266`, so the tag may be stale; the rate-limit row
-    rests on `f:1b3ye3` meanwhile.
-  - |
     Beyond the outline's list, the plan places five [verified]/[external] facts on the page's job:
     `f:1b3ye3` (the check order, the rate-limit triggers, and the two authorization refusals),
     `f:prb2os` (observability gates Workers Logs), `f:gzs6b8` (Workers Logs and `wrangler tail`),
@@ -1094,11 +1094,11 @@ friction:
     time and environment rows (covers 3 and 4) precede the session and commit records (cover 6).
     `orderReason` argues each.
   - |
-    reference-arm: `docs/reference/site-facts.md` "Who writes it and who verifies it" names two
+    drift: `docs/reference/site-facts.md` "Who writes it and who verifies it" names two
     verification outcomes (absent, drifted) and not the skipped one `f:vs9g9e` states; the row
     links it anyway.
   - |
-    reference-arm: `f:gun084`'s `devBackendHandle` half has no reference home; the
+    drift: `f:gun084`'s `devBackendHandle` half has no reference home; the
     `createAuthGuard` entry states only the guard's side.
   - |
     Subordination targets stale on disk until their 2b rebuilds land:
@@ -1106,9 +1106,6 @@ friction:
     `devBackendHandle({ access })`) and `docs/extend/add-cairn-to-a-sveltekit-app.md:531-540`
     (`devBackendHandle()`, `createAuthGuard({ access })`). Their plans place `f:cvzb8z`,
     `f:7cv105`, `f:dqjkci`, and `f:q07rd5`.
-  - |
-    No `introduction.facts`: `f:gy2h7p` and `f:eywrq8` back the introduction from `fact` items in
-    the first section whose `use` names the introduction.
   - |
     The admin track's troubleshooting page (out of scope, operator symptoms) is not on disk and not
     in this outline, so the not-covered list names it without a link.

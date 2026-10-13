@@ -423,10 +423,7 @@ sections:
           a publish copies it to the default branch, and the deploy rebuilds the manifest; D1 and
           R2 sit beside git with what each holds. The caption names Data tiers as the section that
           states what each store holds. The diagram makes no claim about retries or guards.
-        source: |
-          The mermaid block in the committed docs/extend/architecture.md (write path and three
-          data tiers), kept and edited only where a placed fact changes a claim it makes, under the
-          cairn-figure skill.
+        source: "docs/extend/architecture.md"
       - id: wp-handoff
         kind: handoff
         text: |
@@ -955,6 +952,10 @@ dispositions:
       handles attach the map, so the reason fires only outside every hook's coverage. The roles
       subsection states the attachment itself through f:iwf4nu and f:gun084.
 constraints:
+  - |
+    The figure is the mermaid block in the committed docs/extend/architecture.md (write path and
+    three data tiers), kept and edited only where a placed fact changes a claim it makes, under the
+    cairn-figure skill.
   - |
     Re-arm (head-merge, stage 2b): "The one-declaration change and the head-guarded commits for
     publish, publish-all, media, and the dictionary add." The page states both as the current

@@ -1253,9 +1253,10 @@ friction:
     crossLink to `add-a-custom-admin-screen` gives "The signups example as a pattern" as its reason.
     The plan keeps the link as the route to building a custom screen.
   - |
-    `tree-claude-link` targets `docs/claude-code/using-claude-code-with-cairn.md`, which is neither
-    on disk nor in this worktree's outlines (lane F writes `docs/internal/outlines/claude-code.json`
-    in parallel), so the self-check reports it as a missing target until that outline merges.
+    `tree-claude-link` targets `docs/claude-code/using-claude-code-with-cairn.md`, which is in
+    `docs/internal/outlines/claude-code.json` and not on disk yet, so `drafter check-plan` warns
+    for it, and errors if the plan is checked against `extend.json` alone. Check this plan with both
+    outlines.
   - |
     drift: `docs/reference/guidance.md` "install" does not state that
     `cairn-guidance install` exits 0 when an entry is refused or a write fails (`f:5ohm23`).

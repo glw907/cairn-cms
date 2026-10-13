@@ -33,7 +33,7 @@ finding, and no plan had a second read.
 | `extend/rotate-the-github-app-key` | task guide | 9 | 21 | 20 | 4 |
 | `claude-code/using-claude-code-with-cairn` | task guide | 9 | 17 | 15 | 2 |
 
-Placed counts above ids mean the author placed facts beyond the outline's list (see "Facts added
+The Placed column counts `fact` items only; facts placed through `introduction.facts` add to it (`add-cairn-to-a-sveltekit-app` 90, `add-a-custom-admin-screen` 84). Placed counts above ids mean the author placed facts beyond the outline's list (see "Facts added
 beyond the outline" below). The new outline is `docs/internal/outlines/claude-code.json`, one page,
 17 fact ids.
 
@@ -210,7 +210,7 @@ facts on failure queued after F1 (use the fact item beside the failure); failure
   `insecureTestChallenge`, `ChannelDatabaseLike`, the challenge signature, `auth.channel.requested`
   outcomes); a no-fingerprint failure row for rotate-the-github-app-key; `f:s90j7l` and `f:z97ilc`
   as outline fact ids. Disposition: defer to the facts pass.
-- **Mixed tags**: `f:0gltjq`, `f:2glcaf`, and `f:33upyd` are tagged `[verified]` but half of each
+- **Mixed tags**: `f:0gltjq`, `f:2glcaf`, `f:33upyd`, and `f:ejuoh6` (which now also carries a cairn code claim about `/healthz?live=1`) are tagged `[verified]` or `[external]` but half of each
   claim is external Cloudflare behavior; the plans restrict each with `use`. Disposition: defer to
   the facts pass.
 - **Not folded, non-blocking plan-read findings**, recorded in each findings file under

@@ -23,7 +23,7 @@ under `internal/briefs/extend/` and `internal/briefs/claude-code/` (ten extend p
 Code with cairn"), each with 0 errors from `drafter check-plan`. The pass record is
 `superpowers/research/2026-10-12-2b-part2-plans-record.md`. `conductor-cairn-cms` runs
 `drafter check-plan` on all 11 plans again once drafter's next release is installed. The drafting run
-that follows, through drafter, retires the 11 `.plan.md` files, registers the `claude-code` arm in the
+that follows, through drafter, retires the 10 `.plan.md` files, registers the `claude-code` arm in the
 gates, and adds that arm's track entry to `docs-register.md`. Then comes the rest of part 2: the
 relinks and `LEGACY_PATH_MAP` repoints, the reference-arm corrections, the final arm index, the
 outline deletion, the boundary test, and 2b's close, which still owns the friction-log triage. Part

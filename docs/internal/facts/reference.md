@@ -958,11 +958,11 @@ re-sourced to Go on this tree rather than to the page.
   as intended; every other rejection reason does log. Source: `src/lib/cloudflare/turnstile.ts#ROUTINE_ERROR_CODES`
   (`ROUTINE_ERROR_CODES`), `:153-158` (`isRoutine` check gates the `log.warn('turnstile.verify_failed',
   { reason: 'rejected', codes })` call). [verified]
-- `f:thbxvf` `verifyTurnstile` logs `reason: 'missing_secret'` for a blank or non-string `secret`
+- `f:thbxvf` `verifyTurnstile` logs the warn event `turnstile.verify_failed` with `reason: 'missing_secret'` for a blank or non-string `secret`
   and `reason: 'invalid_input'` (with `tokenLength`) for a blank, non-string, or over-length
   `token`; the secret is checked first, so a call with both bad logs `missing_secret`. Both
-  return `false` without calling fetch. Source: `src/lib/cloudflare/turnstile.ts#verifyTurnstile`.
-  [verified]
+  return `false` without calling fetch. Source: `src/lib/cloudflare/turnstile.ts#verifyTurnstile`,
+  `src/lib/cloudflare/turnstile.ts:96,105`. [verified]
 - `f:ndtmx8` `resolveRateLimit` resolves multiple keys in order, short-circuiting at the first key over
   budget (a later key's counter is never incremented once an earlier one has failed), and returns
   a four-arm outcome (`allowed`, `limited`, `no-binding`, `failed`) rather than the boolean its
@@ -1152,7 +1152,7 @@ re-sourced to Go on this tree rather than to the page.
 ## docs/reference/guidance.md
 
 - `f:vhxkab` `cairn-guidance install`'s containment boundary is the real directory `.claude` under the resolved working directory, not a lexical path prefix: the working directory goes through `realpath` (so a project reached through a symlinked parent still installs), then every path component from `.claude` down is `lstat`-ed, and a symlinked component, a symlinked destination, or a destination that already exists as a directory is refused by name while the run continues. A symlink at a `<dest>.orig` path is refused as well, and the destination beside it is also refused and not overwritten in that run, since the recovery copy could not be made; the `.orig` is created with an exclusive, no-follow open, so a dangling link cannot be written through. Both the `.orig` path and the destination beside it land in `report.refused`, so an operator reading the report sees which destination was left stale, not only its `.orig` sibling. Source: `src/lib/guidance/install.ts` (`resolveWritableDest`, `preserveOriginal`, `isGuidancePath`, `installGuidance`). [verified]
-- `f:x5grdm` A write failure during `cairn-guidance install` (an `ENOSPC`, an `EACCES`, ...) is reported through `InstallReport.writeErrors`, a list of `{ path, code }` entries, separate from `report.refused`: a disk or permissions error is not folded into the containment refusals, so the bin's printed line names the errno code rather than misattributing the failure to a symlink or an out-of-bounds path. Source: `src/lib/guidance/install.ts` (`installGuidance`'s write `catch`), `src/lib/guidance/bin.ts` (`write error` print line). [verified]
+- `f:x5grdm` A failure writing a destination file during `cairn-guidance install` (an `ENOSPC`, an `EACCES`, ...) is reported through `InstallReport.writeErrors`, a list of `{ path, code }` entries, separate from `report.refused`: a disk or permissions error is not folded into the containment refusals, so the bin's printed line names the errno code rather than misattributing the failure to a symlink or an out-of-bounds path. Source: `src/lib/guidance/install.ts` (`installGuidance`'s write `catch`), `src/lib/guidance/bin.ts` (`write error` print line). [verified]
 - `f:h2wtin` The package ships exactly 4 bins total (`cairn-manifest`, `cairn-media-seed`, `cairn-audit`,
   `cairn-guidance`) plus a separate `./vite` export (the Vite plugin, `dist/vite/index.js`,
   distinct from the `cairn-manifest` bin at `dist/vite/bin.js`); relative to `cairn-guidance`

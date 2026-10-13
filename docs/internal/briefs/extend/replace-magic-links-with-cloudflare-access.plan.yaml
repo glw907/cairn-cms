@@ -1,0 +1,1317 @@
+version: 1
+page:
+  path: docs/extend/replace-magic-links-with-cloudflare-access.md
+  title: Replace magic links with Cloudflare Access
+  type: task guide
+argument: |
+  Under `identity`, cairn hands the whole of sign-in to the gate and keeps only the roster lookup,
+  so the task is making two admission lists agree on one string and making the gate the only way
+  to reach `/admin`. The Access application's policy decides who reaches the admin and the roster
+  decides who among them may edit; the email the resolver returns is their only join, and the
+  guard looks it up with no cross-check. Every step serves one of those two aims: the roster holds
+  the exact address the provider asserts; the application covers every admin path, admits every
+  rostered editor, and takes the email from a provider the user does not control; no cache rule
+  or ungated hostname delivers an admin response around the gate; the verifier turns the gate's
+  token into that email and nothing else; and the guard takes the resolver as one option beside
+  the `runtime` it already reads, live from one deploy. Verification and recovery read the two
+  records the guard leaves when either list refuses, and recognize the one refusal that leaves
+  none, the gate's own block page.
+introduction:
+  covers: |
+    The introduction frames the page from above before it states the task, and it opens on a
+    statement, never an imperative. First the model the reader leaves: cairn signs editors in by
+    magic link by default so that a content site runs with zero config, because cairn is itself
+    the identity system, its `AUTH_DB` holding the roster, the sessions, and the single-use
+    sign-in tokens; the guard `createAuthGuard` returns is a SvelteKit handle in the server hooks
+    that gates the `/admin` subtree. Then why a site leaves that default: its editors already hold
+    Google or Microsoft accounts in the organization's identity provider, and Cloudflare Access,
+    an application that sits in front of the site's Worker, admits only users who match its
+    policies and signs them in through that provider. The contract sentence: the page puts an
+    Access application in front of `/admin` and writes the resolver that turns its token into the
+    roster email the guard looks up; the roster stays in cairn, so the application decides who
+    reaches the admin and the roster decides who among them may edit. Then the decision input,
+    placed before the first heading as the "right tool for the job" callout: setting `identity`
+    replaces the whole magic-link path, all editors or none, with no token minted and no session
+    cookie set, and the free Zero Trust plan caps the users who authenticate through Access, the
+    cap left to Cloudflare's plans page. It names the readers who arrive: the developer switching
+    an organization's site, the developer still deciding, and the developer behind a different
+    authenticating reverse proxy, who learns that the seam is not Cloudflare-specific, so the
+    resolver carries over and the Cloudflare steps are replaced. The figure closes the
+    introduction.
+  priorKnowledge: |
+    A Svelte-fluent developer who has edited a SvelteKit server hooks file, deployed a Worker with
+    Wrangler, can query Workers Logs, and can read a JWT verification sample closely enough to own
+    the code it becomes, with access to the Cloudflare account's Zero Trust settings. The page
+    explains none of these.
+  notCovered: |
+    Each out-of-scope subject names its page, subject first: the threat analysis of identity mode
+    and the risks the gate leaves open (Security model, its identity-mode section); setting up
+    magic-link sign-in itself, and staying on magic links with a rebranded sign-in email (Add
+    cairn to a SvelteKit app); and signing a second sign-in group in beside editors who keep magic
+    links (Add a second sign-in group). A scope sentence may name the page.
+  facts: ["f:zxdoaf", "f:u77pea", "f:2sd4if", "f:agif8l", "f:gw1oas", "f:8289h7", "f:k40l86", "f:v5ndhs", "f:fhit7f", "f:4olp4u", "f:3p8yu8"]
+orderReason: |
+  The order follows what each step consumes, not the outline's covers inventory. The decision
+  input (all-or-nothing, the plan cap) moves into the introduction as the exemplar's early
+  callout, because a reader who should stay on magic links must learn it before any heading.
+  Before you begin holds the starting state, the seeded first owner among it, since identity mode
+  cannot create that row. Prepare the roster comes first among the steps: it is the cairn half of
+  the join, needs no Zero Trust change, and a mismatch there locks an editor out at the deploy, so
+  fixing it first leaves the gate as the only new variable when identity mode goes live; it also
+  states the two-lists claim the policy step refers back to. Create the Access application
+  follows, every step inside Zero Trust, and it ends by collecting the three values the verifier
+  consumes (the AUD tag, the team domain, the logout address), so no later step asks for a value
+  the page has not located. Close the exposures outside the application splits off the outline's
+  cache-rule and preview-URL covers, because they live in the zone's cache rules and the Worker's
+  Wrangler configuration, outside Zero Trust, and close a different thing: an admin response that
+  reaches a browser around the gate. Write the verifier consumes the three values; its
+  requirements precede the sample so the sample reads against them. Wire the resolver and deploy
+  the Worker comes last among the changes, since the deploy uploads the hooks option and the
+  Wrangler settings together and is the moment identity mode goes live; the outline's logout and
+  token-lifetime cover becomes the explanation after that deploy, where a reader meets what
+  changed, and its stale-tab refusal moves to the failure path. Verify the gate, Resolve a refused
+  sign-in, and See also close the page, as the task-guide anatomy requires.
+preconditions:
+  - magic-link-site
+  - owner-row
+  - zero-trust-team
+  - custom-domain
+sections:
+  - heading: Before you begin
+    opens: |
+      The switch starts from a deployed site that signs editors in by magic link, its first owner
+      already on the roster, the Worker served on a hostname in a Cloudflare zone, and a Cloudflare
+      Zero Trust team with your identity provider connected.
+    items:
+      - id: intro-default
+        kind: fact
+        fact: "f:zxdoaf"
+        use: |
+          Backs the introduction's first paragraph only: magic-link sign-in with the owner and
+          editor pair is cairn's default so that a content site runs with zero config, and auth
+          exists only to gate the admin. Not restated in this section.
+      - id: intro-identity-system
+        kind: fact
+        fact: "f:u77pea"
+        use: |
+          Backs the introduction's first paragraph only: under the default cairn is itself the
+          identity system for its editors, its D1 store `AUTH_DB` holding the roster, the
+          sessions, and the single-use sign-in tokens, and a site's own gate replaces session
+          resolution only when the site configures one. Not restated in this section.
+      - id: intro-guard-scope
+        kind: fact
+        fact: "f:2sd4if"
+        use: |
+          Backs the introduction's sentence on where the guard sits only: the guard
+          `createAuthGuard({ runtime })` returns gates the whole `/admin` subtree before any load
+          runs. Omit the per-route authorization clause.
+      - id: intro-providers
+        kind: fact
+        fact: "f:gw1oas"
+        use: |
+          Backs the introduction's why-switch sentence only: Access offers Google and Microsoft
+          among its identity providers, so an editor can sign in with the organization's Google
+          or Microsoft account.
+      - id: intro-contract
+        kind: fact
+        fact: "f:8289h7"
+        use: |
+          Backs the introduction's contract sentence only: behind Cloudflare Access, or any
+          reverse proxy that authenticates the request before it reaches the Worker, a site sets
+          the guard's `identity` resolver, which replaces session-cookie resolution.
+      - id: intro-all-or-nothing
+        kind: fact
+        fact: "f:v5ndhs"
+        use: |
+          Backs the introduction's decision callout only: configuring `identity` replaces the
+          whole magic-link path, with no partial adoption where some editors keep magic links.
+      - id: intro-no-session
+        kind: fact
+        fact: "f:fhit7f"
+        use: |
+          Backs the introduction's decision callout only: under `identity` the guard mints no
+          token, creates no session, and sets no session cookie; `identity.resolve` reads the
+          gate's proof and the guard looks the proven email up in the roster as it looks up a
+          magic-link session's email.
+      - id: intro-plan-cap
+        kind: fact
+        fact: "f:4olp4u"
+        use: |
+          Backs the introduction's decision callout only: the free Zero Trust plan caps the users
+          who authenticate through Access, counted as those editors rather than as roster rows, so
+          a larger team needs a paid plan. Never state the figure; link the plans page.
+      - id: intro-plans-link
+        kind: link
+        target: https://www.cloudflare.com/plans/zero-trust-services/
+      - id: intro-security-link
+        kind: link
+        target: security-model.md#identity-modes-threat-surface
+      - id: intro-add-cairn-link
+        kind: link
+        target: add-cairn-to-a-sveltekit-app.md#customize-the-sign-in-email
+      - id: intro-second-group-link
+        kind: link
+        target: add-a-second-sign-in-group.md
+      - id: intro-guard-ref-link
+        kind: link
+        target: ../reference/sveltekit.md#createauthguard
+      - id: intro-figure
+        kind: figure
+        source: mermaid
+        text: |
+          The introduction's closing figure, a diagram of one request: the browser; the Cloudflare
+          Access application, holding its policies and the AUD tag; the Worker, holding the guard
+          that calls `identity.resolve`, the roster lookup by email, and the admin shell. An
+          `/admin` request passes the application, which forwards the `Cf-Access-Jwt-Assertion`
+          header to the guard, which looks the email up in the roster before the shell opens. A
+          `/preview/<token>` request and a `/healthz` request reach the Worker without passing the
+          application. The accessible description names every node and edge; the caption states
+          only the path and the two uncovered routes, never the two-lists claim.
+      - id: fig-preview
+        kind: fact
+        fact: "f:vnm1p5"
+        use: |
+          Backs the figure's caption only: the application does not cover `/preview/<token>`,
+          whose reviewer has no reason to be admitted to `/admin`.
+      - id: fig-healthz
+        kind: fact
+        fact: "f:paotzb"
+        use: |
+          Backs the figure's caption only: `/healthz` sits at the site root, outside `/admin`, so
+          the guard does not gate it. Omit the payload, the status codes, and the logging.
+      - id: bb-list
+        kind: sentence
+        mode: claim
+        text: |
+          A complete lead-in sentence, then a bulleted list of four preconditions, each with a
+          link to what produces it: a deployed site whose guard signs editors in by magic link;
+          the first owner's row in `AUTH_DB`; a Custom Domain (or route) in a Cloudflare zone
+          serving the Worker; and a Cloudflare Zero Trust team with the organization's identity
+          provider connected.
+      - id: bb-site-link
+        kind: link
+        target: add-cairn-to-a-sveltekit-app.md
+      - id: bb-owner
+        kind: fact
+        fact: "f:qhmydf"
+        use: |
+          The owner precondition and its reason, in the same bullet: nothing in identity mode can
+          bootstrap an owner, since the `identity` branch never reaches the magic-link routes where
+          `bootstrapOwner` lives, so a site seeds the first owner with `create-cairn-site` or with
+          `wrangler d1 execute` against `AUTH_DB` before the switch.
+      - id: bb-d1-link
+        kind: link
+        target: https://developers.cloudflare.com/workers/wrangler/commands/#d1-execute
+      - id: bb-custom-domain
+        kind: fact
+        fact: "f:thgmpz"
+        use: |
+          The Custom Domain precondition: the Worker's Wrangler configuration declares the
+          hostname as a `routes` entry with `custom_domain: true`, on a hostname inside an active
+          Cloudflare zone. Omit the DNS record and certificate detail.
+      - id: bb-custom-domain-link
+        kind: link
+        target: https://developers.cloudflare.com/workers/configuration/routing/custom-domains/
+      - id: bb-zero-trust
+        kind: fact
+        fact: "f:agif8l"
+        use: |
+          The Zero Trust precondition: an application connects to an identity provider, and Google
+          Workspace and Microsoft Entra ID each have a dedicated connector. Omit the one-time PIN.
+      - id: bb-zero-trust-link
+        kind: link
+        target: https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/
+      - id: bb-handoff
+        kind: handoff
+        text: |
+          Turn to the roster as the admission list cairn holds, so it comes first.
+  - heading: Prepare the roster
+    opens: |
+      The Access application and cairn's roster are two admission lists that never reconcile
+      automatically, and the email string the resolver returns is their only join, so each roster
+      email must match the address your identity provider asserts before identity mode goes live.
+    items:
+      - id: ros-two-lists
+        kind: fact
+        fact: "f:k40l86"
+        use: |
+          Backs the opening sentence, the claim's one full statement on the page: the application
+          decides who reaches `/admin` at all, and the roster decides who among those may edit.
+      - id: ros-join
+        kind: fact
+        fact: "f:emrebl"
+        use: |
+          The join: the guard checks that the returned email is a non-empty string, trims and
+          lowercases it, and looks it up in the roster with no cross-check of its own.
+      - id: ros-primary
+        kind: fact
+        fact: "f:g0206o"
+        use: |
+          The consequence, in the same paragraph: a roster email that is an alias rather than the
+          primary address the provider asserts is refused as unknown from the deploy that turns on
+          `identity`; a mismatch is fixed from the roster screen or with `wrangler d1 execute`
+          against `AUTH_DB`.
+      - id: ros-lead
+        kind: sentence
+        mode: verbatim
+        text: |
+          To prepare the roster, follow these steps:
+      - id: s-roster-compare
+        kind: step
+        text: |
+          In the admin's roster screen, compare each editor's email with the primary address your
+          identity provider asserts for that person, not an alias.
+        requires: [magic-link-site, owner-row]
+        produces: [roster-compared]
+      - id: s-roster-fix
+        kind: step
+        text: |
+          In the roster screen, or with `wrangler d1 execute` against `AUTH_DB`, correct each email
+          that differs.
+        requires: [roster-compared]
+        produces: [roster-matched]
+      - id: ros-handoff
+        kind: handoff
+        text: |
+          Turn to the other admission list, the Access application's policy.
+  - heading: Create the Access application
+    opens: |
+      The guard admits whatever roster email the resolver proves, so the application must cover
+      every admin path, admit every rostered editor, and take each email from a provider the
+      signing-in user does not control.
+    items:
+      - id: app-layer
+        kind: fact
+        fact: "f:agif8l"
+        use: |
+          Backs the opening sentence: only users who match the application's policies reach the
+          Worker behind it. Omit the connectors and the one-time PIN.
+      - id: app-lead
+        kind: sentence
+        mode: verbatim
+        text: |
+          To create and configure the application, follow these steps:
+      - id: s-app-create
+        kind: step
+        text: |
+          In Zero Trust, create a self-hosted application for the site's hostname, as Cloudflare's
+          self-hosted application guide describes.
+        requires: [zero-trust-team, custom-domain]
+        produces: [app-created]
+      - id: app-create-link
+        kind: link
+        target: https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/
+      - id: s-app-paths
+        kind: step
+        text: |
+          In the application's paths, cover `/admin`, every path beneath it, and
+          `/admin/__data.json`, and leave `/preview/<token>` uncovered.
+        requires: [app-created]
+        produces: [paths-covered]
+        canFail: true
+      - id: app-paths
+        kind: fact
+        fact: "f:vnm1p5"
+        use: |
+          A short paragraph under the step: `/admin/__data.json` is SvelteKit's data-only fetch, a
+          preview link's reviewer has no reason to be admitted to `/admin`, and where application
+          paths overlap Access applies the most specific path first.
+      - id: app-paths-link
+        kind: link
+        target: https://developers.cloudflare.com/cloudflare-one/access-controls/policies/app-paths/
+      - id: x-paths
+        kind: failure
+        from: s-app-paths
+        symptom: |
+          A signed-out request to `/admin/login` stays on the site's hostname.
+        cause: |
+          The application's paths leave an admin path uncovered, so the request reaches the Worker
+          without the gate's token.
+        handledBy: app-paths
+      - id: s-app-policy
+        kind: step
+        text: |
+          In the application's policies, add a policy that admits every editor on the roster, as
+          Cloudflare's policies page describes.
+        requires: [app-created]
+        produces: [policy-set]
+        canFail: true
+      - id: app-policy-link
+        kind: link
+        target: https://developers.cloudflare.com/cloudflare-one/access-controls/policies/
+      - id: app-policy-lists
+        kind: sentence
+        mode: claim
+        text: |
+          A short paragraph under the step, the one back-reference to the two-lists claim: an
+          editor the policy leaves out stops at Access and never reaches the guard, and a user the
+          policy admits whom the roster lacks reaches the guard, which refuses them as unknown.
+        facts: ["f:agif8l", "f:k40l86", "f:hilyos"]
+      - id: x-policy
+        kind: failure
+        from: s-app-policy
+        symptom: |
+          A rostered editor sees Cloudflare's Access block page instead of the admin.
+        cause: |
+          The application's policy does not admit that editor.
+        handledBy: r-block
+      - id: s-app-login
+        kind: step
+        text: |
+          In the application's login methods, enable your identity provider and no method whose
+          email claim the signing-in user controls.
+        requires: [app-created]
+        produces: [login-methods-set]
+      - id: app-login-trap
+        kind: fact
+        fact: "f:33upyd"
+        use: |
+          The trap, in the paragraph under the step that sets the value: Access takes the email
+          from the claim the provider returns, and the guard admits whatever email the resolver
+          returns once it matches a roster row, so a user who controls that claim can sign in as
+          any roster address.
+      - id: app-threat-link
+        kind: link
+        target: security-model.md#identity-modes-threat-surface
+      - id: s-app-cors
+        kind: step
+        text: |
+          In the application's CORS settings, leave every setting off.
+        requires: [app-created]
+        produces: [cors-off]
+      - id: app-cors
+        kind: fact
+        fact: "f:0gltjq"
+        use: |
+          The reason, under the step: enabling the application's CORS settings can make the
+          `X-Cairn-CSRF` header settable cross-origin, which defeats the CSRF check the admin guard
+          runs on it.
+      - id: s-app-aud
+        kind: step
+        text: |
+          In the application's **Additional settings**, copy the AUD tag.
+        requires: [app-created]
+        produces: [aud-tag]
+      - id: app-aud
+        kind: fact
+        fact: "f:gs23fb"
+        use: |
+          Under the step: the verifier validates the token against the AUD tag, never the
+          application's id, and the tag changes only when the application is deleted or
+          recreated.
+      - id: s-app-team
+        kind: step
+        text: |
+          In Zero Trust, note your team domain, `https://<your-team-name>.cloudflareaccess.com`.
+        requires: [zero-trust-team]
+        produces: [team-domain]
+      - id: app-team
+        kind: fact
+        fact: "f:s9s8mw"
+        use: |
+          Only the team domain's form, `https://<your-team-name>.cloudflareaccess.com`, as
+          Cloudflare's sample sets it.
+      - id: s-app-logout
+        kind: step
+        text: |
+          On Cloudflare's session management page, find your team's Access logout address and note
+          it.
+        requires: [zero-trust-team]
+        produces: [logout-address]
+      - id: app-logout-link
+        kind: link
+        target: https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/
+      - id: app-live
+        kind: sentence
+        mode: claim
+        text: |
+          From the moment it is saved, the application challenges every request to `/admin` on the
+          site's hostname, magic-link editors included, while the guard behind it keeps signing
+          editors in by magic link until the deploy that switches it to identity.
+        facts: ["f:agif8l", "f:v5ndhs"]
+      - id: app-handoff
+        kind: handoff
+        text: |
+          Turn to the two settings outside the application that can still deliver an admin
+          response around it.
+  - heading: Close the exposures outside the application
+    opens: |
+      A cache rule that matches `/admin` and an ungated `workers.dev` hostname each deliver an
+      admin response the application never sees, so close both before the deploy that switches
+      the guard to identity.
+    items:
+      - id: exp-lead
+        kind: sentence
+        mode: verbatim
+        text: |
+          To close both exposures, follow these steps:
+      - id: s-cache
+        kind: step
+        text: |
+          In the zone's cache rules, remove `/admin` from any rule that matches it. A zone with no
+          such rule skips this step.
+        requires: [magic-link-site, custom-domain]
+        produces: [cache-clear]
+        optional: true
+      - id: exp-cache
+        kind: fact
+        fact: "f:zt0oag"
+        use: |
+          The reason, under the step: a cache rule can ignore the origin's `Cache-Control` and
+          cache the response for a set TTL, which overrides the engine's `private, no-store` on
+          every admin response and lets one editor's cached page reach the next matching request.
+      - id: exp-cache-link
+        kind: link
+        target: https://developers.cloudflare.com/cache/how-to/cache-rules/settings/
+      - id: s-wrangler
+        kind: step
+        text: |
+          In the Worker's Wrangler configuration, set both `workers_dev` and `preview_urls` to
+          `false`.
+        requires: [magic-link-site, custom-domain]
+        produces: [preview-urls-closed]
+      - id: exp-preview
+        kind: fact
+        fact: "f:51uyqr"
+        use: |
+          The trap, under the step that sets the value: with `preview_urls` omitted, Wrangler
+          leaves an existing preview URL setting alone, so `workers_dev: false` alone can leave
+          `/admin` served on an ungated `workers.dev` preview hostname. Omit the alternative of
+          gating those hostnames with an Access application.
+      - id: exp-preview-link
+        kind: link
+        target: https://developers.cloudflare.com/workers/configuration/previews/
+      - id: exp-hostname
+        kind: fact
+        fact: "f:jha9f7"
+        use: |
+          The same paragraph: the guard makes no hostname check of its own, so it admits a request
+          on such a hostname whenever the resolver accepts the token it presents.
+      - id: exp-revoked
+        kind: fact
+        fact: "f:fe0dyh"
+        use: |
+          The same paragraph, only the consequence on an ungated hostname: a token issued before a
+          logout or revocation keeps verifying at an origin that checks it statelessly until its
+          `exp`, so there the gate's revocation never applies.
+      - id: exp-deploy-note
+        kind: sentence
+        mode: claim
+        text: |
+          The Wrangler change is a local edit that takes effect at the deploy in Wire the resolver
+          and deploy the Worker.
+      - id: exp-deploy-link
+        kind: link
+        target: "#wire-the-resolver-and-deploy-the-worker"
+      - id: exp-handoff
+        kind: handoff
+        text: |
+          Turn to the code side, which starts from the three values noted in the application:
+          the team domain, the AUD tag, and the logout address.
+  - heading: Write the verifier
+    opens: |
+      The verifier is code you write and own, since cairn ships no OpenID Connect (OIDC) client
+      and does not depend on `jose`, so TypeScript checks the resolver's shape and nothing in
+      cairn checks the verification it performs.
+    items:
+      - id: ver-own
+        kind: fact
+        fact: "f:lyaf6p"
+        use: |
+          Backs the opening sentence: the verifier is application code the site writes and owns,
+          cairn ships no OIDC client and does not depend on `jose`, and nothing in cairn verifies
+          the recipe's logic.
+      - id: ver-req-lead
+        kind: sentence
+        mode: verbatim
+        text: |
+          A verifier for an Access token meets the following requirements:
+      - id: ver-header
+        kind: fact
+        fact: "f:42fdqq"
+        use: |
+          The first requirement, as a bullet with its reason: it reads the
+          `Cf-Access-Jwt-Assertion` header, not the `CF_Authorization` cookie, since Cloudflare
+          does not guarantee the cookie is passed and a browser can set it by hand.
+      - id: ver-stateless
+        kind: fact
+        fact: "f:fe0dyh"
+        use: |
+          The second requirement, as a bullet with its qualification whole: it checks the
+          signature against the team's `/cdn-cgi/access/certs` keys and checks the `iss` and `aud`
+          claims, and because that validation is stateless, with no revocation step, a revocation
+          takes effect only where Access sits in the request path.
+      - id: ver-type
+        kind: fact
+        fact: "f:zas1dk"
+        use: |
+          The third requirement, as a bullet: it requires `type` to be `app`, an application
+          token rather than the `org` global session token, and refuses a token with no `email`
+          claim, which also refuses a service token.
+      - id: ver-identity
+        kind: fact
+        fact: "f:hilyos"
+        use: |
+          The fourth requirement, as a bullet: it returns the email and, optionally, a display
+          name, never a role, since the guard takes the role from the roster row and uses the
+          resolver's display name, capped at 120 characters, only when the roster's is empty.
+          Omit the unknown-identity clause.
+      - id: ver-reasons
+        kind: fact
+        fact: "f:fu4uis"
+        use: |
+          The fifth requirement, as a bullet: its refusal reason names the failure, since the
+          guard logs `audience`, `issuer`, `keys`, and `error` at error, as a misconfigured gate
+          that would refuse the whole roster, and every other reason at warn; a resolver that
+          throws is logged at error. Omit `auth.identity.unknown`.
+      - id: ver-steps-lead
+        kind: sentence
+        mode: verbatim
+        text: |
+          To write the verifier, follow these steps:
+      - id: s-jose
+        kind: step
+        text: |
+          In the project directory, install `jose` with `npm install jose`.
+        requires: [magic-link-site]
+        produces: [jose-installed]
+      - id: s-config
+        kind: step
+        text: |
+          In `src/lib/`, create a config module that exports the team domain, the AUD tag, and the
+          logout address you noted.
+        requires: [team-domain, aud-tag, logout-address]
+        produces: [config-module]
+      - id: ver-logout-form
+        kind: fact
+        fact: "f:pwmybh"
+        use: |
+          Under the step, only the accepted forms: `createAuthGuard` validates the logout address
+          once, at construction, and accepts a root-relative path or an absolute `https:` URL.
+          Leave the forbidden-character detail to the reference entry.
+      - id: ver-logout-ref
+        kind: link
+        target: ../reference/sveltekit.md#createauthguard
+      - id: s-resolver
+        kind: step
+        text: |
+          In `src/lib/`, create a resolver module that exports an `IdentityResolver` meeting the
+          verifier requirements.
+        requires: [jose-installed, config-module]
+        produces: [resolver-module]
+      - id: ver-seam
+        kind: fact
+        fact: "f:3p8yu8"
+        use: |
+          Under the step, only the interface's shape: an `IdentityResolver` is a `resolve`
+          function plus a `logoutUrl`, with an optional `label`.
+      - id: ver-sample-lead
+        kind: sentence
+        mode: claim
+        text: |
+          The resolver module that follows is illustrative, adapted from Cloudflare's Workers
+          sample on its Validate JWTs page, which stays the authoritative reference for the
+          verification.
+        facts: ["f:s9s8mw"]
+      - id: ver-sample-link
+        kind: link
+        target: https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/
+      - id: ver-sample-shape
+        kind: fact
+        fact: "f:s9s8mw"
+        use: |
+          Backs the sample's verification calls: a key set from `createRemoteJWKSet` over
+          `${teamDomain}/cdn-cgi/access/certs`, the token read from the `cf-access-jwt-assertion`
+          header, and `jwtVerify(token, JWKS, { issuer: teamDomain, audience: audTag })`.
+      - id: ver-code
+        kind: code
+        source: https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/
+        text: |
+          An illustrative `src/lib/access-identity.ts` implementing the `IdentityResolver`
+          interface, adapted from Cloudflare's Workers sample: imports `createRemoteJWKSet` and
+          `jwtVerify` from `jose`, the `IdentityResolver` type from `@glw907/cairn-cms/sveltekit`,
+          and `audTag`, `logoutUrl`, and `teamDomain` from the config module; builds the key set;
+          a `reasonFor` helper that maps `jose`'s error codes to the refusal reasons the guard logs
+          (`expired`, `audience`, `issuer`, `keys`, `invalid`) and returns `undefined` for any code
+          it does not name; and an exported `accessIdentity` with a `label`, the `logoutUrl`, and a
+          `resolve` that returns `missing` with no header, verifies the token against the issuer
+          and audience, returns `invalid` when `payload.type` is not `app`, returns `no_email`
+          when the email claim is absent or empty, returns `{ ok: true, email }` otherwise, and
+          in its `catch` returns the mapped reason or rethrows a failure the mapping does not
+          name.
+      - id: ver-throw
+        kind: sentence
+        mode: claim
+        text: |
+          After the sample: it returns the reason its mapping gives and rethrows any other
+          failure, which the guard logs at error, so under the sample the `error` reason means the
+          resolver threw.
+        facts: ["f:fu4uis"]
+      - id: ver-label
+        kind: fact
+        fact: "f:ojr3qm"
+        use: |
+          After the sample: the optional `label` names the gate on the sign-in hand-off, the
+          identity-unresolved page, and the unknown-identity page, and defaults to "your
+          organization's sign-in". Omit the snapshot and escaping detail.
+      - id: ver-handoff
+        kind: handoff
+        text: |
+          Turn to the guard, which takes the resolver as one option, and to the deploy that
+          makes the switch.
+  - heading: Wire the resolver and deploy the Worker
+    opens: |
+      `createAuthGuard` returns a plain SvelteKit `Handle` whether or not `identity` is set, so the
+      resolver goes in as one more option beside `runtime`, and the deploy that uploads it is the
+      moment identity mode goes live.
+    items:
+      - id: wire-handle
+        kind: fact
+        fact: "f:dwc4kp"
+        use: |
+          Backs the opening sentence: the guard is a plain `Handle` either way, so an identity-mode
+          guard composes with a site's other handles through SvelteKit's `sequence` exactly as the
+          magic-link guard does.
+      - id: wire-runtime
+        kind: fact
+        fact: "f:4xrx5f"
+        use: |
+          Where the option goes: `createAuthGuard` takes a required `runtime`, the composed
+          runtime, plus optional `includeSubDomains` and `identity`, and reads the role vocabulary
+          and the access map from `runtime`. Omit the earlier-versions clause here.
+      - id: wire-scaffold
+        kind: fact
+        fact: "f:f21bcz"
+        use: |
+          The same paragraph: the scaffold's hooks module already calls `createAuthGuard({
+          runtime })` in its production branch, with the runtime imported from
+          `#chassis/cairn.server.js`, so the step adds one option to that call. Omit the
+          dev-backend gate mechanics.
+      - id: wire-access
+        kind: fact
+        fact: "f:iwf4nu"
+        use: |
+          The same paragraph: the guard attaches `runtime.access` to `locals.cairnAccess` on both
+          of its branches, so the adapter's access map keeps governing the admin under `identity`.
+          Omit the earlier-versions clause.
+      - id: wire-older
+        kind: fact
+        fact: "f:4xrx5f"
+        use: |
+          Only the earlier-versions clause, as one sentence: a site whose hooks call
+          `createAuthGuard` without `runtime`, or pass it `roles` or `access`, is on an earlier
+          engine and moves to the `{ runtime }` form before this step.
+      - id: wire-upgrade-link
+        kind: link
+        target: upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change
+      - id: wire-lead
+        kind: sentence
+        mode: verbatim
+        text: |
+          To turn on identity mode, follow these steps:
+      - id: s-wire
+        kind: step
+        text: |
+          In `src/hooks.server.ts`, pass the resolver to the production branch's `createAuthGuard`
+          call as its `identity` option, beside `runtime`.
+        requires: [resolver-module]
+        produces: [identity-wired]
+        canFail: true
+      - id: wire-code
+        kind: code
+        source: ../../templates/waymark/src/hooks.server.ts
+        text: |
+          An illustrative excerpt of the scaffold's hooks file, marked as an excerpt for the
+          snippet check: the import of `accessIdentity` from `#lib/access-identity.js`, and the
+          production branch's `handle = createAuthGuard({ runtime, identity: accessIdentity });`,
+          with the dev-backend branch and the other imports elided and unchanged.
+      - id: x-logout-unsafe
+        kind: failure
+        from: s-wire
+        symptom: |
+          `createAuthGuard` throws `cairn: identity.logoutUrl is not a safe redirect target` at
+          construction.
+        cause: |
+          The config module's logout address is neither a root-relative path nor an absolute
+          `https:` URL.
+        handledBy: s-config
+      - id: s-deploy
+        kind: step
+        text: |
+          In the project directory, deploy the site the way you deploy any change.
+        requires: [identity-wired, preview-urls-closed, roster-matched, paths-covered, policy-set, login-methods-set, cors-off]
+        produces: [identity-live]
+      - id: dep-change-link
+        kind: link
+        target: add-cairn-to-a-sveltekit-app.md#deploy-a-change
+      - id: dep-live
+        kind: sentence
+        mode: claim
+        text: |
+          After the step: the deploy uploads the hooks option and the Wrangler settings together,
+          and from it on identity mode is live, so an editor whose roster email differs from the
+          provider's primary address is refused as unknown.
+        facts: ["f:g0206o", "f:51uyqr"]
+      - id: dep-diff-lead
+        kind: sentence
+        mode: claim
+        text: |
+          A lead-in tying the explanation to the deploy: once the deployed guard carries the
+          option, it differs from magic-link mode in the ways the bulleted list that follows
+          names.
+      - id: dep-per-request
+        kind: fact
+        fact: "f:4uqi5r"
+        use: |
+          A bullet: the guard awaits `identity.resolve` on every non-public `/admin` request and
+          caches no verified identity, so the signature check runs once per request, a request
+          that bypassed the gate included; a handle ahead of the guard can call
+          `resolveRateLimit` from `@glw907/cairn-cms/cloudflare` as best-effort back pressure.
+      - id: dep-ratelimit-link
+        kind: link
+        target: ../reference/cloudflare.md#resolveratelimit
+      - id: dep-lifetime
+        kind: fact
+        fact: "f:2glcaf"
+        use: |
+          A bullet: the gate's session duration governs how long an editor stays signed in, and
+          cairn's 30-day session no longer applies. Never state Access's default or ceiling; link
+          the session management page.
+      - id: dep-session-link
+        kind: link
+        target: https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/
+      - id: dep-signout
+        kind: fact
+        fact: "f:8xxe3b"
+        use: |
+          A bullet: sign-out skips the session-row delete, clears every cairn cookie, and
+          redirects to the gate's `logoutUrl`. Omit the cookie-name forms and the redirect
+          re-check.
+      - id: dep-access-logout
+        kind: fact
+        fact: "f:q0icwk"
+        use: |
+          The same bullet: at the logout address, Access clears the browser's authorization cookie
+          at once and stops accepting earlier tokens shortly after. Never state the timings; the
+          session management link carries them.
+      - id: dep-revocation
+        kind: fact
+        fact: "f:fe0dyh"
+        use: |
+          A bullet, only: a sign-out or a revocation takes effect only where Access sits in the
+          request path, since the origin's signature check is stateless.
+      - id: dep-handoff
+        kind: handoff
+        text: |
+          Turn to checking each of these on the deployed site, from outside.
+  - heading: Verify the gate
+    opens: |
+      A working gate admits a rostered editor to `/admin`, sends a signed-out visitor to the gate's
+      hostname, and serves nothing on an ungated hostname, and since no tool checks the last two
+      yet, you check them by hand against the deployed site.
+    items:
+      - id: vg-hand
+        kind: fact
+        fact: "f:iaqcq6"
+        use: |
+          Backs the opening sentence and the last two checks: no tool checks the login redirect
+          or the `workers.dev` exposure, so a site checks both by hand, an unauthenticated `GET`
+          of the primary hostname's `/admin/login` whose redirect lands on the gate's hostname,
+          and the same `GET` against `<worker-name>.<subdomain>.workers.dev/admin` and the preview
+          alias, watching for any Worker-served response. Never name the retired doctor flag or
+          promise a later release.
+      - id: vg-lead
+        kind: sentence
+        mode: verbatim
+        text: |
+          To verify the gate, run these checks in order:
+      - id: v-admin
+        kind: step
+        text: |
+          From a browser signed in through Access as a rostered editor, open `/admin` on the
+          deployed site. The admin shell opens.
+        requires: [identity-live]
+        produces: [admin-opened]
+        canFail: true
+      - id: x-admin-refused
+        kind: failure
+        from: v-admin
+        symptom: |
+          The browser shows Cloudflare's Access block page or one of the guard's refusal pages
+          instead of the admin shell.
+        cause: |
+          The application's policy, the roster, or the resolver refused the editor.
+        handledBy: vg-resolve-link
+      - id: vg-resolve-link
+        kind: link
+        target: "#resolve-a-refused-sign-in"
+      - id: v-signout
+        kind: step
+        text: |
+          In the admin, sign out. The browser lands on the gate's logout address.
+        requires: [admin-opened]
+        produces: [signout-checked]
+        canFail: true
+      - id: vg-signout
+        kind: fact
+        fact: "f:8xxe3b"
+        use: |
+          Backs the sign-out check: under `identity` the logout redirects to the gate's
+          `logoutUrl`. Only that clause.
+      - id: x-signout
+        kind: failure
+        from: v-signout
+        symptom: |
+          After sign-out, the browser lands somewhere other than the gate's logout address.
+        cause: |
+          The config module exports a different logout address.
+        handledBy: s-config
+      - id: v-login-redirect
+        kind: step
+        text: |
+          From a signed-out client, send an unauthenticated `GET` to `/admin/login` on the primary
+          hostname. The redirect lands on the gate's hostname.
+        requires: [identity-live]
+        produces: [redirect-checked]
+        canFail: true
+      - id: x-login-redirect
+        kind: failure
+        from: v-login-redirect
+        symptom: |
+          The redirect stays on the site's hostname.
+        cause: |
+          The application's paths do not cover `/admin/login`.
+        handledBy: s-app-paths
+      - id: v-hostnames
+        kind: step
+        text: |
+          From the same client, send an unauthenticated `GET` to `/admin` on
+          `<worker-name>.<subdomain>.workers.dev` and on each preview URL. No response comes from
+          the Worker.
+        requires: [identity-live]
+        produces: [hostnames-checked]
+        canFail: true
+      - id: x-hostnames
+        kind: failure
+        from: v-hostnames
+        symptom: |
+          The Worker answers on the `workers.dev` hostname or on a preview URL.
+        cause: |
+          The deployed Wrangler configuration leaves `workers_dev` or `preview_urls` on.
+        handledBy: s-wrangler
+      - id: vg-handoff
+        kind: handoff
+        text: |
+          Turn a refused sign-in in the first checks over to the failure path, which reads the
+          records the guard left or recognizes a refusal that left none.
+  - heading: Resolve a refused sign-in
+    opens: |
+      The guard shows the identity-unresolved page when the resolver refuses or throws and the
+      unknown-identity page when a proven email matches no roster row, each leaving one log record
+      that names the cause, while a refusal at Access never reaches the Worker and leaves none.
+    items:
+      - id: res-unknown-page
+        kind: fact
+        fact: "f:hilyos"
+        use: |
+          Backs the opening sentence's second clause: a proven email with no roster row is refused
+          with the unknown-identity page and logged as `auth.identity.unknown`. Only that clause.
+      - id: res-unresolved
+        kind: fact
+        fact: "f:sbv5xj"
+        use: |
+          Backs the opening sentence's first clause: when the gate refuses the request or the
+          resolver throws, the guard refuses it and leaves a `guard.refused` record with
+          `reason: identity`, whose `detail` carries the refusal's reason.
+      - id: res-log-events-link
+        kind: link
+        target: ../reference/log-events.md
+      - id: res-lead
+        kind: sentence
+        mode: verbatim
+        text: |
+          To find why an editor was refused, run these checks in order:
+      - id: r-stale
+        kind: step
+        text: |
+          If the refused request was a sign-out from a tab left open, sign in through the gate
+          again.
+        requires: [identity-live]
+        produces: [stale-tab-checked]
+        optional: true
+      - id: res-stale
+        kind: fact
+        fact: "f:ig5pn3"
+        use: |
+          Under the step: the shell's logout posts to the bare `/admin`, a guarded path, so a tab
+          whose gate session already ended is refused there before `logoutAction` runs.
+      - id: r-block
+        kind: step
+        text: |
+          If the editor saw Cloudflare's Access block page, add the editor to the application's
+          policy.
+        requires: [stale-tab-checked]
+        produces: [block-checked]
+        optional: true
+      - id: res-block
+        kind: sentence
+        mode: claim
+        text: |
+          Under the step: that request never reached the Worker, so it left neither of the guard's
+          records.
+        facts: ["f:agif8l", "f:k40l86"]
+      - id: r-unknown
+        kind: step
+        text: |
+          Otherwise, in Workers Logs, look for an `auth.identity.unknown` record from the refused
+          request.
+        requires: [block-checked]
+        produces: [unknown-checked]
+        optional: true
+      - id: res-unknown
+        kind: fact
+        fact: "f:mjedcx"
+        use: |
+          Under the step: the record's `email` is the gate's confirmed address, normalized, logged
+          after the roster lookup has failed.
+      - id: r-unknown-fix
+        kind: step
+        text: |
+          If one appears, in the roster screen, add or correct the editor's row so its email
+          matches the record's `email` field.
+        requires: [unknown-checked]
+        produces: [roster-corrected]
+        optional: true
+      - id: res-next
+        kind: fact
+        fact: "f:hilyos"
+        use: |
+          Under the step, only: adding the row lets the editor's very next request succeed.
+      - id: r-reason
+        kind: step
+        text: |
+          Otherwise, read the reason in the `detail` field of the request's `guard.refused` record
+          with `reason: identity`.
+        requires: [unknown-checked]
+        produces: [reason-read]
+        optional: true
+      - id: res-levels
+        kind: fact
+        fact: "f:fu4uis"
+        use: |
+          Under the step: the guard logs `audience`, `issuer`, `keys`, and `error` at error, as a
+          misconfigured gate, and `missing`, `invalid`, `expired`, `no_email`, or a site's own
+          word at warn.
+      - id: r-audience
+        kind: step
+        text: |
+          If the reason is `audience`, compare the AUD tag in the config module with the one in
+          the application's **Additional settings**.
+        requires: [reason-read]
+        produces: [audience-checked]
+        optional: true
+      - id: r-issuer
+        kind: step
+        text: |
+          If the reason is `issuer` or `keys`, check the team domain in the config module.
+        requires: [reason-read]
+        produces: [issuer-checked]
+        optional: true
+      - id: res-issuer
+        kind: fact
+        fact: "f:s9s8mw"
+        use: |
+          Backs the issuer and keys check, only: the sample takes both the issuer and the key set
+          URL from the team domain.
+      - id: r-missing
+        kind: step
+        text: |
+          If the reason is `missing`, confirm that the application's paths cover the requested
+          path and that the request arrived on the primary hostname.
+        requires: [reason-read]
+        produces: [missing-checked]
+        optional: true
+      - id: r-error
+        kind: step
+        text: |
+          If the reason is `error`, fix the resolver module, which threw.
+        requires: [reason-read]
+        produces: [error-checked]
+        optional: true
+      - id: r-expired
+        kind: step
+        text: |
+          If the reason is `expired`, have the editor sign in through the gate again.
+        requires: [reason-read]
+        produces: [expired-checked]
+        optional: true
+      - id: res-expired
+        kind: fact
+        fact: "f:sbv5xj"
+        use: |
+          Backs the expired check, only the remedy: sign in through the gate again.
+      - id: r-invalid
+        kind: step
+        text: |
+          If the reason is `invalid` or `no_email`, confirm the request came from an editor's
+          browser rather than a service token, then check the login method.
+        requires: [reason-read]
+        produces: [invalid-checked]
+        optional: true
+      - id: res-invalid
+        kind: fact
+        fact: "f:zas1dk"
+        use: |
+          Backs the invalid and no_email check, only: the verifier refuses a token whose `type` is
+          not `app` and a token with no `email` claim, and a service-token request's token carries
+          no email.
+      - id: res-debug-link
+        kind: link
+        target: debug-your-site.md#read-the-structured-logs
+  - heading: See also
+    opens: |
+      The following pages cover the seams and limits around identity mode.
+    items:
+      - id: see-security
+        kind: link
+        target: security-model.md#identity-modes-threat-surface
+      - id: see-add-cairn
+        kind: link
+        target: add-cairn-to-a-sveltekit-app.md#customize-the-sign-in-email
+      - id: see-second-group
+        kind: link
+        target: add-a-second-sign-in-group.md
+      - id: see-restrict
+        kind: link
+        target: restrict-admin-access.md
+      - id: see-preview
+        kind: link
+        target: share-a-draft-preview.md
+      - id: see-guard
+        kind: link
+        target: ../reference/sveltekit.md#createauthguard
+dispositions:
+  - fact: "f:gun084"
+    disposition: subordinated
+    reference: ../reference/sveltekit.md#createauthguard
+    reason: |
+      The `createAuthGuard` entry states the whole config bag, that `runtime` is required, that
+      the guard reads `roles` and `access` from it, and that it attaches the map beside
+      `locals.cairnEditor`. The page needs only the call with `identity` beside `runtime`, which
+      `f:4xrx5f`, `f:f21bcz`, and `f:iwf4nu` carry.
+  - fact: "f:3z1uxv"
+    disposition: subordinated
+    reference: restrict-admin-access.md
+    reason: |
+      Whether the scaffold's adapter declares an `access` member, and the example site's signups
+      rule, belong to the access-map task; identity mode leaves the map as it is.
+  - fact: "f:7cv105"
+    disposition: subordinated
+    reference: upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change
+    reason: |
+      The dev backend's `runtime` config is the local-development wiring this page never touches;
+      the upgrade section states that `devBackendHandle` takes `{ runtime }`.
+  - fact: "f:8ciz2s"
+    disposition: subordinated
+    reference: restrict-admin-access.md#decide-what-the-map-leaves-open
+    reason: |
+      The composition-time access-map check is the access-map task's subject and does not change
+      under `identity`.
+  - fact: "f:cvzb8z"
+    disposition: subordinated
+    reference: restrict-admin-access.md
+    reason: |
+      Which readers see the adapter's `access` member is the access-map task's subject; this page
+      needs only that the guard still attaches the map under `identity`, which `f:iwf4nu` carries.
+  - fact: "f:dqjkci"
+    disposition: subordinated
+    reference: add-cairn-to-a-sveltekit-app.md#wire-the-dev-backend
+    reason: |
+      The dev backend mints an owner editor locally and never runs a gate, so it plays no part in
+      identity mode; the tutorial's dev-backend section describes it.
+  - fact: "f:eiaqkh"
+    disposition: cut
+    reason: |
+      The example site's dev-backend swap in its own hooks file is engine-repository wiring that a
+      reader's site does not carry; the scaffold's hooks, placed through `f:f21bcz`, are what the
+      reader edits.
+  - fact: "f:hwffph"
+    disposition: subordinated
+    reference: ../reference/cli-cairn-doctor.md#the-checks
+    reason: |
+      The role-wiring condition concerns custom roles reaching the guard, not identity mode; the
+      doctor reference's checks table states it.
+  - fact: "f:mbx6q1"
+    disposition: subordinated
+    reference: ../reference/sveltekit.md#createeditorroutes
+    reason: |
+      The roster routes' role validation is the `createEditorRoutes` entry's subject; this page
+      edits the roster through the mounted admin and never wires those routes.
+  - fact: "f:mou1li"
+    disposition: subordinated
+    reference: debug-your-site.md#configaccess_unmapped
+    reason: |
+      When `config.access_unmapped` appears in Workers Logs is an access-map diagnostic, off this
+      page's job; the debugging page's entry for the event states it.
+  - fact: "f:pfy9cw"
+    disposition: subordinated
+    reference: ../reference/log-events.md
+    reason: |
+      The fields of the content, admin-action, and access-map events are the log-events table's
+      subject; this page reads only `guard.refused` and `auth.identity.unknown`.
+  - fact: "f:q07rd5"
+    disposition: subordinated
+    reference: define-an-adapter-and-schema.md#start-from-the-adapter-file
+    reason: |
+      Where the adapter module sits is the adapter task's subject; this page edits only the hooks
+      file and its own two modules.
+  - fact: "f:qlgggh"
+    disposition: subordinated
+    reference: scaffolded-site-files.md#file-tree
+    reason: |
+      The scaffold's full file listing is the scaffold file reference's subject; this page needs
+      only the hooks file, which `f:f21bcz` carries.
+  - fact: "f:tycp7k"
+    disposition: subordinated
+    reference: arrange-the-admin-sidebar.md#before-you-begin
+    reason: |
+      The scaffold's `navLayout` and the example site's Signups entry are the sidebar task's
+      subject and play no part in identity mode.
+  - fact: "f:u78zg6"
+    disposition: subordinated
+    reference: ../reference/log-events.md
+    reason: |
+      When `admin.action.misconfigured` fires is an access-map wiring diagnostic, off this page's
+      job; the log-events row for the event states it.
+  - fact: "f:qca0t0"
+    disposition: subordinated
+    reference: add-cairn-to-a-sveltekit-app.md#deploy-a-change
+    reason: |
+      The deploy here is the same deploy as any other change, so the page sends the reader to the
+      tutorial's deploy section rather than restating how a site deploys; the Workers Builds push
+      path is the reader's existing setup, not this page's subject.
+  - fact: "f:9ug9mo"
+    disposition: subordinated
+    reference: add-cairn-to-a-sveltekit-app.md#deploy-a-change
+    reason: |
+      The tutorial's deploy section shows the build and `npx wrangler deploy`; this page names
+      the deploy as one step and links there.
+constraints:
+  - |
+    Re-arm (stage 2b, relink.json, context "Cloudflare Access"): "The one-declaration change:
+    `runtime` carries `roles` and `access` into `createAuthGuard`." The plan carries it in Wire the
+    resolver and deploy the Worker: the guard takes a required `runtime` and reads both from it
+    (`f:4xrx5f`), the scaffold's hooks already call `createAuthGuard({ runtime })` (`f:f21bcz`),
+    and the guard attaches the access map on its identity branch too (`f:iwf4nu`). The call the
+    page shows is `createAuthGuard({ runtime, identity: accessIdentity })`.
+  - |
+    The page never shows or tells the reader to pass `access` or `roles` to `createAuthGuard`, and
+    never names `src/access.ts`. The only mention of the older form is the one sentence that sends
+    a site still passing them to Upgrade cairn.
+  - |
+    The introduction opens on a statement about the magic-link default, never an imperative, and
+    never on the page itself. Its redirects name their pages: a site that wants only a different
+    sign-in email stays on magic links (Add cairn to a SvelteKit app); a second sign-in group
+    beside magic-link editors (Add a second sign-in group); a reader behind another proxy
+    (the `createAuthGuard` reference entry, for `IdentityResolver`); the threat analysis (Security
+    model). These links also render in the See also section; the introduction carries them too.
+  - |
+    Every item whose id begins `intro-` or `fig-` drafts above the first heading, in item order;
+    Before you begin's prose starts at its `opens` and `bb-list`.
+  - |
+    The names the reader creates are illustrative and the page says so where it first names them:
+    `src/lib/access-config.ts` (exporting `teamDomain`, `audTag`, and `logoutUrl`),
+    `src/lib/access-identity.ts` (exporting `accessIdentity`), and the import specifier
+    `#lib/access-identity.js`. The scaffold's `package.json` maps `#lib/*` to `./src/lib/*`
+    (`templates/waymark/package.json:7`); no fact states it, so the page does not explain the
+    alias.
+  - |
+    A vendor's specifics get a link, never a copy: the Zero Trust plan's user cap, Access's
+    session duration default and ceiling, the logout timings, the logout address itself, and
+    the dashboard navigation beyond the name of the setting a step changes.
+  - |
+    The page never calls the deploy "the gate goes live". Two moments are named apart: the
+    application challenges `/admin` from the moment it is saved, and identity mode goes live at
+    the deploy that carries the resolver.
+  - |
+    Each step names its location before its action and holds one action; a conditional step
+    states its condition first and says in prose who skips it. The checks in Verify the gate and
+    Resolve a refused sign-in are numbered lists, and each check's expected result follows its
+    action in the same list item.
+  - |
+    Each security trap sits in the paragraph under the step that sets the value inviting the
+    misuse: the self-asserted email under the login-methods step, the `X-Cairn-CSRF` reason under
+    the CORS step, and the absent hostname check under the Wrangler step.
+  - |
+    The resolver sample is the page's one illustrative snippet, framed as illustrative with the
+    Validate JWTs page beside it as the authoritative reference. It returns no literal `error`
+    reason, so on this page `error` means the resolver threw.
+  - |
+    No manufactured scenario: the introduction states who arrives and why without inventing an
+    organization or its people. The sample's `label` value is a placeholder, not an organization.
+  - |
+    Never describe Cloudflare's one-time PIN as a method whose email the user controls; no fact
+    says so.
+friction:
+  - |
+    departure: the outline's second cover puts the cache rule and the preview URLs under Create
+    the Access application; the plan gives them their own section, Close the exposures outside
+    the application, because both live outside Zero Trust and close a different exposure.
+  - |
+    departure: the outline's fifth cover, "Logout under identity and Access's token lifetime", is
+    no section. Its facts land where a reader meets them: the lifetime and sign-out in the
+    explanation after the deploy, the stateless-validation consequence beside the verifier
+    requirement and the Wrangler step, and the stale-tab refusal as the failure path's first
+    check.
+  - |
+    departure: the outline's first cover, "Before you switch", splits across the introduction
+    (all-or-nothing, the plan cap), Before you begin (the seeded owner), and Prepare the roster
+    (the primary-address match).
+  - |
+    Additions beyond the outline's factIds, each [verified] or [external] and on this page's job:
+    `f:zxdoaf`, `f:u77pea`, `f:fhit7f` (the introduction's framing of the magic-link default and
+    what identity mode drops); `f:paotzb` (the figure's `/healthz` route, which the figureNote
+    names); `f:s9s8mw` (the team domain's form and the sample's calls); `f:pwmybh` (the logout
+    address forms and the construction throw); `f:ojr3qm` (the sample's `label`); `f:thgmpz` (the
+    Custom Domain precondition); `f:8xxe3b` (the sign-out redirect); `f:sbv5xj` (the
+    `guard.refused` record with `reason: identity` and its `detail`). The outline's factIds carry
+    no Custom Domain fact, no sign-out fact, and no fact naming the `guard.refused` record although
+    the page needs all three.
+  - |
+    gap: no fact states that an Access self-hosted application needs a hostname in a Cloudflare
+    zone, so a `workers.dev`-only site cannot put Access in front of `/admin`; the plan carries it
+    as the `custom-domain` precondition backed only by `f:thgmpz`'s Custom Domain mechanics. The
+    facts pass should add an [external] fact for the zone requirement from Cloudflare's
+    self-hosted application docs.
+  - |
+    gap: no fact vouches the `jose` error codes the sample's `reasonFor` helper maps
+    (`ERR_JWT_EXPIRED`, `ERR_JWT_CLAIM_VALIDATION_FAILED` with its `claim`, the `ERR_JWKS_*` and
+    `ERR_JWS_*` codes). The drafter keeps the mapping in code only and checks each code against
+    `jose`'s errors reference; the facts pass should add a [vendor] fact for them.
+  - |
+    gap: no fact states Cloudflare Access's logout address (its path under the team domain), so
+    the page links the session management page and never spells it.
+  - |
+    gap: no fact states the `error` field the guard adds to a `guard.refused` record when the
+    resolver throws (`src/lib/sveltekit/guard.ts:306`), so Resolve a refused sign-in cannot send
+    the reader to the thrown message; it says only that the resolver threw.
+  - |
+    gap: no fact names Cloudflare's policy action or rule selectors for the policy step, so the
+    step links Cloudflare's policies page for them.
+  - |
+    Link anchor for `IdentityResolver`: `docs/reference/sveltekit.md` carries it as a raw
+    `<a id="identityresolver">` inside a Types table row, which check-plan does not read as an
+    anchor, so the plan links `#createauthguard`, whose tier note names the type.
+  - |
+    Docs drift on subordination targets: on-disk `docs/extend/restrict-admin-access.md` predates
+    stage 2b (it still has "Pass the map to the adapter and the guard" and tells the reader to
+    edit `src/access.ts`), so it does not state `f:3z1uxv` or `f:cvzb8z`, and its "Decide what the
+    map leaves open" states `f:8ciz2s` only in part (no screen-key condition, no href rule). Its
+    2b plan places all three.
+  - |
+    drift: `upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change`
+    states that `devBackendHandle` takes `{ runtime }` but not that `runtime.roles` changes no
+    decision under the dev backend (`f:7cv105`). `arrange-the-admin-sidebar.md#before-you-begin`
+    states the scaffold's `Content` and `Site` sections but not the example site's Signups entry
+    (`f:tycp7k`). `add-cairn-to-a-sveltekit-app.md#deploy-a-change` shows the build and
+    `npx wrangler deploy` (`f:9ug9mo`) but not the Workers Builds push path (`f:qca0t0`).

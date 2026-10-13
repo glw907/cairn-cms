@@ -1,0 +1,1566 @@
+version: 1
+page:
+  path: docs/extend/security-model.md
+  title: Security model
+  type: concept
+argument: |
+  cairn's defenses are built around the likeliest attacker, someone holding an editor's account
+  through a stolen or phished sign-in link. The built-in design makes that account hard to take
+  (a short-lived, hashed, browser-bound sign-in token and an origin-bound session cookie), refuses
+  requests forged in its name (SvelteKit's origin check plus the guard's double-submit token, inside
+  a guard that runs in a fixed order), and bounds what a taken account reaches (an access map that
+  narrows only what it names, a render pipeline whose sanitize floor a site cannot switch off by
+  accident, and a GitHub App token whose write reach is the whole repository). Each defense is
+  stated with what it leaves open. The two seams a site can use to change the design, an identity
+  gate in place of magic links and an auth channel for a second sign-in group, each move named
+  defenses to the site, and the page ends with the list of responsibilities that stay with the
+  site, so a developer can assess cairn before adopting it or before replacing its sign-in or
+  access rules.
+introduction:
+  covers: |
+    The introduction frames the page from above before any defense. A site built on cairn lets
+    people who hold no GitHub account change its published content, so its security starts from
+    how cairn decides who those people are. cairn runs inside the site's SvelteKit app on
+    Cloudflare Workers; its admin is the part of that app under `/admin`, where editors sign in
+    from an emailed link with no password, and their edits reach the repository through the site's
+    GitHub App. The framing names the general model (the guard over `/admin`, the identity store in
+    D1, the GitHub App) without restating any section's mechanics.
+
+    Two readers arrive, and the introduction names each reason so each learns early whether the
+    page answers it. A developer evaluating cairn before adopting it reads end to end for what each
+    defense covers and what it leaves to the site. A developer about to replace cairn's sign-in
+    with an identity gate, add a second sign-in group, or tighten the access rules reads for which
+    defenses move with that change.
+
+    The introduction then names what the page covers, in page order, as a bulleted list under a
+    complete lead-in, one form per item: the scope and the threat the design assumes; the sign-in
+    link, its browser binding, and the session cookie; CSRF protection and the guard's fixed order
+    and response headers; the dev-backend flag's refusals; what a signed-in editor reaches through
+    the access map, the render pipeline, and the GitHub App; the threat surfaces of the identity
+    gate and the auth channel; and the responsibilities that stay with the site.
+  priorKnowledge: |
+    The reader is Svelte-fluent and knows SvelteKit server hooks, form actions, and load
+    functions, cookie attributes such as `HttpOnly`, `Secure`, and `SameSite`, and Cloudflare
+    Worker bindings and secrets at a working level. The introduction states this in one sentence
+    and skips web-security basics such as what CSRF is.
+  notCovered: |
+    A bulleted list under a complete lead-in, subject first and page second, one form per item:
+    configuring the access map (`restrict-admin-access.md`); setting up Cloudflare Access as an
+    identity gate (`replace-magic-links-with-cloudflare-access.md`); building an auth channel
+    (`add-a-second-sign-in-group.md`); the renderer's options (`configure-rendering.md`); rotating
+    the GitHub App's key (`rotate-the-github-app-key.md`); and the isolation of the Worker itself,
+    which belongs to Cloudflare's Workers security model. The history of when the sanitize floor
+    shipped is out of scope: the page states the floor as it is now and names no release that
+    added it.
+  facts: ["f:u77pea", "f:kkp5bi", "f:2sd4if", "f:y3ljm0"]
+orderReason: |
+  The body follows the likeliest attacker's path through the built-in design, then turns to the
+  two seams that change that design, then closes with the anatomy's ending. Five departures from
+  the outline's covers order, each argued.
+
+  First, a definition section, Scope and threat position, comes before any defense. The concept
+  anatomy puts a definition after the introduction, and the outline's first cover (scope, the
+  realistic attacker, floors not ceilings) is that definition. It also defines the guard in one
+  sentence, so the sign-in, cookie, and CSRF sections can use the term before The auth guard
+  section states its order.
+
+  Second, the account itself comes first: the sign-in link, then its browser binding, then the
+  session cookie that a confirmed sign-in becomes. Each closes a gap the previous one leaves (a
+  token that exists can be spent elsewhere; a confirmed sign-in needs a carrier), so the order
+  follows the dependency. The outline's last cover, that logs never carry tokens or session ids,
+  folds into Magic-link sign-in, where the token is introduced.
+
+  Third, CSRF protection comes before The auth guard although the guard runs first on every
+  request. The guard's fixed order names the CSRF check as its fourth step, and a reader who has
+  already met the double-submit token reads that order as a list of known steps. The admin
+  response headers ride with the guard because the guard sets them.
+
+  Fourth, the dev-backend flag follows the guard, because the flag's first refusal is the guard's
+  first step. What a signed-in editor reaches then runs from the narrowest control outward: the
+  access map (which screens), the render pipeline (what their markup does to every visitor), and
+  the GitHub App (what the engine's credential can write). The sanitizeSchema change this re-arm
+  carries lands in Render safety as a defense, with the residual in its Limits subsection.
+
+  Fifth, the two seams follow the whole built-in design, because each is read against it: the
+  identity gate replaces the sign-in defenses the early sections state, and the auth channel adds
+  a second sign-in path that shares none of them. The identity gate comes first because it changes
+  the editors' own path; the channel adds a separate group. The site's responsibilities give the
+  "In short" verdict and the list of what stays with the site (the syncthing exemplar's closing
+  move), and Related resources is the concept anatomy's ending.
+sections:
+  - heading: Scope and threat position
+    opens: |
+      cairn's security design assumes that the likeliest attacker holds an editor's account,
+      through a stolen or phished sign-in link, while an anonymous visitor reaches nothing behind
+      `/admin` except the sign-in form and its confirm page.
+    items:
+      - id: sc-attacker
+        kind: fact
+        fact: "f:v85shm"
+        use: |
+          The opening sentence: the likeliest attacker holds an editor's account through a stolen
+          or phished sign-in link, and an anonymous visitor reaches only `/admin/login` and
+          `/admin/auth/confirm`.
+      - id: sc-identity
+        kind: fact
+        fact: "f:u77pea"
+        use: |
+          Under the zero-config default cairn is the identity system for its editors: its D1
+          store, `AUTH_DB`, holds the editor roster, the sessions, and the single-use sign-in
+          tokens. Used by the introduction's framing and repeated here as the definition.
+      - id: sc-app
+        kind: fact
+        fact: "f:kkp5bi"
+        use: |
+          Only that an editor's edits reach the repository through the site's GitHub App, never a
+          personal account, with the App's private key held as a Worker secret. The token's
+          lifetime and caching belong to The GitHub App's reach.
+      - id: sc-guard
+        kind: fact
+        fact: "f:2sd4if"
+        use: |
+          The definition of the guard the page uses throughout: `createAuthGuard` builds the
+          server hook that gates the whole `/admin` subtree before any load runs.
+      - id: sc-guard-link
+        kind: link
+        target: "#the-auth-guard"
+      - id: sc-guard-ref
+        kind: link
+        target: ../reference/sveltekit.md#createauthguard
+      - id: sc-isolation
+        kind: reason
+        text: |
+          The isolation of the Worker that runs the engine belongs to Cloudflare, so the page links
+          the platform's security model instead of restating it.
+      - id: sc-isolation-link
+        kind: link
+        target: https://developers.cloudflare.com/workers/reference/security-model/
+      - id: sc-floors
+        kind: fact
+        fact: "f:y3ljm0"
+        use: |
+          The defaults (owner and editor roles, magic-link sign-in) are floors, not ceilings: a
+          developer can replace admin auth, after which cairn mints no session and reads an owner
+          or editor identity through a defined hand-off.
+      - id: sc-seams
+        kind: sentence
+        mode: claim
+        text: |
+          Two seams change the built-in design: the `identity` option on the guard replaces
+          magic-link sign-in with the proof an external gate supplies, and an auth channel adds a
+          second sign-in group whose request form any unauthenticated caller can post.
+        facts: ["f:y3ljm0", "f:fhit7f", "f:wuwk2q"]
+      - id: sc-handoff
+        kind: handoff
+        text: |
+          Turn to the first thing the assumed attacker targets, the sign-in link, linking the
+          heading Magic-link sign-in.
+
+  - heading: Magic-link sign-in
+    anchor: magic-link-sign-in
+    opens: |
+      A sign-in link carries a single-use token that only a roster address receives, that lives 10
+      minutes, and that the auth store holds only as a hash.
+    items:
+      - id: ml-token
+        kind: fact
+        fact: "f:u1bjul"
+        use: |
+          The opening sentence and the mechanics: a 256-bit random token, only its SHA-256 hash
+          stored, the raw token emailed in a link to `/admin/auth/confirm`; a new request deletes
+          the earlier row; confirm consumes the row in one atomic `DELETE ... RETURNING` and
+          creates a session; only an `editor` row is sent a token, the owner curates that table
+          through the owner-only `editors` screen, and a session resolves through a join on
+          `editor`, so removing an editor stops their session on the next request.
+      - id: ml-lifetimes
+        kind: fact
+        fact: "f:f39xqq"
+        use: |
+          A session lives 30 days and a repeat request from one address is throttled to once per
+          minute; the token lifetime, session lifetime, and throttle are named constants no
+          adapter option loosens.
+      - id: ml-no-token
+        kind: fact
+        fact: "f:8l4wwr"
+        use: |
+          The request action never returns a token: every exit answers an outcome with a `sent`
+          flag and the link travels only by email to the requested address, so against another
+          person's address a requester can at most replace or rebind its live token.
+      - id: ml-neutral
+        kind: fact
+        fact: "f:s32y4a"
+        use: |
+          Only the common case: an address off the roster receives the same
+          `{ outcome: 'sent' }` answer an editor's address receives. The throttled clause belongs
+          to the Limits subsection.
+      - id: ml-logs
+        kind: fact
+        fact: "f:wi766c"
+        use: |
+          No log record carries a sign-in token, a session id, or a link's contents.
+      - id: ml-logs-link
+        kind: link
+        target: ../reference/log-events.md
+
+  - heading: Limits of the non-enumerating answer
+    level: 3
+    opens: |
+      A repeat request inside the one-minute cooldown answers with a distinct `throttled` status,
+      which reveals that the address belongs to an editor.
+    items:
+      - id: ml-throttled
+        kind: fact
+        fact: "f:s32y4a"
+        use: |
+          The opening sentence: the throttled clause of the fact.
+      - id: ml-relaxation
+        kind: fact
+        fact: "f:z0296p"
+        use: |
+          The status is a deliberate relaxation of the non-enumerating answer, traded for sending
+          no second email to an editor who presses the button again.
+      - id: ml-handoff
+        kind: handoff
+        text: |
+          A token that exists could still be spent by a browser other than the one that asked for
+          it; turn to Browser binding for sign-in, which closes that path.
+
+  - heading: Browser binding for sign-in
+    anchor: browser-binding-for-sign-in
+    opens: |
+      A bound sign-in completes only in the browser that requested it, and a confirm from any
+      other browser refuses without consuming the token.
+    items:
+      - id: bb-threats
+        kind: fact
+        fact: "f:k3gfbi"
+        use: |
+          The opening sentence and the two threats it closes: a login CSRF, where an attacker
+          holding a roster address puts their own link before an editor's browser so the editor's
+          next edits carry the attacker's identity, and a scanner burn, where a link-following mail
+          scanner spends an editor's link before the editor clicks it.
+      - id: bb-cookie
+        kind: fact
+        fact: "f:6lmusm"
+        use: |
+          The `cairn_login_pending` cookie (`HttpOnly`, `SameSite=Lax`, `__Host-` on https, one
+          hour) and the compare of its nonce hash against `nonce_hash` inside the same atomic
+          `DELETE` that consumes the token.
+      - id: bb-nonce
+        kind: fact
+        fact: "f:sj1kt9"
+        use: |
+          The nonce means something only while a live token row carries its hash, and the row's
+          ten-minute expiry sweeps it, so a cookie that outlives the row grants nothing; a failed
+          confirm leaves the cookie in place.
+      - id: bb-lockout
+        kind: fact
+        fact: "f:qep9a9"
+        use: |
+          Why the rebind exists: the binding alone would be a lockout, because an attacker posting
+          the form for an editor's address once a minute would keep the token bound to the
+          attacker's browser while the cooldown throttled the editor.
+      - id: bb-rebind
+        kind: fact
+        fact: "f:91dwrk"
+        use: |
+          A throttled re-request rebinds the live token to the browser that just asked, so the
+          last browser to ask holds the binding; the rebind skips an expired or unbound row.
+      - id: bb-rebind-quiet
+        kind: fact
+        fact: "f:uz38ef"
+        use: |
+          Only that the rebind changes nothing else in the answer: no new token, no second email,
+          the cooldown untouched, and the response the same as a throttle that rebound nothing.
+          Leave out the race with the consuming `DELETE`.
+      - id: bb-error-link
+        kind: link
+        target: ../reference/sveltekit.md#no_pending_request_error
+
+  - heading: Limits of the browser binding
+    anchor: limits-of-the-browser-binding
+    level: 3
+    opens: |
+      A token row with no binding still matches a confirm from a browser that holds no cookie.
+    items:
+      - id: bb-null
+        kind: fact
+        fact: "f:5iqvmt"
+        use: |
+          The opening sentence: a cookie-less confirm passes SQL `NULL`, and a row whose
+          `nonce_hash` is `NULL` still matches and signs the editor in.
+      - id: bb-unbound-sources
+        kind: fact
+        fact: "f:an087n"
+        use: |
+          Unbound rows come from an engine older than migration `0004`, from the setup command's
+          bootstrap `INSERT`, and from a recovery row an operator seeds by hand; the engine's own
+          request action always writes a hash.
+      - id: bb-first-link
+        kind: sentence
+        mode: claim
+        text: |
+          The setup command's first sign-in link therefore carries none of the binding's
+          protection.
+        facts: ["f:an087n", "f:5iqvmt"]
+      - id: bb-forwarded
+        kind: fact
+        fact: "f:678law"
+        use: |
+          The forwarded-token residual: someone holding a forwarded token can make it work by
+          posting the request form for that address inside the one-minute cooldown, and outside
+          the cooldown the same request mints a new token and destroys the forwarded one.
+      - id: bb-handoff
+        kind: handoff
+        text: |
+          A confirmed sign-in, bound or unbound, becomes a session; turn to The session cookie,
+          which carries it on every later admin request.
+
+  - heading: The session cookie
+    anchor: the-session-cookie
+    opens: |
+      A confirmed sign-in becomes a session cookie that carries the `__Host-` prefix on every
+      https deploy, so the browser binds it to the site's origin.
+    items:
+      - id: sk-prefix
+        kind: fact
+        fact: "f:wzcgs3"
+        use: |
+          The opening sentence: the prefix makes the browser require `Secure` and `Path=/` and
+          forbid `Domain`, and local http development drops it because `__Host-` requires
+          `Secure`.
+      - id: sk-secure-rule
+        kind: fact
+        fact: "f:g22dnw"
+        use: |
+          Only the rule: every cairn cookie takes its `Secure` bit from one monotonic rule, under
+          which an `https:` request is always Secure, a local host keeps the bare name, and
+          otherwise a configured, parseable `PUBLIC_ORIGIN` decides. The outside-`/admin`
+          consequence belongs to the Limits subsection.
+      - id: sk-csrf-shares
+        kind: fact
+        fact: "f:njh87y"
+        use: |
+          The CSRF cookie shares the session cookie's `__Host-` and `Secure` derivation.
+      - id: sk-logout
+        kind: fact
+        fact: "f:8xxe3b"
+        use: |
+          Only the magic-link logout: it reads the session id from either cookie-name form,
+          deletes both name forms of the session cookie and of the CSRF cookie, each with its
+          matching `Secure` flag, and clears the request's pending-login cookie. The `identity`
+          clauses belong to Identity mode's threat surface.
+
+  - heading: Limits of the session cookie
+    level: 3
+    opens: |
+      Outside `/admin`, a route served over http on a non-local host under an https
+      `PUBLIC_ORIGIN` mints a `__Host-` cookie that the browser discards.
+    items:
+      - id: sk-discarded
+        kind: fact
+        fact: "f:g22dnw"
+        use: |
+          The opening sentence and its cause: only an `/admin` path gets the guard's https help
+          page.
+      - id: sk-handoff
+        kind: handoff
+        text: |
+          The cookie rides every admin request the browser sends, including a form post the editor
+          never meant to send; turn to CSRF protection, which answers that post.
+
+  - heading: CSRF protection
+    anchor: csrf-protection
+    opens: |
+      A forged form post would act with the editor's session, and SvelteKit's origin check and the
+      guard's double-submit token divide the defense against it.
+    items:
+      - id: cs-division
+        kind: fact
+        fact: "f:7rehzh"
+        use: |
+          The opening sentence: the scaffold's Vite config carries no `csrf` key, so SvelteKit's
+          default origin check runs ahead of every handle on every route, `/admin` included, and
+          the guard adds the double-submit token on top.
+      - id: cs-guard-no-origin
+        kind: fact
+        fact: "f:8u4iiv"
+        use: |
+          Only the guard's half: the guard applies no `Origin` check of its own on any route, and
+          its CSRF protection is the double-submit token on unsafe `/admin` form posts. The auth
+          channel's reasons belong to The auth channel's threat surface.
+      - id: cs-sveltekit
+        kind: fact
+        fact: "f:3cekcy"
+        use: |
+          Only the load-bearing distinction, with the link: SvelteKit compares a form post's
+          `Origin` with the app's origin and refuses a mismatch or an absent header unless the
+          origin is in `csrf.trustedOrigins`; it is one global setting with no per-route
+          exception, and SvelteKit 3 removed `csrf.checkOrigin`, leaving `trustedOrigins` as the
+          only setting. Do not copy the rest of SvelteKit's rules.
+      - id: cs-sveltekit-link
+        kind: link
+        target: https://svelte.dev/docs/kit/configuration#csrf
+      - id: cs-checkorigin-link
+        kind: link
+        target: ../reference/supported-toolchain.md#the-checkorigin-removal
+      - id: cs-fetch
+        kind: fact
+        fact: "f:x2stjk"
+        use: |
+          Under the Fetch Standard a non-`cors` request whose method is not `GET` or `HEAD` sends
+          `Origin: null` under a `no-referrer` policy, while `strict-origin` keeps the real
+          `Origin` on a same-origin request.
+      - id: cs-fetch-link
+        kind: link
+        target: https://fetch.spec.whatwg.org/
+      - id: cs-referrer
+        kind: fact
+        fact: "f:ubuj1w"
+        use: |
+          Only the referrer clauses: every admin response the guard's resolve path returns sets
+          `Referrer-Policy: strict-origin`, and each admin view repeats it in a
+          `<meta name="referrer" content="strict-origin">` tag.
+      - id: cs-referrer-scope
+        kind: fact
+        fact: "f:ix10bm"
+        use: |
+          Only the scope: `strict-origin` is set by the guard on `/admin` responses and by
+          `confirmLoad`, never site-wide.
+      - id: cs-referrer-why
+        kind: sentence
+        mode: claim
+        text: |
+          The admin sets `strict-origin` so that its own form posts keep the real `Origin` that
+          SvelteKit's check needs, while a cross-origin request carries no path.
+        facts: ["f:x2stjk", "f:ubuj1w", "f:3cekcy"]
+      - id: cs-token
+        kind: fact
+        fact: "f:keuj8l"
+        use: |
+          On an unsafe `/admin` form request an `X-Cairn-CSRF` header, when sent at all, decides
+          outright, which is how a raw-body upload passes; only with no header is the hidden form
+          field read; the compare is `tokensMatch`, length-checked and constant-time; a failure
+          renders the branded 403 and logs `guard.refused` with reason `csrf`.
+      - id: cs-tokensmatch-link
+        kind: link
+        target: ../reference/auth-crypto.md#tokensmatch
+      - id: cs-cookie
+        kind: fact
+        fact: "f:9ik061"
+        use: |
+          The CSRF cookie's attributes (`HttpOnly`, `Path=/`, `SameSite=Lax`, a `Max-Age`
+          matching the 30-day session) and its two rotation moments on the magic-link path, a
+          successful login and a logout.
+      - id: cs-no-self-rotate
+        kind: fact
+        fact: "f:0vofop"
+        use: |
+          Every other issue re-sets the identical value with a fresh `Max-Age`, so the value never
+          rotates by itself.
+
+  - heading: Limits of CSRF protection
+    level: 3
+    opens: |
+      The guard sets `strict-origin` on `/admin` responses only, so a site-wide `no-referrer`
+      still reduces every other same-origin form post to `Origin: null`.
+    items:
+      - id: cs-null-refused
+        kind: sentence
+        mode: claim
+        text: |
+          SvelteKit's check refuses such a post on the site's own forms, and every auth channel
+          action refuses it through its own `Origin` compare.
+        facts: ["f:3cekcy", "f:ix10bm", "f:x2stjk"]
+      - id: cs-doctor-referrer
+        kind: fact
+        fact: "f:qbfriw"
+        use: |
+          The `config.no-referrer-blanket` check of `cairn doctor` warns on a site-wide
+          `no-referrer`, and its remediation is `strict-origin-when-cross-origin` or `same-origin`
+          as the site default.
+      - id: cs-doctor-link
+        kind: link
+        target: ../reference/cli-cairn-doctor.md#the-checks
+      - id: cs-trusted
+        kind: fact
+        fact: "f:ytwrgp"
+        use: |
+          An origin listed in `csrf.trustedOrigins` passes SvelteKit's check on `/admin` as on
+          every other route, and the `config.csrf-trusted-origins` check warns on `'*'`, which
+          turns the check off everywhere, and on `'null'`, which admits every post from an opaque
+          origin.
+      - id: cs-reauth
+        kind: fact
+        fact: "f:9exogy"
+        use: |
+          A signed-in browser that re-authenticates through `/admin/auth/confirm` rotates the
+          value under another open tab's rendered form, which then fails with one generic 403
+          that a reload recovers from.
+      - id: cs-handoff
+        kind: handoff
+        text: |
+          The CSRF check is one step in a fixed order; turn to The auth guard, which runs that
+          order on every admin request.
+
+  - heading: The auth guard
+    anchor: the-auth-guard
+    opens: |
+      The guard handles every `/admin` request in a fixed order, and every refusing step before
+      the session resolve logs a named `guard.refused` reason.
+    items:
+      - id: gd-order
+        kind: fact
+        fact: "f:7qqhda"
+        use: |
+          The opening sentence and the five steps as a numbered list: the dev-backend tripwire
+          (`dev_backend_in_prod`), the https help page (`https`), the bindings check
+          (`bindings`), the CSRF check (`csrf`), then the session resolve or, under `identity`,
+          the identity resolve. The guard has no origin step, since SvelteKit's check refuses a
+          null or foreign `Origin` form post before any handle runs.
+      - id: gd-tripwire-link
+        kind: link
+        target: "#the-dev-backend-flags-two-refusals"
+      - id: gd-paths
+        kind: fact
+        fact: "f:n3k03a"
+        use: |
+          Everything but the identity clauses: an `/admin` request over plain http on a non-local
+          host gets the `edge.https-not-forced` help page before the CSRF check, public login
+          paths included; a missing `AUTH_DB` fails every admin path with the `bindings`
+          condition, not a raw 500; on a guarded path a missing or invalid session redirects (303)
+          to `/admin/login` with no log record; a resolved editor lands on `locals.cairnEditor`
+          and the access map on `locals.cairnAccess`.
+      - id: gd-headers
+        kind: fact
+        fact: "f:ubuj1w"
+        use: |
+          The header set as a bulleted list (`X-Content-Type-Options: nosniff`,
+          `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'`,
+          `Referrer-Policy: strict-origin` scoped to `/admin`, a `Permissions-Policy` denying
+          camera, microphone, and geolocation, `Strict-Transport-Security` with opt-in subdomain
+          pinning, `Cache-Control: private, no-store`); a rejection page carries the same set less
+          `Strict-Transport-Security`; the 303 redirect, thrown before `resolve`, carries none.
+      - id: gd-hsts-why
+        kind: fact
+        fact: "f:t976f1"
+        use: |
+          Why rejection pages send no `Strict-Transport-Security`: a `max-age`-only header would
+          replace a cached `includeSubDomains` policy under RFC 6797 section 8.1. Also that the
+          guard applies the headers only on `/admin` paths.
+      - id: gd-ref-link
+        kind: link
+        target: ../reference/sveltekit.md#createauthguard
+
+  - heading: Limits of the admin headers
+    level: 3
+    opens: |
+      The admin sends no full Content-Security-Policy by design, because the engine's defense
+      against script in author-written markup is the render pipeline's sanitize floor.
+    items:
+      - id: gd-no-csp
+        kind: fact
+        fact: "f:yzbvk4"
+        use: |
+          The opening sentence: `/admin` sets only `frame-ancestors 'none'`, and the XSS surface
+          that matters is governed on the render path by the sanitize floor.
+      - id: gd-render-link
+        kind: link
+        target: "#render-safety"
+      - id: gd-csp-option
+        kind: fact
+        fact: "f:72xplg"
+        use: |
+          Only that a site wanting a CSP sets SvelteKit's `csp` option in the `sveltekit()` call
+          in its Vite config, and SvelteKit then adds a nonce or a hash to the inline scripts and
+          styles it generates. One sentence with the link; leave the modes and the placeholder to
+          SvelteKit's page.
+      - id: gd-csp-link
+        kind: link
+        target: https://svelte.dev/docs/kit/configuration#csp
+      - id: gd-loads
+        kind: fact
+        fact: "f:horkxq"
+        use: |
+          The loads that issue a CSRF token are `loginLoad`, `confirmLoad`, and the admin shell
+          load, and since the guard applies its headers only to `/admin` paths, a token issued
+          from one of them mounted elsewhere travels without them.
+      - id: gd-handoff
+        kind: handoff
+        text: |
+          The guard's first step refuses a flag that must never reach a deployed Worker; turn to
+          The dev-backend flag's two refusals, which state what each refusal catches and what it
+          leaves open.
+
+  - heading: The dev-backend flag's two refusals
+    anchor: the-dev-backend-flags-two-refusals
+    opens: |
+      A deployed Worker must never carry the `CAIRN_DEV_BACKEND` flag, because the dev backend it
+      enables signs `/admin` in as an owner against in-memory fakes, so the engine refuses the
+      flag in two places on different terms.
+    items:
+      - id: dv-what
+        kind: fact
+        fact: "f:dqjkci"
+        use: |
+          The opening sentence's reason: `devBackendHandle` installs an in-memory GitHub backend,
+          a fake `AUTH_DB`, and a fake media bucket and mints an owner editor on `/admin`, with
+          no email loop.
+      - id: dv-refusals
+        kind: fact
+        fact: "f:tkpmxr"
+        use: |
+          The two engine refusals and their terms, both reading the Worker env alone: the guard
+          refuses with a 503 on the flag alone and logs `guard.refused` with reason
+          `dev_backend_in_prod`, because it mounts only in a production build; every auth channel
+          action refuses with a 503 before other work only when the flag is set and the request
+          counts as deployed, because the flag is a channel dev transport's enable contract. Then,
+          as a separate sentence, the third refusal in the dev package: `devBackendHandle`
+          refuses on a non-local hostname when the flag is set.
+      - id: dv-channel-link
+        kind: link
+        target: "#the-auth-channels-threat-surface"
+      - id: dv-truthy
+        kind: fact
+        fact: "f:gh73p5"
+        use: |
+          The flag counts only as `1` or boolean `true`, read from the Worker env and never from
+          `process.env`; a `'true'` string reads as unset.
+      - id: dv-deployed
+        kind: fact
+        fact: "f:i2udr5"
+        use: |
+          A request counts as deployed when the configured `PUBLIC_ORIGIN` names a non-local host,
+          whatever `Host` claims; a local, absent, or unparseable `PUBLIC_ORIGIN` hands the answer
+          to the request's hostname, so the rule moves only toward refusing, and a deployment with
+          no `PUBLIC_ORIGIN` rests on `Host`.
+      - id: dv-hooks
+        kind: fact
+        fact: "f:f21bcz"
+        use: |
+          Only the selection: the scaffold's hooks module installs `devBackendHandle` only when
+          the build-time `__CAIRN_DEV_BUILD__` define and the runtime opt-in both hold, and
+          `createAuthGuard` otherwise; under `vite dev` the opt-in falls back to `process.env`.
+          Leave out the `runtime` argument history.
+
+  - heading: Limits of the dev-backend refusals
+    level: 3
+    opens: |
+      Neither engine refusal can see a dev-shaped transport deployed with the flag unset, since
+      `deliver`, `lookup`, and the rest of a channel's config are opaque site functions.
+    items:
+      - id: dv-blind
+        kind: fact
+        fact: "f:irs7fg"
+        use: |
+          The opening sentence, then: a dev-branch bundle that replaces the guard behind the
+          `__CAIRN_DEV_BUILD__` conditional sits outside both engine refusals, which
+          `devBackendHandle`'s deployed-host refusal covers only when the flag is set; the example
+          site closes the transport case with a capture transport that refuses unless the flag is
+          `'1'`, and the engine's CI closes the bundle case for the example site alone with a
+          `wrangler deploy --dry-run` that fails on any surviving dev marker.
+      - id: dv-handoff
+        kind: handoff
+        text: |
+          A request the guard admits belongs to a signed-in editor; turn to Access map coverage,
+          which decides what that editor reaches.
+
+  - heading: Access map coverage
+    anchor: access-map-coverage
+    opens: |
+      An access map narrows only the targets it names, so a screen or concept the map never
+      mentions stays reachable to any editor-capability session.
+    items:
+      - id: am-narrows
+        kind: fact
+        fact: "f:vqh4a9"
+        use: |
+          The opening sentence, and that `canReach` is the one function the guard's route checks,
+          the engine's screens, and the sidebar call; the sidebar and the routes read the same map
+          yet can still disagree where a `navLayout` site entry's href matches no key, which stays
+          visible while `requireAccess` refuses its route; the `editors` roster screen stays
+          owner-only whatever the map says. Leave out the earlier-versions clause.
+      - id: am-canreach-link
+        kind: link
+        target: ../reference/core.md#canreach-hasaccessrule
+      - id: am-guard-split
+        kind: fact
+        fact: "f:2sd4if"
+        use: |
+          The guard gates the whole subtree but decides no per-route authorization, which is
+          `requireAccess` and `createSectionAction`'s job.
+      - id: am-one-declaration
+        kind: fact
+        fact: "f:cvzb8z"
+        use: |
+          The adapter's `access` member is the one declaration every reader sees: the engine's
+          screens, their write actions, and the sidebar read it through the composed runtime, and
+          `requireAccess` and `createSectionAction` read the same map from
+          `event.locals.cairnAccess`, which the guard sets. State the current design only; no
+          earlier-versions history and no "pass the map to both" instruction.
+      - id: am-scaffold
+        kind: fact
+        fact: "f:3z1uxv"
+        use: |
+          Only the scaffold clause: a scaffolded site's adapter declares no `access` member and
+          takes the zero-config owner and editor floor.
+      - id: am-write-actions
+        kind: fact
+        fact: "f:cvv6to"
+        use: |
+          Each engine write action gates through the map against one target, the concept id or one
+          of the fixed screens `media`, `nav`, `settings`, or `vocabulary`, with the exceptions the
+          Limits subsection names.
+      - id: am-fail-closed
+        kind: fact
+        fact: "f:4q8kin"
+        use: |
+          A site's action built with `createSectionAction`, or one that opts in through
+          `createAdminAction`'s `access` option, fails closed at three ordered gates, as a
+          numbered list: no rule for the target refuses; a role absent from an existing rule
+          refuses, except owner capability; an `ownerOnly` target refuses a non-owner.
+      - id: am-section-link
+        kind: link
+        target: ../reference/sveltekit.md#createsectionaction
+      - id: am-admin-action-link
+        kind: link
+        target: ../reference/sveltekit.md#createadminaction
+
+  - heading: Limits of access map coverage
+    anchor: limits-of-access-map-coverage
+    level: 3
+    opens: |
+      The site-wide publish spans every concept, so it makes no single access check, and any
+      editor-capability session can post it.
+    items:
+      - id: am-publish-all
+        kind: fact
+        fact: "f:ji8xa0"
+        use: |
+          The opening sentence, then: it filters the pending entries through `canReach` against
+          each entry's concept, so a concept the map narrows publishes nothing for that session
+          and a concept the map never names publishes as it would with no map.
+      - id: am-tidy
+        kind: fact
+        fact: "f:arr13a"
+        use: |
+          The tidy action and the personal-dictionary action gate against the route's `concept`
+          parameter, and mounted on a route without one they refuse with a 404 rather than skip
+          the check.
+      - id: am-unmapped
+        kind: fact
+        fact: "f:8ciz2s"
+        use: |
+          `validateAccessComposition` does not throw for a partial map; it logs a
+          `config.access_unmapped` warning naming the concept ids and fixed screens with no
+          screen-id key, only when the map declares at least one screen-id key.
+
+  - heading: Allowlist semantics from an exhaustive map
+    anchor: allowlist-semantics-from-an-exhaustive-map
+    level: 3
+    opens: |
+      A map behaves as an allowlist only when it names every concept id and every fixed engine
+      screen, the coverage whose absence the `config.access_unmapped` warning reports.
+    items:
+      - id: al-coverage
+        kind: fact
+        fact: "f:8ciz2s"
+        use: |
+          The opening sentence: the coverage the warning measures, where an href key never counts.
+      - id: al-publish
+        kind: fact
+        fact: "f:ji8xa0"
+        use: |
+          Only the last clause: an exhaustive map leaves no concept for the site-wide publish's
+          permissive default.
+      - id: al-steps-link
+        kind: link
+        target: restrict-admin-access.md
+      - id: al-handoff
+        kind: handoff
+        text: |
+          An editor's reach also includes the markup they write, which every visitor's browser
+          renders; turn to Render safety, which covers what the engine does with it.
+
+  - heading: Render safety
+    anchor: render-safety
+    opens: |
+      Every renderer that `createRenderer` builds runs a sanitize floor by default, seeded from
+      GitHub's `defaultSchema`, before the `build()` dispatch or any later stage touches the tree.
+    items:
+      - id: rs-floor
+        kind: fact
+        fact: "f:z3a58a"
+        use: |
+          The opening sentence: the floor strips `<script>` tags, inline event-handler attributes,
+          and `javascript:` and `data:` URLs after markdown parsing and `rehype-raw`.
+      - id: rs-renderer-link
+        kind: link
+        target: ../reference/core.md#createrenderer
+      - id: rs-build-link
+        kind: link
+        target: ../reference/core.md#definecomponent
+      - id: rs-stages
+        kind: fact
+        fact: "f:zzbzo8"
+        use: |
+          The nine stages as a numbered list in their fixed order: markdown parsing, `rehype-raw`,
+          the sanitize floor, the `build()` dispatch, slugs and task lists and highlighting,
+          anchor hardening, the sink guard, the table-scroll wrap, the site's own plugins.
+      - id: rs-raw
+        kind: fact
+        fact: "f:296ar7"
+        use: |
+          Raw HTML in markdown is parsed into elements, not escaped, and cleaned to the same
+          allowlist as directive-authored content.
+      - id: rs-schema
+        kind: fact
+        fact: "f:q9yndd"
+        use: |
+          Beyond GitHub's schema the built schema admits cairn's directive markers as inert data
+          attributes, a few structural tags, `className` on any element, `srcSet` and `sizes` on
+          `img`, and the inert `cairn:` scheme on `href`, while `javascript:` and `data:` stay
+          stripped.
+      - id: rs-callback
+        kind: fact
+        fact: "f:2fwybn"
+        use: |
+          Only the floor's guarantee: a `sanitizeSchema` callback receives a fresh deep copy of
+          the safe schema, and after it returns the engine removes `script` from `tagNames` and
+          unions `strip` with the core list, so no callback can admit author script. The
+          attributes-and-protocols clause belongs to the Limits subsection.
+      - id: rs-tagnames
+        kind: fact
+        fact: "f:tzmhqn"
+        use: |
+          `createRenderer` throws at construction, naming `sanitizeSchema`, when the callback
+          returns no schema with a `tagNames` array, because the sanitizer reads an absent
+          allowlist as every element allowed; `unsafeDisableSanitize` is the way to turn the
+          floor off.
+      - id: rs-anchor
+        kind: fact
+        fact: "f:3yzqup"
+        use: |
+          Every anchor with `target="_blank"` has its `rel` forced, `noopener noreferrer` by
+          default, after highlighting and ahead of the sink guard.
+      - id: rs-sink
+        kind: fact
+        fact: "f:gi3keo"
+        use: |
+          The sink guard runs over the fully built tree, strips every `on*` attribute and inline
+          `style`, and scheme-checks every URL-bearing property against the same safe-scheme list;
+          it does not remove a `<script>`, `<style>`, or `iframe srcdoc` element a `build()`
+          emits.
+
+  - heading: Limits of render safety
+    anchor: limits-of-render-safety
+    level: 3
+    opens: |
+      The floor guarantees that author script cannot pass, and the attributes and URL schemes a
+      `sanitizeSchema` callback admits stay the site's responsibility.
+    items:
+      - id: rs-callback-limit
+        kind: fact
+        fact: "f:2fwybn"
+        use: |
+          The opening sentence, then: a `javascript:` or `data:` URL a callback admits is still
+          stripped by the sink guard, whose safe-scheme list derives from GitHub's schema, never
+          from the site's.
+      - id: rs-unsafe
+        kind: fact
+        fact: "f:r7sbt1"
+        use: |
+          `unsafeDisableSanitize` is a code-level switch on the renderer config, never an admin
+          toggle, and it removes both the sanitize floor and the sink guard.
+      - id: rs-unsafe-effect
+        kind: fact
+        fact: "f:wgovy6"
+        use: |
+          With the switch set, `rehype-raw` still parses author HTML into elements, so a
+          `<script>` or an `onerror` handler that any editor, or anyone holding an editor's
+          session, writes into an entry reaches the rendered HTML the public pages serve to every
+          visitor.
+      - id: rs-build-bypass
+        kind: fact
+        fact: "f:21by9u"
+        use: |
+          A registered `build()` can bypass every render-safety guarantee by rendering trusted
+          literal markup outside the sanitized tree, since the guarantees stop at the boundary of
+          what `createRenderer` produced.
+      - id: rs-options-link
+        kind: link
+        target: configure-rendering.md
+      - id: rs-handoff
+        kind: handoff
+        text: |
+          An editor's edits reach the repository through the engine's own credential; turn to The
+          GitHub App's reach, which sets out what that credential can write.
+
+  - heading: The GitHub App's reach
+    anchor: the-github-apps-reach
+    opens: |
+      Every save and publish commits through the site's GitHub App, so the App's permissions set
+      what its private key and installation token can write.
+    items:
+      - id: ga-key
+        kind: fact
+        fact: "f:kkp5bi"
+        use: |
+          Publishing authenticates as the site's GitHub App, never a personal account; the private
+          key lives as a single Worker secret that signs a JWT to mint a short-lived installation
+          token, cached per Worker isolate for 55 minutes and re-minted on a miss, never written
+          to disk in the deployed runtime and never logged.
+
+  - heading: Limits of the installation token
+    anchor: limits-of-the-installation-token
+    level: 3
+    opens: |
+      The App's **Contents** permission at **Read and write** is repository-wide, so the
+      installation token can write any path in the installed repository.
+    items:
+      - id: ga-repo-wide
+        kind: fact
+        fact: "f:gglwt4"
+        use: |
+          The opening sentence, and that cairn's confinement to its declared content directories
+          is enforced by engine code, not by GitHub.
+      - id: ga-shared-repo
+        kind: fact
+        fact: "f:l5gx1t"
+        use: |
+          Installing the App on a repository that also holds code or other teams' content puts
+          that content inside the token's write reach.
+      - id: ga-rotate-link
+        kind: link
+        target: rotate-the-github-app-key.md
+      - id: ga-handoff
+        kind: handoff
+        text: |
+          Every defense so far assumes cairn's own sign-in; a site that replaces it with an
+          identity gate or adds an auth channel moves some of them. Link the headings Identity
+          mode's threat surface and The auth channel's threat surface.
+
+  - heading: Identity mode's threat surface
+    anchor: identity-modes-threat-surface
+    opens: |
+      A site that replaces magic-link sign-in with an identity gate leaves every sign-in defense
+      to the gate, and cairn's part in sign-in reduces to the roster lookup.
+    items:
+      - id: id-replaces
+        kind: fact
+        fact: "f:fhit7f"
+        use: |
+          The opening sentence: the guard's `identity` option replaces the whole built-in sign-in
+          path (no token minted, no session created, no session cookie set), and the guard looks
+          the email `identity.resolve` proves up against the roster as it does a magic-link
+          session's email.
+      - id: id-ref-link
+        kind: link
+        target: ../reference/sveltekit.md#createauthguard
+      - id: id-lifetime
+        kind: fact
+        fact: "f:2glcaf"
+        use: |
+          Only that the effective session lifetime moves to the gate and cairn's 30-day session
+          constant no longer applies. Leave out Cloudflare Access's default and ceiling, which
+          belong to the vendor's page.
+      - id: id-csrf
+        kind: fact
+        fact: "f:8rnym5"
+        use: |
+          No cairn step rotates the CSRF value under `identity`, so a change of gate identity in
+          one browser keeps the same value until a cairn logout deletes the cookie or its
+          `Max-Age` ends; the login-moment rotation never runs because the confirm action is a 404.
+      - id: id-logout
+        kind: fact
+        fact: "f:8xxe3b"
+        use: |
+          Only the `identity` clauses: logout skips the session-row delete, still clears every
+          cookie, and redirects to the gate's `logoutUrl`, re-checked against the guard's
+          `isSafeLogoutUrl` rule and replaced with `/admin/login` when it fails, since another
+          handle can write `locals` after the guard runs.
+      - id: id-logs
+        kind: fact
+        fact: "f:n3k03a"
+        use: |
+          Only the identity clauses: every refusal the resolver produces logs `guard.refused`
+          with reason `identity`, and a proven email that matches no roster row logs
+          `auth.identity.unknown`.
+
+  - heading: Limits of identity mode
+    level: 3
+    opens: |
+      The only join between the gate and the roster is the email string the resolver returns.
+    items:
+      - id: id-join
+        kind: fact
+        fact: "f:emrebl"
+        use: |
+          The opening sentence, then: the guard rejects an empty string, trims and lowercases the
+          email, and looks it up with no cross-check, so cairn cannot tell a directory-asserted
+          address from a self-asserted one.
+      - id: id-assert
+        kind: fact
+        fact: "f:33upyd"
+        use: |
+          A gate login method whose email the signing-in user controls lets that user sign in to
+          cairn as any roster address they choose to assert. Name only that Cloudflare Access
+          takes the email from the claim the identity provider returns, with the link, and copy
+          no setting names.
+      - id: id-oidc-link
+        kind: link
+        target: https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/generic-oidc/
+      - id: id-hostname
+        kind: fact
+        fact: "f:jha9f7"
+        use: |
+          The guard makes no hostname check under `identity`, so a hostname that reaches the
+          Worker outside the gate's coverage is admitted whenever the resolver accepts the
+          presented token.
+      - id: id-setup-link
+        kind: link
+        target: replace-magic-links-with-cloudflare-access.md
+      - id: id-handoff
+        kind: handoff
+        text: |
+          The other seam a site can add signs in a separate group from an anonymous form; turn to
+          The auth channel's threat surface.
+
+  - heading: The auth channel's threat surface
+    anchor: the-auth-channels-threat-surface
+    opens: |
+      An auth channel's sign-in form takes a contact from an unauthenticated caller, so the channel
+      rests on one rule: no control keyed on the victim's identity may deny, delay, or destroy
+      anything, and denial keys only on the requester.
+    items:
+      - id: ch-rule
+        kind: fact
+        fact: "f:pjjo64"
+        use: |
+          The opening sentence, and that an identity-keyed control either escalates through a
+          channel the site can act on or only logs.
+      - id: ch-why
+        kind: fact
+        fact: "f:2w1yrc"
+        use: |
+          Only the failure the rule prevents: keying a failed-attempt count or a send budget on
+          the victim's contact lets anyone who knows that contact lock its owner out. Leave out
+          the review rounds and the design history.
+      - id: ch-escalation
+        kind: fact
+        fact: "f:7idpoq"
+        use: |
+          First item of a bulleted list of the three controls that could otherwise deny a
+          sign-in: escalation answers `challenge-required`, a retry invitation and never a hard
+          failure, and a failed challenge on an escalated action answers it again.
+      - id: ch-challenge-free
+        kind: fact
+        fact: "f:j254i8"
+        use: |
+          Folded into the escalation item: a failed challenge charges nothing and destroys
+          nothing, since it returns before any code mint, attempt increment, or code consumption.
+      - id: ch-eviction
+        kind: fact
+        fact: "f:k6u4g2"
+        use: |
+          Second item: eviction keys on the requester's own bucket, so a caller crowds out only
+          its own pending rows.
+      - id: ch-ceiling
+        kind: fact
+        fact: "f:e0imm6"
+        use: |
+          Third item: the spend ceiling never denies, and crossing it logs
+          `auth.channel.ceiling_exceeded` at error to alert the site operator.
+      - id: ch-origin
+        kind: fact
+        fact: "f:wu8x70"
+        use: |
+          Every channel action asserts that the request's `Origin` matches the site's origin and
+          that the connection is https, except on a local development host, before any code,
+          budget, or session logic, and either failure throws a plain 403 with no wire result.
+      - id: ch-origin-why
+        kind: fact
+        fact: "f:8u4iiv"
+        use: |
+          Only the channel's reason: SvelteKit's origin check does not run under `vite dev` and
+          admits any origin in `csrf.trustedOrigins`, and the guard adds no `Origin` check of its
+          own, so the channel's compare is the only `Origin` check cairn adds.
+      - id: ch-hash
+        kind: fact
+        fact: "f:fslodf"
+        use: |
+          Identity correlates through a salted hash of the subject, prefixed `s:`, when a roster
+          lookup resolved one, or of the contact, prefixed `c:`, otherwise, and logs carry only
+          the first 16 hex characters of that hash, never the raw contact.
+      - id: ch-prefixes
+        kind: fact
+        fact: "f:dipwmx"
+        use: |
+          The prefixes keep a subject-derived identity from colliding with a contact-derived one,
+          and the per-deployment salt, provisioned on first use, keeps the hash from reversing
+          against a small contact space.
+      - id: ch-code
+        kind: fact
+        fact: "f:plcf5v"
+        use: |
+          A numeric confirmation code is drawn by rejection sampling over Web Crypto random bytes,
+          avoiding the low-end bias a naive modulo introduces.
+      - id: ch-nist
+        kind: fact
+        fact: "f:s047l1"
+        use: |
+          Only the generator requirement, as the reason the random source matters: NIST SP
+          800-63B requires the secrets behind authenticators to come from an approved random bit
+          generator. Do not claim NIST states the uniformity argument.
+      - id: ch-nist-link
+        kind: link
+        target: https://pages.nist.gov/800-63-3/sp800-63b.html
+
+  - heading: Limits of the auth channel
+    level: 3
+    opens: |
+      A dev transport that prints a channel's code to the console is a roster oracle by
+      construction, since delivery runs only for a known subject.
+    items:
+      - id: ch-oracle
+        kind: fact
+        fact: "f:wuwk2q"
+        use: |
+          The opening sentence, then: an unauthenticated caller learns whether any contact is on
+          the roster without guessing a code, the same transport in a deployed Worker with
+          observability on lands plaintext one-time codes in Workers Logs, and no such transport
+          ships in engine code; the hazard is one a site's `deliver` could introduce.
+      - id: ch-capture
+        kind: fact
+        fact: "f:d2j9cj"
+        use: |
+          Only the general clause: a capture transport that records each delivered code for
+          readback answers the same roster oracle. Leave out the example site's roster size.
+      - id: ch-obligations
+        kind: fact
+        fact: "f:ez788q"
+        use: |
+          The factory cannot verify the functions a site supplies: `normalize` must be
+          idempotent, canonical, and injective across people, `lookup`'s subject stable and
+          canonical, and `challenge` must verify a human, since the factory cannot tell a real
+          Turnstile call from `async () => true`.
+      - id: ch-obligations-link
+        kind: link
+        target: ../reference/auth-channel.md#config-obligations
+      - id: ch-build-link
+        kind: link
+        target: add-a-second-sign-in-group.md
+      - id: ch-handoff
+        kind: handoff
+        text: |
+          Turn to the closing verdict, The site's responsibilities, which gathers what each
+          section leaves to the site.
+
+  - heading: The site's responsibilities
+    opens: |
+      In short, cairn makes an editor's sign-in hard to take, and what a taken session reaches
+      depends on how the site configures it, so the following responsibilities stay with the site.
+    items:
+      - id: rp-unbound
+        kind: sentence
+        mode: claim
+        text: |
+          Treat the setup command's first sign-in link and any recovery row seeded by hand as
+          unbound, since neither carries the browser binding's protection.
+        facts: ["f:an087n", "f:5iqvmt"]
+      - id: rp-https
+        kind: sentence
+        mode: claim
+        text: |
+          Serve every route over https, so a `__Host-` cookie minted outside `/admin` is not
+          discarded.
+        facts: ["f:g22dnw"]
+      - id: rp-guard
+        kind: sentence
+        mode: claim
+        text: |
+          Mount the guard, which gates `/admin` and adds the double-submit token on every unsafe
+          `/admin` form post.
+        facts: ["f:2sd4if", "f:keuj8l"]
+      - id: rp-trusted
+        kind: sentence
+        mode: claim
+        text: |
+          Keep `'*'` and `'null'` out of `csrf.trustedOrigins`, since every listed origin passes
+          SvelteKit's check on `/admin` too.
+        facts: ["f:ytwrgp"]
+      - id: rp-referrer
+        kind: sentence
+        mode: claim
+        text: |
+          Keep `Referrer-Policy: no-referrer` off the site-wide default.
+        facts: ["f:qbfriw"]
+      - id: rp-csp
+        kind: sentence
+        mode: claim
+        text: |
+          Configure SvelteKit's `csp` option when the site wants a Content-Security-Policy.
+        facts: ["f:yzbvk4", "f:72xplg"]
+      - id: rp-loads
+        kind: sentence
+        mode: claim
+        text: |
+          Mount `loginLoad`, `confirmLoad`, and the admin shell load under `/admin`, where the
+          guard's headers apply.
+        facts: ["f:horkxq"]
+      - id: rp-dev
+        kind: sentence
+        mode: claim
+        text: |
+          Keep dev transports and the `CAIRN_DEV_BACKEND` flag out of a deployed Worker, with a
+          refusal inside any dev-shaped transport.
+        facts: ["f:irs7fg", "f:wuwk2q"]
+      - id: rp-map
+        kind: sentence
+        mode: claim
+        text: |
+          Make the access map exhaustive when the site intends an allowlist.
+        facts: ["f:8ciz2s", "f:vqh4a9"]
+      - id: rp-schema
+        kind: sentence
+        mode: claim
+        text: |
+          Keep the attributes and URL schemes a `sanitizeSchema` callback admits safe.
+        facts: ["f:2fwybn"]
+      - id: rp-unsafe
+        kind: sentence
+        mode: claim
+        text: |
+          Leave `unsafeDisableSanitize` unset.
+        facts: ["f:wgovy6"]
+      - id: rp-build
+        kind: sentence
+        mode: claim
+        text: |
+          Review the output of every registered `build()`.
+        facts: ["f:21by9u"]
+      - id: rp-repo
+        kind: sentence
+        mode: claim
+        text: |
+          Treat everything in the App's repository, code included, as inside the installation
+          token's write reach.
+        facts: ["f:l5gx1t", "f:gglwt4"]
+      - id: rp-gate-methods
+        kind: sentence
+        mode: claim
+        text: |
+          With an identity gate, allow only login methods whose email the signing-in user cannot
+          control.
+        facts: ["f:33upyd"]
+      - id: rp-gate-hosts
+        kind: sentence
+        mode: claim
+        text: |
+          With an identity gate, put every hostname that reaches the Worker behind the gate.
+        facts: ["f:jha9f7"]
+      - id: rp-channel
+        kind: sentence
+        mode: claim
+        text: |
+          With an auth channel, meet the config obligations of every function the site supplies.
+        facts: ["f:ez788q"]
+
+  - heading: Related resources
+    opens: |
+      The following resources cover the tasks, the system, and the standards behind these
+      defenses.
+    items: []
+
+  - heading: How-to guides
+    level: 3
+    opens: |
+      The following guides configure and operate the parts of a site these defenses depend on.
+    items:
+      - id: rr-access
+        kind: link
+        target: restrict-admin-access.md
+      - id: rr-identity
+        kind: link
+        target: replace-magic-links-with-cloudflare-access.md
+      - id: rr-channel
+        kind: link
+        target: add-a-second-sign-in-group.md
+      - id: rr-render
+        kind: link
+        target: configure-rendering.md
+      - id: rr-key
+        kind: link
+        target: rotate-the-github-app-key.md
+
+  - heading: Concepts
+    level: 3
+    opens: |
+      The following page explains the system these defenses protect.
+    items:
+      - id: rr-architecture
+        kind: link
+        target: architecture.md
+
+  - heading: External resources
+    level: 3
+    opens: |
+      The following standards and platform pages describe the layers beneath cairn's defenses.
+    items:
+      - id: rr-workers
+        kind: link
+        target: https://developers.cloudflare.com/workers/reference/security-model/
+      - id: rr-fetch
+        kind: link
+        target: https://fetch.spec.whatwg.org/
+      - id: rr-nist
+        kind: link
+        target: https://pages.nist.gov/800-63-3/sp800-63b.html
+      - id: rr-csrf
+        kind: link
+        target: https://svelte.dev/docs/kit/configuration#csrf
+      - id: rr-csp
+        kind: link
+        target: https://svelte.dev/docs/kit/configuration#csp
+dispositions:
+  - fact: "f:rv9gdc"
+    disposition: cut
+    reason: |
+      Example-site internals (how `examples/showcase` keeps its capture transport off a deployed
+      Worker and which D1 binding its members fixture reads). The pattern a site copies, a
+      refusal inside the dev-shaped transport, is placed through `f:irs7fg`, and no published
+      page owns the example site's wiring.
+  - fact: "f:r0cv6e"
+    disposition: subordinated
+    reference: migration-notes.md
+    reason: |
+      The outline puts when the sanitize floor shipped out of scope and names the migration
+      notes as its home; this page states the floor as it is now.
+  - fact: "f:9uhscf"
+    disposition: subordinated
+    reference: ../reference/sveltekit.md#no_pending_request_error
+    reason: |
+      The exported error-code constant is a reference detail for a site rendering its own login
+      page; the reference entry states it, and the binding section links it.
+  - fact: "f:9pmipf"
+    disposition: subordinated
+    reference: ../reference/sveltekit.md#no_pending_request_error
+    reason: |
+      Which error code a failed confirm redirects with is reference behavior, not a defense or a
+      residual; the binding section links the entry.
+  - fact: "f:jud805"
+    disposition: subordinated
+    reference: migration-notes.md#0970
+    reason: |
+      Applying migration `0004` before deploying is an upgrade step, and the 0.97.0 migration
+      note states it with the outage an unmigrated `AUTH_DB` causes.
+  - fact: "f:diro7m"
+    disposition: subordinated
+    reference: ../reference/log-events.md
+    reason: |
+      A log-field detail for diagnosing a CSRF refusal under `identity`, not a defense; the log
+      events reference owns the `guard.refused` fields.
+  - fact: "f:doq8s2"
+    disposition: subordinated
+    reference: ../reference/log-events.md
+    reason: |
+      The `witness` field of a `guard.refused` record is a log detail; the page places the
+      header-decides-outright behavior through `f:keuj8l`, and the log events reference states the
+      field.
+  - fact: "f:4xrx5f"
+    disposition: subordinated
+    reference: ../reference/sveltekit.md#createauthguard
+    reason: |
+      The guard's config shape (a required `runtime`, optional `includeSubDomains` and
+      `identity`) is reference material; the page places the one-declaration consequence through
+      `f:cvzb8z`. The earlier-versions clause is history the migration notes carry.
+  - fact: "f:7cv105"
+    disposition: subordinated
+    reference: migration-notes.md#unreleased
+    reason: |
+      `devBackendHandle`'s config shape is wiring, not a defense; the Unreleased migration note
+      states the required `runtime` and the removed `access` and `roles` options.
+  - fact: "f:eiaqkh"
+    disposition: cut
+    reason: |
+      The example site's hooks wiring. The same selection on a scaffolded site, the reader's own
+      case, is placed through `f:f21bcz`, and no published page owns the example site's hooks.
+  - fact: "f:gun084"
+    disposition: subordinated
+    reference: ../reference/sveltekit.md#createauthguard
+    reason: |
+      The guard's options and the `locals.cairnAccess` attachment are reference material; the page
+      places the security consequence, one declaration every reader sees, through `f:cvzb8z`.
+  - fact: "f:hwffph"
+    disposition: subordinated
+    reference: ../reference/cli-cairn-doctor.md#the-checks
+    reason: |
+      A role-wiring diagnostic condition, off this page's job; the `cairn doctor` checks table
+      states the `auth.role-wiring` check.
+  - fact: "f:iwf4nu"
+    disposition: subordinated
+    reference: ../reference/sveltekit.md#createauthguard
+    reason: |
+      It restates the one-declaration design the page places through `f:cvzb8z`; the guard's
+      reference entry states that a site declares the map once, on the adapter, and that the guard
+      attaches it to `locals.cairnAccess`.
+  - fact: "f:mbx6q1"
+    disposition: subordinated
+    reference: ../reference/sveltekit.md#createeditorroutes
+    reason: |
+      The roster routes' config and role validation are reference material, off this page's
+      job; the reference entry states them.
+  - fact: "f:mou1li"
+    disposition: subordinated
+    reference: ../reference/log-events.md
+    reason: |
+      When `config.access_unmapped` fires (once per isolate, at composition) is a log-query
+      detail; the log events reference states it.
+  - fact: "f:pfy9cw"
+    disposition: subordinated
+    reference: ../reference/log-events.md
+    reason: |
+      The fields of several log events are reference material; the log events reference states
+      them.
+  - fact: "f:q07rd5"
+    disposition: subordinated
+    reference: arrange-the-admin-sidebar.md
+    reason: |
+      Where the adapter module sits on each kind of site is wiring, off this page's job; the
+      sidebar guide states both locations.
+  - fact: "f:qlgggh"
+    disposition: subordinated
+    reference: scaffolded-site-files.md#file-tree
+    reason: |
+      The scaffold's root listing belongs to the scaffolded site files page; this page places only
+      the security-relevant clause, that the scaffold's adapter declares no access map, through
+      `f:3z1uxv`.
+  - fact: "f:tycp7k"
+    disposition: subordinated
+    reference: arrange-the-admin-sidebar.md
+    reason: |
+      The scaffold's `navLayout` groups are sidebar arrangement, off this page's job; the sidebar
+      guide owns them.
+  - fact: "f:u78zg6"
+    disposition: subordinated
+    reference: ../reference/log-events.md
+    reason: |
+      When `admin.action.misconfigured` fires is a diagnostic detail; the log events reference
+      states that it does not occur behind either handle and fires only outside every hook's
+      coverage.
+constraints:
+  - |
+    The introduction's not-covered list renders the same links as Related resources
+    (`rr-access`, `rr-identity`, `rr-channel`, `rr-render`, `rr-key`); each target appears as one
+    `link` item only, in Related resources.
+  - |
+    Re-arm (stage 2b, context `sanitizeSchema`), the change this rebuild carries: "The
+    one-declaration change and the sanitize floor: the callback gets a copy, `script` is stripped
+    after it returns, and a missing `tagNames` throws." The sanitize half is placed in Render
+    safety (`rs-callback`, `rs-tagnames`) and its residual in Limits of render safety
+    (`rs-callback-limit`); the one-declaration half is placed in Access map coverage
+    (`am-one-declaration`, `am-narrows`).
+  - |
+    Claims the current page carries that are now false and must not return: that the sidebar
+    reads the adapter's map while `requireAccess` reads the guard's, so a map given to one gates
+    only that one; that a site passes the same access map to the adapter and the guard; that the
+    tidy and dictionary actions are open to any editor-capability session on a route without a
+    `concept` parameter (they answer 404); that an exhaustive map still leaves those actions open;
+    and that a `sanitizeSchema` callback's return replaces the floor's schema with nothing
+    checking it, so a callback can admit `<script>`.
+  - |
+    Keep the headings that carry an `anchor` verbatim, because live links in other pages and
+    sibling plans point at their slugs.
+  - |
+    The outline's suggested headings are not used. "Sign-in binds to the browser that asked" and
+    "An access map is not a whitelist" are sentences, not the register's noun-phrase concept
+    headings; "What the dev backend flag's two refusals leave open" opens on the "What" form the
+    register killed; and "Recovering whitelist semantics" opens on an -ing word, while
+    `docs/extend/migration-notes.md` (the 0.97.0 note), `docs/extend/restrict-admin-access.md`, and
+    `docs/extend/debug-your-site.md` already link `#allowlist-semantics-from-an-exhaustive-map`.
+    The headings this plan keeps carry the content those slugs named.
+  - |
+    Every component section with a residual ends in a level-3 "Limits of" subsection, so a reader
+    separates what cairn defends from what it leaves to the site by heading alone. A Limits
+    subsection states residuals only and never re-explains its parent's defense.
+  - |
+    Form: the guard's five steps, the render pipeline's nine stages, and the access map's three
+    fail-closed gates are numbered lists introduced by a complete sentence; the admin response
+    headers, the auth channel's three controls, and the site's responsibilities are bulleted
+    lists introduced by a complete sentence. Each responsibility is one sentence under 26 words.
+  - |
+    The site's responsibilities opens on the "In short" verdict (the syncthing exemplar's device)
+    and then lists the responsibilities as bullets in the page's section order; its items are
+    `claim` sentences drawn from facts placed in earlier sections, so the list introduces no new
+    fact.
+  - |
+    The Dev-backend section's heading keeps "two refusals" for its slug; the body states the two
+    engine refusals first and the dev package's own third refusal as a separate sentence, so the
+    heading stays true.
+  - |
+    The first mention of an auth channel, in The dev-backend flag's two refusals, defines it in
+    one clause (the seam a site adds to sign in a second sign-in group on its own routes) and links
+    The auth channel's threat surface. The first mention of the setup command names
+    `create-cairn-site` once, then "the setup command".
+  - |
+    Vendor specifics get a link, never a copy: SvelteKit's CSRF and CSP options, the Fetch
+    Standard's Origin rules, Cloudflare Access's session defaults and identity-provider claim
+    settings, and NIST's requirements each appear as the one load-bearing distinction the
+    section needs, with the link beside it.
+  - |
+    Hand-off items name the turn and the target heading; the drafter writes each as one sentence
+    with the heading rendered as a link, carrying no fact, numeral, path, or version, and never
+    naming a position on the page ("below", "next").
+  - |
+    The general docs assume no coding assistant: no sentence addresses a coding agent or
+    mentions Claude Code.
+  - |
+    The introduction opens on a statement about the reader's situation or the subject, never on
+    the page itself or an imperative; a later sentence that bounds the page's scope may name the
+    page. The introduction's covers list and the body's section order must match.
+friction:
+  - |
+    Placed beyond the outline's fact list, each [verified] and on this page's job: `f:v85shm`
+    (the stated threat position, the outline's first cover, which the outline lists no fact for),
+    `f:emrebl` and `f:33upyd` (the identity gate's email-only join and the self-asserted email
+    risk, which the outline's identity cover names), and `f:ytwrgp` (the `cairn doctor` check on
+    `csrf.trustedOrigins`, for the CSRF limits).
+  - |
+    gap: Reference drift. `docs/reference/sveltekit.md#no_pending_request_error` says the code is
+    returned when the browser has no pending-login cookie "and the submitted token is bound to
+    another browser's nonce", but `f:9pmipf` and `src/lib/sveltekit/auth-routes.ts:360-365`
+    return it for any failed confirm from a cookie-less browser (bound row, missing, expired, or
+    replayed token). Subordinated `f:9pmipf` there anyway.
+  - |
+    Reference only partly states `f:diro7m`: `docs/reference/log-events.md` (the
+    `guard.refused` row) says `hasSession` is presence-only but not that it is always `false`
+    under `identity`.
+  - |
+    `f:r0cv6e` is subordinated to `docs/extend/migration-notes.md`, the home the outline names,
+    but that page has no entry for the floor's arrival (commit `40d466ad`, v0.17.0), and the
+    changelog's history stops before 0.17.0, so no published page states the fact.
+  - |
+    Reference drift for `f:qlgggh`: `docs/extend/scaffolded-site-files.md` ("File tree" and
+    "`src/hooks.server.ts` and `src/access.ts`") still lists `src/access.ts` and says both handles
+    receive `{ access }`, which `f:qlgggh` and `f:f21bcz` contradict. That page has its own plan
+    in this run.
+  - |
+    `docs/extend/arrange-the-admin-sidebar.md` states both adapter locations (`f:q07rd5`) and
+    that the scaffold's layout has `Content` and `Site` sections (`f:tycp7k`), but not which
+    screens each section carries, nor `f:q07rd5`'s clause about the tutorial page's hooks.
+    `docs/extend/add-cairn-to-a-sveltekit-app.md:534` still shows `createAuthGuard()` with no
+    config, the form `f:q07rd5` says no longer type-checks.
+  - |
+    `docs/reference/sveltekit.md#createauthguard` states the required `runtime` and the
+    `locals.cairnAccess` attachment (`f:4xrx5f`, `f:gun084`, `f:iwf4nu`) but not the
+    earlier-versions history those bullets carry; `docs/extend/migration-notes.md#unreleased`
+    carries the history.
+  - |
+    format: the links the introduction's out-of-scope list needs are the Related resources link
+    items (`rr-access`, `rr-identity`, `rr-channel`, `rr-render`, `rr-key`); a constraint carries
+    the introduction's use of them, because a link item has no field saying which part of the page
+    it serves.
+  - |
+    format: no `table` or `list` kind, so list form for the guard's steps, the pipeline's stages,
+    the headers, the channel's controls, and the responsibilities is carried in `use` text and a
+    constraints entry.

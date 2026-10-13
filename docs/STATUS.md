@@ -18,18 +18,17 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 
 ## Immediate next action
 
-Stage 2b part 2 begins with its page plans, written in drafter's plan format v1
-(`superpowers/plans/2026-10-12-draft-docs-2b-part2-plans.md`). There are 11: the ten extend pages
-pass B re-armed, and "Using Claude Code with cairn" for the new `claude-code` arm. `conductor-cairn-cms`
-runs the pass. It launched from the main checkout with `claude --bg --model claude-opus-5-5 --effort
-medium --name conductor-cairn-cms "$(cat docs/superpowers/plans/2026-10-12-draft-docs-2b-part2-plans-conductor-prompt.txt)"`,
-and it starts the executor `draft-docs-2b-part2-plans`. The pass battle-tests the format with
-drafter-conductor: findings go into drafter Pass 0 before it merges, and the conductor runs
-`drafter check-plan` on all 11 plans afterward. Drafting the pages through drafter follows. Then
-comes the rest of part 2: the relinks and `LEGACY_PATH_MAP` repoints, the reference-arm corrections,
-the final arm index, the outline deletion, the boundary test, and 2b's close. Part 1's carried items
-are the ROADMAP entry "Stage 2b part 2". The re-arm list is `docs/internal/record/harvest/relink.json`.
-The release holds until the docs are complete.
+Stage 2b part 2 continues with drafting. The 11 page plans exist, written in drafter's plan format v1
+under `internal/briefs/extend/` and `internal/briefs/claude-code/` (ten extend pages and "Using Claude
+Code with cairn"), each with 0 errors from `drafter check-plan`. The pass record is
+`superpowers/research/2026-10-12-2b-part2-plans-record.md`. `conductor-cairn-cms` runs
+`drafter check-plan` on all 11 plans again once drafter's next release is installed. The drafting run
+that follows, through drafter, retires the 10 `.plan.md` files, registers the `claude-code` arm in the
+gates, and adds that arm's track entry to `docs-register.md`. Then comes the rest of part 2: the
+relinks and `LEGACY_PATH_MAP` repoints, the reference-arm corrections, the final arm index, the
+outline deletion, the boundary test, and 2b's close, which still owns the friction-log triage. Part
+1's carried items are the ROADMAP entry "Stage 2b part 2". The re-arm list is
+`docs/internal/record/harvest/relink.json`. The release holds until the docs are complete.
 
 The pre-2b tooling PRs are merged: cairn-cms #116 and workstation #25. If `tellgrader` predates
 #25, rebuild it with `make -C ~/.dotfiles/claude/.claude/skills/writing-voice/evals/tellgrader install`.

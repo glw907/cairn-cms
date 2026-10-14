@@ -7,7 +7,7 @@ prompt; a conflict is a stop.
 
 Load `cairn-pass` (it loads `pass-core`). Read the approved design in full:
 `docs/superpowers/specs/2026-10-11-alignment-design.md`, and the audit it cites,
-`~/.dotfiles/docs/superpowers/research/2026-10-11-cairn-cms-alignment-audit.md`, including Geoff's
+`~/Projects/cairn-cms/docs/superpowers/research/2026-10-11-cairn-cms-alignment-audit.md`, including Geoff's
 rulings at its end. Arm the API-drop wake-up and the lid-switch hold per
 `~/.claude/docs/unattended-work-guards.md`.
 

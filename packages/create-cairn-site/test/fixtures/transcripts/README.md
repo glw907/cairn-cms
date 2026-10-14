@@ -14,7 +14,7 @@ run that needs different bytes is re-captured, never patched.
 - **Tool commit:** `4e725be1b752f75ba2fba8b778775708ffceb5d8` (tree clean at capture time)
 - **Site:** `cairn-capture-scratch`, workers.dev only, on the glw907 Cloudflare account
 - **Live at:** `https://cairn-capture-scratch.glw907.workers.dev` (torn down after capture)
-- **Scratch directory:** `~/Projects/cairn-scratch/2026-08-16-capture/`
+- **Scratch directory:** `2026-08-16-capture/`, a throwaway directory outside this repo, since retired
 
 The template was baked against the published prerelease so the scaffold installed from the
 registry exactly as its own specs dictate, rather than from a vendored tarball no reader gets:

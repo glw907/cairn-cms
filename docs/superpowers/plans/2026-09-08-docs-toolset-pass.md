@@ -428,7 +428,7 @@ ground.
   discovery file that fires the docs-register profile without an explicit flag; consumed by
   `check:provenance` (G2-5) and by any later scanner run over this repository.
 - Consumes: the polish spec's rename table; `docs-sweep.md`; `exports-sweep.md`;
-  `~/.dotfiles/docs/superpowers/plans/2026-09-08-docs-standard-claude-infra-handoff.md`, plan
+  `~/Projects/initiatives/cairn-docs-standard/plans/2026-09-08-docs-standard-claude-infra-handoff.md`, plan
   one's hand-off, which names the six artifacts and gives the verification commands step 3 runs.
 
 **Steps:**

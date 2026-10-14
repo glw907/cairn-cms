@@ -61,23 +61,38 @@ export function embedBatch(templateSource, runtimeSource, state) {
 }
 
 /**
- * Where a docs page's plan sits when it has one: `docs/internal/briefs/<track>/<slug>.plan.md`,
- * beside the page's brief. The track is the page's directory under `docs/`; a page directly under
- * `docs/` is a front-door page. Returns null for a path outside `docs/` or not a markdown page.
+ * Where a docs page's plan sits when it has one, beside the page's brief under
+ * `docs/internal/briefs/<track>/`: `<slug>.plan.yaml` when that file exists, else `<slug>.plan.md`.
+ * The track is the page's directory under `docs/`; a page directly under `docs/` is a front-door
+ * page. Returns null for a path outside `docs/` or not a markdown page.
  * @param {string} pagePath The page's path, absolute or relative to the working directory.
  * @param {string} root The repository root.
- * @returns {string | null} The plan's absolute path, whether or not the file exists.
+ * @returns {string | null} The plan's absolute path. When neither file exists it is the
+ *   `.plan.md` path, so a caller's existence check fails as it always has.
  */
 export function planPathFor(pagePath, root) {
   const parts = relative(root, resolve(pagePath)).split(sep);
   if (parts[0] !== 'docs' || !parts[parts.length - 1].endsWith('.md')) return null;
   const track = parts.length > 2 ? parts[1] : 'front-door';
-  return join(root, 'docs/internal/briefs', track, `${basename(pagePath, '.md')}.plan.md`);
+  const stem = join(root, 'docs/internal/briefs', track, basename(pagePath, '.md'));
+  return existsSync(`${stem}.plan.yaml`) ? `${stem}.plan.yaml` : `${stem}.plan.md`;
 }
 
 /**
- * One review file read from disk: the page's markdown, plus its plan's markdown when
- * `<slug>.plan.md` exists next to its brief, and no `plan` key at all when it does not.
+ * Wraps a YAML plan in a fenced `yaml` block so the page's markdown renderer shows it as code.
+ * The fence is longer than any backtick run inside the plan, so no line can close it early.
+ * @param {string} yaml
+ * @returns {string}
+ */
+function fenceYaml(yaml) {
+  const longest = Math.max(2, ...(yaml.match(/`+/g) ?? []).map((run) => run.length));
+  const fence = '`'.repeat(longest + 1);
+  return `${fence}yaml\n${yaml.replace(/\n*$/, '\n')}${fence}\n`;
+}
+
+/**
+ * One review file read from disk: the page's markdown, plus its plan when one sits next to its
+ * brief (a YAML plan arrives as a fenced `yaml` block), and no `plan` key at all when none does.
  * @param {string} mdPath The page's path, absolute or relative to the working directory.
  * @param {string} root The repository root.
  * @returns {import('./runtime.mjs').DocsReviewFile}
@@ -86,7 +101,10 @@ export function loadReviewFile(mdPath, root) {
   /** @type {import('./runtime.mjs').DocsReviewFile} */
   const file = { path: relative(process.cwd(), mdPath), markdown: readFileSync(mdPath, 'utf8') };
   const planPath = planPathFor(mdPath, root);
-  if (planPath !== null && existsSync(planPath)) file.plan = readFileSync(planPath, 'utf8');
+  if (planPath !== null && existsSync(planPath)) {
+    const plan = readFileSync(planPath, 'utf8');
+    file.plan = planPath.endsWith('.yaml') ? fenceYaml(plan) : plan;
+  }
   return file;
 }
 

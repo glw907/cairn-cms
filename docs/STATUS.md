@@ -18,7 +18,11 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 
 ## Immediate next action
 
-Stage 2b part 2 continues with drafting. The 11 page plans exist, written in drafter's plan format v1
+Stage 2b part 2 continues with drafting. Before the drafting run starts through drafter, copy
+Geoff's `~/.config/drafter/cairn-cms.local.toml` into the drafting worktree as `drafter.local.toml`
+(ignored by git; the committed `drafter.toml` holds the rest), and run `drafter config` there to
+confirm it resolves. The docs review page now shows a `.plan.yaml` plan as a `yaml` block. The 11
+page plans exist, written in drafter's plan format v1
 under `internal/briefs/extend/` and `internal/briefs/claude-code/` (ten extend pages and "Using Claude
 Code with cairn"), each with 0 errors from `drafter check-plan` (drafter F1, both outlines). The pass record is
 `superpowers/research/2026-10-12-2b-part2-plans-record.md`, and the plans' deferrals sit in the

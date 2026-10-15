@@ -2,7 +2,7 @@
 
 Lens: can a cold Sonnet implementer execute each dispatched task from the plan text alone, and can
 `diff-reviewer` grade the result from the diff alone. Read-only review of
-`~/.dotfiles/docs/superpowers/plans/2026-09-08-docs-standard-claude-infra.md` (committed as
+`~/Projects/initiatives/cairn-docs-standard/plans/2026-09-08-docs-standard-claude-infra.md` (committed as
 `6fbc776`) against the real state of `~/.dotfiles`, `~/.claude`, the tellgrader module, the
 vale-hook suite, and cairn's plan two (`docs/superpowers/plans/2026-09-08-docs-toolset-pass.md`).
 

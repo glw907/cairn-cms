@@ -1,6 +1,6 @@
 # Plan one review: sequencing, blast radius, benchmark
 
-Adversarial review of `~/.dotfiles/docs/superpowers/plans/2026-09-08-docs-standard-claude-infra.md`
+Adversarial review of `~/Projects/initiatives/cairn-docs-standard/plans/2026-09-08-docs-standard-claude-infra.md`
 (the Claude infrastructure pass, plan one of three). Three lenses only: sequencing against plan
 two's preflight, blast radius into `~/.claude` while other repos' sessions are live, and the
 cadence measures against published readability and style instruments. Read-only; nothing was
@@ -68,7 +68,7 @@ plan one's task 6 as the one other cairn-cms file it already crosses into.
 ### 3. The handoff document has no path in plan two, so P1 cannot open it (sequencing)
 
 Plan one task 8 creates
-`~/.dotfiles/docs/superpowers/plans/2026-09-08-docs-standard-claude-infra-handoff.md` and calls it
+`~/Projects/initiatives/cairn-docs-standard/plans/2026-09-08-docs-standard-claude-infra-handoff.md` and calls it
 "the pass's product for plan two." Plan two's P1 Interfaces says only "Consumes: plan one's own
 record of what it landed," naming no path, and P1's acceptance criteria demand "the command or path
 that proved it present" for each of three items. P1 therefore has to rediscover nine commands that

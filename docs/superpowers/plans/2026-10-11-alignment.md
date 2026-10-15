@@ -4,7 +4,7 @@ Every lesson a cairn agent needs reaches it through a file it reads, no file a c
 teaches retired process, and the repo carries only live worktrees. Process: `cairn-pass`, which
 loads `pass-core`. Design approved by Geoff on 2026-10-11:
 `docs/superpowers/specs/2026-10-11-alignment-design.md` ("item N" below is its numbered change N).
-Evidence: `~/.dotfiles/docs/superpowers/research/2026-10-11-cairn-cms-alignment-audit.md`, with
+Evidence: `~/Projects/cairn-cms/docs/superpowers/research/2026-10-11-cairn-cms-alignment-audit.md`, with
 Geoff's rulings at its end. No separate spec: the design is a page (`spec-plan-review`, "Depth
 scales with risk"). Plan review: the mechanics lens and the fold,
 `docs/superpowers/research/2026-10-11-alignment-review-mechanics.md` and

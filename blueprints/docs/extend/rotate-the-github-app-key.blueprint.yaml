@@ -57,9 +57,8 @@ framing:
        - Came for: a new key in service and the exposed one retired.
        - Knows: that the key is suspect; possibly little of how cairn uses it.
        - Lacks: that the old key stays valid until it is deleted (`f:ixr3ny`), and that the page
-         deletes it only after a confirmation that cannot come sooner than 55 minutes after the push
-         (`f:ejuoh6`, `f:vg42j3`). The order trades exposure time for no outage. The page answers
-         this reader with that trade named and offers no faster order.
+         deletes it only after the live token check confirms the new key, which needs no wait
+         (`f:ejuoh6`, `f:1pb077`). The exposure window runs from the push to that check.
 
     3. **The hand-built site's developer.** A developer who built the site through
        `docs/extend/add-cairn-to-a-sveltekit-app.md`.
@@ -71,7 +70,7 @@ framing:
          form (`base64 < <file> | tr -d '\n'`), and that the `.pem` was moved outside every
          repository, so this reader likely still holds the old key's file and has a rollback.
        - Lacks: a `/healthz` route (the tutorial mounts none; [[before-you-begin]] links the `loadHealth`
-         entry), and this page's three encode forms, which differ from the tutorial's.
+         entry), and this page's two encode forms, which differ from the tutorial's.
 
     4. **The scaffolded site's developer.** A developer whose site `create-cairn-site` created, App and
        deploy included (`f:kldwss`).
@@ -137,11 +136,12 @@ framing:
        much, because a Svelte-fluent reader expects a code change and a redeploy. The `/healthz`
        route is a SvelteKit route the scaffold ships (`f:paotzb`). It enters at [[before-you-begin]] and
        [[verify-the-new-key]], not in the introduction.
-    6. **What the overlap costs.** The confirmation that lets the old key go cannot come sooner than
-       the token cache's 55 minutes (`f:vg42j3`), and `/healthz` cannot replace it, since its check
-       makes no network call (`f:5dwnh1`; body only). Both keys stay valid for at least that long
-       (`f:ixr3ny`). For a scheduled rotation that is time. For an exposed key it is exposure, the
-       price of no outage (`f:s90j7l`, `f:ejuoh6`).
+    6. **What the overlap costs.** Little time: the live token check mints from the new key at
+       once and skips the 55-minute cache (`f:1pb077`, `f:ejuoh6`), so the old key can go as soon
+       as the check passes. The plain `/healthz` request cannot replace it, since its check makes
+       no network call (`f:5dwnh1`; body only). Both keys stay valid until the old one is deleted
+       (`f:ixr3ny`). The cache explains why a publish proves nothing in that window
+       (`f:vg42j3`); it is not a wait the reader owes.
     7. **The rollback is conditional.** Until the deletion, re-pushing the old key restores signing
        with it (`f:sszb7b`). That re-push needs the old key's file, which a site the setup command
        created never kept (`f:kldwss`, `f:72yc97`). After the deletion, the recovery is a third key
@@ -209,17 +209,18 @@ framing:
        all three outcomes. Close the paragraph on the two recoveries. Until the deletion, the old key
        still works and a failed new key can be rolled back (`f:ixr3ny`, `f:sszb7b`). After it,
        GitHub restores nothing, and the recovery is a third key (`f:lg2ae8`).
-    3. **What the order costs, reader by reader.** Proving the new key takes at least 55 minutes,
-       since the Worker caches each installation token that long and a publish inside the window can
-       run on a token the old key minted (`f:vg42j3`). State the duration and its cause only, and
-       leave "per isolate" and warm versus cold to Verify. For a key that may have been exposed, that
-       window is the price of no outage. GitHub accepts the old key until it is deleted, and this is
-       the order GitHub itself recommends for a compromise (`f:ixr3ny`, `f:ejuoh6`, `f:s90j7l`). The
-       rollback needs a copy of the old key, and a site that `create-cairn-site` created kept none
-       outside the Worker, so on such a site a failed new key is recovered with a third key
-       (`f:kldwss`, `f:72yc97`, `f:lg2ae8`). This is the page's first mention of the scaffolder, so it
-       takes the `create-cairn-site` name. A reader whose key already fails can start at
-       [[recover-from-a-failed-key]].
+    3. **What the order costs, reader by reader.** The proof is immediate: the live token check
+       mints from the new key at once and skips the Worker's 55-minute token cache, so the old
+       key can be deleted as soon as the check passes (`f:1pb077`, `f:ejuoh6`). State that a
+       publish proves nothing in the first 55 minutes, since the Worker may still run on a token
+       the old key minted (`f:vg42j3`), and leave "per isolate" and warm versus cold to
+       [[verify-the-new-key]]. For a key that may have been exposed, the old key stays valid
+       until the reader deletes it, and this is the order GitHub itself recommends for a
+       compromise (`f:ixr3ny`, `f:s90j7l`). The rollback needs a copy of the old key, and a site
+       that `create-cairn-site` created kept none outside the Worker, so on such a site a failed
+       new key is recovered with a third key (`f:kldwss`, `f:72yc97`, `f:lg2ae8`). This is the
+       page's first mention of the scaffolder, so it takes the `create-cairn-site` name. A reader
+       whose key already fails can start at [[recover-from-a-failed-key]].
 
     Then the bounds. The page assumes a terminal
     on the reader's platform, Wrangler's secret commands, and a Workers Logs query. Registering the
@@ -235,7 +236,7 @@ framing:
       model.
     - No invented exposure scenario, such as a committed file or a lost laptop (Tells, "No invented
       material"), and no recommended rotation cadence, since no source states one.
-    - Write "at least 55 minutes", never "about an hour". Do not say whether deleting a key revokes
+    - Write "55 minutes" for the cache, never "about an hour". Do not say whether deleting a key revokes
       tokens already minted with it, since no fact states it.
     - Keep `/healthz`, `github.unreachable`, and the encode forms out of the introduction; each has
       its body section.
@@ -269,17 +270,6 @@ sections:
       The rotation needs a deployed site, edit access to the App's keys on GitHub, Wrangler signed
       in to the Worker's account, the `/healthz` route, and Workers Logs.
     items:
-      - id: intro-two-keys
-        kind: fact
-        fact: f:ixr3ny
-        use: |
-          Only the two-key model, for the introduction; the body does not restate it.
-      - id: intro-order
-        kind: fact
-        fact: f:ejuoh6
-        use: |
-          Only the order, for the introduction: push, confirm, then delete, with a rollback until
-          the deletion. Omit the clause that names a real publish as the confirming signal.
       - id: intro-recover-link
         kind: link
         target: '#recover-from-a-failed-key'
@@ -415,6 +405,7 @@ sections:
           - deployed-site
         produces:
           - new-key-pushed
+        canFail: true
       - id: push-node-fact
         kind: fact
         fact: f:olofdb
@@ -438,6 +429,7 @@ sections:
           - deployed-site
         produces:
           - new-key-pushed
+        canFail: true
       - id: push-ps-fact
         kind: fact
         fact: f:dbue4k
@@ -468,6 +460,23 @@ sections:
           replacement before local development signs with the new key.
         facts:
           - f:86h9o6
+      - id: x-push
+        kind: failure
+        from: s-push-node
+        symptom: |
+          Wrangler reports an error instead of confirming the secret.
+        handledBy: push-retry
+      - id: x-push-ps
+        kind: failure
+        from: s-push-ps
+        symptom: |
+          Wrangler reports an error instead of confirming the secret.
+        handledBy: push-retry
+      - id: push-retry
+        kind: handoff
+        text: |
+          Check that Wrangler is signed in to the Worker's account, as [[before-you-begin]] says,
+          and run the command again.
       - id: push-secrets-link
         kind: link
         target: https://developers.cloudflare.com/workers/configuration/secrets/
@@ -502,8 +511,7 @@ sections:
         mode: claim
         text: |
           A publish in the first 55 minutes after the push can therefore succeed on a token the old
-          key minted, so it proves nothing about the new key, and the page does not use a publish
-          as the check.
+          key minted, so a successful publish proves nothing about the new key.
         facts:
           - f:vg42j3
       - id: ver-live-bypass
@@ -662,20 +670,8 @@ sections:
     why: |
       The page's failure path: an ordered diagnostic list that reads the signals from [[verify-the-new-key]], then the two routes that separate an interrupted run from a total failure.
     opens: |
-      A failed key is recovered by rolling back while the old key is still on GitHub and its PEM
-      file is at hand, and by a third key otherwise.
+      A failed key shows in one of the signals below; work out which one before choosing a route.
     items:
-      - id: rec-route-claim
-        kind: sentence
-        mode: claim
-        text: |
-          The opening's two routes, with their condition first: before the deletion and with the
-          old key's file, roll back; after the deletion, or with no copy of the old key, generate a
-          third key.
-        facts:
-          - f:sszb7b
-          - f:lg2ae8
-          - f:72yc97
       - id: x-editor
         kind: failure
         symptom: |
@@ -688,7 +684,7 @@ sections:
           Worker's key failed (the key missing, unusable, or refused by GitHub). It fires after the
           push, whenever an isolate mints from the new key, including after the old key's
           deletion, so it can show on some requests and not others for up to 55 minutes.
-        handledBy: rec-lead
+        handledBy: s-logs
       - id: rec-editor-fact
         kind: fact
         fact: f:ogokfy
@@ -731,8 +727,18 @@ sections:
         mode: verbatim
         text: |
           Work through these in order.
+      - id: s-logs
+        kind: step
+        text: |
+          In the Cloudflare dashboard, query Workers Logs for `admin.action.failed` and
+          `github.unreachable` events.
+        requires:
+          - workers-logs-on
+        produces:
+          - logs-read
       - id: x-not-configured
         kind: failure
+        from: s-healthz
         symptom: |
           `/healthz` answers 503 with the `githubAppSigning` detail
           `GITHUB_APP_PRIVATE_KEY_B64 is not configured`.
@@ -746,6 +752,7 @@ sections:
           Only the failure details of the signing check. They back this row and the next.
       - id: x-unusable
         kind: failure
+        from: s-healthz
         symptom: |
           `/healthz` answers 503 with the detail `key import or sign failed` or `malformed JWT`.
         cause: |
@@ -754,6 +761,7 @@ sections:
         handledBy: rec-push-link
       - id: x-check-threw
         kind: failure
+        from: s-healthz
         symptom: |
           `/healthz` answers 503 with the detail `health check failed`.
         cause: |
@@ -766,6 +774,7 @@ sections:
           Only the thrown-error clause: the fixed detail and the `health.failed` log event.
       - id: x-wrong-key
         kind: failure
+        from: s-fingerprint
         symptom: |
           `/healthz` answers 200, but its `fingerprint` does not match the one GitHub shows for the
           new key.
@@ -774,6 +783,7 @@ sections:
         handledBy: rec-push-link
       - id: x-refused
         kind: failure
+        from: s-live
         symptom: |
           `/healthz?live=1` answers 503 with the `githubAppToken` detail `key_refused`.
         cause: |
@@ -787,6 +797,7 @@ sections:
           'health'`. They back this row and the next. Omit the rate bound and the shared mint.
       - id: x-not-key
         kind: failure
+        from: s-live
         symptom: |
           `/healthz?live=1` answers 503 with the detail `installation_not_found`,
           `installation_suspended`, or `unreachable`.
@@ -809,10 +820,21 @@ sections:
       - id: rec-push-link
         kind: link
         target: '#push-the-new-key-to-the-worker'
+      - id: rec-route-claim
+        kind: sentence
+        mode: claim
+        text: |
+          The opening's two routes, with their condition first: before the deletion and with the
+          old key's file, roll back; after the deletion, or with no copy of the old key, generate a
+          third key.
+        facts:
+          - f:sszb7b
+          - f:lg2ae8
+          - f:72yc97
       - id: rec-handoff
         kind: handoff
         text: |
-          Lead into the two recovery routes, naming the condition that picks each.
+          Lead into the two recovery routes, which the claim above ties to their conditions.
   - id: roll-back-to-the-old-key
     heading: Roll back to the old key
     why: |
@@ -842,12 +864,23 @@ sections:
       - id: rb-push-link
         kind: link
         target: '#push-the-new-key-to-the-worker'
+      - id: s-rollback-verify
+        kind: step
+        text: |
+          In the terminal, request `/healthz` with `curl` and note the `fingerprint` in the
+          response.
+        requires:
+          - old-key-restored
+        produces:
+          - old-key-identified
+        optional: true
       - id: s-rollback-delete
         kind: step
         text: |
-          On the App's settings page on GitHub, delete the failed key.
+          On the App's settings page on GitHub, delete the key whose fingerprint differs from the
+          `fingerprint` that `/healthz` returned.
         requires:
-          - old-key-restored
+          - old-key-identified
         produces:
           - failed-key-removed
         optional: true
@@ -907,23 +940,16 @@ sections:
         cause: |
           The same causes as for the first new key.
         handledBy: rec-lead
-      - id: s-third-delete-failed
+      - id: s-third-delete
         kind: step
         text: |
-          On the App's settings page on GitHub, delete the key that failed.
+          On the App's settings page on GitHub, delete every key whose fingerprint differs from the
+          `fingerprint` that `/healthz` returned for the third key, which removes the failed key
+          and any old key still on the App.
         requires:
           - third-key-confirmed
         produces:
-          - failed-key-deleted
-      - id: s-third-delete-old
-        kind: step
-        text: |
-          If the old key is still on the App, delete it as [[delete-the-old-key]] describes.
-        requires:
-          - failed-key-deleted
-        produces:
           - rotation-complete
-        optional: true
   - id: see-also
     heading: See also
     why: |

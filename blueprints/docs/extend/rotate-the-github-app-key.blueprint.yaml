@@ -48,7 +48,7 @@ framing:
        - Knows: the site runs; Wrangler; that the App exists. From the security model, the key's
          reach and, in passing, the 55-minute token cache.
        - Lacks: that two keys can sit on the App at once and why that removes the outage; that the
-         push deploys at once with no build; which signal proves that GitHub accepts the new key, and
+         push deploys at once; which signal proves that GitHub accepts the new key, and
          how long that proof takes.
 
     2. **The exposed-key reader.** The same developer, replacing a key a copy of which may have been
@@ -92,7 +92,7 @@ framing:
        - Came for: recovery.
        - Knows: a symptom.
        - Lacks: what each signal means and whether the rollback is still open. [[recover-from-a-failed-key]] answers
-         this, and its first check covers a missing key (`f:5dwnh1`, `f:9xqudi`). The
+         this, and its first row covers a missing key (`f:5dwnh1`, `f:9xqudi`). The
          introduction names that section so this reader skips ahead.
 
     Readers likely to arrive in the wrong place:
@@ -131,9 +131,9 @@ framing:
        minted (`f:vg42j3`). Workers Logs records only with observability on (`f:prb2os`), which is
        body material, not an introduction point.
     5. **Where SvelteKit fits: deliberately absent.** The rotation changes no source file, since the
-       App id and installation id stay in the adapter's `createGithubApp` call (`f:9xqudi`). It runs
-       no build, since the secret write deploys by itself (`f:86h9o6`). The introduction says that
-       much, because a Svelte-fluent reader expects a code change and a redeploy. The `/healthz`
+       App id and installation id stay in the adapter's `createGithubApp` call (`f:9xqudi`). The
+       secret write deploys by itself (`f:86h9o6`), so the reader redeploys nothing. The introduction
+       says that much, because a Svelte-fluent reader expects a code change and a redeploy. The `/healthz`
        route is a SvelteKit route the scaffold ships (`f:paotzb`). It enters at [[before-you-begin]] and
        [[verify-the-new-key]], not in the introduction.
     6. **What the overlap costs.** Little time: the live token check mints from the new key at
@@ -197,8 +197,8 @@ framing:
        schedule, which is the reader's reason and carries no product claim. Then where the work
        happens: on GitHub, which holds the App's keys, and in Cloudflare, where `wrangler secret put`
        deploys the new key to the Worker at once (`f:zoekqt`, `f:86h9o6`). The App id and
-       installation id in the adapter stay as they are, so no source file changes and no build runs
-       (`f:9xqudi`, `f:86h9o6`).
+       installation id in the adapter stay as they are, so no source file changes and nothing needs
+       redeploying (`f:9xqudi`, `f:86h9o6`).
     2. **The two-key model, the order, and the contract.** An App can hold several private keys at
        once, and a new key does not invalidate the old one (`f:ixr3ny`, `f:zoekqt`). That overlap
        removes the outage: the new key is generated beside the old one, pushed to the Worker, and
@@ -270,9 +270,6 @@ sections:
       The rotation needs a deployed site, edit access to the App's keys on GitHub, Wrangler signed
       in to the Worker's account, the `/healthz` route, and Workers Logs.
     items:
-      - id: intro-recover-link
-        kind: link
-        target: '#recover-from-a-failed-key'
       - id: bb-lead
         kind: sentence
         mode: claim
@@ -326,8 +323,18 @@ sections:
         kind: fact
         fact: f:72yc97
         use: |
-          Only the consequence for a scaffolded site: it keeps no copy of the current key, so its
-          recovery from a failed new key is a third key. Omit the version clause.
+          Only the clause that the key lives in the Worker's secret store and is never tracked as a
+          file. The consequence for a scaffolded site is the claim that follows.
+      - id: bb-scaffold-claim
+        kind: sentence
+        mode: claim
+        text: |
+          A site that `create-cairn-site` created keeps no copy of the current key outside the
+          Worker, so its recovery from a failed new key is a third key.
+        facts:
+          - f:72yc97
+          - f:kldwss
+          - f:lg2ae8
       - id: bb-old-key-claim
         kind: sentence
         mode: claim
@@ -337,6 +344,9 @@ sections:
         facts:
           - f:72yc97
           - f:sszb7b
+      - id: intro-recover-link
+        kind: link
+        target: '#recover-from-a-failed-key'
       - id: bb-handoff
         kind: handoff
         text: |
@@ -366,9 +376,16 @@ sections:
         kind: fact
         fact: f:zoekqt
         use: |
-          Only two clauses: the downloaded file is the only copy of the new private key, which is
-          the Warning, and a new key must exist before the old one can be deleted. Omit the settings
-          navigation, the key limit, the PKCS#1 form, and the no-expiry clause.
+          Only two clauses: GitHub keeps only the public portion of a key, which is the Warning, and
+          with one key on the App a new key must be generated before the old one is deleted. Omit
+          the settings navigation, the key limit, the PKCS#1 form, and the no-expiry clause.
+      - id: gen-only-copy-claim
+        kind: sentence
+        mode: claim
+        text: |
+          The downloaded file is the only copy of the new private key.
+        facts:
+          - f:zoekqt
       - id: gen-handoff
         kind: handoff
         text: |
@@ -449,7 +466,7 @@ sections:
         kind: fact
         fact: f:86h9o6
         use: |
-          Only the deploy: the push creates and deploys a new Worker version at once, with no build,
+          Only the deploy: the push creates and deploys a new Worker version at once,
           and local `wrangler dev` reads `.dev.vars` instead. Omit the gradual-deployments command's
           details.
       - id: push-dev-vars-claim
@@ -645,8 +662,9 @@ sections:
       - id: s-delete
         kind: step
         text: |
-          On the App's settings page on GitHub, delete the private key whose fingerprint differs
-          from the `fingerprint` that `/healthz` returned.
+          On the App's settings page on GitHub, delete the old key, the one you replaced. Its
+          fingerprint differs from the `fingerprint` that `/healthz` returned. Leave the new key and
+          any other key you keep.
         requires:
           - new-key-confirmed
         produces:
@@ -673,6 +691,7 @@ sections:
       A failed key shows in one of the signals below; work out which one before choosing a route.
     items:
       - id: x-editor
+        from: s-live
         kind: failure
         symptom: |
           An editor reports that Publish failed while the editor stayed open with the message
@@ -727,15 +746,15 @@ sections:
         mode: verbatim
         text: |
           Work through these in order.
-      - id: s-logs
+      - id: s-rec-checks
         kind: step
         text: |
-          In the Cloudflare dashboard, query Workers Logs for `admin.action.failed` and
-          `github.unreachable` events.
+          Run the three checks in [[verify-the-new-key]] that you have not run, and read each
+          answer against the rows below.
         requires:
-          - workers-logs-on
+          - new-key-pushed
         produces:
-          - logs-read
+          - checks-read
       - id: x-not-configured
         kind: failure
         from: s-healthz
@@ -809,6 +828,7 @@ sections:
         target: ../reference/sveltekit.md#loadhealth
       - id: x-not-key-failure
         kind: failure
+        from: s-live
         symptom: |
           Both checks pass and the fingerprint matches, but a publish still fails.
         cause: |
@@ -820,6 +840,15 @@ sections:
       - id: rec-push-link
         kind: link
         target: '#push-the-new-key-to-the-worker'
+      - id: s-logs
+        kind: step
+        text: |
+          In the Cloudflare dashboard, query Workers Logs for `admin.action.failed` and
+          `github.unreachable` events.
+        requires:
+          - workers-logs-on
+        produces:
+          - logs-read
       - id: rec-route-claim
         kind: sentence
         mode: claim
@@ -877,8 +906,8 @@ sections:
       - id: s-rollback-delete
         kind: step
         text: |
-          On the App's settings page on GitHub, delete the key whose fingerprint differs from the
-          `fingerprint` that `/healthz` returned.
+          On the App's settings page on GitHub, delete the failed key, the one you generated for
+          this rotation. Its fingerprint differs from the `fingerprint` that `/healthz` returned.
         requires:
           - old-key-identified
         produces:
@@ -943,9 +972,9 @@ sections:
       - id: s-third-delete
         kind: step
         text: |
-          On the App's settings page on GitHub, delete every key whose fingerprint differs from the
-          `fingerprint` that `/healthz` returned for the third key, which removes the failed key
-          and any old key still on the App.
+          On the App's settings page on GitHub, delete the failed key, and the old key if it is
+          still on the App. Neither matches the `fingerprint` that `/healthz` returned for the third
+          key.
         requires:
           - third-key-confirmed
         produces:

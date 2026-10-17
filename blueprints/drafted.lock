@@ -1,0 +1,17 @@
+# Written by drafter; do not edit by hand.
+version: 1
+pages:
+    docs/extend/rotate-the-github-app-key.md:
+        page: 25d0f25c369d5585ec17d7584536f6e198d4a7e3
+        blueprint: e299f141f3305a3a68cc67fbfdc6350f589d0918
+        sections:
+            _intro: sha256:bad06db458031f11fca6ecb6f6885b92d54771f60c6c1ed8558f61a003a77746
+            before-you-begin: sha256:48154814a4d22e323f9e2895c151affad6a07814f6ad8dd5973e9a02045d5830
+            delete-the-old-key: sha256:f0d47c41282b4da417d9dc68884e2932f2c41c261e6fe588dd18ce658c740218
+            generate-a-new-key: sha256:25a69d62a50b8e8ed688cdcecb69c3297d69af084348c7378627aed3a8fa8720
+            generate-a-third-key: sha256:2b2d56a5984dab836b0288ed7322e52af447a21b4e9e7cfcde1074c60524bbea
+            push-the-new-key-to-the-worker: sha256:1f486c3414c5af5dc14fe5b1731b19d3832bcbb599598bf52b483e81565e8f99
+            recover-from-a-failed-key: sha256:7f71973244bbccafd2c9738edf53f652f5daeceb5404f699834d7f7d6d0e4e28
+            roll-back-to-the-old-key: sha256:03b43cf6bcf150cef5bea823dbabbe155017f382766d628ff11e5a200c8f1888
+            see-also: sha256:f3ca1e3e61907aa0b7035eb95b7f28bedc55e031bab062e53967533bd8040fa0
+            verify-the-new-key: sha256:3b9e85ea02175d20a57f2cf2bc79eecfecf7a960dcb2a96b99f5d39408d0d307

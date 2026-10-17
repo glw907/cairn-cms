@@ -158,8 +158,7 @@ framing:
       whose custody and reach it explains. No reference page links in. No index lists it yet. The
       setup command's output and the scaffold's guidance do not name it.
     - **What links out.** `debug-your-site` (the crossLink, "Signing failures after a rotation", from
-      the recovery section); the tutorial's register, store-credentials, verify, and Email Sending
-      anchors; `security-model.md#the-github-apps-reach`; `docs/reference/sveltekit.md#loadhealth`;
+      the recovery section); the tutorial's register, deploy, and store-credentials anchors; `security-model.md#the-github-apps-reach`; `docs/reference/sveltekit.md#loadhealth`;
       `docs/reference/log-events.md`; GitHub's "Managing private keys for GitHub Apps"; and
       Cloudflare's "Secrets" and Workers Logs pages.
     - **What siblings own, so the introduction words a shared idea fresh.**
@@ -289,6 +288,9 @@ sections:
         fact: f:i4fg3o
         use: |
           Only the secret's name. The encoding waits for [[push-the-new-key-to-the-worker]].
+      - id: bb-deploy-link
+        kind: link
+        target: add-cairn-to-a-sveltekit-app.md#deploy-the-production-build-and-read-the-refusal
       - id: bb-credentials-link
         kind: link
         target: add-cairn-to-a-sveltekit-app.md#store-the-apps-credentials
@@ -691,7 +693,6 @@ sections:
       A failed key shows in one of the signals below; work out which one before choosing a route.
     items:
       - id: x-editor
-        from: s-live
         kind: failure
         symptom: |
           An editor reports that Publish failed while the editor stayed open with the message
@@ -716,31 +717,6 @@ sections:
         use: |
           Only the timing of the cause: a cold isolate mints from the current key, and a warm one
           keeps its token for up to 55 minutes.
-      - id: rec-logs
-        kind: reason
-        text: |
-          Why the logs are read by these events: the failed publish is recorded as
-          `admin.action.failed`, and the admin shell's best-effort read records
-          `github.unreachable` with `scope: 'shell'`; `commit.failed` and `publish.failed` come only
-          from the commit step, so neither is the query for a key GitHub refuses.
-        facts:
-          - f:ogokfy
-          - f:7u49xs
-      - id: rec-logs-fact
-        kind: fact
-        fact: f:7u49xs
-        use: |
-          Only two clauses: the admin shell logs `github.unreachable` with `scope: 'shell'`, and
-          `commit.failed` and `publish.failed` come only from the commit step. Omit the count of
-          read sites and the help and advisories scopes.
-      - id: rec-logs-observability
-        kind: fact
-        fact: f:prb2os
-        use: |
-          Only the empty-log clause: without observability an empty query proves nothing.
-      - id: rec-log-events-link
-        kind: link
-        target: ../reference/log-events.md
       - id: rec-lead
         kind: sentence
         mode: verbatim
@@ -828,7 +804,6 @@ sections:
         target: ../reference/sveltekit.md#loadhealth
       - id: x-not-key-failure
         kind: failure
-        from: s-live
         symptom: |
           Both checks pass and the fingerprint matches, but a publish still fails.
         cause: |
@@ -840,15 +815,71 @@ sections:
       - id: rec-push-link
         kind: link
         target: '#push-the-new-key-to-the-worker'
+      - id: rec-logs
+        kind: reason
+        text: |
+          Why the logs are read by these events: the failed publish is recorded as
+          `admin.action.failed`, and the admin shell's best-effort read records
+          `github.unreachable` with `scope: 'shell'`; `commit.failed` and `publish.failed` come only
+          from the commit step, so neither is the query for a key GitHub refuses.
+        facts:
+          - f:ogokfy
+          - f:7u49xs
+      - id: rec-logs-fact
+        kind: fact
+        fact: f:7u49xs
+        use: |
+          Only two clauses: the admin shell logs `github.unreachable` with `scope: 'shell'`, and
+          `commit.failed` and `publish.failed` come only from the commit step. Omit the count of
+          read sites and the help and advisories scopes.
+      - id: rec-logs-observability
+        kind: fact
+        fact: f:prb2os
+        use: |
+          Only the empty-log clause: without observability an empty query proves nothing.
+      - id: rec-log-events-link
+        kind: link
+        target: ../reference/log-events.md
       - id: s-logs
         kind: step
         text: |
-          In the Cloudflare dashboard, query Workers Logs for `admin.action.failed` and
-          `github.unreachable` events.
+          In the Cloudflare dashboard, query Workers Logs for `admin.action.failed`,
+          `github.unreachable`, and `health.failed` events.
         requires:
           - workers-logs-on
         produces:
           - logs-read
+        canFail: true
+      - id: x-logs-token
+        kind: failure
+        from: s-logs
+        symptom: |
+          An `admin.action.failed` event carries `GitHub installation token failed` with a status.
+        cause: |
+          GitHub refused the key.
+        handledBy: rec-route-claim
+        facts:
+          - f:ogokfy
+      - id: x-logs-shell
+        kind: failure
+        from: s-logs
+        symptom: |
+          A `github.unreachable` event carries `scope: 'shell'`.
+        cause: |
+          The admin shell's best-effort read failed, and the shell degrades instead of failing.
+        handledBy: s-rec-checks
+        facts:
+          - f:7u49xs
+      - id: x-logs-empty
+        kind: failure
+        from: s-logs
+        symptom: |
+          The query returns no events.
+        cause: |
+          Workers Logs records nothing unless observability is enabled.
+        handledBy: rec-logs-observability
+        facts:
+          - f:prb2os
       - id: rec-route-claim
         kind: sentence
         mode: claim
@@ -890,6 +921,13 @@ sections:
         produces:
           - old-key-restored
         optional: true
+        canFail: true
+      - id: x-rollback-push
+        kind: failure
+        from: s-rollback
+        symptom: |
+          Wrangler reports an error instead of confirming the secret.
+        handledBy: push-retry
       - id: rb-push-link
         kind: link
         target: '#push-the-new-key-to-the-worker'
@@ -903,6 +941,19 @@ sections:
         produces:
           - old-key-identified
         optional: true
+        canFail: true
+      - id: x-rollback-verify
+        kind: failure
+        from: s-rollback-verify
+        symptom: |
+          `/healthz` answers 503, or returns a fingerprint that is not the old key's.
+        cause: |
+          The Worker holds a key other than the old key.
+        handledBy: rb-repush
+      - id: rb-repush
+        kind: handoff
+        text: |
+          Run the push command again with the old key's PEM file.
       - id: s-rollback-delete
         kind: step
         text: |
@@ -952,6 +1003,13 @@ sections:
           - third-key-file
         produces:
           - third-key-pushed
+        canFail: true
+      - id: x-third-push
+        kind: failure
+        from: s-third-push
+        symptom: |
+          Wrangler reports an error instead of confirming the secret.
+        handledBy: push-retry
       - id: s-third-verify
         kind: step
         text: |

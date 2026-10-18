@@ -1,0 +1,5 @@
+{
+  "backlog_path": "BACKLOG.md",
+  "domains": ["cairn-cms"],
+  "default_priority": "medium"
+}

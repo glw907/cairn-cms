@@ -54,7 +54,7 @@ framing:
     1. **The scheduled rotator.** A developer who runs an organization's site on cairn and replaces
        the key because the organization rotates credentials on its own schedule; GitHub's keys never
        expire, so any schedule is the owner's choice (`f:s90j7l`, `f:ixr3ny`).
-       - From: the extend index's Operate group once the page lands; `docs/extend/security-model.md`
+       - From: the extend index's Operate group; `docs/extend/security-model.md`
          ("Limits of the installation token", line 395, and its How-to guides list, line 521; the
          outline's crossLink reads "Operating the key it describes"); a search.
        - Came for: a key swap with no publishing outage.
@@ -637,7 +637,7 @@ sections:
         kind: step
         text: |
           In the terminal, request `/healthz?live=1` with `curl`, at least a minute after any earlier
-          live request.
+          live response.
         requires:
           - key-identified
         produces:
@@ -654,7 +654,7 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          A repeat of the live request within a minute of an earlier one is answered from the
+          A repeat of the live request within a minute of an earlier one can be answered from the
           earlier result, so leave a minute between live requests.
         facts:
           - f:1pb077
@@ -976,7 +976,7 @@ sections:
       - id: s-rollback-verify
         kind: step
         text: |
-          In the terminal, at least a minute after any earlier live request, request `/healthz?live=1`
+          In the terminal, at least a minute after any earlier live response, request `/healthz?live=1`
           with `curl`, and compare the `fingerprint` in the
           response with the fingerprint GitHub shows for the old key.
         requires:

@@ -55,7 +55,7 @@ framing:
        the key because the organization rotates credentials on its own schedule; GitHub's keys never
        expire, so any schedule is the owner's choice (`f:s90j7l`, `f:ixr3ny`).
        - From: the extend index's Operate group once the page lands; `docs/extend/security-model.md`
-         ("Limits of the installation token", line 391, and its How-to guides list, line 516; the
+         ("Limits of the installation token", line 395, and its How-to guides list, line 521; the
          outline's crossLink reads "Operating the key it describes"); a search.
        - Came for: a key swap with no publishing outage.
        - Knows: the site runs; Wrangler; that the App exists. From the security model, the key's
@@ -87,10 +87,9 @@ framing:
 
     4. **The scaffolded site's developer.** A developer whose site `create-cairn-site` created, App and
        deploy included (`f:kldwss`).
-       - From: a search or the extend index. Not from the setup command: its closing message after
-         moving the key tells a developer who loses the key to "re-run this step"
-         (`packages/create-cairn-site/src/cloudflare/secret.mjs:43-46`), and neither it nor the baked
-         README names this page.
+       - From: the setup command's closing message, which links this page after moving the key
+         (`packages/create-cairn-site/src/cloudflare/secret.mjs:43-46`), or a search or the extend
+         index.
        - Came for: replacing a key they never handled by hand.
        - Knows: the admin and the setup run; perhaps not Wrangler's secret commands.
        - Lacks: any copy of the old key. The setup command piped it into the Worker and kept none
@@ -164,12 +163,11 @@ framing:
       `run-cairn-audit-on-your-site`. The kept records `upgrade-cairn.md` and `migration-notes.md`
       share the index heading. It is the group's only page about a credential, and the extend
       track's only page that spans a vendor console (GitHub) and a CLI deploy (Wrangler) in one
-      procedure. `docs/extend/README.md` lists only pages in place, so the page joins Operate when it
-      lands, and the index entry's wording is the index's own.
+      procedure. `docs/extend/README.md` lists the page under Operate.
     - **What links in, and why.** The tutorial links the page twice, as the later replacement of the
       key it registers. The security model links it three times, as the operating side of the key
-      whose custody and reach it explains. No reference page links in. No index lists it yet. The
-      setup command's output and the scaffold's guidance do not name it.
+      whose custody and reach it explains. `define-an-adapter-and-schema.md` links it once, where it says the setup command sets the
+      secret. No reference page links in. The setup command's closing message links it.
     - **What links out.** `debug-your-site` (the crossLink, "Signing failures after a rotation", from
       the recovery section); the tutorial's register, deploy, and store-credentials anchors; `security-model.md#the-github-apps-reach`; `docs/reference/sveltekit.md#loadhealth`;
       `docs/reference/log-events.md`; GitHub's "Managing private keys for GitHub Apps"; and
@@ -638,7 +636,8 @@ sections:
       - id: s-live
         kind: step
         text: |
-          In the terminal, request `/healthz?live=1` with `curl`.
+          In the terminal, request `/healthz?live=1` with `curl`, at least a minute after any earlier
+          live request.
         requires:
           - key-identified
         produces:
@@ -649,8 +648,16 @@ sections:
         fact: f:1pb077
         use: |
           Only the expected result: a 200 with `githubAppToken` ok, which proves GitHub accepts the
-          key. Omit the failure classes, the rate bound, the shared mint, and the timeouts, and say
-          nothing about polling.
+          key, and that a settled result is served for 60 seconds. Omit the failure classes, the
+          rate bound, the shared mint, and the timeouts, and say nothing about polling.
+      - id: ver-live-wait
+        kind: sentence
+        mode: claim
+        text: |
+          A repeat of the live request within a minute of an earlier one is answered from the
+          earlier result, so leave a minute between live requests.
+        facts:
+          - f:1pb077
       - id: x-live
         kind: failure
         from: s-live
@@ -851,11 +858,24 @@ sections:
         kind: failure
         from: s-logs
         symptom: |
-          An `admin.action.failed` event carries `GitHub installation token failed` with a status.
+          An `admin.action.failed` event carries `GitHub installation token failed` with status 401.
         cause: |
           GitHub refused the key.
         handledBy: rec-route-claim
         facts:
+          - f:ogokfy
+          - f:1pb077
+      - id: x-logs-installation
+        kind: failure
+        from: s-logs
+        symptom: |
+          An `admin.action.failed` event carries `GitHub installation token failed` with a status
+          other than 401.
+        cause: |
+          The failure lies with the App's installation or with reaching GitHub, not with the key.
+        handledBy: rec-loadhealth-link
+        facts:
+          - f:1pb077
           - f:ogokfy
       - id: x-logs-shell
         kind: failure
@@ -956,7 +976,8 @@ sections:
       - id: s-rollback-verify
         kind: step
         text: |
-          In the terminal, request `/healthz?live=1` with `curl`, and compare the `fingerprint` in the
+          In the terminal, at least a minute after any earlier live request, request `/healthz?live=1`
+          with `curl`, and compare the `fingerprint` in the
           response with the fingerprint GitHub shows for the old key.
         requires:
           - old-key-restored
@@ -1056,7 +1077,7 @@ sections:
         text: |
           On the App's settings page on GitHub, delete the failed key, and the old key if it is
           still on the App. Neither matches the `fingerprint` that `/healthz` returned for the third
-          key.
+          key. Leave any other key you keep.
         requires:
           - third-key-confirmed
         produces:

@@ -193,7 +193,7 @@ framing:
         introduction names save and publish only as what the installation token serves.
       - `debug-your-site` owns reading the logs in general. The introduction names no log event.
     - **A coverage gap.** A GitHub failure with no key change has no
-      owning page on the extend track, as the wrong-place list above records. The introduction routes
+      owning page on the extend track, as the wrong-place list records. The introduction routes
       only the two out-of-scope items.
   introPlan: |
     Three paragraphs, then the bounds (prior knowledge and what the page leaves out). No heading. The first sentence states the subject from the reader's
@@ -384,6 +384,21 @@ sections:
           - app-settings-access
         produces:
           - new-key-file
+        canFail: true
+      - id: x-generate-limit
+        kind: failure
+        from: s-generate
+        symptom: |
+          GitHub refuses to generate another key.
+        cause: |
+          The App already holds the most keys GitHub allows.
+        handledBy: gen-limit-handoff
+        facts:
+          - f:zoekqt
+      - id: gen-limit-handoff
+        kind: handoff
+        text: |
+          Delete a key the App no longer needs, then generate the new key.
       - id: gen-vendor-link
         kind: link
         target: https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps
@@ -393,7 +408,8 @@ sections:
         use: |
           Only two clauses: GitHub keeps only the public portion of a key, which is the Warning, and
           with one key on the App a new key must be generated before the old one is deleted. Omit
-          the settings navigation, the key limit, the PKCS#1 form, and the no-expiry clause.
+          the settings navigation, the PKCS#1 form, and the no-expiry clause. The key limit waits
+          for the failure row.
       - id: gen-only-copy-claim
         kind: sentence
         mode: claim
@@ -466,7 +482,9 @@ sections:
         kind: fact
         fact: f:dbue4k
         use: |
-          Only two clauses: the PowerShell form returns unwrapped base64 and writes no file, and Windows PowerShell 5.1 and PowerShell 7 write an `Out-File` file in different encodings, which belongs to [[push-the-new-key-to-the-worker]]'s local `.dev.vars` step. Omit any claim on how PowerShell encodes a piped string.
+          Only two clauses: `[Convert]::ToBase64String` returns unwrapped base64, and the form pipes
+          the value to Wrangler and writes no file. Omit the `Out-File` encoding note, which has no
+          step on this page.
       - id: push-ps-code
         kind: code
         text: |
@@ -476,41 +494,12 @@ sections:
           `[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\path\to\new-key.pem'))` piped to
           `npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`. The cairn file is the setup
           command's encode and push that the form matches.
-      - id: s-push-local
-        kind: step
-        text: |
-          If you keep the key in a local `.dev.vars` beside the Wrangler config, replace its value
-          with the new key's base64 encoding. A file written with Windows PowerShell 5.1's
-          `Out-File` holds UTF-16LE text, and PowerShell 7 writes `utf8NoBOM`.
-        requires:
-          - new-key-file
-        optional: true
-        canFail: true
-      - id: x-local
-        kind: failure
-        from: s-push-local
-        symptom: |
-          Local development fails to sign.
-        cause: |
-          `wrangler dev` reads `.dev.vars` and never the deployed secret, so it still holds the old key.
-        handledBy: s-push-local
-        facts:
-          - f:86h9o6
       - id: push-deploys
         kind: fact
         fact: f:86h9o6
         use: |
-          Only the deploy: the push creates and deploys a new Worker version at once,
-          and local `wrangler dev` reads `.dev.vars` instead. Omit the gradual-deployments command's
-          details.
-      - id: push-dev-vars-claim
-        kind: sentence
-        mode: claim
-        text: |
-          A key kept in a local `.dev.vars` is not touched by the push, so it needs the same
-          replacement before local development signs with the new key.
-        facts:
-          - f:86h9o6
+          Only the deploy: the push creates and deploys a new Worker version at once. Omit the
+          gradual-deployments command and the local `.dev.vars` clause.
       - id: x-push
         kind: failure
         from: s-push-node
@@ -548,8 +537,9 @@ sections:
       Deleting a key is the one step GitHub cannot reverse, so the proof comes before it. The
       55-minute token cache is why the proof is the live token check and not a publish.
     opens: |
-      Two requests to `/healthz` prove the new key at once: the plain request shows that the
-      Worker's secret signs and which key it is, and `?live=1` shows that GitHub accepts it.
+      Three checks prove the new key at once: the plain `/healthz` request shows that the
+      Worker's secret signs, its fingerprint names which key the Worker holds, and `?live=1`
+      shows that GitHub accepts it.
     items:
       - id: ver-cache
         kind: fact
@@ -722,7 +712,7 @@ sections:
     why: |
       The page's failure path: an ordered diagnostic list that reads the signals from [[verify-the-new-key]], then the two routes that separate an interrupted run from a total failure.
     opens: |
-      A failed key shows in one of the signals below; work out which one before choosing a route.
+      A failed key shows as one of the signals that the diagnostic list of this section names; work out which one before choosing a route.
     items:
       - id: x-editor
         kind: failure
@@ -758,7 +748,7 @@ sections:
         kind: step
         text: |
           Run the three checks in [[verify-the-new-key]] that you have not run, and read each
-          answer against the rows below.
+          answer against the rows of [[recover-from-a-failed-key]].
         requires:
           - new-key-pushed
         produces:
@@ -926,7 +916,7 @@ sections:
       - id: rec-handoff
         kind: handoff
         text: |
-          Lead into the two recovery routes, which the claim above ties to their conditions.
+          Lead into the two recovery routes, which the route claim ties to their conditions.
   - id: roll-back-to-the-old-key
     heading: Roll back to the old key
     why: |
@@ -966,10 +956,11 @@ sections:
       - id: s-rollback-verify
         kind: step
         text: |
-          In the terminal, request `/healthz?live=1` with `curl` and note the `fingerprint` in the
-          response.
+          In the terminal, request `/healthz?live=1` with `curl`, and compare the `fingerprint` in the
+          response with the fingerprint GitHub shows for the old key.
         requires:
           - old-key-restored
+          - app-settings-access
         produces:
           - old-key-identified
         optional: true
@@ -985,7 +976,8 @@ sections:
       - id: rb-repush
         kind: handoff
         text: |
-          Run the push command again with the old key's PEM file.
+          Run the push command again with the old key's PEM file. If `/healthz` still answers 503,
+          read the rows of [[recover-from-a-failed-key]].
       - id: s-rollback-delete
         kind: step
         text: |
@@ -1101,9 +1093,8 @@ dispositions:
     reference: scaffolded-site-files.md#devvarsexample
     reason: |
       The contents of the scaffold's `.dev.vars.example` belong to the scaffold's file reference.
-      This page needs only that local `wrangler dev` reads `.dev.vars` (`f:86h9o6`), and the
-      target section states the file's purpose but still lists the retired `GITHUB_APP_ID` and
-      `GITHUB_APP_INSTALLATION_ID`.
+      This page does not cover local development, and the target section still lists the retired
+      `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID`.
   - fact: f:772sb6
     disposition: cut
     reason: |
@@ -1139,7 +1130,7 @@ constraints:
   - |
     Never claim how PowerShell encodes a string piped to a native command, never say a PowerShell
     `Out-File` file matches or fails against the Node form's output, and never give a reason for
-    the one-line form beyond what the Worker reads. State `f:dbue4k`'s version difference only.
+    the one-line form beyond what the Worker reads. Say nothing about `Out-File`.
   - |
     Never say the GNU `base64 -w 0` form, or any form, works on macOS other than the Node form;
     the page shows the Node form for Linux and macOS and the PowerShell form for Windows.

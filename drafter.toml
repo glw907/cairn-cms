@@ -59,3 +59,10 @@ max_tokens = 32000
 model = "claude-opus-5-5"
 effort = "low"
 max_tokens = 32000
+
+# The blueprint read, run by `drafter read`. It stays out of `seats`, which lists the seats
+# `drafter page` runs.
+[seat.blueprint]
+model = "claude-opus-5-5"
+effort = "medium"
+max_tokens = 32000

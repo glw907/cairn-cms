@@ -21,7 +21,9 @@ introduction:
     outage, confirm at once that GitHub accepts the new key, and recover if it fails, by rollback
     while the old key remains and by a third key after it is gone. It names the two readers who
     arrive: one rotating on purpose, who follows the page top to bottom, and one whose new key
-    already fails, whom it sends to [[recover-from-a-failed-key]]. Who it is for: a developer with a
+    already fails, whom it sends to [[recover-from-a-failed-key]]. It also says, before the reader starts, that a site
+    `create-cairn-site` created has no rollback and that an exposed key stays valid until the
+    reader deletes it. Who it is for: a developer with a
     terminal, Wrangler, and edit access to the App's settings on GitHub.
   priorKnowledge: |
     A developer comfortable in a terminal on their platform, with `npx wrangler` commands, and with
@@ -36,6 +38,17 @@ introduction:
     - f:ixr3ny
     - f:zoekqt
     - f:ejuoh6
+    - f:s90j7l
+    - f:i4fg3o
+    - f:cjonmm
+    - f:86h9o6
+    - f:9xqudi
+    - f:sszb7b
+    - f:lg2ae8
+    - f:1pb077
+    - f:vg42j3
+    - f:kldwss
+    - f:72yc97
 framing:
   readers: |
     1. **The scheduled rotator.** A developer who runs an organization's site on cairn and replaces
@@ -191,7 +204,7 @@ framing:
        until its developer replaces it (`f:ixr3ny`, `f:zoekqt`, `f:s90j7l`). Then the key's job in
        one sentence: the Worker holds it as `GITHUB_APP_PRIVATE_KEY_B64` and signs with it whenever it
        needs an installation token, the short-lived credential every save and publish commits with
-       (`f:i4fg3o`, `f:kkp5bi`, `f:cjonmm`). Then the readers' reasons. GitHub names one occasion, a
+       (`f:i4fg3o`, `f:cjonmm`). Then the readers' reasons. GitHub names one occasion, a
        key that may have been exposed (`f:s90j7l`). An organization may also rotate on its own
        schedule, which is the reader's reason and carries no product claim. Then where the work
        happens: on GitHub, which holds the App's keys, and in Cloudflare, where `wrangler secret put`
@@ -453,8 +466,7 @@ sections:
         kind: fact
         fact: f:dbue4k
         use: |
-          Only the PowerShell form and the note on the version difference in how `Out-File` writes a
-          file. Omit any claim on how PowerShell encodes a piped string.
+          Only two clauses: the PowerShell form returns unwrapped base64 and writes no file, and Windows PowerShell 5.1 and PowerShell 7 write an `Out-File` file in different encodings, which belongs to [[push-the-new-key-to-the-worker]]'s local `.dev.vars` step. Omit any claim on how PowerShell encodes a piped string.
       - id: push-ps-code
         kind: code
         text: |
@@ -464,6 +476,26 @@ sections:
           `[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\path\to\new-key.pem'))` piped to
           `npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`. The cairn file is the setup
           command's encode and push that the form matches.
+      - id: s-push-local
+        kind: step
+        text: |
+          If you keep the key in a local `.dev.vars` beside the Wrangler config, replace its value
+          with the new key's base64 encoding. A file written with Windows PowerShell 5.1's
+          `Out-File` holds UTF-16LE text, and PowerShell 7 writes `utf8NoBOM`.
+        requires:
+          - new-key-file
+        optional: true
+        canFail: true
+      - id: x-local
+        kind: failure
+        from: s-push-local
+        symptom: |
+          Local development fails to sign.
+        cause: |
+          `wrangler dev` reads `.dev.vars` and never the deployed secret, so it still holds the old key.
+        handledBy: s-push-local
+        facts:
+          - f:86h9o6
       - id: push-deploys
         kind: fact
         fact: f:86h9o6
@@ -704,7 +736,7 @@ sections:
           Worker's key failed (the key missing, unusable, or refused by GitHub). It fires after the
           push, whenever an isolate mints from the new key, including after the old key's
           deletion, so it can show on some requests and not others for up to 55 minutes.
-        handledBy: s-logs
+        handledBy: s-rec-checks
       - id: rec-editor-fact
         kind: fact
         fact: f:ogokfy
@@ -815,31 +847,6 @@ sections:
       - id: rec-push-link
         kind: link
         target: '#push-the-new-key-to-the-worker'
-      - id: rec-logs
-        kind: reason
-        text: |
-          Why the logs are read by these events: the failed publish is recorded as
-          `admin.action.failed`, and the admin shell's best-effort read records
-          `github.unreachable` with `scope: 'shell'`; `commit.failed` and `publish.failed` come only
-          from the commit step, so neither is the query for a key GitHub refuses.
-        facts:
-          - f:ogokfy
-          - f:7u49xs
-      - id: rec-logs-fact
-        kind: fact
-        fact: f:7u49xs
-        use: |
-          Only two clauses: the admin shell logs `github.unreachable` with `scope: 'shell'`, and
-          `commit.failed` and `publish.failed` come only from the commit step. Omit the count of
-          read sites and the help and advisories scopes.
-      - id: rec-logs-observability
-        kind: fact
-        fact: f:prb2os
-        use: |
-          Only the empty-log clause: without observability an empty query proves nothing.
-      - id: rec-log-events-link
-        kind: link
-        target: ../reference/log-events.md
       - id: s-logs
         kind: step
         text: |
@@ -880,6 +887,31 @@ sections:
         handledBy: rec-logs-observability
         facts:
           - f:prb2os
+      - id: rec-logs
+        kind: reason
+        text: |
+          Why the logs are read by these events: the failed publish is recorded as
+          `admin.action.failed`, and the admin shell's best-effort read records
+          `github.unreachable` with `scope: 'shell'`; `commit.failed` and `publish.failed` come only
+          from the commit step, so neither is the query for a key GitHub refuses.
+        facts:
+          - f:ogokfy
+          - f:7u49xs
+      - id: rec-logs-fact
+        kind: fact
+        fact: f:7u49xs
+        use: |
+          Only two clauses: the admin shell logs `github.unreachable` with `scope: 'shell'`, and
+          `commit.failed` and `publish.failed` come only from the commit step. Omit the count of
+          read sites and the help and advisories scopes.
+      - id: rec-logs-observability
+        kind: fact
+        fact: f:prb2os
+        use: |
+          Only the empty-log clause: without observability an empty query proves nothing.
+      - id: rec-log-events-link
+        kind: link
+        target: ../reference/log-events.md
       - id: rec-route-claim
         kind: sentence
         mode: claim
@@ -934,7 +966,7 @@ sections:
       - id: s-rollback-verify
         kind: step
         text: |
-          In the terminal, request `/healthz` with `curl` and note the `fingerprint` in the
+          In the terminal, request `/healthz?live=1` with `curl` and note the `fingerprint` in the
           response.
         requires:
           - old-key-restored

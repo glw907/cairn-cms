@@ -104,21 +104,13 @@ sections:
       Every engine record is one JSON object with a `level`, `event`, and `timestamp` envelope,
       and each row on this page names the `event` to find.
     items:
-      - id: f-intro-seams
-        kind: fact
-        fact: f:gy2h7p
-        use: |
-          Only for the introduction: the developer events fire from engine code inside the site's
-          extension points and report a contract the surrounding site code broke, never a fault in
-          the engine. Omit the per-event source list.
       - id: f-chokepoint
         kind: fact
         fact: f:eywrq8
         use: |
-          Only the introduction's model (one JSON record per operationally meaningful event,
-          through one internal chokepoint) and this section's naming pattern
-          `area[.subject].verb_phrase`. Omit the `/log` exports, which
-          [[site-records-with-createlogger]] carries.
+          Only the event naming pattern `area[.subject].verb_phrase`; the introduction carries the
+          one-record model. Omit the `/log` exports, which [[site-records-with-createlogger]]
+          carries.
       - id: f-envelope
         kind: fact
         fact: f:rkj7tn
@@ -141,7 +133,7 @@ sections:
     opens: |
       A deployed Worker's records reach Workers Logs only when its Wrangler config sets
       `observability.enabled` to `true`, so an empty log on a site without that setting proves
-      nothing.
+      nothing until the setting is turned on.
     items:
       - id: f-observability
         kind: fact
@@ -168,6 +160,32 @@ sections:
         use: |
           Only `cairn logs <site>` as the list's third item: where it reads the site's records
           from, and its empty result from a Worker with observability off.
+      - id: x-empty-log
+        kind: failure
+        symptom: |
+          `cairn logs <site>`, Workers Logs, or `wrangler tail` shows no records for a site that is
+          misbehaving.
+        cause: |
+          The Worker's Wrangler config does not set `observability.enabled` to `true`, so its
+          records go nowhere.
+        handledBy: s-empty-log-fix
+      - id: f-observability-off
+        kind: fact
+        fact: f:txgoyy
+        use: |
+          Only that `cairn doctor`'s `config.observability` check raises `config.observability-off`
+          when the setting is not `true`, which confirms the cause, and the fix: set it to `true`
+          in `wrangler.jsonc` and redeploy.
+      - id: s-empty-log-fix
+        kind: sentence
+        mode: claim
+        text: |
+          The fix is a config change: set `observability.enabled` to `true` in `wrangler.jsonc` and
+          redeploy, then reproduce the problem and read again.
+        facts:
+          - f:txgoyy
+          - f:prb2os
+          - f:gzs6b8
       - id: f-health
         kind: fact
         fact: f:vg5zt8
@@ -385,9 +403,21 @@ sections:
         kind: fact
         fact: f:v1jj2k
         use: |
-          Only the event and the redirect, which back the opening sentence, and, for the lapse
-          row, that the record is the only trace a route leaves of a session that lapsed between
-          the guard's resolve and the action running.
+          Only the event, which backs the opening sentence, and, for the lapse row, that the
+          record is the only trace a route leaves of a session that lapsed between the guard's
+          resolve and the action running.
+      - id: f-session-redirect
+        kind: fact
+        fact: f:da6d2z
+        use: |
+          Only that the session refusal `createAdminAction` makes redirects before any audit
+          call, so it leaves no audit record. Backs the opening sentence's redirect.
+      - id: f-session-target
+        kind: fact
+        fact: f:bp22uq
+        use: |
+          Only that the redirect is a 303 to `/admin/login`, which backs the opening sentence's
+          target and the symptoms' sign-in page.
       - id: x-session-absent
         kind: failure
         symptom: |
@@ -400,10 +430,13 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          The lapse needs no code change; the redirect is the recovery, and the record is the only
-          trace the route leaves of it.
+          The lapse needs no code change: the redirect takes the editor to the sign-in form at
+          `/admin/login` to sign in again, and the record is the only trace the route leaves of it.
         facts:
           - f:v1jj2k
+          - f:da6d2z
+          - f:bp22uq
+          - f:alpsah
       - id: x-session-every-submit
         kind: failure
         symptom: |
@@ -509,8 +542,8 @@ sections:
         fact: f:nup3og
         use: |
           Only the two `reason` values and their triggers: `access_map_not_attached` when
-          `event.locals.cairnAccess` was never set because a hook set `locals.cairnEditor` without
-          it, and `db_not_bound` when `config.resolveDb` returns null or undefined. Omit the
+          `event.locals.cairnAccess` was never set because a site hook set `locals.cairnEditor`
+          without it, and `db_not_bound` when `config.resolveDb` returns null or undefined. Omit the
           parenthetical's second half (the engine guard always sets both), which `f-access-map`
           states for the guard and the dev backend's handle.
       - id: x-access-map
@@ -519,8 +552,8 @@ sections:
           A custom screen's form action answers a generic 500, and the log holds
           `admin.action.misconfigured` with `reason: 'access_map_not_attached'`.
         cause: |
-          A hook other than the guard or the dev backend's handle set `locals.cairnEditor` without
-          `locals.cairnAccess`.
+          The route sits outside the coverage of the guard and the dev backend's handle, and a
+          site hook there set `locals.cairnEditor` without `locals.cairnAccess`.
         handledBy: s-access-map-fix
       - id: f-access-map
         kind: fact
@@ -528,7 +561,8 @@ sections:
         use: |
           Only that `createAuthGuard` and `devBackendHandle` each set `locals.cairnAccess` to
           `runtime.access ?? {}` on every admin path they cover, right after they set
-          `locals.cairnEditor`, so behind either this reason does not fire. Omit the session-check
+          `locals.cairnEditor`, so behind either this reason does not fire and it fires only on a
+          route outside their coverage, where a site hook set the editor. Omit the session-check
           clause, which [[admin-action-session-absent]] carries, the earlier-versions clause, and
           the `devBackendHandle({ access })` fix.
       - id: f-one-declaration
@@ -870,8 +904,7 @@ sections:
         mode: claim
         text: |
           The fix is a site-owned fixed-today reader that takes `CAIRN_FIXED_TODAY` from the Worker
-          env through `cloudflare:workers` and never calls `Date.now()` directly; no engine code
-          reads that variable.
+          env through `cloudflare:workers` and never calls `Date.now()` directly.
         facts:
           - f:ogz5eu
           - f:swjwxb
@@ -1226,8 +1259,8 @@ constraints:
     (or that none is needed), or for a record row how a query allows for it; a fix that needs code
     or config changed says so in those words.
   - |
-    The rate-limit row states only what `f:1b3ye3` states for those events; it adds no detail from
-    the log events reference or the current page.
+    The rate-limit row states only what `f:1b3ye3` and `f:i1dayf` state for those events; it adds
+    no detail from the log events reference.
   - |
     `cairn help agents` is described as the contract for a script or program that runs the
     `cairn` CLI; the page addresses no coding assistant.

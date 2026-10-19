@@ -226,6 +226,17 @@ pages:
             roll-back-to-the-old-key: sha256:03b43cf6bcf150cef5bea823dbabbe155017f382766d628ff11e5a200c8f1888
             see-also: sha256:f3ca1e3e61907aa0b7035eb95b7f28bedc55e031bab062e53967533bd8040fa0
             verify-the-new-key: sha256:3b9e85ea02175d20a57f2cf2bc79eecfecf7a960dcb2a96b99f5d39408d0d307
+        blocked:
+            commit: 8d0770ef630c684f19f295b9ac265261c01e4968
+            findings:
+                - location: verify-the-new-key / s-fingerprint
+                  text: 'Missing failure: s-fingerprint has no failure item for a passing check that returns no `fingerprint`. f:h252kb says the check can omit it, and x-record-no-fp shows the case is expected. ver-fingerprint''s use explicitly omits the omitted-fingerprint clause, and x-fingerprint covers only a mismatch. bb-no-fp-handoff sends a reader with a multi-key App into this section, where s-fingerprint cannot be completed because there is nothing to compare.'
+                - location: before-you-begin / bb-broken-handoff (x-record-old)
+                  text: A recovery route appears before the diagnosis. When s-record-old returns 503, bb-broken-handoff routes the reader straight into generating and pushing a new key. Only afterwards does it say the `githubAppSigning` detail names the cause. One of x-record-old's causes is that the check threw (`health check failed`, f:paotzb). That cause is not a key problem, and a new key will not fix it. The reader is told to act before learning which failure they have.
+                - location: generate-a-third-key / s-third-delete; roll-back-to-the-old-key / s-rollback-verify, s-rollback-delete
+                  text: 'Reader state: the recovery routes depend on records some readers cannot hold. s-rollback-verify, s-rollback-delete, and s-third-delete rely on `old-fingerprint-recorded` and `app-keys-recorded`, which only the steps in before-you-begin produce. The introduction (introPlan para 3, introduction.covers) sends reader 5, whose key already fails, directly to recover-from-a-failed-key, so that reader never made those records. The bb-broken-handoff branch also reaches generate-a-third-key with no old fingerprint. Yet s-third-delete''s text says the old key "matches the fingerprint you recorded there". drafter check passes only because the tokens are declared earlier on the page, not because this reader holds them.'
+                - location: generate-a-new-key / gen-limit-handoff
+                  text: The key-limit recovery can cause the outage the page exists to prevent. gen-limit-handoff says "Delete a key the App no longer needs" but does not exclude the key the Worker signs with now. Deleting that key before a new one is pushed breaks publishing, and GitHub has no restore path (f:lg2ae8). The reader recorded the old key's fingerprint one section earlier precisely so that keys could be told apart.
     docs/extend/scaffolded-site-files.md:
         page: e719abcd526b4960e1b45c8bff6b5739efa7756a
         blueprint: 866835f4a3636ad0e82c8eb53d0b635928f4813a

@@ -26,6 +26,7 @@ pages:
     docs/extend/add-a-second-sign-in-group.md:
         page: 16ad2daf773233d3ff59f80d6d7ed0a593f8afd7
         blueprint: e61f10b26c19c796e94af31abfc523b933021f15
+        accepted: ad021194c8a9e78f1534ed8a7a43a977fb19440d
         sections:
             _intro: sha256:fe64ce977658d074d0f5304c28d306f6b36b4b3b485c5f65b511cbaeff096280
             add-the-role-s-people: sha256:bf3e92fd326ea7496bfcc3d954170ed74432f68bdbab4e0a59255461f8691f38
@@ -47,29 +48,6 @@ pages:
             verify-a-member-signs-in-to-the-member-area: sha256:860eb20d28a9e384d9cc247c7fc374f6b940306c97335692d75234c2c6ee55a1
             verify-the-role-signs-in-to-its-home-screen: sha256:28a31a7d16d465cbfe120b09e52096f25f7f5fc17b4dd8b9201142757b3afb9b
             write-the-channel-module: sha256:685caa2d6f0dfebb74c2dbc43b5246d5556bb2615474c5ca70372a67fa93df59
-        blocked:
-            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
-            findings:
-                - location: resolve-a-failed-setup / r-unmigrated, rs-unmigrated-link
-                  text: Recovery route points at the wrong section. r-unmigrated tells the reader to copy and apply `0001_roles.sql` "as [[add-the-role-s-people]] does", and rs-unmigrated-link targets '#add-the-roles-people'. That section only adds people through the form. The copy and apply steps (s-copy-roles, s-apply-roles) live in deploy-the-role, so the route sends the reader to a section that cannot fix the failure.
-                - location: resolve-a-failed-setup / x-unmigrated, x-wiring
-                  text: The section's why says it holds the failures "in the order a reader meets them". On the role path, though, x-unmigrated (from s-submit, in add-the-role-s-people) comes before x-wiring (from v-doctor, in deploy-the-role). The reader runs v-doctor first, so the stated order is wrong.
-                - location: resolve-a-failed-setup / x-construct
-                  text: 'x-construct names `from: s-channel`, but writing the module cannot throw. Construction throws when the module first loads. Following the steps, that first happens at t-run, because the test imports the module''s `normalizeContact` and so loads member-channel.ts, or at the first request after d-deploy. The `from` names a step where the failure cannot occur.'
-                - location: resolve-a-failed-setup (failure from verify-a-member-signs-in-to-the-member-area / c-enter)
-                  text: Missing failure. At c-enter the reader can enter a code that answers `bad-code` and mints no session (f:vo4m61). The code may be mistyped, past its 10-minute TTL, or past the attempt cap (f:u3qhel). The login form then answers fail(400) and c-redirect does not happen, but no failure item covers this outcome.
-                - location: test-the-channel-on-node / t-run; resolve-a-failed-setup
-                  text: Missing failure. t-run can fail on Node below 24. `createChannelDb` needs `node:sqlite`, the dev package adds no runtime floor guard, and npm only warns (f:fcqs22). before-you-begin states the floor, but t-run carries no `canFail` and no failure item, so a reader on an older Node meets an unexplained test failure.
-                - location: verify-the-role-signs-in-to-its-home-screen / v-sidebar; resolve-a-failed-setup
-                  text: Missing failure. v-sidebar can fail, yet it has no `canFail` and no failure item. If the entry's `roles` names a role the vocabulary does not declare, validation fails (f:16paho). If the site already keeps an access map with a key matching `/admin/staff` that does not name `staff`, `canReach` hides the link (f:altcjp, f:5sx6zl). Either way the reader sees no link and has no recovery.
-                - location: deploy-the-role / v-doctor; before-you-begin / bb-list
-                  text: Reader state. v-doctor tells the reader to run `cairn doctor`, which needs the Go `cairn` CLI installed. No precondition lists it and no earlier step installs it. The magic-link-site precondition covers a site built through the tutorial or the setup command, neither of which implies the CLI.
-                - location: write-the-channel-module / s-types, s-dev-vars-example
-                  text: Reader state. Two steps rely on files that only a scaffolded site is guaranteed to have, and no step or precondition produces either. s-types tells the reader to run "the command that `worker-configuration.d.ts` records on its first lines", so `npx wrangler types` must already have run. s-dev-vars-example edits `.dev.vars.example`, which comes from the scaffold (f:nls26c). The page's priorKnowledge also admits a hand-built tutorial site, where these files may not exist.
-                - location: introduction.covers; framing.introPlan item 3
-                  text: The introduction does not give an accurate overview of what the sections deliver. The outline's covers lists "Test with createChannelDb and the Node requirement", and the blueprint has test-the-channel-on-node and end-a-removed-member-s-sessions. Yet introduction.covers and introPlan items 1 to 3 name neither the Node test nor ending a removed member's sessions. Vitest appears only as prior knowledge.
-                - location: framing.introPlan item 5
-                  text: The introPlan misdescribes the sections. Item 5 says "The page states only the one map constraint the role path needs, in [[show-the-home-screen-in-the-sidebar]]". The sections actually state access-map behavior in two places. build-the-role-s-home-screen covers `requireAccess` and `canReach` admitting a `none` role (hs-why, hs-map-alt, hs-map-link). The sidebar section covers an unmatched href staying visible (sb-visible). An introduction drafted from item 5 would misstate the page's scope against the outline's out-of-scope access maps.
     docs/extend/add-cairn-to-a-sveltekit-app.md:
         page: 65163162be441f51abbf80d2cdb1c0b044fc717c
         blueprint: b307ed09dad986174b8551acadcda4e29c3a6987
@@ -110,6 +88,7 @@ pages:
     docs/extend/debug-your-site.md:
         page: be3ce83e66ec6358b32e1c7952d679b2f8586e7e
         blueprint: ad3be2d68e6160516921681a02acf1d2308dd792
+        accepted: a2cc75f35e618b272a8a05bc8beb4c4cf8dbfade
         sections:
             _intro: sha256:b5a24c1afbac300fa17fd569e992de6bec22c7212df8da5d0a2a4989ca437a60
             a-date-differs-between-machines: sha256:8e9bdb244ae96390aabce263c9ea3a181d5c644338843d74dfd7021188b89e17
@@ -133,13 +112,6 @@ pages:
             read-the-structured-logs: sha256:1f28b328ce7bdf9e37e57c6a7d2079a5ec33fec7198e59a58eb187de971880d7
             see-also: sha256:dc24301d5774787bac12189ee9a1e82c0e53355824b2469b07aafd8af9655f5e
             site-config-events: sha256:2384b4a46133fd98483db72b0c2fb228e4e6f93f531ca656bf9a0b915e67dca2
-        blocked:
-            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
-            findings:
-                - location: find-the-records
-                  text: The section warns that an empty log proves nothing until observability is on, but it has no `failure` item for that case and never gives the remedy. A reader whose `cairn logs <site>` or Workers Logs query returns zero entries is told only that the result proves nothing. There is no symptom row that names the cause (`observability.enabled` unset in the Wrangler config) and the fix (set it and redeploy). Every later row assumes the reader can see a record, so this is the first failure a reader of this page can meet.
-                - location: admin-action-session-absent / f-session-absent
-                  text: The `opens` line says the wrapped action redirects to `/admin/login`. `f-session-absent`'s `use` claims 'the redirect' backs that sentence, and `s-session-absent-fix` calls the redirect the recovery. Fact `f:v1jj2k` says nothing about a redirect or its target, so the `use` scopes a part the fact does not hold. The opening sentence, the symptom wording ('lands on the sign-in page'), and the 'no code change' recovery all rest on an unbacked claim.
     docs/extend/restrict-admin-access.md:
         page: 1d4a936b532f457b25760d8bfa6dfc3270e17acf
         blueprint: 68d14d7543b2f532625bd3b8dfa33cd6a43a5d96
@@ -212,6 +184,7 @@ pages:
     docs/extend/scaffolded-site-files.md:
         page: e719abcd526b4960e1b45c8bff6b5739efa7756a
         blueprint: 866835f4a3636ad0e82c8eb53d0b635928f4813a
+        accepted: e666c9734166e5bb93de74244a213af04b2c333c
         sections:
             _intro: sha256:93e85775c8133cd91c5ed13317eacbb40ec6b95ecaefa0e75f6fdf4b06808452
             cairn-audit-config-json: sha256:be2b27926b846add96c6f253af0c1c62c04f2b05d43ea2c1e828e240aaefc98b
@@ -242,13 +215,6 @@ pages:
             themed-404-page: sha256:544b7a19d9b07f6dacf5b7eb362c63195ef5aaf5ed3a4f07745120e00768bf51
             vite-config-ts: sha256:6a0cd058ceb302efd177dcbda539f9236d05926ac2377082bc2ebda6f002bbbf
             wrangler-jsonc: sha256:a3b8b9092d1407a7d6813ada9a5adcd38d0893d23c8a5c2ca211d37bf5adc60c
-        blocked:
-            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
-            findings:
-                - location: framing (background 'Where Cloudflare fits'; introPlan paragraph 1)
-                  text: The framing contradicts the facts and the wrangler-jsonc section. The background's 'Where Cloudflare fits' bullet says `wrangler.jsonc` 'binds two D1 databases' and that 'each D1 database has its own migrations directory (f:gepykz, f:nv0ok0)'. introPlan paragraph 1 says it 'binds the Worker's D1 databases', in the plural. f:n7t4bn and f:l3cxgc say the scaffold binds only `AUTH_DB` and no second database. [[wrangler-jsonc]] opens on 'its only D1 database is the auth store', and [[database-migrations]] calls `migrations/` 'the scaffold's only migrations directory'. As planned, the introduction would misstate what the body delivers and restate the showcase's `APP_DB` and `migrations-app/`, which the scaffold-claims constraint forbids.
-                - location: introduction (covers, notCovered) against the outline entry
-                  text: The outline entry's `covers` and `outOfScope` no longer match what the blueprint's introduction and sections deliver. `covers` still lists four things the blueprint drops. First, `APP_DB` among the wrangler bindings, which f:n7t4bn says the scaffold lacks. Second, `migrations/` versus `migrations-app/`, which the scaffold does not ship (f:nv0ok0). Third, 'the signups example screen' under `src/routes/`, which f:t2t5lx says is not part of the scaffold. Fourth, `.claude/` with its four skills and VERSION stamp, plus a whole 'guidance tooling' item, which the dispositions subordinate to the guidance reference under the register's Claude Code ruling. `outOfScope` names 'The signups screen as a pattern', while `notCovered` says 'building a custom admin screen'. The blueprint's choices follow verified facts and the register, so the outline entry is stale. Under the introduction check, though, the intro and the entry disagree. I cannot edit the outline entry.
     docs/extend/security-model.md:
         page: ea4bd221fb744bd760fed649ae79e5eaee8df569
         blueprint: f10cff21820db750c75ae8f4fbbb7b5d4e674f65

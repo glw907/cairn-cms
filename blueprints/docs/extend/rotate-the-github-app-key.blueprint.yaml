@@ -1147,6 +1147,16 @@ sections:
       - id: rb-push-link
         kind: link
         target: '#push-the-new-key-to-the-worker'
+      - id: s-rollback-gradual-deploy
+        kind: step
+        text: |
+          If you pushed with `wrangler versions secret put`, deploy that version as Cloudflare's
+          Secrets page describes, as [[push-the-new-key-to-the-worker]] does for the new key.
+        requires:
+          - old-key-restored
+        produces:
+          - rollback-version-deployed
+        optional: true
       - id: s-rollback-verify
         kind: step
         text: |
@@ -1167,13 +1177,20 @@ sections:
           The live request answers 503, or, where you recorded the old key's fingerprint, returns
           a different one.
         cause: |
-          The Worker holds a key other than the old key.
+          The response's detail names the cause: a key detail or a different fingerprint means the
+          Worker does not hold the old key, while an installation or reach detail is not the key's.
         handledBy: rb-repush
+        facts:
+          - f:1pb077
+          - f:5dwnh1
       - id: rb-repush
         kind: handoff
         text: |
-          Run the push command again with the old key's PEM file. If `/healthz` still answers 503,
-          read the rows of [[recover-from-a-failed-key]].
+          Read the `githubAppToken` or `githubAppSigning` detail before acting. Where it names the
+          key (`key_refused`, `GITHUB_APP_PRIVATE_KEY_B64 is not configured`, `key import or sign
+          failed`, or `malformed JWT`) or the fingerprint differs, push the old key's PEM file
+          again. Any other detail, such as `installation_not_found`, `installation_suspended`, or
+          `unreachable`, is not the key's: read its row in [[recover-from-a-failed-key]].
       - id: s-rollback-dev-vars
         kind: step
         text: |
@@ -1228,6 +1245,17 @@ sections:
           - app-settings-access
         produces:
           - third-key-file
+        canFail: true
+      - id: x-third-limit
+        kind: failure
+        from: s-third-generate
+        symptom: |
+          GitHub refuses to generate another key.
+        cause: |
+          The App already holds the most keys GitHub allows.
+        handledBy: gen-limit-handoff
+        facts:
+          - f:zoekqt
       - id: s-third-push
         kind: step
         text: |

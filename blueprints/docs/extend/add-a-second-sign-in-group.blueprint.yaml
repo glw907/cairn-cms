@@ -29,7 +29,12 @@ introduction:
     whichever mechanism you choose, by the end the group signs in on your deployed site and lands
     in an area made for it. Then the two running examples, a `staff` role whose `home` is
     `/admin/staff` and the members channel in the repository's example site, `examples/showcase`,
-    which signs members in at `/members/login` and gates `/members`. It names the readers who
+    which signs members in at `/members/login` and gates `/members`. It says what each path
+    delivers: the role path declares the role, builds its home screen and sidebar link, deploys,
+    adds the role's people, and checks the sign-in; the channel path provisions the channel's
+    database, writes the module, builds the login route and the member area, ends a removed
+    member's sessions, tests the channel on Node with Vitest and `createChannelDb`, deploys, and
+    checks the sign-in. It names the readers who
     arrive: one undecided between the two, one sent from Restrict admin access with a `none` role,
     one sent from the security model to build the channel, and one sent from Replace magic links
     who wants a group beside magic-link editors. The paths share no steps, so a reader who has
@@ -213,6 +218,12 @@ framing:
          roles reference uses (f:4673n6, f:pvs115), and the members channel in the repository's example
          site, `examples/showcase`, which signs members in at `/members/login` and gates `/members`
          (f:265s4t). First mention of the example site uses that full form.
+       - What each path delivers: the role path declares the role, builds its home screen and
+         sidebar link, deploys, adds the role's people, and checks the sign-in on the deployed
+         site; the channel path builds the database, module, login route, and member area, ends a
+         removed member's sessions early with `verify` or `revokeSessions`, tests the channel on
+         Node with Vitest and `createChannelDb` before it deploys, and checks the sign-in on the
+         deployed site (f:dtz8oa, f:1rstld, f:0l7si2, f:fcqs22).
        - The two mechanisms share no steps, so a developer who has already chosen, such as one sent
          here for a `none` role or for a channel, builds only that one (`no-claim`: a scope sentence for
          readers 2, 3, and 5).
@@ -227,8 +238,12 @@ framing:
        a short list:
        - A group whose people write the site's content: `none` capability closes the content screens,
          so such a group signs in at editor capability and an access map narrows what it reaches,
-         `docs/extend/restrict-admin-access.md` (f:4673n6). The page states only the one map constraint
-         the role path needs, in [[show-the-home-screen-in-the-sidebar]].
+         `docs/extend/restrict-admin-access.md` (f:4673n6). The page configures no access map. It
+         states only the map behavior the role path meets: in [[build-the-role-s-home-screen]],
+         that `requireAccess` and `canReach` admit a `none` role only through a route rule naming
+         it, the alternative gate; in [[show-the-home-screen-in-the-sidebar]], that an entry whose
+         `href` no map key matches stays visible; and in [[resolve-a-failed-setup]], that a key
+         matching the home path that does not name the role hides the link (f:5sx6zl, f:altcjp).
        - Signing the editors themselves in through the organization's identity provider:
          `docs/extend/replace-magic-links-with-cloudflare-access.md`.
        - The channel's threat surface and the hazards a site's `deliver` can introduce:
@@ -246,6 +261,7 @@ preconditions:
   - roster-store
   - turnstile-widget
   - test-toolchain
+  - cairn-cli
 exemplars:
   - source: extenders/django-custom-management-commands/
     slice: Extenders
@@ -313,23 +329,35 @@ sections:
           Only: the channel's test uses `@glw907/cairn-cms-dev`'s `createChannelDb`, the dev
           package declares `engines.node` `>=24`, nothing enforces that floor at runtime, and npm
           only warns.
+      - id: bb-cli
+        kind: fact
+        fact: f:1dhk1a
+        use: |
+          Only: the `cairn` CLI, which the role path's wiring check runs, is installed separately
+          from the npm package, with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest`
+          or from a release archive.
       - id: bb-list
         kind: sentence
         mode: claim
         text: |
-          A bulleted list of six preconditions, introduced by the opening sentence, each labeled
+          A bulleted list of seven preconditions, introduced by the opening sentence, each labeled
           with the path it serves and linked to what produces it where a page does: a site whose
           editors sign in by magic link, with the auth database created and migrated; for a role,
-          an owner's sign-in; for a channel, a transport the Worker can call to send a code, such
+          an owner's sign-in; for a role, the `cairn` CLI installed, for the wiring check; for a
+          channel, a transport the Worker can call to send a code, such
           as an email or SMS provider; for a channel, the group's roster in a store the site's code
           can read; for a channel, a Cloudflare Turnstile widget and its secret key; for the
           channel's test, Node 24 or later and `@glw907/cairn-cms-dev` installed as a dev
           dependency.
         facts:
           - f:nj0nfm
+          - f:1dhk1a
           - f:cf1avu
           - f:ez788q
           - f:fcqs22
+      - id: bb-cli-link
+        kind: link
+        target: ../reference/cli-cairn-doctor.md
       - id: bb-auth-db-link
         kind: link
         target: add-cairn-to-a-sveltekit-app.md#create-the-auth-database
@@ -481,9 +509,11 @@ sections:
         kind: fact
         fact: f:q07rd5
         use: |
-          Only the adapter module's location: `src/theme/cairn.config.ts` on a scaffolded site and
-          `src/lib/cairn.config.ts` on the tutorial's site. Omit the clause about the tutorial
-          page's hooks.
+          Only the adapter module's location, `src/theme/cairn.config.ts` on a scaffolded site and
+          `src/lib/cairn.config.ts` on the tutorial's site, and, for the hooks step, the clause
+          that the tutorial page's hooks still call `createAuthGuard()` and `devBackendHandle()`
+          with no config, a form that no longer type-checks, so a site built from the tutorial
+          passes `{ runtime }` there. Omit the `src/access.ts` clause.
       - id: s-declare
         kind: step
         text: |
@@ -756,6 +786,7 @@ sections:
           After building the site locally, in the project directory, run `cairn doctor` and confirm
           that it reports no `auth.role-wiring-missing` warning.
         requires:
+          - cairn-cli
           - role-wired
           - home-screen
           - nav-entry
@@ -826,7 +857,8 @@ sections:
         fact: f:hcjb3o
         use: |
           Only, for the opening and the role-list step, that the invite screen offers every
-          declared role once the vocabulary is larger than the owner and editor pair.
+          declared role once the vocabulary is larger than the owner and editor pair. Scope it to
+          the role path; never apply it to the channel.
       - id: s-add-person
         kind: step
         text: |
@@ -925,6 +957,7 @@ sections:
           - home-confirmed
         produces:
           - link-confirmed
+        canFail: true
         optional: true
       - id: v-refused
         kind: step
@@ -1140,7 +1173,6 @@ sections:
           - channel-binding
         produces:
           - channel-module
-        canFail: true
       - id: c-channel
         kind: code
         text: |
@@ -1166,11 +1198,13 @@ sections:
       - id: s-dev-vars-example
         kind: step
         text: |
-          In `.dev.vars.example`, add `TURNSTILE_SECRET` with an empty value.
+          On a scaffolded site, in `.dev.vars.example`, add `TURNSTILE_SECRET` with an empty value.
+          A site without that file skips this step.
         requires:
           - secret-local
         produces:
           - secret-named
+        optional: true
       - id: wm-dev-vars
         kind: fact
         fact: f:nls26c
@@ -1180,18 +1214,22 @@ sections:
       - id: s-types
         kind: step
         text: |
-          In the project directory, run the command that `worker-configuration.d.ts` records on its
-          first lines, so the generated `Env` carries the secret's name.
+          In the project directory, regenerate the Worker types, so the generated `Env` carries the
+          secret's name. Where `worker-configuration.d.ts` records a command on its first lines, as
+          a scaffolded site's does, run that command; otherwise run `npx wrangler types`, which
+          writes the file.
         requires:
-          - secret-named
+          - secret-local
         produces:
           - env-typed
       - id: wm-gen-types
         kind: fact
         fact: f:pe4vuc
         use: |
-          Only, for the types step and the sentence after it, what the generated `Env` names and
-          which `env` it types.
+          Only, for the types step and the sentence after it, that `npx wrangler types` writes
+          `worker-configuration.d.ts`, that a scaffolded site's recorded command reads
+          `.dev.vars.example` in place of `.dev.vars`, what the generated `Env` names, and which
+          `env` it types.
       - id: wm-types-why
         kind: sentence
         mode: claim
@@ -1658,6 +1696,7 @@ sections:
           - channel-test
         produces:
           - channel-tested
+        canFail: true
       - id: tn-mock
         kind: fact
         fact: f:nv475y
@@ -1837,9 +1876,27 @@ sections:
       The page's failure path holds both paths' failures in the order a reader meets them, after both
       paths so either path's checks can send a reader here.
     opens: |
-      Each failure below names the symptom, then its fix; the first four belong to the role path
-      and the rest to the channel.
+      Each failure below names the symptom, then its fix; the role path's failures come first and
+      the channel's follow.
     items:
+      - id: x-wiring
+        kind: failure
+        from: v-doctor
+        symptom: |
+          `cairn doctor` reports `auth.role-wiring-missing`.
+        cause: |
+          The guard never received the runtime, so it resolves every session against the owner and
+          editor pair and the custom role to `none`.
+        handledBy: r-wiring
+      - id: r-wiring
+        kind: step
+        text: |
+          If `cairn doctor` reports `auth.role-wiring-missing`, pass `{ runtime }` to
+          `createAuthGuard` in `src/hooks.server.ts`, as [[declare-the-role]] does, then rebuild,
+          rerun the check, and deploy as [[deploy-the-role]] does.
+      - id: rs-wiring-link
+        kind: link
+        target: '#declare-the-role'
       - id: x-unmigrated
         kind: failure
         from: s-submit
@@ -1860,28 +1917,10 @@ sections:
         kind: step
         text: |
           If adding a person with the new role fails, copy and apply `0001_roles.sql` as
-          [[add-the-role-s-people]] does.
+          [[deploy-the-role]] does, then add the person again.
       - id: rs-unmigrated-link
         kind: link
-        target: '#add-the-roles-people'
-      - id: x-wiring
-        kind: failure
-        from: v-doctor
-        symptom: |
-          `cairn doctor` reports `auth.role-wiring-missing`.
-        cause: |
-          The guard never received the runtime, so it resolves every session against the owner and
-          editor pair and the custom role to `none`.
-        handledBy: r-wiring
-      - id: r-wiring
-        kind: step
-        text: |
-          If `cairn doctor` reports `auth.role-wiring-missing`, pass `{ runtime }` to
-          `createAuthGuard` in `src/hooks.server.ts`, as [[declare-the-role]] does, then rebuild,
-          rerun the check, and deploy as [[deploy-the-role]] does.
-      - id: rs-wiring-link
-        kind: link
-        target: '#declare-the-role'
+        target: '#deploy-the-role'
       - id: x-welcome
         kind: failure
         from: v-lands
@@ -1922,11 +1961,69 @@ sections:
       - id: rs-redeploy-link
         kind: link
         target: '#deploy-the-role'
+      - id: x-sidebar
+        kind: failure
+        from: v-sidebar
+        symptom: |
+          The home screen's link does not show in the role's sidebar.
+        cause: |
+          The entry's `roles` list names a role the vocabulary does not declare, or the site keeps
+          an access map whose key matching `/admin/staff` does not name `staff`, so `canReach`
+          hides the link.
+        handledBy: r-sidebar
+      - id: rs-sidebar-roles
+        kind: fact
+        fact: f:16paho
+        use: |
+          Only: a `roles` name the site's vocabulary does not declare fails validation.
+      - id: rs-sidebar-map
+        kind: fact
+        fact: f:altcjp
+        use: |
+          Only: a site entry whose `href` a map key matches is shown only to the roles that key
+          admits, and to an owner. Omit the engine-screen and unmatched-href clauses.
+      - id: rs-sidebar-admit
+        kind: fact
+        fact: f:5sx6zl
+        use: |
+          Only: `canReach` admits a `none`-capability session only when the deepest matching key
+          lists its role. Omit the list of targets that stay refused.
+      - id: r-sidebar
+        kind: step
+        text: |
+          If the link does not show, check that the entry's `roles` list names `staff` exactly as
+          the vocabulary declares it, and, on a site that keeps an access map, add `staff` to the
+          key matching `/admin/staff` as Restrict admin access describes; then redeploy as
+          [[deploy-the-role]] does.
+      - id: rs-sidebar-link
+        kind: link
+        target: restrict-admin-access.md
+      - id: x-node
+        kind: failure
+        from: t-run
+        symptom: |
+          The test fails inside `createChannelDb`, on a Node release below 24.
+        cause: |
+          `createChannelDb` needs `node:sqlite`, and nothing enforces the dev package's Node floor
+          at runtime; npm only warned at install.
+        handledBy: r-node
+      - id: rs-node
+        kind: fact
+        fact: f:fcqs22
+        use: |
+          Only: `createChannelDb` needs `node:sqlite`, the dev package declares `engines.node`
+          `>=24` with no runtime guard, and npm only warns.
+      - id: r-node
+        kind: step
+        text: |
+          If the test fails on a Node release below 24, switch to Node 24 or later and run
+          `npx vitest run` again.
       - id: x-construct
         kind: failure
-        from: s-channel
+        from: t-run
         symptom: |
-          The channel module throws when it first loads.
+          The channel module throws a construction error when it first loads: in the test run,
+          which imports its `normalizeContact`, or on the deployed site's first request.
         cause: |
           Construction throws when a required function is missing and when the cookie name is
           missing, empty, or starts with `cairn_`.
@@ -1940,8 +2037,8 @@ sections:
       - id: r-construct
         kind: step
         text: |
-          If the channel module throws when it loads, read the construction error and supply the
-          member it names.
+          If the channel module throws when it loads, read the construction error, supply the
+          member it names as [[write-the-channel-module]] does, and run the test again.
       - id: x-secret
         kind: failure
         from: c-request
@@ -2018,6 +2115,37 @@ sections:
         text: |
           If Workers Logs shows `auth.channel.send_failed`, read its `error` field and fix the
           transport your `deliver` calls.
+      - id: x-bad-code
+        kind: failure
+        from: c-enter
+        symptom: |
+          Entering the code returns the login page with an error, and no redirect to `/members`
+          follows.
+        cause: |
+          The confirm action answered something other than `confirmed`, so the login route answered
+          `fail(400, ...)`: a mistyped code answers `bad-code` and mints no session, and a code
+          past its 10-minute lifetime or its 5 attempts no longer confirms.
+        handledBy: r-bad-code
+        facts:
+          - f:vo4m61
+          - f:u3qhel
+          - f:265s4t
+      - id: rs-bad-code
+        kind: fact
+        fact: f:vo4m61
+        use: |
+          Only: a wrong code on confirm returns `bad-code` and mints no session.
+      - id: rs-code-limits
+        kind: fact
+        fact: f:u3qhel
+        use: |
+          Only `code.ttlMs`, 10 minutes, and `code.attemptCap`, 5, as defaults. Omit every other
+          limit.
+      - id: r-bad-code
+        kind: step
+        text: |
+          If entering the code returns an error, request a new code and enter it exactly as
+          delivered, within 10 minutes and the 5 attempts a code allows by default.
       - id: rs-channel-records-link
         kind: link
         target: ../reference/log-events.md
@@ -2220,9 +2348,12 @@ constraints:
     cairn's.
   - |
     The page never says that `requireAccess` refuses every `none` session whatever the map says, or
-    that a map rule for the home path hides its sidebar link from the role; both are false since a
-    route rule naming a `none` role admits it (`f:5sx6zl`). The page configures no access map: the
-    home screen checks the role, and the map alternative is one sentence with a link.
+    that a map rule for the home path that names the role hides its sidebar link from the role;
+    both are false since a route rule naming a `none` role admits it (`f:5sx6zl`). A key matching
+    the home path that does not name the role does hide the link (`f:altcjp`), which
+    [[resolve-a-failed-setup]] states as a failure cause. The page configures no access map: the
+    home screen checks the role, the map alternative is one sentence with a link, and the sidebar
+    failure's fix for a site that already keeps a map routes to Restrict admin access.
   - |
     The test assigns `createChannelDb`'s result to the mocked env with no cast (`f:ditn3e`), typing
     the env's `MEMBER_DB` as `ChannelDatabaseLike`, a type the `@glw907/cairn-cms/auth-channel`

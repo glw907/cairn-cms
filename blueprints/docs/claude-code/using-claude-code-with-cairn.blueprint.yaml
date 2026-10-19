@@ -40,24 +40,59 @@ introduction:
     trust boundary, which the `cairn-guidance` reference page covers.
   facts:
     - f:pmmtrm
+framing:
+  readers: |
+    The page has no register track of its own, so its reader is the extend track's profile, per
+    the outline's `job`: a Svelte-fluent web developer building an organization's site on cairn's
+    seams, who has chosen Claude Code as their coding assistant. Two arrivals:
+
+    1. **The scaffolded-site developer.** The site already carries the guidance tree, and the
+       reader wants to know what Claude Code now reads and which skill fires for which task.
+    2. **The adopting or refreshing developer.** The reader adopts the tree on an existing site,
+       or refreshes it after an engine upgrade, and needs to know what `install` writes and what
+       it leaves to them.
+
+    A developer using another coding agent arrives in the wrong place: cairn ships no guidance
+    for that agent (`f:pmmtrm`), and the introduction says so in one line.
+  introPlan: |
+    Two paragraphs, then the bounds (prior knowledge and what the page leaves out). No heading.
+
+    1. **The task and the reader.** State the task from the reader's situation: setting up and
+       working with Claude Code on a cairn site. Say who the page is for, the extend track's
+       developer who has chosen Claude Code, and name the two arrivals: a scaffolded site that
+       already carries the tree, and an existing site adopting the tree or refreshing it after an
+       upgrade. State that the rest of the docs assume no coding assistant and that this page is
+       the one that teaches working with Claude Code. Give one line, and only one, to other
+       agents: cairn ships its guidance in Claude Code's format only, with no `AGENTS.md` and no
+       file for any other coding agent, so a developer using another agent has no cairn guidance
+       to read (`f:pmmtrm`).
+    2. **The contract.** Name what the reader does with the page: learn the guidance tree under
+       `.claude/` and the root `CLAUDE.md` that imports it, which of the four packaged skills
+       loads for which task, and where the review agent sits (its file, with the reference for
+       what it checks); wire the `Stop` hook that runs the site's `check:cairn` script when a
+       Claude Code turn ends; adopt, refresh, and check the tree with `cairn-guidance install`
+       and `cairn-guidance check`, including their exit codes and what `check` reports when a
+       site lacks the scaffold's gate wiring; and make the scaffold's CI step gate, if they
+       choose to.
+
+    Then the bounds. The page assumes a running cairn site with the engine installed, working
+    knowledge of Claude Code (starting a session, what a skill and a subagent are, where a
+    project's `.claude/settings.json` lives), package scripts, and a GitHub Actions workflow
+    file; it needs no knowledge of the engine's internals. It leaves to other pages the
+    scaffolded tree outside `.claude/` (Scaffolded site files), running the audit and reading its
+    findings (Run cairn-audit on your site), the upgrade procedure and when to refresh (Upgrade
+    cairn), the consultation brief's protocol (the `cairn-consult` skill itself), and the CLI's
+    full option and output listing and the trust boundary (the `cairn-guidance` reference page).
+
+    Cautions for the drafter, introduction only:
+
+    - Name no other coding agent, and teach none.
+    - Promise only where the review agent sits, never what it reviews.
+    - Address the human developer, never Claude Code.
 orderReason: |
-  The tree comes first because both arrivals need it before they act: the scaffolded-site reader
-  already has it and needs to know what Claude Code reads and which skill fires for which task,
-  and the adopting reader needs to know what `install` is about to write. Its one level-3
-  subsection (skills by task) stays under it because the skills are part of the tree, not a task;
-  the review agent is one bullet of the tree with a link to the reference.
-  The install section follows as the first task, since every later step reads the tree it
-  produces, and it carries the root `CLAUDE.md` import line because `install` never writes that
-  line and an adopting site would otherwise fail the check's second line. The `Stop` hook comes
-  next: it is the one edit `install` leaves out on purpose, and the reader makes it once the tree
-  and the import exist. The CI section follows the hook because it is the second deliberate,
-  optional choice and it introduces the check's exit codes where the reader decides whether to
-  gate on them. Verification then runs `cairn-guidance check` over everything the earlier
-  sections produced and reads its seven lines, ends a Claude Code turn to see the hook run, and
-  reads the CI log for a reader who gated it, so it can come only after them. The failure
-  section collects the step-linked failures from install, the hook, and the check after the
-  verification that surfaces most of them, and the see-also section closes the page as the
-  task-guide anatomy requires.
+  The sections run in the order the reader meets the guidance: what the tree holds, the install
+  that writes it, the two edits the engine leaves to the developer, then the verification of all
+  of them and the failures it surfaces. [[see-also]] closes the page.
 preconditions:
   - cairn-site
   - claude-code
@@ -79,6 +114,9 @@ exemplars:
 sections:
   - id: before-you-begin
     heading: Before you begin
+    why: |
+      The reader confirms the two things every later section rests on, a cairn site and Claude
+      Code, before the page describes what cairn installs.
     opens: |
       Working through this page takes a cairn site with the engine installed and Claude Code
       installed on the machine you develop on.
@@ -110,6 +148,10 @@ sections:
           With both in place, the next section describes what cairn puts under `.claude/`.
   - id: the-guidance-tree
     heading: The guidance tree
+    why: |
+      Both arrivals need the tree before they act: the scaffolded-site reader already has it and
+      needs to know what Claude Code reads, and the adopting reader needs to know what `install` is
+      about to write. The review agent is one bullet of the tree, with a link to the reference.
     opens: |
       cairn's guidance for Claude Code is a set of files under `.claude/`, plus the root
       `CLAUDE.md` that imports it, and a scaffolded site is born with all of it installed.
@@ -118,22 +160,23 @@ sections:
         kind: fact
         fact: f:pmmtrm
         use: |
-          The tree is written only under `.claude/` plus the root `CLAUDE.md`, in Claude Code's
-          locations (`@` import, `.claude/skills/`, `.claude/agents/`); no `AGENTS.md` or other
-          agent's file ships. Backs the introduction's one line on other agents as well.
+          Only that the tree is written under `.claude/` plus the root `CLAUDE.md`, in Claude Code's
+          locations (`@` import, `.claude/skills/`, `.claude/agents/`), and that no `AGENTS.md` or
+          other agent's file ships. It also backs the introduction's one line on other agents.
       - id: f-tree-paths
         kind: fact
         fact: f:0ygumq
         use: |
-          The tree's paths: `.claude/skills/<skill>/`, `.claude/agents/cairn-extension-reviewer.md`,
-          `.claude/cairn/CLAUDE.md`, `.claude/cairn/VERSION`, `.claude/cairn/MANIFEST`, and the
-          root `CLAUDE.md` importing the fragment. Present as a bulleted list or a short text tree.
+          Only the tree's paths: `.claude/skills/<skill>/`,
+          `.claude/agents/cairn-extension-reviewer.md`, `.claude/cairn/CLAUDE.md`,
+          `.claude/cairn/VERSION`, `.claude/cairn/MANIFEST`, and the root `CLAUDE.md` importing the
+          fragment. Present them as a bulleted list or a short text tree.
       - id: f-tree-root-claude
         kind: fact
         fact: f:6ro1n9
         use: |
-          The root `CLAUDE.md` is the one import line followed by a `# Your site` section for the
-          site's own guidance.
+          Only the root `CLAUDE.md`'s shape: the one import line, then a `# Your site` section for
+          the site's own guidance.
       - id: r-tree-own-guidance
         kind: reason
         text: |
@@ -146,7 +189,7 @@ sections:
         kind: fact
         fact: f:dy5cfj
         use: |
-          On a scaffolded site, `VERSION` stamps the engine dependency spec with its caret
+          Only what `VERSION` stamps on a scaffolded site: the engine dependency spec with its caret
           stripped, resolved when the scaffold was baked, not a version read from `node_modules`.
       - id: l-tree-ref
         kind: link
@@ -169,6 +212,9 @@ sections:
           The part of the tree that acts on each task you ask for is the skills.
   - id: skills-by-task
     heading: Skills by task
+    why: |
+      The skills are part of the tree, not a task, so they sit under [[the-guidance-tree]] as its
+      one subsection and say which skill fires for which task.
     level: 3
     opens: |
       Claude Code loads each of the four packaged skills when a task matches the description the
@@ -178,9 +224,9 @@ sections:
         kind: fact
         fact: f:o7bkm0
         use: |
-          The four skills and when each loads: `cairn-admin-screens`, `cairn-consult`,
-          `cairn-extend`, and `cairn-public`. Present as a bulleted list or a two-column table of
-          skill and task.
+          Only the four skills, `cairn-admin-screens`, `cairn-consult`, `cairn-extend`, and
+          `cairn-public`, and when each loads. Present them as a bulleted list or a two-column
+          table of skill and task.
       - id: f-skills-public
         kind: fact
         fact: f:hiif6u
@@ -203,6 +249,10 @@ sections:
           next.
   - id: adopt-or-refresh-the-guidance-tree
     heading: Adopt or refresh the guidance tree
+    why: |
+      The first task, since every later step reads the tree it produces. It carries the root
+      `CLAUDE.md` import line because `install` never writes that line, and an adopting site would
+      otherwise fail the check's second line.
     opens: |
       `cairn-guidance install` writes the guidance tree into an existing site and refreshes it
       after an engine upgrade; a scaffolded site skips this section until its first upgrade.
@@ -211,8 +261,8 @@ sections:
         kind: fact
         fact: f:0ygumq
         use: |
-          `npx cairn-guidance install` is how an existing site adopts the same tree a scaffolded
-          site is born with, or refreshes it after an upgrade.
+          Only that `npx cairn-guidance install` is how an existing site adopts the same tree a
+          scaffolded site is born with, or refreshes it after an upgrade.
       - id: s-install
         kind: step
         text: |
@@ -227,8 +277,8 @@ sections:
         kind: fact
         fact: f:6ro1n9
         use: |
-          `install` writes the fragment to `.claude/cairn/CLAUDE.md` and never rewrites the root
-          `CLAUDE.md`, so an adopting site adds the import line by hand.
+          Only that `install` writes the fragment to `.claude/cairn/CLAUDE.md` and never rewrites
+          the root `CLAUDE.md`, so an adopting site adds the import line by hand.
       - id: s-import
         kind: step
         text: |
@@ -247,14 +297,15 @@ sections:
         kind: fact
         fact: f:4h9fz4
         use: |
-          A refresh never deletes: a path an earlier `MANIFEST` listed that the package no longer
-          ships prints as removable, and the site removes it.
+          Only the no-delete rule of a refresh: a path an earlier `MANIFEST` listed that the
+          package no longer ships prints as removable, and the site removes it.
       - id: f-install-exit
         kind: fact
         fact: f:5ohm23
         use: |
-          `install` exits 0 even when an entry is refused or a destination write fails, each
-          printed to stderr, so a script that must detect a partial install reads stderr.
+          Only the exit code on a partial run: `install` exits 0 even when an entry is refused or a
+          destination write fails, each printed to stderr, so a script that must detect a partial
+          install reads stderr.
       - id: s-install-refresh
         kind: sentence
         mode: claim
@@ -270,6 +321,9 @@ sections:
           The tree is now in place, and the one Claude Code setting it needs is yours to add.
   - id: wire-the-stop-hook
     heading: Wire the Stop hook
+    why: |
+      The hook is the one edit `install` leaves out on purpose, and the reader makes it once the
+      tree and the import exist.
     opens: |
       The `Stop` hook runs `npm run check:cairn --if-present` when a Claude Code turn ends, and you
       paste it into `.claude/settings.json` yourself because `install` never writes that file.
@@ -309,8 +363,8 @@ sections:
         mode: claim
         text: |
           The hook runs the site's own `check:cairn` script, which a scaffolded site carries; a
-          site without that script gets nothing from the hook until it adds one, and the
-          verification below reports the missing script with the entries to paste.
+          site without that script gets nothing from the hook until it adds one, and
+          [[verify-the-guidance-setup]] reports the missing script with the entries to paste.
         facts:
           - f:4nccq6
           - f:mrv24k
@@ -321,7 +375,7 @@ sections:
         kind: fact
         fact: f:mrv24k
         use: |
-          What the hook's `check:cairn` runs: the admin stylesheet build, then `cairn-audit`'s
+          Only what the hook's `check:cairn` runs: the admin stylesheet build, then `cairn-audit`'s
           whole static registry, public-scope findings as advisories that never change the exit
           code, and a missing `daisyui` or `tailwindcss` peer failing the run by name.
       - id: l-hook-audit
@@ -334,6 +388,9 @@ sections:
           choice.
   - id: make-the-ci-step-gate-on-a-stale-tree
     heading: Make the CI step gate on a stale tree
+    why: |
+      The CI gate is the second deliberate, optional choice, so it follows the hook, and it
+      introduces the check's exit codes where the reader decides whether to gate on them.
     opens: |
       The scaffold's workflow reports a stale or missing guidance tree in its job log without
       failing the build, and making it fail the build is a choice you make in
@@ -343,7 +400,7 @@ sections:
         kind: fact
         fact: f:jd54ph
         use: |
-          Both halves: the scaffold's guidance step runs without `--strict` under
+          Only the scaffold's guidance step, both halves: it runs without `--strict` under
           `continue-on-error: true`, so a stale or missing tree surfaces in the job log without
           failing the build; and `continue-on-error` there covers only a crash or a resolution
           failure, so removing it also lets a crash or a resolution failure fail the build.
@@ -360,7 +417,7 @@ sections:
         kind: fact
         fact: f:4ax489
         use: |
-          The exit codes the choice turns on: `check` exits 0 by default, and `--strict` exits 1
+          Only the exit codes the choice turns on: `check` exits 0 by default, and `--strict` exits 1
           only when the guidance tree is stale or missing.
       - id: c-ci
         kind: code
@@ -400,6 +457,10 @@ sections:
           Whichever you chose, verify the setup locally first, then in CI if you gated it.
   - id: verify-the-guidance-setup
     heading: Verify the guidance setup
+    why: |
+      Verification runs `cairn-guidance check` over everything the earlier sections produced and
+      reads its seven lines, ends a Claude Code turn to see the hook run, and reads the CI log for a
+      reader who gated it, so it comes only after them.
     opens: |
       A healthy setup reports the tree fresh and every other line satisfied, and
       `check --strict` exits 0.
@@ -418,18 +479,18 @@ sections:
         kind: fact
         fact: f:4ax489
         use: |
-          The run reports seven lines and exits 0 by default; `--strict` exits 1 only on a stale
-          or missing tree.
+          Only the seven report lines and the exit codes: 0 by default, and 1 under `--strict`
+          only on a stale or missing tree.
       - id: f-verify-import
         kind: fact
         fact: f:6ro1n9
         use: |
-          One of the lines reports whether the root `CLAUDE.md` carries the import line.
+          Only the line that reports whether the root `CLAUDE.md` carries the import line.
       - id: f-verify-tailwind
         kind: fact
         fact: f:1kwkl0
         use: |
-          The `.claude/` Tailwind exclusion line counts `source(none)` as excluding, beside the
+          Only two clauses: the `.claude/` Tailwind exclusion line counts `source(none)` as excluding, beside the
           literal `@source not "./.claude";`, and the tree's freshness ignores the `VERSION`
           stamp, so a tree differing only there reads fresh.
       - id: l-verify-ref
@@ -471,6 +532,9 @@ sections:
           When a line reports a problem, the next section maps it to its fix.
   - id: diagnose-an-install-or-check-failure
     heading: Diagnose an install or check failure
+    why: |
+      It collects the step-linked failures from the install, the hook, and the check, after the
+      verification that surfaces most of them.
     opens: |
       `install` reports a partial run on stderr, `check` reports each problem on its own line, and
       the hook's `check:cairn` run names a missing peer, and each row below points at its fix.
@@ -553,6 +617,9 @@ sections:
         target: ../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build
   - id: see-also
     heading: See also
+    why: |
+      The task-guide anatomy closes the page with the pages that cover the work around the
+      guidance tree.
     opens: |
       The following pages cover the work around the guidance tree that this page leaves out.
     items:
@@ -594,7 +661,7 @@ constraints:
   - |
     Claude Code's own behavior (when a `Stop` hook fires, how skills are discovered, where hook
     output appears) gets a link to Claude Code's docs, never a restated detail, per the vendor
-    rule. The `Stop` timing sentence in "Wire the Stop hook" stays at "when a Claude Code turn
+    rule. The `Stop` timing sentence in [[wire-the-stop-hook]] stays at "when a Claude Code turn
     ends" with the hooks link beside it.
   - |
     f:5ohm23 is placed only for a refused entry or a failed destination write. Do not widen it
@@ -609,9 +676,9 @@ constraints:
     continuing, a write error naming its errno code). The realpath and lstat mechanics, the
     `.orig` refusal pairing, and `InstallReport.writeErrors` stay on the reference page.
   - |
-    The review agent is one bullet in "The guidance tree", with no heading of its own: its
+    The review agent is one bullet in [[the-guidance-tree]], with no heading of its own: its
     location (f:0ygumq) and the reference link `l-agent-ref`, nothing on what it reviews or how it
-    relates to `cairn-audit` until a fact states that; see the friction entry.
+    relates to `cairn-audit` until a fact states that.
   - |
     The hand-offs `pre-handoff`, `h-tree`, `h-skills`, `h-install`, `h-hook`, `h-ci`, and
     `h-verify` carry no extractable fact; `pre-handoff` and `h-tree` name `.claude/` and the
@@ -619,7 +686,7 @@ constraints:
   - |
     GitHub's `continue-on-error` behavior and npm's `--if-present` behavior are vendor behavior
     with no `[vendor]` fact, so each gets its link (`l-ci-vendor`, `l-hook-npm`) and only the
-    minimal statement the plan's items word; the drafter adds no further claim about either.
+    minimal statement this blueprint's items word; the drafter adds no further claim about either.
   - |
     `s-ci-no-workflow`, `x-wiring`, and `x-orig` rest on the reference page they link
     (`docs/reference/guidance.md`, the `check` and "What ships under `claude/`" sections), not on

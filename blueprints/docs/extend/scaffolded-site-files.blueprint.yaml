@@ -17,8 +17,9 @@ introduction:
     The introduction names two readers: a developer who took over a scaffolded site from someone
     else, and a developer who ran the setup command and wants to know what it wrote and why. It
     lists the subjects in body order: what the scaffold is and who owns it; the file tree, with the
-    files the engine or a check reads marked; the root files, the build and deploy configuration,
-    and the database migrations; the routes and the server hook, including what the local dev
+    files the engine or a check reads marked; the root files, the build and deploy configuration
+    with the Worker's one D1 database, and the database migrations, with why a database the site
+    adds takes its own directory; the routes and the server hook, including what the local dev
     server runs; the theme, chassis, content, and style sheets; the settings a new owner edits by
     hand; the build's crawl rules and the themed 404 page; and the state the setup command left
     outside the repository.
@@ -32,13 +33,14 @@ introduction:
     changing the theme and the chassis (`docs/extend/theme-your-public-site.md`); building a custom
     admin screen (`docs/extend/add-a-custom-admin-screen.md`); each delivery route's wiring
     (`docs/extend/build-the-public-routes.md`); media configuration behind the `MEDIA_BUCKET`
-    binding (`docs/extend/configure-media.md`); and `cairn-audit.config.json` in depth
-    (`docs/extend/run-cairn-audit-on-your-site.md`).
+    binding (`docs/extend/configure-media.md`); `cairn-audit.config.json` in depth
+    (`docs/extend/run-cairn-audit-on-your-site.md`); and the guidance files under `.claude/` with
+    the `cairn-guidance` command (`docs/reference/guidance.md`).
 framing:
   readers: |
     | Reader | Arrives from | Came for | Knows | Lacks |
     | --- | --- | --- | --- | --- |
-    | A. The inheritor (the job's reader): a Svelte-fluent developer who took over a site someone else scaffolded | `docs/extend/architecture.md` paragraph 3 ("maps each file the command writes") and its related resources; the extend index's Start group once the page is listed; a search for a file the tree holds (`cairn-audit.config.json`, `migrations-app`, `.dev.vars.example`, `check.yml`) | What each file does, whether it may change it, and what the engine or a gate depends on | SvelteKit, Vite, enough Wrangler to read `wrangler.jsonc`; that the site is live and editors may already publish to it (`f:kldwss`, `f:cjonmm`) | The setup run's history: the saved record sits in the home directory of whoever ran the command (`f:3m0oxs`), and a Workers Builds connection deploys on a token that person pasted (`f:3bbeia`, `f:qca0t0`); which files carry a contract; that no engine release rewrites the tree (`f:rxj43c`, `f:jtl15v`); what `.claude/` is for (`f:qlgggh`; the guidance detail is subordinated to the guidance reference) |
+    | A. The inheritor (the job's reader): a Svelte-fluent developer who took over a site someone else scaffolded | `docs/extend/architecture.md` paragraph 3 ("maps each file the command writes") and its related resources; the extend index's Start group once the page is listed; a search for a file the tree holds (`cairn-audit.config.json`, `.dev.vars.example`, `check.yml`) | What each file does, whether it may change it, and what the engine or a gate depends on | SvelteKit, Vite, enough Wrangler to read `wrangler.jsonc`; that the site is live and editors may already publish to it (`f:kldwss`, `f:cjonmm`) | The setup run's history: the saved record sits in the home directory of whoever ran the command (`f:3m0oxs`), and a Workers Builds connection deploys on a token that person pasted (`f:3bbeia`, `f:qca0t0`); which files carry a contract; that no engine release rewrites the tree (`f:rxj43c`, `f:jtl15v`); what `.claude/` is for (`f:qlgggh`; the guidance detail is subordinated to the guidance reference) |
     | B. The runner: a developer who ran `create-cairn-site` and now opens the tree to change it | `docs/extend/add-cairn-to-a-sveltekit-app.md` paragraph 2 ("explains what it writes"); the extend index; a search after the run. The command's hand-over text names `.github/workflows/check.yml`, `.claude/`, and `npx cairn-guidance check` but links no page (`packages/create-cairn-site/src/scaffold.mjs:230-264`, `f:kouawx`), so the output itself is not an arrival path | Why each file the command wrote is there, starting with the three the hand-over named | Their own answers to the setup prompts; they hold the state file | The file map; which files carry a contract; why the CI's guidance step never fails a build (`f:jd54ph`; the check's own exit rules are subordinated to the guidance reference) |
     | C. The chooser: a developer deciding between the setup command and the by-hand build | `docs/extend/add-cairn-to-a-sveltekit-app.md` paragraph 2, which names this page as the account of what the command writes | A look at what the command would give them before choosing | SvelteKit; little of cairn | A scaffold to look at; the page shows it through the file tree and the ownership statement |
     | D. The architecture reader: a developer mapping the engine's import points and seams onto real files | `docs/extend/architecture.md`, the crossLink "A scaffolded reader maps the architecture onto their own files" | Where the adapter, the server hook, the admin mount, and the bindings sit in the tree | The model: one adapter, the seams, the data tiers (`f:j0ut9n`) | File locations; the body's tree and per-file entries answer it |
@@ -85,12 +87,15 @@ framing:
       `vite.config.ts` and no `svelte.config.js` (`f:n4rg1z`); the admin is a catch-all route pair at
       `/admin` (`f:t2t5lx`), a server hook guards it (`f:f21bcz`), and the public site is a prerendered
       route group (`f:qtm9y2`, `f:2qnqkm`).
-    - **Where Cloudflare fits.** `wrangler.jsonc` names the Worker the build produces and binds two D1
-      databases, the Email Sending binding, and an R2 bucket (`f:o47i0q`, `f:n7t4bn`), with Workers
-      Logs on (`f:prb2os`); each D1 database has its own migrations directory (`f:gepykz`,
-      `f:nv0ok0`). Workers Builds deploys on every push to the default branch only when the run
-      connected it (`f:qca0t0`), on the build token the run registered (`f:3bbeia`). The intro hedges
-      any deploy claim accordingly and never says every push deploys.
+    - **Where Cloudflare fits.** `wrangler.jsonc` names the Worker the build produces and binds one D1
+      database, the auth store `AUTH_DB`, with no second database, plus the Email Sending binding and
+      an R2 bucket (`f:o47i0q`, `f:n7t4bn`, `f:l3cxgc`), with Workers Logs on (`f:prb2os`);
+      `migrations/` is that database's one migrations directory (`f:gepykz`), and a database the
+      site adds would take its own (`f:nv0ok0`, general rule only). The setup run deploys the site
+      once (`f:kldwss`); Workers Builds deploys on every push to the default branch only once the
+      setup command's separate `--connect` invocation has connected it (`f:qca0t0`), on the build
+      token that chapter registered (`f:3bbeia`). The intro hedges any deploy claim accordingly and
+      never says every push deploys.
     - **Where GitHub fits.** The repository holds the code and the markdown; the site's GitHub App
       commits each editor's publish to its default branch (`f:cjonmm`); a GitHub Actions workflow runs
       install, `npm run check`, and `npm run check:cairn` on every push and pull request and never
@@ -146,8 +151,8 @@ framing:
        against (`f:n2skkz`, `f:rxj43c`); the definition proper waits for [[the-scaffold]]. Then at most two
        sentences place the platforms: SvelteKit's routes mount the admin and the public site, a server
        hook guards `/admin`, and the config sits inline in `vite.config.ts` (`f:t2t5lx`, `f:f21bcz`,
-       `f:n4rg1z`); `wrangler.jsonc` binds the Worker's D1 databases, mail binding, and R2 bucket
-       (`f:n7t4bn`); the repository holds the code and the markdown, the site's GitHub App commits
+       `f:n4rg1z`); `wrangler.jsonc` binds the Worker's one D1 database (the auth store), mail
+       binding, and R2 bucket (`f:n7t4bn`); the repository holds the code and the markdown, the site's GitHub App commits
        each editor's publish into it, and a workflow checks every push and pull request (`f:cjonmm`,
        `f:gj96px`, `f:guiavc`).
     2. **Ownership and the contracts inside it (why the page matters).** Every file belongs to the
@@ -165,7 +170,8 @@ framing:
     3. **The readers and their reasons.** A developer who ran the setup command, or who took over a
        site from someone who did, reads on to learn what each file does and whether to change it. One
        who took over also lacks what the command left outside the repository: its saved record on the
-       machine that ran it, and, when the run connected Workers Builds, the build token whose
+       machine that ran it, and, when the setup command's separate `--connect` invocation connected
+       Workers Builds, the build token whose
        revocation stops deploys without warning (`f:3m0oxs`, `f:3bbeia`, `f:qca0t0`). A reader who knows
        the engine's import points and seams from Architecture (link `docs/extend/architecture.md`, the
        intro's one link outside the bounds lists) finds where each lands in the tree, and a reader
@@ -184,7 +190,7 @@ framing:
     - **Prior knowledge.** The `priorKnowledge` sentence: SvelteKit's project structure (routes, layouts, hooks,
       and prerendering), Vite configuration, and Wrangler configuration for a Worker's bindings and D1
       migrations. It follows paragraph 3, so reader G learns here that the page expects a developer.
-    - **What the page doesn't cover.** The six-item list of `notCovered` under a complete lead-in that never
+    - **What the page doesn't cover.** The seven-item list of `notCovered` under a complete lead-in that never
       names the page, each item subject first and page last.
 
     Cautions for the drafter, each from the background above: never say every push deploys (Workers
@@ -235,14 +241,15 @@ sections:
         fact: f:kldwss
         use: |
           Only the run's outcome: the GitHub App, the repository, the Cloudflare bindings, and the
-          deploy, so the tree arrives already live.
+          deploy, so the tree arrives already live. Omit any claim that this run connects Workers
+          Builds, which a separate `--connect` invocation does ([[setup-state-outside-the-tree]]).
       - id: scaffold-ownership
         kind: sentence
         mode: claim
         text: |
           Every file in the tree belongs to the site: the engine's npm package carries neither the
           template nor the chassis, and the engine arrives as one ordinary dependency in
-          `package.json`, so a site built by hand from `sv create` starts with neither.
+          `package.json`.
         facts:
           - f:rxj43c
           - f:o47i0q
@@ -328,9 +335,11 @@ sections:
     items:
       - id: root-two-entries
         kind: fact
-        fact: f:guiavc
+        fact: f:qlgggh
         use: |
-          Only what backs the section's opening sentence; add nothing beyond it.
+          Only that the root holds `.github/workflows/check.yml`, `.dev.vars.example`,
+          `cairn-audit.config.json`, and `.gitignore`, which backs the section's opening sentence;
+          [[gitignore]] carries the rename.
   - id: github-workflows-check-yml
     heading: '`.github/workflows/check.yml`'
     why: |
@@ -666,7 +675,8 @@ sections:
         use: |
           Only when `0001_roles.sql` is needed, that the scaffold ships it, that any automated apply
           runs it and its rebuild keeps only the engine's `editor` columns, and what
-          `0003_preview.sql` serves.
+          `0003_preview.sql` serves. Omit the fact's "opt-in" label for `0003_preview.sql`, since
+          the scaffold ships it (`f:gepykz`); only `0002_audit.sql` is opt-in here.
       - id: mig-second-db
         kind: fact
         fact: f:nv0ok0
@@ -1130,9 +1140,9 @@ sections:
       What lives outside the repository closes the body, ending on the build-token risk, the one
       item there that can break a live site.
     opens: |
-      The setup command kept its record of the run on the machine that ran it, and when the run
-      connected Workers Builds, it registered the Cloudflare API token pasted during setup as the
-      build token the site's deploys use.
+      The setup command kept its record of the run on the machine that ran it, and when its
+      separate `--connect` invocation connected Workers Builds, it registered the Cloudflare API
+      token pasted during setup as the build token the site's deploys use.
     items:
       - id: state-record
         kind: fact
@@ -1163,8 +1173,9 @@ sections:
         kind: fact
         fact: f:3bbeia
         use: |
-          Only the build token's name and its reuse, and that revoking or rolling it breaks
-          automatic deploys with no prior warning. This is the body's last paragraph.
+          Only the build token's name and its reuse, that revoking or rolling it breaks automatic
+          deploys with no prior warning, and how that shows: the next commit still triggers a
+          build, and the build fails. This is the body's last paragraph.
   - id: related-resources
     heading: Related resources
     why: |
@@ -1448,6 +1459,14 @@ constraints:
     `APP_DB`, `migrations-app/`, or `src/access.ts`. The example site, `examples/showcase`, appears
     only as the scaffold's source in [[the-scaffold]]; the example-site halves of `f:zzjrza`, `f:3z1uxv`,
     `f:tycp7k`, `f:nv0ok0`, and `f:q07rd5` stay off the page.
+  - |
+    Where the outline entry's `covers` or `outOfScope` names `APP_DB`, `migrations-app/`, the
+    signups screen, or the guidance tooling under `.claude/`, the introduction follows this
+    blueprint instead: the scaffold holds no `APP_DB`, no `migrations-app/`, and no signups screen
+    (`f:n7t4bn`, `f:nv0ok0`, `f:t2t5lx`), so the covers list names the one D1 database and the
+    general rule for a database the site adds, and the out-of-scope list routes building a custom
+    admin screen and the guidance tooling to their own pages. The outline entry needs the matching
+    update.
   - |
     `/healthz`: state only what `f:paotzb` carries (outside the guard, the JSON payload, 200 or 503,
     the fixed detail on a thrown error, `cache-control: no-store`, `prerender = false`). Never call

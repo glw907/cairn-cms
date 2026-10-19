@@ -1188,8 +1188,9 @@ sections:
         text: |
           Read the `githubAppToken` or `githubAppSigning` detail before acting. Where it names the
           key (`key_refused`, `GITHUB_APP_PRIVATE_KEY_B64 is not configured`, `key import or sign
-          failed`, or `malformed JWT`) or the fingerprint differs, push the old key's PEM file
-          again. Any other detail, such as `installation_not_found`, `installation_suspended`, or
+          failed`, or `malformed JWT`) or the fingerprint differs, run this section's push step
+          again with the old key's PEM file, then its deploy step if the Worker uses gradual
+          deployments, and repeat the live request. Any other detail, such as `installation_not_found`, `installation_suspended`, or
           `unreachable`, is not the key's: read its row in [[recover-from-a-failed-key]].
       - id: s-rollback-dev-vars
         kind: step
@@ -1253,9 +1254,15 @@ sections:
           GitHub refuses to generate another key.
         cause: |
           The App already holds the most keys GitHub allows.
-        handledBy: gen-limit-handoff
+        handledBy: third-limit-handoff
         facts:
           - f:zoekqt
+      - id: third-limit-handoff
+        kind: handoff
+        text: |
+          Delete the failed key, the one you generated for this rotation: the Worker holds it, but
+          signing with it already fails. Then generate the third key. Leave every other key on the
+          App, since a rollback or another site may still need it.
       - id: s-third-push
         kind: step
         text: |

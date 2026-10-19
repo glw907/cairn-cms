@@ -3,7 +3,8 @@
 // real heading. A dead link or a stale anchor fails the gate, which is what catches docs drift when a
 // pass removes or renames a symbol the prose still points at. The RED output is the fix worklist.
 //
-// Scope is the published docs (`docs/`, minus the historical `docs/superpowers/` plan and spec records)
+// Scope is the published docs (`docs/`, minus the planning records in `docs/specs`, `docs/plans`,
+// `docs/research`, and `docs/archive` and the two loose session briefs beside them)
 // plus the root-level public docs, plus every packaged skill's Markdown (`skills/**/*.md`) and the
 // packaged Claude Code guidance tree (`claude/**/*.md`, scanned when present). Both ship in the
 // tarball, so a dead link inside them is as real as one in `docs/`.
@@ -27,6 +28,10 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const ROOT_DOCS = ['README.md', 'SECURITY.md', 'ROADMAP.md', 'CHANGELOG.md', 'CONTRIBUTING.md'];
 // Captured third-party pages keep their original links, so the link gate skips them.
 const EXEMPLARS_DIR = join('docs', 'internal', 'exemplars');
+// Planning records are write-once history, so their links are never repaired. Matched by path
+// from the repo root, never by directory name, so a published `research` folder would be scanned.
+const PLANNING_DIRS = ['specs', 'plans', 'research', 'archive'].map((name) => join('docs', name));
+const PLANNING_BRIEFS = ['docs/2026-07-07-fresh-session-brief.md', 'docs/2026-08-18-tui-skills-setup-brief.md'];
 
 // Recursively collect `.md` files under a directory, skipping a name list.
 /**
@@ -57,9 +62,12 @@ function walkIfPresent(root, dirName) {
 // Every Markdown file in scope, as repo-relative paths, sorted.
 /** @param {string} root */
 export function filesInScope(root = ROOT) {
-  const docs = walkMarkdown(join(root, 'docs'), new Set(['superpowers']), []).filter(
-    (p) => !relative(root, p).startsWith(EXEMPLARS_DIR + '/'),
-  );
+  const docs = walkMarkdown(join(root, 'docs'), new Set(), []).filter((p) => {
+    const rel = relative(root, p);
+    if (rel.startsWith(EXEMPLARS_DIR + sep)) return false;
+    if (PLANNING_DIRS.some((dir) => rel.startsWith(dir + sep))) return false;
+    return !PLANNING_BRIEFS.includes(rel.split(sep).join('/'));
+  });
   const rootDocs = ROOT_DOCS.map((p) => join(root, p)).filter(existsSync);
   const skills = walkIfPresent(root, 'skills');
   const claude = walkIfPresent(root, 'claude');

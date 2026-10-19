@@ -25,7 +25,7 @@ import { armOf, readArmStates } from './arm-state.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 // The four published arms plus the front-door index, the same corpus check-visuals.mjs scans.
-// docs/superpowers and docs/internal discuss the marker convention in prose and would
+// The planning folders and docs/internal discuss the marker convention in prose and would
 // false-positive if scanned as though they carried real marked blocks.
 const SCAN_DIRS = ['docs/admin', 'docs/editors', 'docs/extend', 'docs/reference'];
 const INDEX_FILES = ['docs/README.md'];

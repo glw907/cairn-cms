@@ -183,7 +183,10 @@ describe('C3 process', () => {
     for (const text of [
       '[x](../internal/admin-design-system.md)',
       'see docs/internal/engine-rulings.md',
-      '[x](../superpowers/research/a.md)',
+      '[x](../research/a.md)',
+      'see docs/specs/a-design.md',
+      '[x](../plans/a.md)',
+      'docs/archive/old.md',
       '[roadmap](../../ROADMAP.md)',
       'STATUS.md',
       '/var/home/someone/.config',
@@ -192,6 +195,10 @@ describe('C3 process', () => {
     ]) {
       expect(hits(text), text).toContain('C3:error');
     }
+  });
+
+  it('lets a relative code path into a route named like a planning folder through', () => {
+    expect(hits("import Page from '../archive/+page.svelte';", T2)).toEqual([]);
   });
 
   it('lets an absolute GitHub link to a maintainer doc through', () => {

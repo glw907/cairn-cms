@@ -410,16 +410,16 @@ describe('checkOptionMap', () => {
 });
 
 describe('publishedPageSlugs', () => {
-  it('collects a page slug from each arm and skips README.md, internal, and superpowers', () => {
+  it('collects a page slug from each arm and skips README.md, internal, and the planning folders', () => {
     const dir = mkdtempSync(join(tmpdir(), 'check-options-docs-'));
     dirs.push(dir);
-    for (const arm of ['extend', 'reference', 'internal', 'superpowers']) mkdirSync(join(dir, arm));
+    for (const arm of ['extend', 'reference', 'internal', 'specs', 'plans', 'research', 'archive']) mkdirSync(join(dir, arm));
     writeFileSync(join(dir, 'extend', 'README.md'), '');
     writeFileSync(join(dir, 'extend', 'add-a-screen.md'), '');
     writeFileSync(join(dir, 'reference', 'README.md'), '');
     writeFileSync(join(dir, 'reference', 'core.md'), '');
     writeFileSync(join(dir, 'internal', 'notes.md'), '');
-    writeFileSync(join(dir, 'superpowers', 'plan.md'), '');
+    for (const arm of ['specs', 'plans', 'research', 'archive']) writeFileSync(join(dir, arm, `${arm}-record.md`), '');
     writeFileSync(join(dir, 'why-cairn.md'), '');
     const slugs = publishedPageSlugs(dir);
     expect([...slugs].sort()).toEqual(['add-a-screen', 'core']);

@@ -1,7 +1,7 @@
 // cairn-cms: the code-idiom gate. Records the code-idiom charter's M4 rule (indentation is
 // 2-space everywhere) as a running check rather than a one-time sweep; .editorconfig has
 // declared `indent_size = 2` since the M4 pass, but nothing enforced it until this gate exists,
-// so its claim becomes true only from here on. Seven rules, several scopes:
+// so its claim becomes true only from here on. Eight rules, several scopes:
 //
 //   1. Leading-tab indentation is banned in src/lib and scripts (*.ts, *.svelte, *.mjs).
 //   2. `process.exit` is banned in scripts/checks/*.mjs ONLY (never scripts/lab, build, or
@@ -11,9 +11,9 @@
 //   3. A gate under scripts/checks names itself one way in its own console output. A mismatch
 //      (part of the file saying `check:foo`, another part saying `foo`, or `check-foo`) is the
 //      exact drift a 2026-09 sweep found in check-chassis-boundary.mjs.
-//   4. A `docs/superpowers/` path is banned in src/lib: that directory is planning-and-spec
-//      scaffolding the npm tarball never ships, so a comment pointing there sends a package
-//      consumer to a 404, not a citation. A bare functional-spec citation, e.g. `(spec 2.8)`,
+//   4. A planning path (`docs/specs/`, `docs/plans/`, `docs/research/`, `docs/archive/`) is
+//      banned in src/lib: those directories are planning-and-spec scaffolding the npm tarball
+//      never ships, so a comment pointing there sends a package consumer to a 404, not a citation. A bare functional-spec citation, e.g. `(spec 2.8)`,
 //      names a section of the shipped functional spec by number and is not this shape.
 //   5. A pass-scoped process reference is banned in src/lib: `Task N`, `Phase N`/`phase N`,
 //      `Pass A`/`pass A` (a single lettered pass), `Pass N`/`pass N`, `Plan N`/`plan N`,
@@ -52,6 +52,10 @@
 //      where the cast is the point of the test, not a bypass of it. The scan strips backtick-quoted
 //      spans before matching, so a comment that MENTIONS the phrase (`` `as never` ``) rather than
 //      writing the cast is never flagged.
+//   8. No tracked file sits in the retired planning folder (`docs/` plus the old plugin's name).
+//      The 2026-10-19 layout move emptied it into the four directories rule 4 names, and a session
+//      on an older skill would recreate it. The name is assembled from two literals
+//      (RETIRED_PLANNING_DIR below) so this file never cites it.
 //
 // Rules 4-6 live in THIS gate, scoped to `src/lib`, rather than in the ESLint comment plugin
 // (`eslint.config.js`, `check:comments`) for one structural reason: ESLint's TypeScript parser
@@ -76,6 +80,7 @@
 // files. Rule 7 additionally excludes its own unit test file BY NAME (AS_NEVER_SELF_EXCLUSION
 // below), which exercises real `as never` literals to prove the matcher's own behavior. Wired as
 // `npm run check:idioms`.
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve, relative, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -175,13 +180,26 @@ export function selfIdentityVariantsUsed(stem, source) {
 // surrounds a match.
 export const COMMENT_SCOPE_PATTERN = /\.(ts|svelte|css)$/;
 
+const PLANNING_PATH_PATTERN = /\bdocs\/(?:specs|plans|research|archive)\//;
+
 /**
- * Every 1-based line number in `source` that names a `docs/superpowers/` path (rule 4).
+ * Every 1-based line number in `source` that names a planning path (rule 4).
  * @param {string} source
  * @returns {number[]}
  */
-export function findSuperpowersPathLines(source) {
-  return findLines(source, (line) => line.includes('docs/superpowers/'));
+export function findPlanningPathLines(source) {
+  return findLines(source, (line) => PLANNING_PATH_PATTERN.test(line));
+}
+
+const RETIRED_PLANNING_DIR = 'docs/' + 'super' + 'powers/';
+
+/**
+ * Every repo-relative path in `paths` that sits in the retired planning folder (rule 8).
+ * @param {string[]} paths
+ * @returns {string[]}
+ */
+export function findRetiredFolderFiles(paths) {
+  return paths.filter((path) => path.startsWith(RETIRED_PLANNING_DIR));
 }
 
 // Task N (a one- or two-letter suffix allowed, e.g. `Task 16b`): the original, narrowest shape,
@@ -382,10 +400,11 @@ export function findAsNeverLines(source) {
  *   tabs: string[],
  *   exit: string[],
  *   identity: string[],
- *   superpowersPaths: string[],
+ *   planningPaths: string[],
  *   processReferences: string[],
  *   hostnames: string[],
  *   asNever: string[],
+ *   retiredFolder: string[],
  * }} IdiomViolations
  */
 
@@ -400,7 +419,7 @@ function relPath(file) {
 }
 
 /**
- * Scan the real tree for all seven rules. Exported so the unit test can assert the gate is born
+ * Scan the real tree for all eight rules. Exported so the unit test can assert the gate is born
  * green without shelling out.
  * @returns {IdiomViolations}
  */
@@ -410,10 +429,11 @@ export function scanIdioms() {
     tabs: [],
     exit: [],
     identity: [],
-    superpowersPaths: [],
+    planningPaths: [],
     processReferences: [],
     hostnames: [],
     asNever: [],
+    retiredFolder: [],
   };
 
   const tabScopeFiles = [
@@ -441,7 +461,7 @@ export function scanIdioms() {
   for (const file of commentScopeFiles) {
     const rel = relPath(file);
     const source = readFileSync(file, 'utf8');
-    for (const line of findSuperpowersPathLines(source)) violations.superpowersPaths.push(`${rel}:${line}`);
+    for (const line of findPlanningPathLines(source)) violations.planningPaths.push(`${rel}:${line}`);
     for (const line of findProcessReferenceLines(source)) violations.processReferences.push(`${rel}:${line}`);
     for (const line of findConsumerHostnameLines(source)) violations.hostnames.push(`${rel}:${line}`);
   }
@@ -454,20 +474,24 @@ export function scanIdioms() {
     for (const line of findAsNeverLines(source)) violations.asNever.push(`${rel}:${line}`);
   }
 
+  const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' }).split('\0');
+  violations.retiredFolder.push(...findRetiredFolderFiles(tracked));
+
   return violations;
 }
 
 // Each category's report heading, in report order: the count and the indented hit list around it
-// are identical in shape across all seven, so only the wording differs.
+// are identical in shape across all eight, so only the wording differs.
 /** @type {[keyof IdiomViolations, string][]} */
 const VIOLATION_HEADINGS = [
   ['tabs', 'leading-tab indentation hit(s) (repo convention is 2-space)'],
   ['exit', 'direct process.exit call(s) in scripts/checks (use process.exitCode plus a flow guard)'],
   ['identity', 'self-identity spelling mismatch(es)'],
-  ['superpowersPaths', 'docs/superpowers/ path reference(s) in src/lib (the npm tarball never ships that directory)'],
+  ['planningPaths', 'planning path reference(s) in src/lib (the npm tarball never ships docs/specs, docs/plans, docs/research, or docs/archive)'],
   ['processReferences', 'pass-scoped process reference(s) in src/lib (keep the rationale, drop the session label)'],
   ['hostnames', 'unrecognized hostname literal(s) in src/lib (add a real public host to HOSTNAME_ALLOWED_HOSTS, or generalize a consumer-site mention)'],
   ['asNever', 'unescaped "as never" cast(s) in src/tests (use a typed fixture, or annotate a deliberate negative-path cast with "// idioms-allow: as-never  <reason>")'],
+  ['retiredFolder', 'tracked file(s) in the retired planning folder (move each to docs/specs, docs/plans, docs/research, or docs/archive)'],
 ];
 
 /**
@@ -491,7 +515,7 @@ function main() {
   const total = Object.values(violations).reduce((n, hits) => n + hits.length, 0);
   if (total === 0) {
     console.log(
-      'check-idioms: OK (2-space indentation, no direct process.exit calls in scripts/checks, one self-identity spelling per gate, no docs/superpowers/ paths, pass-scoped references, or consumer hostnames in src/lib, no unescaped as-never casts in src/tests)',
+      'check-idioms: OK (2-space indentation, no direct process.exit calls in scripts/checks, one self-identity spelling per gate, no planning paths, pass-scoped references, or consumer hostnames in src/lib, no unescaped as-never casts in src/tests, no files in the retired planning folder)',
     );
     return;
   }

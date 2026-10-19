@@ -14,10 +14,11 @@ introduction:
     `.claude/` and the root `CLAUDE.md` that imports it, which of the four packaged skills loads
     for which task, where the review agent sits (its file, with a link to the reference for what
     it checks), how to wire the `Stop` hook that runs the site's `check:cairn` script when a
-    Claude Code turn ends, and how to adopt, refresh, and check the tree with
-    `cairn-guidance install` and `cairn-guidance check`, including their exit codes, what `check`
-    reports when a site lacks the scaffold's gate wiring, and the scaffold's CI step and how to
-    make it gate. The reader is the extend track's developer (a Svelte-fluent web developer
+    Claude Code turn ends (adding that script on a site without one), and how to adopt, refresh,
+    and check the tree with `cairn-guidance install` and `cairn-guidance check`, including their
+    exit codes, what `check` reports when a site lacks the scaffold's gate wiring, and the
+    scaffold's CI step and how to make it gate (starting the workflow on a site without one). The
+    reader is the extend track's developer (a Svelte-fluent web developer
     building an organization's site on cairn's seams) who has chosen Claude Code as their coding
     assistant. Two arrivals are named: a developer whose scaffolded site already carries the tree
     and wants to know what Claude Code now reads, and a developer adopting the tree on an
@@ -32,7 +33,9 @@ introduction:
     `.claude/settings.json` lives. Package scripts and a GitHub Actions workflow file are assumed.
     No knowledge of the engine's internals is needed.
   notCovered: |
-    Any coding assistant other than Claude Code, which cairn ships nothing for. The scaffolded
+    Any coding assistant other than Claude Code, which cairn ships nothing for. The review agent's
+    purpose and how it relates to the audit gate: the page places only the agent's file, and the
+    `cairn-guidance` reference page describes what the agent checks. The scaffolded
     tree outside `.claude/`, file by file, which Scaffolded site files covers. Running the audit
     and reading its findings, which Run cairn-audit on your site covers. The upgrade procedure and
     when to refresh, which Upgrade cairn covers. Writing a consultation brief, whose protocol
@@ -70,15 +73,18 @@ framing:
        `.claude/` and the root `CLAUDE.md` that imports it, which of the four packaged skills
        loads for which task, and where the review agent sits (its file, with the reference for
        what it checks); wire the `Stop` hook that runs the site's `check:cairn` script when a
-       Claude Code turn ends; adopt, refresh, and check the tree with `cairn-guidance install`
-       and `cairn-guidance check`, including their exit codes and what `check` reports when a
-       site lacks the scaffold's gate wiring; and make the scaffold's CI step gate, if they
-       choose to.
+       Claude Code turn ends, adding that script on a site without one; adopt, refresh, and
+       check the tree with `cairn-guidance install` and `cairn-guidance check`, including their
+       exit codes and what `check` reports when a site lacks the scaffold's gate wiring; and make
+       the scaffold's CI step gate, starting the workflow on a site without one, if they choose
+       to.
 
     Then the bounds. The page assumes a running cairn site with the engine installed, working
     knowledge of Claude Code (starting a session, what a skill and a subagent are, where a
     project's `.claude/settings.json` lives), package scripts, and a GitHub Actions workflow
-    file; it needs no knowledge of the engine's internals. It leaves to other pages the
+    file; it needs no knowledge of the engine's internals. It leaves out the review agent's
+    purpose and its relation to the audit gate, placing only the agent's file and linking the
+    `cairn-guidance` reference page for what the agent checks. It leaves to other pages the
     scaffolded tree outside `.claude/` (Scaffolded site files), running the audit and reading its
     findings (Run cairn-audit on your site), the upgrade procedure and when to refresh (Upgrade
     cairn), the consultation brief's protocol (the `cairn-consult` skill itself), and the CLI's
@@ -282,7 +288,8 @@ sections:
       - id: s-import
         kind: step
         text: |
-          If the root `CLAUDE.md` lacks it, add `@.claude/cairn/CLAUDE.md` as its first line.
+          If the root `CLAUDE.md` lacks it, add `@.claude/cairn/CLAUDE.md` as its first line,
+          creating the file in the project root if the site has none.
         requires:
           - guidance-tree
         produces:
@@ -306,6 +313,14 @@ sections:
           Only the exit code on a partial run: `install` exits 0 even when an entry is refused or a
           destination write fails, each printed to stderr, so a script that must detect a partial
           install reads stderr.
+      - id: s-install-throw
+        kind: sentence
+        mode: claim
+        text: |
+          Caveat: a failure creating a directory, writing the `MANIFEST`, or reading an existing
+          destination is not a partial run: it stops `install` with a nonzero exit.
+        facts:
+          - f:5ohm23
       - id: s-install-refresh
         kind: sentence
         mode: claim
@@ -358,16 +373,30 @@ sections:
       - id: l-hook-vendor
         kind: link
         target: https://code.claude.com/docs/en/hooks#stop
+      - id: s-script
+        kind: step
+        text: |
+          In `package.json`, check that `scripts` holds a `check:cairn` entry. If it has none,
+          merge in the script entries from the package's `check-cairn.json` snippet, shown below.
+        requires:
+          - cairn-site
+        produces:
+          - check-cairn-script
+      - id: c-script
+        kind: code
+        text: |
+          The script entries a site needs for the admin stylesheet build and the `check:cairn`
+          gates, as the package ships them; a scaffolded site already carries them.
+        source: ../../claude/snippets/check-cairn.json
       - id: s-hook-script
         kind: sentence
         mode: claim
         text: |
-          The hook runs the site's own `check:cairn` script, which a scaffolded site carries; a
-          site without that script gets nothing from the hook until it adds one, and
-          [[verify-the-guidance-setup]] reports the missing script with the entries to paste.
+          The hook runs the site's own `check:cairn` script under `--if-present`, so on a site
+          without that script the hook runs nothing and reports nothing, which is why the step
+          above checks for it.
         facts:
           - f:4nccq6
-          - f:mrv24k
       - id: l-hook-npm
         kind: link
         target: https://docs.npmjs.com/cli/v11/commands/npm-run#if-present
@@ -378,6 +407,15 @@ sections:
           Only what the hook's `check:cairn` runs: the admin stylesheet build, then `cairn-audit`'s
           whole static registry, public-scope findings as advisories that never change the exit
           code, and a missing `daisyui` or `tailwindcss` peer failing the run by name.
+      - id: s-hook-peers
+        kind: sentence
+        mode: claim
+        text: |
+          The `check:cairn` run therefore needs the `daisyui` and `tailwindcss` peers installed;
+          a missing one fails the run by name, and [[diagnose-an-install-or-check-failure]] covers
+          that case.
+        facts:
+          - f:mrv24k
       - id: l-hook-audit
         kind: link
         target: ../extend/run-cairn-audit-on-your-site.md#run-the-static-pass
@@ -400,16 +438,26 @@ sections:
         kind: fact
         fact: f:jd54ph
         use: |
-          Only the scaffold's guidance step, both halves: it runs without `--strict` under
-          `continue-on-error: true`, so a stale or missing tree surfaces in the job log without
-          failing the build; and `continue-on-error` there covers only a crash or a resolution
-          failure, so removing it also lets a crash or a resolution failure fail the build.
-      - id: s-ci-no-workflow
-        kind: sentence
-        mode: claim
+          Only the scaffold's guidance step and what gating it takes: the step runs without
+          `--strict` under `continue-on-error: true`, so a stale or missing tree surfaces in the
+          job log without failing the build, and gating takes both `--strict` and removing the
+          `continue-on-error` line.
+      - id: s-ci-workflow
+        kind: step
         text: |
-          A site without `.github/workflows/check.yml` gets a starting workflow, carrying the same
-          guidance step, from `cairn-guidance check`'s CI workflow line, as the reference lists.
+          If the site has no `.github/workflows/check.yml`, create it from the package's
+          `check.yml` snippet, which carries the same guidance step as the scaffold's workflow.
+        requires:
+          - cairn-site
+        produces:
+          - ci-workflow
+        optional: true
+      - id: c-ci-workflow
+        kind: code
+        text: |
+          The starting workflow as the package ships it, for a site that has none, with the
+          comment above the guidance step left out.
+        source: ../../claude/snippets/check.yml
       - id: l-ci-snippet-ref
         kind: link
         target: ../reference/guidance.md#what-ships-under-claude
@@ -423,7 +471,7 @@ sections:
         kind: code
         text: |
           Only the workflow's last step, `npx cairn-guidance check` with `continue-on-error: true`,
-          as the scaffold ships it.
+          as the scaffold ships it, without the comment above it.
         source: ../../templates/waymark/.github/workflows/check.yml
       - id: s-ci
         kind: step
@@ -432,6 +480,7 @@ sections:
           remove its `continue-on-error: true` line.
         requires:
           - guidance-tree
+          - ci-workflow
         produces:
           - ci-gate
         optional: true
@@ -447,10 +496,12 @@ sections:
       - id: r-ci-trade
         kind: reason
         text: |
-          Removing `continue-on-error: true` is a trade: beside a stale or missing tree, a crash
-          or a resolution failure of the check then fails the build too.
+          Removing `continue-on-error: true` is a trade: that setting passes the job on any
+          nonzero exit of the step, so without it any nonzero exit fails the build, not only the
+          `--strict` exit on a stale or missing tree.
         facts:
           - f:jd54ph
+          - f:4ax489
       - id: h-ci
         kind: handoff
         text: |
@@ -512,6 +563,7 @@ sections:
           output the `Stop` hook produced.
         requires:
           - stop-hook
+          - check-cairn-script
         produces:
           - hook-report
         canFail: true
@@ -525,6 +577,7 @@ sections:
           line in the `check` job's log.
         requires:
           - ci-gate
+        canFail: true
         optional: true
       - id: h-verify
         kind: handoff
@@ -533,11 +586,12 @@ sections:
   - id: diagnose-an-install-or-check-failure
     heading: Diagnose an install or check failure
     why: |
-      It collects the step-linked failures from the install, the hook, and the check, after the
-      verification that surfaces most of them.
+      It collects the step-linked failures from the install, the hook, the check, and the gated
+      CI job, after the verification that surfaces most of them.
     opens: |
-      `install` reports a partial run on stderr, `check` reports each problem on its own line, and
-      the hook's `check:cairn` run names a missing peer, and each row below points at its fix.
+      `install` reports a partial run on stderr, `check` reports each problem on its own line, the
+      hook's `check:cairn` run names a missing peer or prints nothing, and a gated CI job fails at
+      the guidance step, and each row below points at its fix.
     items:
       - id: x-refused
         kind: failure
@@ -580,6 +634,41 @@ sections:
       - id: l-diag-audit
         kind: link
         target: ../extend/run-cairn-audit-on-your-site.md#diagnose-a-run-that-exits-2
+      - id: x-hook-silent
+        kind: failure
+        from: v-hook
+        symptom: |
+          The turn ends and no `check:cairn` output appears.
+        cause: |
+          `package.json` has no `check:cairn` script, so `--if-present` skips the run, or the
+          `Stop` entry is not under `hooks` in `.claude/settings.json`.
+        handledBy: h-diag-hook
+        facts:
+          - f:4nccq6
+      - id: h-diag-hook
+        kind: handoff
+        text: |
+          Add the missing script as the `check:cairn` step in [[wire-the-stop-hook]] shows; if the
+          script is there, compare the `Stop` entry in `.claude/settings.json` with the snippet in
+          that section, then end another turn.
+      - id: x-ci-stale
+        kind: failure
+        from: v-push
+        symptom: |
+          The `check` job fails at the guidance step, and its first line reports the guidance tree
+          stale or missing.
+        cause: |
+          Under `--strict`, the check exits 1 on a stale or missing tree, and with
+          `continue-on-error` removed that exit fails the job.
+        handledBy: h-diag-ci
+        facts:
+          - f:4ax489
+          - f:jd54ph
+      - id: h-diag-ci
+        kind: handoff
+        text: |
+          Refresh the tree with the install in [[adopt-or-refresh-the-guidance-tree]], commit the
+          refreshed `.claude/` tree, and push again.
       - id: x-stale
         kind: failure
         from: v-check
@@ -629,6 +718,12 @@ sections:
       - id: l-see-upgrade
         kind: link
         target: ../extend/upgrade-cairn.md
+      - id: l-see-audit
+        kind: link
+        target: ../extend/run-cairn-audit-on-your-site.md
+      - id: l-see-ref
+        kind: link
+        target: ../reference/guidance.md
 dispositions:
   - fact: f:7ozknm
     disposition: cut
@@ -664,10 +759,9 @@ constraints:
     rule. The `Stop` timing sentence in [[wire-the-stop-hook]] stays at "when a Claude Code turn
     ends" with the hooks link beside it.
   - |
-    f:5ohm23 is placed only for a refused entry or a failed destination write. Do not widen it
-    to "every failure": the `mkdir` before each write and the `MANIFEST` write sit outside the
-    write's `catch` (`src/lib/guidance/install.ts:385,405`), so a disk error there ends the run
-    with a nonzero exit.
+    f:5ohm23's exit-0 half is placed only for a refused entry or a failed destination write, and
+    its nonzero half only as the caveat `s-install-throw`. Do not widen the exit-0 half to "every
+    failure", and give the nonzero case no fix: no fact names one.
   - |
     f:hiif6u is placed only for `cairn-public`'s catalogue pages. Its `check:public-skill` half
     is an engine-repository script that a site does not run, and never appears on this page.
@@ -680,14 +774,15 @@ constraints:
     location (f:0ygumq) and the reference link `l-agent-ref`, nothing on what it reviews or how it
     relates to `cairn-audit` until a fact states that.
   - |
-    The hand-offs `pre-handoff`, `h-tree`, `h-skills`, `h-install`, `h-hook`, `h-ci`, and
-    `h-verify` carry no extractable fact; `pre-handoff` and `h-tree` name `.claude/` and the
+    The hand-offs `pre-handoff`, `h-tree`, `h-skills`, `h-install`, `h-hook`, `h-ci`,
+    `h-verify`, `h-diag-hook`, and `h-diag-ci` carry no extractable fact; `pre-handoff` and `h-tree` name `.claude/` and the
     skills, which earlier or later items back.
   - |
     GitHub's `continue-on-error` behavior and npm's `--if-present` behavior are vendor behavior
     with no `[vendor]` fact, so each gets its link (`l-ci-vendor`, `l-hook-npm`) and only the
     minimal statement this blueprint's items word; the drafter adds no further claim about either.
   - |
-    `s-ci-no-workflow`, `x-wiring`, and `x-orig` rest on the reference page they link
-    (`docs/reference/guidance.md`, the `check` and "What ships under `claude/`" sections), not on
-    a fact; the drafter words them no wider than that page states.
+    `s-script`, `s-ci-workflow`, `x-wiring`, and `x-orig` rest on the reference page they link
+    (`docs/reference/guidance.md`, the `check` and "What ships under `claude/`" sections) and on
+    the snippet files the code items `c-script` and `c-ci-workflow` quote, not on a fact; the
+    drafter words them no wider than that page and those files state.

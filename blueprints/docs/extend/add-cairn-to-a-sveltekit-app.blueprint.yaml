@@ -26,7 +26,8 @@ introduction:
     cairn does underneath, who can read it through. It names the running example, Field Notes, a site
     with one post, and states what the reader can do by the end: an editor signs in to the deployed
     site, edits the post, and publishes it. It lists the four milestones as a numbered list, each
-    with the check that ends it, and says that a closing section customizes the sign-in email.
+    with the check that ends it, and says that a closing section customizes the sign-in email. It
+    ends with pointers, Architecture among them for the curious reader who wants the model in full.
   priorKnowledge: |
     Working knowledge of SvelteKit (routes, layouts, server hooks, and the Vite config that carries
     the kit config), TypeScript, git, and a terminal. The tutorial explains every Cloudflare and
@@ -38,7 +39,7 @@ introduction:
     adapter option (Define an adapter and schema); the security reasoning behind the GitHub App's
     repository-wide write and the CSRF design (Security model); the delivery routes beyond the entry
     catch-all (Build the public routes); rotating the App's private key later (Rotate the GitHub App
-    key). The retired JavaScript doctor and the removed `/components` subpath are not named at all.
+    key); a custom sender's own code (the SvelteKit reference's types section). The retired JavaScript doctor and the removed `/components` subpath are not named at all.
   facts:
     - f:kldwss
     - f:9slxqf
@@ -79,10 +80,10 @@ framing:
     4. Then the Field Notes example, the prior knowledge, the milestone list, the closing-section
        line, and the pointers, with Architecture among the pointers for reader C.
 orderReason: |
-  The page re-sequences the outline's covers so that every step's prerequisite exists before the
-  step: the prerequisites, then four milestones (a bare deploy, an entry rendered from content on
-  disk, the admin on the dev backend, and production), then customizing the sign-in email, then the
-  summary and next steps the tutorial anatomy requires. Content precedes the admin, since the admin
+  The sections run so that every step's prerequisite exists before the step: the prerequisites,
+  then four milestones (a bare deploy, an entry rendered from content on disk, the admin on the dev
+  backend, and production), then customizing the sign-in email, then the summary and next steps the
+  tutorial anatomy requires. Content precedes the admin, since the admin
   needs the runtime the adapter feeds and the dev backend reads the content, the manifest, and the
   define that the content milestone supplies. Each milestone runs its objectives and starting state,
   steps, verification, failure paths, a try-it-yourself prompt with a disclosure answer, and a
@@ -131,13 +132,6 @@ sections:
           its free tier runs (the first milestone's bare deploy), the Workers Paid plan and the
           first deploy that needs it (the one that carries the admin), and the domain zone that real
           sign-in mail needs.
-      - id: pre-second-person
-        kind: fact
-        fact: f:t4pwpw
-        use: |
-          Only the split between sign-in mail to a second person, which the same plan covers, and
-          mail to yourself, which is free on any plan, inside the Workers Paid list item. Omit the
-          price.
       - id: pre-paid-link
         kind: link
         target: https://developers.cloudflare.com/workers/platform/pricing/
@@ -163,10 +157,14 @@ sections:
       - id: s-install-cli
         kind: step
         text: |
-          Inside the `cairn` CLI list item, a command block: install it with
-          `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest`, or from a release archive.
+          Inside the `cairn` CLI list item: on a machine with a Go toolchain, install it with
+          `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` in a command block; on a
+          machine without one, install it from a release archive, which needs no Go.
         produces:
           - cairn-cli
+      - id: pre-go-link
+        kind: link
+        target: https://go.dev/doc/install
       - id: pre-doctor-link
         kind: link
         target: ../reference/cli-cairn-doctor.md
@@ -838,6 +836,7 @@ sections:
           - manifest-plugin
         produces:
           - manifest
+        canFail: true
       - id: x-cli-link
         kind: link
         target: ../reference/cli-cairn-manifest.md
@@ -1028,12 +1027,17 @@ sections:
           - f:n0laoh
       - id: f-zero
         kind: failure
+        from: s-write-manifest
         symptom: |
-          The manifest holds no rows for a concept, and no error names it.
+          The manifest `npx cairn-manifest` writes holds no rows for a concept, and no error names
+          it.
         cause: |
-          Fires on every manifest build while a declared concept is missing from the plugin's
-          `content` option.
+          A declared concept is missing from the plugin's `content` option, which `npx
+          cairn-manifest` reuses.
         handledBy: f-zero-fix
+        facts:
+          - f:n0laoh
+          - f:fh6kod
       - id: f-zero-fix
         kind: sentence
         mode: claim
@@ -1407,15 +1411,14 @@ sections:
         use: |
           Only the one `if` and its two reads in order (the define, then `CAIRN_DEV_BACKEND ===
           '1'`), the handle it picks and exports as `handle`, and that both handles take `{ runtime
-          }`, in a paragraph after the hooks code. Under `vite dev` the hooks run in Node, where the
-          Worker env never carries the shell variable `npm run dev` sets, so this site's flag test
-          reads `process.env`. Omit the scaffold's paths and its `dev-gate` helper.
+          }`, in a paragraph after the hooks code; then the `vite dev` clause, as the reason this
+          site's opt-in reads `process.env`. Omit the Worker-env read that the scaffold's helper
+          adds and this site's code does not, the scaffold's paths, and its `dev-gate` helper.
       - id: d-callsite
         kind: fact
         fact: f:72mctx
         use: |
-          Only the direct-naming rule and its reason, in the same paragraph: the module names
-          `__CAIRN_DEV_BUILD__` itself, never through an imported constant.
+          Only the direct-naming rule and its reason, in the same paragraph.
       - id: d-dynamic
         kind: fact
         fact: f:eiaqkh
@@ -1668,7 +1671,9 @@ sections:
         kind: fact
         fact: f:7bch04
         use: |
-          Only the three edits, as a bulleted list, then why the hooks module needs no edit.
+          Only the three edits, as a bulleted list framed as the edits to files the site already
+          has, beside the App, the secret, and the database the sections create; then the hooks
+          clause.
       - id: p-order
         kind: fact
         fact: f:e5vm42
@@ -1679,8 +1684,7 @@ sections:
     heading: Push the site to GitHub
     why: |
       The GitHub App is installed on the account that owns the site's repository and covers that
-      repository, so the repository exists on GitHub before the App, and the push opens this
-      milestone instead of closing the content one.
+      repository, so the repository exists on GitHub before the App.
     level: 3
     opens: |
       The GitHub App you register next is installed on the account that owns the site's repository
@@ -2188,10 +2192,8 @@ sections:
         kind: fact
         fact: f:txgoyy
         use: |
-          Only the setting and the check that raises it, inside the `wrangler.jsonc` step:
-          `observability.enabled: true` sends the engine's log records to Workers Logs, and the site
-          sets it here because `cairn doctor` would otherwise warn from its `config.observability`
-          check when the verification runs it.
+          Only the fix and the check that raises the condition, inside the `wrangler.jsonc` step.
+          Omit the condition's id.
       - id: em-steps-lead
         kind: sentence
         mode: verbatim
@@ -2312,7 +2314,6 @@ sections:
           - doctor-passed
         produces:
           - prod-deployed
-        canFail: true
       - id: pv-publish-lead
         kind: sentence
         mode: verbatim
@@ -2406,7 +2407,7 @@ sections:
         handledBy: pf-bindings-fix
       - id: pf-refusal
         kind: failure
-        from: s-deploy-prod
+        from: s-sign-in
         symptom: |
           `/admin` on the deployed site still shows **Wrangler bindings are missing**.
         cause: |
@@ -2422,7 +2423,7 @@ sections:
           - f:jbt2hh
       - id: pf-origin
         kind: failure
-        from: s-deploy-prod
+        from: s-sign-in
         symptom: |
           The site throws `config.public-origin-invalid`.
         cause: |
@@ -2646,33 +2647,26 @@ sections:
           Only the message's members, with `replyTo` taking one address, and the rule for what a
           sender throws: its text reaches the log scrubbed of token values and truncated, so a
           thrown message never embeds the message body or the sign-in link.
-      - id: s-custom-send
-        kind: step
+      - id: cs-scope
+        kind: sentence
+        mode: claim
         text: |
-          In the server module, pass a `send` that edits the message's subject before sending it
-          through the `EMAIL` binding.
-        requires:
-          - admin-factory
-        produces:
-          - sender-custom
-      - id: cs-code
-        kind: code
-        text: |
-          `src/lib/cairn.server.ts` with a `send: SendMagicLink` that throws a message naming only
-          the missing binding when `env.EMAIL` is absent, then sends `{ ...message, subject:
-          `${message.subject}: your sign-in link` }`, passed beside `bootstrapOwner` in `auth`.
-        source: ../../templates/waymark/src/chassis/cairn.server.ts
+          This tutorial writes no custom sender, so the site keeps the Cloudflare sender; the
+          `SendMagicLink` type and the message it receives are in the SvelteKit reference's types
+          section.
+        facts:
+          - f:lbetsq
       - id: cs-types-link
         kind: link
         target: ../reference/sveltekit.md#types
   - id: verify-the-sign-in-email
     heading: Verify the sign-in email
     why: |
-      Either change shows only in the next email the deployed site sends, so one verification closes
-      both routes.
+      The branding change shows only in the next email the deployed site sends, so the verification
+      follows both routes' sections.
     level: 3
     opens: |
-      Either change shows in the next sign-in email the deployed site sends.
+      The branding change shows in the next sign-in email the deployed site sends.
     items:
       - id: ve-steps-lead
         kind: sentence
@@ -2685,6 +2679,7 @@ sections:
           In the project directory, build the site and deploy it.
         requires:
           - production-verified
+          - branding-set
         produces:
           - email-deployed
       - id: s-email-request
@@ -2703,7 +2698,7 @@ sections:
         symptom: |
           The email does not arrive.
         cause: |
-          The custom sender threw, or the domain is not onboarded.
+          The domain is not onboarded for Email Sending.
         handledBy: pf-mail-fix
   - id: summary
     heading: Summary
@@ -2754,6 +2749,13 @@ sections:
         kind: link
         target: security-model.md
 dispositions:
+  - fact: f:t4pwpw
+    disposition: cut
+    reason: |
+      The page states the Workers Paid requirement once, through `f:75hawi`: a site carrying the
+      admin needs the plan from that first deploy, which already covers a second person's sign-in
+      mail. The free-to-yourself clause beside it would suggest a site with the admin can run
+      without the plan.
   - fact: f:gglwt4
     disposition: subordinated
     reference: security-model.md#limits-of-the-installation-token
@@ -2944,15 +2946,6 @@ constraints:
     where the reader types it; `create-cairn-site` on first mention, then the setup command; the
     `cairn` CLI with its verb (`cairn doctor`); `cairn-manifest` by name; the GitHub App; the
     Worker; the admin, and `/admin` for the path.
-  - |
-    Facts placed beyond the outline's inventory, each load-bearing for a claim the covers or the
-    Part 1 items need: `f:kldwss`, `f:9slxqf`, and `f:rxj43c` (the introduction's two readers and
-    the setup command); `f:skeche` (an existing app on SvelteKit 2); `f:pgeeq3` (the `#lib` subpath
-    imports); `f:ibis7z` and `f:g7zuji` (the root `+layout.svelte` that wraps `/admin`); `f:pkt8i6`
-    (the entry route's loader); `f:shv6wv` (`editor.siteConfigPath`, without which the admin's
-    Tags and Settings screens look for the site config at the scaffold's path); `f:1dhk1a` (the
-    `cairn` CLI install); `f:thgmpz` (the custom-domain route); `f:txgoyy` (observability);
-    `f:4lcto0` (`@types/node` and the hooks module's `/// <reference types="node" />` line).
   - |
     The introduction's model paragraph draws only on facts the body places (`f:dqe7ij`,
     `f:f21bcz`, `f:xluud1`, `f:lbetsq`, `f:5f4kmk`, `f:ntdafg`), and its setup-command sentences on

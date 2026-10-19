@@ -37,12 +37,15 @@ introduction:
     ids with their groups and parameters; the site's adapter module; and a Workers Logs query, for
     the checks. The page explains none of these.
   notCovered: |
-    Each out-of-scope subject names its page, subject first: why the map only narrows and never
-    acts as an allowlist by itself (Security model); building a custom screen and its section
-    actions in full (Add a custom admin screen); hiding a sidebar entry without denying its route
-    (Arrange the admin sidebar); a role that signs in but reaches no engine content, a `none` role
-    for a second sign-in group (Add a second sign-in group); and moving an older site's map off its
-    hooks onto the adapter (Upgrade cairn). A scope sentence may name the page.
+    Each out-of-scope subject names its page, subject first, and links it: why the map only narrows
+    and never acts as an allowlist by itself (Security model, `security-model.md`); building a
+    custom screen and its section actions in full (Add a custom admin screen,
+    `add-a-custom-admin-screen.md`); hiding a sidebar entry without denying its route (Arrange the
+    admin sidebar, `arrange-the-admin-sidebar.md`); a role that signs in but reaches no engine
+    content, a `none` role for a second sign-in group (Add a second sign-in group,
+    `add-a-second-sign-in-group.md`); and moving an older site's map off its hooks onto the adapter
+    (Upgrade cairn, `upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change`). A scope
+    sentence may name the page.
   facts:
     - f:p1xmp5
     - f:zjglk8
@@ -107,47 +110,21 @@ sections:
     heading: Before you begin
     why: |
       The reader learns before any step what the task needs: a custom admin screen to gate, and a
-      deployed site with a second person to sign in as, since local development cannot show a role
-      refusal.
+      deployed site with a second person to sign in as, since the dev backend mints an owner
+      editor on `/admin`.
     opens: |
       The steps need a site with a custom admin screen, and the checks need a deployed site you can
       redeploy and a second person to sign in as.
     items:
-      - id: intro-one-declaration
-        kind: fact
-        fact: f:cvzb8z
-        use: |
-          Only the readers of the one declaration, which back the introduction's where-it-sits
-          sentence: the engine's screens, their write actions, and the sidebar through the runtime,
-          and `requireAccess` and `createSectionAction` through `locals.cairnAccess`. Omit the
-          earlier-versions clause.
-      - id: intro-security-link
-        kind: link
-        target: security-model.md
-      - id: intro-custom-screen-link
-        kind: link
-        target: add-a-custom-admin-screen.md
-      - id: intro-sidebar-link
-        kind: link
-        target: arrange-the-admin-sidebar.md
-      - id: intro-second-group-link
-        kind: link
-        target: add-a-second-sign-in-group.md
-      - id: intro-upgrade-link
-        kind: link
-        target: upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change
-      - id: intro-exhaustive-link
-        kind: link
-        target: '#make-the-map-exhaustive'
       - id: bb-list
         kind: sentence
         mode: claim
         text: |
           A bulleted list of four preconditions, each with a link to what produces it: a site that
-          `create-cairn-site` scaffolded (or a hand-built site); a custom admin screen whose `load`
-          calls `requireAccess` and whose form actions are `createSectionAction` wrappers; a
-          deployed site with a way to redeploy it; and an email address for a test editor besides
-          the owner's, with a second browser to sign in as that editor.
+          `create-cairn-site` scaffolded (or a hand-built site); a custom admin screen under
+          `/admin`, built as Add a custom admin screen builds it; a deployed site with a way to
+          redeploy it; and an email address for a test editor besides the owner's, with a second
+          browser to sign in as that editor.
       - id: bb-adapter-module
         kind: fact
         fact: f:q07rd5
@@ -183,8 +160,17 @@ sections:
         kind: fact
         fact: f:dqjkci
         use: |
-          Only the dev backend's owner editor on `/admin`, as the reason for the deployed-site
-          precondition: local development cannot show a role refusal.
+          Only the owner editor the dev backend mints on `/admin`, as the reason for the
+          deployed-site precondition. Omit the in-memory stores and the email loop.
+      - id: bb-dev-reason
+        kind: sentence
+        mode: claim
+        text: |
+          The checks need a deployed site because the dev backend signs every `/admin` visitor in as
+          an owner, so a role refusal never shows in local development.
+        facts:
+          - f:dqjkci
+          - f:7cv105
       - id: bb-dev-roles
         kind: fact
         fact: f:7cv105
@@ -284,8 +270,8 @@ sections:
     heading: Declare the access map
     why: |
       The map names the declared roles, so it follows them. It carries the page's one code block,
-      both declarations on the adapter, and says where the map goes in place of a separate step for
-      the guard, which reads the map from the runtime.
+      both declarations on the adapter, and where the map goes, since the guard reads the map from
+      the runtime.
     opens: |
       The access map keys each target, an engine screen id or an `/admin` route path, to the role
       names it admits.
@@ -324,9 +310,8 @@ sections:
         kind: fact
         fact: f:3z1uxv
         use: |
-          Only the example site's starting map: name the owner-only signups rule and say the map
-          holds other keys the steps keep (in the example, an owner-only theme-kit rule). The
-          example changes the signups key so the webmaster role reaches the screen.
+          Only the example site's starting `access` map and its two route rules. Omit the scaffold
+          half, which [[before-you-begin]] places.
       - id: s-map-vocab
         kind: step
         text: |
@@ -350,8 +335,8 @@ sections:
         kind: fact
         fact: f:zo034s
         use: |
-          Only the route half, as one clause beside the step: a key dropped from the map locks its
-          route. Omit the comparison, which [[decide-what-the-map-leaves-open]] carries.
+          Only the route half, beside the step's keep-every-key clause. Omit the engine-screen half,
+          which [[decide-what-the-map-leaves-open]] carries.
       - id: map-code
         kind: code
         text: |
@@ -428,8 +413,9 @@ sections:
         kind: fact
         fact: f:onqm6k
         use: |
-          Only the signups screen's existing gates, with `ownerOnly: true` on `remove` alone, to say
-          the example needs no edit here. The steps that follow are for a route of your own.
+          Only the signups screen's gated load and its `create` and `remove` wrappers, with
+          `ownerOnly: true` on `remove` alone, as the example's state at each step. Omit `APP_DB`
+          and the migration.
       - id: enf-route-id
         kind: fact
         fact: f:54d3ui
@@ -446,8 +432,8 @@ sections:
         kind: fact
         fact: f:5pyozi
         use: |
-          Only the form-action rule, as the trap in the paragraph with the `load` call: a gated
-          `load` never gates the actions beside it.
+          Only the form-action rule and its reason, as the trap in the paragraph with the `load`
+          call.
       - id: enf-section-action
         kind: fact
         fact: f:3s23un
@@ -461,8 +447,7 @@ sections:
         kind: fact
         fact: f:smbsa6
         use: |
-          Only the `ownerOnly` rule, on top of the map's rule and never in place of it, with the
-          example: a webmaster session adds a signup and only an owner removes one.
+          Only the `ownerOnly` rule, in the paragraph after the section action's checks.
       - id: s-route-key
         kind: step
         text: |
@@ -477,13 +462,14 @@ sections:
         kind: fact
         fact: f:zo034s
         use: |
-          Only the route half, as one clause beside step 1. Omit the comparison, which
+          Only the route half, beside step 1. Omit the engine-screen half, which
           [[decide-what-the-map-leaves-open]] carries.
       - id: s-load-gate
         kind: step
         text: |
           In the route's `+page.server.ts`, call `requireAccess(event)` at the top of `load`,
-          before it reads anything.
+          before it reads anything. A `load` that already makes the call, as the example's does,
+          needs no edit.
         requires:
           - route-keyed
         produces:
@@ -492,6 +478,8 @@ sections:
         kind: step
         text: |
           In the same file, wrap each form action in the section's `createSectionAction` wrapper.
+          An action that is already a wrapper, as the example's `create` and `remove` are, needs
+          no edit.
         requires:
           - load-gated
         produces:
@@ -534,9 +522,8 @@ sections:
         kind: fact
         fact: f:8ciz2s
         use: |
-          Only the engine-screen half: the unnamed-screen default and the `config.access_unmapped`
-          warning, with the href key that never counts. In the example the warning names every
-          concept and fixed screen except `media`.
+          Only the `config.access_unmapped` warning, its `unmapped` list, and the href key that
+          never counts. Omit the shape checks.
       - id: open-allowlist-link
         kind: link
         target: security-model.md#allowlist-semantics-from-an-exhaustive-map
@@ -657,8 +644,8 @@ sections:
         kind: fact
         fact: f:uhoyun
         use: |
-          Only the second half of the fact, as the trap: an unmatched href stays visible while the
-          route behind it refuses, so a new screen's entry shows before its route has a key.
+          Only the unmatched-href half, as the trap. Omit the prefix matching, which
+          [[key-nested-and-parameterized-routes]] carries.
       - id: nav-handoff
         kind: handoff
         text: |
@@ -781,8 +768,8 @@ sections:
     heading: Assign the roles
     why: |
       A declared role reaches no one until an owner assigns it on the deployed roster, so assignment
-      follows the deploy; the next-request rule lets one test editor cycle through the roles in the
-      checks.
+      follows the deploy, and the role select it introduces is what the checks use to move the test
+      editor between roles.
     opens: |
       A declared role reaches no one until an owner assigns it on the roster.
     items:
@@ -847,8 +834,7 @@ sections:
         kind: fact
         fact: f:uotol3
         use: |
-          Only the next-request rule, with its two consequences: a demotion takes effect at once,
-          and one test editor can cycle through the roles.
+          Only the next-request rule, in the paragraph after the **Change** button.
       - id: asg-handoff
         kind: handoff
         text: |
@@ -887,8 +873,7 @@ sections:
         kind: fact
         fact: f:8ciz2s
         use: |
-          Only the `unmapped` list, backing the check's expected list: here every concept and fixed
-          screen but `media`.
+          Only the `unmapped` list, backing the check's expected list.
       - id: x-no-warning
         kind: failure
         from: v-warning
@@ -945,6 +930,7 @@ sections:
           - role-editor
         produces:
           - signups-refusal-seen
+        canFail: true
       - id: ver-error-page
         kind: fact
         fact: f:ty4ehh
@@ -959,6 +945,7 @@ sections:
           - role-editor
         produces:
           - media-refusal-seen
+        canFail: true
       - id: ver-media
         kind: fact
         fact: f:joo5f2
@@ -976,12 +963,14 @@ sections:
       - id: v-reload
         kind: step
         text: |
-          In the test editor's browser, reload the admin. The media library and the signups screen
-          appear in the sidebar and both open, with no new sign-in.
+          In the test editor's browser, reload the admin. The media library entry is back in the
+          sidebar, and so is the Signups entry where the site's `navLayout` carries one; the media
+          library and `/admin/signups` both open, with no new sign-in.
         requires:
           - role-webmaster
         produces:
           - webmaster-reach-seen
+        canFail: true
       - id: v-add-signup
         kind: step
         text: |
@@ -1006,6 +995,7 @@ sections:
           - signup-added
         produces:
           - owner-gate-seen
+        canFail: true
       - id: ver-delete-flow
         kind: fact
         fact: f:b0kf86
@@ -1042,8 +1032,9 @@ sections:
       its cause, so it follows the checks.
     opens: |
       An unexpected refusal traces to a missing key or `target`, a role the vocabulary does not
-      hold, or an auth database without the roles migration, and an open screen the map should
-      close traces to a deploy that predates the map or a route that skips `requireAccess`.
+      hold, or an auth database without the roles migration; an open screen the map should close
+      traces to a deploy that predates the map or a route that skips `requireAccess`; and a remove
+      that succeeds traces to a missing `ownerOnly`.
     items:
       - id: res-lead
         kind: sentence
@@ -1052,74 +1043,106 @@ sections:
           To find the cause, run these checks in order:
       - id: x-refuse-all
         kind: failure
+        from: v-reload
         symptom: |
-          A route refuses every session, owner included.
+          A route refuses every session, owner included, and the `auth.access.refused` record's
+          `reason` reads `no_rule`.
         cause: |
-          The route calls `requireAccess` and the map has no key for its target, or a deeper key
-          shadows a parameterized route; the `auth.access.refused` record's `reason` reads
-          `no_rule` or `shadowed`.
+          The route calls `requireAccess` and the map has no key for its target.
         handledBy: s-route-key
+        facts:
+          - f:8anql1
+          - f:zo034s
+      - id: x-shadowed
+        kind: failure
+        from: v-reload
+        symptom: |
+          A parameterized route refuses every session, and the `auth.access.refused` record's
+          `reason` reads `shadowed`.
+        cause: |
+          A deeper map key hides the route's rule, and the route declares no `target`.
+        handledBy: s-nest-load-target
+        facts:
+          - f:8anql1
       - id: res-refuse-all
         kind: fact
         fact: f:8anql1
         use: |
-          Only the record's target and its `no_rule` and `shadowed` reasons, backing the first
-          check. Point to [[key-nested-and-parameterized-routes]] for the shadowed case.
+          Only the record's target and its `no_rule` and `shadowed` reasons, backing the two
+          checks before.
       - id: res-nested-link
         kind: link
         target: '#key-nested-and-parameterized-routes'
       - id: x-role-unknown
         kind: failure
+        from: v-reload
         symptom: |
           A webmaster editor is refused on every screen, and the logs show `auth.role.unknown`
           for that role.
         cause: |
           The role is absent from the adapter's vocabulary, so it resolves to `none`.
         handledBy: s-roles-declare
+        facts:
+          - f:zjglk8
+          - f:4bazhe
       - id: res-role-unknown
         kind: fact
         fact: f:4bazhe
         use: |
-          Only the `none` resolution and the `auth.role.unknown` log, backing the second check.
-      - id: res-doctor
-        kind: fact
-        fact: f:hwffph
-        use: |
-          Only the `auth.role-wiring-missing` condition and its fix, as the second check's other
-          cause. Say that on this engine a `createAuthGuard()` call without `runtime` does not
-          type-check (`f:4xrx5f`, placed in [[declare-the-access-map]]), so this cause mostly
-          reaches a hand-built site following the tutorial's stale hooks. Omit the older-engine `{
-          roles }` spelling.
-      - id: res-doctor-link
-        kind: link
-        target: ../reference/cli-cairn-doctor.md
+          Only the `auth.role.unknown` log, backing the unknown-role check. Omit the no-access
+          clause; the resolution to `none` is `f:zjglk8`'s, which [[declare-the-roles]] places.
       - id: res-unmigrated
         kind: sentence
         mode: claim
         text: |
-          The third check: if adding a webmaster editor fails on `/admin/editors`, apply
-          `0001_roles.sql` to the remote auth database, as [[deploy-the-changes]] does.
+          If adding a webmaster editor fails on `/admin/editors`, apply `0001_roles.sql` to the
+          remote auth database, as [[deploy-the-changes]] does.
         facts:
           - f:xffr6i
           - f:rn62i1
       - id: res-deploy-link
         kind: link
         target: '#deploy-the-changes'
-      - id: x-still-open
+      - id: x-signups-open
         kind: failure
+        from: v-signups-refused
         symptom: |
-          The media library or the signups screen still opens for an `editor` session.
+          The signups screen opens for an `editor` session.
         cause: |
-          The deployed Worker predates the map, or the route calls `requireEditor` rather than
-          `requireAccess`.
-        handledBy: s-load-gate
+          The deployed Worker predates the map, or the route's `load` calls `requireEditor`
+          rather than `requireAccess`.
+        handledBy: res-open-handoff
       - id: res-still-open
         kind: fact
         fact: f:8anql1
         use: |
-          Only the `requireEditor` clause, backing the fourth check's second cause; its fix is the
-          `requireAccess` call in [[enforce-the-map-on-your-routes]]. For the first cause, redeploy
-          as [[deploy-the-changes]] does.
+          Only the `requireEditor` clause, backing the signups check's second cause.
+      - id: res-open-handoff
+        kind: handoff
+        text: |
+          For a Worker that predates the map, redeploy as [[deploy-the-changes]] does. For a
+          `requireEditor` call, replace it with `requireAccess` as [[enforce-the-map-on-your-routes]]
+          does, then redeploy.
+      - id: x-media-open
+        kind: failure
+        from: v-media-refused
+        symptom: |
+          The media library opens for an `editor` session.
+        cause: |
+          The deployed Worker predates the map.
+        handledBy: res-redeploy-link
+      - id: x-remove-succeeds
+        kind: failure
+        from: v-remove-refused
+        symptom: |
+          The delete succeeds for the webmaster session, and the row leaves the table.
+        cause: |
+          The route's remove action carries no `ownerOnly: true` in its wrapper's options, or
+          another action carries it instead.
+        handledBy: s-owner-only
+        facts:
+          - f:smbsa6
+          - f:3s23un
       - id: res-enforce-link
         kind: link
         target: '#enforce-the-map-on-your-routes'
@@ -1148,6 +1171,9 @@ sections:
       - id: see-second-group
         kind: link
         target: add-a-second-sign-in-group.md
+      - id: see-upgrade
+        kind: link
+        target: upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change
       - id: see-access-map
         kind: link
         target: ../reference/core.md#access-map
@@ -1177,7 +1203,14 @@ dispositions:
     reference: ../reference/cli-cairn-doctor.md
     reason: |
       Which conditions the `cairn` CLI checks raise is the doctor reference's subject. The page
-      names only `auth.role-wiring-missing`, which `f:hwffph` carries.
+      names no doctor condition.
+  - fact: f:hwffph
+    disposition: subordinated
+    reference: ../reference/cli-cairn-doctor.md
+    reason: |
+      `auth.role-wiring-missing` describes a guard called without `runtime`, which `f:4xrx5f` makes
+      a type error on this engine, so the task cannot produce it; the doctor reference carries the
+      condition for older engines.
   - fact: f:eiaqkh
     disposition: cut
     reason: |

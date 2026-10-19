@@ -2,27 +2,7 @@
 version: 1
 pages:
     docs/claude-code/using-claude-code-with-cairn.md:
-        blocked:
-            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
-            findings:
-                - location: the-guidance-tree, s-agent-location
-                  text: The outline's covers list requires the review agent's purpose and its relation to the audit gate, and its job names 'what the review agent reviews'. The blueprint places only the agent's file location. A constraint and the introPlan caution ('never what it reviews') rule the purpose out, yet outOfScope does not list it. The page would fail to deliver a covers item and would not say it leaves that item out.
-                - location: introduction / framing.introPlan
-                  text: The introduction does not match the outline. introduction.covers and introPlan promise only the review agent's location, while the outline job and covers promise its purpose and audit relation. notCovered does not list that omission, so the introduction gives an inaccurate overview against the outline.
-                - location: see-also
-                  text: The task-guide closing section is incomplete. Its opens line promises the pages covering the work this page leaves out, but it links only scaffolded-site-files and upgrade-cairn. It omits Run cairn-audit on your site and the cairn-guidance reference page, both named in notCovered, and it lists no concept pages or limitations.
-                - location: verify-the-guidance-setup, v-hook (and wire-the-stop-hook, s-hook)
-                  text: 'Reader state: v-hook relies on the site having a check:cairn script, and the daisyui and tailwindcss peers, without saying so. No step produces the script and no precondition lists it. A hand-built site, which pre-site admits, has no script, so --if-present makes the hook silently do nothing and the step cannot succeed.'
-                - location: make-the-ci-step-gate-on-a-stale-tree, s-ci / s-ci-no-workflow
-                  text: 'Reader state: s-ci edits .github/workflows/check.yml, which a hand-built site may not have. s-ci-no-workflow sends the reader to cairn-guidance check''s CI workflow line, but check first runs at v-check, later on the page. The prerequisite is unavailable at that point, and the recovery route comes before the diagnosis that surfaces it.'
-                - location: diagnose-an-install-or-check-failure (from s-install)
-                  text: A failure is missing for s-install. f:5ohm23 states that a failure creating a directory, writing the MANIFEST, or reading a destination throws out of the bin and exits nonzero. A reader running s-install can meet this, and a constraint even notes it, but no failure item covers it.
-                - location: diagnose-an-install-or-check-failure (from v-hook)
-                  text: A failure is missing for v-hook. When the hook produces no check:cairn output, because the script is absent, --if-present skips it, or the settings entry did not take, the reader has no failure item to turn to. x-peer covers only the missing-peer stop.
-                - location: verify-the-guidance-setup v-push / diagnose-an-install-or-check-failure
-                  text: A failure is missing for v-push. A reader who gated CI and pushes can see the check job fail, either from a stale or missing tree or, without continue-on-error, from a crash. v-push has no canFail and no failure item.
-                - location: make-the-ci-step-gate-on-a-stale-tree, f-ci-step / r-ci-trade
-                  text: Two items carry a claim the fact does not hold. f-ci-step's use says continue-on-error 'covers only a crash or a resolution failure', and r-ci-trade cites f:jd54ph for that claim. f:jd54ph says only that continue-on-error passes the job on any nonzero exit. The use adds content instead of scoping the fact, and the paraphrase would survive a corrected fact.
+        accepted: f8047ba01387cdd688e72a0e6003506577ec64a9
     docs/extend/add-a-second-sign-in-group.md:
         page: 16ad2daf773233d3ff59f80d6d7ed0a593f8afd7
         blueprint: e61f10b26c19c796e94af31abfc523b933021f15
@@ -115,6 +95,7 @@ pages:
     docs/extend/restrict-admin-access.md:
         page: 1d4a936b532f457b25760d8bfa6dfc3270e17acf
         blueprint: 68d14d7543b2f532625bd3b8dfa33cd6a43a5d96
+        accepted: 7bc844b82ae86baff80e06412d7c0d313463e230
         sections:
             _intro: sha256:a85ff393b7c8777c9dbf5b58402317f96bc8e293004eb9afe48ec37bd3e16222
             assign-the-roles: sha256:48021fd5f5aece915e1bce810d75451aac5a9a62b252ea80848db771004c268a
@@ -130,35 +111,6 @@ pages:
             see-also: sha256:b4ebba2cdbf22a19d95ec80c9d368ef4fcb505a77d92affd633f72ca85e9d12a
             sidebar-entries: sha256:b43b1baabc610ab92554f5391650b14fa88e9701f0ddbe5d44e27114040ea30c
             verify-each-role-s-reach: sha256:0cb90ccd04a764d236d2af3b2d22d012748265601dffe782382ff63f3c991e46
-        blocked:
-            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
-            findings:
-                - location: before-you-begin / intro-one-declaration, intro-security-link, intro-custom-screen-link, intro-sidebar-link, intro-second-group-link, intro-upgrade-link, intro-exhaustive-link
-                  text: 'Order: the introduction''s material is filed under the Before you begin section. intro-one-declaration and six intro-*-link items, including the out-of-scope links and the link to make-the-map-exhaustive, sit in before-you-begin. A drafter following section order would put the introduction''s where-it-sits support and its scope links under the Before you begin heading, mixed with the preconditions. The framing says the introduction has no heading.'
-                - location: before-you-begin / bb-list; enforce-the-map-on-your-routes / s-load-gate, s-wrap-actions
-                  text: 'User goal: the precondition presupposes half of the page''s job. The job is to declare a map and to enforce it on your own screens'' reads and writes. bb-list requires a custom screen whose load already calls requireAccess and whose actions are already createSectionAction wrappers. That makes enforce-the-map-on-your-routes redundant for every reader who meets the preconditions. enf-example then says the example needs no edit there. Yet s-load-gate and s-wrap-actions are not optional, and s-deploy-push and s-build require actions-gated.'
-                - location: resolve-a-refusal / x-still-open
-                  text: 'Recovery: x-still-open has no `from`, but a reader meets it during the steps. The media library or signups screen opening for an editor session is exactly the outcome that contradicts v-signups-refused and v-media-refused. Its handledBy also covers only the second cause, the requireEditor route. The first cause, a Worker that predates the map, has no handler.'
-                - location: resolve-a-refusal / x-role-unknown, x-refuse-all
-                  text: 'Recovery: x-role-unknown and x-refuse-all have no `from`, but a reader meets both at the verification steps. A webmaster refused on signups or media after the role change surfaces at v-reload. A route refusing everyone surfaces at v-reload or v-signups-refused. Neither is a symptom met only in ordinary use after the steps end. x-refuse-all also routes its shadowed cause to s-route-key, when the fix for that cause is s-nest-load-target.'
-                - location: verify-each-role-s-reach / v-remove-refused
-                  text: 'Missing failure: v-remove-refused can show a delete that succeeds. That happens for a reader''s own route that skipped the optional s-owner-only step, or set ownerOnly on the wrong action. No failure item covers a webmaster removing a row.'
-                - location: declare-the-access-map (why)
-                  text: Durable field narrates a planning departure. The why says the section carries where the map goes 'in place of a separate step for the guard'. That records a step cut against the outline's 'Pass the same map to the adapter and to createAuthGuard', when the field should describe the page as it is.
-                - location: declare-the-access-map / map-keep-keys
-                  text: This `use` restates the fact's content instead of scoping it. 'a key dropped from the map locks its route' paraphrases f:zo034s. The same happens in enf-no-key's sibling placements.
-                - location: enforce-the-map-on-your-routes / enf-action-trap
-                  text: 'This `use` paraphrases f:5pyozi: ''a gated `load` never gates the actions beside it''.'
-                - location: enforce-the-map-on-your-routes / enf-owner-only
-                  text: 'This `use` adds example content the fact does not carry: ''a webmaster session adds a signup and only an owner removes one''. A corrected fact or example would leave it stale.'
-                - location: sidebar-entries / nav-unmatched-trap
-                  text: 'This `use` restates f:uhoyun''s second half and an inference: ''an unmatched href stays visible while the route behind it refuses, so a new screen''s entry shows before its route has a key''.'
-                - location: decide-what-the-map-leaves-open / open-warning; verify-each-role-s-reach / ver-unmapped
-                  text: Two `use`s state a derived content claim, that the warning names 'every concept and fixed screen except `media`'. That claim should stay in the step text, or go, rather than sit in a scoping field.
-                - location: assign-the-roles / asg-next-request
-                  text: 'This `use` restates content and invents consequences beyond f:uotol3: ''a demotion takes effect at once, and one test editor can cycle through the roles''.'
-                - location: before-you-begin / bb-dev-owner; declare-the-access-map / map-example-site
-                  text: Two `use`s carry content claims rather than scope. bb-dev-owner says 'local development cannot show a role refusal'. map-example-site says 'an owner-only theme-kit rule' and that the example changes the signups key.
     docs/extend/rotate-the-github-app-key.md:
         page: 25d0f25c369d5585ec17d7584536f6e198d4a7e3
         blueprint: e299f141f3305a3a68cc67fbfdc6350f589d0918

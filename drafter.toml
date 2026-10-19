@@ -69,3 +69,7 @@ max_tokens = 32000
 model = "claude-opus-5-5"
 effort = "medium"
 max_tokens = 32000
+
+# The brief path cairn's provenance check accepts, kept until cairn moves to the convention.
+[blueprints]
+brief_path = "docs/internal/briefs/{dir}/{name}.json"

@@ -388,9 +388,9 @@ sections:
         kind: fact
         fact: f:h252kb
         use: |
-          Only that a passing check carries `fingerprint` and that it matches the fingerprint GitHub
-          shows for the same key. Omit the openssl pipeline, the `spki` mechanics, and the
-          omitted-fingerprint clause.
+          Only that a passing check carries `fingerprint`, that it matches the fingerprint GitHub
+          shows for the same key, and that a passing check omits it when none can be computed.
+          Omit the openssl pipeline and the `spki` mechanics.
       - id: x-record-old
         kind: failure
         from: s-record-old
@@ -402,6 +402,23 @@ sections:
         facts:
           - f:paotzb
           - f:5dwnh1
+      - id: x-record-no-fp
+        kind: failure
+        from: s-record-old
+        symptom: |
+          The route answers 200 with `ok: true` but no `fingerprint`.
+        cause: |
+          The Worker signs, but the check could not compute the key's fingerprint.
+        handledBy: bb-no-fp-handoff
+        facts:
+          - f:h252kb
+      - id: bb-no-fp-handoff
+        kind: handoff
+        text: |
+          Note the App's keys as the next step says. If that list holds one key, it is the old key:
+          record its fingerprint as the old key's and continue. If it holds several, no record
+          names the key the Worker signs with, so run the rotation through [[verify-the-new-key]]
+          and skip [[delete-the-old-key]], leaving each noted key on the App.
       - id: bb-broken-handoff
         kind: handoff
         text: |
@@ -575,8 +592,8 @@ sections:
           Check that Wrangler is signed in to the Worker's account, as [[before-you-begin]] says,
           and run the command again. On a Worker that uses gradual deployments, run it with
           `wrangler versions secret put` in place of `wrangler secret put`, then deploy that
-          version as Cloudflare's Secrets page describes before you run the checks in
-          [[verify-the-new-key]].
+          version as Cloudflare's Secrets page describes before you run the check that follows
+          the push.
       - id: push-secrets-link
         kind: link
         target: https://developers.cloudflare.com/workers/configuration/secrets/

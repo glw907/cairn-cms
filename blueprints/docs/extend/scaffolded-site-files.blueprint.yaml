@@ -33,9 +33,8 @@ introduction:
     changing the theme and the chassis (`docs/extend/theme-your-public-site.md`); building a custom
     admin screen (`docs/extend/add-a-custom-admin-screen.md`); each delivery route's wiring
     (`docs/extend/build-the-public-routes.md`); media configuration behind the `MEDIA_BUCKET`
-    binding (`docs/extend/configure-media.md`); `cairn-audit.config.json` in depth
-    (`docs/extend/run-cairn-audit-on-your-site.md`); and the guidance files under `.claude/` with
-    the `cairn-guidance` command (`docs/reference/guidance.md`).
+    binding (`docs/extend/configure-media.md`); and `cairn-audit.config.json` in depth
+    (`docs/extend/run-cairn-audit-on-your-site.md`).
 framing:
   readers: |
     | Reader | Arrives from | Came for | Knows | Lacks |
@@ -190,7 +189,7 @@ framing:
     - **Prior knowledge.** The `priorKnowledge` sentence: SvelteKit's project structure (routes, layouts, hooks,
       and prerendering), Vite configuration, and Wrangler configuration for a Worker's bindings and D1
       migrations. It follows paragraph 3, so reader G learns here that the page expects a developer.
-    - **What the page doesn't cover.** The seven-item list of `notCovered` under a complete lead-in that never
+    - **What the page doesn't cover.** The six-item list of `notCovered` under a complete lead-in that never
       names the page, each item subject first and page last.
 
     Cautions for the drafter, each from the background above: never say every push deploys (Workers
@@ -1459,14 +1458,6 @@ constraints:
     `APP_DB`, `migrations-app/`, or `src/access.ts`. The example site, `examples/showcase`, appears
     only as the scaffold's source in [[the-scaffold]]; the example-site halves of `f:zzjrza`, `f:3z1uxv`,
     `f:tycp7k`, `f:nv0ok0`, and `f:q07rd5` stay off the page.
-  - |
-    Where the outline entry's `covers` or `outOfScope` names `APP_DB`, `migrations-app/`, the
-    signups screen, or the guidance tooling under `.claude/`, the introduction follows this
-    blueprint instead: the scaffold holds no `APP_DB`, no `migrations-app/`, and no signups screen
-    (`f:n7t4bn`, `f:nv0ok0`, `f:t2t5lx`), so the covers list names the one D1 database and the
-    general rule for a database the site adds, and the out-of-scope list routes building a custom
-    admin screen and the guidance tooling to their own pages. The outline entry needs the matching
-    update.
   - |
     `/healthz`: state only what `f:paotzb` carries (outside the guard, the JSON payload, 200 or 503,
     the fixed detail on a thrown error, `cache-control: no-store`, `prerender = false`). Never call

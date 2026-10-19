@@ -160,32 +160,6 @@ sections:
         use: |
           Only `cairn logs <site>` as the list's third item: where it reads the site's records
           from, and its empty result from a Worker with observability off.
-      - id: x-empty-log
-        kind: failure
-        symptom: |
-          `cairn logs <site>`, Workers Logs, or `wrangler tail` shows no records for a site that is
-          misbehaving.
-        cause: |
-          The Worker's Wrangler config does not set `observability.enabled` to `true`, so its
-          records go nowhere.
-        handledBy: s-empty-log-fix
-      - id: f-observability-off
-        kind: fact
-        fact: f:txgoyy
-        use: |
-          Only that `cairn doctor`'s `config.observability` check raises `config.observability-off`
-          when the setting is not `true`, which confirms the cause, and the fix: set it to `true`
-          in `wrangler.jsonc` and redeploy.
-      - id: s-empty-log-fix
-        kind: sentence
-        mode: claim
-        text: |
-          The fix is a config change: set `observability.enabled` to `true` in `wrangler.jsonc` and
-          redeploy, then reproduce the problem and read again.
-        facts:
-          - f:txgoyy
-          - f:prb2os
-          - f:gzs6b8
       - id: f-health
         kind: fact
         fact: f:vg5zt8
@@ -200,6 +174,32 @@ sections:
           match each one to its row on this page.
         facts:
           - f:vg5zt8
+          - f:q9ylqa
+      - id: x-empty-log
+        kind: failure
+        symptom: |
+          `cairn logs <site>` returns zero entries, or Workers Logs shows no records, for a site
+          that is misbehaving.
+        cause: |
+          The Worker's Wrangler config does not set `observability.enabled` to `true`, so its
+          structured records go nowhere.
+        handledBy: s-empty-log-fix
+      - id: f-observability-off
+        kind: fact
+        fact: f:txgoyy
+        use: |
+          Only that `cairn doctor`'s `config.observability` check raises `config.observability-off`
+          when the setting is not `true`, which confirms the cause, and the fix: set it to `true`
+          in `wrangler.jsonc` and redeploy.
+      - id: s-empty-log-fix
+        kind: sentence
+        mode: claim
+        text: |
+          The fix is a config change: set `observability.enabled` to `true` in `wrangler.jsonc` and
+          redeploy, then reproduce the problem and read `cairn logs` or Workers Logs again.
+        facts:
+          - f:txgoyy
+          - f:prb2os
           - f:q9ylqa
       - id: f-help-agents
         kind: fact
@@ -395,9 +395,9 @@ sections:
       Authentication is the first check `createSectionAction` runs, so its event leads the admin
       rows.
     opens: |
-      A wrapped action logs `admin.action.session_absent` and redirects to `/admin/login` when no
-      editor session reaches it, either because the session lapsed after the guard resolved it or
-      because the guard never resolved one.
+      A wrapped action logs `admin.action.session_absent` and stops at `createAdminAction`'s
+      session check when no editor session reaches it, either because the session lapsed after
+      the guard resolved it or because the guard never resolved one.
     items:
       - id: f-session-absent
         kind: fact
@@ -406,22 +406,10 @@ sections:
           Only the event, which backs the opening sentence, and, for the lapse row, that the
           record is the only trace a route leaves of a session that lapsed between the guard's
           resolve and the action running.
-      - id: f-session-redirect
-        kind: fact
-        fact: f:da6d2z
-        use: |
-          Only that the session refusal `createAdminAction` makes redirects before any audit
-          call, so it leaves no audit record. Backs the opening sentence's redirect.
-      - id: f-session-target
-        kind: fact
-        fact: f:bp22uq
-        use: |
-          Only that the redirect is a 303 to `/admin/login`, which backs the opening sentence's
-          target and the symptoms' sign-in page.
       - id: x-session-absent
         kind: failure
         symptom: |
-          One form submission lands on the sign-in page, and the log holds
+          One form submission on a custom screen does not take effect, and the log holds
           `admin.action.session_absent`.
         cause: |
           The session lapsed after the guard resolved it and before the wrapped action ran.
@@ -430,17 +418,16 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          The lapse needs no code change: the redirect takes the editor to the sign-in form at
-          `/admin/login` to sign in again, and the record is the only trace the route leaves of it.
+          The lapse needs no code change: the editor's next visit to a protected admin route
+          redirects to the sign-in form at `/admin/login`, where they sign in again and resubmit.
+          The record is the only trace the route leaves of the lapse.
         facts:
           - f:v1jj2k
-          - f:da6d2z
-          - f:bp22uq
           - f:alpsah
       - id: x-session-every-submit
         kind: failure
         symptom: |
-          Every submission of a wrapped action lands on the sign-in page, and the log holds
+          No submission of a wrapped action takes effect, and the log holds
           `admin.action.session_absent` for each one.
         cause: |
           The action's route is outside `/admin`, so the guard never resolves a session for it and
@@ -451,7 +438,7 @@ sections:
         fact: f:u78zg6
         use: |
           Only that a request with no `cairnEditor` stops at `createAdminAction`'s session check
-          first. Omit the access-map behavior, which [[adminactionmisconfigured]] carries, and the
+          first, which also backs the opening sentence's stop. Omit the access-map behavior, which [[adminactionmisconfigured]] carries, and the
           earlier-versions clause.
       - id: f-admin-subtree
         kind: fact
@@ -829,7 +816,7 @@ sections:
           - f:8ciz2s
       - id: l-restrict
         kind: link
-        target: restrict-admin-access.md
+        target: restrict-admin-access.md#make-the-map-exhaustive
   - id: event-platform-is-undefined
     heading: '`event.platform` is undefined'
     why: |
@@ -1181,7 +1168,7 @@ dispositions:
       belongs to the reference entry.
   - fact: f:cvzb8z
     disposition: subordinated
-    reference: restrict-admin-access.md
+    reference: restrict-admin-access.md#declare-the-access-map
     reason: |
       Which readers see the adapter's map, and the engine-screen history, belong to the
       access-map task; this page places only the attachment that decides `admin.action.misconfigured`.
@@ -1238,6 +1225,20 @@ dispositions:
     reference: ../reference/sveltekit.md#createeditorroutes
     reason: |
       `createEditorRoutes`'s config is the reference entry's; no row here turns on it.
+  - fact: f:da6d2z
+    disposition: subordinated
+    reference: ../reference/sveltekit.md#createsectionaction
+    reason: |
+      Which refusals write an audit record is `createSectionAction`'s audit contract, the
+      reference entry's to state. The session row rests only on its own record (`f:v1jj2k`) and
+      on where the request stops (`f:u78zg6`), and makes no claim about the audit table.
+  - fact: f:bp22uq
+    disposition: subordinated
+    reference: ../reference/sveltekit.md#createadminaction
+    reason: |
+      Which helper refuses through `error()` and which through `redirect()` is the reference
+      entry's; the fact names no channel for `createAdminAction`'s session check, so the session
+      row states no response for it.
 constraints:
   - |
     [[adminactionmisconfigured]] states the current wiring (the adapter's `access` member is the

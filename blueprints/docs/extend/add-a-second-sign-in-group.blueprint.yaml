@@ -139,7 +139,7 @@ framing:
        physically apart from the editors' store (f:rcpe0n).
     4. **Why a role exists.** It reuses the editors' sign-in, sessions, and roster screen for people who
        need a screen under the admin and no content: an owner adds them on `/admin/editors`, and
-       `/admin` sends them to the role's `home` (f:4673n6, f:hcjb3o, f:7n28wc, f:pvs115).
+       `/admin` sends them to the role's `home` (f:4673n6, f:nj0nfm, f:mbx6q1, f:7n28wc, f:pvs115).
     5. **Where SvelteKit fits.** The role's home is a SvelteKit route under `/admin`, the custom-screen
        seam. The channel ships no route or UI, so its login page and member area are the site's own
        SvelteKit routes outside `/admin`: form actions call the channel's actions, and a `load` calls
@@ -404,7 +404,7 @@ sections:
           lookup.
         facts:
           - f:4673n6
-          - f:hcjb3o
+          - f:nj0nfm
           - f:5t6hz6
           - f:7n28wc
           - f:we2lmp
@@ -419,7 +419,7 @@ sections:
           A role suits a group that an owner adds person by person and that works in screens under
           `/admin`.
         facts:
-          - f:hcjb3o
+          - f:nj0nfm
           - f:7n28wc
       - id: ch-fit-channel
         kind: sentence
@@ -691,7 +691,8 @@ sections:
         use: |
           Only the opening and the validation sentence: an entry's optional `roles` list names
           declared role names, and a name the vocabulary does not declare fails validation. Omit
-          the section clause.
+          the section clause. Never say when or where the validation failure surfaces, or that it
+          hides the link; the fact states neither.
       - id: sb-where
         kind: fact
         fact: f:ys1iq1
@@ -736,8 +737,8 @@ sections:
     heading: Deploy the role
     why: |
       The role reaches the live site only after the roles migration and a local wiring check, so a
-      wiring fault is caught before it goes live, and the deploy is what makes the editors screen offer
-      the role.
+      wiring fault is caught before it goes live, and the deploy is what makes the editors screen
+      accept the role.
     level: 3
     opens: |
       The role reaches the deployed site once `AUTH_DB` carries `0001_roles.sql`, the migration that
@@ -822,7 +823,7 @@ sections:
         kind: step
         text: |
           In the project directory, build and deploy the site as Deploy a change describes, so the
-          screen that adds editors offers the new role.
+          screen that adds editors accepts the new role.
         requires:
           - roles-migrated
           - wiring-checked
@@ -846,19 +847,19 @@ sections:
   - id: add-the-role-s-people
     heading: Add the role's people
     why: |
-      An owner can add the role's people only once the deployed screen offers the role.
+      An owner can add the role's people only once the deployed screen accepts the role.
     level: 3
     opens: |
       An owner adds each of the role's people on `/admin/editors`, the screen that adds editors,
-      which now offers the role.
+      which now accepts the role.
     items:
-      - id: ap-select
+      - id: ap-accepts
         kind: fact
-        fact: f:hcjb3o
+        fact: f:mbx6q1
         use: |
-          Only, for the opening and the role-list step, that the invite screen offers every
-          declared role once the vocabulary is larger than the owner and editor pair. Scope it to
-          the role path; never apply it to the channel.
+          Only, for the opening: the add action validates the posted role against the declared
+          vocabulary, so the deployed screen accepts the `staff` role. Omit the
+          `createEditorRoutes` wiring and the default-pair clause.
       - id: s-add-person
         kind: step
         text: |
@@ -872,7 +873,7 @@ sections:
       - id: s-choose-role
         kind: step
         text: |
-          In the **Role** list, choose the `staff` role.
+          In the form's role field, choose the `staff` role.
         requires:
           - person-entered
         produces:
@@ -1961,41 +1962,37 @@ sections:
       - id: rs-redeploy-link
         kind: link
         target: '#deploy-the-role'
-      - id: x-sidebar
+      - id: x-map-hides
         kind: failure
         from: v-sidebar
         symptom: |
-          The home screen's link does not show in the role's sidebar.
+          On a site that keeps an access map, the home screen's link does not show in the role's
+          sidebar, though `/admin` lands on the home screen.
         cause: |
-          The entry's `roles` list names a role the vocabulary does not declare, or the site keeps
-          an access map whose key matching `/admin/staff` does not name `staff`, so `canReach`
-          hides the link.
-        handledBy: r-sidebar
-      - id: rs-sidebar-roles
-        kind: fact
-        fact: f:16paho
-        use: |
-          Only: a `roles` name the site's vocabulary does not declare fails validation.
-      - id: rs-sidebar-map
+          The deepest map key matching `/admin/staff` does not list `staff`, so the map decides the
+          entry and refuses the role.
+        handledBy: r-map-hides
+        facts:
+          - f:altcjp
+          - f:5sx6zl
+      - id: rs-map-gates
         kind: fact
         fact: f:altcjp
         use: |
-          Only: a site entry whose `href` a map key matches is shown only to the roles that key
-          admits, and to an owner. Omit the engine-screen and unmatched-href clauses.
-      - id: rs-sidebar-admit
+          Only the clause on a site entry whose `href` a map key matches: `canReach` decides it.
+      - id: rs-map-admit
         kind: fact
         fact: f:5sx6zl
         use: |
-          Only: `canReach` admits a `none`-capability session only when the deepest matching key
-          lists its role. Omit the list of targets that stay refused.
-      - id: r-sidebar
+          Only the clause on a route-path target for a `none`-capability session: the deepest
+          matching key must list the role.
+      - id: r-map-hides
         kind: step
         text: |
-          If the link does not show, check that the entry's `roles` list names `staff` exactly as
-          the vocabulary declares it, and, on a site that keeps an access map, add `staff` to the
-          key matching `/admin/staff` as Restrict admin access describes; then redeploy as
-          [[deploy-the-role]] does.
-      - id: rs-sidebar-link
+          If the site keeps an access map and the link does not show, add `staff` to the map key
+          that matches `/admin/staff`, as Restrict admin access describes. Then redeploy as
+          [[deploy-the-role]] does. A site with no access map skips this check.
+      - id: rs-map-link
         kind: link
         target: restrict-admin-access.md
       - id: x-node
@@ -2327,6 +2324,14 @@ dispositions:
     reason: |
       The scaffold's and the example site's sidebar groups are the sidebar page's subject; the role
       path adds one entry and needs no group layout.
+  - fact: f:hcjb3o
+    disposition: cut
+    reason: |
+      A consistency read found it conflicting with `f:b3l3t0`, `f:q7fj6p`, and `f:nz890r` twice,
+      once after its placements were scoped to the role path. The page carries the role path's
+      add step from the facts that do not conflict: an owner adds people on `/admin/editors` with
+      a name, email, and role (`f:nj0nfm`), and the add action accepts a role the vocabulary
+      declares (`f:mbx6q1`).
   - fact: f:lml542
     disposition: subordinated
     reference: ../reference/auth-store.md#deleteeditor

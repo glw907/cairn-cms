@@ -63,25 +63,20 @@ pages:
     slug: scaffolded-site-files
     title: Scaffolded site files
     type: concept
-    job: 'Take over a site the setup command scaffolded: learn what each generated file and directory does, which ones you own and may change, and which ones the engine or its gates depend on. For a Svelte-fluent web developer who took over a scaffolded site and wants to know what the tool wrote and why.'
+    job: 'Take over a site the setup command scaffolded: learn what each generated file and directory does, that the site owns every one of them, and which ones the engine or a check reads, so you change the rest freely and keep the contract on those. For a Svelte-fluent web developer who took over a scaffolded site and wants to know what the tool wrote and why.'
     covers:
-      - 'What the scaffold is: Waymark on the chassis, baked from the same tree cairn tests itself against, with Topo planned but not shipped.'
-      - 'The annotated root: .github/workflows/check.yml (Node 24, the continue-on-error guidance check), .dev.vars.example, cairn-audit.config.json, CLAUDE.md, the gitignore rename, and .claude/ with its four skills, the extension reviewer agent, and the VERSION stamp.'
-      - 'Config files: package.json scripts (dev, check:cairn, check:cairn:rendered and its missing Playwright), vite.config.ts (cairnManifest, the dev-build define, and the inline sveltekit() call: adapter options, handleHttpError, handleUnseenRoutes, no csrf key since SvelteKit 3 removed checkOrigin), app.d.ts, wrangler.jsonc bindings (AUTH_DB, APP_DB, EMAIL, MEDIA_BUCKET, observability).'
-      - migrations/ versus migrations-app/ and why the app schema sits in its own directory.
-      - 'src/routes/: the admin catch-all and layout pair, the signups example screen, the (site) group with the public catch-all and markdown twin, archive, preview, media route, feeds, robots, and /healthz outside the guard.'
-      - 'src/theme/ and src/content/: cairn.config.ts with its navLayout, the registry and chrome, the content directories, and the committed manifests under src/content/.cairn/.'
-      - 'Stylesheets: admin.css importing admin-sources.css, and the public theme.css and site.css layering over cairn-public.css (depth on theme-your-public-site).'
-      - package.json's pre-scripts that compile .cairn/admin.css for any build, plus the cairn:manifest, format, and test:unit scripts.
-      - 'The themed 404: the root +error.svelte and not_found_handling set to none, and why both are needed.'
-      - 'Crawl rules: handleUnseenRoutes'' one exemption for the archive, and rel="external" on every /admin link through isAdminHref.'
-      - 'The knobs a new owner looks for first: ARCHIVE_PAGE_SIZE and the home page''s lead, and the footer menu edited by hand while /admin/nav edits the primary one.'
-      - 'What the setup command left outside the tree: its saved state file and the token in it, the resume overrides, the --brand-color forms, and the Workers Builds token whose revocation breaks deploys without warning.'
-      - 'The guidance tooling: cairn-guidance check and --strict, install''s never-delete and exit-0 behavior, and the Stop hook snippet it never writes for you.'
+      - 'What the scaffold is: Waymark on the chassis, copied from the same tree the engine tests itself against, and why the site owns every file.'
+      - The annotated file tree, with the files the engine or a check reads marked.
+      - 'The root files (the CI workflow, the local secrets template, the audit config, the renamed .gitignore); the build and deploy configuration (package.json, vite.config.ts, wrangler.jsonc with the Worker''s one D1 database, the auth store, and app.d.ts); and the migrations/ directory, with why a database the site adds takes its own directory.'
+      - 'The routes and the server hook: the guard and the dev backend in hooks.server.ts, including what the local dev server runs, the admin mount, the (site) group, the endpoints at the root, and the root layout and error page.'
+      - 'The theme, chassis, and content directories, the committed manifests under src/content/.cairn/, and the two style sheets.'
+      - The settings a new owner edits by hand, outside the admin.
+      - The build's crawl rules and the themed 404 page.
+      - 'What the setup command left outside the repository: its saved record of the run and, when Workers Builds was connected, the build token whose revocation stops deploys without warning.'
     outOfScope:
       - Building the same tree by hand (add-cairn-to-a-sveltekit-app).
       - Changing the theme and chassis (theme-your-public-site).
-      - The signups screen as a pattern (add-a-custom-admin-screen).
+      - Building a custom admin screen (add-a-custom-admin-screen).
       - Each delivery route's wiring (build-the-public-routes).
       - Media configuration behind the MEDIA_BUCKET binding (configure-media).
       - cairn-audit.config.json in depth (run-cairn-audit-on-your-site).
@@ -407,7 +402,7 @@ pages:
       - Capability as the floor and the map as a narrowing layer.
       - 'Roles: the declared vocabulary and capability values (link add-a-second-sign-in-group for a none-capability audience).'
       - 'defineAccess: keys (screen ids or /admin paths) and values; validation against roles.'
-      - Pass the same map to the adapter and to createAuthGuard.
+      - Give the map to the adapter; the guard takes only { runtime } and reads the map from it.
       - 'Enforce on your routes: requireAccess checks the route id; a load never gates its own action; ownerOnly adds to the rule.'
       - The unmapped-target asymmetry between routes and engine screens; media restriction reaching the image picker.
       - Nav entries gated by a matching rule.
@@ -504,18 +499,19 @@ pages:
     slug: using-claude-code-with-cairn
     title: Using Claude Code with cairn
     type: task guide
-    job: 'Work on a cairn site with Claude Code: know which guidance cairn installs under .claude/, which of the four skills loads for which task, what the review agent reviews, how to wire the Stop hook that runs the audit after each turn, and how to adopt, refresh, and check the guidance tree with cairn-guidance install and check, including their exit codes and the CI step. For the extend track''s reader (a Svelte-fluent web developer building an organization''s site on cairn''s seams) who has chosen Claude Code as their coding assistant. The general docs assume no coding assistant; this page is the one that teaches working with Claude Code.'
+    job: 'Work on a cairn site with Claude Code: know which guidance cairn installs under .claude/, which of the four skills loads for which task, where the review agent sits, how to wire the Stop hook that runs the audit after each turn, and how to adopt, refresh, and check the guidance tree with cairn-guidance install and check, including their exit codes and the CI step. For the extend track''s reader (a Svelte-fluent web developer building an organization''s site on cairn''s seams) who has chosen Claude Code as their coding assistant. The general docs assume no coding assistant; this page is the one that teaches working with Claude Code.'
     covers:
       - 'The introduction: the task (set up and work with Claude Code on a cairn site), who it is for (the extend track''s developer who has chosen Claude Code), that the general docs assume no coding assistant and this page is the one that does not, and that cairn ships guidance in Claude Code''s format only (no AGENTS.md, no file for another agent).'
       - 'The guidance tree a scaffolded site is born with and that cairn-guidance install writes: .claude/skills/<skill>/, .claude/agents/cairn-extension-reviewer.md, .claude/cairn/CLAUDE.md, .claude/cairn/VERSION, .claude/cairn/MANIFEST, and the root CLAUDE.md that imports the fragment with one @ line followed by the site''s own section; what VERSION stamps (the caret-stripped engine spec at bake time).'
       - 'The four skills and when each loads: cairn-admin-screens (build or review a screen inside /admin), cairn-consult (write a consultation brief after working around an engine behavior twice or wanting something the seams do not reach), cairn-extend (change anything that touches /admin, a form action, logging, or an engine seam), and cairn-public (restyle or extend the public side, with its catalogue pages).'
-      - 'The review agent, cairn-extension-reviewer: where it sits (.claude/agents/), what it is for, and how it relates to the audit gate.'
+      - 'The review agent, cairn-extension-reviewer: where it sits (.claude/agents/cairn-extension-reviewer.md), with a link to the guidance reference page for what it checks.'
       - 'The Stop hook: cairn-guidance install never writes .claude/settings.json, so the hook that runs npm run check:cairn --if-present is a snippet (claude/snippets/settings-hook.json) the developer pastes in deliberately; what check:cairn runs.'
-      - 'cairn-guidance install: adopting the tree on an existing site and refreshing it after an upgrade; it never deletes (a path an earlier MANIFEST listed that the package no longer ships is printed as removable); it never rewrites the root CLAUDE.md; it refuses a symlinked or directory destination by name and continues; a write failure prints the errno code on stderr; it exits 0 even on a refusal or write failure, so a script reads stderr, not the exit code.'
+      - 'cairn-guidance install: adopting the tree on an existing site and refreshing it after an upgrade; it never deletes (a path an earlier MANIFEST listed that the package no longer ships is printed as removable); it never rewrites the root CLAUDE.md; it refuses a symlinked or directory destination by name and continues; a write failure prints the errno code on stderr; it exits 0 even on a refusal or write failure, so a script reads stderr, not the exit code; a failure creating a directory, writing the MANIFEST, or reading an existing destination stops it with a nonzero exit.'
       - 'cairn-guidance check: the seven report lines, exit 0 by default, --strict exits 1 only when the guidance tree is stale or missing, the root CLAUDE.md import check, the .claude/ Tailwind exclusion check, and that the VERSION stamp does not count toward staleness.'
       - 'The CI step: the scaffold''s check.yml runs npx cairn-guidance check without --strict under continue-on-error: true, so a stale tree surfaces in the job log without failing the build; how to make it gate (add --strict and remove the step''s continue-on-error: true line, since --strict alone still passes the build under it) as a choice the reader makes.'
     outOfScope:
       - 'Any coding assistant other than Claude Code: cairn ships no guidance for another agent, and this page says so in one line without teaching one.'
+      - 'The review agent''s purpose and how it relates to the audit gate: no fact states either, so this page places only the agent''s file and links the guidance reference page.'
       - The scaffolded tree outside .claude/, file by file (scaffolded-site-files); that page names CLAUDE.md and .claude/ in one labeled line each and links here.
       - Running the audit and reading its findings (run-cairn-audit-on-your-site); this page wires the Stop hook that runs it and links there.
       - The upgrade procedure and when to refresh the tree (upgrade-cairn); this page covers the install command that refreshes it.

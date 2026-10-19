@@ -200,15 +200,14 @@ sections:
       - id: l-tree-ref
         kind: link
         target: ../reference/guidance.md#install
-      - id: s-agent-location
-        kind: sentence
-        mode: claim
-        text: |
-          One bullet of the tree: the review agent's definition sits at
-          `.claude/agents/cairn-extension-reviewer.md`, and the reference describes what it
-          checks. The page states no purpose for the agent beyond that link.
-        facts:
-          - f:0ygumq
+      - id: f-agent-location
+        kind: fact
+        fact: f:0ygumq
+        use: |
+          Only the review agent's file, `.claude/agents/cairn-extension-reviewer.md`, as one bullet
+          of the tree, with the reference link beside it for what the agent checks. The agent's
+          purpose and its relation to the audit gate are outside this page's outline entry, and no
+          fact states either, so the bullet says nothing about them.
       - id: l-agent-ref
         kind: link
         target: ../reference/guidance.md#what-ships-under-claude
@@ -312,15 +311,8 @@ sections:
         use: |
           Only the exit code on a partial run: `install` exits 0 even when an entry is refused or a
           destination write fails, each printed to stderr, so a script that must detect a partial
-          install reads stderr.
-      - id: s-install-throw
-        kind: sentence
-        mode: claim
-        text: |
-          Caveat: a failure creating a directory, writing the `MANIFEST`, or reading an existing
-          destination is not a partial run: it stops `install` with a nonzero exit.
-        facts:
-          - f:5ohm23
+          install reads stderr. The nonzero half is the failure row in
+          [[diagnose-an-install-or-check-failure]].
       - id: s-install-refresh
         kind: sentence
         mode: claim
@@ -589,7 +581,7 @@ sections:
       It collects the step-linked failures from the install, the hook, the check, and the gated
       CI job, after the verification that surfaces most of them.
     opens: |
-      `install` reports a partial run on stderr, `check` reports each problem on its own line, the
+      `install` reports a partial run on stderr or stops with a nonzero exit, `check` reports each problem on its own line, the
       hook's `check:cairn` run names a missing peer or prints nothing, and a gated CI job fails at
       the guidance step, and each row below points at its fix.
     items:
@@ -622,6 +614,18 @@ sections:
         use: |
           Only that a write failure is reported separately from a refusal and its printed line
           names the errno code, such as `ENOSPC` or `EACCES`.
+      - id: x-install-throw
+        kind: failure
+        from: s-install
+        symptom: |
+          `install` stops with an error instead of finishing, and exits nonzero.
+        cause: |
+          A failure creating a directory, writing the `MANIFEST`, or reading a destination that
+          already exists. Unlike a refusal or a write error, which the run prints and continues
+          past, this failure ends the run.
+        handledBy: l-diag-install
+        facts:
+          - f:5ohm23
       - id: l-diag-install
         kind: link
         target: ../reference/guidance.md#install
@@ -707,20 +711,25 @@ sections:
   - id: see-also
     heading: See also
     why: |
-      The task-guide anatomy closes the page with the pages that cover the work around the
-      guidance tree.
+      The task-guide anatomy closes the page with its related task, concept, and reference pages
+      and its limitations. The outline's one concept page on this subject is Scaffolded site
+      files, which explains the scaffolded tree the guidance sits in. The outline holds no
+      limitations page for the guidance tree or for Claude Code, so the section links none, and
+      the page's own limits are the introduction's `notCovered` list, whose other homes the
+      remaining links reach: the audit, the upgrade, and the `cairn-guidance` reference.
     opens: |
-      The following pages cover the work around the guidance tree that this page leaves out.
+      The following pages explain the scaffolded tree around the guidance and cover the work this
+      page leaves out.
     items:
       - id: l-see-scaffold
         kind: link
         target: ../extend/scaffolded-site-files.md
-      - id: l-see-upgrade
-        kind: link
-        target: ../extend/upgrade-cairn.md
       - id: l-see-audit
         kind: link
         target: ../extend/run-cairn-audit-on-your-site.md
+      - id: l-see-upgrade
+        kind: link
+        target: ../extend/upgrade-cairn.md
       - id: l-see-ref
         kind: link
         target: ../reference/guidance.md
@@ -760,8 +769,9 @@ constraints:
     ends" with the hooks link beside it.
   - |
     f:5ohm23's exit-0 half is placed only for a refused entry or a failed destination write, and
-    its nonzero half only as the caveat `s-install-throw`. Do not widen the exit-0 half to "every
-    failure", and give the nonzero case no fix: no fact names one.
+    its nonzero half only as the failure `x-install-throw`. Do not widen the exit-0 half to
+    "every failure", and give the nonzero case no fix beyond its link to the `install` reference:
+    no fact names one.
   - |
     f:hiif6u is placed only for `cairn-public`'s catalogue pages. Its `check:public-skill` half
     is an engine-repository script that a site does not run, and never appears on this page.

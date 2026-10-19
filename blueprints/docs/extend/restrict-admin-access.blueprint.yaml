@@ -11,7 +11,7 @@ argument: |
   incrementally and dangerous to forget on a new route. One running example carries the page: a
   webmaster role with editor capability that alone, with owners, reaches the media library and the
   example site's signups screen at `/admin/signups`, declared on the adapter, enforced on the
-  screen's load and actions, deployed with the roles migration, assigned on the roster, and proved
+  reader's own route's load and actions (the signups screen shows the finished form), deployed with the roles migration, assigned on the roster, and proved
   on the deployed site by a test editor who meets the admin's own error page wherever the map
   excludes their role.
 introduction:
@@ -93,7 +93,7 @@ orderReason: |
   narrowing model sit in the introduction, because the reader needs the model before any step.
 preconditions:
   - scaffolded-site
-  - custom-screen
+  - unchecked-route
   - deployed-site
   - test-editor-address
 exemplars:
@@ -109,22 +109,23 @@ sections:
   - id: before-you-begin
     heading: Before you begin
     why: |
-      The reader learns before any step what the task needs: a custom admin screen to gate, and a
-      deployed site with a second person to sign in as, since the dev backend mints an owner
-      editor on `/admin`.
+      The reader learns before any step what the task needs: an admin route of the site's own
+      whose reads and writes do not yet check the access map, and a deployed site with a second
+      person to sign in as, since the dev backend mints an owner editor on `/admin`.
     opens: |
-      The steps need a site with a custom admin screen, and the checks need a deployed site you can
-      redeploy and a second person to sign in as.
+      The steps need a site with an admin route of its own that does not yet check the access map,
+      and the checks need a deployed site you can redeploy and a second person to sign in as.
     items:
       - id: bb-list
         kind: sentence
         mode: claim
         text: |
-          A bulleted list of four preconditions, each with a link to what produces it: a site that
-          `create-cairn-site` scaffolded (or a hand-built site); a custom admin screen under
-          `/admin`, built as Add a custom admin screen builds it; a deployed site with a way to
-          redeploy it; and an email address for a test editor besides the owner's, with a second
-          browser to sign in as that editor.
+          A bulleted list of four preconditions, each with a link to what produces it where a page
+          does: a site that `create-cairn-site` scaffolded (or a hand-built site), with or without
+          an `access` member on its adapter; a route of the site's own under `/admin` whose `load`
+          and form actions do not yet check the access map, such as one whose `load` calls
+          `requireEditor`; a deployed site with a way to redeploy it; and an email address for a
+          test editor besides the owner's, with a second browser to sign in as that editor.
       - id: bb-adapter-module
         kind: fact
         fact: f:q07rd5
@@ -137,22 +138,17 @@ sections:
         fact: f:3z1uxv
         use: |
           Only the scaffold's missing `access` member and `src/access.ts`, as the site
-          precondition's second clause, stated as where a scaffolded site starts: the custom-screen
-          precondition has since added a map holding the screen's key. Omit the example site's map,
-          which [[declare-the-access-map]] carries.
+          precondition's second clause. Omit the example site's map, which
+          [[declare-the-access-map]] carries.
       - id: bb-hand-built-link
         kind: link
         target: add-cairn-to-a-sveltekit-app.md
-      - id: bb-screen
+      - id: bb-route-editor
         kind: fact
-        fact: f:onqm6k
+        fact: f:8anql1
         use: |
-          Only the signups screen as the custom-screen precondition: its gated load, its `create`
-          and `remove` section actions, and that the scaffold does not ship it. Omit `APP_DB` and
-          the migration, which Add a custom admin screen owns.
-      - id: bb-screen-link
-        kind: link
-        target: add-a-custom-admin-screen.md
+          Only the `requireEditor` clause, as the route precondition's example of a `load` that
+          does not consult the map. Omit `requireAccess` and `requireSession`.
       - id: bb-deployed-link
         kind: link
         target: add-cairn-to-a-sveltekit-app.md#move-the-site-to-production
@@ -315,19 +311,35 @@ sections:
       - id: s-map-vocab
         kind: step
         text: |
-          In the adapter module's `defineAccess` call, pass `roles` as the first argument in place
-          of `undefined`.
+          If the adapter already declares `access`, in its `defineAccess` call, pass `roles` as
+          the first argument in place of `undefined`, as the example site's call needs. A site
+          with no `access` member skips this step and takes the next.
         requires:
           - roles-on-adapter
         produces:
           - map-vocab-passed
+        optional: true
+      - id: s-map-member
+        kind: step
+        text: |
+          If the adapter has no `access` member, in the `defineAdapter` call, add `access` set to
+          a `defineAccess` call that passes `roles` first, as the code block shows. A site that
+          already declares `access` skips this step.
+        requires:
+          - roles-on-adapter
+        produces:
+          - map-vocab-passed
+        optional: true
       - id: s-map
         kind: step
         text: |
-          In the adapter module's `access` map, change the `/admin/signups` key to admit webmaster
-          and add a `media` key admitting webmaster. Keep every other key.
+          In the adapter module's `access` map, add a `media` key admitting webmaster and a key
+          for your route's path listing the roles that reach it. In the example, the
+          `/admin/signups` key admits webmaster in place of its owner-only rule. Keep every other
+          key.
         requires:
-          - map-vocab-passed
+          - roles-on-adapter
+          - unchecked-route
         produces:
           - map-declared
         canFail: true
@@ -396,9 +408,10 @@ sections:
   - id: enforce-the-map-on-your-routes
     heading: Enforce the map on your routes
     why: |
-      `requireAccess` and `createSectionAction` read the map the guard attaches, so the site's own
-      routes are enforced once the map exists. Its first step keys the route, so a reader never
-      locks everyone out before learning why.
+      `requireAccess` and `createSectionAction` read the map the guard attaches, so the route's
+      checks follow the map that holds its key; with the key declared first, the route's
+      `requireAccess` call never refuses everyone. The steps edit the reader's own route, and the
+      example site's signups screen shows the form they produce.
     opens: |
       Your own routes check the map themselves, with `requireAccess` in each `load` and a
       `createSectionAction` wrapper around each form action.
@@ -413,9 +426,9 @@ sections:
         kind: fact
         fact: f:onqm6k
         use: |
-          Only the signups screen's gated load and its `create` and `remove` wrappers, with
-          `ownerOnly: true` on `remove` alone, as the example's state at each step. Omit `APP_DB`
-          and the migration.
+          Only the signups screen's `load` call and its `create` and `remove` wrappers, with
+          `ownerOnly: true` on `remove` alone, as the finished form of these steps and never as
+          the reader's starting state. Omit `APP_DB` and the migration.
       - id: enf-route-id
         kind: fact
         fact: f:54d3ui
@@ -448,42 +461,28 @@ sections:
         fact: f:smbsa6
         use: |
           Only the `ownerOnly` rule, in the paragraph after the section action's checks.
-      - id: s-route-key
-        kind: step
-        text: |
-          In the adapter module's `access` map, add a key for the route, listing the roles that
-          reach it. The example's `/admin/signups` key already covers its screen.
-        requires:
-          - map-declared
-          - custom-screen
-        produces:
-          - route-keyed
-      - id: enf-no-key
-        kind: fact
-        fact: f:zo034s
-        use: |
-          Only the route half, beside step 1. Omit the engine-screen half, which
-          [[decide-what-the-map-leaves-open]] carries.
       - id: s-load-gate
         kind: step
         text: |
           In the route's `+page.server.ts`, call `requireAccess(event)` at the top of `load`,
-          before it reads anything. A `load` that already makes the call, as the example's does,
-          needs no edit.
+          before it reads anything, in place of any `requireEditor` call.
         requires:
-          - route-keyed
+          - map-declared
+          - unchecked-route
         produces:
           - load-gated
       - id: s-wrap-actions
         kind: step
         text: |
-          In the same file, wrap each form action in the section's `createSectionAction` wrapper.
-          An action that is already a wrapper, as the example's `create` and `remove` are, needs
-          no edit.
+          In the same file, wrap each form action in a `createSectionAction` wrapper, so no action
+          runs without the map's check.
         requires:
           - load-gated
         produces:
           - actions-gated
+      - id: enf-wrapper-link
+        kind: link
+        target: add-a-custom-admin-screen.md#choose-the-action-wrapper
       - id: s-owner-only
         kind: step
         text: |
@@ -848,6 +847,15 @@ sections:
       On the deployed site, the composition warning names the targets the map leaves open, and
       each role meets the admin's error page wherever the map excludes it.
     items:
+      - id: ver-own-route
+        kind: sentence
+        mode: claim
+        text: |
+          The checks name the example site's signups screen at `/admin/signups`. On your own site,
+          open the route you gated in its place, and run its own actions in place of the signups
+          add and delete; a route with no owner-only action skips the delete check.
+        facts:
+          - f:onqm6k
       - id: ver-lead
         kind: sentence
         mode: verbatim
@@ -980,6 +988,19 @@ sections:
           - role-webmaster
         produces:
           - signup-added
+        canFail: true
+      - id: x-add-refused
+        kind: failure
+        from: v-add-signup
+        symptom: |
+          The add is refused for the webmaster session, and the site logs `auth.access.refused`.
+        cause: |
+          The route carries a rest or dynamic parameter under a deeper key, or serves more than one
+          section, and its section actions declare no `target`.
+        handledBy: s-nest-action-target
+        facts:
+          - f:3s23un
+          - f:xbjxit
       - id: ver-add
         kind: fact
         fact: f:7ji7x0
@@ -1049,7 +1070,7 @@ sections:
           `reason` reads `no_rule`.
         cause: |
           The route calls `requireAccess` and the map has no key for its target.
-        handledBy: s-route-key
+        handledBy: s-map
         facts:
           - f:8anql1
           - f:zo034s
@@ -1254,14 +1275,14 @@ dispositions:
     disposition: subordinated
     reference: add-a-custom-admin-screen.md#before-you-begin
     reason: |
-      The signups screen's second database belongs to building that screen; this page takes the
-      built screen as a precondition.
+      The signups screen's second database belongs to building that screen; this page uses the
+      screen only as the finished form of its enforcement steps.
   - fact: f:nv0ok0
     disposition: subordinated
     reference: add-a-custom-admin-screen.md#before-you-begin
     reason: |
-      The signups table's migrations directory belongs to building that screen; this page takes the
-      built screen as a precondition.
+      The signups table's migrations directory belongs to building that screen; this page uses the
+      screen only as the finished form of its enforcement steps.
   - fact: f:pfy9cw
     disposition: subordinated
     reference: ../reference/log-events.md
@@ -1330,11 +1351,14 @@ constraints:
     which refuses every session, owner included (`f:zo034s`). In the example, the theme-kit key
     stays.
   - |
-    The reader arrives with an `access` map that already holds the custom screen's route key,
-    since Add a custom admin screen requires one (the example's owner-only `/admin/signups` rule).
-    [[before-you-begin]] states the scaffold's missing `access` member (`f:3z1uxv`) only as where a
-    scaffolded site starts, never as the reader's current state, so it does not conflict with the
-    starting map in [[declare-the-access-map]].
+    The reader arrives with a route of the site's own under `/admin` whose `load` and form actions
+    do not yet check the access map, and with or without an `access` member on the adapter
+    (`f:3z1uxv`). The page never presupposes the route's map key, its `requireAccess` call, or its
+    `createSectionAction` wrappers: [[declare-the-access-map]] adds the key and
+    [[enforce-the-map-on-your-routes]] adds the call and the wrappers. The example site's signups
+    screen (`f:onqm6k`) appears only as the finished form of those steps and as the screen the
+    checks name, never as the reader's starting state, and its owner-only starting map
+    (`f:3z1uxv`) is the example site's, not the reader's.
   - |
     Keep the heading of [[make-the-map-exhaustive]] stable: `docs/extend/security-model.md` sends a
     reader here for the steps of an exhaustive map.

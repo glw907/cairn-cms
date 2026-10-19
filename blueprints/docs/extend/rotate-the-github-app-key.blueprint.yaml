@@ -2,12 +2,15 @@ version: 1
 argument: |
   A GitHub App holds more than one private key at once, and a new key does not invalidate the old
   one, so a rotation without a publishing outage runs on overlap: generate the new key beside the
-  old one, push it to the Worker, prove it, and only then delete the old key. The proof is
-  immediate and needs no publish: `/healthz` shows that the Worker's secret signs and, through its
-  fingerprint, which key the Worker holds, and `/healthz?live=1` mints a token straight from that
-  key, past the 55-minute token cache, so a 200 proves GitHub accepts it. The overlap also leaves a
-  rollback, which lasts exactly until the deletion; after it, GitHub restores nothing and the
-  recovery is a third key. A key that fails later shows to editors as a publish that fails while
+  old one, push it to the Worker, prove it, and only then delete the old key. The proof needs no
+  publish and no wait for the 55-minute token cache: `/healthz` shows that the Worker's secret
+  signs and, through its fingerprint, which key the Worker holds, and `/healthz?live=1` mints a
+  token straight from that key, past the token cache, so a 200 proves GitHub accepts it. The live
+  check serves a settled result for 60 seconds, so its one wait is a minute after any earlier live
+  response. The overlap also leaves a rollback, which lasts exactly until the deletion: a re-push
+  of the old key restores the Worker's secret at once, though a warm isolate may keep a token
+  minted with the other key for up to 55 minutes. After the deletion, GitHub restores nothing
+  and the recovery is a third key. A key that fails later shows to editors as a publish that fails while
   the editor stays up, and the same `/healthz` signals name the cause.
 introduction:
   covers: |
@@ -18,7 +21,8 @@ introduction:
     developer chooses to replace it. An App holds several keys at once and a new key does not
     invalidate the old, which allows an order with no gap: generate, push, confirm, and only then
     delete. The contract sentence: the steps replace the App's private key without a publishing
-    outage, confirm at once that GitHub accepts the new key, and recover if it fails, by rollback
+    outage, confirm that GitHub accepts the new key without waiting out the 55-minute token
+    cache, and recover if it fails, by rollback
     while the old key remains and by a third key after it is gone. It names the two readers who
     arrive: one rotating on purpose, who follows the page top to bottom, and one whose new key
     already fails, whom it sends to [[recover-from-a-failed-key]]. It also says, before the reader starts, that a site
@@ -72,7 +76,8 @@ framing:
        - Came for: a new key in service and the exposed one retired.
        - Knows: that the key is suspect; possibly little of how cairn uses it.
        - Lacks: that the old key stays valid until it is deleted (`f:ixr3ny`), and that the page
-         deletes it only after the live token check confirms the new key, which needs no wait
+         deletes it only after the live token check confirms the new key, which skips the
+         55-minute token cache and waits at most the minute its own 60-second result lasts
          (`f:ejuoh6`, `f:1pb077`). The exposure window runs from the push to that check.
 
     3. **The hand-built site's developer.** A developer who built the site through
@@ -150,14 +155,16 @@ framing:
        says only that no source file changes, because a Svelte-fluent reader expects a code change. The `/healthz`
        route is a SvelteKit route at the site root (`f:paotzb`). It enters at [[before-you-begin]] and
        [[verify-the-new-key]], not in the introduction.
-    6. **What the overlap costs.** Little time: the live token check mints from the new key at
-       once and skips the 55-minute cache (`f:1pb077`, `f:ejuoh6`), so the old key can go as soon
-       as the check passes. The plain `/healthz` request cannot replace it, since its check makes
+    6. **What the overlap costs.** Little time: the live token check mints from the key the
+       Worker holds and skips the 55-minute cache, and its own settled result lasts 60 seconds, so
+       its one wait is a minute after any earlier live response (`f:1pb077`, `f:ejuoh6`). The old
+       key can go as soon as the check passes. The plain `/healthz` request cannot replace it, since its check makes
        no network call (`f:5dwnh1`; body only). Both keys stay valid until the old one is deleted
        (`f:ixr3ny`). The cache explains why a publish proves nothing in that window
        (`f:vg42j3`); it is not a wait the reader owes.
-    7. **The rollback is conditional.** Until the deletion, re-pushing the old key restores signing
-       with it (`f:sszb7b`). That re-push needs the old key's file, which a site the setup command
+    7. **The rollback is conditional.** Until the deletion, re-pushing the old key restores the
+       Worker's secret at once (`f:sszb7b`, `f:86h9o6`), though a warm isolate may keep a token
+       minted with the other key for up to 55 minutes (`f:vg42j3`). That re-push needs the old key's file, which a site the setup command
        created never kept (`f:kldwss`, `f:72yc97`). After the deletion, the recovery is a third key
        (`f:lg2ae8`).
   placeInDocSet: |
@@ -221,9 +228,9 @@ framing:
        all three outcomes. Close the paragraph on the two recoveries. Until the deletion, the old key
        still works and a failed new key can be rolled back (`f:ixr3ny`, `f:sszb7b`). After it,
        GitHub restores nothing, and the recovery is a third key (`f:lg2ae8`).
-    3. **What the order costs, reader by reader.** The proof is immediate: the live token check
-       mints from the new key at once and skips the Worker's 55-minute token cache, so the old
-       key can be deleted as soon as the check passes (`f:1pb077`, `f:ejuoh6`). State that a
+    3. **What the order costs, reader by reader.** The proof is quick: the live token check skips
+       the Worker's 55-minute token cache, its one wait is the minute its own result cache lasts,
+       and the old key can be deleted as soon as the check passes (`f:1pb077`, `f:ejuoh6`). State that a
        publish proves nothing in the first 55 minutes, since the Worker may still run on a token
        the old key minted (`f:vg42j3`), and leave "per isolate" and warm versus cold to
        [[verify-the-new-key]]. For a key that may have been exposed, the old key stays valid
@@ -422,12 +429,16 @@ sections:
       - id: bb-broken-handoff
         kind: handoff
         text: |
-          The site already cannot sign, so there is no working key to keep in service and no old
-          fingerprint to record. Note the App's keys as the next step says, then generate and push
-          a new key as the following sections describe, and run the checks in
-          [[verify-the-new-key]]. Skip [[delete-the-old-key]]: no key on the noted list is
-          confirmed as the one the Worker held, so leave each on the App. The `githubAppSigning`
-          detail names the cause, which the rows of [[recover-from-a-failed-key]] explain.
+          Read the response's `githubAppSigning` detail before changing anything, since it names
+          which failure this is. The detail `health check failed` means the check itself threw,
+          which a new key does not fix: query Workers Logs for the `health.failed` event as
+          [[recover-from-a-failed-key]] describes, and start the rotation only once that cause is
+          fixed. The detail `GITHUB_APP_PRIVATE_KEY_B64 is not configured`, `key import or sign
+          failed`, or `malformed JWT` means the site already cannot sign, so there is no working
+          key to keep in service and no old fingerprint to record. In that case, note the App's
+          keys as the next step says, then generate and push a new key as the following sections
+          describe, and run the checks in [[verify-the-new-key]]. Skip [[delete-the-old-key]]: no
+          key on the noted list is confirmed as the one the Worker held, so leave each on the App.
       - id: s-record-keys
         kind: step
         text: |
@@ -473,7 +484,12 @@ sections:
       - id: gen-limit-handoff
         kind: handoff
         text: |
-          Delete a key the App no longer needs, then generate the new key.
+          Delete one key the App no longer needs, then generate the new key. Never delete the key
+          whose fingerprint matches the old key's `fingerprint` you recorded in
+          [[before-you-begin]]: the Worker signs with it until the push, and GitHub restores no
+          deleted key. Never delete a key another site still signs with. If you recorded no old
+          fingerprint while the Worker still signs, nothing on this page tells its key from the
+          others, so delete only a key you know nothing signs with.
       - id: gen-vendor-link
         kind: link
         target: https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps
@@ -631,7 +647,7 @@ sections:
       Deleting a key is the one step GitHub cannot reverse, so the proof comes before it. The
       55-minute token cache is why the proof is the live token check and not a publish.
     opens: |
-      Three checks prove the new key at once: the plain `/healthz` request shows that the
+      Three checks prove the new key without waiting out the token cache: the plain `/healthz` request shows that the
       Worker's secret signs, its fingerprint names which key the Worker holds, and `?live=1`
       shows that GitHub accepts it.
     items:
@@ -719,8 +735,29 @@ sections:
         kind: fact
         fact: f:h252kb
         use: |
-          Only what the fingerprint is and that it matches the value GitHub shows for the key. Omit
-          the openssl pipeline, the `spki` mechanics, and the omitted-fingerprint clause.
+          Only what the fingerprint is, that it matches the value GitHub shows for the key, and
+          that a passing check omits it when none can be computed. Omit the openssl pipeline and
+          the `spki` mechanics.
+      - id: x-fp-missing
+        kind: failure
+        from: s-fingerprint
+        symptom: |
+          The response passes with `ok: true` but carries no `fingerprint`, so there is nothing to
+          compare.
+        cause: |
+          The check could not compute the key's fingerprint, and it omits the field without a
+          message.
+        handledBy: fp-missing-handoff
+        facts:
+          - f:h252kb
+      - id: fp-missing-handoff
+        kind: handoff
+        text: |
+          Without a `fingerprint`, no check on this page shows which key the Worker holds. Run the
+          live check that follows: a pass still proves that GitHub accepts the key the Worker
+          holds, but not that it is the new key, so nothing names the old key as safe to delete.
+          Skip [[delete-the-old-key]] and leave each key on the App, as [[before-you-begin]] does
+          when no record names the Worker's key. The old key stays valid while it stays on the App.
       - id: x-fingerprint
         kind: failure
         from: s-fingerprint
@@ -736,7 +773,7 @@ sections:
           In the terminal, request `/healthz?live=1` with `curl`, at least a minute after any earlier
           live response.
         requires:
-          - key-identified
+          - signing-checked
         produces:
           - new-key-confirmed
         canFail: true
@@ -815,6 +852,7 @@ sections:
           matches the `fingerprint` you recorded in [[before-you-begin]]. Leave every other key.
         requires:
           - new-key-confirmed
+          - key-identified
           - old-fingerprint-recorded
         produces:
           - old-key-deleted
@@ -865,6 +903,14 @@ sections:
         use: |
           Only the timing of the cause: a cold isolate mints from the current key, and a warm one
           keeps its token for up to 55 minutes.
+      - id: rec-records
+        kind: sentence
+        mode: claim
+        text: |
+          A reader who came to this section directly may hold none of the records that
+          [[before-you-begin]] makes, the old key's fingerprint and the list of the App's keys.
+          Each route below still works without them, and its delete step says which keys to leave
+          on the App when a record is missing.
       - id: rec-lead
         kind: sentence
         mode: verbatim
@@ -873,8 +919,9 @@ sections:
       - id: s-rec-checks
         kind: step
         text: |
-          Run the three checks in [[verify-the-new-key]] that you have not run, and read each
-          answer against the rows of [[recover-from-a-failed-key]].
+          Run the three checks in [[verify-the-new-key]] that you have not run, the live check at
+          least a minute after any earlier live response, and read each answer against the rows
+          of [[recover-from-a-failed-key]].
         requires:
           - healthz-route
         produces:
@@ -1063,15 +1110,24 @@ sections:
       of the rotation.
     level: 3
     opens: |
-      Until the old key is deleted, pushing it again with the same command restores signing with
-      it immediately.
+      Until the old key is deleted, pushing it again with the same command puts it back in the
+      Worker's secret at once, though a warm isolate may keep a token minted with the other key
+      for up to 55 minutes.
     items:
       - id: rb-fact
         kind: fact
         fact: f:sszb7b
         use: |
           Only the re-push of the old key's value with the same command, which works while the old
-          key stays undeleted.
+          key stays undeleted. Omit "immediately": the secret changes at once, and the `rb-cache`
+          placement carries why a warm isolate's token does not.
+      - id: rb-cache
+        kind: fact
+        fact: f:vg42j3
+        use: |
+          Only that a secret change leaves a warm isolate's cached token standing until its
+          55-minute entry expires, so the re-push restores the Worker's secret at once but not
+          every isolate's token.
       - id: s-rollback
         kind: step
         text: |
@@ -1095,21 +1151,22 @@ sections:
       - id: s-rollback-verify
         kind: step
         text: |
-          In the terminal, at least a minute after any earlier live response, request `/healthz?live=1`
-          with `curl`, and compare the `fingerprint` in the
-          response with the old key's fingerprint, the one you recorded in [[before-you-begin]].
+          In the terminal, at least a minute after any earlier live response, request
+          `/healthz?live=1` with `curl`. A 200 shows that GitHub accepts the key the Worker now
+          holds. If you recorded the old key's fingerprint in [[before-you-begin]], also compare
+          the response's `fingerprint` with it.
         requires:
           - old-key-restored
-          - old-fingerprint-recorded
         produces:
-          - old-key-identified
+          - rollback-confirmed
         optional: true
         canFail: true
       - id: x-rollback-verify
         kind: failure
         from: s-rollback-verify
         symptom: |
-          `/healthz` answers 503, or returns a fingerprint other than the one you recorded.
+          The live request answers 503, or, where you recorded the old key's fingerprint, returns
+          a different one.
         cause: |
           The Worker holds a key other than the old key.
         handledBy: rb-repush
@@ -1125,18 +1182,19 @@ sections:
           key's base64 line, as [[delete-the-old-key]] describes for the new key, so local
           development does not sign with the failed key once it is deleted.
         requires:
-          - old-key-identified
+          - rollback-confirmed
         produces:
           - dev-vars-rolled-back
         optional: true
       - id: s-rollback-delete
         kind: step
         text: |
-          On the App's settings page on GitHub, delete the failed key, the one you generated for
-          this rotation: its fingerprint is not on the list you noted in [[before-you-begin]].
+          If you noted the App's keys in [[before-you-begin]], on the App's settings page on
+          GitHub delete the failed key, the one you generated for this rotation: its fingerprint
+          is not on that list. Without that list, nothing on this page tells the failed key from
+          the others, so leave each key on the App.
         requires:
-          - old-key-identified
-          - app-keys-recorded
+          - rollback-confirmed
         produces:
           - failed-key-removed
         optional: true
@@ -1218,13 +1276,13 @@ sections:
         kind: step
         text: |
           On the App's settings page on GitHub, delete the failed key, and the old key if it is
-          still on the App. The failed key is the one whose fingerprint is neither on the list you
-          noted in [[before-you-begin]] nor the `fingerprint` that `/healthz` returned for the
-          third key; the old key matches the fingerprint you recorded there. Leave every other key.
+          still on the App, each only where a record from [[before-you-begin]] identifies it. If
+          you noted the App's keys there, the failed key is the one whose fingerprint is neither
+          on that list nor the `fingerprint` that `/healthz` returned for the third key. If you
+          recorded the old key's fingerprint there, the old key is the one that matches it. Leave
+          every other key, including any key you cannot identify this way.
         requires:
           - third-key-confirmed
-          - old-fingerprint-recorded
-          - app-keys-recorded
         produces:
           - rotation-complete
   - id: see-also
@@ -1289,7 +1347,9 @@ constraints:
     200 when the check fails. Do not copy `docs/extend/scaffolded-site-files.md` on this point.
   - |
     Never use a publish as the verification signal, and never tell the reader to wait 55 minutes
-    before deleting the old key: the live check bypasses the cache. The cache explains why a
+    before deleting the old key: the live check bypasses the cache, and its one wait is a minute
+    after any earlier live response, for its own 60-second result (`f:1pb077`). Never say the
+    live check proves a key at once or with no wait. The cache explains why a
     publish proves nothing in that window and why an editor-visible failure can lag the push.
   - |
     Never claim whether deleting a key on GitHub affects an installation token already minted with

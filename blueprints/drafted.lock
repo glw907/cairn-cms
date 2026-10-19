@@ -226,6 +226,13 @@ pages:
             roll-back-to-the-old-key: sha256:03b43cf6bcf150cef5bea823dbabbe155017f382766d628ff11e5a200c8f1888
             see-also: sha256:f3ca1e3e61907aa0b7035eb95b7f28bedc55e031bab062e53967533bd8040fa0
             verify-the-new-key: sha256:3b9e85ea02175d20a57f2cf2bc79eecfecf7a960dcb2a96b99f5d39408d0d307
+        blocked:
+            commit: fd90da8d87488d3320b78c482fb03071c68b4d7b
+            findings:
+                - location: roll-back-to-the-old-key / s-rollback
+                  text: The rollback route has no deploy step for a Worker that uses gradual deployments. The push section makes `wrangler versions secret put` the command for such a Worker and adds s-push-gradual-deploy, because that command does not deploy. s-rollback only says to run the push command with the old key's file. A gradual-deployments reader who follows it leaves the old key in an undeployed version, so s-rollback-verify still reports the failed key and the reader loops through rb-repush without restoring anything.
+                - location: roll-back-to-the-old-key / x-rollback-verify, rb-repush
+                  text: Recovery comes before diagnosis. x-rollback-verify treats any 503 from the live request as 'the Worker holds a key other than the old key' and hands off to rb-repush. rb-repush tells the reader to push again first and to read the recovery rows only if the 503 persists. A live 503 carries a `githubAppToken` or `githubAppSigning` detail that names the failure, and `installation_not_found`, `installation_suspended`, `unreachable`, and `key_refused` are not fixed by re-pushing. The cause is also stated too narrowly.
     docs/extend/scaffolded-site-files.md:
         page: e719abcd526b4960e1b45c8bff6b5739efa7756a
         blueprint: 866835f4a3636ad0e82c8eb53d0b635928f4813a

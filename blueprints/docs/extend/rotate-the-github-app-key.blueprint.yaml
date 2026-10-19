@@ -422,10 +422,9 @@ sections:
       - id: bb-no-fp-handoff
         kind: handoff
         text: |
-          Note the App's keys as the next step says. If that list holds one key, it is the old key:
-          record its fingerprint as the old key's and continue. If it holds several, no record
-          names the key the Worker signs with, so run the rotation through [[verify-the-new-key]]
-          and skip [[delete-the-old-key]], leaving each noted key on the App.
+          Note the App's keys as the next step says. No record then names the key the Worker
+          signs with, so run the rotation through [[verify-the-new-key]] and skip
+          [[delete-the-old-key]], leaving each noted key on the App.
       - id: bb-broken-handoff
         kind: handoff
         text: |

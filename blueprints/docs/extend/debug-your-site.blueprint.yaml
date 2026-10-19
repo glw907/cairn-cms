@@ -44,39 +44,46 @@ introduction:
   facts:
     - f:gy2h7p
     - f:eywrq8
+framing:
+  introPlan: |
+    Three paragraphs, then the bounds (prior knowledge and what the page leaves out). No heading.
+    The introduction frames the page from above before any row. The first sentence states the
+    subject from the reader's situation. It is neither an imperative nor a sentence about the page.
+
+    1. **The model.** A cairn site is a SvelteKit app running as a Cloudflare Worker, and the
+       engine writes every operationally meaningful event as one JSON record through one internal
+       chokepoint (`f:eywrq8`). The events a developer meets most often fire from engine code
+       running inside the site's extension points (a concept's fieldset, a wrapped admin action, a
+       public route factory, the committed site config), and each reports a contract the
+       surrounding site code broke, never a fault in the engine itself (`f:gy2h7p`). Other
+       failures leave no record, and the developer finds them by what the site or the build shows.
+    2. **Why readers arrive.** Name each reason a reader arrives, so each learns early whether the
+       page answers it: a `cairn health` errors check failed; the site misbehaves under the
+       development server or in production; an extend guide's failure path sent them here; or they
+       are building a query, alert, or records of their own.
+    3. **What the page covers, in page order.** Reaching and reading the records, including with
+       the `cairn` CLI; one row per developer event (content fields, public routes, admin actions,
+       site config); the failures with no record (`event.platform`, date-dependent output, and the
+       skipped `site-facts.json` check); the session and commit records a query can miscount; and a
+       site's own records through `createLogger`. Say that each row names what the reader sees, the
+       event or error, what it means, and the fix (or that none is needed), or, for a record that
+       reports no fault, how a query allows for it.
+
+    Then the bounds. Prior knowledge takes one sentence: working knowledge of SvelteKit server
+    code (hooks, loads, and form actions), the site's Wrangler config, and whichever cairn seams
+    the site uses; it skips logging and JSON basics. What the page leaves out follows as a short
+    list under a complete lead-in, subject first and page second: symptoms an operator resolves
+    without a code change (the admin track's troubleshooting page, not yet published, so named
+    without a link); the full event table with every event's fields (the log events reference);
+    configuring cairn-audit for a whole site (Run cairn-audit on your site); and an error that
+    began with an engine upgrade (Upgrade cairn and the migration notes).
 orderReason: |
   The page runs from reaching a record, to the rows a record names, to the failures that leave no
   record, then to the material a reader building a query, alert, or records of their own needs,
-  and closes with See also as the symptom-row anatomy requires. A reader with a symptom gets every
-  row before any of the query-building material, which would otherwise stand between them and the
-  rows that answer it.
-
-  Read the structured logs comes first because every event row depends on it: a reader must know
-  the envelope, where records land, and that an empty query proves nothing until observability is
-  on, before any row helps. The `cairn` CLI cover moves up into its Find the records subsection
-  (a departure from the outline's covers order): `cairn health`'s errors check is the alarm that
-  most often sends a reader here and `cairn logs` is a reading surface, so left at the end they
-  would arrive after the rows they lead into. Record redaction follows as the second subsection,
-  since it explains values a reader sees inside a record (`'<repeated>'`, `'<unserializable>'`).
-
-  The event rows regroup by seam, in the order the extend track builds each seam (concept fields,
-  public routes, custom admin screens, site config and the access map), so a reader who has just
-  built a seam finds its events where the track left them. Within Admin action events the rows
-  follow `createSectionAction`'s check order, then the handler's audit and the sink it calls: the
-  first event a request logs is the first check it failed, so the order doubles as a triage order.
-  The `admin.action.misconfigured` row covers steps 3 and 6 together, so the `auth.access.refused`
-  row (steps 4 and 5) follows it.
-
-  The failures with no record follow the event rows, ordered by how visible each is:
-  `event.platform` is undefined surfaces as a missing binding, Date-dependent output as a test
-  that changed with no source change, and the skipped `site-facts.json` check as one build
-  warning. The env row also precedes the date rows because the fixed-today fix reads the Worker
-  env through `cloudflare:workers`, which the env row introduces.
-
-  Session and commit records come next. They report no fault, and they matter to a reader building
-  a query or alert. Site records with `createLogger` follows them (the outline's first cover splits
-  here): it is about writing records, not reading them, and it serves the same query-building
-  reader. The upgrade cover becomes link-only, in the introduction's not-covered list and See also.
+  and closes with [[see-also]] as the symptom-row anatomy requires. A reader with a symptom gets
+  every row before any of the query-building material, which would otherwise stand between them
+  and the rows that answer it. The event rows group by seam, in the order the extend track builds
+  each seam, and the failures with no record run from the most visible to the least.
 exemplars:
   - source: operators/github-pages-troubleshoot-domains/
     slice: Operators
@@ -89,6 +96,10 @@ exemplars:
 sections:
   - id: read-the-structured-logs
     heading: Read the structured logs
+    why: |
+      Every event row depends on this section: a reader must know the envelope, where records
+      land, and that an empty query proves nothing until observability is on, before any row
+      helps.
     opens: |
       Every engine record is one JSON object with a `level`, `event`, and `timestamp` envelope,
       and each row on this page names the `event` to find.
@@ -106,14 +117,15 @@ sections:
         use: |
           Only the introduction's model (one JSON record per operationally meaningful event,
           through one internal chokepoint) and this section's naming pattern
-          `area[.subject].verb_phrase`. Omit the `/log` exports, which Site records with
-          `createLogger` carries.
+          `area[.subject].verb_phrase`. Omit the `/log` exports, which
+          [[site-records-with-createlogger]] carries.
       - id: f-envelope
         kind: fact
         fact: f:rkj7tn
         use: |
-          Backs the opening sentence, and that a query or alert keyed on an event name rests on a
-          stable contract because renaming an `event` is a breaking change.
+          Only the envelope, which backs the opening sentence, and the breaking-change clause, so
+          the section can say that a query or alert keyed on an event name rests on a stable
+          contract.
       - id: h-read
         kind: handoff
         text: |
@@ -121,6 +133,11 @@ sections:
   - id: find-the-records
     heading: Find the records
     level: 3
+    why: |
+      No row helps a reader who cannot see a record. The `cairn` CLI sits here, not at the page's
+      end, because `cairn health`'s errors check is the alarm that most often sends a reader to
+      this page and `cairn logs` is a reading surface; at the end they would arrive after the rows
+      they lead into.
     opens: |
       A deployed Worker's records reach Workers Logs only when its Wrangler config sets
       `observability.enabled` to `true`, so an empty log on a site without that setting proves
@@ -130,14 +147,15 @@ sections:
         kind: fact
         fact: f:prb2os
         use: |
-          Backs the opening sentence and that the scaffold's `wrangler.jsonc` sets the value.
+          Only the observability requirement, which backs the opening sentence, and that the
+          scaffold's `wrangler.jsonc` sets the value.
       - id: f-surfaces
         kind: fact
         fact: f:gzs6b8
         use: |
-          A bulleted list of reading surfaces, its first two items: Workers Logs in the Cloudflare
-          dashboard and `npx wrangler tail` while reproducing the problem, each with its vendor
-          link.
+          Only Workers Logs in the Cloudflare dashboard and `npx wrangler tail` while reproducing
+          the problem, as the first two items of a bulleted list of reading surfaces, each with its
+          vendor link.
       - id: l-workers-logs
         kind: link
         target: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
@@ -148,15 +166,14 @@ sections:
         kind: fact
         fact: f:q9ylqa
         use: |
-          The list's third item: `cairn logs <site>` reads the site's records from Workers
-          Observability, and an empty result from a Worker with observability off is zero entries
-          and no error.
+          Only `cairn logs <site>` as the list's third item: where it reads the site's records
+          from, and its empty result from a Worker with observability off.
       - id: f-health
         kind: fact
         fact: f:vg5zt8
         use: |
-          The list's last item: `cairn health`'s `errors` check fails above `--error-threshold`
-          (default 5) engine error-level records in the `--since` window (default 24h).
+          Only `cairn health`'s `errors` check as the list's last item: when it fails, with the
+          `--error-threshold` and `--since` defaults.
       - id: s-health-cue
         kind: sentence
         mode: claim
@@ -170,7 +187,7 @@ sections:
         kind: fact
         fact: f:vi9xh0
         use: |
-          A script or program that runs `cairn logs` or `cairn health` reads the CLI's contract
+          Only that a script or program that runs `cairn logs` or `cairn health` reads the CLI's contract
           (exit codes and precedence, stdout as payload and stderr as diagnostics, the schema URLs)
           from `cairn help agents`, because `go install` installs no docs tree.
       - id: h-find
@@ -180,6 +197,9 @@ sections:
   - id: record-redaction
     heading: Record redaction
     level: 3
+    why: |
+      It explains values a reader sees inside a record (`'<repeated>'`, `'<unserializable>'`), so
+      it follows [[find-the-records]] and comes before any row quotes a record.
     opens: |
       Every engine record passes through the same redaction a site's records take, so some values
       in a record are the redactor's markers rather than the logged data.
@@ -202,6 +222,10 @@ sections:
           Turn from reading a record to the event rows, grouped by the seam each event comes from.
   - id: content-field-events
     heading: Content field events
+    why: |
+      The event rows group by seam, in the order the extend track builds each seam, so a reader
+      who has just built a seam finds its events where the track left them. Concept fields come
+      first.
     opens: |
       A concept's fieldset logs these events while the engine builds the tag index or validates a
       save, and each points at one field declaration.
@@ -213,6 +237,8 @@ sections:
   - id: content-field-unmarked
     heading: '`content.field_unmarked`'
     level: 3
+    why: |
+      The concept-field seam's first row: a field declaration that leaves the tag index empty.
     opens: |
       A concept that declares a multiselect named `tags`, `freetags`, or `categories` but marks no
       field `taxonomy: true` gets an empty tag index, and the engine logs `content.field_unmarked`
@@ -240,6 +266,8 @@ sections:
   - id: content-field-behavior-failed
     heading: '`content.field_behavior_failed`'
     level: 3
+    why: |
+      The concept-field seam's second row: a field validator that throws during a save.
     opens: |
       When a field's `behavior.validate()` throws during a save, the engine treats the field as
       valid, saves the value, and logs `content.field_behavior_failed` as a warning.
@@ -266,6 +294,9 @@ sections:
           - f:qdfs37
   - id: public-route-events
     heading: Public route events
+    why: |
+      Public routes are the second seam the extend track builds, so their events follow the
+      concept fields.
     opens: |
       A public route factory checks its media wiring once, when it is built, so its event appears
       once and not on each request.
@@ -277,6 +308,8 @@ sections:
   - id: media-resolver-absent
     heading: '`media.resolver_absent`'
     level: 3
+    why: |
+      The public-route seam's one row.
     opens: |
       Public images render as literal `media:` tokens when a public route factory is built with
       media on but no `resolveMedia`, and the engine logs `media.resolver_absent` once, at
@@ -308,6 +341,11 @@ sections:
         target: ../reference/delivery.md#publicroutesconfig
   - id: admin-action-events
     heading: Admin action events
+    why: |
+      Custom admin screens are the third seam the extend track builds. Its rows follow
+      `createSectionAction`'s check order, then the handler's audit and the sink it calls: the
+      first event a request logs is the first check it failed, so the order doubles as a triage
+      order.
     opens: |
       `createSectionAction` runs its checks in a fixed order before the handler, and the event a
       request logs places it at the check that stopped or degraded it.
@@ -316,14 +354,15 @@ sections:
         kind: fact
         fact: f:1b3ye3
         use: |
-          A numbered list of the check order under a complete lead-in. Each item is only the step,
-          the event it logs, and the response: (1) authentication through `createAdminAction`,
-          which throws rather than answering `fail()`; (2) the rate limit when configured, which
-          degrades to open; (3) the access-map check, `admin.action.misconfigured` and `fail(500)`;
-          (4) and (5) the two authorization checks, `fail(403)`; (6) the database-binding check,
-          `admin.action.misconfigured` and `fail(500)`. Omit each step's trigger and its audit
-          detail string, which the rows carry. Items 4 and 5 point to the `auth.access.refused`
-          row, and the rest of the rows follow the same order.
+          Only the check order, as a numbered list under a complete lead-in. Each item is only the
+          step, the event it logs, and the response: (1) authentication through
+          `createAdminAction`, which throws rather than answering `fail()`; (2) the rate limit when
+          configured, which degrades to open; (3) the access-map check, `admin.action.misconfigured`
+          and `fail(500)`; (4) and (5) the two authorization checks, `fail(403)`; (6) the
+          database-binding check, `admin.action.misconfigured` and `fail(500)`. Omit each step's
+          trigger and its audit detail string, which the rows carry. Items 3 and 6 point to
+          [[adminactionmisconfigured]], items 4 and 5 to [[auth-access-refused]], and the rest of
+          the rows follow the same order.
       - id: l-section-action
         kind: link
         target: ../reference/sveltekit.md#createsectionaction
@@ -334,6 +373,9 @@ sections:
   - id: admin-action-session-absent
     heading: '`admin.action.session_absent`'
     level: 3
+    why: |
+      Authentication is the first check `createSectionAction` runs, so its event leads the admin
+      rows.
     opens: |
       A wrapped action logs `admin.action.session_absent` and redirects to `/admin/login` when no
       editor session reaches it, either because the session lapsed after the guard resolved it or
@@ -343,9 +385,9 @@ sections:
         kind: fact
         fact: f:v1jj2k
         use: |
-          Backs the opening sentence's event and redirect, and the lapse row: the record is the
-          only trace a route leaves of a session that lapsed between the guard's resolve and the
-          action running.
+          Only the event and the redirect, which back the opening sentence, and, for the lapse
+          row, that the record is the only trace a route leaves of a session that lapsed between
+          the guard's resolve and the action running.
       - id: x-session-absent
         kind: failure
         symptom: |
@@ -376,8 +418,8 @@ sections:
         fact: f:u78zg6
         use: |
           Only that a request with no `cairnEditor` stops at `createAdminAction`'s session check
-          first. Omit the access-map behavior, which the `admin.action.misconfigured` row carries,
-          and the earlier-versions clause.
+          first. Omit the access-map behavior, which [[adminactionmisconfigured]] carries, and the
+          earlier-versions clause.
       - id: f-admin-subtree
         kind: fact
         fact: f:2sd4if
@@ -396,6 +438,9 @@ sections:
   - id: admin-action-rate-limit-absent-and-admin-action-rate-limit-failed
     heading: '`admin.action.rate_limit_absent` and `admin.action.rate_limit_failed`'
     level: 3
+    why: |
+      The rate limit is `createSectionAction`'s second check, so its two events follow the
+      authentication row.
     opens: |
       The rate-limit check is the one check that degrades to open, so both events report an
       action that ran with no limit.
@@ -451,6 +496,9 @@ sections:
     heading: '`admin.action.misconfigured`'
     level: 3
     anchor: adminactionmisconfigured
+    why: |
+      This row covers the third and sixth checks together, so it comes before
+      [[auth-access-refused]], which covers the fourth and fifth.
     opens: |
       `createSectionAction` answers `fail(500)` and logs `admin.action.misconfigured` when the
       action has no access map attached or its database binding does not resolve, and the
@@ -481,8 +529,8 @@ sections:
           Only that `createAuthGuard` and `devBackendHandle` each set `locals.cairnAccess` to
           `runtime.access ?? {}` on every admin path they cover, right after they set
           `locals.cairnEditor`, so behind either this reason does not fire. Omit the session-check
-          clause, which the `admin.action.session_absent` row carries, the earlier-versions clause,
-          and the `devBackendHandle({ access })` fix.
+          clause, which [[admin-action-session-absent]] carries, the earlier-versions clause, and
+          the `devBackendHandle({ access })` fix.
       - id: f-one-declaration
         kind: fact
         fact: f:iwf4nu
@@ -523,6 +571,9 @@ sections:
   - id: auth-access-refused
     heading: '`auth.access.refused`'
     level: 3
+    why: |
+      The fourth and fifth checks, the two authorization refusals, follow the row that covers the
+      third.
     opens: |
       `createSectionAction` refuses a session the access map does not admit with `fail(403)`, and
       it audits and logs the refusal as `auth.access.refused`.
@@ -564,6 +615,8 @@ sections:
   - id: admin-action-unaudited
     heading: '`admin.action.unaudited`'
     level: 3
+    why: |
+      After the checks comes the handler, and its audit is the next place a request can log.
     opens: |
       A `createAdminAction` route that returns without calling `ctx.audit` throws
       `UnauditedActionError` in development and logs `admin.action.unaudited` at error in
@@ -599,6 +652,8 @@ sections:
   - id: audit-sink-call-failed
     heading: '`audit.sink.call_failed`'
     level: 3
+    why: |
+      The site's sink is what the handler's audit calls, so its failure closes the admin rows.
     opens: |
       The site's `event.locals.cairnAuditSink` threw or rejected after the action completed, so the
       action's result stands and only its audit record was lost.
@@ -657,6 +712,9 @@ sections:
         target: ../reference/sveltekit.md#created1auditsink
   - id: site-config-events
     heading: Site config events
+    why: |
+      Site config and the access map are the last seam the extend track builds, so their events
+      close the event rows.
     opens: |
       The engine logs these events when the committed site config fails to parse or validate, and
       when a declared access map leaves a concept or a fixed engine screen without a rule.
@@ -668,6 +726,9 @@ sections:
   - id: config-invalid
     heading: '`config.invalid`'
     level: 3
+    why: |
+      The site-config seam's first row: a committed config that fails to parse or validate always
+      needs a change.
     opens: |
       When the committed site config fails to parse or validate, the admin shows an empty list or
       generic copy while the `config.invalid` record's `error` carries the parser's real message.
@@ -696,6 +757,8 @@ sections:
     heading: '`config.access_unmapped`'
     level: 3
     anchor: configaccess_unmapped
+    why: |
+      The site-config seam's second row, the one that can need no change.
     opens: |
       The engine checks the access map once, at composition, so `config.access_unmapped` appears
       at most once per isolate, on a cold start, and a query scoped to a live request window can
@@ -705,7 +768,7 @@ sections:
         kind: fact
         fact: f:mou1li
         use: |
-          Backs the opening sentence.
+          Only the once-per-isolate check at composition, which backs the opening sentence.
       - id: x-unmapped
         kind: failure
         symptom: |
@@ -735,6 +798,11 @@ sections:
         target: restrict-admin-access.md
   - id: event-platform-is-undefined
     heading: '`event.platform` is undefined'
+    why: |
+      The failures with no record follow the event rows, from the most visible to the least, and
+      a missing binding is the most visible. This row also precedes [[date-dependent-output]]
+      because the fixed-today fix reads the Worker env through `cloudflare:workers`, which this
+      row introduces.
     opens: |
       Under `@sveltejs/adapter-cloudflare` 8, `event.platform` is undefined everywhere, so code
       that reads the Worker env through it finds no bindings and no engine record names the
@@ -752,7 +820,7 @@ sections:
         kind: fact
         fact: f:swjwxb
         use: |
-          The cause, and that `cloudflare:workers` returns a `wrangler.jsonc` `vars` value under
+          Only the cause, and that `cloudflare:workers` returns a `wrangler.jsonc` `vars` value under
           `vite dev` (through the adapter's platform proxy) and under `wrangler dev` alike, with
           no `process.env` fallback needed.
       - id: s-platform-fix
@@ -765,6 +833,9 @@ sections:
           - f:swjwxb
   - id: date-dependent-output
     heading: Date-dependent output
+    why: |
+      A test that changed with no source change is less visible than a missing binding and more
+      visible than one build warning, so the date rows sit between the two.
     opens: |
       Output that reads the clock or the host's time zone can change between days and between
       machines with no change to the source, and no engine record names it.
@@ -777,6 +848,9 @@ sections:
   - id: a-visual-baseline-changes-every-day
     heading: A visual baseline changes every day
     level: 3
+    why: |
+      The live clock comes first because its fix introduces the `CAIRN_FIXED_TODAY` pin that
+      the other two date rows refine.
     opens: |
       A visual-regression baseline that renders a component reading `Date.now()` drifts daily
       with no source change, because the component reads the live clock.
@@ -804,6 +878,9 @@ sections:
   - id: cairn-fixed-today-yields-invalid-date
     heading: '`CAIRN_FIXED_TODAY` yields `Invalid Date`'
     level: 3
+    why: |
+      The pin that [[a-visual-baseline-changes-every-day]] introduces can itself fail silently,
+      so its failure follows that fix.
     opens: |
       `new Date(env.CAIRN_FIXED_TODAY)` returns `Invalid Date` without throwing when the value is
       malformed.
@@ -821,7 +898,8 @@ sections:
         fact: f:yomgrm
         use: |
           Only the silent `Invalid Date` and the fix: write the value as an explicit instant such
-          as `2026-08-29T00:00:00Z`. The date-only half belongs to the next row.
+          as `2026-08-29T00:00:00Z`. Omit the date-only half, which
+          [[a-date-differs-between-machines]] carries.
       - id: s-invalid-date-fix
         kind: sentence
         mode: claim
@@ -832,6 +910,9 @@ sections:
   - id: a-date-differs-between-machines
     heading: A date differs between machines
     level: 3
+    why: |
+      The host's time zone also decides how a date-only pin formats, so this row closes the date
+      rows after the pin's own failure.
     opens: |
       Formatting without a `timeZone` option uses the host's time zone, so one instant can format
       as different days on different machines.
@@ -867,6 +948,8 @@ sections:
         target: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
   - id: the-site-facts-json-check-was-skipped
     heading: The `site-facts.json` check was skipped
+    why: |
+      One build warning is the least visible failure with no record, so it closes those rows.
     opens: |
       When the build cannot derive the site facts from the adapter, it reports the `site-facts.json`
       check as skipped rather than stale and warns once, naming the check and the derivation's
@@ -897,6 +980,9 @@ sections:
         target: ../reference/site-facts.md#who-writes-it-and-who-verifies-it
   - id: session-and-commit-records
     heading: Session and commit records
+    why: |
+      These records report no fault and matter to a reader building a query or alert, so they
+      come after every row a reader with a symptom needs.
     opens: |
       These records report no fault, yet a query or alert built on them miscounts unless it
       allows for when each fires and which field it carries; none needs a code change.
@@ -908,6 +994,8 @@ sections:
   - id: auth-session-destroyed
     heading: '`auth.session.destroyed`'
     level: 3
+    why: |
+      The first record row: a sign-out alert that miscounts.
     opens: |
       Sign-out logs `auth.session.destroyed` only when the deleted session row was still live, so a
       stale cookie or an expired row leaves no record.
@@ -933,6 +1021,9 @@ sections:
   - id: auth-channel-session-destroyed
     heading: '`auth.channel.session.destroyed`'
     level: 3
+    why: |
+      An auth channel's sign-out record follows [[auth-session-destroyed]] because a query on it
+      miscounts the same way and keys on a different field.
     opens: |
       An auth channel logs `auth.channel.session.destroyed` on three paths, only for a live row,
       and the record carries a `correlationId` in place of the roster subject.
@@ -950,7 +1041,7 @@ sections:
         kind: fact
         fact: f:vq634h
         use: |
-          The three paths as a bulleted list (the channel's logout, a confirm clearing the row an
+          Only the three paths, as a bulleted list (the channel's logout, a confirm clearing the row an
           incoming cookie named, `resolveSubject` revoking a session the site's `verify` hook
           refused), and that a query correlates these records by `correlationId`.
       - id: l-second-group
@@ -959,6 +1050,8 @@ sections:
   - id: commit-succeeded-and-commit-failed
     heading: '`commit.succeeded` and `commit.failed`'
     level: 3
+    why: |
+      The last record row: commit records split the field a query keys on by surface.
     opens: |
       A commit record carries `concept` for an entry commit and `scope` for a nav, settings,
       vocabulary, or media commit, never both.
@@ -983,6 +1076,9 @@ sections:
           - f:vq8cta
   - id: site-records-with-createlogger
     heading: Site records with `createLogger`
+    why: |
+      It is about writing records, not reading them, and it serves the same query-building reader
+      as [[session-and-commit-records]], so it follows them.
     opens: |
       The `/log` subpath exports `createLogger`, so a site's own events share the engine's record
       shape and redaction, while the engine's own `log` instance is exported from no subpath.
@@ -998,7 +1094,7 @@ sections:
         fact: f:avc1a2
         use: |
           Only that `createLogger`'s `redactKeys` option unions a site's names with the defaults and
-          cannot narrow them, and that a site's records take the redaction Record redaction
+          cannot narrow them, and that a site's records take the redaction [[record-redaction]]
           describes. Omit the normalization rule and the key list, which the reference owns.
       - id: l-redaction-anchor
         kind: link
@@ -1008,6 +1104,9 @@ sections:
         target: ../reference/log.md#createlogger
   - id: see-also
     heading: See also
+    why: |
+      The symptom-row anatomy closes the page with the pages behind its rows and the pages it
+      leaves subjects to.
     opens: |
       The following pages cover the full event table, upgrade breakage, and the seams this page's
       events come from.
@@ -1108,21 +1207,20 @@ dispositions:
       `createEditorRoutes`'s config is the reference entry's; no row here turns on it.
 constraints:
   - |
-    Re-arm (stage 2b), carried from the entry's `done` text: "The one-declaration change and the
-    warning the build now emits when it skips the site-facts check." The `admin.action.misconfigured`
-    row states the current wiring (the adapter's `access` member is the one declaration, and the
-    guard and the dev backend's handle attach it), and the `site-facts.json` row describes the skip
-    warning.
+    [[adminactionmisconfigured]] states the current wiring (the adapter's `access` member is the
+    one declaration, and the guard and the dev backend's handle attach it), and
+    [[the-site-facts-json-check-was-skipped]] describes the warning the build emits when it skips
+    the check.
   - |
     The page never offers `devBackendHandle({ access })` or a guard `access` option as a fix, and
     never says the build reports a stale `site-facts.json` current. An upgrading reader is sent to
     Upgrade cairn's one-declaration section by link, with no history restated.
   - |
     Each event row's heading is the literal event string. Each event row also links the log events
-    reference (`../reference/log-events.md`) for its record's fields: the plan carries that target
-    once, as `l-see-log-events` in See also, and the drafter writes the per-row link in every event
-    row from this constraint. The two headings that carry an `anchor` keep their exact text:
-    sibling plans subordinate facts to their anchors.
+    reference (`../reference/log-events.md`) for its record's fields: the blueprint carries that
+    target once, as `l-see-log-events` in [[see-also]], and the drafter writes the per-row link in
+    every event row from this constraint. The two headings that carry an `anchor` keep their exact
+    text: sibling blueprints subordinate facts to their anchors.
   - |
     Each row holds, in order, what the reader sees, the event or error, what it means, and the fix
     (or that none is needed), or for a record row how a query allows for it; a fix that needs code
@@ -1136,10 +1234,10 @@ constraints:
   - |
     Workers Logs and `wrangler tail` get their vendor links and no copied dashboard navigation.
   - |
-    The page carries only the rows this plan lists. The current page's `admin.action.csrf_refused`
-    row, its build-time env-read row, and its illustrative today reader have no fact in this plan
-    and are not carried over.
+    The page carries only the rows this blueprint lists: no `admin.action.csrf_refused` row, no
+    build-time env-read row, and no illustrative today reader, since no fact here backs any of
+    them.
   - |
-    These links also render in the introduction's not-covered list: the See also links to the log
-    events reference, Upgrade cairn, the migration notes, and Run cairn-audit on your site. The
-    plan carries one link item per target, in See also, and none in the first section.
+    These links also render in the introduction's not-covered list: the [[see-also]] links to the
+    log events reference, Upgrade cairn, the migration notes, and Run cairn-audit on your site. The
+    blueprint carries one link item per target, in [[see-also]], and none in the first section.

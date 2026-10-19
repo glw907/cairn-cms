@@ -283,7 +283,8 @@ sections:
       keys apart by fingerprint.
     opens: |
       The rotation needs a deployed site, edit access to the App's keys on GitHub, Wrangler signed
-      in to the Worker's account, the `/healthz` route, and Workers Logs.
+      in to the Worker's account, the `/healthz` route, and Workers Logs, and it starts by recording
+      which keys the Worker and the App hold now.
     items:
       - id: bb-lead
         kind: sentence
@@ -545,8 +546,7 @@ sections:
         kind: fact
         fact: f:86h9o6
         use: |
-          Only the deploy: the push creates and deploys a new Worker version at once, and a Worker
-          on gradual deployments takes `wrangler versions secret put` instead. Omit the local
+          Only the immediate deploy and the gradual-deployments command. Omit the local
           `.dev.vars` clause, which [[delete-the-old-key]] carries.
       - id: x-push
         kind: failure
@@ -565,8 +565,9 @@ sections:
         text: |
           Check that Wrangler is signed in to the Worker's account, as [[before-you-begin]] says,
           and run the command again. On a Worker that uses gradual deployments, run it with
-          `wrangler versions secret put` in place of `wrangler secret put`, and follow Cloudflare's
-          Secrets page for the rest.
+          `wrangler versions secret put` in place of `wrangler secret put`, then deploy that
+          version as Cloudflare's Secrets page describes before you run the checks in
+          [[verify-the-new-key]].
       - id: push-secrets-link
         kind: link
         target: https://developers.cloudflare.com/workers/configuration/secrets/
@@ -1074,6 +1075,17 @@ sections:
         text: |
           Run the push command again with the old key's PEM file. If `/healthz` still answers 503,
           read the rows of [[recover-from-a-failed-key]].
+      - id: s-rollback-dev-vars
+        kind: step
+        text: |
+          If the site's `.dev.vars` holds `GITHUB_APP_PRIVATE_KEY_B64`, set its value to the old
+          key's base64 line, as [[delete-the-old-key]] describes for the new key, so local
+          development does not sign with the failed key once it is deleted.
+        requires:
+          - old-key-identified
+        produces:
+          - dev-vars-rolled-back
+        optional: true
       - id: s-rollback-delete
         kind: step
         text: |
@@ -1148,6 +1160,17 @@ sections:
         cause: |
           The same causes as for the first new key.
         handledBy: s-rec-checks
+      - id: s-third-dev-vars
+        kind: step
+        text: |
+          If the site's `.dev.vars` holds `GITHUB_APP_PRIVATE_KEY_B64`, set its value to the third
+          key's base64 line, as [[delete-the-old-key]] describes for the new key, so local
+          development signs with neither key you are about to delete.
+        requires:
+          - third-key-confirmed
+        produces:
+          - dev-vars-third
+        optional: true
       - id: s-third-delete
         kind: step
         text: |

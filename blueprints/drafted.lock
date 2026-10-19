@@ -214,6 +214,7 @@ pages:
     docs/extend/rotate-the-github-app-key.md:
         page: 25d0f25c369d5585ec17d7584536f6e198d4a7e3
         blueprint: e299f141f3305a3a68cc67fbfdc6350f589d0918
+        accepted: 32858b72cad693ed264a2b8edf5a049f0733230f
         sections:
             _intro: sha256:bad06db458031f11fca6ecb6f6885b92d54771f60c6c1ed8558f61a003a77746
             before-you-begin: sha256:48154814a4d22e323f9e2895c151affad6a07814f6ad8dd5973e9a02045d5830
@@ -225,13 +226,6 @@ pages:
             roll-back-to-the-old-key: sha256:03b43cf6bcf150cef5bea823dbabbe155017f382766d628ff11e5a200c8f1888
             see-also: sha256:f3ca1e3e61907aa0b7035eb95b7f28bedc55e031bab062e53967533bd8040fa0
             verify-the-new-key: sha256:3b9e85ea02175d20a57f2cf2bc79eecfecf7a960dcb2a96b99f5d39408d0d307
-        blocked:
-            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
-            findings:
-                - location: before-you-begin; delete-the-old-key / s-delete (also verify-the-new-key / x-fingerprint, roll-back-to-the-old-key / s-rollback-verify and s-rollback-delete, generate-a-third-key / s-third-delete)
-                  text: 'Reader state: no step records the current key''s fingerprint before the push, yet several later steps depend on it. s-delete says to delete "the old key, the one you replaced" and to "leave the new key and any other key you keep". x-fingerprint diagnoses a fingerprint that "matches the old key". s-rollback-verify compares against "the fingerprint GitHub shows for the old key". s-third-delete and s-rollback-delete also tell keys apart. With exactly two keys on the App, "the non-matching one" works. GitHub allows up to 25 keys (f:zoekqt), though, and the blueprint itself allows for other kept keys. In that case the reader cannot tell which key the Worker held before the rotation, because no earlier step produces that knowledge and no precondition lists it.'
-                - location: delete-the-old-key (and introduction.notCovered)
-                  text: 'Missing failure: local development keeps the old key. f:86h9o6, which the blueprint places, says local `wrangler dev` reads secrets from `.dev.vars`, never from the deployed secret, and push-deploys explicitly omits that clause. A developer whose `.dev.vars` holds the old key''s base64 value can follow every step and delete the old key. After that, every token mint in local development is refused. No failure item, step, or notCovered entry addresses this. The dispositions say "This page does not cover local development", but the introduction''s notCovered does not tell the reader so.'
     docs/extend/scaffolded-site-files.md:
         page: e719abcd526b4960e1b45c8bff6b5739efa7756a
         blueprint: 866835f4a3636ad0e82c8eb53d0b635928f4813a

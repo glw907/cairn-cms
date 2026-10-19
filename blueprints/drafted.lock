@@ -1,6 +1,28 @@
 # Written by drafter; do not edit by hand.
 version: 1
 pages:
+    docs/claude-code/using-claude-code-with-cairn.md:
+        blocked:
+            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
+            findings:
+                - location: the-guidance-tree, s-agent-location
+                  text: The outline's covers list requires the review agent's purpose and its relation to the audit gate, and its job names 'what the review agent reviews'. The blueprint places only the agent's file location. A constraint and the introPlan caution ('never what it reviews') rule the purpose out, yet outOfScope does not list it. The page would fail to deliver a covers item and would not say it leaves that item out.
+                - location: introduction / framing.introPlan
+                  text: The introduction does not match the outline. introduction.covers and introPlan promise only the review agent's location, while the outline job and covers promise its purpose and audit relation. notCovered does not list that omission, so the introduction gives an inaccurate overview against the outline.
+                - location: see-also
+                  text: The task-guide closing section is incomplete. Its opens line promises the pages covering the work this page leaves out, but it links only scaffolded-site-files and upgrade-cairn. It omits Run cairn-audit on your site and the cairn-guidance reference page, both named in notCovered, and it lists no concept pages or limitations.
+                - location: verify-the-guidance-setup, v-hook (and wire-the-stop-hook, s-hook)
+                  text: 'Reader state: v-hook relies on the site having a check:cairn script, and the daisyui and tailwindcss peers, without saying so. No step produces the script and no precondition lists it. A hand-built site, which pre-site admits, has no script, so --if-present makes the hook silently do nothing and the step cannot succeed.'
+                - location: make-the-ci-step-gate-on-a-stale-tree, s-ci / s-ci-no-workflow
+                  text: 'Reader state: s-ci edits .github/workflows/check.yml, which a hand-built site may not have. s-ci-no-workflow sends the reader to cairn-guidance check''s CI workflow line, but check first runs at v-check, later on the page. The prerequisite is unavailable at that point, and the recovery route comes before the diagnosis that surfaces it.'
+                - location: diagnose-an-install-or-check-failure (from s-install)
+                  text: A failure is missing for s-install. f:5ohm23 states that a failure creating a directory, writing the MANIFEST, or reading a destination throws out of the bin and exits nonzero. A reader running s-install can meet this, and a constraint even notes it, but no failure item covers it.
+                - location: diagnose-an-install-or-check-failure (from v-hook)
+                  text: A failure is missing for v-hook. When the hook produces no check:cairn output, because the script is absent, --if-present skips it, or the settings entry did not take, the reader has no failure item to turn to. x-peer covers only the missing-peer stop.
+                - location: verify-the-guidance-setup v-push / diagnose-an-install-or-check-failure
+                  text: A failure is missing for v-push. A reader who gated CI and pushes can see the check job fail, either from a stale or missing tree or, without continue-on-error, from a crash. v-push has no canFail and no failure item.
+                - location: make-the-ci-step-gate-on-a-stale-tree, f-ci-step / r-ci-trade
+                  text: Two items carry a claim the fact does not hold. f-ci-step's use says continue-on-error 'covers only a crash or a resolution failure', and r-ci-trade cites f:jd54ph for that claim. f:jd54ph says only that continue-on-error passes the job on any nonzero exit. The use adds content instead of scoping the fact, and the paraphrase would survive a corrected fact.
     docs/extend/add-a-second-sign-in-group.md:
         page: 16ad2daf773233d3ff59f80d6d7ed0a593f8afd7
         blueprint: e61f10b26c19c796e94af31abfc523b933021f15
@@ -25,6 +47,29 @@ pages:
             verify-a-member-signs-in-to-the-member-area: sha256:860eb20d28a9e384d9cc247c7fc374f6b940306c97335692d75234c2c6ee55a1
             verify-the-role-signs-in-to-its-home-screen: sha256:28a31a7d16d465cbfe120b09e52096f25f7f5fc17b4dd8b9201142757b3afb9b
             write-the-channel-module: sha256:685caa2d6f0dfebb74c2dbc43b5246d5556bb2615474c5ca70372a67fa93df59
+        blocked:
+            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
+            findings:
+                - location: resolve-a-failed-setup / r-unmigrated, rs-unmigrated-link
+                  text: Recovery route points at the wrong section. r-unmigrated tells the reader to copy and apply `0001_roles.sql` "as [[add-the-role-s-people]] does", and rs-unmigrated-link targets '#add-the-roles-people'. That section only adds people through the form. The copy and apply steps (s-copy-roles, s-apply-roles) live in deploy-the-role, so the route sends the reader to a section that cannot fix the failure.
+                - location: resolve-a-failed-setup / x-unmigrated, x-wiring
+                  text: The section's why says it holds the failures "in the order a reader meets them". On the role path, though, x-unmigrated (from s-submit, in add-the-role-s-people) comes before x-wiring (from v-doctor, in deploy-the-role). The reader runs v-doctor first, so the stated order is wrong.
+                - location: resolve-a-failed-setup / x-construct
+                  text: 'x-construct names `from: s-channel`, but writing the module cannot throw. Construction throws when the module first loads. Following the steps, that first happens at t-run, because the test imports the module''s `normalizeContact` and so loads member-channel.ts, or at the first request after d-deploy. The `from` names a step where the failure cannot occur.'
+                - location: resolve-a-failed-setup (failure from verify-a-member-signs-in-to-the-member-area / c-enter)
+                  text: Missing failure. At c-enter the reader can enter a code that answers `bad-code` and mints no session (f:vo4m61). The code may be mistyped, past its 10-minute TTL, or past the attempt cap (f:u3qhel). The login form then answers fail(400) and c-redirect does not happen, but no failure item covers this outcome.
+                - location: test-the-channel-on-node / t-run; resolve-a-failed-setup
+                  text: Missing failure. t-run can fail on Node below 24. `createChannelDb` needs `node:sqlite`, the dev package adds no runtime floor guard, and npm only warns (f:fcqs22). before-you-begin states the floor, but t-run carries no `canFail` and no failure item, so a reader on an older Node meets an unexplained test failure.
+                - location: verify-the-role-signs-in-to-its-home-screen / v-sidebar; resolve-a-failed-setup
+                  text: Missing failure. v-sidebar can fail, yet it has no `canFail` and no failure item. If the entry's `roles` names a role the vocabulary does not declare, validation fails (f:16paho). If the site already keeps an access map with a key matching `/admin/staff` that does not name `staff`, `canReach` hides the link (f:altcjp, f:5sx6zl). Either way the reader sees no link and has no recovery.
+                - location: deploy-the-role / v-doctor; before-you-begin / bb-list
+                  text: Reader state. v-doctor tells the reader to run `cairn doctor`, which needs the Go `cairn` CLI installed. No precondition lists it and no earlier step installs it. The magic-link-site precondition covers a site built through the tutorial or the setup command, neither of which implies the CLI.
+                - location: write-the-channel-module / s-types, s-dev-vars-example
+                  text: Reader state. Two steps rely on files that only a scaffolded site is guaranteed to have, and no step or precondition produces either. s-types tells the reader to run "the command that `worker-configuration.d.ts` records on its first lines", so `npx wrangler types` must already have run. s-dev-vars-example edits `.dev.vars.example`, which comes from the scaffold (f:nls26c). The page's priorKnowledge also admits a hand-built tutorial site, where these files may not exist.
+                - location: introduction.covers; framing.introPlan item 3
+                  text: The introduction does not give an accurate overview of what the sections deliver. The outline's covers lists "Test with createChannelDb and the Node requirement", and the blueprint has test-the-channel-on-node and end-a-removed-member-s-sessions. Yet introduction.covers and introPlan items 1 to 3 name neither the Node test nor ending a removed member's sessions. Vitest appears only as prior knowledge.
+                - location: framing.introPlan item 5
+                  text: The introPlan misdescribes the sections. Item 5 says "The page states only the one map constraint the role path needs, in [[show-the-home-screen-in-the-sidebar]]". The sections actually state access-map behavior in two places. build-the-role-s-home-screen covers `requireAccess` and `canReach` admitting a `none` role (hs-why, hs-map-alt, hs-map-link). The sidebar section covers an unmatched href staying visible (sb-visible). An introduction drafted from item 5 would misstate the page's scope against the outline's out-of-scope access maps.
     docs/extend/add-cairn-to-a-sveltekit-app.md:
         page: 65163162be441f51abbf80d2cdb1c0b044fc717c
         blueprint: b307ed09dad986174b8551acadcda4e29c3a6987
@@ -61,6 +106,31 @@ pages:
             verify-the-rendered-entry: sha256:df781e49e6e9979080427b4b71307454740bf31f549e21d32c566a72d6c10dcd
             verify-the-sign-in-email: sha256:caa6957a894c3397b689fd4f2d8ac5bfb064573aa98453acf02b2a5ece99b82d
             write-the-site-config-and-a-minimal-adapter: sha256:f00bd4046b73fc086c4434b5af7145ee0a7fbf774afbf46246acf64c6b72cfe0
+        blocked:
+            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
+            findings:
+                - location: orderReason
+                  text: The `orderReason` describes the planning session rather than the page. It opens "The page re-sequences the outline's covers…", which is a departure from the outline's milestone order (content and admin swapped) and belongs in the commit message.
+                - location: push-the-site-to-github
+                  text: 'The section''s `why` narrates a move against an earlier plan: "the push opens this milestone instead of closing the content one."'
+                - location: constraints (facts placed beyond the outline's inventory)
+                  text: 'A constraint records planning history against the outline''s fact inventory: "Facts placed beyond the outline''s inventory, each load-bearing for a claim the covers or the Part 1 items need." It reads as a session note, not a description of the page.'
+                - location: wire-the-dev-backend / d-hooks
+                  text: 'The `use` restates the fact''s content instead of scoping it: "Under `vite dev` the hooks run in Node, where the Worker env never carries the shell variable `npm run dev` sets, so this site''s flag test reads `process.env`." It also changes the fact. f:f21bcz says the opt-in reads the Worker env first and falls back to `process.env`. A corrected fact would leave this paraphrase stale.'
+                - location: add-the-email-sending-binding-and-name-the-origin / em-observability
+                  text: The `use` restates content and adds a claim the fact does not carry. f:txgoyy never says the records go to "Workers Logs", and the use also paraphrases the doctor warning.
+                - location: wire-the-dev-backend / d-callsite
+                  text: The `use` restates the direct-naming rule ("the module names `__CAIRN_DEV_BUILD__` itself, never through an imported constant") instead of naming the part of the fact it carries.
+                - location: before-you-begin / s-install-cli
+                  text: The step relies on a prerequisite no earlier step produces and no precondition lists. `go install` needs a Go toolchain, which the preconditions omit, and the step declares no `requires`. A reader without Go cannot complete the primary install form.
+                - location: edit-the-message-in-a-custom-sender / s-custom-send
+                  text: The custom sender relies on state the page never builds. cs-code reads `env.EMAIL` (from `cloudflare:workers`) and sends through the binding. Per f:vvgpr5, Worker bindings are typed only by the `Env` that `wrangler types` generates, and the page places no `wrangler types` step. The dispositions say "the tutorial's code reads no generated binding type", and i-appd-code adds no `Cloudflare.Env`. `env.EMAIL` therefore will not type-check. The Email Sending binding's send call is also never established on the page.
+                - location: resolve-a-production-failure / pf-refusal, pf-origin
+                  text: Two failures name `s-deploy-prod` in `from`, but neither can occur there. The "`/admin` still shows Wrangler bindings are missing" symptom and the `config.public-origin-invalid` throw are runtime responses to a request, and the deploy step opens no page. The reader first meets them when opening the deployed origin.
+                - location: resolve-a-content-build-failure / f-zero
+                  text: The failure has no `from`, yet a reader meets it during the steps, not in ordinary use after they end. A concept left out of the plugin's `content` option shows when the manifest is written or the build runs in this milestone. The free-standing symptom-row allowance does not apply.
+                - location: verify-the-sign-in-email / x-email
+                  text: 'The failure names two causes, "the custom sender threw, or the domain is not onboarded", but `handledBy: pf-mail-fix` covers only domain onboarding. A reader whose custom `auth.send` threw has no recovery route.'
     docs/extend/debug-your-site.md:
         page: be3ce83e66ec6358b32e1c7952d679b2f8586e7e
         blueprint: ad3be2d68e6160516921681a02acf1d2308dd792
@@ -87,6 +157,13 @@ pages:
             read-the-structured-logs: sha256:1f28b328ce7bdf9e37e57c6a7d2079a5ec33fec7198e59a58eb187de971880d7
             see-also: sha256:dc24301d5774787bac12189ee9a1e82c0e53355824b2469b07aafd8af9655f5e
             site-config-events: sha256:2384b4a46133fd98483db72b0c2fb228e4e6f93f531ca656bf9a0b915e67dca2
+        blocked:
+            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
+            findings:
+                - location: find-the-records
+                  text: The section warns that an empty log proves nothing until observability is on, but it has no `failure` item for that case and never gives the remedy. A reader whose `cairn logs <site>` or Workers Logs query returns zero entries is told only that the result proves nothing. There is no symptom row that names the cause (`observability.enabled` unset in the Wrangler config) and the fix (set it and redeploy). Every later row assumes the reader can see a record, so this is the first failure a reader of this page can meet.
+                - location: admin-action-session-absent / f-session-absent
+                  text: The `opens` line says the wrapped action redirects to `/admin/login`. `f-session-absent`'s `use` claims 'the redirect' backs that sentence, and `s-session-absent-fix` calls the redirect the recovery. Fact `f:v1jj2k` says nothing about a redirect or its target, so the `use` scopes a part the fact does not hold. The opening sentence, the symptom wording ('lands on the sign-in page'), and the 'no code change' recovery all rest on an unbacked claim.
     docs/extend/restrict-admin-access.md:
         page: 1d4a936b532f457b25760d8bfa6dfc3270e17acf
         blueprint: 68d14d7543b2f532625bd3b8dfa33cd6a43a5d96
@@ -105,6 +182,35 @@ pages:
             see-also: sha256:b4ebba2cdbf22a19d95ec80c9d368ef4fcb505a77d92affd633f72ca85e9d12a
             sidebar-entries: sha256:b43b1baabc610ab92554f5391650b14fa88e9701f0ddbe5d44e27114040ea30c
             verify-each-role-s-reach: sha256:0cb90ccd04a764d236d2af3b2d22d012748265601dffe782382ff63f3c991e46
+        blocked:
+            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
+            findings:
+                - location: before-you-begin / intro-one-declaration, intro-security-link, intro-custom-screen-link, intro-sidebar-link, intro-second-group-link, intro-upgrade-link, intro-exhaustive-link
+                  text: 'Order: the introduction''s material is filed under the Before you begin section. intro-one-declaration and six intro-*-link items, including the out-of-scope links and the link to make-the-map-exhaustive, sit in before-you-begin. A drafter following section order would put the introduction''s where-it-sits support and its scope links under the Before you begin heading, mixed with the preconditions. The framing says the introduction has no heading.'
+                - location: before-you-begin / bb-list; enforce-the-map-on-your-routes / s-load-gate, s-wrap-actions
+                  text: 'User goal: the precondition presupposes half of the page''s job. The job is to declare a map and to enforce it on your own screens'' reads and writes. bb-list requires a custom screen whose load already calls requireAccess and whose actions are already createSectionAction wrappers. That makes enforce-the-map-on-your-routes redundant for every reader who meets the preconditions. enf-example then says the example needs no edit there. Yet s-load-gate and s-wrap-actions are not optional, and s-deploy-push and s-build require actions-gated.'
+                - location: resolve-a-refusal / x-still-open
+                  text: 'Recovery: x-still-open has no `from`, but a reader meets it during the steps. The media library or signups screen opening for an editor session is exactly the outcome that contradicts v-signups-refused and v-media-refused. Its handledBy also covers only the second cause, the requireEditor route. The first cause, a Worker that predates the map, has no handler.'
+                - location: resolve-a-refusal / x-role-unknown, x-refuse-all
+                  text: 'Recovery: x-role-unknown and x-refuse-all have no `from`, but a reader meets both at the verification steps. A webmaster refused on signups or media after the role change surfaces at v-reload. A route refusing everyone surfaces at v-reload or v-signups-refused. Neither is a symptom met only in ordinary use after the steps end. x-refuse-all also routes its shadowed cause to s-route-key, when the fix for that cause is s-nest-load-target.'
+                - location: verify-each-role-s-reach / v-remove-refused
+                  text: 'Missing failure: v-remove-refused can show a delete that succeeds. That happens for a reader''s own route that skipped the optional s-owner-only step, or set ownerOnly on the wrong action. No failure item covers a webmaster removing a row.'
+                - location: declare-the-access-map (why)
+                  text: Durable field narrates a planning departure. The why says the section carries where the map goes 'in place of a separate step for the guard'. That records a step cut against the outline's 'Pass the same map to the adapter and to createAuthGuard', when the field should describe the page as it is.
+                - location: declare-the-access-map / map-keep-keys
+                  text: This `use` restates the fact's content instead of scoping it. 'a key dropped from the map locks its route' paraphrases f:zo034s. The same happens in enf-no-key's sibling placements.
+                - location: enforce-the-map-on-your-routes / enf-action-trap
+                  text: 'This `use` paraphrases f:5pyozi: ''a gated `load` never gates the actions beside it''.'
+                - location: enforce-the-map-on-your-routes / enf-owner-only
+                  text: 'This `use` adds example content the fact does not carry: ''a webmaster session adds a signup and only an owner removes one''. A corrected fact or example would leave it stale.'
+                - location: sidebar-entries / nav-unmatched-trap
+                  text: 'This `use` restates f:uhoyun''s second half and an inference: ''an unmatched href stays visible while the route behind it refuses, so a new screen''s entry shows before its route has a key''.'
+                - location: decide-what-the-map-leaves-open / open-warning; verify-each-role-s-reach / ver-unmapped
+                  text: Two `use`s state a derived content claim, that the warning names 'every concept and fixed screen except `media`'. That claim should stay in the step text, or go, rather than sit in a scoping field.
+                - location: assign-the-roles / asg-next-request
+                  text: 'This `use` restates content and invents consequences beyond f:uotol3: ''a demotion takes effect at once, and one test editor can cycle through the roles''.'
+                - location: before-you-begin / bb-dev-owner; declare-the-access-map / map-example-site
+                  text: Two `use`s carry content claims rather than scope. bb-dev-owner says 'local development cannot show a role refusal'. map-example-site says 'an owner-only theme-kit rule' and that the example changes the signups key.
     docs/extend/rotate-the-github-app-key.md:
         page: 25d0f25c369d5585ec17d7584536f6e198d4a7e3
         blueprint: e299f141f3305a3a68cc67fbfdc6350f589d0918
@@ -119,6 +225,13 @@ pages:
             roll-back-to-the-old-key: sha256:03b43cf6bcf150cef5bea823dbabbe155017f382766d628ff11e5a200c8f1888
             see-also: sha256:f3ca1e3e61907aa0b7035eb95b7f28bedc55e031bab062e53967533bd8040fa0
             verify-the-new-key: sha256:3b9e85ea02175d20a57f2cf2bc79eecfecf7a960dcb2a96b99f5d39408d0d307
+        blocked:
+            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
+            findings:
+                - location: before-you-begin; delete-the-old-key / s-delete (also verify-the-new-key / x-fingerprint, roll-back-to-the-old-key / s-rollback-verify and s-rollback-delete, generate-a-third-key / s-third-delete)
+                  text: 'Reader state: no step records the current key''s fingerprint before the push, yet several later steps depend on it. s-delete says to delete "the old key, the one you replaced" and to "leave the new key and any other key you keep". x-fingerprint diagnoses a fingerprint that "matches the old key". s-rollback-verify compares against "the fingerprint GitHub shows for the old key". s-third-delete and s-rollback-delete also tell keys apart. With exactly two keys on the App, "the non-matching one" works. GitHub allows up to 25 keys (f:zoekqt), though, and the blueprint itself allows for other kept keys. In that case the reader cannot tell which key the Worker held before the rotation, because no earlier step produces that knowledge and no precondition lists it.'
+                - location: delete-the-old-key (and introduction.notCovered)
+                  text: 'Missing failure: local development keeps the old key. f:86h9o6, which the blueprint places, says local `wrangler dev` reads secrets from `.dev.vars`, never from the deployed secret, and push-deploys explicitly omits that clause. A developer whose `.dev.vars` holds the old key''s base64 value can follow every step and delete the old key. After that, every token mint in local development is refused. No failure item, step, or notCovered entry addresses this. The dispositions say "This page does not cover local development", but the introduction''s notCovered does not tell the reader so.'
     docs/extend/scaffolded-site-files.md:
         page: e719abcd526b4960e1b45c8bff6b5739efa7756a
         blueprint: 866835f4a3636ad0e82c8eb53d0b635928f4813a
@@ -152,6 +265,13 @@ pages:
             themed-404-page: sha256:544b7a19d9b07f6dacf5b7eb362c63195ef5aaf5ed3a4f07745120e00768bf51
             vite-config-ts: sha256:6a0cd058ceb302efd177dcbda539f9236d05926ac2377082bc2ebda6f002bbbf
             wrangler-jsonc: sha256:a3b8b9092d1407a7d6813ada9a5adcd38d0893d23c8a5c2ca211d37bf5adc60c
+        blocked:
+            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
+            findings:
+                - location: framing (background 'Where Cloudflare fits'; introPlan paragraph 1)
+                  text: The framing contradicts the facts and the wrangler-jsonc section. The background's 'Where Cloudflare fits' bullet says `wrangler.jsonc` 'binds two D1 databases' and that 'each D1 database has its own migrations directory (f:gepykz, f:nv0ok0)'. introPlan paragraph 1 says it 'binds the Worker's D1 databases', in the plural. f:n7t4bn and f:l3cxgc say the scaffold binds only `AUTH_DB` and no second database. [[wrangler-jsonc]] opens on 'its only D1 database is the auth store', and [[database-migrations]] calls `migrations/` 'the scaffold's only migrations directory'. As planned, the introduction would misstate what the body delivers and restate the showcase's `APP_DB` and `migrations-app/`, which the scaffold-claims constraint forbids.
+                - location: introduction (covers, notCovered) against the outline entry
+                  text: The outline entry's `covers` and `outOfScope` no longer match what the blueprint's introduction and sections deliver. `covers` still lists four things the blueprint drops. First, `APP_DB` among the wrangler bindings, which f:n7t4bn says the scaffold lacks. Second, `migrations/` versus `migrations-app/`, which the scaffold does not ship (f:nv0ok0). Third, 'the signups example screen' under `src/routes/`, which f:t2t5lx says is not part of the scaffold. Fourth, `.claude/` with its four skills and VERSION stamp, plus a whole 'guidance tooling' item, which the dispositions subordinate to the guidance reference under the register's Claude Code ruling. `outOfScope` names 'The signups screen as a pattern', while `notCovered` says 'building a custom admin screen'. The blueprint's choices follow verified facts and the register, so the outline entry is stale. Under the introduction check, though, the intro and the entry disagree. I cannot edit the outline entry.
     docs/extend/security-model.md:
         page: ea4bd221fb744bd760fed649ae79e5eaee8df569
         blueprint: f10cff21820db750c75ae8f4fbbb7b5d4e674f65
@@ -185,3 +305,26 @@ pages:
             the-github-apps-reach: sha256:200c3cf62bbe3065d524f3085a804a61c25c06edd56d3a48918c7ec0c89f5ac2
             the-session-cookie: sha256:d9f8d0714bfd58568009594abce2173ffa8e1744fe5e8999dbea4e7953ac45d3
             the-site-s-responsibilities: sha256:63d46429aff481f60cd7c77ca436aeb17af943e37efb6e7453b400bec73bf2e3
+        blocked:
+            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
+            findings:
+                - location: constraints (fifth entry, "The outline's suggested headings are not used")
+                  text: This constraint records the planning session, not the page. It says the outline's suggested headings are not used, why each was rejected, and which old slugs they had. That is a departure from an earlier outline and belongs in the commit message, not a durable field.
+                - location: framing.introPlan (paragraphs 2 and 4) against scope-and-threat-position (sc-attacker, sc-floors, sc-seams)
+                  text: The introduction plan restates sections instead of framing them. It carries the owner's threat sentences word for word, then the floors and the identity hand-off. scope-and-threat-position opens on the same threat sentence (sc-attacker) and places the floors (sc-floors) and the seams (sc-seams). A reader meets the same definition twice in a row. This contradicts the introduction.covers rule that the framing names the model "without restating any section's mechanics".
+                - location: magic-link-sign-in / ml-neutral
+                  text: 'This `use` restates the fact''s content, not its scope. It copies the `{ outcome: ''sent'' }` literal, which goes stale if the fact changes.'
+                - location: csrf-protection / cs-sveltekit
+                  text: 'This `use` paraphrases the fact''s content: what SvelteKit compares and refuses, `trustedOrigins`, the global setting, and the SvelteKit 3 removal of `checkOrigin`. It does not just scope the fact.'
+                - location: csrf-protection / cs-referrer and cs-referrer-scope
+                  text: These two `use` fields restate header values (`strict-origin`, the meta tag) and their scope instead of naming the parts of the facts to place.
+                - location: identity-modes-threat-surface / id-lifetime
+                  text: This `use` restates the fact's content, including the 30-day constant. A changed constant would leave the `use` stale.
+                - location: identity-modes-threat-surface / id-logout and the-session-cookie / sk-logout
+                  text: Both `use` fields copy logout mechanics from f:8xxe3b (`isSafeLogoutUrl`, `/admin/login`, the cookie name forms) instead of scoping the fact.
+                - location: identity-modes-threat-surface / id-logs
+                  text: This `use` restates the log event names and reasons (`guard.refused`, `identity`, `auth.identity.unknown`) instead of scoping the fact.
+                - location: the-dev-backend-flags-two-refusals / dv-hooks; limits-of-the-admin-headers / gd-csp-option; render-safety / rs-callback
+                  text: These `use` fields paraphrase the fact's mechanics (`__CAIRN_DEV_BUILD__`, `process.env`, the `sveltekit()` call, the `script`/`strip` handling) instead of naming parts of the facts.
+                - location: the-auth-channels-threat-surface / ch-why, ch-origin-why, ch-nist; limits-of-the-auth-channel / ch-capture
+                  text: These `use` fields restate the fact's content instead of scoping it. ch-why paraphrases the lockout. ch-origin-why restates SvelteKit's behavior. ch-nist restates NIST's requirement. ch-capture restates the capture-transport clause.

@@ -2,6 +2,9 @@
 # key, the prompts module, agent definitions, and the index-link command live in each
 # workstation's drafter.local.toml (ignored) and the user config until cutover.
 
+# cairn runs on its own prompts module, so a run with none set must refuse the stock fallback.
+require_prompts = true
+
 [gate]
 command = "npm run check:docs-gate -- --page {page} --brief {brief}"
 protocol = "cairn-run-gate"

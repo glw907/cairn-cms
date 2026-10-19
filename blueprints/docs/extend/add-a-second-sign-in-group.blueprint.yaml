@@ -69,7 +69,7 @@ framing:
          stays the site's code.
     2. **The developer sent from Restrict admin access.**
        - Arrives from: that page's roles section, which sends a role that signs in but reaches no
-         engine content here, and its See also (`docs/internal/briefs/extend/restrict-admin-access.plan.md:155,206-207,540`).
+         engine content here, and its See also.
        - Came for: what a `none`-capability role does and how to give it a home.
        - Knows: the role vocabulary, capability as the floor, `defineRoles`, the access map.
        - Lacks: that the map admits no `none` session, so the role's screen gates by hand (the body's
@@ -90,11 +90,11 @@ framing:
        - Knows: the guard, the `identity` seam, Access.
        - Lacks: the role-or-channel choice, and the assurance that editors keep their magic link.
     5. **The developer arriving from the reference or the example site's code.**
-       - Arrives from: `docs/reference/auth-channel.md`, whose migrations-directory sentence the page
-         restores a pointer from (outline rearm 60); the example site's source comments in
+       - Arrives from: `docs/reference/auth-channel.md`, whose migrations-directory sentence points
+         here; the example site's source comments in
          `examples/showcase/src/members/channel.ts`, `capture-transport.ts`, `src/app.d.ts`,
          `src/routes/members/`, `wrangler.jsonc`, and `e2e/members.spec.ts`, which name this page as the
-         documented pattern (rearms 111 to 121); and, one step removed, a scaffolded site's agent that
+         documented pattern; and, one step removed, a scaffolded site's agent that
          the shipped guidance routes to the reference
          (`templates/waymark/.claude/skills/cairn-extend/SKILL.md:33`).
        - Came for: the assembled walkthrough that one reference entry or one exemplar file does not
@@ -102,7 +102,7 @@ framing:
        - Knows: `createAuthChannel`'s config members, or the example code.
        - Lacks: the build order, the deploy, the verified test recipe, and the role alternative, which
          neither the reference nor the guidance names. This reader also meets a new name: the
-         reference and the guidance say "second audience" (friction filed).
+         reference and the guidance say "second audience".
 
     Readers likely in the wrong place, each with the page they belong on:
 
@@ -129,7 +129,7 @@ framing:
     3. **Why the channel exists.** The `/auth-channel` subpath exists for a site's own login for a group
        the owner/editor sign-in was never meant to model. The factory owns every security discipline
        (code minting and consumption, budgets, sessions, revocation), and the site supplies delivery,
-       roster lookup, identifier shape, and a bot challenge (f:qqy4uq, filed by this step; f:cf1avu).
+       roster lookup, identifier shape, and a bot challenge (f:qqy4uq, f:cf1avu).
        The channel's database is never `AUTH_DB`, by design, so the group's roster and sessions stay
        physically apart from the editors' store (f:rcpe0n).
     4. **Why a role exists.** It reuses the editors' sign-in, sessions, and roster screen for people who
@@ -142,7 +142,7 @@ framing:
     6. **Where Cloudflare fits.** Both mechanisms rest on D1. The role reuses `AUTH_DB` (f:b3l3t0); the
        channel needs a D1 binding and a migrations directory of its own (f:rcpe0n, f:5rkxfp). The
        example's bot challenge is Cloudflare Turnstile through `verifyTurnstile` (f:ez788q, f:69xbyh);
-       the introduction leaves Turnstile to "Before you begin", since the factory requires only a
+       the introduction leaves Turnstile to [[before-you-begin]], since the factory requires only a
        challenge function and Turnstile is the example's choice.
     7. **GitHub, left out on purpose.** A publish commits through the site's GitHub App with the
        signed-in editor as author (f:cjonmm). A `none` role reaches no content screen (f:4673n6) and a
@@ -151,15 +151,13 @@ framing:
        Restrict admin access.
   placeInDocSet: |
     - **Group and neighbors.** "Auth and access", fourth of four: Security model (concept),
-      Restrict admin access, Replace magic links with Cloudflare Access, then this page. On the index
-      today only Security model and Replace magic links are listed; this page and Restrict admin
-      access join in this run.
+      Restrict admin access, Replace magic links with Cloudflare Access, then this page.
     - **Links in, and why.** Replace magic links sends the reader who wants a second population beside
       magic-link editors (introduction and See also). Security model sends the reader building the
       channel it analyzes (outline crossLink: "Building the channel whose threat catalogue it
       carries"). Restrict admin access sends the reader with a `none`-capability audience (crossLink:
       "A none-capability role"). The reference and the example site's comments send the reader who
-      wants the documented pattern (outline rearms 60 and 111 to 121). The old slug redirects here.
+      wants the documented pattern. The old slug redirects here.
     - **Links out.** Security model for the channel's threat surface (crossLink: "The channel's threat
       catalogue and obligations"); Restrict admin access for access maps; Replace magic links for the
       reverse wrong-place reader; Add a custom admin screen and Arrange the admin sidebar from the
@@ -176,7 +174,7 @@ framing:
       or the access map from scratch. It never repeats "floors, not ceilings" or the zero-config
       rationale.
   introPlan: |
-    Three framing paragraphs, then the plan's bounds. The opening is a statement from the reader's
+    Three framing paragraphs, then the bounds. The opening is a statement from the reader's
     situation, never an imperative and never a sentence about the page; no sentence names a position
     on the page. Wording is the drafter's; each item fixes the claim and its facts. A task-section
     sentence stays under 26 words, so the drafter splits any item below that runs long.
@@ -210,64 +208,37 @@ framing:
        - Contract, the anatomy's one-line contract inside the framing: whichever mechanism you choose,
          by the end the group signs in on your deployed site and lands in an area of its own
          (`no-claim`: the page's promise; both paths end in a deploy and a verification on the
-         deployed site, per the plan).
+         deployed site).
        - The running examples: a `staff` role whose `home` is `/admin/staff`, the declaration the
          roles reference uses (f:4673n6, f:pvs115), and the members channel in the repository's example
          site, `examples/showcase`, which signs members in at `/members/login` and gates `/members`
-         (f:265s4t). First mention of the example site uses that full form, per the plan's drafting
-         constraints.
+         (f:265s4t). First mention of the example site uses that full form.
        - The two mechanisms share no steps, so a developer who has already chosen, such as one sent
          here for a `none` role or for a channel, builds only that one (`no-claim`: a scope sentence for
          readers 2, 3, and 5).
 
-    Then the plan's bounds, as the plan's part 2 and part 3 set them:
+    Then the bounds:
 
-    4. **Prior knowledge** (plan part 2, unchanged): a site built through
+    4. **Prior knowledge**: a site built through
        `docs/extend/add-cairn-to-a-sveltekit-app.md` or scaffolded by the setup command, so its hooks
        file, adapter module, `wrangler.jsonc` bindings, and applying a D1 migration are familiar;
        SvelteKit load functions and form actions; Vitest, for the channel's test.
-    5. **What the page leaves out** (plan part 3), each with the page to read instead, as sentences or
+    5. **What the page leaves out**, each with the page to read instead, as sentences or
        a short list:
        - A group whose people write the site's content: `none` capability closes the content screens,
          so such a group signs in at editor capability and an access map narrows what it reaches,
          `docs/extend/restrict-admin-access.md` (f:4673n6). The page states only the one map constraint
-         the role path needs, in "Show the home screen in the sidebar".
+         the role path needs, in [[show-the-home-screen-in-the-sidebar]].
        - Signing the editors themselves in through the organization's identity provider:
          `docs/extend/replace-magic-links-with-cloudflare-access.md`.
        - The channel's threat surface and the hazards a site's `deliver` can introduce:
          `docs/extend/security-model.md#the-auth-channels-threat-surface`.
-
-    Facts the introduction draws on that the plan's dispositions table does not list, for the
-    drafter's brief: f:zxdoaf (owner tier, `docs/internal/facts/front-door.md`) and f:qqy4uq (filed by
-    this step, `docs/internal/facts/extend.md`).
 orderReason: |
-  The sections follow the task-guide anatomy and the dependency between steps, not the outline's
-  covers inventory. Before you begin comes first, as the anatomy requires, and its channel items (a
-  transport, a roster store, a Turnstile secret) are themselves a cost the reader weighs in the
-  choice that follows. Choose the mechanism is next because the outline's job says the page first
-  helps the reader choose and the two paths share no step; it takes the early right-tool callout
-  from the Sanity exemplar. The role path comes before the channel because it is shorter and reuses
-  the sign-in the site already runs, and a channel reader skips it from the comparison. The role's
-  sections run in dependency order: declare the role (the name and `home` every later step uses,
-  declared once on the adapter so the hooks need no edit), build the home screen (the path `home`
-  names must exist before anyone lands there), show it in the sidebar (the link points at that
-  screen), deploy the role (the roles migration, then the `cairn doctor` wiring check on a local
-  build so a wiring fault is caught before it goes live, then the deploy that makes the editors
-  screen offer the role), add the people (once the deployed screen offers the role), and verify on
-  the deployed site (the dev backend mints an owner, so the role cannot be tried locally). The channel's sections follow the
-  example site's build order, the Django exemplar's one running example: provision the database
-  (the binding `resolveDb` returns, migrated locally so `wrangler dev` serves the channel), write
-  the module (it returns the actions the routes call, and its secret steps type the env), build the
-  login route (it calls `request` and `confirm`), gate the member area (the login's redirect
-  target), end a removed member's sessions (the two removal tools with no route), test on Node (the
-  last check before anything goes live), deploy (the remote migration and the production secret
-  before the code that reads them), and verify on the deployed site. Both paths end the same way, a
-  deploy then a check on the live site. Resolve a failed setup holds both paths' failures in the
-  order a reader meets them, and See also closes the page. Departures from the covers: the binding
-  comes before the config members, because the module's `resolveDb` returns it; the covers'
-  returned actions and helpers are split across the sections that call each one; the home-screen,
-  removal, deploy, and verification sections are added; and the test cover keeps its Node floor in
-  Before you begin, where the reader needs it.
+  The sections follow the task-guide anatomy and the dependency between steps. Setup and the
+  choice come first because the two paths share no step and a reader builds only one. The role
+  path runs before the channel path. Each runs in dependency order from its declaration to a deploy
+  and a check on the live site. [[resolve-a-failed-setup]] gathers both paths' failures, and
+  [[see-also]] closes the page.
 preconditions:
   - magic-link-site
   - owner-sign-in
@@ -287,6 +258,10 @@ exemplars:
 sections:
   - id: before-you-begin
     heading: Before you begin
+    why: |
+      The anatomy opens a task guide with its preconditions, and the channel's items (a transport,
+      a roster store, a Turnstile secret) are a cost the reader weighs in the choice that follows. The
+      channel test's Node floor sits here, where the reader needs it before any step.
     opens: |
       Both mechanisms start from a cairn site whose editors already sign in by magic link, and each
       path adds the items labeled for it.
@@ -370,6 +345,9 @@ sections:
           Turns to the first decision: which mechanism to build.
   - id: choose-the-mechanism
     heading: Choose the mechanism
+    why: |
+      The two paths share no step, so the reader chooses before building anything. The section
+      carries the early right-tool callout, here role versus channel.
     opens: |
       A second group signs in either as a declared role in the editors' roster in `AUTH_DB` or
       through a separate login built with `createAuthChannel`.
@@ -428,13 +406,14 @@ sections:
         kind: fact
         fact: f:nguseg
         use: |
-          The sentence after the fit sentences, worded apart from the introduction's: for either
-          mechanism, the site's code defines what a member, a staff assignment, or a signup is.
+          Only the domain point as it applies to either mechanism (what a member, a staff
+          assignment, or a signup is), in the sentence after the fit sentences, worded apart from
+          the introduction's.
       - id: s-choose
         kind: step
         text: |
           Choose the mechanism the comparison fits. A reader who chooses a channel skips the role
-          path and continues at Sign the group in through a channel.
+          path and continues at [[sign-the-group-in-through-a-channel]].
         requires:
           - magic-link-site
         produces:
@@ -448,6 +427,9 @@ sections:
           Turns to the role path, which follows.
   - id: sign-the-group-in-with-a-role
     heading: Sign the group in with a role
+    why: |
+      The role path comes before the channel because it is shorter and reuses the sign-in the site
+      already runs; a reader who chose a channel skips it from the comparison.
     opens: |
       A role adds the group to the editors' roster at `none` capability, so its people sign in by
       the magic link and reach only the screens the site builds for them.
@@ -456,8 +438,8 @@ sections:
         kind: fact
         fact: f:4673n6
         use: |
-          Backs the opening: a `none`-capability role still authenticates through the same
-          magic-link flow every editor uses, and the engine's content and roster screens refuse it.
+          Only, for the opening, the shared magic-link flow and the refusal by the engine's content
+          and roster screens.
       - id: ra-example
         kind: fact
         fact: f:pvs115
@@ -473,6 +455,9 @@ sections:
           Turns to the declaration: the role starts as one entry in the vocabulary.
   - id: declare-the-role
     heading: Declare the role
+    why: |
+      Every later role step uses the role's name and `home`, and the role is declared once on the
+      adapter, so the hooks need no edit.
     level: 3
     opens: |
       A role is one entry in the site's role vocabulary, declared once on the adapter's `roles`
@@ -490,7 +475,8 @@ sections:
         use: |
           Only: `devBackendHandle` takes the same required `runtime` and reads `runtime.roles`, so
           one declaration serves both handles. Omit the earlier-versions clause; the
-          dev-backend-mints-an-owner clause is placed in the verification section.
+          dev-backend-mints-an-owner clause is placed in
+          [[verify-the-role-signs-in-to-its-home-screen]].
       - id: dr-module
         kind: fact
         fact: f:q07rd5
@@ -560,8 +546,8 @@ sections:
         kind: fact
         fact: f:pvs115
         use: |
-          The `home` rule: an absolute `/admin`-prefixed path, and the `/admin` index redirects a
-          role that declares one there (303) before it looks for a reachable concept.
+          Only the `home` rule: the path's form and the `/admin` index's redirect to it, before
+          the index looks for a reachable concept.
       - id: dr-welcome
         kind: fact
         fact: f:7n28wc
@@ -577,6 +563,9 @@ sections:
           Turns to the screen the `home` path needs, which the next section builds.
   - id: build-the-role-s-home-screen
     heading: Build the role's home screen
+    why: |
+      The path the role's `home` names must exist before anyone lands there, so the screen follows
+      the declaration.
     level: 3
     opens: |
       The home path is a custom admin screen the site builds, and its load function checks the
@@ -586,9 +575,8 @@ sections:
         kind: fact
         fact: f:5t6hz6
         use: |
-          Backs the opening: a `none`-capability session is an ordinary row in `AUTH_DB`'s `editor`
-          table and populates `locals.cairnEditor` like an editor's, with `capability` resolved to
-          `none`, so the screen reads `role` from it.
+          Only, for the opening, that a `none`-capability session populates `locals.cairnEditor`
+          like an editor's, so the screen reads `role` from it.
       - id: s-route
         kind: step
         text: |
@@ -660,6 +648,8 @@ sections:
           Turns to the sidebar, which shows the screen's link to the role.
   - id: show-the-home-screen-in-the-sidebar
     heading: Show the home screen in the sidebar
+    why: |
+      The sidebar entry points at the home screen, so it follows the screen.
     level: 3
     opens: |
       A `navLayout` entry with a `roles` list shows the home screen's link only to the roles it
@@ -714,6 +704,10 @@ sections:
           Turns to the deploy, now that the screen and its link exist.
   - id: deploy-the-role
     heading: Deploy the role
+    why: |
+      The role reaches the live site only after the roles migration and a local wiring check, so a
+      wiring fault is caught before it goes live, and the deploy is what makes the editors screen offer
+      the role.
     level: 3
     opens: |
       The role reaches the deployed site once `AUTH_DB` carries `0001_roles.sql`, the migration that
@@ -820,6 +814,8 @@ sections:
           Turns to adding the role's people on the deployed site.
   - id: add-the-role-s-people
     heading: Add the role's people
+    why: |
+      An owner can add the role's people only once the deployed screen offers the role.
     level: 3
     opens: |
       An owner adds each of the role's people on `/admin/editors`, the screen that adds editors,
@@ -829,9 +825,8 @@ sections:
         kind: fact
         fact: f:hcjb3o
         use: |
-          Backs the opening and the role-list step: once the vocabulary is larger than the owner and editor pair,
-          the invite screen offers every declared role, so the role's people are added and removed
-          there like editors.
+          Only, for the opening and the role-list step, that the invite screen offers every
+          declared role once the vocabulary is larger than the owner and editor pair.
       - id: s-add-person
         kind: step
         text: |
@@ -865,7 +860,7 @@ sections:
         kind: fact
         fact: f:nj0nfm
         use: |
-          Backs the add steps and the last step: name, email, role, then **Add editor**, and the
+          Only, for the add steps and the last step, the form's fields and button and that the
           action sends no invitation email.
       - id: s-tell
         kind: step
@@ -882,6 +877,9 @@ sections:
           Turns to the verification on the deployed site.
   - id: verify-the-role-signs-in-to-its-home-screen
     heading: Verify the role signs in to its home screen
+    why: |
+      The dev backend mints an owner, so the role cannot be tried locally, and the role path closes
+      with checks on the deployed site.
     level: 3
     opens: |
       A working role signs its people in by the magic link onto the home screen, with the screen's
@@ -898,7 +896,7 @@ sections:
         mode: claim
         text: |
           The checks run in order, as a numbered list introduced by a complete sentence, and a
-          failed check leads to Resolve a failed setup.
+          failed check leads to [[resolve-a-failed-setup]].
       - id: v-sign-in
         kind: step
         text: |
@@ -943,9 +941,12 @@ sections:
       - id: vr-handoff
         kind: handoff
         text: |
-          Closes the role path; a failed check goes to Resolve a failed setup.
+          Closes the role path; a failed check goes to [[resolve-a-failed-setup]].
   - id: sign-the-group-in-through-a-channel
     heading: Sign the group in through a channel
+    why: |
+      The channel path follows the example site's build order with one running example, the members
+      channel, from database to deploy.
     opens: |
       `createAuthChannel` builds the request, confirm, and logout actions for a separate login over
       a numeric code, and the site supplies the routes, the code's delivery, and the roster.
@@ -960,10 +961,7 @@ sections:
         kind: fact
         fact: f:cf1avu
         use: |
-          Backs the opening's division of work: the site supplies the delivery function, roster
-          lookup, identifier normalizer, and bot challenge, plus a D1 binding resolver and a cookie
-          name, and the factory owns code minting, code consumption, rate budgets, sessions, and
-          revocation.
+          Only the division of work between the site and the factory, for the opening.
       - id: cp-example-db
         kind: fact
         fact: f:uci4pa
@@ -994,6 +992,9 @@ sections:
           Turns to the channel's database, which comes first.
   - id: provision-the-channel-database
     heading: Provision the channel database
+    why: |
+      The module's `resolveDb` returns this binding, so the database and its binding come before the
+      config members, and the local migration lets `wrangler dev` serve the channel.
     level: 3
     anchor: provision-the-channel-database
     opens: |
@@ -1004,8 +1005,7 @@ sections:
         kind: fact
         fact: f:rcpe0n
         use: |
-          Backs the opening: the channel's binding is never `AUTH_DB`, and it needs its own binding
-          and a `migrations_dir` distinct from the one `AUTH_DB` uses.
+          Only, for the opening, the separate binding and the distinct `migrations_dir`.
       - id: p-create
         kind: step
         text: |
@@ -1032,9 +1032,8 @@ sections:
         kind: fact
         fact: f:6ab2z6
         use: |
-          Backs the copy step's path and the idempotence sentence: every statement is idempotent,
-          so applying the file to a database that already holds the tables changes nothing and
-          records the migration.
+          Only the packaged file's path, for the copy step, and its idempotence, for the sentence
+          after it.
       - id: p-bind
         kind: step
         text: |
@@ -1084,9 +1083,12 @@ sections:
         kind: handoff
         text: |
           Turns to the module, whose `resolveDb` returns this binding; the remote database takes the
-          migration in Deploy the channel.
+          migration in [[deploy-the-channel]].
   - id: write-the-channel-module
     heading: Write the channel module
+    why: |
+      The module returns the actions the routes call, and its secret steps type the env, so it comes
+      before any route.
     level: 3
     anchor: write-the-channel-module
     opens: |
@@ -1097,8 +1099,7 @@ sections:
         kind: fact
         fact: f:41kl6q
         use: |
-          Backs the opening and the create step: the config requires `resolveDb`, `deliver`,
-          `lookup`, `normalize`, `challenge`, and `cookie.name`.
+          Only the list of required config members, for the opening and the create step.
       - id: s-lookup
         kind: step
         text: |
@@ -1189,10 +1190,8 @@ sections:
         kind: fact
         fact: f:pe4vuc
         use: |
-          Backs the types step and the sentence after it: `wrangler types` writes
-          `worker-configuration.d.ts`, whose generated `Env` names each binding and secret name (a
-          scaffolded site's recorded command reads `.dev.vars.example`), and that generated `Env`
-          types the `env` that `cloudflare:workers` exports, never the module's local `Env`.
+          Only, for the types step and the sentence after it, what the generated `Env` names and
+          which `env` it types.
       - id: wm-types-why
         kind: sentence
         mode: claim
@@ -1208,7 +1207,7 @@ sections:
         fact: f:86h9o6
         use: |
           Only: `wrangler dev` reads secrets from `.dev.vars` beside the Wrangler config, never from
-          a deployed secret, so the production copy waits for Deploy the channel. The
+          a deployed secret, so the production copy waits for [[deploy-the-channel]]. The
           `wrangler secret put` clause is placed in that section.
       - id: wm-members-lead
         kind: sentence
@@ -1235,14 +1234,14 @@ sections:
         fact: f:ditn3e
         use: |
           Only: `resolveDb` returns `ChannelDatabaseLike | undefined`, which a real `D1Database`
-          satisfies with no cast. The `createChannelDb` half is placed in Test the channel on Node.
+          satisfies with no cast. The `createChannelDb` half is placed in [[test-the-channel-on-node]].
       - id: wm-lookup
         kind: fact
         fact: f:dtz8oa
         use: |
           Only the `lookup` clause: `lookup` returns the stable subject for a normalized contact or
-          null, which decides membership. The `verify` clauses are placed in End a removed member's
-          sessions.
+          null, which decides membership. The `verify` clauses are placed in
+          [[end-a-removed-member-s-sessions]].
       - id: wm-env
         kind: fact
         fact: f:ffskeq
@@ -1253,8 +1252,7 @@ sections:
         kind: fact
         fact: f:4cw5dk
         use: |
-          The `cookie.name` member: the base name of the session cookie that also names its
-          `_pending` nonce cookie, and a base that starts with `cairn_` throws at construction.
+          Only the `cookie.name` member: the cookies it names and the `cairn_` prefix rule.
       - id: wm-turnstile
         kind: fact
         fact: f:69xbyh
@@ -1280,16 +1278,13 @@ sections:
         kind: fact
         fact: f:ez788q
         use: |
-          The three duties: `normalize` idempotent, canonical per identity, and injective across
-          distinct people; `lookup`'s subject stable and canonical per person; `challenge` actually
-          verifying a human.
+          Only the three duties of `normalize`, `lookup`, and `challenge`.
       - id: wm-consequences
         kind: fact
         fact: f:pa2hqh
         use: |
-          The consequences: the factory cannot verify the three obligations, a lossy `normalize`
-          maps two people onto one identity's rate budget, and `challenge` is the whole economic
-          bound on guessing a code.
+          Only the consequences: that the factory cannot verify the obligations, the lossy
+          `normalize` case, and `challenge` as the bound on guessing a code.
       - id: wm-obligations-link
         kind: link
         target: ../reference/auth-channel.md#config-obligations
@@ -1308,6 +1303,8 @@ sections:
           Turns to the routes that call the returned actions, starting with the login route.
   - id: build-the-login-route
     heading: Build the login route
+    why: |
+      The login route calls the `request` and `confirm` actions the module returns.
     level: 3
     opens: |
       The example site folds request and confirm onto `/members/login` as two named form actions
@@ -1364,7 +1361,7 @@ sections:
         use: |
           Only: both member route modules export `prerender = false`, since on a site that
           prerenders by default the asset layer would serve a prerendered copy without running the
-          Worker. The component clause is placed in Gate the member area.
+          Worker. The component clause is placed in [[gate-the-member-area]].
       - id: l-form-request
         kind: step
         text: |
@@ -1416,7 +1413,7 @@ sections:
         use: |
           Only the outcome sentence: a wrong code answers `bad-code` and mints no session, and a
           false or thrown challenge answers `challenge-required` without minting. The construction
-          clause is placed in Resolve a failed setup.
+          clause is placed in [[resolve-a-failed-setup]].
       - id: lr-types-link
         kind: link
         target: ../reference/auth-channel.md#types
@@ -1426,6 +1423,8 @@ sections:
           Turns to `/members`, where a confirmed code lands and which the next section gates.
   - id: gate-the-member-area
     heading: Gate the member area
+    why: |
+      The member area is the login route's redirect target, so it follows the login route.
     level: 3
     opens: |
       A channel session never populates `locals.cairnEditor`, so the member area lives in the
@@ -1484,9 +1483,8 @@ sections:
         kind: fact
         fact: f:k0cryh
         use: |
-          Backs the component step and the sentence after the code: the members page component
-          renders the subject its load returns and a sign-out form that posts to `?/logout`, and a
-          prerendered gated page would be served by the asset layer without its gate ever running.
+          Only the members page component, for the component step, and the prerender hazard, for
+          the sentence after the code.
       - id: c-area-server
         kind: code
         text: |
@@ -1509,8 +1507,8 @@ sections:
         kind: fact
         fact: f:gubeex
         use: |
-          Logout deletes the session cookie and destroys that one session's row, and it never
-          touches another session of the same identity.
+          Only what logout ends and what it leaves: that one session, never another of the same
+          identity.
       - id: ga-handoff
         kind: handoff
         text: |
@@ -1518,6 +1516,9 @@ sections:
           site ends it.
   - id: end-a-removed-member-s-sessions
     heading: End a removed member's sessions
+    why: |
+      A removed member keeps an open session, and the two tools that end it need no route, so they
+      follow the routes.
     level: 3
     opens: |
       A channel session lasts 30 days by default, and a site ends a removed member's sessions early
@@ -1582,6 +1583,9 @@ sections:
           Turns to a test that proves the finished channel on Node before it deploys.
   - id: test-the-channel-on-node
     heading: Test the channel on Node
+    why: |
+      The test is the last check before anything goes live, so it comes after the channel is
+      complete and before the deploy.
     level: 3
     opens: |
       `createChannelDb`, exported from `@glw907/cairn-cms-dev`, applies the channel's migration to
@@ -1599,8 +1603,8 @@ sections:
         kind: fact
         fact: f:fcqs22
         use: |
-          Only: `createChannelDb` needs `node:sqlite`. The Node floor is placed in Before you
-          begin.
+          Only: `createChannelDb` needs `node:sqlite`. The Node floor is placed in
+          [[before-you-begin]].
       - id: t-inline
         kind: step
         text: |
@@ -1615,10 +1619,8 @@ sections:
         kind: fact
         fact: f:1stlyv
         use: |
-          Backs the inline step and the explanation: the engine imports `cloudflare:workers`, which
-          Node's loader rejects when Vitest leaves the engine external; inlined, Vitest transforms
-          the engine and a test's `vi.mock('cloudflare:workers')` reaches its import; the
-          scaffold's `vitest.config.ts` carries the setting.
+          Only, for the inline step and the explanation after it, why the engine must be inlined
+          and that the scaffold's config carries the setting.
       - id: t-write
         kind: step
         text: |
@@ -1678,9 +1680,8 @@ sections:
         kind: fact
         fact: f:l2xruc
         use: |
-          The sentence after the explanation: the double runs only on Node, since under workerd
-          `node:sqlite` resolves but the database constructor throws, so `wrangler dev` reads the
-          local D1 database instead.
+          Only, for the sentence after the explanation, where the double runs and what `wrangler
+          dev` reads instead.
       - id: tn-provision-link
         kind: link
         target: '#provision-the-channel-database'
@@ -1690,6 +1691,9 @@ sections:
           Turns to the deploy, now that the test passes.
   - id: deploy-the-channel
     heading: Deploy the channel
+    why: |
+      The remote migration and the production secret must be live before the code that reads them,
+      so they precede the deploy step.
     level: 3
     opens: |
       The deployed site needs the channel's migration on the remote database and the Turnstile
@@ -1746,6 +1750,8 @@ sections:
           Turns to the verification on the deployed site.
   - id: verify-a-member-signs-in-to-the-member-area
     heading: Verify a member signs in to the member area
+    why: |
+      The channel path closes, as the role path does, with a check on the live site.
     level: 3
     opens: |
       A working channel signs a member in on the deployed site with a code from your transport,
@@ -1824,9 +1830,12 @@ sections:
       - id: vm-handoff
         kind: handoff
         text: |
-          Closes the channel path; a failed check goes to Resolve a failed setup.
+          Closes the channel path; a failed check goes to [[resolve-a-failed-setup]].
   - id: resolve-a-failed-setup
     heading: Resolve a failed setup
+    why: |
+      The page's failure path holds both paths' failures in the order a reader meets them, after both
+      paths so either path's checks can send a reader here.
     opens: |
       Each failure below names the symptom, then its fix; the first four belong to the role path
       and the rest to the channel.
@@ -1850,8 +1859,8 @@ sections:
       - id: r-unmigrated
         kind: step
         text: |
-          If adding a person with the new role fails, copy and apply `0001_roles.sql` as Add the
-          role's people does.
+          If adding a person with the new role fails, copy and apply `0001_roles.sql` as
+          [[add-the-role-s-people]] does.
       - id: rs-unmigrated-link
         kind: link
         target: '#add-the-roles-people'
@@ -1868,8 +1877,8 @@ sections:
         kind: step
         text: |
           If `cairn doctor` reports `auth.role-wiring-missing`, pass `{ runtime }` to
-          `createAuthGuard` in `src/hooks.server.ts`, as Declare the role does, then rebuild, rerun
-          the check, and deploy as Deploy the role does.
+          `createAuthGuard` in `src/hooks.server.ts`, as [[declare-the-role]] does, then rebuild,
+          rerun the check, and deploy as [[deploy-the-role]] does.
       - id: rs-wiring-link
         kind: link
         target: '#declare-the-role'
@@ -1886,13 +1895,13 @@ sections:
         kind: fact
         fact: f:kqcyv1
         use: |
-          Backs the symptom: a `none`-capability role with no declared `home` lands on a minimal
-          signed-in screen that says it has no content access, instead of `/admin`'s first concept.
+          Only, for the symptom, the welcome screen a `none`-capability role with no `home` lands
+          on.
       - id: r-welcome
         kind: step
         text: |
           If the person lands on the welcome screen, check that the vocabulary declares the role with
-          its `home`, then redeploy as Deploy the role does.
+          its `home`, then redeploy as [[deploy-the-role]] does.
       - id: x-forbidden
         kind: failure
         from: v-lands
@@ -1906,7 +1915,7 @@ sections:
         kind: step
         text: |
           If the home screen answers 403, replace `requireAccess` in its load function with the role
-          check from Build the role's home screen, then redeploy as Deploy the role does.
+          check from [[build-the-role-s-home-screen]], then redeploy as [[deploy-the-role]] does.
       - id: rs-forbidden-link
         kind: link
         target: '#build-the-roles-home-screen'
@@ -1927,7 +1936,7 @@ sections:
         fact: f:vo4m61
         use: |
           Only: construction throws when `challenge` or any other required function is missing. The
-          cookie-name throw rests on `f:4cw5dk`, placed in Write the channel module.
+          cookie-name throw rests on `f:4cw5dk`, placed in [[write-the-channel-module]].
       - id: r-construct
         kind: step
         text: |
@@ -2025,6 +2034,9 @@ sections:
         target: debug-your-site.md
   - id: see-also
     heading: See also
+    why: |
+      The anatomy closes a task guide with the pages around its subject: the channel's threat
+      surface, access maps, identity mode, the sidebar, and the reference entries.
     opens: |
       The following pages cover the seams and limits around a second group.
     items:
@@ -2195,9 +2207,9 @@ dispositions:
       removes an editor.
 constraints:
   - |
-    Re-arm (stage 2b, relink.json, context `resolveDb`): "The one-declaration change, the roles
-    migration, `resolveDb` taking `createChannelDb`'s result with no cast, and the Turnstile
-    missing-secret reason." The plan carries each: the role declared once on the adapter and read
+    The page carries the one-declaration change, the roles migration, `resolveDb` taking
+    `createChannelDb`'s result with no cast, and the Turnstile missing-secret reason: the role
+    declared once on the adapter and read
     by both handles from the runtime (`f:4xrx5f`, `f:7cv105`, `f:f21bcz`, `f:mbx6q1`, `f:hwffph`,
     `f:q07rd5`); the roles migration (`f:rn62i1`, `f:xffr6i`); `resolveDb` and the cast-free test
     (`f:ditn3e`); the missing-secret reason (`f:thbxvf`).
@@ -2221,10 +2233,10 @@ constraints:
     `insecureTestChallenge`. Its `challenge` reads `TURNSTILE_SECRET`, the one name the
     `.dev.vars`, `.dev.vars.example`, and `wrangler secret put` steps store.
   - |
-    Keep these two headings stable: `docs/reference/auth-channel.md` links both anchors (lines 161
-    and 216).
+    Keep the headings of [[provision-the-channel-database]] and [[write-the-channel-module]]
+    stable: `docs/reference/auth-channel.md` links both anchors.
   - |
-    The See also links to the security model's channel section, Restrict admin access, and Replace
+    The [[see-also]] links to the security model's channel section, Restrict admin access, and Replace
     magic links with Cloudflare Access also render in the introduction's not-covered list.
   - |
     On the page, the example site is "the repository's example site, `examples/showcase`" at its
@@ -2233,10 +2245,11 @@ constraints:
     second audience or population.
   - |
     Each step names its location before its action and holds one action; a conditional step states
-    its condition first and says who skips it. "Show the home screen in the sidebar" is a
-    one-step procedure, a single bulleted item. The two removal steps in "End a removed member's
-    sessions" are a bulleted list of alternatives. The verification checks and the Resolve checks
-    are numbered lists, and in Resolve each failure and its handler render as one numbered item.
+    its condition first and says who skips it. [[show-the-home-screen-in-the-sidebar]] is a
+    one-step procedure, a single bulleted item. The two removal steps in
+    [[end-a-removed-member-s-sessions]] are a bulleted list of alternatives. The verification
+    checks and the checks in [[resolve-a-failed-setup]] are numbered lists, and there each failure
+    and its handler render as one numbered item.
   - |
     The channel path states no threat claim; the security model owns the channel's threat surface.
     Do not claim that applying an already-applied `0001_roles.sql` is a no-op, or that the setup

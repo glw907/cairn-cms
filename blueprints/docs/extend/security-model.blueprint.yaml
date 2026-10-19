@@ -78,7 +78,7 @@ framing:
     - Consequence: an editor's cairn sign-in is what stands between a person and a commit, which is
       why the threat position centers on the editor's account (`f:v85shm`).
     - Where SvelteKit fits: cairn runs inside the site's SvelteKit app; the admin is the `/admin` part
-      of it (`f:4zpvor`, `f:9xthnq`); every `/admin` request passes the guard, a server hook
+      of it (`f:4zpvor`, `f:2sd4if`); every `/admin` request passes the guard, a server hook
       (`f:7qqhda`).
     - Where Cloudflare fits: the app runs as a Worker (`f:i74t7g`); the store is D1; Worker isolation
       is Cloudflare's, linked out.
@@ -91,14 +91,17 @@ framing:
     1. Model and why: opening statement from the reader's situation (people with no GitHub account
        change the site, so security starts from who they are); SvelteKit + Workers placement; why the
        emailed link; cairn as identity system; App commits.
-    2. Threat position (the owner's threat sentences, word for word except that the subject is made
-       explicit), the guard as the SvelteKit hook, Cloudflare isolation linked.
-    3. The readers and what each wants.
-    4. Seams for the replacer: floors, the `identity` hand-off, the auth channel; prior knowledge.
+    2. The guard named as the SvelteKit hook over `/admin`, and the page's subject named as the
+       defenses around an editor's account. The threat statement itself, the floors, and the
+       seams are not stated here: [[scope-and-threat-position]] opens on the threat and places
+       the floors and the seams.
+    3. The two readers `introduction.covers` names and what each wants.
+    4. That a site can replace sign-in or add a second sign-in group, named in one clause with no
+       mechanism, then prior knowledge.
     5. Covers list, one bounding sentence for seams and ending, the elsewhere links.
 
     The introduction never describes the page in its opening and carries no imperative outside
-    steps. The sentence that a site can also replace sign-in folds into the seams paragraph.
+    steps. The sentence that a site can also replace sign-in folds into paragraph 4.
 orderReason: |
   The body follows the likeliest attacker's path through the built-in design, then turns to the
   two seams that change that design, then closes with the anatomy's ending. A definition of scope
@@ -215,8 +218,8 @@ sections:
         kind: fact
         fact: f:f39xqq
         use: |
-          Only the session lifetime, the per-address throttle, and that these and the token
-          lifetime are constants no adapter option loosens.
+          Only the three lifetimes and limits, with the token's lifetime in the opening sentence,
+          and that no adapter option loosens them.
       - id: ml-no-token
         kind: fact
         fact: f:8l4wwr
@@ -227,9 +230,7 @@ sections:
         kind: fact
         fact: f:s32y4a
         use: |
-          Only the common case: an address off the roster receives the same
-          `{ outcome: 'sent' }` answer an editor's address receives. The throttled clause belongs
-          to [[limits-of-the-non-enumerating-answer]].
+          Omit the throttled clause, which [[limits-of-the-non-enumerating-answer]] carries.
       - id: ml-logs
         kind: fact
         fact: f:wi766c
@@ -386,10 +387,8 @@ sections:
         kind: fact
         fact: f:8xxe3b
         use: |
-          Only the magic-link logout: it reads the session id from either cookie-name form,
-          deletes both name forms of the session cookie and of the CSRF cookie, each with its
-          matching `Secure` flag, and clears the request's pending-login cookie. The `identity`
-          clauses belong to [[identity-modes-threat-surface]].
+          Only the magic-link logout. The `identity` clauses belong to
+          [[identity-modes-threat-surface]].
   - id: limits-of-the-session-cookie
     heading: Limits of the session cookie
     level: 3
@@ -440,11 +439,9 @@ sections:
         kind: fact
         fact: f:3cekcy
         use: |
-          Only the load-bearing distinction, with the link: SvelteKit compares a form post's
-          `Origin` with the app's origin and refuses a mismatch or an absent header unless the
-          origin is in `csrf.trustedOrigins`; it is one global setting with no per-route
-          exception, and SvelteKit 3 removed `csrf.checkOrigin`, leaving `trustedOrigins` as the
-          only setting. Do not copy the rest of SvelteKit's rules.
+          Only the origin comparison and its one global setting, with the link. Omit the
+          `Content-Type` clause; the `vite dev` clause belongs to
+          [[the-auth-channels-threat-surface]].
       - id: cs-sveltekit-link
         kind: link
         target: https://svelte.dev/docs/kit/configuration#csrf
@@ -464,15 +461,8 @@ sections:
         kind: fact
         fact: f:ubuj1w
         use: |
-          Only the referrer clauses: every admin response the guard's resolve path returns sets
-          `Referrer-Policy: strict-origin`, and each admin view repeats it in a
-          `<meta name="referrer" content="strict-origin">` tag.
-      - id: cs-referrer-scope
-        kind: fact
-        fact: f:ix10bm
-        use: |
-          Only the scope: `strict-origin` is set by the guard on `/admin` responses and by
-          `confirmLoad`, never site-wide.
+          Only the `Referrer-Policy` clause, with its scope and the meta-tag echo. The other
+          headers belong to [[the-auth-guard]].
       - id: cs-referrer-why
         kind: sentence
         mode: claim
@@ -497,13 +487,12 @@ sections:
         kind: fact
         fact: f:9ik061
         use: |
-          Only the CSRF cookie's attributes and its two rotation moments on the magic-link path.
+          Omit the `Max-Age` clause; `cs-no-self-rotate` carries the cookie's lifetime.
       - id: cs-no-self-rotate
         kind: fact
         fact: f:0vofop
         use: |
-          Only what every other issue does to the value, and that the value never rotates by
-          itself.
+          Omit the session cookie's clause.
   - id: limits-of-csrf-protection
     heading: Limits of CSRF protection
     level: 3
@@ -523,7 +512,7 @@ sections:
           action refuses it through its own `Origin` compare.
         facts:
           - f:3cekcy
-          - f:ix10bm
+          - f:wu8x70
           - f:x2stjk
       - id: cs-doctor-referrer
         kind: fact
@@ -566,7 +555,8 @@ sections:
         fact: f:7qqhda
         use: |
           Only the five steps in order, each with its refusal reason, as the opening sentence and a
-          numbered list, and why the guard has no origin step.
+          numbered list. Omit the reason the guard has no origin step, which [[csrf-protection]]
+          carries with its scope.
       - id: gd-tripwire-link
         kind: link
         target: '#the-dev-backend-flags-two-refusals'
@@ -615,10 +605,8 @@ sections:
         kind: fact
         fact: f:72xplg
         use: |
-          Only that a site wanting a CSP sets SvelteKit's `csp` option in the `sveltekit()` call
-          in its Vite config, and SvelteKit then adds a nonce or a hash to the inline scripts and
-          styles it generates. One sentence with the link; leave the modes and the placeholder to
-          SvelteKit's page.
+          Only where the option lives and what SvelteKit then adds, in one sentence with the link.
+          Omit the modes and the placeholder, which SvelteKit's page carries.
       - id: gd-csp-link
         kind: link
         target: https://svelte.dev/docs/kit/configuration#csp
@@ -678,10 +666,8 @@ sections:
         kind: fact
         fact: f:f21bcz
         use: |
-          Only the selection: the scaffold's hooks module installs `devBackendHandle` only when
-          the build-time `__CAIRN_DEV_BUILD__` define and the runtime opt-in both hold, and
-          `createAuthGuard` otherwise; under `vite dev` the opt-in falls back to `process.env`.
-          Leave out the `runtime` argument history.
+          Only the selection between the two handles and where the opt-in is read. Omit the
+          `runtime` argument and its history.
   - id: limits-of-the-dev-backend-refusals
     heading: Limits of the dev-backend refusals
     level: 3
@@ -862,9 +848,7 @@ sections:
         kind: fact
         fact: f:2fwybn
         use: |
-          Only the floor's guarantee: a `sanitizeSchema` callback receives a fresh deep copy of
-          the safe schema, and after it returns the engine removes `script` from `tagNames` and
-          unions `strip` with the core list, so no callback can admit author script. The
+          Only the floor's guarantee and how the engine enforces it around the callback. The
           attributes-and-protocols clause belongs to [[limits-of-render-safety]].
       - id: rs-tagnames
         kind: fact
@@ -998,9 +982,7 @@ sections:
         kind: fact
         fact: f:2glcaf
         use: |
-          Only that the effective session lifetime moves to the gate and cairn's 30-day session
-          constant no longer applies. Leave out Cloudflare Access's default and ceiling, which
-          belong to the vendor's page.
+          Omit Cloudflare Access's default and ceiling, which belong to the vendor's page.
       - id: id-csrf
         kind: fact
         fact: f:8rnym5
@@ -1011,17 +993,12 @@ sections:
         kind: fact
         fact: f:8xxe3b
         use: |
-          Only the `identity` clauses: logout skips the session-row delete, still clears every
-          cookie, and redirects to the gate's `logoutUrl`, re-checked against the guard's
-          `isSafeLogoutUrl` rule and replaced with `/admin/login` when it fails, since another
-          handle can write `locals` after the guard runs.
+          Only the `identity` clauses. The magic-link logout belongs to [[the-session-cookie]].
       - id: id-logs
         kind: fact
         fact: f:n3k03a
         use: |
-          Only the identity clauses: every refusal the resolver produces logs `guard.refused`
-          with reason `identity`, and a proven email that matches no roster row logs
-          `auth.identity.unknown`.
+          Only the identity clauses. The other paths belong to [[the-auth-guard]].
   - id: limits-of-identity-mode
     heading: Limits of identity mode
     level: 3
@@ -1083,9 +1060,8 @@ sections:
         kind: fact
         fact: f:2w1yrc
         use: |
-          Only the failure the rule prevents: keying a failed-attempt count or a send budget on
-          the victim's contact lets anyone who knows that contact lock its owner out. Leave out
-          the review rounds and the design history.
+          Only the lockout each identity-keyed control caused, as the failure the rule prevents.
+          Omit the review rounds and the design history.
       - id: ch-escalation
         kind: fact
         fact: f:7idpoq
@@ -1119,9 +1095,8 @@ sections:
         kind: fact
         fact: f:8u4iiv
         use: |
-          Only the channel's reason: SvelteKit's origin check does not run under `vite dev` and
-          admits any origin in `csrf.trustedOrigins`, and the guard adds no `Origin` check of its
-          own, so the channel's compare is the only `Origin` check cairn adds.
+          Only the channel's reason for its own check, and that its compare is the only `Origin`
+          check cairn adds. The guard's half belongs to [[csrf-protection]].
       - id: ch-hash
         kind: fact
         fact: f:fslodf
@@ -1142,9 +1117,8 @@ sections:
         kind: fact
         fact: f:s047l1
         use: |
-          Only the generator requirement, as the reason the random source matters: NIST SP
-          800-63B requires the secrets behind authenticators to come from an approved random bit
-          generator. Do not claim NIST states the uniformity argument.
+          Only the generator requirement, as the reason the random source matters. Omit any claim
+          that NIST states the uniformity argument.
       - id: ch-nist-link
         kind: link
         target: https://pages.nist.gov/800-63-3/sp800-63b.html
@@ -1170,8 +1144,7 @@ sections:
         kind: fact
         fact: f:d2j9cj
         use: |
-          Only the general clause: a capture transport that records each delivered code for
-          readback answers the same roster oracle. Leave out the example site's roster size.
+          Only the general clause. Omit the example site's route and roster size.
       - id: ch-obligations
         kind: fact
         fact: f:ez788q
@@ -1393,6 +1366,19 @@ sections:
         kind: link
         target: https://svelte.dev/docs/kit/configuration#csp
 dispositions:
+  - fact: f:9xthnq
+    disposition: cut
+    reason: |
+      Its public-path clause (the login page and the auth endpoints) is looser than `f:v85shm`,
+      which names exactly two public `/admin` paths; the page states the public paths from
+      `f:v85shm` alone, and the admin-toolkit point is off this page's job.
+  - fact: f:ix10bm
+    disposition: cut
+    reason: |
+      Its claim that SvelteKit's origin check refuses a null or foreign `Origin` before any handle
+      runs holds without the `vite dev` and `trustedOrigins` exceptions `f:3cekcy` and `f:8u4iiv`
+      state. The page places the channel's compare through `f:wu8x70` and the referrer scope
+      through `f:ubuj1w`.
   - fact: f:rv9gdc
     disposition: cut
     reason: |
@@ -1541,14 +1527,6 @@ constraints:
     Keep the headings that carry an `anchor` verbatim, because live links in other pages and
     sibling plans point at their slugs.
   - |
-    The outline's suggested headings are not used. "Sign-in binds to the browser that asked" and
-    "An access map is not a whitelist" are sentences, not the register's noun-phrase concept
-    headings; "What the dev backend flag's two refusals leave open" opens on the "What" form the
-    register bars; and "Recovering whitelist semantics" opens on an -ing word, while
-    `docs/extend/migration-notes.md` (the 0.97.0 note), `docs/extend/restrict-admin-access.md`, and
-    `docs/extend/debug-your-site.md` already link `#allowlist-semantics-from-an-exhaustive-map`.
-    The headings this plan keeps carry the content those slugs named.
-  - |
     Every component section with a residual ends in a level-3 "Limits of" subsection, so a reader
     separates what cairn defends from what it leaves to the site by heading alone. A Limits
     subsection states residuals only and never re-explains its parent's defense.
@@ -1567,9 +1545,9 @@ constraints:
     engine refusals first and the dev package's own third refusal as a separate sentence, so the
     heading stays true.
   - |
-    The first mention of an auth channel, in [[the-dev-backend-flags-two-refusals]], defines it in
-    one clause (the seam a site adds to sign in a second sign-in group on its own routes) and links
-    [[the-auth-channels-threat-surface]]. The first mention of the setup command names
+    The first body mention of an auth channel, in [[scope-and-threat-position]] (`sc-seams`),
+    defines it in one clause (the seam a site adds to sign in a second sign-in group on its own
+    routes); later mentions use the term without redefining it. The first mention of the setup command names
     `create-cairn-site` once, then "the setup command".
   - |
     Vendor specifics get a link, never a copy: SvelteKit's CSRF and CSP options, the Fetch

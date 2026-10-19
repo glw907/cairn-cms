@@ -398,10 +398,19 @@ sections:
           The route answers 503 with `ok: false` and no `fingerprint`.
         cause: |
           The Worker's current secret is missing or is not a usable private key, or the check threw.
-        handledBy: intro-recover-link
+        handledBy: bb-broken-handoff
         facts:
           - f:paotzb
           - f:5dwnh1
+      - id: bb-broken-handoff
+        kind: handoff
+        text: |
+          The site already cannot sign, so there is no working key to keep in service and no old
+          fingerprint to record. Note the App's keys as the next step says, then generate and push
+          a new key as the following sections describe, and run the checks in
+          [[verify-the-new-key]]. Skip [[delete-the-old-key]]: no key on the noted list is
+          confirmed as the one the Worker held, so leave each on the App. The `githubAppSigning`
+          detail names the cause, which the rows of [[recover-from-a-failed-key]] explain.
       - id: s-record-keys
         kind: step
         text: |
@@ -414,13 +423,13 @@ sections:
       - id: bb-handoff
         kind: handoff
         text: |
-          Turn to the first step: the new key has to exist on the App before anything can be
+          Turn to generating the new key: it has to exist on the App before anything can be
           pushed.
   - id: generate-a-new-key
     heading: Generate a new key
     why: |
       Nothing can be pushed before the new key exists, and GitHub deletes no App's only key, so
-      generation is the first step.
+      generation is the first change the rotation makes.
     opens: |
       Generating a new key changes nothing on the site, because the key joins the App beside the
       old one and the Worker keeps signing with the old key until the push.

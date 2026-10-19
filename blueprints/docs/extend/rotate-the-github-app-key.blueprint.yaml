@@ -146,8 +146,8 @@ framing:
        body material, not an introduction point.
     5. **Where SvelteKit fits: deliberately absent.** The rotation changes no source file, since the
        App id and installation id stay in the adapter's `createGithubApp` call (`f:9xqudi`). The
-       secret write deploys by itself (`f:86h9o6`), so the reader redeploys nothing. The introduction
-       says that much, because a Svelte-fluent reader expects a code change and a redeploy. The `/healthz`
+       secret write deploys by itself (`f:86h9o6`), outside gradual deployments. The introduction
+       says only that no source file changes, because a Svelte-fluent reader expects a code change. The `/healthz`
        route is a SvelteKit route at the site root (`f:paotzb`). It enters at [[before-you-begin]] and
        [[verify-the-new-key]], not in the introduction.
     6. **What the overlap costs.** Little time: the live token check mints from the new key at
@@ -209,8 +209,8 @@ framing:
        schedule, which is the reader's reason and carries no product claim. Then where the work
        happens: on GitHub, which holds the App's keys, and in Cloudflare, where `wrangler secret put`
        deploys the new key to the Worker at once (`f:zoekqt`, `f:86h9o6`). The App id and
-       installation id in the adapter stay as they are, so no source file changes and nothing needs
-       redeploying (`f:9xqudi`, `f:86h9o6`).
+       installation id in the adapter stay as they are, so no source file changes (`f:9xqudi`).
+       Leave the gradual-deployments exception to [[push-the-new-key-to-the-worker]].
     2. **The two-key model, the order, and the contract.** An App can hold several private keys at
        once, and a new key does not invalidate the old one (`f:ixr3ny`, `f:zoekqt`). That overlap
        removes the outage: the new key is generated beside the old one, pushed to the Worker, and
@@ -517,6 +517,16 @@ sections:
           A complete sentence introduces the two platform forms as alternatives: run the one for
           your platform in the site's directory, with the path replaced by the new PEM file's
           location.
+      - id: s-push-gradual
+        kind: step
+        text: |
+          If the Worker uses gradual deployments, use `npx wrangler versions secret put` in place
+          of `npx wrangler secret put` in the command for your platform.
+        requires:
+          - wrangler-access
+        produces:
+          - push-command-chosen
+        optional: true
       - id: s-push-node
         kind: step
         text: |
@@ -574,6 +584,16 @@ sections:
         use: |
           Only the immediate deploy and the gradual-deployments command. Omit the local
           `.dev.vars` clause, which [[delete-the-old-key]] carries.
+      - id: s-push-gradual-deploy
+        kind: step
+        text: |
+          If you pushed with `wrangler versions secret put`, deploy the new version as Cloudflare's
+          Secrets page describes.
+        requires:
+          - new-key-pushed
+        produces:
+          - gradual-version-deployed
+        optional: true
       - id: x-push
         kind: failure
         from: s-push-node
@@ -590,10 +610,7 @@ sections:
         kind: handoff
         text: |
           Check that Wrangler is signed in to the Worker's account, as [[before-you-begin]] says,
-          and run the command again. On a Worker that uses gradual deployments, run it with
-          `wrangler versions secret put` in place of `wrangler secret put`, then deploy that
-          version as Cloudflare's Secrets page describes before you run the check that follows
-          the push.
+          and run the command again.
       - id: push-secrets-link
         kind: link
         target: https://developers.cloudflare.com/workers/configuration/secrets/

@@ -566,7 +566,8 @@ sections:
         kind: step
         text: |
           If you gated CI, push a commit from the project root, and read the guidance check's
-          line in the `check` job's log.
+          report lines in the `check` job's log, starting with the first, which reports whether
+          the tree is fresh.
         requires:
           - ci-gate
         canFail: true
@@ -583,7 +584,8 @@ sections:
     opens: |
       `install` reports a partial run on stderr or stops with a nonzero exit, `check` reports each problem on its own line, the
       hook's `check:cairn` run names a missing peer or prints nothing, and a gated CI job fails at
-      the guidance step, and each row below points at its fix.
+      the guidance step on a stale tree or on any other nonzero exit, and each row below points at
+      its fix.
     items:
       - id: x-refused
         kind: failure
@@ -659,20 +661,47 @@ sections:
         kind: failure
         from: v-push
         symptom: |
-          The `check` job fails at the guidance step, and its first line reports the guidance tree
-          stale or missing.
+          The `check` job fails at the guidance step, and the guidance check's first line in the
+          job log reports the guidance tree stale or missing.
         cause: |
-          Under `--strict`, the check exits 1 on a stale or missing tree, and with
-          `continue-on-error` removed that exit fails the job.
-        handledBy: h-diag-ci
+          The committed tree is stale or missing. Under `--strict` the check exits 1 on exactly
+          that, and with `continue-on-error` removed the exit fails the job.
+        handledBy: h-diag-ci-stale
         facts:
           - f:4ax489
           - f:jd54ph
-      - id: h-diag-ci
+      - id: h-diag-ci-stale
         kind: handoff
         text: |
-          Refresh the tree with the install in [[adopt-or-refresh-the-guidance-tree]], commit the
-          refreshed `.claude/` tree, and push again.
+          Run the install step in [[adopt-or-refresh-the-guidance-tree]], commit the refreshed
+          `.claude/` tree, and push again.
+      - id: x-ci-other
+        kind: failure
+        from: v-push
+        symptom: |
+          The `check` job fails at the guidance step, but the guidance check's first line in the
+          job log does not report the guidance tree stale or missing, or the step prints no
+          report lines at all.
+        cause: |
+          The step exited nonzero for a reason other than a stale or missing tree. `--strict`
+          exits 1 only on a stale or missing tree, so this exit is not the gate's, and with
+          `continue-on-error` removed any nonzero exit of the step fails the job: the trade
+          [[make-the-ci-step-gate-on-a-stale-tree]] describes.
+        handledBy: h-diag-ci-other
+        facts:
+          - f:4ax489
+          - f:jd54ph
+      - id: h-diag-ci-other
+        kind: handoff
+        text: |
+          Read the guidance step's output in the job log, and compare it with what the
+          `cairn-guidance check` reference says the command reports. To keep the build passing
+          while you work on it, put the `continue-on-error: true` line back under the step, which
+          passes the job on any nonzero exit, then push again; the build then no longer fails on a
+          stale tree either until you remove the line again.
+      - id: l-diag-ci-ref
+        kind: link
+        target: ../reference/guidance.md#check
       - id: x-stale
         kind: failure
         from: v-check
@@ -785,7 +814,9 @@ constraints:
     relates to `cairn-audit` until a fact states that.
   - |
     The hand-offs `pre-handoff`, `h-tree`, `h-skills`, `h-install`, `h-hook`, `h-ci`,
-    `h-verify`, `h-diag-hook`, and `h-diag-ci` carry no extractable fact; `pre-handoff` and `h-tree` name `.claude/` and the
+    `h-verify`, `h-diag-hook`, `h-diag-ci-stale`, and `h-diag-ci-other` carry no extractable
+    fact (`h-diag-ci-other`'s restored `continue-on-error` line rests on f:jd54ph, which
+    `x-ci-other` cites); `pre-handoff` and `h-tree` name `.claude/` and the
     skills, which earlier or later items back.
   - |
     GitHub's `continue-on-error` behavior and npm's `--if-present` behavior are vendor behavior

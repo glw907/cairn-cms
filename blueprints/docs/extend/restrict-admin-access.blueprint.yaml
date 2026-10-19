@@ -249,7 +249,7 @@ sections:
           The server start throws from `defineRoles`.
         cause: |
           The vocabulary has no `owner` key mapped to owner capability.
-        handledBy: roles-owner-reserved
+        handledBy: s-roles-declare
       - id: s-roles-member
         kind: step
         text: |
@@ -323,8 +323,8 @@ sections:
         kind: step
         text: |
           If the adapter has no `access` member, in the `defineAdapter` call, add `access` set to
-          a `defineAccess` call that passes `roles` first, as the code block shows. A site that
-          already declares `access` skips this step.
+          a `defineAccess` call that passes `roles` first. A site that already declares `access`
+          skips this step.
         requires:
           - roles-on-adapter
         produces:
@@ -396,7 +396,7 @@ sections:
           The server start throws a `defineAccess:` or `access:` error naming a key or a role.
         cause: |
           The map breaks one of the construction or composition checks.
-        handledBy: map-validation
+        handledBy: s-map
       - id: map-unset-pointer
         kind: link
         target: '#decide-what-the-map-leaves-open'
@@ -1052,8 +1052,8 @@ sections:
       The page's failure path: it traces a result that differs from [[verify-each-role-s-reach]] to
       its cause, so it follows the checks.
     opens: |
-      An unexpected refusal traces to a missing key or `target`, a role the vocabulary does not
-      hold, or an auth database without the roles migration; an open screen the map should close
+      An unexpected refusal traces to a missing key or `target`, a key that does not list the
+      role, a role the vocabulary does not hold, or an auth database without the roles migration; an open screen the map should close
       traces to a deploy that predates the map or a route that skips `requireAccess`; and a remove
       that succeeds traces to a missing `ownerOnly`.
     items:
@@ -1085,12 +1085,28 @@ sections:
         handledBy: s-nest-load-target
         facts:
           - f:8anql1
+      - id: x-role-not-listed
+        kind: failure
+        from: v-reload
+        symptom: |
+          The webmaster session is refused on your route or on the media library, and the
+          `auth.access.refused` record names the webmaster role; a route's record reads
+          `reason` `role`.
+        cause: |
+          The map holds a key for the target, but the key does not list webmaster, as the example
+          site's starting owner-only `/admin/signups` key does.
+        handledBy: s-map
+        facts:
+          - f:8anql1
+          - f:joo5f2
+          - f:0qb73i
+          - f:3z1uxv
       - id: res-refuse-all
         kind: fact
         fact: f:8anql1
         use: |
-          Only the record's target and its `no_rule` and `shadowed` reasons, backing the two
-          checks before.
+          Only the record's target and its `no_rule`, `shadowed`, and `role` reasons, backing the
+          three checks before.
       - id: res-nested-link
         kind: link
         target: '#key-nested-and-parameterized-routes'

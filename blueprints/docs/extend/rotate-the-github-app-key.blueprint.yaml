@@ -1160,9 +1160,9 @@ sections:
       - id: s-rollback-verify
         kind: step
         text: |
-          In the terminal, at least a minute after any earlier live response, request
-          `/healthz?live=1` with `curl`. A 200 shows that GitHub accepts the key the Worker now
-          holds. If you recorded the old key's fingerprint in [[before-you-begin]], also compare
+          In the terminal, after the deploy step if the Worker uses gradual deployments and at
+          least a minute after any earlier live response, request `/healthz?live=1` with `curl`.
+          A 200 shows that GitHub accepts the key the Worker now holds. If you recorded the old key's fingerprint in [[before-you-begin]], also compare
           the response's `fingerprint` with it.
         requires:
           - old-key-restored
@@ -1186,15 +1186,19 @@ sections:
       - id: rb-repush
         kind: handoff
         text: |
-          Read the `githubAppToken` or `githubAppSigning` detail before acting. Where it names the
-          key (`key_refused`, `GITHUB_APP_PRIVATE_KEY_B64 is not configured`, `key import or sign
-          failed`, or `malformed JWT`) or the fingerprint differs, run this section's push step
-          again with the old key's PEM file, then its deploy step if the Worker uses gradual
-          deployments, and repeat the live request at least a minute after the last one. If the
-          detail still names the key, the file is not the old key or the old key is no longer on
-          the App, and pushing it again changes nothing: turn to [[generate-a-third-key]]. Any
-          other detail, such as `installation_not_found`, `installation_suspended`, or
-          `unreachable`, is not the key's: read its row in [[recover-from-a-failed-key]].
+          Read the `githubAppToken` or `githubAppSigning` detail before acting. A detail that does
+          not name the key, such as `installation_not_found`, `installation_suspended`, or
+          `unreachable`, is not the key's: read its row in [[recover-from-a-failed-key]]. Where the
+          detail names the key (`key_refused`, `GITHUB_APP_PRIVATE_KEY_B64 is not configured`, `key
+          import or sign failed`, or `malformed JWT`) or the fingerprint differs, push the old
+          key's PEM file once more with this section's push step, and its deploy step if the
+          Worker uses gradual deployments, then repeat the live request at least a minute after
+          the last one. Compare the new answer with the last. If it is unchanged, the same key
+          detail or the same differing fingerprint, the file is not the old key or the old key is
+          no longer on the App, and no further push changes it: turn to [[generate-a-third-key]].
+          If it is now a 200 whose fingerprint matches where you recorded one, the rollback holds,
+          so continue with the next step. Read any other new answer against the rows of
+          [[recover-from-a-failed-key]].
       - id: s-rollback-dev-vars
         kind: step
         text: |

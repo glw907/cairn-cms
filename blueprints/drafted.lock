@@ -73,6 +73,7 @@ pages:
     docs/extend/add-cairn-to-a-sveltekit-app.md:
         page: 65163162be441f51abbf80d2cdb1c0b044fc717c
         blueprint: b307ed09dad986174b8551acadcda4e29c3a6987
+        accepted: 7b6c8f453f1a546cfc0b45afd60948f44c809d7d
         sections:
             _intro: sha256:e734d828280e7541ed8caa833e86e941e551ccc4fa866235e55617223057f9ef
             add-a-second-post: sha256:b4c3d4ee08166cd69771a148a4a58ae61b6a5521aff0bf2ccff1dec6067768c1
@@ -106,31 +107,6 @@ pages:
             verify-the-rendered-entry: sha256:df781e49e6e9979080427b4b71307454740bf31f549e21d32c566a72d6c10dcd
             verify-the-sign-in-email: sha256:caa6957a894c3397b689fd4f2d8ac5bfb064573aa98453acf02b2a5ece99b82d
             write-the-site-config-and-a-minimal-adapter: sha256:f00bd4046b73fc086c4434b5af7145ee0a7fbf774afbf46246acf64c6b72cfe0
-        blocked:
-            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
-            findings:
-                - location: orderReason
-                  text: The `orderReason` describes the planning session rather than the page. It opens "The page re-sequences the outline's covers…", which is a departure from the outline's milestone order (content and admin swapped) and belongs in the commit message.
-                - location: push-the-site-to-github
-                  text: 'The section''s `why` narrates a move against an earlier plan: "the push opens this milestone instead of closing the content one."'
-                - location: constraints (facts placed beyond the outline's inventory)
-                  text: 'A constraint records planning history against the outline''s fact inventory: "Facts placed beyond the outline''s inventory, each load-bearing for a claim the covers or the Part 1 items need." It reads as a session note, not a description of the page.'
-                - location: wire-the-dev-backend / d-hooks
-                  text: 'The `use` restates the fact''s content instead of scoping it: "Under `vite dev` the hooks run in Node, where the Worker env never carries the shell variable `npm run dev` sets, so this site''s flag test reads `process.env`." It also changes the fact. f:f21bcz says the opt-in reads the Worker env first and falls back to `process.env`. A corrected fact would leave this paraphrase stale.'
-                - location: add-the-email-sending-binding-and-name-the-origin / em-observability
-                  text: The `use` restates content and adds a claim the fact does not carry. f:txgoyy never says the records go to "Workers Logs", and the use also paraphrases the doctor warning.
-                - location: wire-the-dev-backend / d-callsite
-                  text: The `use` restates the direct-naming rule ("the module names `__CAIRN_DEV_BUILD__` itself, never through an imported constant") instead of naming the part of the fact it carries.
-                - location: before-you-begin / s-install-cli
-                  text: The step relies on a prerequisite no earlier step produces and no precondition lists. `go install` needs a Go toolchain, which the preconditions omit, and the step declares no `requires`. A reader without Go cannot complete the primary install form.
-                - location: edit-the-message-in-a-custom-sender / s-custom-send
-                  text: The custom sender relies on state the page never builds. cs-code reads `env.EMAIL` (from `cloudflare:workers`) and sends through the binding. Per f:vvgpr5, Worker bindings are typed only by the `Env` that `wrangler types` generates, and the page places no `wrangler types` step. The dispositions say "the tutorial's code reads no generated binding type", and i-appd-code adds no `Cloudflare.Env`. `env.EMAIL` therefore will not type-check. The Email Sending binding's send call is also never established on the page.
-                - location: resolve-a-production-failure / pf-refusal, pf-origin
-                  text: Two failures name `s-deploy-prod` in `from`, but neither can occur there. The "`/admin` still shows Wrangler bindings are missing" symptom and the `config.public-origin-invalid` throw are runtime responses to a request, and the deploy step opens no page. The reader first meets them when opening the deployed origin.
-                - location: resolve-a-content-build-failure / f-zero
-                  text: The failure has no `from`, yet a reader meets it during the steps, not in ordinary use after they end. A concept left out of the plugin's `content` option shows when the manifest is written or the build runs in this milestone. The free-standing symptom-row allowance does not apply.
-                - location: verify-the-sign-in-email / x-email
-                  text: 'The failure names two causes, "the custom sender threw, or the domain is not onboarded", but `handledBy: pf-mail-fix` covers only domain onboarding. A reader whose custom `auth.send` threw has no recovery route.'
     docs/extend/debug-your-site.md:
         page: be3ce83e66ec6358b32e1c7952d679b2f8586e7e
         blueprint: ad3be2d68e6160516921681a02acf1d2308dd792
@@ -276,6 +252,7 @@ pages:
     docs/extend/security-model.md:
         page: ea4bd221fb744bd760fed649ae79e5eaee8df569
         blueprint: f10cff21820db750c75ae8f4fbbb7b5d4e674f65
+        accepted: df3d63385517e4f709a209391f7d80300b894086
         sections:
             _intro: sha256:2efae629b5ee5820ad29eaf9b851ea1667857cf7fa9c30b4038a5776a0cacd15
             access-map-coverage: sha256:dc1ddaafa480c54e609f25ec371d98fbc6124707e832294aa1c2204156f58e97
@@ -306,26 +283,3 @@ pages:
             the-github-apps-reach: sha256:200c3cf62bbe3065d524f3085a804a61c25c06edd56d3a48918c7ec0c89f5ac2
             the-session-cookie: sha256:d9f8d0714bfd58568009594abce2173ffa8e1744fe5e8999dbea4e7953ac45d3
             the-site-s-responsibilities: sha256:63d46429aff481f60cd7c77ca436aeb17af943e37efb6e7453b400bec73bf2e3
-        blocked:
-            commit: 18099821a890cd51dc4d5d7a55fbccc7f948f468
-            findings:
-                - location: constraints (fifth entry, "The outline's suggested headings are not used")
-                  text: This constraint records the planning session, not the page. It says the outline's suggested headings are not used, why each was rejected, and which old slugs they had. That is a departure from an earlier outline and belongs in the commit message, not a durable field.
-                - location: framing.introPlan (paragraphs 2 and 4) against scope-and-threat-position (sc-attacker, sc-floors, sc-seams)
-                  text: The introduction plan restates sections instead of framing them. It carries the owner's threat sentences word for word, then the floors and the identity hand-off. scope-and-threat-position opens on the same threat sentence (sc-attacker) and places the floors (sc-floors) and the seams (sc-seams). A reader meets the same definition twice in a row. This contradicts the introduction.covers rule that the framing names the model "without restating any section's mechanics".
-                - location: magic-link-sign-in / ml-neutral
-                  text: 'This `use` restates the fact''s content, not its scope. It copies the `{ outcome: ''sent'' }` literal, which goes stale if the fact changes.'
-                - location: csrf-protection / cs-sveltekit
-                  text: 'This `use` paraphrases the fact''s content: what SvelteKit compares and refuses, `trustedOrigins`, the global setting, and the SvelteKit 3 removal of `checkOrigin`. It does not just scope the fact.'
-                - location: csrf-protection / cs-referrer and cs-referrer-scope
-                  text: These two `use` fields restate header values (`strict-origin`, the meta tag) and their scope instead of naming the parts of the facts to place.
-                - location: identity-modes-threat-surface / id-lifetime
-                  text: This `use` restates the fact's content, including the 30-day constant. A changed constant would leave the `use` stale.
-                - location: identity-modes-threat-surface / id-logout and the-session-cookie / sk-logout
-                  text: Both `use` fields copy logout mechanics from f:8xxe3b (`isSafeLogoutUrl`, `/admin/login`, the cookie name forms) instead of scoping the fact.
-                - location: identity-modes-threat-surface / id-logs
-                  text: This `use` restates the log event names and reasons (`guard.refused`, `identity`, `auth.identity.unknown`) instead of scoping the fact.
-                - location: the-dev-backend-flags-two-refusals / dv-hooks; limits-of-the-admin-headers / gd-csp-option; render-safety / rs-callback
-                  text: These `use` fields paraphrase the fact's mechanics (`__CAIRN_DEV_BUILD__`, `process.env`, the `sveltekit()` call, the `script`/`strip` handling) instead of naming parts of the facts.
-                - location: the-auth-channels-threat-surface / ch-why, ch-origin-why, ch-nist; limits-of-the-auth-channel / ch-capture
-                  text: These `use` fields restate the fact's content instead of scoping it. ch-why paraphrases the lockout. ch-origin-why restates SvelteKit's behavior. ch-nist restates NIST's requirement. ch-capture restates the capture-transport clause.

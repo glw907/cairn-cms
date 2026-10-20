@@ -39,7 +39,7 @@ framing:
   readers: |
     | Reader | Arrives from | Came for | Knows | Lacks |
     | --- | --- | --- | --- | --- |
-    | A. The inheritor (the job's reader): a Svelte-fluent developer who took over a site someone else scaffolded | `docs/extend/architecture.md` paragraph 3 ("maps each file the command writes") and its related resources; the extend index's Start group once the page is listed; a search for a file the tree holds (`cairn-audit.config.json`, `.dev.vars.example`, `check.yml`) | What each file does, whether it may change it, and what the engine or a gate depends on | SvelteKit, Vite, enough Wrangler to read `wrangler.jsonc`; that the site is live and editors may already publish to it (`f:kldwss`, `f:cjonmm`) | The setup run's history: the saved record sits in the home directory of whoever ran the command (`f:3m0oxs`), and a Workers Builds connection deploys on a token that person pasted (`f:3bbeia`, `f:qca0t0`); which files carry a contract; that no engine release rewrites the tree (`f:rxj43c`, `f:jtl15v`); what `.claude/` is for (`f:qlgggh`; the guidance detail is subordinated to the guidance reference) |
+    | A. The inheritor (the job's reader): a Svelte-fluent developer who took over a site someone else scaffolded | `docs/extend/architecture.md` paragraph 3 ("maps each file the command writes") and its related resources; the extend index's Start group once the page is listed; a search for a file the tree holds (`cairn-audit.config.json`, `wrangler.jsonc`, `check.yml`) | What each file does, whether it may change it, and what the engine or a gate depends on | SvelteKit, Vite, enough Wrangler to read `wrangler.jsonc`; that the site is live and editors may already publish to it (`f:kldwss`, `f:cjonmm`) | The setup run's history: the saved record sits in the home directory of whoever ran the command (`f:3m0oxs`), and a Workers Builds connection deploys on a token that person pasted (`f:3bbeia`, `f:qca0t0`); which files carry a contract; that no engine release rewrites the tree (`f:rxj43c`, `f:jtl15v`); what `.claude/` is for (`f:qlgggh`; the guidance detail is subordinated to the guidance reference) |
     | B. The runner: a developer who ran `create-cairn-site` and now opens the tree to change it | `docs/extend/add-cairn-to-a-sveltekit-app.md` paragraph 2 ("explains what it writes"); the extend index; a search after the run. The command's hand-over text names `.github/workflows/check.yml`, `.claude/`, and `npx cairn-guidance check` but links no page (`packages/create-cairn-site/src/scaffold.mjs:230-264`, `f:kouawx`), so the output itself is not an arrival path | Why each file the command wrote is there, starting with the three the hand-over named | Their own answers to the setup prompts; they hold the state file | The file map; which files carry a contract; why the CI's guidance step never fails a build (`f:jd54ph`; the check's own exit rules are subordinated to the guidance reference) |
     | C. The chooser: a developer deciding between the setup command and the by-hand build | `docs/extend/add-cairn-to-a-sveltekit-app.md` paragraph 2, which names this page as the account of what the command writes | A look at what the command would give them before choosing | SvelteKit; little of cairn | A scaffold to look at; the page shows it through the file tree and the ownership statement |
     | D. The architecture reader: a developer mapping the engine's import points and seams onto real files | `docs/extend/architecture.md`, the crossLink "A scaffolded reader maps the architecture onto their own files" | Where the adapter, the server hook, the admin mount, and the bindings sit in the tree | The model: one adapter, the seams, the data tiers (`f:j0ut9n`) | File locations; the body's tree and per-file entries answer it |
@@ -87,13 +87,15 @@ framing:
       `/admin` (`f:t2t5lx`), a server hook guards it (`f:f21bcz`), and the public site is a prerendered
       route group (`f:qtm9y2`, `f:2qnqkm`).
     - **Where Cloudflare fits.** `wrangler.jsonc` names the Worker the build produces and binds one D1
-      database, the auth store `AUTH_DB`, with no second database, plus the Email Sending binding and
-      an R2 bucket (`f:o47i0q`, `f:n7t4bn`, `f:l3cxgc`), with Workers Logs on (`f:prb2os`);
+      database, the auth store `AUTH_DB`, with no second database, plus the static-assets binding, the
+      Email Sending binding, and an R2 bucket (`f:o47i0q`, `f:n7t4bn`, `f:l3cxgc`), with Workers Logs
+      on (`f:prb2os`);
       `migrations/` is that database's one migrations directory (`f:gepykz`), and a database the
       site adds would take its own (`f:nv0ok0`, general rule only). The setup run deploys the site
-      once (`f:kldwss`); Workers Builds deploys on every push to the default branch only once the
-      setup command's separate `--connect` invocation has connected it (`f:qca0t0`), on the build
-      token that chapter registered (`f:3bbeia`). The intro hedges any deploy claim accordingly and
+      once (`f:kldwss`); Workers Builds deploys on every push to the default branch only when the
+      same run's Workers Builds chapter connected it rather than recording a decline (`--connect`
+      only re-enters that chapter for a site already past its first deploy, `f:qca0t0`), on the
+      build token that chapter registered (`f:3bbeia`). The intro hedges any deploy claim accordingly and
       never says every push deploys.
     - **Where GitHub fits.** The repository holds the code and the markdown; the site's GitHub App
       commits each editor's publish to its default branch (`f:cjonmm`); a GitHub Actions workflow runs
@@ -169,8 +171,7 @@ framing:
     3. **The readers and their reasons.** A developer who ran the setup command, or who took over a
        site from someone who did, reads on to learn what each file does and whether to change it. One
        who took over also lacks what the command left outside the repository: its saved record on the
-       machine that ran it, and, when the setup command's separate `--connect` invocation connected
-       Workers Builds, the build token whose
+       machine that ran it, and, when the setup run connected Workers Builds, the build token whose
        revocation stops deploys without warning (`f:3m0oxs`, `f:3bbeia`, `f:qca0t0`). A reader who knows
        the engine's import points and seams from Architecture (link `docs/extend/architecture.md`, the
        intro's one link outside the bounds lists) finds where each lands in the tree, and a reader
@@ -228,7 +229,11 @@ sections:
         kind: fact
         fact: f:n2skkz
         use: |
-          Only the source tree, `examples/showcase`, and the material the copy leaves out.
+          Only the source tree, `examples/showcase`, and the material the copy leaves out, in
+          full: every group the fact names, including the `admin/signups` screen with its
+          `migrations-app/`, the `admin/error-fixture` route, `src/lib/env-check.ts`,
+          `src/routes/(site)/+layout.server.ts`, the members fixture with `migrations-members/`,
+          and 13 of the showcase's 27 posts.
       - id: scaffold-one-template
         kind: fact
         fact: f:u705t5
@@ -240,8 +245,8 @@ sections:
         fact: f:kldwss
         use: |
           Only the run's outcome: the GitHub App, the repository, the Cloudflare bindings, and the
-          deploy, so the tree arrives already live. Omit any claim that this run connects Workers
-          Builds, which a separate `--connect` invocation does ([[setup-state-outside-the-tree]]).
+          deploy, so the tree arrives already live. Leave the Workers Builds connection, which the
+          same run offers in its own chapter, to [[setup-state-outside-the-tree]].
       - id: scaffold-ownership
         kind: sentence
         mode: claim
@@ -288,7 +293,9 @@ sections:
           `src/theme/site.config.yaml` [engine]; `vite.config.ts` [engine] [gate]; `wrangler.jsonc`
           [engine]. `CLAUDE.md` and `.claude/` appear unmarked. The tree has no `src/access.ts`, no
           `migrations-app/`, and no `src/routes/admin/signups/`, and it leaves out files no section
-          discusses, such as `src/app.html` and the theme's test files.
+          discusses, such as `src/app.html` and the theme's test files. Draw it from the source
+          directory less the Deploy-button overlay: no `.dev.vars.example` and no `LICENSE`, which
+          only that tree carries (`f:qlgggh`).
         facts:
           - f:guiavc
           - f:mrv24k
@@ -304,6 +311,7 @@ sections:
           - f:2zl3qz
           - f:34rsss
           - f:n7t4bn
+          - f:qlgggh
         source: ../../templates/waymark
       - id: tree-root-entries
         kind: fact
@@ -311,7 +319,7 @@ sections:
         use: |
           Only the listing of what exists: the root's files and directories, plus `src/admin.css`,
           `src/lib/log.ts`, `src/content/.cairn/site-facts.json`, and `src/theme/theme-names.ts`,
-          with no `src/access.ts`.
+          with no `src/access.ts`, and with no `.dev.vars.example` or `LICENSE` at the root.
       - id: tree-claude-label
         kind: sentence
         mode: claim
@@ -329,16 +337,16 @@ sections:
       The per-file walk starts at the outside of the tree, with the root's files, among them the CI
       workflow every push meets.
     opens: |
-      Beside a plain SvelteKit project's files, the root carries a CI workflow, a template for
-      local secrets, the audit's config, and a `.gitignore` that the setup command renames.
+      Beside a plain SvelteKit project's files, the root carries a CI workflow, the audit's
+      config, and a `.gitignore` that the setup command renames.
     items:
       - id: root-two-entries
         kind: fact
         fact: f:qlgggh
         use: |
-          Only that the root holds `.github/workflows/check.yml`, `.dev.vars.example`,
-          `cairn-audit.config.json`, and `.gitignore`, which backs the section's opening sentence;
-          [[gitignore]] carries the rename.
+          Only that the root holds `.github/workflows/check.yml`, `cairn-audit.config.json`, and
+          `.gitignore`, which backs the section's opening sentence; [[gitignore]] carries the
+          rename.
   - id: github-workflows-check-yml
     heading: '`.github/workflows/check.yml`'
     why: |
@@ -371,21 +379,24 @@ sections:
         use: |
           Only that the workflow installs no browser, so `check:cairn:rendered` cannot run in it.
   - id: dev-vars-example
-    heading: '`.dev.vars.example`'
+    heading: '`.dev.vars`'
     why: |
-      The template for local secrets is the root file a new owner copies before running the site
-      locally.
+      Local secrets live in a `.dev.vars` the scaffold does not ship, so a new owner who looks for
+      a template at the root needs to learn that none is there and what the file holds.
     level: 3
     opens: |
-      This file is the template for the gitignored `.dev.vars`, and its header says to copy it
-      there and never commit a real value.
+      The scaffold ships no `.dev.vars.example`: local secrets go in a `.dev.vars` the owner
+      creates, which the `.gitignore` keeps out of the repository, and only the Deploy-button
+      tree, `templates/waymark/`, carries a template for it.
     items:
       - id: devvars-contents
         kind: fact
         fact: f:nls26c
         use: |
-          Only the file's two entries: the private key's placeholder, with why the App id and
-          installation id are absent, and the empty `ANTHROPIC_API_KEY` that tidy reads.
+          Only that the scaffold ships no template, and the two entries the Deploy-button tree's
+          `.dev.vars.example` names for `.dev.vars`: the private key's placeholder, with why the
+          App id and installation id are absent, and the empty `ANTHROPIC_API_KEY` that tidy reads,
+          noting that the scaffold's `site.config.yaml` ships tidy enabled.
       - id: devvars-tidy-link
         kind: link
         target: turn-on-tidy.md
@@ -410,8 +421,9 @@ sections:
   - id: gitignore
     heading: '`.gitignore`'
     why: |
-      The `.gitignore` gets its own entry because the setup command renames it, and it hides two
-      files other entries name: `.dev.vars` and the compiled admin sheet.
+      The `.gitignore` gets its own entry because the setup command renames it, and it hides paths
+      other entries name: `.dev.vars` and the `.cairn/` directory that holds the compiled admin
+      sheet.
     level: 3
     opens: |
       The setup command's package stores this file as `gitignore`, because npm's packlist drops a
@@ -427,12 +439,14 @@ sections:
         kind: fact
         fact: f:nls26c
         use: |
-          Only that the file ignores `.dev.vars` and re-includes `.dev.vars.example`.
+          Only that the file ignores `.dev.vars` and every `.dev.vars.*` file, with no line that
+          re-includes any of them.
       - id: gitignore-admin-css
         kind: fact
         fact: f:666eg6
         use: |
-          Only that the file ignores the compiled `.cairn/admin.css`, which the pre-scripts rebuild.
+          Only that the file ignores the whole root `.cairn/` directory (`/.cairn/`), which holds
+          the compiled `.cairn/admin.css` the pre-scripts rebuild.
   - id: other-root-files
     heading: Other root files
     why: |
@@ -446,8 +460,8 @@ sections:
         kind: fact
         fact: f:qlgggh
         use: |
-          Only the root files a plain project carries: `LICENSE`, `README.md`, `.prettierignore`,
-          `.prettierrc`, `tsconfig.json`, and `vitest.config.ts`.
+          Only the root files a plain project carries: `README.md`, `.prettierignore`,
+          `.prettierrc`, `tsconfig.json`, and `vitest.config.ts`. The scaffold has no `LICENSE`.
       - id: other-worker-types
         kind: fact
         fact: f:n52h8f
@@ -602,14 +616,14 @@ sections:
       the engine reads at run time.
     level: 3
     opens: |
-      The Worker's config declares three bindings and one variable, and its only D1 database is the
-      auth store.
+      The Worker's config declares four bindings, the static-assets binding `ASSETS` among them,
+      and one variable, and its only D1 database is the auth store.
     items:
       - id: wrangler-bindings
         kind: fact
         fact: f:n7t4bn
         use: |
-          Only the three bindings and the variable, as a bulleted list with one item each, and that
+          Only the four bindings (`ASSETS` included) and the variable, as a bulleted list with one item each, and that
           the scaffold binds no second database.
       - id: wrangler-media-link
         kind: link
@@ -901,7 +915,8 @@ sections:
     level: 3
     opens: |
       The adapter, `cairn.config.ts`, is one `defineAdapter` call over `content`, `backend`,
-      `email`, `rendering`, and an `editor` group carrying `navLayout`.
+      `email`, `media`, `rendering`, and an `editor` group carrying `nav`, `navLayout`, and
+      `preview`.
     items:
       - id: theme-adapter
         kind: fact
@@ -940,7 +955,8 @@ sections:
         fact: f:qnf469
         use: |
           Only the directory's other files, one list item each with what it holds: `site-config.ts`,
-          `site.config.yaml`, `markdown-components.ts`, `icons.ts`, `components/`, `islands/`,
+          `site.config.yaml` (its `spellcheck` and `tidy` blocks included, tidy shipped enabled),
+          `markdown-components.ts`, `icons.ts`, `components/`, `islands/`,
           `theme.css` and `site.css`, and `theme-names.ts`.
       - id: theme-public-link
         kind: link
@@ -1032,7 +1048,8 @@ sections:
         kind: fact
         fact: f:666eg6
         use: |
-          Only that the pre-scripts compile `src/admin.css` into the gitignored `.cairn/admin.css`.
+          Only that the pre-scripts compile `src/admin.css` into `.cairn/admin.css`, inside the
+          gitignored root `.cairn/` directory.
       - id: styles-audit-sheet
         kind: fact
         fact: f:guiavc
@@ -1139,9 +1156,9 @@ sections:
       What lives outside the repository closes the body, ending on the build-token risk, the one
       item there that can break a live site.
     opens: |
-      The setup command kept its record of the run on the machine that ran it, and when its
-      separate `--connect` invocation connected Workers Builds, it registered the Cloudflare API
-      token pasted during setup as the build token the site's deploys use.
+      The setup command kept its record of the run on the machine that ran it, and when the same
+      run's Workers Builds chapter connected the repository, it registered the Cloudflare API token
+      pasted during setup as the build token the site's deploys use.
     items:
       - id: state-record
         kind: fact
@@ -1262,7 +1279,8 @@ dispositions:
     disposition: subordinated
     reference: ../reference/guidance.md#check
     reason: |
-      The check's seven lines and its `--strict` exit belong to the guidance reference; the
+      The check's seven lines and its exit codes (0 whatever the report says, 1 under `--strict`
+      only for a stale or missing tree) belong to the guidance reference; the
       `check.yml` entry states only that its guidance step cannot fail the job (`f:jd54ph`).
   - fact: f:4h9fz4
     disposition: subordinated
@@ -1287,9 +1305,9 @@ dispositions:
     disposition: subordinated
     reference: ../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build
     reason: |
-      How `cairn-guidance check` judges the Tailwind exclusion and hashes the tree is guidance
-      tooling; the reference states both the `source(none)` pass and the hash's omission of the
-      `VERSION` stamp.
+      How `cairn-guidance check` judges the Tailwind exclusion (a `.gitignore` line first, then the
+      first of the two admin stylesheets that names a source) and hashes the tree is guidance
+      tooling the guidance reference owns, the hash's omission of the `VERSION` stamp included.
   - fact: f:onqm6k
     disposition: subordinated
     reference: add-a-custom-admin-screen.md#gate-it
@@ -1410,7 +1428,7 @@ dispositions:
     reference: rotate-the-github-app-key.md
     reason: |
       Key rotation is a separate task with its own guide; the page names the key only as the
-      placeholder in `.dev.vars.example`.
+      placeholder in the Deploy-button tree's `.dev.vars.example`, in [[dev-vars-example]].
   - fact: f:gcuj1j
     disposition: cut
     reason: |

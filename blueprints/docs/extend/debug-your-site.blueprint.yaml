@@ -373,14 +373,17 @@ sections:
         fact: f:1b3ye3
         use: |
           Only the check order, as a numbered list under a complete lead-in. Each item is only the
-          step, the event it logs, and the response: (1) authentication through
-          `createAdminAction`, which throws rather than answering `fail()`; (2) the rate limit when
+          step, the event it logs, and the response: (1) `createAdminAction`'s own checks, which
+          throw rather than answer `fail()`: the session check, `admin.action.session_absent` and a
+          303 redirect to `/admin/login`, then the double-submit CSRF check,
+          `admin.action.csrf_refused` and `error(403)`; (2) the rate limit when
           configured, which degrades to open; (3) the access-map check, `admin.action.misconfigured`
           and `fail(500)`; (4) and (5) the two authorization checks, `fail(403)`; (6) the
           database-binding check, `admin.action.misconfigured` and `fail(500)`. Omit each step's
           trigger and its audit detail string, which the rows carry. Items 3 and 6 point to
-          [[adminactionmisconfigured]], items 4 and 5 to [[auth-access-refused]], and the rest of
-          the rows follow the same order.
+          [[adminactionmisconfigured]], items 4 and 5 to [[auth-access-refused]], item 1's session
+          check to [[admin-action-session-absent]], and the rest of the rows follow the same order.
+          The CSRF check has no row on this page; the list names its event and response only.
       - id: l-section-action
         kind: link
         target: ../reference/sveltekit.md#createsectionaction
@@ -395,40 +398,44 @@ sections:
       Authentication is the first check `createSectionAction` runs, so its event leads the admin
       rows.
     opens: |
-      A wrapped action logs `admin.action.session_absent` and stops at `createAdminAction`'s
-      session check when no editor session reaches it, either because the session lapsed after
-      the guard resolved it or because the guard never resolved one.
+      A wrapped action logs `admin.action.session_absent`, stops at `createAdminAction`'s session
+      check, and redirects to `/admin/login` only on a route no hook resolved an editor for: a
+      route outside `/admin`, or one of the two public admin paths, `/admin/login` and
+      `/admin/auth/confirm`, where the guard resolves no session.
     items:
       - id: f-session-absent
         kind: fact
         fact: f:v1jj2k
         use: |
-          Only the event, which backs the opening sentence, and, for the lapse row, that the
-          record is the only trace a route leaves of a session that lapsed between the guard's
-          resolve and the action running.
+          Only the event, its redirect, and where it fires, which back the opening sentence; and
+          that on a gated admin path the guard redirects a missing or expired session to
+          `/admin/login` itself with no log record, so an expired session never produces this
+          event. Omit the doc-comment clause.
       - id: x-session-absent
         kind: failure
         symptom: |
-          One form submission on a custom screen does not take effect, and the log holds
+          A signed-in editor's submission of a wrapped action on `/admin/login` or
+          `/admin/auth/confirm` never takes effect and lands on the sign-in form, and the log holds
           `admin.action.session_absent`.
         cause: |
-          The session lapsed after the guard resolved it and before the wrapped action ran.
+          Those are the two public admin paths (the guard's `isPublicAdminPath` check), where the
+          guard resolves no session, so the action finds no editor.
         handledBy: s-session-absent-fix
       - id: s-session-absent-fix
         kind: sentence
         mode: claim
         text: |
-          The lapse needs no code change: the editor's next visit to a protected admin route
-          redirects to the sign-in form at `/admin/login`, where they sign in again and resubmit.
-          The record is the only trace the route leaves of the lapse.
+          The fix is a code change that moves the action off the public admin paths to a gated
+          route under `/admin`, where the guard resolves the editor's session before the action
+          runs.
         facts:
           - f:v1jj2k
-          - f:alpsah
+          - f:2sd4if
       - id: x-session-every-submit
         kind: failure
         symptom: |
-          No submission of a wrapped action takes effect, and the log holds
-          `admin.action.session_absent` for each one.
+          No submission of a wrapped action takes effect, each one redirects to `/admin/login`, and
+          the log holds `admin.action.session_absent` for each one.
         cause: |
           The action's route is outside `/admin`, so the guard never resolves a session for it and
           `createAdminAction`'s session check, the first check the wrapper runs, finds none.
@@ -449,8 +456,8 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          The fix is a code change that mounts the route under `/admin`, where the guard resolves
-          the editor's session before the action runs.
+          The fix is a code change that mounts the route under `/admin`, on a gated path rather than
+          a public one, where the guard resolves the editor's session before the action runs.
         facts:
           - f:u78zg6
           - f:2sd4if
@@ -612,8 +619,10 @@ sections:
           A custom screen's form action answers that the editor does not have access to the
           action, and the log holds `auth.access.refused`.
         cause: |
-          The access map has no rule for the action's target, or its rule does not admit the
-          editor's role, or the action is owner-only and the editor is not the owner.
+          The record's `reason` names which: `no_rule` when the access map has no rule for the
+          action's target, `shadowed` when a dynamic route segment hides the matched rule behind a
+          deeper key, or `role` when the rule does not admit the editor's role or the action is
+          owner-only and the editor is not the owner.
         handledBy: s-refused-fix
       - id: f-refused-steps
         kind: fact
@@ -621,15 +630,24 @@ sections:
         use: |
           Only steps 4 and 5, as the cause: `hasAccessRule` false, or `canReach` false or
           `ownerOnly` violated, each answering `fail(403)`.
+      - id: f-refused-reason
+        kind: fact
+        fact: f:147zhc
+        use: |
+          Only the three `reason` values and what each means, which back the cause: `no_rule`,
+          `shadowed` (a dynamic route segment hides the matched rule behind a deeper key), and
+          `role`. Omit the other refusals `role` covers and the list of emitters.
       - id: s-refused-fix
         kind: sentence
         mode: claim
         text: |
           A refusal of a session the map should not admit is the map working; for one it should
-          admit, the fix is a code change to the access map or to the action's target.
+          admit, the fix is a code change to the access map or to the action's target, at the
+          refusal the record's `reason` names.
         facts:
           - f:xbjxit
           - f:1b3ye3
+          - f:147zhc
       - id: l-resolve-refusal
         kind: link
         target: restrict-admin-access.md#resolve-a-refusal
@@ -639,9 +657,9 @@ sections:
     why: |
       After the checks comes the handler, and its audit is the next place a request can log.
     opens: |
-      A `createAdminAction` route that returns without calling `ctx.audit` throws
+      A `createAdminAction` handler that returns without calling `ctx.audit` throws
       `UnauditedActionError` in development and logs `admin.action.unaudited` at error in
-      production.
+      production, unless it returned `fail()`.
     items:
       - id: x-unaudited
         kind: failure
@@ -649,7 +667,8 @@ sections:
           Under the development server the action throws `UnauditedActionError`; in production it
           completes, leaves no audit record, and the log holds `admin.action.unaudited`.
         cause: |
-          The handler returned on a path that never called `ctx.audit`.
+          The handler returned a value other than a `fail()` on a path that never called
+          `ctx.audit`.
         handledBy: s-unaudited-fix
       - id: f-unaudited
         kind: fact
@@ -657,14 +676,15 @@ sections:
       - id: r-unaudited
         kind: reason
         text: |
-          Production logs instead of throwing because a redirect or error response mid-request
-          would be worse than a gap in the audit trail.
+          Production logs instead of throwing because an unaudited state change is a defect but
+          should not 500 a live site.
       - id: s-unaudited-fix
         kind: sentence
         mode: claim
         text: |
           The fix is a code change in the handler that calls `ctx.audit` on every successful path
-          before it returns.
+          before it returns. A path that rejects with `fail()` before writing owes no audit, but
+          one that writes and then returns `fail()` still has to call it.
         facts:
           - f:07efts
       - id: l-admin-action
@@ -1237,8 +1257,8 @@ dispositions:
     reference: ../reference/sveltekit.md#createadminaction
     reason: |
       Which helper refuses through `error()` and which through `redirect()` is the reference
-      entry's; the fact names no channel for `createAdminAction`'s session check, so the session
-      row states no response for it.
+      entry's; the session row states only the 303 redirect to `/admin/login` that `f:v1jj2k` and
+      `f:1b3ye3` name for `createAdminAction`'s session check.
 constraints:
   - |
     [[adminactionmisconfigured]] states the current wiring (the adapter's `access` member is the
@@ -1268,9 +1288,10 @@ constraints:
   - |
     Workers Logs and `wrangler tail` get their vendor links and no copied dashboard navigation.
   - |
-    The page carries only the rows this blueprint lists: no `admin.action.csrf_refused` row, no
-    build-time env-read row, and no illustrative today reader, since no fact here backs any of
-    them.
+    The page carries only the rows this blueprint lists: no `admin.action.csrf_refused` row (the
+    check-order list names its event and response, from `f:1b3ye3`, and nothing more), no
+    build-time env-read row, and no illustrative today reader, since no fact here backs either
+    of the last two.
   - |
     These links also render in the introduction's not-covered list: the [[see-also]] links to the
     log events reference, Upgrade cairn, the migration notes, and Run cairn-audit on your site. The

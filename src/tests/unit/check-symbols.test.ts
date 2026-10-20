@@ -359,6 +359,16 @@ describe('extractFilePaths', () => {
   });
 });
 
+describe('extractFilePaths, package import specifiers', () => {
+  it('skips a #-prefixed specifier and still resolves a repo path', () => {
+    const tokens = extractFilePaths(
+      codeVoiceSegments('import from `#lib/cairn.config.js`, edit `src/lib/x.ts`'),
+    ).map((c) => c.token);
+    expect(tokens).not.toContain('lib/cairn.config.js');
+    expect(tokens).toEqual(['src/lib/x.ts']);
+  });
+});
+
 describe('extractEventOrConditionCandidates', () => {
   it('extracts a real and a fake dotted name sharing a real area, both halves', () => {
     const segments = codeVoiceSegments('the `commit.succeeded` and `commit.errored` events');

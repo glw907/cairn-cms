@@ -665,14 +665,6 @@ sections:
           Only that `createGithubApp` makes no network call and validates nothing, and that the dev
           backend replaces the provider for every request it serves, so placeholder values serve
           until production. Omit the request-path expression.
-      - id: a-location
-        kind: fact
-        fact: f:q07rd5
-        use: |
-          Only the tutorial site's half: the adapter module sits at `src/lib/cairn.config.ts`, the
-          rest of the site imports it as `#lib/cairn.config.js`, and the `cairnManifest`
-          `configModule` will name it. Nothing about the scaffold or about an older version of this
-          page.
       - id: a-steps-lead
         kind: sentence
         mode: verbatim
@@ -831,12 +823,19 @@ sections:
         kind: step
         text: |
           In the project directory, write the manifest with `npx cairn-manifest`, which writes
-          `src/content/.cairn/index.json`.
+          `src/content/.cairn/index.json` and, in the same run, `src/content/.cairn/site-facts.json`.
         requires:
           - manifest-plugin
         produces:
           - manifest
         canFail: true
+      - id: x-site-facts
+        kind: fact
+        fact: f:yio35u
+        use: |
+          Only that the same `npx cairn-manifest` run writes `site-facts.json` beside the content
+          manifest, so the commit step carries both files. The build failure a stale copy causes
+          waits for [[resolve-a-content-build-failure]].
       - id: x-cli-link
         kind: link
         target: ../reference/cli-cairn-manifest.md
@@ -844,7 +843,7 @@ sections:
         kind: step
         text: |
           In the project directory, commit every uncommitted file to the repository the first
-          milestone started, the entry and its manifest included.
+          milestone started, the entry, its manifest, and `site-facts.json` included.
         requires:
           - local-repo
           - manifest
@@ -978,11 +977,11 @@ sections:
   - id: resolve-a-content-build-failure
     heading: Resolve a content build failure
     why: |
-      The failure rows follow the verification steps they diagnose, and they separate the two
+      The failure rows follow the verification steps they diagnose, and they separate the three
       failures that stop the build from the one that does not.
     level: 3
     opens: |
-      The content wiring fails in three ways, and only the first two stop the build.
+      The content wiring fails in four ways, and only the first three stop the build.
     items:
       - id: f-modes
         kind: fact
@@ -1025,6 +1024,24 @@ sections:
         facts:
           - f:fdtgh5
           - f:n0laoh
+      - id: f-site-facts
+        kind: failure
+        from: s-build-content
+        symptom: |
+          The build stops with an error that names `site-facts.json` and `npx cairn-manifest`.
+        cause: |
+          The committed `site-facts.json` no longer matches the adapter.
+        handledBy: f-site-facts-fix
+        facts:
+          - f:eqlssz
+      - id: f-site-facts-fix
+        kind: sentence
+        mode: claim
+        text: |
+          Run `npx cairn-manifest`, which rewrites `site-facts.json`, and commit the result.
+        facts:
+          - f:z61ibp
+          - f:yio35u
       - id: f-zero
         kind: failure
         from: s-write-manifest
@@ -1181,9 +1198,10 @@ sections:
         kind: fact
         fact: f:f2vudv
         use: |
-          Only what `bootstrapOwner` does in each mode: nothing while the dev backend is active, and
-          the first real owner row on the first real sign-in, in the production milestone. The log
-          event waits for [[verify-the-production-site]].
+          Only what `bootstrapOwner` does in each mode: nothing while the dev backend is active, and,
+          in the production milestone, the first real owner row, inserted when the configured email
+          submits the sign-in request form, before any link is sent. The log event waits for
+          [[verify-the-production-site]].
       - id: s-server-module
         kind: step
         text: |
@@ -1332,8 +1350,8 @@ sections:
         fact: f:xluud1
         use: |
           Only the define the `cairnManifest` plugin already in `vite.config.ts` supplies, its value
-          under `vite dev` and in a default build, and that a define the site sets would win, so the
-          site writes none of its own.
+          under `vite dev`, under a `VITE_CAIRN_E2E=1` build, and in a default build, and that a
+          define the site sets would win, so the site writes none of its own.
       - id: d-noexternal
         kind: fact
         fact: f:2pv4r5
@@ -1672,8 +1690,8 @@ sections:
         fact: f:7bch04
         use: |
           Only the three edits, as a bulleted list framed as the edits to files the site already
-          has, beside the App, the secret, and the database the sections create; then the hooks
-          clause.
+          has, beside the App, the secret, and the database the sections create; then that the
+          private key is a Worker secret rather than a file edit, and the hooks clause.
       - id: p-order
         kind: fact
         fact: f:e5vm42
@@ -1779,10 +1797,10 @@ sections:
         kind: fact
         fact: f:ntdafg
         use: |
-          Only the four values the engine reads from the Worker env, and the
-          `config.bindings-missing` throw that a missing `AUTH_DB` raises, the condition behind the
-          page. The `PUBLIC_ORIGIN` throw waits for
-          [[add-the-email-sending-binding-and-name-the-origin]].
+          Only the four values the engine reads from the Worker env, and that a missing `AUTH_DB`
+          throws nothing at the guard: the guard logs `guard.refused` and returns the branded 500
+          page for condition `config.bindings-missing` itself. Omit the `requireDb` throw. The
+          `PUBLIC_ORIGIN` throw waits for [[add-the-email-sending-binding-and-name-the-origin]].
       - id: r-paid
         kind: fact
         fact: f:75hawi
@@ -2152,8 +2170,8 @@ sections:
         kind: fact
         fact: f:pkrwom
         use: |
-          Only the separate D1 binding with its own `migrations_dir` for `0002_audit.sql`, and its
-          reason.
+          Only the recommendation, not a requirement, that `0002_audit.sql` go on its own D1
+          binding with its own `migrations_dir`, and the reason for it.
       - id: db-audit-link
         kind: link
         target: ../reference/sveltekit.md#created1auditsink
@@ -2333,7 +2351,9 @@ sections:
         kind: fact
         fact: f:f2vudv
         use: |
-          Only the owner row the first real sign-in creates and its `editor.bootstrapped` log.
+          Only that submitting the request with the `bootstrapOwner` email, while the allowlist is
+          empty, inserts the owner row and logs `editor.bootstrapped` before the link is sent, so
+          the row exists before the reader opens the link.
       - id: pv-log-link
         kind: link
         target: ../reference/log-events.md
@@ -2861,8 +2881,8 @@ dispositions:
     disposition: subordinated
     reference: upgrade-cairn.md#when-your-range-crosses-sveltekit-3
     reason: |
-      The page places no `cf-typegen` step: the fact gives only the scaffold's command, which
-      reads a `.dev.vars.example` the hand-built site never writes, and the tutorial's code reads
+      The page places no `cf-typegen` step: the fact gives the scaffold's and the Deploy-button
+      tree's scripts, neither of which the hand-built site carries, and the tutorial's code reads
       no generated binding type; the upgrade page carries the `wrangler types` command.
   - fact: f:pfy9cw
     disposition: subordinated

@@ -2,11 +2,11 @@
 version: 1
 pages:
     docs/claude-code/using-claude-code-with-cairn.md:
-        accepted: f8047ba01387cdd688e72a0e6003506577ec64a9
+        accepted: a0ab900d9578aacc81178efac7d97073ac7b0e4e
     docs/extend/add-a-second-sign-in-group.md:
         page: 16ad2daf773233d3ff59f80d6d7ed0a593f8afd7
         blueprint: e61f10b26c19c796e94af31abfc523b933021f15
-        accepted: ad021194c8a9e78f1534ed8a7a43a977fb19440d
+        accepted: f530624cc4b8c4fb1b233e6ff7e832936a9e8ab9
         sections:
             _intro: sha256:fe64ce977658d074d0f5304c28d306f6b36b4b3b485c5f65b511cbaeff096280
             add-the-role-s-people: sha256:bf3e92fd326ea7496bfcc3d954170ed74432f68bdbab4e0a59255461f8691f38
@@ -31,7 +31,7 @@ pages:
     docs/extend/add-cairn-to-a-sveltekit-app.md:
         page: 65163162be441f51abbf80d2cdb1c0b044fc717c
         blueprint: b307ed09dad986174b8551acadcda4e29c3a6987
-        accepted: 7b6c8f453f1a546cfc0b45afd60948f44c809d7d
+        accepted: 6d66d4efc15dfb7b8537d46959b4abd6fba302bb
         sections:
             _intro: sha256:e734d828280e7541ed8caa833e86e941e551ccc4fa866235e55617223057f9ef
             add-a-second-post: sha256:b4c3d4ee08166cd69771a148a4a58ae61b6a5521aff0bf2ccff1dec6067768c1
@@ -68,7 +68,7 @@ pages:
     docs/extend/debug-your-site.md:
         page: be3ce83e66ec6358b32e1c7952d679b2f8586e7e
         blueprint: ad3be2d68e6160516921681a02acf1d2308dd792
-        accepted: a2cc75f35e618b272a8a05bc8beb4c4cf8dbfade
+        accepted: 192b9d8d6e9d24d60485661be88830e8149ea25a
         sections:
             _intro: sha256:b5a24c1afbac300fa17fd569e992de6bec22c7212df8da5d0a2a4989ca437a60
             a-date-differs-between-machines: sha256:8e9bdb244ae96390aabce263c9ea3a181d5c644338843d74dfd7021188b89e17
@@ -170,7 +170,7 @@ pages:
     docs/extend/security-model.md:
         page: ea4bd221fb744bd760fed649ae79e5eaee8df569
         blueprint: f10cff21820db750c75ae8f4fbbb7b5d4e674f65
-        accepted: df3d63385517e4f709a209391f7d80300b894086
+        accepted: d3b65464f554f817b94e715367c485d5f2173a4a
         sections:
             _intro: sha256:2efae629b5ee5820ad29eaf9b851ea1667857cf7fa9c30b4038a5776a0cacd15
             access-map-coverage: sha256:dc1ddaafa480c54e609f25ec371d98fbc6124707e832294aa1c2204156f58e97

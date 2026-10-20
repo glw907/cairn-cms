@@ -17,8 +17,8 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   editor as commit author. Source: `src/lib/github/types.ts:20`, "A commit author: the signed-in
   editor (spec §7.4).", `src/lib/github/repo.ts:260-263` (no committer is set). [verified]
 - `f:kldwss` `create-cairn-site` creates the GitHub App, the repository, the Cloudflare bindings, and deploys,
-  in one run. Source: `packages/create-cairn-site/` (chapter2.mjs GitHub App and Cloudflare
-  provisioning flow, referenced in docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md).
+  in one run. Source: `packages/create-cairn-site/`, `packages/create-cairn-site/src/github/chapter.mjs:1-8`, `packages/create-cairn-site/src/cloudflare/chapter.mjs:1-6`, `packages/create-cairn-site/src/cloudflare/deploy.mjs:1-10` (the GitHub chapter creates the App and
+  the repository; the Cloudflare chapter and its deploy step provision the bindings and deploy).
   [verified]
 - `f:9xthnq` The admin is also a toolkit: a developer's own route under `/admin` renders as a child of `CairnAdminShell` like the engine's own screens, can adopt the packaged admin-toolkit components, and sits behind the same `/admin` sign-in guard, since every `/admin` path except the login page and the auth endpoints is gated. Source: `examples/showcase/src/routes/admin/+layout.svelte:3-5`, "every /admin/** route renders inside CairnAdminShell"; `examples/showcase/src/routes/admin/signups/+page.svelte:1-4`, "a developer's own route rendered in CairnAdminShell"; `src/lib/sveltekit/guard.ts:24`, "everything else under /admin is gated". [verified]
 - `f:i74t7g` A cairn site is built to run on Cloudflare Workers: the engine's environment contract is Cloudflare Worker bindings (the `AUTH_DB` D1 database, the Email Sending binding), so a production site built on cairn is hosted on Cloudflare. Source: `src/lib/env.ts:5,17-33`, the `CairnEnv` interface and its `D1Database` import from `@cloudflare/workers-types`. [verified: the code fixes Cloudflare as the runtime platform; where a given site is deployed is the operator's fact and is not separately confirmed]
@@ -119,10 +119,13 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   scripts/build/transpile-dist-svelte.mjs && chmod +x ..."`. [verified]
 - `f:eywrq8` The engine emits a JSON structured-log record for every operationally meaningful event
   through one internal chokepoint at `src/lib/log/`, with event names forming a stable, public-observable
-  vocabulary (`area[.subject].verb_phrase`) documented in `docs/reference/log-events.md`; the engine's
-  own `log` instance is exported from no package subpath; `/log` exports `createLogger` (`f:mreycz`).
-  Source: `src/lib/log/events.ts:1-16` (module comment: "renaming one is a breaking change... See
-  docs/reference/log-events.md, kept in step with this union."); `src/lib/log/public.ts:1-7`;
+  vocabulary (`area[.subject].verb_phrase`) documented in the event table directly under the title
+  heading of `docs/reference/log-events.md`, one row per event with its level, trigger, and fields;
+  the engine's own `log` instance is exported from no package subpath; `/log` exports `createLogger`
+  (`f:mreycz`). Source: `src/lib/log/events.ts:1-16` (module comment: "renaming one is a breaking
+  change... See docs/reference/log-events.md, kept in step with this union.");
+  `docs/reference/log-events.md:16-98` (the `| Event | Level | Fires when | Fields |` table under
+  `# Log events`); `src/lib/log/public.ts:1-7`;
   `src/lib/log/` contains `create.ts`, `emit.ts`, `events-list.ts`, `events.ts`, `index.ts`, `public.ts`.
   [verified]
 - `f:w379wu` Every publish is a commit with the editor as author and no committer set, so GitHub attributes

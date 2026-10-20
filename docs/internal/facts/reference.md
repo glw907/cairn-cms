@@ -207,7 +207,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   subset of D1 the channel store calls (`prepare(...).bind(...).first()/run()`, `withSession('first-primary')`,
   and a session's `prepare` and `batch`); a real `D1Database` and `createChannelDb()`'s result both
   satisfy it with no cast, and `AuthChannel.revokeSessions` takes the same type. Source:
-  `src/lib/auth-channel/store.ts#ChannelDatabaseLike`, `src/lib/auth-channel/factory.ts#AuthChannelConfig.resolveDb`.
+  `src/lib/auth-channel/store.ts#ChannelDatabaseLike`, `src/lib/auth-channel/factory.ts:232-238`.
   [verified]
 - `f:vh76wt` A non-positive `limits` override always throws even where the table states only a ceiling
   (prevents a 0 or negative clamp value from silently passing). Source:
@@ -1151,7 +1151,7 @@ re-sourced to Go on this tree rather than to the page.
 
 ## docs/reference/guidance.md
 
-- `f:vhxkab` `cairn-guidance install`'s containment boundary is the real directory `.claude` under the resolved working directory, not a lexical path prefix: the working directory goes through `realpath` (so a project reached through a symlinked parent still installs), then every path component from `.claude` down is `lstat`-ed, and a symlinked component, a symlinked destination, or a destination that already exists as a directory is refused by name while the run continues. A symlink at a `<dest>.orig` path is refused as well, and the destination beside it is also refused and not overwritten in that run, since the recovery copy could not be made; the `.orig` is created with an exclusive, no-follow open, so a dangling link cannot be written through. Both the `.orig` path and the destination beside it land in `report.refused`, so an operator reading the report sees which destination was left stale, not only its `.orig` sibling. Source: `src/lib/guidance/install.ts` (`resolveWritableDest`, `preserveOriginal`, `isGuidancePath`, `installGuidance`). [verified]
+- `f:vhxkab` `cairn-guidance install`'s containment boundary is the real directory `.claude` under the resolved working directory, not a lexical path prefix: the working directory goes through `realpath` (so a project reached through a symlinked parent still installs), then every path component from `.claude` down is `lstat`-ed, and a symlinked component, a symlinked destination, a component that exists as something other than a directory (a regular file where a directory belongs), a destination that exists as something other than a regular file (a directory, for one), and a destination outside `.claude` are each refused by name while the run continues. A symlink at a `<dest>.orig` path is refused as well, and the destination beside it is also refused and not overwritten in that run, since the recovery copy could not be made; the `.orig` is created with an exclusive, no-follow open, so a dangling link cannot be written through. Both the `.orig` path and the destination beside it land in `report.refused`, so an operator reading the report sees which destination was left stale, not only its `.orig` sibling; the same happens when the exclusive create of a missing `.orig` fails and the path is then not a plain file. The `.claude/cairn/MANIFEST` path is resolved by the same rule, and when it is refused (a symlinked MANIFEST, say) the install adds it to `report.refused` and returns without writing a MANIFEST. Every refusal is reported on stderr as `refused <path>: ...`, and none changes the exit code: `install` exits 0 with refusals in its report. Source: `src/lib/guidance/install.ts:300-305` (`if (isLast ? !stats.isFile() : !stats.isDirectory()) return null;`), `src/lib/guidance/install.ts:361` (`resolveWritableDest(cwd, realCwd, MANIFEST_DEST)`), `src/lib/guidance/install.ts:399-402` (`report.refused.push(MANIFEST_DEST)`), `src/lib/guidance/install.ts:425-428,440-443` (`report.refused.push(origRelPath)`), `src/lib/guidance/install.ts` (`resolveWritableDest`, `preserveOriginal`, `isGuidancePath`, `installGuidance`), `src/lib/guidance/bin.ts:94-104` (`refused`). [verified]
 - `f:x5grdm` A failure writing a destination file during `cairn-guidance install` (an `ENOSPC`, an `EACCES`, ...) is reported through `InstallReport.writeErrors`, a list of `{ path, code }` entries, separate from `report.refused`: a disk or permissions error is not folded into the containment refusals, so the bin's printed line names the errno code rather than misattributing the failure to a symlink or an out-of-bounds path. Source: `src/lib/guidance/install.ts` (`installGuidance`'s write `catch`), `src/lib/guidance/bin.ts` (`write error` print line). [verified]
 - `f:h2wtin` The package ships exactly 4 bins total (`cairn-manifest`, `cairn-media-seed`, `cairn-audit`,
   `cairn-guidance`) plus a separate `./vite` export (the Vite plugin, `dist/vite/index.js`,
@@ -1160,7 +1160,7 @@ re-sourced to Go on this tree rather than to the page.
   `package.json:183-186` (`"./vite"`). [verified]
 - `f:hiif6u` `cairn-guidance install` ships a fourth skill, `cairn-public`, for the public side of a site: a router `SKILL.md` within the 3,500-token packaged budget, and `references/` holding one catalogue page per public piece (each registry directive plus the built-in `figure` and `include`, each island, `CairnHead`, `PreviewBanner`, each `cairn-*` class the chassis `composition.css` defines, and six prose pages). `npm run check:public-skill` fails a source with no page, a snippet class absent from the showcase's compiled public sheet and the emitted-class registry, a named token that resolves nowhere, and a parser that matches nothing. Source: `skills/cairn-public/SKILL.md:1`, `scripts/checks/check-public-skill.mjs:1`. [verified]
 - `f:qzsspl` The chassis `tokens.css` excludes the project-root `.claude/` from Tailwind's automatic source detection with `@source not "../../.claude"`. Tailwind resolves that path against the stylesheet that carries it, so the earlier `./.claude` excluded only a directory beside `src/chassis/`, and a utility used only in an installed skill's files reached a scaffolded site's compiled CSS. `check:public-skill` compiles a standalone copy to prove the exclusion. Source: `examples/showcase/src/chassis/tokens.css:55`, `scripts/checks/check-public-skill.mjs:1`. [verified]
-- `f:1kwkl0` `cairn-guidance check` counts an admin stylesheet whose Tailwind import uses `source(none)` as excluding `.claude/`, beside the literal `@source not "./.claude";` line, and the guidance tree hash leaves out the `.claude/cairn/VERSION` stamp, so an installed and a packaged tree that differ only in that stamp compare fresh. Source: `src/lib/guidance/check.ts#judgeSourceExclusion`, `src/lib/guidance/install.ts#hashFileTree`. [verified]
+- `f:1kwkl0` `cairn-guidance check` judges whether `.claude/` is excluded from the site's Tailwind build in a fixed order. First, a `.gitignore` line that is exactly `.claude`, `.claude/`, `/.claude`, or `/.claude/` counts as excluded outright, before any stylesheet is read. Otherwise it reads only `src/admin.css`, then `src/theme/admin.css`, and the first of the two that contains `@source` or `source(none)` anywhere decides: excluded when that file contains the literal `@source not "./.claude";` line or the string `source(none)` anywhere in it, not excluded otherwise. When neither file carries either string, the item reports unknown and names every path it checked. The guidance tree hash leaves out the `.claude/cairn/VERSION` stamp, so an installed and a packaged tree that differ only in that stamp compare fresh. Source: `src/lib/guidance/check.ts:62-66` (`gitignoreExcludesClaude`), `src/lib/guidance/check.ts:29` (`SOURCE_CSS_CANDIDATES`), `src/lib/guidance/check.ts:81-91` (`gitignoreExcludesClaude(gitignore)`, then `content.includes(SOURCE_EXCLUSION_LINE) || content.includes(SOURCE_NONE)`), `src/lib/guidance/install.ts#hashFileTree`. [verified]
 
 ## docs/reference/islands.md
 
@@ -1301,12 +1301,21 @@ re-sourced to Go on this tree rather than to the page.
   `src/lib/sveltekit/guard.ts:264-283` (`headerSent = ... !== null`; `verdict = headerSent ?
   csrfHeaderVerdict(...) : await csrfTokenVerdict(event)`; the log's `witness` field is
   `headerSent ? 'header' : 'field'`). [verified]
-- `f:v1jj2k` `admin.action.session_absent` is the only trace a `createAdminAction`-mounted route leaves for a
-  session that lapsed between the guard's resolve and the action running, since the guard's own
-  `guard.refused` csrf branch refuses an earlier condition. Source:
-  `src/lib/sveltekit/admin-action.ts:146-153,207-211` (`if (!editor) { log.warn('admin.action.
-  session_absent', ...); throw redirect(303, '/admin/login'); }`, the first check the wrapper
-  runs). [verified]
+- `f:v1jj2k` `admin.action.session_absent` (warn) fires when a `createAdminAction`-wrapped action
+  runs with no `event.locals.cairnEditor`; it is the wrapper's first check, and the wrapper then
+  redirects 303 to `/admin/login`. It never records a session that lapsed after the guard resolved
+  it: the engine guard resolves the session on the same request before the route runs, and on a
+  gated admin path it redirects a missing or expired session to `/admin/login` itself, with no log
+  record, so a gated admin route always reaches the action with an editor set. The event fires only
+  on a route no hook resolved an editor for: an action mounted outside `/admin` (the guard returns
+  early on a non-admin path) or on one of the two public admin paths, `/admin/login` and
+  `/admin/auth/confirm`, where the guard resolves no session. The wrapper's own doc comment reads the
+  absence as a session that "expired or was never established"; behind the guard only the second
+  reading occurs. Source: `src/lib/sveltekit/admin-action.ts:213-217` (`log.warn('admin.action.session_absent'`),
+  `src/lib/sveltekit/guard.ts:363-365` (`if (!editor) throw redirect(303, '/admin/login');`),
+  `src/lib/sveltekit/guard.ts:220-222` (`if (!isAdminPath(pathname))`),
+  `src/lib/sveltekit/guard.ts:33-35` (`isPublicAdminPath`), `src/lib/sveltekit/guard.ts:297,359`
+  (`isPublicAdminPath(pathname)`). [verified]
 - `f:yauo4m` `audit.sink.call_failed` omits `record.detail` to avoid duplication (the full record already
   logged one line earlier as `admin.action.audited`), while `audit.sink.write_failed` persists the
   whole truncated record since it is the only surviving trace of a row the packaged sink itself
@@ -1727,7 +1736,11 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   outcome = event.locals.cairnAuditSink?.(full); ... }`), `:296` (`ctx.audit({ action: 'deny', ...
   })`), `:302-310` (`const result = await handler(...)`, then the `emitted === 0` check). [verified]
 - `f:1b3ye3` `createSectionAction`'s full check order, fail-closed at every step except the rate limit
-  (which degrades to open): (1) `createAdminAction`'s own authentication (throws, not `fail()`);
+  (which degrades to open): (1) `createAdminAction`'s own checks, which throw rather than return
+  `fail()`: a missing editor logs `admin.action.session_absent` and redirects 303 to
+  `/admin/login`, then the double-submit CSRF check (the `X-Cairn-CSRF` header when one was sent,
+  otherwise the `csrf` form field against the cookie) logs `admin.action.csrf_refused` and throws
+  `error(403)` on a mismatch;
   (2) rate limit, when configured, an unresolved binding or a throwing `key()`/`limit()` call
   degrades to open and logs `admin.action.rate_limit_absent`/`rate_limit_failed`, an over-limit
   call logs `admin.action.rate_limited` and returns `fail(429)` with no `ctx.audit` call; (3)
@@ -1738,8 +1751,10 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   returning null/undefined audits `'rejected: database not bound'`, logs
   `admin.action.misconfigured`, returns `fail(500)`, running last so a refused session's attempt
   always audits as a denial rather than a config fault. Source:
-  `src/lib/sveltekit/section-action.ts:120-140` (doc comment states the same order verbatim) and
-  the runtime checks at `:219-304`. [verified]
+  `src/lib/sveltekit/section-action.ts:120-140` (doc comment states the same order verbatim),
+  the runtime checks at `src/lib/sveltekit/section-action.ts:221-304`, and
+  `src/lib/sveltekit/admin-action.ts:213-245` (`log.warn('admin.action.csrf_refused'`), the
+  wrapper's session and CSRF checks. [verified]
 - `f:jy9y3u` `hasAccessRule` runs before `canReach`, never `canReach` alone: `canReach`'s permissive
   unmapped-target reading is nav semantics (an engine screen with no rule still reachable), while
   a section path with no rule at all must refuse. Source:

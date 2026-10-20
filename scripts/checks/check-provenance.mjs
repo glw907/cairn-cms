@@ -142,13 +142,28 @@ const PATH_EXTENSION_RE = new RegExp(`\\.(?:${PATH_EXTENSIONS})$`);
 
 const CODE_SPAN_RE = /`([^`]+)`/g;
 const LINK_TARGET_RE = /\]\([^)]*\)/g;
+const LINKED_TEXT_RE = /\[([^\]]*)\]\([^)]*\)/g;
 const IMAGE_RE = /!\[[^\]]*\]\([^)]*\)/g;
 const URL_RE = /https?:\/\/[^\s<>)\]`]+/g;
 const DATE_RE = /(?<![\w.-])\d{4}-\d{2}-\d{2}(?![\w-])/g;
 const VERSION_RE = /(?<![\w.])v?\d+(?:\.\d+)+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?(?![\w]|\.\d)/g;
 const NUMERAL_RE = /(?<![\w$.])(\d{1,3}(?:,\d{3})+|\d+)(?:%|[a-zA-Z]{1,3})?(?![\w]|[.,]\d)/g;
 const FLAG_RE = /(?<![\w-])--[a-z][\w-]*/g;
-const PROSE_COMMAND_RE = /(?<![\w-])(?:npm|npx|pnpm|yarn)\s+(?:run\s+)?[a-z][\w:@-]*/g;
+const NPM_SUBCOMMANDS = [
+  'access', 'adduser', 'audit', 'bugs', 'cache', 'ci', 'completion', 'config', 'dedupe', 'deprecate',
+  'diff', 'dist-tag', 'docs', 'doctor', 'edit', 'exec', 'explain', 'explore', 'find-dupes', 'fund',
+  'get', 'help', 'hook', 'i', 'init', 'install', 'install-ci-test', 'install-test', 'it', 'link',
+  'login', 'logout', 'ls', 'org', 'outdated', 'owner', 'pack', 'ping', 'pkg', 'prefix', 'profile',
+  'prune', 'publish', 'query', 'rebuild', 'repo', 'restart', 'root', 'run', 'run-script', 's', 'search',
+  'set', 'shrinkwrap', 'star', 'start', 'stop', 'team', 't', 'test', 'token', 'tst', 'uninstall',
+  'unpublish', 'unstar', 'update', 'version', 'view', 'whoami',
+];
+// `npm` reads as a command only before a real npm subcommand ("the npm package" is a noun phrase);
+// npx, pnpm, and yarn keep the looser rule.
+const PROSE_COMMAND_RE = new RegExp(
+  `(?<![\\w-])(?:npm\\s+run\\s+[a-z][\\w:@-]*|npm\\s+(?:${NPM_SUBCOMMANDS.join('|')})(?![\\w:@-])|(?:npx|pnpm|yarn)\\s+(?:run\\s+)?[a-z][\\w:@-]*)`,
+  'g',
+);
 const PROSE_PATH_RE =
   /(?<![\w./@~-])(?:(?:~|\.{1,2})?\/[\w.@[\]-]+(?:\/[\w.@[\]-]*)*|[\w.@-]+(?:\/[\w.@[\]-]*)+)/g;
 const NAME_RE = /^@?[A-Za-z_$][\w$:[\]-]*(?:\.[A-Za-z_$][\w$-]*)*$/;
@@ -242,11 +257,17 @@ function codeSpanFacts(span) {
  */
 export function extractFacts(text, keyPhrases) {
   const withoutLinks = text.replace(DETAILS_TAG_RE, ' ').replace(IMAGE_RE, ' ').replace(LINK_TARGET_RE, ']');
+  // A code span inside a link's text is navigation, not a claim: blank it for fact extraction
+  // while the key-phrase scan below still reads the full text.
+  const claimText = text
+    .replace(DETAILS_TAG_RE, ' ')
+    .replace(IMAGE_RE, ' ')
+    .replace(LINKED_TEXT_RE, (_all, label) => `[${label.replace(CODE_SPAN_RE, ' ')}]`);
   /** @type {ExtractedFact[]} */
   const found = [];
-  for (const m of withoutLinks.matchAll(CODE_SPAN_RE)) found.push(...codeSpanFacts(m[1]));
+  for (const m of claimText.matchAll(CODE_SPAN_RE)) found.push(...codeSpanFacts(m[1]));
 
-  let prose = withoutLinks.replace(CODE_SPAN_RE, ' ');
+  let prose = claimText.replace(CODE_SPAN_RE, ' ');
   /**
    * Record each match of `re` in the remaining prose as `kind`, then blank it out so a later,
    * looser class cannot read it again.

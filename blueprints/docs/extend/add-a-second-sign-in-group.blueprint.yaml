@@ -347,8 +347,8 @@ sections:
           channel, a transport the Worker can call to send a code, such
           as an email or SMS provider; for a channel, the group's roster in a store the site's code
           can read; for a channel, a Cloudflare Turnstile widget and its secret key; for the
-          channel's test, Node 24 or later and `@glw907/cairn-cms-dev` installed as a dev
-          dependency.
+          channel's test, `@glw907/cairn-cms-dev` installed as a dev dependency on a Node release
+          its declared `engines.node` floor, `>=24`, accepts.
         facts:
           - f:nj0nfm
           - f:1dhk1a
@@ -489,7 +489,7 @@ sections:
     level: 3
     opens: |
       A role is one entry in the site's role vocabulary, declared once on the adapter's `roles`
-      member, and the guard and the dev backend both read it from the composed runtime.
+      member; the guard reads it from the composed runtime, which the dev backend also takes.
     items:
       - id: dr-guard
         kind: fact
@@ -501,8 +501,9 @@ sections:
         kind: fact
         fact: f:7cv105
         use: |
-          Only: `devBackendHandle` takes the same required `runtime` and reads `runtime.roles`, so
-          one declaration serves both handles. Omit the earlier-versions clause; the
+          Only: `devBackendHandle` takes the same required `runtime`, so one declaration serves
+          both handles, and it reads only `runtime.access` from it, never `runtime.roles`. Omit
+          the earlier-versions clause; the
           dev-backend-mints-an-owner clause is placed in
           [[verify-the-role-signs-in-to-its-home-screen]].
       - id: dr-module
@@ -800,9 +801,10 @@ sections:
         fact: f:hwffph
         use: |
           Only: the warning means the adapter declares custom roles but `createAuthGuard` was not
-          passed `{ runtime }`, so the running guard falls back to the owner and editor pair, and
-          `cairn doctor` raises it from its `auth.role-wiring` check. Omit the older-engine
-          spelling.
+          passed `{ runtime }`, and `cairn doctor` raises it from its `auth.role-wiring` check. On
+          this engine such a guard throws when `src/hooks.server.ts` loads; the fallback to the
+          owner and editor pair that the warning's text describes is an older engine's behavior.
+          Omit the older-engine spelling.
       - id: vr-type-error
         kind: fact
         fact: f:4xrx5f
@@ -1199,8 +1201,9 @@ sections:
       - id: s-dev-vars-example
         kind: step
         text: |
-          On a scaffolded site, in `.dev.vars.example`, add `TURNSTILE_SECRET` with an empty value.
-          A site without that file skips this step.
+          On a site that carries `.dev.vars.example`, as one from the Deploy-button tree does, add
+          `TURNSTILE_SECRET` to that file with an empty value. A site without that file, such as
+          one the setup command scaffolded, skips this step.
         requires:
           - secret-local
         produces:
@@ -1210,8 +1213,9 @@ sections:
         kind: fact
         fact: f:nls26c
         use: |
-          Only: `.dev.vars.example` is the template for the local-only `.dev.vars`, which the
-          scaffold's `.gitignore` keeps out of git. Omit the names the template lists.
+          Only: `.dev.vars.example` is the template for the local-only `.dev.vars`, and only the
+          Deploy-button tree carries it; the setup command's scaffold ships none, and its
+          `.gitignore` keeps `.dev.vars` out of git. Omit the names the template lists.
       - id: s-types
         kind: step
         text: |
@@ -1228,9 +1232,10 @@ sections:
         fact: f:pe4vuc
         use: |
           Only, for the types step and the sentence after it, that `npx wrangler types` writes
-          `worker-configuration.d.ts`, that a scaffolded site's recorded command reads
-          `.dev.vars.example` in place of `.dev.vars`, what the generated `Env` names, and which
-          `env` it types.
+          `worker-configuration.d.ts`, what the generated `Env` names, and which `env` it types.
+          Omit the recorded-command clause: the setup command's scaffold regenerates the file with
+          no `--env-file`, so its recorded command reads `.dev.vars`; only the Deploy-button tree's
+          reads `.dev.vars.example`.
       - id: wm-types-why
         kind: sentence
         mode: claim
@@ -1886,8 +1891,9 @@ sections:
         symptom: |
           `cairn doctor` reports `auth.role-wiring-missing`.
         cause: |
-          The guard never received the runtime, so it resolves every session against the owner and
-          editor pair and the custom role to `none`.
+          The adapter declares custom roles, but `createAuthGuard` in `src/hooks.server.ts` was not
+          passed `{ runtime }`. On this engine that guard throws when the hooks module loads; the
+          owner-and-editor fallback the warning describes is an older engine's.
         handledBy: r-wiring
       - id: r-wiring
         kind: step
@@ -1999,10 +2005,11 @@ sections:
         kind: failure
         from: t-run
         symptom: |
-          The test fails inside `createChannelDb`, on a Node release below 24.
+          The test fails inside `createChannelDb` because `node:sqlite` cannot load on the running
+          Node release.
         cause: |
-          `createChannelDb` needs `node:sqlite`, and nothing enforces the dev package's Node floor
-          at runtime; npm only warned at install.
+          `createChannelDb` needs `node:sqlite`, and nothing enforces the dev package's declared
+          `engines.node` floor at runtime; npm only warned at install.
         handledBy: r-node
       - id: rs-node
         kind: fact
@@ -2013,8 +2020,8 @@ sections:
       - id: r-node
         kind: step
         text: |
-          If the test fails on a Node release below 24, switch to Node 24 or later and run
-          `npx vitest run` again.
+          If the test fails because `node:sqlite` cannot load, switch to a Node release the dev
+          package's `engines.node` floor accepts, 24 or later, and run `npx vitest run` again.
       - id: x-construct
         kind: failure
         from: t-run
@@ -2343,7 +2350,7 @@ constraints:
     The page carries the one-declaration change, the roles migration, `resolveDb` taking
     `createChannelDb`'s result with no cast, and the Turnstile missing-secret reason: the role
     declared once on the adapter and read
-    by both handles from the runtime (`f:4xrx5f`, `f:7cv105`, `f:f21bcz`, `f:mbx6q1`, `f:hwffph`,
+    by the guard from the runtime both handles take (`f:4xrx5f`, `f:7cv105`, `f:f21bcz`, `f:mbx6q1`, `f:hwffph`,
     `f:q07rd5`); the roles migration (`f:rn62i1`, `f:xffr6i`); `resolveDb` and the cast-free test
     (`f:ditn3e`); the missing-secret reason (`f:thbxvf`).
   - |

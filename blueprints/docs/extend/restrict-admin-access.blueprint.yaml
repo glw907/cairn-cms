@@ -171,7 +171,8 @@ sections:
         kind: fact
         fact: f:7cv105
         use: |
-          Only the clause on `runtime.roles` under the dev backend, the same reason's second half.
+          Only the clause that the dev backend never reads `runtime.roles`, since it mints the
+          owner capability, the same reason's second half.
           Omit the one-declaration half, which [[declare-the-access-map]] places.
       - id: bb-handoff
         kind: handoff
@@ -281,9 +282,10 @@ sections:
         kind: fact
         fact: f:iwf4nu
         use: |
-          Only where the map goes and when it runs: the adapter member, the runtime, and the guard's
-          attachment on every admin path, so the guard takes no second copy. Omit the
-          earlier-versions clause.
+          Only where the map goes: the adapter member, `composeRuntime` carrying it onto the
+          runtime, and the guard's attachment on every admin path, so the guard takes no second
+          copy. Omit the earlier-versions clause and any checking of the map's keys, which
+          `composeRuntime` does not do and a later item places.
       - id: map-guard-reads
         kind: fact
         fact: f:4xrx5f
@@ -365,13 +367,15 @@ sections:
         fact: f:iewhzh
         use: |
           Only the image-picker consequence of restricting `media`, as the trap in the paragraph
-          right after the block, beside the `media` key.
+          right after the block, beside the `media` key: the picker's upload is refused, but
+          picking an image the library already holds makes no request, so the role can still
+          insert an existing library image.
       - id: map-writes
         kind: fact
         fact: f:cvv6to
         use: |
-          Only the media library's write actions, in the same paragraph. Omit the exceptions, which
-          the link that follows carries.
+          Only the media library's write actions, gated against `media`, in the same paragraph.
+          Omit the other actions, which the link that follows carries.
       - id: map-limits-link
         kind: link
         target: security-model.md#limits-of-access-map-coverage
@@ -379,7 +383,10 @@ sections:
         kind: fact
         fact: f:3z48zf
         use: |
-          Only the construction and composition checks, as when the map is checked.
+          Only when the map is checked: `defineAccess`'s construction checks, then the key checks
+          `createContentRoutesContext` runs when the admin routes are built at server start.
+          `composeRuntime` checks only the map's role names, so never attribute the key checks to
+          it.
       - id: map-undefined-vocab
         kind: fact
         fact: f:grxpu5
@@ -395,7 +402,8 @@ sections:
         symptom: |
           The server start throws a `defineAccess:` or `access:` error naming a key or a role.
         cause: |
-          The map breaks one of the construction or composition checks.
+          The map breaks one of `defineAccess`'s construction checks or one of the key checks the
+          admin routes run when they are built at server start.
         handledBy: s-map
       - id: map-unset-pointer
         kind: link
@@ -557,8 +565,10 @@ sections:
         kind: fact
         fact: f:cvv6to
         use: |
-          Only the actions an exhaustive map still leaves outside it, named in one sentence after
-          the step. Omit the rest, which the limits link carries.
+          Only that an exhaustive map covers every engine write action, in one sentence after the
+          step: the tidy and personal-dictionary actions gate against the entry's concept like any
+          entry action, and the site-wide publish filters each entry by its concept. No write
+          action stays outside the map. Omit the rest, which the limits link carries.
       - id: exh-limits-link
         kind: link
         target: security-model.md#limits-of-access-map-coverage
@@ -665,8 +675,9 @@ sections:
         fact: f:rn62i1
         use: |
           Only when `0001_roles.sql` is needed and where a site gets it, with the trap in the same
-          paragraph: a site carries any column it added to `editor` across first. Omit
-          `0003_preview.sql`.
+          paragraph: applying it rebuilds the table, so a site carries any column it added to
+          `editor` across first. Omit the automated-apply clause, since no redeploy path this page
+          names applies a migration (`f:jtl15v`), and omit `0003_preview.sql`.
       - id: dep-scaffold-set
         kind: fact
         fact: f:gepykz
@@ -719,8 +730,9 @@ sections:
         kind: fact
         fact: f:qca0t0
         use: |
-          Only the Workers Builds path: the connect command and the deploy on every push to the
-          default branch.
+          Only the Workers Builds path: the setup command's chapter 3 connects it in the same setup
+          run, `--connect` only re-enters that chapter on a site past its first deploy, and the
+          connected repository deploys on every push to the default branch.
       - id: s-deploy-push
         kind: step
         text: |
@@ -844,7 +856,7 @@ sections:
       The task guide closes its steps on proof: each check reads the deployed map through the role
       the test editor holds.
     opens: |
-      On the deployed site, the composition warning names the targets the map leaves open, and
+      On the deployed site, the warning logged when the admin routes are built names the targets the map leaves open, and
       each role meets the admin's error page wherever the map excludes it.
     items:
       - id: ver-own-route
@@ -888,14 +900,15 @@ sections:
         symptom: |
           The query returns no `config.access_unmapped` record.
         cause: |
-          The record fires only at composition, once per isolate, so a window that misses the
+          The record fires only when the admin routes are built at server start, once per isolate,
+          so a window that misses the
           cold start misses it.
         handledBy: r-widen-window
       - id: r-widen-window
         kind: reason
         text: |
           Widen the query window to cover the cold start after the deploy, since no request after
-          composition logs the warning again.
+          server start logs the warning again.
       - id: v-set-editor
         kind: step
         text: |
@@ -1126,8 +1139,9 @@ sections:
         kind: fact
         fact: f:4bazhe
         use: |
-          Only the `auth.role.unknown` log, backing the unknown-role check. Omit the no-access
-          clause; the resolution to `none` is `f:zjglk8`'s, which [[declare-the-roles]] places.
+          Only the `auth.role.unknown` log and that no access-map rule can name an undeclared role,
+          backing the unknown-role check. Omit the resolution to `none`, which `f:zjglk8` carries and
+          [[declare-the-roles]] places.
       - id: res-unmigrated
         kind: sentence
         mode: claim
@@ -1246,7 +1260,8 @@ dispositions:
     reference: ../reference/cli-cairn-doctor.md
     reason: |
       `auth.role-wiring-missing` describes a guard called without `runtime`, which `f:4xrx5f` makes
-      a type error on this engine, so the task cannot produce it; the doctor reference carries the
+      a type error on this engine, and a guard built without one throws when the hooks module
+      loads, so the task cannot produce it; the doctor reference carries the
       condition for older engines.
   - fact: f:eiaqkh
     disposition: cut

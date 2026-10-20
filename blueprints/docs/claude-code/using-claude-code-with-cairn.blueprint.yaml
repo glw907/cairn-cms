@@ -457,8 +457,9 @@ sections:
         kind: fact
         fact: f:4ax489
         use: |
-          Only the exit codes the choice turns on: `check` exits 0 by default, and `--strict` exits 1
-          only when the guidance tree is stale or missing.
+          Only the exit codes the choice turns on: once its arguments parse, `check` exits 0
+          whatever the report says, and `--strict` exits 1 only when the guidance tree is stale or
+          missing.
       - id: c-ci
         kind: code
         text: |
@@ -522,8 +523,9 @@ sections:
         kind: fact
         fact: f:4ax489
         use: |
-          Only the seven report lines and the exit codes: 0 by default, and 1 under `--strict`
-          only on a stale or missing tree.
+          Only the seven report lines and the exit codes: once its arguments parse, 0 whatever
+          the report says, and 1 under `--strict` only on a stale or missing tree; an unknown
+          command or flag exits 2.
       - id: f-verify-import
         kind: fact
         fact: f:6ro1n9
@@ -533,9 +535,13 @@ sections:
         kind: fact
         fact: f:1kwkl0
         use: |
-          Only two clauses: the `.claude/` Tailwind exclusion line counts `source(none)` as excluding, beside the
-          literal `@source not "./.claude";`, and the tree's freshness ignores the `VERSION`
-          stamp, so a tree differing only there reads fresh.
+          Only two clauses. First, the order in which the `.claude/` Tailwind exclusion line
+          judges: a `.gitignore` line that ignores `.claude` counts as excluded before any
+          stylesheet is read; otherwise only `src/admin.css`, then `src/theme/admin.css`, is read,
+          and the first of them that contains `@source` or `source(none)` decides, excluded when it
+          holds the literal `@source not "./.claude";` line or `source(none)` anywhere; when neither
+          file carries either, the line reports unknown and names the paths it checked. Second, the
+          tree's freshness ignores the `VERSION` stamp, so a tree differing only there reads fresh.
       - id: l-verify-ref
         kind: link
         target: ../reference/guidance.md#check
@@ -593,15 +599,23 @@ sections:
         symptom: |
           `install` prints a `refused <path>` line on stderr and still exits 0.
         cause: |
-          The destination is a symlink, reaches `.claude` through a symlink, or already exists as
-          a directory; the run refuses that path by name and continues.
+          The path has a symlinked component or destination, has a component that exists as
+          something other than a directory (a regular file, say), exists as something other than a
+          regular file (a directory, say), or falls outside `.claude`; or a `<path>.orig` recovery
+          copy could not be made, which refuses the destination beside it too; or the
+          `.claude/cairn/MANIFEST` path is itself refused (a symlinked `MANIFEST`, say), so no
+          `MANIFEST` is written. The run refuses each path by name and continues.
         handledBy: l-diag-install
       - id: f-diag-refused
         kind: fact
         fact: f:vhxkab
         use: |
-          Only that a symlinked component, a symlinked destination, or a destination that already
-          exists as a directory is refused by name while the run continues.
+          Only the refusal cases a reader sees, each refused by name while the run continues and
+          none changing the exit code: a symlinked component or destination, a component that
+          exists as something other than a directory, a destination that exists as something other
+          than a regular file, a destination outside `.claude`, a `.orig` copy that could not be
+          made (which refuses the destination beside it too), and a refused `MANIFEST` path, after
+          which no `MANIFEST` is written.
       - id: x-write
         kind: failure
         from: s-install
@@ -683,8 +697,9 @@ sections:
           job log does not report the guidance tree stale or missing, or the step prints no
           report lines at all.
         cause: |
-          The step exited nonzero for a reason other than a stale or missing tree. `--strict`
-          exits 1 only on a stale or missing tree, so this exit is not the gate's, and with
+          The step exited nonzero for a reason other than a stale or missing tree, such as exit 2
+          for an unknown flag or a file read that failed and ended the run. `--strict` exits 1
+          only on a stale or missing tree, so this exit is not the gate's, and with
           `continue-on-error` removed any nonzero exit of the step fails the job: the trade
           [[make-the-ci-step-gate-on-a-stale-tree]] describes.
         handledBy: h-diag-ci-other
@@ -732,11 +747,27 @@ sections:
         from: v-check
         symptom: |
           The Tailwind line reports `.claude/` not excluded from the site's Tailwind build, or
-          reports that it could not find the Tailwind entry.
+          reports unknown and names the paths it checked.
         handledBy: l-diag-tailwind
       - id: l-diag-tailwind
         kind: link
         target: ../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build
+      - id: x-check-throw
+        kind: failure
+        from: v-check
+        symptom: |
+          `npx cairn-guidance check`, with or without `--strict`, stops with an error instead of
+          finishing, and exits nonzero.
+        cause: |
+          A file read failed with anything but the file being absent, or a read would have left
+          the project directory. Either ends the run. Unlike the stale-tree exit, which needs
+          `--strict`, this failure happens with or without it.
+        handledBy: l-diag-check-throw
+        facts:
+          - f:4ax489
+      - id: l-diag-check-throw
+        kind: link
+        target: ../reference/guidance.md#check
   - id: see-also
     heading: See also
     why: |
@@ -806,8 +837,9 @@ constraints:
     is an engine-repository script that a site does not run, and never appears on this page.
   - |
     f:vhxkab and f:x5grdm are placed only for what the reader sees (a refusal by name, the run
-    continuing, a write error naming its errno code). The realpath and lstat mechanics, the
-    `.orig` refusal pairing, and `InstallReport.writeErrors` stay on the reference page.
+    continuing, a write error naming its errno code). The `.orig` case is placed only as a copy
+    that could not be made refusing the destination beside it; the realpath and lstat mechanics,
+    the exclusive no-follow open, and `InstallReport.writeErrors` stay on the reference page.
   - |
     The review agent is one bullet in [[the-guidance-tree]], with no heading of its own: its
     location (f:0ygumq) and the reference link `l-agent-ref`, nothing on what it reviews or how it

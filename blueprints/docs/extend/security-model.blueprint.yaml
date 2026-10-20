@@ -478,8 +478,9 @@ sections:
         fact: f:keuj8l
         use: |
           Only the token check on an unsafe `/admin` form request: the header that decides
-          outright and why a raw-body upload passes, the form field as the fallback, the compare,
-          and what a failure renders and logs.
+          outright without reading the body and why a raw-body upload passes, the form field as the
+          fallback (read from a clone of the request, so the route can still read the body), the
+          compare, and what a failure renders and logs.
       - id: cs-tokensmatch-link
         kind: link
         target: ../reference/auth-crypto.md#tokensmatch
@@ -571,14 +572,15 @@ sections:
         kind: fact
         fact: f:ubuj1w
         use: |
-          Only the header set, as a bulleted list, and which headers a rejection page and the 303
-          redirect carry.
+          Only the header set, as a bulleted list, and which headers a rejection page, the 303
+          redirect, and the dev-backend 503 carry (the 503 carries none, on every path).
       - id: gd-hsts-why
         kind: fact
         fact: f:t976f1
         use: |
-          Only why rejection pages send no `Strict-Transport-Security`, and that the guard applies
-          the headers only on `/admin` paths.
+          Only why rejection pages send no `Strict-Transport-Security`, that the guard applies the
+          headers only on `/admin` paths, and that the dev-backend 503 falls outside both rules: a
+          bare response with no security headers, returned on every path, `/admin` or not.
       - id: gd-ref-link
         kind: link
         target: ../reference/sveltekit.md#createauthguard
@@ -732,8 +734,17 @@ sections:
         kind: fact
         fact: f:cvv6to
         use: |
-          Only the target each engine write action gates against. The exceptions belong to
+          Only the target each engine write action gates against, the tidy and personal-dictionary
+          actions included, against the concept id in the route's `concept` param, so an exhaustive
+          map covers them like any entry action. Omit the 404 clause, which `am-tidy` carries. The
+          site-wide publish, the one action with no single gate call, belongs to
           [[limits-of-access-map-coverage]].
+      - id: am-tidy
+        kind: fact
+        fact: f:arr13a
+        use: |
+          Only what the tidy and personal-dictionary actions do on a route without a `concept`
+          parameter: they refuse with a 404 rather than skip the check.
       - id: am-fail-closed
         kind: fact
         fact: f:4q8kin
@@ -750,8 +761,8 @@ sections:
     level: 3
     anchor: limits-of-access-map-coverage
     why: |
-      The site-wide publish, the actions keyed on a route parameter, and a partial map are what the
-      access map leaves open, so they close [[access-map-coverage]] as its Limits subsection.
+      The site-wide publish and a partial map are what the access map leaves open, so they close
+      [[access-map-coverage]] as its Limits subsection.
     opens: |
       The site-wide publish spans every concept, so it makes no single access check, and any
       editor-capability session can post it.
@@ -763,12 +774,6 @@ sections:
           Only the opening sentence, then how the publish filters pending entries, and what that
           means for a narrowed concept and for an unnamed one. The last clause, on an exhaustive
           map, belongs to [[allowlist-semantics-from-an-exhaustive-map]].
-      - id: am-tidy
-        kind: fact
-        fact: f:arr13a
-        use: |
-          Only what the tidy and personal-dictionary actions gate against, and what they do on a
-          route without that parameter.
       - id: am-unmapped
         kind: fact
         fact: f:8ciz2s
@@ -833,7 +838,17 @@ sections:
         kind: fact
         fact: f:zzbzo8
         use: |
-          Only the nine stages, as a numbered list in their fixed order.
+          Only the nine stages, as a numbered list in their fixed order: the site's `remarkPlugins`
+          inside the first, markdown stage, and only its `rehypePlugins` as the ninth. Omit the
+          `unsafeDisableSanitize` clause, which `rs-unsafe` carries.
+      - id: rs-plugins
+        kind: fact
+        fact: f:xothz1
+        use: |
+          Only where the site's two plugin lists run: `remarkPlugins` after cairn's own remark
+          steps and before the remark-to-rehype conversion, so before the sanitize floor, and
+          `rehypePlugins` last of all, after the table-scroll wrap. Omit the floor's and the
+          anchor-rel step's placement, which `rs-floor` and `rs-anchor` carry.
       - id: rs-raw
         kind: fact
         fact: f:296ar7
@@ -901,7 +916,11 @@ sections:
         kind: fact
         fact: f:21by9u
         use: |
-          Only the `build()` bypass and the boundary where the guarantees stop.
+          Only the one trust a registered `build()` gets, that the sanitize floor never sees its
+          output; that it still cannot emit raw markup, since it returns a hast `Element` and the
+          final stringify allows no raw HTML; that the anchor-rel hardening and the sink guard run
+          over its output; and the boundary where the guarantees stop. Never say a `build()`
+          bypasses every render-safety guarantee.
       - id: rs-options-link
         kind: link
         target: configure-rendering.md
@@ -1192,7 +1211,7 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          Mount the guard, which gates `/admin` and adds the double-submit token on every unsafe
+          Mount the guard, which gates `/admin` and checks the double-submit token on every unsafe
           `/admin` form post.
         facts:
           - f:2sd4if

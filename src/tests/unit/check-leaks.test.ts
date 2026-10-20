@@ -459,6 +459,12 @@ describe('runLeakCheck over a tree', () => {
     }
   });
 
+  it('scans blueprints at the T3 tier', () => {
+    expect(profileFor('blueprints/docs/extend/x.blueprint.yaml')).toEqual(T3);
+    const root = tree({ 'blueprints/x.blueprint.yaml': 'Deploy ecxc-ski first.\n' });
+    expect(runLeakCheck(root).findings.some((f) => f.cls === 'C1' && f.severity === 'error')).toBe(true);
+  });
+
   it('skips seed content and LICENSE inside a template, and scans the rest', () => {
     const root = tree({
       'templates/waymark/src/content/posts/a.md': 'The Anchorage ecxc household.\n',

@@ -79,6 +79,32 @@ describe('extractFacts', () => {
   });
 });
 
+describe('link text and npm prose, the gate fixes', () => {
+  const index = loadFactIndex(FACTS);
+  const noClaim = (text: string) => checkSentences([{ text, id: 'no-claim' }], index);
+
+  it('treats a code span inside link text as navigation in a no-claim sentence', () => {
+    expect(facts('See [`createAuthGuard`](../reference/x.md).')).toEqual([]);
+    expect(noClaim('See [`createAuthGuard`](../reference/x.md).')).toEqual([]);
+  });
+
+  it('accepts a linked name and a linked file path in link text, in no-claim sentences', () => {
+    expect(noClaim('Read [The `site-facts.json` contract](../reference/contract.md) before you scaffold.')).toEqual([]);
+    expect(noClaim('Open [`src/lib/example.ts`](../reference/example.md) for the shape.')).toEqual([]);
+  });
+
+  it('still fails a code span outside a link in a no-claim sentence', () => {
+    expect(noClaim('Call `createAuthGuard` first.')).toEqual([expect.any(String)]);
+  });
+
+  it('reads npm as a command only before an npm subcommand', () => {
+    expect(facts('Install the npm package first.')).toEqual([]);
+    expect(facts('Run `npm run build` first.')).toEqual(['command:npm run build']);
+    expect(facts('Then npm install the package.')).toEqual(['command:npm install']);
+    expect(facts('Then npx cairn doctor.')).toEqual(['command:npx cairn']);
+  });
+});
+
 describe('checkSentences, one failure mode per case', () => {
   const index = loadFactIndex(FACTS);
   const { cases } = JSON.parse(readFileSync(join(FIXTURES, 'cases.json'), 'utf8')) as {

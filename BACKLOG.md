@@ -4,10 +4,6 @@
 
 ## Medium
 
-- [ ] **#14** Stop `check:provenance` reading a plain phrase or a linked name as an uncited claim `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-19)*
-  In the B3c pilot it escalated three drafted pages at the gate. It reads "npm package" as a command (50 defects on add-cairn-to-a-sveltekit-app), and it flags a no-claim sentence that only names a linked symbol or file, such as "createAuthGuard" or "cairn-audit.config.json" (scaffolded-site-files, add-a-second-sign-in-group). `scripts/checks/check-provenance.mjs`
-- [ ] **#15** Stop `check:symbols` reading an import alias as a file path `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-19)*
-  Prose naming `#lib/cairn.config.js` fails as the unresolved file path `lib/cairn.config.js`, which escalated add-cairn-to-a-sveltekit-app in the B3c pilot. `scripts/checks/check-symbols.mjs`
 - [ ] **#16** Re-anchor facts that cite `section-action.ts#createSectionAction.wrap` `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-19)*
   f:i1dayf, f:nup3og, and f:gy2h7p cite an anchor whose excerpt reads "declaration not found", so the fact seat blocks debug-your-site on them. B3c could not edit facts. `docs/internal/facts/extend.md`
 - [ ] **#17** Finish the rotate page's rollback re-push handler `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-19)*
@@ -16,8 +12,6 @@
   using-claude-code-with-cairn's redrafts drop the `c-script` and `c-ci-workflow` snippet blocks; restrict-admin-access's drops the link to security-model's limits section. Both blueprints are accepted; the next run starts from them.
 - [ ] **#19** Settle the outline's add-cairn branding entry and the `createAdminAction` 403 variant `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-19)*
   The B3c fix rounds left the add-cairn outline entry's branding line stale and did not place `createAdminAction`'s 403 refusal on debug-your-site. `blueprints/outline.yaml`
-- [ ] **#20** Add `blueprints` to `check:leaks` `SCAN_ROOTS` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-19)*
-  The blueprints are public and carry prose, but the leak scan does not read them. `scripts/checks/check-leaks.mjs:473`
 - [ ] **#9** Merge `x-fingerprint` and `x-wrong-key` into one failure row with a route to push `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-19)*
   They are one failure written as two rows. Patch: `docs-system/research/2026-10-19-edit-quality-base-fixes.patch` in glw907/initiatives, made on a throwaway branch by the drafter edit-quality test (glw907/drafter#51).
 - [ ] **#10** Give `s-third-generate` a failure row for the key limit `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-19)*

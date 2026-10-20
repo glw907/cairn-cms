@@ -203,6 +203,7 @@ export function profileFor(relPath) {
   }
   if (
     /^docs\/internal\/(?:briefs|outlines|facts)\//.test(path) ||
+    path.startsWith('blueprints/') ||
     path === 'docs/internal/docs-register.md'
   ) {
     return { tier: 'T3', classes: ['C1', 'C2', 'C4'], mode: 'whole' };
@@ -488,6 +489,7 @@ export const SCAN_ROOTS = [
   'docs/internal/outlines',
   'docs/internal/facts',
   'docs/internal/docs-register.md',
+  'blueprints',
   'skills',
   'claude',
   'migrations',

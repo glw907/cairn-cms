@@ -316,6 +316,8 @@ export function extractFilePaths(segments) {
     const text = seg.fenced ? stripImportSpecifiers(seg.text) : seg.text;
     if (text.includes('://')) continue;
     for (const m of text.matchAll(pattern)) {
+      // `#lib/x.js` is a package import specifier (the tokenizer never includes `#`), not a path.
+      if (m.index > 0 && text[m.index - 1] === '#') continue;
       const token = m[0].replace(/^(?:\.{0,2}\/)+|[./]+$/g, '');
       if (!token.includes('/')) continue;
       const ext = token.slice(token.lastIndexOf('.') + 1).toLowerCase();

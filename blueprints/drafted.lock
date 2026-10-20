@@ -6,7 +6,7 @@ pages:
     docs/extend/add-a-second-sign-in-group.md:
         page: 16ad2daf773233d3ff59f80d6d7ed0a593f8afd7
         blueprint: e61f10b26c19c796e94af31abfc523b933021f15
-        accepted: ad021194c8a9e78f1534ed8a7a43a977fb19440d
+        accepted: f530624cc4b8c4fb1b233e6ff7e832936a9e8ab9
         sections:
             _intro: sha256:fe64ce977658d074d0f5304c28d306f6b36b4b3b485c5f65b511cbaeff096280
             add-the-role-s-people: sha256:bf3e92fd326ea7496bfcc3d954170ed74432f68bdbab4e0a59255461f8691f38
@@ -170,7 +170,7 @@ pages:
     docs/extend/security-model.md:
         page: ea4bd221fb744bd760fed649ae79e5eaee8df569
         blueprint: f10cff21820db750c75ae8f4fbbb7b5d4e674f65
-        accepted: df3d63385517e4f709a209391f7d80300b894086
+        accepted: d3b65464f554f817b94e715367c485d5f2173a4a
         sections:
             _intro: sha256:2efae629b5ee5820ad29eaf9b851ea1667857cf7fa9c30b4038a5776a0cacd15
             access-map-coverage: sha256:dc1ddaafa480c54e609f25ec371d98fbc6124707e832294aa1c2204156f58e97

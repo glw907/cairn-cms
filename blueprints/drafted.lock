@@ -2,7 +2,7 @@
 version: 1
 pages:
     docs/claude-code/using-claude-code-with-cairn.md:
-        accepted: f8047ba01387cdd688e72a0e6003506577ec64a9
+        accepted: a0ab900d9578aacc81178efac7d97073ac7b0e4e
     docs/extend/add-a-second-sign-in-group.md:
         page: 16ad2daf773233d3ff59f80d6d7ed0a593f8afd7
         blueprint: e61f10b26c19c796e94af31abfc523b933021f15
@@ -68,7 +68,7 @@ pages:
     docs/extend/debug-your-site.md:
         page: be3ce83e66ec6358b32e1c7952d679b2f8586e7e
         blueprint: ad3be2d68e6160516921681a02acf1d2308dd792
-        accepted: a2cc75f35e618b272a8a05bc8beb4c4cf8dbfade
+        accepted: 192b9d8d6e9d24d60485661be88830e8149ea25a
         sections:
             _intro: sha256:b5a24c1afbac300fa17fd569e992de6bec22c7212df8da5d0a2a4989ca437a60
             a-date-differs-between-machines: sha256:8e9bdb244ae96390aabce263c9ea3a181d5c644338843d74dfd7021188b89e17

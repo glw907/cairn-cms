@@ -418,8 +418,8 @@ sections:
           `/admin/auth/confirm` never takes effect and lands on the sign-in form, and the log holds
           `admin.action.session_absent`.
         cause: |
-          Those are the two public admin paths (the guard's `isPublicAdminPath` check), where the
-          guard resolves no session, so the action finds no editor.
+          `/admin/login` and `/admin/auth/confirm` are the two public admin paths, where the guard
+          resolves no session, so the action finds no editor.
         handledBy: s-session-absent-fix
       - id: s-session-absent-fix
         kind: sentence
@@ -1250,8 +1250,9 @@ dispositions:
     reference: ../reference/sveltekit.md#createsectionaction
     reason: |
       Which refusals write an audit record is `createSectionAction`'s audit contract, the
-      reference entry's to state. The session row rests only on its own record (`f:v1jj2k`) and
-      on where the request stops (`f:u78zg6`), and makes no claim about the audit table.
+      reference entry's to state. The session row rests on its own record (`f:v1jj2k`), on where
+      the request stops (`f:u78zg6`), and on the gated route its fix moves the action to
+      (`f:2sd4if`), and makes no claim about the audit table.
   - fact: f:bp22uq
     disposition: subordinated
     reference: ../reference/sveltekit.md#createadminaction

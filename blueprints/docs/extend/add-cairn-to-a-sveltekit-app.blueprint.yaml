@@ -665,14 +665,6 @@ sections:
           Only that `createGithubApp` makes no network call and validates nothing, and that the dev
           backend replaces the provider for every request it serves, so placeholder values serve
           until production. Omit the request-path expression.
-      - id: a-location
-        kind: fact
-        fact: f:q07rd5
-        use: |
-          Only the tutorial site's half: the adapter module sits at `src/lib/cairn.config.ts`, the
-          rest of the site imports it as `#lib/cairn.config.js`, and the `cairnManifest`
-          `configModule` will name it. Nothing about the scaffold or about an older version of this
-          page.
       - id: a-steps-lead
         kind: sentence
         mode: verbatim
@@ -1698,8 +1690,8 @@ sections:
         fact: f:7bch04
         use: |
           Only the three edits, as a bulleted list framed as the edits to files the site already
-          has, beside the App, the secret, and the database the sections create; then the hooks
-          clause.
+          has, beside the App, the secret, and the database the sections create; then that the
+          private key is a Worker secret rather than a file edit, and the hooks clause.
       - id: p-order
         kind: fact
         fact: f:e5vm42
@@ -2889,8 +2881,8 @@ dispositions:
     disposition: subordinated
     reference: upgrade-cairn.md#when-your-range-crosses-sveltekit-3
     reason: |
-      The page places no `cf-typegen` step: the fact gives only the scaffold's command, which
-      reads a `.dev.vars.example` the hand-built site never writes, and the tutorial's code reads
+      The page places no `cf-typegen` step: the fact gives the scaffold's and the Deploy-button
+      tree's scripts, neither of which the hand-built site carries, and the tutorial's code reads
       no generated binding type; the upgrade page carries the `wrangler types` command.
   - fact: f:pfy9cw
     disposition: subordinated

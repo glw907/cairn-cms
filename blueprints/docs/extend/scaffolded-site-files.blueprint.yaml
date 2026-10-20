@@ -229,11 +229,14 @@ sections:
         kind: fact
         fact: f:n2skkz
         use: |
-          Only the source tree, `examples/showcase`, and the material the copy leaves out, in
-          full: every group the fact names, including the `admin/signups` screen with its
-          `migrations-app/`, the `admin/error-fixture` route, `src/lib/env-check.ts`,
+          Only the source tree, `examples/showcase`, the material the copy leaves out, and what the
+          bake writes in place of the showcase's own files. Name every group the exclude list
+          removes, including the `admin/signups` screen with its `migrations-app/`, the
+          `admin/error-fixture` route, `src/lib/env-check.ts`,
           `src/routes/(site)/+layout.server.ts`, the members fixture with `migrations-members/`,
-          and 13 of the showcase's 27 posts.
+          and 13 of the showcase's 27 posts. Then say that the bake writes its own `README.md`,
+          `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` in place of the
+          showcase's, so the scaffold still carries those files.
       - id: scaffold-one-template
         kind: fact
         fact: f:u705t5
@@ -338,7 +341,8 @@ sections:
       workflow every push meets.
     opens: |
       Beside a plain SvelteKit project's files, the root carries a CI workflow, the audit's
-      config, and a `.gitignore` that the setup command renames.
+      config, and a `.gitignore` that the setup command renames, and local secrets go in a
+      `.dev.vars` the owner creates there.
     items:
       - id: root-two-entries
         kind: fact
@@ -562,8 +566,11 @@ sections:
         kind: fact
         fact: f:n0fg3w
         use: |
-          Only the `cf-typegen` row: it holds the command recorded in `worker-configuration.d.ts`,
-          so the site regenerates its `Env` with the same arguments.
+          Only the `cf-typegen` row: in the scaffold it holds `wrangler types
+          --include-runtime=false`, the command the scaffold's `worker-configuration.d.ts` records,
+          with no `--env-file`. Running it regenerates `Env` from the bindings in `wrangler.jsonc`
+          and names no missing file. Only the Deploy-button tree's script adds
+          `--env-file=.dev.vars.example`.
   - id: vite-config-ts
     heading: '`vite.config.ts`'
     why: |
@@ -1185,6 +1192,12 @@ sections:
         use: |
           Only the three shapes `--brand-color` accepts and that any other fails. State no range for
           the number.
+      - id: state-builds-chapter
+        kind: fact
+        fact: f:qca0t0
+        use: |
+          Only that the setup run's Workers Builds chapter can connect the repository or record a
+          decline, and that `--connect` re-enters it only for a site at or past its first deploy.
       - id: state-build-token
         kind: fact
         fact: f:3bbeia

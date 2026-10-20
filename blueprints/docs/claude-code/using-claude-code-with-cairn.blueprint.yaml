@@ -599,7 +599,7 @@ sections:
         symptom: |
           `install` prints a `refused <path>` line on stderr and still exits 0.
         cause: |
-          The path is a symlink or reaches `.claude` through one, has a component that exists as
+          The path has a symlinked component or destination, has a component that exists as
           something other than a directory (a regular file, say), exists as something other than a
           regular file (a directory, say), or falls outside `.claude`; or a `<path>.orig` recovery
           copy could not be made, which refuses the destination beside it too; or the

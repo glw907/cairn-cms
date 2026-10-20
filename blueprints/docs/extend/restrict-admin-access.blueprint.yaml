@@ -675,8 +675,9 @@ sections:
         fact: f:rn62i1
         use: |
           Only when `0001_roles.sql` is needed and where a site gets it, with the trap in the same
-          paragraph: a site carries any column it added to `editor` across first. Omit
-          `0003_preview.sql`.
+          paragraph: applying it rebuilds the table, so a site carries any column it added to
+          `editor` across first. Omit the automated-apply clause, since no redeploy path this page
+          names applies a migration (`f:jtl15v`), and omit `0003_preview.sql`.
       - id: dep-scaffold-set
         kind: fact
         fact: f:gepykz
@@ -1138,8 +1139,9 @@ sections:
         kind: fact
         fact: f:4bazhe
         use: |
-          Only the `auth.role.unknown` log, backing the unknown-role check. Omit the no-access
-          clause; the resolution to `none` is `f:zjglk8`'s, which [[declare-the-roles]] places.
+          Only the `auth.role.unknown` log and that no access-map rule can name an undeclared role,
+          backing the unknown-role check. Omit the resolution to `none`, which `f:zjglk8` carries and
+          [[declare-the-roles]] places.
       - id: res-unmigrated
         kind: sentence
         mode: claim

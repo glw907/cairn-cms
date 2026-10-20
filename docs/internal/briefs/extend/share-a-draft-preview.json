@@ -916,7 +916,7 @@
       "id": "f:ntdafg"
     },
     {
-      "text": "[Worker environment reads](debug-your-site.md#worker-environment-reads) explains why the env comes from there.",
+      "text": "[Debug your site](debug-your-site.md#eventplatform-is-undefined) explains why the env comes from there.",
       "id": "no-claim"
     },
     {

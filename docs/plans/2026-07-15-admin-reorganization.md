@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. In this repo the executor is `cairn-implementer` per task, per `cairn-pass`.
 
 **Goal:** Ship the flat zero-config sidebar default and the evidence-grounded guide upgrade per the
-ratified spec (`docs/superpowers/specs/2026-07-14-admin-reorganization-design.md`), plus one audit
+ratified spec (`docs/specs/2026-07-14-admin-reorganization-design.md`), plus one audit
 rider: zen recedes the sidebar.
 
 **Architecture:** A synthesis-only change in `resolveNavLayout` (the default arrangement emits loose

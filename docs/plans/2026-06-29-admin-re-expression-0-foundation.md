@@ -1,6 +1,6 @@
 # Admin re-expression Phase 0: foundation — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. This is **Phase 0** of the initiative specified in `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`. Read the spec first; this plan implements only its "Phase 0: foundation" and the verification deliverables, scoped to what the vocabulary pilot needs plus the durable gate. The later sweep phases (2–6) and the template track get their own just-in-time plans.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. This is **Phase 0** of the initiative specified in `docs/specs/2026-06-29-admin-idiomatic-re-expression-design.md`. Read the spec first; this plan implements only its "Phase 0: foundation" and the verification deliverables, scoped to what the vocabulary pilot needs plus the durable gate. The later sweep phases (2–6) and the template track get their own just-in-time plans.
 >
 > **This plan was adversarially reviewed (code-correctness and executability lenses) before publication, and the findings are folded in.** The "review corrections" note at the end records what changed and why, so the trail survives.
 

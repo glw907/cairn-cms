@@ -32,7 +32,7 @@ the scaffold's `templates/waymark/src/theme/cairn.config.ts:131-174`,
 `templates/waymark/src/content/fragments/trail-safety-notice.md`, and
 `templates/waymark/src/content/pages/about.md`). `docs/extend/configure-rendering.md` and
 `docs/extend/link-content-with-references.md` are not on disk yet; the run plan
-(`docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md`, "The runs") says forward links pass the
+(`docs/plans/2026-10-11-draft-docs-2b-part1.md`, "The runs") says forward links pass the
 gate, so the page links both. No `docs/editors/` page is on disk.
 
 Headings in this plan's section list are the page's headings, verbatim. A claim inventory `section`

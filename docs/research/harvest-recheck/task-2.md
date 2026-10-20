@@ -1,6 +1,6 @@
 # Harvest recheck: task 2 (audit admin)
 
-One line per item, per rule 4 of `docs/superpowers/research/2026-09-29-harvest-theme-lineage-brief.md`. Resolution column is filled by task 6b.
+One line per item, per rule 4 of `docs/research/2026-09-29-harvest-theme-lineage-brief.md`. Resolution column is filled by task 6b.
 
 - `f:udg87q` (new bullet, `admin.md`): Source cites `src/lib/components/ManageEditors.svelte`; repoint to `src/lib/admin/ManageEditors.svelte` and re-check the line ranges after the rename. Resolution: repointed: the merge already rewrote the Source path to `src/lib/admin/ManageEditors.svelte`; lines 98-102, 144, and 158-176 re-read against the file (the table header, the remove form, and the add form) and hold. No edit.
 - `f:iqlr1w` (new bullet, `admin.md`): Source cites `src/lib/components/CairnAdminShell.svelte` (the `isDeskRoute` branch); repoint to `src/lib/admin/CairnAdminShell.svelte` and re-check the lines. Resolution: repointed: the Source path is now `src/lib/admin/CairnAdminShell.svelte`; lines 848-851 hold the `isDeskRoute` branch and its comment. No edit.

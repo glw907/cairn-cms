@@ -76,7 +76,7 @@ Verify claims against today's `main` code. These change when #97 merges, old to 
 
 ## Rule 4: the recheck file
 
-Each audit task writes `docs/superpowers/research/harvest-recheck/<task>.md` (for example
+Each audit task writes `docs/research/harvest-recheck/<task>.md` (for example
 `task-2.md`), one line per item, for every one of these cases:
 
 - a new bullet whose `Source:` cites a path under `src/lib/components/`, `dist/components/`,

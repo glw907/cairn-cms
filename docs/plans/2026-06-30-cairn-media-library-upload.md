@@ -8,7 +8,7 @@
 
 **Tech Stack:** SvelteKit form actions over a `text/plain` upload transport, the `GithubDouble` + miniflare test backends, vitest (unit/integration/component) + Playwright (showcase e2e).
 
-**Design reference (authoritative):** `docs/superpowers/specs/2026-06-30-cairn-media-library-upload-design.md`. Where this plan and the spec disagree, the spec wins.
+**Design reference (authoritative):** `docs/specs/2026-06-30-cairn-media-library-upload-design.md`. Where this plan and the spec disagree, the spec wins.
 
 ## Global Constraints
 

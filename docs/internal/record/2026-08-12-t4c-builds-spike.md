@@ -2,7 +2,7 @@
 
 Run 2026-08-12 local / 2026-08-13 UTC against the live glw907 account
 (`120c269ad6d3dfbe6d63a0bb53758ca0`), per Task 1 of
-`docs/superpowers/plans/2026-08-12-create-cairn-site-t4c.md`. Every body below is copied
+`docs/plans/2026-08-12-create-cairn-site-t4c.md`. Every body below is copied
 verbatim from a real response; anything inferred rather than observed says so. The platform
 claims carry this date and rot on Cloudflare's schedule.
 

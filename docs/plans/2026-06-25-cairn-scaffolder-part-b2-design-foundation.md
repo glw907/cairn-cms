@@ -4,14 +4,14 @@
 
 **Goal:** establish cairn's public visual language and a first-class, re-skinnable DaisyUI 5 oklch token layer on the showcase, restyling the chrome and authoring a bespoke token-bound reading surface, with Home mocked against the tokens and a `/styleguide` route that proves a one-edit re-skin.
 
-**Architecture:** the public side adopts Tailwind 4 + DaisyUI 5 for the first time (it is plain-CSS today). A `frontend-design` loop sets the visual design against the bar in [`docs/superpowers/specs/2026-06-25-cairn-b2-design-bar.md`](../specs/2026-06-25-cairn-b2-design-bar.md); the settled values feed a two-tier token layer (a DaisyUI `@plugin "daisyui/theme"` oklch block plus cairn-authored type/space/measure tokens) that both the chrome and a bespoke reading surface read, so one token edit re-skins both. Build-time syntax highlighting moves into the engine render pipeline, emitting CSS-variable tokens bound to the same DaisyUI roles. Two ordered gates close the pass: the visual-design critique, then the token-layer adversarial review.
+**Architecture:** the public side adopts Tailwind 4 + DaisyUI 5 for the first time (it is plain-CSS today). A `frontend-design` loop sets the visual design against the bar in [`docs/specs/2026-06-25-cairn-b2-design-bar.md`](../specs/2026-06-25-cairn-b2-design-bar.md); the settled values feed a two-tier token layer (a DaisyUI `@plugin "daisyui/theme"` oklch block plus cairn-authored type/space/measure tokens) that both the chrome and a bespoke reading surface read, so one token edit re-skins both. Build-time syntax highlighting moves into the engine render pipeline, emitting CSS-variable tokens bound to the same DaisyUI roles. Two ordered gates close the pass: the visual-design critique, then the token-layer adversarial review.
 
 **Tech Stack:** SvelteKit 2, Svelte 5 runes, Tailwind CSS 4 (`@tailwindcss/vite`), DaisyUI 5 (oklch theme system), Shiki (build-time highlighting in the engine pipeline), culori (oklch contrast math in CI), `@glw907/cairn-cms` engine (`file:../..`), Playwright, GitHub Actions, Node 22.
 
 ## Global constraints
 
 - **The design bar is the acceptance contract.** Every visual and token decision is judged against
-  [`docs/superpowers/specs/2026-06-25-cairn-b2-design-bar.md`](../specs/2026-06-25-cairn-b2-design-bar.md).
+  [`docs/specs/2026-06-25-cairn-b2-design-bar.md`](../specs/2026-06-25-cairn-b2-design-bar.md).
   The settled direction is fixed: a distinct editorial display face over a legibility-grade humanist sans
   body (mono only for code), and a warm-tinted oklch paper-and-ink ground with one restrained accent. The
   exact faces and values are Phase A's output.
@@ -159,7 +159,7 @@ output.
   aesthetic-usability), not only taste.
 
 - [ ] **A4: Append the settled design to the bar doc.** Add a "Settled design (B2 output)" appendix to
-  [`docs/superpowers/specs/2026-06-25-cairn-b2-design-bar.md`](../specs/2026-06-25-cairn-b2-design-bar.md)
+  [`docs/specs/2026-06-25-cairn-b2-design-bar.md`](../specs/2026-06-25-cairn-b2-design-bar.md)
   recording the chosen faces, the oklch values (light + dark), the type/space/measure/geometry token
   values, and the chrome + reading-surface layouts. The later tasks read their values from this appendix.
   Commit it: `docs: record the B2 settled design (faces, oklch values, scales)`.

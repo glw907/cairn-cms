@@ -3,11 +3,11 @@
 **Goal:** Prove every claim on the 49 old narrative and front-door pages is a fact or a recorded
 cut, then delete those pages with every inbound reference and gate repaired.
 
-**Spec:** `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` (the claim ledger, the
+**Spec:** `docs/specs/2026-09-29-draft-docs-harvest-design.md` (the claim ledger, the
 audit, the verifier, the deletion, timing, acceptance) and its parent,
-`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`, "Amendment: harvest, then
+`docs/specs/2026-09-26-draft-docs-approach-design.md`, "Amendment: harvest, then
 delete". Executors read the harvest spec in full. Where this plan and the spec disagree, stop and
-report. Review record: `docs/superpowers/research/2026-09-29-draft-docs-harvest-fold.md`.
+report. Review record: `docs/research/2026-09-29-draft-docs-harvest-fold.md`.
 
 **Approach:** Build the ledger format and its verifier first, test-first, now. Hold everything
 else until the theme lineage (passes B and C) merges to `main`, then merge `main` in. Audit admin
@@ -87,7 +87,7 @@ the three-to-four-task segment); S4 is tasks 7, 9, and 10. Every boundary is a g
   that." PR #97 (pass C, carrying B) cannot merge before Geoff's attended sitting, so the audit
   runs now on every page the theme lineage leaves alone. The pass C conductor supplied what the
   lineage changes, recorded in
-  `docs/superpowers/research/2026-09-29-harvest-theme-lineage-brief.md`. Every audit dispatch
+  `docs/research/2026-09-29-harvest-theme-lineage-brief.md`. Every audit dispatch
   (tasks 2 to 6 and 6b) reads that brief in full and obeys its four rules: six deferred pages,
   frozen fact ids, renames to verify against, and a per-task recheck file.
 
@@ -283,7 +283,7 @@ scripts/oneshot/verify-harvest.mjs --arm extend`, light lane.
 `docs/extend/<name>.md`), audited as their original task would have, against the merged code.
 
 **Outcomes:** the six pages audited per task 2's outcomes. Every line of every
-`docs/superpowers/research/harvest-recheck/task-*.md` is resolved against the merged code (a
+`docs/research/harvest-recheck/task-*.md` is resolved against the merged code (a
 `Source:` repointed, a fact retraced and corrected or `[rejected]`, a frozen bullet's needed change
 made now that it is unfrozen), and each line records its resolution. `animate-a-custom-screen`
 gains its facts section.
@@ -339,7 +339,7 @@ anchor-list fixture states. The gate is green.
 test`, `npm run test:emit`, and `make -C tool check`, each through `cairn-run-gate`, light lane.
 
 **Discovery (the implementer runs it first and works from its output, never from this list):**
-`git grep -nIE 'docs/(admin|editors|extend)/|why-cairn|docs/README' -- ':!docs/superpowers'`,
+`git grep -nIE 'docs/(admin|editors|extend)/|why-cairn|docs/README' -- ':!docs/{plans,research,specs}'`,
 plus a link-shaped grep per deleted page (`<basename>.md`, and the path-qualified forms
 `(admin|editors|extend)/README` and `../README.md` inside the arms), since anchors and relative
 links omit the directory. At review time the first grep hit about 204 files, 88 of them live

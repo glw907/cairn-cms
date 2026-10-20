@@ -3,10 +3,10 @@
 Status: approved design, pre-plan. Authored 2026-05-30.
 
 This design adds a public read-and-deliver layer to the engine. It supplements the
-functional spec at `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`,
+functional spec at `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`,
 which holds the locked architecture, and it follows the eight rebuild plans that landed
 the admin, auth, commit, render, and nav subsystems. The numbered plan derived from this
-design will land under `docs/superpowers/plans/`; its number is settled at planning time
+design will land under `docs/plans/`; its number is settled at planning time
 (see Sequencing).
 
 ## Why this layer exists

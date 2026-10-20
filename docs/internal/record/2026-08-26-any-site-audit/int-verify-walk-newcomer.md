@@ -12,7 +12,7 @@ Confirmed against the tree, not the prose:
 
 - `ls src/lib/*.md` → nothing. No `src/lib/README.md`.
 - `docs/internal/` holds 20 top-level docs; none is an engine/module map. `grep -rli "engine-map|internals map|module map" docs/ CONTRIBUTING.md` hits only
-  `docs/superpowers/plans/2026-08-26-engine-consultation-pass.md` (a plan, not a map).
+  `docs/plans/2026-08-26-engine-consultation-pass.md` (a plan, not a map).
 - `CONTRIBUTING.md:128-130` is exactly the three lines quoted. Verbatim: "`src/lib/`: the shipped
   library. Public entry points are package subpaths, each with a matching page in
   `docs/reference/`; a directory without a reference page is internal."
@@ -98,8 +98,8 @@ Counts re-measured independently:
 - `grep -rEo "Plan [0-9]+" src/lib | wc -l` → **17** (finding: 17).
 - `grep -rEo "C2 breaking-window pass|export-rule sweep|R[0-9] ruling|Pass [A-Z]|spec [0-9]\.[0-9]|Task [0-9]+|phase-3a|2a fetch" src/lib | wc -l` → **192** occurrences (finding: 189; the
   small gap is pattern punctuation, not a different phenomenon).
-- `grep -rEo "docs/superpowers/[^ )\`]*" src/lib | wc -l` → **19**, and `package.json` `files` is
-  `["dist","migrations","skills","CHANGELOG.md","docs/README.md","docs/why-cairn.md","docs/reference","docs/admin","docs/editors","docs/extend"]` — `docs/superpowers/` is confirmed
+- `grep -rEo "docs/[^ )\`]*" src/lib | wc -l` → **19**, and `package.json` `files` is
+  `["dist","migrations","skills","CHANGELOG.md","docs/README.md","docs/why-cairn.md","docs/reference","docs/admin","docs/editors","docs/extend"]` — `docs/` is confirmed
   unshipped. Every one of those 19 pointers is dead for anyone who installed the package.
 - Consumer-site names: **18** hits, matching.
 
@@ -278,7 +278,7 @@ Re-counted independently over `src/lib`:
 - The composite pattern `C2 breaking-window pass|export-rule sweep|R[0-9] ruling|Pass [A-Z]|spec
   N.N|Task NN|phase-3a|2a fetch`: **192** occurrences (walk said 189; direction and magnitude
   right).
-- `docs/superpowers/…` paths: **19**, exact.
+- `docs/…` paths: **19**, exact.
 - Consumer-site mentions (`ecxc|aksailingclub|907.life`): **18**, exact.
 
 Every quoted line verified verbatim: `src/lib/index.ts:5-6`, `:38-39`, `admin-action.ts:1-10`
@@ -288,12 +288,12 @@ club-admin-scaffold"), `cairn-admin.ts:275` ("spec 2.8, Task 15"), `:316` ("2a f
 
 **Strengthened.** `package.json` `files` is `["dist","migrations","skills","CHANGELOG.md",
 "docs/README.md","docs/why-cairn.md","docs/reference","docs/admin","docs/editors","docs/extend"]`
-— `docs/superpowers/` is not shipped, as claimed. And the comments themselves DO reach the
+— `docs/` is not shipped, as claimed. And the comments themselves DO reach the
 installed package: `dist/index.js` line 1 carries
 `// The access map (admin access map and attention seams pass): …`. So an installing developer
 reads the unresolvable citation, not just a GitHub visitor.
 `diagnostics/conditions.ts` is a second instance in one file: its header ends
-"See docs/superpowers/specs/2026-06-08-cairn-diagnostics-initiative-design.md."
+"See docs/specs/2026-06-08-cairn-diagnostics-initiative-design.md."
 
 **One cited rule does not apply as stated.** The finding invokes "the docs-register rule that
 never names ASC publicly". `docs/internal/docs-register.md:356` reads "Name types of

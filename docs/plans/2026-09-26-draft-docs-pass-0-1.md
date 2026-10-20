@@ -9,7 +9,7 @@ and check every reference page's claims in place.
 disagree, stop and report, except this plan's intended departures from the spec's page-chain
 description: task 10's read-only fact-read agents with per-batch apply commits, the section split
 for the five largest reference pages, and reporting (never editing) released tool contract content.
-Review record: `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-fold.md`.
+Review record: `docs/research/2026-09-26-draft-docs-pass-0-1-fold.md`.
 
 **Approach:** Land the rules and the checks first, since every later task gates on them. Then
 the chain and the review page, proven together on one scratch page in one owner sitting that
@@ -44,7 +44,7 @@ is the close, authored by one fold agent with one independent `diff-reviewer` re
 overrun rather than a predictable midpoint (spec:149-150). Derivation: stage 0's 2.5M share plus
 task 9's chain proof (one short extend page on the lean path, about 0.65M, which the spec's 0.2M
 review-page line does not cover), so about 3.2M; stage 1 at about 4.5M (below; figure per the fold record's task 10 line,
-`docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-fold.md:110`). Planned spend is
+`docs/research/2026-09-26-draft-docs-pass-0-1-fold.md:110`). Planned spend is
 about 7.7M; the ceiling adds headroom above it rather than sitting at it. This is a method call
 inside R8's 30M initiative ceiling: it moves stages 0 and 1 from 6M to about 7.7M planned, which
 narrows the spec's roughly 3M arm-page headroom to about 1.3M. The spec resets every share from
@@ -427,7 +427,7 @@ The sitting is one combined message to Geoff: the review page link, with the own
 question for the facts on the same page or alongside it.
 
 **Acceptance:**
-- A record at `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-proof.md` with the chain
+- A record at `docs/research/2026-09-26-draft-docs-pass-0-1-proof.md` with the chain
   record's summary, which chain branch the run took and which branches only task 7's synthetic
   test covers, the chain's measured cost, the published and saved version ids, the comment read
   back, the applied diff, and `check:provenance` green. A no-op edit or an edit to a sentence the
@@ -469,7 +469,7 @@ codes, payloads, and check ids on `cli-cairn-doctor.md`, `cli-cairn-exit-codes.m
 `cli-cairn-*` pages (`manifest`, `media-seed`) are checked like any page.
 
 **Acceptance:**
-- A stage record at `docs/superpowers/research/2026-09-26-draft-docs-stage-1-record.md` lists all
+- A stage record at `docs/research/2026-09-26-draft-docs-stage-1-record.md` lists all
   29 pages, each with a nonzero claim count or a stated reason; the conductor diffs the list
   against `docs/reference/*.md` less the README, and a missing page fails the task.
 - No fact-read agent ran `npm run package`, a gate, or a commit (their records state it; every
@@ -518,7 +518,7 @@ counts as one).
 ### Segment A boundary (2026-09-26): parked on Geoff's hold
 
 Geoff put draft docs on hold until the theme identity pass
-(`docs/superpowers/specs/2026-09-26-theme-identity-design.md`) merges: pause at this boundary,
+(`docs/specs/2026-09-26-theme-identity-design.md`) merges: pause at this boundary,
 do not merge `draft-docs-0`. Resume at segment B.
 
 | Task | Status | Commits |
@@ -566,7 +566,7 @@ review of the published page found three "AI phrasing" headings and an explanati
 ordering the register did not yet forbid, fixed in `docs/internal/docs-register.md`
 (`07d5c87e`, `fb5238d1`) and the workstation's `cairn-register-editor` agent definition, not in
 the page. Task 10 (five batches, `716cd90e` through `11bd4809`, full record
-`docs/superpowers/research/2026-09-26-draft-docs-stage-1-record.md`) checked 1204 claims across
+`docs/research/2026-09-26-draft-docs-stage-1-record.md`) checked 1204 claims across
 28 of 29 reference pages (the two theme identity pass B moves deferred by Geoff's split), fixed
 33 of 35 discrepancies, and caught one batch's apply agent landing its commit in the wrong
 worktree before the next batch dispatched.

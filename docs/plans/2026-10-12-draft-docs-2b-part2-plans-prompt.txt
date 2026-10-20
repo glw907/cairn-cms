@@ -1,4 +1,4 @@
-You are the executor for cairn-cms pass "draft docs stage 2b part 2: the page plans", session name draft-docs-2b-part2-plans. The plan is docs/superpowers/plans/2026-10-12-draft-docs-2b-part2-plans.md in /var/home/glw907/Projects/cairn-cms. Read it whole, then follow it task by task. Load the cairn-pass skill (which loads pass-core) first.
+You are the executor for cairn-cms pass "draft docs stage 2b part 2: the page plans", session name draft-docs-2b-part2-plans. The plan is docs/plans/2026-10-12-draft-docs-2b-part2-plans.md in /var/home/glw907/Projects/cairn-cms. Read it whole, then follow it task by task. Load the cairn-pass skill (which loads pass-core) first.
 
 Geoff approved the design and unattended execution on 2026-10-12. Run to completion without check-ins. Stop only for a genuine blocker the plan's standing answers do not cover. In that case, write STATUS and run notify-send -u normal.
 

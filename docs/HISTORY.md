@@ -13,11 +13,11 @@ detail this file only summarizes.
 
 Branch `gate-economy` (draft PR #110) and the dotfiles branch of the same name, both closed unreleased:
 no version bump, no publish, no `CHANGELOG.md` entry (no public behavior changed). Plan, ledger, and
-post-mortem with the score: `docs/superpowers/plans/2026-10-09-gate-economy.md`. Spec and fold:
-`docs/superpowers/specs/2026-10-09-gate-economy-design.md`,
-`docs/superpowers/research/2026-10-09-gate-economy-spec-fold.md`. The replay of pass A against the new
+post-mortem with the score: `docs/plans/2026-10-09-gate-economy.md`. Spec and fold:
+`docs/specs/2026-10-09-gate-economy-design.md`,
+`docs/research/2026-10-09-gate-economy-spec-fold.md`. The replay of pass A against the new
 classifier, the timed ranges, and the projection:
-`docs/superpowers/research/2026-10-09-gate-economy-replay.md`.
+`docs/research/2026-10-09-gate-economy-replay.md`.
 
 **What landed:**
 
@@ -124,9 +124,9 @@ component project is `ROADMAP.md` follow-up (f) and is not filed twice.
 ## Engine pass before stage 2b, pass A, 2026-10-08 to 10-09
 
 Branch `engine-pre-2b-a` (PR #108, merged to `main`). Plan and post-mortem:
-`docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md`. Closed unreleased: no version bump, no
+`docs/plans/2026-10-08-engine-pass-pre-2b-a.md`. Closed unreleased: no version bump, no
 publish. Clock and gate evidence:
-`docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`.
+`docs/research/2026-10-09-gate-economy-pass-inputs.md`.
 
 **What landed:**
 
@@ -186,7 +186,7 @@ Final gates on `b5953af8` (the branch with `main` merged in, 2026-10-09): the lo
 ## Stage 2a close finish, 2026-10-07
 
 Branch `draft-docs-2a` (PR #107). Plan and post-mortem:
-`docs/superpowers/plans/2026-10-07-2a-close-finish.md`. Closed unreleased: no version bump, no
+`docs/plans/2026-10-07-2a-close-finish.md`. Closed unreleased: no version bump, no
 publish.
 
 **What landed:**
@@ -255,9 +255,9 @@ rename set on three smaller sites first de-risks the one site with real work.
 ## Draft docs stage 2a, and its unattended finish, 2026-09-30 to 10-07
 
 Branch `draft-docs-2a`, closed 2026-10-07 at R7 of the unattended run. Governing plan, ledger, and
-post-mortem: `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md`; the run's plan:
-`docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`. Stage records under
-`docs/superpowers/research/` (the pilot record, the rework and resolution records, the targeted-close
+post-mortem: `docs/plans/2026-09-30-draft-docs-stage-2a.md`; the run's plan:
+`docs/plans/2026-10-07-2a-unattended-finish.md`. Stage records under
+`docs/research/` (the pilot record, the rework and resolution records, the targeted-close
 record, and the run's R4, R5, and R6 records). Closed unreleased: no version bump, no publish.
 
 **What landed:**
@@ -357,8 +357,8 @@ one planning miss (the run plan's post-close next action, overturned at R7).
 ## SvelteKit 3 upgrade, 2026-10-03 to 07
 
 Branch `sveltekit-3`, merged to `main` 2026-10-07 as `04116a3b` (PR #103). Plan, ledger, and
-post-mortem: `docs/superpowers/plans/2026-10-03-sveltekit-3-upgrade.md`. Spec:
-`docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md`. Closed unreleased: no version
+post-mortem: `docs/plans/2026-10-03-sveltekit-3-upgrade.md`. Spec:
+`docs/specs/2026-10-03-sveltekit-3-upgrade-design.md`. Closed unreleased: no version
 bump, no publish; the release holds until draft docs stage 2a lands, so Kit 3 and the rebuilt extend
 docs ship together (Geoff, 2026-10-03). `0.98.0` stays the published version.
 
@@ -434,8 +434,8 @@ docs ship together (Geoff, 2026-10-03). `0.98.0` stays the published version.
 ## Draft docs harvest, then delete, 2026-09-29 to 30
 
 Branch `draft-docs-harvest`, its PR merging under Geoff's R4 once the close gate and reviews are
-green. Plan, ledger, and post-mortem: `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md`.
-Spec: `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md`, the parent spec's
+green. Plan, ledger, and post-mortem: `docs/plans/2026-09-29-draft-docs-harvest.md`.
+Spec: `docs/specs/2026-09-29-draft-docs-harvest-design.md`, the parent spec's
 "Amendment: harvest, then delete". Unreleased; `0.98.0` published before the merge and is
 cairn.pub's pin ceiling for the old narrative arms.
 
@@ -525,8 +525,8 @@ with R4 and R5; the overnight run asked no checkpoint question.
 
 Branch `theme-identity-c` (draft PR #97), built on pass B's closed head, then `main` at `dc9bb99b`
 (the style-guide sync). Passes B and C merge to `main` together at this close. Plan, ledger, and
-post-mortem: `docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`. Spec (shared with pass
-B): `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`. Unreleased; `0.98.0` is
+post-mortem: `docs/plans/2026-09-27-theme-identity-pass-c.md`. Spec (shared with pass
+B): `docs/specs/2026-09-27-theme-identity-pass-b-design.md`. Unreleased; `0.98.0` is
 planned for the cut after the merge, carrying passes A, B, and C.
 
 **What landed:**
@@ -539,7 +539,7 @@ planned for the cut after the merge, carrying passes A, B, and C.
 - **Derived defaults.** Each ink is a 50 percent `color-mix` toward `--color-base-content`, muted is
   an opaque 80 percent mix, and the shadow mixes `black`. `N` and `M` came from a Chromium
   measurement over 35 stock themes, Waymark with its inks stripped, and the fixture theme
-  (`docs/superpowers/research/2026-09-29-theme-pass-c-ink-derivation.md`).
+  (`docs/research/2026-09-29-theme-pass-c-ink-derivation.md`).
 - **The template.** Heading levers (`--font-weight-heading`, `--cairn-heading-case`, the
   `heading-case` utility), the toggle's `color-scheme` resolution and `theme-names.ts`, the skip
   link, radius-token corners, a registry-driven `/styleguide`, `PreviewBanner`'s token palette, the
@@ -637,7 +637,7 @@ two focus-ring languages.
 
 Branch `theme-identity-b`, draft PR #95, unmerged at this close and held as pass C's base. Built
 on pass A's closed head, then `main` at `1056432d` (pass A merged on its own, PR #92). Plan and
-full post-mortem: `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`. Unreleased;
+full post-mortem: `docs/plans/2026-09-27-theme-identity-pass-b.md`. Unreleased;
 `0.98.0` is planned for pass C's close.
 
 **What landed:**
@@ -735,10 +735,10 @@ four extra specs caught; whether they earned that cost was not measured.
 
 Branch `style-guide-sync` (worktree `.claude/worktrees/style-guide-sync`), closed with `main`
 merged in (`c84a7d40`); its PR and merge follow the close. Plan, ledger, and post-mortem:
-`docs/superpowers/plans/2026-09-28-style-guide-sync.md`. Spec with rulings 1 to 21:
-`docs/superpowers/specs/2026-09-28-style-guide-sync-design.md`. No release, no version bump, and
+`docs/plans/2026-09-28-style-guide-sync.md`. Spec with rulings 1 to 21:
+`docs/specs/2026-09-28-style-guide-sync-design.md`. No release, no version bump, and
 `CHANGELOG.md` untouched (no public behavior changed). The pass paused in the first plan's segment
-A for a leanness check (`docs/superpowers/research/2026-09-28-style-guide-sync-leanness.md`) and
+A for a leanness check (`docs/research/2026-09-28-style-guide-sync-leanness.md`) and
 was re-scoped under Geoff's ruling 15: "I'm not looking to invent anything new. I want a proven
 and battle-tested system." The re-scope walked back the first plan's quote-provenance markers, its
 provenance table, and the page chain's section extraction and finding coercion, and cut every
@@ -838,7 +838,7 @@ Vale lacks `vale test`, caught by review).
 
 Branch `theme-identity-a`, PR #92, merged to `main` as `4d725057` (Geoff approved pass A merging
 on its own, 2026-09-28, which supersedes the plan's joint A-B-C merge). Plan and full
-post-mortem: `docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`. Unreleased; `0.98.0`
+post-mortem: `docs/plans/2026-09-26-theme-identity-pass-a.md`. Unreleased; `0.98.0`
 is planned for pass C's close.
 
 **What landed:** the admin's identity moved into daisyUI's theme layer. The admin sheet compiles
@@ -892,7 +892,7 @@ against execution.
 
 Branch `draft-docs-0` (worktree `.claude/worktrees/draft-docs-0`), draft PR #91 (unmerged at
 this close, per Geoff's hold: the merge itself waits on his word). Plan:
-`docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md`. Stood up the lean page chain, the
+`docs/plans/2026-09-26-draft-docs-pass-0-1.md`. Stood up the lean page chain, the
 four docs-gate check extensions, the `check:docs-gate` runner, and the R10 review-page template;
 lifted the narrative-arm freeze to a per-arm rule; settled four stale owner facts; and checked
 every reference page's claims in place.
@@ -931,7 +931,7 @@ every reference page's claims in place.
   `cairn-register-editor` agent definition on the workstation). Geoff approved the redraft (v4)
   with no edits.
 - Task 10, stage 1 reference claim check (five batches, `716cd90e` through `11bd4809`; full
-  record `docs/superpowers/research/2026-09-26-draft-docs-stage-1-record.md`): 1204 claims
+  record `docs/research/2026-09-26-draft-docs-stage-1-record.md`): 1204 claims
   checked across 28 of 29 reference pages (the two theme identity pass B moves deferred by
   Geoff's split), 35 discrepancies found and 33 applied; a batch 1 apply agent's wrong-worktree
   mistake was caught by `diff-reviewer` and moved by the conductor rather than repeated.
@@ -1008,7 +1008,7 @@ captured pty transcripts are re-captured, never hand-edited; the template is emi
 ## Go tool architecture chores, thirteen tasks, 2026-09-27
 
 Branch `go-chores-plan` (worktree `.claude/worktrees/go-chores-plan`), PR #94. Plan:
-`docs/superpowers/plans/2026-09-27-go-tool-architecture-chores.md`. A behavior-preserving refactor
+`docs/plans/2026-09-27-go-tool-architecture-chores.md`. A behavior-preserving refactor
 of `tool/` clearing every defect and nit the two ROADMAP Next-tier Go entries named, run as
 thirteen tasks across four segments (S1 to S4), each `cairn-implementer` on `sonnet` reviewed by
 `diff-reviewer` on `claude-opus-5-5`, gated per task by `make -C tool check` on the light lane.
@@ -1106,7 +1106,7 @@ of `make -C tool check`, resolved by normalizing both forms in the runner (dotfi
   runner now treats both forms as the same gate string.
 - **The architecture reads grade whole packages, so their findings mostly predate the pass.** The
   ten `go-architecture-reader` reads at this pass's close
-  (`docs/superpowers/research/2026-09-27-go-chores-architecture-reads.md`) found 58 structural
+  (`docs/research/2026-09-27-go-chores-architecture-reads.md`) found 58 structural
   findings and 96 nits, the large majority pre-existing rather than introduced by this pass's
   diffs. `cmd/cairn` alone read "needs work" (13 structural findings), everything else "sound with
   nits." Declined items and the round-2 follow-up are in `ROADMAP.md`, not restated here.
@@ -1175,8 +1175,8 @@ removed. The branches `docs-reset-2a` (last working copy and post-mortem) and
 ## Docs reset pass 1b, the validation redesign, closed on tuning, 2026-09-24 to 25
 
 Branch `docs-reset-1b`. Plan, ledger, post-mortem, and the program budget draft:
-`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`. Spec:
-`docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`. Records:
+`docs/plans/2026-09-24-docs-reset-pass-1b.md`. Spec:
+`docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`. Records:
 `docs/internal/record/2026-09-24-docs-reset-1b-tuning.md` and
 `2026-09-24-docs-reset-1b-validation.md`. Geoff closed the pass on its tuning record before the
 freeze (O11, 2026-09-25). Tasks 11 to 15 did not run, no freeze tag exists, and every reader class
@@ -1235,8 +1235,8 @@ questions, the third-`fix` stop, and the pre-freeze question).
 ## Docs reset pass 1, the writing system, thirteen tasks, 2026-09-23 to 24
 
 Branch `docs-reset-system`, off `main` after the `docs-reset` spec merge. Plan, ledger, and
-post-mortem: `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`. Spec:
-`docs/superpowers/specs/2026-09-23-docs-reset-design.md`, with its pass 1 amendments at the top.
+post-mortem: `docs/plans/2026-09-23-docs-reset-pass-1.md`. Spec:
+`docs/specs/2026-09-23-docs-reset-design.md`, with its pass 1 amendments at the top.
 The pass built the system and closed with its validation failed. Geoff ruled on 2026-09-24 that the
 failure is a finding about the validation method, and pass 1b redesigns it before pass 2a.
 
@@ -1350,8 +1350,8 @@ What the gates caught, and what a later cut would be wrong to rediscover:
 ## Record the doctor retirement, retire-2b, four tasks, 2026-09-22
 
 Branch `doctor-records`, off `main` at `65092fc1` (after retire-2a's merge `688aba41`). Plan and
-post-mortem: `docs/superpowers/plans/2026-09-21-doctor-retire-2b-records.md`. Spec:
-`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`. The pass changes no engine
+post-mortem: `docs/plans/2026-09-21-doctor-retire-2b-records.md`. Spec:
+`docs/specs/2026-09-21-doctor-retirement-design.md`. The pass changes no engine
 code: it writes the record of a removal retire-2a already made.
 
 **What landed.** Task 1 added the facts container's retirement bullets and re-sourced the
@@ -1413,8 +1413,8 @@ on a hand-run full gate (filed to Next).
 ## Retire cairn-doctor from the engine, retire-2a, seven tasks, 2026-09-22
 
 Branch `doctor-engine`, off `main` at `59b920f1` (tool 1.1.0's merge). Plan and post-mortem:
-`docs/superpowers/plans/2026-09-21-doctor-retire-2-engine.md`. Spec:
-`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`. Precondition:
+`docs/plans/2026-09-21-doctor-retire-2-engine.md`. Spec:
+`docs/specs/2026-09-21-doctor-retirement-design.md`. Precondition:
 `tool/v1.1.0` tagged and released, since the Go `cairn` tool now owns everything
 `cairn-doctor` did.
 
@@ -1486,8 +1486,8 @@ and no tool patch follows.
 ## Draft docs pass A, the tool's contract pages, eleven tasks, 2026-09-22
 
 Branch `draft-docs-a`, off `main` at `5e286a01` (retire-1's merge). Plan and post-mortem:
-`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`. Spec:
-`docs/superpowers/specs/2026-09-21-draft-docs-design.md`.
+`docs/plans/2026-09-21-draft-docs-pass-a.md`. Spec:
+`docs/specs/2026-09-21-draft-docs-design.md`.
 
 **What landed.** The Go tool's exit-code, JSON, and `cairn doctor` contracts now live in the
 engine's reference arm, inside the npm tarball. Task 1 was a read-only pre-flight that found seven
@@ -1572,8 +1572,8 @@ budget was assumed at about a third of its real cost), zero execution sittings.
 ## retire-1, `cairn doctor`, eleven tasks, 2026-09-22
 
 Branch `doctor-go`, merged without a tool tag. Plan and post-mortem:
-`docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`. Spec:
-`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, the "retire-1" section.
+`docs/plans/2026-09-21-doctor-retire-1-go.md`. Spec:
+`docs/specs/2026-09-21-doctor-retirement-design.md`, the "retire-1" section.
 
 **What landed.** The Go half of the doctor retirement: `cairn doctor [<dir>]`, eleven checks over a
 directory, in a new `tool/internal/doctor` package with its own check contract. Task 1 built that
@@ -1653,8 +1653,8 @@ missing run, not a passing one; dispatch them by hand and record the run ids.
 ## The doctor-retirement pre-task, four tasks, 2026-09-21
 
 Branch `doctor-pretask`. Plan and post-mortem:
-`docs/superpowers/plans/2026-09-21-doctor-pretask.md`. Spec:
-`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, the "Pre-task" section.
+`docs/plans/2026-09-21-doctor-pretask.md`. Spec:
+`docs/specs/2026-09-21-doctor-retirement-design.md`, the "Pre-task" section.
 
 **What landed.** Three contracts the Go doctor needs before retire-1 can branch. Task 1 gave
 `config.media-bucket` its own condition id, `config.media-bucket-missing`, on both the TypeScript
@@ -1723,7 +1723,7 @@ two execution sittings (the gate diagnosis, the budget question).
 ## The Go tool's Pass B2, twenty-one tasks, 2026-09-21
 
 Branch `cairn-tool-b2`, PR #71. Plan and post-mortem:
-`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`, B2 section. Owner rulings:
+`docs/plans/2026-09-14-cairn-tool-1-0-pass.md`, B2 section. Owner rulings:
 `docs/internal/record/2026-09-21-go-tool-b2-owner-rulings.md`.
 
 **What landed.** The `cairn` operator CLI's 1.0: the cobra command tree and grammar, `adopt`,
@@ -1782,7 +1782,7 @@ time: five planning misses, about ten execution sittings.
 
 ## The pre-cut pass, five tasks, 2026-09-21
 
-Branch `pre-cut`, PR #69. Plan and post-mortem: `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`.
+Branch `pre-cut`, PR #69. Plan and post-mortem: `docs/plans/2026-09-21-pre-cut-pass.md`.
 
 **What landed.** Task 1, the dependency sweep, regenerated both lockfiles from scratch
 (`494d151d`) and recorded the visual gate result (`cab9c670`). Task 2, the two `cairn-guidance`
@@ -1849,7 +1849,7 @@ showcase build or e2e run in a worktree is trusted.
 ## Go tool pass B1 (`cairn-tool-B1`), nine tasks, 2026-09-20
 
 Branch `cairn-tool-a`, PR #60, MERGED with Pass A as `efc75093`. Plan and full post-mortem:
-`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`. Spend about 8.9M of a 10M ceiling
+`docs/plans/2026-09-14-cairn-tool-1-0-pass.md`. Spend about 8.9M of a 10M ceiling
 (raised from 8M mid-pass).
 
 **What landed.** Context threaded through every `providers` call; the `health` package with a
@@ -1884,8 +1884,8 @@ is not acceptable on the owner's desktop.
 
 Branch `cairn-tool-a`, draft PR #60, UNMERGED at close by Geoff's ruling (the merge rides Pass
 B1's close, because extend-2 was mid-flight on the same three ledger files). Plan and full
-post-mortem: `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md` on that branch. Decision
-record for what follows: `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`.
+post-mortem: `docs/plans/2026-09-14-cairn-tool-1-0-pass.md` on that branch. Decision
+record for what follows: `docs/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`.
 
 **What landed.** The `tool/` Go module (`github.com/glw907/cairn-cms/tool`), foundation only:
 `record`, `store`, `providers`, `spine`, `secrets`, `version`, and a `cmd/cairn` with `auth set`,
@@ -1926,7 +1926,7 @@ into `spine`, all before the command tree is built.
 ## extend-2 pass, ten tasks, 2026-09-19 to 2026-09-20
 
 Branch `extend-2` with `extend-2-skills` (chain B: tasks 5, 6, 7) merged into it; plan at
-`docs/superpowers/plans/2026-09-14-extend-2-pass.md`; record at
+`docs/plans/2026-09-14-extend-2-pass.md`; record at
 `docs/internal/record/2026-09-14-extend-2-record.md`. The pass ships the guidance layer: a
 developer using Claude Code on a cairn site now gets the engine's guidance from the package it
 already has, installed or refreshed by one bin.
@@ -1987,8 +1987,8 @@ raise, Geoff's own initiative, not a question put to him.
 ## extend-1 pass, nine tasks, 2026-09-16 to 2026-09-20
 
 Branch `extend-1` with `extend-1-site` (chain B: tasks 7, 8a, 8b) merged into it; plan at
-`docs/superpowers/plans/2026-09-14-extend-1-pass.md`; spec at
-`docs/superpowers/specs/2026-09-12-extend-design.md` (revision 2); record at
+`docs/plans/2026-09-14-extend-1-pass.md`; spec at
+`docs/specs/2026-09-12-extend-design.md` (revision 2); record at
 `docs/internal/record/2026-09-14-extend-1-record.md`. The pass gives a consumer site cairn's own
 gates over its own code and cairn's atoms to compose instead of reinventing. No new package, and no
 change to `cairn-doctor`.
@@ -2042,7 +2042,7 @@ two security reads at the fold. Merged as PR #66.
 
 ## Docs-to-facts pass, five tasks, 2026-09-15
 
-Branch `docs-to-facts`; plan at `docs/superpowers/plans/2026-09-15-docs-to-facts-pass.md`;
+Branch `docs-to-facts`; plan at `docs/plans/2026-09-15-docs-to-facts-pass.md`;
 review record at `docs/internal/record/2026-09-15-facts-container-review/`. This pass gates the
 facts container instead of deleting the three narrative arms, the shape the three-lens
 adversarial review overturned before execution.
@@ -2102,8 +2102,8 @@ PR #65.
 ## Admin motion language pass, nine tasks (chain A) plus one (chain B), 2026-09-15
 
 Branch `admin-motion` (chain A) with `admin-motion-8` (chain B, task 8 alone) merged into it; plan
-at `docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`; spec at
-`docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`. This pass writes the admin's
+at `docs/plans/2026-09-13-admin-motion-language-pass.md`; spec at
+`docs/specs/2026-09-13-admin-motion-language-design.md`. This pass writes the admin's
 motion vocabulary (five durations, three curves, all Carbon aliases), migrates the admin's
 seventeen shipped motion declarations onto it, ships three error-tier `cairn-audit` rules plus one
 advisory rendered rule, and hands the result to the extend track as its first per-pattern recipe.
@@ -2171,8 +2171,8 @@ read on the merged branch surfaces anything those three proofs missed, the smoke
 ## Polish-C (audit remediation slice 12, the breaking window), fifteen tasks complete on its worktree 2026-09-14
 
 Branch `polish-c`, executed on `.claude/worktrees/polish-c` off post-11b-ii `main`; plan at
-`docs/superpowers/plans/2026-09-08-polish-c-pass.md`; spec at
-`docs/superpowers/specs/2026-09-08-polish-passes-design.md`. This is the initiative's one breaking
+`docs/plans/2026-09-08-polish-c-pass.md`; spec at
+`docs/specs/2026-09-08-polish-passes-design.md`. This is the initiative's one breaking
 slice, and the last of the twelve.
 
 **What landed.** Thirty renamed or removed public identifiers, every one of them in the window the
@@ -2304,7 +2304,7 @@ the `cairn-release` skill after the merge.
 ## Polish-11b-ii (audit remediation slice 11b-ii, the dev-backend access seam and the signups exemplar, non-breaking), six tasks complete on its worktree 2026-09-13
 
 Branch `polish-11b-ii`, executed on `.claude/worktrees/polish-11b-ii` off post-11b-i `main`; plan
-at `docs/superpowers/plans/2026-09-08-polish-11b-ii-pass.md`.
+at `docs/plans/2026-09-08-polish-11b-ii-pass.md`.
 
 **What landed.** `devBackendHandle` (`@glw907/cairn-cms-dev`) accepts `access` and `roles`, so a
 site's dev backend authorizes a `createSectionAction` form action the same way `createAuthGuard`
@@ -2376,7 +2376,7 @@ release body cutting this window must gather those, not assume the block is clea
 ## Polish-11b-i (audit remediation slice 11b-i, the design system and the engine admin surface, non-breaking), eleven tasks complete on its worktree 2026-09-13
 
 Branch `polish-11b-i`, executed on `.claude/worktrees/polish-11b-i` off post-11a `main`; plan at
-`docs/superpowers/plans/2026-09-08-polish-11b-i-pass.md`.
+`docs/plans/2026-09-08-polish-11b-i-pass.md`.
 
 **What landed.** The design system gains a ruled busy idiom (native `disabled` plus an
 always-mounted status region for a control mid-wait, `aria-disabled` plus `cairn-btn-guarded` for
@@ -2468,7 +2468,7 @@ assertion on the option's own class list.
 ## Polish-11a (audit remediation slice 11a, the engine and CLI half, non-breaking), thirteen tasks complete on its worktree 2026-09-12
 
 Branch `polish-11a`, thirteen tasks executed on `.claude/worktrees/polish-11a` off post-chassis-B2
-`main`; plan at `docs/superpowers/plans/2026-09-08-polish-11a-pass.md`.
+`main`; plan at `docs/plans/2026-09-08-polish-11a-pass.md`.
 
 **What landed.** Both retired route monoliths named on the audit's own monolith list split into
 named cluster modules with the public surface byte-identical: `content-routes-entry.ts` (1,630
@@ -2535,7 +2535,7 @@ against the CI runner, not a regression this pass introduced.
 Branch `chassis-b2`, eight tasks executed on `.claude/worktrees/chassis-b2` off `chassis-b`
 across four `pass-execute-chains` workflow runs and one overnight halt-and-resume, 2026-09-08
 to 2026-09-09; plan and post-mortem at
-`docs/superpowers/plans/2026-09-07-chassis-b2-pass.md`; harvest at
+`docs/plans/2026-09-07-chassis-b2-pass.md`; harvest at
 `docs/internal/record/2026-09-04-chassis-inputs/chassis-b2-harvest.md`.
 
 **What landed.** The paginated archive proven on a real 27-post corpus (thirteen 2025-dated
@@ -2586,7 +2586,7 @@ Full detail and the reviewer/verifier verdicts are in the plan's own post-mortem
 ## Chassis-B1 (audit remediation slice 9a, the paint-changing half's first slice), merged 2026-09-08
 
 Branch `chassis-b`, seven tasks executed on `.claude/worktrees/chassis-b` off post-chassis-A
-`main`; plan and post-mortem at `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md` (PR #51,
+`main`; plan and post-mortem at `docs/plans/2026-09-07-chassis-b1-pass.md` (PR #51,
 `58ed9d1f`); harvest at `docs/internal/record/2026-09-04-chassis-inputs/chassis-b1-harvest.md`.
 
 **What landed.** The showcase, the chassis every theme copy and the scaffold descend from, now
@@ -2631,7 +2631,7 @@ pipeline.
 
 Branch `identity-seam`, seven tasks executed on `.claude/worktrees/identity-seam` off `main`, in
 parallel with chassis-B1; plan and post-mortem at
-`docs/superpowers/plans/2026-09-07-identity-seam-pass.md`; harvest at
+`docs/plans/2026-09-07-identity-seam-pass.md`; harvest at
 `docs/internal/record/2026-09-07-identity-seam/harvest.md`.
 
 **What landed.** The identity seam the charter promised but did not yet ship: `createAuthGuard({
@@ -2665,7 +2665,7 @@ silently ignored.
 
 Branch `chassis-a`, twelve tasks executed through four `pass-execute-chains` runs and direct
 fix dispatches over 2026-09-05 to 2026-09-08; plan and post-mortem at
-`docs/superpowers/plans/2026-09-04-chassis-a-pass.md`; harvest at
+`docs/plans/2026-09-04-chassis-a-pass.md`; harvest at
 `docs/internal/record/2026-09-04-chassis-inputs/chassis-a-harvest.md`.
 
 **What landed.** Prettier on the showcase's ts, js, and svelte with the scaffold format-checked in
@@ -2693,7 +2693,7 @@ trip the runaway guard.
 
 ## 2026-09-05: internals-C pass complete (audit-remediation slice 7, coherence)
 
-Plan and post-mortem: `docs/superpowers/plans/2026-09-03-internals-c-pass.md` (worktree
+Plan and post-mortem: `docs/plans/2026-09-03-internals-c-pass.md` (worktree
 `internals-c`, off post-B `main`). All thirteen tasks landed through the
 implementer/diff-reviewer/gate chain: type-level exhaustiveness over `FieldDescriptor`'s five
 dispatch sites (compile-time-only proof, permissive runtime fallback preserved on every Worker
@@ -2730,7 +2730,7 @@ spend figure is recorded at STATUS close.
 
 ## 2026-09-04: internals-B pass complete (audit-remediation slice 6, four monolith splits), merged at `0ac9b40a` (PR #48)
 
-Plan and post-mortem: `docs/superpowers/plans/2026-09-03-internals-b-pass.md` (worktree
+Plan and post-mortem: `docs/plans/2026-09-03-internals-b-pass.md` (worktree
 `internals-b`, off `main` at `c95ff02d`). All fourteen tasks across five independent chains
 landed through the implementer/diff-reviewer/gate chain: `content-routes-core.ts` retired
 into five siblings behind the unchanged `content-routes.ts` composition root;
@@ -2776,7 +2776,7 @@ the CLI-update kill).
 
 ## 2026-09-03: internals pass complete (audit-remediation slice), branch pushed for PR
 
-Plan and post-mortem: `docs/superpowers/plans/2026-09-01-internals-pass.md` (worktree
+Plan and post-mortem: `docs/plans/2026-09-01-internals-pass.md` (worktree
 `internals`, off `main` at `a5352f0b`). All thirteen tasks landed through the
 implementer/diff-reviewer/gate chain: the standing gates (`check:self-use`, the F-1
 leak-class rider on `check:surface`, the `staleNames` per-subpath rescope, the
@@ -2822,7 +2822,7 @@ fully autonomous review fold.
 
 ## 2026-09-02: conformance pass merged (audit-remediation slice 4b), PR #46, CI green
 
-Plan and post-mortem: `docs/superpowers/plans/2026-09-01-conformance-pass.md` (worktree
+Plan and post-mortem: `docs/plans/2026-09-01-conformance-pass.md` (worktree
 `conformance`, merged at `12330d71`). All fourteen tasks landed through the
 implementer/diff-reviewer/gate chain: the 26 Tier 1 retires, alias prunes, the CairnHistory
 reshapes, `TidyClient` narrowed, `previewMint` made safe (Opus), the `ReproContext`
@@ -2869,7 +2869,7 @@ review, the friction-triage ritual step).
 
 ## 2026-09-01: conventions pass merged (audit-remediation slice 4a), PR #43, CI green
 
-Plan and post-mortem: `docs/superpowers/plans/2026-08-30-conventions-pass.md` (worktree
+Plan and post-mortem: `docs/plans/2026-08-30-conventions-pass.md` (worktree
 `conventions`, merged at `bc960fec`). All eleven tasks plus two doc residuals landed through
 the implementer/diff-reviewer/gate chain in workflow mode, three sequential chunks: the
 sitting's rulings written into the ledger, bags and contracts, verb renames, the outcome
@@ -2908,7 +2908,7 @@ errors in three docs main's CI passes; reconcile before trusting local vale as a
 
 ## 2026-08-30: retires pass merged (audit-remediation slice 3), PR #42, CI green
 
-Plan and post-mortem: `docs/superpowers/plans/2026-08-30-retires-pass.md` (worktree
+Plan and post-mortem: `docs/plans/2026-08-30-retires-pass.md` (worktree
 `retires`, ten commits, merged at `d2c434ea`). The 56 ratified retires executed: 38
 unsanctioned in three family batches plus 18 F-1 sanctioned leaks with the move record
 (`docs/internal/record/2026-08-30-retires-move-record.md`), a compile-only fixture proving
@@ -2948,7 +2948,7 @@ test carries the guarantee.
 
 ## 2026-08-30: foundations B pass closed on its worktree (audit-remediation slice 2b), awaiting Geoff's ratification and merge
 
-Plan and post-mortem: `docs/superpowers/plans/2026-08-28-foundations-b-pass.md` (worktree
+Plan and post-mortem: `docs/plans/2026-08-28-foundations-b-pass.md` (worktree
 `.claude/worktrees/foundations-b`, pushed, ten commits `e743f624..014872b2`). T1 narrowed the
 public `createContentRoutes` declared return to a 25-member `Pick`-derived `ContentRoutes`
 (ten media-janitorial members internal-only; unexported-from-barrels
@@ -2983,7 +2983,7 @@ the repo exercises the hand-mount path against generated `./$types` (carried fol
 
 ## 2026-08-29: foundations A pass closed on its worktree (audit-remediation slice 2a), awaiting merge
 
-Plan and post-mortem: `docs/superpowers/plans/2026-08-28-foundations-a-pass.md`. Three tasks on
+Plan and post-mortem: `docs/plans/2026-08-28-foundations-a-pass.md`. Three tasks on
 worktree `.claude/worktrees/foundations-a`, gates green, per-task diffs accepted, pass-end
 `engine-triage` verdict "holds" on all three artifacts. T1 repaired 14 truncated ledger shapes
 and landed `check:rulings-format` (`632cca35`). T2 ratified R-0 (an unused-but-usable export is
@@ -3017,7 +3017,7 @@ needed only one fix cycle, not a redo.
 
 ## 2026-08-30: csrf-hardening pass merged (remediation slice 1)
 
-Plan and post-mortem: `docs/superpowers/plans/2026-08-27-csrf-hardening-pass.md`. Merged via
+Plan and post-mortem: `docs/plans/2026-08-27-csrf-hardening-pass.md`. Merged via
 PR #40, all checks green, holding unpublished. Four tasks (Lax cookie with re-anchored
 Max-Age and one `csrfSecure` derivation; the unreadable failure paths; the
 detail/witness/hasSession rejection discriminator; ledger hygiene) plus a pass-end security
@@ -3041,7 +3041,7 @@ token material.
 
 ## 2026-08-29: harvest-detection pass merged; main's CI red healed
 
-Plan and post-mortem: `docs/superpowers/plans/2026-08-26-harvest-detection-pass.md`. Merged as
+Plan and post-mortem: `docs/plans/2026-08-26-harvest-detection-pass.md`. Merged as
 `445e350f` (PR #39), holding unpublished. Six tasks: the `config.no-referrer-blanket` doctor
 check, `sheet` as a source list, four audit rules (stripe/trim parity, unlayered font clobber,
 `list-role` with in-tree `role="list"` adoption, `panel-width` with the new `row-expanded`
@@ -3071,7 +3071,7 @@ CI; the deflaked tests use `node:test` mock timers. A stale local showcase insta
 
 ## 2026-08-27: toolkit-seams pass merged
 
-Plan and post-mortem: `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md`. Six ASC-harvest
+Plan and post-mortem: `docs/plans/2026-08-26-toolkit-seams-pass.md`. Six ASC-harvest
 behavior absorptions (media picker seam, ExpandableRow inert-cell escape, ToolbarDisclosure,
 CsrfField hardening, StatusChip three-register grammar with tone/dot retired, admin sheet
 contrast fixes), holding unpublished. What a later pass would be wrong to rediscover: the
@@ -3086,8 +3086,8 @@ not the header path. `isUniqueViolation` deferred with reopen triggers in the le
 
 ## 2026-08-26: engine-consultation pass closed
 
-Plan and post-mortem: `docs/superpowers/plans/2026-08-26-engine-consultation-pass.md`; spec
-`docs/superpowers/specs/2026-08-26-engine-consultation-design.md`. Landed on `main` directly
+Plan and post-mortem: `docs/plans/2026-08-26-engine-consultation-pass.md`; spec
+`docs/specs/2026-08-26-engine-consultation-design.md`. Landed on `main` directly
 (docs and Claude infrastructure only). Shipped the consultation protocol: the
 `engine-consult` skill, the `engine-triage` agent, both pass-skill hooks (cold-start tested
 with a negative control), the rulings ledger, the consultations arm, and both CLAUDE.md
@@ -3110,7 +3110,7 @@ resumes from cache, so fix-and-resume costs only the re-run agents, never the fl
 
 ## 2026-08-22: newest-toolchain pass merged
 
-Plan and post-mortem: `docs/superpowers/plans/2026-08-21-newest-toolchain-before-beta.md`.
+Plan and post-mortem: `docs/plans/2026-08-21-newest-toolchain-before-beta.md`.
 Worktree `newest-toolchain` off `main` at `13726d57`, merged as `d2972d11`. Pushed every floor
 to current: Node `>=24`, `@sveltejs/kit ^2.70`, `svelte ^5.56.10`, DaisyUI 5.7.20, Tailwind
 4.3.3, Wrangler 4.125.0, Vite 8.2.2, ESLint 10, `@anthropic-ai/sdk` 0.120 (peer widened to
@@ -3180,16 +3180,16 @@ triggers (both later resolved, see 2026-08-21 and 2026-08-22 above); `@cloudflar
 ## 2026-08-20: Go `cairn` tool, sub-project 1 opened (parallel track)
 
 Design approved by Geoff in a Fable brainstorm, written to
-`docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`, then revised after a
+`docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`, then revised after a
 five-vantage adversarial review and a 24-agent verify pass (chapter spine as Go types, a
 read-only health HUD, poplar's root-model-plus-registry shape, a split credential model,
-`tool/` in-repo). Plan: `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`, three
+`tool/` in-repo). Plan: `docs/plans/2026-08-20-cairn-tool-spine-and-hud.md`, three
 passes (A foundation, B checks and CLI, C the HUD), 29 tasks. Runs independently of the engine
 window; does not block site updates or the editors rewrite.
 
 ## 2026-08-19: live-reproduction seam built, both halves
 
-Plan and five post-mortems: `docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`.
+Plan and five post-mortems: `docs/plans/2026-08-15-live-reproduction-seam-plan.md`.
 The delivery half shipped in `cairn-pub` on `pass-d-docs-tracks` (`8bef4f0`..`e182f36`); two
 load-bearing engine commits landed here alongside it: `42b9d105` lets a prerendered route mount
 `EditPage` (four of 25 story pages emitted no HTML at all without it), and `a5a069a8` binds a
@@ -3221,7 +3221,7 @@ without a picture needs rewriting, not illustrating. Research banked at
 The diagram-pages pass merged 2026-08-16 (`817d155a`): eleven mermaid diagrams across ten
 pages, nine page rewrites, and the `check:visuals` gate, reviewed by eleven register-editor
 fan-outs. The capture pass ran 2026-08-17 (plan and post-mortems:
-`docs/superpowers/plans/2026-08-16-capture-pass.md`); transcript fixtures now exist and both
+`docs/plans/2026-08-16-capture-pass.md`); transcript fixtures now exist and both
 admin pages quote them. The admin-screen reference capture (2026-08-15) banked 44 captures under
 `docs/internal/reference-captures/2026-08-15-admin-screens/`, internal-only and excluded from
 the npm `files` whitelist.

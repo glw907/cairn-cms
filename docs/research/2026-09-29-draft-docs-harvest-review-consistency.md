@@ -1,7 +1,7 @@
 # Draft docs harvest: consistency review
 
 **Lens:** consistency against ratified documents, citation spot-checks, and plan-to-spec coverage.
-**Targets:** `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` (spec) and
+**Targets:** `docs/specs/2026-09-29-draft-docs-harvest-design.md` (spec) and
 `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md` (plan), at `7e57601d`.
 **Read against:** the parent spec (`2026-09-26-draft-docs-approach-design.md`), repo `CLAUDE.md`,
 `docs/internal/facts/README.md`, `docs/internal/briefs/README.md`, `docs/STATUS.md`, `pass-core`,

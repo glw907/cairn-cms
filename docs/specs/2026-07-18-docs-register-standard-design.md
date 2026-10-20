@@ -120,7 +120,7 @@ The standard doc carries both poles so graders learn the line, not just the rule
 
 **Scope:** the 62 published docs pages (`reference/`, `guides/`, `explanation/`,
 `tutorial/`, plus the docs README) plus the root `README.md`. Out of scope: `ROADMAP.md`,
-`CHANGELOG.md`, `SECURITY.md`, everything under `docs/internal/` and `docs/superpowers/`.
+`CHANGELOG.md`, `SECURITY.md`, everything under `docs/internal/` and `docs/`.
 
 **Shape** (workflow; Geoff's standing authorization, runaway guard armed at launch):
 

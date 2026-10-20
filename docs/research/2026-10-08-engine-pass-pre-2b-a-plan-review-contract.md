@@ -1,7 +1,7 @@
 # Plan review, contract and criteria lens: engine pass pre-2b, pass A
 
 Target: `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md` at `504b82f0`. Spec:
-`docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`. Code read on `main`. Line
+`docs/specs/2026-10-07-engine-pass-pre-2b-design.md`. Code read on `main`. Line
 numbers below are the plan's unless a path says otherwise.
 
 Lens: is every criterion testable, does it name the fixture state it needs, does it carry its

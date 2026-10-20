@@ -4,7 +4,7 @@ import "slices"
 
 // Code is the tool's own closed vocabulary for a Failing outcome whose failure mode carries no
 // cairn-doctor condition id (Condition) in src/lib/diagnostics/conditions.ts. Most Failing
-// outcomes this tool measures have no id in that registry (docs/superpowers/specs/2026-08-20
+// outcomes this tool measures have no id in that registry (docs/specs/2026-08-20
 // -cairn-tool-spine-and-hud-design.md's health table marks most checks "new"), and printing one
 // of them as though it belonged to that registry would mislead a reader who greps the registry
 // for it. Every Code value is prefixed "tool.", distinct from a Condition's own engine-owned

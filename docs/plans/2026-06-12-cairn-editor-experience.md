@@ -7,7 +7,7 @@
 **Status: LANDED on `main` 2026-06-12. Post-mortem at the end.**
 
 **Goal:** rebuild the in-editor writing experience per the approved spec
-(`docs/superpowers/specs/2026-06-12-cairn-editor-experience-design.md`): a quiet monospace
+(`docs/specs/2026-06-12-cairn-editor-experience-design.md`): a quiet monospace
 writing surface with real hierarchy and marker discipline, the directive machinery as rails with
 meaning-over-machinery fences and cursor-aware emphasis, the two missing table-stakes behaviors
 (GFM parsing, markdown keymap), and focus mode plus typewriter scroll as persisted toggles.

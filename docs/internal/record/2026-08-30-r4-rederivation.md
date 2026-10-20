@@ -576,5 +576,5 @@ under the scoped predicate (retire-verdicted, absent from every export list, nam
 surviving rendered shape) is 20 after the pass: the 18 sanctioned plus `DictionaryAddFailure`
 and `TidyFailure`; `NavIcon`/`EngineScreenId`/`SlotKind` are the expansion class, outside
 that predicate and owned by the internals pass. The retires pass plan
-(`docs/superpowers/plans/2026-08-30-retires-pass.md`) carries the full fold-in of both
+(`docs/plans/2026-08-30-retires-pass.md`) carries the full fold-in of both
 reviews' findings.

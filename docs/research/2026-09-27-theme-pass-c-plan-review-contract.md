@@ -1,7 +1,7 @@
 # Theme identity pass C plan review: contract and criteria
 
 **Target:** `docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md` at `1ed7e232`, against
-`docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`. **Lens:** is every promise
+`docs/specs/2026-09-27-theme-identity-pass-b-design.md`. **Lens:** is every promise
 testable, can any criterion pass vacuously, does every check name its report per state and every proof
 its fixture state, does every pass C spec promise land in a task's acceptance, and do the classes,
 gates, and owner time fit the risk (pass-core table).

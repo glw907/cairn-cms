@@ -7,7 +7,7 @@ pass actually reads, so the catch-up the docs initiative completed across Phases
 This phase changes no in-repo docs arm. It edits the process surfaces that govern every later pass.
 
 **Parent.** This is the sixth and last phase of the documentation initiative
-(`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`), the "Process and infra" phase. The
+(`docs/specs/2026-06-04-cairn-docs-initiative-design.md`), the "Process and infra" phase. The
 initiative absorbed the rule statement in its "Docs as a pass dimension" section; this phase implements it.
 
 ## Why now

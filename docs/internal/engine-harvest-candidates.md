@@ -49,8 +49,8 @@ the site copy (`aksailingclub-org/docs/STATUS.md`, the NEXT entry).
 **ecxc.** The site itself plans little: a pre-publish checklist and small content
 items (`ecxc-ski/docs/STATUS.md`, `BACKLOG.md`). Its large plan is the xcathletes
 platform, a standalone multi-team training platform that will be a fifth cairn
-consumer. Authority: `ecxc-ski/docs/superpowers/specs/2026-07-30-team-platform-requirements.md`
-(ratified), executed by `docs/superpowers/plans/2026-07-30-team-platform-pass-1.md`
+consumer. Authority: `ecxc-ski/docs/specs/2026-07-30-team-platform-requirements.md`
+(ratified), executed by `docs/plans/2026-07-30-team-platform-pass-1.md`
 (pass map: foundation; log/check-in/push; plans/schedule/broadcast; chat; races/
 cutover; East High). The requirements' own scope statement matters here: "Member OTP
 auth, notifications, chat, and push are platform-native by design and ask nothing of

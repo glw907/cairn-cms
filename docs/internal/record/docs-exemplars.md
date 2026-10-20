@@ -1,7 +1,7 @@
 # Docs exemplar corpus: manifest
 
 The drafters' primary input for the docs reset (spec
-[`2026-09-23-docs-reset-design.md`](../../superpowers/specs/2026-09-23-docs-reset-design.md),
+[`2026-09-23-docs-reset-design.md`](../../specs/2026-09-23-docs-reset-design.md),
 ruling 13 and pass 2a stage 3). Captured pages live outside the repository at
 `~/.local/share/cairn/exemplars/<audience>/<slug>/` (`page.html`, `page.md`, `meta.json`); this
 file keeps only the manifest. A lost capture is rebuilt from the URL here.

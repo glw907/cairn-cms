@@ -1,6 +1,6 @@
 # Docs-code sync spec: fold record
 
-**Target:** `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md` (229 lines before, 278
+**Target:** `docs/specs/2026-09-30-docs-code-sync-design.md` (229 lines before, 278
 after). **Reviews folded:** contract (CC), mechanics (MF), integrity (DI), consistency (CO), in
 `docs/superpowers/research/2026-09-30-docs-code-sync-review-*.md`. **Base:** `254d7860`.
 
@@ -107,7 +107,7 @@ is ruling 2.
 
 ## Second fold
 
-**Input:** `docs/superpowers/research/2026-09-30-docs-code-sync-fold-verification.md` (FV-1 to
+**Input:** `docs/research/2026-09-30-docs-code-sync-fold-verification.md` (FV-1 to
 FV-11) and Geoff's rulings of 2026-09-30, recorded in the spec as S8 (release sweep) and S9
 (ceiling 24M, flag 19.2M). **Base:** `16aa249e`. **Scope:** majors folded in full; minors folded
 only where the fix is a wording or number correction; the rest owed. The spec's "Rulings for

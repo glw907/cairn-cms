@@ -269,7 +269,7 @@ disposed 0; none remain in `docs/internal/option-map.json`.
 
 ## Framing A/B
 
-See `docs/superpowers/research/2026-10-11-draft-docs-2b-part1-ab/README.md` once T2 lands.
+See `docs/research/2026-10-11-draft-docs-2b-part1-ab/README.md` once T2 lands.
 
 ## Consistency read
 

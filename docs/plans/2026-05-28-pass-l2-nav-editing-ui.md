@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-28
 **Initiative:** cairn-cms (see `docs/PLAN.md`)
-**Design:** `docs/superpowers/specs/2026-05-27-pass-l-yaml-site-config-design.md` (the L2 half)
+**Design:** `docs/specs/2026-05-27-pass-l-yaml-site-config-design.md` (the L2 half)
 **Status:** plan for execution. Pass L (read side + config migration) is done and committed locally.
 
 ## Goal

@@ -20,9 +20,9 @@ state. cairn stays markdown-first: the control writes markdown, the preview stay
 `rehype-sanitize`, Svelte 5 runes, CodeMirror 6 (the editor seams), Vitest (unit + a real-browser
 component project), Playwright (the showcase E2E).
 
-Source spec: `docs/superpowers/specs/2026-06-16-cairn-media-3a-inline-figure-design.md` (the
+Source spec: `docs/specs/2026-06-16-cairn-media-3a-inline-figure-design.md` (the
 adversarially reviewed design, with the contract each task must meet). Umbrella: the gallery spec
-`docs/superpowers/specs/2026-06-15-cairn-media-gallery-design.md`. Builds on the 2b insert UI
+`docs/specs/2026-06-15-cairn-media-gallery-design.md`. Builds on the 2b insert UI
 (`src/lib/components/MediaInsertPopover.svelte`, `editor-media.ts`, `markdown-format.ts`, the
 `registerInsertImage`/`registerReplaceRange`/`registerSelectRange` editor seams) and the foundation
 render resolver (`src/lib/render/resolve-media.ts`).

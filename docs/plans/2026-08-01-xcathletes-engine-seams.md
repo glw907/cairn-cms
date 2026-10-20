@@ -9,7 +9,7 @@ a supported server-only export of the editor-provisioning store, and a first-pub
 the content manifest with a pure diff helper, so announce-on-publish stays consumer-side.
 
 **Authority:** `docs/internal/2026-08-01-xcathletes-consumer-brief.md` (this plan's input), which
-traces to `ecxc-ski/docs/superpowers/specs/2026-07-30-team-platform-requirements.md` (§Broadcast,
+traces to `ecxc-ski/docs/specs/2026-07-30-team-platform-requirements.md` (§Broadcast,
 ratified 2026-08-01). The brief's scope check found exactly these two gaps; nothing else in the
 platform's requirements asks anything of the engine.
 

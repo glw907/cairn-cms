@@ -1,8 +1,8 @@
 # Style-guide sync re-scope review: contract and criteria lens
 
 Date: 2026-09-28. Targets at `e0d5f954`: the re-scoped spec
-(`docs/superpowers/specs/2026-09-28-style-guide-sync-design.md`) and plan
-(`docs/superpowers/plans/2026-09-28-style-guide-sync.md`). Lens: is every promise testable, can
+(`docs/specs/2026-09-28-style-guide-sync-design.md`) and plan
+(`docs/plans/2026-09-28-style-guide-sync.md`). Lens: is every promise testable, can
 any criterion pass vacuously, does each task's acceptance map to a spec criterion, does ruling 16
 have a real check, and is the ceremony proportionate. Governing ruling 15: no finding below asks
 for new machinery. Every fold is a sentence in the spec or plan, or a reordering.

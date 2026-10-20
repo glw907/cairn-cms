@@ -25,7 +25,7 @@ component is built only where a recorded failure justifies it. The failure recor
 baseline plus pass A's documented failures; a component with no failure behind it is deferred, and
 the record says which.
 
-**Spec:** [`docs/superpowers/specs/2026-09-23-docs-reset-design.md`](../specs/2026-09-23-docs-reset-design.md),
+**Spec:** [`docs/specs/2026-09-23-docs-reset-design.md`](../specs/2026-09-23-docs-reset-design.md),
 "Pass 1: the writing system", rulings 9, 10, and 13, "Evidence the method follows", and
 "Relation to existing designs". Executors read the spec's pass 1 section before their task. Where
 this plan and the spec disagree, stop and report.
@@ -161,7 +161,7 @@ classifier refused an edited copy of `pass-execute.js`; later segments do the sa
 5. **A fact edited after a page cites it:** Expected: the id is unchanged and the reverse mode lists
    the citing page. Pinned in Task 6.
 6. **A reader seeing the answer key:** Expected: a repository-class checkout holds no
-   `docs/internal/record/`, `docs/superpowers/`, or `.git`. Pinned in Task 2.
+   `docs/internal/record/`, `docs/`, or `.git`. Pinned in Task 2.
 
 ---
 
@@ -255,7 +255,7 @@ a class-preparation module, tests.
 for docs-and-site, a scaffolded site with the engine installed from a packed tarball of the
 worktree, with the installed package's `docs/`, `claude/`, and `skills/` directories removed and
 `npm install` done at preparation; for repository, a `git archive` export at a named commit that
-excludes `docs/internal/record/`, `docs/superpowers/`, and `.git`. Preparation fails if any of
+excludes `docs/internal/record/`, `docs/`, and `.git`. Preparation fails if any of
 those paths is present. The docs-and-binary class is declared here and wired in Task 3. Before
 pass 2a's profiles exist, each class supplies one neutral sentence describing its reader.
 
@@ -264,7 +264,7 @@ pass 2a's profiles exist, each class supplies one neutral sentence describing it
   `node_modules/@glw907/cairn-cms/docs` (absent) or any path outside its directory; an `npm
   install` it attempts is blocked by the proxy.
 - A repository reader can run `npm run check:facts` and cannot reach the host checkout; a test
-  fails preparation when a planted `docs/superpowers/` path survives the export.
+  fails preparation when a planted `docs/` path survives the export.
 - Each class declaration carries its neutral sentence.
 - Gate: `CAIRN_GATE_LANE=light cairn-run-gate 'npx vitest run --project unit src/tests/unit/docs-readers && npm run check:comments'`;
   one live run per class of a trivial job runs outside the gate, transcripts attached.

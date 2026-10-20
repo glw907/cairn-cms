@@ -21,7 +21,7 @@ This is the second half of the original "distribution and site cutover" pass. Pl
 | 09 | `CairnExtension` machinery: site-registered admin panels, custom concept and field types. |
 | 10 | `create-cairn-site` scaffolder and the first templates. |
 
-The canonical sources are the functional spec at `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md` and the cutover design at `docs/superpowers/specs/2026-05-29-cairn-cutover-design.md`.
+The canonical sources are the functional spec at `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md` and the cutover design at `docs/specs/2026-05-29-cairn-cutover-design.md`.
 
 ### Repos and working directories
 

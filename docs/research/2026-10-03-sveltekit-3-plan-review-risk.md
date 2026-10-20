@@ -1,7 +1,7 @@
 # SvelteKit 3 plan review: domain-risk lens
 
 Target: `docs/superpowers/plans/2026-10-03-sveltekit-3-upgrade.md` at HEAD `27b254ac`, against the
-approved spec `docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md` and its review trail.
+approved spec `docs/specs/2026-10-03-sveltekit-3-upgrade-design.md` and its review trail.
 Lens: auth, CSRF, sessions, D1, the commit path, the public seam contract, and the Go doctor's frozen
 contract. This lens flags only gaps that affect correctness or a stated requirement. The spec and its
 Rulings are not re-argued.

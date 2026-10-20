@@ -55,7 +55,7 @@ Fresh reader; no part in the reviews or the fold.
   tokens. The fallback measures a run by the `/cost` delta (:139-140), which works only if `/cost`
   includes them. This repo already recorded which is true: "`/usage` (the command `/cost` now
   reports as) includes subagent and workflow-agent tokens"
-  (`docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md:504-505`, citing
+  (`docs/plans/2026-09-26-draft-docs-pass-0-1.md:504-505`, citing
   code.claude.com/docs/en/costs.md). So the rule as written double-counts every dispatch, and the
   25M ceiling and 20M flag are measured against an inflated number.
 
@@ -78,7 +78,7 @@ will reach the disagreement, and :12-13 tells it to stop. The second owed item, 
 `2026-09-30-docs-code-sync-fold.md:129`, also has no landing. Header :16 says the fold "carries
 one owed spec erratum"; it carries two owed items.
 
-**Fix.** Add `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md` to task 4's Files and
+**Fix.** Add `docs/specs/2026-09-30-docs-code-sync-design.md` to task 4's Files and
 one outcome: strike the zero-as-prompt-failure clause at :282-283 with a status-line note citing
 PR-12. Route FV-11's amendment to task 4 as a one-line note on the sync fold record, or to task
 10's post-mortem. Task 4's acceptance names the 2a plan fold's "Owed errata" explicitly, since

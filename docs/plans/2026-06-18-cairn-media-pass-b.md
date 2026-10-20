@@ -21,7 +21,7 @@ content-addressed `media:` codec, `buildUsageIndex` (`media/usage.ts`), the cont
 (`content/media-refs.ts`), `commitFiles` (`github/repo.ts`), DaisyUI v5, Vitest (unit + workerd
 integration + real-browser component), Playwright (showcase E2E).
 
-**Spec:** `docs/superpowers/specs/2026-06-18-cairn-media-pass-b-design.md`.
+**Spec:** `docs/specs/2026-06-18-cairn-media-pass-b-design.md`.
 **Design target (approved rev.2 mockup):** `docs/internal/design/2026-06-18-media-pass-b-rev2-mockup.html`.
 
 **Version:** a minor, `0.58.0` (a new admin subsystem surface: replace and alt-propagation actions plus

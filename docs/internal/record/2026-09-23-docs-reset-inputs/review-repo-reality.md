@@ -1,6 +1,6 @@
 # Review: the docs reset spec against repo reality
 
-Artifact: `docs/superpowers/specs/2026-09-23-docs-reset-design.md` (cited as `spec:N`). Lens:
+Artifact: `docs/specs/2026-09-23-docs-reset-design.md` (cited as `spec:N`). Lens:
 feasibility, internal consistency, rule conflicts, plannability. Reviewer: Opus 5.5, read-only.
 
 ## Critical
@@ -67,7 +67,7 @@ trial after the ledger.
 
 **M1. The budgets contradict the repo's own record.**
 - Pass A had a 3.5M ceiling and spent about 6.1M on 12 tasks and two pages, with the chain alone
-  at 2.64M (`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md:476,489,509`).
+  at 2.64M (`docs/plans/2026-09-21-draft-docs-pass-a.md:476,489,509`).
 - Other passes: `docs/HISTORY.md:225` (6.1M against 3.5M), `:302` (4.7M against 2.4M), and `:439`
   (a 14M ceiling raised six times to 28.5M).
 - Pass 1 at 3M (`spec:209`) holds seven components, four of them new agents, a chain rewrite, an

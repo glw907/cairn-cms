@@ -1,7 +1,7 @@
 # Go tool architecture chores: the close's architecture reads
 
 Ten `go-architecture-reader` reads, run at the close of the Go tool architecture chores pass
-(`docs/superpowers/plans/2026-09-27-go-tool-architecture-chores.md`), one per package whose
+(`docs/plans/2026-09-27-go-tool-architecture-chores.md`), one per package whose
 non-test source the pass touched. Each reader ran read-only, with no plan in context, grading the
 whole package on five axes (exported surface against grepped callers, duplication, file split,
 test-only seams, comment density against a named stdlib package). A finding therefore mostly

@@ -9,7 +9,7 @@ the auth cryptography a site's second audience otherwise copies by hand, and a
 `createSectionAction` factory on `./sveltekit` producing the guarded form-action wrapper every
 site-built admin section otherwise hand-rolls.
 
-**Authority:** the design spec `docs/superpowers/specs/2026-08-01-asc-engine-seams-design.md`
+**Authority:** the design spec `docs/specs/2026-08-01-asc-engine-seams-design.md`
 (decisions settled with Geoff 2026-08-01), tracing to the consumer brief
 `docs/internal/2026-08-01-asc-consumer-brief.md`. Seams 3, 4, and 5 are designed in the same
 spec but implemented in pass two; do not build them here.

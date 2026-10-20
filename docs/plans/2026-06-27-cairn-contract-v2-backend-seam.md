@@ -17,7 +17,7 @@ behind the existing dev fence, and the global-`fetch` monkeypatch is retired.
 **Tech Stack:** TypeScript, SvelteKit 2, Svelte 5 runes, Cloudflare Workers, Vitest, the GitHub REST and
 Git Data APIs.
 
-**Spec:** `docs/superpowers/specs/2026-06-27-cairn-contract-v2-backend-seam-design.md` (read it; this
+**Spec:** `docs/specs/2026-06-27-cairn-contract-v2-backend-seam-design.md` (read it; this
 plan implements it and the spec is the source of truth for every interface shape and the rationale).
 
 ## Global Constraints

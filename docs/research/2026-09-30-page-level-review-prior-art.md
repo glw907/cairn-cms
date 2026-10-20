@@ -39,8 +39,8 @@ Repo files read: `docs/internal/docs-register.md` (anatomies at lines 591-632, t
 693-714, the deviations tables at 879-918), `docs/internal/outlines/extend.json`,
 `~/.claude/agents/cairn-docs-drafter.md`, `docs/internal/engine-rulings.md` (entry format, lines 1-20),
 `docs/internal/briefs/extend/security-model.json`, `scripts/checks/check-provenance.mjs`,
-`docs/internal/facts/README.md`, `docs/superpowers/specs/2026-09-08-docs-standard-design.md`,
-`docs/superpowers/specs/2026-09-21-draft-docs-design.md`.
+`docs/internal/facts/README.md`, `docs/specs/2026-09-08-docs-standard-design.md`,
+`docs/specs/2026-09-21-draft-docs-design.md`.
 
 ## The page types the extend arm uses
 
@@ -283,7 +283,7 @@ Related-resources section, which the template makes optional and the owner's rul
 
 ### The 09-08 spec's "page describing itself" tell
 
-`docs/superpowers/specs/2026-09-08-docs-standard-design.md:656-660` adds three tells to the writing-voice output
+`docs/specs/2026-09-08-docs-standard-design.md:656-660` adds three tells to the writing-voice output
 style: "the two-headed heading, the abstract noun standing in for the concrete thing, and the page describing
 itself." The pilot pages' meta-sentence openers ("This page assesses, one exposed component at a time, what cairn
 defends ...", `docs/internal/briefs/extend/security-model.json` first sentence) are that tell. It conflicts on its
@@ -494,7 +494,7 @@ owner's adopt-only ruling supports editing `job` text and `outOfScope` entries a
 
 ### What the repo already cites
 
-`docs/superpowers/specs/2026-09-08-docs-standard-design.md:640-646`, "### Reader test":
+`docs/specs/2026-09-08-docs-standard-design.md:640-646`, "### Reader test":
 
 > For a task guide, someone who is not the author must do the task from the page. For a concept page or the front
 > door, the reader reads it once and paraphrases it back. Every mismatch between the paraphrase and the page is a
@@ -503,7 +503,7 @@ owner's adopt-only ruling supports editing `job` text and `outOfScope` entries a
 > pages get one is owner decision 4.
 
 "The guidelines" are the Federal Plain Language Guidelines, March 2011, Rev. 1, May 2011 (the spec's "Prose rules"
-section, `:173`, vendors that PDF; Part V is "V. Test", PDF page 99). `docs/superpowers/specs/2026-09-21-draft-docs-design.md:239`,
+section, `:173`, vendors that PDF; Part V is "V. Test", PDF page 99). `docs/specs/2026-09-21-draft-docs-design.md:239`,
 the cold-reader row of the testing table: "Admin | Cold reader: an agent with the page and a terminal only, held to
 the profile's ceiling, logging every point where it had to infer | each task guide in pass B | an unstated step, an
 unclassified error". The extend arm has no such row (its tests are the site round and the page chain).

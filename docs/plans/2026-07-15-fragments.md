@@ -4,7 +4,7 @@
 > one `cairn-implementer` dispatch per task, test-first, full gate per task; the conductor
 > reviews each diff and verifies the gate before the next dispatch. Checkboxes track
 > completion. The contract is the ratified spec,
-> `docs/superpowers/specs/2026-07-15-fragments-design.md`; read it in full before Task 1.
+> `docs/specs/2026-07-15-fragments-design.md`; read it in full before Task 1.
 
 **Goal:** Ship Fragments end to end: a site-declared `fragments` concept (non-routable
 reusable markdown), an engine built-in `::include{fragment="<id>"}` leaf directive resolved

@@ -1,6 +1,6 @@
 # Benchmark review: the docs standard against programs with a public track record
 
-Adversarial review of `docs/superpowers/specs/2026-09-08-docs-standard-design.md`, one lens only:
+Adversarial review of `docs/specs/2026-09-08-docs-standard-design.md`, one lens only:
 how the proposed infrastructure compares to documentation programs that publish their tooling and
 have shipped under it for years. Read-only. Every claim below is checked against a live page and
 cited; nothing is asserted from memory. Fetched 2026-09-08.
@@ -12,7 +12,7 @@ Baseline for proportion: 79 published Markdown pages under `docs/` outside `inte
 
 For the comparison to be fair, here is the current state. `.vale.ini` vendors the community Google
 and Microsoft packages, globs `docs/**/*.md` onto Google, overrides `docs/editors/**` onto
-Microsoft, and exempts `docs/internal/**`, `docs/superpowers/**`, `STATUS.md`, and `HISTORY.md`.
+Microsoft, and exempts `docs/internal/**`, `docs/**`, `STATUS.md`, and `HISTORY.md`.
 Five Cairn rules exist, all small: `Announcement.yml`, `ContrastFrame.yml`, `Marketing.yml`,
 `TwoHeadedHeading.yml`, `VirtueClaims.yml`, 53 lines in total. CI installs a pinned Vale 3.15.1 and
 runs `check:vale` at `--minAlertLevel=error`, plus `check:docs` (internal link and anchor

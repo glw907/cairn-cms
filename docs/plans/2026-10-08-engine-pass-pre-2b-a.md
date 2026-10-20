@@ -20,8 +20,8 @@ showcase e2e, Go (`tool/`).
 
 **Spec:** `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md` at `27df5088` (reviewed,
 folded, and verified). Its "Pass A" list is this plan's task list, numbered the same. Owner rulings:
-`docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md`. Fold record and owed errata:
-`docs/superpowers/research/2026-10-07-engine-pass-pre-2b-spec-fold.md`. The spec's line numbers are
+`docs/specs/2026-10-07-engine-pass-pre-2b-rulings.md`. Fold record and owed errata:
+`docs/research/2026-10-07-engine-pass-pre-2b-spec-fold.md`. The spec's line numbers are
 `draft-docs-2a`'s; the pre-flight re-checks each at this pass's `main`. Where this plan and the spec
 disagree, stop and report, except the items under "Decisions this plan takes".
 
@@ -1205,8 +1205,8 @@ uses, from their published pages.
 `auth-channel.md`, `cli-cairn-doctor.md`, `admin-toolkit.md` (the shell-only sentence), the reference
 prose for each task's minimal edits; `packages/cairn-cms-dev/README.md`; `docs/internal/facts/*.md`;
 `CHANGELOG.md` (`## Unreleased`); `docs/extend/migration-notes.md`; `docs/extend/upgrade-cairn.md`;
-`docs/internal/engine-rulings.md`; `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-
-spec.md` (C7's "Request a link" and "Guard" lines); `docs/superpowers/specs/2026-06-15-cairn-media-2a-
+`docs/internal/engine-rulings.md`; `docs/specs/2026-05-28-cairn-rebuild-functional-
+spec.md` (C7's "Request a link" and "Guard" lines); `docs/specs/2026-06-15-cairn-media-2a-
 ingest-delivery-design.md` (decision 1, `:162-168`); `ROADMAP.md`; `docs/internal/api-surface.md`
 (regenerated).
 
@@ -1455,7 +1455,7 @@ is a dispatch that returns a structured verdict.
   (`wf_1cd41eb4-cd7`, stopped by the conductor at Geoff's direction to relaunch on the new infra).
 - **Reports:** every implementer and reviewer result for Tasks 1 and 2 (summaries, mutation ledgers,
   unspecified decisions, `cairnFriction`, `outOfScope`, non-blocking notes; gate output omitted) is in
-  `docs/superpowers/research/2026-10-08-pass-a-s1-reports.json`. **Owed at the next checkpoint:**
+  `docs/research/2026-10-08-pass-a-s1-reports.json`. **Owed at the next checkpoint:**
   verify and file each `cairnFriction` and `outOfScope` item in the friction log on `main`, and carry
   Task 1's `Consumers must:` draft, affected 2a pages, and fact ids into Task 12's notes.
 - **Infra changed mid-pass (Geoff, 2026-10-08), all reviewed and accepted:** per-task gate sized to
@@ -1563,14 +1563,14 @@ is a dispatch that returns a structured verdict.
   Fixed on `main` (`8f2fe6da`, `check-latest: true`); `main` would have failed the same way. Every other
   CI job was green on `a4618437`.
 - **S3 friction filed on `main`:** `ae373ef1`. Task 12's S3 carry:
-  `docs/superpowers/research/2026-10-09-pass-a-s3-task12-carry.md`.
+  `docs/research/2026-10-09-pass-a-s3-task12-carry.md`.
 - **S4 pre-flight** (Haiku at `a4618437`): no outcome-changing claim. Task 11's ":84 passes `cairn` as
   the third argument" is the change itself (today two arguments); `verifyManifest` spans `:308-378`;
   `checkContainerNesting` is `src/lib/content/fieldset.ts:388`. Task 6: the `createGithubApp` literal is
   `cairn.config.ts:150`; `workers-env.ts` is `src/lib/sveltekit/workers-env.ts:43`. Task 12: the media
   design's decision 1 is item 1 of "Locked decisions" at `:162-168` (true). **Amended:** Task 12's
   removed-option grep scopes to the published tree (`docs/` minus `docs/internal/` and
-  `docs/superpowers/`, `README.md`, `packages/cairn-cms-dev/README.md`, `skills/`, `claude/`); 14
+  `docs/`, `README.md`, `packages/cairn-cms-dev/README.md`, `skills/`, `claude/`); 14
   internal planning files still name the options and are never edited. **Amended:** Decision 12 is
   superseded by Geoff's ruling (option B): Task 12 writes `what-cairn-is-and-is-not.md:107` as "An
   anonymous visitor reaches nothing behind `/admin` except the two pages of the sign-in flow: the form
@@ -1592,7 +1592,7 @@ is a dispatch that returns a structured verdict.
   15: a present key that fails signing also skips the live mint (an unusable key is the signing check's
   finding); a test pins it.
 - **S4 friction filed on `main`:** `0c2f3272`. Task 12's S4 carry:
-  `docs/superpowers/research/2026-10-09-pass-a-s4-task12-carry.md`.
+  `docs/research/2026-10-09-pass-a-s4-task12-carry.md`.
 - **Next:** Task 12 alone, then the S4 boundary (D) and the close.
 
 ## Post-mortem (2026-10-09)
@@ -1675,7 +1675,7 @@ dictionary commit ahead of publish, which held.
   fail-closed point (Decision 16), not a regression.
 - **The gate economy is the larger finding.** Most of the clock went to repeating broad gates, and
   `cairn-run-gate` records no per-run duration. Inputs:
-  `docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`.
+  `docs/research/2026-10-09-gate-economy-pass-inputs.md`.
 
 **Final gates.**
 

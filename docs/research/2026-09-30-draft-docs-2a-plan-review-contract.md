@@ -89,7 +89,7 @@ counts exist only in the Workflow tool result the conductor saw. A compaction or
 split loses them, and the close cannot reconcile or count.
 
 **Fold:** fold this into PC-2's commit. The run's per-page records are committed as a stage
-record under `docs/superpowers/research/`, one section per page: status, round-1 and round-2
+record under `docs/research/`, one section per page: status, round-1 and round-2
 verdicts, cross-regression flag, rows received and disposed, `frictionFiled`, and PC-1's
 per-page cost. Stage 1 already committed a stage record this way. Tasks 7 and 10 read that file.
 This persists output the chain already produces and adds no new mechanism.

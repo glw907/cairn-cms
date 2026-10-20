@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, the GitHub Git Data API over `fetch`, vitest (the `unit` project, node).
 
-**Design reference:** `docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md` (approved). This is Plan 1 of the five-plan content-graph initiative.
+**Design reference:** `docs/specs/2026-06-02-cairn-content-graph-design.md` (approved). This is Plan 1 of the five-plan content-graph initiative.
 
 ---
 

@@ -3,7 +3,7 @@
 Verified against `main` working tree, 2026-08-26. I did not produce the findings. Every claim below
 was re-measured from the code; where a repo ruling could sanction the pattern I went looking for it
 (`docs/internal/code-idioms.md`, `docs/internal/engine-rulings.md`,
-`docs/internal/admin-design-system.md`, `docs/superpowers/plans/2026-07-01-code-polish-survey.md`).
+`docs/internal/admin-design-system.md`, `docs/plans/2026-07-01-code-polish-survey.md`).
 
 ---
 

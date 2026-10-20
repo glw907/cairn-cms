@@ -1,6 +1,6 @@
 # Draft docs, stage 1 record: reference claim check
 
-Task 10 of `docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md`. One `claude-opus-5-5`
+Task 10 of `docs/plans/2026-09-26-draft-docs-pass-0-1.md`. One `claude-opus-5-5`
 fact-read agent (or one per chunk, for the five largest pages) checked every prose claim on each
 of the 28 in-scope `docs/reference/*.md` pages against the facts container, `dist`, and
 `docs/internal/api-surface.md`. Five batches of up to six pages ran sequentially; after each batch
@@ -10,7 +10,7 @@ read the commit before the next batch dispatched. Source: the workflow journal a
 
 ## Scope and the pass B split
 
-Geoff split the task on 2026-09-27 (`docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md`
+Geoff split the task on 2026-09-27 (`docs/plans/2026-09-26-draft-docs-pass-0-1.md`
 line 446): `docs/reference/components.md` (the page the theme identity pass B renames to
 `admin.md`) and the `./public` page pass B creates are excluded from this stage. Both get a short
 follow-up fact-read batch after pass B lands, with the same acceptance this stage used. This

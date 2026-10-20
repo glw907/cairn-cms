@@ -2,11 +2,11 @@
 
 > The frozen design for the tag-vocabulary admin screen (`VocabularyAdmin.svelte`), the proving pilot
 > of the admin idiomatic re-expression initiative
-> (`docs/superpowers/plans/2026-06-29-admin-re-expression-1-vocab-pilot.md`, Task 1). The visual record
+> (`docs/plans/2026-06-29-admin-re-expression-1-vocab-pilot.md`, Task 1). The visual record
 > is `2026-06-29-vocabulary-admin-ledger.html` ("variant A, the ledger"), authored in the real
 > DaisyUI 5.6 / Tailwind 4 utility classes the component carries, validated by screenshot in both themes.
 > Task 2 ports this verbatim. The interaction rules live with the tag-management spec
-> (`docs/superpowers/specs/2026-06-29-cairn-tag-management-design.md`, Component 2).
+> (`docs/specs/2026-06-29-cairn-tag-management-design.md`, Component 2).
 
 ## What the screen is
 

@@ -7,7 +7,7 @@
 > criteria.
 
 **Goal:** Execute the approved docs IA
-(`docs/superpowers/specs/2026-07-01-docs-ia-design.md`) against the frozen contract: the
+(`docs/specs/2026-07-01-docs-ia-design.md`) against the frozen contract: the
 snippet gate first, then the rewrite in the IA's writing order, until the shipped tree matches
 the IA's page inventory exactly.
 
@@ -221,7 +221,7 @@ archive convention; internal docs whose public-worthy content the rewrite absorb
 with `what-cairn-is-and-is-not.md` → `why-cairn.md`) gain a one-line pointer header naming
 their successor; every internal doc that published pages used to link into is either public
 now or unreferenced; the friction log is pruned of items this pass resolves. Exempt by
-convention: `docs/superpowers/` plans and specs, post-mortems, and everything already under
+convention: `docs/` plans and specs, post-mortems, and everything already under
 `history/` — those are write-once records, not staleness. The sweep is graded work
 (implementer inventories and proposes, main loop rules on each disposition), not a bulk
 delete; ROADMAP updates — the docs-rewrite Next entry marked done and

@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (5.x `const` type parameters, mapped/conditional types), vitest (`unit` project, node; `expectTypeOf` for type-level assertions).
 
-**Design reference:** `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
+**Design reference:** `docs/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
 
 ---
 

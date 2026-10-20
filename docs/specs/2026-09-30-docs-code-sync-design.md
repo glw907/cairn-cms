@@ -1,14 +1,14 @@
 # Docs-code sync, built as the arms are drafted: design
 
 **Date:** 2026-09-30. **Status:** approved by Geoff, 2026-09-30 (rulings S1 to S9), folded after a four-lens review and again
-after its fold verification (`docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`); page names updated 2026-09-30 to match their titles (owner ruling); meaning unchanged. The Acceptance clause "and zero across all six is read there as a prompt failure" was struck 2026-09-30 per the 2a plan fold (PR-12): a zero count is no failure signal, and the checkpoint reports entries per pilot page while the close triages them. **Parent:**
-`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md` (the stages, the page chain, the
+after its fold verification (`docs/research/2026-09-30-docs-code-sync-fold.md`); page names updated 2026-09-30 to match their titles (owner ruling); meaning unchanged. The Acceptance clause "and zero across all six is read there as a prompt failure" was struck 2026-09-30 per the 2a plan fold (PR-12): a zero count is no failure signal, and the checkpoint reports entries per pilot page while the close triages them. **Parent:**
+`docs/specs/2026-09-26-draft-docs-approach-design.md` (the stages, the page chain, the
 pilot checkpoint). This spec amends the parent: it adds a code-first gap sweep to each rebuilt
 stage's planning phase and two docs-code sync mechanisms that ride steps already running. Where
 it and the parent disagree, this spec governs for stage 2a onward; the disagreements are listed
 under "Amends the parent."
-**Inputs:** the gap sweep record (`docs/superpowers/research/2026-09-30-extend-gap-sweep.md`) and
-the prior-art record (`docs/superpowers/research/2026-09-30-docs-code-sync-prior-art.md`).
+**Inputs:** the gap sweep record (`docs/research/2026-09-30-extend-gap-sweep.md`) and
+the prior-art record (`docs/research/2026-09-30-docs-code-sync-prior-art.md`).
 
 ## Brief
 

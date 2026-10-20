@@ -13,9 +13,9 @@ Sources, short names:
   `cairn-run-gate --records /var/home/glw907/Projects/cairn-cms/.claude/worktrees/engine-pre-2b-b engine-pre-2b-b`
   (prints `gate 3014s (5 runs), lock wait 785s, ci wait 692s (2 waits), malformed 0`).
 - **Runner:** `~/.claude/workflows/pass-execute.js`.
-- **Replay:** `docs/superpowers/research/2026-10-09-gate-economy-replay.md`.
-- **Plan B:** `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` (in the worktree).
-- **Plan GE:** `docs/superpowers/plans/2026-10-09-gate-economy.md`.
+- **Replay:** `docs/research/2026-10-09-gate-economy-replay.md`.
+- **Plan B:** `docs/plans/2026-10-08-engine-pass-pre-2b-b.md` (in the worktree).
+- **Plan GE:** `docs/plans/2026-10-09-gate-economy.md`.
 
 ## 1. What happened
 
@@ -219,7 +219,7 @@ hours (Replay part 4), with a 9-hour target that Replay part 4 and Plan GE (line
 |---|---|---|---|
 | Gate economy (PR #110) | 4 h 37 min from first implementer dispatch to the fold; 662 s lock wait; about 12 min strict CI wait; about 37 min itemized rework; Task 0 about 13 min | 4.8 h | `docs/HISTORY.md:73-76`; Plan GE lines 1146-1156 |
 | Engine pass A (PR #108) | about 28 h wall from first commit 10-08 07:49 to the last close fix round 10-09 about 11:30; about 17 h executing from Task 3's relaunch; about 5.5 h rework (S2 reds about 1 h, Task 11 about 1 h, close fix chains about 3.5 h); gate time and lock wait not summed (records did not exist) | none (first pass scored on clock) | `docs/HISTORY.md:159-163`; Plan A lines 1699-1713 |
-| SvelteKit 3 upgrade (PR #103) | S1 alone about 3.5 h of clock, "most of it three full gates with an 11-minute e2e each, one doubled by a re-issue" | none found | `docs/superpowers/plans/2026-10-03-sveltekit-3-upgrade.md:1364-1365` |
+| SvelteKit 3 upgrade (PR #103) | S1 alone about 3.5 h of clock, "most of it three full gates with an 11-minute e2e each, one doubled by a re-issue" | none found | `docs/plans/2026-10-03-sveltekit-3-upgrade.md:1364-1365` |
 | Stage 2a unattended finish | a weekly rate-limit outage cost "roughly 8 hours of wall clock and one duplicated dispatch" (clock total not stated in the HISTORY entry) | not found in HISTORY | `docs/HISTORY.md:3128-3129` |
 
 Two of the four entries carry a re-issue or duplicated dispatch as a named clock cost, and the gate economy

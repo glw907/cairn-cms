@@ -4,10 +4,10 @@ The design ratified in the 2026-07-22/27 brainstorm (opened in the ASC sitting, 
 cairn-cms). Supersedes the seed at
 `~/Projects/aksailingclub-org/docs/2026-07-22-cairn-design-infrastructure-brainstorm-seed.md`
 for everything except the ASC evidence corpus it points to, which remains this initiative's
-data. Implementation runs as three just-in-time pass plans under `docs/superpowers/plans/`.
+data. Implementation runs as three just-in-time pass plans under `docs/plans/`.
 Revised 2026-07-27 after a clean-context adversarial Fable review with prior-art research;
 the full report with sources is
-[`docs/internal/2026-07-27-design-infrastructure-adversarial-review.md`](../../internal/record/2026-07-27-design-infrastructure-adversarial-review.md),
+[`docs/internal/2026-07-27-design-infrastructure-adversarial-review.md`](../internal/record/2026-07-27-design-infrastructure-adversarial-review.md),
 and the revision marks are noted inline where they changed a decision.
 
 ## 1. The question and the bet

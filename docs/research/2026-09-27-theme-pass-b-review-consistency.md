@@ -255,7 +255,7 @@ importing a subpath that no published version has.
 
 - **Location:** spec `:14-16`, `:108-109`.
 - **Defect:** the harvest and chassis-inventory reports cited as evidence are not under
-  `docs/superpowers/research/`. The ecosystem survey and pass A's spike are. The stale-copy claim
+  `docs/research/`. The ecosystem survey and pass A's spike are. The stale-copy claim
   reproduces. The claim "eight hand-set eyebrow instances across three sites, most bypassing the
   existing token" does not reproduce from a plain grep:
   - All five sites use `tracking-eyebrow` or `var(--tracking-eyebrow)`, about 25 uses in all,

@@ -1,6 +1,6 @@
 # Harvest recheck: task 3 (audit editors)
 
-One line per item, per rule 4 of `docs/superpowers/research/2026-09-29-harvest-theme-lineage-brief.md`. Resolution column is filled by task 6b.
+One line per item, per rule 4 of `docs/research/2026-09-29-harvest-theme-lineage-brief.md`. Resolution column is filled by task 6b.
 
 - `f:z8qz85` (new bullet, `editors.md`): Source cites `src/lib/components/` (HelpHome.svelte); repoint to `src/lib/admin/` (`PreviewBanner.svelte` moves to `src/lib/public/`) and re-check the line ranges after the rename. Resolution: repointed: the merge rewrote the Source path to `src/lib/admin/`; the cited line ranges re-read against the merged file and hold. No edit.
 - `f:alpsah` (new bullet, `editors.md`): Source cites `src/lib/components/` (LoginPage.svelte); repoint to `src/lib/admin/` (`PreviewBanner.svelte` moves to `src/lib/public/`) and re-check the line ranges after the rename. Resolution: repointed: the merge rewrote the Source path to `src/lib/admin/`; the cited line ranges re-read against the merged file and hold. No edit.

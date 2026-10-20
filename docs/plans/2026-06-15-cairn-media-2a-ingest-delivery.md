@@ -1,8 +1,8 @@
 # Plan: media Phase 2a, ingest and delivery infrastructure
 
-Source spec: `docs/superpowers/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md` (the hardened
+Source spec: `docs/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md` (the hardened
 design, with the contracts each task must meet). Umbrella: the gallery spec
-`docs/superpowers/specs/2026-06-15-cairn-media-gallery-design.md`. Builds on the Phase 1 foundation
+`docs/specs/2026-06-15-cairn-media-gallery-design.md`. Builds on the Phase 1 foundation
 under `src/lib/media/`.
 
 This is the infrastructure under the Phase 2b insert UI: the `/media` delivery route, the upload admin

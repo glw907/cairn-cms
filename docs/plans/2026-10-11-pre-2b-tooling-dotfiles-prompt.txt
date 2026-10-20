@@ -1,7 +1,7 @@
 You are executing track D of the pre-2b docs tooling pass. It is a `runner`-class pass in the workstation repo, started from its main checkout `/var/home/glw907/.dotfiles`. Geoff approved its design on 2026-10-11.
 
 Goal: fix the dotfiles half of the docs tooling before stage 2b.
-Scope: `docs-page-chain.js`'s plan, structural, register-seat, and scoped-read prompts; the drafter's brief shape; and tellgrader's `showcase` entry. The plan lives in cairn-cms. Read it whole by absolute path: `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/overnight-2b-plan/docs/superpowers/plans/2026-10-11-pre-2b-tooling.md`. Your tasks are DT1 and DT-C. Its "Shared wording" section holds the two sentences you copy verbatim. A cairn-cms session runs track C in parallel.
+Scope: `docs-page-chain.js`'s plan, structural, register-seat, and scoped-read prompts; the drafter's brief shape; and tellgrader's `showcase` entry. The plan lives in cairn-cms. Read it whole by absolute path: `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/overnight-2b-plan/docs/plans/2026-10-11-pre-2b-tooling.md`. Your tasks are DT1 and DT-C. Its "Shared wording" section holds the two sentences you copy verbatim. A cairn-cms session runs track C in parallel.
 
 Before any other act, enter your worktree:
 - If `/var/home/glw907/.dotfiles/.claude/worktrees/pre2b-tooling` appears in `git worktree list`, this is a relaunch: call EnterWorktree with that `path`.

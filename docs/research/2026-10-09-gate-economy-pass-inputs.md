@@ -111,7 +111,7 @@ Geoff: the pass ceiling, and whether the close drops the local full gate for CI 
 `~/.claude/skills/pass-core/SKILL.md` (the pass-class table and the per-task gate paragraph),
 `~/.claude/docs/pass-gate-economy.md`, `~/.claude/workflows/pass-execute.js` and
 `pass-execute-chains.js`, `scripts/checks/gate-tier.mjs`, `vitest.config.ts`, `.github/workflows/*.yml`,
-and pass B's plan (`docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md`, its gate section, already
+and pass B's plan (`docs/plans/2026-10-08-engine-pass-pre-2b-b.md`, its gate section, already
 amended once on `ee62f982`).
 
 ## The draft build's results (branch `gate-related`, commit `075bc174`, 2026-10-09)

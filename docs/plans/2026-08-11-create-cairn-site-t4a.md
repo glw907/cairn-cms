@@ -22,7 +22,7 @@ function is pure over an in-memory record and returns its outcome.**
 fake-bin pattern plus a new fake Cloudflare API fixture server whose fixtures are copied
 verbatim from spike-captured bodies, wrangler `^4` via the site's own devDependency.
 
-**Spec:** `docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`. The five
+**Spec:** `docs/specs/2026-08-11-create-cairn-site-t4a-design.md`. The five
 rulings govern; the umbrella's chapter 2 section is the parent.
 
 ## Global Constraints

@@ -11,12 +11,12 @@
 
 **Date:** 2026-09-21.
 
-**Spec:** `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, the "retire-1" section
+**Spec:** `docs/specs/2026-09-21-doctor-retirement-design.md`, the "retire-1" section
 (`:113-217`), "Choreography" (`:342-380`), "Out of scope" (`:382-386`), and the retire-1 half of
 "Acceptance" (`:390-404`). This plan covers that scope only. The engine pre-task is
-`docs/superpowers/plans/2026-09-21-doctor-pretask.md`; the engine removal is
-`docs/superpowers/plans/2026-09-21-doctor-retire-2-engine.md` and
-`docs/superpowers/plans/2026-09-21-doctor-retire-2b-records.md`.
+`docs/plans/2026-09-21-doctor-pretask.md`; the engine removal is
+`docs/plans/2026-09-21-doctor-retire-2-engine.md` and
+`docs/plans/2026-09-21-doctor-retire-2b-records.md`.
 
 **This pass cuts no release and pushes no tag.** No `tool/v1.1.0`, no `gh release create`, no npm
 version. It merges to `main` by PR, untagged. The `tool/v1.1.0` tag is a separate session after
@@ -171,7 +171,7 @@ Verified, and not contradictions:
     deviation. The classifier's header (`:34-37`) also states that it chooses a tier and never a
     lane, so this plan's `gateLane: "light"` is the caller's decision and stands.
 21. **Draft docs pass A's precondition 4 pins this pass's docs inventory exactly.**
-    `docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md:44-48` expects
+    `docs/plans/2026-09-21-draft-docs-pass-a.md:44-48` expects
     `tool/docs/reference/` on `main` to hold **seven `*.schema.json` files and four markdown
     pages**: `exit-codes.md`, `json-output.md`, `log-events.md`, and `cli-cairn-doctor.md`. "A
     different inventory stops the pass for a plan amendment." This pass therefore adds **exactly
@@ -189,7 +189,7 @@ Verified, and not contradictions:
 
 ## Spec amendments this plan proposes
 
-Three edits to `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` ship with this
+Three edits to `docs/specs/2026-09-21-doctor-retirement-design.md` ship with this
 plan. Two are already applied, since the Choreography is Geoff's own ruling and the spec's prose
 contradicted it. The third, ruling 5's exit code, Geoff approved with this plan on 2026-09-21.
 
@@ -263,7 +263,7 @@ the require blocks only). `tool/Makefile` gained `install-check` and a `VERSION`
 | Field | Value |
 | --- | --- |
 | **Goal** | Land `cairn doctor [<dir>]` in the Go `cairn` CLI on `main`, untagged: a record-less, credential-less directory preflight carrying the eleven checks the spec scopes, its own JSON payload kind and published schema, the conditions text embed, and the corpus lifted from the TypeScript doctor's unit tests before retire-2 deletes them. |
-| **Spec** | `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` ("retire-1", `:113-217`; "Choreography"; "Out of scope"; the retire-1 bullets of "Acceptance"). |
+| **Spec** | `docs/specs/2026-09-21-doctor-retirement-design.md` ("retire-1", `:113-217`; "Choreography"; "Out of scope"; the retire-1 bullets of "Acceptance"). |
 | **Place in the order** | Step 3 of the spec's five-step Choreography: B2's `tool/v1.0.0` merges and releases, the engine pre-task merges, **this pass** merges untagged, draft docs pass A merges, one `tool/v1.1.0` is tagged and released from a commit carrying both, retire-2a then retire-2b land last. |
 | **Pass precondition** | See "The pass precondition" below. All three must hold before Task 1 is dispatched. |
 | **Branch** | `doctor-go`, off `origin/main` **after both `tool/v1.0.0` and the pre-task have merged**. |
@@ -293,7 +293,7 @@ dispatched. None is re-run by an implementer.
 2. `git ls-tree origin/main tool/internal/spine/conditions.json` prints a tree entry. That is the
    pre-task's conditions mirror, and every task in Segment 1 reads it.
 3. **`doctor-retire-1-plan` is merged to `main`**, asserted with
-   `git ls-tree origin/main docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md
+   `git ls-tree origin/main docs/plans/2026-09-21-doctor-retire-1-go.md
    docs/internal/record/2026-09-21-doctor-retire-1-pass-a-inventory.md` printing **two** tree
    entries. Neither file is on `main` as this plan is written; both live on the
    `doctor-retire-1-plan` branch, and the PR that lands them merges after Geoff's approval and
@@ -550,7 +550,7 @@ skills. Task 1, filled, is the worked example:
     "tool/testdata/copy.golden.md"
   ],
   "criteria": "A read through a symlink leaving the directory is refused, proven on a real temporary tree, with the textual `..` arm proven separately; a read of an absent file under the directory returns absent, not an error; the status conversion is table-driven over all five statuses and asserts pass 0, fail-blocker 2, fail-warning 1, skip 0, info 0, unchecked 3, plus a case asserting a run of only pass, skip, and info folds to spine.VerdictOK; a run with zero checks folds to spine.VerdictUnknown; the not-a-cairn-site predicate is proven on four fixtures; a test asserts spine.StateWord is named nowhere in the package; `make -C <abs worktree>/tool copy-list` produces a golden carrying a doctor section, committed in its own commit, with check-copy and TestRenderMatchesCommittedGolden green; the light gate is green.",
-  "notes": "Read the plan's Task 1 section whole: docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md. go-conventions is mandatory for every file. The contract is pure functions over one snapshot and is not health.Check. Containment uses filepath.EvalSymlinks and filepath.Rel, never strings.HasPrefix. Report your commit SHAs and subjects."
+  "notes": "Read the plan's Task 1 section whole: docs/plans/2026-09-21-doctor-retire-1-go.md. go-conventions is mandatory for every file. The contract is pure functions over one snapshot and is not health.Check. Containment uses filepath.EvalSymlinks and filepath.Rel, never strings.HasPrefix. Report your commit SHAs and subjects."
 }
 ```
 
@@ -1619,7 +1619,7 @@ single dispatch cannot clear.
 
 ## Spec coverage
 
-Every retire-1 requirement in `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`,
+Every retire-1 requirement in `docs/specs/2026-09-21-doctor-retirement-design.md`,
 mapped to the task that carries it.
 
 | retire-1 spec requirement | Task |

@@ -14,8 +14,8 @@ remaining log-event evenness fixes, the two audit registry-rule repairs, the fiv
 surface, batched into the standing `Consumers must:` window.
 
 **Architecture:** This is audit-remediation slice 4b (initiative design
-`docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`; routing list in
-`docs/superpowers/plans/2026-08-30-conventions-pass.md`, "What this pass unblocks and hands
+`docs/specs/2026-08-27-audit-remediation-initiative-design.md`; routing list in
+`docs/plans/2026-08-30-conventions-pass.md`, "What this pass unblocks and hands
 to 4b"). Every item executes a pre-existing, verify-confirmed audit verdict or a ruling from
 Geoff's 2026-08-31 sitting; where rank and verify disagree, **the verify record wins** (the
 stated conductor default, unobjected). The compiled evidence is the banked docket and usage

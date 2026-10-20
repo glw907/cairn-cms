@@ -4,13 +4,13 @@
 extend arm's 25 outline pages through that chain, starting with a six-page pilot that measures
 the chain at its costliest, and merge them to `main` with every re-armed gate green.
 
-**Spec:** `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md` (approved, rulings S1 to
+**Spec:** `docs/specs/2026-09-30-docs-code-sync-design.md` (approved, rulings S1 to
 S9; it governs from stage 2a on where it and the parent disagree), its parent
-`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md` (stages, the page chain, the
+`docs/specs/2026-09-26-draft-docs-approach-design.md` (stages, the page chain, the
 pilot checkpoint, "Edits after the chain"), and
-`docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` ("Outline format", the arm
+`docs/specs/2026-09-29-draft-docs-harvest-design.md` ("Outline format", the arm
 states, `relink.json`). Executors read the named sections. Where this plan and a spec disagree,
-stop and report. Review records: `docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`
+stop and report. Review records: `docs/research/2026-09-30-docs-code-sync-fold.md`
 (owed items FV-10, FV-11, and the owed errata), the plan review
 (`2026-09-30-draft-docs-2a-plan-review-{contract,mechanics,risk}.md`), and its fold
 (`2026-09-30-draft-docs-2a-plan-fold.md`, whose two owed items task 4 lands).
@@ -30,7 +30,7 @@ coverage, teach the chain map rows and design friction, and land the release swe
 errata, so the pilot measures the mechanisms with the pages. Then re-arm extend, run the pilot, take
 the checkpoint to Geoff, run the other five 2a pages on the chain he picks, and close with a
 consistency read and the relink. The planning-phase gap sweep is done (record
-`docs/superpowers/research/2026-09-30-extend-gap-sweep.md`). Plans specify outcomes, never code.
+`docs/research/2026-09-30-extend-gap-sweep.md`). Plans specify outcomes, never code.
 
 **Pass class:** mixed. Tasks 1, 2, and 3 are `engine-logic`. Task 4 is `docs`. Task 5 is `docs`,
 with `engine-logic`'s gate for its test edits. Tasks 6, 8, and 9 are `docs` (the register chain
@@ -105,7 +105,7 @@ behavior, it states the limitation as a filed `[verified]` fact."
   7.
 - **After each run** (tasks 6 and 8): the conductor hands the run's records to one
   `cairn-implementer`, which runs the whole-tree `check:docs-gate`, writes them to a stage
-  record under `docs/superpowers/research/` (per page: status, round verdicts, cross-regression
+  record under `docs/research/` (per page: status, round verdicts, cross-regression
   flag, rows received and disposed, `frictionFiled`, and any scoped-review verdicts), and commits
   the files the records name (pages, briefs, fact containers, the map, the friction log, the
   index) with the stage record. One `diff-reviewer` read checks the file set only (the register
@@ -313,10 +313,10 @@ the diff-reviewer checks the errata against the 2a plan fold's "Owed errata"
 (`2026-09-30-draft-docs-2a-plan-fold.md`).
 
 **Files:** `~/.dotfiles/claude/.claude/skills/cairn-release/SKILL.md` (committed in
-`~/.dotfiles`); `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`;
-`docs/superpowers/research/2026-09-30-docs-code-sync-prior-art.md`;
-`docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`;
-`docs/superpowers/research/2026-09-30-docs-code-sync-fold.md`.
+`~/.dotfiles`); `docs/specs/2026-09-26-draft-docs-approach-design.md`;
+`docs/research/2026-09-30-docs-code-sync-prior-art.md`;
+`docs/specs/2026-09-30-docs-code-sync-design.md`;
+`docs/research/2026-09-30-docs-code-sync-fold.md`.
 
 **Outcomes:**
 - **`cairn-release` carries the release sweep** (spec, "Mechanism 2", every item in its
@@ -368,7 +368,7 @@ check:docs-gate` (light lane).
 - **Fixes.** One implementer lands every accepted gap in its strongest form; each rule lands once,
   where it executes, and a side doc is never the only home.
 
-**Acceptance:** the audit record committed under `docs/superpowers/research/`, each gap fixed or
+**Acceptance:** the audit record committed under `docs/research/`, each gap fixed or
 refused with a reason; the gates green; one `diff-reviewer` read over both repos' diffs. Task 10
 re-runs the checklist after the friction route's close shape lands.
 
@@ -467,7 +467,7 @@ dispatch before the answer.
 ### Task 7a: the chain owns the page (Geoff, 2026-09-30)
 
 **Pass class:** `engine-logic` for any runner change, `docs` for the register and drafter. **Why:**
-`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md` (every pilot page has page-level weaknesses no
+`docs/research/2026-09-30-draft-docs-2a-pilot-job-read.md` (every pilot page has page-level weaknesses no
 seat grades; the four causes there).
 
 **Adopt, never invent (Geoff, 2026-09-30).** Every piece of this task is either a published system taken as written or
@@ -475,7 +475,7 @@ a mechanism this repo already has. Nothing is designed here: no new tag, field, 
 A gap that neither covers is dropped and recorded, never filled with a bespoke mechanism.
 
 **First step, prior art:** one research agent records in
-`docs/superpowers/research/2026-09-30-page-level-review-prior-art.md`, with citations: a published checklist for the
+`docs/research/2026-09-30-page-level-review-prior-art.md`, with citations: a published checklist for the
 structural (developmental or substantive) edit, the level above the line and copy edits the register editor already
 does; The Good Docs Project's concept, tutorial, and how-to templates (their required opening and closing sections);
 and Diátaxis's explanation and tutorial guidance as a cross-check. It names which source each outcome below takes, and
@@ -525,7 +525,7 @@ republished for Geoff's second read; task 8 waits for it.
 
 **Pass class:** `engine-logic` for the runner and `check:provenance`, `docs` for the register and the
 drafter. **Runs before** task 7b's resolution pass. **Why:**
-`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md` (the chain carries no
+`docs/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md` (the chain carries no
 artifact that holds a page's argument; inputs, brief, and reviewers are all atomic).
 
 **Adopt, never invent** (task 7a's rule). Every outcome names its source in the task 7a prior-art
@@ -616,7 +616,7 @@ scripts/checks/gate-tier.mjs --range <base>..HEAD` prints, `<base>` being task 8
   `docs/reference/auth-channel.md:38`; and the `vocabularySaveAction` path at
   `docs/reference/sveltekit.md:1207`. The code comments stay in the log for an engine pass.
 
-**Acceptance:** the record committed under `docs/superpowers/research/` with each finding applied or
+**Acceptance:** the record committed under `docs/research/` with each finding applied or
 refused with a reason; the scoped-review verdicts in the stage record, any `fix` applied before the
 commit; the gate green; every `relink.json` entry tagged `2a` shows its restoring commit, and the
 diff-reviewer confirms none is left open.
@@ -684,7 +684,7 @@ Run `cairn-pass`'s close:
 
 ## Post-mortem
 
-Closed 2026-10-07 by R7 of the unattended finish (`docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`),
+Closed 2026-10-07 by R7 of the unattended finish (`docs/plans/2026-10-07-2a-unattended-finish.md`),
 which governed tasks 8 to 10 where the two disagreed. `docs/HISTORY.md`, "Draft docs stage 2a, and
 its unattended finish", carries the full account; this section scores the plan.
 

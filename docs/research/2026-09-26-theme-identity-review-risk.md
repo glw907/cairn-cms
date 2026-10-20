@@ -177,7 +177,7 @@ measures on the built sheet.
 ### M6. The draft-docs pass 0+1 is about to fact-check the same reference pages this pass invalidates
 
 - **Location:** `docs/STATUS.md` ("Immediate next action"); plan
-  `docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md:4` ("lift the narrative-arm freeze"),
+  `docs/plans/2026-09-26-draft-docs-pass-0-1.md:4` ("lift the narrative-arm freeze"),
   `:438-461` (stage 1 checks every prose claim on each reference page against the facts); spec
   lines 239-247.
 - **Defect:** stage 1 verifies `docs/reference/*`, including `cairn-audit.md` (the 16px radius

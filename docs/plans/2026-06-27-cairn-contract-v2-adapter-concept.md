@@ -24,7 +24,7 @@
 
 ## Execution model (read before dispatching)
 
-The change splits into an additive task, one atomic unit, and a final gate, mirroring the proven field-migration cutover (`docs/superpowers/plans/2026-06-26-cairn-contract-v2-cutover.md`).
+The change splits into an additive task, one atomic unit, and a final gate, mirroring the proven field-migration cutover (`docs/plans/2026-06-26-cairn-contract-v2-cutover.md`).
 
 - **Task 1 is pure-additive groundwork.** It gates green on its own and is a normal gated `cairn-implementer` dispatch.
 - **Tasks 2-8 are ONE atomic compile unit.** The instant `CairnAdapter` retypes to six groups and `ConceptConfig.schema` renames to `fields`, every adapter consumer across `src/lib`, the showcase, and the adapter-shaped test fixtures breaks at once; `npm run check` (0 warnings) cannot pass at any mid-migration point. Execute 2-8 as a single coherent effort in the **main loop** (the cross-file lockstep coordination and the type-invisible Vite-string change make this unsuitable for an unmonitored single Sonnet dispatch). Write all new v2 tests, migrate every consumer and fixture in lockstep, and gate once at the end of Task 8. The task split below is for review legibility and ordering, not for independent green gates.

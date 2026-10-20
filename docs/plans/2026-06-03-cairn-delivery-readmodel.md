@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Svelte 5, Vitest (node `unit` project, no Svelte plugin), `@glw907/cairn-cms` package export map, `publint` + `attw` via `check:package`.
 
-**Spec:** `docs/superpowers/specs/2026-06-02-cairn-delivery-readmodel-design.md`
+**Spec:** `docs/specs/2026-06-02-cairn-delivery-readmodel-design.md`
 
 **Conventions:** Test-first, one behavior per test. The `unit` project runs in `node` with no Svelte plugin (only the `component` project has `svelte()`). The full gate before "done": the targeted test, then `npm run check` (svelte-check 0 errors / 0 warnings), then `npm test` (must exit 0). Commit specific files, imperative mood, co-author footer `Co-Authored-By: Claude <noreply@anthropic.com>`.
 

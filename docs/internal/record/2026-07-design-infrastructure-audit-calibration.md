@@ -25,7 +25,7 @@ agent's judgment, because the distinction matters for a later pass reading this 
 
 ## 1. The promotion bar
 
-The bar lives in the design spec, `docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`,
+The bar lives in the design spec, `docs/specs/2026-07-27-cairn-design-infrastructure-design.md`,
 section 6.1 ("Mechanics"), under **Tiers**. Quoted exactly:
 
 > **Tiers.** `error` exits nonzero; `advisory` reports and never gates. Compositional

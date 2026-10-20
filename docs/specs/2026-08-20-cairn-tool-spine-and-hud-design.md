@@ -97,7 +97,7 @@ Two ADRs land with the first commit, under `tool/docs/adr/`. `0001-component-arc
 records decision 3 with the registry analyzer and field bound as the tripwire.
 `0002-design-language-and-input` records decision 4 by reference to poplar's design-language
 artifact and ADR-0012. A cairn fork of `elm-conventions` is written after ADR-0001 lands, per
-the setup brief (`docs/superpowers/2026-08-18-tui-skills-setup-brief.md`), carrying poplar's
+the setup brief (`docs/2026-08-18-tui-skills-setup-brief.md`), carrying poplar's
 lipgloss v2 rule unchanged and re-deriving its scope section, which still names poplar
 packages that no longer exist.
 

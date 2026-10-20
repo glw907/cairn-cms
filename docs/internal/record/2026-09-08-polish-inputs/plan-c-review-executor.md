@@ -1,6 +1,6 @@
 # Polish-C plan review, executor and plannability lens
 
-Adversarial review of `docs/superpowers/plans/2026-09-08-polish-c-pass.md` (uncommitted) and its
+Adversarial review of `docs/plans/2026-09-08-polish-c-pass.md` (uncommitted) and its
 dispatch args at `~/.cache/cairn-polish-c/args.json` and `run1-args.json`, against the executor
 that will run them: `cairn-implementer` (Sonnet, zero conversation context) reviewed per task by
 `diff-reviewer` (Opus), driven by `~/.claude/workflows/pass-execute-chains.js` as one sequential
@@ -61,7 +61,7 @@ renamed symbol before names its new one", and drop `check-surface-leaks.json` fr
 **3. Tasks 4, 5, 6, 7, 8, 9, 10, 12 / Plan:433 (global constraint 7) and Plan:1710 (Task 12 Step
 1) -- the remaining-hit taxonomy has four classes and the tree has sixteen live files outside all
 four, one of which no task may edit.** Evidence: greping the thirty renamed identifiers plus
-`OfficeList` over `docs/`, excluding `docs/superpowers/`, `docs/internal/record/`,
+`OfficeList` over `docs/`, excluding `docs/`, `docs/internal/record/`,
 `docs/HISTORY.md`, `CHANGELOG.md` and `docs/internal/engine-rulings.md`, returns sixteen files:
 `docs/STATUS.md`, `docs/internal/pre-beta-harvest.md`, `docs/internal/engine-harvest-candidates.md`,
 `docs/internal/docs-friction-log.md`, `docs/internal/admin-design-system.md`,

@@ -1,6 +1,6 @@
 # Plan: media foundation (Phase 1 of the media gallery series)
 
-Source spec: `docs/superpowers/specs/2026-06-15-cairn-media-gallery-design.md`. Design reference (the
+Source spec: `docs/specs/2026-06-15-cairn-media-gallery-design.md`. Design reference (the
 research and the direction verdict): `docs/internal/design/2026-06-15-media-management-design-reference.md`.
 Design target (the rev.2 mockup): `docs/internal/design/2026-06-15-media-gallery-mockup.html`.
 

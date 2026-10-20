@@ -11,7 +11,7 @@ floor). **Checkpoint interval:** four
 tasks. **Worktree:** `csrf-hardening` off `main` AFTER the harvest-detection merge (that pass holds
 warm edits in `docs/extend/security-model.md`, `docs/reference/doctor.md`, and `CHANGELOG.md`,
 all files this pass also edits; do not branch before it lands).
-**Initiative frame:** `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`
+**Initiative frame:** `docs/specs/2026-08-27-audit-remediation-initiative-design.md`
 (the hardening slice; its standing-constraints block applies to every task here).
 **Evidence base:** the 2026-08-27 `web-auth-security-reviewer` verdict, inlined below where
 load-bearing; the friction-log CSRF entry (docs/internal/docs-friction-log.md, 2026-08-27).

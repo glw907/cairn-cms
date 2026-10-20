@@ -1,6 +1,6 @@
 # Chassis-B plan inputs (pre-extracted 2026-09-07 against main at d565ab77)
 
-Three read-only research dispatches banked for the chassis-B plan (`docs/superpowers/plans/2026-09-07-chassis-b-pass.md`), drafted while chassis-A executed. Every anchor is re-verified at dispatch against post-A `main`; the drift notes name where chassis-A moves a line. Write-once record.
+Three read-only research dispatches banked for the chassis-B plan (`docs/plans/2026-09-07-chassis-b-pass.md`), drafted while chassis-A executed. Every anchor is re-verified at dispatch against post-A `main`; the drift notes name where chassis-A moves a line. Write-once record.
 
 ---
 
@@ -391,7 +391,7 @@ already merged (commit `3e4ba6eb` "Merge pull request #49 from glw907/internals-
 
 ## Item 9, Waymark's deliberate adaptation and final rebake (initiative design item 6, second half)
 
-**Source:** `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`, item 6
+**Source:** `docs/specs/2026-08-27-audit-remediation-initiative-design.md`, item 6
 (lines ~109-115):
 
 > **6. The chassis pass.** `examples/showcase` improves against the changed engine (review half
@@ -960,7 +960,7 @@ gets three widths, default, 1440 (`e2e/admin-visual.spec.ts:125-131`), and 768
 
 **"Documented screenshot floor" quote**, from review 5.6 (`### 5.6 A screenshot floor the suite
 documents but does not compensate for`), also referenced by the chassis-passes-design spec at
-`docs/superpowers/specs/2026-09-04-chassis-passes-design.md:238` ("the documented screenshot floor
+`docs/specs/2026-09-04-chassis-passes-design.md:238` ("the documented screenshot floor
 is compensated or the doc says why not"):
 
 > `playwright.config.ts:4-14` states plainly that `maxDiffPixels: 120` means "a green screenshot
@@ -1019,7 +1019,7 @@ Every backtick-quoted path cited in the doc, checked against the current tree:
 - `examples/showcase/src/lib/components/` (line 317, referenced as "The chrome"), **stale**:
   real directory is `examples/showcase/src/theme/components/`.
 - All other cited paths resolve currently: `cairn-admin.css`, `cairn.config.ts`,
-  `docs/internal/admin-design-system.md`, `docs/superpowers/specs/2026-06-25-cairn-b2-design-bar.md`,
+  `docs/internal/admin-design-system.md`, `docs/specs/2026-06-25-cairn-b2-design-bar.md`,
   `scripts/checks/check-public-tokens.mjs`, `scripts/lab/reskin-fixture.mjs`, `site.css`,
   `SiteFooter.svelte`, `SiteHeader.svelte`, `src/lib/components/cairn-admin.css`,
   `src/lib/render/highlight.ts`, `src/lib/render/sanitize-schema.ts`, `theme.css`, `prose.css`.

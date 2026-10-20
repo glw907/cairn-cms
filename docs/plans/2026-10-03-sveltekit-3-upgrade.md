@@ -16,10 +16,10 @@ versions and replaces every `event.platform` read with one internal `cloudflare:
 `^5.57.1`, vite 8, vite-plugin-svelte 7, wrangler 4, vitest (unit, component, and workerd integration
 projects), Playwright, Go (`tool/`).
 
-**Spec:** `docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md` (approved; its Rulings
+**Spec:** `docs/specs/2026-10-03-sveltekit-3-upgrade-design.md` (approved; its Rulings
 section records Geoff's 2026-10-03 rulings). Fold record and owed errata:
-`docs/superpowers/research/2026-10-03-sveltekit-3-spec-fold.md`. Evidence:
-`docs/superpowers/research/2026-10-04-sveltekit-3-survey.md` and the probe rig at
+`docs/research/2026-10-03-sveltekit-3-spec-fold.md`. Evidence:
+`docs/research/2026-10-04-sveltekit-3-survey.md` and the probe rig at
 `~/.cache/kit3-review/app`. Where this plan and the spec disagree, stop and report, except the
 decisions under "Decisions this plan takes".
 
@@ -149,7 +149,7 @@ seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it
 ## Decisions this plan takes
 
 1. **The spike harness is kept as a record.** It is committed on the pass branch at
-   `docs/superpowers/research/2026-10-03-sveltekit-3-spike/harness.sh` beside the spike record
+   `docs/research/2026-10-03-sveltekit-3-spike/harness.sh` beside the spike record
    `record.md`, so Task 11b and the close re-run the same script from any session. It takes tarball
    paths and a scratch root as arguments and writes nothing inside the repo.
 2. **The spike's scratch branch widens the kit peer to `^3`** so the tarball installs into a Kit 3
@@ -178,7 +178,7 @@ seconds`, follows the rerun rule in `docs/internal/durable-gotchas.md` before it
    registry-shaped install break surfaces in S4 rather than at the close. That run is also the
    harness's reproduction check from a fresh session; S0 adds no second harness run.
 8. **`@sveltejs/package` 3's survey record** lands at
-   `docs/superpowers/research/2026-10-03-sveltekit-package-3-survey.md`, since the implementer cannot
+   `docs/research/2026-10-03-sveltekit-package-3-survey.md`, since the implementer cannot
    load the `dependency-upgrade` skill; the conductor pastes that skill's per-bump requirements into
    Task 4's notes.
 9. **The live smoke runs after merge readiness, before the merge**, on the showcase per Ruling 1.
@@ -289,8 +289,8 @@ a fact.
 `/tmp`, never inside the repo. The worktree and branch are deleted at the close after the harness's
 final run; only the harness and the record (Decision 1) reach the pass branch.
 
-**Files (pass branch):** `docs/superpowers/research/2026-10-03-sveltekit-3-spike/harness.sh`,
-`docs/superpowers/research/2026-10-03-sveltekit-3-spike/record.md`.
+**Files (pass branch):** `docs/research/2026-10-03-sveltekit-3-spike/harness.sh`,
+`docs/research/2026-10-03-sveltekit-3-spike/record.md`.
 
 **Outcome:**
 - On the scratch branch: a probe `cloudflare:workers` read in a module reached from
@@ -451,7 +451,7 @@ a take-now, file, or propose decision on each new capability) into the dispatch.
 
 **Files:** `package.json`, `package-lock.json`, the root `svelte.config.js` only if 3.0.0 requires a
 change, `scripts/build/*` only if the packaging output moved,
-`docs/superpowers/research/2026-10-03-sveltekit-package-3-survey.md` (new).
+`docs/research/2026-10-03-sveltekit-package-3-survey.md` (new).
 
 **Outcome:** the root devDependency is `@sveltejs/package` `^3` at the newest production 3.x; the
 packed output is equivalent; a break found is fixed in this task (Ruling 2); the survey record lists
@@ -582,7 +582,7 @@ which.
 
 **Acceptance:**
 - `git grep -nE "vite preview|CAIRN_DEV_BACKEND=1 [^|]*run preview"`, excluding
-  `docs/internal/record`, `docs/internal/history`, `docs/superpowers`, `docs/HISTORY.md`,
+  `docs/internal/record`, `docs/internal/history`, `docs/{plans,research,specs}`, `docs/HISTORY.md`,
   `CHANGELOG.md`, and fact bullets that quote a past measurement, prints nothing, or only survivors
   the report names with a reason.
 - Each flagged readiness probe fails on a redirect: the report quotes one probe's output against a
@@ -609,7 +609,7 @@ weighs the split here. STATUS written.
 **Dispatch:** `web-auth-security-reviewer` at `high`, read-only. **Spec:** "CSRF", last paragraph.
 The reviewer starts with zero context, so the dispatch names every input by path:
 - the spec's "Evidence" bullets on Kit's CSRF check and Referrer-Policy, and its "CSRF" section;
-- the spec risk review's R2, R5, and R6 (`docs/superpowers/research/2026-10-03-sveltekit-3-spec-review-risk.md`);
+- the spec risk review's R2, R5, and R6 (`docs/research/2026-10-03-sveltekit-3-spec-review-risk.md`);
 - Kit 3's `runtime/server/respond.js:98-133` and `runtime/server/csrf.js`, and the `'*'` switch at
   `exports/vite/index.js:495`, under `~/.cache/kit3-research/kit/package/src/`; Kit 2.70.3's
   `respond.js:73-100` from the repo's `node_modules/@sveltejs/kit`;
@@ -623,7 +623,7 @@ meta (header plus one meta from the shell, site-meta precedence, the token never
 and the doctor's `trustedOrigins` check (`'*'` fails, other entries pass with a detail). The read also
 rules the wildcard condition's severity: accept `warning` or amend Task 10, checking Decision 5's two
 premises (Rule 1 covers the login and confirm posts; the factory keeps `originMatches`) against the
-code. Recorded at `docs/superpowers/research/2026-10-03-sveltekit-3-csrf-security-read.md`, committed
+code. Recorded at `docs/research/2026-10-03-sveltekit-3-csrf-security-read.md`, committed
 by the conductor.
 
 **Acceptance:** the record names each delta, and the severity, with accept, amend (with the task it
@@ -1124,7 +1124,7 @@ the developer brief in `docs/internal/docs-register.md`; Vale's error tier is th
 and every other page the repoint grep names; `docs/internal/facts/*.md`;
 `docs/internal/api-surface.md` (regenerated if not already current); `CHANGELOG.md`;
 `docs/extend/migration-notes.md`; `docs/extend/upgrade-cairn.md`; `docs/internal/durable-gotchas.md`;
-`docs/internal/engine-rulings.md`; `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`
+`docs/internal/engine-rulings.md`; `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`
 (erratum at `:228`); `docs/internal/admin-smoke-test.md`; `CLAUDE.md`; `ROADMAP.md`.
 
 **Outcome:**
@@ -1322,7 +1322,7 @@ Run `pass-core`'s ritual with the cairn specifics, in order:
    0.19M, plus the conductor); read `/cost` at the next checkpoint for the authoritative figure.
 
 **Task 1, spike: GO** (`d95c4419`, record and harness under
-`docs/superpowers/research/2026-10-03-sveltekit-3-spike/`). Items 1 to 4 pass; consumer mode fails only at
+`docs/research/2026-10-03-sveltekit-3-spike/`). Items 1 to 4 pass; consumer mode fails only at
 `GET /admin/login` (500, `config.bindings-missing`) because the probe tarball still reads `event.platform`, the
 break Task 11b fixes. Flag delivery: `npx wrangler dev --port $PORT --ip 127.0.0.1 --inspector-port $((PORT+1)) --var CAIRN_DEV_BACKEND:1`
 after `VITE_CAIRN_E2E=1 npm run build` and `npx wrangler d1 migrations apply MEMBER_DB --local`. Building gate:
@@ -1354,7 +1354,7 @@ passed when rerun alone).
 - Task 3, `0a5a6883`: prerender counts equal before and after on both builds (96 files, 64 pages); the dead alias
   maps in `check-public-skill.mjs` and the root `vitest.config.ts` are removed; no fallback needed.
 - Task 4, `285b166e`: `@sveltejs/package` 3.0.0; the packed output is identical (876 files, same dist hashes); survey
-  at `docs/superpowers/research/2026-10-03-sveltekit-package-3-survey.md`, three capabilities, all "no action".
+  at `docs/research/2026-10-03-sveltekit-package-3-survey.md`, three capabilities, all "no action".
 
 **Out-of-scope findings:** the dev package's kit range (`^2.61.0`) is Task 11b's (`^3`, Global constraints); the
 `csrf-disable` fix text naming `svelte.config.js` retires in Task 10, and its fact `f:4dolfa` is in Task 13's set.
@@ -1407,7 +1407,7 @@ so it is fixed here, not filed.
 and `test:theme-fixture` needs the light lane's memory override (5G/6G).
 
 **S3 inputs folded:** the S3 pre-flight (`59c11065`) and Task 7's security read (`fd8c1730`, record
-`docs/superpowers/research/2026-10-03-sveltekit-3-csrf-security-read.md`): proceed with amendments, each admin view owns
+`docs/research/2026-10-03-sveltekit-3-csrf-security-read.md`): proceed with amendments, each admin view owns
 its referrer meta (Decision 11 amended), and the doctor fails `'null'` as well as `'*'`.
 
 **Split decision:** no split. Spend through S2 is about 2.4M of 12.4M (subagents: S1 0.49M, S2 runs 0.66M, pre-flights

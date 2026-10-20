@@ -158,6 +158,6 @@ no owner forks.
 
 - **Where:** Global constraints (`:241-242`), Close step 2 (`:550-551`).
 - **Defect:** the removed-symbol grep omits `scripts/` and `.github/`, and those directories hold
-  gates that read tool files. The Close diff-scope proof omits `docs/superpowers/` (the plan and
+  gates that read tool files. The Close diff-scope proof omits `docs/` (the plan and
   this record) and the friction log, so it would fail on the pass's own files.
 - **Disposition:** folded.

@@ -1,7 +1,7 @@
 # SvelteKit 3 plan review: contract and criteria lens
 
 Target: `docs/superpowers/plans/2026-10-03-sveltekit-3-upgrade.md` at HEAD `27b254ac`, against the
-approved spec `docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md` and the pass-class
+approved spec `docs/specs/2026-10-03-sveltekit-3-upgrade-design.md` and the pass-class
 table in `~/.claude/skills/pass-core/SKILL.md`. Scope: whether each acceptance criterion is testable,
 names its fixture state, and would fail if the work were wrong; whether Interfaces agree; whether every
 spec requirement maps to a task; class fit and ceremony. Spec rulings are not re-argued.

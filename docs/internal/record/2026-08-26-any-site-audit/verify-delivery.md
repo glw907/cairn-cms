@@ -99,7 +99,7 @@ reshape of a passing export.
 
 The discriminator the ranking missed. The repo's ratified export rule is *"every type named in a public
 signature is exported from a subpath the consumer already imports"* (R4 doctrine,
-`docs/superpowers/plans/2026-08-02-c2-breaking-window.md:206`, cited in `data.ts:8`). Checked every
+`docs/plans/2026-08-02-c2-breaking-window.md:206`, cited in `data.ts:8`). Checked every
 occurrence: `PublicRoutes` is named in **no** signature. `createPublicRoutes` returns an inferred object
 literal (`public-routes.ts:246`) and the alias is appended afterwards (line 253). The rule does not reach it.
 
@@ -251,7 +251,7 @@ My cold reading reached `keep` on evenness, then broke it. Two checks did it:
 
 - **The export rule does not reach it.** R4 doctrine is *"every type named in a public signature is
   exported from a subpath the consumer already imports"*
-  (`docs/superpowers/plans/2026-08-02-c2-breaking-window.md:206`). `createPublicRoutes` returns an
+  (`docs/plans/2026-08-02-c2-breaking-window.md:206`). `createPublicRoutes` returns an
   inferred object literal (`public-routes.ts:246`); the alias is appended at line 253 and is named
   in no signature. Ranks 7, 8 and 11 *are* reached by the rule; this one is not. The set is not
   uniform in the way the keep assumed.

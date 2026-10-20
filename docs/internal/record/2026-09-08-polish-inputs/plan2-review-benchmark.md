@@ -1,6 +1,6 @@
 # Benchmark review of plan two: the toolset at the implementation level
 
-Adversarial review of `docs/superpowers/plans/2026-09-08-docs-toolset-pass.md` (revision 1), one
+Adversarial review of `docs/plans/2026-09-08-docs-toolset-pass.md` (revision 1), one
 lens only: for each script, gate, template, schema, and corpus artifact the plan builds, how does
 its design compare to how the surveyed documentation programs implement the nearest equivalent, and
 is there an off-the-shelf tool or rule set the task should adopt instead of writing one. Read-only.

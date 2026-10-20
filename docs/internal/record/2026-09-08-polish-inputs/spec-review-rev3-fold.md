@@ -1,7 +1,7 @@
 # Polish spec revision 3, three-lens review fold
 
 The disposition of every finding in the three reviews of
-`docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 3, folded into revision 4 on
+`docs/specs/2026-09-08-polish-passes-design.md` revision 3, folded into revision 4 on
 2026-09-08. Fifty findings: twenty from the grounding lens, thirteen from the risk and sizing lens,
 seventeen from the charter and precedent lens.
 

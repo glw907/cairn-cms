@@ -1,6 +1,6 @@
 # Prose and fidelity review: theme identity pass A plan (at `5f7d3fd6`)
 
-Artifact: docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md. Audience: a Sonnet cairn-implementer that sees one task's text, the plan's global sections, and the spec; the diff reviewer sees only that task's criteria. Graded fidelity and plannability first, register last.
+Artifact: docs/plans/2026-09-26-theme-identity-pass-a.md. Audience: a Sonnet cairn-implementer that sees one task's text, the plan's global sections, and the spec; the diff reviewer sees only that task's criteria. Graded fidelity and plannability first, register last.
 
 Verified accurate: all task 0 item 4 inventory counts (85 matches / 17 files, 24, 4, 1, 5, 8, 1, 16), the allowlist 18 entries and cap 19, every cited line (segmented-control.ts:22-24, cairn-admin.css:501, motion-vocabulary.ts:204-208, pass-execute.js:32-33 and 286-288, norms.ts:484 and 555-561, playwright.config.ts:29-32, the IconPicker/EditorToolbar/ListToolbar/MediaPicker/Pagination/CairnAdminShell lines, HISTORY.md, ROADMAP.md:880, the design-system and reference-page lines), daisyUI's 29 theme keys and the :checked selector, every script name, the 15.8M token sum, the renumbered task 0 items 1 to 10. No 17-for-16 cap slip, no leftover 15.6M.
 
@@ -36,7 +36,7 @@ W8 (lines 642-643). Task 5's focus-visible and active values are undefined ("hol
 
 W9. Two idiom rules lack a loses-to-a-utility case the global constraint (line 240) requires. Add to task 7: "Loses to a utility: a Lucide icon carrying `stroke-[2.5]` (through `hostCss` in `@layer utilities`) computes 2.5." Add to task 6: "Loses to a utility: `btn-outline btn-active text-error` keeps the red ink."
 
-W10 (line 1078). Task 14 cites "fold record, 'Errata owed'" when two fold records exist. Replace with "docs/superpowers/research/2026-09-26-theme-identity-fold.md, "Errata owed to ratified documents"".
+W10 (line 1078). Task 14 cites "fold record, 'Errata owed'" when two fold records exist. Replace with "docs/research/2026-09-26-theme-identity-fold.md, "Errata owed to ratified documents"".
 
 W11 (line 330). The recorded draft-docs head is stale: draft-docs-0 is at 85efee59 (19:30), after the plan's d0639043. Replace with "the plan-time head was `85efee59`."
 

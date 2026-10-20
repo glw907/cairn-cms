@@ -19,7 +19,7 @@ Filed, never done in the sweep; one batched decision at consolidation (Task 8).
    `build*` pure-data producer like every other `build*` export in `delivery/` (`buildRssFeed`,
    `buildJsonFeed`, `buildSitemap`, `buildRobots`, `buildSeoMeta`, `buildSiteManifest`). The
    idiom survey names it the clearest naming outlier in the delivery subsystem
-   (`docs/superpowers/plans/2026-07-01-code-polish-survey.md:333-349`) and nominates renaming
+   (`docs/plans/2026-07-01-code-polish-survey.md:333-349`) and nominates renaming
    it to `createLinkResolver`. It is exported from `@glw907/cairn-cms/delivery` and
    `/delivery/data` (`docs/reference/delivery-data.md`), so renaming it changes
    `check:surface` and `check:reference:signatures` and needs a documented `Consumers must:`

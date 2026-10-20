@@ -1,8 +1,8 @@
 # Plan: media Phase 2b, the insert UI
 
-Source spec: `docs/superpowers/specs/2026-06-16-cairn-media-2b-insert-ui-design.md` (the adversarially
+Source spec: `docs/specs/2026-06-16-cairn-media-2b-insert-ui-design.md` (the adversarially
 reviewed design, with the contract each task must meet). Umbrella: the gallery spec
-`docs/superpowers/specs/2026-06-15-cairn-media-gallery-design.md`. Builds on the Phase 1 foundation
+`docs/specs/2026-06-15-cairn-media-gallery-design.md`. Builds on the Phase 1 foundation
 (`src/lib/media/`) and the Phase 2a infrastructure (the `/media` route, `uploadAction`, the
 `client-ingest` helper, the `editLoad` `mediaTargets` projection, the render resolver).
 

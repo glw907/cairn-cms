@@ -7,7 +7,7 @@
 > (Tasks 3 onward) follows straight on. Steps use checkbox syntax.
 
 **Goal:** make the post/pages list (`ConceptList`) extend the editor/desk gold standard, per the
-approved spec (`docs/superpowers/specs/2026-06-13-cairn-office-list-design.md`): a triage filter
+approved spec (`docs/specs/2026-06-13-cairn-office-list-design.md`): a triage filter
 layer driven by publish state (with counts), self-describing rows with a summary line, and the one
 data-layer change that feeds them.
 
@@ -111,7 +111,7 @@ feature set: how the competition presents a content list, judged against the moc
 - [ ] Dispatch an independent review (a general-purpose agent, or a Workflow find-and-verify sweep
   if Geoff opts in) that argues the competition's UI case against the Task 1 mockup. Give it the
   rendered mockup (screenshots of both themes, all four screens) and the spec
-  (`docs/superpowers/specs/2026-06-13-cairn-office-list-design.md`), and a mandate to study how the
+  (`docs/specs/2026-06-13-cairn-office-list-design.md`), and a mandate to study how the
   record-school and blog CMSs present their content lists: Ghost, Sveltia, WordPress, and added for
   this review Contentful and Sanity. The question is about UI, not features: what do these tools'
   list views do better on visual hierarchy, density, scannability, the row treatment, the status

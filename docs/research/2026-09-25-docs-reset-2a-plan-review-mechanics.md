@@ -1,7 +1,7 @@
 # Docs reset pass 2a plan review: mechanics and feasibility lens
 
 **Target:** `docs/superpowers/plans/2026-09-25-docs-reset-pass-2a.md` at `9f112c92`, against the
-spec `docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md`. **Lens:** does every
+spec `docs/specs/2026-09-25-docs-reset-pass-2a-design.md`. **Lens:** does every
 mechanism the plan relies on behave as stated. Each claim below was checked against source or by
 a probe, run read-only from the main checkout (probe outputs are in the reviewer's scratchpad).
 

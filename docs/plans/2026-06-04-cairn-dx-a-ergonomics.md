@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Svelte 5, Vitest (unit and component projects), `svelte-check`, the existing `src/lib/render` and `src/lib/content` modules, the `examples/showcase` reference consumer.
 
-**Source spec:** `docs/superpowers/specs/2026-06-04-cairn-dx-907-hardening-design.md`.
+**Source spec:** `docs/specs/2026-06-04-cairn-dx-907-hardening-design.md`.
 
 **Worktree:** Run on a feature worktree off `main`, per the cairn rebuild topology. The per-task gate is `npm run check` (0 errors, 0 warnings) plus `npm test` (exit 0). The root `npm run check` does not typecheck `examples/showcase`, so Task 3 carries the showcase verification explicitly.
 

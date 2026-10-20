@@ -252,7 +252,7 @@ The second sitting added five, and the last is the hardest:
   nest models." Both ship real software. Decide it here, record it as this repo's ADR,
   and only then fork `elm-conventions` into a cairn variant (lipgloss v2 box math,
   poplar Rule 10, ports unchanged either way). Source:
-  `docs/superpowers/2026-08-18-tui-skills-setup-brief.md`, Task 2.
+  `docs/2026-08-18-tui-skills-setup-brief.md`, Task 2.
 - **The v1 view cut.** Which dashboard views ship first, and what a site's row shows
   when it is healthy and boring.
 - **What "health" means per site, concretely.** Which checks run, and what each

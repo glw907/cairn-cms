@@ -6,7 +6,7 @@
 > Tasks specify outcomes, constraints, and acceptance criteria; implementers own the code.
 
 **Goal:** Execute the approved design at
-`docs/superpowers/specs/2026-07-01-code-polish-pass-design.md`: one idiom per pattern across the
+`docs/specs/2026-07-01-code-polish-pass-design.md`: one idiom per pattern across the
 engine, the gate scripts, the tests, the Wayfinder showcase, and the dev package, with zero
 unjustified dead code and the frozen public surface byte-identical throughout.
 
@@ -25,7 +25,7 @@ is not restated per task.
 - Log event names never change. Error-message text changes only where the charter standardizes
   a format, tests updated in the same commit; the pruning pass's loud-boundary messages keep
   their wording.
-- Surface-change wants go to `docs/superpowers/plans/2026-07-01-code-polish-surface-wants.md`
+- Surface-change wants go to `docs/plans/2026-07-01-code-polish-surface-wants.md`
   (create on first want), one batched decision for Geoff at consolidation. The sweep never
   changes the public surface.
 - No version bump, no publish; changelog under `## Unreleased`.
@@ -40,7 +40,7 @@ is not restated per task.
 
 **Dispatch:** `cairn-implementer`.
 
-**Files:** create `docs/superpowers/plans/2026-07-01-code-polish-measurements.md`; tool configs
+**Files:** create `docs/plans/2026-07-01-code-polish-measurements.md`; tool configs
 only if a tool needs one (e.g. a `knip.json`), committed with a comment saying it serves the
 polish pass.
 
@@ -76,7 +76,7 @@ file:line exemplars of each variant, and the agent's nomination for the best-in-
 with one-line reasoning. Agents catalogue; they do not judge beyond the nomination.
 
 **Acceptance:** all subsystem catalogues returned and persisted to the scratchpad, with a
-committed evidence summary (`docs/superpowers/plans/2026-07-01-code-polish-survey.md`) listing
+committed evidence summary (`docs/plans/2026-07-01-code-polish-survey.md`) listing
 each divergence the synthesis must resolve. No repo mutation.
 
 - [ ] Launch the survey workflow, collect catalogues
@@ -151,7 +151,7 @@ header; full per-task gate green.
 ### Task 6: Rider — admin-build content scope
 
 **Dispatch:** `cairn-implementer`, executing the already-written plan at
-`docs/superpowers/plans/2026-06-30-admin-build-content-scope.md` verbatim (test-first, restrict
+`docs/plans/2026-06-30-admin-build-content-scope.md` verbatim (test-first, restrict
 the admin CSS build's Tailwind content detection to the components glob, the no-foreign-token
 sheet test, the `admin-visual` baseline as the no-utility-dropped proof).
 

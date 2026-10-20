@@ -2,7 +2,7 @@
 
 **Status: ADJUDICATED 2026-08-02.** The C2 sitting ran on Fable and ruled on every in-window item
 and every confirmed finding; the rulings and the execution plan live in
-`docs/superpowers/plans/2026-08-02-c2-breaking-window.md`, which supersedes this document. This
+`docs/plans/2026-08-02-c2-breaking-window.md`, which supersedes this document. This
 spec stays as the historical input: the agenda as widened (Geoff signaled the widening
 2026-08-02) plus the audit-sweep evidence the sitting adjudicated. Release one is the final
 release a consumer absorbs breakage as one batch; at beta, compatibility-SemVer makes every
@@ -188,7 +188,7 @@ and 11 drew no confirmed findings; the other nine in-window items each have evid
   `check:reference` cannot catch this, because `scripts/reference-coverage.mjs` checks stale names
   against a package-wide export pool by design (`globalKnownNames`, lines 317-326). It survived the
   2026-07-01 pruning audit as a bare `KEEP MakeIcon` line
-  (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md:358`), and a developer
+  (`docs/plans/2026-07-01-surface-pruning-audit-verdicts.md:358`), and a developer
   following the reference hits a broken import today.
 
 - **`ConceptUrlPolicy` is exported from the root barrel, named by no public signature, and used only
@@ -290,7 +290,7 @@ and 11 drew no confirmed findings; the other nine in-window items each have evid
   `FieldLabel`/`SelectField`, while `docs/reference/admin-fields.md:24-27` names "a toolbar filter"
   as the canonical `register="inline"` case. Both postdate the audit (`admin-fields/index.ts`
   2026-07-06 in `4cc74bd2`, `admin-toolkit/index.ts` 2026-07-20 in `24b30c50`), and
-  `docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md` has zero occurrences of
+  `docs/plans/2026-07-01-surface-pruning-audit-verdicts.md` has zero occurrences of
   either name. The verifier corrects the framing: the audit covered all twelve subpaths that existed
   on 2026-07-01 and omitted nothing selectively, so five of today's sixteen code subpaths have never
   been pruned, `./auth-store`, `./auth-crypto`, and `./cloudflare` included. Merging the pair later

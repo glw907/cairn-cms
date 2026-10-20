@@ -1,6 +1,6 @@
 # Pass 1b spec review: measurement integrity lens
 
-**Target:** `docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` at
+**Target:** `docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` at
 `30083f27`. **Lens:** where the measurement can be silently corrupted or leak. **Reviewer:**
 `claude-opus-5-5`, one read, with the pass 1 validation, planted-defects, and baseline records,
 the pass 1 plan, and `scripts/docs-readers/` (`lib/prepare-class.ts`, `prepare-validation.ts`,
@@ -98,7 +98,7 @@ a path is named.
   near-duplicate of a tuned-for dev plant is the likeliest silent inflation. The reverse drift,
   toward known blind spots, deflates recall.
 - **Fold.** The planter reads code from the repository-class export (`REPOSITORY_EXCLUDED_PATHS`
-  already drops `docs/internal/record`, `docs/superpowers`, and `scripts/docs-readers`), with
+  already drops `docs/internal/record`, `docs/{plans,research,specs}`, and `scripts/docs-readers`), with
   `docs/HISTORY.md` and `docs/STATUS.md` also dropped for this dispatch. The planter prompt is
   frozen (M1). Add a scripted check after planting: no test plant shares a page and a subject
   term with a dev plant (P01 to P17). Any hit is recorded and replanted before the planted runs.

@@ -8,7 +8,7 @@
 
 **Date:** 2026-09-14. **Approved:** Geoff, 2026-09-14, after the three-lens adversarial review, the
 fold read over the spec and both plans, and the targeted read of the fold's own mechanisms. The
-plan-approval gate is closed; execution needs no further read. **Spec:** `docs/superpowers/specs/2026-09-12-extend-design.md`
+plan-approval gate is closed; execution needs no further read. **Spec:** `docs/specs/2026-09-12-extend-design.md`
 (revision 2, with Fold 10 carrying this plan's review back). The plan argues from the spec;
 executors read both.
 
@@ -57,7 +57,7 @@ domain-risk). Every ranked change is applied. The decisions that changed the pla
 ## Where it sits
 
 After the `0.97.0` cut. In parallel with the rest of the Go tool pass A
-(`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`), which lives under `tool/` and touches
+(`docs/plans/2026-09-14-cairn-tool-1-0-pass.md`), which lives under `tool/` and touches
 no file this pass touches except the three pass-close files, merged in whichever order the closes
 land. **Resequenced 2026-09-16 (Geoff's 2026-09-15 decision in `docs/STATUS.md`):** extend-2
 follows this pass directly, then one cut, then the site round; the docs rebuild follows the round,

@@ -13,9 +13,9 @@ stop. If the call prints a stop, end your turn without another act until Geoff t
 On a new worktree, run the adapter's setup command, `npm ci && npm ci --prefix examples/showcase`.
 Load `cairn-pass` (it loads `pass-core`) and follow it. Read the plan whole: before PB-T0's commit,
 at
-`/var/home/glw907/Projects/cairn-cms/.claude/worktrees/engine-pre-2b-b/docs/superpowers/plans/2026-10-10-engine-pass-b-lean.md`;
+`/var/home/glw907/Projects/cairn-cms/.claude/worktrees/engine-pre-2b-b/docs/plans/2026-10-10-engine-pass-b-lean.md`;
 after it, the same path in your own worktree. Then read the sections of
-`docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` (same directory) that it names as
+`docs/plans/2026-10-08-engine-pass-pre-2b-b.md` (same directory) that it names as
 binding. On a relaunch, follow the plan's Resume convention. Arm the API-drop wake-up (`/loop` with
 no interval) and the lid-switch hold (`systemd-inhibit --what=handle-lid-switch --who=engine-pass-b
 sleep 43200`, as a background Bash task). Each wake-up tick runs `test -e "$(git rev-parse

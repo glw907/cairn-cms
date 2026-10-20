@@ -5,7 +5,7 @@ Filed from the team-platform pass 1 planning session. The platform
 admin-extension consumer after ASC, and this brief flows in the harvest protocol's
 reverse direction: seams the consumer's ratified requirements need that the engine
 lacks. Requirements authority:
-`ecxc-ski/docs/superpowers/specs/2026-07-30-team-platform-requirements.md`.
+`ecxc-ski/docs/specs/2026-07-30-team-platform-requirements.md`.
 Geoff intends a proactive engine pass; this brief is its input.
 
 Scope check first: these are the only two gaps. Everything else the platform

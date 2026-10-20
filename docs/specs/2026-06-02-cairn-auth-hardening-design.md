@@ -1,7 +1,7 @@
 # cairn Auth-Hardening Design
 
 **Status:** approved (brainstormed 2026-06-02). Supersedes nothing; extends the locked auth design in the
-functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`, section 7.1).
+functional spec (`docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`, section 7.1).
 
 ## Goal
 

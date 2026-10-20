@@ -1,6 +1,6 @@
 # Style-guide sync spec review: mechanics, feasibility, and failure risk
 
-**Target:** `docs/superpowers/specs/2026-09-28-style-guide-sync-design.md` (branch
+**Target:** `docs/specs/2026-09-28-style-guide-sync-design.md` (branch
 `style-guide-sync`, commit `99535b08`). **Lens:** can each mechanism be built as stated, and what
 breaks when it lands. **Method:** probes against a scratch snapshot of `draft-docs-0`'s committed
 tree (`git archive`), with the workstation Vale 3.23.0 and the CI pin 3.15.1 (downloaded from the
@@ -180,7 +180,7 @@ proposals for final wording.
    routes "End-user and editor product copy, admin walkthroughs" to `editor.md` (Microsoft), while
    ruling 1 puts cairn's admin arm under Google. Other repos load both files: SKILL.md:22-23
    route every SvelteKit or web repo's developer docs and changelogs to `technical-doc-web.md`,
-   `~/Projects/dubplate/docs/superpowers/plans/2026-09-23-rung-5c-pages-member-verb.md:1535`
+   `~/Projects/dubplate/docs/plans/2026-09-23-rung-5c-pages-member-verb.md:1535`
    names `editor.md`, and so does `tool/docs/design/copy-standard.md:734`. The added list rule is
    safe for them. **Fold:** W4 also qualifies row 24 to UI-only walkthroughs. It notes that
    `writing-voice/evals/evals.json` routes three cases to `technical-doc-web`, and says whether

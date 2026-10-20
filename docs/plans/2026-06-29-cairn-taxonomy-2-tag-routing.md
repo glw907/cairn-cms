@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **Depends on Plan 1.** The tag index it routes to comes from Plan 1's marker wiring. Land Plan 1 first.
-- **Spec is canonical.** `docs/superpowers/specs/2026-06-28-cairn-taxonomy-tag-delivery-design.md`, Component 2 and the Breaking change section.
+- **Spec is canonical.** `docs/specs/2026-06-28-cairn-taxonomy-tag-delivery-design.md`, Component 2 and the Breaking change section.
 - **One door.** `resolveRoute` replaces `entryLoad`/`tagLoad`/`tagIndexLoad`/`archiveLoad`; the removal is a documented `Consumers must` and drifts `check:surface`.
 - **Tag URLs are slugified** with a build-time slug-collision throw; the stored canonical tag value is recovered through a per-concept slug→value index.
 - **Entry permalinks win.** An exact entry permalink takes precedence; the build throws on any entry-vs-tag-route overlap so precedence never has to resolve a real collision at runtime.

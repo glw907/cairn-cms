@@ -3,7 +3,7 @@
 `create-cairn-site` is not built yet and stays last in the queue (ROADMAP, "Toward 1.0"). This is
 the AI-posture pass's share of that future pass: exactly what the scaffolder must surface for
 `CairnAdapter.aiPosture`, so the scaffolder pass implements from this rather than re-deriving the
-reasoning. Authority: `docs/superpowers/specs/2026-08-05-ai-posture-design.md`, "The setup path."
+reasoning. Authority: `docs/specs/2026-08-05-ai-posture-design.md`, "The setup path."
 The hand-build path reaches this same moment where it wires the delivery surface, in
 [`docs/extend/build-a-site-by-hand.md`](../../extend/build-a-site-by-hand.md). (This record was
 written against the old tutorial's Milestone 6 "Worth deciding here" passage, which Pass D's docs

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.12, Pygments 2.19.2, `statistics`/`re` stdlib (no numpy), pytest, GNU Stow, Claude Code hooks + output styles.
 
-**Spec:** `cairn-cms/docs/superpowers/specs/2026-05-26-prose-guard-design.md`
+**Spec:** `cairn-cms/docs/specs/2026-05-26-prose-guard-design.md`
 
 **Repos touched:** `~/.dotfiles` (tool, tests, output style, global settings, CLAUDE.md, claude-pkg cleanup), `ecnordic-ski` (retire hook), `cairn-cms` (PLAN.md note), `~/.claude/projects/.../memory` (memory + cairn `.claude/settings.json`).
 

@@ -1,7 +1,7 @@
 # Review: the docs-reset design against published agent-docs methodologies
 
 Reviewer: Opus 5.5, adversarial and read-only, 2026-09-23. Under review:
-`docs/superpowers/specs/2026-09-23-docs-reset-design.md`. The two research inputs already cover
+`docs/specs/2026-09-23-docs-reset-design.md`. The two research inputs already cover
 persona limits, judge recall, Vercel, Stripe, Mintlify's llms.txt benchmark, Petrenko, and the
 Opus 5.5 quirks, so this review does not restate them. **[Inference]** marks my own reasoning.
 

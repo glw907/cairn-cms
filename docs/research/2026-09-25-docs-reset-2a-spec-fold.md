@@ -1,8 +1,8 @@
 # Docs reset pass 2a spec review: fold record
 
-**Target:** `docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md` (reviewed at
+**Target:** `docs/specs/2026-09-25-docs-reset-pass-2a-design.md` (reviewed at
 `598902f3`, revised in the working tree). **Parent edit:** the "Amendments from pass 2a's
-brainstorm" section of `docs/superpowers/specs/2026-09-23-docs-reset-design.md` only. **Reviews:**
+brainstorm" section of `docs/specs/2026-09-23-docs-reset-design.md` only. **Reviews:**
 `2026-09-25-docs-reset-2a-spec-review-{contract,mechanics,risk,consistency}.md` in this directory.
 IDs below are prefixed by lens: `con` consistency, `ctr` contract, `mec` mechanics, `rsk` risk.
 

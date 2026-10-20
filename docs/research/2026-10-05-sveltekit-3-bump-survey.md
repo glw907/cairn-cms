@@ -2,7 +2,7 @@
 
 Date: 2026-10-05. Branch `sveltekit-3`, segment S4 (the bump). The dependency-upgrade record for the
 `@sveltejs/kit` and `@sveltejs/adapter-cloudflare` majors, which Geoff approved in the pass's spec
-(`docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md`). The earlier planning survey,
+(`docs/specs/2026-10-03-sveltekit-3-upgrade-design.md`). The earlier planning survey,
 `2026-10-04-sveltekit-3-survey.md`, ranked the opportunities before the plan; this record covers what
 the bump itself found against the repo's call sites, including what that survey missed.
 

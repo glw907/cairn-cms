@@ -53,7 +53,7 @@ Runs unattended through the `spec-plan-review` skill at full depth:
 3. Plan: outcome-only, at high effort. Tasks governed by an open spec fork build on the recommendation and are marked blocked until Geoff rules.
 4. Plan review: three lenses, one fold, a verification read, and a second fold only on a blocker or major.
 
-Execution waits for Geoff's spec read. Review files go to `docs/superpowers/research/`, and the conductor commits each stage on `main`.
+Execution waits for Geoff's spec read. Review files go to `docs/research/`, and the conductor commits each stage on `main`.
 
 ## Fork rulings (Geoff, 2026-10-08)
 

@@ -40,23 +40,23 @@ https://developers.google.com/tech-writing/two/large-docs).
 - **Owner rulings (Geoff, 2026-09-30 and 2026-10-01).** Every page gets an introduction per the
   anatomy. A plan may push a fact off the page: subordinated to a named reference entry, or cut
   with a reason, never dropped. Qualified claims stay whole, named for this page's `f:0xxou5`.
-- **Round-2 findings** (`docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`,
+- **Round-2 findings** (`docs/research/2026-10-01-draft-docs-2a-rework-record.md`,
   "### architecture", and "Edit history" under "Not conflicts"): a blocking finding applies where
   this plan keeps the sentence it cites, and a finding on a sentence this plan drops is disposed
   here. The table near the end maps all three blocking findings and the non-blocking ones the
   plan takes.
 - **Resolution run findings**
-  (`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`,
+  (`docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`,
   "### architecture", "Escalation findings (final, in full)"): the structural edit, the fact
   read, and the figure verifier accepted the drafted page; the register editor returned two
   blocking findings, both in the introduction (the covers lead-in at `:5-12` and the
   out-of-scope sentence at `:14`). The conductor's ruling of 2026-10-03 has this plan address
   each at its line without widening; the last table records both dispositions.
-- **The job read** (`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md`,
+- **The job read** (`docs/research/2026-09-30-draft-docs-2a-pilot-job-read.md`,
   "Findings by page"): the seams section ended in three unrelated paragraphs, commit concurrency
   sat detached from the write path, the page stopped on a link with no closing synthesis, and
   "capability" first appeared untied to its seam. Each has a disposition below.
-- **The diagnosis** (`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`):
+- **The diagnosis** (`docs/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`):
   the committed page reads as atoms. This plan decides what the page argues, which facts carry
   the argument, and which are detail the reference already holds.
 

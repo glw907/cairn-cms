@@ -12,7 +12,7 @@ system and the one defector converged onto it, the live regions always mounted, 
 chip vocabulary with no first-paint composition swap, the login page off its bracketed var and
 inline style, and the small conformance sweep closed across the engine's admin components.
 
-**Spec:** `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, revision 4, section
+**Spec:** `docs/specs/2026-09-08-polish-passes-design.md`, revision 4, section
 "Polish-11b", with the Decisions block (5, 7, 8, 9, 11), the Dispositions table, "Sequencing and
 budgets", and "Risks". **The spec's "Polish-11b" section is executed by two passes, this one and
 polish-11b-ii.** This pass carries the spec's tasks 1 through 8 (the design system and the engine
@@ -601,7 +601,7 @@ the busy-idiom ruling row, and the eight corrected `AdminLayout` references.
   `^## polish-busy-idiom: ` and carries a title, a verdict, a date and a source in the ledger's own
   parenthetical, with all five labeled lines beneath it, whose `Shape` line points at the design
   system's busy section by name and does not restate the recipe, and which quotes decision 7 and
-  cites `docs/superpowers/specs/2026-09-08-polish-passes-design.md` with its 2026-09-08 date.
+  cites `docs/specs/2026-09-08-polish-passes-design.md` with its 2026-09-08 date.
 - The row's text names the promotion-condition narrowing as an amendment declared in this plan,
   rather than attributing the narrowed wording to decision 7.
 - `npm run check:rulings-format` passes.

@@ -5,7 +5,7 @@ The plan won't run overnight as written. Its first chain launch (T1) fails, beca
 I reviewed `overnight-2b-plan` at `59d09fa05`, which matches `origin/overnight-2b-plan`. Neither tooling worktree exists yet: both `pre2b-tooling` worktrees are absent from `git worktree list`. So I checked runner claims against dotfiles `main` `2912c95` `claude/.claude/workflows/docs-page-chain.js`, and the tooling plan's DT1 for what it will change.
 
 Files:
-- Plan: `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/overnight-2b-plan/docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md` (P)
+- Plan: `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/overnight-2b-plan/docs/plans/2026-10-11-draft-docs-2b-part1.md` (P)
 - Launch prompt: `.../plans/2026-10-11-draft-docs-2b-part1-prompt.txt` (LP)
 - Design: `.../specs/2026-10-11-overnight-2b-design.md`
 
@@ -144,6 +144,6 @@ Files:
 - The transcript directory, `journal.jsonl` and `agent-<id>.jsonl` exist as T2 assumes. The inline `script` and `resumeFromRunId` parameters are real.
 - CI's `pull_request` trigger has no branch filter, so the stacked PR gets CI.
 - `review-desk triage` rows are `{item, disposition: now|defer|drop, reason}`.
-- `docs/superpowers/` is outside the link gate, so the A/B files are safe there.
+- `docs/` is outside the link gate, so the A/B files are safe there.
 - Workflow consent is already recorded (`skipWorkflowUsageWarning: true`), so the first launch won't prompt.
 - The executor's `<total_tokens>` budget reminder (15M) tracks the main loop only, so it doesn't cap the night.

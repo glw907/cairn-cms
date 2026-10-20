@@ -1,8 +1,8 @@
 # Style-guide sync re-scope: leanness review
 
 Date: 2026-09-28. Lens: leanness (what to cut, what is invented). Targets at `e0d5f954`: the spec
-`docs/superpowers/specs/2026-09-28-style-guide-sync-design.md` and the plan
-`docs/superpowers/plans/2026-09-28-style-guide-sync.md`. Ruling 16 (the register's voice,
+`docs/specs/2026-09-28-style-guide-sync-design.md` and the plan
+`docs/plans/2026-09-28-style-guide-sync.md`. Ruling 16 (the register's voice,
 specimens, Names, anatomies, and deviations) is out of this lens's reach; every finding below
 touches machinery only.
 

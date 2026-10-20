@@ -1,7 +1,7 @@
 # Stage 2b part 2: the page plans, pass record (2026-10-12)
 
 Executor session `draft-docs-2b-part2-plans`, branch `draft-docs-2b-part2-plans`. Plan:
-`docs/superpowers/plans/2026-10-12-draft-docs-2b-part2-plans.md`. The pass wrote 11 page plans in
+`docs/plans/2026-10-12-draft-docs-2b-part2-plans.md`. The pass wrote 11 page plans in
 drafter's plan format v1 and no page prose. This record holds the per-plan results, every format
 finding with the date it went to `drafter-conductor`, the amendments that landed mid-run, and the
 decisions the pass made.

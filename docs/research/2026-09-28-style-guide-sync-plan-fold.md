@@ -184,7 +184,7 @@ here is method or scheduling.
 ## Infra re-baseline (2026-09-28, after the infra sweep's A-core and B merged)
 
 The plan took the ten amendments in the dotfiles infra sweep spec
-(`/var/home/glw907/.dotfiles/docs/superpowers/specs/2026-09-28-claude-infra-sweep-design.md`,
+(`/var/home/glw907/.dotfiles/docs/specs/2026-09-28-claude-infra-sweep-design.md`,
 "Amendments to the style-guide-sync plan"). No ruling above is undone: K-M1's lanes, K-M2's
 pinned `SCRIPTS_GATE`, K-M3's notes spec path and conductor-made worktree, and K-m1's W6 scope all
 stand; W6's scope is now met by the A-core scanner, a superset of it.

@@ -1,6 +1,6 @@
 # Gate economy spec: published-practice review
 
-Target: `docs/superpowers/specs/2026-10-09-gate-economy-design.md`, read against `~/.claude/skills/pass-core/SKILL.md`.
+Target: `docs/specs/2026-10-09-gate-economy-design.md`, read against `~/.claude/skills/pass-core/SKILL.md`.
 Every quote below was fetched on 2026-10-09 and carries its URL. A source I searched but could not quote is listed at the end and is not relied on.
 
 ## Verdict

@@ -35,7 +35,7 @@ asserted; fact 2 answers the question it left open.
    field would be an additive capability, not a compatibility event, so nothing forces it into the
    pre-beta window.
 3. **The xcathletes pass-1 plan contradicts the landed factory.** Task 4 of
-   `ecxc-ski/docs/superpowers/plans/2026-07-30-team-platform-pass-1.md` still specifies a
+   `ecxc-ski/docs/plans/2026-07-30-team-platform-pass-1.md` still specifies a
    hand-rolled OTP module with 6-digit codes, while the merged `createAuthChannel` defaults to
    8-digit codes and requires a `challenge` (`docs/reference/auth-channel.md`). Nothing in the ecxc
    repo records the reconciliation.

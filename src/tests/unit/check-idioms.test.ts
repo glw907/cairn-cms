@@ -86,7 +86,7 @@ describe('selfIdentityVariantsUsed', () => {
 
 describe('findSuperpowersPathLines', () => {
   it('flags a comment naming a docs/superpowers/ path', () => {
-    expect(findSuperpowersPathLines('// see docs/superpowers/plans/x.md\n')).toEqual([1]);
+    expect(findSuperpowersPathLines('// see docs/plans/x.md\n')).toEqual([1]);
   });
 
   it('passes a docs/internal/ path, which the tarball does ship', () => {

@@ -113,9 +113,9 @@ the tree `create-cairn-site` bakes, and the base for the beta-path site rebuilds
 earlier slice keeps waymark compiling as part of its own gate (`check:consumers` and the
 scaffold job make breakage loud); the chassis work does waymark's deliberate adaptation and
 the final rebake before the cut. Sizing split the chassis work into three passes, all
-shipped: chassis-A (structural, `docs/superpowers/plans/2026-09-04-chassis-a-pass.md`), then
+shipped: chassis-A (structural, `docs/plans/2026-09-04-chassis-a-pass.md`), then
 chassis-B1 and chassis-B2 (the paint-changing half, split at the plan review's fold on
-2026-09-07; `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md` and `-b2-pass.md`). Their
+2026-09-07; `docs/plans/2026-09-07-chassis-b1-pass.md` and `-b2-pass.md`). Their
 detail lives in `docs/STATUS.md` and `ROADMAP.md`'s audit-remediation entry, not restated
 here.
 

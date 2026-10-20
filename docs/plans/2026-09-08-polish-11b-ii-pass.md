@@ -12,7 +12,7 @@ recipes (the documented action wrapper, a stacked label register, an announced o
 confirmed destructive action), `formatTimestamp` widened to every shape that names its own zone, and
 the records for this half of the slice.
 
-**Spec:** `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, revision 4, section
+**Spec:** `docs/specs/2026-09-08-polish-passes-design.md`, revision 4, section
 "Polish-11b", with the Decisions block (5, 7, 8, 9, 11), the Dispositions table, "Sequencing and
 budgets", and "Risks". **The spec's "Polish-11b" section is executed by two passes, polish-11b-i and
 this one.** Polish-11b-i carried the spec's tasks 1 through 8 (the design system and the engine

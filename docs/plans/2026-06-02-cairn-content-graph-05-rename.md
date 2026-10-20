@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Svelte 5 runes, SvelteKit actions (`fail`/`redirect`/`error`), the GitHub Git Data API, vitest (unit + `vitest-browser-svelte` component project).
 
-**Design reference:** `docs/superpowers/specs/2026-06-02-cairn-content-graph-05-rename-design.md` (approved).
+**Design reference:** `docs/specs/2026-06-02-cairn-content-graph-05-rename-design.md` (approved).
 
 ---
 

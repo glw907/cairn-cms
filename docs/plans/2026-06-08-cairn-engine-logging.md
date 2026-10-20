@@ -6,7 +6,7 @@
 
 **Architecture:** A new internal `src/lib/log/` module owns one logger. Every engine diagnostic calls `log.info|warn|error(event, fields)`, which assembles a structured record (`{ level, event, timestamp, ...fields }`) and writes it to `console` as a JSON object. Workers Logs ingests and indexes it when a consumer sets `observability.enabled = true`. The module is not exported from any package subpath, so its API is free to grow. Call sites in the auth handlers, the admin guard, and the commit pipeline emit a fixed event vocabulary. The vocabulary is documented as public-observable API.
 
-**Tech Stack:** TypeScript, SvelteKit, Cloudflare Workers, D1, Vitest (unit, integration via `@cloudflare/vitest-pool-workers`, component via Playwright). The design spec is `docs/superpowers/specs/2026-06-08-cairn-engine-logging-design.md`.
+**Tech Stack:** TypeScript, SvelteKit, Cloudflare Workers, D1, Vitest (unit, integration via `@cloudflare/vitest-pool-workers`, component via Playwright). The design spec is `docs/specs/2026-06-08-cairn-engine-logging-design.md`.
 
 **Scope note (read before Task 1):** The spec lists `render.failed`. The engine has no request-time render call site that catches an error (rendering is build-time and consumer-side, and the editor preview is client-only behind the `MarkdownEditor` seam). `render.failed` is therefore deferred until a server-side render path exists, alongside the spec's named extension points. It is not in this plan's vocabulary. The two non-engine `console` calls stay as they are: `src/lib/vite/bin.ts` (a CLI) and `src/lib/components/chrome-guard.ts` (a dev-only browser guard). Only `src/lib/sveltekit/auth-routes.ts:55` (the send-failed log) is replaced.
 

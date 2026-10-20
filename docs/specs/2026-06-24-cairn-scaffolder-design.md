@@ -114,8 +114,8 @@ up a site into the open. Across all three parts, the work is dogfooded from two 
 first hour (clone, run, customize, deploy) and the editor's first ten minutes (sign in through the dev
 backend, write and publish a first post). Those walkthroughs do double duty: they confirm the template is
 a useful starting point, and they surface engine rough edges, DX debt, and gaps in the developer-docs
-outline. Every finding is triaged each pass into [`docs/internal/docs-friction-log.md`](../../internal/docs-friction-log.md),
-[`ROADMAP.md`](../../../ROADMAP.md), and the parked docs-rewrite outline
+outline. Every finding is triaged each pass into [`docs/internal/docs-friction-log.md`](../internal/docs-friction-log.md),
+[`ROADMAP.md`](../../ROADMAP.md), and the parked docs-rewrite outline
 ([`2026-06-23-docs-rewrite-content-outline.md`](2026-06-23-docs-rewrite-content-outline.md)), fixed inline
 only when trivial or template-level, and otherwise scheduled as a later pass. The review already seeded
 this list (the `AuthEnv` root re-export, the `wrangler.jsonc`-vs-`.toml` doc inconsistency, the

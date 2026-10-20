@@ -8,7 +8,7 @@
 docs shipped inside the npm package, with the three ratified engine additions published
 as a minor release first.
 
-**Spec:** `docs/superpowers/specs/2026-07-18-docs-on-site-pipeline-design.md` (ratified;
+**Spec:** `docs/specs/2026-07-18-docs-on-site-pipeline-design.md` (ratified;
 its decisions are binding on every task).
 
 **Architecture:** three phases in strict order. Phase A adds the engine surface on a
@@ -74,7 +74,7 @@ divergence is fixed engine-side and documented in the task report.
 
 **Outcome:** the published tarball carries `docs/reference`, `docs/guides`,
 `docs/explanation`, `docs/tutorial`, and `docs/README.md`, and does NOT carry
-`docs/internal`, `docs/superpowers`, or `docs/STATUS.md`. A check asserts presence of
+`docs/internal`, `docs/{plans,research,specs}`, or `docs/STATUS.md`. A check asserts presence of
 the four arm READMEs and absence of the internal trees in `npm pack --dry-run` output
 (or json), so a future `files` edit cannot silently drop the docs.
 

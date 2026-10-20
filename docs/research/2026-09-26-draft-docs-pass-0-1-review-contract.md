@@ -1,7 +1,7 @@
 # Draft docs pass 0+1 plan review: contract and criteria lens
 
 **Target:** `docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md` at `ad30f1ec`, against
-`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`. **Lens:** is each acceptance
+`docs/specs/2026-09-26-draft-docs-approach-design.md`. **Lens:** is each acceptance
 testable, with a named fixture that would fail; can any criterion pass vacuously; does every spec
 "Stage 0 acceptance" and "Stage 1" item map to a task without shrinking; the four planning-miss
 items. Findings are ranked by consequence. Counts: 0 blockers, 7 major, 6 minor, 0 owner forks.

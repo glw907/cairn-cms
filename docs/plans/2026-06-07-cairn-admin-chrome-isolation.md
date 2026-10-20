@@ -8,7 +8,7 @@
 
 **Tech Stack:** Svelte 5 runes, SvelteKit 2, vitest (browser and unit projects), the engine's self-styled scoped admin CSS.
 
-This is plan 3 of the admin-stands-alone initiative. The design is settled in `docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md` (sections 3, 4, 5, and the "Resolved for plan 3 (2026-06-07)" block). The work is engine-only. The two production-site retrofits (907.life, ecnordic.ski) are separate `site-pass` work that runs after this engine version publishes.
+This is plan 3 of the admin-stands-alone initiative. The design is settled in `docs/specs/2026-06-07-cairn-admin-stands-alone-design.md` (sections 3, 4, 5, and the "Resolved for plan 3 (2026-06-07)" block). The work is engine-only. The two production-site retrofits (907.life, ecnordic.ski) are separate `site-pass` work that runs after this engine version publishes.
 
 **Scope boundary on the tutorial.** The tutorial gains a focused teaching subsection on the rule and a forward-pointer, not a full restructuring of its public-page milestones into a `(site)` group. The canonical pattern lives in `docs/admin-route-structure.md`; the tutorial points there.
 

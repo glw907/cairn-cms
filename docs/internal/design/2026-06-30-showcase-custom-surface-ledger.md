@@ -1,9 +1,9 @@
 # The showcase custom-surface ledger (Tier 1/2/3)
 
 > The committed audit artifact for the starter-template track of the admin idiomatic re-expression
-> initiative (`docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`, the
+> initiative (`docs/specs/2026-06-29-admin-idiomatic-re-expression-design.md`, the
 > "## The starter template" section; Phase 1 plan
-> `docs/superpowers/plans/2026-06-30-starter-template-1-foundation.md`). It classifies the custom
+> `docs/plans/2026-06-30-starter-template-1-foundation.md`). It classifies the custom
 > surface of `examples/showcase` into the three tiers the five de-customization rules define, censuses
 > the retired-token call sites, records the Phase-2 fold targets, and seeds the `check:custom-surface`
 > showcase retired-token budget. It is the companion to the admin ledger

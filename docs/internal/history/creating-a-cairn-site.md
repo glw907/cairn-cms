@@ -2,7 +2,7 @@
 
 > **Status: living draft (started 2026-05-26 during the admin-UI brainstorm).** The adapter, the
 > admin, the render engine, and the public delivery surface ship in 0.10. A few sections still flag
-> open design rounds inline. See `docs/PLAN.md` and the specs under `docs/superpowers/specs/`.
+> open design rounds inline. See `docs/PLAN.md` and the specs under `docs/specs/`.
 
 > **Vocabulary (settled 2026-05-26).** The word **"theme" is retired** for the site-design concept
 > because it carried WordPress/Hugo "installable/swappable package" baggage that never matched this model.
@@ -123,7 +123,7 @@ Drawn between **machinery** (engine) and **data + builders + CSS** (site code):
 A render-engine bug → a `cairn-cms` bump (propagates); the site's code stays pure design. **907.life is
 trivial** (it keeps its own `remark-html` renderer; its output contract differs from the rehype engine).
 This line **is R10a**: the registry is the single declaration the renderer and the palette share.
-Implemented in the **Theme-Architecture Extraction** pass (`docs/superpowers/plans/`).
+Implemented in the **Theme-Architecture Extraction** pass (`docs/plans/`).
 
 **Cheap mitigations for (a)'s no-propagation weakness (add later):**
 - An **engine version stamp** in scaffolded sites (which engine version they forked from) for drift audit.

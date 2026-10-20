@@ -1,7 +1,7 @@
 # Engine pass B lean plan: data integrity and failure-risk review
 
 Lens: data integrity and failure risk (crash, concurrency, partial write, resume, merge). Target:
-`docs/superpowers/plans/2026-10-10-engine-pass-b-lean.md` (cited as `lean`) and its prompt
+`docs/plans/2026-10-10-engine-pass-b-lean.md` (cited as `lean`) and its prompt
 (`prompt`) at `18cd15db`, with `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` (cited as
 `old`). Read-only: no tracked file edited, nothing committed, no gate run.
 
@@ -200,7 +200,7 @@ Lens: data integrity and failure risk (crash, concurrency, partial write, resume
     - `! pgrep -af '[e]ngine-pre-2b-b'`.
     - `[ "$(git rev-parse engine-pre-2b-b)" = "$(git rev-parse origin/engine-pre-2b-b)" ]`.
   - PB-T0 merges `origin/engine-pre-2b-b`, named by the SHA the prompt records, not the local name.
-  - The prompt reads the plan with `git show <sha>:docs/superpowers/plans/...`, or from its own
+  - The prompt reads the plan with `git show <sha>:docs/plans/...`, or from its own
     worktree after PB-T0.
 
 ### M5 (major). Fail-proofs and mutation proofs revert by a method that can wipe uncommitted task edits

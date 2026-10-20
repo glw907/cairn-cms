@@ -1,6 +1,6 @@
 # Theme identity pass B plan review: domain risk lens
 
-**Target:** `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md` at `07035110`
+**Target:** `docs/plans/2026-09-27-theme-identity-pass-b.md` at `07035110`
 (branch `theme-b-plan`), against the pass B spec and its parent spec.
 **Lens:** what the pass could break for the production sites, the Waymark template, cairn.pub,
 and the single `0.98.0` release that carries passes A, B, and C. Proportionality is checked too.

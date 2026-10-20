@@ -325,7 +325,7 @@ always-on CI canary that tests an upgrade nobody is performing. So the rehearsal
 
 ## Phasing
 
-Each phase is its own just-in-time plan under `docs/superpowers/plans/`, written after the prior one
+Each phase is its own just-in-time plan under `docs/plans/`, written after the prior one
 lands, adversarially reviewed before execution, executed task-by-task via `cairn-implementer` (Sonnet)
 with the main loop reviewing each diff and clearing the gate.
 

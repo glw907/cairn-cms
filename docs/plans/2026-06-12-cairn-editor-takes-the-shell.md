@@ -5,7 +5,7 @@
 > one model upshift (`model: opus`). Steps use checkbox syntax for tracking.
 
 **Goal:** give an open document the shell, per the approved spec
-(`docs/superpowers/specs/2026-06-12-cairn-editor-takes-the-shell-design.md`): the four shell
+(`docs/specs/2026-06-12-cairn-editor-takes-the-shell-design.md`): the four shell
 rungs (one header band, receding nav, details slide-over, zen), the editor ergonomics set
 (8px rail pitch with strength-only active, hanging indents, the completed keyboard system with
 the Ctrl+/ sheet, adjudicated container folding), and the gold-standard sweep across the entire

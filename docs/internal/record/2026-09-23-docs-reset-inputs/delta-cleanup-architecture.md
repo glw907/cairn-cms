@@ -108,7 +108,7 @@ not exhaustively re-verified line by line.)
 
 `examples/showcase` is the chassis: the seed every theme copy and
 `templates/waymark` descend from (spec
-`docs/superpowers/specs/2026-09-04-chassis-passes-design.md`; emitted via
+`docs/specs/2026-09-04-chassis-passes-design.md`; emitted via
 `scripts/build/emit-template.mjs` / `packages/create-cairn-site/scripts/
 {emit-template-dir,bake-template}.mjs`). Chassis-A (structural, merged
 2026-09-08), chassis-B1 (PR #51, merged 2026-09-08), chassis-B2 (merged

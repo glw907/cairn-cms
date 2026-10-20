@@ -19,7 +19,7 @@
 
 ## Global Constraints
 
-- **Source of truth spec:** `docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md`. Every task implements part of it; reread the cited section before starting a task.
+- **Source of truth spec:** `docs/specs/2026-06-28-cairn-developer-extensibility-design.md`. Every task implements part of it; reread the cited section before starting a task.
 - **D1 access through prepared statements only.** No ORM. Store functions take the `AUTH_DB` binding plus primitives and stay free of SvelteKit. Callers pass `now`/`expiresAt` in epoch milliseconds.
 - **Tokens and session ids are 256-bit url-safe CSPRNG values; only the SHA-256 hash of a magic-link token is stored, never the token.** Reuse `src/lib/auth/crypto.ts` (`generateSessionId`, `generateToken`, `hashToken`).
 - **The session cookie keeps the `__Host-` prefix on https, bare on local http** (`sessionCookieName(secure)`); `httpOnly`, `secure` on https, `SameSite=Lax`, explicit `maxAge`.

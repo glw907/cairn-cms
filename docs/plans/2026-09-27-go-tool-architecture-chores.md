@@ -13,7 +13,7 @@
 name, "The B2 architecture reads, what retire-1 left" and "Go tool architecture chores filed at
 retire-1's close", as a behavior-preserving refactor of the `tool/` module.
 
-**Review:** single-lens fold, `docs/superpowers/research/2026-09-27-go-chores-plan-review.md`.
+**Review:** single-lens fold, `docs/research/2026-09-27-go-chores-plan-review.md`.
 
 **Pass class:** `tool`. Per-task gate `make -C tool check` on the light lane, Opus
 `diff-reviewer`, test mandate `go-conventions`, and at the close one `code-simplifier` plus one
@@ -80,7 +80,7 @@ tree. What holds is folded into the tasks. What drifted or is false:
    entry's first line, so `longHealth`'s four-comma "Precedence is ..." continuation line passes
    unseen. The trip is the heuristic reaching a help `Long`, not a fix-line violation.
 4. **`spine.FromKind` and `spine.Kind` are pre-adjudicated 2.0 seams.** The 1.0 plan's seams
-   table (`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md:282-305`) names `FromKind`
+   table (`docs/plans/2026-09-14-cairn-tool-1-0-pass.md:282-305`) names `FromKind`
    with its 2.0 caller, the HUD's detail view, and `kind.go:18` says so. `Kind` is its parameter
    type. Decision 2 keeps both.
 5. **`CombineState` is not open-coded in `check_creds.go`.** `worseCredentialOutcome`
@@ -580,7 +580,7 @@ Run by the conductor per `cairn-pass` and `pass-core`, after S4 lands green.
    name is declined with its reason.
 2. **Full gate.** `make -C tool check` on the light lane, `check-facts` at baseline, and a
    `git diff --name-only main...HEAD` proving nothing outside `tool/`, `docs/internal/facts/`,
-   `docs/superpowers/` (this plan and its review record), the friction log, and the ledgers
+   `docs/` (this plan and its review record), the friction log, and the ledgers
    changed. No engine npm gate runs: the pass touches nothing under `src/`,
    `packages/`, `examples/`, or `scripts/`. Push the branch and open the PR; `tool.yml`'s
    Linux, macOS, and Windows legs and every other workflow must be green before merge.
@@ -642,7 +642,7 @@ line, and count below is verified at the same `tool/` tree the header names.
   amendment.
 - Finding 4 (`spine.FromKind`/`Kind` pre-adjudicated 2.0 seams): confirmed. The 1.0 plan's seams
   table names `FromKind` with the HUD's detail view at
-  `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md:303`; `kind.go:18` states the same
+  `docs/plans/2026-09-14-cairn-tool-1-0-pass.md:303`; `kind.go:18` states the same
   seam. No amendment.
 - Finding 5 (`CombineState` not open-coded in `check_creds.go`): confirmed exact.
   `worseCredentialOutcome` spans `check_creds.go:115-126` exactly; `credentialRank` breaks the
@@ -1042,13 +1042,13 @@ task's acceptance. No task's Files list, decision, or acceptance criterion neede
   output bytes or unexported a seams-table name.
 - **Full gate.** `make -C tool check` green on the light lane; `check-facts` reproduces exactly
   Task 0's one baseline defect (`docs/internal/facts/admin.md:53`); `git diff --name-only
-  main...HEAD` touches only `tool/`, `docs/internal/facts/`, `docs/superpowers/`, and this pass's
+  main...HEAD` touches only `tool/`, `docs/internal/facts/`, `docs/`, and this pass's
   ledgers. PR #94 opened against `main`.
 - **Architecture reads.** Ten `go-architecture-reader` reads, one per package whose non-test
   source changed (`spine`, `store`, `health`, `providers`, `render`, `render/fixtures`,
   `internal/exe`, `cmd/mangen`, `cmd/copylist`, `cmd/cairn`): nine "sound with nits," `cmd/cairn`
   "needs work," 58 structural findings and 96 nits total, most predating this pass. Full text and
-  the ROADMAP filings: `docs/superpowers/research/2026-09-27-go-chores-architecture-reads.md`.
+  the ROADMAP filings: `docs/research/2026-09-27-go-chores-architecture-reads.md`.
 - **Docs.** No facts bullet filed and no reference page changed (the pass's one public-behavior
   change, `cairn doctor --help`'s first sentence, needed neither). `docs/internal/docs-friction-log.md`
   read against this pass's scope; nothing to triage or add, since the pass touched no public docs.

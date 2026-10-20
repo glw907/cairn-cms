@@ -8,7 +8,7 @@
 
 **Tech Stack:** `tailwindcss` 4, `@tailwindcss/postcss` 4, `daisyui` 5, `postcss`, `postcss-prefix-selector`; `@sveltejs/package`; Vitest.
 
-**Scope note:** This is plan 1 of the "admin stands on its own" initiative (spec: `docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`). It lands the self-styling CSS pipeline only. The DaisyUI UX rebuild and dark mode (plan 2) and the chrome isolation (plan 3) follow, then the two site retrofits. The CSS pipeline scans the component source on every build, so it picks up whatever classes the later UX rebuild adds with no further build change.
+**Scope note:** This is plan 1 of the "admin stands on its own" initiative (spec: `docs/specs/2026-06-07-cairn-admin-stands-alone-design.md`). It lands the self-styling CSS pipeline only. The DaisyUI UX rebuild and dark mode (plan 2) and the chrome isolation (plan 3) follow, then the two site retrofits. The CSS pipeline scans the component source on every build, so it picks up whatever classes the later UX rebuild adds with no further build change.
 
 **Mechanism is pre-verified.** The Tailwind v4 plus DaisyUI v5 compile and the `postcss-prefix-selector` scoping were proven empirically before this plan was written: utilities and component classes emit with no global Preflight, `themes: false` keeps the palette ours, the scope prefix `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])` leaks no global rule, and `@keyframes` step selectors stay intact. The code below is the verified shape. Task 1's spike re-runs it in the real repo before the rest leans on it.
 

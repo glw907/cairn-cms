@@ -1,6 +1,6 @@
 # Alignment plan review: mechanics and feasibility
 
-`plan-reviewer` (Opus, effort `medium`) on `docs/superpowers/plans/2026-10-11-alignment.md` at
+`plan-reviewer` (Opus, effort `medium`) on `docs/plans/2026-10-11-alignment.md` at
 `09fa98d5a`. Read-only; saved verbatim by the planning session.
 
 ## Verdict
@@ -94,9 +94,9 @@ design. Two items are owner forks, both minor.
    literal path in the pair prompt. Reads outside the worktree work; the docs say the first-read
    prompt "doesn't appear in ... background sessions".
 10. **MAJOR, correctness: AL-T3's `dx-backlog-ecnordic` grep claim is false** (plan.md:220-222). It
-    also hits four 2026-06 specs, `docs/superpowers/plans/2026-06-04-cairn-docs-phase-1-legibility.md`,
+    also hits four 2026-06 specs, `docs/plans/2026-06-04-cairn-docs-phase-1-legibility.md`,
     this plan, and the design; a Sonnet executor may edit frozen plans. Fold: exclude
-    `docs/superpowers/**` as frozen records.
+    `docs/**` as frozen records.
 11. **MINOR, correctness: the end-to-end check cannot test the agent pointer** (plan.md:334-337).
     `~/.claude/agents` resolves into the dotfiles main checkout, unchanged until Geoff merges and
     pulls; the prompt names the file, so (a) passes either way. AL-T6 deletes the main store while

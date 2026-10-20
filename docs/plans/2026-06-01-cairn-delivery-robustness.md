@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, vitest (`unit` project, node), Vite `import.meta.glob` and SvelteKit prerender for the showcase end-to-end check.
 
-**Design reference:** `docs/superpowers/specs/2026-06-01-cairn-delivery-robustness-design.md` (approved). The schema initiative landed at `0.14.0`.
+**Design reference:** `docs/specs/2026-06-01-cairn-delivery-robustness-design.md` (approved). The schema initiative landed at `0.14.0`.
 
 ---
 

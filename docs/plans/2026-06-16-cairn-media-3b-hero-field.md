@@ -22,10 +22,10 @@ gray-matter (frontmatter serialize), the 2b media stack (`MediaPicker`, `MediaCa
 codec, `makeMediaResolver`), the delivery layer (`readSeoFields`, `resolveImageUrl`, `entryLoad`), Vitest
 (unit + real-browser component), Playwright (the showcase E2E).
 
-Source spec: `docs/superpowers/specs/2026-06-16-cairn-media-3b-hero-field-design.md` (the adversarially
+Source spec: `docs/specs/2026-06-16-cairn-media-3b-hero-field-design.md` (the adversarially
 reviewed design, with the contract each task must meet). The polished visual contract is
 `docs/internal/design/2026-06-16-media-3b-hero-mockup.html`. Umbrella: the gallery spec
-`docs/superpowers/specs/2026-06-15-cairn-media-gallery-design.md`. Builds on the bundled media release
+`docs/specs/2026-06-15-cairn-media-gallery-design.md`. Builds on the bundled media release
 (`0.57.0`), which must be published before this pass executes.
 
 ---

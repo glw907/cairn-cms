@@ -3,7 +3,7 @@
 **Date:** 2026-05-27
 **Initiative:** cairn-cms (see `docs/PLAN.md`)
 **Covers:** R4 (differentiated editing), R10/R10a (component palette), R11 (formatting toolbar), R12 (preview toggle).
-**Parent spec:** `docs/superpowers/specs/2026-05-26-admin-ui-design.md` (the holistic admin requirements).
+**Parent spec:** `docs/specs/2026-05-26-admin-ui-design.md` (the holistic admin requirements).
 
 ## Purpose
 

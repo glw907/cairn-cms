@@ -11,7 +11,7 @@
 
 **Date:** 2026-09-21.
 
-**Supersedes:** `docs/superpowers/plans/2026-09-14-pre-cut-window-pass.md`. That plan was written,
+**Supersedes:** `docs/plans/2026-09-14-pre-cut-window-pass.md`. That plan was written,
 approved, and never executed: `docs/HISTORY.md` carries no entry for it, the last commit touching
 `package-lock.json` is `c2290d69` (2026-09-07), and the root manifest still declares
 `svelte: ^5.56.10`, the version its own survey ruled should move to 5.57.0. Its dependency-sweep
@@ -709,7 +709,7 @@ command.
 
 **A fourth gate (Geoff, 2026-09-21): the tool's contract pages ship in the `0.97.0` tarball, and
 one tool tag follows them.** Draft docs pass A
-(`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`) moves the tool's contract pages and its
+(`docs/plans/2026-09-21-draft-docs-pass-a.md`) moves the tool's contract pages and its
 six schemas under `docs/reference/`; then one `tool/v1.1.0` tag is cut, carrying pass retire-1's
 work and the repointed links, so the binary `0.97.0` announces never names a deleted path. The
 tool's contract pages are on `origin/main` and tagged: `git ls-tree origin/main

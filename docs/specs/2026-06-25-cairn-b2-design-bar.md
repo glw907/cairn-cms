@@ -1,7 +1,7 @@
 # cairn public design bar (B2 foundation)
 
 The criteria the public theme is built and judged against. This is the public-side counterpart to
-[`admin-design-system.md`](../../internal/admin-design-system.md): that reference governs the editor's
+[`admin-design-system.md`](../internal/admin-design-system.md): that reference governs the editor's
 Warm Stone surface; this governs the reader's surface and the token layer a site owner re-skins. The B2
 `frontend-design` loop optimizes against this bar, and the B2 token-layer review gates against it. The
 strategic decisions sit in the scaffolder spec

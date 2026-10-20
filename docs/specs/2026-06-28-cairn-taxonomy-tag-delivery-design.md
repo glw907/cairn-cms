@@ -16,7 +16,7 @@ This is cairn's job. Tags are a content-delivery concern over the committed mark
 over the content index, with no runtime store. The pass adds no actor, no auth, and no domain model. The
 `taxonomy` marker, the latent `byTag`/`allTags`/`tagLoad`/`tagIndexLoad`/`FeedItem.tags` surface, and the
 Contract v2 spec text were all left in place deliberately for this pass
-(`docs/superpowers/plans/2026-06-26-cairn-contract-v2-references.md:57,470`). It also fits the markdown-git
+(`docs/plans/2026-06-26-cairn-contract-v2-references.md:57,470`). It also fits the markdown-git
 idiom the comparable static generators use: tags are frontmatter strings indexed at build time, not
 runtime entities. It passes the premise check.
 

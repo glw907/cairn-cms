@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (NodeNext ESM, `.js` import specifiers), Vitest (`vitest run`), `@cloudflare/vitest-pool-workers` for the integration project, svelte-check for the type gate.
 
-**Spec:** `docs/superpowers/specs/2026-06-08-cairn-diagnostics-initiative-design.md` (Pass 1 section).
+**Spec:** `docs/specs/2026-06-08-cairn-diagnostics-initiative-design.md` (Pass 1 section).
 
 **Project gate (every task ends green):** the task's targeted test passes, `npm run check` reports 0 errors / 0 warnings, and `npm test` exits 0. The module is internal, so `npm run check:reference` and `npm run check:package` must stay green with no reference edit. Do **not** add `src/lib/diagnostics` to any public barrel or to `package.json` exports.
 
@@ -66,7 +66,7 @@ Expected: FAIL, cannot resolve `../../lib/diagnostics/conditions.js`.
 // from, so the three surfaces agree (the 1:1:1). Internal: exported from no public package subpath,
 // so the shape stays free to grow, the same stance as src/lib/log/. Renaming an id is a breaking
 // change to the observable contract. See
-// docs/superpowers/specs/2026-06-08-cairn-diagnostics-initiative-design.md.
+// docs/specs/2026-06-08-cairn-diagnostics-initiative-design.md.
 import type { CairnLogEvent } from '../log/index.js';
 
 export type ConditionSeverity = 'blocker' | 'warning';
@@ -634,4 +634,4 @@ Pass 1 landed on `main` directly, subagent-driven, one `cairn-implementer` per t
 
 **Two carry-forwards (recorded, not fixed).** (1) Both reviewers independently noted `REGISTRY` is a mutable `Record` by type, relying on convention to stay read-only; `as const satisfies Record<string, CairnCondition>` or `Object.freeze` would enforce it. Defensive only, left to a future diagnostics touch when the registry grows. (2) `renderConditionResponse` enforces the registry/renderer 1:1 with two separate structures (the `condition(id)` membership assert plus the `switch` `default` throw), so an id in one but not the other is caught but by two mechanisms; a single coverage test asserting `REASON_CONDITION` values all both resolve and render would tie them. The Task 5 test already asserts the resolve half. (3) Pre-existing, not introduced here: nothing asserts the ordering between the https branch and the csrf branch (an http admin form POST with a bad token should get the 400 https page, not the 403); the refactor preserves the code order, so it is an untested invariant, not a regression.
 
-**Next:** Pass 2 (the email-delivery runtime arm), which lands `CairnError`'s first throw-site. Design in `docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md`.
+**Next:** Pass 2 (the email-delivery runtime arm), which lands `CairnError`'s first throw-site. Design in `docs/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md`.

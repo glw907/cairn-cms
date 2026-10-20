@@ -32,7 +32,7 @@ package's.
 
 ## Global Constraints
 
-- Spec: `docs/superpowers/specs/2026-08-10-create-cairn-site-t3-design.md`. The umbrella:
+- Spec: `docs/specs/2026-08-10-create-cairn-site-t3-design.md`. The umbrella:
   `2026-08-09-admin-setup-and-docs-reset-design.md`. Platform verdicts:
   `docs/internal/2026-08-09-tool-passes-platform-spikes.md`.
 - Node floor `>=22` (`engines.node`); no dependency may be added to `package.json`.
@@ -104,7 +104,7 @@ deep merge only covers `github`; the chapter writes `cloudflare` whole per hop, 
 safe because each hop rewrites every field it knows.
 
 > **Amended by Task 1's spike (2026-08-10).** The verdict doc is
-> [`docs/internal/2026-08-10-t3-cloudflare-spike.md`](../../internal/record/2026-08-10-t3-cloudflare-spike.md);
+> [`docs/internal/2026-08-10-t3-cloudflare-spike.md`](../internal/record/2026-08-10-t3-cloudflare-spike.md);
 > read it before Tasks 3, 4, 7, 9, and 10. The six changes it forces, each marked **[spike]**
 > at the task it changes:
 > 1. **No id write-back.** Wrangler provisions id-less bindings by name and writes nothing back

@@ -1,9 +1,9 @@
 # Draft docs on a conventional approach: design
 
 **Date:** 2026-09-26. **Status:** amended 2026-09-29 (harvest, then delete; see the amendment section). Revision 2 folded four review lenses
-(`docs/superpowers/research/2026-09-26-draft-docs-approach-fold.md`); owner rulings R8 and R9
+(`docs/research/2026-09-26-draft-docs-approach-fold.md`); owner rulings R8 and R9
 (2026-09-26) settle its two open rulings; a second fold took the fold verification; a third took the
-prose review and owner ruling R10. The 2026-09-30 errata application (owner ruling, Geoff) amends six passages in place per `docs/superpowers/research/2026-09-29-draft-docs-harvest-fold.md` ("Owed errata"). A second 2026-09-30 errata application (owner ruling, Geoff) amends six more passages in place per the docs-code sync spec's "Amends the parent" (`2026-09-30-docs-code-sync-design.md`) and the 2a plan fold's "Owed errata" (`docs/superpowers/research/2026-09-30-draft-docs-2a-plan-fold.md`): the Brief's "No new check is built" and "The budget goes to pages", the Budget's per-stage planning line and the extend page count, the stage flow's step 1, and, per the voice ruling of 2026-09-30, the Exemplars section. **Replaces:** the reader-validation line of
+prose review and owner ruling R10. The 2026-09-30 errata application (owner ruling, Geoff) amends six passages in place per `docs/research/2026-09-29-draft-docs-harvest-fold.md` ("Owed errata"). A second 2026-09-30 errata application (owner ruling, Geoff) amends six more passages in place per the docs-code sync spec's "Amends the parent" (`2026-09-30-docs-code-sync-design.md`) and the 2a plan fold's "Owed errata" (`docs/research/2026-09-30-draft-docs-2a-plan-fold.md`): the Brief's "No new check is built" and "The budget goes to pages", the Budget's per-stage planning line and the extend page count, the stage flow's step 1, and, per the voice ruling of 2026-09-30, the Exemplars section. **Replaces:** the reader-validation line of
 `2026-09-23-docs-reset-design.md` (stopped 2026-09-25). **Input:**
 `docs/internal/record/2026-09-26-docs-approach-handoff.md`.
 
@@ -123,7 +123,7 @@ only, and its changelog says so.
 
 **Design.** The harvest pass's design, and the answers to the four questions this amendment left
 open (harvest proof, the per-version records, arm order, outline format), are in
-`docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md`.
+`docs/specs/2026-09-29-draft-docs-harvest-design.md`.
 
 **Superseded:** the quarantine row's "the page-inputs agent reads the old page's claims only", the
 "per-page harvest in page inputs" row, and the per-arm freeze with its discovered-deficiency fixes
@@ -433,7 +433,7 @@ and extend troubleshooting (none). A weak exemplar is swapped at a checkpoint, n
 3. **The site round** follows the admin and extend pages as written and fixes or files every
    divergence (stage 0 puts this rule in the `site-pass` skill). It is the execution test for
    procedures.
-4. **Human task reads,** per R4, from `docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md`.
+4. **Human task reads,** per R4, from `docs/research/2026-09-25-docs-reset-2a-human-reads.md`.
    Before the round, Sheet 2 is repointed from cairn.pub, which renders the pinned tarball and
    cannot show drafts, to the drafts on GitHub `main`, and the sheets' header names where logs go
    now. Logs land in that file's Logs table; findings are fixed or filed through the site-round

@@ -2,8 +2,8 @@
 
 **Date:** 2026-09-29. **Status:** approved by Geoff in the brainstorm, 2026-09-29; revised by the
 spec-plan review fold the same day (record:
-`docs/superpowers/research/2026-09-29-draft-docs-harvest-fold.md`).
-**Parent:** `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`, "Amendment: harvest,
+`docs/research/2026-09-29-draft-docs-harvest-fold.md`).
+**Parent:** `docs/specs/2026-09-26-draft-docs-approach-design.md`, "Amendment: harvest,
 then delete". That amendment settled the scope, the order (harvest, then delete, then draft), and
 that no input guard is built. This spec answers the four questions it left open and designs the
 one pass that carries the harvest and the deletion. Where this spec departs from the parent's
@@ -34,7 +34,7 @@ read.
 The kept pages are never audited or deleted. Their outbound links into deleted pages are
 repaired (link repair only). A changed sentence on `choose-an-ai-posture.md` changes its brief's
 matching sentence in the same commit, per the facts README's "Edits after the chain" rule. The
-reference arm, `docs/internal/`, `docs/superpowers/`, STATUS, HISTORY, and the repo-root files
+reference arm, `docs/internal/`, `docs/`, STATUS, HISTORY, and the repo-root files
 change only where an inbound link is repaired.
 
 No old page carries a figure, so the harvest has no visual assets to account for.
@@ -186,7 +186,7 @@ the goldens, testdata, and design records that carry it (`tool/**/testdata/**`, 
 `scripts/checks/shipped-anchors.json`); the reference arm's pages documenting shipped URLs; the
 facts files' page-path section headings; dated history (`CHANGELOG.md`, `docs/HISTORY.md`,
 `docs/STATUS.md`, `docs/internal/record/**`, `docs/internal/history/**`,
-`docs/internal/feedback/**`, historical entries in `migration-notes.md`); `docs/superpowers/**`; a
+`docs/internal/feedback/**`, historical entries in `migration-notes.md`); `docs/**`; a
 hit naming an arm directory or a kept-set page, not a deleted page; non-link mentions in
 `docs/internal/engine-rulings.md` and `docs/internal/consultations/**`, kept as dated evidence
 (their Markdown links are still repaired); and a register or brief line naming a page a stage

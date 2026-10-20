@@ -35,9 +35,9 @@ never sent. Each sheet after it is sent whole, from its heading to the rule belo
 **Where each log goes.** The reader replies to you. Add one line on top naming the sheet, the
 reader (or "Geoff"), and for Sheet 1 the club site and its engine version. Then either paste the
 log into the Claude session running pass 2a, or save it verbatim at
-`/var/home/glw907/Projects/cairn-cms/docs/superpowers/research/human-reads-2a/sheet-1-editor.md`
+`/var/home/glw907/Projects/cairn-cms/docs/research/human-reads-2a/sheet-1-editor.md`
 or
-`/var/home/glw907/Projects/cairn-cms/docs/superpowers/research/human-reads-2a/sheet-2-evaluator.md`.
+`/var/home/glw907/Projects/cairn-cms/docs/research/human-reads-2a/sheet-2-evaluator.md`.
 The conductor saves a pasted log verbatim at the matching path. At Task 8 and before owner stop 1,
 a `sonnet` agent at `medium` checks both paths and copies each log under "Logs" at the foot of
 this file, so the conductor never reads a log. A log that arrives after the audience review's fold

@@ -20,7 +20,7 @@ axes.**
 
 The good news is unusually good, and it should be said first because it constrains the fix. cairn
 has a **written, ratified naming grammar** — the C2 breaking-window R1 ruling
-(`docs/superpowers/plans/2026-08-02-c2-breaking-window.md:110-129`) — covering factory verbs,
+(`docs/plans/2026-08-02-c2-breaking-window.md:110-129`) — covering factory verbs,
 parameter bags, factory returns, `Load`/`Action` suffixes, and `Plan`/`Result` suffixes. Most
 engines this size have no such document. Two of its clauses are honored almost perfectly
 (`Load`/`Action`; `Plan`/`Result`). Two are not honored at all.

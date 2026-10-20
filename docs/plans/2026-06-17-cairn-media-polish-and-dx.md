@@ -26,7 +26,7 @@ the hero field (`components/MediaHeroField.svelte`), the Media Library
 (`render/registry.ts`), DaisyUI v5, Vitest (unit + real-browser component).
 
 Source: the 3c post-mortem and review carry-forwards
-(`docs/superpowers/plans/2026-06-17-cairn-media-3c-library.md`), the 3b hero carry-forwards, and the
+(`docs/plans/2026-06-17-cairn-media-3c-library.md`), the 3b hero carry-forwards, and the
 friction log (`docs/internal/docs-friction-log.md`), which now holds six entries from the ecxc and
 907-life 0.57.0 cutovers. Builds on the whole media stack on `main` (`0.57.0`, published).
 

@@ -1,6 +1,6 @@
 # Plan: round-trip editing of a placed component
 
-Source spec: `docs/superpowers/specs/2026-06-15-cairn-component-round-trip-design.md`. Same branch as
+Source spec: `docs/specs/2026-06-15-cairn-component-round-trip-design.md`. Same branch as
 the picker pass (`feat/component-picker-live-preview`), bundled into one release (`0.56.2`).
 Execution: one `cairn-implementer` per task, test-first, main loop reviews each diff and clears the
 gate between dispatches.

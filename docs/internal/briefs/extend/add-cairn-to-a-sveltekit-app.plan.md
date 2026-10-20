@@ -4,7 +4,7 @@ Agent-facing, committed beside the brief. Written 2026-10-03 by the plan step of
 chain (stage 2a, task 7c) for the task 7b resolution run, revised once the same day on the
 structural edit's findings (the repository step; "Structural edit findings on the plan, disposed"
 below), and revised again the same day for resolution run 2, on the round-2 BLOCKING findings of
-`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md` alone ("Resolution
+`docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md` alone ("Resolution
 run 2 findings, disposed" below; nothing else changed). Corrected on 2026-10-07 for SvelteKit 3
 (R4 of the 2a unattended finish, a scoped correction under the parent spec's "Edits after the
 chain" rule; "Kit 3 correction (R4), disposed" below). The drafter drafts from this plan: it
@@ -21,10 +21,10 @@ deploy that commits through your own GitHub App, for a Svelte-fluent web develop
 a GitHub account, and a Cloudflare account.
 
 Inputs read: the page's entry and the owner rulings in
-`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md`; the page's round-2
+`docs/research/2026-09-30-draft-docs-2a-pilot-job-read.md`; the page's round-2
 findings and the "Not conflicts" list in
-`docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`;
-`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`; the committed page at
+`docs/research/2026-10-01-draft-docs-2a-rework-record.md`;
+`docs/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`; the committed page at
 `bbfb6788`; every fact bullet named below in `docs/internal/facts/extend.md`,
 `docs/internal/facts/front-door.md`, `docs/internal/facts/admin.md`, and
 `docs/internal/facts/reference.md`; the two exemplars,
@@ -773,7 +773,7 @@ blocking finding and two advisories.
 
 The resolution run's round 2 (2026-10-03) drafted from this plan and returned five BLOCKING
 findings on the page, four from the register editor and one from the fact read, in
-`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`, "###
+`docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`, "###
 add-cairn-to-a-sveltekit-app", the final escalation findings. The conductor's ruling for run 2
 starts from the accepted plan and changes it only where one of these requires; each change sits
 at the plan line the page defect traces to, and the round's advisories are outside the ruling's

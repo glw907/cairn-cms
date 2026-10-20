@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, hast/hastscript, unified/remark/rehype, Svelte 5, Vitest (node `unit` project, no Svelte plugin), `@glw907/cairn-cms` package export map, `publint` + `attw` via `check:package`.
 
-**Spec:** `docs/superpowers/specs/2026-06-03-cairn-render-authoring-design.md`
+**Spec:** `docs/specs/2026-06-03-cairn-render-authoring-design.md`
 
 **Conventions:** Test-first, one behavior per test. The full gate before "done": the targeted test, then `npm run check` (svelte-check 0 errors / 0 warnings), then `npm test` (must EXIT 0). Commit specific files, imperative mood, co-author footer `Co-Authored-By: Claude <noreply@anthropic.com>` (this is the repo convention). For docs, draft in the repo's prose voice (no em dashes, one idea per sentence, no "not X but Y" frames) so `prose-guard` passes on the first try.
 

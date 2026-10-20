@@ -12,7 +12,7 @@ doctor fixtures re-recorded against the current tool, the engine's own Svelte co
 comment gate, the JSDoc residuals of ratified rulings closed, and the state-reset coverage regex
 closed on its generic-comma gap.
 
-**Spec:** `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, revision 4, section
+**Spec:** `docs/specs/2026-09-08-polish-passes-design.md`, revision 4, section
 "Polish-11a", with the Decisions block, the Dispositions table, "Docs work defers to the rewrite",
 "Sequencing and budgets", and "Risks".
 
@@ -698,7 +698,7 @@ ledger annotations.
   barrel arm, named in the report with the reason it stays.
 - `RETIRED_CORE_ARMS` names `DeleteFailure`, and `sveltekit-barrel-prune.test.ts` passes.
 - `grep -rn "content-routes-entry\.ts" src docs` and `grep -rn -- "-entry\.ts" src docs` together
-  return only history files under `docs/superpowers/`, `docs/internal/record/`, `docs/HISTORY.md`,
+  return only history files under `docs/`, `docs/internal/record/`, `docs/HISTORY.md`,
   and `docs/internal/engine-rulings.md`, whose hits the annotation rule preserves. The report
   enumerates every `engine-rulings.md` hit line with the row heading it sits under, and each of
   those rows carries a `- **Note (polish-11a, Task 3):**` line naming the new module.
@@ -929,7 +929,7 @@ eight naming sites, and the ledger annotations.
   actions, `MediaDeleteRefusal`, `MediaBulkFailure`, `MediaBulkDeleteResult`,
   `MediaOrphanPurgeResult`, `originRank`, or `branchKey`.
 - `grep -rn "MediaDeleteRefusal" src docs packages examples scripts` returns nothing outside
-  `docs/superpowers/`, `docs/internal/record/`, `docs/HISTORY.md`, and `CHANGELOG.md`.
+  `docs/`, `docs/internal/record/`, `docs/HISTORY.md`, and `CHANGELOG.md`.
 - `RETIRED_TIER1` in `sveltekit-barrel-prune.test.ts` names `MediaDeleteFailure`, and the suite
   passes.
 - The three media suites in the diff changed only their import path and the renamed type name;
@@ -1038,13 +1038,13 @@ comment that names it by path, the `BulkDeleteSkip` rename, and the ledger annot
 - `src/lib/sveltekit/content-routes-media.ts` does not exist after this commit.
 - `content-routes-media-metadata.ts` imports no other cluster module.
 - `grep -rn "BulkDeleteSkip\b" src docs packages examples scripts` returns nothing outside
-  `docs/superpowers/`, `docs/internal/record/`, `docs/HISTORY.md`, and
+  `docs/`, `docs/internal/record/`, `docs/HISTORY.md`, and
   `docs/internal/engine-rulings.md`, whose hits survive in historical fields the annotation rule
   forbids rewriting, and whose `audit-sveltekit-bulkdeleteskip` row carries a
   `- **Note (polish-11a, Task 6):**` line naming the new type name. `grep -rn
   "BulkDeleteSkippedAsset" src` returns the declaration and its seven use sites.
 - `grep -rn "content-routes-media\.ts" src docs scripts` and `grep -rn -- "-media\.ts" src docs`
-  together return only history files under `docs/superpowers/`, `docs/internal/record/`,
+  together return only history files under `docs/`, `docs/internal/record/`,
   `docs/HISTORY.md`, and `docs/internal/engine-rulings.md`, whose hits the annotation rule
   preserves, plus the unrelated `editor-media.ts`, `resolve-media.ts` matches, which the report
   names. The report enumerates every `engine-rulings.md` hit line with the row heading it sits

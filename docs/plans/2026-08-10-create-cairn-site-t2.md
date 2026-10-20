@@ -52,8 +52,8 @@ dependencies.
 
 ## Global Constraints
 
-- Spec: `docs/superpowers/specs/2026-08-10-create-cairn-site-t2-design.md` (as amended by
-  the fold). The umbrella: `docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`.
+- Spec: `docs/specs/2026-08-10-create-cairn-site-t2-design.md` (as amended by
+  the fold). The umbrella: `docs/specs/2026-08-09-admin-setup-and-docs-reset-design.md`.
 - Node floor `>=22` (`engines.node`); no dependency may be added to `package.json`.
 - **No secret is ever written under the project directory.** App credentials go in the T1
   state store (`saveSite`/`updateSite`, mode 0600). The user access token is held in memory

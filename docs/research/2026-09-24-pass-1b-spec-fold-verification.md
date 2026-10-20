@@ -1,6 +1,6 @@
 # Pass 1b spec fold: verification read
 
-**Target:** `docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` at
+**Target:** `docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` at
 `d875b4b5`, diffed against `30083f27`. **Inputs:** the fold record, the five lens reviews, and the
 parent's "Amendments from pass 1b" section. **Reader:** one fresh `claude-opus-5-5` read with no
 part in the fold. Rulings O1 to O4 and C1 to C15 are taken as settled; this read checks only

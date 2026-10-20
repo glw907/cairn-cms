@@ -18,7 +18,7 @@ feeds equivalent v1 and v2 fields identical inputs and asserts identical results
 **Tech Stack:** TypeScript, Vitest (node `unit` project). No new dependencies. Reuse `ValidationResult`
 from `content/types.ts`, `isCalendarDate`/`dateInputValue` from `content/frontmatter.ts`.
 
-**Spec:** `docs/superpowers/specs/2026-06-26-cairn-engine-hardening-design.md`.
+**Spec:** `docs/specs/2026-06-26-cairn-engine-hardening-design.md`.
 
 ## Global Constraints
 

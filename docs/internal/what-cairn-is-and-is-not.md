@@ -85,7 +85,7 @@ This single rule adjudicates any scope question without an enumerated denylist:
 ### The `cairn` tool is the operator's cockpit, not engine surface
 
 The boundary above governs the engine a consumer site inherits. The Go `cairn` tool
-(`docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`) is a different thing:
+(`docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`) is a different thing:
 an owner-side product over every cairn site a machine knows, and by decision an operator
 cockpit (Geoff, 2026-08-20). It replicates administrative operations the web admin also offers,
 user management and site settings among them, as a second front over the same contracts, and it

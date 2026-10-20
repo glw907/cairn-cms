@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, unified/remark/rehype, `rehype-sanitize` and `hast-util-sanitize`, Svelte 5 (the editor preview), vitest (`unit` in node, `component` in a real browser).
 
-**Design reference:** `docs/superpowers/specs/2026-06-02-cairn-render-sanitize-design.md` (approved).
+**Design reference:** `docs/specs/2026-06-02-cairn-render-sanitize-design.md` (approved).
 
 ---
 

@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, unified/remark (`remark-parse`, `unist-util-visit`, `vfile`), the GitHub Git Data API via the Plan 1 `commitFiles`, vitest (unit, component, integration), SvelteKit on Cloudflare.
 
-**Design reference:** `docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md` (approved). This plan merges the design's Plan 2 (the committed manifest) and Plan 3 (the token, resolver, and build backstop) into one pass, since they share the token parser and together form the first end-to-end capability. The picker and the lifecycle guards stay separate, later plans.
+**Design reference:** `docs/specs/2026-06-02-cairn-content-graph-design.md` (approved). This plan merges the design's Plan 2 (the committed manifest) and Plan 3 (the token, resolver, and build backstop) into one pass, since they share the token parser and together form the first end-to-end capability. The picker and the lifecycle guards stay separate, later plans.
 
 ---
 

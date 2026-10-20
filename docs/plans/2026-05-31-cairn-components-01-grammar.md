@@ -12,7 +12,7 @@
 
 ## Design reference
 
-Full design: `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`. This plan implements the model (attributes + named slots + render) and the three machines, scoped to flat components plus repeatable slots whose items hold a single inline field. Multi-field repeatable items (a grid item with its own icon and title sub-fields) are explicitly deferred to a follow-on; this plan ships the list-of-entries shape ecnordic's `grid` actually renders.
+Full design: `docs/specs/2026-05-31-cairn-site-components-design.md`. This plan implements the model (attributes + named slots + render) and the three machines, scoped to flat components plus repeatable slots whose items hold a single inline field. Multi-field repeatable items (a grid item with its own icon and title sub-fields) are explicitly deferred to a follow-on; this plan ships the list-of-entries shape ecnordic's `grid` actually renders.
 
 ## Canonical serialization rules (locked, shared by every task)
 

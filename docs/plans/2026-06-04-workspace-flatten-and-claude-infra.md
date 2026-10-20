@@ -19,7 +19,7 @@ consolidates.
 **Tech Stack:** bash, git, npm, the SvelteKit/Cloudflare site toolchains, the Claude Code memory and config
 files under `~/.claude`.
 
-**Source spec:** `docs/superpowers/specs/2026-06-04-workspace-flatten-and-claude-infra-design.md`.
+**Source spec:** `docs/specs/2026-06-04-workspace-flatten-and-claude-infra-design.md`.
 
 **Pre-flight reminder:** Before editing any doc or `CLAUDE.md`, read `~/.claude/docs/prose-voice.md`. The
 `prose-guard` hook rejects a whole file on a violation, so draft clean. No em dashes, one idea per sentence.
@@ -590,12 +590,12 @@ not a symlink into a workspace.
 
 - [ ] **Step 5: Write the post-mortem**
 
-Append a post-mortem to this plan file (now at `~/Projects/cairn-cms/docs/superpowers/plans/`) recording what
+Append a post-mortem to this plan file (now at `~/Projects/cairn-cms/docs/plans/`) recording what
 moved, the verification evidence, the memory consolidation result (counts before and after, any dedup or
 obsolete deletions), whether the `memory:` agent feature was confirmed and applied, and any deviation. Then
 update `~/Projects/cairn-cms/docs/STATUS.md` if anything material changed. Commit in cairn-cms:
 ```bash
-cd ~/Projects/cairn-cms && git add docs/superpowers/plans/2026-06-04-workspace-flatten-and-claude-infra.md docs/STATUS.md
+cd ~/Projects/cairn-cms && git add docs/plans/2026-06-04-workspace-flatten-and-claude-infra.md docs/STATUS.md
 git commit -m "Record the workspace-flatten post-mortem"
 ```
 

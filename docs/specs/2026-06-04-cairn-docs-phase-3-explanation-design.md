@@ -1,7 +1,7 @@
 # Documentation Initiative Phase 3 design spec: the Explanation arm
 
 > Design spec. Authored 2026-06-04. Part of the cairn-cms documentation initiative
-> (`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`). Audience for the docs being
+> (`docs/specs/2026-06-04-cairn-docs-initiative-design.md`). Audience for the docs being
 > built: external adopters who install `@glw907/cairn-cms` and build their own sites. Delivery
 > surface: markdown in-repo, rendered on GitHub and npm. No hosted docs site.
 
@@ -31,7 +31,7 @@ The worked example: `security-model.md` gives the render-safety threat model and
 links `render-sanitize-floor.md` for the keep, strip, and rewrite detail.
 
 Public explanation pages stay self-contained. They link the reference pages and each other. They do
-not make the `docs/superpowers/` design specs required reading; a sparse "design history" pointer is
+not make the `docs/` design specs required reading; a sparse "design history" pointer is
 the most an explanation page carries into that tree.
 
 ## The page set
@@ -137,7 +137,7 @@ alternative where it clarifies the choice. The arm carries no full decision ledg
   placeholder to the explanation index. Mirrors Phase 2's final task.
 - **SECURITY.md.** Confirm or repoint its detail link to `explanation/security-model.md`.
 - **Functional-spec reconciliation.** When `architecture.md` lands, add a one-line pointer from the
-  functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`) marking the
+  functional spec (`docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`) marking the
   explanation arm as the current architecture statement and the spec as the locked design record with
   known drift (it predates the Carta-to-CodeMirror swap and the `renderPreview`-to-`render` rename).
   This keeps the two from competing as the current architecture source.

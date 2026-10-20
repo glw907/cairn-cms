@@ -9,7 +9,7 @@ breaking-window pass (2026-08-02, R4) adopted a rule:
 
 > **The export rule, adopted as doctrine:** *every type named in a public signature is exported
 > from a subpath the consumer already imports.*
-> — `docs/superpowers/plans/2026-08-02-c2-breaking-window.md:206`
+> — `docs/plans/2026-08-02-c2-breaking-window.md:206`
 
 Its own post-mortem records the blast radius:
 
@@ -24,7 +24,7 @@ each one down individually, e.g.:
 > DEMOTE TextField [prosecution: demote, HOLDS] — defense: Arm of the kept FieldDescriptor union;
 > consumers use fields.text and structural narrowing on `kind`, neither of which needs the arm
 > exported. … No consumer imports it.
-> — `docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`
+> — `docs/plans/2026-07-01-surface-pruning-audit-verdicts.md`
 
 This audit's standard says family recurrence is never sufficient and there is no accept-by-default.
 Doctrine is weaker still: it is not evidence at all. So every C2_READDED name ranks low here.
@@ -243,7 +243,7 @@ consumers exist for any item: no consumer outside the family was found for anyth
 
 - **surfacedAt:** `.`, `/delivery`, `/delivery/data`
 - **Provenance:** the AI-posture pass, `f68ca468 Let a site state an AI posture, and emit what it
-  implies`, from `docs/superpowers/specs/2026-08-05-ai-posture-design.md` with all four decisions
+  implies`, from `docs/specs/2026-08-05-ai-posture-design.md` with all four decisions
   confirmed by Geoff. Built family consumers exist (`xcathletes-org` and the showcase both set
   `aiPosture`). No external consumer.
 - **Any-site case:** the value reaches `buildRobots`, which the engine renders. A site cannot

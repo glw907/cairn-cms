@@ -24,7 +24,7 @@ when they do not change.
 **Tech stack:** Tailwind 4 `@utility` / CSS custom properties in `cairn-admin.css`; Vitest
 for the definition test; the showcase Playwright suite for the no-drift gate.
 
-**Spec:** `docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`,
+**Spec:** `docs/specs/2026-07-27-cairn-design-infrastructure-design.md`,
 sections 4 and 10 (Pass 1). Read its section 4 before starting.
 
 ## Global constraints

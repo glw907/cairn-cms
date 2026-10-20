@@ -25,8 +25,8 @@ processes, the one-executor rule's stand-down signal. Whoever closes that branch
 three staging files as part of the close.
 
 Destinations: the survivors are queued in two pass plans,
-`docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md` (behavior) and
-`docs/superpowers/plans/2026-08-26-harvest-detection-pass.md` (detection and docs), and are
+`docs/plans/2026-08-26-toolkit-seams-pass.md` (behavior) and
+`docs/plans/2026-08-26-harvest-detection-pass.md` (detection and docs), and are
 tracked as live entries in `docs/internal/docs-friction-log.md` until those passes ship.
 
 ## The adversarial test

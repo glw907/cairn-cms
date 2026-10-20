@@ -6,7 +6,7 @@
 > adversarial find-and-verify workflow phase.
 
 **Goal:** open the engine's role vocabulary to site-declared roles mapped onto three
-engine capability levels, per `docs/superpowers/specs/2026-07-14-extensible-roles-design.md`.
+engine capability levels, per `docs/specs/2026-07-14-extensible-roles-design.md`.
 
 **Architecture:** a new `src/lib/auth/roles.ts` module owns the vocabulary (declaration,
 validation, capability resolution); the guard resolves capability per request and the
@@ -20,7 +20,7 @@ idiom.
 
 ## Global constraints
 
-- The spec is the contract: `docs/superpowers/specs/2026-07-14-extensible-roles-design.md`.
+- The spec is the contract: `docs/specs/2026-07-14-extensible-roles-design.md`.
   Read it before any task. Zero-config sites must see no behavior change anywhere.
 - Work happens on the `extensible-roles` worktree off `main`; all edits target the
   worktree path. Run `npm ci` if node_modules is stale and `npm run package` before

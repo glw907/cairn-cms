@@ -1,6 +1,6 @@
 # The admin-toolkit organization pass (harvest wave 1 + engine adoption)
 
-Spec: `docs/superpowers/specs/2026-07-20-admin-toolkit-organization-design.md` (approved
+Spec: `docs/specs/2026-07-20-admin-toolkit-organization-design.md` (approved
 2026-07-20). Scope in one line: establish `@glw907/cairn-cms/admin-toolkit`, graduate the
 ASC-born components into it, and re-express cairn's own admin screens on the toolkit so no
 parallel bespoke implementation survives where a component fits.

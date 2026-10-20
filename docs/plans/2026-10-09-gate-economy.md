@@ -9,8 +9,8 @@ land where they execute, and a replay of pass A proves the selection before pass
 
 **Spec:** `docs/superpowers/specs/2026-10-09-gate-economy-design.md` at `e8bdb077`, with Geoff's
 two rulings recorded there (the coverage probe is dropped; a retry-pass is green and logged). Fold
-record and owed minors: `docs/superpowers/research/2026-10-09-gate-economy-spec-fold.md`. Inputs:
-`docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md`. Where this plan and the spec
+record and owed minors: `docs/research/2026-10-09-gate-economy-spec-fold.md`. Inputs:
+`docs/research/2026-10-09-gate-economy-pass-inputs.md`. Where this plan and the spec
 disagree, stop and report, except under "Decisions this plan takes".
 
 **Pass class:** `engine-logic` for every cairn-cms script and test task (Tasks 2, 3, 4a); Task 7
@@ -939,7 +939,7 @@ boundary). **Spec:** "Acceptance": timed ranges, miss rate, projection. **Decisi
 8, 9.** The two timed ranges and the projection are non-blocking, so they run at the close beside
 the reviewers (Close, step 2); this task keeps the blocking parts.
 
-**Files:** `docs/superpowers/research/2026-10-09-gate-economy-replay.md` (new).
+**Files:** `docs/research/2026-10-09-gate-economy-replay.md` (new).
 
 **Outcome:** one committed record holding four parts; this task writes parts 1 and 3, and the
 close appends parts 2 and 4.
@@ -986,7 +986,7 @@ plan at the close, step 3). **Spec:** "Owed errata" items 9 and 11. The
 reviewer is `diff-reviewer`, a deliberate departure from the `docs` class's register chain: both
 files are internal planning documents, which the register does not govern.
 
-**Files:** `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md`, `ROADMAP.md`.
+**Files:** `docs/plans/2026-10-08-engine-pass-pre-2b-b.md`, `ROADMAP.md`.
 
 **Outcome:**
 - Erratum 9, pass B's plan: the Segments table (boundary proof becomes CI green, local F the
@@ -1008,14 +1008,14 @@ files are internal planning documents, which the register does not govern.
 pass B task's Outcome or Acceptance changes.
 
 **Gate:** `CAIRN_GATE_LANE=light cairn-run-gate 'git diff --check <base>..HEAD'`, plus any check
-the S3 pre-flight finds reads `ROADMAP.md` or `docs/superpowers/plans/`, appended to that string.
+the S3 pre-flight finds reads `ROADMAP.md` or `docs/plans/`, appended to that string.
 
 **S3 pre-flight** (one `haiku` agent before Task 6a's dispatch): every pass-core, cairn-pass,
 pass-gate-economy, model-economy, and cairn-implementer anchor erratum 1 to 6 names, at the
 dotfiles head; the `diff-reviewer` prompt's location in each runner; pass B's plan lines 115,
 117 to 126, 128 to 132, the Gates section, and every `gateTier: full` pin (`grep`); `ROADMAP.md`'s
 gate economy entry (line 311 at plan time) and follow-ups (line 1055); whether any check reads
-`ROADMAP.md` or `docs/superpowers/plans/`. (The PR #108 runs and the archive moved to Task 0's
+`ROADMAP.md` or `docs/plans/`. (The PR #108 runs and the archive moved to Task 0's
 miss-rate floor.)
 
 ---
@@ -1075,7 +1075,7 @@ numbering in one way: the ledgers land before the CI read, so one CI read covers
    commit on the `main` checkout, never on the branch (Global constraints): the gate economy pass
    closed, pass B next. Its resume prompt (erratum 12) supersedes the audit scope and names pass
    B's plan, ceiling, and the new gate: "Execute engine pass B
-   (`docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md`)", launch directory
+   (`docs/plans/2026-10-08-engine-pass-pre-2b-b.md`)", launch directory
    `~/Projects/cairn-cms`, `claude --model claude-opus-5-5`, after both merges.
 6. **Pre-bake.** Both worktrees clean; pass B's plan carries its updated gate section (Task 6b).
 7. **Owner message** (one): the two merges, the push of `main`'s local commits, and the stow step

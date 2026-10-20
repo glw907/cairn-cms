@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown, `prose-guard` (the writing-voice gate), `git`, plus Node, npm, and Vite for the capstone reproduction.
 
-**Design spec:** `docs/superpowers/specs/2026-06-04-cairn-docs-phase-5-tutorial-design.md`.
+**Design spec:** `docs/specs/2026-06-04-cairn-docs-phase-5-tutorial-design.md`.
 
 ---
 

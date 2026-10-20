@@ -2,7 +2,7 @@
 
 **Status:** approved (2026-06-02).
 
-**Parent design:** `docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md` (the content-graph
+**Parent design:** `docs/specs/2026-06-02-cairn-content-graph-design.md` (the content-graph
 initiative). That spec's plan list calls this "Plan 4: the picker"; the numbered plan files renumber it to
 Plan 3 after Plan 2 merged the old Plan 2 and Plan 3 into one pass. This document is the per-plan design.
 

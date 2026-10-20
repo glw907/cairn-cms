@@ -1,6 +1,6 @@
 # Pass 1b spec fold record
 
-**Target:** `docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`, folded
+**Target:** `docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`, folded
 from `c6f473b1`. **Reviews:** the five lens files `2026-09-24-pass-1b-spec-review-{contract,
 integrity,consistency,mechanics,methodology}.md`. **Fold agent:** one `claude-opus-5-5` read.
 

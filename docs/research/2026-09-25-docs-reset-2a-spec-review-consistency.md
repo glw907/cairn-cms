@@ -2,7 +2,7 @@
 
 **Target:** `docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md` at `598902f3`, plus
 the parent spec's "Amendments from pass 2a's brainstorm" section
-(`docs/superpowers/specs/2026-09-23-docs-reset-design.md:76-89`). **Lens:** consistency with the
+(`docs/specs/2026-09-23-docs-reset-design.md:76-89`). **Lens:** consistency with the
 ratified documents, and a spot check of every citation. Read-only apart from this file.
 
 **Counts:** 1 blocker, 5 major, 9 minor. Two items are marked OWNER FORK.
@@ -148,7 +148,7 @@ standing cost is scoped tokens on a free Worker.
 ### M-4. OWNER FORK: the budget rows sit well below pass 1b's measured unit costs and below the spec's own "fix rounds as the norm" rule
 
 **Location:** `:197-210`, against the pass 1b post-mortem's program budget
-(`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md:882-905`).
+(`docs/plans/2026-09-24-docs-reset-pass-1b.md:882-905`).
 
 **Defect.** The post-mortem's measured figures, set against this spec's rows:
 

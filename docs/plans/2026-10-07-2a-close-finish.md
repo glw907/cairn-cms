@@ -135,9 +135,9 @@ checks are green, `origin/main` is an ancestor of the branch (merge `main` in if
   internal ROADMAP ASC naming was left for its own open ruling.
 
 **Engine-pass boundary verdict.** An engine pass is warranted before stage 2b. Its scope is the
-spec `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`, which applies Geoff's ruling
+spec `docs/specs/2026-10-07-engine-pass-pre-2b-design.md`, which applies Geoff's ruling
 1 (an item earns its place only by improving the product); the rulings are at
-`docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md`.
+`docs/specs/2026-10-07-engine-pass-pre-2b-rulings.md`.
 
 **What a later pass would be wrong to rediscover.**
 

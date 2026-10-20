@@ -16,8 +16,8 @@ Short names for the paths cited below:
 | Short name | Path |
 |---|---|
 | R | `.claude/worktrees/draft-docs-0/docs/internal/docs-register.md` |
-| STD | `docs/superpowers/specs/2026-09-08-docs-standard-design.md` |
-| APP | `.claude/worktrees/draft-docs-0/docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md` |
+| STD | `docs/specs/2026-09-08-docs-standard-design.md` |
+| APP | `.claude/worktrees/draft-docs-0/docs/specs/2026-09-26-draft-docs-approach-design.md` |
 | CHAIN | `~/.claude/workflows/docs-page-chain.js` (identical to the `~/.dotfiles/claude/.claude/workflows/` source) |
 | DRAFTER | `~/.claude/agents/cairn-docs-drafter.md` |
 | EDITOR | `~/.claude/agents/cairn-register-editor.md` |

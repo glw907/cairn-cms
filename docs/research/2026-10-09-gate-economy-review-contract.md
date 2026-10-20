@@ -77,7 +77,7 @@ code. Add one runner-harness case for each of these three paths.
 
 ### B3. "`auth-data` never takes a reduced gate" is undefined against the new per-task gate, and pass A is mostly `auth-data`
 
-Location: spec lines 72-73, 22, 97; `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md:28-29`;
+Location: spec lines 72-73, 22, 97; `docs/plans/2026-10-08-engine-pass-pre-2b-a.md:28-29`;
 `pass-execute.js:84-86`.
 
 The defect: pass A, the replay case, ran 8 of its 12 tasks as `auth-data` (plan lines 28-29). The

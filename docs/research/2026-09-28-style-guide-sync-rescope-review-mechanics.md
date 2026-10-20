@@ -1,7 +1,7 @@
 # Style-guide sync re-scope review: mechanics and feasibility
 
 **Targets:** the re-scoped spec and plan at `e0d5f954` (`docs/superpowers/specs/2026-09-28-style-guide-sync-design.md`,
-`docs/superpowers/plans/2026-09-28-style-guide-sync.md`). **Lens:** does every mechanism behave as
+`docs/plans/2026-09-28-style-guide-sync.md`). **Lens:** does every mechanism behave as
 stated. **Method:** probes only in the session scratchpad: a clone of the dotfiles branch at
 `4461c1f` (revert applied there), a `git archive` of this worktree's HEAD with prototype Vale
 rules, markdownlint-cli2 0.23.3 installed in scratch, workstation Vale 3.23.0 (the CI pin), and a

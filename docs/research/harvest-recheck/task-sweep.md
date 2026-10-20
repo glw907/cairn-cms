@@ -1,6 +1,6 @@
 # Harvest recheck: cut sweep over admin, editors, and the front door
 
-One line per item, per rule 4 of `docs/superpowers/research/2026-09-29-harvest-theme-lineage-brief.md`.
+One line per item, per rule 4 of `docs/research/2026-09-29-harvest-theme-lineage-brief.md`.
 Resolution column is filled by task 6b. No claim re-disposed in this sweep maps to a fact, and no
 fact it filed depends, on a rule-3 rule count, scope default, the `./components` subpath, or a
 chassis token. The lines below are two new bullets whose `Source:` cites a path under

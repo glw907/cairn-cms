@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-01
 **Status:** Approved (design)
-**Parent initiative:** schema source of truth, `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`
+**Parent initiative:** schema source of truth, `docs/specs/2026-06-01-cairn-schema-source-of-truth-design.md`
 **Prior plans:** Plan 1 (the additive `defineFields` primitive), Plan 2 (the contract cutover, `0.13.0` on `main`)
 
 ## Summary

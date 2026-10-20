@@ -24,11 +24,11 @@ store (`media/manifest.ts`, `media/store.ts`), the GitHub-App commit/branch prim
 `github/branches.ts`), the 2b media projection (`media/library-entry.ts`, `media/reference.ts`,
 `media/naming.ts`), DaisyUI v5, Vitest (unit + real-browser component), Playwright (the showcase E2E).
 
-Source spec: `docs/superpowers/specs/2026-06-17-cairn-media-3c-library-design.md` (the adversarially
+Source spec: `docs/specs/2026-06-17-cairn-media-3c-library-design.md` (the adversarially
 reviewed design, with the locked decisions each task must meet). The polished visual contract is
 `docs/internal/design/2026-06-17-media-library-mockup.html`. The research ground is
 `docs/internal/design/2026-06-17-media-library-design-reference.md`. Umbrella: the gallery spec
-`docs/superpowers/specs/2026-06-15-cairn-media-gallery-design.md`. Builds on the media stack on `main`
+`docs/specs/2026-06-15-cairn-media-gallery-design.md`. Builds on the media stack on `main`
 (`0.57.0`, the in-progress bundled media window).
 
 ---

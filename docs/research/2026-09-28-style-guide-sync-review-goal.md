@@ -1,6 +1,6 @@
 # Style-guide sync spec review: goal fidelity
 
-Reviewer lens: goal fidelity. Target: `docs/superpowers/specs/2026-09-28-style-guide-sync-design.md`
+Reviewer lens: goal fidelity. Target: `docs/specs/2026-09-28-style-guide-sync-design.md`
 at `99535b08`. Register read on `draft-docs-0` (`git show draft-docs-0:docs/internal/docs-register.md`,
 cited as REG). Guide quotes were fetched live on 2026-09-28 from developers.google.com/style (tone,
 headings, procedures, link-text) and learn.microsoft.com/style-guide (top-10-tips).

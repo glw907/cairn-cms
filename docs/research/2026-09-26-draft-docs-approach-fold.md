@@ -1,6 +1,6 @@
 # Draft docs approach spec: fold record
 
-**Target:** `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`, revision 1 at
+**Target:** `docs/specs/2026-09-26-draft-docs-approach-design.md`, revision 1 at
 `2efcb86c`, folded to revision 2 in place. **Reviews:** `2026-09-26-draft-docs-approach-review-`
 `{contract,mechanics,risk,consistency}.md` in this directory. IDs below prefix each lens: `C`
 contract, `X` mechanics, `K` risk, `S` consistency. Every finding was checked against the source

@@ -15,7 +15,7 @@ an honest cost admission across the whole tool.
 and state store rather than adding a subsystem. Every Cloudflare email call is a REST call
 through `src/cloudflare/api.mjs`; the `wrangler email sending` beta command group is not used.
 
-**Spec:** `docs/superpowers/specs/2026-08-11-create-cairn-site-t4b-design.md`. Its verification
+**Spec:** `docs/specs/2026-08-11-create-cairn-site-t4b-design.md`. Its verification
 section carries live API shapes captured 2026-08-11; treat those as fixtures, not as claims to
 re-derive.
 

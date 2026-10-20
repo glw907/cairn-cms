@@ -2,7 +2,7 @@
 
 **Target:** `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` at `57baf01b` (re-targeted
 from `a9fa3436`; every finding below was checked against `57baf01b`, and line numbers are its own).
-**Spec:** `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`.
+**Spec:** `docs/specs/2026-10-07-engine-pass-pre-2b-design.md`.
 **Lens:** domain risk. The lens covers the scaffold, the dev backend, the published packages, and
 security.
 **Code read on:** `main` at `57baf01b` (pass A not yet merged; findings that depend on pass A's

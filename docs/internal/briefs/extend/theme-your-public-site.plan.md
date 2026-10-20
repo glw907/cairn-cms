@@ -11,12 +11,12 @@ plan read below. Every check the three plan reads passed is kept as it was.
 
 Inputs read: the outline entry in `docs/internal/outlines/extend.json`; the page anatomies and the
 developer drafting brief in `docs/internal/docs-register.md`; this page's entries in
-`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md` ("Findings by page", "Owner
-ruling", "Owner rulings at resume") and `docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`
+`docs/research/2026-09-30-draft-docs-2a-pilot-job-read.md` ("Findings by page", "Owner
+ruling", "Owner rulings at resume") and `docs/research/2026-10-01-draft-docs-2a-rework-record.md`
 ("### theme-your-public-site", the five round-2 blocking findings and the non-blocking ones);
-`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`; both plan reads under
+`docs/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`; both plan reads under
 "### theme-your-public-site" of
-`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`; every fact bullet named
+`docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`; every fact bullet named
 below in `docs/internal/facts/extend.md` and `docs/internal/facts/reference.md`; the reference pages
 each subordination names (`docs/reference/public-css.md`, `docs/reference/cairn-audit.md`,
 `docs/reference/cli-cairn-media-seed.md`, `docs/reference/core.md`); the two exemplars; the showcase
@@ -725,7 +725,7 @@ table above, and every fact keeps its section.
 
 The structural edit read the revised plan in run `wf_fe61a650-884` and returned one blocking
 finding and two advisory ones, recorded under "### theme-your-public-site" of
-`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`. Each is disposed
+`docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`. Each is disposed
 below. No fact changes its disposition; `f:ivp8wl` and `f:spn4hj` gain one citation each, and
 every check the read listed as passed (the introduction's three parts and six out-of-scope pages,
 Before you begin's routing, the argued departures from the covers order, both outline cross-links

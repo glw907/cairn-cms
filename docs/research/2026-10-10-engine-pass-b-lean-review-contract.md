@@ -1,8 +1,8 @@
 # Engine pass B lean re-plan: contract and criteria review
 
-Lens: contract and criteria. Target: `docs/superpowers/plans/2026-10-10-engine-pass-b-lean.md`
+Lens: contract and criteria. Target: `docs/plans/2026-10-10-engine-pass-b-lean.md`
 (called "lean" below) and its launch prompt, at `18cd15db`, binding sections of
-`docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` (called "old" below). Probed against
+`docs/plans/2026-10-08-engine-pass-pre-2b-b.md` (called "old" below). Probed against
 `origin/main` `dea73f7d`, `origin/worktree-lean-cutover` (PR #112, `scripts/checks/gate-tier.mjs`,
 `docs/internal/pass-gate-tiers.md`), `pass-core`, `cairn-pass`, the agent definitions
 (`cairn-implementer`, `diff-reviewer`), the `claude-clock-stop` hook, and the `EnterWorktree` tool

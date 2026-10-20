@@ -182,7 +182,7 @@ became Ruling 2 alongside its fold.
 - `docs/reference/sveltekit.md:768-772`: `resolveDb`'s shape "stays ratified unchanged" holds, but its
   rationale ("the engine can't conjure an absent platform") goes false; the docs task rewrites the
   sentence. Flagged because the text calls itself ratified.
-- `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md:228`: the confirm step's
+- `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md:228`: the confirm step's
   "Referrer-Policy: no-referrer" becomes `strict-origin` plus the meta. CLAUDE.md names this spec the
   canonical source, so an erratum is owed even though the spec admits drift.
 - `docs/reference/cli-cairn-json-output.md` frozen-id list: changes under the tool major (docs task).

@@ -138,8 +138,8 @@ check scripts' tests use; match it), `package.json` (`check:facts` wired into `c
 ### Task 3: Governance is container-first (repo side)
 
 **Files:** `CLAUDE.md` ("Documentation is a pass dimension" section), `ROADMAP.md`,
-`docs/superpowers/plans/2026-09-14-extend-1-pass.md`,
-`docs/superpowers/plans/2026-09-14-extend-2-pass.md`, `CHANGELOG.md`.
+`docs/plans/2026-09-14-extend-1-pass.md`,
+`docs/plans/2026-09-14-extend-2-pass.md`, `CHANGELOG.md`.
 
 **Acceptance criteria:**
 

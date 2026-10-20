@@ -1,6 +1,6 @@
 # Theme identity pass A plan review: contract and criteria
 
-Lens: contract and criteria. Target: `docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md`
+Lens: contract and criteria. Target: `docs/plans/2026-09-26-theme-identity-pass-a.md`
 at `c260832f`, against the approved spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md`.
 Every finding below was checked against the tree or `node_modules`, not recalled. The spec's ratified
 design is not re-argued.

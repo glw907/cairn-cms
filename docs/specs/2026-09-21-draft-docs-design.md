@@ -7,7 +7,7 @@ Go `cairn` tool's contract pages, the admin arm, and the extend arm, written fre
 site round. The full 2026-09-08 docs standard waits for the rebuild that follows the round.
 
 This spec covers the whole initiative, three passes. Each pass gets its own plan, written when
-its preconditions hold. The first plan is `docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`.
+its preconditions hold. The first plan is `docs/plans/2026-09-21-draft-docs-pass-a.md`.
 
 ## Where this sits
 
@@ -23,7 +23,7 @@ The order of work, as ruled:
    last. Then the one engine cut, `0.97.0`.
 5. The docs chore that updates the narrative-arm freeze and the site-agent rule.
 6. The docs-infra currency pass, whole
-   (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`).
+   (`~/.dotfiles/docs/plans/2026-09-19-docs-infra-currency-pass.md`).
 7. **Pass B**, the admin arm.
 8. **Pass C**, the extend arm. It closes before the site round starts, so no site agent edits a
    page a drafter holds.

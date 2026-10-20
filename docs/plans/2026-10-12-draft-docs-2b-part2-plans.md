@@ -7,7 +7,7 @@ Claude Code with cairn", the first page of the new `claude-code` arm. No page pr
 **Design.** Approved by Geoff in chat on 2026-10-12, with unattended execution approved. There is no
 separate spec, since the design fits on a page. It is restated here in the "Rulings" section.
 
-**Review.** Mechanics lens: `docs/superpowers/research/2026-10-12-2b-part2-plans-review-mechanics.md`.
+**Review.** Mechanics lens: `docs/research/2026-10-12-2b-part2-plans-review-mechanics.md`.
 The fold record is at its end. Every correctness finding is folded below.
 
 **Pass class.** `ordinary`, since every path is under `docs/`. The pass merges its own PR once the
@@ -270,7 +270,7 @@ plans.
 
 ### T15. Record and close (ordinary, 60 min)
 
-1. Write `docs/superpowers/research/2026-10-12-2b-part2-plans-record.md`:
+1. Write `docs/research/2026-10-12-2b-part2-plans-record.md`:
    - for each plan: its file, section count, placed and disposed fact counts, and the plan read's
      verdict
    - every format finding, with the date it was sent to drafter-conductor

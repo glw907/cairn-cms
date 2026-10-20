@@ -1,6 +1,6 @@
 # Pass 1b spec review: consistency lens
 
-**Target:** `docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` at
+**Target:** `docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` at
 `30083f27`. **Lens:** does the draft contradict a ratified document, or change its meaning
 without saying so? Checked against the parent spec (amendments, pass 1 items 2, 3, 8, 9, pass 2a
 items 4 and 5, budgets), the pass 1 plan (Task 4, Task 11, the ledger's "4 prep", "11 pre-flight",

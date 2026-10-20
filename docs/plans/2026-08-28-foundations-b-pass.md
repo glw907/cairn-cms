@@ -19,7 +19,7 @@ task), `docs/reference/sveltekit.md` (Tasks 1, 3).
 foundations B" subsection (four items; note 1 routed to the internals pass rather than
 executed in Task 1 per the engine-triage review, notes 2 and 3 in Task 2, note 4 out of scope
 under Pass-end notes).
-**Initiative frame:** `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`
+**Initiative frame:** `docs/specs/2026-08-27-audit-remediation-initiative-design.md`
 (slice 2b; its standing-constraints block applies).
 **Evidence base, read from source, never memory:** `coherence-v2.md` (C3 at `:189-231`, the
 prescription quoted at `:230-231`; C10 at `:492-`, its route-factories tally at `:496`),

@@ -1,7 +1,7 @@
 # Polish-11a plan review: the fold record
 
 Disposition for every finding in the three adversarial plan reviews of
-`docs/superpowers/plans/2026-09-08-polish-11a-pass.md`, folded 2026-09-08. Lenses:
+`docs/plans/2026-09-08-polish-11a-pass.md`, folded 2026-09-08. Lenses:
 `plan-11a-review-coverage.md` (22 findings), `plan-11a-review-executor.md` (17),
 `plan-11a-review-sequencing.md` (12). Fifty-one findings: 51 taken, 0 declined, and five of the
 taken folded once across lenses rather than twice, recorded as superseded on the duplicate.

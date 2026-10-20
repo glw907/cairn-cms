@@ -183,7 +183,7 @@ tracks"):
 
 ## 3. Pass plans' "What this pass hands forward" — chassis items
 
-**`docs/superpowers/plans/2026-09-01-internals-pass.md:791-793`:**
+**`docs/plans/2026-09-01-internals-pass.md:791-793`:**
 
 > "- **Chassis:** unchanged (the render trio re-homing—Task 3 allowlists their
 > narrative-context block until then; the showcase hand-mount against generated
@@ -193,12 +193,12 @@ Same plan, Task 3 (`:283-308`) is the source of the render-trio deferral mechani
 render trio is F-1 list (c) Tier 4, deferred to the CHASSIS pass, so this task cannot fix
 it by re-homing: it gets a per-page allowlist entry with that reason" (`:296-298`).
 
-**`docs/superpowers/plans/2026-09-03-internals-b-pass.md:623`:**
+**`docs/plans/2026-09-03-internals-b-pass.md:623`:**
 
 > "- **Chassis:** the showcase exemplar half of audit finding 8; the render trio
 > re-homing."
 
-**`docs/superpowers/plans/2026-09-03-internals-c-pass.md:499-502`:**
+**`docs/plans/2026-09-03-internals-c-pass.md:499-502`:**
 
 > "## What this pass hands forward
 >
@@ -218,7 +218,7 @@ pass, not history rows; the annotation states the class vocabulary those helpers
 renamed here, so the chassis re-homing re-teaches `cairn-*` names."
 
 **Internals-C's Task 10 "chassis-inputs record" reference**
-(`docs/superpowers/plans/2026-09-03-internals-c-pass.md:470-483`, "### Task 10: Exemplar
+(`docs/plans/2026-09-03-internals-c-pass.md:470-483`, "### Task 10: Exemplar
 drift, the monolith line, records (last)"):
 
 > "**Files:** Modify: the `createSectionAction` docs (verify the call-site count — the
@@ -245,7 +245,7 @@ admin screen (`admin/signups/+page.server.ts`) uses `requireOwner`/raw `formData
 `fail(400, {error})` instead of the documented `createSectionAction`, which "has **zero
 non-test call sites**."
 
-Also relevant from `docs/superpowers/plans/2026-09-01-conformance-pass.md:962-974`:
+Also relevant from `docs/plans/2026-09-01-conformance-pass.md:962-974`:
 
 > "- **Chassis pass:** the render trio re-homing (`cardShell`/`headRow`/`iconSpan` —
 >   explicitly untouched by Task 7), and the carried showcase hand-mounted
@@ -253,7 +253,7 @@ Also relevant from `docs/superpowers/plans/2026-09-01-conformance-pass.md:962-97
 > - **Release:** the window still holds; ONE cut after the chassis slice per the
 >   initiative design."
 
-And `docs/superpowers/plans/2026-08-28-foundations-b-pass.md:528-532` (the origin of the
+And `docs/plans/2026-08-28-foundations-b-pass.md:528-532` (the origin of the
 hand-mount carry-forward): "**Carried follow-ups (routed, not floating).** (1) No compile
 in the repo exercises the hand-mount path against generated `./$types`; a hand-mounted
 `+page.server.ts` in the showcase is the close (routed to STATUS carry-forwards)."
@@ -614,7 +614,7 @@ hand-edit") and by the `audit-render-iconspan`/`-headrow`/`-cardshell` ledger ro
 
 ---
 
-## 9. `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`
+## 9. `docs/specs/2026-08-27-audit-remediation-initiative-design.md`
 
 **The chassis slice's definition** (`:109-115`, "**6. The chassis pass.**"):
 
@@ -665,5 +665,5 @@ the showcase exemplar is what is out of date.
 
 **Routed to chassis:** adopting `createSectionAction` in `examples/showcase`'s signups route is
 showcase-exemplar work, not a docs fix, and belongs to the chassis pass that touches that route.
-The chassis-A plan (`docs/superpowers/plans/2026-09-04-chassis-a-pass.md`) keeps the showcase's
+The chassis-A plan (`docs/plans/2026-09-04-chassis-a-pass.md`) keeps the showcase's
 raw shape as written and defers adoption to chassis-B on this ruling.

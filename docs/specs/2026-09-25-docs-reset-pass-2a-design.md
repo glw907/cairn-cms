@@ -1,14 +1,14 @@
 # Docs reset pass 2a: design
 
 **Date:** 2026-09-25. **Status:** approved design, revised by the spec-review fold
-(`docs/superpowers/research/2026-09-25-docs-reset-2a-spec-fold.md`, with its second and prose
+(`docs/research/2026-09-25-docs-reset-2a-spec-fold.md`, with its second and prose
 folds); the ceiling ruled as B4. **Parent:**
 [`2026-09-23-docs-reset-design.md`](2026-09-23-docs-reset-design.md), whose "Amendments from pass
 2a's brainstorm" section points here. **Owner rulings:** O12 and B1 to B4 (Geoff, 2026-09-25),
 below. **Inputs:** the pass 1b validation record
 (`docs/internal/record/2026-09-24-docs-reset-1b-validation.md`), its tuning record
 (`docs/internal/record/2026-09-24-docs-reset-1b-tuning.md`), the pass 1b post-mortem (foot of
-`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`), and `ROADMAP.md`'s docs reset entry.
+`docs/plans/2026-09-24-docs-reset-pass-1b.md`), and `ROADMAP.md`'s docs reset entry.
 
 Pass 1b's readers caught 2 of 16 on-map plant-runs. About half the misses were defects the reader
 noticed and filed where the judge never looks, because the report had no field for them. Pass 2a
@@ -419,7 +419,7 @@ Drafting any page, including the parent's three trial pages, which move to the f
 pass. Two inputs move with them: the designer theme-guide content input (ROADMAP, Geoff
 2026-09-24) and pass 1b's rule that measuring jobs stay disjoint from the chain's reader-stage
 jobs. The freeze and its readiness items, which stay filed in
-`docs/superpowers/research/2026-09-24-pass-1b-carries.md`. Sonnet readers. The labeled defect set
+`docs/research/2026-09-24-pass-1b-carries.md`. Sonnet readers. The labeled defect set
 and the profile-grader comparison, which fall with the trial. The free-floor rescore (CR6).
 
 ## Budget

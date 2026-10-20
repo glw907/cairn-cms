@@ -13,7 +13,7 @@ custom-screen example rebuilt before the `OfficeList` export leaves, every rulin
 subject the window renames annotated, and the release readiness derived and recorded so the
 conductor can cut through `cairn-release` after the merge.
 
-**Spec:** `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, revision 4, section
+**Spec:** `docs/specs/2026-09-08-polish-passes-design.md`, revision 4, section
 "Polish-C", with the Decisions block (6, 8, 11 in particular), the Dispositions table, "Findings
 not taken", "Sequencing and budgets", and "Risks".
 
@@ -210,7 +210,7 @@ every 11b-produced anchor by prose, never by the task number quoted here.
 ### Counts the spec states that measurement corrects
 
 - **The window's file reach, over three excluded trees rather than two.** The spec's risk block
-  states 464 tracked files and 267 excluding `docs/superpowers/` and `docs/internal/record/`, for
+  states 464 tracked files and 267 excluding `docs/` and `docs/internal/record/`, for
   twenty-five identifiers at `f3f24b9f`. Re-derived by the same method at `0705776e` over this
   plan's set of thirty renamed or removed identifiers plus the four factories whose signature
   changes: **505 tracked files match; 281 excluding the two archive trees the spec names; 273 also
@@ -637,7 +637,7 @@ These bind every task. An implementer reads them before its Files block.
 
    | Class | Treatment |
    |---|---|
-   | `docs/superpowers/**`, `docs/internal/record/**`, `docs/internal/history/**` | Write-once archives. Left verbatim, classified, never edited |
+   | `docs/**`, `docs/internal/record/**`, `docs/internal/history/**` | Write-once archives. Left verbatim, classified, never edited |
    | `docs/internal/design/**`, `docs/internal/feedback/**` | Dated point-in-time records. Same treatment as the archives |
    | A historical field in a ruling row (`Shape:`, `Record:`, `Verified:`) | Left verbatim; the annotation rule forbids rewriting it. Only the appended Note names the new name |
    | A `docs/HISTORY.md` or `CHANGELOG.md` entry describing what was true then | Prose left verbatim. **One exception, constraint 16: a link anchor a gate resolves is repaired** |
@@ -1010,7 +1010,7 @@ change is proven by the compiler and by `check:transcripts`, not by a new suite.
   positional signature did.
 - **The `convention-parameter-bags` amendment is written in this task, not deferred.** It is a
   dated clause appended to the row, quoting decision 11's text and citing
-  `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, dated 2026-09-08. The clause states
+  `docs/specs/2026-09-08-polish-passes-design.md`, dated 2026-09-08. The clause states
   that the source of the ruling is that spec's Decisions block rather than a sitting quotation,
   per the spec's own preamble. Task 3 adds nothing to the row; one amendment covers all four
   factories.
@@ -2472,7 +2472,7 @@ those gates discharge the clause.
   live tier, plus one new follow-up line, below, plus the live tier lines that name a symbol this
   window renamed, which earlier tasks report and this task repairs under constraint 7's table; a
   struck-through or historical line stays verbatim), `docs/internal/docs-friction-log.md` (verified
-  still empty, or triaged), `docs/superpowers/plans/2026-09-08-polish-c-pass.md` (the Post-mortem
+  still empty, or triaged), `docs/plans/2026-09-08-polish-c-pass.md` (the Post-mortem
   heading)
 - Not modified: `package.json`, `docs/STATUS.md`
 
@@ -2771,7 +2771,7 @@ record is complete; after Task 15 the branch is ready for the conductor's cut.
   Sequencing block gives the reason: otherwise the two branches conflict on one file, or 2a's
   rebuild re-teaches `OfficeList` from a pre-removal fact ledger and turns `check:snippets` red on
   `main` after the release is cut. The amendment naming this is already written into
-  `docs/superpowers/plans/2026-09-08-docs-toolset-pass.md`; the executor confirms it is there before
+  `docs/plans/2026-09-08-docs-toolset-pass.md`; the executor confirms it is there before
   2a branches.
 - **To the docs rewrite's stage one, a stable vocabulary.** Every rename in this window invalidates
   a fact-ledger entry in exactly the class the ledger exists to guarantee, which is why polish-C

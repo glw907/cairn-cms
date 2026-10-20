@@ -1,7 +1,7 @@
 # Theme identity pass A: plan review, domain-risk lens
 
 Target: `docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md` at `c260832f`, against the
-approved spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md`. The ratified design is
+approved spec `docs/specs/2026-09-26-theme-identity-design.md`. The ratified design is
 not re-argued. The findings below are ranked by consequence. Each one was checked against the
 code, the daisyUI 5.7.44 sources, or the runner, and was not inferred from the plan's prose.
 

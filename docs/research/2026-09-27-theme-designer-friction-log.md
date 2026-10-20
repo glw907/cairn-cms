@@ -6,9 +6,9 @@ comfortable reading Svelte, new to cairn. **Tree:** a scratch copy of `examples/
 `node_modules`, which resolve the engine through `file:../..` to the real repo's `dist`. No
 engine, site, or worktree file was edited.
 
-**Tagged against:** `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md` (the
+**Tagged against:** `docs/specs/2026-09-27-theme-identity-pass-b-design.md` (the
 twice-folded draft, "draft, folded twice") and the nine
-`docs/superpowers/research/2026-09-27-theme-pass-b-review-*.md` files plus the fold record
+`docs/research/2026-09-27-theme-pass-b-review-*.md` files plus the fold record
 `2026-09-27-theme-pass-b-fold.md`. Review IDs (TH*, CP*, ME*, RK*) are the fold record's.
 
 **Severity:** **blocks** (cannot finish the step as documented), **costs time** (finished, but

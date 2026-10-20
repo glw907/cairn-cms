@@ -1,6 +1,6 @@
 # Pre-2b docs tooling pass
 
-This pass fixes the docs tooling that cost stage 2a its rounds, so that stage 2b drafts against corrected tools. Process: `cairn-pass` for track C and `dotfiles-pass` for track D, each loading `pass-core`. Geoff approved the design on 2026-10-11: `docs/superpowers/specs/2026-10-11-overnight-2b-design.md`, item "1. The pre-2b tooling pass". Source items: `ROADMAP.md:341-394` ("Docs tooling before stage 2b"). No separate spec: the design is a page. Two executors work in parallel on disjoint repos. Track C is the cairn-cms executor, with its PR to `glw907/cairn-cms`. Track D is the dotfiles executor, with its PR to `glw907/workstation`.
+This pass fixes the docs tooling that cost stage 2a its rounds, so that stage 2b drafts against corrected tools. Process: `cairn-pass` for track C and `dotfiles-pass` for track D, each loading `pass-core`. Geoff approved the design on 2026-10-11: `docs/specs/2026-10-11-overnight-2b-design.md`, item "1. The pre-2b tooling pass". Source items: `ROADMAP.md:341-394` ("Docs tooling before stage 2b"). No separate spec: the design is a page. Two executors work in parallel on disjoint repos. Track C is the cairn-cms executor, with its PR to `glw907/cairn-cms`. Track D is the dotfiles executor, with its PR to `glw907/workstation`.
 
 ## Owner rulings after planning (Geoff, 2026-10-11)
 
@@ -159,7 +159,7 @@ CT2, CT6, and CT7 all edit `docs/internal/facts/*.md`, so they stay serial.
     - `docs/extend/restrict-admin-access.md:51` and `:363`, with `docs/internal/briefs/extend/restrict-admin-access.json:187` and `:970`.
     - `docs/extend/replace-magic-links-with-cloudflare-access.md:34` and `:409`, with its brief's `:88` and `:645`.
   - **Facts.** `f:nz890r` (`docs/internal/facts/extend.md:255`), `f:tkpmxr` (`:722`), and `f:hcjb3o` (`:72`): rename in claim prose only. A claim or anchor that quotes a `src/lib` comment verbatim stays as it is, because the comment itself stays; `f:qqy4uq` (`:256`, whose anchor quotes "the second-audience login factory") is one.
-  - **Left as records:** every file under `src/` (Later), the code comment at `examples/showcase/src/members/channel.ts:53` (Later, with the `src/lib` comments), `docs/superpowers/**`, `*.plan.md` and `*.framing.md` under `docs/internal/briefs/`, `docs/internal/outlines/**`, `CHANGELOG.md`, `ROADMAP.md`, `docs/internal/engine-rulings.md`, and the facts heading `## docs/extend/add-a-second-audience.md` (`extend.md:68`, which absorbed-page coverage reads).
+  - **Left as records:** every file under `src/` (Later), the code comment at `examples/showcase/src/members/channel.ts:53` (Later, with the `src/lib` comments), `docs/**`, `*.plan.md` and `*.framing.md` under `docs/internal/briefs/`, `docs/internal/outlines/**`, `CHANGELOG.md`, `ROADMAP.md`, `docs/internal/engine-rulings.md`, and the facts heading `## docs/extend/add-a-second-audience.md` (`extend.md:68`, which absorbed-page coverage reads).
 - **Files.** As listed above.
 - **Risk.** `ordinary`. The diff is prose only, and nothing under `src/` changes.
 - **Acceptance.**

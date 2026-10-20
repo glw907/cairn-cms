@@ -82,7 +82,7 @@ its credentials: a credential scheme that makes a second site easy is the requir
 why the read tokens are account-scoped rather than confined to one zone or one repository. The
 site template's home follows "easiest, most idiomatic, architecturally correct". The full
 framing is
-[`docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`](../../superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md).
+[`docs/specs/2026-09-21-cairn-tool-after-1-0-framing.md`](../../specs/2026-09-21-cairn-tool-after-1-0-framing.md).
 
 ## The ceiling, raised six times
 

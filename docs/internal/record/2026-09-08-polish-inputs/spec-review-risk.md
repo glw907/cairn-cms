@@ -1,6 +1,6 @@
 # Polish spec review, risk and sizing lens
 
-Adversarial review of `docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 1 (Opus, fresh context, 2026-09-08). Folded into revision 2.
+Adversarial review of `docs/specs/2026-09-08-polish-passes-design.md` revision 1 (Opus, fresh context, 2026-09-08). Folded into revision 2.
 
 ---
 

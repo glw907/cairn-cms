@@ -7,8 +7,8 @@ carried them. The pass's own detail lives in its plan post-mortem.
 ## Immediate next action (2026-08-08: stable `0.94.0` on `latest`; ASC adopted; the vertical-alignment pass is MERGED and unreleased; the CLEANUP PASS is SPECCED AND PLANNED, execution next, ahead of release one)
 
 **The cleanup pass is ready to execute (2026-08-08, the Fable brainstorm sitting).** The spec is
-[`2026-08-08-cleanup-pass-design.md`](../../superpowers/specs/2026-08-08-cleanup-pass-design.md) and the
-plan is [`2026-08-08-cleanup-pass.md`](../../superpowers/plans/2026-08-08-cleanup-pass.md), both
+[`2026-08-08-cleanup-pass-design.md`](../../specs/2026-08-08-cleanup-pass-design.md) and the
+plan is [`2026-08-08-cleanup-pass.md`](../../plans/2026-08-08-cleanup-pass.md), both
 committed. The sitting's rulings: **cairn-audit ships whole as consumer product** (the
 hypothesized rule split dissolved on evidence: all 23 registered rules audit the `/admin` surface,
 and a consumer's admin IS cairn's admin toolkit); the lab apparatus evicts from `src/lib` with a
@@ -52,14 +52,14 @@ class and are worth one pass.
 
 **Both Phase F passes are DONE and MERGED to `main`.** Pass one (history and revert): merge
 `55aaad28`, 2026-08-06, post-mortem in
-[`2026-08-06-history-revert.md`](../../superpowers/plans/2026-08-06-history-revert.md). Pass two
+[`2026-08-06-history-revert.md`](../../plans/2026-08-06-history-revert.md). Pass two
 (public preview): merge `e3db7de8` via PR #23, 2026-08-07, all five CI checks green on the
-real merge ref, post-mortem in [`2026-08-06-preview.md`](../../superpowers/plans/2026-08-06-preview.md)
+real merge ref, post-mortem in [`2026-08-06-preview.md`](../../plans/2026-08-06-preview.md)
 (the pass-end adversarial workflow refuted 34 of 41 findings and the 7 confirmed are fixed;
 the live admin smoke and its transcript are in the post-mortem). Both hold under
 `## Unreleased` for RELEASE ONE; no version bump. The spec, with its round 3 corrections and
 the discard nuance, is
-[`2026-08-06-history-revert-preview-design.md`](../../superpowers/specs/2026-08-06-history-revert-preview-design.md).
+[`2026-08-06-history-revert-preview-design.md`](../../specs/2026-08-06-history-revert-preview-design.md).
 
 **Pass A is MERGED to `main` (`f5b9a301`, 2026-08-08) and holds unreleased under `## Unreleased`.**
 Release one no longer gates on it; release one now follows the CLEANUP PASS, for the ordering
@@ -72,7 +72,7 @@ confirmed rows), the site-visual suite widened to the five-viewport bar as its o
 guardrail for the one confirmed mechanic), and task 5 (docs). Full detail, including every
 verified measurement, the two mechanisms locked in, and the pass's own cost accounting, is the
 post-mortem appended to
-[`2026-08-07-vertical-alignment-cairn-wide.md`](../../superpowers/plans/2026-08-07-vertical-alignment-cairn-wide.md).
+[`2026-08-07-vertical-alignment-cairn-wide.md`](../../plans/2026-08-07-vertical-alignment-cairn-wide.md).
 The harvest, the "ink not boxes" lesson now folded into the `visual-fidelity` skill's trigger, and
 the gate lessons (a passing visual baseline certifies stability never correctness; a conformance
 fan-out cannot find a wrong premise) are banked in

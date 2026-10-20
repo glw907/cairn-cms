@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, SvelteKit handlers and `Handle` hook, Web Crypto, D1 via prepared statements, vitest (`unit` project in node, `integration` project in workerd against a real miniflare D1).
 
-**Design reference:** `docs/superpowers/specs/2026-06-02-cairn-auth-hardening-design.md` (approved).
+**Design reference:** `docs/specs/2026-06-02-cairn-auth-hardening-design.md` (approved).
 
 ---
 

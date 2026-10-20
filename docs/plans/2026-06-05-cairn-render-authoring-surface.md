@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, hast/hastscript, vitest, the svelte-check and package gates (`npm run check`, `npm test`, `npm run check:reference`, `npm run check:package`).
 
-**Design spec:** `docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md`.
+**Design spec:** `docs/specs/2026-06-05-cairn-render-authoring-surface-design.md`.
 
 ---
 
@@ -530,7 +530,7 @@ export { remarkDirectiveStamp } from './render/remark-directives.js';
 // The component-authoring helpers (iconSpan, cardShell, headRow, isElement, strAttr) live on the
 // @glw907/cairn-cms/render subpath, not the root barrel. rehypeDispatch is deliberately not public:
 // createRenderer is the one public render pipeline, so the safe plugin ordering is the only public
-// path. See docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md.
+// path. See docs/specs/2026-06-05-cairn-render-authoring-surface-design.md.
 export { createRenderer } from './render/pipeline.js';
 ```
 

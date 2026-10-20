@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown, `prose-guard` (the writing-voice gate), the `typescript` compiler API (already a dependency, v6) for export enumeration, `vitest` (the `unit` project at `src/tests/unit/`) for the script's test, `git`.
 
-**Design spec:** `docs/superpowers/specs/2026-06-04-cairn-docs-phase-2-reference-design.md`.
+**Design spec:** `docs/specs/2026-06-04-cairn-docs-phase-2-reference-design.md`.
 
 ---
 

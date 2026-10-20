@@ -83,7 +83,7 @@ parallelism lives in the survey and the verifiers, where it is safe.
    the showcase `svelte-check` and the dev package's typecheck into the root gate so a public
    reshape can never silently break them again.
 2. **The admin-build content-scope plan** (already written:
-   `docs/superpowers/plans/2026-06-30-admin-build-content-scope.md`): scope the admin CSS
+   `docs/plans/2026-06-30-admin-build-content-scope.md`): scope the admin CSS
    build's Tailwind content detection to the components glob, with the no-foreign-token test.
 3. **The form-renderer merge** (`ComponentForm`/`FieldInput`, ROADMAP Later): the largest known
    duplication, as a guarded final task with its own constraints — component tests first, the

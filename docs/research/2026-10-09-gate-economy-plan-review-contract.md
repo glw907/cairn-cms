@@ -1,8 +1,8 @@
 # Gate economy plan review: contract and criteria lens
 
 Target: `docs/superpowers/plans/2026-10-09-gate-economy.md` at `211b1a37`. Spec:
-`docs/superpowers/specs/2026-10-09-gate-economy-design.md` with both rulings; owed minors from
-`docs/superpowers/research/2026-10-09-gate-economy-spec-fold.md`. Lens: is each acceptance criterion
+`docs/specs/2026-10-09-gate-economy-design.md` with both rulings; owed minors from
+`docs/research/2026-10-09-gate-economy-spec-fold.md`. Lens: is each acceptance criterion
 testable by a `diff-reviewer`, does it name its fixture and its failure reason, can it pass
 vacuously, does the plan cover the spec and the owed errata, and is the ceremony proportionate.
 Per Anthropic's reviewer guidance, findings are limited to gaps that affect correctness or a stated

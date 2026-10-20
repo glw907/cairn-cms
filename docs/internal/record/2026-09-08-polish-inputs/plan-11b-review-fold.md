@@ -5,9 +5,9 @@ Disposition of every finding from the three adversarial lenses on the unsplit po
 `plan-11b-review-sequencing.md`, 14; fifty in all). Folded 2026-09-08 into two plans, because Geoff
 ruled the pass split at the draft's run-two boundary on the same day:
 
-- **11b-i**, `docs/superpowers/plans/2026-09-08-polish-11b-i-pass.md`, the draft's Tasks 1 to 10
+- **11b-i**, `docs/plans/2026-09-08-polish-11b-i-pass.md`, the draft's Tasks 1 to 10
   renumbered 1 to 10, plus a new Task 11 for its own records.
-- **11b-ii**, `docs/superpowers/plans/2026-09-08-polish-11b-ii-pass.md`, the draft's Tasks 11 to 16
+- **11b-ii**, `docs/plans/2026-09-08-polish-11b-ii-pass.md`, the draft's Tasks 11 to 16
   renumbered 1 to 6.
 
 The draft (`2026-09-08-polish-11b-pass.md`) and its args cache (`~/.cache/cairn-polish-11b/`) are

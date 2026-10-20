@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (NodeNext ESM, `.js` import specifiers), Vitest (`vitest run`), `@cloudflare/vitest-pool-workers` for the integration project (runs `requestAction` in workerd against a real miniflare D1), `vitest-browser-svelte` for the component project, svelte-check for the type gate.
 
-**Spec:** `docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md` (Arm A, plus the two 2026-06-09 reconciliations: the Pass 2/3 docs split and the await-the-send timing side-channel noted not mitigated).
+**Spec:** `docs/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md` (Arm A, plus the two 2026-06-09 reconciliations: the Pass 2/3 docs split and the await-the-send timing side-channel noted not mitigated).
 
 **Project gate (every task ends green):** the task's targeted test passes, `npm run check` reports 0 errors / 0 warnings, and `npm test` exits 0. The diagnostics module stays internal (no public subpath). The one public-surface change is the additive `status` field on the action result; the observable-log contract gains `code` and `conditionId` on `auth.link.send_failed`. Bump the minor to `0.38.0` (additive; a `Consumers may:` changelog line). The `delivery-*-split` parallel-load flake is known: if `npm test` exits 1 only on those two files with an import-timeout, re-run the full suite once to confirm green.
 

@@ -87,7 +87,7 @@ What remains genuinely blocked, and must stay blocked:
   structural: `docs/internal/2026-07-design-infrastructure-audit-calibration.md` (its corpus B
   section and section 7), `docs/STATUS.md`, the initiative memory
   (`cairn-design-infrastructure-initiative`), and the Task 17 Step 2 note in
-  `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`. Say the run
+  `docs/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`. Say the run
   stopped short and why, rather than that the door was locked.
 - [x] **Step 7:** full gate if any rule changed; commit; ASC repo verified untouched.
 

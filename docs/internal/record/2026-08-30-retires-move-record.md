@@ -43,7 +43,7 @@ which failed exactly this way before the fix). The compiling form wraps the opti
 `NonNullable` before indexing: `NonNullable<EditData['advisories'][number]['actions']>[number]`,
 used above and in the fixture.
 
-**Dispositions (the three-case rule, `docs/superpowers/plans/2026-08-30-retires-pass.md`, Global
+**Dispositions (the three-case rule, `docs/plans/2026-08-30-retires-pass.md`, Global
 constraints).** Fourteen of the eighteen are case 3 (a real cross-module consumer keeps the
 module-level `export`; only the barrel/subpath publication drops): `AdvisoryNotice`
 (`content/advisories.ts`, consumed directly by `content-routes-core.ts`), `LinkTarget`

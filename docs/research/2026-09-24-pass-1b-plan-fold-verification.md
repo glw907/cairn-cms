@@ -1,8 +1,8 @@
 # Pass 1b plan fold verification
 
 **Date:** 2026-09-24. **Reader:** `claude-opus-5-5`, fresh context, over HEAD `a621e597`
-(plan `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`, spec
-`docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`, fold record
+(plan `docs/plans/2026-09-24-docs-reset-pass-1b.md`, spec
+`docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`, fold record
 `2026-09-24-pass-1b-plan-fold.md`). Rulings O1 to O8 and P1 to P11 were taken as settled.
 
 **Counts:** 0 blockers, 2 majors, 6 minors. Verdict: approvable once the two majors take their

@@ -5,7 +5,7 @@
 > loop reviews each diff and verifies the gate between dispatches.
 
 **Goal:** ship the four sidebar seams as one cairn minor window, per
-`docs/superpowers/specs/2026-07-18-admin-access-and-attention-design.md`: the access map
+`docs/specs/2026-07-18-admin-access-and-attention-design.md`: the access map
 with one-authority enforcement and derived nav, declared collapse defaults, the widened
 icon vocabulary with engine-ref overrides, and per-session attention badges.
 
@@ -21,7 +21,7 @@ bundled family.
 
 ## Global constraints
 
-- The spec is the contract: `docs/superpowers/specs/2026-07-18-admin-access-and-attention-design.md`.
+- The spec is the contract: `docs/specs/2026-07-18-admin-access-and-attention-design.md`.
   Read it before any task. Zero-config sites must see no behavior change anywhere.
 - Work happens on the `admin-access-attention` worktree off `main`; all edits target the
   worktree path. Run `npm ci` if node_modules is stale and `npm run package` before

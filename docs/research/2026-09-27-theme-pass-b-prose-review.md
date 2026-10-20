@@ -2,7 +2,7 @@
 
 prose-voice-reviewer, against spec commit 7f902c70.
 
-**Review of `/var/home/glw907/Projects/cairn-cms/docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`**
+**Review of `/var/home/glw907/Projects/cairn-cms/docs/specs/2026-09-27-theme-identity-pass-b-design.md`**
 
 **Setup.** This is an internal design spec. Its closest register is `technical-doc-web.md`, but specs are not register-graded, so facts and contradictions come first and style gets a light touch. No corpus manifest was named, so I graded without one. I checked the spec against the tree at `7f902c70`, the fold record, the nine review files, the parent spec, the pass A worktree, `node_modules`, the five sibling site repos, and `npm view`.
 

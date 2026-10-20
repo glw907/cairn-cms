@@ -3,7 +3,7 @@
 The prioritized output of the principle-adherence review pass (2026-06-28). It records what the
 whole-engine audit found when every subsystem was read through the charter lens. The charter is the
 `## What cairn is` block in `CLAUDE.md` and `what-cairn-is-and-is-not.md` (same directory); the pass
-spec is `docs/superpowers/specs/2026-06-28-cairn-principle-adherence-review.md`.
+spec is `docs/specs/2026-06-28-cairn-principle-adherence-review.md`.
 
 ## Headline
 

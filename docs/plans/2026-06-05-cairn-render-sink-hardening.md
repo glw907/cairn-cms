@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, unified/rehype, `hast-util-sanitize` (`defaultSchema` protocol allowlist), `unist-util-visit`, vitest, the svelte-check and package gates (`npm run check`, `npm test`, `npm run check:reference`, `npm run check:package`).
 
-**Design spec:** `docs/superpowers/specs/2026-06-05-cairn-render-sink-hardening-design.md`.
+**Design spec:** `docs/specs/2026-06-05-cairn-render-sink-hardening-design.md`.
 
 ---
 

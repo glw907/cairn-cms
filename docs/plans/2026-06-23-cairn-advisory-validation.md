@@ -16,7 +16,7 @@ address-collision notice and the existing client-derived needs-alt notice render
 
 **Tech Stack:** TypeScript, Svelte 5 runes, SvelteKit 2, DaisyUI v5 and Tailwind v4, Cloudflare Workers
 with D1 and R2, vitest (unit, integration, component). Design record:
-`docs/superpowers/specs/2026-06-23-cairn-advisory-validation-design.md`.
+`docs/specs/2026-06-23-cairn-advisory-validation-design.md`.
 
 ## Global Constraints
 

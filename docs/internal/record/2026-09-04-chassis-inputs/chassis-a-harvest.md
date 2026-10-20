@@ -2,7 +2,7 @@
 
 What chassis-A's twelve tasks learned about the emitter, the bake, and the gates, banked for
 chassis-B1, chassis-B2, and polish so those passes do not rediscover it. Plan:
-`docs/superpowers/plans/2026-09-04-chassis-a-pass.md`.
+`docs/plans/2026-09-04-chassis-a-pass.md`.
 
 ## 1. The gate ceiling missed the CLI suite until Task 1's fix round
 

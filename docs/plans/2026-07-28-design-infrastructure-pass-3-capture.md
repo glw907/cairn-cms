@@ -22,7 +22,7 @@ heavy material loads on demand; then the trial instrumentation and narrative (Ta
 The skill lives at `skills/cairn-admin-screens/` (SKILL.md plus `references/`), joins the
 package `files` array, and is installed and freshness-checked by `cairn-doctor`.
 
-**Spec:** `docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`,
+**Spec:** `docs/specs/2026-07-27-cairn-design-infrastructure-design.md`,
 sections 5, 7, 8, 10, and the **2026-07-28 amendments** (the three rulings and two scope
 decisions; read them before starting). Evidence:
 `docs/internal/2026-07-design-infrastructure-audit-calibration.md` section 12.

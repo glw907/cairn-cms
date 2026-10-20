@@ -137,7 +137,7 @@ The pass fixes these; this fold did not edit them.
 
 ## Second fold
 
-Input: `docs/superpowers/research/2026-09-26-theme-identity-fold-verification.md` (0 blockers, 2
+Input: `docs/research/2026-09-26-theme-identity-fold-verification.md` (0 blockers, 2
 majors, 10 minors). Each finding was checked against daisyUI 5.7.44 and @lucide/svelte 1.47.0 in
 `node_modules` before it was folded. The same fold renamed the sublayer.
 

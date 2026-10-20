@@ -1,9 +1,9 @@
 # Theme identity pass C plan: review fold
 
-**Target:** `docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md` on `theme-c-plan`, folded
+**Target:** `docs/plans/2026-09-27-theme-identity-pass-c.md` on `theme-c-plan`, folded
 from HEAD `8c7616c8`. **Inputs:** the three lens reviews in this directory, `-contract` (C1 to C24),
 `-mechanics` (M1 to M12, O1), and `-risk` (R1 to R18). **Spec:**
-`docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`, unedited.
+`docs/specs/2026-09-27-theme-identity-pass-b-design.md`, unedited.
 
 **Counts:** 55 finding IDs. 51 folded, 2 refused (O1, R13), 2 routed to one owner fork (C10 and R18,
 ruling 1). Three folded findings also refuse a sub-part (R1, R6, R8), each named below.

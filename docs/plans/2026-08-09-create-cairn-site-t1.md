@@ -18,7 +18,7 @@ is a property of the frame, not a per-feature flag.
 **Tech Stack:** Node (floor copied from the showcase's `engines`), `@clack/prompts` for the
 prompt UI (the `sv create`/C3 ecosystem standard), `node:test`, the existing emitter.
 
-**Spec:** `docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md` (Part 1
+**Spec:** `docs/specs/2026-08-09-admin-setup-and-docs-reset-design.md` (Part 1
 chapter 1 steps 1-3, the failure-and-state model, the dry-run ruling; Part 3 Pass T1).
 
 ## Global Constraints
@@ -680,7 +680,7 @@ Geoff then made the ruling that mattered: "a well-tuned persona agent run severa
 several vantage points is probably more effective than I'll be." Task 1's own third option allows
 exactly this, on the condition it is labeled. Five blind persona walks ran (owner-nondev,
 dev-new-to-stack, going-live, recovery, wayfinding), each required to evidence every finding with a
-`file:line` quote and barred from reading `docs/superpowers/`. Two of them went beyond reading and
+`file:line` quote and barred from reading `docs/`. Two of them went beyond reading and
 reproduced steps live against the real registry and the current toolchain.
 
 **The method earned its keep in a way one walk could not.** Ranking by agreement, not by any one

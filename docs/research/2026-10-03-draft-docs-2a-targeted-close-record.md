@@ -1,6 +1,6 @@
 # Draft docs stage 2a, task 7b targeted close record (2026-10-03)
 
-Agent-facing. Plan: `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md`, "Execution mode", "After each run".
+Agent-facing. Plan: `docs/plans/2026-09-30-draft-docs-stage-2a.md`, "Execution mode", "After each run".
 
 ## Ruling
 

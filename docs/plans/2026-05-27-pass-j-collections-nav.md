@@ -15,7 +15,7 @@
 Read these before starting; they are the ground truth this plan is written against.
 
 - **Initiative tracker:** `cairn-cms/docs/PLAN.md` (locked decisions, risk register, progress log). Pass J is one of the "New Admin UI" passes; it ships folded with Pass I (already coded) and possibly Pass K as one cairn-cms minor.
-- **Design source:** `cairn-cms/docs/superpowers/specs/2026-05-26-admin-ui-design.md` §R3 (the requirement) and the "Implementation passes" section (the Pass J line).
+- **Design source:** `cairn-cms/docs/specs/2026-05-26-admin-ui-design.md` §R3 (the requirement) and the "Implementation passes" section (the Pass J line).
 - **The F2 invariant (do not break it):** the admin route files in `ecnordic-ski/src/routes/admin/**` and `907-life/src/routes/admin/**` are **byte-identical** except each site's `src/lib/cairn.config.ts`. Every route file you add or change must be added or changed identically in **both** sites. After the site work, `diff -rq ecnordic-ski/src/routes/admin 907-life/src/routes/admin` must report only legitimate differences.
 - **Filename-based ids (Pass E finding):** an entry's `id` is the bare filename stem (`2026-05-welcome` for `src/content/posts/2026-05-welcome.md`). There is no slug codec. `RepoFile` is `{ id, name, path }` (`src/lib/github.ts:19`).
 - **Read auth:** `readToken(env)` (`src/lib/sveltekit/index.ts:44`) mints a GitHub App installation token for reads when configured, else returns `undefined` (anonymous). Always thread it through `listMarkdown`/`readRaw`; anonymous reads 403 in prod (Hotfix 0.3.1).

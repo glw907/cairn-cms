@@ -1,5 +1,5 @@
 // cairn-cms: the transcript gate for the recorded-run blocks the admin docs quote (the marker
-// convention in docs/superpowers/plans/2026-08-16-capture-pass.md). A page marks a quoted
+// convention in docs/plans/2026-08-16-capture-pass.md). A page marks a quoted
 // transcript with `<!-- transcript: <fixture path> -->` immediately before a fenced block; this
 // gate resolves that marker against the named fixture under
 // packages/create-cairn-site/test/fixtures/transcripts/, replays both the block and the fixture

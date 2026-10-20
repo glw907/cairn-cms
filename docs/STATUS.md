@@ -25,7 +25,7 @@ confirm it resolves. The docs review page now shows a `.plan.yaml` plan as a `ya
 page plans exist, written in drafter's plan format v1
 under `internal/briefs/extend/` and `internal/briefs/claude-code/` (ten extend pages and "Using Claude
 Code with cairn"), each with 0 errors from `drafter check-plan` (drafter F1, both outlines). The pass record is
-`superpowers/research/2026-10-12-2b-part2-plans-record.md`, and the plans' deferrals sit in the
+`research/2026-10-12-2b-part2-plans-record.md`, and the plans' deferrals sit in the
 ROADMAP entry "Stage 2b part 2". The drafting run
 that follows, through drafter, retires the 10 `.plan.md` files, registers the `claude-code` arm in the
 gates, and adds that arm's track entry to `docs-register.md`. Then comes the rest of part 2: the
@@ -40,7 +40,7 @@ The residue is the "Docs tooling before stage 2b: the residue" entry in `ROADMAP
 
 ## Open decisions and watches
 - Stage 2b part 1, for Geoff: the framing A/B
-  (`superpowers/research/2026-10-11-draft-docs-2b-part1-ab/README.md`); the engine fixture for the
+  (`research/2026-10-11-draft-docs-2b-part1-ab/README.md`); the engine fixture for the
   sidebar figure (the story `nav/worked-navlayout` relabels media to its own default); the outline
   crossLinks from `share-a-draft-preview` and `act-on-newly-published-entries` to
   `build-the-public-routes`.

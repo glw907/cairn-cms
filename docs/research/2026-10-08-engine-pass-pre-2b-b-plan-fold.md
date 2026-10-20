@@ -90,7 +90,7 @@ mechanics 18, risk 10, cross-plan 3.
 
 ### Cross-plan (routed from pass A's mechanics review, blocker 1)
 
-Source: `docs/superpowers/research/2026-10-08-engine-pass-pre-2b-a-plan-review-mechanics.md`, B1.
+Source: `docs/research/2026-10-08-engine-pass-pre-2b-a-plan-review-mechanics.md`, B1.
 
 | ID | Disposition | Note |
 | --- | --- | --- |

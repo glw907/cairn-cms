@@ -210,7 +210,7 @@ reduced-motion bugs fixed, the seventeen shipped motion declarations migrated on
 frame offset and zen's chrome given the one documented exception, and the result handed to the extend
 work as the extend track's first per-pattern recipe.
 
-**Spec:** `docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, revision 2 as folded
+**Spec:** `docs/specs/2026-09-13-admin-motion-language-design.md`, revision 2 as folded
 2026-09-13, whole. Its own Fold section governs where it conflicts with its Revision 2 section. Its
 Decisions block, "The token set", "The property allowlist", "Enter and exit, with the floor", "The
 modality gate", "Reduced motion", "Responsive rules", "The case table", "The DaisyUI component-class
@@ -364,7 +364,7 @@ All six are preconditions rather than task steps, and none is true at plan autho
 
 1. Confirm polish-C has merged to `main` and CI on `main` is green. This pass branches off post-C
    `main`, per decision 7.
-2. Commit this plan onto `admin-motion` at `docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`.
+2. Commit this plan onto `admin-motion` at `docs/plans/2026-09-13-admin-motion-language-pass.md`.
    The runner's implement prompt names the plan as committed in the repo and orders a first read of
    its Global constraints, Ruled inputs, and Task section; an untracked plan means ten dispatches that
    cannot follow instruction one.
@@ -402,7 +402,7 @@ inside this same pass has already moved, and each re-measures.
 
 ### Anchors polish-C is known to move
 
-Read from `docs/superpowers/plans/2026-09-08-polish-c-pass.md`'s task list. Each row names the polish-C
+Read from `docs/plans/2026-09-08-polish-c-pass.md`'s task list. Each row names the polish-C
 task that moves it and the motion task that reads it.
 
 | Anchor | What polish-C does | Which motion task cares | How to relocate |
@@ -2268,7 +2268,7 @@ the rulings ledger, the friction log, and the `## Unreleased` block read whole).
 - `docs/internal/engine-rulings.md` carries rows whose headings match
   `^## [a-z0-9-]+: .*\((accept|reshape|decline), \d{4}-\d{2}-\d{2}, ` with all five labeled lines
   beneath each, quoting decisions 3 and 4 and the two escalation rulings, and citing
-  `docs/superpowers/specs/2026-09-13-admin-motion-language-design.md` with its 2026-09-13 date in the
+  `docs/specs/2026-09-13-admin-motion-language-design.md` with its 2026-09-13 date in the
   body. The heading's date is the date the row is written, which is not necessarily this plan's.
 - `npm run check:rulings-format` passes.
 - `docs/HISTORY.md` carries this pass's entry with the five named do-not-rediscover items.

@@ -187,7 +187,7 @@ conclusion, and it is the class that survives sweeps, because a sweep looks for 
 ### 5. The comment register is pass-scoped, and it ships
 
 Measured over `src/lib`: **179** references to a plan task, ruling, pass, or phase
-(`Plan NN`, `Task N`, `Pass N`, `C2`, `R9`, `phase-3a`); **19** pointers into `docs/superpowers/`,
+(`Plan NN`, `Task N`, `Pass N`, `C2`, `R9`, `phase-3a`); **19** pointers into `docs/`,
 a directory the npm tarball does not ship; **18** named mentions of private consumer sites (ecxc,
 aksailingclub, 907.life) in the source of an MIT-licensed public package. Add ~40 test titles and
 174 test comments in the same register.

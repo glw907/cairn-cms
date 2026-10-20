@@ -47,7 +47,7 @@ Counts: 1 blocker, 10 major (3 of them owner forks), 6 minor, 2 over-ceremony.
 
 - **Location:** `spec:333-341` (C11), against
   `src/lib/sveltekit/content-routes-entry-write.ts:215-231,347-381`, and decision 1 of
-  `docs/superpowers/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md:162-168`.
+  `docs/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md:162-168`.
 - **Defect.** Publish commits a `media.json` snapshot read from main at save time. It commits the
   snapshot to main through the head-merge retry, with no `expectedHead`, and it never re-reads or
   re-merges on retry (`entry-write.ts:347-354`). The 2a media design ruled this exact shape out: "A

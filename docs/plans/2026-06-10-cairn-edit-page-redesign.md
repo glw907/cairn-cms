@@ -8,7 +8,7 @@
 
 **Tech Stack:** Svelte 5 runes, CodeMirror 6 (`@codemirror/lang-markdown`, `@lezer/highlight`), Tailwind 4 + DaisyUI 5 (scoped admin sheet), Vitest + vitest-browser-svelte, Playwright (showcase E2E and the design render loop).
 
-**Spec:** `docs/superpowers/specs/2026-06-10-cairn-edit-page-redesign-design.md`. Read it first, and read `docs/internal/admin-design-system.md` before any component markup.
+**Spec:** `docs/specs/2026-06-10-cairn-edit-page-redesign-design.md`. Read it first, and read `docs/internal/admin-design-system.md` before any component markup.
 
 **Project gate (every task ends green):** the task's targeted test passes, `npm run check` 0/0, `npm test` exit 0 (re-run once if only the known `delivery-*-split` import-timeout flake fails), `npm run check:prose` clean when admin copy changed. Bump the minor to `0.40.0` in the docs task.
 

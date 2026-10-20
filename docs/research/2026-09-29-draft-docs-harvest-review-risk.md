@@ -1,6 +1,6 @@
 # Draft docs harvest: data integrity and domain risk review
 
-**Lens:** data integrity and domain risk. **Targets:** `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md`
+**Lens:** data integrity and domain risk. **Targets:** `docs/specs/2026-09-29-draft-docs-harvest-design.md`
 (spec) and `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md` (plan), at `7e57601d`.
 **Question:** can knowledge or a shipped contract be lost or silently corrupted, and is any
 guard over-built for what it protects?

@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (NodeNext ESM, `.js` specifiers), Vitest (`vitest run`), scripted/stateful fetch doubles for the GitHub layer, `vitest-browser-svelte` for components, svelte-check.
 
-**Spec:** `docs/superpowers/specs/2026-06-10-cairn-publish-workflow-design.md`.
+**Spec:** `docs/specs/2026-06-10-cairn-publish-workflow-design.md`.
 
 **Project gate (every task ends green):** the task's targeted test passes, `npm run check` 0/0, `npm test` exits 0 (re-run once if only the known `delivery-*-split` import-timeout flake fails). Bump the minor to `0.39.0` in the docs task.
 
@@ -645,7 +645,7 @@ The golden path extends to the new flow: create, save, the list shows New, publi
 ### Task 11: Docs, changelog, and the 0.39.0 bump
 
 **Files:**
-- Modify: `docs/reference/sveltekit.md` (the `createContentRoutes` return signature: the three new actions, the widened `LayoutData`/`EntrySummary`/`EditData`/`ListData`), `docs/reference/components.md` (the new props and controls), `docs/reference/admin-routes.md` (the shim examples gain the three action lines), `docs/reference/log-events.md` (three event rows plus field notes), `docs/explanation/architecture.md` and `docs/explanation/security-model.md` (the branch model; the App writes under `cairn/` refs and the content dirs on `main`), `docs/guides/upgrade-cairn.md`, `CHANGELOG.md`, `package.json` (0.39.0), `docs/superpowers/specs/2026-06-10-cairn-publish-workflow-design.md` (one-line reconciliation notes), and a new editor-facing guide `docs/guides/publish-and-discard.md`
+- Modify: `docs/reference/sveltekit.md` (the `createContentRoutes` return signature: the three new actions, the widened `LayoutData`/`EntrySummary`/`EditData`/`ListData`), `docs/reference/components.md` (the new props and controls), `docs/reference/admin-routes.md` (the shim examples gain the three action lines), `docs/reference/log-events.md` (three event rows plus field notes), `docs/explanation/architecture.md` and `docs/explanation/security-model.md` (the branch model; the App writes under `cairn/` refs and the content dirs on `main`), `docs/guides/upgrade-cairn.md`, `CHANGELOG.md`, `package.json` (0.39.0), `docs/specs/2026-06-10-cairn-publish-workflow-design.md` (one-line reconciliation notes), and a new editor-facing guide `docs/guides/publish-and-discard.md`
 - The changelog entry carries: `Consumers must: add publish/discard to the edit shim's actions and publishAll to the list shim's actions; saves no longer deploy the site, Publish does.`
 
 - [ ] **Step 1: Write the docs and bump. Step 2: Run the three doc gates plus the full gate. Step 3: Commit** (`Document the publish workflow; bump 0.39.0`).

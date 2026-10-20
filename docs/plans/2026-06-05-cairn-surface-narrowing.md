@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, the svelte-check and export-coverage gates (`npm run check`, `npm run check:reference`, `npm run check:package`), `npm test` (vitest), `npm pack`, `git`.
 
-**Design spec:** `docs/superpowers/specs/2026-06-05-cairn-surface-narrowing-design.md`.
+**Design spec:** `docs/specs/2026-06-05-cairn-surface-narrowing-design.md`.
 
 ---
 

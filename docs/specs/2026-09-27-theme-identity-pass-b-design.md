@@ -106,7 +106,7 @@ nothing. This grep also prints nothing at pass B's close:
 
 ```sh
 git grep -nE "lib/components|dist/components|cairn-cms/components|['\"]\.?/components['\"]" -- \
-  ':!docs/internal/history' ':!docs/internal/record' ':!docs/internal/design' ':!docs/superpowers' \
+  ':!docs/internal/history' ':!docs/internal/record' ':!docs/internal/design' ':!docs/{plans,research,specs}' \
   ':!docs/HISTORY.md' ':!CHANGELOG.md' ':!docs/extend/migration-notes.md' \
   ':!docs/internal/engine-rulings.md'
 ```

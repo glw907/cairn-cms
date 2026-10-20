@@ -26,7 +26,7 @@ package depends on `@glw907/cairn-cms` for engine types only; it ships no runtim
 ## Global Constraints
 
 - **This is Part A of the scaffolder initiative.** The design spec is
-  `docs/superpowers/specs/2026-06-24-cairn-scaffolder-design.md` (read its "Part A" and "What the
+  `docs/specs/2026-06-24-cairn-scaffolder-design.md` (read its "Part A" and "What the
   adversarial review changed / Reversal 1" sections). Parts B and C follow; do not build them here.
 - **Run on a fresh git worktree off `main`,** not the main checkout. Create it with
   `git worktree add ../cairn-cms-part-a -b feat/cairn-cms-dev main`, symlink node_modules

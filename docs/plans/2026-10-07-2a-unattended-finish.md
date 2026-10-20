@@ -4,11 +4,11 @@
 corrected for Kit 3, task 8's five pages drafted through the chain, task 9's consistency read and relink, and the
 close merged to `main`. Two side lanes, a dependency sweep and an engineering cleanup, land beside it. No release.
 
-**Governing plan:** `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md` (on `draft-docs-2a`; on `main` after
+**Governing plan:** `docs/plans/2026-09-30-draft-docs-stage-2a.md` (on `draft-docs-2a`; on `main` after
 R7's merge). Its global constraints, map rule, "After each run" record, scoped reviews, task 9, and task 10 hold
 unless this plan says otherwise. Where the two disagree, this plan governs. Inputs:
-`docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md` (the targeted-close method) and
-`docs/superpowers/research/2026-10-06-draft-docs-2a-kit3-merge-map.md`, corrected by this plan's pre-flight
+`docs/research/2026-10-03-draft-docs-2a-targeted-close-record.md` (the targeted-close method) and
+`docs/research/2026-10-06-draft-docs-2a-kit3-merge-map.md`, corrected by this plan's pre-flight
 (2026-10-07; the corrections are written into R2 and R4 below).
 
 **Pass class:** mixed, per task. **Checkpoint interval:** after R4, R5, R6, and the lanes (four checkpoints).
@@ -213,7 +213,7 @@ deploy`, or a push, and the stage record lists what stayed unexercised; R5's re-
   and `$theme` imports, with its brief; `architecture` L61, checked and left alone if framework-neutral.
 
 **Acceptance:** per page, the scoped reads accept and the re-tests pass where they apply. The whole-tree docs gate,
-`check:facts`, and `check:provenance` are green. A stage record under `docs/superpowers/research/` lists each page's
+`check:facts`, and `check:provenance` are green. A stage record under `docs/research/` lists each page's
 changes, verdicts, and unexercised steps. One `diff-reviewer` file-set read. **Checkpoint 1.**
 
 ### R5: task 8, the rest of 2a

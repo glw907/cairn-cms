@@ -1,7 +1,7 @@
 # Theme identity pass B: right-sized engineering review
 
 Reviewer lens: right-sized engineering (argue for cutting; also catch under-builds that let a goal
-silently fail). Target: `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md` at
+silently fail). Target: `docs/specs/2026-09-27-theme-identity-pass-b-design.md` at
 `4365ac34`. Line numbers refer to that file. Evidence was read from `main`: `src/lib/audit/`,
 `scripts/checks/check-public-tokens.mjs`, `scripts/lab/reskin-fixture.mjs`, and the showcase
 chassis and theme.

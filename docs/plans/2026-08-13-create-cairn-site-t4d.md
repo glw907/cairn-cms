@@ -29,7 +29,7 @@ views and auto-resume for the propagation and Builds classes, parks unchanged ev
 else, plus the three extract-and-reuse moves and the `hostname.mjs` diagnosis upgrade
 (carry-forwards 1 and 7 close in this pass).
 
-**Spec:** `docs/superpowers/specs/2026-08-13-create-cairn-site-t4d-design.md`, as revised
+**Spec:** `docs/specs/2026-08-13-create-cairn-site-t4d-design.md`, as revised
 at both gates. Its decision record and ten acceptance criteria govern. The estate fact
 (case 1, inherited from Task 8) was checked at the sitting; **re-verify
 `~/.config/cairn/sites/` at execution start** before Task 7 plans on it.
@@ -332,9 +332,9 @@ than agree with it.
 ## Task 7 and 8 addendum (2026-08-13 night, Opus session)
 
 **Task 7 is proven and Task 8 Step 1 is done.** Full evidence, with the raw reads, is in
-[`docs/internal/2026-08-13-t4d-task7-live-proof.md`](../../internal/record/2026-08-13-t4d-task7-live-proof.md);
+[`docs/internal/2026-08-13-t4d-task7-live-proof.md`](../internal/record/2026-08-13-t4d-task7-live-proof.md);
 the settled teardown table is in
-[`docs/internal/2026-08-13-t5-task8-live-e2e.md`](../../internal/record/2026-08-13-t5-task8-live-e2e.md).
+[`docs/internal/2026-08-13-t5-task8-live-e2e.md`](../internal/record/2026-08-13-t5-task8-live-e2e.md).
 Every acceptance criterion is now met, AC5, AC9, and AC10 included.
 
 **The proof.** Three provocations drifted the local reconcile hash on the inherited `builds-live`

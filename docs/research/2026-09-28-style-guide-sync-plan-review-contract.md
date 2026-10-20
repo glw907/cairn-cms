@@ -2,7 +2,7 @@
 
 **Reviewer:** one adversarial reader, contract-and-criteria lens, `claude-opus-5-5` at `high`.
 **Target:** `docs/superpowers/plans/2026-09-28-style-guide-sync.md` at `44e20e61`, against the spec
-`docs/superpowers/specs/2026-09-28-style-guide-sync-design.md` (criteria 1-13, rulings 1-11) and
+`docs/specs/2026-09-28-style-guide-sync-design.md` (criteria 1-13, rulings 1-11) and
 the `pass-core` class table.
 **Counts:** 1 blocker, 7 major, 8 minor. One owner fork (finding M5).
 

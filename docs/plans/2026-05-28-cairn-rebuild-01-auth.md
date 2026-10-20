@@ -8,7 +8,7 @@
 
 **Tech Stack:** D1 via `@cloudflare/workers-types` `D1Database`, Web Crypto (`crypto.subtle`, `crypto.getRandomValues`), `@sveltejs/kit` `redirect`/`error`/`fail` plus the `isRedirect`/`isHttpError` guards, Vitest 4.1 with `@cloudflare/vitest-pool-workers` against real miniflare D1.
 
-**Source spec:** `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md` (section 7.1, the seam in section 6, the test design in section 9, and auth acceptance scenarios 1 through 9 in section 10).
+**Source spec:** `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md` (section 7.1, the seam in section 6, the test design in section 9, and auth acceptance scenarios 1 through 9 in section 10).
 
 **Divergences from the frozen `legacy/` auth (deliberate, spec-driven):**
 

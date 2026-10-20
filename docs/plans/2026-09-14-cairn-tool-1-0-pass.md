@@ -2,10 +2,10 @@
 
 **Date: 2026-09-14, Pass B re-cut into B1 and B2 on 2026-09-20.** Three passes, `cairn-tool-A`,
 `cairn-tool-B1`, and `cairn-tool-B2`, re-cut from
-`docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md` at the CLI-versus-HUD
+`docs/plans/2026-08-20-cairn-tool-spine-and-hud.md` at the CLI-versus-HUD
 boundary per Geoff's versioning ruling of 2026-09-13. Pass A closed on 2026-09-20, unmerged; the
 B1/B2 re-cut is authored from
-`docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`, which Geoff pre-approved,
+`docs/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`, which Geoff pre-approved,
 and the three-lens plan review runs on it.
 
 > **For agentic workers:** dispatch each task through `cairn-implementer` (Sonnet), review the
@@ -99,8 +99,8 @@ carries the end-state assertion: `go mod tidy` leaves exactly these four direct 
 other line in `require` is marked `// indirect`, and the task report lists the indirect set it
 saw.
 
-**Spec:** `docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`, with the
-predecessor `docs/superpowers/specs/2026-08-13-go-successor-tool-design.md` for the why.
+**Spec:** `docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`, with the
+predecessor `docs/specs/2026-08-13-go-successor-tool-design.md` for the why.
 Executors read the spec section a task names. This plan argues from the spec and does not
 restate it. Where this plan contradicts the spec, this plan wins, and the contradiction is
 listed under "Knowing corrections to the spec" below.
@@ -250,7 +250,7 @@ next pass").
 The tool lives under its own module, so running in parallel with an engine pass is real
 parallelism. Neither pass touches `src/lib`, so the branches contend over six files only:
 `CHANGELOG.md`, `docs/STATUS.md`, and `ROADMAP.md`, all written at a pass close; `CLAUDE.md` and
-`docs/superpowers/2026-08-18-tui-skills-setup-brief.md`, written by Task 2; and
+`docs/2026-08-18-tui-skills-setup-brief.md`, written by Task 2; and
 `docs/internal/what-cairn-is-and-is-not.md`, written by Task 25.
 
 ## What the re-cut changed
@@ -507,7 +507,7 @@ measured 2026-09-14 against `main` at `f1c72dbf`, re-verified 2026-09-14 against
 | 22 | The repo root `.vale.ini` | Globs every `docs/**/*.md` and pins Vale 3.15.1 in CI; Task 1 leaves it alone unless it would otherwise lint `tool/`, and asserts `npm run check:vale` output is byte-identical before and after | Task 1 | Verified 2026-09-14 post-polish-C |
 | 23 | `src/lib/sveltekit/health.ts:28` `loadHealth` | polish-C Task 7 renamed it from `healthLoad`, with `previewMint`, `previewRevoke`, and `previewLoad` becoming `mintPreview`, `revokePreview`, and `loadPreview` (all now in effect) | Task 16, and any doc a task cites | Verified 2026-09-14 post-polish-C (changed) |
 | 24 | `packages/cairn-cms-dev/src/handle.ts` and `fake-auth-db.ts` | `createFakeAuthDb` imported at `handle.ts:21`, called at `:93`; `DevBackendOptions` at `:26`. No tool code depends on these today. Recorded so a later task does not build against the pre-polish-C names | None yet | Verified 2026-09-14 post-polish-C |
-| 25 | `docs/superpowers/2026-08-18-tui-skills-setup-brief.md` | Its Tasks 1, 2, and 4 are the ones Task 2 marks done. Task 3 of that brief concerns TUI skills and stays open for 2.0 | Task 2 | Verified 2026-09-14 post-polish-C |
+| 25 | `docs/2026-08-18-tui-skills-setup-brief.md` | Its Tasks 1, 2, and 4 are the ones Task 2 marks done. Task 3 of that brief concerns TUI skills and stays open for 2.0 | Task 2 | Verified 2026-09-14 post-polish-C |
 | 26 | `~/.claude/docs/cloudflare-estate-inventory.md` | The values-free record Task 10 writes the permission-group names into during Geoff's own mint. It is a workstation record and not a product artifact; the product's own record of which permission groups a token needs is `tool/docs/credentials.md`. Outside this repo, so polish-C does not move it, but re-verify the section names | Task 10 | No |
 | 27 | `packages/create-cairn-site/src/state.mjs:55` `saveSite` | Writes `JSON.stringify(data, null, 2) + '\n'`, which preserves insertion order, at file mode `0o600` under a `0o700` directory. This is the byte and permission contract Tasks 4 and 5 port | Tasks 4, 5 | Verified 2026-09-14 post-polish-C |
 | 28 | `packages/create-cairn-site/src/cloudflare/records.mjs:41-54` (`PROBE_PLAN`) | The DMARC-is-TXT expectation and the named DKIM selector set Task 14's Email check ports | Task 14 | Re-verified 2026-09-20, anchor corrected |
@@ -610,7 +610,7 @@ and `windows-latest`. `tool/cmd/cairn/root.go` holds the cobra root with `Silenc
 **Files:**
 - Create: `tool/docs/adr/0001-the-spine-is-the-product.md`
 - Modify: `CLAUDE.md` (at most four lines in the existing tooling section)
-- Modify: `docs/superpowers/2026-08-18-tui-skills-setup-brief.md` (mark its Tasks 1, 2, and 4
+- Modify: `docs/2026-08-18-tui-skills-setup-brief.md` (mark its Tasks 1, 2, and 4
   done with the commit)
 
 **Acceptance:**
@@ -4518,7 +4518,7 @@ and Task 22a-ii's criterion 5 landed it first; keep it.
 `check`. The executor does not decide it; the pre-flight puts it to the conductor, and the task
 implements whichever answer comes back. **The operator's write-scoped token check is not this
 task**; it heads 1.1
-(`docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md` on `main`).
+(`docs/specs/2026-09-21-cairn-tool-after-1-0-framing.md` on `main`).
 
 **Files:**
 - Modify: `tool/cmd/cairn/probe_token.go`, `probe_token_test.go`, `probe_cloudflare.go`,
@@ -4939,11 +4939,11 @@ Owner-gated because it merges the branch Task 22b's published tag lives on. Sugg
 **Files:**
 - Modify: `docs/STATUS.md`, `CHANGELOG.md`, `ROADMAP.md`,
   `docs/internal/what-cairn-is-and-is-not.md`,
-  `docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`,
+  `docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`,
   `docs/internal/engine-rulings.md` (only if a ruling reaches beyond the tool),
   `tool/docs/design/README.md`, and this plan file's own post-mortem
 - Modify: `docs/internal/record/2026-09-21-site-upgrade-brief.md` (criterion 16),
-  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md` (criterion 22), and
+  `docs/specs/2026-09-21-cairn-tool-after-1-0-framing.md` (criterion 22), and
   `tool/README.md` (criterion 24)
 - Create: `docs/internal/facts/admin.md` (criterion 25, gated by `check:facts`)
 - Modify, outside this repo: the user-scoped `site-pass` skill, for criterion 22's "Tool friction"
@@ -4988,7 +4988,7 @@ Owner-gated because it merges the branch Task 22b's published tag lives on. Sugg
    2026-09-14 ruling and were marked in the header as awaiting him: the exit codes, now the
    monitoring-plugin convention with the spec's exit 4 dropped, and the registry path, now
    `os.UserConfigDir` with the Node CLI's path as a fallback read. For each one he confirmed, edit
-   `docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md` in place, and record the
+   `docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md` in place, and record the
    amendment in `docs/internal/engine-rulings.md` if the ruling reaches beyond the tool. Also amend
    the spec's credential section, which says the tool never writes a credential: `cairn auth set`
    writes one to the OS keyring by the same ruling, and `cairn auth unset` removes one. Do not
@@ -5027,7 +5027,7 @@ Owner-gated because it merges the branch Task 22b's published tag lives on. Sugg
 **Acceptance, the duties this task gained on 2026-09-21.** They were agreed with the pre-cut
 conductor (session `cairn-cms-f5`, PR #69) so both sessions carry Geoff's directions the same way.
 Items 15 to 18 are the release handshake the `0.97.0` cut reads; that cut runs as Task 6 of
-`docs/superpowers/plans/2026-09-21-pre-cut-pass.md` in a fresh session starting from STATUS alone,
+`docs/plans/2026-09-21-pre-cut-pass.md` in a fresh session starting from STATUS alone,
 so what it needs has to be on `main` and not in a conversation.
 
 15. **A `CHANGELOG.md` entry under `## Unreleased` for the Go tool's 1.0**, carrying the `go
@@ -5052,7 +5052,7 @@ so what it needs has to be on `main` and not in a conversation.
     the real handoff, because the orchestrator session will likely be closed by then.
 19. **Message the engine orchestrator after the merge**, that `main` carries the tool, that the
     cut's remaining predecessors are the doctor retirement and draft-docs pass A, and that the
-    cut resumes from Task 6 of `docs/superpowers/plans/2026-09-21-pre-cut-pass.md`. The message
+    cut resumes from Task 6 of `docs/plans/2026-09-21-pre-cut-pass.md`. The message
     is a courtesy on top of criterion 18, never a substitute for it.
 20. **`main` stays quiet during the cut.** When the cut session asks, hold every edit on `main`
     until its publish verifies: a push between its CI verify and its tag forces a re-verify.
@@ -5062,7 +5062,7 @@ so what it needs has to be on `main` and not in a conversation.
     docs, the site round, the improvement release.
 22. **Site agents may edit docs directly after that chore, so two documents are amended to match.**
     The after-1.0 framing brief
-    (`docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`) has its tool-friction
+    (`docs/specs/2026-09-21-cairn-tool-after-1-0-framing.md`) has its tool-friction
     route amended, since it assumes a site agent cannot edit the cairn-cms checkout, and the
     `site-pass` skill gains a "Tool friction" section. Acceptance: the brief's route names the
     direct-edit path and the skill's section exists.
@@ -5078,7 +5078,7 @@ so what it needs has to be on `main` and not in a conversation.
 24. **The README-facing facts state the HUD's real home.** `tool/README.md` and the ROADMAP entry
     say that **a terminal HUD is a 1.x minor under `cairn hud`**, and that **2.0 is reserved for a
     break** rather than for the HUD. The framing brief
-    (`docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`, on `main`) is the
+    (`docs/specs/2026-09-21-cairn-tool-after-1-0-framing.md`, on `main`) is the
     record. Criterion 8's 2.0 hand-forward is rewritten to match: the render surfaces the HUD
     imports unchanged are still the hand-forward, but the version it hands forward to is a minor.
     Task 22a-ii criterion 15 already corrected the README sentence; this criterion is what keeps
@@ -5523,25 +5523,25 @@ one-line-per-check output, so the seam ships exercised rather than dead. A HUD p
 as given, not as work.
 
 **The spec's own corrections a HUD plan must make first** are the dated 2026-09-20 addendum at the
-end of `docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`. It is append-only
+end of `docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`. It is append-only
 and no task in this plan rewrites it.
 
 ## Sources
 
-- `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`
-- `docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`, the binding, pre-approved
+- `docs/plans/2026-08-20-cairn-tool-spine-and-hud.md`
+- `docs/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md`, the binding, pre-approved
   brief this file's B1 and B2 sections are authored from: Geoff's three rulings of 2026-09-20, the
   seven `go-architecture-reader` reads at Pass A's close, and the two research audits of the same
   day (CLI practice; bubbletea v2 readiness)
-- `docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`, including its dated
+- `docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`, including its dated
   2026-09-20 addendum
 - The Monitoring Plugins development guidelines, the source of the reserved short flags `-v`, `-t`,
   `-V`, and `-q` and of the exit-code convention, with the positional-operand and
   `--help`-exits-0 deviations recorded as deliberate
 - `clig.dev`, and the `gh` and `kubectl` command grammars, the sources for keeping `health <site>`
   a positional operand
-- `docs/superpowers/specs/2026-08-13-go-successor-tool-design.md`
-- `docs/superpowers/plans/2026-09-08-polish-c-pass.md` (the renames this plan reconciles against,
+- `docs/specs/2026-08-13-go-successor-tool-design.md`
+- `docs/plans/2026-09-08-polish-c-pass.md` (the renames this plan reconciles against,
   and the model for the reconciliation and rollback sections)
 - `docs/STATUS.md`
 - `ROADMAP.md`, the entries "The window after the cut, sequenced" and "The Go successor tool"
@@ -5640,7 +5640,7 @@ with the deletion of `probe-token`'s private verdict algebra in its favor, and `
 single-source rewrite and three-file split all move to Pass B1's opening task.
 `discoverSites` moving into `store`, a typed exit error, and a dependencies struct for the
 command constructors move to Tasks 19 and 21 of the re-cut. The decision record for all of this is
-`docs/superpowers/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md` on `main`: the re-cut of
+`docs/plans/2026-09-20-cairn-tool-pass-b-recut-brief.md` on `main`: the re-cut of
 Pass B into B1 and B2 is authored by the B1 session from that brief, pre-approved by Geoff
 within the brief's bounds, and PR #60's merge belongs to B1's close.
 
@@ -5749,11 +5749,11 @@ also corrected by ruling: count only cairn's own structured error records, never
 line.
 
 **Decisions locked.** The day's owner rulings are recorded at
-[`docs/internal/record/2026-09-21-go-tool-b2-owner-rulings.md`](../../internal/record/2026-09-21-go-tool-b2-owner-rulings.md):
+[`docs/internal/record/2026-09-21-go-tool-b2-owner-rulings.md`](../internal/record/2026-09-21-go-tool-b2-owner-rulings.md):
 the twelve-item owner list, Custom Domains only, the errors check's counting rule, the copy
 calls, the tool's single-source docs home, the go on the tag and the merge, provisioning as
 2.0's goal, and the second site as the credential design test. What follows 1.0 is
-[`docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`](../specs/2026-09-21-cairn-tool-after-1-0-framing.md).
+[`docs/specs/2026-09-21-cairn-tool-after-1-0-framing.md`](../specs/2026-09-21-cairn-tool-after-1-0-framing.md).
 
 **Both budgets.** Tokens: the ceiling opened at 14M and was raised by Geoff six times, to 18, 20,
 23, 25, 27, and 28.5M; spend at the close was about 27.3M. Attended time: planning misses five

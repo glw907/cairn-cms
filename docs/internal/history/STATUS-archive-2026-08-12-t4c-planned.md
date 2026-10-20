@@ -16,8 +16,8 @@ trusted. The superseded entry is archived at
 delivery-is-unproven note, which remains true.
 
 **The T4c planning sitting is done** (Fable, 2026-08-12). Spec:
-`docs/superpowers/specs/2026-08-12-create-cairn-site-t4c-design.md`. Plan:
-`docs/superpowers/plans/2026-08-12-create-cairn-site-t4c.md`. Both were amended at a
+`docs/specs/2026-08-12-create-cairn-site-t4c-design.md`. Plan:
+`docs/plans/2026-08-12-create-cairn-site-t4c.md`. Both were amended at a
 three-agent adversarial gate; the blockers folded in are recorded in the plan's preamble and
 task text (catalogue-name collision, the union token key set, build discovery by commit, the
 `bin.mjs` routing gap, `base_tree` on the reconcile commit, the stale-origin re-entry rule).
@@ -28,7 +28,7 @@ end-to-end first-build verification; flexible entry with `--connect`.
 task-by-task via `cairn-implementer`, test-first, full gate per task, Task 1 (the live spike)
 first since it gates Tasks 2, 3, 4, 6, 7. Resume prompt (launch directory
 `~/Projects/cairn-cms`): "Execute the T4c plan
-(`docs/superpowers/plans/2026-08-12-create-cairn-site-t4c.md`) on a new worktree off `main`.
+(`docs/plans/2026-08-12-create-cairn-site-t4c.md`) on a new worktree off `main`.
 Read `docs/STATUS.md`, the T4c spec, and the plan in full first. Task 1 is a main-loop live
 spike and gates the marked tasks."
 

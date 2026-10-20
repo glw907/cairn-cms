@@ -4,8 +4,8 @@ Consolidated from the four-lens review in `chassis-b-plan-review.md`; the plans 
 
 
 One document, folded from four adversarial reviews (grounding G1-G24, risk R1-R17, hygiene
-H1-H15, visual V1-V14) of `docs/superpowers/plans/2026-09-07-chassis-b-pass.md` and the spec
-section `docs/superpowers/specs/2026-09-04-chassis-passes-design.md` "Chassis-B". The plan author
+H1-H15, visual V1-V14) of `docs/plans/2026-09-07-chassis-b-pass.md` and the spec
+section `docs/specs/2026-09-04-chassis-passes-design.md` "Chassis-B". The plan author
 rewrites the plan from this file. Every one of the 70 findings lands below: folded, merged into a
 neighbour, or dismissed with a reason. Section 1 is ordered by plan section, not by severity.
 

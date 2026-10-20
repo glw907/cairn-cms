@@ -2,7 +2,7 @@
 
 **Lens:** docs standards, prose voice, and agent-instruction design. **Reviewer:** one adversarial
 `claude-opus-5-5` read at high effort, 2026-09-28. **Read against:** plan `44e20e61`
-(`docs/superpowers/plans/2026-09-28-style-guide-sync.md`), the spec beside it, the register at HEAD,
+(`docs/plans/2026-09-28-style-guide-sync.md`), the spec beside it, the register at HEAD,
 `~/.claude/agents/cairn-{docs-drafter,register-editor,implementer,site-implementer}.md`,
 `~/.claude/workflows/docs-page-chain.js`, the `writing-voice` skill and output style,
 `~/.claude/docs/voice/technical-doc-web.md`, the authoring charter, `register-check`, and
@@ -239,7 +239,7 @@ which writers the routing still misses. Ranked by consequence.
 ### m6. `register-check` names a superseded rule set as outranking everything
 
 - **Where:** `~/.claude/skills/register-check/SKILL.md` "Standing rules" ("The living rule set is
-  the register section of `docs/superpowers/plans/2026-07-01-docs-rewrite-stage-2.md`; it outranks
+  the register section of `docs/plans/2026-07-01-docs-rewrite-stage-2.md`; it outranks
   everything here") and "bound into the plan's rule set and the `cairn-register-editor`
   definition."
 - **Defect.** The skill points at a July plan instead of the register, and it tells the session

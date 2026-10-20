@@ -1,7 +1,7 @@
 # Polish-11a plan review, coverage and grounding lens
 
-Adversarial read of `docs/superpowers/plans/2026-09-08-polish-11a-pass.md` (uncommitted, on disk) against
-`docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4 and the two sweeps it executes,
+Adversarial read of `docs/plans/2026-09-08-polish-11a-pass.md` (uncommitted, on disk) against
+`docs/specs/2026-09-08-polish-passes-design.md` revision 4 and the two sweeps it executes,
 with every anchor re-measured on `main` at `ac911ec3`. Fresh context, read-only, nothing built or edited
 outside this file. Coverage is close to complete: every spec task, every Dispositions row routed to 11a,
 and every sweep finding the spec assigns to 11a has a plan task and an acceptance criterion, and the plan
@@ -66,7 +66,7 @@ unrouted while the acceptance grep forbids the name in `docs/internal`.** The ro
 Task 5's Files block lists `engine-rulings.md` only for `:1615`, `:1780`, and the
 `convention-failure-suffix` progress note, so the row is never edited, yet the acceptance
 `grep -rn "MediaDeleteRefusal\|BulkDeleteSkip\b" src docs` returns nothing outside
-`docs/superpowers/`, `docs/internal/record/`, `docs/HISTORY.md`, and `CHANGELOG.md` would fail on
+`docs/`, `docs/internal/record/`, `docs/HISTORY.md`, and `CHANGELOG.md` would fail on
 `:1489`. Correction: add `:1489` to the Files block with the "verdict unchanged" annotation, and change
 "the two renamed-type ledger rows" in the acceptance to three.
 
@@ -220,7 +220,7 @@ entry is worth the file's churn.
 **22. Plan:1122-1123 (eslint anchors) and Plan:77 (initiative-design anchors) -- two anchors off by one.**
 `eslint.config.js`'s `.svelte` block comment runs `:74-78`, with `:79` the opening brace and the `files`
 glob at `:80` (the glob line is correct). In
-`docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`, the CI-derived gate clause is
+`docs/specs/2026-08-27-audit-remediation-initiative-design.md`, the CI-derived gate clause is
 at `:138-140` and the changelog-and-ledger clause at `:141-143`; the plan records `:137-139` and
 `:140-143` as "Both confirmed. No move."
 

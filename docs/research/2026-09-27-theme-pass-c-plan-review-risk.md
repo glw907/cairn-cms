@@ -1,7 +1,7 @@
 # Pass C plan review: domain risk lens
 
 Target: `docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md` at `1ed7e232`, against the
-approved spec `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`. Lens: what the
+approved spec `docs/specs/2026-09-27-theme-identity-pass-b-design.md`. Lens: what the
 pass could break for the four production sites, the template, cairn.pub, and the `0.98.0` cut,
 plus proportionality. Line references are to the plan unless named.
 

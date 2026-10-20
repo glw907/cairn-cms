@@ -13,7 +13,7 @@ stop. If the call prints a stop, end your turn without another act until Geoff t
 On a new worktree, run `git merge --no-edit origin/worktree-alignment` (after `git fetch origin`),
 then the adapter's setup command, `npm ci && npm ci --prefix examples/showcase`. Load `cairn-pass`
 (it loads `pass-core`) and follow it. Read the plan whole: before AL-T0's commit, at
-`/var/home/glw907/Projects/cairn-cms/.claude/worktrees/alignment/docs/superpowers/plans/2026-10-11-alignment.md`;
+`/var/home/glw907/Projects/cairn-cms/.claude/worktrees/alignment/docs/plans/2026-10-11-alignment.md`;
 after it, the same path in your own worktree. On a relaunch, follow the plan's Resume convention.
 Arm the API-drop wake-up (`/loop` with no interval) and the lid-switch hold (`systemd-inhibit
 --what=handle-lid-switch --who=cairn-alignment sleep 21600`, as a background Bash task). Each

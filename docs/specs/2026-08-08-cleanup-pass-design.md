@@ -144,7 +144,7 @@ it and Geoff opts in at execution.
   `.github`, `scripts/`, `package.json`, or the published docs arms references them.
   `examples/` keeps the showcase (the canonical proving ground) and `examples/cairn-theme`
   (16 KB; the plan verifies what it is before deciding it stays).
-- **Prune closed-plan binary artifacts** under `docs/superpowers/` (22 MB) and
+- **Prune closed-plan binary artifacts** under `docs/` (22 MB) and
   `docs/internal/` (7.6 MB): screenshots and captures referenced only by closed plans and
   superseded reports are deleted (git history keeps them). Post-mortem and plan text stays.
   Any image a live doc links stays; the sweep greps for references before deleting.

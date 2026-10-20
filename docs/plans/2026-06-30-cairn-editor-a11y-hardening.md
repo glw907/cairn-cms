@@ -8,7 +8,7 @@
 
 **Tech Stack:** Svelte 5 (runes), CodeMirror 6 (`@codemirror/view` 6.43, `@codemirror/state` 6.6, `@codemirror/lint` 6.9.7, `@codemirror/autocomplete` 6.20.2), vitest + vitest-browser-svelte (chromium component project), the `fake-spell-worker` seam.
 
-**Design reference (authoritative):** `docs/superpowers/specs/2026-06-30-cairn-editor-a11y-hardening-design.md`. Every task honors it; where this plan and the spec disagree, the spec wins and the discrepancy is a plan bug to fix.
+**Design reference (authoritative):** `docs/specs/2026-06-30-cairn-editor-a11y-hardening-design.md`. Every task honors it; where this plan and the spec disagree, the spec wins and the discrepancy is a plan bug to fix.
 
 ## Global Constraints
 

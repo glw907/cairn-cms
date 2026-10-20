@@ -83,7 +83,7 @@ docs/
 ```
 
 One coupling constrains the split. The `cairn-pass` skill reads and writes `docs/STATUS.md`
-and the `docs/superpowers/` tree, so those stay at their current paths rather than moving
+and the `docs/` tree, so those stay at their current paths rather than moving
 into `internal/`. They are dev-process files, and the public docs index simply does not link
 them. Everything historical and free of tooling dependencies moves into `docs/internal/`, so
 an adopter browsing the repo never reads the reverted-better-auth, pre-render-engine past as

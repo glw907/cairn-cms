@@ -30,7 +30,7 @@ contact sheets and is the merge gate.
 vitest, Playwright (baselines CI-canonical via `e2e.yml`'s `update_snapshots` dispatch),
 ImageMagick (`magick compare`, `magick montage`; installed), the repo's gate estate.
 
-**Spec:** `docs/superpowers/specs/2026-09-04-chassis-passes-design.md`, section "Chassis-B"
+**Spec:** `docs/specs/2026-09-04-chassis-passes-design.md`, section "Chassis-B"
 (amended 2026-09-07 from the fold brief's section 4); the fresh review it cites is
 `docs/internal/record/2026-09-04-chassis-inputs/showcase-review-at-the-exemplar-bar.md`.
 

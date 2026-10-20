@@ -2,13 +2,13 @@
 
 **Goal.** Draft the 14 extend pages the outline marks `"batch": "2b"` through `docs-page-chain`, using the fixed pre-2b tools. Close every escalation the way 2a did. Run the framing A/B on the first page. Hand the result to Geoff as a draft PR stacked on the tooling branch, and he reads it in the morning.
 
-**Design.** `docs/superpowers/specs/2026-10-11-overnight-2b-design.md`, item 2. Approved by Geoff on 2026-10-11. No separate spec, since the design fits on a page.
+**Design.** `docs/specs/2026-10-11-overnight-2b-design.md`, item 2. Approved by Geoff on 2026-10-11. No separate spec, since the design fits on a page.
 
 **Governing precedent.** Several 2a sections hold unless this plan says otherwise:
-- From `docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md`: "Global constraints" (the map rule included), "After each run", "Scoped reviews", and task 9's consistency-read method.
-- From `docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`: the unattended contract, R5's settings, and R5's escalation handling.
-- From `docs/superpowers/research/2026-10-03-draft-docs-2a-targeted-close-record.md`: the targeted-close method.
-- From `docs/superpowers/research/2026-10-07-draft-docs-2a-r5-task8-record.md`: R5's conductor rulings 1 to 3. Ruling 1 is hand-run seats for a plan-read escalation. Ruling 2 is the 26-word cap's scope. Ruling 3 is a reader re-test rewrite applied without a further round.
+- From `docs/plans/2026-09-30-draft-docs-stage-2a.md`: "Global constraints" (the map rule included), "After each run", "Scoped reviews", and task 9's consistency-read method.
+- From `docs/plans/2026-10-07-2a-unattended-finish.md`: the unattended contract, R5's settings, and R5's escalation handling.
+- From `docs/research/2026-10-03-draft-docs-2a-targeted-close-record.md`: the targeted-close method.
+- From `docs/research/2026-10-07-draft-docs-2a-r5-task8-record.md`: R5's conductor rulings 1 to 3. Ruling 1 is hand-run seats for a plan-read escalation. Ruling 2 is the 26-word cap's scope. Ruling 3 is a reader re-test rewrite applied without a further round.
 
 Where this plan and those disagree, this plan governs. Line numbers in the dotfiles chain were probed at dotfiles `main` `2912c95`. The tooling branch may move them, so every agent finds cited text by searching for it.
 
@@ -49,7 +49,7 @@ Two findings on the runner and the CI shape change how the rulings are carried o
 - The `/cost` proxy, parking, and the token stop's hand-over stand as written (finding 5).
 - Until the dotfiles PR merges and `make install` rebuilds `~/.local/bin/tellgrader`, `check:tellgrader` still reads the bare noun "showcase" as `slop-hard`. The executor rules alone that such a finding on the example site's name is a known tool artifact. It records the finding and never rewrites the name. (Since the plan-review fold, L0 builds the tooling branch's `tellgrader` onto the executor's PATH, so this ruling is only a fallback.)
 
-**Plan-review fold (2026-10-12).** The fold record is `docs/superpowers/research/2026-10-11-draft-docs-2b-part1-fold.md`. These changes carry out the rulings above by mechanisms that work:
+**Plan-review fold (2026-10-12).** The fold record is `docs/research/2026-10-11-draft-docs-2b-part1-fold.md`. These changes carry out the rulings above by mechanisms that work:
 - **The chain script is a pinned copy inside the 2b worktree.** The Workflow tool refuses a `scriptPath` outside the session's readable directories. L0 writes `git show <dotfiles_tooling_head>:claude/.claude/workflows/docs-page-chain.js` to `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1/.superpowers/draft-docs-2b-part1/docs-page-chain.js`. Git ignores `.superpowers/`. Every run uses that copy, and every `cmp` compares against it. This is still the tooling branch's script, now held fixed at the head T0 verified.
 - **One token unit:** input + output + cache-creation tokens, excluding cache reads (see "Counting"). It replaces "measured by /cost".
 - **Resume stays in this session.** A Workflow run's saved results live under the session that ran it. So a relaunch reattaches this session (`claude attach <session id>`), and a fresh session re-runs uncommitted pages as a new run.
@@ -257,7 +257,7 @@ If check 1, 2, 4, 6, 7, or 8 fails, 2b does not launch.
 
 **Outcome:** the executor in its worktree with setup run, every launch fact re-verified and recorded, the stage record started, and the draft PR open.
 
-**Files:** creates `docs/superpowers/research/2026-10-11-draft-docs-2b-part1-record.md`, the stage record. It has sections for launch facts, a ledger table (task, run id, commits, tokens, count after), per-run page tables, the A/B, the consistency read, and rulings for Geoff.
+**Files:** creates `docs/research/2026-10-11-draft-docs-2b-part1-record.md`, the stage record. It has sections for launch facts, a ledger table (task, run id, commits, tokens, count after), per-run page tables, the A/B, the consistency read, and rulings for Geoff.
 
 **Risk:** `ordinary`.
 
@@ -299,7 +299,7 @@ If check 1, 2, 4, 6, 7, or 8 fails, 2b does not launch.
 
 **Outcome:** two framing records and two introductions for `act-on-newly-published-entries`, kept in the A/B directory. The page proceeds on xhigh.
 
-**Files:** creates `docs/superpowers/research/2026-10-11-draft-docs-2b-part1-ab/` (the A/B directory) holding `README.md` (the A/B section), `framing-xhigh.md`, `framing-high.md`, `intro-xhigh.md`, and `intro-high.md`. It never edits the stage record, which T3 writes at the same time; T11 links the README from the record. Scratch goes in `/var/home/glw907/.cache/draft-docs-2b-part1/ab/`. The generated script goes in `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1/.superpowers/draft-docs-2b-part1/`, which the session can read and git ignores.
+**Files:** creates `docs/research/2026-10-11-draft-docs-2b-part1-ab/` (the A/B directory) holding `README.md` (the A/B section), `framing-xhigh.md`, `framing-high.md`, `intro-xhigh.md`, and `intro-high.md`. It never edits the stage record, which T3 writes at the same time; T11 links the README from the record. Scratch goes in `/var/home/glw907/.cache/draft-docs-2b-part1/ab/`. The generated script goes in `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1/.superpowers/draft-docs-2b-part1/`, which the session can read and git ignores.
 
 **Risk:** `ordinary`. **Clock:** none of its own. T2 runs under T3's clock file, and it never writes, resets, or removes `pass-task-clock`.
 
@@ -307,7 +307,7 @@ If check 1, 2, 4, 6, 7, or 8 fails, 2b does not launch.
 1. Copy the chain's framing record first: `git show <run-1 WIP commit>:docs/internal/briefs/extend/act-on-newly-published-entries.framing.md > <A/B directory>/framing-xhigh.md`. Take it from the commit, because a T3 close may rewrite the file on disk.
 2. Find the `framing:act-on-newly-published-entries` agent's id in run 1's `journal.jsonl` (its `started` line has that `label`). Extract its prompt with `jq -r 'select(.type=="user") | .message.content | select(type=="string")' <run dir>/agent-<id>.jsonl > <scratch>/raw.txt`. Then run `sed '1d; s/^  //' <scratch>/raw.txt > <scratch>/prompt-xhigh.txt`. The harness adds one header line (`[Workflow harness — computed task] ...`) and indents every prompt line by two spaces, as R5's run `wf_27395374-42e` shows. The `sed` removes both, so no hand-copying is needed.
 3. `cp` that file to `<scratch>/prompt-high.txt`, then make two edits with `sed -i`:
-   - Every occurrence of `docs/internal/briefs/extend/act-on-newly-published-entries.framing.md` becomes `docs/superpowers/research/2026-10-11-draft-docs-2b-part1-ab/framing-high.md`.
+   - Every occurrence of `docs/internal/briefs/extend/act-on-newly-published-entries.framing.md` becomes `docs/research/2026-10-11-draft-docs-2b-part1-ab/framing-high.md`.
    - Append one paragraph (with `>>` from a scratch file): "A/B variant: do not open docs/internal/briefs/extend/act-on-newly-published-entries.framing.md or docs/extend/act-on-newly-published-entries.md. File no fact and no friction entry; list each fact you would file, with its Source, under a final heading 'Facts this record would file'."
 4. Build the one-agent script `<script dir>/ab-framing.js`, never typing the prompt:
    - `sed -n '/^const FRAMING_SCHEMA = {/,/^};/p' <pinned script> > <script dir>/ab-framing.js`.
@@ -440,9 +440,9 @@ On reject, it fixes forward from the note, within part 1's scope, and hands over
 
 ## Launch prompt
 
-The conductor commits this text as `docs/superpowers/plans/2026-10-11-draft-docs-2b-part1-prompt.txt` on `overnight-2b-plan`, with this plan at `docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md`. After L0, it launches with:
+The conductor commits this text as `docs/plans/2026-10-11-draft-docs-2b-part1-prompt.txt` on `overnight-2b-plan`, with this plan at `docs/plans/2026-10-11-draft-docs-2b-part1.md`. After L0, it launches with:
 
-`cd /var/home/glw907/Projects/cairn-cms && PATH=/var/home/glw907/.cache/draft-docs-2b-part1/bin:$PATH claude --bg --model sonnet --effort medium --name draft-docs-2b-part1 --settings '{"env":{"TMPDIR":"/var/home/glw907/.cache/draft-docs-2b-part1/tmp","NODE_OPTIONS":"--max-old-space-size=6144"}}' "$(cat /var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1/docs/superpowers/plans/2026-10-11-draft-docs-2b-part1-prompt.txt)"`
+`cd /var/home/glw907/Projects/cairn-cms && PATH=/var/home/glw907/.cache/draft-docs-2b-part1/bin:$PATH claude --bg --model sonnet --effort medium --name draft-docs-2b-part1 --settings '{"env":{"TMPDIR":"/var/home/glw907/.cache/draft-docs-2b-part1/tmp","NODE_OPTIONS":"--max-old-space-size=6144"}}' "$(cat /var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1/docs/plans/2026-10-11-draft-docs-2b-part1-prompt.txt)"`
 
 Why each flag reaches the session:
 - `PATH`: "A background session also runs with the `PATH` of the shell you dispatched it from" (agent-view docs, "Settings and provider").

@@ -15,7 +15,7 @@ unchanged. The opener row's innermost rail bar, dropped today for the in-text ch
 **Tech Stack:** TypeScript, Svelte 5, CodeMirror 6 (`@codemirror/view` `gutter`/`GutterMarker`,
 `@codemirror/language` `codeFolding`), Vitest browser component tests.
 
-**Spec:** `docs/superpowers/specs/2026-06-14-fold-gutter-design.md`. **Mockup:**
+**Spec:** `docs/specs/2026-06-14-fold-gutter-design.md`. **Mockup:**
 `docs/internal/design/2026-06-14-fold-gutter-mockup.html`.
 
 **Model note:** Tasks 1 and 2 carry the novel CodeMirror gutter logic the plan specifies but cannot
@@ -537,7 +537,7 @@ Docs-only; no `code-simplifier`, no test gate beyond `prose-guard` on the markdo
 - [ ] **Step 1: Supersede the old folding note**
 
 At the top of `2026-06-12-folding-interaction-notes.md`, add a short superseded banner pointing to
-`docs/superpowers/specs/2026-06-14-fold-gutter-design.md` and naming the reversed decisions (the
+`docs/specs/2026-06-14-fold-gutter-design.md` and naming the reversed decisions (the
 in-text band, the depth-shifting chevron x, gutter-hover replacing the 28px-band reveal). Leave the
 rest as history.
 

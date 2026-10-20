@@ -10,10 +10,10 @@ rate-limit wrapper with its degrade-to-open convention), and a packaged D1 audit
 (`createD1AuditSink` plus a migration) for the `AdminActionAuditSink` seam the engine defines but
 has never implemented.
 
-**Authority:** the design spec `docs/superpowers/specs/2026-08-01-asc-engine-seams-design.md`,
+**Authority:** the design spec `docs/specs/2026-08-01-asc-engine-seams-design.md`,
 sections "Pass two, seams 3 and 4" and "Pass two, seam 5", tracing to the consumer brief
 `docs/internal/2026-08-01-asc-consumer-brief.md`. Pass one (seams 1 and 2) shipped in `0.93.0`;
-its post-mortem is appended to `docs/superpowers/plans/2026-08-01-asc-engine-seams-1.md`.
+its post-mortem is appended to `docs/plans/2026-08-01-asc-engine-seams-1.md`.
 
 **Architecture:** `./cloudflare` is a new server-only subpath whose membership rule is the charter
 line itself: Cloudflare-native platform primitives only. Turnstile is the platform's own bot

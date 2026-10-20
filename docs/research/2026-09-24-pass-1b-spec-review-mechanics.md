@@ -1,6 +1,6 @@
 # Pass 1b spec review: mechanics and feasibility
 
-**Target:** `docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` at
+**Target:** `docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` at
 `30083f27`. **Lens:** does each stated mechanism behave as stated against the runner's source
 (`scripts/docs-readers/`), and what does the six-step sequence need that the runner cannot do
 today. Every claim below was checked against source or saved run data; probes were read-only.
@@ -81,7 +81,7 @@ today. Every claim below was checked against source or saved run data; probes we
 - **Defect:** Adding the list means a schema change in `FIELDS`, plus a loader change. More
   importantly, what is absent by design is a property of the prepared tree, not the class. For the
   scripter's bundle, the whole repository except three pages and eight schemas is absent. For
-  core-developer, only `docs/internal/record`, `docs/superpowers`, and `scripts/docs-readers` are
+  core-developer, only `docs/internal/record`, `docs/{plans,research,specs}`, and `scripts/docs-readers` are
   absent. One class-level list either over-excludes the scripter's findings about code or
   under-excludes core-developer's.
 - **Fold:** Put the list on the batch job, or derive it from the builder: the builder already knows

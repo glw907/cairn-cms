@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Vite plugin API, SvelteKit, Vitest (unit project), `svelte-check`, the existing `src/lib/delivery` and `src/lib/content/manifest.ts` modules, the `examples/showcase` reference consumer.
 
-**Source spec:** `docs/superpowers/specs/2026-06-04-cairn-dx-b-manifest-plugin-design.md`.
+**Source spec:** `docs/specs/2026-06-04-cairn-dx-b-manifest-plugin-design.md`.
 
 **Worktree:** Run on a feature worktree off `main`, per the cairn rebuild topology. The per-task gate is `npm run check` (0 errors, 0 warnings) plus `npm test` (exit 0). The root `npm run check` does not typecheck or build `examples/showcase`, so the showcase tasks carry the showcase `check` and `build` explicitly.
 
@@ -169,7 +169,7 @@ Append a short "Task 1 findings" section to the end of this plan file stating: t
 
 Run the root gate (`cd <worktree-root> && npm run check && npm test`), expecting `check` 0/0 and `npm test` exit 0 (the new plugin file must typecheck; it has no unit test yet, the showcase build is its proof). Then:
 ```bash
-git add src/lib/vite/index.ts examples/showcase/vite.config.ts docs/superpowers/plans/2026-06-04-cairn-dx-b-manifest-plugin.md
+git add src/lib/vite/index.ts examples/showcase/vite.config.ts docs/plans/2026-06-04-cairn-dx-b-manifest-plugin.md
 git commit -m "Spike the cairnManifest Vite verify mechanism, proven on the showcase build"
 ```
 

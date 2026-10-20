@@ -1,7 +1,7 @@
 # Docs reset pass 2a plan review: contract and criteria lens
 
 **Target:** `docs/superpowers/plans/2026-09-25-docs-reset-pass-2a.md` at `9f112c92`, against the
-approved spec `docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md`. **Lens:** whether
+approved spec `docs/specs/2026-09-25-docs-reset-pass-2a-design.md`. **Lens:** whether
 each acceptance criterion can fail, whether each fixture state is named, whether cross-task
 interfaces match, and whether every pre-registered pilot condition maps to a built computation
 and a Task 5 check. Every claim below was checked against the source at `9f112c92`.

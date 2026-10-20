@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (NodeNext ESM, `.js` specifiers), Vitest, the existing `yaml` dependency, Node 20+ `fetch` and WebCrypto (the GitHub signing module already runs on Web Crypto), no new runtime dependencies.
 
-**Spec:** `docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md` (Arms B and C; Arm A shipped as Pass 2 / 0.38.0). The umbrella is `docs/superpowers/specs/2026-06-08-cairn-diagnostics-initiative-design.md`.
+**Spec:** `docs/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md` (Arms B and C; Arm A shipped as Pass 2 / 0.38.0). The umbrella is `docs/specs/2026-06-08-cairn-diagnostics-initiative-design.md`.
 
 **Project gate (every task ends green):** the task's targeted test passes, `npm run check` 0/0, `npm test` exit 0 (re-run once if only the known `delivery-*-split` import-timeout flake fails), `npm run check:prose` when admin copy changes. The docs task bumps the version to **`0.41.0`** (the doctor is initiative-closing feature work, a minor under the new x.1.0-for-larger-stuff rule).
 
@@ -239,7 +239,7 @@ Seven small items:
 
 **Files:**
 - Create: `docs/reference/doctor.md` (the bin: flags, env vars, the check table with condition ids, exit codes, CI wiring)
-- Modify: `docs/reference/README.md` (index the new page), `docs/reference/log-events.md` (the `github.unreachable` row), `docs/guides/deploy-to-cloudflare.md` (the "Onboard your sending domain" section per the spec's Arm C: the wrangler command, the DNS records it writes, the Workers Paid note, the exact error strings, pointers at `cairn doctor` and the readiness checklist), `docs/guides/upgrade-cairn.md`, `CHANGELOG.md`, `package.json` (`0.41.0`), `docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md` (a one-line plan-time reconciliation where the spec implies `branding.from` is readable from site.config.yaml: it arrives via `--from`/`CAIRN_FROM` because branding lives in the adapter)
+- Modify: `docs/reference/README.md` (index the new page), `docs/reference/log-events.md` (the `github.unreachable` row), `docs/guides/deploy-to-cloudflare.md` (the "Onboard your sending domain" section per the spec's Arm C: the wrangler command, the DNS records it writes, the Workers Paid note, the exact error strings, pointers at `cairn doctor` and the readiness checklist), `docs/guides/upgrade-cairn.md`, `CHANGELOG.md`, `package.json` (`0.41.0`), `docs/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md` (a one-line plan-time reconciliation where the spec implies `branding.from` is readable from site.config.yaml: it arrives via `--from`/`CAIRN_FROM` because branding lives in the adapter)
 - The changelog entry is "Consumers may" throughout (the doctor, the checklist, the gate, and every debt fix are additive; no shim or action changes). Note the `github.unreachable` event and the behavior-neutral editLoad/coalescing improvements with no-action lines.
 
 - [ ] **Step 1: Write the docs and bump. Step 2: All gates** (`check:reference` if the bin counts as documented surface, `check:package`, `check:docs`, `check:readiness`, the full gate, `check:prose`). **Step 3: Commit** (`Document the doctor and the readiness checklist; bump 0.41.0`).

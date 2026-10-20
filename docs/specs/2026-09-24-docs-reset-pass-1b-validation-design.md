@@ -409,7 +409,7 @@ judged count rests on the two judges.
 pass 1 refit, the sensitivity table, the floors, the stability figures, and the recomputed
 thresholds at any achieved plant count. The plan commits it before the freeze; it is specified
 here, not built. The trial figures in "Finding for pass 2a" rest on the spec folds' scratch
-scripts, which the plan commits under `docs/superpowers/research/` before the build.
+scripts, which the plan commits under `docs/research/` before the build.
 
 **Reported, gating nothing:**
 

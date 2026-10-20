@@ -1,7 +1,7 @@
 # Plan one adversarial review: spec coverage, charter, proportion
 
 Reviewed: `~/Projects/initiatives/cairn-docs-standard/plans/2026-09-08-docs-standard-claude-infra.md`
-against `docs/superpowers/specs/2026-09-08-docs-standard-design.md` (sections "Claude setup",
+against `docs/specs/2026-09-08-docs-standard-design.md` (sections "Claude setup",
 "Where each piece lives", "Unit 3c", "Owner decisions", "Rationale"),
 `~/.claude/CLAUDE.md` ("Writing voice", "Pass sizing is the orchestrator's job"), and
 `~/.claude/docs/authoring-charter.md`. Read-only; nothing was edited.

@@ -6,7 +6,7 @@
 > the full gate between dispatches.
 
 **Authority:** ruling R10 and Task 12 of
-[`2026-08-02-c2-breaking-window.md`](./2026-08-02-c2-breaking-window.md), cut out of C2
+[`2026-08-02-c2-breaking-window.md`](2026-08-02-c2-breaking-window.md), cut out of C2
 mid-execution under the pre-approved contingency split, plus the `requireAccess` asymmetry that
 plan's post-mortem routed here. Both passes sit in the same unpublished `## Unreleased` window;
 C2b appends its own `Consumers must:` entries to the list C2 assembled, so a consumer still
@@ -17,7 +17,7 @@ answers a form post in place becomes `fail()` with a precise type. A refusal tha
 navigates carries a bounded code the load resolves to engine copy. No screen renders a
 query-derived sentence.
 
-Note the name collision. [`2026-08-02-refusal-channel-convergence.md`](./2026-08-02-refusal-channel-convergence.md)
+Note the name collision. [`2026-08-02-refusal-channel-convergence.md`](2026-08-02-refusal-channel-convergence.md)
 is a different, already-shipped pass: it converged `adminAction`'s own two throws onto SvelteKit's
 native `error()`/`redirect()`. This pass converges the *content actions'* refusals, one layer up.
 

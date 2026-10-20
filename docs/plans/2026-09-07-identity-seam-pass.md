@@ -31,7 +31,7 @@ as Unstable API.
 **Tech stack:** SvelteKit 2, TypeScript, vitest (the node unit and workerd integration
 projects; miniflare D1 for `AUTH_DB`), the repo's gate estate.
 
-**Spec:** `docs/superpowers/specs/2026-09-07-identity-seam-design.md` (revision 3). Inputs:
+**Spec:** `docs/specs/2026-09-07-identity-seam-design.md` (revision 3). Inputs:
 `docs/internal/record/2026-09-07-identity-seam/`.
 
 **Token ceiling:** 5.5M. About 3.6M for the seven tasks at chassis-A's observed 0.3M to 0.6M

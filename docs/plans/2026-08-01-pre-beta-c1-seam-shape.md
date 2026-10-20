@@ -13,7 +13,7 @@ channels, and declare the supported toolchain.
 `check-reference-signatures.mjs` `| undefined` fix, the env-genericity sweep, the function-color
 audit, the refusal-channel ruling, the toolchain matrix), sequenced by the "pre-beta pass series"
 section at `ROADMAP.md:69-105`. Pass two's post-mortem is
-`docs/superpowers/plans/2026-08-01-asc-engine-seams-2.md`.
+`docs/plans/2026-08-01-asc-engine-seams-2.md`.
 
 **Branch topology, load-bearing:** this pass branches off `asc-engine-seams-2`, NOT off `main`.
 Pass two is deliberately unmerged ([PR #16](https://github.com/glw907/cairn-cms/pull/16)), so `main`
@@ -158,7 +158,7 @@ who starts late never learns the earlier pattern behaves differently.
 exactly (verified: `section-action.ts:153-214` implements the amended seven-step order). The
 documentation task covers A, B, and C as the developer-facing set, with D and E as one-line
 cross-references. Verbatim rationale to quote, from
-`docs/superpowers/specs/2026-08-01-asc-engine-seams-design.md:311-317`:
+`docs/specs/2026-08-01-asc-engine-seams-design.md:311-317`:
 
 > One security finding was deliberately not adopted: throwing for the 403/500 branches. `fail(...)`
 > is kept (type-verified, ASC-proven form UX), and the exposure it worried about closes by requiring
@@ -419,7 +419,7 @@ Documentation task plus one small showcase addition.
       `adminAction`'s own guards throw `AdminActionError` (needs a site `handleError`);
       `createSectionAction`'s own authorization and binding branches return `fail(...)` (renders as
       inline form state). Quote the spec rationale from
-      `docs/superpowers/specs/2026-08-01-asc-engine-seams-design.md:311-317` verbatim (reproduced in
+      `docs/specs/2026-08-01-asc-engine-seams-design.md:311-317` verbatim (reproduced in
       "Decisions settled at plan time" above). Add one-line cross-references for the two channels a
       developer never writes: the built-in actions' `redirect(303, '...?error=')` pattern, and the
       guard's pre-routing raw `Response` (which is why `adminAction`'s own CSRF branch is
@@ -481,8 +481,8 @@ step lands, `npm --prefix examples/showcase run build` succeeds.
       version, so the two cannot drift.
 - [ ] Note in the matrix that `check:package`'s three `attw --ignore-rules` entries
       (`package.json:34`) are structural svelte-package limitations with recorded rationale
-      (`docs/superpowers/plans/2026-05-29-cairn-rebuild-07-engine-distribution.md:1317-1318`;
-      `docs/superpowers/plans/2026-06-28-cairn-extensibility-2-enforced-boundary.md:15`), not masked
+      (`docs/plans/2026-05-29-cairn-rebuild-07-engine-distribution.md:1317-1318`;
+      `docs/plans/2026-06-28-cairn-extensibility-2-enforced-boundary.md:15`), not masked
       defects. Both plans conclude "do not un-mute".
 - [ ] File to ROADMAP (Next): extend `cairn-doctor`'s `config.dependency-floors` check
       (`src/lib/doctor/check-floors.ts`) beyond svelte and kit. It is the only floor enforcement that

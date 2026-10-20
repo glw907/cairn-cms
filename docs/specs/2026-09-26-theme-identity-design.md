@@ -1,12 +1,12 @@
 # Theme identity: cairn's own look through the daisyUI levers
 
 **Status:** approved design (Geoff, 2026-09-26), revised by the four-lens review fold
-(`docs/superpowers/research/2026-09-26-theme-identity-fold.md`) and a second fold. No owner items
+(`docs/research/2026-09-26-theme-identity-fold.md`) and a second fold. No owner items
 are open: the two details of ruling 1 that the spike and the fold verification reopened are decided
 by idiom and best practice (D1, D2).
 **Arc record:** `docs/internal/record/2026-09-26-theme-identity-arc-log.md` (every round, candidate,
 verdict, and the six rulings after review).
-**Evidence:** the architecture spike, `docs/superpowers/research/2026-09-26-theme-identity-spike.md`
+**Evidence:** the architecture spike, `docs/research/2026-09-26-theme-identity-spike.md`
 (measured on daisyUI 5.7.44, Tailwind 4.3.3).
 **Reference:** the ratified probe pages and their captures are committed in
 `docs/internal/record/2026-09-26-theme-identity/`: `final-1440.png` and `final-390.png` (each

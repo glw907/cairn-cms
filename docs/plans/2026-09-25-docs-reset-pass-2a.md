@@ -10,7 +10,7 @@
 >
 > **Plan author:** `claude-opus-5-5` at `high`. The close counts this plan's planning misses.
 > Revised by the plan-review fold
-> (`docs/superpowers/research/2026-09-25-docs-reset-2a-plan-fold.md`).
+> (`docs/research/2026-09-25-docs-reset-2a-plan-fold.md`).
 
 **Date:** 2026-09-25.
 
@@ -26,7 +26,7 @@ the plants file), E2 (R-h, the CLI hold), E3 (Task 9 runs three lenses split by 
 §6 names one, because one lens cannot read the corpus; plan fold record, M m8 and R m11), and E4
 (Task 9's deferral to pass 2b, an erratum only if Geoff rules F2(a)). The rulings behind the
 spec: its "Rulings" section and the fold record
-`docs/superpowers/research/2026-09-25-docs-reset-2a-spec-fold.md`.
+`docs/research/2026-09-25-docs-reset-2a-spec-fold.md`.
 
 **Approved:** pending Geoff's read, with the two owner decisions below.
 
@@ -257,7 +257,7 @@ gates are named in their tasks.
 - No published doc arm (`docs/admin`, `docs/editors`, `docs/extend`, `docs/reference`,
   `docs/README.md`, `docs/why-cairn.md`) changes. **Facts container:** this pass changes no public
   behavior. Everything it writes sits under `scripts/`, `src/tests/`, `docs/internal/`, and
-  `docs/superpowers/`, none of it in `package.json` `files`, so no bullet goes under
+  `docs/`, none of it in `package.json` `files`, so no bullet goes under
   `docs/internal/facts/`. A task that finds otherwise files the bullet and says so.
 - Every new script carries TSDoc per the comment gate and a unit test under `src/tests/unit/`.
   New fixtures go under `scripts/docs-readers/fixtures/` (or the task's named fixture directory),
@@ -378,7 +378,7 @@ Verified against `main` at `3bc3647f`, rechecked by the fold at `2eb96b74`, and 
    line name the close of the last drafting pass that runs `docs-and-binary` readers (CR7);
    `~/.dotfiles/secrets/registry.md`'s `CAIRN_SCRATCH_CF_TOKEN` rotation line says the same,
    committed by path; `claude-tooling-sync verify` run and its exit recorded.
-5. The human-read sheets (`docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md`,
+5. The human-read sheets (`docs/research/2026-09-25-docs-reset-2a-human-reads.md`,
    written by the plan-review fold) confirmed sent to Geoff with the plan-approval message, and
    the send recorded in the Ledger. Nothing is written here.
 
@@ -734,24 +734,24 @@ passes. **Gate:** Task 6's gate string run in the `docs-reset-2a` worktree. **Re
 
 **Outcome.** The spec's §5.
 1. Four cold `claude-opus-5-5` lenses at `high` (`general-purpose`, web-capable), run in parallel,
-   each writing `docs/superpowers/research/2026-09-25-docs-reset-2a-audience-review-<lens>.md`
+   each writing `docs/research/2026-09-25-docs-reset-2a-audience-review-<lens>.md`
    (`users`, `boundaries`, `agents`, `open`), each finding with quoted evidence, a testability
    ruling per profile, and a proposed fix. Every lens reads the six profiles, the README, and the
    raw sources, never Task 7's scratch extraction. `users` also reads comparable CMSs' public
    evidence (web); `boundaries` the charter and the hat map; `agents` the shipped guidance layer;
    `open` peer docs' audience divisions (web).
 2. The human reads' stall logs, as they arrive, copied verbatim under "Logs" in
-   `docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md` in the worktree by a
+   `docs/research/2026-09-25-docs-reset-2a-human-reads.md` in the worktree by a
    `sonnet` agent at `medium`, so the conductor never reads a log. A log reaches the pass one of
    two ways: Geoff saves it in the main checkout at
-   `/var/home/glw907/Projects/cairn-cms/docs/superpowers/research/human-reads-2a/sheet-1-editor.md`
-   or `/var/home/glw907/Projects/cairn-cms/docs/superpowers/research/human-reads-2a/sheet-2-evaluator.md`
+   `/var/home/glw907/Projects/cairn-cms/docs/research/human-reads-2a/sheet-1-editor.md`
+   or `/var/home/glw907/Projects/cairn-cms/docs/research/human-reads-2a/sheet-2-evaluator.md`
    (untracked), or he pastes it into the session running the pass, and the conductor saves it
    verbatim at the matching path without acting on it. The conductor dispatches the copier at this
    step and again before Task 10; the copier checks both paths and returns only which logs it
    recorded.
 3. One fold by `claude-opus-5-5` at `high`: the profiles revised and
-   `docs/superpowers/research/2026-09-25-docs-reset-2a-audience-fold.md` written.
+   `docs/research/2026-09-25-docs-reset-2a-audience-fold.md` written.
 
 **Acceptance.** The spec's §5 line. Each human read is recorded or listed open (an open read does
 not hold the fold; a read that arrives after the fold is routed to pass 2b as an input). The schema
@@ -764,7 +764,7 @@ against the four reviews.
 audience (editors and evaluators; operators and core; designers and extenders), each reading every
 capture's `page.md` and `meta.json` in its two directories (about 75k tokens of page text each,
 never `page.html`) against the manifest entry and the matching profile, write one shared review,
-`docs/superpowers/research/2026-09-25-docs-reset-2a-exemplar-review.md`, one section per lens. One
+`docs/research/2026-09-25-docs-reset-2a-exemplar-review.md`, one section per lens. One
 fold marks the manifest: each of the 68 captures gains one verdict line under its entry, in the
 form Task 6 pins (indented two spaces, bare slug, bold marks as shown):
 `` - **Verdict (`<slug>/`):** kept `` or `` - **Verdict (`<slug>/`):** rejected (<reason>) ``. The
@@ -786,7 +786,7 @@ task is not deferred.
 ### Task 10: Owner stop 1 (conductor-run; 0.2M; attended)
 
 **Outcome.** A `claude-opus-5-5` author at `high` writes the one-page brief the spec's §7 names, at
-`docs/superpowers/research/2026-09-25-docs-reset-2a-owner-stop-1.md`, and the conductor puts it to
+`docs/research/2026-09-25-docs-reset-2a-owner-stop-1.md`, and the conductor puts it to
 Geoff with the Ledger current. Geoff's rulings go in the Ledger. An edit he asks for to the record
 or the manifest goes to one `claude-opus-5-5` fold dispatch before the close; a larger change is
 filed to pass 2b.
@@ -815,7 +815,7 @@ independent `diff-reviewer` read over the fold's diff.
 - Errata E1 to E4 filed against the spec, E4 only if F2(a) deferred Task 9 (a dated "Errata"
   note appended to the spec, the only spec edit this pass makes).
 - Once the Logs section carries them verbatim, the untracked raw logs under
-  `docs/superpowers/research/human-reads-2a/` in the main checkout are removed.
+  `docs/research/human-reads-2a/` in the main checkout are removed.
 - The conductor runs the scratch site's dry-run listing (the record's teardown section, step 1) as
   a health check, deleting nothing, and records the result; confirms `uupd.timer` is active again;
   updates the `docs-reset-initiative` memory; opens the PR.

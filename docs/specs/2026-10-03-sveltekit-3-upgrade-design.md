@@ -1,10 +1,10 @@
 # SvelteKit 3 upgrade: design
 
 Status: revised after the four-lens review and its verification read, 2026-10-03; Geoff's rulings
-recorded at the end. Inputs: the survey `docs/superpowers/research/2026-10-04-sveltekit-3-survey.md`,
+recorded at the end. Inputs: the survey `docs/research/2026-10-04-sveltekit-3-survey.md`,
 the published tarballs (`@sveltejs/kit` 3.0.0, `@sveltejs/adapter-cloudflare` 8.0.0, both npm `latest`),
 the WHATWG Fetch spec, and the probe rig at `~/.cache/kit3-review/app`. Dispositions:
-`docs/superpowers/research/2026-10-03-sveltekit-3-spec-fold.md` and its verification read
+`docs/research/2026-10-03-sveltekit-3-spec-fold.md` and its verification read
 `2026-10-03-sveltekit-3-spec-fold-verification.md` beside it.
 
 ## Goal

@@ -30,12 +30,12 @@ turns its token into a roster email, for a Svelte-fluent web developer building 
 site on cairn's seams.
 
 Inputs read: the page's entry and the owner rulings in
-`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md`; the page's round-2
+`docs/research/2026-09-30-draft-docs-2a-pilot-job-read.md`; the page's round-2
 findings and the `/healthz` note under "Not conflicts" in
-`docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`;
-`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`; both plan reads and
+`docs/research/2026-10-01-draft-docs-2a-rework-record.md`;
+`docs/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`; both plan reads and
 the escalation findings under "### replace-magic-links-with-cloudflare-access" in
-`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`, and the third plan
+`docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`, and the third plan
 read's findings as the revision dispatch delivered them; Cloudflare's policies page
 (https://developers.cloudflare.com/cloudflare-one/access-controls/policies/), opened to confirm
 it resolves before the policy step linked it; the committed page
@@ -76,18 +76,18 @@ invites the misuse) and
 - **Owner rulings (Geoff, 2026-10-01).** Every page gets an introduction per the anatomy; a task
   guide's contract alone is not one. A plan may push a fact off the page, subordinated to a named
   reference entry or cut with a reason, never dropped.
-- **Round-2 findings** (`docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`,
+- **Round-2 findings** (`docs/research/2026-10-01-draft-docs-2a-rework-record.md`,
   "### replace-magic-links-with-cloudflare-access"): the one blocking finding applies where this
   plan keeps the sentence it cites; a finding on a sentence this plan drops is disposed here. The
   table near the end maps every finding.
 - **The three plan reads** (the first two recorded in
-  `docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`,
+  `docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`,
   "### replace-magic-links-with-cloudflare-access"; the third delivered with this revision's
   dispatch): all three blocking findings are closed, the first read's in the failure path's step
   order, the second read's by the deploy step that places the go-live moment, the third read's by
   the policy step that fills the application's admission list; the seven advisories are taken.
   Three tables near the end map them.
-- **The diagnosis** (`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`):
+- **The diagnosis** (`docs/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`):
   the committed page reads as atoms. This plan decides what the page argues, which facts carry
   the argument, and which are detail the reference already holds.
 

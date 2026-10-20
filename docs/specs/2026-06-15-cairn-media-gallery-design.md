@@ -15,12 +15,12 @@ built thin.
 This spec rests on a research pass and a mockup-and-judge pass, both recorded:
 
 - Research, unified strategy, and the direction verdict:
-  [`docs/internal/design/2026-06-15-media-management-design-reference.md`](../../internal/design/2026-06-15-media-management-design-reference.md).
+  [`docs/internal/design/2026-06-15-media-management-design-reference.md`](../internal/design/2026-06-15-media-management-design-reference.md).
 - The design target (the rev.2 synthesized mockup):
   [`docs/internal/design/2026-06-15-media-gallery-mockup.html`](../../internal/design/2026-06-15-media-gallery-mockup.html).
 - The three divergent direction mockups (insert-first, library-first, command-surface) sit beside it
   as history.
-- The design language: [`docs/internal/admin-design-system.md`](../../internal/admin-design-system.md).
+- The design language: [`docs/internal/admin-design-system.md`](../internal/admin-design-system.md).
 
 ## The model (locked)
 

@@ -10,7 +10,7 @@
 
 **Prerequisite:** Pass 1 complete (`2026-05-26-prose-guard-infrastructure.md`) — both prongs built (the `prose-guard` tool with lexical/structural/stats layers + JSON deny hook; the `writing-voice` output style), wired global + cairn workspace, ecnordic's guard retired, Claude-infra prose cleaned. **Run this in a fresh session** so the hook and the output style are both live (they take effect at session start). The live output style means your fix-edits already lean toward clean prose; the hook blocks any fix that reintroduces a lexical or structural tell.
 
-**Spec:** `cairn-cms/docs/superpowers/specs/2026-05-26-prose-guard-design.md`
+**Spec:** `cairn-cms/docs/specs/2026-05-26-prose-guard-design.md`
 
 ---
 
@@ -42,7 +42,7 @@ Run:
 ```bash
 cd ~/Projects/cairn/cairn-cms && prose-guard docs/**/*.md docs/*.md *.md 2>/dev/null; echo "exit=$?"
 ```
-Expected: a grouped report (exit 1) or clean (exit 0). Note: exclude `docs/superpowers/specs` and `docs/superpowers/plans` if they contain intentional tell-fixtures (the prose-guard spec/plans quote banned tokens as examples — those live in fenced blocks and won't be flagged, but review any hit).
+Expected: a grouped report (exit 1) or clean (exit 0). Note: exclude `docs/specs` and `docs/plans` if they contain intentional tell-fixtures (the prose-guard spec/plans quote banned tokens as examples — those live in fenced blocks and won't be flagged, but review any hit).
 
 - [ ] **Step 2: Fix the doc hits**
 

@@ -5,9 +5,9 @@ Status: approved design, pre-plan. Authored 2026-05-29.
 This design covers the cutover that repoints both consumer sites (907-life and
 ecnordic-ski) from the old pre-rebuild `@glw907/cairn-cms` API onto the rebuilt
 engine. It supplements the functional spec at
-`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`, which holds the
+`docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`, which holds the
 locked architecture. The numbered plan derived from this design lands at
-`docs/superpowers/plans/2026-05-29-cairn-rebuild-08-cutover.md`.
+`docs/plans/2026-05-29-cairn-rebuild-08-cutover.md`.
 
 ## Why this is more than a version bump
 

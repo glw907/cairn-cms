@@ -1,6 +1,6 @@
 # Draft docs pass 0+1, task 9: chain proof and review-page round trip
 
-Conductor-led sitting for the plan's task 9 (`docs/superpowers/plans/2026-09-26-draft-docs-pass-0-1.md`).
+Conductor-led sitting for the plan's task 9 (`docs/plans/2026-09-26-draft-docs-pass-0-1.md`).
 Owner facts (step 1) landed as `6ad6dee8` before this record; this record covers steps 2 and 3
 and the landing of the approved page onto `draft-docs-0`.
 

@@ -1,8 +1,8 @@
 # Gate economy pass: design
 
 Status: approved in conversation 2026-10-09, revised by the spec review fold
-(`docs/superpowers/research/2026-10-09-gate-economy-spec-fold.md`); both rulings below
-taken by Geoff on 2026-10-09. Inputs: `docs/superpowers/research/2026-10-09-gate-economy-pass-inputs.md` (pass A's clock,
+(`docs/research/2026-10-09-gate-economy-spec-fold.md`); both rulings below
+taken by Geoff on 2026-10-09. Inputs: `docs/research/2026-10-09-gate-economy-pass-inputs.md` (pass A's clock,
 the adversarial review, the draft build's results) and the draft branch `gate-related` at
 `075bc174`.
 
@@ -266,7 +266,7 @@ adding a file.
 7. The `diff-reviewer` prompt in `pass-execute.js` (or the agent definition): the test-weakening
    finding.
 8. `pass-execute-chains.js` header comment: no per-task pipelining.
-9. `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md`: the Segments table, Execution mode,
+9. `docs/plans/2026-10-08-engine-pass-pre-2b-b.md`: the Segments table, Execution mode,
    line 115 (`auth-data` fix rounds), the amended paragraph at 117 to 126, the local boundary at 128
    to 132, the Gates section, Task 0's baseline, each boundary line, the close budget row, and every
    `gateTier: full` pin reviewed against the new gate.

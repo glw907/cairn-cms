@@ -11,7 +11,7 @@ pre-approval reviews cut a no-op task and an unbuildable extension); then execut
 same session. Resume prompt for
 the fresh session, verbatim on its own line:
 
-In ~/Projects/cairn-cms, execute the foundations A pass (docs/superpowers/plans/2026-08-28-foundations-a-pass.md) and then foundations B in the same session, per the Session handoff note in the A plan.
+In ~/Projects/cairn-cms, execute the foundations A pass (docs/plans/2026-08-28-foundations-a-pass.md) and then foundations B in the same session, per the Session handoff note in the A plan.
 
 > **For agentic workers:** three tasks, SERIAL. Dispatch the `cairn-implementer` /
 > `diff-reviewer` chain per task with the Agent tool; the full gate inside the chain. Task 2
@@ -23,7 +23,7 @@ csrf-hardening merges (a two-branch chain; neither is merged at authoring time).
 **Shared files:** `docs/internal/engine-rulings.md` (Tasks 1, 2), `CHANGELOG.md` (every
 task), `docs/internal/api-surface.md` and many `docs/reference/` pages (Task 2),
 `scripts/checks/check-surface.mjs` (Task 2's enforcement rule).
-**Initiative frame:** `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`
+**Initiative frame:** `docs/specs/2026-08-27-audit-remediation-initiative-design.md`
 (slice 2a; its standing-constraints block applies to every task here).
 **Evidence base, read from source, never memory:** `coherence-v2.md` (R-0 at `:839-842`; R-1
 at `:130-140` and `:844-847`), `verify-route-factories.md:143-149` (the rank-99 `SlotDef`

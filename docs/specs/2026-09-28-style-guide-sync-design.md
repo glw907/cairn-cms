@@ -3,7 +3,7 @@
 **Status:** re-scoped design (2026-09-28, evening). The first design, approved and revised by two
 `spec-plan-review` folds, is in git history at `fb1aeba3`. The re-scope follows Geoff's ruling
 that the system be proven and battle-tested, with nothing invented (ruling 15), and the leanness
-record that prompted it: `docs/superpowers/research/2026-09-28-style-guide-sync-leanness.md`.
+record that prompted it: `docs/research/2026-09-28-style-guide-sync-leanness.md`.
 **Planned against:** `main` at `feca3348`; `docs/internal/docs-register.md` and
 `docs/extend/choose-an-ai-posture.md` as merged by PR #91 at `8bbe78f5`. Landed on this branch
 before the pause: R1 (`7bf6a110`, `f9723e50`) and R2p (`5d82b505`); on the dotfiles branch

@@ -7,7 +7,7 @@ newcomer from an empty directory to a first working cairn site running locally, 
 current feature set along the way. It is the fifth phase of the documentation initiative and the
 last writing phase before the process phase (Phase 6).
 
-**Parent spec:** `docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`. That spec
+**Parent spec:** `docs/specs/2026-06-04-cairn-docs-initiative-design.md`. That spec
 scopes Phase 5 as `tutorial/build-your-first-cairn-site.md`, end to end, validated against
 `examples/showcase`, written last so it can cite the other arms.
 

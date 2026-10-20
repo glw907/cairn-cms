@@ -10,7 +10,7 @@
 only what using cairn requires, and every piece of engine apparatus lives outside the
 shipped surface in a named home.
 
-**Spec:** `docs/superpowers/specs/2026-08-08-cleanup-pass-design.md` (ratified 2026-08-08).
+**Spec:** `docs/specs/2026-08-08-cleanup-pass-design.md` (ratified 2026-08-08).
 Read it first; its rulings govern every task.
 
 **Architecture:** Boundary-first. svelte-package ships everything reachable under
@@ -209,7 +209,7 @@ diff is its dry run.
 ### Task 5: Closed-plan artifact pruning
 
 **Files:**
-- Delete: binary artifacts (images, captures, archives) under `docs/superpowers/` (22 MB)
+- Delete: binary artifacts (images, captures, archives) under `docs/` (22 MB)
   and `docs/internal/` (7.6 MB) that no live document references.
 - Modify: nothing else; post-mortem and plan TEXT is untouched.
 
@@ -312,13 +312,13 @@ appropriate; the themes repo `glw907/cairn-themes` is public for the same reason
 | Instrument | Before | After |
 |---|---|---|
 | Packed tarball | 2.5 MB / 7.0 MB unpacked / 741 files | 2.5 MB / 6.9 MB / 739 files |
-| `docs/superpowers` + `docs/internal` | 29.6 MB | 11.3 MB |
+| `docs/{plans,research,specs}` + `docs/internal` | 29.6 MB | 11.3 MB |
 | Consumer production install (tidy unused) | baseline | **-13 MB, ~-1,980 files** |
 | Test suite | 5,266 tests / 413 files | 5,273 tests / 412 files |
 
 **The packed baseline barely moved, and the spec's success criterion was written around it.**
 Only Task 2's eviction touches the tarball, about 66 KB of 2.5 MB. Nothing in `examples/`,
-`docs/superpowers/`, `docs/internal/`, or `legacy/` was ever in the `files` array, so pruning
+`docs/`, `docs/internal/`, or `legacy/` was ever in the `files` array, so pruning
 them is repo hygiene rather than package weight. The pass's real consumer win is the SDK peer
 move, which is an order of magnitude larger than everything else combined and was listed as a
 scope edge rather than the headline. A future pass aiming at "the shipped package is lean"

@@ -27,7 +27,7 @@ pushes the result to the template repo; one workflow job drives it after the npm
 checklist is prose in two places bound by a match test; the rest of the pass is live
 verification with evidence.
 
-**Spec:** `docs/superpowers/specs/2026-08-12-create-cairn-site-t5-design.md`, as amended at
+**Spec:** `docs/specs/2026-08-12-create-cairn-site-t5-design.md`, as amended at
 the adversarial gate. Task 2 exists to observe the umbrella's button claim; every downstream
 copy claim waits for it.
 
@@ -42,7 +42,7 @@ run. It failed. The synced tree installs and will not build: it imports `preview
 `PreviewBanner`, which published `@glw907/cairn-cms@0.94.0` does not export. Evidence, scope
 (exactly two symbols, measured across all 57 engine imports rather than inferred from the build's
 two errors), and why no existing gate could have caught it are in
-[`docs/internal/2026-08-13-t5-button-spike.md`](../../internal/record/2026-08-13-t5-button-spike.md),
+[`docs/internal/2026-08-13-t5-button-spike.md`](../internal/record/2026-08-13-t5-button-spike.md),
 Step 1.
 
 **Spec ruling 6 is wrong on its central claim.** It reasoned that moving the strip into the sync is
@@ -353,7 +353,7 @@ synced repo), not on the spike.
 
 ### Task 9: Teardown, T5b brief, records, and pass close **[main loop]**
 
-**Files:** Modify `docs/superpowers/specs/2026-08-12-create-cairn-site-t5-design.md` (the
+**Files:** Modify `docs/specs/2026-08-12-create-cairn-site-t5-design.md` (the
 T5b brief lands as a dated addition), `ROADMAP.md`, `docs/STATUS.md`, `CHANGELOG.md`
 (`## Unreleased`), this file (post-mortem); the spike doc's teardown table gains its
 verified column.
@@ -498,7 +498,7 @@ invocations and three parks (DNS propagation, App repo-selection, build queue), 
 with a correct printed re-entry and every resume entering at the right hop. PR #30 was merged
 first (all six checks green, merge `95227bed`), so the packed artifacts are byte-identical to
 `main`. The full per-hop evidence, all raw reads, is
-[`docs/internal/2026-08-13-t5-task8-live-e2e.md`](../../internal/record/2026-08-13-t5-task8-live-e2e.md):
+[`docs/internal/2026-08-13-t5-task8-live-e2e.md`](../internal/record/2026-08-13-t5-task8-live-e2e.md):
 the no-fake preflight, the freshness triple, and each hop's read.
 
 **What is now live-proven that only fakes covered before:** the tool's own orchestration end to

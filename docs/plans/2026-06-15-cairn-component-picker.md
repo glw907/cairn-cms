@@ -1,6 +1,6 @@
 # Plan: component insert picker with live preview, and the contract additions
 
-Source spec: `docs/superpowers/specs/2026-06-15-cairn-component-picker-design.md`. Mockup (rev. 2,
+Source spec: `docs/specs/2026-06-15-cairn-component-picker-design.md`. Mockup (rev. 2,
 critique folded in): `docs/internal/design/2026-06-15-component-picker-mockup.html`.
 
 Execution: one `cairn-implementer` per task, test-first, on a feature worktree off `main`. The main

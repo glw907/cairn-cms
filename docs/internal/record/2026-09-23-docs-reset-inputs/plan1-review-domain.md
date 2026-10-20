@@ -1,6 +1,6 @@
 # Plan 1 review: domain-risk lens
 
-Reviewer: `claude-opus-5-5`, 2026-09-23. Plan: `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`.
+Reviewer: `claude-opus-5-5`, 2026-09-23. Plan: `docs/plans/2026-09-23-docs-reset-pass-1.md`.
 
 ## Critical
 
@@ -70,8 +70,8 @@ only the diff.
 
 **M4. The repository-class reader can see the answer key (lines 133, 294).** A clean checkout "at a
 named commit" contains `docs/internal/record/` (the planted-defect record, the baseline failure
-record) and `docs/superpowers/plans/` (pass A's list of the 14 defects, this plan). Fix: prepare the
-checkout with `git archive`, excluding `docs/internal/record/`, `docs/superpowers/`, and `.git`.
+record) and `docs/plans/` (pass A's list of the 14 defects, this plan). Fix: prepare the
+checkout with `git archive`, excluding `docs/internal/record/`, `docs/`, and `.git`.
 Make the init or preparation check fail if those paths are present.
 
 **M5. Reader spend has no hard stop and draws on a shared pool (lines 26-27, 107).** The runner

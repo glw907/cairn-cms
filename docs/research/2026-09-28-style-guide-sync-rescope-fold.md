@@ -1,9 +1,9 @@
 # Style-guide sync re-scope: fold record
 
 Date: 2026-09-28. Targets at `e0d5f954`: `docs/superpowers/specs/2026-09-28-style-guide-sync-design.md`
-and `docs/superpowers/plans/2026-09-28-style-guide-sync.md`. Four lenses, all read in full:
+and `docs/plans/2026-09-28-style-guide-sync.md`. Four lenses, all read in full:
 contract (`C`), mechanics (`X`), consistency (`K`), leanness (`L`), each under
-`docs/superpowers/research/2026-09-28-style-guide-sync-rescope-review-*.md`. Governing rulings:
+`docs/research/2026-09-28-style-guide-sync-rescope-review-*.md`. Governing rulings:
 15 (proven, nothing invented) and 16 (the register preserved in full).
 
 The fold verified these facts before acting on them:

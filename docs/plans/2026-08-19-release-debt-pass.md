@@ -173,7 +173,7 @@ with `log.warn('guard.rejected', { reason: 'https' })` and a branded 400, and
 prints a security-shaped refusal and a `400 /admin (linked from /)` that no doc explains. Two live
 records corroborate it independently:
 `docs/internal/record/2026-08-13-t5-task8-live-e2e.md:152` and
-`docs/superpowers/plans/2026-08-12-create-cairn-site-t5.md:521`.
+`docs/plans/2026-08-12-create-cairn-site-t5.md:521`.
 
 - [ ] The fix is in the template, not the guard: the guard is behaving correctly and its own
   integration test (`src/tests/integration/auth-guard.test.ts:510-514`) pins that. Suppress the

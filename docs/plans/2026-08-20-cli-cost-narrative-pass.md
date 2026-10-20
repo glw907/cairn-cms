@@ -12,7 +12,7 @@ consents to a deploy that actually works.
 in the engine docs and the CLI's opening preamble, then found the same false premise in the tool's
 interactive consent flow. That half is flow and prompt-order work rather than copy, so absorbing it
 would have been the pass's fourth scope growth. It was deliberately cut. See that pass's post-mortem
-in `docs/superpowers/plans/2026-08-19-release-debt-pass.md`.
+in `docs/plans/2026-08-19-release-debt-pass.md`.
 
 **Why it is urgent rather than merely filed:** this gates a release decision. The cut has to decide
 whether `create-cairn-site` ships or holds, and today the tool promises a free deploy that fails. If

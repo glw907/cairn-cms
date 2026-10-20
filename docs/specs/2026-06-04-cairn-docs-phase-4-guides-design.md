@@ -1,7 +1,7 @@
 # Documentation Initiative Phase 4 design spec: the Guides arm
 
 > Design spec. Authored 2026-06-04. Part of the cairn-cms documentation initiative
-> (`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`). Audience for the docs being
+> (`docs/specs/2026-06-04-cairn-docs-initiative-design.md`). Audience for the docs being
 > built: external adopters who install `@glw907/cairn-cms` and build their own sites. Delivery
 > surface: markdown in-repo, rendered on GitHub and npm. No hosted docs site.
 

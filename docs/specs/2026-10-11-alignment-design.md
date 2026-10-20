@@ -1,7 +1,7 @@
 # cairn-cms alignment (design)
 
 **Status:** approved by Geoff, 2026-10-11, with the class-C recommendation, for unattended planning. The pass runs
-before docs stage 2b. Evidence: the alignment audit at `~/Projects/cairn-cms/docs/superpowers/research/2026-10-11-cairn-cms-alignment-audit.md`,
+before docs stage 2b. Evidence: the alignment audit at `~/Projects/cairn-cms/docs/research/2026-10-11-cairn-cms-alignment-audit.md`,
 read at `b4cc338`, which is still `main`.
 
 ## Outcome

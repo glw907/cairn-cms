@@ -148,7 +148,7 @@ dispositions below, all folded, 0 refused.
 
 ## Prose review fold
 
-**Source:** `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-prose-review.md`
+**Source:** `docs/research/2026-09-26-draft-docs-pass-0-1-prose-review.md`
 (`prose-voice-reviewer`, plan at `f334a30a`). All 16 findings folded as the review proposed, no
 refusals, no owner forks.
 
@@ -180,7 +180,7 @@ refusals, no owner forks.
    chunked near 5K words (about 37 agents total) and a batch as up to six pages with a split page's
    chunks kept together.
 10. **S1.** Folded: the token-ceiling paragraph cites
-    `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-fold.md:110` for the 4.5M stage 1
+    `docs/research/2026-09-26-draft-docs-pass-0-1-fold.md:110` for the 4.5M stage 1
     figure.
 11. **S2.** Folded: the token-ceiling paragraph now states the narrowed headroom as "about 1.3M" in
     place of "roughly 1M".

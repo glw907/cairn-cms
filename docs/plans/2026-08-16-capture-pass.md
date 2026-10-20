@@ -130,7 +130,7 @@ README records both published versions, the bake command, and the tool commit.
 
 ### Task A0: commit this plan and repoint STATUS (before anything runs)
 
-**Files:** Create: `docs/superpowers/plans/2026-08-16-capture-pass.md`. Modify:
+**Files:** Create: `docs/plans/2026-08-16-capture-pass.md`. Modify:
 `docs/STATUS.md`.
 
 - [ ] Commit this plan into the repo. Rewrite STATUS's immediate-next-action to name this

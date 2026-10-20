@@ -74,7 +74,7 @@ Five machines were left running at handoff; each pushes durable results:
 
 ## The lines Fable drew (late additions — extend these patterns, don't re-derive)
 
-- **Security reference implementations** at docs/superpowers/specs/assets/phase-2-reference/:
+- **Security reference implementations** at docs/specs/assets/phase-2-reference/:
   admin-action.ts (the Part-C seam's contract + acceptance tests) and
   stripe-webhook-verify.ts (pass 2.2's core + tests). The Part-C engine pass LIFTS these;
   critical-code changes to them go back through Fable batch-audit per the system doc.
@@ -120,7 +120,7 @@ cutover); aksailingclub-sveltekit = retired. First housekeeping task: remove the
    ASC cutover (Geoff's go) → the theme-building tutorial + docs chassis sweep → the
    consolidating release → cairn.pub Phase 1 → beta. THE scope question (beta waits for
    phase 2 or not) is flagged there for Geoff.
-5. Phase 2 executes docs/superpowers/specs/2026-07-06-asc-phase-2-design-suite.md.
+5. Phase 2 executes docs/specs/2026-07-06-asc-phase-2-design-suite.md.
    **Part C's engine pass LAUNCHED overnight** (cairn-cms branch `admin-extension-seams`,
    a Sonnet implementer building all four additive seams from the drawn lines + the
    proven scaffold stand-ins, full gate required, clean-stop on blockers): REVIEW that

@@ -1,6 +1,6 @@
 // Task 5 of the auth-channel factory plan: the optional rate limit on request and confirm (spec
-// docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md, Surface's rateLimit? row;
-// plan docs/superpowers/plans/2026-08-03-auth-channel-factory.md, Task 5). THE RULE this suite
+// docs/specs/2026-08-03-auth-channel-factory-design.md, Surface's rateLimit? row;
+// plan docs/plans/2026-08-03-auth-channel-factory.md, Task 5). THE RULE this suite
 // exists to prove: no control keyed on the victim's identity may deny, delay, or destroy
 // anything, so the default key must be the composed requester bucket (the address half paired
 // with the derived identity), never the identity alone -- the key-composition test below is the

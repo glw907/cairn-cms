@@ -1,8 +1,8 @@
 # Docs reset pass 1b: validation record
 
 The verdict record for docs reset pass 1b
-(`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`, spec
-`docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`).
+(`docs/plans/2026-09-24-docs-reset-pass-1b.md`, spec
+`docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`).
 
 **No gated verdict exists.** Geoff closed the pass on its tuning record (O11, 2026-09-25) before
 the freeze. The freeze, the mapping runs, the planting, the planted runs, and the gated scoring

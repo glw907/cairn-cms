@@ -4,7 +4,7 @@
 edits), run the whole-surface retroactive any-site audit, and re-review the two held
 absorption plans, per the ratified spec.
 
-**Spec:** `docs/superpowers/specs/2026-08-26-engine-consultation-design.md` (read it first;
+**Spec:** `docs/specs/2026-08-26-engine-consultation-design.md` (read it first;
 tasks argue from it). Worked examples:
 `docs/internal/record/2026-08-26-asc-harvest-triage.md`. Inputs record:
 `docs/internal/record/2026-08-26-engine-consultation-inputs.md`.
@@ -364,8 +364,8 @@ pass-sizing rule applied, raised to Geoff in-session).
 ### Task 9: Re-review the two held plans
 
 **Files:**
-- Modify: `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md`
-- Modify: `docs/superpowers/plans/2026-08-26-harvest-detection-pass.md`
+- Modify: `docs/plans/2026-08-26-toolkit-seams-pass.md`
+- Modify: `docs/plans/2026-08-26-harvest-detection-pass.md`
 
 **Consumes:** the ratified standard, the audit rulings (Task 8).
 
@@ -453,7 +453,7 @@ Path (a), no plan exists. PASS: enumeration (action 4) precedes plan-writing (ac
 2. Look for the Pass 12 plan doc and confirm none exists. Quote: "Read the plan doc for the current pass."
 3. Brainstorm the open questions before drafting anything. Quote: "If none exists and the starter prompt lists open questions, brainstorm first (invoke `superpowers:brainstorming`)"
 4. Run the engine-contact enumeration and record its outcome in the plan header. Quote: "then run the engine-contact enumeration per the `engine-consult` skill and record its outcome in the plan header (either the consultation-brief link or the one-line \"no engine asks\")"
-5. Write the plan file, per `plan-template.md`, with its token ceiling and checkpoint interval. Quote: "then write a plan at `docs/superpowers/plans/YYYY-MM-DD-<topic>.md` (see `plan-template.md`; its header carries a token ceiling and a checkpoint interval, default four tasks)"
+5. Write the plan file, per `plan-template.md`, with its token ceiling and checkpoint interval. Quote: "then write a plan at `docs/plans/YYYY-MM-DD-<topic>.md` (see `plan-template.md`; its header carries a token ceiling and a checkpoint interval, default four tasks)"
 
 Path (b), committed plan, no consultation line. PASS: the backstop (actions 3 and 4)
 precedes the first `site-implementer` dispatch (action 5).

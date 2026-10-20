@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, SvelteKit, Vitest, the `yaml` package (eemeli/yaml), Vite `?raw` imports, npm workspaces (the sites consume the engine via the workspace symlink in dev).
 
-**Spec:** `docs/superpowers/specs/2026-05-27-pass-l-yaml-site-config-design.md`
+**Spec:** `docs/specs/2026-05-27-pass-l-yaml-site-config-design.md`
 
 **Pass-end note:** The cairn-pass consolidation ritual (code-simplifier over the changed engine code, then the per-pass verification and the PLAN.md progress entry) runs after the last task. Per-task commits below do not each run code-simplifier.
 
@@ -856,4 +856,4 @@ EOF
 
 ## Execution Handoff
 
-Plan complete and saved to `docs/superpowers/plans/2026-05-28-pass-l-yaml-site-config.md`.
+Plan complete and saved to `docs/plans/2026-05-28-pass-l-yaml-site-config.md`.

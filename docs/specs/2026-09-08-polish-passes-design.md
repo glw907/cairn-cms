@@ -342,7 +342,7 @@ is not contended.
 
 **The ruling (Geoff, 2026-09-08).** No significant docs investment now that a rewrite is
 planned. The docs standard initiative
-(`docs/superpowers/specs/2026-09-08-docs-standard-design.md`) rebuilds every published page
+(`docs/specs/2026-09-08-docs-standard-design.md`) rebuilds every published page
 from a per-track fact ledger, and its drafter never opens the page it replaces. Prose
 corrected now is therefore paid for twice, and the corrected text is quarantined from that
 drafter anyway. Polish-B dissolves as a pass on that reasoning.
@@ -552,7 +552,7 @@ ordered after polish-C merges; otherwise the two branches conflict on one file, 
 re-teaches `OfficeList` from a pre-removal ledger and turns `check:snippets` red on `main`
 after the release is cut. And no polish pass commits a figures substrate, so 2a's preflight
 hard stop on it is removed. Both changes are written into
-`docs/superpowers/plans/2026-09-08-docs-toolset-pass.md` as a dated amendment.
+`docs/plans/2026-09-08-docs-toolset-pass.md` as a dated amendment.
 
 **Polish-C lands entirely before the docs harvest branches.** Every rename invalidates a
 fact-ledger entry in exactly the class the ledger exists to guarantee. **Then the rewrite's
@@ -608,7 +608,7 @@ did not.
   a render and a tile read, and a finding the render refutes retires with the tile named.
 - **The breaking window's file reach is measured, not estimated.** Over `git ls-files` for the
   twenty-five identifiers the window renames or removes, 464 tracked files match, and 267 match
-  excluding `docs/superpowers/` and `docs/internal/record/`, which are write-once archives no
+  excluding `docs/` and `docs/internal/record/`, which are write-once archives no
   rename sweep touches. Polish-C's plan re-derives the count by the same method. The earlier
   "365 in-tree files" figure reproduced from nothing in the repo and is retired here and in
   `docs-standard-design.md`. The mitigation is one list of ten lines, one release, the sites

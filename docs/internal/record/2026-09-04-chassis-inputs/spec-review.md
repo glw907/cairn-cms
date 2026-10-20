@@ -1,4 +1,4 @@
-# Adversarial review: `docs/superpowers/specs/2026-09-04-chassis-passes-design.md`
+# Adversarial review: `docs/specs/2026-09-04-chassis-passes-design.md`
 
 Read-only review, three lenses, findings ranked within each. Verified against the working tree at
 `main` (`1e019f2d`). Every file:line below was opened, not inferred.
@@ -12,7 +12,7 @@ Read-only review, three lenses, findings ranked within each. Verified against th
 The spec writes "The engine stays on `check:idioms`" in the present tense. There is no
 `check:idioms` script in `package.json`, no `scripts/checks/check-idioms.mjs`, and no reference to
 the name anywhere on `main` or in the `internals-c` worktree. The gate is *created* by internals-C
-Task 2 (`docs/superpowers/plans/2026-09-03-internals-c-pass.md:157`), scoped to leading-tab
+Task 2 (`docs/plans/2026-09-03-internals-c-pass.md:157`), scoped to leading-tab
 indentation in `src/lib` plus `scripts` (`*.ts`/`*.svelte`/`*.mjs`) and `process.exit(` in
 `scripts/checks/*.mjs`.
 
@@ -178,7 +178,7 @@ cannot verify from the docs.
   halves live at `packages/create-cairn-site/scripts/emit-template-dir.mjs` and `.../bake-template.mjs`.
   Naming all three in the plan saves an implementer a search.
 - `docs/STATUS.md` calls the initiative design "the amended initiative design", but
-  `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md:119` still reads "One
+  `docs/specs/2026-08-27-audit-remediation-initiative-design.md:119` still reads "One
   cut, after the chassis pass." The spec is right that the amendment is outstanding (item 11); STATUS
   is the stale document. Worth a line so the plan author does not assume it is done.
 - `svelte.config.js:44` says "the 220-post fixture here never triggers it", and
@@ -269,7 +269,7 @@ still does, before counting quote style, trailing commas, arrow parens, and Svel
 wrapping. The spec forecloses a repo-wide rewrap for the engine in the same sentence that authorizes
 one for the showcase, without saying so. internals-C's ratified ruling ("Prettier adoption is out of
 scope, whole-tree rewrap is the opposite of least-churn",
-`docs/superpowers/plans/2026-09-03-internals-c-pass.md:59-61`) is scoped to the engine, so this is
+`docs/plans/2026-09-03-internals-c-pass.md:59-61`) is scoped to the engine, so this is
 not a contradiction of the ruling, but it inherits the same objection and needs the same explicit
 answer.
 

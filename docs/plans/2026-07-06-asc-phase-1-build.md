@@ -1,8 +1,8 @@
 # ASC phase 1: the build
 
-> Executes docs/superpowers/specs/2026-07-06-asc-phase-1-design.md (ratified 2026-07-06,
+> Executes docs/specs/2026-07-06-asc-phase-1-design.md (ratified 2026-07-06,
 > including the club-grounds color story). The north star is the committed full example:
-> docs/superpowers/specs/assets/2026-07-06-asc-home-northstar.html — the build's design
+> docs/specs/assets/2026-07-06-asc-home-northstar.html — the build's design
 > CONTRACT, not an inspiration. The visual-fidelity method binds end to end; the chassis
 > harvest banks whatever this build teaches (the 7th consumer). Production cutover is NOT
 > in this plan — the build ships to dev.aksailingclub.org behind the existing Access app;

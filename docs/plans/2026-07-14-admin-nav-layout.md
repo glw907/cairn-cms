@@ -9,7 +9,7 @@
 the whole admin nav (engine and site screens mixed), one resolved-tree rendering path, the
 organize-your-admin-nav guide, and the desk-route sidebar rider.
 
-**Spec:** `docs/superpowers/specs/2026-07-14-admin-nav-layout-design.md` (ratified 2026-07-14).
+**Spec:** `docs/specs/2026-07-14-admin-nav-layout-design.md` (ratified 2026-07-14).
 Read it before any task. This plan binds its decisions; where the plan locks a call the spec
 left open, the lock is marked **[plan-locked]**.
 

@@ -3,7 +3,7 @@
 Written at theme identity pass C's close (2026-09-29, Geoff's 2026-09-28 ruling that the facts carry atomic claims and the draft
 docs stages also need page-level intent). It covers passes A, B, and C together. It is an input to
 the stage 2 (extend) and stage 5 (front door) outlines in
-`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md` ("Each rebuilt stage's flow", step 1); the outline
+`docs/specs/2026-09-26-draft-docs-approach-design.md` ("Each rebuilt stage's flow", step 1); the outline
 that Geoff approves on the R10 page is drawn from it, and this file is not itself the outline. The
 page type is a section-heading vocabulary from `docs/internal/record/docs-exemplars.md` (Designers and Extenders slices);
 each outline assigns its two exemplars. Fact ids are `f:` ids in `docs/internal/facts/`; an id

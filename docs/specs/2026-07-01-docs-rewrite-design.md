@@ -109,5 +109,5 @@ without it.
   ritual, writing dispatched per the plan the IA produces; prose drafting follows the
   writing-voice standards (Google for the published arms), with `prose-voice-reviewer` in the
   review gate alongside the doc gates.
-- The docs IA doc lives at `docs/superpowers/specs/` beside this design; the Stage 2 plan is
+- The docs IA doc lives at `docs/specs/` beside this design; the Stage 2 plan is
   authored only after the IA is approved.

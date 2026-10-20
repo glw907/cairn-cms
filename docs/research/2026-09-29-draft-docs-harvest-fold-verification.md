@@ -1,6 +1,6 @@
 # Draft docs harvest: fold verification
 
-**Targets:** `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` (spec) and
+**Targets:** `docs/specs/2026-09-29-draft-docs-harvest-design.md` (spec) and
 `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md` (plan), at `da3a923b`.
 **Read against:** the fold record, the four reviews, the parent spec, `docs/STATUS.md`,
 `~/.claude/workflows/pass-execute-chains.js`, the facts container, `docs/internal/docs-register.md`,

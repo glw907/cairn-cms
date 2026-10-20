@@ -1,6 +1,6 @@
 # Pass clock time: prior art
 
-Written 2026-10-10 for the clock-time design (`docs/superpowers/specs/2026-10-10-pass-clock-time-design.md`).
+Written 2026-10-10 for the clock-time design (`docs/specs/2026-10-10-pass-clock-time-design.md`).
 Two Sonnet research agents (effort `high`) produced these reports; the conductor condensed them and kept every
 citation. "(tested)" marks a check the agent ran on this workstation; "(inference)" marks its own reading.
 

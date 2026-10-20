@@ -16,7 +16,7 @@
 > 2b, with the whole 76-page harvest in 2b. The owner's direction of 2026-09-08 dissolved 2b and
 > moved the harvest into the per-track stages, so the docs system is tuned as it is used. Revision 2
 > was authored against spec revision 3
-> (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`) and the six adversarial reviews of
+> (`docs/specs/2026-09-08-docs-standard-design.md`) and the six adversarial reviews of
 > revision 1 under `docs/internal/record/2026-09-08-polish-inputs/` (`plan2-review-coverage.md`,
 > `-plannability.md`, `-executor.md`, `-sequencing.md`, `-charter.md`, `-benchmark.md`); that spec's
 > Implementation section now carries the staged shape. What each review finding became is recorded in
@@ -56,7 +56,7 @@ stages.
 3.15.1 (the CI pin) for prose and heading rules; Node ESM scripts under `scripts/checks/` with
 co-located vitest specs for the four gates no linter can carry; the `yaml` package already in `dependencies` for the brief parser.
 
-**Spec:** `docs/superpowers/specs/2026-09-08-docs-standard-design.md` (revision 3 with the
+**Spec:** `docs/specs/2026-09-08-docs-standard-design.md` (revision 3 with the
 2026-09-08 staged Implementation section; units 2, 3a, 3b, and 4 in full, unit 1's schema and tools,
 and the first tuning checkpoint. Unit 3c belongs to plan one; unit 1's four remaining track harvests
 and unit 5 belong to the stages). Inputs: `docs/internal/record/2026-09-08-polish-inputs/`,
@@ -242,7 +242,7 @@ one.
 ## Amendment 2026-09-08 (evening), from the polish spec revision 4 fold
 
 Geoff's rulings of that evening, recorded in
-`docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4, change three things in this
+`docs/specs/2026-09-08-polish-passes-design.md` revision 4, change three things in this
 plan. Task numbering is unchanged.
 
 1. **The figures substrate is no longer a precondition, and no longer a hard stop.** Pre-task 1 read
@@ -321,7 +321,7 @@ plan. Task numbering is unchanged.
 - **Every new script gets a must-fire fixture and a passing fixture, plus a unit test.** Both shapes
   per script, under `scripts/checks/fixtures/docs-standard/`.
 - **Internal planning docs stay outside the Vale gates.** `.vale.ini`'s empty `BasedOnStyles` for
-  `docs/superpowers/**`, `docs/internal/**`, `docs/STATUS.md`, and `docs/HISTORY.md` is not touched.
+  `docs/**`, `docs/internal/**`, `docs/STATUS.md`, and `docs/HISTORY.md` is not touched.
 - **This plan is not prose-graded.** No receipt, no page brief, no Vale loop.
 - **No em dashes in any file this plan produces**, prose and comments alike, and no ruling or pass
   citations in shipped comments or condition copy.
@@ -444,7 +444,7 @@ ground.
   names, and record each as present or absent with the command and its output pasted. Do not stop
   the pass on any absence; name the criterion each absence degrades.
 - [ ] **Step 4:** create `.tellgrader.json` at the repository root with exactly
-  `{"profile":"docs-register","include":["docs/**"],"exclude":["docs/internal/**","docs/superpowers/**"]}`,
+  `{"profile":"docs-register","include":["docs/**"],"exclude":["docs/internal/**","docs/**"]}`,
   and prove discovery fires by path rather than by an explicit flag.
 - [ ] **Step 5:** re-derive the published-page set and count; re-resolve every `docs-sweep.md`
   finding number and every `exports-sweep.md` `F` number this plan cites, and write the
@@ -491,7 +491,7 @@ ground.
   ~/.claude/skills/writing-voice/evals/tellgrader/MEASURES.md` plus `grep -n "Divergences from
   cairn's measure-prose.mjs" ~/.claude/skills/writing-voice/evals/tellgrader/MEASURES.md`.
 - `.tellgrader.json` is committed at the repository root with exactly
-  `{"profile":"docs-register","include":["docs/**"],"exclude":["docs/internal/**","docs/superpowers/**"]}`,
+  `{"profile":"docs-register","include":["docs/**"],"exclude":["docs/internal/**","docs/**"]}`,
   and the report pastes the output proving `tellgrader --register docs docs/why-cairn.md` then
   reports a `measures` object and `tellgrader --register docs docs/internal/docs-register.md` does
   not, so discovery, not an explicit flag, is what fires the profile on one path and not the other.
@@ -875,7 +875,7 @@ implementer that finds nothing to correct says so explicitly in its report.
   drafting dispatch and restored by the coverage-diff step.
 - It is a single copyable block, delimited so a dispatch can quote it whole.
 - **No plan linter is built.** Revision 1 bolted a `--plan-lint` mode, a fixture, a package script,
-  and a full gate run onto this task; plan documents live under `docs/superpowers/`, which every
+  and a full gate run onto this task; plan documents live under `docs/`, which every
   gate in this standard exempts, and nothing in this plan would exercise it against a real input.
   The fragment is the artifact the spec funds.
 
@@ -1799,7 +1799,7 @@ hand-off would hand stage one the unamended tooling.
 
 **Notes:** **the polish-spec amendment is no longer R1's.** It is a precondition of the whole
 initiative and lands as a dated amendment section in
-`docs/superpowers/specs/2026-09-08-polish-passes-design.md` before polish-B's plan is authored.
+`docs/specs/2026-09-08-polish-passes-design.md` before polish-B's plan is authored.
 Revision 1 had the last task of this plan writing instructions to passes that, by its own stated
 ordering (A, B, D, C, then this plan), had already finished; polish-B would have folded its thirty
 prose findings into the pages as edits and polish-D would have authored the front door, which is
@@ -2099,7 +2099,7 @@ The five partition the 76 published pages with no page in two stages and none in
    the corpus entry it graded against and carrying the measurement table.
 6. **The reader test for that stage's pages**, per the allocation below.
 7. **The tuning checkpoint**, defined once in the spec's Implementation section
-   (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`, "The tuning checkpoint" and
+   (`docs/specs/2026-09-08-docs-standard-design.md`, "The tuning checkpoint" and
    "Gauging and iterating"). Its record is
    `docs/internal/record/docs-rebuild/stage-<n>-tuning.md`. This plan does not restate the
    definition, so there is one copy to amend.

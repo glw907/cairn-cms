@@ -4,9 +4,9 @@
 at `da97461b`. A first fold landed as checkpoint `64ccc784`. Owner rulings O7 and O8 then cut the
 pass to the core gate, and a second fold, uncommitted, rewrote the plan and this record to match
 and re-checked the spec and the parent's "Amendments from pass 1b" section against them.
-**Targets:** `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`,
-`docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`, and the parent's
-amendment section in `docs/superpowers/specs/2026-09-23-docs-reset-design.md`.
+**Targets:** `docs/plans/2026-09-24-docs-reset-pass-1b.md`,
+`docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`, and the parent's
+amendment section in `docs/specs/2026-09-23-docs-reset-design.md`.
 
 **Reviews folded.** ID prefixes: `SP` the spec prose review
 (`2026-09-24-pass-1b-spec-prose-review.md`), `CT` the plan contract review, `MX` the plan mechanics

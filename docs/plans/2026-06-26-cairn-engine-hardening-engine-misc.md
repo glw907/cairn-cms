@@ -17,7 +17,7 @@ deliverable with its own verification surface.
 
 **Tech Stack:** Svelte 5 (runes), TypeScript, the admin CSS layer, the Node check scripts, Vitest.
 
-**Spec:** `docs/superpowers/specs/2026-06-26-cairn-engine-hardening-design.md`. Before any `/admin`
+**Spec:** `docs/specs/2026-06-26-cairn-engine-hardening-design.md`. Before any `/admin`
 `.svelte` or `cairn-admin.css` change (Tasks 1-2), read `docs/internal/admin-design-system.md`.
 
 ## Global Constraints
@@ -80,7 +80,7 @@ identical error; `daisyui-a11y-reviewer` at the gate.
 
 **Files:**
 - Modify: `src/lib/render/registry.ts:97` (the `icon` contract JSDoc) and the `defaultIconByRole` lookup area
-- Modify: `docs/superpowers/specs/2026-06-15-cairn-component-picker-design.md:97` and `docs/reference/components.md`
+- Modify: `docs/specs/2026-06-15-cairn-component-picker-design.md:97` and `docs/reference/components.md`
 - Test: `src/tests/unit/registry*.test.ts`
 
 **Interfaces:**

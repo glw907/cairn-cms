@@ -1,6 +1,6 @@
 # Theme identity pass B plan: review fold
 
-**Target:** `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md`, reviewed at `07035110`
+**Target:** `docs/plans/2026-09-27-theme-identity-pass-b.md`, reviewed at `07035110`
 and folded on branch `theme-b-plan`. **Reviews:**
 `2026-09-27-theme-pass-b-plan-review-contract.md` (C1 to C17),
 `...-mechanics.md` (M1 to M11, O1 and O2), and `...-risk.md` (R1 to R14, O1 and O2, F1, F2, A1).

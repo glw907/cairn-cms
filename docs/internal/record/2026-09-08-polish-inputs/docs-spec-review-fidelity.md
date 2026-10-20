@@ -1,7 +1,7 @@
 # Fidelity review: docs-standard design spec against the approved proposal
 
 Lens: FIDELITY only. Read-only review of
-[`docs/superpowers/specs/2026-09-08-docs-standard-design.md`](../../../superpowers/specs/2026-09-08-docs-standard-design.md)
+[`docs/specs/2026-09-08-docs-standard-design.md`](../../../specs/2026-09-08-docs-standard-design.md)
 (revision 1) against
 [`docs-standard-proposal.md`](docs-standard-proposal.md) (revision 9, HEAD) and the owner's two
 post-approval directions. Reviewer: fresh context, 2026-09-08.

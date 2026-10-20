@@ -284,7 +284,7 @@ doctor prose is rewritten. The string-assertion tests and `substitute.test.mjs`'
 
 ### Docs
 
-In scope: the 21 files in the published arms. `docs/internal` and `docs/superpowers` are history
+In scope: the 21 files in the published arms. `docs/internal` and `docs/{plans,research,specs}` are history
 and are not swept; nor are past-version entries in `migration-notes.md`.
 
 - `docs/reference/doctor.md` leaves; a reference page for `site-facts.json` arrives (pre-task).
@@ -363,7 +363,7 @@ registry entries, the cairn-pub link); then the STATUS line, in the commit that 
 3. retire-1, branch `doctor-go`: verified, then merged to `main` **without a tool tag**. It has
    no tag task and no release task.
 4. Draft docs pass A (the docs conductor's pass,
-   `docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`) runs against that `main`. It moves
+   `docs/plans/2026-09-21-draft-docs-pass-a.md`) runs against that `main`. It moves
    the tool's contract pages and schemas under `docs/reference/`, including the
    `cairn doctor` page and the seventh schema, and repoints the binary's help and tests. Its
    pre-flight requires that retire-2 has not started and that no `tool/v1.1.0` tag exists.

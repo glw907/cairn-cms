@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: execute with `cairn-pass` + per-task
 > `cairn-implementer` dispatches from a fresh Opus 5 session, on a worktree off `main`.
 > This plan is the adjudication record AND the execution plan. The agenda spec
-> (`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`) is now historical input;
+> (`docs/specs/2026-08-02-c2-breaking-window-agenda.md`) is now historical input;
 > every ruling lives here.
 
 **Status: APPROVED 2026-08-02 (Geoff), the Task-12 contingency split PRE-APPROVED.** Execution

@@ -3,12 +3,12 @@
 Rollout step 5 of the lean pass cutover: engine pass B before draft docs stage 2b, re-planned as a
 lean task list and the first pass scored on the new process. Process: `cairn-pass`, which loads
 `pass-core`. Design approved by Geoff on 2026-10-10. Plan review: three lenses and a fold,
-`docs/superpowers/research/2026-10-10-engine-pass-b-lean-review-*.md` and
-`docs/superpowers/research/2026-10-10-engine-pass-b-lean-fold.md`.
+`docs/research/2026-10-10-engine-pass-b-lean-review-*.md` and
+`docs/research/2026-10-10-engine-pass-b-lean-fold.md`.
 
 ## Sources
 
-- **The task bodies.** `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` (the old plan)
+- **The task bodies.** `docs/plans/2026-10-08-engine-pass-pre-2b-b.md` (the old plan)
   carries each task's Files, Outcome, and Acceptance, including the test-first lines and mutation
   proofs. Each task below names its old task and lists only the amendments. Where an amendment and
   the old text disagree, the amendment wins. Everything else in that task's Files, Outcome, and
@@ -18,10 +18,10 @@ lean task list and the first pass scored on the new process. Process: `cairn-pas
 - **The record.** The old plan's Ledger is a read-only record: its Task 0 entry (pre-flight at
   `21ec86a9`, with pass A's hand-off list verbatim) binds, and nothing is appended to it. Old Task 11
   reads that list for the `relink.json` re-arm entries.
-- **The design.** `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md` ("Pass B" and
+- **The design.** `docs/specs/2026-10-07-engine-pass-pre-2b-design.md` ("Pass B" and
   each item's section) and its rulings file beside it.
 - **The process spec.**
-  `/var/home/glw907/.dotfiles/docs/superpowers/specs/2026-10-10-lean-pass-process-design.md`,
+  `/var/home/glw907/.dotfiles/docs/specs/2026-10-10-lean-pass-process-design.md`,
   "Rollout" step 5 and "Success test".
 
 ## Retired from the old plan
@@ -312,7 +312,7 @@ PB-T3, PB-T5, PB-T9, PB-T10) stays serial, since each rewrites `templates/waymar
 - **Risk.** `auth-data` (old Task 2's D1 provisioning beside `AUTH_DB`).
 - **Acceptance.** Old Task 1's and old Task 2's Acceptance; the fast lane over `<PB-T0>^1..HEAD`
   green; `diff-reviewer` returns `accept` on `git diff <PB-T0>^1..<PB-T1 sha> -- .
-  ':!docs/superpowers'`, the whole WIP plus the delta, with both tasks' criteria and Decisions 5, 9,
+  ':!docs/{plans,research,specs}'`, the whole WIP plus the delta, with both tasks' criteria and Decisions 5, 9,
   10, and 12 quoted.
 - **Test.** Old Task 2's three test-first unit tests and old Task 1's `emit-template-tree.test.ts`
   assertion.
@@ -599,7 +599,7 @@ P=.claude/worktrees/engine-pre-2b-b &&
 [ "$(git rev-parse engine-pre-2b-b)" = "$(git rev-parse origin/engine-pre-2b-b)" ] &&
 git check-ignore -q .claude/worktrees/x &&
 claude --bg --model sonnet --effort medium --name engine-pass-b \
-  "$(cat "$P/docs/superpowers/plans/2026-10-10-engine-pass-b-lean-prompt.txt")"
+  "$(cat "$P/docs/plans/2026-10-10-engine-pass-b-lean-prompt.txt")"
 ) || echo "launch refused: a check failed" >&2
 ```
 

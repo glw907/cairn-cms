@@ -14,7 +14,7 @@ as calibration exemplars, then run a find-then-verify workflow over the remainin
 (Sonnet graders, Opus refute-biased verifiers, an Opus recall spot-check), triage survivors
 in the main loop, and dispatch mechanical application to `cairn-implementer`.
 
-**Spec:** `docs/superpowers/specs/2026-07-18-docs-register-standard-design.md` (the register
+**Spec:** `docs/specs/2026-07-18-docs-register-standard-design.md` (the register
 standard, the calibration specimens, the sweep shape, and Geoff's seven brainstorm rulings).
 
 ## Global constraints

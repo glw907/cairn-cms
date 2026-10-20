@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown, Mermaid (GitHub renders it natively), `prose-guard` (the writing-voice gate), `git`.
 
-**Design spec:** `docs/superpowers/specs/2026-06-04-cairn-docs-phase-3-explanation-design.md`.
+**Design spec:** `docs/specs/2026-06-04-cairn-docs-phase-3-explanation-design.md`.
 
 ---
 
@@ -28,7 +28,7 @@ grep -oE '\]\((\.{1,2}/[^)]+)\)' "$f" | sed -E 's/^\]\(//; s/\)$//' | while read
 done; echo "(no DANGLING line above means every relative link resolves)"
 ```
 
-**Explain and link.** Each page carries the why. It links the Phase 2 reference pages under `docs/reference/` for an exact signature and never restates one. Where a detailed behavioral doc already exists (`render-sanitize-floor.md`), the page explains the reasoning and links the detail rather than absorbing it. Public explanation pages stay self-contained: they link the reference pages and each other, and they do not make the `docs/superpowers/` specs required reading (a sparse "design history" pointer is the most they carry into that tree).
+**Explain and link.** Each page carries the why. It links the Phase 2 reference pages under `docs/reference/` for an exact signature and never restates one. Where a detailed behavioral doc already exists (`render-sanitize-floor.md`), the page explains the reasoning and links the detail rather than absorbing it. Public explanation pages stay self-contained: they link the reference pages and each other, and they do not make the `docs/` specs required reading (a sparse "design history" pointer is the most they carry into that tree).
 
 **Diagrams.** Two to three Mermaid diagrams total across the arm. The anchors are the layered model and the commit/publish flow in `architecture.md` (this plan gives both verbatim in Task 2). A third in `content-model.md` is optional and given in Task 4. Prose carries the rest.
 
@@ -36,7 +36,7 @@ done; echo "(no DANGLING line above means every relative link resolves)"
 
 **Prose.** All authored prose follows the writing-voice standard, so draft clean on the first pass. No em dashes in prose; end the sentence or use a colon, comma, or parentheses. One idea per sentence. No "not X but Y" frame, no reflexive three-item lists, no setup-colon payoff, no participial or connector openers.
 
-**The relocation's transient referrers.** Task 1 moves `docs/data-architecture.md` to `docs/explanation/data-tiers.md`. The live public referrers in `docs/README.md` and `SECURITY.md` are repointed later (Task 3 repoints `SECURITY.md`, Task 5 rewrites the `docs/README.md` lines), so a transient dangling link to the old path is expected between tasks, the same within-phase pattern Phase 2 used for forward links. The phase-end ritual confirms none remain. Leave the dated historical references under `docs/superpowers/` and the historical `docs/STATUS.md` entries as point-in-time records; do not rewrite history.
+**The relocation's transient referrers.** Task 1 moves `docs/data-architecture.md` to `docs/explanation/data-tiers.md`. The live public referrers in `docs/README.md` and `SECURITY.md` are repointed later (Task 3 repoints `SECURITY.md`, Task 5 rewrites the `docs/README.md` lines), so a transient dangling link to the old path is expected between tasks, the same within-phase pattern Phase 2 used for forward links. The phase-end ritual confirms none remain. Leave the dated historical references under `docs/` and the historical `docs/STATUS.md` entries as point-in-time records; do not rewrite history.
 
 ---
 
@@ -61,7 +61,7 @@ git mv docs/data-architecture.md docs/explanation/data-tiers.md
 
 Read `docs/explanation/data-tiers.md` in full. Confirm each statement against the current engine and make only these touch-ups:
 - Confirm the three tiers still match the engine: markdown content in git; content-derived build-read structure in git (the YAML site-config, the nav, and the content-graph manifest); runtime admin state in D1 (sessions, magic tokens, the editor allowlist). The existing body already covers these; correct any drift you find, otherwise leave the prose intact.
-- In the "Related documents" section, the links point into `docs/superpowers/` specs. Keep them as design-history pointers (they are allowed as sparse pointers, not required reading). Verify each path still resolves from the new `docs/explanation/` location and fix any relative path the move broke.
+- In the "Related documents" section, the links point into `docs/` specs. Keep them as design-history pointers (they are allowed as sparse pointers, not required reading). Verify each path still resolves from the new `docs/explanation/` location and fix any relative path the move broke.
 - Do not add a diagram in this task. The diagram budget is spent in Task 2, with an optional third in Task 4.
 
 - [ ] **Step 3: Verify**
@@ -89,7 +89,7 @@ git commit -m "Relocate data-architecture to explanation/data-tiers"
 
 **Page:** `docs/explanation/architecture.md`  **Model:** Opus (the synthesis page).
 
-**Source material (read before writing):** `docs/internal/ARCHITECTURE.md` (the layered model, the commit flow, the adapter contract), `docs/creating-a-cairn-site.md` (the engine/site line and the extension seams; stale on auth and collections, so mine the structure, not the reverted specifics), `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md` (the locked design, noting its Carta/`renderPreview` drift), and the repo `CLAUDE.md` intro paragraph. Cross-link targets: `docs/reference/core.md`, `docs/reference/sveltekit.md`, `docs/reference/delivery.md`, `./security-model.md`, `./content-model.md`, `./data-tiers.md`.
+**Source material (read before writing):** `docs/internal/ARCHITECTURE.md` (the layered model, the commit flow, the adapter contract), `docs/creating-a-cairn-site.md` (the engine/site line and the extension seams; stale on auth and collections, so mine the structure, not the reverted specifics), `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md` (the locked design, noting its Carta/`renderPreview` drift), and the repo `CLAUDE.md` intro paragraph. Cross-link targets: `docs/reference/core.md`, `docs/reference/sveltekit.md`, `docs/reference/delivery.md`, `./security-model.md`, `./content-model.md`, `./data-tiers.md`.
 
 - [ ] **Step 1: Read the source material**
 
@@ -223,7 +223,7 @@ git commit -m "Add the security-model explanation page and repoint SECURITY.md"
 
 **Page:** `docs/explanation/content-model.md`  **Model:** Opus (the synthesis across several initiatives).
 
-**Source material (read before writing):** the `cairn-content-model-fixed-concepts`, `cairn-url-identity-model`, `cairn-schema-source-of-truth-initiative`, and `cairn-content-graph-initiative` design history; `docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md`; `src/lib` for the schema (`defineFields`), the id helpers, and the manifest and `cairn:` link helpers. Cross-link targets: `docs/reference/core.md` (schema, id, manifest, and link helpers), `./data-tiers.md`, `./architecture.md`.
+**Source material (read before writing):** the `cairn-content-model-fixed-concepts`, `cairn-url-identity-model`, `cairn-schema-source-of-truth-initiative`, and `cairn-content-graph-initiative` design history; `docs/specs/2026-06-02-cairn-content-graph-design.md`; `src/lib` for the schema (`defineFields`), the id helpers, and the manifest and `cairn:` link helpers. Cross-link targets: `docs/reference/core.md` (schema, id, manifest, and link helpers), `./data-tiers.md`, `./architecture.md`.
 
 - [ ] **Step 1: Read the source material**
 
@@ -269,7 +269,7 @@ git commit -m "Add the content-model explanation page"
 **Files:**
 - Create: `docs/explanation/README.md`
 - Modify: `docs/README.md` (flip the Explanation line; drop the relocated page from Current pages)
-- Modify: `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md` (the reconciliation pointer)
+- Modify: `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md` (the reconciliation pointer)
 
 - [ ] **Step 1: Write `docs/explanation/README.md`**
 
@@ -314,7 +314,7 @@ Leave the other Current pages entries, including `render-sanitize-floor.md`, in 
 
 - [ ] **Step 3: Add the functional-spec reconciliation pointer**
 
-In `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`, add a short note near the top (under the title, before the first section) marking the explanation arm as the current architecture statement. Use this text:
+In `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`, add a short note near the top (under the title, before the first section) marking the explanation arm as the current architecture statement. Use this text:
 
 ```markdown
 > **Status (2026-06-04):** the current architecture statement for adopters is the explanation arm
@@ -344,7 +344,7 @@ Expected: no blocking tell on either README, no `MISSING` line, and no `DANGLING
 - [ ] **Step 5: Commit**
 
 ```bash
-git add docs/explanation/README.md docs/README.md docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md
+git add docs/explanation/README.md docs/README.md docs/specs/2026-05-28-cairn-rebuild-functional-spec.md
 git commit -m "Add the explanation index, flip the docs index, reconcile the functional spec"
 ```
 
@@ -361,7 +361,7 @@ After all tasks commit, before declaring the phase done:
 - [ ] Confirm every explanation page and the index exist: `for p in architecture data-tiers security-model content-model README; do test -f "docs/explanation/$p.md" || echo "MISSING $p"; done`.
 - [ ] Run `prose-guard` across every authored page: `for f in docs/README.md SECURITY.md docs/explanation/*.md; do prose-guard "$f"; done`. No blocking tell on any (advisory lines are non-blocking).
 - [ ] Confirm no dangling relative link across `docs/explanation/*.md`, the flipped `docs/README.md`, and the repointed `SECURITY.md` (the Task 5 Step 4 sweep, extended to `SECURITY.md`).
-- [ ] Confirm the old path is fully retired from the live public docs: `grep -rn "data-architecture" docs/README.md SECURITY.md` returns nothing (historical references under `docs/superpowers/` and `docs/STATUS.md` dated entries stay as records).
+- [ ] Confirm the old path is fully retired from the live public docs: `grep -rn "data-architecture" docs/README.md SECURITY.md` returns nothing (historical references under `docs/` and `docs/STATUS.md` dated entries stay as records).
 - [ ] Confirm the Mermaid count: two diagrams in `architecture.md`, at most one more in `content-model.md`, two to three total across the arm.
 - [ ] Append any remaining design friction this phase surfaced to `docs/internal/docs-friction-log.md`.
 - [ ] Update `docs/STATUS.md` to record Phase 3 landed and name Phase 4 (Guides) as the next action, per the `cairn-pass` ritual. Refresh the `cairn-docs-initiative` memory.

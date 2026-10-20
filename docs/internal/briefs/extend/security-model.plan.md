@@ -4,12 +4,12 @@ The plan for `docs/extend/security-model.md`, a concept page in the extend track
 2026-10-03 as the plan step of the docs page chain (stage 2a task 7c, run ahead of the task 7b
 resolution), and revised the same day for the resolution run's second round (conductor ruling
 2026-10-03): the accepted plan stands, changed only where a round-2 blocking finding in
-`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`, "### security-model",
+`docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`, "### security-model",
 requires. Revised once more the same day on the structural edit's read of the plan itself: one
 blocking finding (the guard used as a known term before anything defines it) and four advisories,
 each disposed in the third table near the end. Revised a fourth time in the targeted close Geoff
 ruled on 2026-10-03, after the plan's second structural read
-(`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-2-record.md`,
+(`docs/research/2026-10-03-draft-docs-2a-resolution-run-2-record.md`,
 "### security-model") blocked on a second concept used before its introduction, the auth channel
 in the dev-backend section: both concepts, the guard and the channel, are now introduced before or
 where the page first depends on them, the fourth table near the end disposes that read's findings,
@@ -46,15 +46,15 @@ https://developers.google.com/tech-writing/two/large-docs).
   (`~/.local/share/cairn/exemplars/evaluators/syncthing-security/page.md`): one section per exposed
   component, the "In short" verdict, and the closing list of the operator's own responsibilities.
 - **Owner rulings (Geoff, 2026-09-30 and 2026-10-01).** The introduction's first two paragraphs
-  land as written in `docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md`, "The
+  land as written in `docs/research/2026-09-30-draft-docs-2a-pilot-job-read.md`, "The
   two introductions for task 7b", with the threat position cited as `f:v85shm`. A plan may push a
   fact off the page: subordinated to a named reference entry, or cut with a reason, never dropped.
 - **Rework-record round-2 findings**
-  (`docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md`, "### security-model"): a
+  (`docs/research/2026-10-01-draft-docs-2a-rework-record.md`, "### security-model"): a
   blocking finding applies where this plan keeps the sentence it cites, and a finding on a sentence
   this plan drops is disposed here. The first table near the end maps all seven.
 - **Resolution-run round-2 findings**
-  (`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`,
+  (`docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`,
   "### security-model", "Escalation findings"): four blocking findings, two from the structural read
   and two from the register read, on a page drafted from the accepted version of this plan. Two of
   the four are the same defect seen by two seats (the dropped hand-offs), and two are the
@@ -91,7 +91,7 @@ https://developers.google.com/tech-writing/two/large-docs).
   session cookie's Limits glosses its "https help page" clause, section 6 sets its two refusals as
   a two-item list, and Migration notes leaves the Concepts group. The fifth table near the end maps
   all four.
-- **The diagnosis** (`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`):
+- **The diagnosis** (`docs/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`):
   the committed page reads as atoms. This plan decides what the page argues, which facts carry the
   argument, and which are detail the reference already holds.
 
@@ -624,7 +624,7 @@ Heading fixed by inbound links (see Heading policy).
   consuming nothing; stated in the `challenge` bullet under `createAuthChannel` in
   `docs/reference/auth-channel.md`). Cut: `f:2w1yrc` (the rule's design history from three review
   rounds; the page states the rule as it is, and
-  `docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md` holds the history),
+  `docs/specs/2026-08-03-auth-channel-factory-design.md` holds the history),
   `f:d2j9cj` (the example site's capture transport answering the same oracle, and its six demo
   contacts: an instance of the hazard `f:wuwk2q` states, specific to the example site).
 
@@ -792,7 +792,7 @@ fact; each named entry was opened and read before it was named, and re-read at t
 | `f:wuwk2q` | placed | The auth channel's threat surface (Limits; its printing transport is cited again from The dev-backend flag's two refusals as the definition of a dev transport) |
 | `f:ez788q` | subordinated | `docs/reference/auth-channel.md`, "Config obligations": states the `normalize`, `lookup`, and `challenge` obligations in full |
 | `f:j254i8` | subordinated | `docs/reference/auth-channel.md`, "`createAuthChannel`", the `challenge` bullet: states that the challenge is awaited before any code is minted on `request` and on an escalated `confirm`, and that a failure writes no row, charges no attempt, and consumes nothing |
-| `f:2w1yrc` | cut | The rule's design history (three review rounds that failed on the same move) is history, not a defense or a residual; the page states the rule as it is and `docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md` holds the history |
+| `f:2w1yrc` | cut | The rule's design history (three review rounds that failed on the same move) is history, not a defense or a residual; the page states the rule as it is and `docs/specs/2026-08-03-auth-channel-factory-design.md` holds the history |
 | `f:d2j9cj` | cut | The example site's capture transport answering the same roster oracle, and its six demo contacts, is an example-site instance of the hazard `f:wuwk2q` states |
 | `f:jud805` | cut | The absence of a pre-deploy check for migration `0004` is an operational gap for the admin track, not a defense or a residual of the binding (the pilot's cut, kept) |
 
@@ -858,7 +858,7 @@ that answers it; the plan changes nothing else.
 ## Second structural edit findings on this plan (2026-10-03), disposed
 
 The second read of this plan
-(`docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-2-record.md`,
+(`docs/research/2026-10-03-draft-docs-2a-resolution-run-2-record.md`,
 "### security-model") returned fix: one blocking finding and two advisories, with
 `npm run check:vale` at 0 errors, and the order, the introduction's three parts, the cross-links,
 and the module types passed. Geoff's ruling for the targeted close: keep everything the reads

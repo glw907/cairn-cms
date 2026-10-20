@@ -344,7 +344,7 @@ cheaply. Either way, STATUS's resume scope is superseded and the close says so.
    :110-111 (the reduced gate naming), and the new lowest-layer rule.
 7. `~/.claude/workflows/pass-execute.js` and `pass-execute-chains.js` header comments: the spec
    for each runner, per pass-core :117-121, including `PASS_CLASSES` and the fix-round gate.
-8. `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-b.md` (wider than "its gate section"):
+8. `docs/plans/2026-10-08-engine-pass-pre-2b-b.md` (wider than "its gate section"):
    - the Segments table :60-66;
    - Execution mode :94 (`gate` the F string);
    - :115 (auth-data fix rounds);

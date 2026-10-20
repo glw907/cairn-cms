@@ -6,8 +6,8 @@ again. Before any other act, call EnterWorktree with the name `alignment`, then 
 prompt; a conflict is a stop.
 
 Load `cairn-pass` (it loads `pass-core`). Read the approved design in full:
-`docs/superpowers/specs/2026-10-11-alignment-design.md`, and the audit it cites,
-`~/Projects/cairn-cms/docs/superpowers/research/2026-10-11-cairn-cms-alignment-audit.md`, including Geoff's
+`docs/specs/2026-10-11-alignment-design.md`, and the audit it cites,
+`~/Projects/cairn-cms/docs/research/2026-10-11-cairn-cms-alignment-audit.md`, including Geoff's
 rulings at its end. Arm the API-drop wake-up and the lid-switch hold per
 `~/.claude/docs/unattended-work-guards.md`.
 
@@ -32,7 +32,7 @@ Anything beyond the design goes in the plan's "Later", never into a task.
 Run pass-core Lifecycle steps 2 to 4 without Geoff:
 1. Spec, only if `spec-plan-review`'s depth calls for one. Re-probe every line number the audit
    cites against current `main` before a task names it; the audit read `b4cc338`.
-2. Plan. Write `docs/superpowers/plans/2026-10-11-alignment.md` in the lean format, matching this
+2. Plan. Write `docs/plans/2026-10-11-alignment.md` in the lean format, matching this
    repo's recent plans. Each task carries its outcome, files, risk class, acceptance, test, and a
    clock estimate. Three constraints bind the plan:
    - The two dotfiles edits (`~/.claude/agents/cairn-implementer.md` drops `memory: project` and
@@ -47,7 +47,7 @@ Run pass-core Lifecycle steps 2 to 4 without Geoff:
    Then run `spec-plan-review` on the plan (and the spec, if one exists) at the depth it sets, with
    the fold and the verification read.
 3. Write the executor's launch prompt as a committed file beside the plan, in the shape of
-   `docs/superpowers/plans/2026-10-10-engine-pass-b-lean-prompt.txt`, continuing your branch.
+   `docs/plans/2026-10-10-engine-pass-b-lean-prompt.txt`, continuing your branch.
 
 A plan whose task minutes exceed 300 (twice the design's 2.5 hours) is a stop. So is a finding that
 changes the approved design. For either, write one question with a recommendation into

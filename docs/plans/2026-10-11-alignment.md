@@ -3,12 +3,12 @@
 Every lesson a cairn agent needs reaches it through a file it reads, no file a cairn session loads
 teaches retired process, and the repo carries only live worktrees. Process: `cairn-pass`, which
 loads `pass-core`. Design approved by Geoff on 2026-10-11:
-`docs/superpowers/specs/2026-10-11-alignment-design.md` ("item N" below is its numbered change N).
-Evidence: `~/Projects/cairn-cms/docs/superpowers/research/2026-10-11-cairn-cms-alignment-audit.md`, with
+`docs/specs/2026-10-11-alignment-design.md` ("item N" below is its numbered change N).
+Evidence: `~/Projects/cairn-cms/docs/research/2026-10-11-cairn-cms-alignment-audit.md`, with
 Geoff's rulings at its end. No separate spec: the design is a page (`spec-plan-review`, "Depth
 scales with risk"). Plan review: the mechanics lens and the fold,
-`docs/superpowers/research/2026-10-11-alignment-review-mechanics.md` and
-`docs/superpowers/research/2026-10-11-alignment-fold.md`.
+`docs/research/2026-10-11-alignment-review-mechanics.md` and
+`docs/research/2026-10-11-alignment-fold.md`.
 
 ## Ruled for this pass
 
@@ -202,7 +202,7 @@ No path is shared and neither task generates output.
     workstation's `claude-tail-guard` PreToolUse hook blocks the piped form.
 
   `durable-gotchas.md:95` ("full record in `docs/HISTORY.md` (the doctor-retirement pre-task
-  entry)") is repointed to `docs/superpowers/plans/2026-09-21-doctor-pretask.md` if that plan holds
+  entry)") is repointed to `docs/plans/2026-09-21-doctor-pretask.md` if that plan holds
   the record (grep it for `Cannot connect`). Otherwise it names `docs/HISTORY.md` as the frozen
   record. The intro's "The first five entries are indexed from `CLAUDE.md`" stays true. Then `git rm
   -r examples/showcase/.claude/agent-memory`. The main checkout's store and the worktrees-root store
@@ -246,7 +246,7 @@ No path is shared and neither task generates output.
       naming the finder and date (the `cairn-pass` close checklist). An item already shipped or
       overtaken is dropped and counted in the commit body.
     - Delete the file. Drop its index entry at `docs/internal/README.md:57`, and point
-      `docs/internal/feedback/README.md:16` at `docs-friction-log.md`. `docs/superpowers/**`,
+      `docs/internal/feedback/README.md:16` at `docs-friction-log.md`. `docs/**`,
       `docs/internal/history/**`, and `docs/HISTORY.md` are frozen records and keep their mentions.
   - **HISTORY** (item 7). In `docs/HISTORY.md:5-6`, replace the dead "(`~/.claude/CLAUDE.md`,
     "Project ledgers")" citation with `pass-core` "Ledgers". No other HISTORY edit.

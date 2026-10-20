@@ -1,7 +1,7 @@
 # Plan 1 review: contract and criteria lens
 
-Reviewer: `claude-opus-5-5`, 2026-09-23. Plan: `docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`.
-Spec: `docs/superpowers/specs/2026-09-23-docs-reset-design.md`.
+Reviewer: `claude-opus-5-5`, 2026-09-23. Plan: `docs/plans/2026-09-23-docs-reset-pass-1.md`.
+Spec: `docs/specs/2026-09-23-docs-reset-design.md`.
 
 ## Critical
 

@@ -9,18 +9,18 @@ shipped guidance teaches "write this plain class, get this look" from one source
 sync test. The editor's block insert stops fusing a closing fence onto the text after the caret.
 One fresh-agent probe proves the guidance at the close. The branch stays unmerged.
 
-**Spec:** `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`, approved by Geoff
+**Spec:** `docs/specs/2026-09-27-theme-identity-pass-b-design.md`, approved by Geoff
 2026-09-27. This plan covers pass B only: the spec's "Names", "Pass B: the rename and the admin
 agent path", probe 1 under "Proof", the pass B paragraph of "Documentation and records", and
 "Delivery"'s pass B paragraph. For the agent path's rules and guidance the parent spec governs,
-`docs/superpowers/specs/2026-09-26-theme-identity-design.md`, sections "G2: easy for agents",
+`docs/specs/2026-09-26-theme-identity-design.md`, sections "G2: easy for agents",
 "Corners", "Buttons", "The markup sweep", and "Delivery"'s pass B bullet; the pass B spec governs
 names and paths. Evidence and record: the fold record
-`docs/superpowers/research/2026-09-27-theme-pass-b-fold.md` (its fifth fold's "Trim: what moved
+`docs/research/2026-09-27-theme-pass-b-fold.md` (its fifth fold's "Trim: what moved
 where" holds the rename's file list and the probe-retry process), pass A's plan and ledger
-`docs/superpowers/plans/2026-09-26-theme-identity-pass-a.md` (the final class vocabulary, the
+`docs/plans/2026-09-26-theme-identity-pass-a.md` (the final class vocabulary, the
 `/admin/theme-kit` fixture, decisions 14 to 18), and pass C's reviewed plan on branch
-`theme-c-plan`, `docs/superpowers/plans/2026-09-27-theme-identity-pass-c.md`, whose inputs this
+`theme-c-plan`, `docs/plans/2026-09-27-theme-identity-pass-c.md`, whose inputs this
 pass produces (see "What pass C receives"). Executors read the spec sections their task names.
 Where this plan and a spec disagree, stop and report, except the decisions recorded under
 "Decisions this plan takes".
@@ -34,7 +34,7 @@ merges `main` in and leaves the branch unmerged for pass C. Plans specify outcom
 never implementation code.
 
 **Plan review:** three lenses (contract, mechanics, risk) reviewed this plan at `07035110`; the
-fold record is `docs/superpowers/research/2026-09-27-theme-pass-b-plan-fold.md`, and Geoff's three
+fold record is `docs/research/2026-09-27-theme-pass-b-plan-fold.md`, and Geoff's three
 rulings on it (2026-09-27) sit under "Rulings for Geoff".
 
 **Branch topology (Geoff, 2026-09-27; task 0 verifies it).** Pass B branches from pass A's
@@ -1006,7 +1006,7 @@ live tree only), and `templates/waymark/**` through `npm run emit:template`.
 - These five greps each print nothing outside the rename allowlist (decision 6), with the spec's
   exclusion list plus `ROADMAP.md` and `docs/STATUS.md`:
   ```sh
-  X=(':!docs/internal/history' ':!docs/internal/record' ':!docs/internal/design' ':!docs/superpowers' ':!docs/HISTORY.md' ':!CHANGELOG.md' ':!docs/extend/migration-notes.md' ':!docs/internal/engine-rulings.md' ':!ROADMAP.md' ':!docs/STATUS.md')
+  X=(':!docs/internal/history' ':!docs/internal/record' ':!docs/internal/design' ':!docs/{plans,research,specs}' ':!docs/HISTORY.md' ':!CHANGELOG.md' ':!docs/extend/migration-notes.md' ':!docs/internal/engine-rulings.md' ':!ROADMAP.md' ':!docs/STATUS.md')
   git grep -nE "lib/components|dist/components|cairn-cms/components|['\"]\.?/components['\"]" -- "${X[@]}"
   git grep -n '\.\./components/' -- src/lib
   git grep -nE '(`|<code>)\.?/components(`|</code>)' -- "${X[@]}"

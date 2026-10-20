@@ -5,7 +5,7 @@
 **Covers:** the content-model question raised before the fragments design round. Replaces the
 generic "collections" abstraction (and deletes R8) with a curated set of named, first-class
 content concepts.
-**Parent spec:** `docs/superpowers/specs/2026-05-26-admin-ui-design.md` (R3, R4, R8 collection CRUD).
+**Parent spec:** `docs/specs/2026-05-26-admin-ui-design.md` (R3, R4, R8 collection CRUD).
 
 ## The question
 

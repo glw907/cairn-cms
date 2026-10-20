@@ -6,7 +6,7 @@
 
 **Architecture:** A small adapter addition (`kind?: 'page' | 'story'` on `CairnCollection`) threads through the existing `cairn-cms/sveltekit` content loads into the shared `cairn-cms/components` editor. The palette reads the component registry that already ships on the adapter (`adapter.registry`), inserting at the cursor through a new package-internal `MarkdownEditor` interface backed by Carta's public `carta.input` API (verified sufficient). Both sites repoint as byte-identical shims; only `cairn.config.ts` differs.
 
-**Tech Stack:** SvelteKit 2 plus Svelte 5 runes, `carta-md@4.11.2` (peer dep), DaisyUI v5, vitest, `svelte-package`. Spec: `docs/superpowers/specs/2026-05-27-pass-k-editing-design.md`.
+**Tech Stack:** SvelteKit 2 plus Svelte 5 runes, `carta-md@4.11.2` (peer dep), DaisyUI v5, vitest, `svelte-package`. Spec: `docs/specs/2026-05-27-pass-k-editing-design.md`.
 
 ---
 
@@ -1026,7 +1026,7 @@ In `docs/PLAN.md` risk #17 and in `docs/ARCHITECTURE.md` wherever Carta is calle
 
 ```bash
 cd cairn-cms
-git add docs/PLAN.md docs/ARCHITECTURE.md docs/superpowers/specs/2026-05-27-pass-k-editing-design.md docs/superpowers/plans/2026-05-27-pass-k-editing.md
+git add docs/PLAN.md docs/ARCHITECTURE.md docs/specs/2026-05-27-pass-k-editing-design.md docs/plans/2026-05-27-pass-k-editing.md
 git commit -m "docs: record Pass K (differentiated editing, palette, preview toggle)
 
 Co-Authored-By: Claude <noreply@anthropic.com>"

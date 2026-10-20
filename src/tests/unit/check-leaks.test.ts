@@ -76,7 +76,7 @@ describe('profileFor', () => {
   });
 
   it('does not scan paths outside every tier, vendored directories, or binaries', () => {
-    expect(profileFor('docs/superpowers/plans/x.md')).toBeNull();
+    expect(profileFor('docs/plans/x.md')).toBeNull();
     expect(profileFor('docs/internal/record/x.md')).toBeNull();
     expect(profileFor('skills/node_modules/x/README.md')).toBeNull();
     expect(profileFor('templates/waymark/static/logo.png')).toBeNull();

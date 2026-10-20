@@ -1,6 +1,6 @@
 # Draft docs harvest: contract-and-criteria review
 
-**Lens:** contract and criteria. **Targets:** `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md`
+**Lens:** contract and criteria. **Targets:** `docs/specs/2026-09-29-draft-docs-harvest-design.md`
 (spec) and `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md` (plan), at `7e57601d`.
 **Counts:** 2 blocker, 5 major, 6 minor. No owner forks: every finding has one correct answer.
 
@@ -111,7 +111,7 @@ nothing points at a bullet another chain deleted.
 
 **Defect.** The acceptance says the discovery grep returns only `relink.json`, `CHANGELOG.md`,
 the ledgers, and Go constants naming `cairn.pub` anchors. Four problems with that:
-- The grep already excludes `docs/internal/record`, `CHANGELOG.md`, and `docs/superpowers`, so
+- The grep already excludes `docs/internal/record`, `CHANGELOG.md`, and `docs/{plans,research,specs}`, so
   three of its four allowed items can never appear.
 - Hits the list does not allow must survive:
   - every facts file's section headings (`docs/internal/facts/admin.md:6` is

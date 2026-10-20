@@ -26,7 +26,7 @@ Normalization precedes enforcement so cairn's own tree is the audit's first hone
 `@utility` in `scripts/admin-css.input.css`, tokens in `src/lib/components/cairn-admin.css`,
 Vitest fixtures, showcase Playwright suite, Workers-free Node CLI.
 
-**Spec:** `docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`,
+**Spec:** `docs/specs/2026-07-27-cairn-design-infrastructure-design.md`,
 sections 5 (extended primitives list), 6 (all of it), 10 (Pass 2), 13 (the ratified
 rulings). Calibration input: `docs/internal/2026-07-design-infrastructure-pass-1-deviations.md`.
 Read spec sections 6 and 13 before starting.

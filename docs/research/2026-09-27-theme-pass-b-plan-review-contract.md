@@ -1,6 +1,6 @@
 # Pass B plan review: contract and criteria lens
 
-**Target:** `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md` at `07035110`
+**Target:** `docs/plans/2026-09-27-theme-identity-pass-b.md` at `07035110`
 (branch `theme-b-plan`), against the pass B spec, the parent spec's G2, Corners, The markup
 sweep, and Delivery sections, and pass C's plan on `theme-c-plan` for interface checks.
 Line references are to the plan unless named otherwise. Counts: **0 blockers, 4 majors,

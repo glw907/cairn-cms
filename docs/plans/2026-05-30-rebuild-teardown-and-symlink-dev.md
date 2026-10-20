@@ -259,7 +259,7 @@ Confirm the open steps read: each site migrates to `0.7.0` and onto the delivery
 
 ```bash
 cd ~/Projects/cairn/cairn-cms
-git add docs/runbooks/symlink-dev.md docs/STATUS.md docs/superpowers/plans/2026-05-30-rebuild-teardown-and-symlink-dev.md
+git add docs/runbooks/symlink-dev.md docs/STATUS.md docs/plans/2026-05-30-rebuild-teardown-and-symlink-dev.md
 git commit -m "docs(workspace): archive the rebuild worktree and document symlink dev"
 ```
 

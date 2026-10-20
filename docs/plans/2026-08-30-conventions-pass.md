@@ -11,7 +11,7 @@ across the factory population, the auth family, the coupled reshape/retire items
 engine bins, in one worktree, batched into the standing `Consumers must:` window.
 
 **Architecture:** This is audit-remediation slice 4a (initiative design
-`docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`, "The conventions
+`docs/specs/2026-08-27-audit-remediation-initiative-design.md`, "The conventions
 pass"). The rulings were ratified by Geoff in the 2026-08-30 plan-authoring sitting and are
 restated in full below; the pass writes them into the ledger first, then applies them, so no
 signature is touched twice. Slice 4b (the cross-surface conformance sweep) executes the
@@ -23,7 +23,7 @@ section placeholder at the end.
 **Tech Stack:** TypeScript 6 / SvelteKit 2 / Svelte 5 runes; Vitest; the repo gate
 (`npm run check` 0/0, `npm test` exit 0, plus the CI-derived gate list).
 
-**Spec:** `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md` (slice 4),
+**Spec:** `docs/specs/2026-08-27-audit-remediation-initiative-design.md` (slice 4),
 with per-item shapes in `docs/internal/engine-rulings.md` and the coherence evidence in
 `docs/internal/record/2026-08-26-any-site-audit/coherence-v2.md`.
 

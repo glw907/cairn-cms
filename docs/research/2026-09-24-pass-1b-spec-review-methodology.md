@@ -1,6 +1,6 @@
 # Pass 1b spec review: methodology red team
 
-**Target:** `docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` at
+**Target:** `docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md` at
 `30083f27` (cited as `spec:N`). **Lens:** the premise, not the mechanics: does passing these bars
 show the instrument is fit for pass 2a's two uses (the chain's reader stage and the trial's
 measure)? **Reviewer:** `claude-opus-5-5` at `xhigh`. Computations in the statistics section were

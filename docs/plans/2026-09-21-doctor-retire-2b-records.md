@@ -18,7 +18,7 @@
 
 **Date:** 2026-09-21.
 
-**Spec:** [`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`](../specs/2026-09-21-doctor-retirement-design.md),
+**Spec:** [`docs/specs/2026-09-21-doctor-retirement-design.md`](../specs/2026-09-21-doctor-retirement-design.md),
 the "retire-2: the engine pass" section's `## Unreleased`, Ledger, and Close subsections, plus the
 records half of the "Pre-task and retire-2" acceptance bullets. The removal half is
 [`2026-09-21-doctor-retire-2-engine.md`](2026-09-21-doctor-retire-2-engine.md) (retire-2a), and its
@@ -27,7 +27,7 @@ the only writer of "the `0.97.0` cut is unblocked".
 
 **Inputs:** retire-2a's implementer reports (what the removal actually did, which the changelog
 entry describes), and
-[`docs/internal/record/2026-09-21-doctor-retirement-inventory.md`](../../internal/record/2026-09-21-doctor-retirement-inventory.md).
+[`docs/internal/record/2026-09-21-doctor-retirement-inventory.md`](../internal/record/2026-09-21-doctor-retirement-inventory.md).
 
 ---
 
@@ -110,7 +110,7 @@ do.
 | Field | Value |
 | --- | --- |
 | **Goal** | The record catches up with the removal: the `## Unreleased` window stops describing a doctor that gains features, the ledger carries one entry per ruled item and a disposition for every affected `audit-cli-*` entry, ROADMAP carries what was deferred, and `docs/STATUS.md` gains the one line saying the `0.97.0` cut is unblocked. |
-| **Spec** | `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, the "retire-2" section's `## Unreleased`, Ledger, and Close subsections. |
+| **Spec** | `docs/specs/2026-09-21-doctor-retirement-design.md`, the "retire-2" section's `## Unreleased`, Ledger, and Close subsections. |
 | **Preconditions (all four, verified by the conductor before branching)** | (1) **retire-2a is merged to `main`** with CI green on the merge SHA; (2) `git ls-tree origin/main src/lib/doctor` prints nothing; (3) the `tool/v1.1.0` tag and its GitHub release exist on origin, and `origin/main` descends from the tagged commit (`git merge-base --is-ancestor tool/v1.1.0^{commit} origin/main`); (4) draft docs pass A is merged, so `docs/reference/cli-cairn-doctor.md` exists. |
 | **Branch and worktree** | Branch `doctor-records`, cut off **retire-2a's merge commit on `origin/main`**. Worktree `.claude/worktrees/doctor-records`. **No `npm install` in `examples/showcase` is needed**: no task in this pass builds or renders the showcase. |
 | **Token ceiling** | **1.0M**. The 80 percent decision point is **800K**, checked at each segment boundary, the only place a decision can land. Sized as the prose remainder of the undivided retire-2, whose 3.2M a reviewer judged to carry no slack; 2a takes 2.6M, so the split adds 400K of headroom rather than dividing a number that had none. |

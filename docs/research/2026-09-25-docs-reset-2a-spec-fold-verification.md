@@ -1,6 +1,6 @@
 # Docs reset pass 2a spec fold: verification read
 
-**Target:** `docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md` and the parent's
+**Target:** `docs/specs/2026-09-25-docs-reset-pass-2a-design.md` and the parent's
 "Amendments from pass 2a's brainstorm" (`2026-09-23-docs-reset-design.md:76-96`), both at
 `1f718a2e`, against the fold record and the four lens reviews. **Reader:** a fresh Opus 5.5
 context with no part in the fold. **Source checked:** `score.ts` (`runDev`), `lib/score-catch.ts`,

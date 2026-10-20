@@ -28,7 +28,7 @@ committed baselines, so it moved to B with the entry-row extraction).
 **Tech stack:** SvelteKit 2, Svelte 5, TypeScript, Prettier with `prettier-plugin-svelte`,
 ESLint with `svelte-eslint-parser`, vitest, Playwright, the repo's gate estate.
 
-**Spec:** `docs/superpowers/specs/2026-09-04-chassis-passes-design.md`; inputs and reviews
+**Spec:** `docs/specs/2026-09-04-chassis-passes-design.md`; inputs and reviews
 banked at `docs/internal/record/2026-09-04-chassis-inputs/`; the recorded fourteen at
 `docs/internal/record/2026-08-26-any-site-audit/int-rank-site-chassis.md`; the fresh review
 whose section numbers this plan cites is
@@ -235,7 +235,7 @@ assertions cover both by name; the showcase e2e suite green unchanged; `check:do
 
 - [ ] **Step 1:** `grep -rn "IntroLedger\|Carousel\|reference-capture" --include='*' .`
   outside `node_modules`, `docs/internal/history`, `docs/internal/record`, and
-  `docs/superpowers` (the recorded finding verified zero referrers in `src/` and `e2e/`); the
+  `docs/{plans,research,specs}` (the recorded finding verified zero referrers in `src/` and `e2e/`); the
   deletions; the row rewrite; re-emit; full gate; commit.
 
 **Acceptance criteria:** the grep returns nothing outside the write-once directories; the
@@ -427,7 +427,7 @@ residue; neither 220-post comment remains.
 ### Task 12: Records (last)
 
 **Files:**
-- Modify: `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md:109-121`
+- Modify: `docs/specs/2026-08-27-audit-remediation-initiative-design.md:109-121`
   (item 6 and the publish paragraph amended: one cut after polish; the chassis work is two
   passes), `docs/STATUS.md` (the stale "amended initiative design" wording), `ROADMAP.md`
   (the chassis improvement round: what shipped leaves the tier, the rest carried to chassis-B

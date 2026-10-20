@@ -19,7 +19,7 @@ The push-alt "alt was" diff row strikes through the old alt text with `decoratio
 
 ## Global Constraints
 
-- **The spec is canonical.** Phase 6 of `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md` (the Phase 6 list, the five rules, the non-goals, the "Tier 3 to its proven floor" success criterion). The ledger and the Phase 5 plan are the pattern.
+- **The spec is canonical.** Phase 6 of `docs/specs/2026-06-29-admin-idiomatic-re-expression-design.md` (the Phase 6 list, the five rules, the non-goals, the "Tier 3 to its proven floor" success criterion). The ledger and the Phase 5 plan are the pattern.
 - **Boundary: `CairnMediaLibrary` `≥ 1627` only.** Phase 5 swept `< 1627` (now 0 tokens there). This phase sweeps the `≥ 1627` region. The `</script>` closes at `:1283`, so every one of the 105 is live markup (no JS const; `headerLabel`/`segButtonClass`/`densityButtonClass` were Phase-5 swaps and are not in the 105).
 - **Rule 2, exact swap — the entangled sites (swap ONLY the muted/subtle token, find by token):**
   - `CairnMediaLibrary:1841` — delete-in-use inline ternary; the muted token is the **false-arm** (`… : 'bg-base-content/[0.07] text-[var(--color-muted)]'`). Keep the `cairn-error-tint`/`cairn-error-ink` true arm.

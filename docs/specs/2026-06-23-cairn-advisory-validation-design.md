@@ -110,7 +110,7 @@ The publish action (`publishAction`) re-runs `buildAddressIndex` + `addressColli
 being published. It does **not** gate; the publish proceeds (last-write-wins). When a collision exists it
 emits a new log event, `publish.address_collision` (level `warn`), carrying the editor's email, the
 `address`, and the displaced entry's `concept`/`id`. This joins the diagnostics vocabulary and is added
-to [`docs/reference/log-events.md`](../../reference/log-events.md). No token or session id is logged, per
+to [`docs/reference/log-events.md`](../reference/log-events.md). No token or session id is logged, per
 the log policy.
 
 ### Unit 3: the EditPage advisory region and needs-alt unification
@@ -184,7 +184,7 @@ accessibility is unchanged). Plus `/code-review`.
   and `AdvisoryAction` types must be exported too (tsc will not emit a `.d.ts` for `EditData` that names
   a private type), so they ride `/sveltekit` and get a row in `docs/reference/sveltekit.md` to satisfy
   `check:reference`. The new `publish.address_collision` log event goes in
-  [`docs/reference/log-events.md`](../../reference/log-events.md).
+  [`docs/reference/log-events.md`](../reference/log-events.md).
 
 ## Out of scope (deferred)
 

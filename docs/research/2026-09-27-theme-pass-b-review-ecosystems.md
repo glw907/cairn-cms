@@ -1,7 +1,7 @@
 # Theme pass B spec review: the theme-ecosystems lens (2026-09-27)
 
 Target: `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md` at `4365ac34`.
-Evidence: `docs/superpowers/research/2026-09-27-theme-ecosystem-survey.md` (cited as "survey"),
+Evidence: `docs/research/2026-09-27-theme-ecosystem-survey.md` (cited as "survey"),
 plus repo reads and one web check of daisyUI's theme docs.
 
 Overall: the spec's shape is the one the robust ecologies converge on. It puts tokens first, keeps

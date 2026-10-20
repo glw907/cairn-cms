@@ -149,9 +149,9 @@ the conventional fix already in the codebase covers the defect.
 2. `ROADMAP.md` boundary-test entry: clause 1 runs after ruling 1's product test; clause 3's
    "whichever engine pass runs next" reads "the final engine batch" unless a stage close pulls an
    item forward. The batched rows carry their page tags.
-3. `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`: dated amendments for C7
+3. `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`: dated amendments for C7
    ("Request a link", "Guard") and D5 (line 390's site-config default).
-4. `docs/superpowers/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md`, decision 1
+4. `docs/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md`, decision 1
    (`:162-168`): the publish snapshot's last-writer-wins trade becomes a fail-closed head guard.
 5. `docs/internal/what-cairn-is-and-is-not.md:107`: the proposed phrase "the sign-in form and its
    confirm page", for Geoff's read. The spec's C7 reasoning stands on the current text either way.

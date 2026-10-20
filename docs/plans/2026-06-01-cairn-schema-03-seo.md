@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, vitest (`unit` project, node), the `WHATWG URL` constructor for resolution, Vite `import.meta.glob` and SvelteKit prerender for the showcase end-to-end gate.
 
-**Design reference:** `docs/superpowers/specs/2026-06-01-cairn-schema-03-seo-design.md` (approved). Plan 2 (the contract cutover) landed at `0.13.0`.
+**Design reference:** `docs/specs/2026-06-01-cairn-schema-03-seo-design.md` (approved). Plan 2 (the contract cutover) landed at `0.13.0`.
 
 ---
 

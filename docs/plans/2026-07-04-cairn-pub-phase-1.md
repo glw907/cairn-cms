@@ -1,6 +1,6 @@
 # cairn.pub Phase 1: the living demo ships
 
-> Executes the approved architecture (`docs/superpowers/specs/2026-07-04-cairn-pub-architecture.md`),
+> Executes the approved architecture (`docs/specs/2026-07-04-cairn-pub-architecture.md`),
 > AFTER the responsive pass folds and the rename sweep lands. Workflow-authorized. The prose
 > seats are the main loop's (home, the Waymark page, the help landing adaptation, the two
 > posts); assembly and routes dispatch. Every prose artifact passes the register machinery.

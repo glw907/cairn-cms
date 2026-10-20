@@ -9,7 +9,7 @@ planning sitting (2026-08-14), which merged PR #33 and superseded this entry.
 with the three extractions (loopback core, DNS helper, fake HTTP plumbing) and the hostname
 diagnosis split. **Carry-forwards 1 and 7 are CLOSED.** The post-mortem, with the full lesson set
 and the Task 7/8 addendum, is in the plan
-(`docs/superpowers/plans/2026-08-13-create-cairn-site-t4d.md`).
+(`docs/plans/2026-08-13-create-cairn-site-t4d.md`).
 
 **The console is live-proven.** Three provocations drifted the local reconcile hash on the
 inherited `builds-live` record, each riding the reauthorize trip and its push into a real held
@@ -67,7 +67,7 @@ extracting the workflow's script and running it.
 multi-site, named **`cairn`**, and lives **in this repo** rather than its own. Decisions 7 through 9
 plus the sequencing, the adopt-is-feature-one finding, the credential caution, and five new open
 questions are folded into
-`docs/superpowers/specs/2026-08-13-go-successor-tool-design.md`, whose status header no longer says
+`docs/specs/2026-08-13-go-successor-tool-design.md`, whose status header no longer says
 post-1.0: **the dashboard half starts once T4d closes.** The changelog `Consumers must:` convention
 becomes a machine-readable contract before the beta cut, filed as **ROADMAP P9**, scoped
 forward-only with no backfill.

@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Svelte 5 (runes), SvelteKit 2, `svelte-package`, vitest (projects `unit` node, `component` playwright, `integration` workerd).
 
-**Design reference:** `docs/superpowers/specs/2026-06-01-cairn-delivery-dx-design.md`.
+**Design reference:** `docs/specs/2026-06-01-cairn-delivery-dx-design.md`.
 
 ---
 

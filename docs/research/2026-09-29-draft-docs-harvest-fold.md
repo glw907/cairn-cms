@@ -1,6 +1,6 @@
 # Draft docs harvest: review fold record
 
-**Targets revised:** `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` and
+**Targets revised:** `docs/specs/2026-09-29-draft-docs-harvest-design.md` and
 `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md`, from `add2517c`.
 **Reviews folded:** contract (`CC-*`), mechanics (`MF-*`), risk (`DR-*`, with `DR-OC-*` for its
 over-ceremony items), consistency (`CO-*`, with `CO-OC-*`).
@@ -66,7 +66,7 @@ and the re-derived plan is about 7.8 to 9.5M, above the approved 7M. **Recommend
 
 ## Owed errata (ratified documents this fold did not edit)
 
-**Parent spec** (`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`):
+**Parent spec** (`docs/specs/2026-09-26-draft-docs-approach-design.md`):
 1. Amendment "Release": cairn.pub pins `0.94.0-rc.1`, not `0.97.0`; `0.98.0` carries the old
    arms (the harvest orders after the theme lineage); the pin ceiling is the last release cut
    before the deletion merges.
@@ -104,7 +104,7 @@ and the re-derived plan is about 7.8 to 9.5M, above the approved 7M. **Recommend
 
 ## Second fold (fold verification, FV-1 to FV-12)
 
-Source: `docs/superpowers/research/2026-09-29-draft-docs-harvest-fold-verification.md`, read at
+Source: `docs/research/2026-09-29-draft-docs-harvest-fold-verification.md`, read at
 `da3a923b`.
 
 | ID | Disposition | Where |

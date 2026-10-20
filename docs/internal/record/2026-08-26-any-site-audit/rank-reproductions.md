@@ -14,7 +14,7 @@ Family-originated by construction, and the record is explicit about which family
 2026-08-15 sequencing call". The demand side is enumerated as a list of cairn-pub docs pages
 (`:22-33`), and the id inventory is owned by a spec in the *other* repo:
 `manifest.ts:14-16` — "The ids, their order, and the flags come from the story inventory in
-cairn-pub docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md".
+cairn-pub docs/specs/2026-08-15-live-reproduction-seam-design.md".
 
 **No consumer outside the family exists.** The subsystem shipped in `0.95.0` and its sole
 importer is cairn-pub. I checked `~/Projects/cairn-pub` at `f0a24c3` directly. Seven of the

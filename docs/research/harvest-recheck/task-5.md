@@ -1,6 +1,6 @@
 # Harvest recheck: task 5 (audit extend, first half)
 
-One line per item, per rule 4 of `docs/superpowers/research/2026-09-29-harvest-theme-lineage-brief.md`. Resolution column is filled by task 6b. Pages under this file: `add-a-custom-admin-screen`, `add-an-island`, `add-a-second-audience`, `add-cairn-to-a-sveltekit-app`, `announce-on-publish`, `auth-channel-security-model`, `configure-rendering`, `content-model`, `data-tiers`, `debug-your-site`, `declare-your-own-concept`, `define-an-adapter-and-schema`.
+One line per item, per rule 4 of `docs/research/2026-09-29-harvest-theme-lineage-brief.md`. Resolution column is filled by task 6b. Pages under this file: `add-a-custom-admin-screen`, `add-an-island`, `add-a-second-audience`, `add-cairn-to-a-sveltekit-app`, `announce-on-publish`, `auth-channel-security-model`, `configure-rendering`, `content-model`, `data-tiers`, `debug-your-site`, `declare-your-own-concept`, `define-an-adapter-and-schema`.
 
 New bullets whose Source cites `src/lib/components/`:
 

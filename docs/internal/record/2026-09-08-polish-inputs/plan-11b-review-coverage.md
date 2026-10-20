@@ -1,7 +1,7 @@
 # Polish-11b plan review, coverage and grounding lens
 
-Adversarial read of `docs/superpowers/plans/2026-09-08-polish-11b-pass.md` (uncommitted, 1,838
-lines) against `docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4, the admin
+Adversarial read of `docs/plans/2026-09-08-polish-11b-pass.md` (uncommitted, 1,838
+lines) against `docs/specs/2026-09-08-polish-passes-design.md` revision 4, the admin
 sweep `docs/internal/record/2026-09-08-polish-inputs/admin-sweep.md`,
 `docs/internal/admin-design-system.md`, and `docs/internal/engine-rulings.md`. Fresh context,
 read-only, Opus, effort high. Measured against `main` at `f944ca4e`; the plan measured at

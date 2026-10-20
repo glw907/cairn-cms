@@ -1,8 +1,8 @@
 # Plan two adversarial review: spec coverage and scope
 
 Lens: SPEC COVERAGE and scope only. Read-only review of
-`docs/superpowers/plans/2026-09-08-docs-toolset-pass.md` (revision 1) against
-`docs/superpowers/specs/2026-09-08-docs-standard-design.md` (revision 3). Unit 3c is plan one and
+`docs/plans/2026-09-08-docs-toolset-pass.md` (revision 1) against
+`docs/specs/2026-09-08-docs-standard-design.md` (revision 3). Unit 3c is plan one and
 unit 5 is plan three; both are out of scope for this review except where the plan must consume or
 hand off to them. The seven owner decisions are accepted as recommended.
 

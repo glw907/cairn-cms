@@ -22,8 +22,8 @@ vitest (unit, component, and workerd integration projects), Playwright, Node `no
 
 **Spec:** `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md` at `0c476887`, "Pass B"
 under "Sizing and the split", plus each item's section. Owner rulings:
-`docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md`. Fold record and owed errata:
-`docs/superpowers/research/2026-10-07-engine-pass-pre-2b-spec-fold.md`. Line numbers in the spec and
+`docs/specs/2026-10-07-engine-pass-pre-2b-rulings.md`. Fold record and owed errata:
+`docs/research/2026-10-07-engine-pass-pre-2b-spec-fold.md`. Line numbers in the spec and
 in this plan are `draft-docs-2a`'s at `2b37ae78`; Task 0 re-reads every one on `main`. Where this
 plan and the spec disagree, stop and report, except under "Decisions this plan takes".
 
@@ -154,7 +154,7 @@ its targeted gate, then waits for CI green on its own commit. Per-task gate cost
 measured at the gate economy pass's close: 16.3 minutes of run time for a docs-and-engine range that
 selects 6 component files and 56 e2e tests, and 25.2 minutes for one that triggers the whole component
 project and 216 e2e tests (plus any lock wait). The per-leg tables and the pass A projection are in
-`docs/superpowers/research/2026-10-09-gate-economy-replay.md`, parts 2 and 4.
+`docs/research/2026-10-09-gate-economy-replay.md`, parts 2 and 4.
 
 The local F is the fallback only. It replaces its last step with `npm --prefix examples/showcase run
 test:e2e -- --grep-invert "site home|archive page 2"`. Those are the 20 `site-visual.spec.ts` tests
@@ -1135,7 +1135,7 @@ record's "Owed errata"; pass B task 11. **Decisions 1, 7, and 8.** Drafts to the
 other page the repoint greps name; `docs/internal/facts/*.md`; `docs/internal/api-surface.md`
 (regenerated if not current); `CHANGELOG.md`; `docs/extend/migration-notes.md`;
 `docs/extend/upgrade-cairn.md`; `docs/internal/engine-rulings.md`;
-`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md` (`:390`);
+`docs/specs/2026-05-28-cairn-rebuild-functional-spec.md` (`:390`);
 `docs/internal/record/harvest/relink.json`; `docs/internal/docs-friction-log.md`; `ROADMAP.md`;
 `packages/cairn-cms-dev/README.md` (beyond Task 10's delta); `packages/create-cairn-site/README.md`
 (beyond Task 2's line); `skills/**` and `claude/**` wherever a repoint grep hits.
@@ -1410,7 +1410,7 @@ From pass A's plan Ledger, "Task 12 carry (Tasks 1 to 3)":
 - **Next:** the S1 boundary (F and T), then S2's pre-flight and launch.
 ```
 
-#### docs/superpowers/research/2026-10-09-pass-a-s2-task12-carry.md
+#### docs/research/2026-10-09-pass-a-s2-task12-carry.md
 
 ```text
 # Task 12 carry from S2 (Tasks 4, 5, 7), extracted verbatim from s2-run.json
@@ -1454,7 +1454,7 @@ Also noted by the implementer: examples/showcase/README.md health notes (not che
 - scaffolded-site-files (Tasks 4 and 7), rotate-the-github-app-key (Task 7), restrict-admin-access (Task 4), add-a-second-sign-in-group (Tasks 4 and 5); add-cairn-to-a-sveltekit-app (Task 5) also affected.
 ```
 
-#### docs/superpowers/research/2026-10-09-pass-a-s3-task12-carry.md
+#### docs/research/2026-10-09-pass-a-s3-task12-carry.md
 
 ```text
 # Task 12 carry from S3 (Tasks 8, 9, 10), engine pass pre-2b A
@@ -1523,7 +1523,7 @@ Source: s3-run.json `.result.tasks`. Verbatim from the record; nothing here is f
 - Unfiled gap noted by Task 9: no gate compares the prose list on architecture.md to f:0gihxq, so the page went stale unnoticed.
 ```
 
-#### docs/superpowers/research/2026-10-09-pass-a-s4-task12-carry.md
+#### docs/research/2026-10-09-pass-a-s4-task12-carry.md
 
 ```text
 # Task 12 carry from S4 (Tasks 11 and 6), engine pass pre-2b A

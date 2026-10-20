@@ -1,11 +1,11 @@
 # Task 7b resolution run 2: page plans and round-2 findings
 
-Agent-facing stage record for draft docs stage 2a, task 7b's second resolution run. Written 2026-10-03 from the run result JSON and the run journal. Source of truth for what the plan readers and round readers said; nothing here is a ruling. The earlier run's record is `docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`.
+Agent-facing stage record for draft docs stage 2a, task 7b's second resolution run. Written 2026-10-03 from the run result JSON and the run journal. Source of truth for what the plan readers and round readers said; nothing here is a ruling. The earlier run's record is `docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`.
 
 ## Run
 
 - Run: `wf_ab29e38c-e13`, on runner dotfiles `526c111`.
-- Args: `bothReviewers: true`, `inFlight: 3`, `planModel: fable`; all six pages ran as `rework` pages. The rework texts pointed at `docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`.
+- Args: `bothReviewers: true`, `inFlight: 3`, `planModel: fable`; all six pages ran as `rework` pages. The rework texts pointed at `docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`.
 - Started from commit `2aacb280` on `draft-docs-2a`.
 - Cost: 68 agents, 8,034,514 subagent tokens, 1,212 tool calls, about 120 minutes; run result `spent` value 1351043.
 - Outcome: 0 of 6 pages accepted, all six escalated. One escalated on a second plan-read fix verdict with no drafting (security-model; its page was not redrafted and `docs/extend/security-model.md` is unchanged from `2aacb280`). Five were drafted and escalated after round 2 (add-a-custom-admin-screen, replace-magic-links-with-cloudflare-access, add-cairn-to-a-sveltekit-app, theme-your-public-site, architecture; reason "second fix verdict or red gate").
@@ -294,7 +294,7 @@ Reads: structural edit fix (blocking 1); register editor fix (blocking 5); fact 
 
 Round 1 drafter `couldNotDo`:
 
-- The resolution run record's section for this page (docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md, '### replace-magic-links-with-cloudflare-access') holds only the escalation status line: no plan-read findings and no couldNotDo dispositions. The committed plan's 'Plan read 1/2/3 findings, disposed' tables were taken as the authoritative record of the blocking findings, and the page follows them: the failure path's step order, the deploy step that marks when identity mode goes live, and the policy step.
+- The resolution run record's section for this page (docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md, '### replace-magic-links-with-cloudflare-access') holds only the escalation status line: no plan-read findings and no couldNotDo dispositions. The committed plan's 'Plan read 1/2/3 findings, disposed' tables were taken as the authoritative record of the blocking findings, and the page follows them: the failure path's step order, the deploy step that marks when identity mode goes live, and the policy step.
 - Policy step (Create the Access application, step 3): no fact names the Access policy action or its rule selectors, so the step states only what the policy must do and links Cloudflare's policies page. The plan already filed this facts gap in the friction log.
 - Logout address (Access step 7 and the config module): no fact gives Access's logout address, so the page links the session management page and never writes the address out. The plan already filed this gap too.
 - Block-page wording: no fact describes what an editor sees when Access refuses them, so the plan's 'Cloudflare's block page' is drafted as 'stopped by Access' (Access step 3's sub-paragraph and failure step 2), which f:agif8l supports.
@@ -1149,7 +1149,7 @@ The page /var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2a/doc
 
 ## Convergence
 
-Facts only. Blocking counts are the `blocking` value of each read. "Prior run" is `wf_fe61a650-884`, from `docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`; "this run" is `wf_ab29e38c-e13`. R1 and R2 are the first and second round reads. "n/r" means the page had no round in that run (it escalated on its plan reads). "-" means that seat did not read that page.
+Facts only. Blocking counts are the `blocking` value of each read. "Prior run" is `wf_fe61a650-884`, from `docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`; "this run" is `wf_ab29e38c-e13`. R1 and R2 are the first and second round reads. "n/r" means the page had no round in that run (it escalated on its plan reads). "-" means that seat did not read that page.
 
 ### Blocking counts per page and reader
 

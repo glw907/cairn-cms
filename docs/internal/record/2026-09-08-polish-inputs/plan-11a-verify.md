@@ -1,12 +1,12 @@
 # Polish-11a plan, verification read
 
-Fresh-context verification of `docs/superpowers/plans/2026-09-08-polish-11a-pass.md` (uncommitted,
+Fresh-context verification of `docs/plans/2026-09-08-polish-11a-pass.md` (uncommitted,
 folded 2026-09-08) and the three workflow args files under `~/.cache/cairn-polish-11a/`, against the
 three adversarial reviews, the fold record, and the measured tree.
 
 - **Read at:** `main` head `4453f540`. The plan measures at `ac911ec3`, its parent; no source file
   changed between the two, so every measured anchor in the plan reproduces exactly.
-- **Spec diff:** one hunk, `docs/superpowers/specs/2026-09-08-polish-passes-design.md:549-555`, the
+- **Spec diff:** one hunk, `docs/specs/2026-09-08-polish-passes-design.md:549-555`, the
   Sequencing ceiling line. That is the only change, as R8 requires.
 - **Scope covered:** fold fidelity for all 51 findings (coverage 1 to 22, executor 1 to 17,
   sequencing 1 to 12); the media partition re-derived from the file; the entry split's shared
@@ -29,7 +29,7 @@ constraint 10 restates it: an annotated row "keeps whatever fields it has."
 
 **What the plan says.** Global constraint 11 closes with "Task 13 verifies with a grep that no row
 names either dead path." Task 3's acceptance requires `grep -rn "content-routes-entry\.ts" src docs`
-to return only history files under `docs/superpowers/`, `docs/internal/record/`, `docs/HISTORY.md`,
+to return only history files under `docs/`, `docs/internal/record/`, `docs/HISTORY.md`,
 `ROADMAP.md`, and `CHANGELOG.md`. Task 6's requires the same shape for `content-routes-media\.ts`
 over `src docs scripts`. Task 13's requires that no ruling row names either path except inside a
 polish-11a Note line.

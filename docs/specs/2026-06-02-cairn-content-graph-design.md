@@ -152,7 +152,7 @@ Each plan is written just-in-time after the prior one lands, per the cairn-pass 
 
 > **Resequenced 2026-06-02 after Plan 1 landed:** the design's Plan 2 (the committed manifest) and
 > Plan 3 (the token, resolver, and build backstop) are written and executed as **one** plan,
-> `docs/superpowers/plans/2026-06-02-cairn-content-graph-02-manifest-and-resolution.md`. They share
+> `docs/plans/2026-06-02-cairn-content-graph-02-manifest-and-resolution.md`. They share
 > the `cairn:` token parser, and together they form the first end-to-end capability (links resolve at
 > build and fail closed), so a manifest-only pass would ship infrastructure nothing reads yet. The
 > picker (now Plan 3) and the lifecycle guards (now Plan 4) stay separate. The numbered plan files are

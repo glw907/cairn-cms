@@ -7,7 +7,7 @@
 mapping and an authorization refusal stops reading as an engine fault.
 
 **Authority:** phase C1's post-mortem
-(`docs/superpowers/plans/2026-08-01-pre-beta-c1-seam-shape.md`) and the `web-auth-security-reviewer`
+(`docs/plans/2026-08-01-pre-beta-c1-seam-shape.md`) and the `web-auth-security-reviewer`
 finding it records. Geoff ratified the fix over the documented workaround (2026-08-02).
 
 **Branch:** `refusal-channel-convergence`, worktree `.claude/worktrees/refusal-convergence`, off
@@ -194,7 +194,7 @@ action-thrown rendering would go uncaught.
 
 **Sequencing note.** This pass ran before C2 because it changed what `AdminActionError` means, and
 the naming sitting should not name a symbol mid-change. The full breaking-window agenda (eleven
-items in, four out) is `docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`; this pass
+items in, four out) is `docs/specs/2026-08-02-c2-breaking-window-agenda.md`; this pass
 added two entries to its vocabulary item (the `csrf_rejected`/`guard.rejected` pair and the
 `session_absent` naming).
 

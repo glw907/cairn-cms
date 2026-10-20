@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown, `prose-guard` (the writing-voice gate), `git`.
 
-**Design spec:** `docs/superpowers/specs/2026-06-04-cairn-docs-phase-4-guides-design.md`.
+**Design spec:** `docs/specs/2026-06-04-cairn-docs-phase-4-guides-design.md`.
 
 ---
 
@@ -34,7 +34,7 @@ done; echo "(no DANGLING line above means every relative link resolves)"
 
 **Lean versus full.** The three lean setup guides (Tasks 2, 3, 7) state the goal, the numbered steps, and the verify, then link the authoritative ops doc for depth rather than duplicating it. They draw their facts from the engine source, the named ops doc, and the credentials and bindings in `CLAUDE.md`, because `examples/showcase` runs `adapter-node` and has no Worker, D1, or GitHub App loop to validate them. The three full guides (Tasks 4, 5, 6) carry a worked example checked against the showcase files named in each task.
 
-**The relocation's transient referrer.** Task 1 moves `docs/upgrading.md` to `docs/guides/upgrade-cairn.md`. The live public referrers in `docs/README.md` (the How-to-guides line and the Current-pages "Upgrading cairn" entry) are repointed in Task 8, so a transient dangling link to the old path is expected between Task 1 and Task 8, the same within-phase pattern Phase 3 used. The phase-end ritual confirms none remain. Leave dated historical references under `docs/superpowers/` and the historical `docs/STATUS.md` entries as point-in-time records; do not rewrite history.
+**The relocation's transient referrer.** Task 1 moves `docs/upgrading.md` to `docs/guides/upgrade-cairn.md`. The live public referrers in `docs/README.md` (the How-to-guides line and the Current-pages "Upgrading cairn" entry) are repointed in Task 8, so a transient dangling link to the old path is expected between Task 1 and Task 8, the same within-phase pattern Phase 3 used. The phase-end ritual confirms none remain. Leave dated historical references under `docs/` and the historical `docs/STATUS.md` entries as point-in-time records; do not rewrite history.
 
 **Friction logging.** If writing a guide surfaces design friction (a setup step that needs too much tribal knowledge, an awkward adapter shape, a deploy flow with a sharp edge), append a short entry to `docs/internal/docs-friction-log.md` under `## Findings` (perspective `developer` or `editor`, the guide that surfaced it, a short note). If none, skip the friction file for that task.
 
@@ -450,7 +450,7 @@ After all tasks commit, before declaring the phase done:
 - [ ] Confirm every guide and the index exist: `for p in set-up-the-github-app configure-auth-and-d1 define-an-adapter-and-schema configure-rendering wire-the-delivery-surface deploy-to-cloudflare upgrade-cairn README; do test -f "docs/guides/$p.md" || echo "MISSING $p"; done`.
 - [ ] Run `prose-guard` across every authored page: `for f in docs/README.md docs/guides/*.md; do prose-guard "$f"; done`. No blocking tell on any (advisory lines are non-blocking).
 - [ ] Confirm no dangling relative link across `docs/guides/*.md` and the flipped `docs/README.md` (the Task 8 Step 3 sweep).
-- [ ] Confirm the old path is retired from the live public docs: `grep -rn "upgrading.md" docs/README.md` returns nothing (historical references under `docs/superpowers/` and `docs/STATUS.md` dated entries stay as records).
+- [ ] Confirm the old path is retired from the live public docs: `grep -rn "upgrading.md" docs/README.md` returns nothing (historical references under `docs/` and `docs/STATUS.md` dated entries stay as records).
 - [ ] Append any remaining design friction this phase surfaced to `docs/internal/docs-friction-log.md`.
 - [ ] Update `docs/STATUS.md` to record Phase 4 landed and name Phase 5 (Tutorial) as the next action, per the `cairn-pass` ritual. Refresh the `cairn-docs-initiative` memory.
 - [ ] Leave the tree clean.
@@ -488,7 +488,7 @@ shows no blocking tell on any of the eight authored files; advisory tells appear
 `configure-rendering.md` and the index, `anaphora` on `define-an-adapter-and-schema.md` and the index),
 all sweep-only and non-blocking. Every relative link across the arm and the flipped `docs/README.md`
 resolves, with no dangling link at the phase end. `grep -n upgrading.md docs/README.md` is clean, so the
-old path is retired from the live public docs (historical references under `docs/superpowers/` and dated
+old path is retired from the live public docs (historical references under `docs/` and dated
 `docs/STATUS.md` entries stay as records). The transient forward-dangles the plan predicted (a guide
 linking a sibling not yet written) all resolved once the later task landed, exactly as the task ordering
 intended.

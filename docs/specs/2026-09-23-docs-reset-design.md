@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-23. **Status:** revision 3, after three adversarial reviews of revision 1 and one
 of revision 2; for Geoff's review. **Owner rulings:** Geoff, 2026-09-22 and 2026-09-23. **Inputs:** banked at
-[`docs/internal/record/2026-09-23-docs-reset-inputs/`](../../internal/record/2026-09-23-docs-reset-inputs/):
+[`docs/internal/record/2026-09-23-docs-reset-inputs/`](../internal/record/2026-09-23-docs-reset-inputs/):
 four current-state inventories, two research reports, three reviews of revision 1, and one of
 revision 2 (`review-methodologies.md`, `review-repo-reality.md`, `review-project-prior-art.md`, `review-rev2.md`).
 
@@ -20,7 +20,7 @@ cut.
 
 Pass 1's execution corrected this spec in six places. Where a line below and the body disagree,
 this section wins. The detail is in the pass 1 plan's ledger and post-mortem
-(`docs/superpowers/plans/2026-09-23-docs-reset-pass-1.md`).
+(`docs/plans/2026-09-23-docs-reset-pass-1.md`).
 
 - **Pass A's defects number 19, not 14.** The 14 was the verifier's ranked summary. The itemized
   ground truth (`0e7f4eb9`) has 19 scripter-visible defects, and the json-output page was tested
@@ -106,7 +106,7 @@ structure intact but the target stale: three pages outside the outline, most of 
 unshipped, no contributor docs, no conceptual page for the admin building blocks, and agents served
 on three reference pages only.
 
-Pass A's post-mortem (`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`) supplies the central
+Pass A's post-mortem (`docs/plans/2026-09-21-draft-docs-pass-a.md`) supplies the central
 evidence. A fresh agent that had to write a working wrapper and parser from three contract pages
 alone found 14 page defects that the register editor, the profile grader, and the fact read had all
 accepted. The chain
@@ -209,7 +209,7 @@ From the two research reports and the three reviews:
 - In-place deficiency fixes on current pages continue under the freeze rule, each filing its
   container bullet, so the harvest keeps pace.
 - The docs-infra currency pass
-  (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`) and the reset's
+  (`~/.dotfiles/docs/plans/2026-09-19-docs-infra-currency-pass.md`) and the reset's
   closing PR both edit cairn-cms `CLAUDE.md`'s docs section; whichever lands second rebases, and
   pass 2b's plan checks the other's state first.
 

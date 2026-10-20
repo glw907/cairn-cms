@@ -1,7 +1,7 @@
 # Stage 2a R5: task 8's five pages, record (2026-10-07)
 
-Agent-facing. Scope: task 8 of the stage 2a plan (`docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md`),
-run as R5 of the unattended finish (`docs/superpowers/plans/2026-10-07-2a-unattended-finish.md`).
+Agent-facing. Scope: task 8 of the stage 2a plan (`docs/plans/2026-09-30-draft-docs-stage-2a.md`),
+run as R5 of the unattended finish (`docs/plans/2026-10-07-2a-unattended-finish.md`).
 Pages: `scaffolded-site-files`, `add-a-second-sign-in-group`, `rotate-the-github-app-key`,
 `restrict-admin-access`, `debug-your-site`. Base `d102143a`; the chain run's output sits in the WIP
 commit `bd78ad83`; the conductor's closes and this post-run step land in the two commits that follow it.

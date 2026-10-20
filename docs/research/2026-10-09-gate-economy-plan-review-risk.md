@@ -1,7 +1,7 @@
 # Gate economy plan review: domain risk lens
 
 Target: `docs/superpowers/plans/2026-10-09-gate-economy.md` at `211b1a37`. Spec:
-`docs/superpowers/specs/2026-10-09-gate-economy-design.md`. Lens: assurance loss and process
+`docs/specs/2026-10-09-gate-economy-design.md`. Lens: assurance loss and process
 failure during and after a pass that rewrites the gates guarding every later pass, partly using
 itself. Per Anthropic's reviewer guidance, only gaps affecting correctness or the stated
 requirements are raised as blocker or major; the rest are optional.

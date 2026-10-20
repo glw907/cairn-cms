@@ -3,7 +3,7 @@
 // claim in it is a fact in the container, a fact filed for it, or a recorded cut. This script reads
 // the ledgers under docs/internal/record/harvest/ and fails on any page whose proof is missing,
 // stale, or unresolvable. The rules and the ledger schema live in that directory's README.md and
-// in docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md ("The verifier").
+// in docs/specs/2026-09-29-draft-docs-harvest-design.md ("The verifier").
 //
 // It is a record, never a standing gate: its subject (the deleted pages) leaves the tree, and the
 // list-versus-tree check fails by design afterward. Its unit test runs on fixtures only, through

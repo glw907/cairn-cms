@@ -108,7 +108,7 @@ wrote.
    `pgrep -f .claude/worktrees` returns nothing. A live executor anywhere in this repo stops the
    pass (workstation rule, one executor per worktree).
 3. Confirm `git status` is clean in the main checkout.
-4. Commit this plan to `docs/superpowers/plans/2026-09-14-pre-cut-window-pass.md` on `main`. Each
+4. Commit this plan to `docs/plans/2026-09-14-pre-cut-window-pass.md` on `main`. Each
    implementer is told to read it from the repo, so an untracked plan means four dispatches that
    cannot follow instruction one.
 5. Run the transition-all reconciliation grep below and record its answer in the dispatch note.
@@ -142,7 +142,7 @@ anchors and reports the measured line beside the quoted one.
 | The role `<select>` the refactor decision takes | `src/lib/components/ManageEditors.svelte:169-174`, the label at `:169`, the `<select>` at `:170`, and `selected={entry.role === 'editor'}` inside the `#each` at `:172` |
 | `EditPage`'s flash strip | `src/lib/components/EditPage.svelte:1643`, the only `transition-all` in `src/lib` |
 | The pagination call site, one | `src/lib/components/ConceptList.svelte:465`, the repo's only `<Pagination>` |
-| The motion pass's intended-moves protocol | `docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md:605-607` and `:641-663`; its Task 6a heading is at `:1300` |
+| The motion pass's intended-moves protocol | `docs/plans/2026-09-13-admin-motion-language-pass.md:605-607` and `:641-663`; its Task 6a heading is at `:1300` |
 | The second live ROADMAP entry for the pagination defect | `ROADMAP.md:1422-1431`, "Three design-system gaps found in the same triage" |
 
 ### The measured baseline fact, which two tasks depend on
@@ -164,7 +164,7 @@ every admin shot, and daisyUI 5.7.35 fixes badge shrink inside a flex row.
 here, not twice.
 
 **The motion pass already takes it.** Its plan,
-`docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`, assigns the fix to **Task 6a,
+`docs/plans/2026-09-13-admin-motion-language-pass.md`, assigns the fix to **Task 6a,
 "The admin migrated onto the language"** (`:1300`), whose step 3 and acceptance criteria name
 `EditPage.svelte:1643` taking "a named property list (`transition-[opacity,translate]`)" and the
 duration token (`:1349`, `:1410`, `:1414`), with `:1468` asserting `transition-all` as one of three
@@ -245,7 +245,7 @@ These bind every task. An implementer reads them before its Files block.
     files the task declared. Anything else is a real red, and a locally biased baseline is never
     committed.
 13. **The intended-moves protocol, imported verbatim from the motion pass**
-    (`docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md:605-607` and `:641-663`), and
+    (`docs/plans/2026-09-13-admin-motion-language-pass.md:605-607` and `:641-663`), and
     binding on **Task 1 and Task 2**, the pass's two paint tasks. Each declares `INTENDED MOVES:`
     before touching markup or a manifest, one `surface width scheme: what moves` per line. The moved
     list is **produced, not asserted**: before any regeneration, run the visual suites unmodified
@@ -850,9 +850,9 @@ edits. Step 1's reconciliation is reported as a finding list, not as a red.
 - `docs/internal/record/2026-09-13-minor-bump-features.md`, the changelog survey (read in full).
 - `docs/internal/record/2026-09-13-carbon-patterns-survey.md`, Parts 5b and 5c.
 - `docs/internal/record/2026-09-13-blueprint-audit.md`, "DEFECTS TO FIX BEFORE THE RELEASE".
-- `docs/superpowers/plans/2026-09-08-polish-c-pass.md`, its header, Token ceiling, Global
+- `docs/plans/2026-09-08-polish-c-pass.md`, its header, Token ceiling, Global
   constraints, Task 13, Gate, and Pass-end ritual.
-- `docs/superpowers/plans/2026-09-13-admin-motion-language-pass.md`, its header, Token ceiling,
+- `docs/plans/2026-09-13-admin-motion-language-pass.md`, its header, Token ceiling,
   Execution, the intended-moves protocol at `:605-607` and `:641-663`, and Task 6a at `:1300`.
 - `docs/STATUS.md`, the next-action block naming this pass and the `0.97.0` cut.
 - `ROADMAP.md`, the Next tier's five-defaults entry at `:896-914` and the triage entry at

@@ -1,7 +1,7 @@
 # Pass 1b plan review: domain risk (measurement integrity)
 
 **Target:** `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md` at `dc37e38b`. **Spec
-(fixed):** `docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`. **Lens:**
+(fixed):** `docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`. **Lens:**
 where execution can leak into or corrupt the pre-registered measurement despite the spec.
 **Reviewer:** one `claude-opus-5-5` read, checked against the runner in `scripts/docs-readers/`.
 
@@ -160,7 +160,7 @@ instructions they are given.
   They do not catch the planter tuning placement to job texts or reports.
 - **Fold:**
   - Run the miner in a mirror built with `git filter-repo --invert-paths`. The mirror drops
-    `docs/internal/record`, `docs/superpowers`, `scripts/docs-readers`, `docs/HISTORY.md`,
+    `docs/internal/record`, `docs/{plans,research,specs}`, `scripts/docs-readers`, `docs/HISTORY.md`,
     `docs/STATUS.md`, `ROADMAP.md`, `docs/internal/docs-friction-log.md`, and
     `src/tests/unit/docs-readers-*` from all history. Build it at the freeze commit, and put the
     mirror's head commit in the addendum.
@@ -308,7 +308,7 @@ instructions they are given.
 ## Checked and sound
 
 - **The development-set exclusion in the existing export.** `docs/internal/record`,
-  `docs/superpowers`, and `scripts/docs-readers` are excluded, and an assertion enforces it
+  `docs/{plans,research,specs}`, and `scripts/docs-readers` are excluded, and an assertion enforces it
   (prepare-class.ts:414-428).
 - **Reader mounts.** Only the per-run copy is mounted. The docs-only, docs-and-site, and
   repository classes have Anthropic-only egress.

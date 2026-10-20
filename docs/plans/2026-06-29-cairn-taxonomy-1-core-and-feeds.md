@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **Charter, premise-checked.** This is content-delivery work over the committed markdown, build-time, no runtime store, no new actor. Source: the spec's "Premise check".
-- **Spec is canonical.** `docs/superpowers/specs/2026-06-28-cairn-taxonomy-tag-delivery-design.md`. This plan implements Components 1 and 3 and the reference-prose friction fix.
+- **Spec is canonical.** `docs/specs/2026-06-28-cairn-taxonomy-tag-delivery-design.md`. This plan implements Components 1 and 3 and the reference-prose friction fix.
 - **Glossary fixed.** A *taxonomy* is a concept's single multiselect field marked `taxonomy: true`; its values are *tags*. No "category" or "term" as cairn concepts; "category" appears only as feed output (RSS `<category>`, JSON Feed `tags`).
 - **Read the VALIDATED value, never raw frontmatter** for the marked field, so a scalar coerces to an array.
 - **No implicit `tags` fallback**, but a build advisory when an unmarked `tags`-named multiselect exists.

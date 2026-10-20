@@ -8,7 +8,7 @@
 
 **Tech Stack:** Svelte 5.55, `@sveltejs/kit` 2.61, `@sveltejs/package` 2, TypeScript 6.0, Vite 8, Vitest 4.1, `@cloudflare/vitest-pool-workers` 0.16, Wrangler 4. No better-auth, no Drizzle, no better-sqlite3.
 
-**Source spec:** `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md` (sections 4, 5, 9, 11).
+**Source spec:** `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md` (sections 4, 5, 9, 11).
 
 **Scope of this plan:** package manifest, build and test config, the worktree, the legacy move, the first real unit module (`env.ts`), the D1 integration harness, and CI. It deliberately does not build auth, content, GitHub, render, or UI; those are Plans 01 through 07.
 

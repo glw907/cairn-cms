@@ -1,5 +1,5 @@
 // Task 3 of the auth-channel factory plan: the request action's eight-step flow (spec
-// docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md, Flows), proven against real
+// docs/specs/2026-08-03-auth-channel-factory-design.md, Flows), proven against real
 // miniflare D1. The lockout regression test is the structural guard the design's three review
 // rounds needed: a victim who requests first must complete a login with no extra interaction even
 // after an attacker in a separate cookie jar blows past every identity-keyed cap.

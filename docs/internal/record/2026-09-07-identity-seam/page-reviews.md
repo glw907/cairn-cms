@@ -11,8 +11,8 @@ The security read (blocking criterion) and the prose read of docs/extend/sign-in
 Object: `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/identity-seam/docs/extend/sign-in-through-your-organization.md`
 as committed at `fb757009` (the file is dirty in the worktree; this review reads the committed blob only).
 Checked against: the shipped contract in `src/lib/sveltekit/guard.ts` and `src/lib/sveltekit/auth-routes.ts` @ `fb757009`,
-spec revision 3 (`docs/superpowers/specs/2026-09-07-identity-seam-design.md`), plan Task 5a
-(`docs/superpowers/plans/2026-09-07-identity-seam-pass.md:319-362`), and the earlier lens records
+spec revision 3 (`docs/specs/2026-09-07-identity-seam-design.md`), plan Task 5a
+(`docs/plans/2026-09-07-identity-seam-pass.md:319-362`), and the earlier lens records
 (`docs/internal/record/2026-09-07-identity-seam/{spec-review,access-research}.md`).
 Read-only. Line numbers are the committed file's.
 

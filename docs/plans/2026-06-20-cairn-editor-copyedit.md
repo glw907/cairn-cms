@@ -55,7 +55,7 @@ component) and Playwright (showcase E2E).
 
 **Design brief:** `docs/internal/design/2026-06-20-editor-copyedit-design-brief.md` (authoritative for
 product decisions and the corrected convention set).
-**Spec:** `docs/superpowers/specs/2026-06-20-cairn-editor-copyedit-design.md` (the authoritative design;
+**Spec:** `docs/specs/2026-06-20-cairn-editor-copyedit-design.md` (the authoritative design;
 sections referenced per task).
 **Technical design:** `docs/internal/design/2026-06-20-editor-copyedit-technical-design.md`.
 **Approved mockups:** the editor `docs/internal/design/2026-06-20-editor-copyedit-review-mode-rev2-mockup.html`

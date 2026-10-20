@@ -1,7 +1,7 @@
 # The retroactive any-site audit (2026-08-26)
 
 The whole-surface audit mandated by the engine-consultation spec
-(`docs/superpowers/specs/2026-08-26-engine-consultation-design.md` §4): every public item
+(`docs/specs/2026-08-26-engine-consultation-design.md` §4): every public item
 argued against the codified standard, ranked weakest-to-strongest anonymous-consumer case,
 verdicted keep / reshape / retire, and independently verified. Per-item entries live in the
 rulings ledger ([engine-rulings.md](../engine-rulings.md), audit section); the full
@@ -177,7 +177,7 @@ charters, a zero-drift log grammar, 27 bespoke gates) and unenforced one line be
 public edge. The charter has no gate; convergence stops half-finished with comments that
 license the next copy; roughly a dozen module headers assert contracts the code contradicts;
 the comment register is pass-scoped (179 unresolvable process references, 18 named
-private consumer sites, 19 pointers into the unshipped `docs/superpowers/`); the test
+private consumer sites, 19 pointers into the unshipped `docs/`); the test
 estate erases checked contracts with 827 `as never` casts across four filename conventions;
 engine-emitted names use four prefix conventions including a consumer site's initials
 (`ec-*`, 18 sites, also the chassis's `ec-` classes in public rendered output, a

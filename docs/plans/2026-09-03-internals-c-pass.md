@@ -209,7 +209,7 @@ files; `check:idioms` green including over its own file.
 **Files:**
 - Modify: `src/lib/sveltekit/`, `src/lib/auth*/`, `src/lib/content/`,
   `src/lib/delivery/` comment sites carrying pass-scoped process references,
-  `docs/superpowers/` pointers, or consumer-site names (re-enumerate at dispatch; the
+  `docs/` pointers, or consumer-site names (re-enumerate at dispatch; the
   audit counted 179 + 19 + 18 across all of `src/lib`)
 
 **Interfaces:** none new.
@@ -240,7 +240,7 @@ rewritten comment still true against the code (diff-reviewer verifies a sample);
 - Produces: three register rules in `check:idioms`, scoped to `src/lib` comments (kept in
   this gate, not the ESLint plugin, deliberately: ESLint does not parse `.svelte`, and
   the register must hold uniformly across `.ts` and `.svelte` — the leaner-home question
-  the review raised, answered in the gate's header): ban `docs/superpowers/` paths; ban
+  the review raised, answered in the gate's header): ban `docs/` paths; ban
   the pass-scoped process-reference patterns; ban consumer-site hostnames **by shape**
   (a bare production hostname literal in a comment), NOT by enumerating the private
   hostnames into a public repo's gate file (security lens).
@@ -297,7 +297,7 @@ rule matches by shape with no private hostname in the rule data; gate green.
 
 **Acceptance criteria:** `grep -rEn '\bec-(icon|icon-secondary|glyph|head|grid)\b'` over
 the tree — `templates/` included, post-re-emit — (excluding `docs/internal/history`,
-`docs/internal/record`, `docs/superpowers`, and the annotated ledger rows) returns
+`docs/internal/record`, `docs/{plans,research,specs}`, and the annotated ledger rows) returns
 nothing; showcase CI visual suite and `check:template` green; the namespace rule as
 documented matches the ruled registration form.
 
@@ -514,7 +514,7 @@ is the one shared helper, called only from `decodeField`. Task 2 landed `check:i
 green: leading-tab indentation banned in `src/lib` and `scripts`, `process.exit(` banned inside
 `scripts/checks/*.mjs` in favor of a flow-preserving `process.exitCode`, and one self-identity
 spelling per gate. Tasks 3a/3b purged the pass-scoped comment register (process citations,
-`docs/superpowers/` paths, consumer hostnames by shape) across all of `src/lib` and landed the
+`docs/` paths, consumer hostnames by shape) across all of `src/lib` and landed the
 three register rules inside `check:idioms`. Task 4 renamed the render pipeline's emitted
 `ec-*` classes to `cairn-*` across the chassis, the docs, and the baked template, the pass's one
 `Consumers must:` event. Task 5 built the `testEvent` builder and converted the five heaviest

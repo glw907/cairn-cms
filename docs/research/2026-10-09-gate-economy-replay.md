@@ -6,7 +6,7 @@ Parts 1 and 3 were written at Task 7; parts 2 and 4 (the timed ranges and the pr
   `4a1663f3`. Every range runs at the head of its part (Decision 8): the selection is historical, the code
   is current.
 - **Pass measured:** pass A, `engine-pre-2b-a` (PR #108, merged head `8483ca5b`). Task ranges come
-  from `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md` (Ledger, Post-mortem) and
+  from `docs/plans/2026-10-08-engine-pass-pre-2b-a.md` (Ledger, Post-mortem) and
   `git log --first-parent` over the branch, which leaves out the `main` commits interleaved into the
   branch's window.
 - **Method:** `scripts/checks/gate-tier.mjs` run two ways per range, both with the task's pass class.

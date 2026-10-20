@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-27
 **Initiative:** cairn-cms (see `docs/PLAN.md`)
-**Spec:** `docs/superpowers/specs/2026-05-26-admin-ui-design.md` §R6
+**Spec:** `docs/specs/2026-05-26-admin-ui-design.md` §R6
 **Sequence:** first of the New Admin UI passes, ahead of J (nav) and K (editing).
 
 ## Goal

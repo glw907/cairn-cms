@@ -1,6 +1,6 @@
 # SvelteKit 3 spec: fold verification (2026-10-03)
 
-Fresh-context read of `docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md` (405 lines,
+Fresh-context read of `docs/specs/2026-10-03-sveltekit-3-upgrade-design.md` (405 lines,
 HEAD `0d41bbd9`) against the pre-fold spec (`d5c2ca98`), the fold record, the four reviews, the Kit
 3.0.0 and adapter-cloudflare 8.0.0 tarballs, the installed Kit 2.70.3 and adapter 7.2.9, and the repo.
 New probes ran in this session's scratchpad on wrangler 4.147.0, with the showcase's
@@ -31,7 +31,7 @@ Yes, all of them. The table gives the location for each.
 
 ### V1 (major): the fold record's suggested cut after S3 would leave `main` unreleasable, with a silent security regression
 
-- **Location:** `docs/superpowers/research/2026-10-03-sveltekit-3-spec-fold.md:211-214`. The spec's segment preamble (spec:269-270) is where the cut would be recorded.
+- **Location:** `docs/research/2026-10-03-sveltekit-3-spec-fold.md:211-214`. The spec's segment preamble (spec:269-270) is where the cut would be recorded.
 - **Defect:** S3 deletes guard Rule 2 and `config.csrf-disable-missing`, and it ships the v2 doctor, while the engine still peers on Kit `^2.70`. Every existing consumer was told by the v1 doctor and the old templates to set `checkOrigin: false`. On a post-S3 Kit 2 engine, such a site loses its only non-admin Origin check: Rule 2 is gone and Kit's check is off. The v2 doctor flags only `'*'`, so the site gets no warning either. The CLAUDE.md contract is "`main` stays releasable". In `0.x`, a patch cut from that `main` also flows into `^0.98.x` ranges.
 - **Fix:** If the pass splits, cut after S2. The first half (S0 spike, S1 deprecations and Vite-plugin config, S2 harness host move) changes no runtime security behavior and is safely releasable. The second half runs S3 through S5, so the CSRF handover and the Kit 3 peer land together. If the conductor keeps one pass, nothing changes: the segments live on the pass worktree. See the split recommendation below.
 

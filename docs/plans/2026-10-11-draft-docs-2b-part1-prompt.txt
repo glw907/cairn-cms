@@ -18,7 +18,7 @@ Then arm the API-drop wake-up (/loop with no interval). Each tick first runs tha
 ends the turn if the listing shows pass-stop.
 
 Load cairn-pass (it loads pass-core) and follow it. Read the plan whole:
-/var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1/docs/superpowers/plans/2026-10-11-draft-docs-2b-part1.md.
+/var/home/glw907/Projects/cairn-cms/.claude/worktrees/draft-docs-2b-part1/docs/plans/2026-10-11-draft-docs-2b-part1.md.
 Read /var/home/glw907/.cache/draft-docs-2b-part1/launch-facts.txt for the tooling heads, PR
 numbers, and the night's token count at launch. If no commit subject on this branch starts with
 2b1-T0, this is a fresh start: run T0, whose setup is

@@ -23,7 +23,7 @@ reusing T4a's REST seam, prefill, catalogue, runner, and state store, plus
 `src/github/oauth.mjs`'s `reauthorize` and a `base_tree` Git Data commit for the reconcile.
 No new subsystem; no engine change.
 
-**Spec:** `docs/superpowers/specs/2026-08-12-create-cairn-site-t4c-design.md`. Its platform
+**Spec:** `docs/specs/2026-08-12-create-cairn-site-t4c-design.md`. Its platform
 claims are dated 2026-08-12 and Task 1 re-verifies every one this pass leans on.
 
 **Tech Stack:** Node ESM (`.mjs`), `node:test`, `@clack/prompts`, the Cloudflare REST API v4

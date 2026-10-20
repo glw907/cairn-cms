@@ -9,7 +9,7 @@ in hand and re-derives them rather than trusting them. A measurement that disagr
 wins over this file.
 
 Written by polish-C's records task (Task 15 of
-`docs/superpowers/plans/2026-09-08-polish-c-pass.md`). The window is `CHANGELOG.md:1` through the
+`docs/plans/2026-09-08-polish-c-pass.md`). The window is `CHANGELOG.md:1` through the
 `## 0.96.0` heading at `CHANGELOG.md:2039`, 2,038 lines, carrying one `##` heading and **six**
 `###` subsections, not the five the plan measured: `Added` (`:5`), `Removed` (`:276`), `Changed`
 (`:335`), `Documentation` (`:1383`), `Fixed` (`:1496`), and a **second `Documentation`** (`:1997`)
@@ -569,7 +569,7 @@ is a record.
 The skill's grep, `grep -rnE '[a-z-]+-\[[^]]*(\||\*|\.\.\.)[^]]*\]' docs/ CHANGELOG.md ROADMAP.md`,
 returns thirteen hits on this branch. **None is a hazard and none was written by polish-C**, which
 `git diff f1c72dbf..HEAD -- docs/ CHANGELOG.md ROADMAP.md` confirms by returning no added line that
-matches. Eleven of the thirteen sit in write-once trees (`docs/superpowers/**`,
+matches. Eleven of the thirteen sit in write-once trees (`docs/**`,
 `docs/internal/record/**`) and the other two are a ruling row and a `cairn-audit` rule description,
 each naming `font-[family-name:...]` as a pattern the font-parity rule recognizes. The failure mode
 the grep exists to catch cannot fire from any of them: `scripts/build/admin-css.input.css` pins the

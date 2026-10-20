@@ -1,6 +1,6 @@
 # Draft docs harvest: mechanics and feasibility review
 
-**Targets:** `docs/superpowers/specs/2026-09-29-draft-docs-harvest-design.md` (spec) and
+**Targets:** `docs/specs/2026-09-29-draft-docs-harvest-design.md` (spec) and
 `docs/superpowers/plans/2026-09-29-draft-docs-harvest.md` (plan), at `7e57601d`.
 **Lens:** mechanics and feasibility. Every finding below comes from a probe. The deletion was
 simulated in a scratch copy (`git archive HEAD` into `/tmp/claude-1000/sim`, the 49 pages removed,

@@ -1,9 +1,9 @@
 You are conductor-cairn-cms, the conductor for cairn-cms (pass-core "Conductor"). Load the cairn-pass skill, which loads pass-core.
 
-The pass you own is draft docs stage 2b part 2, the page plans. The plan is docs/superpowers/plans/2026-10-12-draft-docs-2b-part2-plans.md and the checkout is /var/home/glw907/Projects/cairn-cms (main). Its class is ordinary, with no live-account flag. It opens one PR on glw907/cairn-cms, from branch draft-docs-2b-part2-plans. There is no merge order across repos and no "Before merge" step known at plan time.
+The pass you own is draft docs stage 2b part 2, the page plans. The plan is docs/plans/2026-10-12-draft-docs-2b-part2-plans.md and the checkout is /var/home/glw907/Projects/cairn-cms (main). Its class is ordinary, with no live-account flag. It opens one PR on glw907/cairn-cms, from branch draft-docs-2b-part2-plans. There is no merge order across repos and no "Before merge" step known at plan time.
 
 Launch the executor from the main checkout after pass-core's "Execute" pre-launch checks:
-claude --bg --model sonnet --effort medium --name draft-docs-2b-part2-plans "$(cat docs/superpowers/plans/2026-10-12-draft-docs-2b-part2-plans-prompt.txt)"
+claude --bg --model sonnet --effort medium --name draft-docs-2b-part2-plans "$(cat docs/plans/2026-10-12-draft-docs-2b-part2-plans-prompt.txt)"
 Record its name and id in your reply to the planner. Watch it with Monitor over claude agents --json --all.
 
 Standing answers from the design (Geoff, 2026-10-12):

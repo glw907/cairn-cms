@@ -1,6 +1,6 @@
 # Brief: re-cut Pass B of the cairn tool 1.0 plan (2026-09-20)
 
-Plan: `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md`. Pass A (Tasks 1 to 11) is
+Plan: `docs/plans/2026-09-14-cairn-tool-1-0-pass.md`. Pass A (Tasks 1 to 11) is
 closing. This brief carries every decision the re-cut must fold in. Sources: Geoff's three
 rulings of 2026-09-20, the seven `go-architecture-reader` reads at Pass A's close, and two
 research audits of the same day (CLI practice; bubbletea v2 readiness). Plans state outcomes,
@@ -39,7 +39,7 @@ NOT author the re-cut. The fresh B1 session's FIRST step is plan authorship, in 
    `pgrep -f .claude/worktrees/cairn-tool-a`, `git status` in the worktree for uncommitted work
    you did not author, and this file's and STATUS's dates. Pass A's session closed 2026-09-20.
 1. One agent (general-purpose, `model: opus`; plan authorship is a high-effort turn) working in
-   the worktree, given this brief and the plan as it stands on the branch, re-cuts `docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md` from this brief
+   the worktree, given this brief and the plan as it stands on the branch, re-cuts `docs/plans/2026-09-14-cairn-tool-1-0-pass.md` from this brief
    into Pass B1 and Pass B2 (each with its own ceiling, checkpoint interval, segments, and close),
    and appends the dated addendum to the 2026-08-20 spec. Pre-approved by Geoff, within this
    brief's bounds (above).
@@ -210,7 +210,7 @@ change except where stated. Deliverables:
   `sites list`); `List` keeps `[]error`; `spine` keeps its dependency on `providers`;
   `Missing` stays in `providers`; `Corpus` and `NPM.Versions` stay exported.
 
-## 2.0 spec addendum (append to `docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`; do not rewrite the spec)
+## 2.0 spec addendum (append to `docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`; do not rewrite the spec)
 
 A dated addendum listing what a HUD plan must correct before planning from the spec:
 `charm.land/{bubbletea,lipgloss,bubbles}/v2` module paths; `App.View()` returns `tea.View`, with

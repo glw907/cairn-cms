@@ -26,7 +26,7 @@ design under B1's protocol.
 
 **Tech stack:** as B1.
 
-**Spec:** `docs/superpowers/specs/2026-09-04-chassis-passes-design.md`, section "Chassis-B"
+**Spec:** `docs/specs/2026-09-04-chassis-passes-design.md`, section "Chassis-B"
 (amended 2026-09-07).
 
 **Token ceiling:** 6M (8 tasks at about 0.63M non-image each, plus about 0.15M of per-task
@@ -306,7 +306,7 @@ tree; `check:template` green.
   corpus decision and its trade, the content method on a fixture corpus, the second-menu
   editing question, the `check-public-tokens` scope argument, the CI regen loop's cost), the
   contact sheets for B2's changed surfaces (home, archive2, admin-office)
-- Modify: `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md` (item 6
+- Modify: `docs/specs/2026-08-27-audit-remediation-initiative-design.md` (item 6
   and the publish paragraph: one cut after polish; the chassis work is three passes, A, B1,
   B2), `ROADMAP.md` (the chassis improvement round leaves the tier; polish's inputs by name),
   `docs/STATUS.md` (only stale wording), `CHANGELOG.md` (`## Unreleased`: `menus.footer`,

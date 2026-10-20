@@ -1,6 +1,6 @@
 # Harvest recheck: task 6 (audit extend, second half, 12 pages)
 
-One line per item, per rule 4 of `docs/superpowers/research/2026-09-29-harvest-theme-lineage-brief.md`.
+One line per item, per rule 4 of `docs/research/2026-09-29-harvest-theme-lineage-brief.md`.
 Resolution column is filled by task 6b. No claim mapped to a fact, and no fact filed, depends on a
 rule-3 rule count, scope default, the `./components` subpath, or a chassis token; every line below
 is a source path under `src/lib/components/` or a frozen bullet that needs a change.

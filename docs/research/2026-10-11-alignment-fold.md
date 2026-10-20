@@ -1,7 +1,7 @@
 # Alignment plan fold
 
 The fold of `2026-10-11-alignment-review-mechanics.md` into
-`docs/superpowers/plans/2026-10-11-alignment.md`. The planning session (Opus 5.5) ran the fold
+`docs/plans/2026-10-11-alignment.md`. The planning session (Opus 5.5) ran the fold
 itself, since it held the probes the review checked. No verification read runs: the pass is
 `runner`, neither `auth-data` nor `live-account` (`spec-plan-review`, "Depth scales with risk").
 The task ids were renumbered: old AL-T1 folded into AL-T0, so old T2 to T6 are now T1 to T5.
@@ -24,7 +24,7 @@ Each finding was verified before the fold acted on it. Re-probes by the planning
 | 7 | major | Folded | Resume judges done by commit subject, AL-T3 by the `ls` count, and AL-T0's backup never re-copies over an existing `BK`. |
 | 8 | major | Folded | AL-T1 acceptance greps `claude-tail-guard`. |
 | 9 | major | Folded | Pairs: each prompt states `BK`'s literal path. |
-| 10 | major | Folded | AL-T2 names `docs/superpowers/**` as frozen, and its grep excludes `superpowers` and `history`. |
+| 10 | major | Folded | AL-T2 names `docs/**` as frozen, and its grep excludes `superpowers` and `history`. |
 | 11 | minor | Folded | AL-C item 3.1 says the check proves reachability only, gives the post-merge check, and asks Geoff to merge the dotfiles PR first. The pair's override already says "Do not read or write agent memory". |
 | 12 | minor | Folded | AL-T3 names `lean-test-suite.md:15`. |
 | 13 | minor | Folded | AL-C items 3.2 and 3.3 write the phrase list to a file, then run `grep -i -F -f` over `*.md`. |

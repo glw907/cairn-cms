@@ -13,14 +13,14 @@ approved by Geoff 2026-09-26. This plan covers the spec's "Delivery" pass A only
 print, the agent-build probe) is out of scope. Executors read the spec sections their task names.
 Where this plan and the spec disagree, stop and report, except the plan's decisions on the spec's
 "Open for the plan" items and the fold's decisions, recorded under "Decisions this plan takes"
-below. Evidence and record: the spike (`docs/superpowers/research/2026-09-26-theme-identity-spike.md`),
+below. Evidence and record: the spike (`docs/research/2026-09-26-theme-identity-spike.md`),
 the spec's fold record and its verification
-(`docs/superpowers/research/2026-09-26-theme-identity-fold.md`,
-`docs/superpowers/research/2026-09-26-theme-identity-fold-verification.md`), the spec's prose
+(`docs/research/2026-09-26-theme-identity-fold.md`,
+`docs/research/2026-09-26-theme-identity-fold-verification.md`), the spec's prose
 review, the arc log (`docs/internal/record/2026-09-26-theme-identity-arc-log.md`), the ratified
 captures (`docs/internal/record/2026-09-26-theme-identity/final-1440.png`, `final-390.png`,
 `switch-1440.png`), and this plan's review, fold, fold verification, and prose review
-(`docs/superpowers/research/2026-09-26-theme-identity-pass-a-review-{contract,mechanics,risk}.md`,
+(`docs/research/2026-09-26-theme-identity-pass-a-review-{contract,mechanics,risk}.md`,
 `...-pass-a-fold.md`, `...-pass-a-fold-verification.md`, which produced decision 13, and
 `...-pass-a-prose-review.md`).
 
@@ -1071,7 +1071,7 @@ step. The e2e run also proves the pin through the showcase's real build.
   transparent))`, so `btn-outline btn-primary` keeps its colored edge. The badge half sets
   `border-color` directly on an uncolored `badge-outline`, since daisyUI sets
   `border-color: currentColor` there rather than a variable
-  (`docs/superpowers/research/2026-09-26-theme-identity-fold-verification.md`). The rule carries
+  (`docs/research/2026-09-26-theme-identity-fold-verification.md`). The rule carries
   the full state set for the outline button.
 - The file header's "only chassis VALUES" sentence gains this one declared rule. The re-skin recipe
   gains one line naming the ladder as the family geometry a site may change freely, citing no
@@ -1161,7 +1161,7 @@ themes at 1440 and 390.
 `src/tests/unit/audit/rules/rendered/norms-bands.browser.test.ts` (expectations that restate a
 moved band), `examples/showcase/cairn-audit.config.json` (the `rendered.extraPages` list), and a
 new record
-`docs/superpowers/research/2026-09-26-theme-identity-pass-a-proof.md`.
+`docs/research/2026-09-26-theme-identity-pass-a-proof.md`.
 
 **Outcome:** The spec's Proof measurements, taken in a real browser on the fixture and recorded.
 `theme-kit-contrast.spec.ts` paints each pair to a canvas and reads it back, as the audit engine
@@ -1243,7 +1243,7 @@ preview stops.
 "Admin interface design" paragraph of `CLAUDE.md`.
 
 **Outcome:** (spec, "Documentation", "The design-system rule";
-`docs/superpowers/research/2026-09-26-theme-identity-fold.md`, "Errata owed to ratified
+`docs/research/2026-09-26-theme-identity-fold.md`, "Errata owed to ratified
 documents"). Each line below is one deliverable. Line numbers are plan-time; re-locate by content
 if lines moved.
 
@@ -1951,5 +1951,5 @@ documents record it. S4 regenerated 92 CI baselines.
   and drew no corrections. S3 will be the third.
 
 **Resume here (next session):** pass A is closed and unmerged. Pass B runs from this head per
-its plan (`docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md` on `theme-b-plan`). Geoff's
+its plan (`docs/plans/2026-09-27-theme-identity-pass-b.md` on `theme-b-plan`). Geoff's
 S3 before-and-after is still owed; its corrections land on `theme-identity-a` and merge forward.

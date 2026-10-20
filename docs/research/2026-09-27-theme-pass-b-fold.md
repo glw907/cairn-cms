@@ -1,6 +1,6 @@
 # Theme identity pass B: review fold record (2026-09-27)
 
-**Target:** `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`, folded from `main`
+**Target:** `docs/specs/2026-09-27-theme-identity-pass-b-design.md`, folded from `main`
 at `ed2b7955`. The parent spec (`2026-09-26-theme-identity-design.md`) was not edited. The fold
 changes no meaning in it, so no erratum is owed.
 

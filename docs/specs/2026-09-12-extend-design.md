@@ -6,8 +6,8 @@ adversarial review (charter-and-ledger, mechanics-and-feasibility, domain-risk).
 records what the review changed; "What the fresh read changed" records what the read changed
 before it. Geoff reads those two sections; the rest is the design as it now stands.
 
-Executed by two plans: `docs/superpowers/plans/2026-09-14-extend-1-pass.md` (gates and atoms) and
-`docs/superpowers/plans/2026-09-14-extend-2-pass.md` (guidance).
+Executed by two plans: `docs/plans/2026-09-14-extend-1-pass.md` (gates and atoms) and
+`docs/plans/2026-09-14-extend-2-pass.md` (guidance).
 
 ## Fold (2026-09-14)
 

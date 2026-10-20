@@ -21,7 +21,7 @@ goldens render through the seam with no running program.
 `golang.org/x/sys/windows`, `golang.org/x/tools` (analyzers), golangci-lint, Vale with the
 vendored `glw907` overlay. Node 22 for the fixture-extraction task only.
 
-**Spec:** `docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`. Executors
+**Spec:** `docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`. Executors
 read the spec section named in each task; this plan argues from it and does not restate it.
 
 ## Global constraints
@@ -107,7 +107,7 @@ re-check the pass boundary, not to keep going.
   once it exists, `tui-design:tui-design` optional; `go-conventions` is already global)
 - Create: `tool/docs/adr/0001-component-architecture.md`,
   `tool/docs/adr/0002-design-language-and-input.md`
-- Modify: `docs/superpowers/2026-08-18-tui-skills-setup-brief.md` (mark Tasks 1, 2, 4 done with
+- Modify: `docs/2026-08-18-tui-skills-setup-brief.md` (mark Tasks 1, 2, 4 done with
   the commit)
 
 **Acceptance:**

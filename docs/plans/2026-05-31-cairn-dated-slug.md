@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript (NodeNext, `.js` import specifiers), Svelte 5 runes, Vitest (the `unit` project for pure logic, the `component` project for the create form), the `yaml` package for the site-config.
 
-**Source of truth:** `docs/superpowers/specs/2026-05-31-cairn-dated-slug-design.md`.
+**Source of truth:** `docs/specs/2026-05-31-cairn-dated-slug-design.md`.
 
 ---
 
@@ -1172,7 +1172,7 @@ git commit -m "Export the site index and the dated-slug type surface"
 
 **Verified.** `npm run check` 0 errors / 0 warnings over `src/`; `npm test` exit 0 at 315 tests across unit, integration, and component; `npm run check:package` green (publint `--strict` clean, attw green across all four entry points and every resolution mode). Three review subagents (svelte, cloudflare-workers, daisyui-a11y) returned no blockers: the composed git path is provably confined to `[a-z0-9-]` by `isValidId` plus the anchored date regex, the `{ path }` rest-route prerender shape and trailing-slash normalization are correct, and the index's heavy work stays in the prerender graph. Four small review findings were folded in (`77d9bf2`): the `composeDatedId` regex is end-anchored, the create guards use explicit `return bounce(...)`, the redundant input `aria-label`s are gone, and the create-date default is set client-side so SSR and hydration agree.
 
-**Decisions locked** (canonical in the design doc `docs/superpowers/specs/2026-05-31-cairn-dated-slug-design.md`): `datePrefix` is an explicit per-concept knob, not derived from the permalink; URL policy lives in the admin-editable YAML under the SSG model; public delivery is unified at the `CairnRuntime` seam behind one catch-all route; rename and delete are deferred to a content-lifecycle pass that owns internal-link rewriting but not external redirects; the settings web editor is a separate later pass.
+**Decisions locked** (canonical in the design doc `docs/specs/2026-05-31-cairn-dated-slug-design.md`): `datePrefix` is an explicit per-concept knob, not derived from the permalink; URL policy lives in the admin-editable YAML under the SSG model; public delivery is unified at the `CairnRuntime` seam behind one catch-all route; rename and delete are deferred to a content-lifecycle pass that owns internal-link rewriting but not external redirects; the settings web editor is a separate later pass.
 
 **Follow-ups (latent, not bugs under current use):**
 - The create date-in-slug guard rejects any slug opening with `^\d{4}-` on a dated concept, which is broader than the `datePrefix` strip (a `day` concept strips only a full `YYYY-MM-DD-`). A post deliberately titled to slug as `2026-recap` is refused with the "leave the date out" hint. Acceptable, since the date is captured separately; revisit if a real title trips it.

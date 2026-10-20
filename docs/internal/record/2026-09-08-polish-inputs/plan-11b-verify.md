@@ -1,8 +1,8 @@
 # Polish-11b-i and 11b-ii plans, verification read
 
 Fresh-context read, 2026-09-08, on the uncommitted plans
-`docs/superpowers/plans/2026-09-08-polish-11b-i-pass.md` (eleven tasks, two runs) and
-`docs/superpowers/plans/2026-09-08-polish-11b-ii-pass.md` (six tasks, two runs), their six args
+`docs/plans/2026-09-08-polish-11b-i-pass.md` (eleven tasks, two runs) and
+`docs/plans/2026-09-08-polish-11b-ii-pass.md` (six tasks, two runs), their six args
 files under `~/.cache/cairn-polish-11b-i/` and `~/.cache/cairn-polish-11b-ii/`, and the fold record
 `plan-11b-review-fold.md` against its three lenses. Scope: fold fidelity, executability of the nine
 named tasks, args fidelity, cross-plan consistency, and one spec edit.
@@ -34,7 +34,7 @@ an outline, `hooks.server.ts:20` outside the template fence with `:32` inside th
 enumerates the ledger population by grep", and 11b-ii `:1175` "polish-C's task 1 and task 7 find it
 where the spec says it is" (the open `OfficeList` ROADMAP item).
 
-**Measured** in `docs/superpowers/plans/2026-09-08-polish-c-pass.md`, read-only: Task 9 is `EditorRow`
+**Measured** in `docs/plans/2026-09-08-polish-c-pass.md`, read-only: Task 9 is `EditorRow`
 and the `createMediaRoute` record, Task 10 is the log vocabulary's six refusal outliers, Task 7 is
 the four preview and health names. Migration notes are reconciled by **Task 14** (the C plan says so
 at its `:162`, `:628` and `:670`); the ledger rename sweep is **Task 13** (its `grep -n "<old name>"

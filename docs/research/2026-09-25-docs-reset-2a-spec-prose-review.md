@@ -1,7 +1,7 @@
 # Pass 2a spec: prose review
 
 Reviewer: `prose-voice-reviewer` (`claude-opus-5-5`), 2026-09-25, on
-`docs/superpowers/specs/2026-09-25-docs-reset-pass-2a-design.md` and the parent's pass 2a
+`docs/specs/2026-09-25-docs-reset-pass-2a-design.md` and the parent's pass 2a
 amendment section at `73e09d7b`. Saved by the conductor from the agent's report. Specs are not
 register-graded; the review checked fidelity and cross-section consistency first.
 

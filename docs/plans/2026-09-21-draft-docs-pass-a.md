@@ -5,7 +5,7 @@ schemas, under
 `docs/reference/`, graded against a scripter-or-agent profile, with the `tool/` side moved in the
 same merge, so the `0.97.0` tarball carries them.
 
-**Spec:** `docs/superpowers/specs/2026-09-21-draft-docs-design.md`. Executors read both. Where
+**Spec:** `docs/specs/2026-09-21-draft-docs-design.md`. Executors read both. Where
 this plan and the spec disagree, stop and report.
 
 **Approach:** Move the schemas first, since a gate checks that every path a page names exists.
@@ -100,7 +100,7 @@ If any fails, stop with one combined report.
 | `tool/testdata/flags.json`, a Go test beside the cobra root, a `flags` Makefile target | 3 | the committed flag list and its drift test |
 | `scripts/checks/check-symbols.mjs`, its tests | 3 | unions `tool/testdata/flags.json` into the known flags |
 | `docs/internal/facts/reference.md` | 4 | two new `##` sections; additions to the log-events section |
-| `docs/superpowers/plans/2026-09-21-draft-docs-pass-a.mining.md` | 4 | manifests and dispositions; deleted in task 11 |
+| `docs/plans/2026-09-21-draft-docs-pass-a.mining.md` | 4 | manifests and dispositions; deleted in task 11 |
 | `docs/reference/cli-cairn-exit-codes.md` | 5 | new |
 | `docs/reference/cli-cairn-json-output.md` | 6 | new |
 | `docs/reference/cli-cairn-doctor.md` | 6b | new |

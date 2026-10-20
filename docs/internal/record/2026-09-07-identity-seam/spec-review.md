@@ -5,7 +5,7 @@ Security (the web-auth-security-reviewer agent), charter and precedent, groundin
 ---
 
 
-Object: `docs/superpowers/specs/2026-09-07-identity-seam-design.md` (DRAFT, 2026-09-07).
+Object: `docs/specs/2026-09-07-identity-seam-design.md` (DRAFT, 2026-09-07).
 Reviewer posture: skeptical, read-only. Severity vocabulary: **blocking for the spec** (the spec
 cannot be implemented safely or coherently as written), **should-fix** (implementable, but the
 design leaves an exploitable or operationally dangerous gap), **note** (residual worth stating).
@@ -661,7 +661,7 @@ missing and a configuration split that can leave the magic-link door live beside
 ---
 
 
-Object: `docs/superpowers/specs/2026-09-07-identity-seam-design.md` (DRAFT, 2026-09-07).
+Object: `docs/specs/2026-09-07-identity-seam-design.md` (DRAFT, 2026-09-07).
 Lens: the charter's premise check ("is this cairn's job, and is it the leanest form?") and the
 rulings ledger's own precedent. Read-only; no files changed.
 

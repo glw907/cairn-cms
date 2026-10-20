@@ -1,6 +1,6 @@
 # Docs-standard spec review, charter, scope, and failure-mode lens
 
-Adversarial review of `docs/superpowers/specs/2026-09-08-docs-standard-design.md` revision 1
+Adversarial review of `docs/specs/2026-09-08-docs-standard-design.md` revision 1
 (fresh context, read-only, 2026-09-08). Inputs read in full: the spec, `CLAUDE.md`
 ("What cairn is", "Documentation is a pass dimension", "Authoring", "Watch items"),
 `docs/internal/docs-register.md`, `docs/internal/what-cairn-is-and-is-not.md`, the proposal's
@@ -263,7 +263,7 @@ so a later reader knows the count is a locator and not a score.
 **Spec:** page type 11, "Proposal (internal)" (:186); templates for "one template per page type in
 the registry" (:590); the spec's own preamble deviation note (:20-28).
 
-`.vale.ini` zeroes `BasedOnStyles` for `docs/superpowers/**` and `docs/internal/**` with a stated
+`.vale.ini` zeroes `BasedOnStyles` for `docs/**` and `docs/internal/**` with a stated
 reason: internal planning docs are write-once, and grading them spends tokens on findings that do not
 matter. The register says the contributor zone has no style floor. The spec pulls internal proposals
 back under a template and `check:anatomy`, then exempts design specs on the grounds that "a design

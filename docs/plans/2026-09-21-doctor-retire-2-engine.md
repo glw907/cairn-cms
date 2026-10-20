@@ -15,7 +15,7 @@
 
 **Date:** 2026-09-21.
 
-**Spec:** [`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`](../specs/2026-09-21-doctor-retirement-design.md),
+**Spec:** [`docs/specs/2026-09-21-doctor-retirement-design.md`](../specs/2026-09-21-doctor-retirement-design.md),
 the "retire-2: the engine pass" section and the "Pre-task and retire-2" acceptance bullets. This
 plan carries the **removal half** of retire-2. The records half is
 [`2026-09-21-doctor-retire-2b-records.md`](2026-09-21-doctor-retire-2b-records.md), which runs after
@@ -24,7 +24,7 @@ this pass merges and which alone writes the unblock line. The pre-task
 docs pass A ([`2026-09-21-draft-docs-pass-a.md`](2026-09-21-draft-docs-pass-a.md)) are other plans,
 and their outputs are preconditions here, never work.
 
-**Inputs:** [`docs/internal/record/2026-09-21-doctor-retirement-inventory.md`](../../internal/record/2026-09-21-doctor-retirement-inventory.md)
+**Inputs:** [`docs/internal/record/2026-09-21-doctor-retirement-inventory.md`](../internal/record/2026-09-21-doctor-retirement-inventory.md)
 (the engine-side survey; the spec corrects it in places, and the Pre-flight findings below correct
 both).
 
@@ -190,7 +190,7 @@ spec's line numbers.
 | Field | Value |
 | --- | --- |
 | **Goal** | `cairn-doctor` leaves the engine: the bin, `src/lib/doctor/`, the printed commands, the published docs, and every gate that read the directory. The pass ends gate-green on `main` with the removal predicate empty. It does **not** write the unblock line. |
-| **Spec** | `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, the "retire-2" section and the "Pre-task and retire-2" acceptance bullets, minus the records half (the `## Unreleased` window, the ledger, ROADMAP, the STATUS unblock line), which is 2b's. |
+| **Spec** | `docs/specs/2026-09-21-doctor-retirement-design.md`, the "retire-2" section and the "Pre-task and retire-2" acceptance bullets, minus the records half (the `## Unreleased` window, the ledger, ROADMAP, the STATUS unblock line), which is 2b's. |
 | **Preconditions (all five, verified by the conductor before branching)** | (1) the `tool/v1.1.0` **tag** exists on origin; (2) its **GitHub release** exists on origin with the `tool` workflow green on its SHA; (3) the pre-task is merged to `main`; (4) retire-1 is merged to `main`; (5) **draft docs pass A is merged to `main`**, so `docs/reference/cli-cairn-doctor.md` exists and the tool's contract pages sit under `docs/reference/`. Task 1 builds the machine check for (1) and (2). The conductor verifies (3), (4), and (5) with `git log origin/main -- tool/ scripts/build/emit-tool-conditions.mjs` and `git ls-tree origin/main docs/reference/cli-cairn-doctor.md`; an empty result for (5) is a stop, because Task 6's retarget destination would not exist. |
 | **Branch and worktree** | Branch `doctor-engine`, cut off **`origin/main` at a commit that is a descendant of the commit the `tool/v1.1.0` tag points at**. Verify with `git merge-base --is-ancestor tool/v1.1.0^{commit} origin/main`. There is no "merge SHA of `v1.1.0`" to find: the tag is cut from a commit carrying retire-1 and pass A, and what this pass needs is that `origin/main` descends from it. Worktree `.claude/worktrees/doctor-engine`. |
 | **Worktree setup, mandatory** | A from-scratch `npm install` in the worktree's `examples/showcase` before any showcase build or e2e is trusted. `examples/showcase/node_modules` symlinks back to the main checkout and otherwise proves **main's** engine (CLAUDE.md, "a worktree showcase e2e proves MAIN's engine"). `rm -rf examples/showcase/node_modules examples/showcase/package-lock.json`, `npm install` at the root, then `npm install --prefix examples/showcase`. |
@@ -856,7 +856,7 @@ exist. `docs/reference/doctor.md` is gone and every inbound reference resolves.
 
 - `test ! -e docs/reference/doctor.md; echo "exit:$?"` prints `exit:0`.
 - `grep -rn 'reference/doctor' docs --include='*.md' | grep -v '^docs/internal/' | grep -v
-  '^docs/superpowers/'` returns exactly one line, `docs/extend/migration-notes.md:151`, with its
+  '^docs/'` returns exactly one line, `docs/extend/migration-notes.md:151`, with its
   past-version exemption stated in the report.
 - `grep -rn 'cairn-doctor' docs/admin docs/extend docs/reference docs/editors docs/why-cairn.md`
   returns nothing except inside `migration-notes.md`'s past-version entries, which the report
@@ -1004,7 +1004,7 @@ retire-2 requirement maps to exactly one task across the two plans.**
 | Transcripts `02` and `03` leave; the `01` captures **stay and gain a README staleness note** (spec correction) | 5 |
 | A new `cairn doctor` transcript meets `is-it-working.md`'s floor of 1; the capture procedure is in the README; the floor is not lowered | 5 |
 | The string-assertion tests follow; `substitute.test.mjs`'s twin assertion follows | 5 (strings), 4 (the twin, with the JSON) |
-| The 21 published-arm files are in scope; `docs/internal` and `docs/superpowers` are not swept; past-version `migration-notes.md` entries are not swept | 6 |
+| The 21 published-arm files are in scope; `docs/internal` and `docs/{plans,research,specs}` are not swept; past-version `migration-notes.md` entries are not swept | 6 |
 | `docs/reference/doctor.md` leaves; the cross-arm links retargeted to `docs/reference/cli-cairn-doctor.md` or unlinked; `CHANGELOG.md`'s past-version links saved by `LEGACY_PATH_MAP` | 6 |
 | A reference page for `site-facts.json` arrives | pre-task (precondition) |
 | The five stale-step replacements, the App-key step's positive artifact, and the workers.dev manual check | 6 |

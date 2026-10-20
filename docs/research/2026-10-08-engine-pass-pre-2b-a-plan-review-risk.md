@@ -1,7 +1,7 @@
 # Plan review, domain-risk lens: engine pass A before stage 2b
 
 **Target:** `docs/superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md` at `504b82f0` (`main`).
-**Spec:** `docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md`.
+**Spec:** `docs/specs/2026-10-07-engine-pass-pre-2b-design.md`.
 **Lens:** domain risk (auth, sessions, signing, D1, the commit path). Code read on `main`, never
 `.claude/worktrees/`.
 **Bar:** this review flags only correctness and data-loss gaps, ranked by consequence, plus

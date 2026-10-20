@@ -1,6 +1,6 @@
 # Style-guide sync spec: fold record
 
-Fold of the four-lens review into `docs/superpowers/specs/2026-09-28-style-guide-sync-design.md`
+Fold of the four-lens review into `docs/specs/2026-09-28-style-guide-sync-design.md`
 (branch `style-guide-sync`, reviews at `36f50347`). One disposition per finding; duplicates across
 lenses fold once and list every id.
 
@@ -122,7 +122,7 @@ charter row. Geoff reviews these with the owner rulings.
 
 ## Errata owed (ratified documents not edited here)
 
-1. **`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`** (on `draft-docs-0`):
+1. **`docs/specs/2026-09-26-draft-docs-approach-design.md`** (on `draft-docs-0`):
    line 17 "No new check is built" and the retirement row at line 88 (`check:headings`,
    markdownlint as a gate) are superseded for structural checks by R2 and R3. If owner ruling 3 is
    no, line 160's "merges to `main` before the next starts" also takes an erratum for this pass.
@@ -209,7 +209,7 @@ spec change is needed.
 1. **Repo `CLAUDE.md`, "Authoring" section:** "On top of the Google floor, every published docs
    page follows the register standard" becomes "base" (the style-guide sense of ruling 2 and R1).
    The same sentence should name the drafting briefs once R1 lands.
-2. **`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`:** line 17 "No new check is
+2. **`docs/specs/2026-09-26-draft-docs-approach-design.md`:** line 17 "No new check is
    built" and the retirement row (`check:headings`, markdownlint as a gate) are superseded for
    structural checks by R2 and R3. The first fold's conditional erratum on line 160
    (merge-before-next) is withdrawn: ruling 9 keeps the rule as written.

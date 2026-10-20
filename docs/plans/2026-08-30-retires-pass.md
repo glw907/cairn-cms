@@ -22,7 +22,7 @@ the worktree symlink trap post-install.
 `docs/internal/api-surface.md`, `scripts/checks/check-surface-reexports.json`,
 `scripts/checks/check-rulings-format-allowlist.json`, `CHANGELOG.md`,
 `docs/extend/migration-notes.md`.
-**Spec:** `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md` (slice
+**Spec:** `docs/specs/2026-08-27-audit-remediation-initiative-design.md` (slice
 3; standing constraints apply verbatim).
 
 **The ratified input and the counts as executed (the record's tables plus the two ruled

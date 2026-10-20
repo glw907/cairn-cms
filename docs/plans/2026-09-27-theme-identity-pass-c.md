@@ -8,16 +8,16 @@ skill, `cairn-public`, teaches a designer and an implementer the contract. A sec
 the contract as a standing fixture, and the Waymark render does not move. The close merges passes
 B and C to `main` together and cuts `0.98.0`.
 
-**Spec:** `docs/superpowers/specs/2026-09-27-theme-identity-pass-b-design.md`, approved by Geoff
+**Spec:** `docs/specs/2026-09-27-theme-identity-pass-b-design.md`, approved by Geoff
 2026-09-27. This plan covers pass C only: the spec's "Pass C: one public theme", the pass C half of
 "Proof" (probes 2 and 3, the fixture, the rule fixtures), the pass C half of "Documentation and
 records", and "Delivery"'s pass C list and "Sequencing and release". Where the spec defers to it,
-the parent spec `docs/superpowers/specs/2026-09-26-theme-identity-design.md` governs. Evidence and
-record: the fold record `docs/superpowers/research/2026-09-27-theme-pass-b-fold.md` (its fifth
+the parent spec `docs/specs/2026-09-26-theme-identity-design.md` governs. Evidence and
+record: the fold record `docs/research/2026-09-27-theme-pass-b-fold.md` (its fifth
 fold's "Trim: what moved where" holds the resolver internals, the walkthrough's line-level fixes,
 and the probe-retry process), its verification
-`docs/superpowers/research/2026-09-27-theme-pass-b-fold-verification.md`, the designer friction
-log `docs/superpowers/research/2026-09-27-theme-designer-friction-log.md`, and the nine
+`docs/research/2026-09-27-theme-pass-b-fold-verification.md`, the designer friction
+log `docs/research/2026-09-27-theme-designer-friction-log.md`, and the nine
 `2026-09-27-theme-pass-b-review-*.md` lens reviews. Executors read the spec sections their task
 names. Where this plan and the spec disagree, stop and report, except the decisions recorded
 under "Decisions this plan takes".
@@ -513,7 +513,7 @@ gaps this plan found while verifying the spec against the tree.
 ## Rulings for Geoff
 
 One question for the plan-approval sitting. Everything else the review raised is folded or
-refused in `docs/superpowers/research/2026-09-27-theme-pass-c-plan-fold.md`. Decision 7's
+refused in `docs/research/2026-09-27-theme-pass-c-plan-fold.md`. Decision 7's
 `app.html` regex is not on this list: keeping the two names gives a stale cookie a graceful
 fallback instead of pinning a visitor to the default block, a behavioral reason with a clear
 answer, and the unit check guards agreement.
@@ -798,7 +798,7 @@ expectation unchanged. An expectation regenerated after the move voids the test.
 **Files:** `src/lib/public/cairn-public.css` (the ink, muted, and shadow defaults),
 `examples/showcase/src/theme/theme.css`, a new measurement script
 `scripts/lab/measure-status-inks.mjs`, a new record
-`docs/superpowers/research/<date>-theme-pass-c-ink-derivation.md`, a new
+`docs/research/<date>-theme-pass-c-ink-derivation.md`, a new
 `scripts/lab/theme-fixture/theme.css` (its two daisyUI blocks only), the snapshot file if a default
 string it pins changes, `scripts/checks/check-public-tokens.mjs` (its ink reader only, decision
 26), and `templates/waymark/**` (re-emitted).
@@ -1787,7 +1787,7 @@ cairn-pass ritual:
   the draft docs stages also need page-level intent. Write
   `docs/internal/record/<date>-theme-contract-docs-input.md`, an outline input for draft docs
   stage 2 (extend) and stage 5 (the front door), in the form the draft docs approach spec
-  (`docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`) takes outline inputs. It
+  (`docs/specs/2026-09-26-draft-docs-approach-design.md`) takes outline inputs. It
   covers passes A, B, and C together: each narrative page the theme work creates, changes, or
   retires (at least `design-your-site.md`, a theme-building task guide if the contract warrants
   one, and the custom admin screen pages the `./admin` and `./public` split touches), each with

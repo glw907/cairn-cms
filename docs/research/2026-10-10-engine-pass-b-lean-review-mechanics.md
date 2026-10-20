@@ -1,6 +1,6 @@
 # Engine pass B lean plan: mechanics and feasibility review
 
-Lens: mechanics and feasibility. Target: `docs/superpowers/plans/2026-10-10-engine-pass-b-lean.md`
+Lens: mechanics and feasibility. Target: `docs/plans/2026-10-10-engine-pass-b-lean.md`
 and its prompt at `18cd15db`, with the old plan binding by reference. Every claim below comes from a
 quoted source or a probe. The probes were read-only and ran under `~/.cache/plan-review-mechanics/`
 or as `git merge-tree`, `git show`, and `gh api` reads.
@@ -105,7 +105,7 @@ Counts: 1 blocker, 4 major, 14 minor, 1 owner fork.
      Resume rule assumes, `.claude/worktrees/engine-pass-b` and branch `worktree-engine-pass-b`
      already exist. The tool's contract covers only an existing worktree "via `path`".
   2. The prompt has the session read
-     `.claude/worktrees/engine-pre-2b-b/docs/superpowers/plans/...` after `EnterWorktree` moved its
+     `.claude/worktrees/engine-pre-2b-b/docs/plans/...` after `EnterWorktree` moved its
      cwd into `.claude/worktrees/engine-pass-b`, where that relative path does not exist.
   3. Before PB-T0's merge, the old plan read by its relative path is `main`'s copy, which lacks
      the Task 0 Ledger the plan cites (`git diff --stat origin/main engine-pre-2b-b -- <old plan>`:

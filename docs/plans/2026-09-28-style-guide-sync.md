@@ -19,9 +19,9 @@ packages, a short register supplement per guide with three to five exemplars, tw
 rules at warning with `vale test` cases, and the register editor working a checklist plus Vale's
 output.
 
-**Spec:** `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/style-guide-sync/docs/superpowers/specs/2026-09-28-style-guide-sync-design.md`
+**Spec:** `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/style-guide-sync/docs/specs/2026-09-28-style-guide-sync-design.md`
 (rulings 1 to 20, the Sources list, and criteria 1 to 8). Leanness record:
-`docs/superpowers/research/2026-09-28-style-guide-sync-leanness.md`.
+`docs/research/2026-09-28-style-guide-sync-leanness.md`.
 
 **Pass class:** mixed, per task. Each task carries `passClass` in the runner args.
 **Token ceiling:** 6M for the remainder (ruling 20). **Checkpoint:** every segment boundary, any

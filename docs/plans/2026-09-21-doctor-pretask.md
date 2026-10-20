@@ -10,9 +10,9 @@
 
 **Date:** 2026-09-21.
 
-**Spec:** `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, the "Pre-task" section
+**Spec:** `docs/specs/2026-09-21-doctor-retirement-design.md`, the "Pre-task" section
 and the pre-task half of "Acceptance". This plan covers that scope only. The engine removal is
-`docs/superpowers/plans/2026-09-21-doctor-retire-2-engine.md`; the Go pass is retire-1.
+`docs/plans/2026-09-21-doctor-retire-2-engine.md`; the Go pass is retire-1.
 
 **This pass does not cut a release.** No `npm version`, no tag, no publish. Every entry lands under
 `CHANGELOG.md`'s `## Unreleased` and `package.json` is untouched.
@@ -194,7 +194,7 @@ them red is a real finding, not noise from the other.
 | Field | Value |
 | --- | --- |
 | **Goal** | Land the three pre-task deliverables on `main` so retire-1 can branch: the committed conditions mirror under `tool/` with its drift gate and CI workflow, the built-and-verified `site-facts.json` cross-language contract, and the two `conditions.ts` rewordings of ruling 3a. |
-| **Spec** | `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md` ("Pre-task"; the pre-task bullets of "Acceptance"). |
+| **Spec** | `docs/specs/2026-09-21-doctor-retirement-design.md` ("Pre-task"; the pre-task bullets of "Acceptance"). |
 | **Place in the order** | Step 2 of the spec's five-step Choreography: B2's tool 1.0 merges, **this pass**, retire-1 merges untagged, draft docs pass A, `tool/v1.1.0` tagged and released, retire-2 last. |
 | **Pass precondition** | See below: one check to execute, two more to merge. Execution may start before B2 merges; the merge may not. |
 | **Branch** | `doctor-pretask`, off `origin/main`. |

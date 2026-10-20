@@ -18,7 +18,7 @@ default and the documented primary path. This seam is the supported second chann
 your auth" menu.
 
 The driving consumer is the xcathletes team platform (ecxc-ski
-`docs/superpowers/plans/2026-07-30-team-platform-pass-1.md`, Task 4). Its requirements are this
+`docs/plans/2026-07-30-team-platform-pass-1.md`, Task 4). Its requirements are this
 spec's floor, with one deliberate deviation recorded below.
 
 ## The acceptance test

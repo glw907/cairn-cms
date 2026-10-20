@@ -3,7 +3,7 @@
 Compiled read-only from `docs/HISTORY.md`, `docs/STATUS.md`, `ROADMAP.md`,
 `docs/internal/docs-friction-log.md`, `docs/internal/engine-rulings.md`, the
 2026-08-26 any-site audit records (`docs/internal/record/2026-08-26-any-site-audit/`), the
-2026-08-29/30 foundations and retires records, and `docs/superpowers/plans/2026-09-01-conformance-pass.md`
+2026-08-29/30 foundations and retires records, and `docs/plans/2026-09-01-conformance-pass.md`
 (the 4b plan). Every item is checked against **current `main`** (HEAD at compile time,
 `ea45e182`), not against what a prior record says happened — the discipline this docket
 exists to enforce, after a prior docket (`2026-09-01-4b-planning-inputs`) transcribed a
@@ -93,7 +93,7 @@ not a ledger item — an inheritance note only, in the move-set record and echoe
 **Source:** `docs/internal/record/2026-08-26-any-site-audit/coherence-v2.md:839-842` (R-0's
 two clauses); `docs/internal/record/2026-08-29-foundations-a-move-set.md:39-43`
 (inheritance note 4, the authoritative "not yet discharged" statement);
-`docs/superpowers/plans/2026-08-28-foundations-a-pass.md:242` ("R-0's second direction
+`docs/plans/2026-08-28-foundations-a-pass.md:242` ("R-0's second direction
 (ratified, not yet discharged; no owning slice)").
 
 **Prescribed shape:** R-0 reads *"A fact with one source is read from that source, never
@@ -143,7 +143,7 @@ rows as cited above, unrelated in scope to the still-open standing-gate ask.
 
 ## 4. The six stale `content-routes-*` header wordings
 
-**Source:** `docs/superpowers/plans/2026-08-28-foundations-b-pass.md:528-536` (the
+**Source:** `docs/plans/2026-08-28-foundations-b-pass.md:528-536` (the
 foundations B post-mortem's "Carried follow-ups" §2) — **not** the any-site audit; STATUS's
 `content-routes-context.ts:272` anchor traces here, not to the audit records.
 
@@ -238,7 +238,7 @@ no longer has its own subpath row, the indexed-access expression a consumer now 
 value through.
 
 **This item has a live consumer already landing under it.** 4b's Task 1
-(`docs/superpowers/plans/2026-09-01-conformance-pass.md:130-199`) ships a
+(`docs/plans/2026-09-01-conformance-pass.md:130-199`) ships a
 `NonNullable<ContentFormFailure['usage']>[number]` recovery line for the retired
 `UsageEntry`, explicitly depending on this convention (per the plan's own hands-forward
 note, `:965`, "which Task 1's recovery line depends on, noted in its ledger close"). The
@@ -283,7 +283,7 @@ whole ledger citation.
 
 ## 9. `MarkdownEditor`'s seam collapse
 
-**Source:** `docs/superpowers/plans/2026-08-30-conventions-pass.md:836-838` (the routing
+**Source:** `docs/plans/2026-08-30-conventions-pass.md:836-838` (the routing
 sentence: *"`MarkdownEditor`'s seam collapse... (internals)"*);
 `docs/internal/record/2026-08-26-any-site-audit/int-rank-components-editor.md:162-229`
 (the full prescription); `docs/internal/record/2026-08-26-any-site-audit/int-verify-components-editor.md:117-154`
@@ -331,7 +331,7 @@ component's own wiring props are due to be re-examined."*
 
 ## 10. The dogfood tripwire
 
-**Source:** `docs/superpowers/plans/2026-08-30-conventions-pass.md:836-838` (routing
+**Source:** `docs/plans/2026-08-30-conventions-pass.md:836-838` (routing
 sentence); `docs/internal/record/2026-08-26-any-site-audit/rank-cli-surface.md:48-73`
 (Rank 1, "retire the proposal"); `docs/internal/record/2026-08-26-any-site-audit/verify-cli-surface.md:86-90`
 (verified); `docs/internal/record/2026-08-26-any-site-audit/coherence-v2.md:602-654` (C13,
@@ -362,7 +362,7 @@ full text was not re-quoted in this docket).
 
 ## 11. The `SITE_CONFIG_PATHS`-from-bake-constant derivation
 
-**Source:** `docs/superpowers/plans/2026-08-30-conventions-pass.md:836-838` (routing
+**Source:** `docs/plans/2026-08-30-conventions-pass.md:836-838` (routing
 sentence); `docs/internal/record/2026-08-26-any-site-audit/coherence-v2.md:189-233` (C3, in
 full) and `:879-885` (R-8); ledger `audit-cli-config-site-config-check`
 (`docs/internal/engine-rulings.md:4735-4741`).
@@ -406,7 +406,7 @@ half-closed as described above.
 ## 12. The editors-page quote-drift tripwire
 
 **Source:** `docs/internal/docs-friction-log.md:161-166` (`contributor`, open finding);
-`docs/superpowers/plans/2026-08-30-conventions-pass.md:938,951` (post-mortem + hands-forward,
+`docs/plans/2026-08-30-conventions-pass.md:938,951` (post-mortem + hands-forward,
 "the quote-drift tripwire" routed to internals).
 
 **Prescribed shape:** the bolded copy quotes in `docs/editors/when-something-goes-wrong.md`
@@ -432,7 +432,7 @@ does what this item asks. **Ledger:** none — friction-log and plan post-mortem
 
 **Source:** `docs/HISTORY.md`'s 2026-09-01 "conventions pass" entry (*"Local `check:vale`
 reports 18 errors in three docs main's CI passes; reconcile before trusting local vale as a
-gate."*); `docs/superpowers/plans/2026-08-30-conventions-pass.md:939,951`.
+gate."*); `docs/plans/2026-08-30-conventions-pass.md:939,951`.
 
 **Prescribed shape:** reconcile the local Vale install against CI's before treating a local
 `npm run check:vale` result as trustworthy.
@@ -456,7 +456,7 @@ only, not an audit-ledgered item.
 
 ## 14. The engine-wide access-semantics question
 
-**Source:** `docs/superpowers/plans/2026-09-01-conformance-pass.md:407-414` (Task 5's
+**Source:** `docs/plans/2026-09-01-conformance-pass.md:407-414` (Task 5's
 design note, in full) and `:960-970` (hands-forward, "NEW from this plan's review"). This
 item did not exist before 4b's round-1 security review; it is new, not inherited from the
 any-site audit.

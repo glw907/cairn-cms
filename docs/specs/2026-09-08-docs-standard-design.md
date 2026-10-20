@@ -1,7 +1,7 @@
 # A documentation standard for cairn: design
 
 **Status:** revision 3, 2026-09-08. Derived from the approved proposal at
-[`docs/internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md`](../../internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md).
+[`docs/internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md`](../internal/record/2026-09-08-polish-inputs/docs-standard-proposal.md).
 The proposal carries the evidence and the reasoning behind every rule here, and its reviews and
 research sit beside it in the same directory. This spec restates two things as requirements: the
 eleven decisions the owner adopted with the proposal, and three further directions the owner gave on
@@ -24,9 +24,9 @@ section orders. It also
 needs the adopted decisions with their sizes, an implementation order in pass-sized units, the
 acceptance criteria for each unit, the risks, the decisions the owner still owes, and the items the
 owner still owes. Exemplars: the Go design document for monotonic time
-([`corpus-sample-go-design.md`](../../internal/record/2026-09-08-polish-inputs/corpus-sample-go-design.md))
+([`corpus-sample-go-design.md`](../internal/record/2026-09-08-polish-inputs/corpus-sample-go-design.md))
 and KEP-2400
-([`corpus-sample-kep-node-swap.md`](../../internal/record/2026-09-08-polish-inputs/corpus-sample-kep-node-swap.md)).
+([`corpus-sample-kep-node-swap.md`](../internal/record/2026-09-08-polish-inputs/corpus-sample-kep-node-swap.md)).
 The section order below is the Go document's spine, which runs abstract, background, proposal,
 rationale, compatibility, implementation. Deviations, each with its reason:
 
@@ -38,7 +38,7 @@ rationale, compatibility, implementation. Deviations, each with its reason:
 - Rationale is present but short. It carries only the reasoning this document adds beyond the
   proposal; repeating the proposal's own reasoning would produce a second copy that drifts.
 - The decisions table, the owner-decisions table, and the acceptance criteria are this repository's
-  own spec convention, held by every spec under `docs/superpowers/specs/`. Decisions sits before
+  own spec convention, held by every spec under `docs/specs/`. Decisions sits before
   Compatibility because Compatibility is written against the adopted set. Risks sits after
   Implementation because most risks are unit risks.
 - The registry folds the proposal's "condition entry and symptom row" bullet into the reference
@@ -71,7 +71,7 @@ Two rules stand above the four parts:
 ## Background
 
 The failure that produced this standard is recorded in
-[`front-door-net-failure.md`](../../internal/record/2026-09-08-polish-inputs/front-door-net-failure.md).
+[`front-door-net-failure.md`](../internal/record/2026-09-08-polish-inputs/front-door-net-failure.md).
 The rejected front-door draft opened with a story about editors emailing the owner changes, and
 that never happened. It said that starting a cairn site needs a developer, which the admin track's
 own promise contradicts. Its sentences were built as hinged pairs at a rate no human page then
@@ -257,7 +257,7 @@ requirement governs.
 No internal type is in the registry. Internal planning documents are not graded, which owner
 decision 2 settles, so a spec, a plan, a post-mortem, and a record carry no page type and no
 template, and they stay outside the Vale gates that `.vale.ini` exempts for `docs/internal/**` and
-`docs/superpowers/**`. Every structure gate is scoped to published paths only.
+`docs/**`. Every structure gate is scoped to published paths only.
 
 Four rules hold at this level:
 
@@ -321,7 +321,7 @@ template cost. Every review after it is the first part of a stage's tuning check
 its per-type numbers from that stage's record rather than counting them a second time.
 
 **What here is precedented and what is not.** The field survey at
-[`research-agent-run-docs-lifecycle.md`](../../internal/record/2026-09-08-polish-inputs/research-agent-run-docs-lifecycle.md)
+[`research-agent-run-docs-lifecycle.md`](../internal/record/2026-09-08-polish-inputs/research-agent-run-docs-lifecycle.md)
 found the registry itself, the human adjudication of every proposed change, and the fixed review
 cadence all well attested, at Cloudflare, Kubernetes, GitLab, PostHog, and GitBook. It found no
 published precedent for a per-type outcome record or for a trigger that fires when a brief cannot
@@ -526,7 +526,7 @@ The proposal names the candidate entries per page type, with the excerpt each wo
 them, or naming the ones to swap, is decision 7 and remains the owner's action. Three entries exist
 today as samples, all unapproved: the SQLite scope excerpt, the Go design document excerpt, and the
 KEP-2400 excerpt, all in
-[`docs/internal/record/2026-09-08-polish-inputs/`](../../internal/record/2026-09-08-polish-inputs/).
+[`docs/internal/record/2026-09-08-polish-inputs/`](../internal/record/2026-09-08-polish-inputs/).
 A second editors entry is owed and must be chosen by hand, because the Mozilla support articles
 block automated reads.
 
@@ -588,7 +588,7 @@ rather than for one page.
 
 The rejected front-door draft would fail this check. Its editors-emailing-the-owner story resolves
 to no line in
-[`front-door-author-brief.md`](../../internal/record/2026-09-08-polish-inputs/front-door-author-brief.md),
+[`front-door-author-brief.md`](../internal/record/2026-09-08-polish-inputs/front-door-author-brief.md),
 so the sentence carries no id it could cite, and leaving it unclassified fails the build outright.
 Marking it `no-claim` would pass the script and fail the reviewer, because a narrative assertion
 recorded as claiming nothing is visible in the brief rather than invisible in the prose. The check
@@ -988,7 +988,7 @@ Acceptance criteria:
 - The manifest carries source, license, fetch date, page type, track, measured numbers, and an
   approval column for every entry.
 - Every committed entry is at most 400 words and carries a `## Source` section in the shape of
-  [`corpus-sample-sqlite.md`](../../internal/record/2026-09-08-polish-inputs/corpus-sample-sqlite.md).
+  [`corpus-sample-sqlite.md`](../internal/record/2026-09-08-polish-inputs/corpus-sample-sqlite.md).
 - Every table-shaped entry is marked structure-only, and every entry whose license blocks
   redistribution is marked reference-only with its numbers and no excerpt.
 - The three existing samples are migrated into the corpus directory or superseded, and the record
@@ -1109,7 +1109,7 @@ once, instead of editing a page and rebuilding it afterwards.
 
 **Amendment 2026-09-08 (evening), from the polish spec revision 4 fold.** Three sentences above are
 superseded by Geoff's rulings of that evening, recorded in
-`docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4. First, "Polish-B folds here
+`docs/specs/2026-09-08-polish-passes-design.md` revision 4. First, "Polish-B folds here
 except its code half. Tasks 2, 8, and 9 and the `check:reference` change in task 5 stay in polish-B,
 which merges before the harvest branches" no longer holds, because polish-B dissolved and polish-A
 split into slices 11a and 11b. Task 8's custom-screen example is polish-C's task 1; task 9's records

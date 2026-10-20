@@ -23,7 +23,7 @@ Spacing: label 4px, control 8px, group 16px, section 24px.
 ## Ratified rulings (2026-07-27, Pass 2 brainstorm)
 
 Recorded canonically in the design spec's Amendments section
-(`docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`, section 13).
+(`docs/specs/2026-07-27-cairn-design-infrastructure-design.md`, section 13).
 Each type entry below now has a destination; the entries retire from this file when Pass 2's
 normalization migration lands and the baselines regenerate.
 
@@ -194,7 +194,7 @@ Four questions the rendered audit raised against cairn's own admin, ruled by Geo
 rules in the same task. These are recorded deviations now, not open questions: each one names a
 number the audit will not re-litigate, and the first entry is a measured value that stays below a
 standard's floor on purpose. Canonical record: the plan
-(`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, Task 16b).
+(`docs/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, Task 16b).
 
 **Ruling 1: `touch-targets` enforces 24x24, not 44x44.** Spec 6.3 set 44x44, which is WCAG 2.2's AAA
 criterion 2.5.5 (Target Size Enhanced). The bar cairn can honestly claim is AA, whose own target-size

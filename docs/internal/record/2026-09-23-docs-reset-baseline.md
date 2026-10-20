@@ -217,7 +217,7 @@ source-read log or per-page reports, so this record folds in no site-round evide
 ## Pass A's documented failures
 
 These come from the pass A plan's segment 2 boundary and post-mortem
-(`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md`) and from this record's ground truth.
+(`docs/plans/2026-09-21-draft-docs-pass-a.md`) and from this record's ground truth.
 
 - **P1, joined neighbour entries.** "The fact read finds sentences the drafter composed by
   joining neighbouring manifest entries." A fact read caught them after drafting; no gate did.

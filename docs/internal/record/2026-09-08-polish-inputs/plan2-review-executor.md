@@ -3,7 +3,7 @@
 Lens: EXECUTION UNDER THE CHAIN. The plan is read as the Sonnet `cairn-implementer` would read it
 cold, with zero conversation context, inside a dedicated worktree, driven by
 `~/.claude/workflows/pass-execute-chains.js`. Read-only review; no file in the plan's scope was
-edited. Target: `docs/superpowers/plans/2026-09-08-docs-toolset-pass.md` (revision 1). Repository
+edited. Target: `docs/plans/2026-09-08-docs-toolset-pass.md` (revision 1). Repository
 state read at `main` `d565ab77` plus the owner's uncommitted figures working tree.
 
 Everything below is a defect in the plan as an executable artifact, not a disagreement with the

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown, `prose-guard` (the writing-voice gate), `git` (two repos).
 
-**Design spec:** `docs/superpowers/specs/2026-06-04-cairn-docs-phase-6-process-design.md`.
+**Design spec:** `docs/specs/2026-06-04-cairn-docs-phase-6-process-design.md`.
 
 ---
 
@@ -180,7 +180,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ### Task 4: Reconcile the initiative spec and verify the memory
 
-**Files:** Modify `~/Projects/cairn-cms/docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`. Read `~/.claude/projects/-home-glw907-Projects-cairn-cms/memory/docs-is-a-pass-dimension.md`.
+**Files:** Modify `~/Projects/cairn-cms/docs/specs/2026-06-04-cairn-docs-initiative-design.md`. Read `~/.claude/projects/-home-glw907-Projects-cairn-cms/memory/docs-is-a-pass-dimension.md`.
 
 - [ ] **Step 1: Reconcile the backlog wording in the initiative spec**
 
@@ -193,8 +193,8 @@ Read the memory. It already states the rule, the friction-capture-from-two-persp
 - [ ] **Step 3: Verify**
 
 ```bash
-prose-guard docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md
-grep -n -i backlog docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md
+prose-guard docs/specs/2026-06-04-cairn-docs-initiative-design.md
+grep -n -i backlog docs/specs/2026-06-04-cairn-docs-initiative-design.md
 ```
 
 Expected: no blocking tell, and the remaining `backlog` mentions read consistently (the out-of-scope or no-backlog statements, not a triage target that contradicts the codified rule).
@@ -202,7 +202,7 @@ Expected: no blocking tell, and the remaining `backlog` mentions read consistent
 - [ ] **Step 4: Commit in cairn-cms**
 
 ```bash
-git add docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md
+git add docs/specs/2026-06-04-cairn-docs-initiative-design.md
 git commit -m "Reconcile the docs-initiative spec triage target to ROADMAP and STATUS
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
@@ -219,7 +219,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] **Step 1: Run the full Phase 6 gate**
 
 ```bash
-for f in ~/.dotfiles/claude/.claude/skills/cairn-pass/SKILL.md ~/.dotfiles/claude/.claude/skills/site-pass/SKILL.md CLAUDE.md docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md; do
+for f in ~/.dotfiles/claude/.claude/skills/cairn-pass/SKILL.md ~/.dotfiles/claude/.claude/skills/site-pass/SKILL.md CLAUDE.md docs/specs/2026-06-04-cairn-docs-initiative-design.md; do
   prose-guard "$f" 2>&1 | grep -iE 'em.dash|banned|structural|marketing' | grep -viE 'anaphora|tricolon|burstiness|passive|soft' && echo "  ^^blocking in $f"
 done
 echo "(no ^^blocking line means the gate is clean)"
@@ -242,7 +242,7 @@ Update the `cairn-docs-initiative` memory description and body to record Phase 6
 - [ ] **Step 5: Commit and confirm clean**
 
 ```bash
-git add docs/STATUS.md docs/superpowers/plans/2026-06-04-cairn-docs-phase-6-process.md
+git add docs/STATUS.md docs/plans/2026-06-04-cairn-docs-phase-6-process.md
 git commit -m "Record docs Phase 6 landed; initiative complete, point STATUS at P4
 
 Co-Authored-By: Claude <noreply@anthropic.com>"

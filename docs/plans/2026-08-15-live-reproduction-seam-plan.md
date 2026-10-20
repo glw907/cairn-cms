@@ -22,7 +22,7 @@ the styleguide, and the editors rewrite authors the real ones later.
 remark/rehype plugins on the engine's `createRenderer` seams, vitest (the engine's `unit`,
 `unit-dist-spawn`, and browser `component` projects), `playwright` for the recorded probe.
 
-**Spec:** cairn-pub `docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md`
+**Spec:** cairn-pub `docs/specs/2026-08-15-live-reproduction-seam-design.md`
 (branch `pass-d-docs-tracks`; as amended 2026-08-15 after the plan review). The spec is the
 contract; where a task summary and the spec disagree, the spec wins and the disagreement is
 raised, not resolved silently.
@@ -470,7 +470,7 @@ pass itself.
   cairn-cms `docs/STATUS.md`: Pass 1 shipped, immediate next action is Pass 2 with its
   repo (`~/Projects/cairn-pub`), branch (`pass-d-docs-tracks`), and resume prompt
   ("Execute Pass 2 of the live-reproduction seam plan, cairn-cms
-  docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md, from Task B1").
+  docs/plans/2026-08-15-live-reproduction-seam-plan.md, from Task B1").
   Commit and push `main`.
 
 ---

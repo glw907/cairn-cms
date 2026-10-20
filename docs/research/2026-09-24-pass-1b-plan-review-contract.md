@@ -1,7 +1,7 @@
 # Pass 1b plan review: contract and criteria
 
 **Target:** `docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md` at `dc37e38b`, against the
-fixed spec `docs/superpowers/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`.
+fixed spec `docs/specs/2026-09-24-docs-reset-pass-1b-validation-design.md`.
 **Lens:** does every spec rule land in a task with a checkable, non-vacuous criterion, and do the
 four planning-miss items hold. **Reviewer:** `claude-opus-5-5`, one read, 2026-09-24.
 
@@ -18,7 +18,7 @@ Code facts checked against HEAD for this review (quoted, not recalled):
 - No automatic rerun exists in the runner: `grep rerun|attempt` over `lib/*.ts` and `run.ts` finds
   only the token-mint retry at `run.ts:159`. Pass 1's reruns were a separate batch
   (`validation-rerun-20260924`).
-- `lib/prepare-class.ts:414` already excludes `docs/internal/record`, `docs/superpowers`, and
+- `lib/prepare-class.ts:414` already excludes `docs/internal/record`, `docs/{plans,research,specs}`, and
   `scripts/docs-readers` from repository exports.
 
 ## Blockers

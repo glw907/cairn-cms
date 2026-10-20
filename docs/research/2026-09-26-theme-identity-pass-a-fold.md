@@ -135,7 +135,7 @@ three findings a reviewer flagged as owner forks were settled by the owner befor
 ## Second fold
 
 Input: the fold verification
-(`docs/superpowers/research/2026-09-26-theme-identity-pass-a-fold-verification.md`), 1 major and
+(`docs/research/2026-09-26-theme-identity-pass-a-fold-verification.md`), 1 major and
 10 minors. Each finding was checked against the tree before it was folded. The only spec edit is
 the Delivery section's sequencing sentence. No gate was run.
 
@@ -179,7 +179,7 @@ Item 6's dispatch adds about 0.2M. The task 0 row is now 0.5M, and the planned t
 ## Prose review fold
 
 Input: the prose and fidelity review
-(`docs/superpowers/research/2026-09-26-theme-identity-pass-a-prose-review.md`), 5 blockers, 14
+(`docs/research/2026-09-26-theme-identity-pass-a-prose-review.md`), 5 blockers, 14
 warnings, and 12 suggestions. Each finding was checked against the tree before it was folded. The
 conductor decided W8, W13, W2, and the resume trigger; those are applied as decided. Only the
 plan changed. No gate was run.

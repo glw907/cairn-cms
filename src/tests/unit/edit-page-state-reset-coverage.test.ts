@@ -1,7 +1,7 @@
 // EditPage.svelte carries roughly fifty `$state`/`$state.raw` declarations, and the entry-key
 // reset ($effect.pre, keyed on entryKey) only ever covered a hand-picked fraction of them: task
 // 11's audit found `uploadedRecords` missing (a same-route link hop carried entry A's uploaded
-// media records into entry B's save payload, docs/superpowers/plans/2026-09-03-internals-b-pass.md
+// media records into entry B's save payload, docs/plans/2026-09-03-internals-b-pass.md
 // Task 11). This test parses the real source so a NEW `$state` declaration added later without an
 // explicit decision (reset it, or mark it exempt with a reason) fails the gate instead of silently
 // widening the same gap. It is a source-enumeration test, not a runtime one: it never mounts any

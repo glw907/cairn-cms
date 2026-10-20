@@ -5,11 +5,11 @@ Status: approved design, pre-plan. Authored 2026-05-31.
 This design gives dated content concepts a split identity so recurring titles get clean,
 unique URLs, and it moves a site's URL policy into the admin-editable YAML config under a
 static-site-generator model. It supplements the functional spec at
-`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`, which holds the locked
+`docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`, which holds the locked
 architecture, and the public-delivery design at
-`docs/superpowers/specs/2026-05-30-cairn-public-delivery-design.md`, which landed the read
+`docs/specs/2026-05-30-cairn-public-delivery-design.md`, which landed the read
 side. It ships as engine version `0.8.0`. The numbered plan derived from this design lands
-under `docs/superpowers/plans/`; its number is settled at planning time.
+under `docs/plans/`; its number is settled at planning time.
 
 ## Why this design exists
 

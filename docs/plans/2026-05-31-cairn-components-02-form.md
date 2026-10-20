@@ -8,7 +8,7 @@
 
 **Tech Stack:** Svelte 5 runes, DaisyUI 5, the engine's `serializeComponent`/`validateComponent`/`emptyValues` (Plan 1), `vitest-browser-svelte` (Playwright chromium) for component tests, the node `unit` project for the pure helper.
 
-**Design reference:** `docs/superpowers/specs/2026-05-31-cairn-components-02-form-design.md`, refining the parent initiative spec `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`.
+**Design reference:** `docs/specs/2026-05-31-cairn-components-02-form-design.md`, refining the parent initiative spec `docs/specs/2026-05-31-cairn-site-components-design.md`.
 
 ---
 

@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript 6, SvelteKit 2, Vitest 4 (unit project, node env), gray-matter (already a dependency), no new runtime dependencies.
 
-This plan implements `docs/superpowers/specs/2026-05-30-cairn-public-delivery-design.md`. Read that spec first. The engine is `@glw907/cairn-cms`; tests run with `npm run test:unit` (node) and the full gate is `npm run check` (0 errors, 0 warnings) plus `npm test` (exit 0).
+This plan implements `docs/specs/2026-05-30-cairn-public-delivery-design.md`. Read that spec first. The engine is `@glw907/cairn-cms`; tests run with `npm run test:unit` (node) and the full gate is `npm run check` (0 errors, 0 warnings) plus `npm test` (exit 0).
 
 ---
 

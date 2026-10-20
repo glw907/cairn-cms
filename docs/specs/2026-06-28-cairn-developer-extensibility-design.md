@@ -44,7 +44,7 @@ primitive; custom data is a D1 binding the developer reads directly. cairn suppl
 identity, the nav entry, and an enforced boundary, then gets out of the way.
 
 The competitive research that grounds this design is in
-[`docs/internal/2026-06-28-extensibility-competitive-research.md`](../../internal/record/2026-06-28-extensibility-competitive-research.md).
+[`docs/internal/2026-06-28-extensibility-competitive-research.md`](../internal/record/2026-06-28-extensibility-competitive-research.md).
 Three findings are load-bearing:
 
 - The git-backed CMSs closest to cairn (Keystatic, Decap) gate login on git-host access and offer
@@ -483,7 +483,7 @@ attribute scope validation to the static doctor.
 ## Observability
 
 cairn requires a log event for every diagnosable code path, and event names are themselves a frozen
-public contract ([`docs/reference/log-events.md`](../../reference/log-events.md)). This initiative adds
+public contract ([`docs/reference/log-events.md`](../reference/log-events.md)). This initiative adds
 the highest-stakes new paths in the codebase, so it names their events in the same pre-1.0 window as the
 type surface (completeness G1):
 
@@ -608,7 +608,7 @@ from editor-only to the principal model with an explicit, documented "Consumers 
 - The islands client-mount pattern is not reused here. Admin screens are full SvelteKit routes, not
   mounted components.
 - The extending-developer lens
-  ([`docs/internal/extending-developer-lens.md`](../../internal/extending-developer-lens.md)) is the
+  ([`docs/internal/extending-developer-lens.md`](../internal/extending-developer-lens.md)) is the
   persona and the four sub-lenses this design answers: extend the dashboard (the admin-screen seam),
   reuse the editor login (the principal model and `loadPrincipal`/`requireScope`), depend on an enforced
   boundary (the `./extend` contract and its gate), and upgrade smoothly (the versioning promise and

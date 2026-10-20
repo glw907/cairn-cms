@@ -397,7 +397,7 @@ These came up in the dogfood and are deliberately out of scope:
 - **Maintainer gate hygiene → a later slot:** the admin prose gate skips `docs/internal/` and
   `<script>`-level/`.ts` copy modules; audit that `check:reference:signatures` actually compares declared
   reference types against real exports.
-- **Docs rewrite → the docs-rewrite initiative** (`docs/superpowers/specs/2026-06-23-docs-rewrite-content-outline.md`):
+- **Docs rewrite → the docs-rewrite initiative** (`docs/specs/2026-06-23-docs-rewrite-content-outline.md`):
   the quickstart, the positioning/fit page, the symptom→event→fix lookup, the tutorial re-reproduction,
   the `create-cairn-site` "forthcoming" line.
 - **Part C publishing prerequisites → Part C:** the emitted template's `.gitignore` → `_gitignore`

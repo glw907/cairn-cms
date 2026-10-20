@@ -1,6 +1,6 @@
 # Polish-11b plan review, executor and plannability lens
 
-Adversarial read of `docs/superpowers/plans/2026-09-08-polish-11b-pass.md` (uncommitted, 1838 lines)
+Adversarial read of `docs/plans/2026-09-08-polish-11b-pass.md` (uncommitted, 1838 lines)
 and its dispatch args `~/.cache/cairn-polish-11b/{args,run1-args,run2-args,run3-args}.json`, against
 the executor that will actually run them: `cairn-implementer` (Sonnet, zero conversation context,
 tools Read/Write/Edit/Bash/Grep/Glob), reviewed per task by `diff-reviewer` (Opus, read-only),

@@ -1,7 +1,7 @@
 # Documentation Initiative Phase 2 Design: the Reference arm
 
 **Initiative:** cairn-cms documentation initiative (spec
-`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`). This is the per-phase design
+`docs/specs/2026-06-04-cairn-docs-initiative-design.md`). This is the per-phase design
 for Phase 2, the Reference arm. Phase 1 (legibility and split) landed on `main` 2026-06-04.
 
 ## Goal

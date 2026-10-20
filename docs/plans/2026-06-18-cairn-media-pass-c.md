@@ -24,7 +24,7 @@ WAI-ARIA multi-select; new actions register through the `cairn-admin` composer.
 the R2 `MediaStore` seam, DaisyUI v5, Vitest (unit + workerd integration + real-browser component),
 Playwright (showcase E2E).
 
-**Spec:** `docs/superpowers/specs/2026-06-18-cairn-media-pass-c-design.md`.
+**Spec:** `docs/specs/2026-06-18-cairn-media-pass-c-design.md`.
 **Design target (approved rev.2 mockup):** `docs/internal/design/2026-06-18-media-pass-c-rev2-mockup.html`.
 
 **Version:** a minor, `0.59.0` (a new admin surface: bulk delete + orphan collection). Additive, so no

@@ -23,8 +23,8 @@ wins; stop and report.
 
 **Spec:** the pass 1b spec above, read in full by every executor before its task. The parent spec's
 "Amendments from pass 1b" section and the fold records
-(`docs/superpowers/research/2026-09-24-pass-1b-spec-fold.md`,
-`docs/superpowers/research/2026-09-24-pass-1b-plan-fold.md`) carry the rulings behind it.
+(`docs/research/2026-09-24-pass-1b-spec-fold.md`,
+`docs/research/2026-09-24-pass-1b-plan-fold.md`) carry the rulings behind it.
 
 **Approved:** Geoff, 2026-09-24, with the freeze-readiness review added to Task 11.
 
@@ -131,7 +131,7 @@ score-affecting input.
 - No automatic rerun exists; pass 1 reran by hand from `batches/validation-rerun.json`. A
   batch-level stop marks unstarted jobs `notStarted` (`runner.ts:239-241`).
 - The reader image (`scripts/docs-readers/Containerfile`) builds on `node:24-slim` with no git.
-- `lib/prepare-class.ts:414` excludes `docs/internal/record`, `docs/superpowers`, and
+- `lib/prepare-class.ts:414` excludes `docs/internal/record`, `docs/{plans,research,specs}`, and
   `scripts/docs-readers` and rejects any `.git` (`:486`, `:573`), but not
   `src/tests/unit/docs-readers-*` (17 files). `prepare-validation.ts:51` pins the scripter's
   current pages to `HEAD`, and `:84` throws with no planted directory. `prepare-baseline.ts:143`
@@ -158,7 +158,7 @@ plan and pins each open choice in the dispatch. The same pre-flight runs again b
   `scripts/docs-readers/fixtures/dev-items.json`: each of the 46 development items (D01 to D19, P01 to P17, F1 to F6, R1 to R4)' id, one-line
   subject, and page.
 - The spec folds' scratch simulations are committed at plan approval under
-  `docs/superpowers/research/2026-09-24-pass-1b-sims/` (tmpfs would lose them); Task 0 confirms
+  `docs/research/2026-09-24-pass-1b-sims/` (tmpfs would lose them); Task 0 confirms
   they rerun.
 - The pre-flight pins the chain file's path (shared by Tasks 3 and 5) and the agreement sample
   file's format (Task 6 builds from it, Task 7 writes it) into both dispatches.
@@ -489,7 +489,7 @@ runner's refusal, the stamp, the chain, and the scorer's gated mode reject drift
 or out-of-chain input (it runs each check against a crafted bad fixture); whether any prompt,
 rubric, or packet leaks a development item or a reader's model or run id; and whether the
 export leaks a plant through git, mtimes, or an excluded path. A blocker is fixed and re-read
-before the tag. Findings go to `docs/superpowers/research/2026-09-24-pass-1b-freeze-readiness.md`.
+before the tag. Findings go to `docs/research/2026-09-24-pass-1b-freeze-readiness.md`.
 
 **Acceptance.**
 - The manifest lists by path every input in the spec's list, including each prompt, rubric,
@@ -593,7 +593,7 @@ with no one watching. The executing session starts cold from the STATUS resume p
 Tasks 7 and 9 to 16 under these rules. Where they differ from the header, these rules win.
 
 **At start.**
-- Read this plan, the spec, and `docs/superpowers/research/2026-09-24-pass-1b-carries.md` (review
+- Read this plan, the spec, and `docs/research/2026-09-24-pass-1b-carries.md` (review
   findings routed to later tasks).
 - Run the one-executor check.
 - Confirm that `docs-reset-1b` carries the segment 2 merge.

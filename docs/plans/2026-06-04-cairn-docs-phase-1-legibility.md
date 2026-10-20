@@ -4,7 +4,7 @@
 
 **Goal:** Give cairn-cms a clean, trustworthy face for external adopters: a rewritten README, a security policy, a prioritized roadmap, accurate npm packaging, and the historical clutter moved out of the adopter's path.
 
-**Architecture:** This is the first of six phases in the documentation initiative spec at `docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`. Phase 1 produces the repo-root legibility files and the `docs/` skeleton without writing the four Diátaxis arms yet. Those arms (reference, explanation, guides, tutorial) land in phases 2 through 5. Every link this phase writes must point at a file that exists, so the phase creates the linked-to files before the files that link to them.
+**Architecture:** This is the first of six phases in the documentation initiative spec at `docs/specs/2026-06-04-cairn-docs-initiative-design.md`. Phase 1 produces the repo-root legibility files and the `docs/` skeleton without writing the four Diátaxis arms yet. Those arms (reference, explanation, guides, tutorial) land in phases 2 through 5. Every link this phase writes must point at a file that exists, so the phase creates the linked-to files before the files that link to them.
 
 **Tech Stack:** Markdown, `prose-guard` (the writing-voice gate), `gh` CLI (GitHub API for private advisories), `npm`/`publint` (package metadata), `git mv` (history-preserving relocation).
 
@@ -77,7 +77,7 @@ Run:
 
 ```bash
 grep -rn --include='*.md' -E 'docs/(PLAN|ARCHITECTURE|ARCHITECTURE-CRITIQUE|FORWARD-COMPAT)\.md|cairn-dx-feedback-2026-06-04|dx-backlog-ecnordic-migration' . \
-  | grep -v '^\./docs/internal/' | grep -v '^\./docs/superpowers/plans/2026-06-04-cairn-docs'
+  | grep -v '^\./docs/internal/' | grep -v '^\./docs/plans/2026-06-04-cairn-docs'
 ```
 
 For each hit outside `docs/internal/`, update the path to its new `docs/internal/...` location. `CLAUDE.md` and `README.md` both reference `docs/PLAN.md` and `docs/ARCHITECTURE.md`; the `README.md` reference is removed wholesale in Task 5, so only fix the `CLAUDE.md` reference here (change `docs/PLAN.md` to `docs/internal/PLAN.md` and `docs/ARCHITECTURE.md` to `docs/internal/ARCHITECTURE.md`). Do not edit files under `docs/internal/` (their cross-references moved together and stay valid by basename).
@@ -503,7 +503,7 @@ After all tasks commit, before declaring the phase done:
 - Every link written in this phase points at a file that exists by the time its file is created; the ordering section enforces it.
 - `SECURITY.md` links `docs/data-architecture.md` and `docs/render-sanitize-floor.md`, which exist now; Phase 3 repoints them to `security-model.md` when that arm lands.
 - The packaging task ships `CHANGELOG.md` (a stable filename), not the churning `docs/` tree, so the `files` array stays low-maintenance.
-- `docs/STATUS.md` and `docs/superpowers/` are untouched by the relocation because `cairn-pass` depends on their paths.
+- `docs/STATUS.md` and `docs/` are untouched by the relocation because `cairn-pass` depends on their paths.
 
 ## Post-mortem (2026-06-04, landed on `main`)
 
@@ -522,7 +522,7 @@ a passive line and a tricolon in verbatim plan content, plus a low-burstiness fl
 chased per the plan). No dangling relative links in the root files or `docs/README.md`. `npm run
 check:package` stayed green with the metadata change: publint "All good", attw "No problems found", and
 `npm pack --dry-run` lists `CHANGELOG.md`. The historical-ref grep leaves `docs/PLAN.md` references inside
-`docs/superpowers/` and `docs/STATUS.md` and the superseded `docs/creating-a-cairn-site.md`, all
+`docs/` and `docs/STATUS.md` and the superseded `docs/creating-a-cairn-site.md`, all
 intentional per the self-review note (dev-process and historical files, not the adopter path).
 
 **Carry-forward.** Private vulnerability reporting could not be enabled: the repo is private, so

@@ -8,7 +8,7 @@
 
 **Date:** 2026-09-14. **Approved:** Geoff, 2026-09-14, after the three-lens adversarial review, the
 fold read over the spec and both plans, and the targeted read of the fold's own mechanisms. The
-plan-approval gate is closed; execution needs no further read. **Spec:** `docs/superpowers/specs/2026-09-12-extend-design.md`
+plan-approval gate is closed; execution needs no further read. **Spec:** `docs/specs/2026-09-12-extend-design.md`
 (Layer 3, the Trust boundary, Adoption, Fold 6, 9, and 10). The plan argues from the spec;
 executors read both.
 

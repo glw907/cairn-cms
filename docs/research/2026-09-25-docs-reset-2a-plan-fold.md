@@ -104,7 +104,7 @@ Budget). The cost arithmetic holds: four build tasks at 2.0M give 15.75M, at 0.9
 | V minor 5 (fixture `inputs` paths) | Folded: every absolute path in the committed key, `inputs` keys included, is rewritten repository-relative before commit. `report.path` is rewritten again at test time by a joining test. | Task 3 live check |
 | V minor 6 (new-field catch test) | Folded: the test also asserts `true` in the plant's `runsCaught` for that run, as spec 1c states. | Task 4 acceptance |
 | V minor 7 (editor docs version) | Folded by the tag route: Geoff's notes give the help link at `v0.95.0` or `v0.96.0` by club site, with the lookup for a later upgrade. | Sheets, "For Geoff" |
-| V minor 8 (sheets not send-ready) | Folded: Geoff's notes moved to their own unsent section, the entry title and help link are named fill-ins, and the log goes as a reply to Geoff, who pastes it into the pass session or saves it at `docs/superpowers/research/human-reads-2a/sheet-{1-editor,2-evaluator}.md` in the main checkout. Task 8 reads both paths; the close removes the raw copies once recorded. | Sheets; Task 8 step 2; Task 11 |
+| V minor 8 (sheets not send-ready) | Folded: Geoff's notes moved to their own unsent section, the entry title and help link are named fill-ins, and the log goes as a reply to Geoff, who pastes it into the pass session or saves it at `docs/research/human-reads-2a/sheet-{1-editor,2-evaluator}.md` in the main checkout. Task 8 reads both paths; the close removes the raw copies once recorded. | Sheets; Task 8 step 2; Task 11 |
 | V minor 9 (Ledger, run count) | Folded: the plan row names `f3d1e4f6` and this second fold; Task 5's cost note says 15 runs. | Ledger; Cost lines |
 
 ## Prose fold

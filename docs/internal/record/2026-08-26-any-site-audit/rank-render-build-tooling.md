@@ -61,7 +61,7 @@ shared structural helpers` and `f22ef893 feat(render): port the rehype dispatche
 helpers`; it was later relocated from the root barrel to `/render` by `fb10c9bc Add the /render
 authoring subpath`. The relocation spec lists it as inherited, not new demand:
 "Pass 1 narrowed the root barrel but left the component-authoring helpers (`iconSpan`, `cardShell`,
-`headRow`, `rehypeDispatch`) on root" (`docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md:18`).
+`headRow`, `rehypeDispatch`) on root" (`docs/specs/2026-06-05-cairn-render-authoring-surface-design.md:18`).
 No consumer outside the family exists. familyOriginated: true.
 
 **Anonymous-consumer argument.** A stranger's `build(ctx)` returns hast and they own every class name in
@@ -226,8 +226,8 @@ name would be a gratuitous ergonomic loss. Keep.
 - **Verdict: keep**
 
 **Provenance.** Engine-designed capability, not a site ask: contract v2 phase 4b, specced in
-`docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md` and planned in
-`docs/superpowers/plans/2026-06-27-cairn-contract-v2-islands.md` ("a small Svelte-only client runtime on a
+`docs/specs/2026-06-25-cairn-contract-v2-design.md` and planned in
+`docs/plans/2026-06-27-cairn-contract-v2-islands.md` ("a small Svelte-only client runtime on a
 new `./islands` subpath mounts the site's live component over it"), landed by `4087c252 feat(islands): add
 the ./islands client runtime`. Built consumers exist inside the family (aksailingclub-org 2 call sites,
 cairn-pub 1, showcase 1) and the shipped scaffold ships an island out of the box

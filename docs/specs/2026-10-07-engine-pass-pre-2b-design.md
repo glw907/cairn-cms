@@ -1,14 +1,14 @@
 # Engine pass before stage 2b: design
 
 Status: folded after the four-lens spec review, 2026-10-07, for Geoff's read. Inputs: the owner
-rulings (`docs/superpowers/specs/2026-10-07-engine-pass-pre-2b-rulings.md`), the candidate list in
+rulings (`docs/specs/2026-10-07-engine-pass-pre-2b-rulings.md`), the candidate list in
 `ROADMAP.md`'s Now tier on `draft-docs-2a` ("Engine pass before stage 2b"), the friction log at
 `b38ef6b3` and the entries filed at `2f4ef9d8`, the charter
 (`docs/internal/what-cairn-is-and-is-not.md`), and the rulings ledger
 (`docs/internal/engine-rulings.md`). Every claim was checked against the code at `draft-docs-2a`;
 line numbers below are that branch's. The F4 close review of the 2a close finish filed nothing
 (verified at `38af392d`). The fold record is
-`docs/superpowers/research/2026-10-07-engine-pass-pre-2b-spec-fold.md`.
+`docs/research/2026-10-07-engine-pass-pre-2b-spec-fold.md`.
 
 ## Goal
 
@@ -320,7 +320,7 @@ new scope and `reason`). Pass class: `auth-data` (signing).
 ### Ruling 5: the dev backend over the site's real content
 
 **The runtime boundary.** Under `vite dev` the server runs in Node, with `cloudflare:workers`
-stubbed over the platform proxy (`docs/superpowers/specs/2026-10-03-sveltekit-3-upgrade-design.md`,
+stubbed over the platform proxy (`docs/specs/2026-10-03-sveltekit-3-upgrade-design.md`,
 "Evidence"), so `node:fs` reads the working tree. The showcase e2e build runs under `wrangler dev`
 in workerd (`examples/showcase/playwright.config.ts`), where it cannot. The e2e suite also asserts
 against the fixture ids (`2026-06-hello`, the media seed, the vocabulary branch).
@@ -746,7 +746,7 @@ settles gets no new entry.
   the two postures. The inner CSRF check under the action wrappers is defense in depth behind the
   guard's, and it runs before an editor exists to audit. The reference's "Refusal channels" section
   (`sveltekit.md:413`) already documents the three. Record: the pre-beta C1 pass
-  (`docs/superpowers/plans/2026-08-01-pre-beta-c1-seam-shape.md`, Task 5). Reopens on: a site
+  (`docs/plans/2026-08-01-pre-beta-c1-seam-shape.md`, Task 5). Reopens on: a site
   needing a uniform audit trail across the three.
 - **`csrf-no-rotation-under-identity`** (decline). Under `identity`, no cairn sign-in occurs, so the
   login-moment rotation never runs, and a gate-side identity change is invisible to cairn. A cairn

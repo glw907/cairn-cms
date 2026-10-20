@@ -21,7 +21,7 @@ the question on the table is whether `docs/` should be restructured around those
   sentence added to the root `README.md`. It has not merged to `main` yet, and `check:docs`
   already anticipates it in its root-file list.
 - The docs-on-site pipeline rulings of 2026-07-18
-  (`docs/superpowers/specs/2026-07-18-docs-on-site-pipeline-design.md`) were Geoff's explicit
+  (`docs/specs/2026-07-18-docs-on-site-pipeline-design.md`) were Geoff's explicit
   picks and shipped: in-package docs sourcing, cairn.pub rendering `/docs` and `/help` from the
   tarball, two sites, Topo and the docs.cairn.pub split later. Reopening any of these takes a
   deliberate decision.
@@ -31,7 +31,7 @@ the question on the table is whether `docs/` should be restructured around those
 ### The published tree
 
 `package.json` `files` ships `docs/README.md`, `docs/reference`, `docs/guides`,
-`docs/explanation`, and `docs/tutorial`. `docs/internal/` and `docs/superpowers/` stay out of the
+`docs/explanation`, and `docs/tutorial`. `docs/internal/` and `docs/` stay out of the
 tarball. The shipped tree in the `cleanup-artifacts` snapshot:
 
 | Arm | Pages | Notes |
@@ -64,7 +64,7 @@ ledgers, comparables research, post-mortems, review records. The prior observati
 `docs/internal/` conflates engine-developer documentation with project history and process is
 confirmed, and the README's own index has not kept up with the accumulation.
 
-`docs/superpowers/` holds 106 specs and 180 plans, the initiative record. It is process history
+`docs/` holds 106 specs and 180 plans, the initiative record. It is process history
 by design and nothing routes a newcomer into it.
 
 ### Where each audience enters today
@@ -201,7 +201,7 @@ gains nothing visible.
 
 Split `docs/internal/` into its two conflated halves: a curated contributor-docs set (the ~14
 "Live" documents, indexed, routed from `CONTRIBUTING.md`) and the process record (dated
-artifacts, joined with or paralleling `history/`; `docs/superpowers/` stays the initiative
+artifacts, joined with or paralleling `history/`; `docs/` stays the initiative
 archive it is). Front-door changes limited to routing prose, with `docs/README.md` gaining a real
 third-audience sentence pointing at `CONTRIBUTING.md`.
 
@@ -269,7 +269,7 @@ ratifies the audience taxonomy should reconcile the tags or say why not.
 1. Where does the editor corpus live: a grouped section of `docs/guides/` (status quo), its own
    shipped arm (option B), or wherever the Topo migration puts it (option D)?
 2. Is `docs/internal/` one thing or two? If two, where is the line between contributor
-   documentation and project record, and does `docs/superpowers/` stay separate or fold into the
+   documentation and project record, and does `docs/` stay separate or fold into the
    record side?
 3. What is the contributor's front door: `CONTRIBUTING.md` alone, or `CONTRIBUTING.md` plus a
    curated, indexed contributor set it routes into?

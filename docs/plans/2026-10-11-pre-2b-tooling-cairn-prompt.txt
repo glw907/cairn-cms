@@ -1,7 +1,7 @@
 You are executing track C of the pre-2b docs tooling pass. It is a `runner`-class pass in cairn-cms, started from the main checkout `/var/home/glw907/Projects/cairn-cms`. Geoff approved its design on 2026-10-11.
 
 Goal: fix the cairn-cms half of the docs tooling before stage 2b.
-Scope: the register, `check:snippets`, `check:provenance`, `check:symbols`, `link:consumer`, `check:facts`, the fact-pointer sweep, and one name for the second sign-in group. The plan is `docs/superpowers/plans/2026-10-11-pre-2b-tooling.md` on branch `overnight-2b-plan`. A dotfiles session runs track D of the same plan in parallel.
+Scope: the register, `check:snippets`, `check:provenance`, `check:symbols`, `link:consumer`, `check:facts`, the fact-pointer sweep, and one name for the second sign-in group. The plan is `docs/plans/2026-10-11-pre-2b-tooling.md` on branch `overnight-2b-plan`. A dotfiles session runs track D of the same plan in parallel.
 
 Before any other act, enter your worktree:
 - If `/var/home/glw907/Projects/cairn-cms/.claude/worktrees/pre2b-tooling` appears in `git worktree list`, this is a relaunch: call EnterWorktree with that `path`.

@@ -6,7 +6,7 @@
 
 **Architecture:** A site disables SvelteKit's global `checkOrigin`. cairn's `createAuthGuard()` becomes the single CSRF authority with two rules: every `/admin` unsafe form POST carries a valid `__Host-cairn_csrf` double-submit token (issued lazily and stably by the loads, rendered by a shared `CsrfField`, validated centrally in the guard), and every non-admin unsafe form POST keeps a faithful `Origin` check. Any rejection from cairn's own check renders a branded page built through a shared static-page helper.
 
-**Tech Stack:** TypeScript, SvelteKit 2, Svelte 5 runes, Cloudflare Workers (workerd), Vitest (unit, `cloudflare:test` integration, `vitest-browser-svelte` component). Design spec: `docs/superpowers/specs/2026-06-08-cairn-login-csrf-ownership-design.md`.
+**Tech Stack:** TypeScript, SvelteKit 2, Svelte 5 runes, Cloudflare Workers (workerd), Vitest (unit, `cloudflare:test` integration, `vitest-browser-svelte` component). Design spec: `docs/specs/2026-06-08-cairn-login-csrf-ownership-design.md`.
 
 ---
 
@@ -257,7 +257,7 @@ Expected: FAIL with module `csrf.js` not found.
 // src/lib/sveltekit/csrf.ts
 // cairn owns CSRF for the admin once a site disables SvelteKit's global checkOrigin. These helpers
 // back the guard's two rules and the loads that issue the double-submit token. See
-// docs/superpowers/specs/2026-06-08-cairn-login-csrf-ownership-design.md.
+// docs/specs/2026-06-08-cairn-login-csrf-ownership-design.md.
 import { csrfCookieName, generateCsrfToken } from '../auth/crypto.js';
 import type { CookieJar, RequestContext } from './types.js';
 

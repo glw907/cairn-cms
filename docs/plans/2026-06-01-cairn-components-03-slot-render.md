@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, unified (remark/rehype), mdast-util-directive, hast/hastscript, Svelte 5 (runes), vitest (projects `unit` node, `component` playwright).
 
-**Design reference:** `docs/superpowers/specs/2026-06-01-cairn-engine-backlog-and-slot-render-design.md`. Parent component design: `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`.
+**Design reference:** `docs/specs/2026-06-01-cairn-engine-backlog-and-slot-render-design.md`. Parent component design: `docs/specs/2026-05-31-cairn-site-components-design.md`.
 
 ---
 

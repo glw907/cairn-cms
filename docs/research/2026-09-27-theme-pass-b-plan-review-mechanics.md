@@ -1,6 +1,6 @@
 # Theme identity pass B plan review: mechanics and feasibility
 
-Target: `docs/superpowers/plans/2026-09-27-theme-identity-pass-b.md` at `07035110` (branch
+Target: `docs/plans/2026-09-27-theme-identity-pass-b.md` at `07035110` (branch
 `theme-b-plan`, pass A's head `1486f3f7` plus the plan). Lens: does every mechanism the plan relies
 on behave as stated, and can each task build in the stated order.
 

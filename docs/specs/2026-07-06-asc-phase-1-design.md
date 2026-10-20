@@ -130,7 +130,7 @@ Geoff's own correction. Roles are the contract; exact values tune during the bui
   can never collide with warnings again.
 
 **The north star:** the complete home example at
-`docs/superpowers/specs/assets/2026-07-06-asc-home-northstar.html` — every locked decision
+`docs/specs/assets/2026-07-06-asc-home-northstar.html` — every locked decision
 (A1's quieting, the C7-dot-evolved-to-gold-stars season, the fleet/facilities photo
 compositions, the mission-first CTA, gentle hover motion) in the story, blessed whole.
 The full calibration record (C0 through C9, the iteration's reasoning) sits beside it.

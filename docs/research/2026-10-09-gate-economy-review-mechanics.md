@@ -1,6 +1,6 @@
 # Gate economy spec review: mechanics and feasibility
 
-Lens: does every mechanism behave as stated? Target: `docs/superpowers/specs/2026-10-09-gate-economy-design.md`
+Lens: does every mechanism behave as stated? Target: `docs/specs/2026-10-09-gate-economy-design.md`
 at `f2fa2a25` (cited below as `spec:N`). Draft: `gate-related` at `075bc174`. Every claim below is
 quoted from source or docs, or comes from a probe run on 2026-10-09 (probes in the session
 scratchpad, not the repo). Settled decisions are not re-argued. Where a finding touches one, it is

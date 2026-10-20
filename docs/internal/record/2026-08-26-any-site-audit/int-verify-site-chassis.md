@@ -20,7 +20,7 @@ on `main`, plus `docs/internal/code-idioms.md` and the `docs/internal/record/` r
   vocabulary hits (a *tag named* "archive"). No unit test exists at all (see finding 4).
 
 **Counter-case found, and it defeats the remediation, not the observation.**
-- `docs/superpowers/plans/2026-07-17-waymark-final-review-fixes.md:5` — "The fixture corpus (220
+- `docs/plans/2026-07-17-waymark-final-review-fixes.md:5` — "The fixture corpus (220
   posts) stays on this branch". The 220-post corpus was deliberately review-branch-only; `main` was
   always meant to carry the small corpus. Line 183 records the weight measurement that set the size
   ("home document 53.1KB (was 195KB)"). So `ARCHIVE_PAGE_SIZE = 50` is a measured real-site default,

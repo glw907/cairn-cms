@@ -31,7 +31,7 @@ pages:
     docs/extend/add-cairn-to-a-sveltekit-app.md:
         page: 65163162be441f51abbf80d2cdb1c0b044fc717c
         blueprint: b307ed09dad986174b8551acadcda4e29c3a6987
-        accepted: 7b6c8f453f1a546cfc0b45afd60948f44c809d7d
+        accepted: 6d66d4efc15dfb7b8537d46959b4abd6fba302bb
         sections:
             _intro: sha256:e734d828280e7541ed8caa833e86e941e551ccc4fa866235e55617223057f9ef
             add-a-second-post: sha256:b4c3d4ee08166cd69771a148a4a58ae61b6a5521aff0bf2ccff1dec6067768c1

@@ -206,6 +206,417 @@ New findings start in the group they belong to, one per finding, with its perspe
 - **`extender`.** `docs/extend/scaffolded-site-files.md` carries two stale claims about files the rotation page leans on, both found while converting the rotate-the-github-app-key plan to a blueprint (drafter pass B1, 2026-10-17). Its `.dev.vars.example` section (lines 160-166) says the file names `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID`, but the scaffold's `.dev.vars.example` (`packages/create-cairn-site/template-repo/.dev.vars.example:7`) names no App id or installation id, only `GITHUB_APP_PRIVATE_KEY_B64` of the three. Its "Endpoints at the root" section (lines 366-371) says `/healthz` answers 200 even on failure, while the route answers 503 with `ok: false` (`examples/showcase/src/routes/healthz/server.test.ts:26-36`). Fix: correct both at the page's next blueprint pass.
 - **`extender`.** `docs/reference/sveltekit.md` (`loadHealth`, line 1625) says a caller waits at most 5 seconds for the shared live mint, but the wait is the mint's 5-second abort plus a 500 ms grace (`src/lib/sveltekit/health.ts`, `MINT_TIMEOUT_MS` and `CALLER_GRACE_MS`), 5.5 seconds in all (found with the entry above).
 - **`extender`.** `docs/extend/debug-your-site.md` has no row for a signing failure after a key rotation, which the outline's crossLink from the rotation page names as its purpose (a search for `signing`, `github.unreachable`, and `rotation` finds none). The rotation page links the page's "Read the structured logs" section from its recovery routes and keeps the key diagnostics itself (found with the entry above).
+- **`extender`.** Friction from converting the `docs/claude-code/using-claude-code-with-cairn.md` plan to a blueprint, dropped from the blueprint (drafter pass B3c, 2026-10-19). Fix: triage each line at stage 2b's close.
+    - gap: `docs/internal/docs-register.md` has no `claude-code` track entry (profile, base
+  guide, vocabulary, arrival state). This plan takes the extend track's reader profile as the
+  baseline, per the outline's `job`. The entry lands with the page's drafting, not this pass.
+
+    - gap: no gate registers the `claude-code` arm yet. ARM_NAMES, ARM_DIRS, the arm-index
+  check, package-files, snippets, symbols, visuals, leaks, the links check, and `package.json`
+  `files` all need the new `docs/claude-code/` directory before the page can ship. These land
+  with the page's drafting.
+
+    - Divergence from the outline, review agent: the outline's `job` says "what the review agent
+  reviews" and its covers ask what `cairn-extension-reviewer` is for and how it relates to the
+  audit gate, and no fact in the inventory states either. The plan therefore folds the agent
+  into "The guidance tree" as one bullet (`s-agent-location`, location only) plus the
+  reference link `l-agent-ref`, with no level-3 heading and no purpose claim, and the
+  introduction promises only where it sits. A `[verified]` fact would cite
+  `claude/agents/cairn-extension-reviewer.md`: line 3 (it reviews a diff touching the site's
+  own code, admin screens, or extension seams against the boundary, the atoms, and the craft
+  bar), line 4 (`tools: Read, Grep, Glob` only), lines 32-34 (`cairn-audit` reports the same
+  radius and retired-patch patterns as `radius-scale` and `stock-default-hazards`; files
+  outside the audit's `static.scope` are read by hand), and lines 62-69 (accept, fix, or
+  escalate with `file:line` findings). Once it lands, the subsection can return.
+
+    - Fact gap, CI gating: `--strict` alone does not gate while `continue-on-error: true` stays,
+  so `s-ci` tells the reader to remove that line too, and `r-ci-both` states GitHub's side only
+  as far as naming the setting, with the link `l-ci-vendor`. A `[vendor]` fact quoting
+  GitHub's workflow-syntax sentence on `jobs.<job_id>.steps[*].continue-on-error` ("Prevents a
+  job from failing when a step fails.") would let `r-ci-both` cite it. The outline's covers
+  line now names both edits.
+
+    - Fact gap, `--if-present`: no `[vendor]` fact states that `npm run --if-present` does not
+  fail when the script is undefined (npm's `npm run` page, "if-present"), so `s-hook-script`'s
+  "gets nothing from the hook" rests on the link `l-hook-npm` alone.
+
+    - Fact gap, gate wiring on a hand-built site: f:mrv24k covers only the scaffold's `check:cairn`
+  script, and no fact states that `check` reports a missing `check:cairn` script,
+  `cairn-audit.config.json`, or `.github/workflows/check.yml` and prints the snippet for each,
+  or that its seventh line names a leftover `.orig`. A fact would cite
+  `src/lib/guidance/check.ts:94-103,150-155,177-194,204-207` and
+  `docs/reference/guidance.md:60-78,97-104`. Plan items `s-hook-script` (its second half),
+  `s-ci-no-workflow`, `x-wiring`, and `x-orig` are scoped to what that reference page states
+  and handled by links to it.
+
+    - Likely path, Tailwind line: a hand-built site will almost always reach `x-tailwind`, since
+  `check` reads only `.gitignore`, `src/admin.css`, and `src/theme/admin.css`
+  (`src/lib/guidance/check.ts:29,77-92`) and reports unknown otherwise. The row stays a failure
+  path; the drafter need not soften it.
+
+    - Fact gap, Stop timing: no `[vendor]` fact states when Claude Code fires a `Stop` hook
+  ("When Claude finishes responding", in Claude Code's hooks reference). The `opens` of "Wire
+  the Stop hook" rests on the link `l-hook-vendor` alone.
+
+    - Fact gap, VERSION on install: f:dy5cfj covers only the scaffold bake. After
+  `cairn-guidance install`, `VERSION` holds the installed package's version
+  (`src/lib/guidance/install.ts:54-59`, `docs/reference/guidance.md:30`), and no fact says so.
+  Plan item `f-tree-version` is scoped to a scaffolded site for that reason.
+
+    - Fact gap, `.orig` and commit: no inventory fact covers `install` writing `<dest>.orig` beside
+  an edited file, or the tree belonging in the site's commit (the bin prints that line,
+  `src/lib/guidance/bin.ts:101-103`). Both matter to a refreshing reader; the plan leaves them
+  to the reference link `l-tree-ref`.
+
+    - Fact gap, exit 2: `cairn-guidance` exits 2 on an unknown command or flag, or on `--strict`
+  with `install` (`src/lib/guidance/bin.ts:36-57`). No fact states it, so the exemplar's
+  closing caution (a command may carry codes the page does not list) has nothing to cite.
+
+    - Recovery surface: the anatomy points failure paths at `extend/debug-your-site.md`, which has
+  no `cairn-guidance` row. Plan items `x-refused`, `x-write`, `x-wiring`, `x-orig`, and
+  `x-tailwind` are handled by links to `docs/reference/guidance.md` instead, and `x-stale` and
+  `x-import` by this page's own steps.
+- **`extender`.** Friction from converting the `docs/extend/debug-your-site.md` plan to a blueprint, dropped from the blueprint (drafter pass B3c, 2026-10-19). Fix: triage each line at stage 2b's close.
+    - Beyond the outline's list, the plan places five [verified]/[external] facts on the page's job:
+  `f:1b3ye3` (the check order, the rate-limit triggers, and the two authorization refusals),
+  `f:prb2os` (observability gates Workers Logs), `f:gzs6b8` (Workers Logs and `wrangler tail`),
+  `f:q9ylqa` (`cairn logs` and the empty result), and `f:xbjxit` (`createSectionAction`'s 403
+  refusal is audited and logged as `auth.access.refused`).
+
+    - departure: cover 8 says the `site-facts.json` check "reports current when the adapter cannot
+  derive the facts". The re-armed `f:vs9g9e` says it reports skipped and warns, so the row
+  follows the fact and the outline's cover text is stale.
+
+    - departure: the CLI cover moves into Find the records; cover 1 splits (redaction stays first,
+  `createLogger` moves to the end, after the no-record rows and the session and commit records);
+  the upgrade cover is link-only; the Worker environment group shrinks to one H2 row; and the
+  time and environment rows (covers 3 and 4) precede the session and commit records (cover 6).
+  `orderReason` argues each.
+
+    - drift: `docs/reference/site-facts.md` "Who writes it and who verifies it" names two
+  verification outcomes (absent, drifted) and not the skipped one `f:vs9g9e` states; the row
+  links it anyway.
+
+    - drift: `f:gun084`'s `devBackendHandle` half has no reference home; the
+  `createAuthGuard` entry states only the guard's side.
+
+    - Subordination targets stale on disk until their 2b rebuilds land:
+  `docs/extend/restrict-admin-access.md:111-132` (passes the map to the guard and
+  `devBackendHandle({ access })`) and `docs/extend/add-cairn-to-a-sveltekit-app.md:531-540`
+  (`devBackendHandle()`, `createAuthGuard({ access })`). Their plans place `f:cvzb8z`,
+  `f:7cv105`, `f:dqjkci`, and `f:q07rd5`.
+
+    - The admin track's troubleshooting page (out of scope, operator symptoms) is not on disk and not
+  in this outline, so the not-covered list names it without a link.
+
+    - gap: no fact says where engine records appear under the development server (`vite dev` or
+  `wrangler dev`). Find the records names only the deployed surfaces, so the introduction's
+  development-server arrival reason has no reading surface on the page until a fact is filed.
+
+    - gap: no fact names why `resolveDb` returns null or undefined in practice (such as a binding
+  the Wrangler config does not declare), so the `db_not_bound` row's cause and fix stay at what
+  `f:nup3og` states.
+
+    - The plan read asked for a second `db_not_bound` cause, a `resolveDb` that reads
+  `event.platform`, and for the rate-limit row to point at the env row. Neither is carried:
+  `resolveDb` and a rate limit's `resolve` receive only the env `siteEnv()` reads from
+  `cloudflare:workers`, never the request event (`src/lib/sveltekit/section-action.ts:47,228,303`,
+  `src/lib/sveltekit/workers-env.ts:29-37`), so that cause cannot arise in either callback.
+- **`extender`.** Friction from converting the `docs/extend/restrict-admin-access.md` plan to a blueprint, dropped from the blueprint (drafter pass B3c, 2026-10-19). Fix: triage each line at stage 2b's close.
+    - Outline cover 4, "Pass the same map to the adapter and to createAuthGuard.", is stale against
+  `f:iwf4nu` and `f:4xrx5f`: the map is declared once on the adapter and the guard reads it from
+  the runtime. The plan folds the cover into a where-it-goes paragraph in Declare the access map
+  and drops the old section "Pass the map to the adapter and the guard".
+
+    - Additions beyond the outline's factIds, each [verified] or [external] and on this page's job:
+  `f:zjglk8`, `f:dbaklx`, `f:4673n6`, `f:2zytgf` (Declare the roles); `f:3z48zf` (Declare the
+  access map); `f:jtl15v`, `f:xxtooz`, `f:qca0t0`, `f:9ug9mo` (Deploy the changes); `f:pwb0wr`,
+  `f:udg87q`, `f:2dgbff`, `f:dfxxwb` (Assign the roles); `f:5eum60`, `f:joo5f2`, `f:7ji7x0`,
+  `f:b0kf86`, `f:thnbyp`, `f:xbjxit` (Verify each role's reach); `f:4bazhe` (Resolve a refusal).
+  The outline's factIds carry no role-declaration, roster, or deploy fact although its covers
+  and the task need them.
+
+    - gap: no fact states that the setup command applies the scaffold's migrations, `0001_roles.sql`
+  among them, to the remote auth database at creation (the code does: `applyMigrations` in
+  `packages/create-cairn-site/src/cloudflare/deploy.mjs`, per its test at `deploy.test.mjs:230`).
+  Without it the page cannot tell a new site it may skip the apply step.
+
+    - Mutual preconditions: this page needs a custom admin screen (Add a custom admin screen builds
+  the signups screen), and Add a custom admin screen's plan needs an access-map rule for the
+  screen's route (it links this page). The plan keeps the screen as a precondition and makes
+  keying the route the first step of Enforce the map on your routes, so a reader can arrive from
+  either side.
+
+    - Docs drift on a linked page: `docs/extend/security-model.md`, "Access map coverage", still says
+  the sidebar reads the adapter's map and `requireAccess` reads the guard's, so a map given to one
+  gates only that one (contradicts `f:cvzb8z` and `f:vqh4a9`); its "Limits of access map
+  coverage" says the warning fires when the map covers "some, but not all" targets (narrower than
+  `f:8ciz2s`). This page links both anchors.
+
+    - Docs drift on subordination targets: the on-disk `docs/extend/scaffolded-site-files.md` and
+  `docs/extend/add-a-custom-admin-screen.md` predate stage 2b (both still describe `src/access.ts`
+  or a scaffold that ships the signups screen and `APP_DB`). The dispositions name them as the
+  homes their rebuilt pages will be; the anchors chosen exist on disk and in their plans.
+
+    - `f:bw5uk0` subordinated to `docs/reference/cli-cairn-doctor.md`: that page lists the
+  `auth.role-wiring` check but does not state the list of conditions no tool check raises.
+
+    - `f:q07rd5` records that the hand-built tutorial page's `src/hooks.server.ts` calls
+  `createAuthGuard()` with no config, which no longer type-checks; the plan places only the
+  adapter-module locations from it and sends a hand-built reader to the tutorial, which carries
+  that drift.
+
+    - Not placed, flagged for the facts pass: `f:a9zcj9` (a scaffolded site has no `+error.svelte`
+  under `src/routes/admin`) contradicts `f:ty4ehh` and `f:qtm9y2`;
+  `templates/waymark/src/routes/admin/+error.svelte` exists. The plan uses `f:ty4ehh`.
+- **`extender`.** Friction from converting the `docs/extend/scaffolded-site-files.md` plan to a blueprint, dropped from the blueprint (drafter pass B3c, 2026-10-19). Fix: triage each line at stage 2b's close.
+    - `f:orz556` is tagged [rejected]; cut, never placed. `f:paotzb` carries the route's real
+  behavior.
+
+    - gap: the covers name the ownership statement (the shadcn exemplar take), the
+  content directories, and "no csrf key since SvelteKit 3 removed checkOrigin", but the outline's
+  `factIds` hold no fact for them. The plan adds `f:rxj43c` [verified], `f:gj96px` [verified], and
+  `f:hnvweu` [verified]; the outline's `factIds` should carry them.
+
+    - Stale outline entries after the re-arm: cover 4 ("migrations/ versus migrations-app/") and
+  cover 5 ("the signups example screen") describe files the scaffold no longer ships, cover 2 and
+  cover 13 describe guidance content the owner ruling moves to the Claude Code page, and the
+  crossLink to `add-a-custom-admin-screen` gives "The signups example as a pattern" as its reason.
+  The plan keeps the link as the route to building a custom screen.
+
+    - `tree-claude-link` targets `docs/claude-code/using-claude-code-with-cairn.md`, which is in
+  `docs/internal/outlines/claude-code.json` and not on disk yet, so `drafter check-plan` warns
+  for it, and errors if the plan is checked against `extend.json` alone. Check this plan with both
+  outlines.
+
+    - drift: `docs/reference/guidance.md` "install" does not state that
+  `cairn-guidance install` exits 0 when an entry is refused or a write fails (`f:5ohm23`).
+
+    - drift: `docs/reference/guidance.md` "install" says `VERSION` is "stamped from
+  the installed package's own version", which does not cover the scaffold's baked stamp, the
+  caret-stripped engine spec (`f:dy5cfj`).
+
+    - drift: `docs/reference/sveltekit.md` "loadHealth" states the no-network
+  signing check but not the three failure `detail` strings `f:5dwnh1` lists.
+
+    - drift: `docs/reference/auth-store.md` "deleteEditor" states that the editor's
+  preview links go, but not that the cascade runs as a separate statement that swallows only a
+  missing-table fault (`f:lml542`).
+
+    - Stale subordination target: `docs/extend/debug-your-site.md` "admin.action.misconfigured" still
+  says the dev backend attaches the map only with `devBackendHandle({ access })`, which `f:u78zg6`
+  says is gone; that page's own re-arm should fix it.
+
+    - Stale subordination target: `docs/extend/debug-your-site.md` "config.access_unmapped" does not
+  state that the warning logs only when the map declares a screen-id key (`f:8ciz2s`).
+
+    - drift: `docs/extend/add-a-custom-admin-screen.md` (lines 5, 14, 33-38) still says
+  the setup command writes the signups screen and binds `APP_DB`; `docs/extend/restrict-admin-access.md`
+  "Pass the map to the adapter and the guard" still says the scaffold passes `src/access.ts`'s
+  map to the hook handles; `docs/extend/add-cairn-to-a-sveltekit-app.md` "Wire the dev backend"
+  still shows `createAuthGuard()` with no options and a hand-written define plugin (`f:q07rd5`
+  records the first). This page links all three, so its claims contradict theirs until those
+  pages are rebuilt.
+
+    - `f:qlgggh`'s wording is garbled ("its adapter declares no `access` member, `admin.css`,
+  `lib/log.ts`, ...") and reads as if those four files were absent; `tree-root-entries` limits
+  its use to the listing of what exists.
+
+    - `f:t2t5lx` says the two route pairs are "the only entries under `admin/`", but the directory
+  also holds `+error.svelte` (`f:ty4ehh`, `f:qtm9y2`); `admin-mount` limits its use.
+
+    - `f:l3cxgc` states only that `observability.enabled` is `true`; no fact in the inventory says
+  what the setting does (`f:prb2os` would), so the page links Cloudflare's Workers Logs page
+  rather than stating it.
+- **`extender`.** Friction from converting the `docs/extend/security-model.md` plan to a blueprint, dropped from the blueprint (drafter pass B3c, 2026-10-19). Fix: triage each line at stage 2b's close.
+    - Placed beyond the outline's fact list, each [verified] and on this page's job: `f:v85shm`
+  (the stated threat position, the outline's first cover, which the outline lists no fact for),
+  `f:emrebl` and `f:33upyd` (the identity gate's email-only join and the self-asserted email
+  risk, which the outline's identity cover names), and `f:ytwrgp` (the `cairn doctor` check on
+  `csrf.trustedOrigins`, for the CSRF limits).
+
+    - gap: Reference drift. `docs/reference/sveltekit.md#no_pending_request_error` says the code is
+  returned when the browser has no pending-login cookie "and the submitted token is bound to
+  another browser's nonce", but `f:9pmipf` and `src/lib/sveltekit/auth-routes.ts:360-365`
+  return it for any failed confirm from a cookie-less browser (bound row, missing, expired, or
+  replayed token). Subordinated `f:9pmipf` there anyway.
+
+    - Reference only partly states `f:diro7m`: `docs/reference/log-events.md` (the
+  `guard.refused` row) says `hasSession` is presence-only but not that it is always `false`
+  under `identity`.
+
+    - `f:r0cv6e` is subordinated to `docs/extend/migration-notes.md`, the home the outline names,
+  but that page has no entry for the floor's arrival (commit `40d466ad`, v0.17.0), and the
+  changelog's history stops before 0.17.0, so no published page states the fact.
+
+    - Reference drift for `f:qlgggh`: `docs/extend/scaffolded-site-files.md` ("File tree" and
+  "`src/hooks.server.ts` and `src/access.ts`") still lists `src/access.ts` and says both handles
+  receive `{ access }`, which `f:qlgggh` and `f:f21bcz` contradict. That page has its own plan
+  in this run.
+
+    - `docs/extend/arrange-the-admin-sidebar.md` states both adapter locations (`f:q07rd5`) and
+  that the scaffold's layout has `Content` and `Site` sections (`f:tycp7k`), but not which
+  screens each section carries, nor `f:q07rd5`'s clause about the tutorial page's hooks.
+  `docs/extend/add-cairn-to-a-sveltekit-app.md:534` still shows `createAuthGuard()` with no
+  config, the form `f:q07rd5` says no longer type-checks.
+
+    - `docs/reference/sveltekit.md#createauthguard` states the required `runtime` and the
+  `locals.cairnAccess` attachment (`f:4xrx5f`, `f:gun084`, `f:iwf4nu`) but not the
+  earlier-versions history those bullets carry; `docs/extend/migration-notes.md#unreleased`
+  carries the history.
+
+    - format: the links the introduction's out-of-scope list needs are the Related resources link
+  items (`rr-access`, `rr-identity`, `rr-channel`, `rr-render`, `rr-key`); a constraint carries
+  the introduction's use of them, because a link item has no field saying which part of the page
+  it serves.
+
+    - format: no `table` or `list` kind, so list form for the guard's steps, the pipeline's stages,
+  the headers, the channel's controls, and the responsibilities is carried in `use` text and a
+  constraints entry.
+- **`extender`.** Friction from converting the `docs/extend/add-a-second-sign-in-group.md` plan to a blueprint, dropped from the blueprint (drafter pass B3c, 2026-10-19). Fix: triage each line at stage 2b's close.
+    - Additions beyond the outline's factIds and the re-arm list, each [verified] or [external] and
+  on this page's job: `f:zxdoaf`, `f:qqy4uq` (introduction); `f:nj0nfm` (owner precondition, add
+  steps); `f:pvs115`, `f:dbaklx`, `f:zjglk8` (Declare the role); `f:8anql1`, `f:5sx6zl` (Build the
+  role's home screen); `f:ys1iq1`, `f:altcjp` (sidebar); `f:xxtooz`
+  (both apply steps); `f:6oopkt` (doctor after a build); `f:uci4pa`, `f:265s4t`, `f:4cw5dk`,
+  `f:k0cryh` (the example channel and its routes); `f:dbh3aj`, `f:69xbyh`, `f:nls26c`,
+  `f:pe4vuc`, `f:86h9o6` (Write the channel module, Deploy the channel); `f:u3qhel` (session
+  default); `f:0l7si2`, `f:1stlyv`, `f:nv475y`, `f:wu8x70`, `f:l2xruc` (Test the channel on
+  Node). The outline's factIds carry no role-declaration, home-screen gating, deploy, secret, or
+  test-harness fact although its covers and the task need them.
+
+    - gap: no fact records that a channel action answers `unavailable` when `resolveDb` returns no
+  binding or the schema version does not match (`src/lib/auth-channel/factory.ts`), the likeliest
+  first-run failure when a migration was not applied. Resolve a failed setup cannot carry it.
+
+    - gap: no fact states the `auth.channel.requested` record's `outcome` values (`unknown`,
+  `lookup_failed`) or the `auth.channel.send_failed` record and its `error` field; the log events
+  reference states them (`docs/reference/log-events.md:86-87`), and the Resolve handlers for a
+  code that never arrives name them on that reference's authority.
+
+    - gap: no fact gives `challenge`'s signature, `(event, form) => Promise<boolean>` with no env
+  (`src/lib/auth-channel/factory.ts:267`), which is why the module reads `TURNSTILE_SECRET` from
+  the `env` that `cloudflare:workers` exports; the sentence after the types step rests on it.
+
+    - gap: no fact records that the example site's channel `challenge` is the CI stand-in
+  `insecureTestChallenge` (`examples/showcase/src/members/channel.ts:31-41`); the page names only
+  the capture transport's divergence (`f:rv9gdc`) and a constraint keeps the sample off both.
+
+    - gap: no fact states that `ChannelDatabaseLike` is exported as a type from
+  `@glw907/cairn-cms/auth-channel` (`src/lib/auth-channel/index.ts:20`), which the cast-free test
+  imports; the reference's types table lists it. The constraint carries the import.
+
+    - gap: `f:thbxvf` gives the `missing_secret` and `invalid_input` reasons but not the event name
+  `turnstile.verify_failed` (`src/lib/cloudflare/turnstile.ts:96`); the Resolve symptoms name the
+  event from the log events reference, which the section links.
+
+    - Docs drift on this page's predecessor: the on-disk `docs/extend/add-a-second-sign-in-group.md`
+  passes `roles` to `createAuthGuard` and `devBackendHandle` (contradicts `f:4xrx5f`, `f:7cv105`),
+  says `requireAccess` refuses every `none` session whatever the map says and that a map rule
+  hides the home link from the role (contradicts `f:5sx6zl`, `f:p1xmp5`), and casts the double
+  in its test (`f:ditn3e`). The plan drops each.
+
+    - Docs drift on subordination and link targets, all slated for stage 2b rebuilds:
+  `docs/extend/scaffolded-site-files.md` "`migrations/`" calls `0001_roles.sql` opt-in and absent
+  (contradicts `f:gepykz`, `f:rn62i1`); `docs/extend/debug-your-site.md`
+  "`admin.action.misconfigured`" still gives the fix as `devBackendHandle({ access })`
+  (contradicts `f:u78zg6`); `docs/extend/restrict-admin-access.md` still has "Pass the map to the
+  adapter and the guard" (contradicts `f:iwf4nu`, `f:cvzb8z`);
+  `docs/extend/add-cairn-to-a-sveltekit-app.md` "Customize the sign-in email" says a supplied
+  `branding` replaces the default whole (contradicts `f:v72g9z`), and its hooks sample calls
+  `createAuthGuard()` with no config (`f:q07rd5`).
+
+    - drift: `docs/reference/cli-cairn-doctor.md` does not list the conditions no
+  tool check raises (`f:bw5uk0`); `docs/reference/admin-toolkit.md` says the toolkit renders only
+  inside the admin shell but not that no component reads an editor session (`f:mfmmof`, partial);
+  `docs/reference/auth-crypto.md` states that `nonce_hash IS NULL` keeps an old row confirmable
+  but not the no-cookie `NULL` path (`f:5iqvmt`, partial); `docs/reference/cloudflare.md` states
+  the 2048-character cap but not the 5000 ms fetch timeout (`f:b857di`, partial);
+  `docs/extend/arrange-the-admin-sidebar.md` "Declare the layout" states the scaffold's sections
+  but not the example site's signups entry (`f:tycp7k`, partial).
+
+    - departure: the covers' nav item ("nav gating with roles") loses the old access-map constraint
+  on the home path, since a route rule naming a `none` role now admits it (`f:5sx6zl`); the
+  covers' channel order (config members, then binding) is reversed; and the plan adds the home
+  screen, removal, deploy, and verification sections the covers do not name.
+
+    - format: the comparison table is a `sentence` item describing the table, since no table kind
+  exists.
+- **`extender`.** Friction from converting the `docs/extend/add-cairn-to-a-sveltekit-app.md` plan to a blueprint, dropped from the blueprint (drafter pass B3c, 2026-10-19). Fix: triage each line at stage 2b's close.
+    - `s-email-deploy` should follow either `s-branding` (`branding-set`) or `s-custom-send`
+  (`sender-custom`), since the verification checks whichever change the reader made, but
+  `requires` is a conjunction and cannot express either-or. The step requires only
+  `production-verified`, and the section's `opens` says "Either change".
+
+    - The tutorial milestone anatomy wants a disclosure block per milestone, but sections stop at
+  level 3 and no item kind or field marks a disclosure, so each try-it section carries a
+  `sentence` (`t1-disclosure`, `t2-disclosure`, `t3-disclosure`, `t4-disclosure`) and a
+  constraint describing the `<details>` block.
+
+    - gap: the `done` text names "the cf-typegen script", but the only fact, `f:n0fg3w`, gives
+  the scaffold's `wrangler types --env-file=.dev.vars.example --include-runtime=false`, which
+  reads a file the hand-built site never writes. No fact gives a hand-built site's `wrangler
+  types` command or says whether its `src/app.d.ts` should reference the generated file, so the
+  plan places no `cf-typegen` step. A fact stating the hand-built command would let the page add
+  one.
+
+    - No citable fact says the admin shell styles itself. `CairnAdminShell.svelte:43` imports
+  `./cairn-admin.css`, and `docs/reference/admin-routes.md` "The root layout must be chrome-free"
+  says "The admin self-styles", but `f:p3vmug` (the scaffold's `.cairn/admin.css` import) is
+  tagged [candidate]. The constraint that the layout sample imports no style sheet rests on code,
+  not on a fact.
+
+    - `SendMagicLink`'s `(env, message)` signature has no fact; `f:1b54g7` covers the message only.
+  The custom-sender code item leans on `docs/reference/sveltekit.md` "Types", which states it.
+
+    - No fact in the inventory names the `auth.link.send_failed` log event, so the email verify
+  failure row points at domain onboarding only.
+
+    - The outline's covers put `createCairnAdmin` and `bootstrapOwner` in milestone 2 and the
+  adapter, `parseSiteConfig`, and `cairnManifest` in milestone 3, an order that cannot be built.
+  The plan moves the content into milestone 2 and the admin into milestone 3 (`orderReason`);
+  the outline's covers should follow.
+
+    - The outline's inventory lacks facts for both Part 1 items (the `#lib` subpath imports and the
+  root `+layout.svelte`), for `editor.siteConfigPath`, and for the custom-domain route and
+  observability the production config needs; the plan adds `f:pgeeq3`, `f:ibis7z`, `f:g7zuji`,
+  `f:shv6wv`, `f:thgmpz`, and `f:txgoyy`, and the outline's `factIds` should carry them.
+
+    - Stale subordination target: `docs/extend/debug-your-site.md` "admin.action.misconfigured" says
+  `devBackendHandle` attaches the map only with `devBackendHandle({ access })` and gives that as
+  the fix, which `f:u78zg6` says is gone; the handles now take `{ runtime }`.
+
+    - Partial subordination target: `docs/extend/debug-your-site.md` "config.access_unmapped" does
+  not state that the warning logs only when the map declares a screen-id key (`f:8ciz2s`).
+
+    - Partial subordination target: `docs/extend/upgrade-cairn.md` "When your range crosses SvelteKit
+  3" gives the `wrangler types` command but names no `cf-typegen` script (`f:n0fg3w`), and it
+  says the scaffold's `worker-configuration.d.ts` records the command "on its first line"; the
+  file's first line is `/* eslint-disable */` and the command is on line 2, as `f:n0fg3w` says.
+
+    - Partial subordination target: `docs/reference/sveltekit.md` "createAuthGuard" states the
+  `locals.cairnAccess` attachment but not that `devBackendHandle` takes the same `runtime` and
+  attaches the same map (`f:gun084`).
+
+    - Partial subordination target: `docs/reference/cloudflare.md` "verifyTurnstile" states the
+  2048-character token cap but not the 5000 ms fetch timeout (`f:b857di`).
+
+    - Partial subordination target: `docs/extend/arrange-the-admin-sidebar.md` "Declare the layout"
+  names the scaffold's `Content` and `Site` sections but not their entries or the example site's
+  custom entry (`f:tycp7k`).
+
+    - Partial subordination target: `docs/extend/migration-notes.md` "Unreleased" states the
+  working-tree default but not that the scaffold's hooks pass no `content` option while the
+  example site passes `'fixtures'` (`f:zzjrza`).
+
+    - `f:q07rd5` carries a clause about this page's own stale hooks ("still calls `createAuthGuard()`
+  and `devBackendHandle()` with no config"); `a-location` limits its use to the adapter path, and
+  the clause goes stale the moment this page is rebuilt.
+
+    - Several placements rest on a fact whose subject is the scaffold or the example site
+  (`f:7rehzh`, `f:eiaqkh`, `f:ew4uk7`, `f:n52h8f`, `f:7bch04`) and narrow it with `use` to the
+  general claim the tutorial site shares; an `excludes` or `scope` field would carry that
+  narrowing more reliably than prose.
 
 ### Repo tooling
 

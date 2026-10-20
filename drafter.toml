@@ -19,7 +19,9 @@ dir = "docs/internal/facts"
 [seat.draft]
 model = "claude-opus-5-5"
 effort = "high"
-max_tokens = 64000
+# The longest task guides (restrict-admin-access, scaffolded-site-files) stopped at 64000 tokens
+# of page, brief, and thinking.
+max_tokens = 128000
 
 [seat.structure]
 model = "claude-opus-5-5"
@@ -69,3 +71,7 @@ max_tokens = 32000
 model = "claude-opus-5-5"
 effort = "medium"
 max_tokens = 32000
+
+# The brief path cairn's provenance check accepts, kept until cairn moves to the convention.
+[blueprints]
+brief_path = "docs/internal/briefs/{dir}/{name}.json"

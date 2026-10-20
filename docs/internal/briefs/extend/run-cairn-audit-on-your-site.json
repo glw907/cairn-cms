@@ -173,7 +173,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The engine, installed by the setup command as [Scaffolded site files](scaffolded-site-files.md) describes, or by hand as [Install and wire the engine](add-cairn-to-a-sveltekit-app.md#install-and-wire-the-engine) shows.",
+      "text": "The engine, installed by the setup command as [Scaffolded site files](scaffolded-site-files.md) describes, or by hand as [Install the engine and let Vite compile it](add-cairn-to-a-sveltekit-app.md#install-the-engine-and-let-vite-compile-it) shows.",
       "id": "no-claim"
     },
     {

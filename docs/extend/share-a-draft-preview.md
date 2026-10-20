@@ -418,7 +418,7 @@ export const actions: Actions = {
 ```
 
 The file reads `PUBLIC_ORIGIN` from `cloudflare:workers`.
-[Worker environment reads](debug-your-site.md#worker-environment-reads) explains why the env comes
+[Debug your site](debug-your-site.md#eventplatform-is-undefined) explains why the env comes
 from there. Both functions log the same mint and revoke records the built-in actions log. The
 `sharePreview` action returns a link that opens the draft, the same result
 [Verify the preview](#verify-the-preview) checks.

@@ -1,9 +1,120 @@
 # Written by drafter; do not edit by hand.
 version: 1
 pages:
+    docs/claude-code/using-claude-code-with-cairn.md:
+        accepted: f8047ba01387cdd688e72a0e6003506577ec64a9
+    docs/extend/add-a-second-sign-in-group.md:
+        page: 16ad2daf773233d3ff59f80d6d7ed0a593f8afd7
+        blueprint: e61f10b26c19c796e94af31abfc523b933021f15
+        accepted: ad021194c8a9e78f1534ed8a7a43a977fb19440d
+        sections:
+            _intro: sha256:fe64ce977658d074d0f5304c28d306f6b36b4b3b485c5f65b511cbaeff096280
+            add-the-role-s-people: sha256:bf3e92fd326ea7496bfcc3d954170ed74432f68bdbab4e0a59255461f8691f38
+            before-you-begin: sha256:5f4e87b185a7da859e8af5c0810d0b521f4c0b83f6443f74e0d4076e489ce8a5
+            build-the-login-route: sha256:09aa0470bf8ef4d059670c69dc418a65b276a250e035b0409b09e2219db76bdb
+            build-the-role-s-home-screen: sha256:85b146fb17cc55f7f278b0824fbaa8e1761bec19cf0e7bb09b9aadbedd2e02c5
+            choose-the-mechanism: sha256:99f895cf652ce10290895c80b9f09c9f923449c3ff7aa9f567ddf51e8e051f8e
+            declare-the-role: sha256:86e11a6739dc3aa0518446ff3e88ae6c96cc5a348212028f438dbcf26eadf042
+            deploy-the-channel: sha256:4dbad16be8fe37e4f3af10accd4d2c2e6515e410a5a3f8e243cc189f751e855a
+            end-a-removed-member-s-sessions: sha256:e98897543fccb02aefe5e7d09b8a97a7d13389b55db2a8c0d83fe1ab54f86970
+            gate-the-member-area: sha256:87db86b3b3a80a7e76aebbe7947c960d67b19a2a820190580e3ad4b07fe8a04b
+            provision-the-channel-database: sha256:30796eed462da0fddf6d8a53413522551d7221731f43681fc3064556c247b5e6
+            resolve-a-failed-setup: sha256:726b20b4b745d54d4dd797a609ea064e371999724ec85a744040df8155378081
+            see-also: sha256:65074e85da05184e61b80ca14c82b13fdebf0971f68f8a9c490b82925a6d8518
+            show-the-home-screen-in-the-sidebar: sha256:06d3ec31d3c66297d534f696de0f3607dcc3f40d520dad7fbb350f94e524b18a
+            sign-the-group-in-through-a-channel: sha256:cca797a156736d65b14fba82228ec20b7e6d44b80be3b98e248d44d212e53a60
+            sign-the-group-in-with-a-role: sha256:e22d214701a20f49186fe5989820181bf8aef4be3d0349ba3aeb657a1ab8eee2
+            test-the-channel-on-node: sha256:16b3331a9e146f3dc99949b2e9e7de58e8501bbba73be796bf036c446ebf1dfd
+            verify-a-member-signs-in-to-the-member-area: sha256:860eb20d28a9e384d9cc247c7fc374f6b940306c97335692d75234c2c6ee55a1
+            verify-the-role-signs-in-to-its-home-screen: sha256:28a31a7d16d465cbfe120b09e52096f25f7f5fc17b4dd8b9201142757b3afb9b
+            write-the-channel-module: sha256:685caa2d6f0dfebb74c2dbc43b5246d5556bb2615474c5ca70372a67fa93df59
+    docs/extend/add-cairn-to-a-sveltekit-app.md:
+        page: 65163162be441f51abbf80d2cdb1c0b044fc717c
+        blueprint: b307ed09dad986174b8551acadcda4e29c3a6987
+        accepted: 7b6c8f453f1a546cfc0b45afd60948f44c809d7d
+        sections:
+            _intro: sha256:e734d828280e7541ed8caa833e86e941e551ccc4fa866235e55617223057f9ef
+            add-a-second-post: sha256:b4c3d4ee08166cd69771a148a4a58ae61b6a5521aff0bf2ccff1dec6067768c1
+            add-the-email-sending-binding-and-name-the-origin: sha256:2edc2ea3e10f6d61a1e558f788152792d404b37c2ae44c933e38d6eb9e5043f4
+            add-the-first-entry: sha256:18341a13c60d83afedf19ead313a6bb993cf32876e745114529bde80d6743ffc
+            apply-an-opt-in-migration-locally: sha256:61cd1c2253ca68169da298a99bfc9a9f80467dd3d11d87b4b1c4e7ac696f80ef
+            before-you-begin: sha256:22f05854dbdca751a0d0fef77b843a3810d37c1017d491c92d70fb98db4acc2b
+            checklist-before-production: sha256:a58715fd2d908940429b4da58f26a0bc14fe81ff4faadd3fbfeacd130d75bf88
+            checklist-before-the-engine: sha256:fdd459a7394a42f01bccb3e25a4ded13a6455dc342943e30ff3eb71d62481fcd
+            checklist-for-production: sha256:3144e53ba4e4a20f919c26a9b51401b2278fa118b053fd72159f4801bdf5f7d9
+            create-the-auth-database: sha256:54aac33f711e6b64d1686a3a9c9fceba8797548021736bc81391bc4fa8c3fea6
+            create-the-project-on-the-cloudflare-adapter: sha256:4d2414d5ba2774e28b002e0296c42417ae617b88eb56d70a24857df76b6fbdc9
+            customize-the-sign-in-email: sha256:97c300a5b94b54b6621f5509e73f52d85e5bdbd786755d6fab8e2000df45c3c2
+            deploy-a-bare-sveltekit-site: sha256:b5c8ff14804f618a2f82378e0b2799699224f3432ea087887b10f07915b65fc6
+            deploy-a-change: sha256:3c1987033ad7b22a2b4d2a79a65de3468f438e9233a92219f192f70bd8918149
+            deploy-the-production-build-and-read-the-refusal: sha256:50bd7c843a7cf6022d33e277e0ce59a925af5144e84ab2bcac9c519313f4f15b
+            describe-the-worker-and-deploy-it: sha256:140bc0adfe0f73a548a78b2039f9264701f837b2abaa8e789b9bb9018c2be0bd
+            edit-the-message-in-a-custom-sender: sha256:fbeecbe75d65535ac767ae378d2138ee3853bc41540688d842d6d14e844c339d
+            index-the-content-and-commit-its-manifest: sha256:f440ba5c4320e74b3b8c17fa4080407591ce44ace6c8421440909aa5bc1654ae
+            install-the-engine-and-let-vite-compile-it: sha256:7eb47d7c2c93ff41250afac5117b965b865ff8e6897d09184305f43080a5c165
+            move-the-site-to-production: sha256:256e9fa2da2e809d2d9934b3e037546b99012cb33d8f736f7dad0e31de2d4e42
+            next-steps: sha256:92262b77e15d00ce7bb7a79ee0beb99744400b4bcf800185d88c0d0f95d664ca
+            rebrand-the-email: sha256:929494af69c513d7ec9e4db465f2a70f7fa7853ac7ed3bef49196b71de44cafb
+            register-the-github-app: sha256:5bc502dda3e0c05df6409df22775162e3ce5d2495fa3b0f063ec113fdab7f5f3
+            render-the-entry: sha256:58db47c9a34e1015030fff2e1df70cdf12221bdceacfcb17b08365a22eee510f
+            resolve-a-content-build-failure: sha256:069b560a39dbaf7d438fcefd9bc498a6b20b2774d75b56acc816e2fd6f0b5dd1
+            resolve-a-production-failure: sha256:4dd2a6eadc8f904c768194220e6de36e646b35846ee7b66c0fe385e53806911d
+            store-the-app-s-credentials: sha256:ccb0877d131e409fb8380d51dccda31172dabe5d887d70413103ac550fc336b1
+            verify-the-deployed-site: sha256:e5f486157406774b9f2e30149b32bcaee2deabd946537d6b3477b3b78a6dfc56
+            verify-the-production-site: sha256:1fef811cbcab39780719e895ae81e6ea24e774906712f1137bee507e90bfa5b2
+            verify-the-rendered-entry: sha256:df781e49e6e9979080427b4b71307454740bf31f549e21d32c566a72d6c10dcd
+            verify-the-sign-in-email: sha256:caa6957a894c3397b689fd4f2d8ac5bfb064573aa98453acf02b2a5ece99b82d
+            write-the-site-config-and-a-minimal-adapter: sha256:f00bd4046b73fc086c4434b5af7145ee0a7fbf774afbf46246acf64c6b72cfe0
+    docs/extend/debug-your-site.md:
+        page: be3ce83e66ec6358b32e1c7952d679b2f8586e7e
+        blueprint: ad3be2d68e6160516921681a02acf1d2308dd792
+        accepted: a2cc75f35e618b272a8a05bc8beb4c4cf8dbfade
+        sections:
+            _intro: sha256:b5a24c1afbac300fa17fd569e992de6bec22c7212df8da5d0a2a4989ca437a60
+            a-date-differs-between-machines: sha256:8e9bdb244ae96390aabce263c9ea3a181d5c644338843d74dfd7021188b89e17
+            a-visual-baseline-changes-every-day: sha256:5b4b89be24ebff432157e531a4d55e75e5cdf27fee4fbc27ee693e9b53a8fc9a
+            admin-action-events: sha256:2382e4a64e8004d4ba189e64052a9015ec3b9d75b073bb2c6c4b734b690bf275
+            admin-action-session-absent: sha256:a616caa2eddcfe86a5126d1805f1f29c74231b719b780231020fae61c4905f65
+            admin-action-unaudited: sha256:f5a84ce5b75321b22bf2315a5af393a666836bf79b04dcc98f89eba831fc8dda
+            adminactionmisconfigured: sha256:c4411b2cf89d7dee247dbaa6adfc50441055a05f75320915aee98a955caf22a4
+            audit-sink-call-failed: sha256:708e46ab53a73711a0e555d303d7d75085c3ef50fe2093a504b2336d98812ec0
+            cairn-fixed-today-yields-invalid-date: sha256:fd4343cd2ea401f87c9e06aa0239e8077a2eee4206bf8bde764bd6784c867e07
+            config-invalid: sha256:ee8c0d483ac560bea92bdf599ff458fe323b3356fb3a896ac99202f06094a9fb
+            configaccess-unmapped: sha256:844bd612e8f80a84bcfb86339ae06e9de167af8eaf2791975019f34220518a97
+            content-field-behavior-failed: sha256:e9b0c2d69c104e28c038f678936a7dd628be2bd61aad3d963dbfaf1f235e1e61
+            content-field-events: sha256:c1a134ea0b459b6e5c2b0c7c135329e941d32c08a00c9ae5565c0ff8a4087d22
+            content-field-unmarked: sha256:8a4c61efa01592a6b2756491c9ea004a0a7302cdfa9261367c844f7d84402c8f
+            date-dependent-output: sha256:689649c61ca798524ce68ab637729cbc11a8545d77871c5fa3a794d3865b9a7b
+            event-platform-is-undefined: sha256:5b03fb7ad1a70ff2f79070ecc3dc48c4823cf3f18b856ab021a6d737884c1d84
+            find-the-records: sha256:bd3248fbd4c8464351ff2fc9a605522f4e114a9836703e8a826880eef1993dc4
+            media-resolver-absent: sha256:696929cae8494aead3ba1009f37de3b95d4c0ff830462def25711c74bc07bd11
+            public-route-events: sha256:4d29613d68eed51460490308482be0c2c5913bcf21f025bb9dc68b42f48345e0
+            read-the-structured-logs: sha256:1f28b328ce7bdf9e37e57c6a7d2079a5ec33fec7198e59a58eb187de971880d7
+            see-also: sha256:dc24301d5774787bac12189ee9a1e82c0e53355824b2469b07aafd8af9655f5e
+            site-config-events: sha256:2384b4a46133fd98483db72b0c2fb228e4e6f93f531ca656bf9a0b915e67dca2
+    docs/extend/restrict-admin-access.md:
+        page: 1d4a936b532f457b25760d8bfa6dfc3270e17acf
+        blueprint: 68d14d7543b2f532625bd3b8dfa33cd6a43a5d96
+        accepted: 7bc844b82ae86baff80e06412d7c0d313463e230
+        sections:
+            _intro: sha256:a85ff393b7c8777c9dbf5b58402317f96bc8e293004eb9afe48ec37bd3e16222
+            assign-the-roles: sha256:48021fd5f5aece915e1bce810d75451aac5a9a62b252ea80848db771004c268a
+            before-you-begin: sha256:91af7cb59e7040dd03fbf7e360be5333135de36f82ca5deb42c0bad242dfa3a3
+            decide-what-the-map-leaves-open: sha256:afe79509b9972738042d88b7f924e3fcf8a16832d52626c718ecb9e4b255e5e2
+            declare-the-access-map: sha256:b1478ccc624e0a272748aacaca768c96aae077ba494a43704431c4a34e983191
+            declare-the-roles: sha256:47d773b59e6ea1ea7db8fb3083ab25bffdc5279246a7bf9ef4fe7037d9091617
+            deploy-the-changes: sha256:0663a76e95b1e80cf4083c8ac592688d3d0e2e46860cdee3be62355899360b6d
+            enforce-the-map-on-your-routes: sha256:155ea5210cbc8ea59e9e1d2c8356a483cbdbdfe86e0d26d6a7887fefd03be94a
+            key-nested-and-parameterized-routes: sha256:e32676a750d1580e9c48a2bf9b2fd093b6355f2ae3877c304cd96968c9dd916d
+            make-the-map-exhaustive: sha256:9df6b9d4da8926366c9502b16b7d8e2647a093b013c7bb29025413cd0022f6d9
+            resolve-a-refusal: sha256:508c3eb023818eb5872c867d48f4afd995a08e521fc7a6ed4ea9d5ed715319e4
+            see-also: sha256:b4ebba2cdbf22a19d95ec80c9d368ef4fcb505a77d92affd633f72ca85e9d12a
+            sidebar-entries: sha256:b43b1baabc610ab92554f5391650b14fa88e9701f0ddbe5d44e27114040ea30c
+            verify-each-role-s-reach: sha256:0cb90ccd04a764d236d2af3b2d22d012748265601dffe782382ff63f3c991e46
     docs/extend/rotate-the-github-app-key.md:
         page: 25d0f25c369d5585ec17d7584536f6e198d4a7e3
         blueprint: e299f141f3305a3a68cc67fbfdc6350f589d0918
+        accepted: c659158278ec0d4d0538f31fc139cb5df146b2be
         sections:
             _intro: sha256:bad06db458031f11fca6ecb6f6885b92d54771f60c6c1ed8558f61a003a77746
             before-you-begin: sha256:48154814a4d22e323f9e2895c151affad6a07814f6ad8dd5973e9a02045d5830
@@ -15,3 +126,78 @@ pages:
             roll-back-to-the-old-key: sha256:03b43cf6bcf150cef5bea823dbabbe155017f382766d628ff11e5a200c8f1888
             see-also: sha256:f3ca1e3e61907aa0b7035eb95b7f28bedc55e031bab062e53967533bd8040fa0
             verify-the-new-key: sha256:3b9e85ea02175d20a57f2cf2bc79eecfecf7a960dcb2a96b99f5d39408d0d307
+        blocked:
+            commit: fd90da8d87488d3320b78c482fb03071c68b4d7b
+            findings:
+                - location: roll-back-to-the-old-key / s-rollback
+                  text: The rollback route has no deploy step for a Worker that uses gradual deployments. The push section makes `wrangler versions secret put` the command for such a Worker and adds s-push-gradual-deploy, because that command does not deploy. s-rollback only says to run the push command with the old key's file. A gradual-deployments reader who follows it leaves the old key in an undeployed version, so s-rollback-verify still reports the failed key and the reader loops through rb-repush without restoring anything.
+                - location: roll-back-to-the-old-key / x-rollback-verify, rb-repush
+                  text: Recovery comes before diagnosis. x-rollback-verify treats any 503 from the live request as 'the Worker holds a key other than the old key' and hands off to rb-repush. rb-repush tells the reader to push again first and to read the recovery rows only if the 503 persists. A live 503 carries a `githubAppToken` or `githubAppSigning` detail that names the failure, and `installation_not_found`, `installation_suspended`, `unreachable`, and `key_refused` are not fixed by re-pushing. The cause is also stated too narrowly.
+    docs/extend/scaffolded-site-files.md:
+        page: e719abcd526b4960e1b45c8bff6b5739efa7756a
+        blueprint: 866835f4a3636ad0e82c8eb53d0b635928f4813a
+        accepted: e666c9734166e5bb93de74244a213af04b2c333c
+        sections:
+            _intro: sha256:93e85775c8133cd91c5ed13317eacbb40ec6b95ecaefa0e75f6fdf4b06808452
+            cairn-audit-config-json: sha256:be2b27926b846add96c6f253af0c1c62c04f2b05d43ea2c1e828e240aaefc98b
+            configuration-files: sha256:ce8824e962e2d0e27cfa7e7be7d7b35f2ccbadf94795b4876eedd687a7b71e7b
+            crawl-rules: sha256:1fe2f607375cd5c8a1bd83618a8c01154acab635b7a1dab564c15e1cb72cf0a9
+            database-migrations: sha256:a47627fdbf0ebbf5210e00410e4722c1b2dc85111615bd28057cd669c627c5eb
+            dev-vars-example: sha256:119648e059608e70e3c9dcaaec998e4de88f7b8c794ab38c6e2a0d0adc99fe1e
+            endpoints-at-the-root: sha256:7ddd381234cea1c1f6a4ecffc90bb07778984e508c11068ccb2affd0e923384b
+            file-tree: sha256:3120cedf0f00e5822dcc1607ebef0089097c9286fddf0d4b16a637ad805fca14
+            github-workflows-check-yml: sha256:d8a0fd1e29a6f0ec88353aea4a4e384420a00f8ac15224f6749bbad84ca61389
+            gitignore: sha256:1a9f5f6c02e29a8a119a433a9fda036b5994c06f8d4c51fa22480df865ffe802
+            other-root-files: sha256:901b46635467048254d775a7800ec59a4efef787f303ea6df8cdee35fbd25151
+            package-json: sha256:33991d7bb513c130320948d75a5d46d1019ea496919c4b3d8afc334315788b50
+            root-files: sha256:8c1f6012e4fd57f103ef57c474de4b1105cc17e362bd772a0b6d800eb0423802
+            root-layout-and-error-page: sha256:a006146fbcec70d4a938d2270e717803ed841051e45cd34c4e8caef8a1011f2c
+            routes-and-the-server-hook: sha256:27eb37bf14ade92604570cc7a45d9cf33f165fbbe32cab80044abc534d85ebf5
+            settings-outside-the-admin: sha256:1734470fbf36aabb7b21ad36cafe6ee3fa693ad7d6c762bf1ce44a2e8692f623
+            setup-state-outside-the-tree: sha256:6811df013d69141a954892cf334702f8313e968ed54b08086a7c5a91224dab56
+            src-chassis: sha256:31aae55da6cfe601335b72458b31f742ebf073523dbae58944bbed08700bc564
+            src-content: sha256:f60fc9a0e3195003e40438f30ece994c1d25cd8b110826cfba35dc828c5c6c49
+            src-content-cairn: sha256:5f607020cf11b47093fc5edc75819ff5cd92e99dd77efc26a4096d368215f4ae
+            src-routes-admin: sha256:59aa04c75c9cdb7456883d6af28b1c4158e9392afb46b0388b714538a6e74600
+            src-routes-site: sha256:6309ecba5ff2a5a6ed3c40972fc4342e7c5ca7ae19f158cc48885a7c964d6108
+            src-theme: sha256:e7858d92af2550526077e80d120b8f1bae613abac2148841cb8f45386853cc24
+            style-sheets: sha256:36ee8ccca160783a26ebdbd510bdc0291501c7ab519207c61a7498e294a549b9
+            the-scaffold: sha256:ef89e9fff22734bc0b1c443a9ead591199a6dcba69c174154df17203adcf674e
+            theme-chassis-and-content: sha256:e2c8ee58fb635e4142da56bbf25ef65701a68ab4200a97ac6a7fd564918a7bff
+            themed-404-page: sha256:544b7a19d9b07f6dacf5b7eb362c63195ef5aaf5ed3a4f07745120e00768bf51
+            vite-config-ts: sha256:6a0cd058ceb302efd177dcbda539f9236d05926ac2377082bc2ebda6f002bbbf
+            wrangler-jsonc: sha256:a3b8b9092d1407a7d6813ada9a5adcd38d0893d23c8a5c2ca211d37bf5adc60c
+    docs/extend/security-model.md:
+        page: ea4bd221fb744bd760fed649ae79e5eaee8df569
+        blueprint: f10cff21820db750c75ae8f4fbbb7b5d4e674f65
+        accepted: df3d63385517e4f709a209391f7d80300b894086
+        sections:
+            _intro: sha256:2efae629b5ee5820ad29eaf9b851ea1667857cf7fa9c30b4038a5776a0cacd15
+            access-map-coverage: sha256:dc1ddaafa480c54e609f25ec371d98fbc6124707e832294aa1c2204156f58e97
+            allowlist-semantics-from-an-exhaustive-map: sha256:f2f13a0d1452e4f099d094a2fcc232b56365806fa2005cc700dc0a65c3412cf3
+            browser-binding-for-sign-in: sha256:9e0d083d1fa3f44a9401b811e8eb7fc79651f79e01dab5780eb14c83cb7d5d64
+            concepts: sha256:53d1686cdd69a431d43994c47b289637a76a31876dabe93e5fc5e80d9d057e08
+            csrf-protection: sha256:eda75222519b42ae0140b10c5aa83c640527ee958e9234f0cacaf3f5b4fb5a83
+            external-resources: sha256:c6806c49cd6cb3545fdeb45d35df0d8859dc43fc1b1dc45c27cf72b3678076c1
+            how-to-guides: sha256:5e29605f64d7ac99677130ba37e9df1443bc7b982d65a89446d6c408fb77a3de
+            identity-modes-threat-surface: sha256:2f37bf84b76376d4163aa30941a97d06cc2d49599f6f055864c957e9573c0eb9
+            limits-of-access-map-coverage: sha256:8db40c8d20f075da4a3472584da05b2082aeefc73c3d4fe1fcb9f1310b4b0aba
+            limits-of-csrf-protection: sha256:02d9b71db51177ef650b7f246e5264bfa4f45ed1dad31bc44cd65dd7bbb2ded9
+            limits-of-identity-mode: sha256:bf4ec79b4b7f6ade76b74daea2b2e6e357d495225373e14295824fb40252707b
+            limits-of-render-safety: sha256:153e42f2a8da7af18dd848e339469eb19f1234dc584fe08cd262c0a35a9c948e
+            limits-of-the-admin-headers: sha256:607e2e33be1b471df7844ab8375bb24ba7296ebb45d756ee056e5b77605bb482
+            limits-of-the-auth-channel: sha256:b0503f6c1a7a3073e51e18b3a254cb53f618a0f5b81e5142f9e6f099c06f772d
+            limits-of-the-browser-binding: sha256:00aa8ebcacf8357bd8a4c7a87b18493b2294921a04be6055b925c73aa19debec
+            limits-of-the-dev-backend-refusals: sha256:6f7f1d6e5840fe51ca0e958c7852e0678f8a4c67c4070e39ef7b15bad41db027
+            limits-of-the-installation-token: sha256:ccbf09f4fa65dce7133de71aa4d9114cf0f6e50173ac617d9740e7814ebaf3f9
+            limits-of-the-non-enumerating-answer: sha256:ffd3e4c099c9cf79f537ece13e33fd4ac06d207d0fea1b33018f7e0fe909c15a
+            limits-of-the-session-cookie: sha256:a0664816f9cca5412093cf4f6f81ba1a8369f6c31f3ca5d40f8670bc8c0dbe67
+            magic-link-sign-in: sha256:6540ef61adb7c45ba0c1d8cd8efad94de48fb925f1c46ea7a6422aae190f740b
+            related-resources: sha256:38d5f1dddb2d1cb5a13d897cc69a614ab2d97e2cc5393800458d45344faac4d1
+            render-safety: sha256:128d9f2a819226d70417bbce700b33bf313e6efab4232b3499a104d51dadb7ba
+            the-auth-channels-threat-surface: sha256:53c63af632e774c2af4daba7766cd6c4ab106ed674a982b2040f883c143bbf3c
+            the-auth-guard: sha256:a9e954f930bebda284f6cdd67b51fd206beb8597735e7aa75c3949c42b418378
+            the-dev-backend-flags-two-refusals: sha256:6dc53863574179210a0e46d68fe993d0a390d8feaaa9d60e0d9c7e907f77b93c
+            the-github-apps-reach: sha256:200c3cf62bbe3065d524f3085a804a61c25c06edd56d3a48918c7ec0c89f5ac2
+            the-session-cookie: sha256:d9f8d0714bfd58568009594abce2173ffa8e1744fe5e8999dbea4e7953ac45d3
+            the-site-s-responsibilities: sha256:63d46429aff481f60cd7c77ca436aeb17af943e37efb6e7453b400bec73bf2e3

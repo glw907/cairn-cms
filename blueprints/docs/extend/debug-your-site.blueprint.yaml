@@ -555,28 +555,21 @@ sections:
         use: |
           Only that `createAuthGuard` and `devBackendHandle` each set `locals.cairnAccess` to
           `runtime.access ?? {}` on every admin path they cover, right after they set
-          `locals.cairnEditor`, so behind either this reason does not fire and it fires only on a
-          route outside their coverage, where a site hook set the editor. Omit the session-check
+          `locals.cairnEditor`, so behind either this reason does not fire; it fires only when
+          other code, such as a site's own hook, sets `locals.cairnEditor` without
+          `locals.cairnAccess`. Omit the session-check
           clause, which [[admin-action-session-absent]] carries, the earlier-versions clause, and
           the `devBackendHandle({ access })` fix.
-      - id: f-one-declaration
-        kind: fact
-        fact: f:iwf4nu
-        use: |
-          Only that a site declares its access map once, as the adapter's `access` member, and the
-          guard attaches it, so there is no second copy to pass to a handle. Omit the
-          earlier-versions clause.
       - id: s-access-map-fix
         kind: sentence
         mode: claim
         text: |
-          The fix is a code change: that hook also attaches the adapter's access map to
-          `locals.cairnAccess`, or the route goes behind the guard, which attaches it on every
-          admin path it covers.
+          The fix is a code change: that hook also sets `locals.cairnAccess` to
+          `runtime.access ?? {}`, as the guard does, or the route goes behind the guard, which sets
+          it on every admin path it covers.
         facts:
           - f:nup3og
           - f:u78zg6
-          - f:iwf4nu
       - id: l-upgrade-one-declaration
         kind: link
         target: upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change
@@ -1179,7 +1172,14 @@ dispositions:
     reference: ../reference/sveltekit.md#createauthguard
     reason: |
       The guard's config shape is the reference entry's; the page needs only that the guard
-      attaches the adapter's map (`f:u78zg6`, `f:iwf4nu`).
+      attaches the adapter's map (`f:u78zg6`).
+  - fact: f:iwf4nu
+    disposition: subordinated
+    reference: upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change
+    reason: |
+      That the map is declared once on the adapter, with no second copy for the guard, is upgrade
+      history the upgrade page owns; the row needs only the attachment `f:u78zg6` places. Placing
+      it here also set it against the live restrict-admin-access page's stale two-copy heading.
   - fact: f:gun084
     disposition: subordinated
     reference: ../reference/sveltekit.md#createauthguard

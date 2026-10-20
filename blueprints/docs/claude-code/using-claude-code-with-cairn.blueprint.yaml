@@ -747,11 +747,30 @@ sections:
         from: v-check
         symptom: |
           The Tailwind line reports `.claude/` not excluded from the site's Tailwind build, or
-          reports that it could not find the Tailwind entry.
+          reports unknown and names the paths it checked.
         handledBy: l-diag-tailwind
       - id: l-diag-tailwind
         kind: link
         target: ../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build
+      - id: x-check-throw
+        kind: failure
+        from: v-check
+        symptom: |
+          `npx cairn-guidance check`, with or without `--strict`, stops with an error instead of
+          finishing, and exits nonzero.
+        cause: |
+          A file the check reads failed to read for a reason other than its being absent, which
+          ends the run. This exit is not the stale-tree exit: `--strict` exits 1 only on a stale
+          or missing tree, and this failure happens with or without `--strict`.
+        handledBy: h-diag-check-throw
+        facts:
+          - f:4ax489
+      - id: h-diag-check-throw
+        kind: handoff
+        text: |
+          Read the error the run printed, compare it with the files the `cairn-guidance check`
+          reference says the command reads, make the file that failed readable, and run the check
+          again from the project root.
   - id: see-also
     heading: See also
     why: |

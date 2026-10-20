@@ -234,7 +234,7 @@ sections:
           removes, including the `admin/signups` screen with its `migrations-app/`, the
           `admin/error-fixture` route, `src/lib/env-check.ts`,
           `src/routes/(site)/+layout.server.ts`, the members fixture with `migrations-members/`,
-          and 13 of the showcase's 27 posts. Then say that the bake writes its own `README.md`,
+          and 13 of the showcase's 27 posts, so the scaffold keeps the other 14. Then say that the bake writes its own `README.md`,
           `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` in place of the
           showcase's, so the scaffold still carries those files.
       - id: scaffold-one-template
@@ -567,9 +567,8 @@ sections:
         fact: f:n0fg3w
         use: |
           Only the `cf-typegen` row: in the scaffold it holds `wrangler types
-          --include-runtime=false`, the command the scaffold's `worker-configuration.d.ts` records,
-          with no `--env-file`. Running it regenerates `Env` from the bindings in `wrangler.jsonc`
-          and names no missing file. Only the Deploy-button tree's script adds
+          --include-runtime=false`, which reproduces the arguments the committed
+          `worker-configuration.d.ts` records. Only the Deploy-button tree's script adds
           `--env-file=.dev.vars.example`.
   - id: vite-config-ts
     heading: '`vite.config.ts`'
@@ -1163,9 +1162,9 @@ sections:
       What lives outside the repository closes the body, ending on the build-token risk, the one
       item there that can break a live site.
     opens: |
-      The setup command kept its record of the run on the machine that ran it, and when the same
-      run's Workers Builds chapter connected the repository, it registered the Cloudflare API token
-      pasted during setup as the build token the site's deploys use.
+      The setup command kept its record of the run on the machine that ran it, and when its Workers
+      Builds chapter connected the repository, it registered the Cloudflare API token pasted during
+      setup as the build token the site's deploys use.
     items:
       - id: state-record
         kind: fact

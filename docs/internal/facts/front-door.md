@@ -119,10 +119,13 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   scripts/build/transpile-dist-svelte.mjs && chmod +x ..."`. [verified]
 - `f:eywrq8` The engine emits a JSON structured-log record for every operationally meaningful event
   through one internal chokepoint at `src/lib/log/`, with event names forming a stable, public-observable
-  vocabulary (`area[.subject].verb_phrase`) documented in `docs/reference/log-events.md`; the engine's
-  own `log` instance is exported from no package subpath; `/log` exports `createLogger` (`f:mreycz`).
-  Source: `src/lib/log/events.ts:1-16` (module comment: "renaming one is a breaking change... See
-  docs/reference/log-events.md, kept in step with this union."); `src/lib/log/public.ts:1-7`;
+  vocabulary (`area[.subject].verb_phrase`) documented in the event table directly under the title
+  heading of `docs/reference/log-events.md`, one row per event with its level, trigger, and fields;
+  the engine's own `log` instance is exported from no package subpath; `/log` exports `createLogger`
+  (`f:mreycz`). Source: `src/lib/log/events.ts:1-16` (module comment: "renaming one is a breaking
+  change... See docs/reference/log-events.md, kept in step with this union.");
+  `docs/reference/log-events.md:16-98` (the `| Event | Level | Fires when | Fields |` table under
+  `# Log events`); `src/lib/log/public.ts:1-7`;
   `src/lib/log/` contains `create.ts`, `emit.ts`, `events-list.ts`, `events.ts`, `index.ts`, `public.ts`.
   [verified]
 - `f:w379wu` Every publish is a commit with the editor as author and no committer set, so GitHub attributes

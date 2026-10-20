@@ -5,7 +5,7 @@ Grounding and feasibility, design and accessibility (the daisyui-a11y-reviewer a
 ---
 
 
-Object: `docs/superpowers/specs/2026-09-08-pictures-design.md` (DRAFT, 2026-09-08).
+Object: `docs/specs/2026-09-08-pictures-design.md` (DRAFT, 2026-09-08).
 Lens: grounding (every claim opened against the tree) and feasibility (sizing, tasks).
 Read-only review; nothing in the tree was edited. `node_modules` is absent in this checkout, so
 every verdict below is static reading of source, not an executed test.
@@ -1277,7 +1277,7 @@ naming the limit (the same build-backstop posture as an unknown icon name)."
 **The precedent says the opposite.** `src/lib/render/glyph.ts:12`: "**An unknown icon name yields
 the bare svg shell with no path child, so it never serializes**", the render-side icon behavior is a
 graceful degrade, deliberately fixed *away* from failing
-(`docs/superpowers/plans/2026-06-01-cairn-components-03-slot-render.md:488,812`). The one
+(`docs/plans/2026-06-01-cairn-components-03-slot-render.md:488,812`). The one
 throw-on-unknown-icon is `normalizeAdminNav`
 (`2026-06-28-cairn-extensibility-1-admin-shell-and-nav.md:302`), which validates a **developer's
 config at construction**, not an author's content at render.

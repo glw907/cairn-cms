@@ -2,7 +2,7 @@
 
 Superseded "Immediate next action" entries moved out of the rolling `docs/STATUS.md` on 2026-07-01,
 newest first, verbatim. The rolling doc keeps only the current entry; per-plan post-mortems live with
-the plans under `docs/superpowers/plans/`.
+the plans under `docs/plans/`.
 
 
 ## Immediate next action (2026-07-01, LATEST): Media Library direct upload COMPLETE + MERGED to `main`, release HELD; NEXT is Geoff's merge/release call, then the next engine pass
@@ -13,7 +13,7 @@ reused `MediaCaptureCard`, post the file to a new `mediaLibraryUpload` action th
 `ingestAndStore` body) and commits the derived `media.json` row to `main` in one step, then refresh to the
 `uploaded` flash. Single-file, idempotent on a duplicate hash, client posts only the file, commit is
 fail-closed on `expectedHead` (matching `settingsSave`/`vocabularySave`). Plan + post-mortem:
-`docs/superpowers/plans/2026-06-30-cairn-media-library-upload.md`. Memory:
+`docs/plans/2026-06-30-cairn-media-library-upload.md`. Memory:
 `cairn-image-gallery-initiative-placement`.
 
 **Gate (pass end):** `npm run check` 0/0 (1256 files), `npm test` exit 0 (278 files, 2908 tests),
@@ -50,7 +50,7 @@ is a non-modal `role="group"`. The built-in tooltip is suppressed via `tooltipFi
 empty array does NOT suppress on `@codemirror/lint` 6.9.7); `linter()` keeps the underline, tuned for
 weight and offset on the locked `--cairn-warning-ink`. A new `check:cm-internals` allowlist gate (wired
 into CI) holds the editor theme's CodeMirror-internal coupling to the `.cm-tooltip` floor. Plan +
-post-mortem: `docs/superpowers/plans/2026-06-30-cairn-cm-suggestion-popover.md`. Memory:
+post-mortem: `docs/plans/2026-06-30-cairn-cm-suggestion-popover.md`. Memory:
 `cairn-codemirror-integration-pass`.
 
 **Gate (pass end):** `npm run check` 0/0 (1252 files), `npm test` exit 0 (2882 tests, 275 files),
@@ -155,7 +155,7 @@ upgrade path. Gate green (`check:docs` OK, `check:reference` unaffected, Vale 0 
 3. **Carried follow-ups (unrelated to a cut), now planned:**
    - **Scope the admin CSS build's content detection** so the shipped sheet stops compiling foreign rules
      from `examples/showcase` and `docs/`. Plan WRITTEN + QUEUED:
-     `docs/superpowers/plans/2026-06-30-admin-build-content-scope.md` (a test-first single task: disable
+     `docs/plans/2026-06-30-admin-build-content-scope.md` (a test-first single task: disable
      Tailwind's automatic source detection with `source(none)`, keep the explicit `@source`, lock it with a
      no-foreign-token invariant in `admin-css-build.test.ts`, prove it with the byte-identical `admin-visual`
      baseline). ROADMAP "Next"; the friction log has the detail. Execute via `cairn-implementer`.
@@ -171,7 +171,7 @@ The starter-template track is done through the fold. **Phase 1 (template foundat
 chrome) are both complete** on branch `starter-template-1` (off `main` at `14e52b1`, in the
 `extensibility-plan-1` worktree), **held and not yet merged** (merge to `main` when Geoff asks; the showcase
 template is copied, not imported, so no release). Plans + post-mortems:
-`docs/superpowers/plans/2026-06-30-starter-template-{1-foundation,2-chrome}.md`.
+`docs/plans/2026-06-30-starter-template-{1-foundation,2-chrome}.md`.
 
 **Phase 2 (template chrome) — the fold, executed via a workflow.** Geoff opted into a workflow; it ran six
 sequential `cairn-implementer` fold tasks (shared files, strict in-order ratchet) plus a parallel review.
@@ -199,7 +199,7 @@ PASS both trees (admin 0, showcase 0), `check:public-tokens` PASS (30 pairs AA i
 `islands`). `svelte-reviewer` and `daisyui-a11y-reviewer` both clean.
 
 **NEXT = the docs phase (the final phase of the admin idiomatic re-expression initiative).** Per the spec
-(`docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`, "Final phase: docs"): rewrite
+(`docs/specs/2026-06-29-admin-idiomatic-re-expression-design.md`, "Final phase: docs"): rewrite
 `admin-design-system.md` from "bespoke recipes" to "native primitives plus the documented essential floor,"
 publishing the role vocabulary (the Warm Stone theme tokens, the `text-muted`/`text-subtle` utilities, the
 component recipes) as the versioned seam beside `CairnAdminShell`/`adminNav`; document the template's owned
@@ -214,7 +214,7 @@ admin-re-expression + starter-template body can batch into one release decision 
 The starter-template track of the admin idiomatic re-expression has begun, and **Phase 1 (template
 foundation) is complete** on branch `starter-template-1` (off `main` at `14e52b1`, in the
 `extensibility-plan-1` worktree). Plan + post-mortem:
-`docs/superpowers/plans/2026-06-30-starter-template-1-foundation.md`. Held unpublished, **not yet merged**
+`docs/plans/2026-06-30-starter-template-1-foundation.md`. Held unpublished, **not yet merged**
 (merge to `main` when Geoff asks; admin + showcase internals a consumer never imports, no public surface or
 behavior change, no release).
 
@@ -259,7 +259,7 @@ for the Phase-2 brainstorm:** the `@theme` namespace mapping and naming (e.g. `-
 `--text-step-1` → `text-step-1`; `--cairn-space-m` → a `--spacing-*` step → `gap-m`/`px-m`); which tokens
 get named utilities vs stay bare CSS consumption; whether the figure/code Tier-2 contracts need any utility
 exposure. **The Phase 2 plan is WRITTEN + QUEUED** at
-`docs/superpowers/plans/2026-06-30-starter-template-2-chrome.md` (committed, not executed). It commits to
+`docs/plans/2026-06-30-starter-template-2-chrome.md` (committed, not executed). It commits to
 the idiomatic `@theme` mapping (the table in the plan) and structures the fold as six tasks (faces →
 type/space scales → tracking/leading/measure/colors → radius+floor → island-converter+`--cairn-rule` →
 styleguide+recipe+ledger), each pixel-neutral and guarded by the `site-visual` baseline, ratcheting the
@@ -283,7 +283,7 @@ Tier-2 sanctioned set (the a11y inks, the elevation pair, the walled editor syst
 infrastructure, the two unlayered workarounds, the `.btn-primary` lift, and the guaranteed-value
 `--color-muted` / `--color-subtle` vars behind the frozen `text-muted` / `text-subtle` role utilities),
 owned on purpose. Plan + post-mortem:
-`docs/superpowers/plans/2026-06-30-admin-re-expression-6-media-part-2.md`; the ledger Phase 6 sign-off is
+`docs/plans/2026-06-30-admin-re-expression-6-media-part-2.md`; the ledger Phase 6 sign-off is
 in `docs/internal/design/2026-06-29-custom-surface-ledger.md`.
 
 **Phase 6 (four clusters + a baseline).** Executed through one background Workflow that ran the four
@@ -313,7 +313,7 @@ change, no behavior change, so an upgrading site needs no action. Phases 0-1 alr
 starter template in native DaisyUI 5.6 / Tailwind 4 (sequenced after the admin primitives publish into the
 showcase `file:` dep, now done). The docs phase publishes the role vocabulary (the `text-muted` /
 `text-subtle` utilities plus the recipes) as the versioned seam in `admin-design-system.md`. Spec:
-`docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
+`docs/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
 
 **The CodeMirror integration is a separate future pass (Geoff steer, 2026-06-30).** Better-integrate
 CodeMirror so the editor feels like a fully integrated part of cairn and shares its design language, while
@@ -331,7 +331,7 @@ worktree off `main` per `superpowers:using-git-worktrees`, then:
 > foundation). The admin sweep (Phases 0–6) is complete and published as `0.78.1`, so the admin primitives
 > are stable and the showcase builds against them through the `file:../..` dep (`npm run package` carries
 > the dist). Read the spec
-> `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md` (the "## The starter
+> `docs/specs/2026-06-29-admin-idiomatic-re-expression-design.md` (the "## The starter
 > template" section and the "### The starter-template track" phasing), the ledger
 > `docs/internal/design/2026-06-29-custom-surface-ledger.md`, and the `cairn-admin-design-modernization`
 > memory first. Use `cairn-pass`. The phase: audit `examples/showcase` into its own Tier-1/2/3 ledger;
@@ -348,7 +348,7 @@ worktree off `main` per `superpowers:using-git-worktrees`, then:
 
 The admin idiomatic re-expression **sweep Phases 2 (office chrome), 3 (forms), 4 (desk chrome), and 5 (media part 1)
 are complete**, merged to `main` and pushed, held unpublished per the hold-and-batch cadence. Plans + post-mortems are
-under `docs/superpowers/plans/2026-06-30-admin-re-expression-{2,3,4,5}-*.md`; the ledger
+under `docs/plans/2026-06-30-admin-re-expression-{2,3,4,5}-*.md`; the ledger
 (`docs/internal/design/2026-06-29-custom-surface-ledger.md`) carries the per-phase sign-offs.
 
 **All four were near-mechanical token retirements (the spec's premise check holds).** The admin `retiredTokenBudget`
@@ -383,7 +383,7 @@ floor). Census the six a11y models in the slide-over/safe-delete region, write +
 its proven floor; then the serialized starter-template track, then the docs phase.
 
 **The Phase 6 plan is WRITTEN, REVIEWED, and QUEUED** at
-`docs/superpowers/plans/2026-06-30-admin-re-expression-6-media-part-2.md` (on `main`, and on branch
+`docs/plans/2026-06-30-admin-re-expression-6-media-part-2.md` (on `main`, and on branch
 `admin-reexpr-6-media-pt2`). Census + single-agent adversarial review done; findings folded. It is ready to **execute**
 (not yet executed — this is where the session prepped a clear). **The one decision to confirm before Task 2:** the
 `decoration-[var(--color-muted)]/55` strikethrough at `CairnMediaLibrary:2322` cannot fold to `text-muted`; the plan
@@ -394,7 +394,7 @@ pixel-exact alternative — Geoff's call.
 **Resume prompt for the fresh session** (launch in the cairn-cms main checkout `~/Projects/cairn-cms`):
 > Execute Phase 6 (the final phase) of the admin idiomatic re-expression sweep. Create a feature worktree off `main`
 > (Phases 2–5 are merged; budget 125). The plan is written and reviewed at
-> `docs/superpowers/plans/2026-06-30-admin-re-expression-6-media-part-2.md` — read it, the ledger's Phase 4+5 sign-off,
+> `docs/plans/2026-06-30-admin-re-expression-6-media-part-2.md` — read it, the ledger's Phase 4+5 sign-off,
 > and the `cairn-admin-design-modernization` memory first. Confirm the `:2322` decoration treatment (the plan
 > recommends option b). Execute task-by-task via a `cairn-implementer` workflow (the four retirement clusters ratchet
 > the budget 125 → 0, the terminal floor), add the slide-over/dialog visual baseline, run the pass-end ritual, and
@@ -405,7 +405,7 @@ pixel-exact alternative — Geoff's call.
 
 Phase 1 (the vocabulary-screen pilot) is built, reviewed, and merged; the held tag-management release is cut as
 **0.78.0** on `worktree-tag-management-1`. Plan + post-mortem:
-`docs/superpowers/plans/2026-06-29-admin-re-expression-1-vocab-pilot.md`.
+`docs/plans/2026-06-29-admin-re-expression-1-vocab-pilot.md`.
 
 **What landed (Tasks 1–5):** `VocabularyAdmin.svelte`, a tag-vocabulary admin screen built natively on the frozen
 `text-muted`/`text-subtle` role interface (a near-twin of `CairnTidySettings`, mounted as the engine `vocabulary`
@@ -432,7 +432,7 @@ scans-docs gotcha bit twice this pass (an ASCII-ellipsis and a pipe inside a `te
 **NEXT = the sweep (Phases 2–6)** of the admin idiomatic re-expression (office chrome, forms, desk chrome, media ×2),
 then the serialized starter-template track, then the docs phase (publishes the role vocabulary as the versioned seam in
 `admin-design-system.md`). Each phase is a just-in-time plan, test-first, ratcheting its `check:custom-surface` caps; see
-`docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
+`docs/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
 
 **Release cadence for the sweep: hold and batch, do not cut a release per phase** (Geoff, 2026-06-29). The sweep
 phases + the template track + the docs phase accumulate UNPUBLISHED on `main`, each finalizing its `## Unreleased`
@@ -446,7 +446,7 @@ version is the first free minor after `0.78.0`, set at the cut. The release sche
 
 > Start Phase 2 of the admin idiomatic re-expression sweep (office chrome): the `AdminLayout`/shell,
 > `NavTree`, `ConceptList`, `LoginPage`/`ConfirmPage`, the empty states, and the dialog family. Read the spec
-> `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md` (the Phase 2 list, the five
+> `docs/specs/2026-06-29-admin-idiomatic-re-expression-design.md` (the Phase 2 list, the five
 > de-customization rules, the verification section), the ledger
 > `docs/internal/design/2026-06-29-custom-surface-ledger.md`, and the `cairn-admin-design-modernization`
 > memory first. Use `cairn-pass`. Write the Phase 2 plan just-in-time (test-first; pre-declare the
@@ -526,9 +526,9 @@ loop reviewing each diff and clearing the gate, except Task 1 (the ledger, main-
 adversarial-review gate). Resume prompt:
 
 > Execute Phase 0 of the admin idiomatic re-expression
-> (`docs/superpowers/plans/2026-06-29-admin-re-expression-0-foundation.md`) on branch
+> (`docs/plans/2026-06-29-admin-re-expression-0-foundation.md`) on branch
 > `worktree-tag-management-1`. Read the spec
-> (`docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`) and the
+> (`docs/specs/2026-06-29-admin-idiomatic-re-expression-design.md`) and the
 > `cairn-admin-design-modernization` memory first. Use `cairn-pass`. Execute task-by-task via
 > `cairn-implementer` (Sonnet), reviewing each diff and clearing the gate between.
 
@@ -542,7 +542,7 @@ tag-management Plan 3 on the current idiom now and re-express it during the swee
 
 An admin design-system modernization pass emerged mid tag-management Plan 3 and is partly landed on
 `worktree-tag-management-1`. Plan + decisions:
-`docs/superpowers/plans/2026-06-29-cairn-admin-design-modernization.md`; memory
+`docs/plans/2026-06-29-cairn-admin-design-modernization.md`; memory
 `cairn-admin-design-modernization`.
 
 **Landed (committed on the worktree):**
@@ -566,7 +566,7 @@ long and noisy, so we cleared context to brainstorm it fresh.
 
 > Brainstorm the fresh admin UI for cairn-cms: a restrained, idiomatic, current DaisyUI 5.6 showcase within
 > the Warm Stone sensibility. The 5.6 bump and the live-components bar already landed (see
-> `docs/superpowers/plans/2026-06-29-cairn-admin-design-modernization.md` and the
+> `docs/plans/2026-06-29-cairn-admin-design-modernization.md` and the
 > `cairn-admin-design-modernization` memory). Use `superpowers:brainstorming` to scope what "start the UI
 > fresh" means (full component rebuild vs. fresh shell/layout keeping logic; how Warm Stone is re-expressed
 > in idiomatic 5.6; sequencing vs. the held tag-management Plan 3, whose vocabulary screen should be built
@@ -595,7 +595,7 @@ editor-facing UI and benefits from a focused `frontend-design` mockup pass). Lau
 worktree `~/Projects/cairn-cms/.claude/worktrees/extensibility-plan-1` (so the repo's `CLAUDE.md`, hooks, and
 memory load), on branch `worktree-tag-management-1`. Resume prompt:
 
-> Execute tag-management Plan 3 (`docs/superpowers/plans/2026-06-29-cairn-tag-management-3-admin-ui.md`) on
+> Execute tag-management Plan 3 (`docs/plans/2026-06-29-cairn-tag-management-3-admin-ui.md`) on
 > branch `worktree-tag-management-1`. Plans 1 + 2 of the initiative have landed and are green. Use the
 > `cairn-pass` skill. Execute task-by-task via `cairn-implementer` (Sonnet), reviewing each diff and clearing
 > the full gate between, EXCEPT Task 2 (the mockup-first design stage) which is main-loop `frontend-design`
@@ -611,7 +611,7 @@ After Plan 3 lands, the whole initiative is one held minor (first free after `0.
 **Plan 2 (the data engine) is complete on `worktree-tag-management-1`**, all eight tasks landed
 (`13e6895`→`890f2b4`, plus `df07299` simplifier), each dispatched to `cairn-implementer` (Sonnet),
 test-first, main loop reviewing every diff. Plan + post-mortem:
-`docs/superpowers/plans/2026-06-29-cairn-tag-management-2-data-engine.md`.
+`docs/plans/2026-06-29-cairn-tag-management-2-data-engine.md`.
 
 **What shipped.** The `vocabulary` site-config key (`{value,label}`) + `validateVocabulary`/
 `extractVocabulary`/`setVocabulary` (public), threaded onto `CairnRuntime.vocabulary`; `ManifestEntry.tags`
@@ -642,7 +642,7 @@ system), in the `CairnAdminShell` seam with a `vocabularyLoad`/`vocabularySave` 
 `navLoad`/`navSave`); the enable/seed flow with the orphan **checklist** (seed from `allTags()`, gate on
 the vocabulary being a superset of in-use tags); the **size-gated template filter** (showcase, off by
 default, client-side over `ContentSummary.tags`); the live admin smoke + e2e. The delete gate uses
-`buildTagUsageIndex` (cross-branch). Spec: `docs/superpowers/specs/2026-06-29-cairn-tag-management-design.md`
+`buildTagUsageIndex` (cross-branch). Spec: `docs/specs/2026-06-29-cairn-tag-management-design.md`
 (Component 2, the migration seed, the UI/UX directive). The release is the first free minor after `0.77.0`
 publishes. Use `cairn-pass` for pass-start/end. See the `cairn-tag-management-initiative` memory.
 
@@ -678,7 +678,7 @@ vocabulary config key in `site.config.yaml` + parser/validation; the `ManifestEn
 `verifyManifest` normalization + a pure `tagUsage(manifest, value)` helper whose "in use" **unions `main` +
 every open `cairn/*` branch** (the media where-used model); and the **async pre-resolve** field options seam at
 save/render/build with enforcement + **orphan preservation**. Spec:
-`docs/superpowers/specs/2026-06-29-cairn-tag-management-design.md` (Plan split + Components 1/3 + the
+`docs/specs/2026-06-29-cairn-tag-management-design.md` (Plan split + Components 1/3 + the
 load-bearing review folds, all in the `cairn-tag-management-initiative` memory too). The release covering the
 whole initiative is the first free minor after `0.77.0` publishes; this reshapes the held taxonomy work before
 publish. Use `cairn-pass` for pass-start/end.
@@ -687,7 +687,7 @@ publish. Use `cairn-pass` for pass-start/end.
 
 **The next dev initiative is tag management with an editor-owned vocabulary, and its design is complete,
 adversarially reviewed, and committed.** Spec:
-`docs/superpowers/specs/2026-06-29-cairn-tag-management-design.md` (six-lens adversarial workflow, 10 findings
+`docs/specs/2026-06-29-cairn-tag-management-design.md` (six-lens adversarial workflow, 10 findings
 folded). Evidence: two committed deep-research runs under `docs/internal/research/2026-06-29-tags-*.md`
 (SEO excluded per Geoff; found the AI and human-browsing value of tags weak at cairn's small scale, so the
 admin is justified by **editor self-sufficiency**, not by AI/browsing payoff).
@@ -780,10 +780,10 @@ taxonomy per concept), make tag routing first-class through the catch-all (a dis
 with a `tagSlug` codec, a `taxonomyBase` URL policy, and a prefix-aware collision throw), populate feed
 categories, and close the `inFeeds`/`routable` feed/sitemap gap. Folds four live friction-log items (URL
 single home, the `mintToken` reference-prose drift, the `delivery-*` cold-import flake, the spellcheck e2e
-flake). Spec `docs/superpowers/specs/2026-06-28-cairn-taxonomy-tag-delivery-design.md` (adversarially
+flake). Spec `docs/specs/2026-06-28-cairn-taxonomy-tag-delivery-design.md` (adversarially
 reviewed, five-lens, 18/30 folded); **Plan 1** (data layer)
-`docs/superpowers/plans/2026-06-29-cairn-taxonomy-1-core-and-feeds.md` and **Plan 2** (read path)
-`docs/superpowers/plans/2026-06-29-cairn-taxonomy-2-tag-routing.md`, both adversarially reviewed (six-lens,
+`docs/plans/2026-06-29-cairn-taxonomy-1-core-and-feeds.md` and **Plan 2** (read path)
+`docs/plans/2026-06-29-cairn-taxonomy-2-tag-routing.md`, both adversarially reviewed (six-lens,
 16/38 folded) and QUEUED. **Execute Plan 1 then Plan 2** on a fresh worktree off `main`, dispatching each
 task to `cairn-implementer` (Sonnet) with the main loop reviewing each diff and clearing the gate between.
 Plan 2 depends on Plan 1; the release covering both is one minor, the first free after `0.77.0` publishes.
@@ -835,8 +835,8 @@ returns `fail` (a `warning` condition that hard-failed would be incoherent), ove
 `LayoutData` removal), and the breaking-in-0.x banner. The release fires OIDC trusted publishing. Then the
 site cutovers (ecxc-ski, 907-life): mount the shared `/admin/+layout`, read the shell from
 `page.data.shell`. Canonical artifacts: spec
-`docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-redesign-design.md`; Plan 1 + Plan 2 under
-`docs/superpowers/plans/2026-06-28-cairn-extensibility-{1,2}-*.md` (both COMPLETE, post-mortems appended).
+`docs/specs/2026-06-28-cairn-developer-extensibility-redesign-design.md`; Plan 1 + Plan 2 under
+`docs/plans/2026-06-28-cairn-extensibility-{1,2}-*.md` (both COMPLETE, post-mortems appended).
 
 ## Prior next action (2026-06-28): extensibility PLAN 1 LANDED on main (held `0.77.0`); NEXT = EXECUTE Plan 2 (enforcement)
 
@@ -851,9 +851,9 @@ unpublished until Plan 2 lands** (the two plans ship as one minor). The full gat
 fan-out (svelte, web-auth-security, daisyui-a11y) found no blocker; the web-auth review confirmed the
 `requireOwner` narrowing is safe and a custom `/admin` POST is genuinely CSRF-protected in production.
 
-**Canonical artifacts:** spec `docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-redesign-design.md`;
-**Plan 1** `docs/superpowers/plans/2026-06-28-cairn-extensibility-1-admin-shell-and-nav.md` (COMPLETE, post-mortem
-appended); **Plan 2** `docs/superpowers/plans/2026-06-28-cairn-extensibility-2-enforced-boundary.md` (WRITTEN,
+**Canonical artifacts:** spec `docs/specs/2026-06-28-cairn-developer-extensibility-redesign-design.md`;
+**Plan 1** `docs/plans/2026-06-28-cairn-extensibility-1-admin-shell-and-nav.md` (COMPLETE, post-mortem
+appended); **Plan 2** `docs/plans/2026-06-28-cairn-extensibility-2-enforced-boundary.md` (WRITTEN,
 queued).
 
 **NEXT = EXECUTE Plan 2 (enforcement)** task-by-task on a fresh worktree off `main`: the `check:surface` `.d.ts`
@@ -903,7 +903,7 @@ brings their own auth/functionality/data, and depends on a narrow enforced bound
 thin seams, not features. The redesign inputs (persona, the four diagnostic questions, the corrected
 baseline) are in `docs/internal/extending-developer-lens.md`; the competitive research
 (`docs/internal/2026-06-28-extensibility-competitive-research.md`) carries forward. The old extensibility
-design spec (`docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md`) and the phase-1
+design spec (`docs/specs/2026-06-28-cairn-developer-extensibility-design.md`) and the phase-1
 plan are **SUPERSEDED** (wrong model) and carry a superseded header; they remain only as history.
 
 **Durable lesson:** the premise check, "is this cairn's job, and is it the leanest form?", runs BEFORE the
@@ -919,7 +919,7 @@ landed and the held window (`0.69.0`–`0.76.0`) ships as one published `0.76.0`
 entry preserving every "Consumers must" step, so the public crosses `0.68.0` → `0.76.0` in one jump. (A
 "0.9 series" was considered and rejected: `0.9.0` and the whole sub-0.68 range were already published in the
 pre-rebuild line, so the only valid number is the held-window top.) Plan + post-mortem:
-`docs/superpowers/plans/2026-06-27-cairn-contract-v2-islands.md`.
+`docs/plans/2026-06-27-cairn-contract-v2-islands.md`.
 
 **Islands (4b).** `hydrate?: boolean | 'visible'` on `ComponentDef`; the island boundary emitted in
 `rehypeDispatch`; `rendering.islands` with a fail-closed consistency assertion; the Svelte-only
@@ -952,7 +952,7 @@ and pushed, held unpublished. The `render` adapter seam moved to the entry-aware
 `render({ body, concept?, frontmatter?, resolve?, resolveMedia? }): Promise<string>` (the root-barrel `SiteRender` type),
 and the `stagger` knob is gone: the `data-rise` ordinal is now unconditional, with a `data-cairn-preview` marker so a site
 scopes an entrance animation away from the preview. Returning a Svelte component was rejected in the spec; interactivity
-rides on 4b islands. Plan + post-mortem: `docs/superpowers/plans/2026-06-27-cairn-contract-v2-render-seam.md`.
+rides on 4b islands. Plan + post-mortem: `docs/plans/2026-06-27-cairn-contract-v2-render-seam.md`.
 
 **Verified.** `npm run check` 1206 0/0; `npm test` exit 0 at 2711; `check:comments` + the four doc gates + `check:version`
 (minor → 0.75.0); `code-simplifier` clean; the svelte + cloudflare-workers reviewer fan-out (two findings folded: the
@@ -967,7 +967,7 @@ front-loaded by a six-lens adversarial find-verify workflow over the plan and sp
 brainstorm scope first. The six 4b design carry-forwards (from the 4a review) are in the plan's "4b carry-forwards" block.
 **Per Geoff: do NOT release until the whole v2 series, islands included, is complete;** one rollup release closes the held
 window (now 0.69.0 through 0.75.0). Spec (source of truth):
-`docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`.
+`docs/specs/2026-06-25-cairn-contract-v2-design.md`.
 
 **Carry-forwards (filed in ROADMAP).** Still carried: the live `wrangler dev` admin smoke owed at the next site cutover
 (the 39-test e2e covers the `/admin` preview surface meanwhile); the silent-routing-trap watch (every dated `posts`
@@ -987,8 +987,8 @@ so content querying stays build-time over the manifest and a runtime DB can neve
 The adapter's `backend` field changes from a `{ owner, repo, branch, appId, installationId }` object literal
 to `backend: githubApp({ ... })`; the App's non-secret identity rides the provider and the private key stays
 the Worker secret read at request time. Spec + plan + post-mortem:
-`docs/superpowers/specs/2026-06-27-cairn-contract-v2-backend-seam-design.md` and
-`docs/superpowers/plans/2026-06-27-cairn-contract-v2-backend-seam.md`.
+`docs/specs/2026-06-27-cairn-contract-v2-backend-seam-design.md` and
+`docs/plans/2026-06-27-cairn-contract-v2-backend-seam.md`.
 
 **Held unpublished (Geoff): do NOT publish until the whole Contract v2 series is complete.** No GitHub
 Release / npm publish is cut; the held window now spans **0.69.0 through 0.74.0** and rolls into one release
@@ -1027,9 +1027,9 @@ and validating the component at declaration (the component-level companion to `d
 attribute validator moved off the descriptor into the co-bundled `behavior` table with a `validate(value, siblings)`
 signature; and `fields.icon()` is a first-class descriptor for concepts and components alike. `AttributeField` and
 `FieldType` are deleted. Plan + post-mortem:
-`docs/superpowers/plans/2026-06-27-cairn-contract-v2-field-unification.md`. (Phase 3b, the adapter restructure into
+`docs/plans/2026-06-27-cairn-contract-v2-field-unification.md`. (Phase 3b, the adapter restructure into
 six groups + the open concept model, shipped just before as 0.72.0; its post-mortem is in
-`docs/superpowers/plans/2026-06-27-cairn-contract-v2-adapter-concept.md`.)
+`docs/plans/2026-06-27-cairn-contract-v2-adapter-concept.md`.)
 
 **Held unpublished (Geoff): do NOT publish until the whole Contract v2 series is complete.** No GitHub Release /
 npm publish is cut; the held window now spans **0.69.0 through 0.73.0** and rolls into one release when references →
@@ -1061,7 +1061,7 @@ malformed value (a non-numeric `number`) now fails the save-path `validateCompon
 **NEXT: the `Backend` seam** (then render-as-component with opt-in islands; islands are phase 4, a separate
 brainstorm). The field system is now unified, so the remaining v2 work is the backend abstraction and the render
 seam. No plan written yet; brainstorm the `Backend` seam scope before authoring it. Spec:
-`docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. See [[cairn-site-contract-v2-opportunity]].
+`docs/specs/2026-06-25-cairn-contract-v2-design.md`. See [[cairn-site-contract-v2-opportunity]].
 **Branch state:** neither 3b nor 3c is merged to `main` (main's tip is the 3c plan commit); both live on
 `contract-v2-3c-field-unification` (3c branched off the 3b tip, so the branch carries both). Merge to `main` at
 Geoff's discretion.
@@ -1087,7 +1087,7 @@ fail-closed cross-branch `buildReferenceIndex`, the build-time `verifyReferences
 authority), the surgical rename rewriter, the `EntryPicker`/`ReferenceField` editor arm, the rename/delete
 integrity gates, and `resolveReferences` at the site-resolver layer. Verified at 2651 tests; the pass-end
 fan-out caught three commit-pipeline content-corruption/save blockers the hazard sweep and 2592 tests missed,
-all fixed. Plan + post-mortem: `docs/superpowers/plans/2026-06-26-cairn-contract-v2-references.md`.
+all fixed. Plan + post-mortem: `docs/plans/2026-06-26-cairn-contract-v2-references.md`.
 
 ---
 
@@ -1110,7 +1110,7 @@ dev-package); the friction-log prune; and the 0.68.0 bump + lockfile self-versio
 started it but the Task 2 browser-test agent hung on a reactivity bug; recovery finished in the main loop
 (see the post-mortem's execution note). Both reviewers ran: the a11y reviewer caught a real cap-cascade
 blocker (fixed). Plan + post-mortem:
-`docs/superpowers/plans/2026-06-26-cairn-engine-hardening-engine-misc.md`.
+`docs/plans/2026-06-26-cairn-engine-hardening-engine-misc.md`.
 
 **Verified (Plan 2).** `npm test` exit 0 (2533); `npm run check` 0/0; `check:comments`, `check:prose`,
 `check:dev-package`, and the doc gates (`check:reference`, `check:reference:signatures`, `check:package`,
@@ -1120,26 +1120,26 @@ blocker (fixed). Plan + post-mortem:
 constraint logic in the internal `src/lib/content/field-rules.ts`; v2 `fieldset` reached v1 text/date
 constraint parity + declaration-time pattern compile + parsed-YAML symmetry + multiselect lone-scalar
 coercion; a v1-vs-v2 parity matrix proves agreement. Plan + post-mortem:
-`docs/superpowers/plans/2026-06-26-cairn-engine-hardening-validator-parity.md`.
+`docs/plans/2026-06-26-cairn-engine-hardening-validator-parity.md`.
 
 **NEXT: the Contract v2 cutover, drafted and GATED ON GEOFF'S REVIEW before execution.** It is breaking
 and high-blast-radius (Geoff: no hurry to cut over), so unlike the hardening passes it does not land
 autonomously. The cutover wires `fields.*`/`fieldset` into the live editor, validator, delivery, and
 manifest, migrates the showcase off `defineFields`, and removes `FrontmatterField`/`defineFields`/
 `validate.ts` (freeing the v2 `*Field`/`Infer` barrel names the additive phase held back). Spec:
-`docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. Plan series after the cutover:
+`docs/specs/2026-06-25-cairn-contract-v2-design.md`. Plan series after the cutover:
 references → object/array + adapter + component unification → backend → render + islands.
 
 **The prior Contract v2 Plan 1 (the additive `fields.*` field foundation)** merged to `main` 2026-06-25
 (`75f91e2`) as `0.66.0`: the 11 plain-data descriptors, `fieldset()` with a server-derived validator and
 Standard Schema, `Infer`/`InferFieldset`, `initialValues`, and 8 root-barrel exports. Plan + post-mortem:
-`docs/superpowers/plans/2026-06-25-cairn-contract-v2-field-foundation.md`.
+`docs/plans/2026-06-25-cairn-contract-v2-field-foundation.md`.
 
 **Design context (unchanged).** A pre-pass adversarial review (nine-tool sentiment sweep) became the full
 Contract v2 design: the composable `fields.*` vocabulary, references on the id-stable content graph,
 one-level `object`/`array`, an open concept model, a namespaced adapter, an entry-aware string renderer
 with opt-in islands, and a `Backend` seam (25 verified review findings, all incorporated). Spec:
-`docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. Source review:
+`docs/specs/2026-06-25-cairn-contract-v2-design.md`. Source review:
 `docs/internal/2026-06-25-site-contract-adversarial-review.md`. Sequencing (confirmed 2026-06-25):
 Contract v2 phases 1-2 land BEFORE the scaffolder's B3, so B3 bakes the template against v2; the
 showcase migrates as the first v2 consumer.
@@ -1150,13 +1150,13 @@ scope, pruning five already-shipped items (the manifest-bin `config.root` fix, t
 hardening, the admin-render DOM gate, the editor link-picker narrowing, the create-form slug preview) and
 catching a stale friction-log entry that resurfaced a killed feature (the point-of-typing writing coach,
 discarded 2026-06-23 as the Clippy pattern). The hardening is two passes; the spec is
-`docs/superpowers/specs/2026-06-26-cairn-engine-hardening-design.md`.
+`docs/specs/2026-06-26-cairn-engine-hardening-design.md`.
 
 - **Hardening Plan 1 (the cutover's spine): validator/fields parity + unification.** DONE as `0.67.0`
   (see the immediate-next-action block above). Plan + post-mortem:
-  `docs/superpowers/plans/2026-06-26-cairn-engine-hardening-validator-parity.md`.
+  `docs/plans/2026-06-26-cairn-engine-hardening-validator-parity.md`.
 - **Hardening Plan 2: engine-misc.** DONE as `0.68.0` (see the immediate-next-action block above). Plan +
-  post-mortem: `docs/superpowers/plans/2026-06-26-cairn-engine-hardening-engine-misc.md`.
+  post-mortem: `docs/plans/2026-06-26-cairn-engine-hardening-engine-misc.md`.
 
 **After the hardening: the Contract v2 cutover** wires `fields.*`/`fieldset` into the live editor,
 validator, delivery, and manifest, migrates the showcase off `defineFields`, and removes
@@ -1168,7 +1168,7 @@ adapter + component unification → backend → render + islands.
 deferred pre-B3 engine/DX slot re-numbers when it resumes after the contract stabilizes.
 
 **Infra (2026-06-26):** Vale is scoped to published docs only (the in-tree `.vale.ini` excludes
-`docs/superpowers/**`, `docs/internal/**`, STATUS, and the loose feedback notes; the global `vale-hook`
+`docs/**`, `docs/internal/**`, STATUS, and the loose feedback notes; the global `vale-hook`
 also skips any `superpowers/` path), so planning docs no longer burn tokens on advisory findings.
 
 ---
@@ -1194,7 +1194,7 @@ the `design.yml` workflow).
 **Verified.** `npm test` EXIT 0 (2486); `check` 0/0; `check:comments`, `check:public-tokens`,
 `test:reskin`, `check:docs` clean; the showcase check 0-in-`src`; the showcase e2e green (golden-path 10/10
 + the styleguide a11y spec); the emitted-template rot gate builds clean. Plan and post-mortem:
-`docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b2-design-foundation.md`. Merged to `main`
+`docs/plans/2026-06-25-cairn-scaffolder-part-b2-design-foundation.md`. Merged to `main`
 2026-06-25 (fast-forward to `b098984`); local `main` is 17 commits ahead of `origin/main`, not pushed
 (no npm publish yet).
 
@@ -1205,7 +1205,7 @@ the tablist, hero-image CLS dimensions, a font/sheet preload, the sticky-header 
 contrast spot-check).
 
 **DEFERRED behind Contract v2 (resumes after phases 1-2): the pre-B3 engine/DX slot**, then B3. Plan:
-`docs/superpowers/plans/2026-06-25-cairn-pre-b3-engine-dx-slot.md` (8 tasks, target `0.66.0`). It clears
+`docs/plans/2026-06-25-cairn-pre-b3-engine-dx-slot.md` (8 tasks, target `0.66.0`). It clears
 the engine, dev-package, and first-hour DX warts a read-based dogfood found before B3 bakes the template:
 the `remark-figure` plain-URL `<figcaption>` gap (Task 1), the Ctrl+K/Ctrl+B editor double-fire (Task 2),
 the `hello-hero` hero-byte seed (Task 3), removing the calendar entirely (Task 4: route, nav, exclude
@@ -1229,8 +1229,8 @@ spec's "Sub-pass sequencing".
 
 **Part B1 merged to `main` and pushed** (origin at `85b3f5b`; the `feat/scaffolder-b1-factoring` worktree
 and branch are removed). **Part B2 (the design foundation) is planned:**
-`docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b2-design-foundation.md`, anchored on the design
-bar `docs/superpowers/specs/2026-06-25-cairn-b2-design-bar.md` (distilled from a 13-reference best-of
+`docs/plans/2026-06-25-cairn-scaffolder-part-b2-design-foundation.md`, anchored on the design
+bar `docs/specs/2026-06-25-cairn-b2-design-bar.md` (distilled from a 13-reference best-of
 review).
 
 **Settled direction:** a distinct editorial display face over a legibility-grade humanist sans body (mono
@@ -1267,7 +1267,7 @@ migration, `app.d.ts` carries the real `AuthEnv` `Platform.env`, `npm run dev` s
 dev package, emits the template against the tarballs, and installs, type-checks, and builds it every
 commit (the rot gate); the e2e elimination grep retargets to the deployable `.svelte-kit/cloudflare/`
 Worker. Plan and post-mortem:
-`docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b1-factoring.md`.
+`docs/plans/2026-06-25-cairn-scaffolder-part-b1-factoring.md`.
 
 **Verified.** `npm test` 2482 EXIT 0; `check` 1147 0/0; `check:comments`, `check:docs`, and `test:emit`
 (2/2) clean; the showcase check has 0 errors in `src/` and the showcase e2e is 30/30 on adapter-cloudflare;
@@ -1289,7 +1289,7 @@ context-clear boundary. See the scaffolder spec's "Sub-pass sequencing" (B2).
 ## Immediate next action (2026-06-25, latest): Part B decomposed into four sub-passes; B1 (the factoring) is planned and ready to execute
 
 **Part B is sequenced into four linear sub-passes** in the scaffolder spec
-(`docs/superpowers/specs/2026-06-24-cairn-scaffolder-design.md`, "Sub-pass sequencing"): B1 the factoring,
+(`docs/specs/2026-06-24-cairn-scaffolder-design.md`, "Sub-pass sequencing"): B1 the factoring,
 B2 the design foundation (the first-class tokens layer), B3 the defaults surface, B4 the options and first
 run. The split between the last two follows the CI matrix axis (the always-present defaults versus the
 configurable options). The `frontend-design` loop researches against best-in-class starters from other
@@ -1298,7 +1298,7 @@ templates, and the tokens layer is authored on DaisyUI 5's oklch theme system. T
 demoted to a requirements cross-check, not the design source.
 
 **B1 (the factoring) is planned:**
-`docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b1-factoring.md`. It swaps the showcase from
+`docs/plans/2026-06-25-cairn-scaffolder-part-b1-factoring.md`. It swaps the showcase from
 `adapter-node` to `adapter-cloudflare` with a real `wrangler.jsonc` (modeled on the live 907-life site),
 keeps the e2e green through the dev backend's fabricated `platform.env` (retargeting the elimination grep
 to `.svelte-kit/cloudflare/`), gives `app.d.ts` the real `AuthEnv` `Platform.env` type, fixes the broken
@@ -1319,7 +1319,7 @@ after B1.
 **Part A (`@glw907/cairn-cms-dev`, `0.63.0`) and the pre-Part-B DX slot (`0.64.0`) are both MERGED to
 `main` (the `feat/cairn-cms-dev` and `feat/pre-part-b-dx` branches and worktrees are removed).** Both are
 unpublished; `main` is ahead of `origin` by both windows and not yet pushed. Post-mortem for the slot:
-`docs/superpowers/plans/2026-06-24-cairn-pre-part-b-dx-slot.md`.
+`docs/plans/2026-06-24-cairn-pre-part-b-dx-slot.md`.
 
 **The DX slot reshaped all three spec items.** (1) The `AuthEnv` root re-export was already done
 (2026-06-13); the stale friction-log bullet is retired. (2) The `media.json` build crash is fixed by
@@ -1358,7 +1358,7 @@ both `platform.env` and `process.env`); the showcase activates the backend behin
 `(dev || import.meta.env.VITE_CAIRN_E2E === '1') && process.env.CAIRN_DEV_BACKEND === '1'` gate, and its
 e2e stays on `build && preview` with `VITE_CAIRN_E2E=1` opting the backend in. Eight commits on the
 branch; plan and post-mortem at
-`docs/superpowers/plans/2026-06-24-cairn-scaffolder-part-a-dev-package.md`.
+`docs/plans/2026-06-24-cairn-scaffolder-part-a-dev-package.md`.
 
 **Verified.** A default `npm run build` leaves `examples/showcase/build/` free of every dev-backend symbol
 across both risk tiers (a ten-needle grep, empty: the Reversal 1 security property). The e2e is 30/30.
@@ -1383,10 +1383,10 @@ wider `fs.allow`, for Part B). All in `docs/internal/docs-friction-log.md` under
 ## Prior next action (2026-06-24): execute the scaffolder Part A plan (the `@glw907/cairn-cms-dev` package)
 
 **The `create-cairn-site` scaffolder initiative is DESIGNED and PLANNED; Part A is ready to execute.** The
-design spec is `docs/superpowers/specs/2026-06-24-cairn-scaffolder-design.md` (a three-part initiative,
+design spec is `docs/specs/2026-06-24-cairn-scaffolder-design.md` (a three-part initiative,
 written after a four-lens adversarial review: Part A the dev package, Part B the showcase-as-deployable
 template with a `frontend-design` pass and a first-class tokens layer, Part C the generator). The Part A
-plan is `docs/superpowers/plans/2026-06-24-cairn-scaffolder-part-a-dev-package.md`.
+plan is `docs/plans/2026-06-24-cairn-scaffolder-part-a-dev-package.md`.
 
 **Execute Part A now.** It extracts the fake GitHub/D1/R2/Anthropic doubles and the magic-link auth
 bypass out of the engine and the showcase into a separate, fenced, fail-closed `@glw907/cairn-cms-dev`
@@ -1412,8 +1412,8 @@ trusted-publishing workflow, and npm `latest` moved `0.62.1` to `0.62.2`. The pa
 cross-branch address check to the main arm at edit-load (zero extra GitHub reads per editor open, down
 from `1 + N`) while keeping the full cross-branch re-check at publish. It resolves the Pass 3 cloudflare
 MEDIUM-HIGH carry-forward. Spec and plan:
-[`docs/superpowers/specs/2026-06-24-cairn-address-check-scope-design.md`](../../superpowers/specs/2026-06-24-cairn-address-check-scope-design.md),
-[`docs/superpowers/plans/2026-06-24-cairn-address-check-scope.md`](../../superpowers/plans/2026-06-24-cairn-address-check-scope.md)
+[`docs/specs/2026-06-24-cairn-address-check-scope-design.md`](../../specs/2026-06-24-cairn-address-check-scope-design.md),
+[`docs/plans/2026-06-24-cairn-address-check-scope.md`](../../plans/2026-06-24-cairn-address-check-scope.md)
 (post-mortem in the plan). Geoff settled Option A (main-arm at edit-load, full at publish), backed by
 cairn's build-time duplicate-permalink resolver as the hard backstop and the ecosystem norm of checking
 the published source. A patch bump, no public export change, no consumer action. A Workflow drove the
@@ -1482,10 +1482,10 @@ action allow-lists, so Publish-site and Sign-out 404'd from `/admin/help`) and a
 `<main>` landmark, plus a sub-3:1 step-box ring). A third find: `check:prose` reported "clean" while
 scanning zero of `HelpHome`'s strings (an extractor strip-order bug, now fixed; a `prose-voice-reviewer`
 pass covered the still-unscanned script-array copy and caught two real tells). Full post-mortem in the plan
-(`docs/superpowers/plans/2026-06-23-cairn-help-home.md`).
+(`docs/plans/2026-06-23-cairn-help-home.md`).
 
-**NEXT: execute Pass 3, advisory validation** (`docs/superpowers/plans/2026-06-23-cairn-advisory-validation.md`,
-from the approved spec `docs/superpowers/specs/2026-06-23-cairn-advisory-validation-design.md`). Four
+**NEXT: execute Pass 3, advisory validation** (`docs/plans/2026-06-23-cairn-advisory-validation.md`,
+from the approved spec `docs/specs/2026-06-23-cairn-advisory-validation-design.md`). Four
 test-first tasks: the advisory-notice shape plus the cross-branch address index (`content/advisories.ts`),
 the edit-load `address-collision` notice on `EditData` (plus the new `AdvisoryNotice`/`AdvisoryAction`
 exports), the publish-time re-check plus the `publish.address_collision` log event, and the unified
@@ -1534,7 +1534,7 @@ plus a simplifier refinement and the svelte and a11y review fold-ins:
 and `check:package` all exit 0. Svelte reviewer clean; a11y reviewer ship-ready (contrast AA in both
 themes). The from-scratch showcase e2e was deferred to release; `check:package`'s dist-`.svelte`
 transpile over the new typed snippet stood in. Full post-mortem in the plan
-(`docs/superpowers/plans/2026-06-23-cairn-editor-help-foundation.md`).
+(`docs/plans/2026-06-23-cairn-editor-help-foundation.md`).
 
 **HELD for the combined release (Geoff's call):** `0.61.0` is merged to `main`, not released or pushed.
 Roll it into the next published release (with the held `0.60.1` site-cutover work, Pass 2, and any other
@@ -1547,10 +1547,10 @@ landed on the Help shell the foundation was built for (WordPress's contextual He
 palette, progressive disclosure). A mockup-first design treatment ran as a Workflow: three frontend-design
 Help-home prototypes, a six-dimension adversarial critique, a rev.2 synthesis, and a Warm Stone
 consistency polish. The design record (`docs/internal/design/2026-06-23-help-shell-mockup-*.html`, the
-polished rev.2 canonical) and the spec (`docs/superpowers/specs/2026-06-23-help-shell-design.md`) are
+polished rev.2 canonical) and the spec (`docs/specs/2026-06-23-help-shell-design.md`) are
 committed.
 
-**NEXT: execute Pass 2, the Help home** (`docs/superpowers/plans/2026-06-23-cairn-help-home.md`). Five
+**NEXT: execute Pass 2, the Help home** (`docs/plans/2026-06-23-cairn-help-home.md`). Five
 test-first tasks: the shared markdown-reference module, the getting-started derive function, the help
 admin view plus load plus `HelpData` contract, the `HelpHome` component, and the pinned Help nav home. Run
 on a fresh worktree off `main` (Pass 1's `supportContact` and field-hint seams are merged there now), with
@@ -1620,7 +1620,7 @@ repeated earlier (fixed with a real `{from,to}` selection seam); number/measurem
 swept without confirmation (fixed by adding the missing `matchNormalization` branches); a dead tidy
 abort signal passed in the SDK body, not the options arg; and a dark-theme diff contrast failure
 (2.70:1) now locked to 5.89:1. Post-mortem with the full detail in
-`docs/superpowers/plans/2026-06-20-cairn-editor-copyedit.md`.
+`docs/plans/2026-06-20-cairn-editor-copyedit.md`.
 
 **HELD for Geoff (his call):** merge `feat/editor-copyedit` to `main`; cut the `0.60.0` release
 (`gh release create v0.60.0 --target main`, fires the OIDC trusted-publishing workflow, npm `latest`);
@@ -1656,8 +1656,8 @@ scan, not a direct get. Three DX findings are in `docs/internal/docs-friction-lo
 cutover with the spellcheck/tidy (editor) release so it bumps once to the combined feature set.
 
 **NEXT (the next initiative): execute the editor copy-edit + spellcheck build.** Plan:
-`docs/superpowers/plans/2026-06-20-cairn-editor-copyedit.md` (spec
-`docs/superpowers/specs/2026-06-20-cairn-editor-copyedit-design.md`; design and mockups under
+`docs/plans/2026-06-20-cairn-editor-copyedit.md` (spec
+`docs/specs/2026-06-20-cairn-editor-copyedit-design.md`; design and mockups under
 `docs/internal/design/2026-06-20-editor-copyedit-*`, with the conventions research and the design brief
 authoritative). Two features for the admin CodeMirror editor: a spellcheck (default, local, CM6
 `@codemirror/lint` plus a WASM dictionary, markdown-aware, dialect-aware) and tidy (opt-in, LLM, a
@@ -1681,7 +1681,7 @@ the admin Media Library: **multi-select bulk delete** (skip-and-report, usage-ga
 commit per batch) and **orphan collection** (an on-demand scan, the one irreversible R2 byte purge, and
 a read-only broken-references readout), plus the "Unused" -> "No references found" rename. Ships as
 `0.59.0` (minor, additive, NO consumer action). Plan + post-mortem at
-`docs/superpowers/plans/2026-06-18-cairn-media-pass-c.md`.
+`docs/plans/2026-06-18-cairn-media-pass-c.md`.
 
 Gate green at the tip, run first-hand from the worktree: `npm run check` 1011 files 0/0; `npm test` 198
 files / 2208 tests exit 0; the showcase Playwright E2E 27 passed (the two new round-trips + 25 existing);
@@ -1729,7 +1729,7 @@ skipped, no typed gate). The pure transforms (`media-rewrite.ts`), the fail-clos
 `buildUsageIndex` (`rewrite-plan.ts`), the four actions on `createContentRoutes` plus their composer
 registration in `cairn-admin.ts`, the two review modals on `CairnMediaLibrary.svelte`, the showcase
 E2E, and the docs all landed. Post-mortem with the full carry-forwards in
-`docs/superpowers/plans/2026-06-18-cairn-media-pass-b.md`.
+`docs/plans/2026-06-18-cairn-media-pass-b.md`.
 
 Gate green at the tip, run first-hand from the worktree: `npm run check` 1004 files 0/0; `npm test` 194
 files / 2153 tests exit 0; `npm run package` exit 0; the showcase Playwright E2E 25 passed (the two new
@@ -1755,8 +1755,8 @@ carry-forward needing its own brainstorm.
 
 ## Prior next action (2026-06-18): Pass A SHIPPED as `0.57.1`; Pass B SPEC + PLAN authored and approved; EXECUTE Pass B next
 
-**Execute Pass B**, planned at `docs/superpowers/plans/2026-06-18-cairn-media-pass-b.md` (spec
-`docs/superpowers/specs/2026-06-18-cairn-media-pass-b-design.md`), a `0.58.0` minor. Main-loop
+**Execute Pass B**, planned at `docs/plans/2026-06-18-cairn-media-pass-b.md` (spec
+`docs/specs/2026-06-18-cairn-media-pass-b-design.md`), a `0.58.0` minor. Main-loop
 orchestrate-and-verify, test-first, one `cairn-implementer` per task, the full gate between dispatches,
 on a FRESH worktree off `main`. Review Tasks 5 and 6 most closely (they rewrite published body content
 atomically with the typed-slug and fail-closed gates; consider `model: opus`). The approved rev.2 design
@@ -1796,7 +1796,7 @@ live-region pattern; no code change followed, deliberately, since the implemente
 flash grammar the plan mandated (`ConceptList`'s `sr-only`-polite-plus-visible-alert, the codebase's
 announce-on-mutation pattern) and the residual repeated-flash edge maps to an existing ROADMAP item.
 Post-mortem with the carry-forwards in the plan
-(`docs/superpowers/plans/2026-06-17-cairn-media-polish-and-dx.md`). No live admin smoke owed (covered by
+(`docs/plans/2026-06-17-cairn-media-polish-and-dx.md`). No live admin smoke owed (covered by
 the component and unit suites), matching the plan.
 
 **Next: Pass B, replace-in-place plus alt propagation**, the next media pass, now in design. The pass
@@ -1822,10 +1822,10 @@ bound a `MEDIA_BUCKET` R2 bucket (`ecxc-media`, `907-life-media`, both created l
 (it collided with 0.57's reserved figure directive); 907 had no collision (empty registry). HELD for
 Geoff: the live admin smoke (the magic-link click is manual), the optional frontmatter hero field,
 and the push + deploy on each branch. Note: 907's `main` carries a pre-existing uncommitted edit
-(`docs/superpowers/archive/plans/2026-06-12-cairn-0.51-crossing.md`, a DONE marker) left untouched.
+(`docs/archive/plans/2026-06-12-cairn-0.51-crossing.md`, a DONE marker) left untouched.
 
 **Immediate next: execute Pass A**, planned at
-`docs/superpowers/plans/2026-06-17-cairn-media-polish-and-dx.md`, a `0.57.1` patch. Main-loop
+`docs/plans/2026-06-17-cairn-media-polish-and-dx.md`, a `0.57.1` patch. Main-loop
 execution, test-first, one `cairn-implementer` per task, the full gate between dispatches, on a fresh
 worktree off `main`. It clears the 3c review carry-forwards (the `/admin/media` action feedback strip,
 the slide-over Escape edge), the 3b decorative-hero alt persistence, the reserved-`figure` error
@@ -1868,7 +1868,7 @@ fresh via `manifestEntryFromFile`, media is unreleased so no stale-manifest inst
 the gate matches the engine's existing manifest-trust model; documented, not re-architected. Live admin
 smoke deferred to the first site cutover (covered by the E2E + the suites), matching 2b/3a/3b.
 Post-mortem with the carry-forwards in the plan
-(`docs/superpowers/plans/2026-06-17-cairn-media-3c-library.md`).
+(`docs/plans/2026-06-17-cairn-media-3c-library.md`).
 
 **Next actions, in order:**
 1. **Merge `feat/media-3c` to `main`** DONE 2026-06-17 (fast-forward, local; the whole media stack 1,
@@ -1881,7 +1881,7 @@ Post-mortem with the carry-forwards in the plan
    range, run the live guard + upload + delivery + Library smoke, copy the `.cairn-place-*` CSS, adopt
    the hero field, and regenerate the content manifest so the Library's `main` where-used is accurate.
 4. **Then execute Pass A** (media polish, the decorative-hero alt fix, and DX docs), planned at
-   `docs/superpowers/plans/2026-06-17-cairn-media-polish-and-dx.md`, a `0.57.1` patch. It clears the
+   `docs/plans/2026-06-17-cairn-media-polish-and-dx.md`, a `0.57.1` patch. It clears the
    3c review carry-forwards (the `/admin/media` action feedback strip, the slide-over Escape edge), the
    3b decorative-hero alt persistence, three DX doc gaps, and the ROADMAP refresh. Mostly independent
    tasks, a good Workflow candidate. The cutover comes first so live use filters the priorities.
@@ -1920,7 +1920,7 @@ unique name; `required` was unenforced on the image arm, fixed to enforce on `sr
 resolves-only-`image`-key limitation documented + carried, and Minors folded. The E2E itself caught a
 real reactive loop in the needs-alt `$effect` (fixed via `untrack`). Live admin smoke deferred to the
 first site cutover (presentation + a delivery read, covered by the E2E), matching 2b/3a. Post-mortem with
-the carry-forwards in the plan (`docs/superpowers/plans/2026-06-16-cairn-media-3b-hero-field.md`).
+the carry-forwards in the plan (`docs/plans/2026-06-16-cairn-media-3b-hero-field.md`).
 
 **Next actions, in order:**
 1. **Merge `feat/media-3b` to `main`** (fast-forward; the whole media stack 1, 2a, 2b, 3a, 3b is then on
@@ -1943,8 +1943,8 @@ the carry-forwards in the plan (`docs/superpowers/plans/2026-06-16-cairn-media-3
    review. Artifacts on `feat/media-3c`: design reference
    `docs/internal/design/2026-06-17-media-library-design-reference.md`, the consolidated mockup
    `docs/internal/design/2026-06-17-media-library-mockup.html` (three explorations beside it), spec
-   `docs/superpowers/specs/2026-06-17-cairn-media-3c-library-design.md`, plan (10 tasks)
-   `docs/superpowers/plans/2026-06-17-cairn-media-3c-library.md`. The Library is a peer of Posts/Pages at
+   `docs/specs/2026-06-17-cairn-media-3c-library-design.md`, plan (10 tasks)
+   `docs/plans/2026-06-17-cairn-media-3c-library.md`. The Library is a peer of Posts/Pages at
    `/admin/media`: a visual grid + a list-density toggle, a non-modal detail slide-over, where-used grouped
    published-vs-edit-branch (cairn's git-substrate advantage, the universally-missing feature), a two-faced
    safe-delete, a triage radiogroup, client-side pagination; no multi-select/bulk/tags/dashboard. Locked
@@ -1957,8 +1957,8 @@ the carry-forwards in the plan (`docs/superpowers/plans/2026-06-16-cairn-media-3
 
 **Resume prompt for the 3c build (fresh session, effort high):**
 "Execute Phase 3c of the cairn media gallery: the admin Media Library screen, plan at
-`docs/superpowers/plans/2026-06-17-cairn-media-3c-library.md` (spec
-`docs/superpowers/specs/2026-06-17-cairn-media-3c-library-design.md`). Invoke the `cairn-pass` skill.
+`docs/plans/2026-06-17-cairn-media-3c-library.md` (spec
+`docs/specs/2026-06-17-cairn-media-3c-library-design.md`). Invoke the `cairn-pass` skill.
 Launch in `cairn-cms`; the design + plan are on the `feat/media-3c` worktree (off `main`). Confirm the
 baseline (`npm test` exit 0), then run the 10 tasks test-first: one `cairn-implementer` per task, review
 each diff, clear the full gate between dispatches, at high effort. Tasks 1, 2, 4, 5, 6 are high-blast:
@@ -2000,7 +2000,7 @@ from the validated record). All folded in at `dabbf9e`. The E2E surfaced a real 
 resolver ignored in-session uploads), fixed at `85b3315a`. The live admin smoke rides the first site cutover
 (no site carries the media binding yet; the flow is proven by the E2E and the 2a workerd integration suite),
 matching the 2a deferral. Post-mortem with the carry-forwards in the plan
-(`docs/superpowers/plans/2026-06-16-cairn-media-2b-insert-ui.md`).
+(`docs/plans/2026-06-16-cairn-media-2b-insert-ui.md`).
 
 **Next actions, in order:**
 1. **Merge `feat/media-2b` to `main`** (needs the push, so it is Geoff's call). The branch is the whole media
@@ -2022,8 +2022,8 @@ matching the 2a deferral. Post-mortem with the carry-forwards in the plan
    the measure default) riding the directive's class. A five-lens-style adversarial critique REVERSED the
    first carrier (it empirically broke caption-in-title on a literal `"` and showed the `{.token}` brace is
    a fragile sibling-text parser that degrades to junk in other tools); the figure directive dodges all of
-   it. Spec `docs/superpowers/specs/2026-06-16-cairn-media-3a-inline-figure-design.md`, plan (9 tasks)
-   `docs/superpowers/plans/2026-06-16-cairn-media-3a-inline-figure.md`. Method: one `cairn-implementer` per
+   it. Spec `docs/specs/2026-06-16-cairn-media-3a-inline-figure-design.md`, plan (9 tasks)
+   `docs/plans/2026-06-16-cairn-media-3a-inline-figure.md`. Method: one `cairn-implementer` per
    task, test-first, full gate between dispatches; Task 1 (the `remarkFigure` render step) and Task 5 (the
    editor figure control) are high-blast (review closely, upshift if needed); Tasks 3 (the mockup), 8 (the
    polish), 9 (the pass-end) run in the main loop. The layer charter is owned as a bounded, theme-owned
@@ -2062,7 +2062,7 @@ docstrings, and the guard body-intact test). The live admin smoke was judged not
 upload and the guard CSRF change are proven in workerd against real miniflare R2 and real D1, the slice
 in a real browser; no auth-store change), so the real guard+upload+delivery live proof rides the first
 site cutover. Post-mortem with the spike findings and carry-forwards in the plan
-(`docs/superpowers/plans/2026-06-15-cairn-media-2a-ingest-delivery.md`).
+(`docs/plans/2026-06-15-cairn-media-2a-ingest-delivery.md`).
 
 **Next actions, in order:**
 1. **Merge `feat/media-2a` to `main`** (needs the push, so it is Geoff's call). It is unreleased
@@ -2070,8 +2070,8 @@ site cutover. Post-mortem with the spike findings and carry-forwards in the plan
    stack rides Phase 2b, when media becomes author-usable. The `feat/media-foundation` Phase 1 merge and
    the `0.56.2` picker/round-trip release stay their own separate pending calls.
 2. **Phase 2b, the insert UI, is DESIGNED, PLANNED, and ready to execute** (2026-06-16). Spec
-   `docs/superpowers/specs/2026-06-16-cairn-media-2b-insert-ui-design.md`, plan (13 tasks)
-   `docs/superpowers/plans/2026-06-16-cairn-media-2b-insert-ui.md`, both committed on `feat/media-2a`. A
+   `docs/specs/2026-06-16-cairn-media-2b-insert-ui-design.md`, plan (13 tasks)
+   `docs/plans/2026-06-16-cairn-media-2b-insert-ui.md`, both committed on `feat/media-2a`. A
    five-lens adversarial design review (run pre-spec at Geoff's request) reshaped it: the `:::image`
    figure directive for per-image alignment was DROPPED (three independent lenses converged: it breaks
    the `media:` resolver since the ref is a directive attribute not an image node, it bakes presentation
@@ -2106,8 +2106,8 @@ and APPROVED, ready to build on a feature worktree off `main`.** The design ran 
 design-hardening workflow plus the context exploration), so the build was deliberately deferred to a
 fresh session per the context-handoff discipline; this section is the pre-baked brief.
 
-Spec: `docs/superpowers/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md`. Plan (ten tasks):
-`docs/superpowers/plans/2026-06-15-cairn-media-2a-ingest-delivery.md`. Both committed on `main`.
+Spec: `docs/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md`. Plan (ten tasks):
+`docs/plans/2026-06-15-cairn-media-2a-ingest-delivery.md`. Both committed on `main`.
 
 The Phase 2 insert experience is cut into **2a (this infrastructure)** and **2b (the insert UI)**, two
 verification surfaces (Geoff's call). 2a delivers the locked-down `/media` delivery route (streams
@@ -2135,8 +2135,8 @@ the bundled release happens when Phase 2b makes media author-usable.
 
 **Resume prompt (fresh session, launched in `~/Projects/cairn-cms` so its hooks and memory load):**
 "Execute Phase 2a of the cairn media gallery: the ingest and delivery infrastructure plan at
-`docs/superpowers/plans/2026-06-15-cairn-media-2a-ingest-delivery.md` (spec:
-`docs/superpowers/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md`). Invoke the `cairn-pass`
+`docs/plans/2026-06-15-cairn-media-2a-ingest-delivery.md` (spec:
+`docs/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md`). Invoke the `cairn-pass`
 skill, create a feature worktree off `main` for the pass, then run the ten tasks test-first: one
 `cairn-implementer` (Sonnet) per task, review each diff, and clear the full gate between dispatches.
 Task 8 carries the WASM HEIC decoder library spike; run that in the main loop. It is unreleased engine
@@ -2172,7 +2172,7 @@ findings"); cost within the Cloudflare Images Free tier for both sites. Three re
 (cloudflare-workers, svelte/render, an adversarial correctness pass), no Critical or Important; five
 fold-ins in `cb8c890` (the load-bearing one threaded the ignored `publicBase` through `publicPath`).
 Post-mortem with the carry-forwards in the plan
-(`docs/superpowers/plans/2026-06-15-cairn-media-foundation.md`).
+(`docs/plans/2026-06-15-cairn-media-foundation.md`).
 
 **Next actions, in order:**
 1. **Merge `feat/media-foundation` to `main`** (needs the push, so it is Geoff's call). It is unreleased
@@ -2194,8 +2194,8 @@ research, the unified strategy, and the direction verdict are in
 `docs/internal/design/2026-06-15-media-management-design-reference.md`; the approved design target is
 the rev.2 synthesized mockup `docs/internal/design/2026-06-15-media-gallery-mockup.html` (the three
 divergent direction mockups sit beside it as history). The spec is
-`docs/superpowers/specs/2026-06-15-cairn-media-gallery-design.md`; the first plan is
-`docs/superpowers/plans/2026-06-15-cairn-media-foundation.md`.
+`docs/specs/2026-06-15-cairn-media-gallery-design.md`; the first plan is
+`docs/plans/2026-06-15-cairn-media-foundation.md`.
 
 The model splits media by lifecycle: stored files (images, documents, the gallery, the build target),
 referenced external media (video and embeds, the existing directive system), and design-system tokens
@@ -2233,8 +2233,8 @@ rendered through the site pipeline into a sandboxed iframe, debounced, with hone
 settling/incomplete/render-failed states) when a component declares a `preview`. The `ComponentDef`
 contract gains optional `icon`, `group`, `hidden`, `preview`; `AttributeField` gains
 `pattern`/`validate`; `SlotDef` gains `itemLabel`. Spec
-`docs/superpowers/specs/2026-06-15-cairn-component-picker-design.md`, plan (post-mortem)
-`docs/superpowers/plans/2026-06-15-cairn-component-picker.md`, mockup
+`docs/specs/2026-06-15-cairn-component-picker-design.md`, plan (post-mortem)
+`docs/plans/2026-06-15-cairn-component-picker.md`, mockup
 `docs/internal/design/2026-06-15-component-picker-mockup.html` (rev. 2).
 
 Round-trip editing: with the caret in a placed component, an "Edit block" toolbar control opens it
@@ -2243,8 +2243,8 @@ back into the same guided form, pre-filled, and Update rewrites the block in pla
 is left for hand-editing rather than silently rewritten (the Decap/Tina corruption class). The
 substrate was already there: `caretContainerRange` for the range, the reversible
 `serializeComponent`/`parseComponent` pair. Spec
-`docs/superpowers/specs/2026-06-15-cairn-component-round-trip-design.md`, plan (post-mortem)
-`docs/superpowers/plans/2026-06-15-cairn-component-round-trip.md`.
+`docs/specs/2026-06-15-cairn-component-round-trip-design.md`, plan (post-mortem)
+`docs/plans/2026-06-15-cairn-component-round-trip.md`.
 
 Gate green at the branch tip `8a3f4b1`, run first-hand: `npm run check` 924 files 0/0, `npm test` 162
 files / 1598 tests exit 0, the reference/signature/docs gates exit 0, `check:prose` clean, showcase
@@ -2269,7 +2269,7 @@ pass (its own plan, below) and the editor fold-gutter pass both merged; `package
 the changelog covers both. Releasing via `gh release create v0.56.0`, which fires OIDC
 trusted-publishing.
 
-The fold-gutter pass (spec `docs/superpowers/specs/2026-06-14-fold-gutter-design.md`, mockup
+The fold-gutter pass (spec `docs/specs/2026-06-14-fold-gutter-design.md`, mockup
 `2026-06-14-fold-gutter-mockup.html`, plan `2026-06-14-editor-fold-gutter.md`) moved the
 directive-container fold control out of an in-text chevron band into a real CodeMirror `gutter()`
 column: nothing at rest, gutter-hover reveal, a focusable button so folding (not just unfolding) is
@@ -2288,7 +2288,7 @@ crossed to `^0.55.0`, regenerated the manifest, and deployed green (907's broken
 `build-manifest.mjs` was swapped for the `cairn-manifest` bin).
 
 **Next: the gates, tooling, and DX-hardening pass (`0.56.0`).** Plan
-`docs/superpowers/plans/2026-06-13-cairn-gates-tooling-dx.md`. It clears the live, non-scaffolder
+`docs/plans/2026-06-13-cairn-gates-tooling-dx.md`. It clears the live, non-scaffolder
 friction-log backlog. A parallel verify sweep (2026-06-13) re-checked the whole log against the tree:
 most was already addressed (the public-surface narrowing keystone, the ambient type, `mintToken`,
 the `fail` types, the composer alignment, E2E-in-CI, the `PUBLIC_ORIGIN` condition, the render
@@ -2323,7 +2323,7 @@ WCAG 1.4.3) and an Important (the zero-count dim), both fixed in `cba576e`; the 
 Minor `''`-vs-`null` contract drifts also folded in. The live `wrangler dev` smoke was judged not
 proportionate (additive `summary` plus client-side filtering, no server/auth/action/SSR change; the
 E2E and both-theme captures cover it). Post-mortem with the carry-forwards in the plan
-(`docs/superpowers/plans/2026-06-13-cairn-office-list.md`).
+(`docs/plans/2026-06-13-cairn-office-list.md`).
 
 **Next actions, in order:**
 1. **Publish `0.55.0`** (needs the push, so it is Geoff's call): push `main`, then
@@ -2351,12 +2351,12 @@ OIDC trusted-publishing workflow (run `27472879535` green), `0.54.0` is the regi
 both sites crossed and verified live the same day: ecxc-ski `^0.53.0 → ^0.54.0` (deploy `27473025539`
 green, `cairn-doctor --probe` 11/0/1), 907-life `^0.51.0 → ^0.54.0` (deploy green, doctor 8/0/4, then
 wired the `cairnManifest` plugin so its doctor self-derives to 12/0/0). The editor-takes-the-shell
-post-mortem is in `docs/superpowers/plans/2026-06-12-cairn-editor-takes-the-shell.md`.
+post-mortem is in `docs/plans/2026-06-12-cairn-editor-takes-the-shell.md`.
 
 **Next: the office-list pass as `0.55.0`** (the post/pages list rises to the gold standard). Spec
-`docs/superpowers/specs/2026-06-13-cairn-office-list-design.md` (Direction B, approved after a
+`docs/specs/2026-06-13-cairn-office-list-design.md` (Direction B, approved after a
 Ghost/WordPress/Sveltia precedent survey); plan
-`docs/superpowers/plans/2026-06-13-cairn-office-list.md`. The list gains a triage filter layer driven
+`docs/plans/2026-06-13-cairn-office-list.md`. The list gains a triage filter layer driven
 by publish state (All / Pending edits / Published / Hidden, with counts, client-side) and
 self-describing rows with a summary line, the office finally extending the editor/desk gold standard.
 One data-layer change: the manifest and `EntrySummary` gain a `summary` string fed by the existing
@@ -2396,7 +2396,7 @@ Important (zen could strand focus when entered from a band control, WCAG 2.4.3, 
 The live `wrangler dev` smoke was judged not proportionate (presentation-only, no server/auth/action/
 SSR change; the showcase E2E and first-hand both-theme captures cover the flows). Post-mortem with
 four carry-forwards in the plan
-(`docs/superpowers/plans/2026-06-12-cairn-editor-takes-the-shell.md`).
+(`docs/plans/2026-06-12-cairn-editor-takes-the-shell.md`).
 
 **Next actions, in order:**
 1. **Publish `0.54.0`** (needs the push, so it is Geoff's call): push `main`, then
@@ -2427,7 +2427,7 @@ and a WCAG 1.4.1 pressed-state fix (the check glyph as the non-color cue). Gates
 tip (906 files 0/0, 1407 tests exit 0, five doc gates).
 
 **Next: plan and execute the editor-takes-the-shell pass as `0.54.0`** (spec
-`docs/superpowers/specs/2026-06-12-cairn-editor-takes-the-shell-design.md`, APPROVED 2026-06-12
+`docs/specs/2026-06-12-cairn-editor-takes-the-shell-design.md`, APPROVED 2026-06-12
 after a full mockup design session; the approved mockup is committed as
 `docs/internal/design/2026-06-12-editor-shell-gold-standard.html` and is the declared cairn UI
 gold standard, with the folding fine grain in the companion notes beside it). The pass: the four
@@ -2451,7 +2451,7 @@ ink; the sub-AA focus dim; nested rails). The review gate's Blocker (menuitemche
 non-menu popover) landed as aria-pressed toggles. Gate at the tip, run first-hand: `npm run
 check` 904 files 0/0, `npm test` 157 files / 1404 tests exit 0, five doc gates, showcase E2E 7/7.
 Post-mortem with five carry-forwards in the plan
-(`docs/superpowers/plans/2026-06-12-cairn-editor-experience.md`).
+(`docs/plans/2026-06-12-cairn-editor-experience.md`).
 
 **Next actions, in order:**
 1. **Publish `0.52.0`**: push `main`, then `gh release create v0.52.0 --target main` with the
@@ -2473,7 +2473,7 @@ Live proofs all green: doctor 12/12 with flags, `sent` then `throttled` on back-
 the `auth.link.requested` trail in Workers Logs.
 
 **Next: execute the editor-experience plan
-(`docs/superpowers/plans/2026-06-12-cairn-editor-experience.md`, spec approved by Geoff
+(`docs/plans/2026-06-12-cairn-editor-experience.md`, spec approved by Geoff
 2026-06-12).** Seven tasks toward `0.52.0`: GFM base + markdown keymap (the two defects), the
 quiet surface (hierarchy, marker discipline, 70ch measure), the directive treatment as a focus
 arm (rails not bands, meaning-over-machinery fences, cursor-aware emphasis), focus mode +
@@ -2523,7 +2523,7 @@ ran pre-crash and drove the `byConcept` override; its site-side wiring sits comm
 ecxc-ski checkout (`47f82dc`), held unpushed until the publish. The review fold-in (`32ade6b`,
 twelve findings, one Critical on invisible popover keyboard focus) and the `.menu` Preflight
 substitute (`b7cf172`) are in the window. The post-mortem with three carry-forwards is in the plan
-(`docs/superpowers/plans/2026-06-12-cairn-doctor-dx-and-preview.md`).
+(`docs/plans/2026-06-12-cairn-doctor-dx-and-preview.md`).
 
 **Next actions, in order:**
 1. **Publish `0.51.0`**: push `main`, then `gh release create v0.51.0 --target main` with the
@@ -2578,7 +2578,7 @@ Gate green at the tip, run first-hand: `npm run check` 895 files 0/0, `npm test`
 reviewers converged on one Critical (the `ManageEditors` form names), fixed in the fold-in
 `08bc85e` with a new form-action contract test across all six views. The post-mortem with seven
 carry-forwards is in the plan
-(`docs/superpowers/plans/2026-06-11-cairn-single-mount-admin.md`).
+(`docs/plans/2026-06-11-cairn-single-mount-admin.md`).
 
 **Next actions, in order:**
 1. **Publish the held window** (`0.41.0` diagnostics + `0.50.0` single-mount): push `main`, then
@@ -2603,7 +2603,7 @@ hand-edit, with silent failure when a key is missed (the 0.39 lesson). Geoff acc
 work for better future-site DX, waived the heavy ritual, and retargeted the version to open the
 **0.50.x series**.
 
-**The plan is `docs/superpowers/plans/2026-06-11-cairn-single-mount-admin.md`, in progress.**
+**The plan is `docs/plans/2026-06-11-cairn-single-mount-admin.md`, in progress.**
 Thirteen tasks: a `createCairnAdmin(runtime, deps)` dispatcher returning one `load` plus one
 static `actions` record, a `CairnAdmin.svelte` view switcher, the showcase converted to the
 two-file mount, and the review's completion-debt riders (diagnostics conditions finished,
@@ -2643,7 +2643,7 @@ fold-in raised the kit peer floor to `^2.12` (the `$app/state` import; a `Consum
 rides the changelog) and paired the doctor's CSRF check (an uncommented `checkOrigin: false` AND
 a cairn-wired hooks file, closing a false-assurance gap). The post-mortem with seven
 carry-forwards is in the plan
-(`docs/superpowers/plans/2026-06-11-cairn-diagnostics-03-doctor-and-debt.md`).
+(`docs/plans/2026-06-11-cairn-diagnostics-03-doctor-and-debt.md`).
 
 **Next actions, in order:**
 1. **Publish `0.41.0`**: push `main`, then `gh release create v0.41.0 --target main` with the
@@ -2679,7 +2679,7 @@ navigation carried entry A's body into entry B over an armed Save (`{#key}` plus
 reset effect). The a11y reviewer's computed-contrast pass drove the focus hairline to 70% alpha
 (3.23:1), added the sticky-stack `scroll-margin-top` rule (WCAG 2.4.11), and moved both new
 dropdowns to DaisyUI v5's Popover API pattern. The post-mortem with nine carry-forwards is in the
-plan (`docs/superpowers/plans/2026-06-10-cairn-edit-page-redesign.md`).
+plan (`docs/plans/2026-06-10-cairn-edit-page-redesign.md`).
 
 **Next actions, in order:**
 1. **Publish the held window** (`0.39.0` publish workflow + `0.40.0` edit page): push `main`, then
@@ -2687,7 +2687,7 @@ plan (`docs/superpowers/plans/2026-06-10-cairn-edit-page-redesign.md`).
    body, carrying `0.39.0`'s `Consumers must:` shim-actions line and `0.40.0`'s conditional notes.
    The release fires the OIDC trusted-publishing workflow.
 2. **The queue resumes: diagnostics Pass 3** (doctor + the gated readiness checklist), spec
-   `docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md`;
+   `docs/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md`;
    no plan yet (write it just-in-time at pass start). Then the gates-and-tooling pass, the
    gallery (which replaces the editor's disabled Image placeholder), P4.
 3. **Site track:** the ecxc `^0.38.0` bump stays queued; each site's `^0.40.0` retrofit wires the
@@ -2721,7 +2721,7 @@ smoke was satisfied in substance by the showcase E2E (no auth code changed; the 
 smoke rides each `^0.39.0` retrofit). The post-mortem with eight carry-forwards (the live `%2F`
 ref-route proof, the layoutLoad degrade event for Pass 3, dialog titles, the flash-pattern
 convergence, the token-mint coalescing, the editLoad probe waterfall, the "1 entries" plural, the
-empty-batch flash) is in the plan (`docs/superpowers/plans/2026-06-10-cairn-publish-workflow.md`).
+empty-batch flash) is in the plan (`docs/plans/2026-06-10-cairn-publish-workflow.md`).
 
 **Next actions, in order:**
 1. **Publish `0.39.0`** (needs the push, so it is Geoff's call): push `main`, then
@@ -2729,7 +2729,7 @@ empty-batch flash) is in the plan (`docs/superpowers/plans/2026-06-10-cairn-publ
    fires the OIDC trusted-publishing workflow. The `Consumers must:` line for the shim actions
    must reach the release notes.
 2. **The queue resumes: diagnostics Pass 3** (doctor + the gated readiness checklist), designed in
-   `docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md`;
+   `docs/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md`;
    no plan written yet (write it just-in-time at pass start). It picks up two queued conditions
    (the missing-binding condition from Pass 2, the layoutLoad GitHub-degrade event from this
    pass). Then the gates-and-tooling pass, the gallery, P4.
@@ -2742,10 +2742,10 @@ plan tasks plus the simplifier (`6c5ea1e`) and the review fold-in (`3f1d8f8`), c
 `5d5c865..3f1d8f8`. The send is awaited, `requestAction` returns the `RequestResult` discriminant,
 `LoginPage` renders the `send_error`/`throttled` states, and `auth.link.send_failed` carries
 `code` plus `conditionId`. The post-mortem with six carry-forwards is in the plan
-(`docs/superpowers/plans/2026-06-09-cairn-diagnostics-02-email-delivery.md`).
+(`docs/plans/2026-06-09-cairn-diagnostics-02-email-delivery.md`).
 
 **The publish-workflow initiative (context, complete):** the approved spec is
-`docs/superpowers/specs/2026-06-10-cairn-publish-workflow-design.md`, now carrying two plan-time
+`docs/specs/2026-06-10-cairn-publish-workflow-design.md`, now carrying two plan-time
 reconciliations (consumer shims must add the actions; branches hold no manifest copy) and two
 review-time ones (publish-what-you-see; the sha-guarded delete). The plan executed as eleven
 Sonnet `cairn-implementer` dispatches verified by the main loop, with the engine review fold-in as
@@ -2785,9 +2785,9 @@ of truth for the readiness checklist, the `cairn doctor` probe, and the runtime 
 ecxc magic-link-swallowed finding (`docs/cairn-dx-feedback-2026-06-08-ecxc-magic-link-send-swallowed.md`)
 and the recurring class of silent Cloudflare setup failures behind it (email not onboarded, HTTPS not
 forced, `checkOrigin: false` missing, observability off). It is decomposed foundation first across three
-passes, designed in `docs/superpowers/specs/2026-06-08-cairn-diagnostics-initiative-design.md` (umbrella
+passes, designed in `docs/specs/2026-06-08-cairn-diagnostics-initiative-design.md` (umbrella
 plus the Pass 1 detail) and
-`docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md` (Passes 2 and 3).
+`docs/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md` (Passes 2 and 3).
 
 **Pass 1 (foundation) LANDED on `main` 2026-06-09, published in `0.37.1` (2026-06-09; the
 patch also carried the docs reorganization and voice rewrite, with no consumer action).** It stood up the internal
@@ -2808,10 +2808,10 @@ The live admin smoke was judged not proportionate (behavior-preserving re-home, 
 workerd integration suite already pins the responses). Post-mortem with the three carry-forwards (freeze
 `REGISTRY`; tie the renderer/registry 1:1 with one coverage test; the pre-existing untested
 https-vs-csrf branch ordering) is in the plan
-(`docs/superpowers/plans/2026-06-08-cairn-diagnostics-01-foundation.md`).
+(`docs/plans/2026-06-08-cairn-diagnostics-01-foundation.md`).
 
 **Pass 2 (the email-delivery runtime arm) HAS A WRITTEN PLAN, ready to execute:**
-`docs/superpowers/plans/2026-06-09-cairn-diagnostics-02-email-delivery.md`. Execute with
+`docs/plans/2026-06-09-cairn-diagnostics-02-email-delivery.md`. Execute with
 `superpowers:subagent-driven-development`, one `cairn-implementer` per task, on `main` directly (the
 established precedent for this initiative). Seven tasks, each ending on the full gate (`npm run check`
 0/0, `npm test` exit 0). It consumes the Pass 1 model: await the send (remove the `waitUntil`
@@ -2887,8 +2887,8 @@ at the logs first). Gate green at the source tip `6be795b`, run first-hand: `npm
 0/0, `npm test` 130 files / 814 tests exit 0, and `check:docs`/`check:reference`/`check:package` exit 0.
 The post-mortem (the four-not-five commit-site plan gap, the three-reviewer-converged email-bounding
 fold-in, and the carry-forwards) is in the plan
-(`docs/superpowers/plans/2026-06-08-cairn-engine-logging.md`); the design spec is
-`docs/superpowers/specs/2026-06-08-cairn-engine-logging-design.md`.
+(`docs/plans/2026-06-08-cairn-engine-logging.md`); the design spec is
+`docs/specs/2026-06-08-cairn-engine-logging-design.md`.
 
 **The review gate ran clean.** Three reviewers, no Critical or Important. `web-auth-security-reviewer`
 confirmed no token, session id, or magic-link content reaches a field, and that `String(err)` cannot
@@ -2948,8 +2948,8 @@ check, so disabling the global check is not a net loss. The token is issued by t
 admin-shell loads, rendered by a new public `CsrfField` component, validated centrally with a constant-time
 compare, and a failed admin check serves a branded 403 page (not the raw framework text) built through a
 shared static-page shell extracted from the HTTPS-required page. Spec:
-`docs/superpowers/specs/2026-06-08-cairn-login-csrf-ownership-design.md`. Plan with the full post-mortem:
-`docs/superpowers/plans/2026-06-08-cairn-login-csrf-ownership.md`.
+`docs/specs/2026-06-08-cairn-login-csrf-ownership-design.md`. Plan with the full post-mortem:
+`docs/plans/2026-06-08-cairn-login-csrf-ownership.md`.
 
 It ran subagent-driven, one `cairn-implementer` per task on `main` directly, Tasks 5 and 10 on Opus and the
 rest on Sonnet. Thirteen commits `93774a6..b165df3`: eleven task commits, a simplifier commit `cbd8b31` (a
@@ -3034,7 +3034,7 @@ gained a `(site)` route group with plain-CSS chrome, proving the admin self-styl
 site. The route pattern is documented (`docs/admin-route-structure.md`) and taught in the tutorial. Gate
 green at the tip `b87cfd3`, run first-hand: `npm run check` 823 files 0/0, `npm test` 121 files / 758 tests
 exit 0, `check:reference`/`check:package`/`check:docs` exit 0. The post-mortem is in the plan
-(`docs/superpowers/plans/2026-06-07-cairn-admin-chrome-isolation.md`).
+(`docs/plans/2026-06-07-cairn-admin-chrome-isolation.md`).
 
 **This closes the plan-1 global at-rule carry-forward** by isolation rather than name-mangling: the sheet
 is code-split to the admin roots, so it loads only on `/admin`, and the route pattern keeps host CSS off
@@ -3055,7 +3055,7 @@ not proportionate (the only runtime change is a dev-only `console.error` that co
 and changes no rendering; the showcase preview smoke already proved `/admin` renders outside the chrome),
 the same call plan 1 made.
 
-The admin-stands-alone initiative spec is `docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`.
+The admin-stands-alone initiative spec is `docs/specs/2026-06-07-cairn-admin-stands-alone-design.md`.
 Plans 1, 2, and 3 have all landed; the polish and design-identity arc ran between plans 2 and 3. The
 remaining initiative work is the two site retrofits, after the held window publishes.
 
@@ -3110,7 +3110,7 @@ is a new build-only devDependency. The minor bumps `0.32.0` with a "Consumers ma
 `listDeleteAction` is the one new opt-in action). Gate green at the tip `73cf8a7`, run first-hand: `npm run
 check` 816 files 0/0, `npm test` 120 files / 745 tests exit 0 (one re-run cleared the known
 `delivery-*-split` parallel-load flake), and `check:reference`/`check:package`/`check:docs` exit 0. The
-post-mortem is in the plan (`docs/superpowers/plans/2026-06-07-cairn-admin-ux-rebuild.md`).
+post-mortem is in the plan (`docs/plans/2026-06-07-cairn-admin-ux-rebuild.md`).
 
 **The verification gate caught a latent plan-1 defect, fixed as `ed0d50a`.** Task 10's light-and-dark
 showcase proof found the admin sidebar never rendered at desktop width and the root background never
@@ -3133,7 +3133,7 @@ The fold-in reads the flat shape, forwards `form` from the shim, and surfaces th
 the sortable headers and a load-present `role="status"` live region for the filter result count and the
 empty state. Two cheap minors rode along: the breadcrumb `{#each}` key and a `btn-sm` delete target.
 
-The admin-stands-alone initiative spec is `docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`.
+The admin-stands-alone initiative spec is `docs/specs/2026-06-07-cairn-admin-stands-alone-design.md`.
 It decomposes into three engine plans by verification surface (self-styling foundation, the UX rebuild plus
 dark mode, chrome isolation plus the route-structure pattern and dev guard), then two site retrofits. Plans
 1 and 2 have landed; the polish pass runs between plan 2 and plan 3.
@@ -3151,7 +3151,7 @@ rest on Sonnet. Six task commits `2e7cf0d..968999f`, a review fold-in `fda004e`,
 tests exit 0, `check:reference`/`check:package`/`check:docs` exit 0. The compiled sheet is 168,236 bytes
 (23 `.btn`, 0 surviving raw directives, 623 scoped selectors). The minor bumps `0.31.0` with a "Consumers
 may:" line (the change is additive, no required action). The post-mortem is in the plan
-(`docs/superpowers/plans/2026-06-07-cairn-admin-self-styling-foundation.md`).
+(`docs/plans/2026-06-07-cairn-admin-self-styling-foundation.md`).
 
 **The review gate caught one real defect, folded in as `fda004e`.** The run-as-script guard that compared
 `import.meta.url` against a `file://`-prefixed `process.argv[1]` was fragile: `import.meta.url`
@@ -3189,8 +3189,8 @@ moved and `rehypeDispatch` is gone). Gate green at the source tip `7ee7c7b`, run
 793 files 0/0, `npm test` 118 files / 720 tests exit 0, `check:reference` and `check:package` exit 0; the
 render-pipeline snapshot stayed byte-identical; the showcase `check` 0 errors in `src/` and a production
 build exit 0. The post-mortem (with the three carry-forwards and the review triage) is in the plan
-(`docs/superpowers/plans/2026-06-05-cairn-render-authoring-surface.md`); the design spec is
-`docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md`.
+(`docs/plans/2026-06-05-cairn-render-authoring-surface.md`); the design spec is
+`docs/specs/2026-06-05-cairn-render-authoring-surface-design.md`.
 
 **The review gate caught one real doc-framing issue, folded in as `c69079e`.** The `defineRegistry` icon
 guard was filed under "additive (non-breaking)" in the upgrade guide, but it converts a previously silent
@@ -3248,8 +3248,8 @@ and a declared concept key). No public surface changed, so `check:reference`/`ch
 no reference edit. The minor bumps `0.29.0`, no `Consumers must:` line (a valid config needs no action). Gate
 green at the tip `b9f025c`, run first-hand: `npm run check` 790 files 0/0, `npm test` 117 files / 701 tests
 exit 0, `check:reference` and `check:package` exit 0. The post-mortem is in the plan
-(`docs/superpowers/plans/2026-06-05-cairn-url-identity-consolidation.md`); the design spec is
-`docs/superpowers/specs/2026-06-05-cairn-url-identity-consolidation-design.md`.
+(`docs/plans/2026-06-05-cairn-url-identity-consolidation.md`); the design spec is
+`docs/specs/2026-06-05-cairn-url-identity-consolidation-design.md`.
 
 **The review gate caught one real regression, folded in as `b9f025c`.** Routing `createContentIndex` through
 `entryIdentity` moved the throwing `permalink()` call before the `descriptor.validate` gate. For a dated
@@ -3289,8 +3289,8 @@ minor bumps `0.27.0`. Gate green at the tip: `npm run check` 786 files 0/0, `npm
 tests exit 0, `check:reference` and `check:package` exit 0. Both production sites build green against the
 `0.27.0` `npm pack` tarball (ecnordic and 907 each `check` 0/0 and `build` exit 0). The review gate was the
 simplifier (one comment edit) plus a high-effort `/code-review` (no finding). The post-mortem is in the
-plan (`docs/superpowers/plans/2026-06-05-cairn-surface-narrowing.md`); the design spec is
-`docs/superpowers/specs/2026-06-05-cairn-surface-narrowing-design.md`.
+plan (`docs/plans/2026-06-05-cairn-surface-narrowing.md`); the design spec is
+`docs/specs/2026-06-05-cairn-surface-narrowing-design.md`.
 
 **Three carry-forwards from pass 1.** (1) The import audit had one miss, now fixed in the site:
 ecnordic-ski root-imported `isElement` and `markFirstList`, so the fix inlined local copies in the site
@@ -3317,8 +3317,8 @@ plus `cairn`, so the floor and the guard cannot drift. It runs last, gated by th
 switch as the floor, and is added to no public barrel. Gate green at the tip `701ddab`: `npm run check` 787
 files 0/0, `npm test` 115 files / 684 tests exit 0, `check:reference` and `check:package` exit 0. The
 render-pipeline snapshot stayed byte-identical across the pass. The post-mortem is in the plan
-(`docs/superpowers/plans/2026-06-05-cairn-render-sink-hardening.md`); the design spec is
-`docs/superpowers/specs/2026-06-05-cairn-render-sink-hardening-design.md`.
+(`docs/plans/2026-06-05-cairn-render-sink-hardening.md`); the design spec is
+`docs/specs/2026-06-05-cairn-render-sink-hardening-design.md`.
 
 **The review gate caught one real bug, folded in as `701ddab`.** The `URL_PROPS` set first listed
 `xlinkHref`, but `property-information` camelCases `xlink:href` to `xLinkHref` with a capital L, so the SVG
@@ -3340,8 +3340,8 @@ lower-severity exfiltration sink rather than a script vector; revisit it if a si
 
 **Pass 3 (URL-identity consolidation) LANDED on `main` 2026-06-05 as `0.29.0`, unpublished.** See the
 top entry "Immediate next action" for the landed result, the review fold-in, the carry-forwards, and the
-gate evidence. The design spec is `docs/superpowers/specs/2026-06-05-cairn-url-identity-consolidation-design.md`
-and the plan with its post-mortem is `docs/superpowers/plans/2026-06-05-cairn-url-identity-consolidation.md`.
+gate evidence. The design spec is `docs/specs/2026-06-05-cairn-url-identity-consolidation-design.md`
+and the plan with its post-mortem is `docs/plans/2026-06-05-cairn-url-identity-consolidation.md`.
 This was the last of the three-pass engine-hardening series, so the series is now complete. Publishing stays
 held; `main` carries the unpublished `0.27.0`, `0.28.0`, and `0.29.0` over the `0.26.0` `latest`, and the
 window publishes together before any site or the scaffolder consumes the new surface.
@@ -3355,7 +3355,7 @@ stays in the "Queued engine capstone" section below; it now follows the three ha
 **The documentation initiative landed across six phases (2026-06-04 through 2026-06-05).** It built a
 self-contained docs set for external adopters plus the project-legibility files, and it made
 documentation a standing pass dimension. The design spec is
-`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`. The six phases: 1 legibility and
+`docs/specs/2026-06-04-cairn-docs-initiative-design.md`. The six phases: 1 legibility and
 split, 2 reference, 3 explanation, 4 guides, 5 tutorial, 6 process and infra. It published nothing and
 touched no engine code.
 
@@ -3367,8 +3367,8 @@ gained a "Documentation is a pass dimension" section; `site-pass` gained a one-l
 the `docs-is-a-pass-dimension` memory was updated to past tense. The initiative spec's friction-triage line
 was reconciled to ROADMAP and STATUS (no backlog). The two skill edits committed in the dotfiles repo
 (`~/.dotfiles`, `7b4194e` and `05031e7`); the in-repo edits committed in cairn-cms. The plan is
-`docs/superpowers/plans/2026-06-04-cairn-docs-phase-6-process.md` (post-mortem appended there); the design
-spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-6-process-design.md`. Gate: prose-guard clean on
+`docs/plans/2026-06-04-cairn-docs-phase-6-process.md` (post-mortem appended there); the design
+spec is `docs/specs/2026-06-04-cairn-docs-phase-6-process-design.md`. Gate: prose-guard clean on
 all four authored files, the CLAUDE.md links resolve, the ritual reads 1 through 9.
 
 **Phase 5 (Tutorial) landed on `main` 2026-06-04.** It built the learning-oriented arm: one page,
@@ -3379,8 +3379,8 @@ menu, the local admin loop through a fenced `CAIRN_DEV_BACKEND` dev backend, and
 `cairn:` internal link). It ran subagent-driven, one `cairn-implementer` per task (Tasks 1-4 and 6 on
 Opus, Tasks 5 and 7 on Sonnet), ten commits `b46bbeb..cd64cff` on `main`, with `docs/README.md`
 flipped to the live tutorial. The plan is
-`docs/superpowers/plans/2026-06-04-cairn-docs-phase-5-tutorial.md` (post-mortem appended there); the
-design spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-5-tutorial-design.md`.
+`docs/plans/2026-06-04-cairn-docs-phase-5-tutorial.md` (post-mortem appended there); the
+design spec is `docs/specs/2026-06-04-cairn-docs-phase-5-tutorial-design.md`.
 
 The docs gate ran per writing task and at phase end: no blocking prose tell on the page or the flipped
 index, every relative link resolves, each worked example cross-checked against `examples/showcase`. The
@@ -3418,7 +3418,7 @@ hub, added `SECURITY.md` and `ROADMAP.md`, fixed the npm packaging metadata (shi
 adds `homepage`/`bugs`), relocated the historical docs under `docs/internal/` with a banner, added the
 `docs/README.md` index, and seeded `docs/internal/docs-friction-log.md`. Eight commits `3323eb8..` on
 `main`. Post-mortem at the end of the Phase 1 plan
-(`docs/superpowers/plans/2026-06-04-cairn-docs-phase-1-legibility.md`). One carry-forward: private
+(`docs/plans/2026-06-04-cairn-docs-phase-1-legibility.md`). One carry-forward: private
 vulnerability reporting could not be enabled because the repo is private (the API 404s); `SECURITY.md`
 describes the intended public-state channel, and the gap is logged in the friction log.
 
@@ -3434,7 +3434,7 @@ Reference line. Task 1 added the gate and its unit test and cleared the full eng
 check` 786 files 0/0, `npm test` 658 tests exit 0); the seven page tasks each cleared the docs gate
 (coverage `OK`, no blocking prose tell, links resolve). The gate was verified fail-closed at the
 phase end. Post-mortem at the end of the Phase 2 plan
-(`docs/superpowers/plans/2026-06-04-cairn-docs-phase-2-reference.md`).
+(`docs/plans/2026-06-04-cairn-docs-phase-2-reference.md`).
 
 The pass surfaced three design-friction findings, all in `docs/internal/docs-friction-log.md` and all
 pointing at one future surface-narrowing engine pass: the `.` root over-exports 174 names with
@@ -3446,8 +3446,8 @@ home is `/delivery`, forcing a `PublicListData` alias off a `ListData` collision
 `docs/explanation/`: four pages plus an index, with the functional spec reconciled to point at the arm.
 It ran subagent-driven, one `cairn-implementer` per page (Opus for the three synthesis pages, Sonnet
 for the relocate and the wiring), five task commits `eab6c61..69ba190` on `main` directly. The plan is
-`docs/superpowers/plans/2026-06-04-cairn-docs-phase-3-explanation.md` (post-mortem appended there); the
-design spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-3-explanation-design.md`. The pages:
+`docs/plans/2026-06-04-cairn-docs-phase-3-explanation.md` (post-mortem appended there); the
+design spec is `docs/specs/2026-06-04-cairn-docs-phase-3-explanation-design.md`. The pages:
 `data-tiers.md` (relocated from `docs/data-architecture.md`, `git mv` with history preserved, light
 refresh, no drift found), `architecture.md` (the layered model and the commit/publish flow, two Mermaid
 diagrams), `security-model.md` (auth, GitHub-App commit trust, render safety, origin and CSRF, with
@@ -3467,7 +3467,7 @@ The page gate ran per page and again at the phase end: `prose-guard` shows no bl
 seven authored files (advisory tells only: tricolon, low burstiness, anaphora, passive), every relative
 link across the arm and the flipped `docs/README.md` and the repointed `SECURITY.md` resolves, and
 `grep -rn data-architecture docs/README.md SECURITY.md` is clean (the old path is retired from the live
-public docs; historical references under `docs/superpowers/` and dated `docs/STATUS.md` entries stay as
+public docs; historical references under `docs/` and dated `docs/STATUS.md` entries stay as
 records). No `npm run check`, `npm test`, review subagent, or `/admin` smoke applied, because the arm
 changes no engine code and adds no test.
 
@@ -3481,9 +3481,9 @@ trip the gate.
 seven how-to guides plus an index, with the docs-index How-to-guides line flipped to point at the arm. It
 ran subagent-driven, one `cairn-implementer` per task (Opus for the three full engine-surface guides,
 Sonnet for the three lean guides, the relocate, and the index), eight task commits `f11b370..455b356` on
-`main` directly. The plan is `docs/superpowers/plans/2026-06-04-cairn-docs-phase-4-guides.md`
+`main` directly. The plan is `docs/plans/2026-06-04-cairn-docs-phase-4-guides.md`
 (post-mortem appended there); the design spec is
-`docs/superpowers/specs/2026-06-04-cairn-docs-phase-4-guides-design.md`.
+`docs/specs/2026-06-04-cairn-docs-phase-4-guides-design.md`.
 
 The three-tier split held. The three lean setup guides (`set-up-the-github-app.md`,
 `configure-auth-and-d1.md`, `deploy-to-cloudflare.md`) state goal, steps, and verify, then link the
@@ -3498,7 +3498,7 @@ reading sequence (set up the backend, build the site, maintain).
 The page gate ran per task and again at the phase end: `prose-guard` shows no blocking tell on any of the
 eight authored files (advisory tells only: tricolon and anaphora on two of them), every relative link
 across the arm and the flipped `docs/README.md` resolves, and `grep -n upgrading.md docs/README.md` is
-clean (the old path is retired from the live public docs; historical references under `docs/superpowers/`
+clean (the old path is retired from the live public docs; historical references under `docs/`
 and dated `docs/STATUS.md` entries stay as records). No `npm run check`, `npm test`, review subagent, or
 `/admin` smoke applied, because the arm changes no engine code and adds no test.
 
@@ -3570,8 +3570,8 @@ git-versus-R2 storage fork). Then P4, authored just-in-time once the surface it 
 
 **DX-sweep Pass A is EXECUTED (landed 2026-06-06 as `0.30.0`, unpublished); see the top entry for the
 landed result, the review fold-in, and the carry-forwards.** The design spec
-is `docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md`; the plan is
-`docs/superpowers/plans/2026-06-05-cairn-render-authoring-surface.md`. It carves a public
+is `docs/specs/2026-06-05-cairn-render-authoring-surface-design.md`; the plan is
+`docs/plans/2026-06-05-cairn-render-authoring-surface.md`. It carves a public
 `@glw907/cairn-cms/render` authoring subpath (relocating `iconSpan`/`cardShell`/`headRow`, re-homing
 `isElement`, adding `strAttr`, with a reference page), lands the P3 render ergonomics (`strAttr`, a
 configurable `headRow` level, a `registry.iconField` hoist, a `defineRegistry` icon guard, first-wins icon
@@ -3584,7 +3584,7 @@ only after pass 3 ships and the window publishes, so its version step bumps the 
 published baseline.
 
 The workspace-flatten infra task is DONE (executed inline 2026-06-04, post-mortem in
-`docs/superpowers/plans/2026-06-04-workspace-flatten-and-claude-infra.md`). cairn-cms is a standalone
+`docs/plans/2026-06-04-workspace-flatten-and-claude-infra.md`). cairn-cms is a standalone
 repo at `~/Projects/cairn-cms`, both sites resolve the published package from the registry, and the
 per-project memory moved to the new working-directory keys.
 
@@ -3595,7 +3595,7 @@ engine passes. The two consumer sites and the durable front-door docs (README, C
 that pass. The items below are now scheduled within the documentation initiative's later phases
 (reference, explanation, guides, tutorial) rather than a separate pass.
 
-- **Functional spec** (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`): accurate on
+- **Functional spec** (`docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`): accurate on
   auth and the fixed-concepts model, but it predates the `0.9.0` editor swap, so it describes a Carta
   editor throughout (lines 30, 51, 57, 89, 101, 144, 196, 267, 310, 338) when the `MarkdownEditor` seam
   is now CodeMirror 6, and it names the old `renderPreview` adapter method (lines 168, 268, 374) that the
@@ -3647,7 +3647,7 @@ confirmed findings folded in as `fce30ab`: the diff now canonicalizes the built 
 longer reports a false `links` drift, and the recursion-avoidance plugin strip is now recursive so a nested
 `cairnManifest()` cannot survive into the nested verify server. The Worker, auth, Svelte, and a11y reviewers
 and the live `/admin` smoke did not apply. The full post-mortem is in
-`docs/superpowers/plans/2026-06-04-cairn-dx-b-manifest-plugin.md`.
+`docs/plans/2026-06-04-cairn-dx-b-manifest-plugin.md`.
 
 **Migration gotchas this pass lands** (all in the `0.26.0` changelog with `Consumers must:` lines). A
 consumer adds `cairnManifest({ configModule, content, manifestPath })` to its Vite config, switches the
@@ -3708,7 +3708,7 @@ Important; two minor accuracy nits folded in as `3cb5860` (the sanitize-floor do
 to `href` since an image `src` still admits a `data:` URI under `defaultSchema`, and the validator comment
 names `freetags` alongside `tags`). The Svelte, a11y, Worker, and auth reviewers and the live `/admin`
 smoke did not apply. The full post-mortem is in the plan file
-`docs/superpowers/plans/2026-06-04-cairn-dx-a-ergonomics.md`.
+`docs/plans/2026-06-04-cairn-dx-a-ergonomics.md`.
 
 **One carry-forward for the scaffolder (from Task 3).** A naive `npm install` inside `examples/showcase`
 pulls a newer `@sveltejs/kit`/`vite` than the linked root pins, and `svelte-check` then reports
@@ -3721,7 +3721,7 @@ package so the gate stays reproducible.
 so it was edited at pass-end (the DX-A handoff item), not committed here.
 
 **DX-B is brainstormed, specced, and planned on `main` (2026-06-04), not yet executed.** The design spec is
-`docs/superpowers/specs/2026-06-04-cairn-dx-b-manifest-plugin-design.md` (`9690537`), sharpening the DX-B
+`docs/specs/2026-06-04-cairn-dx-b-manifest-plugin-design.md` (`9690537`), sharpening the DX-B
 section of the combined hardening spec; the plan is
 `docs/superpowers/plans/2026-06-04-cairn-dx-b-manifest-plugin.md` (`44e1990`). Seven tasks, bumps `0.26.0`.
 Four forks settled in the brainstorm: the build-time verify reads the corpus through a plugin-owned
@@ -3735,7 +3735,7 @@ verify as a build error outside prerender, and the bin's write evaluation) again
 before the rest leans on it, the Plan-07 locked-build-assumption lesson applied first.
 
 **Immediate next action: execute DX-B,
-`docs/superpowers/plans/2026-06-04-cairn-dx-b-manifest-plugin.md`, `subagent-driven`
+`docs/plans/2026-06-04-cairn-dx-b-manifest-plugin.md`, `subagent-driven`
 (`superpowers:subagent-driven-development`, one `cairn-implementer` per task), on a feature worktree off
 `main`. Start at Task 1.** Dispatch Task 1 (the spike), Task 5 (the bin), and Task 6 (showcase finalize)
 `model: opus` (judgment-heavy); the rest fit the Sonnet default. The design is settled and approved, so skip
@@ -3775,7 +3775,7 @@ rather than one.
   is real. It folds 907 #2/#3/#7 and ecnordic #13/#4.
 - **P4 (the scaffolder)** stays the capstone after DX-B, carrying the remaining ecnordic items (5, 6, 14).
 
-**Immediate next action: execute DX-A, `docs/superpowers/plans/2026-06-04-cairn-dx-a-ergonomics.md`,
+**Immediate next action: execute DX-A, `docs/plans/2026-06-04-cairn-dx-a-ergonomics.md`,
 `subagent-driven` (`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet
 default; the tasks are mechanical, no Opus dispatch needed), on a feature worktree off `main`. Start at
 Task 1.** The design is settled and approved, so skip brainstorming. The pass-end review gate is the
@@ -3816,7 +3816,7 @@ a missing `icon` resolved it. The fix writes the already-resolved `icon` directl
 behave alike, and it collapsed the icon double-read the simplification angle flagged. A regression test
 locks it. The Svelte, a11y, Worker, and auth reviewers and the live `/admin` smoke did not apply. The
 full post-mortem with the review triage and the carried follow-ups is in
-`docs/superpowers/plans/2026-06-03-cairn-render-authoring.md`.
+`docs/plans/2026-06-03-cairn-render-authoring.md`.
 
 **The rolled window is PUBLISHED.** `main` is pushed (`d9bf1b6..7e9d49f`) and the
 `0.22.0`/`0.23.0`/`0.24.0` window published together as `0.24.0`, now `latest` on npm (OIDC
@@ -3861,7 +3861,7 @@ showcase entry. The review gate was the simplifier (one consistency fix folding 
 guard onto the same `.find()` shape as the tags check) plus a high-effort four-angle `/code-review`,
 which surfaced no actionable defect within cairn's content domain. The Svelte, Worker, auth, and a11y
 reviewers and the live `/admin` smoke did not apply. The full post-mortem with the review triage and
-the carried follow-ups is in `docs/superpowers/plans/2026-06-03-cairn-schema-validation.md`.
+the carried follow-ups is in `docs/plans/2026-06-03-cairn-schema-validation.md`.
 
 **Two migration gotchas land with this pass** (both intended, documented in the `0.23.0` changelog).
 A migrating site whose committed content holds a non-canonical string `date` (an ISO datetime, an
@@ -3886,7 +3886,7 @@ judgment-heavy (the byte-identical snapshot-fixture migration; the showcase buil
 them `model: opus`; the rest fit the Sonnet default.
 
 **Immediate next action: execute P3,
-`docs/superpowers/plans/2026-06-03-cairn-render-authoring.md`, `subagent-driven`
+`docs/plans/2026-06-03-cairn-render-authoring.md`, `subagent-driven`
 (`superpowers:subagent-driven-development`, one `cairn-implementer` per task; Sonnet default, `model: opus`
 for Tasks 2 and 6), from the cairn-cms directory on `main`. Start at Task 1.** The design is settled and
 approved, so skip brainstorming. It runs on `main` directly (no site deploys). The pass-end review gate
@@ -3925,14 +3925,14 @@ no Important, and no confirmed correctness bug; the one convergent finding (a `f
 "Namespaced") folded in as `36d92a7`. The full post-mortem with the four carried follow-ups (the
 `makeDescriptor` test factory, the per-entry empty-`{}` allocation, the dual-barrel export-list drift, and
 `summaryFields` failing open on an undeclared key) is in
-`docs/superpowers/plans/2026-06-03-cairn-delivery-readmodel.md`.
+`docs/plans/2026-06-03-cairn-delivery-readmodel.md`.
 
 **Immediate next action: execute P2,
-`docs/superpowers/plans/2026-06-03-cairn-schema-validation.md`, `subagent-driven`
+`docs/plans/2026-06-03-cairn-schema-validation.md`, `subagent-driven`
 (`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default; the tasks are
 mechanical and well-specified, so Opus is not needed), from the cairn-cms directory on `main`. Start at
 Task 1.** The design is settled and approved (spec
-`docs/superpowers/specs/2026-06-03-cairn-schema-validation-design.md`), so skip brainstorming. P2 covers DX
+`docs/specs/2026-06-03-cairn-schema-validation-design.md`), so skip brainstorming. P2 covers DX
 items 10 and 12 plus the folded-in P1 `summaryFields` follow-up. The three design calls are locked: date
 validation is strict by default (a real `YYYY-MM-DD` calendar date, no flag, no custom `pattern`); closed
 `tags` membership is enforced by default (no `enforced` flag, since `freetags` is the open escape hatch);
@@ -3970,8 +3970,8 @@ session triaged the DX backlog from the ecnordic `0.21` migration
   defaults and the canonical setup and migration docs.
 
 P1 is specified and planned. The spec is
-`docs/superpowers/specs/2026-06-02-cairn-delivery-readmodel-design.md`; the plan is
-`docs/superpowers/plans/2026-06-03-cairn-delivery-readmodel.md` (nine test-first tasks, additive surface
+`docs/specs/2026-06-02-cairn-delivery-readmodel-design.md`; the plan is
+`docs/plans/2026-06-03-cairn-delivery-readmodel.md` (nine test-first tasks, additive surface
 plus one breaking import path, bumps `0.22.0`). Two design calls made and recorded: `CairnHead` stays off
 the root barrel so root stays node-importable for the unit suite (it resolves from `/delivery/head`), and
 `ConceptDescriptor.summaryFields` is non-optional (matching `datePrefix`/`permalink`), so Task 3 adds the
@@ -3979,7 +3979,7 @@ field to all 13 hand-built descriptor literals in the unit tests (churn accepted
 development; the recurring-literal smell is logged as a test-factory follow-up in the plan).
 
 **Immediate next action: execute P1,
-`docs/superpowers/plans/2026-06-03-cairn-delivery-readmodel.md`, `subagent-driven`
+`docs/plans/2026-06-03-cairn-delivery-readmodel.md`, `subagent-driven`
 (`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default; Opus is not
 needed, the tasks are mechanical and well-specified), from the cairn-cms directory on `main`. Start at
 Task 1.** The design is settled (skip brainstorming). It runs on `main` directly (additive, no site
@@ -4132,10 +4132,10 @@ per save, double `parseMarkdown` per file at build, sequential `editLoad` reads,
 key-shape duplication).
 
 **Immediate next action: execute content-graph Plan 5,
-`docs/superpowers/plans/2026-06-02-cairn-content-graph-05-rename.md`, `subagent-driven`
+`docs/plans/2026-06-02-cairn-content-graph-05-rename.md`, `subagent-driven`
 (`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
 directory on `main`. Start at Task 1.** The design is settled and approved (spec
-`docs/superpowers/specs/2026-06-02-cairn-content-graph-05-rename-design.md`), so skip brainstorming. It runs on
+`docs/specs/2026-06-02-cairn-content-graph-05-rename-design.md`), so skip brainstorming. It runs on
 `main` directly (additive, no site deploys) and bumps `0.21.0`. The pass is slug-only rename (a page renames its
 id=slug; a dated post renames the date-stripped slug, keeping its date prefix) with the atomic inbound-link
 rewrite through `commitFiles`, and no cascade-unwrap-on-delete. Ten test-first tasks: `renameId` and the mdast
@@ -4202,8 +4202,8 @@ a raw-value fallback); `matchCairnTrigger` has no syntax-tree awareness, so `[[`
 section-order tiebreak uses the raw concept id, cosmetic past the two built-in concepts.
 
 **Content-graph Plan 4 is WRITTEN (brainstormed and authored 2026-06-02): content delete and the integrity guards,**
-`docs/superpowers/plans/2026-06-02-cairn-content-graph-04-lifecycle.md` (design spec
-`docs/superpowers/specs/2026-06-02-cairn-content-graph-04-lifecycle-design.md`, approved). The brainstorm split the
+`docs/plans/2026-06-02-cairn-content-graph-04-lifecycle.md` (design spec
+`docs/specs/2026-06-02-cairn-content-graph-04-lifecycle-design.md`, approved). The brainstorm split the
 spec's single lifecycle plan: **Plan 4 takes delete plus the two guards, and rename plus the multi-file inbound rewrite
 move to Plan 5** (the highest-blast-radius op, isolated). Decisions locked, each grounded against the field (Sanity,
 Contentful, Hugo, Docusaurus, WordPress, Notion): the delete guard is block-until-clean (refuse while inbound links
@@ -4265,9 +4265,9 @@ ran (`cloudflare-workers-reviewer` ship-it on the atomic save, `svelte-reviewer`
 comment, the tracked `resolveLink` effect read, the `title="Broken internal link"` text cue). A high-effort
 `/code-review` surfaced one real regression folded in as `c50fc47`: the floor now admits `cairn:`, so the showcase
 feeds shipped dead `cairn:` links until threaded a resolver. Plan and full post-mortem (with the carried
-follow-ups): `docs/superpowers/plans/2026-06-02-cairn-content-graph-02-manifest-and-resolution.md`.
+follow-ups): `docs/plans/2026-06-02-cairn-content-graph-02-manifest-and-resolution.md`.
 
-- Design: `docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md` (approved). This plan implemented its
+- Design: `docs/specs/2026-06-02-cairn-content-graph-design.md` (approved). This plan implemented its
   Plan 2 (the committed manifest) and Plan 3 (the token, resolver, build backstop, preview cue) together.
 
 **One key correction locked in: the manifest slug rule matches `content-index.ts` exactly**
@@ -4282,15 +4282,15 @@ miniflare D1. The browser smoke (an editor saving an entry, confirming the commi
 during the ecnordic migration against that site's real Worker.
 
 **Content-graph Plan 3 is WRITTEN (brainstormed and authored 2026-06-02): the editor link picker,**
-`docs/superpowers/plans/2026-06-02-cairn-content-graph-03-picker.md` (design spec
-`docs/superpowers/specs/2026-06-02-cairn-content-graph-03-picker-design.md`, approved). It builds the "Link to page"
+`docs/plans/2026-06-02-cairn-content-graph-03-picker.md` (design spec
+`docs/specs/2026-06-02-cairn-content-graph-03-picker-design.md`, approved). It builds the "Link to page"
 dialog and the `[[` autocomplete, both writing the `cairn:` token through two new `MarkdownEditor` seams (a generic
 `completionSources` prop wired through `@codemirror/autocomplete`, and a `registerInsertLink` inline insert), reading
 the `linkTargets` Plan 2 ships. Brainstorm decisions locked: drafts shown flagged, the completion seam is generic, and
 substring (not fuzzy) search. Ten test-first tasks, additive, bumps `0.19.0`.
 
 **Immediate next action: execute content-graph Plan 3,
-`docs/superpowers/plans/2026-06-02-cairn-content-graph-03-picker.md`, `subagent-driven`
+`docs/plans/2026-06-02-cairn-content-graph-03-picker.md`, `subagent-driven`
 (`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
 directory on `main`. Start at Task 1.** The design is settled (skip brainstorming). It runs on `main` directly
 (additive, no site deploys). Task 1 adds the `@codemirror/autocomplete` dependency (this plan does change a
@@ -4332,10 +4332,10 @@ high-effort seven-angle `/code-review` confirmed the diff is cleanly additive wi
 leak; its one folded finding is the empty-set guard. The `svelte-reviewer`, `web-auth-security-reviewer`,
 `daisyui-a11y-reviewer`, and the live admin smoke did not apply (no Svelte, auth, session, cookie, or DaisyUI code,
 and no route calls `commitFiles` yet). Plan and full post-mortem (with the locked decisions and the latent
-follow-ups): `docs/superpowers/plans/2026-06-02-cairn-content-graph-01-atomic-commit.md`.
+follow-ups): `docs/plans/2026-06-02-cairn-content-graph-01-atomic-commit.md`.
 
 **Content-graph Plan 2 is WRITTEN (brainstormed and authored 2026-06-02), merging the design's old Plan 2 and Plan
-3 into one pass:** `docs/superpowers/plans/2026-06-02-cairn-content-graph-02-manifest-and-resolution.md`. The
+3 into one pass:** `docs/plans/2026-06-02-cairn-content-graph-02-manifest-and-resolution.md`. The
 manifest (build-verified projection, committed) and the `cairn:` link resolver land together, since they share the
 token parser and a manifest-only pass would ship infrastructure nothing reads yet; together they resolve internal
 links end to end (build resolves against the site index and fails closed on a dangling token, the preview marks a
@@ -4365,7 +4365,7 @@ and it powers rot-proof internal links between posts and pages, a link-aware edi
 delete/rename with inbound-link rewriting. It absorbs and supersedes the retired internal-links design and the
 dated-slug deferred lifecycle items.
 
-The spec is written and approved: `docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md`. The spine is
+The spec is written and approved: `docs/specs/2026-06-02-cairn-content-graph-design.md`. The spine is
 "files are truth, the manifest is a build-verified projection, every content mutation commits content and manifest
 atomically." Two rationales are recorded in it so they are not re-litigated: why a stable-id `cairn:<concept>/<id>`
 token rather than the Obsidian `[[wikilink]]` format (grounded in a verified 2026 competitive survey: not a
@@ -4379,7 +4379,7 @@ The initiative is five foundation-first plans, each written just-in-time after t
 multi-file commit primitive, (2) the committed manifest, (3) the token + build-time resolver + build backstop +
 preview broken-link flag, (4) the picker (toolbar dialog + `[[` autocomplete), (5) content delete/rename + the
 save and delete integrity guards. **Plan 1 is written and committed:**
-`docs/superpowers/plans/2026-06-02-cairn-content-graph-01-atomic-commit.md` (three test-first tasks adding
+`docs/plans/2026-06-02-cairn-content-graph-01-atomic-commit.md` (three test-first tasks adding
 `commitFiles` to `src/lib/github/repo.ts`: the write-only Git Data API sequence, delete encoding, and the
 non-fast-forward retry with a `CommitConflictError` backstop). It is the highest-stakes code in the initiative
 (it writes to `main` and triggers site deploys), so it lands and is verified in isolation before anything builds
@@ -4428,9 +4428,9 @@ so a component `build()` that routes a directive **attribute value** (raw author
 not. Not a regression (delivery had no sanitization before this pass), and the planned sites route attribute
 values into class positions, so the fix is a documented `build()` contract caveat in the render-safety section,
 not engine code. A possible URL-coercing build helper is a carried follow-up. Plan and full post-mortem:
-`docs/superpowers/plans/2026-06-02-cairn-render-sanitize.md`.
+`docs/plans/2026-06-02-cairn-render-sanitize.md`.
 
-- Spec: `docs/superpowers/specs/2026-06-02-cairn-render-sanitize-design.md` (approved).
+- Spec: `docs/specs/2026-06-02-cairn-render-sanitize-design.md` (approved).
 
 **Live admin smoke:** no `/admin` server surface changed, so it does not apply. The editor preview is covered by
 the browser component tests, and the showcase prerender covers the delivery path.
@@ -4475,9 +4475,9 @@ CSRF verification item PASS) and `cloudflare-workers-reviewer` (no Critical or I
 atomicity, the per-isolate memo, the TTL margin, the `waitUntil` keep-alive). Two minor findings in this pass's own new
 code folded in as `443ab01`: prefer the supported `platform.ctx` over the deprecated `platform.context` alias, and
 match the localhost origin hostname exactly so `localhost.evil.com` cannot skip the https requirement. Plan and full
-post-mortem: `docs/superpowers/plans/2026-06-02-cairn-auth-hardening.md`.
+post-mortem: `docs/plans/2026-06-02-cairn-auth-hardening.md`.
 
-- Spec: `docs/superpowers/specs/2026-06-02-cairn-auth-hardening-design.md` (approved).
+- Spec: `docs/specs/2026-06-02-cairn-auth-hardening-design.md` (approved).
 
 **Render-safety verification item: FAIL, escalated to its own pass (the plan's intended handling, not a blocker for
 this pass).** The auth reviewer confirmed the reference delivery render path in `src/lib/render/pipeline.ts` composes
@@ -4532,9 +4532,9 @@ exclusion and the `entry.date` feed gate) are both the plan's locked design, and
 every dropped entry. One review finding folded in as `40eb4d1`: the showcase feed routes now pass `p.date`
 directly instead of the stale `?? ''` empty-string fallback, so the reference teaches the optional-date
 contract a migrating site copies. No `/admin` surface changed, so the live admin smoke does not apply. Plan and
-full post-mortem: `docs/superpowers/plans/2026-06-01-cairn-delivery-robustness.md`.
+full post-mortem: `docs/plans/2026-06-01-cairn-delivery-robustness.md`.
 
-- Spec: `docs/superpowers/specs/2026-06-01-cairn-delivery-robustness-design.md` (approved).
+- Spec: `docs/specs/2026-06-01-cairn-delivery-robustness-design.md` (approved).
 
 **Migration gotcha to honor (Task 2's intended behavior):** `createSiteIndexes` now hard-fails when a declared
 concept has no glob key. The ecnordic and 907 migrations must pass every declared concept's `import.meta.glob`
@@ -4556,10 +4556,10 @@ on the existing `magic_token` row, zero-migration, since the endpoint only sends
 pass grew one unit during brainstorming, a lazy expired-row sweep, the single auth-adjacent backlog item.
 
 **Immediate next action: execute the auth-hardening plan,
-`docs/superpowers/plans/2026-06-02-cairn-auth-hardening.md`, `subagent-driven`
+`docs/plans/2026-06-02-cairn-auth-hardening.md`, `subagent-driven`
 (`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the
 cairn-cms directory on `main`. Start at Task 1.** The plan is fully written (eight test-first tasks) and the
-design is settled (spec `docs/superpowers/specs/2026-06-02-cairn-auth-hardening-design.md`, approved), so skip
+design is settled (spec `docs/specs/2026-06-02-cairn-auth-hardening-design.md`, approved), so skip
 brainstorming. It runs on `main` directly (additive or internal, no site deploys on a cairn-cms push) and bumps
 `0.16.0`. The eight tasks: the `__Host-` cookie prefix (protocol-derived name), the five `/admin` security
 headers in the guard, the in-isolate install-token memo, the magic-link per-email cooldown plus `waitUntil`
@@ -4609,16 +4609,16 @@ value (a stray `robots: "  noindex  "` had reached the head with surrounding whi
 docstrings now state the scope (`author` renders only for a dated entry's `article:author`, and the
 bare-path image anchoring holds for the sites' bare-domain origin). No `/admin` surface changed, so the
 live admin smoke does not apply. Plan and full post-mortem:
-`docs/superpowers/plans/2026-06-01-cairn-schema-03-seo.md`.
+`docs/plans/2026-06-01-cairn-schema-03-seo.md`.
 
-- Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md` (initiative), design
-  reference `docs/superpowers/specs/2026-06-01-cairn-schema-03-seo-design.md` (this plan).
+- Spec: `docs/specs/2026-06-01-cairn-schema-source-of-truth-design.md` (initiative), design
+  reference `docs/specs/2026-06-01-cairn-schema-03-seo-design.md` (this plan).
 
 **Immediate next action: execute the delivery-robustness plan,
-`docs/superpowers/plans/2026-06-01-cairn-delivery-robustness.md`, `subagent-driven`
+`docs/plans/2026-06-01-cairn-delivery-robustness.md`, `subagent-driven`
 (`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the
 cairn-cms directory on `main`.** The plan is fully written (five test-first tasks) and the design is settled
-(spec `docs/superpowers/specs/2026-06-01-cairn-delivery-robustness-design.md`, approved), so skip
+(spec `docs/specs/2026-06-01-cairn-delivery-robustness-design.md`, approved), so skip
 brainstorming and start at Task 1. It runs on `main` directly (additive, no site deploys on a cairn-cms
 push). The five tasks: keep invalid entries out of the typed read (`content-index.ts`, the Astro/Velite
 model, delete the `raw as F` cast), guard a missing or reserved-`site`-key glob at build
@@ -4662,14 +4662,14 @@ review found one confirmed regression, folded in as `526b5b0`: the migrated show
 only `title`/`date`, but the post files carry a `description` the SEO head reads, so validate-once dropped it
 and the prerendered meta description silently fell back to the excerpt. Declaring the field restored it
 (verified in the prerendered HTML). Plan and full post-mortem (with the carried follow-ups and the type-proof
-detail): `docs/superpowers/plans/2026-06-01-cairn-schema-02-cutover.md`.
+detail): `docs/plans/2026-06-01-cairn-schema-02-cutover.md`.
 
 **The lesson for the site migrations: every frontmatter key a site reads must be declared in its concept
 schema.** Validate-once serves only declared fields on `.frontmatter`, so a migrating site reading an
 undeclared key gets `undefined` and a silent degrade, not an error. The ecnordic and 907 migrations each audit
 their content for every read key before declaring the schema.
 
-- Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
+- Spec: `docs/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
 
 **Plan 3 is DONE (executed 2026-06-01).** See the top entry for the landing detail and the authoritative
 next action (a sequencing fork: the residual delivery follow-up, auth hardening, or the site migrations,
@@ -4709,9 +4709,9 @@ correctness findings were folded in test-first as the hardening commit: a malfor
 once in `defineFields` and fails fast there with a config error naming the field, instead of throwing an
 uncaught `SyntaxError` from inside `validate()`; and `~standard.validate` coerces a null frontmatter or body
 to the empty form, so it returns issues rather than dereferencing null. Plan and full post-mortem:
-`docs/superpowers/plans/2026-06-01-cairn-schema-01-primitive.md`.
+`docs/plans/2026-06-01-cairn-schema-01-primitive.md`.
 
-- Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
+- Spec: `docs/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
 
 **Plan 2 is DONE (executed 2026-06-01).** See the top entry for the landing detail and the authoritative next
 action (brainstorm then write Plan 3, the SEO head consumer). The brainstorm record below remains as the
@@ -4743,9 +4743,9 @@ gate. The `cloudflare-workers-reviewer` and `web-auth-security-reviewer` did not
 no Worker, D1, auth, session, or cookie code. Both reviewers converged on one Important finding, the `IconPicker`
 roving-tabindex pattern not moving DOM focus on arrow keys; it was folded in test-first (focus follows selection
 via `tick()` then the live tab stop, the arrow origin derives from the tab stop, and the group label threads from
-the field). Plan and full post-mortem: `docs/superpowers/plans/2026-06-01-cairn-components-03-slot-render.md`.
+the field). Plan and full post-mortem: `docs/plans/2026-06-01-cairn-components-03-slot-render.md`.
 
-- Design: `docs/superpowers/specs/2026-06-01-cairn-engine-backlog-and-slot-render-design.md`.
+- Design: `docs/specs/2026-06-01-cairn-engine-backlog-and-slot-render-design.md`.
 
 **Carried fast-follow: the live `/admin` guided-insert smoke (Task 10) is unrun.** It needs a human clicking
 through the insert dialog in a browser against a real Worker. The render path is proven by the showcase
@@ -4761,7 +4761,7 @@ Velite, Contentlayer, Nuxt Content, Sanity, Payload, Decap), which confirmed the
 and the no-codegen runtime inference, and drove four revisions: a corrected anti-Zod rationale, declarative
 per-field rules (`min`/`max`/`length`/`pattern`), Standard Schema (`~standard`) conformance, and the
 load-bearing invariants. Decision locked: **own the primitive** (not Zod/Valibot), conform to Standard Schema
-for interop. Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`. The initiative is
+for interop. Spec: `docs/specs/2026-06-01-cairn-schema-source-of-truth-design.md`. The initiative is
 three plans: Plan 1 the additive primitive, Plan 2 the contract cutover (`ConceptConfig` to a `schema` member,
 `defineAdapter`, `createSiteIndexes`, validate-once normalized reads, skip-drafts), Plan 3 the per-entry SEO
 head consumer. The residual delivery items (feed/excerpt/permalink guards) become a small follow-up; Pass 3
@@ -4790,9 +4790,9 @@ Final gate on `main`: `npm run check` 739 files 0/0, `npm test` 88 files / 398 t
 catch-all. A simplifier pass, a `svelte-reviewer`, a `daisyui-a11y-reviewer` (both Opus), and a
 two-angle `/code-review` ran at the gate; three findings were folded in (the U+2028/U+2029 JSON-LD
 escape gap, the missing showcase `feed.json` route the head advertised, a repeated concept lookup).
-Plan and full post-mortem with the carried open decisions: `docs/superpowers/plans/2026-06-01-cairn-delivery-dx.md`.
+Plan and full post-mortem with the carried open decisions: `docs/plans/2026-06-01-cairn-delivery-dx.md`.
 
-- Spec: `docs/superpowers/specs/2026-06-01-cairn-delivery-dx-design.md`.
+- Spec: `docs/specs/2026-06-01-cairn-delivery-dx-design.md`.
 
 **Published as `0.11.0` (`latest` on npm, OIDC release `v0.11.0`, 2026-06-01); `main` pushed (commits
 `d522dfd..41b7a42`).** The delivery surface is now consumable as `@glw907/cairn-cms/delivery`.
@@ -4803,7 +4803,7 @@ The sites (ecnordic component migration + delivery Pass 1c, 907 catch-up) wait u
 three passes:
 1. **Component completion** (next, design written). The component slot render path end to end plus the
    render/grammar hardening, the Plan 2 form fixes, and the live `/admin` smoke. Design:
-   `docs/superpowers/specs/2026-06-01-cairn-engine-backlog-and-slot-render-design.md`. The render half
+   `docs/specs/2026-06-01-cairn-engine-backlog-and-slot-render-design.md`. The render half
    of the component initiative was never built: `remarkDirectiveStamp` only stamps registered component
    directives, so nested `:::title`/`:::actions` slots are dropped on the way to hast and the Plan 2 form
    can insert markup that renders to nothing. Pass 1 stamps slots at remark, partitions them at dispatch,
@@ -4853,12 +4853,12 @@ delivery-validation refinements in the post-mortem (skip-drafts-at-build and app
   its findings were folded in test-first as the `008fc33` hardening commit (dropped the
   listbox/option roles for a plain button list, named the dialog, `role="alert"` plus `aria-invalid`/
   `aria-describedby` on the validation errors, the `{#key}` guard, the 24px remove-button floor).
-  Plan and full post-mortem: `docs/superpowers/plans/2026-05-31-cairn-components-02-form.md`.
+  Plan and full post-mortem: `docs/plans/2026-05-31-cairn-components-02-form.md`.
   **Queued (sequence against the delivery-surface DX pass above): brainstorm then write Plan 3
   (per-site migration: each site declares its UI components and `build()` reads named slots instead of
   the old heading convention, ecnordic then 907). It is the last of the three-plan component initiative. This is a design-bearing pass, so run
   `superpowers:brainstorming` with the user on the open decisions before `superpowers:writing-plans`;
-  do not auto-write it. Parent design: `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`.
+  do not auto-write it. Parent design: `docs/specs/2026-05-31-cairn-site-components-design.md`.
   Before Plan 3 ships, the live interactive `/admin` smoke for the guided-insert flow is the one
   unverified Plan 2 surface (see the carried follow-up).** Plan 3 is where the sites pin `^0.10.0` and
   the symlink dev link can engage.
@@ -4880,14 +4880,14 @@ delivery-validation refinements in the post-mortem (skip-drafts-at-build and app
   review ran at the gate; the correctness findings were folded in test-first as a Task 9
   hardening pass (entity-encode quotes, escape title brackets, quote-aware unknown-attribute
   detection, repeatable-slot array guard, pinned `bullet: '-'`). Plan and full post-mortem:
-  `docs/superpowers/plans/2026-05-31-cairn-components-01-grammar.md`. **Immediate next action:
+  `docs/plans/2026-05-31-cairn-components-01-grammar.md`. **Immediate next action:
   execute Plan 2 (the admin guided-insert form),
-  `docs/superpowers/plans/2026-05-31-cairn-components-02-form.md`, via `cairn-pass` +
+  `docs/plans/2026-05-31-cairn-components-02-form.md`, via `cairn-pass` +
   `subagent-driven-development`, dispatching the `cairn-implementer` per task (Sonnet default fits
   these well-specified tasks). Ten tasks, test-first, building on Plan 1's `serializeComponent`/
   `validateComponent`/`emptyValues` and the editor's `registerInsert` seam. It is engine + admin-UI,
   no site migration; run it on `main` directly (additive, no site deploys on a cairn-cms push) or a
-  worktree off `main`. Design: `docs/superpowers/specs/2026-05-31-cairn-components-02-form-design.md`.
+  worktree off `main`. Design: `docs/specs/2026-05-31-cairn-components-02-form-design.md`.
   The brainstorm settled a modal dialog that folds in the palette, a visual icon picker fed by a site
   `IconSet` threaded through the adapter (with a None choice when the icon field is optional), reuse
   of `validateComponent` as the form validator, a schema-vs-template dual path (which also resolves
@@ -4906,7 +4906,7 @@ delivery-validation refinements in the post-mortem (skip-drafts-at-build and app
   (svelte, daisyui-a11y) plus a simplifier pass were folded in (the `$bindable` seam reconciles an external
   value change into the mounted view, a focus ring was restored, toolbar targets reach the 24px floor, and
   the toolbar uses the admin's stroke SVG icon set). Plan and post-mortem:
-  `docs/superpowers/plans/2026-05-31-cairn-editor-codemirror-swap.md`. The `feat/editor-codemirror-swap`
+  `docs/plans/2026-05-31-cairn-editor-codemirror-swap.md`. The `feat/editor-codemirror-swap`
   worktree and branch were removed after the merge. Carried follow-up: the interactive browser smoke (live
   typing, the focus ring, toolbar formatting) is the one unverified surface; the automated gate and the prod
   build cover the rest.
@@ -4916,8 +4916,8 @@ delivery-validation refinements in the post-mortem (skip-drafts-at-build and app
   for non-technical editors, save+build validation, and a generated `llms-full`-shaped reference file an
   author points claude.ai at. Research grounded three choices: explicit named slots over an implicit
   heading, a parse-ready grammar for later round-trip editing, and schema validation. Insert-only in v1.
-  Design: `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`; Plan 1 (engine grammar and
-  schema, no UI): `docs/superpowers/plans/2026-05-31-cairn-components-01-grammar.md`. Plans 2 (admin guided
+  Design: `docs/specs/2026-05-31-cairn-site-components-design.md`; Plan 1 (engine grammar and
+  schema, no UI): `docs/plans/2026-05-31-cairn-components-01-grammar.md`. Plans 2 (admin guided
   form) and 3 (per-site migration, ecnordic then 907) are written just-in-time after each lands. Builds on
   the editor swap's `registerInsert` seam, now published.
 - The dated-slug identity pass landed on `main` (commits `dd2a265..77d9bf2`), bumping the local
@@ -4927,8 +4927,8 @@ delivery-validation refinements in the post-mortem (skip-drafts-at-build and app
   under an SSG model, and unifies public delivery behind a site-level `byPermalink` resolver one
   catch-all `[...path]` route serves. Green at close: `npm run check` 0/0 over `src/`, 315 tests exit
   0, `npm run check:package` clean. Three review subagents returned no blockers; four small findings
-  were folded in. Design: `docs/superpowers/specs/2026-05-31-cairn-dated-slug-design.md`; plan and
-  post-mortem: `docs/superpowers/plans/2026-05-31-cairn-dated-slug.md`. The pass ran directly on
+  were folded in. Design: `docs/specs/2026-05-31-cairn-dated-slug-design.md`; plan and
+  post-mortem: `docs/plans/2026-05-31-cairn-dated-slug.md`. The pass ran directly on
   `main` (user-authorized), not a worktree. Not yet published to npm and not yet smoke-tested against
   a live Worker.
 - Rebuild plans 00 through 08 landed earlier. The public content delivery layer landed too. It merged
@@ -5096,7 +5096,7 @@ in a cloud checkout and runs `check` + `test` + `check:cm-internals`, pinging on
 the public surface (2026-07-01) convicted ~106 of 305 exported names as engine plumbing leaked
 onto the contract, plus five reshapes and two shape blockers (the open `routing` union, the
 hand-declared `Platform.env`). The plan is
-`docs/superpowers/plans/2026-07-01-surface-pruning-pass.md` (evidence:
+`docs/plans/2026-07-01-surface-pruning-pass.md` (evidence:
 `2026-07-01-surface-pruning-audit-verdicts.md` beside it); it lands the prune, the shape fixes,
 the three-tier stability vocabulary (`Unstable API` joins `Extension API`/`Scaffold API`,
 gate-enforced per export), and the packaging boundary, all batched under one `## Unreleased`
@@ -5125,7 +5125,7 @@ index to the body-link delete gate, closing locked decision 9's deliberate asymm
 ## Immediate next action (2026-07-01, LATEST): surface-pruning pass MERGED (the contract freeze); NEXT = the code polish pass, then the docs rewrite
 
 **The surface-pruning pass is merged to `main`** (merge `4136cb2`, branch `surface-pruning-1`;
-plan and post-mortem at `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, audit
+plan and post-mortem at `docs/plans/2026-07-01-surface-pruning-pass.md`, audit
 evidence beside it). The window: ~106 exports demoted to the audited contract (the
 `api-surface.md` diff is the authoritative list), the five reshapes (routing union closed with a
 runtime guard, loud `parseSiteConfig` boundary, `createMediaRoute(runtime)`, the `auth`/`tidy`
@@ -5138,13 +5138,13 @@ reviewers zero blockers; the bindings-fidelity warning and the dev-package fallo
 in-pass (`46af986`, `42d2346`).
 
 **NEXT: execute the code polish pass.** Spec approved
-(`docs/superpowers/specs/2026-07-01-code-polish-pass-design.md`) and the plan is written:
-`docs/superpowers/plans/2026-07-01-code-polish-pass.md` (worktree `code-polish-1`; Tasks 2 and 4
+(`docs/specs/2026-07-01-code-polish-pass-design.md`) and the plan is written:
+`docs/plans/2026-07-01-code-polish-pass.md` (worktree `code-polish-1`; Tasks 2 and 4
 are Workflow launches per Geoff's recorded opt-in, riders via `cairn-implementer`, charter
 synthesis in the main loop). The docs rewrite is fully planned: Stage 1
 research ran (eleven agents + two supplementals), the docs IA is APPROVED
-(`docs/superpowers/specs/2026-07-01-docs-ia-design.md`, Geoff 2026-07-01), and the Stage 2 plan
-is written (`docs/superpowers/plans/2026-07-01-docs-rewrite-stage-2.md`; executes on its own
+(`docs/specs/2026-07-01-docs-ia-design.md`, Geoff 2026-07-01), and the Stage 2 plan
+is written (`docs/plans/2026-07-01-docs-rewrite-stage-2.md`; executes on its own
 worktree AFTER the polish pass merges, since the docs snippets imitate the polished idiom).
 
 **Carried follow-ups (churn, do not accumulate):**

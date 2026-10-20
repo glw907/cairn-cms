@@ -34,7 +34,7 @@ Not yet reflected as its own doc page but relevant: `env.go`, `deps.go`, `regist
 - `tool/v<major.minor.patch>` tags are permanent (Go module proxy caches them); a bad release is corrected by a `retract` directive plus a new patch tag, never a deleted tag.
 
 ### `tool/docs/` inventory and what's moving
-Per `docs/superpowers/specs/2026-09-21-draft-docs-design.md` ("Pass A: the tool's contract pages"):
+Per `docs/specs/2026-09-21-draft-docs-design.md` ("Pass A: the tool's contract pages"):
 - **Moving out** (already done — `tool/docs/reference/README.md` is now a stub pointing to the new locations): `tool/docs/reference/exit-codes.md`, `json-output.md`, `log-events.md`, and `cli-cairn-doctor.md`, plus their `*.schema.json` files, all landed at `docs/reference/cli-cairn-*.md` and `docs/reference/schema/` so they ship in the npm tarball (cairn.pub renders only the npm tarball; `tool/` itself is never in it).
 - **Interim, staying until pass B** (admin arm destination): `tool/docs/credentials.md`, `tool/docs/tripwire.md` (systemd/launchd/Task Scheduler scheduling examples for the read-only tripwire — there is no `tripwire` subcommand; the tripwire is `cairn health --quiet` on a scheduler).
 - **Staying for good**: `tool/docs/release-candidate-notes.md`, `tool/docs/adr/` (0001 "the spine is the product", 0002 render dependencies), `tool/docs/design/` (copy-standard.md, charm-v2-capabilities.md, render-reference fixtures, design reviews) — internal/contributor material, not public docs.

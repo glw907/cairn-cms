@@ -112,7 +112,7 @@ The admin side has the same root. daisyUI 5 compiles its component rules into su
 `@layer utilities`, so an admin override in `@layer components` also loses to a daisyUI
 component rule (the `.btn-primary` lift never rendered). Today's fix is a pinned unlayered rule
 (the pinned-rule comments in `src/lib/admin/cairn-admin.css`); the theme identity spec
-(`docs/superpowers/specs/2026-09-26-theme-identity-design.md`) introduces a named `cairn-idiom`
+(`docs/specs/2026-09-26-theme-identity-design.md`) introduces a named `cairn-idiom`
 sublayer pinned after daisyUI's (`@layer utilities.daisyui, utilities.cairn-idiom;`).
 
 ## The component project stalls under file parallelism
@@ -126,7 +126,7 @@ version, the gate's memory scope, orphaned headless shells, inotify, socket, fil
 limits, conntrack, and `localhost` resolving to `::1`. During a failing run the Vite server
 listens on `[::1]:<port>`, Node is idle, and the port shows paired CLOSE-WAIT and FIN-WAIT-2
 sockets. Root cause unknown; full record in
-`docs/superpowers/plans/2026-09-21-doctor-pretask.md`.
+`docs/plans/2026-09-21-doctor-pretask.md`.
 
 When a component run prints that line, do not retry the stock gate. Kill the run's scope, run
 `pkill -f 'chromium_headless_shel[l]'` (the bracket keeps the pattern from matching its own
@@ -170,7 +170,7 @@ Build a probe site the way `.github/workflows/create-site.yml` does: bake, pack 
 The engine reads its bindings and `waitUntil` from `cloudflare:workers` through one module,
 `src/lib/sveltekit/workers-env.ts`, and nothing reachable from a Node-context entry may import it
 (`src/tests/unit/workers-env-reach.test.ts` walks the packed `dist`). The spike record
-(`docs/superpowers/research/2026-10-03-sveltekit-3-spike/record.md`) proved the following, against a
+(`docs/research/2026-10-03-sveltekit-3-spike/record.md`) proved the following, against a
 packed engine installed into a fresh `sv create` project on Kit 3 and adapter-cloudflare 8.
 
 - The import resolves under `vite dev`, `vite build`, and `wrangler dev` with no `ssr.noExternal`, no
@@ -301,7 +301,7 @@ config change must still include `npm run check`, since `svelte-check` also type
 plain `.mjs` files: a `scripts/checks/*.mjs` that a unit test imports is checked under `checkJs`, so
 it needs JSDoc parameter types and typed empty arrays. The env prefix works inside a
 `cairn-run-gate` string. The measurement is in
-`docs/superpowers/research/2026-10-08-pass-a-s1-reports.json`; a lane-level default is the lasting
+`docs/research/2026-10-08-pass-a-s1-reports.json`; a lane-level default is the lasting
 fix and belongs to the runner, not to this repo.
 
 ## Tailwind scans every file under the project, specs included
@@ -565,7 +565,7 @@ width, where the band's ground color should touch both viewport edges.
 
 A drift-hunt after a rename or a public-surface narrowing edits the living docs: `docs/reference/`,
 the guides, and the `engine-rulings.md` ledger. Point-in-time documents describe what was true when
-they were written, so a hit in `docs/internal/record/`, `docs/superpowers/plans/`,
+they were written, so a hit in `docs/internal/record/`, `docs/plans/`,
 `docs/internal/history/`, or a dated design or research brief is evidence to leave alone. A plan's
 rename table is the task's own source text. A grep hit is also not drift when the sentence never
 claims the name is public. `docs/internal/admin-smoke-test.md` names internal source paths and raw

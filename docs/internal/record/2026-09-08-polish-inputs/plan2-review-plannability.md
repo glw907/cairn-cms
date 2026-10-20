@@ -37,7 +37,7 @@ these need re-planning, not editing.
 | `measure-prose.mjs` exports a sentence splitter | **No** | zero `export` statements; it is a CLI only |
 | Five Cairn Vale rules already exist | Yes | Announcement, ContrastFrame, Marketing, TwoHeadedHeading, VirtueClaims |
 | Vale pinned to 3.15.1 in CI | Yes | `.github/workflows/test.yml:102` |
-| `.vale.ini` exempts `docs/superpowers/**`, `docs/internal/**` | Yes | |
+| `.vale.ini` exempts `docs/**`, `docs/internal/**` | Yes | |
 | `npm run check` is a composite of docs gates | **No** | `check` is `svelte-check --tsconfig ./tsconfig.json` alone; docs gates run as separate CI steps |
 | `docs-sweep.md` carries findings `D1`-`D30` | Partly | findings are numbered 1-30 with no `D` prefix |
 | `docs-sweep.md` carries `F7`-`F10` | **No** | the `F` ids live in `exports-sweep.md` |

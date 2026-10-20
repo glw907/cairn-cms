@@ -39,7 +39,7 @@
 // text, because that text gets pasted into issues and screenshots.
 //
 // The Workers Builds routes (added T4c) are NOT threaded through OPERATION_CODES/throwMapped:
-// the catalogue (docs/superpowers/plans/2026-08-12-create-cairn-site-t4c.md, Task 2) catalogued
+// the catalogue (docs/plans/2026-08-12-create-cairn-site-t4c.md, Task 2) catalogued
 // exactly the eight recoverable Builds conditions, a count a test guards, and none of them is a
 // generic "this Builds call failed" row a genuinely unexpected failure could reuse (each row's
 // copy is hardcoded, not built from a `detail` param the way zone-create-failed and its

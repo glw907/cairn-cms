@@ -96,7 +96,7 @@ Readiness checklist:
   (the account's existing 907-life Builds usage was left untouched throughout). **T4d shipped the
   localhost console and T5 split, leaving one open item: T5a'**, the browser door's public-repo
   half (the public template repo, the Deploy button, C3 `--template` compatibility), which rides
-  release one's cut. **Pass D is done** (`docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`,
+  release one's cut. **Pass D is done** (`docs/plans/2026-08-14-pass-d-docs-reset.md`,
   post-mortem appended there); the tool and template still publish in the same cut as release
   one.
 
@@ -120,9 +120,9 @@ Readiness checklist:
   including the silent `PUBLIC_ORIGIN` reconciliation defect. T4c, now shipped, added two inputs
   to the console's own brief: the build watch as a second long wait worth rendering, and the grown
   fake-server surface its plumbing extraction must now cover (recorded in the T4c spec's own "What
-  follows" section, `docs/superpowers/specs/2026-08-12-create-cairn-site-t4c-design.md`). The T4a
+  follows" section, `docs/specs/2026-08-12-create-cairn-site-t4c-design.md`). The T4a
   spec carries the T4b and T4c briefs:
-  [`docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`](docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md),
+  [`docs/specs/2026-08-11-create-cairn-site-t4a-design.md`](docs/specs/2026-08-11-create-cairn-site-t4a-design.md),
   and the banked research behind the split is
   [`docs/internal/record/2026-08-11-t4b-email-console-cost-research.md`](docs/internal/record/2026-08-11-t4b-email-console-cost-research.md).
 
@@ -142,7 +142,7 @@ Readiness checklist:
   landing BEFORE the public beta, and all three implemented (the design sitting's
   `createPreviewRoute(runtime): RequestHandler` reservation is superseded by the shipped
   `loadPreview`, a site-mounted `Load` under R1's grammar; see
-  `docs/superpowers/specs/2026-08-06-history-revert-preview-design.md`, "Part 3"), holding
+  `docs/specs/2026-08-06-history-revert-preview-design.md`, "Part 3"), holding
   unpublished for release one. Release intent (Geoff, 2026-08-01): the three bundle into one
   release, the next cut after the ASC-seams window publishes, however many passes they take to
   land.
@@ -284,7 +284,7 @@ The original decision framing, for the record:
 
   **The path to the release, with each engine pass in its slot.** Every stage close re-runs the test
   and may add or drop a pass; this list is where each one sits today.
-  1. Finish stage 2a's close: `docs/superpowers/plans/2026-10-07-2a-close-finish.md` (leak check,
+  1. Finish stage 2a's close: `docs/plans/2026-10-07-2a-close-finish.md` (leak check,
      cadence rewrite, merge of PR #107). Not an engine pass.
   2. **Engine passes A and B before stage 2b.** Both landed on `main`, unreleased: pass A (PR #108),
      the gate economy pass (PR #110), and pass B (PR #113, the first pass scored on the lean
@@ -340,7 +340,7 @@ The original decision framing, for the record:
   under the rulings.
 
 - **Stage 2b part 2: the items part 1 carried (PR #117 triage, Geoff, 2026-10-12).** Part 1's
-  "Found, not done" table (`docs/superpowers/research/2026-10-11-draft-docs-2b-part1-record.md`,
+  "Found, not done" table (`docs/research/2026-10-11-draft-docs-2b-part1-record.md`,
   "Rulings for Geoff") filed these as defers; Geoff submitted the triage unchanged. Part 2 also owns
   its own scope from the plan (the 10 fact re-arms, the relink and `LEGACY_PATH_MAP` repoints, the
   reference-arm corrections, the final arm index, the outline deletion, the boundary test, 2b's
@@ -414,7 +414,7 @@ The original decision framing, for the record:
   - `tellgrader` in CI (vendoring the binary), and the unreproduced `cairn-run-gate` "gate vanished".
 
 
-- **Docs-code sync (Geoff, 2026-09-30; spec `docs/superpowers/specs/2026-09-30-docs-code-sync-design.md`).**
+- **Docs-code sync (Geoff, 2026-09-30; spec `docs/specs/2026-09-30-docs-code-sync-design.md`).**
   Keep the engine and its docs in sync by catching drift (a fact whose code changed while its
   `Source:` still resolves) and omission (behavior no fact covers). **Shipped in stage 2a
   (2026-10-07):** option coverage (`check:options` over `docs/internal/option-map.json`, in the docs
@@ -453,7 +453,7 @@ The original decision framing, for the record:
     site when a theme next touches the button recipe.
 
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25; spec
-  `docs/superpowers/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still
+  `docs/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still
   to be rebuilt from the facts container.
   **The harvest is done (2026-09-30; `docs/HISTORY.md`, "Draft docs harvest, then delete").**
   Every claim on the 49 old narrative and front-door pages became a fact in
@@ -471,7 +471,7 @@ The original decision framing, for the record:
   Microsoft Learn capture for editors. The stage 2 and stage 5 outline input is
   `docs/internal/record/2026-09-29-theme-contract-docs-input.md`.
   The docs reset's reader-validation line (passes 1, 1b, and 2a, spec
-  `docs/superpowers/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
+  `docs/specs/2026-09-23-docs-reset-design.md`) is stopped by owner
   ruling: its reader instrument failed validation across three passes (`docs/HISTORY.md`, "Docs
   reset pass 2a"). The next approach is designed from conventional practice: a published style
   guide with a linter, SME review, docs-as-tests for procedures, and human task-based usability
@@ -644,7 +644,7 @@ The original decision framing, for the record:
   stations have shipped: the cairn diagram theme landed in cairn-pub, and the diagram-pages pass
   merged 2026-08-16 with eleven diagrams across the extend and admin tracks plus the
   `check:visuals` gate (post-mortem in
-  `docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md`). Geoff reordered the sequencing
+  `docs/plans/2026-08-15-docs-diagram-pages-pass.md`). Geoff reordered the sequencing
   2026-08-19, superseding his 2026-08-15 ruling that release one waits for the visual layer: the
   release-debt engine pass, then the release, then the site updates, then the live site work with
   the docs updated alongside (recorded in `docs/STATUS.md`). The capture pass ran 2026-08-17 and is
@@ -949,7 +949,7 @@ the named human gates only):**
 1. ~~Polish pass close + merge~~ — DONE, merged 2026-07-02.
 2. ~~The pre-beta cut~~ — DONE: `v0.79.0` published 2026-07-02, the last `0.x`.
 3. ~~The docs rewrite Stage 2~~ — DONE, superseded by the ground-up rebuild ruling and shipped
-   as Pass D (`docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`); **the Waymark starter
+   as Pass D (`docs/plans/2026-08-14-pass-d-docs-reset.md`); **the Waymark starter
    component set** (human gate: one batched taste question settles the final component list at
    its plan's start) is still open.
 4. ~~The Waymark design review~~ — DONE 2026-07-17: the two-track audit (90 findings, 82
@@ -1319,7 +1319,7 @@ the named human gates only):**
 
 - **`wrangler types --check` agrees with a committed `worker-configuration.d.ts` only on a tree with
   no build output (2026-10-05, SvelteKit 3 pass, S4; record
-  `docs/superpowers/research/2026-10-05-sveltekit-3-bump-survey.md`).** wrangler adds
+  `docs/research/2026-10-05-sveltekit-3-bump-survey.md`).** wrangler adds
   `GlobalProps.mainModule` (an import of `.svelte-kit/cloudflare/_worker.js`) to the generated file
   when that build output exists, so a regeneration after a build differs from the committed file.
   The `sv` adapter-cloudflare scaffold's `build: wrangler types --check && vite build` fails a second
@@ -1518,7 +1518,7 @@ the named human gates only):**
   subordinate to the steps), but the page-inputs step's claim inventory still lists those sentences
   as claims the extend page itself carries, so a fact reader checking the brief against the page
   reads it as dropped content. Detail:
-  `docs/superpowers/research/2026-09-26-draft-docs-pass-0-1-proof.md`, "Finding: the page-chain's
+  `docs/research/2026-09-26-draft-docs-pass-0-1-proof.md`, "Finding: the page-chain's
   brief format and the register's anatomy disagree." Trigger: the next page-chain redraft that
   relocates a claim to a linked page, or the stage 2 pilot if it hits this first.
 
@@ -1547,7 +1547,7 @@ the named human gates only):**
   alone 7,203 times), so adopting it now means disabling each, and every rule left enabled has
   zero hits and catches nothing. An arm drafted from empty starts clean instead. Adopt the stock
   configuration, with a custom rule only for a defect measured on a rebuilt page. Evidence:
-  `docs/superpowers/research/2026-09-28-style-guide-sync-rescope-review-leanness.md` (M2); package
+  `docs/research/2026-09-28-style-guide-sync-rescope-review-leanness.md` (M2); package
   survey `docs/internal/record/2026-09-28-vale-3-23-and-markdownlint-survey.md`. Trigger: the first
   arm stage that drafts pages into an emptied arm.
 
@@ -1706,7 +1706,7 @@ the named human gates only):**
   merge, and the site-pass no-edit rule, now the `site-docs/<site>-<pass>` PR write path), which
   touches the `site-pass` and `engine-consult` skills and gives `site-pass` a "Tool friction" section;
   the docs-infra currency pass
-  (`~/.dotfiles/docs/superpowers/plans/2026-09-19-docs-infra-currency-pass.md`, its order against
+  (`~/.dotfiles/docs/plans/2026-09-19-docs-infra-currency-pass.md`, its order against
   the draft docs unruled); the draft docs; the site round, upgrading aksailingclub-org, ecxc-ski,
   and 907-life into model cairn sites, each filing container bullets through
   `site-docs/<site>-<pass>`; one improvement release; the docs rebuild from the facts container;
@@ -1722,13 +1722,13 @@ the named human gates only):**
   `--json` on every command with six published schemas, and exit codes 0 to 3.
   `tool/v1.0.1` (commit `9b479e8d`) is its full release page: six archives with man pages,
   `SHA256SUMS`, and a build-provenance attestation, plus the honest `go 1.26` floor. The plan is
-  [`2026-09-14-cairn-tool-1-0-pass.md`](docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md),
+  [`2026-09-14-cairn-tool-1-0-pass.md`](docs/plans/2026-09-14-cairn-tool-1-0-pass.md),
   whose Tasks 22b and 23 are now the runbook for the next tag, and the owner rulings behind it
   are
   [`2026-09-21-go-tool-b2-owner-rulings.md`](docs/internal/record/2026-09-21-go-tool-b2-owner-rulings.md).
 
   **What follows is governed by
-  [the after-1.0 framing](docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md)**
+  [the after-1.0 framing](docs/specs/2026-09-21-cairn-tool-after-1-0-framing.md)**
   (Geoff, 2026-09-21): use it through the site round before building on it; 1.1 is headed by the
   agent-permission check; a terminal HUD is a 1.x minor under `cairn hud`, not a 2.0; 2.0 is
   reserved for a break of a frozen surface, and its goal is provisioning, with the second site
@@ -1808,7 +1808,7 @@ the named human gates only):**
   their items. Each declined item carries the reason a chore did not fix it:
   - **`spine.FromKind` and `spine.Kind` stay exported**, not unexported as callerless. Both are
     pre-adjudicated 2.0 seams: the 1.0 plan's seams table
-    (`docs/superpowers/plans/2026-09-14-cairn-tool-1-0-pass.md:282-305`) names `FromKind` with its
+    (`docs/plans/2026-09-14-cairn-tool-1-0-pass.md:282-305`) names `FromKind` with its
     2.0 caller, the HUD's detail view, and `Kind` is its parameter type (Decision 2).
   - **`render`'s `Role` and its eight constants, the `Profile` constants, and `Glyphs`/`GlyphSet`
     stay exported**, not folded into the eighteen names the render cut unexported. Each is load-
@@ -1829,7 +1829,7 @@ the named human gates only):**
 
 - **Go tool architecture, round 2 (2026-09-27).** The chores pass's ten Go architecture
   reads, full findings and best passages at
-  `docs/superpowers/research/2026-09-27-go-chores-architecture-reads.md`. Nine of ten packages read
+  `docs/research/2026-09-27-go-chores-architecture-reads.md`. Nine of ten packages read
   sound with nits; most findings predate this pass, since the reader grades a whole package rather
   than a diff. Structural-finding counts per package, descending: `cmd/cairn` 13 (**needs work**,
   first in line: the `deps` seam's one test hook per field, duplicated bodies across `adopt`,
@@ -2608,13 +2608,13 @@ the named human gates only):**
   small orgs, personal and small-business sites) — reasonable, deliberately not exhaustive. Today the
   showcase defines `callout`, `alert`, and the `converter` island demo; the demo is showcase-ware,
   not a template component, so the real set is two. The list is DECIDED (Geoff, 2026-07-02, survey-informed:
-  `docs/superpowers/plans/2026-07-02-wayfinder-component-survey.md`): figure, gallery, video
+  `docs/plans/2026-07-02-wayfinder-component-survey.md`): figure, gallery, video
   embed, pull quote, CTA/button, FAQ/details, and inline icon (the survey's one
   frequency-justified addition — 99 uses on the next migration target), joining the existing
   callout and alert; the converter island demo is replaced by an expiring-announcement banner
   (frontmatter-date-driven, auto-hides after expiry — teaches the countdown's date mechanics
   while replacing a real feature of the aksailingclub migration). Plan:
-  `docs/superpowers/plans/2026-07-02-wayfinder-component-set.md`. **BUILT and merged
+  `docs/plans/2026-07-02-wayfinder-component-set.md`. **BUILT and merged
   2026-07-02:** icon, video, pull-quote, cta, faq, and the expiring-banner island (converter
   retired); gallery waits on the filed image-attribute enabler; figure needs no component
   (engine-native). The design review (step 4) receives the set with the fixtures branch. Each ships as a worked `defineComponent` — schema-driven form, icon, and a
@@ -2742,7 +2742,7 @@ the named human gates only):**
 - **Pre-beta polish: split `CairnMediaLibrary.svelte` (promoted from Later, Geoff, 2026-08-01:
   the code goes public as clean as it can be).** It is the file a code-reading stranger will judge
   the repo by. The code-polish pass's measurement
-  (`docs/superpowers/plans/2026-07-01-code-polish-measurements.md`) converged three signals on this
+  (`docs/plans/2026-07-01-code-polish-measurements.md`) converged three signals on this
   one file: the largest component in the tree (3,141 lines), the largest jscpd self-duplication
   cluster (25 `html`-format clone pairs, unchanged across the pass), and an internal organization of
   six near-identical inline dialog controllers (open/close/apply per feature, each with its own
@@ -2804,7 +2804,7 @@ the named human gates only):**
   `main`; the private-vulnerability-reporting toggle plus the SECURITY.md trim (the standing timed
   item); and the issues-on decision with a minimal triage posture. Widened (Geoff, 2026-08-01): the
   exposure review covers everything the flip publishes, not `docs/internal/` alone — the
-  `docs/superpowers/` plans, specs, and post-mortems (written candid, for an audience of us), the
+  `docs/` plans, specs, and post-mortems (written candid, for an audience of us), the
   STATUS archives, and the repo `CLAUDE.md` — and one rule changes meaning at the flip: the docs
   register's never-name-the-ASC-site line currently binds only the published arms, a boundary that
   stops existing when the whole tree is public, so the internal arms' pervasive ASC naming needs
@@ -2844,7 +2844,7 @@ the named human gates only):**
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX
   warts a dogfood found), then Part B3 (defaults) and B4 (options plus first-run), then the Part C
-  generator. Plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`. Carried from the
+  generator. Plans under `docs/plans/2026-06-2*-cairn-scaffolder-*`. Carried from the
   friction log at its 2026-07-16 clearing, each re-verified at plan time: (1) starter/seed content —
   the strongest empty-state activator is an editable, labeled starter post, but the engine has no
   mechanism to commit labeled starter `.md` entries on a fresh site or distinguish them from authored
@@ -3187,7 +3187,7 @@ the named human gates only):**
   gets the broken invocation. Candidate fix: split the chain into `check:surface`
   and a `check:surface:update` that runs `npm run package && node scripts/checks/check-surface.mjs --update`,
   then correct both banners. Filed rather than fixed because a non-breaking fix does not join a
-  breaking window (`docs/superpowers/specs/2026-09-08-polish-passes-design.md`, the polish-C shape).
+  breaking window (`docs/specs/2026-09-08-polish-passes-design.md`, the polish-C shape).
   **Trigger:** the next pass that changes the public surface, which is the next pass that has to
   run the regeneration.
 
@@ -3354,7 +3354,7 @@ the named human gates only):**
 - **The design spec's "reverted content is validated" paragraph names link/include drift as a
   revert advisory, but the shipped advisory covers only retired fields and retired vocabulary
   tags (docs friction log, triaged 2026-08-14).** [The design
-  spec](docs/superpowers/specs/2026-08-06-history-revert-preview-design.md) (Part 2, "Reverted
+  spec](docs/specs/2026-08-06-history-revert-preview-design.md) (Part 2, "Reverted
   content is validated, warn-not-refuse") lists three things an old version can carry that the
   current schema no longer recognizes: retired frontmatter fields, removed vocabulary values,
   and "links or includes to since-deleted targets." `revertSchemaDrift`
@@ -3405,10 +3405,10 @@ the named human gates only):**
   tailing. The pre-design, with the full decision record (why successor rather than protocol
   frontend, the Node-TUI option declined on taste not capability, the parity contract via the
   language-neutral fixture corpus, poplar's three-layer shape) is
-  `docs/superpowers/specs/2026-08-13-go-successor-tool-design.md`. **The trigger was met and
+  `docs/specs/2026-08-13-go-successor-tool-design.md`. **The trigger was met and
   the design sitting happened 2026-08-20:** sub-project 1 (chapter spine, read-only health HUD
   with adopt-to-watch, read-only log view) is specified in
-  `docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md` and awaits its plan.
+  `docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md` and awaits its plan.
   Sub-project 2 is provisioning, adopt-to-manage, infra and auth-store settings including user
   management, the `go:embed` bake, and distribution; sub-project 3 is upgrades over P9, ordered
   rollout, upgrade rollback, deploy rollback, and repo-held settings. The 2026-08-20 spec
@@ -3507,7 +3507,7 @@ the named human gates only):**
   client behavior channel (a `CairnAdmin` prop and scaffolder wiring). A focused concept-array-editor pass can
   design that live-row snapshot properly. The string `itemLabel` (a sub-field key) still covers the common case.
 - **Dedupe the leaf-field family's shared pass-through props, not the renderers themselves.** The
-  code-polish pass's guarded rider (`docs/superpowers/plans/2026-07-01-code-polish-pass.md`, Task 7)
+  code-polish pass's guarded rider (`docs/plans/2026-07-01-code-polish-pass.md`, Task 7)
   wrote guard tests first
   (`src/tests/component/form-renderer-family-guard.test.ts`) covering both leaf-field dispatchers,
   then found the merge architecturally wrong on four separate walls the guards now pin: the binding
@@ -3737,7 +3737,7 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
   land anywhere, at the cost of one thing the editor has to carry across. The promote trigger is a
   real report of the cross-device refusal biting a site's editors, not the theory.
 - **Migrate the engine's own editor default from magic-link to codes.** The auth-channel factory
-  design (`docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md`, decision 6) named
+  design (`docs/specs/2026-08-03-auth-channel-factory-design.md`, decision 6) named
   this out of scope on purpose: `magic_token` and the editor magic-link flow are untouched by
   `createAuthChannel`, which serves a second audience only. The open question this entry tracks is
   whether the engine's own zero-config editor auth should someday move from a magic-link URL to an
@@ -3821,7 +3821,7 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
   deleted by the harvest (2026-09-30), carried the trade-offs and the stack commitment but never
   justified markdown itself and dropped the comparison; after the old corpus's deletion, the academic case survives nowhere in the published
   tree or the internal planning docs it once cited
-  (`docs/superpowers/plans/2026-07-03-markdown-academic-case.md` remains as history only). This is
+  (`docs/plans/2026-07-03-markdown-academic-case.md` remains as history only). This is
   page-shaped, not a sentence to fold into an existing page, and whether it belongs at all is a
   register question for whoever owns the front door: `docs-register.md`'s "keeps the why and the
   honest trade-offs" line for `why-cairn.md` doesn't say which why. **Trigger:** stage 5's outline

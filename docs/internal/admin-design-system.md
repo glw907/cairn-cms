@@ -514,7 +514,7 @@ alongside the component recipes above and below it.
 - **Nav default (flat) and site-declared sections:** the zero-config sidebar renders every item, cairn's
   own screens and a site's flat entries alike, as loose top-level nodes with no section wrapper. A
   category header costs a reader a decision on every visit, a cost the sizes a zero-config sidebar
-  actually reaches never earns back (`docs/superpowers/specs/2026-07-14-admin-reorganization-design.md`,
+  actually reaches never earns back (`docs/specs/2026-07-14-admin-reorganization-design.md`,
   §1). A site that declares its own `navLayout` sections gets the collapsible-group recipe: a native
   `<details>` per group, its `open` computed one-way from a label-keyed `collapsed` Set seeded from
   `data.collapsedNav` (persisted via the `cairn-admin-nav-collapsed` cookie, read at SSR for no flash) and
@@ -1277,7 +1277,7 @@ alongside the component recipes above and below it.
   the column; the in-text band was the version this replaced. The gutter rules live in the
   `EditorView.theme` in `MarkdownEditor.svelte`, with `.cm-gutters` neutralized to blend in. Design
   detail and rationale: `docs/internal/design/2026-06-14-fold-gutter-mockup.html` and the spec
-  `docs/superpowers/specs/2026-06-14-fold-gutter-design.md`.
+  `docs/specs/2026-06-14-fold-gutter-design.md`.
 
 ## Vertical alignment mechanics
 

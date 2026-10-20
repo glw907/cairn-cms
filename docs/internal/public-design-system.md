@@ -12,7 +12,7 @@ the re-skin recipe.
 The live demo is `/styleguide`. The exhaustive oklch values live in `theme.css`, the single source. The
 design criteria and the settled-design appendix (the chosen faces, the values, the layouts, the
 carry-forwards) are in the design bar
-([`docs/superpowers/specs/2026-06-25-cairn-b2-design-bar.md`](../superpowers/specs/2026-06-25-cairn-b2-design-bar.md)),
+([`docs/specs/2026-06-25-cairn-b2-design-bar.md`](../specs/2026-06-25-cairn-b2-design-bar.md)),
 which predates the neutral default and records the earlier branded starting point that became the
 cairn theme.
 
@@ -379,6 +379,6 @@ measure it, rather than trusting the read.
 - The theme and the re-skin recipe: `examples/showcase/src/theme/theme.css`. The reading surface:
   `examples/showcase/src/chassis/prose.css`. The chrome: `examples/showcase/src/theme/components/`.
 - The live demo: `/styleguide`. The criteria and the settled design: the design bar
-  ([`2026-06-25-cairn-b2-design-bar.md`](../superpowers/specs/2026-06-25-cairn-b2-design-bar.md)).
+  ([`2026-06-25-cairn-b2-design-bar.md`](../specs/2026-06-25-cairn-b2-design-bar.md)).
 - The gates: `scripts/checks/check-public-scope.mjs` (the audit's public-scope rules),
   `scripts/lab/reskin-fixture.mjs`, and the `design.yml` workflow. The engine highlighter: `src/lib/render/highlight.ts`.

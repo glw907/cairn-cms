@@ -2,12 +2,12 @@
 
 This document is the agent-facing standard for cairn's published documentation, its front door,
 and the other public surfaces the table in "The base guides" names. Geoff ratified it on
-2026-07-18 (spec: `docs/superpowers/specs/2026-07-18-docs-register-standard-design.md`), and the
+2026-07-18 (spec: `docs/specs/2026-07-18-docs-register-standard-design.md`), and the
 specimen history lives in the front-page-voice memory. Pass D (2026-08-14) organized
 it around the four audience tracks the rebuild ships
 ([`2026-08-14-pass-d-target-manifest.md`](./record/2026-08-14-pass-d-target-manifest.md) names the
 target page set; a page count belongs there, since a number in this document rots). The
-style-guide sync (2026-09-28, spec: `docs/superpowers/specs/2026-09-28-style-guide-sync-design.md`)
+style-guide sync (2026-09-28, spec: `docs/specs/2026-09-28-style-guide-sync-design.md`)
 set every surface on a published base guide, wrote one drafting brief per guide as a short
 supplement to it, and recorded every departure from a guide in one section.
 
@@ -247,7 +247,7 @@ A page's introduction is reasoned fresh for each page, from that page's readers,
 supplies the questions a drafter answers before writing one, never a template to fill. Every
 prompt in it rests on a published source linked beside it, except the two house rulings it marks
 as such. The sources were read on 2026-10-04, and the survey behind them is
-`docs/superpowers/research/2026-10-04-docs-introductions-survey.md`.
+`docs/research/2026-10-04-docs-introductions-survey.md`.
 
 The first question is who arrives at the page and what they already know. Google's technical
 writing course says to "Begin by identifying your audience's role(s)" and measures what a
@@ -1179,7 +1179,7 @@ date.
 - [Writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)
 
 The introduction section cites the following pages, read on 2026-10-04; the source survey is
-`docs/superpowers/research/2026-10-04-docs-introductions-survey.md`.
+`docs/research/2026-10-04-docs-introductions-survey.md`.
 
 - [Google Technical Writing One: Defining your audience](https://developers.google.com/tech-writing/one/audience)
 - [Google Technical Writing One: Documents](https://developers.google.com/tech-writing/one/documents)

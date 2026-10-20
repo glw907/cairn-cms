@@ -32,7 +32,7 @@ only on PASS, and Geoff's five-viewport before/after read is the merge gate.
 vitest, Playwright (baselines CI-canonical via `e2e.yml`'s `update_snapshots` dispatch), the
 repo's gate estate.
 
-**Spec:** `docs/superpowers/specs/2026-09-04-chassis-passes-design.md`, section "Chassis-B";
+**Spec:** `docs/specs/2026-09-04-chassis-passes-design.md`, section "Chassis-B";
 the fresh review whose section numbers this plan cites is
 `docs/internal/record/2026-09-04-chassis-inputs/showcase-review-at-the-exemplar-bar.md`; the
 recorded fourteen at `docs/internal/record/2026-08-26-any-site-audit/int-rank-site-chassis.md`.

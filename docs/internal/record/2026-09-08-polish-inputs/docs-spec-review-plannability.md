@@ -1,12 +1,12 @@
 # Spec review, lens: plannability and cost
 
-Adversarial review of `docs/superpowers/specs/2026-09-08-docs-standard-design.md` revision 1, one
+Adversarial review of `docs/specs/2026-09-08-docs-standard-design.md` revision 1, one
 lens only: can a pass plan be written from each unit with no open reading, are its acceptance
 criteria machine-gradeable, is each unit pass-sized, and what does the whole thing cost in the two
 budgets. Read-only. Baselines measured against the working tree at 2026-09-08 (`main` at `d565ab77`,
 with the untracked figures work present).
 
-Comparison bar for "plannable": `docs/superpowers/plans/2026-09-07-identity-seam-pass.md`, whose
+Comparison bar for "plannable": `docs/plans/2026-09-07-identity-seam-pass.md`, whose
 tasks each carry **Files** (modify / test, named to the line range), **Interfaces** (consumes /
 produces, with exact spellings), numbered steps, and acceptance criteria phrased as gate outcomes.
 That plan's header carries a token ceiling (5.5M), a checkpoint interval, a worktree, and a

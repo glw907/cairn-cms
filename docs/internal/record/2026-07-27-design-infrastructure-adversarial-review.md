@@ -1,7 +1,7 @@
 # Adversarial review of the design-infrastructure spec (2026-07-27)
 
 A clean-context Fable 5 review of
-`docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`, commissioned by
+`docs/specs/2026-07-27-cairn-design-infrastructure-design.md`, commissioned by
 Geoff before plan-writing, with a two-part mandate: research prior art for making a design
 language reproducible by non-designer builders (human or AI), and attack the spec against
 its own success criterion. The reviewer had no involvement in the spec's authorship. All

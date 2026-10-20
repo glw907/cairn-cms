@@ -43,7 +43,7 @@ explaining that the root `_headers` file never reaches SSR output on Cloudflare.
 independently discovering and hand-rolling that is a signal about altitude, not a site-local choice.
 The managed-robots prepend is on three of four sites, not two.
 
-**A stance recorded only in `docs/superpowers/` is not documented.** Several refutations rest on a
+**A stance recorded only in `docs/` is not documented.** Several refutations rest on a
 decision written in a spec or a landed plan's post-mortem. Those are internal write-once docs, which
 this repo's own Vale config excludes from the published standard. A developer cannot reach them, so
 from the developer's vantage the behavior is indistinguishable from one nobody chose. Findings that
@@ -76,7 +76,7 @@ to `/admin` therefore overrides the zone owner's decision, for two years, in tha
 not on HTTPS breaks for that editor.
 
 The value appears in no published doc. `grep` for `63072000` or `includeSubDomains` across `docs/`
-hits only `superpowers/plans`, `superpowers/specs`, and `internal/history`. The engine also
+hits only `plans`, `specs`, and `internal/history`. The engine also
 contradicts its own tooling here, since `checks-cloudflare.ts:140` reports the zone's HSTS as
 failing on a zone whose editors are already hard-pinned by the engine, and nothing reconciles the
 two.

@@ -2,7 +2,7 @@
 
 The agent-facing idiom charter: one obvious way per pattern, each rule anchored to the
 best existing file (imitate the exemplar; the rule is a summary of it). Derived from the
-2026-07-01 eleven-subsystem survey (`docs/superpowers/plans/2026-07-01-code-polish-survey.md`)
+2026-07-01 eleven-subsystem survey (`docs/plans/2026-07-01-code-polish-survey.md`)
 during the code polish pass. This is a standing pass dimension: a pass that changes an idiom
 updates this file, the same as a reference page. Comments and TSDoc are gate-enforced
 elsewhere (`check:comments`) and not restated here.

@@ -421,6 +421,9 @@ function outlineSlugs(dir) {
   return slugs;
 }
 
+// docs/ directories that hold no published pages.
+const UNPUBLISHED_ARMS = new Set(['internal', 'specs', 'plans', 'research', 'archive']);
+
 /**
  * Every published page slug: a markdown file directly under a docs arm directory. An arm's
  * `README.md` is an index, never a page, so it is skipped.
@@ -431,7 +434,7 @@ export function publishedPageSlugs(dir) {
   /** @type {Set<string>} */
   const slugs = new Set();
   for (const arm of readdirSync(dir, { withFileTypes: true })) {
-    if (!arm.isDirectory() || arm.name === 'internal' || arm.name === 'superpowers') continue;
+    if (!arm.isDirectory() || UNPUBLISHED_ARMS.has(arm.name)) continue;
     for (const name of readdirSync(join(dir, arm.name)).filter((file) => file.endsWith('.md') && file !== 'README.md')) {
       slugs.add(name.slice(0, -'.md'.length));
     }

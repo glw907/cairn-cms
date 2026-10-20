@@ -148,6 +148,6 @@ The §10 assumptions from v1, with the Refinement disposition (full reasoning in
 - Locked decisions, risk register, per-pass log, **re-sequenced roadmap**: `docs/PLAN.md`.
 - Red-team this doc was built against: `docs/ARCHITECTURE-CRITIQUE.md`.
 - Layered model, engine/site line, extension contract, authoring guide: `docs/creating-a-cairn-site.md`.
-- Admin requirements R1–R13: `docs/superpowers/specs/2026-05-26-admin-ui-design.md`.
+- Admin requirements R1–R13: `docs/specs/2026-05-26-admin-ui-design.md`.
 - Forward-compat memo (capability door-opening): `docs/FORWARD-COMPAT.md`.
-- Theme-architecture extraction plan: `docs/superpowers/plans/2026-05-26-theme-architecture-extraction.md`.
+- Theme-architecture extraction plan: `docs/plans/2026-05-26-theme-architecture-extraction.md`.

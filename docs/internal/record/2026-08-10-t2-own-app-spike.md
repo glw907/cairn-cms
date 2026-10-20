@@ -1,6 +1,6 @@
 # Pass T2 spike verdict: the own-App GitHub chapter against real GitHub
 
-Task 1 of the T2 plan (`docs/superpowers/plans/2026-08-10-create-cairn-site-t2.md`). Run
+Task 1 of the T2 plan (`docs/plans/2026-08-10-create-cairn-site-t2.md`). Run
 2026-08-10 in one Geoff browser sitting (two rounds, about fifteen minutes total including two
 mid-spike corrections), against the glw907 personal account. Every artifact the spike created
 (two throwaway Apps, three private repos) was deleted in the same sitting; the repos via the

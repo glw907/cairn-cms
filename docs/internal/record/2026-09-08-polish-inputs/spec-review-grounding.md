@@ -1,6 +1,6 @@
 # Polish spec review, grounding lens
 
-Adversarial review of `docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 1 (Opus, fresh context, 2026-09-08). Folded into revision 2.
+Adversarial review of `docs/specs/2026-09-08-polish-passes-design.md` revision 1 (Opus, fresh context, 2026-09-08). Folded into revision 2.
 
 ---
 
@@ -95,7 +95,7 @@ Evidence: `docs/STATUS.md:84-85` — "Landing path: a docs task in polish (or a 
 
 ## Verified true
 
-- **(5) The identity seam adds an `AuthGuardOptions` member.** `docs/superpowers/specs/2026-09-07-identity-seam-design.md:71` declares the interface, `:80` the `resolve` shape, `:260` names `AuthGuardOptions.identity` with its tier note. Polish-C item 2's rename of that bag therefore does collide with it, exactly as spec:282-283 says.
+- **(5) The identity seam adds an `AuthGuardOptions` member.** `docs/specs/2026-09-07-identity-seam-design.md:71` declares the interface, `:80` the `resolve` shape, `:260` names `AuthGuardOptions.identity` with its tier note. Polish-C item 2's rename of that bag therefore does collide with it, exactly as spec:282-283 says.
 - **(6) Gate names.** All 19 other scripts the spec names exist in the committed `package.json`: `check`, `check:comments`, `check:reference`, `check:reference:signatures`, `check:surface`, `check:package`, `check:docs`, `check:snippets`, `check:transcripts`, `check:symbols`, `check:template`, `check:consumers`, `check:vale`, `check:editor-quotes`, `check:arm-indexes`, `check:rulings-format`, `test`. `check:surface -- --update` is real (`check-surface.mjs:425`).
 - **(7) The release rule.** `CLAUDE.md`'s "Releases" section (default to holding; cut at a coherent initiative's natural boundary) supports "one cut after polish," and `docs/STATUS.md:17-18` and `:65` say it in those words. The `cairn-release` skill exists at `~/.claude/skills/cairn-release/SKILL.md`.
 - **(8) The busy-idiom counts.** `ShareLinkPanel.svelte:184,193` are the only `aria-disabled`-for-busy sites in the tree; every other `aria-disabled` is the settled guarded state (`EditPage.svelte:1587,1870`, `VocabularyAdmin.svelte:297`, `EntryPicker.svelte:150`). Four components use state replacement, and `MediaCaptureCard.svelte` exists.

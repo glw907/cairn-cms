@@ -6,7 +6,8 @@ import {
   findProcessExitLines,
   selfIdentityCandidates,
   selfIdentityVariantsUsed,
-  findSuperpowersPathLines,
+  findPlanningPathLines,
+  findRetiredFolderFiles,
   findProcessReferenceLines,
   findConsumerHostnameLines,
   findAsNeverLines,
@@ -84,18 +85,27 @@ describe('selfIdentityVariantsUsed', () => {
   });
 });
 
-describe('findSuperpowersPathLines', () => {
-  it('flags a comment naming a docs/superpowers/ path', () => {
-    expect(findSuperpowersPathLines('// see docs/superpowers/plans/x.md\n')).toEqual([1]);
+describe('findPlanningPathLines', () => {
+  it('flags a comment naming each planning directory', () => {
+    for (const dir of ['specs', 'plans', 'research', 'archive']) {
+      expect(findPlanningPathLines(`// see docs/${dir}/x.md\n`)).toEqual([1]);
+    }
   });
 
   it('passes a docs/internal/ path, which the tarball does ship', () => {
-    expect(findSuperpowersPathLines('// see docs/internal/engine-rulings.md\n')).toEqual([]);
+    expect(findPlanningPathLines('// see docs/internal/engine-rulings.md\n')).toEqual([]);
   });
 
   it('matches the fixture file’s real reference', () => {
-    const source = readFileSync(resolve(FIXTURES, 'superpowers-path.ts'), 'utf8');
-    expect(findSuperpowersPathLines(source)).toEqual([1]);
+    const source = readFileSync(resolve(FIXTURES, 'planning-path.ts'), 'utf8');
+    expect(findPlanningPathLines(source)).toEqual([1]);
+  });
+});
+
+describe('findRetiredFolderFiles', () => {
+  it('names a tracked file under the retired folder and passes its new homes', () => {
+    const retired = ['docs', 'superpowers', 'plans', 'x.md'].join('/');
+    expect(findRetiredFolderFiles([retired, 'docs/plans/x.md', 'docs/internal/y.md'])).toEqual([retired]);
   });
 });
 
@@ -229,10 +239,11 @@ const EMPTY_VIOLATIONS = {
   tabs: [],
   exit: [],
   identity: [],
-  superpowersPaths: [],
+  planningPaths: [],
   processReferences: [],
   hostnames: [],
   asNever: [],
+  retiredFolder: [],
 };
 
 describe('formatViolations', () => {
@@ -241,21 +252,23 @@ describe('formatViolations', () => {
       ...EMPTY_VIOLATIONS,
       tabs: ['a.ts:1'],
       identity: ['b.mjs: mixes check-b, b'],
-      superpowersPaths: ['c.ts:2'],
+      planningPaths: ['c.ts:2'],
       processReferences: ['c.ts:3'],
       hostnames: ['c.ts:4'],
       asNever: ['d.test.ts:5'],
+      retiredFolder: ['e.md'],
     });
     expect(text).toContain('1 leading-tab indentation hit(s)');
     expect(text).toContain('a.ts:1');
     expect(text).not.toContain('process.exit call(s)');
     expect(text).toContain('1 self-identity spelling mismatch(es)');
     expect(text).toContain('b.mjs: mixes check-b, b');
-    expect(text).toContain('1 docs/superpowers/ path reference(s)');
+    expect(text).toContain('1 planning path reference(s)');
     expect(text).toContain('1 pass-scoped process reference(s)');
     expect(text).toContain('1 unrecognized hostname literal(s)');
     expect(text).toContain('1 unescaped "as never" cast(s)');
     expect(text).toContain('d.test.ts:5');
+    expect(text).toContain('1 tracked file(s) in the retired planning folder');
   });
 
   it('renders nothing for an all-clean report', () => {

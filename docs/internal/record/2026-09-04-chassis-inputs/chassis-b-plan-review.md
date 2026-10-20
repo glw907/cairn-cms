@@ -1,12 +1,12 @@
-# Adversarial review: `docs/superpowers/plans/2026-09-07-chassis-b-pass.md` and the spec's Chassis-B section
+# Adversarial review: `docs/plans/2026-09-07-chassis-b-pass.md` and the spec's Chassis-B section
 
 Four read-only lenses run in parallel on 2026-09-07 (Opus 5, fresh context each), against `main` at `fece567c` with chassis-A at Task 4 of 12 in its worktree. Grounding, risk and boundary, and hygiene and sizing repeat chassis-A's round; visual method and gate integrity is new for a changed-by-design pass. The fold brief and the folded plan follow in the same record directory. Write-once.
 
 ---
 
 
-Objects: `docs/superpowers/specs/2026-09-04-chassis-passes-design.md` ("Chassis-B", "Out of
-scope for both", "Risks") and `docs/superpowers/plans/2026-09-07-chassis-b-pass.md`.
+Objects: `docs/specs/2026-09-04-chassis-passes-design.md` ("Chassis-B", "Out of
+scope for both", "Risks") and `docs/plans/2026-09-07-chassis-b-pass.md`.
 Read-only, against `main` at the session head plus `.claude/worktrees/chassis-a` (five commits
 landed: A's Tasks 1-4). Shape and rigor follow the chassis-A round (`spec-review.md`,
 `plan-review.md`); a finding that undoes a correction those reviews already made is marked
@@ -620,7 +620,7 @@ G9 (no measurable public alignment device exists).
 
 
 Read-only. Objects: the spec's "Chassis-B", "Out of scope for both" and "Risks" sections
-(`docs/superpowers/specs/2026-09-04-chassis-passes-design.md:208-274`) and the plan
+(`docs/specs/2026-09-04-chassis-passes-design.md:208-274`) and the plan
 (`docs/superpowers/plans/2026-09-07-chassis-b-pass.md`). Verified against `main` at `cb63056a`
 with the `chassis-a` branch at `b126d892` (Tasks 1 to 4 landed, Tasks 5 to 12 outstanding).
 Every `file:line` below was opened. Findings that regress a correction the chassis-A spec review
@@ -1765,8 +1765,8 @@ question Geoff gets asked will be the one this review is asking now.
 ---
 
 
-Objects: `docs/superpowers/specs/2026-09-04-chassis-passes-design.md` "Chassis-B" (:208-247);
-`docs/superpowers/plans/2026-09-07-chassis-b-pass.md` (518 lines).
+Objects: `docs/specs/2026-09-04-chassis-passes-design.md` "Chassis-B" (:208-247);
+`docs/plans/2026-09-07-chassis-b-pass.md` (518 lines).
 
 The pass is honest about being visual work and reaches for the right machinery. The gap is
 between the machinery it names and the machinery that exists: the capture format cannot be

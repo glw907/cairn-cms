@@ -21,9 +21,9 @@ the seam was filed to delete is still there.
 **What shaped it.** A filed requirement, stated in the design's own opening:
 
 > "The driving consumer is the xcathletes team platform (ecxc-ski
-> `docs/superpowers/plans/2026-07-30-team-platform-pass-1.md`, Task 4). Its requirements are this
+> `docs/plans/2026-07-30-team-platform-pass-1.md`, Task 4). Its requirements are this
 > spec's floor, with one deliberate deviation recorded below."
-> — `docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md`
+> — `docs/specs/2026-08-03-auth-channel-factory-design.md`
 
 Shipped in five commits (`490231e0` … `8e069924`) against three adversarial review rounds, then
 "proven" in a separate pass (`2026-08-04-auth-channel-consumer-proof.md`) by a **showcase fixture**,

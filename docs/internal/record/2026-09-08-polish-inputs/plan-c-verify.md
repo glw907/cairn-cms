@@ -1,9 +1,9 @@
 # Polish-C plan, verification read
 
-Fresh-context verification of `docs/superpowers/plans/2026-09-08-polish-c-pass.md` (uncommitted,
+Fresh-context verification of `docs/plans/2026-09-08-polish-c-pass.md` (uncommitted,
 folded, fifteen tasks) and `~/.cache/cairn-polish-c/{args,run1-args}.json`, against
 `docs/internal/record/2026-09-08-polish-inputs/plan-c-review-fold.md` (46 findings, 44 taken whole,
-2 in part) and `docs/superpowers/specs/2026-09-08-polish-passes-design.md` (working tree).
+2 in part) and `docs/specs/2026-09-08-polish-passes-design.md` (working tree).
 Read 2026-09-08 against `main` at `0705776e`, read-only. Six failures, ranked. Everything else the
 brief asked for is verified and listed under Held.
 
@@ -167,7 +167,7 @@ corrected (`media-replace-blocked` `:4292` above `media-delete-blocked` `:4299`,
 keep (`:4314`) is honored: it is quoted verbatim in Ruled inputs, F12's publish-area merge is
 recorded as not taken, and no row in the table touches it. `RevertOutcome`'s supersession clause
 exists in Task 8 (plan lines 1621-1635, Step 6 at `:1673-1674`, acceptance at `:1699-1702`, and the
-args string), cites `docs/superpowers/specs/2026-09-08-polish-passes-design.md` by path and
+args string), cites `docs/specs/2026-09-08-polish-passes-design.md` by path and
 2026-09-08 by date, states the surviving scope, and names `RevertOutcome` as the ruled exception.
 
 ## Held

@@ -1,9 +1,9 @@
 # Polish-C plan review, coverage and grounding lens
 
 Read-only adversarial review, fresh context (Opus, high effort), 2026-09-08. Target:
-`docs/superpowers/plans/2026-09-08-polish-c-pass.md` (uncommitted, 2,034 lines) and its
+`docs/plans/2026-09-08-polish-c-pass.md` (uncommitted, 2,034 lines) and its
 workflow args at `~/.cache/cairn-polish-c/args.json`. Spec:
-`docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4. Inputs read:
+`docs/specs/2026-09-08-polish-passes-design.md` revision 4. Inputs read:
 `exports-sweep.md`, `spec-review-rev3-charter.md`, `spec-review-rev3-grounding.md`,
 `docs/internal/engine-rulings.md`.
 
@@ -106,7 +106,7 @@ unplanned edits inside the release-path pass. (`src/tests/component/OfficeList.t
 exist; the plan's "if one exists" hedge at `:1487` can be resolved now.)
 
 **6. Plan:496-501 and 1716-1719 -- the remaining-site taxonomy has no bucket for three real classes, so the sweep manufactures false blocking findings.**
-Evidence: constraint 7 admits only a `docs/superpowers/` or `docs/internal/record/` archive, a
+Evidence: constraint 7 admits only a `docs/` or `docs/internal/record/` archive, a
 historical field in a ruling row, or a `docs/HISTORY.md` or `CHANGELOG.md` entry; "Any other
 remaining site is a blocking finding." Measured hits outside all four:
 `docs/extend/migration-notes.md:128-131` (the shipped `0.94.0` entry recording `OfficeList`'s
@@ -248,7 +248,7 @@ Correction: the site table's note should read "the one site on the dev package; 
 |---|---|---|
 | Identifiers renamed or removed | 30 (11 types, 10 functions, 1 component, 8 events) | 30, arithmetic and membership both exact |
 | Tracked files matching the 30 plus the 4 factories | 505 | **505** |
-| Same, excluding `docs/superpowers/` and `docs/internal/record/` | 281 | **281** |
+| Same, excluding `docs/` and `docs/internal/record/` | 281 | **281** |
 | Same, under `src/`, `examples/`, `templates/`, `packages/` | 214 | **214** |
 | `Consumers must:` in `CHANGELOG.md:1-1541` | 68 (spec said 69) | **67** |
 | Changelog window length; `## 0.96.0` heading | 1,541 lines; `:1542` | 1,541; `:1542` (marker `:3`) |

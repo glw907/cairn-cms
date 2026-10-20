@@ -2,12 +2,12 @@
 
 Agent-facing. This is the inventory the retirement's conductor owes draft docs pass A before that
 pass runs, per the retirement spec's Choreography step 4
-(`docs/superpowers/specs/2026-09-21-doctor-retirement-design.md:352-359`). It says exactly what
+(`docs/specs/2026-09-21-doctor-retirement-design.md:352-359`). It says exactly what
 pass retire-1 adds or changes under `tool/docs/` and which Go tests name those paths, so pass A's
-precondition 4 (`docs/superpowers/plans/2026-09-21-draft-docs-pass-a.md:44-48`) resolves against a
+precondition 4 (`docs/plans/2026-09-21-draft-docs-pass-a.md:44-48`) resolves against a
 written list rather than a re-survey.
 
-Written from the retire-1 plan (`docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`) before
+Written from the retire-1 plan (`docs/plans/2026-09-21-doctor-retire-1-go.md`) before
 that pass executed. Retire-1 merged as `5e286a01` on 2026-09-22, and pass A's Task 1 verified this
 list against that merge, landing the page-coverage test in `tool/internal/doctor/docs_test.go`.
 
@@ -108,5 +108,5 @@ surveys the goldens.
 - **No edit to `docs/internal/README.md`.** `check-arm-indexes.mjs:28-34` walks `docs/internal`
   non-recursively, and `docs/internal/README.md:99-106`'s `## record/` section states that it
   deliberately does not enumerate the files under `record/`. This record is linked from
-  `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md` and from the conductor's handoff to
+  `docs/plans/2026-09-21-doctor-retire-1-go.md` and from the conductor's handoff to
   pass A, which is the filing this directory's own rule asks for.

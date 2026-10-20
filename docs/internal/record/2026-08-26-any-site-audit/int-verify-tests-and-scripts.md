@@ -60,7 +60,7 @@ check:touch-targets
 ```
 
 Both are `package.json:59-60`, both run in no workflow, and the only prose mentioning them is
-`docs/superpowers/specs/2026-07-27-design-infrastructure-design.md:157` (as targets expected to
+`docs/specs/2026-07-27-design-infrastructure-design.md:157` (as targets expected to
 "graduate") and an archived STATUS. They are dormant, as claimed.
 
 `"lint": "eslint src/lib"` (`package.json:64`) versus `scripts/checks/check-comments.sh:9`

@@ -16,7 +16,7 @@ Inputs read: the outline entry for `scaffolded-site-files` in `docs/internal/out
 (`~/.local/share/cairn/exemplars/extenders/shadcn-introduction/page.md`,
 `~/.local/share/cairn/exemplars/designers/ghost-themes-structure/page.md`); every fact bullet named
 below in `docs/internal/facts/extend.md` and `docs/internal/facts/front-door.md`; the stage plan's
-known-defect table (`docs/superpowers/plans/2026-09-30-draft-docs-stage-2a.md`, "Known code defects
+known-defect table (`docs/plans/2026-09-30-draft-docs-stage-2a.md`, "Known code defects
 on 2a pages"); the reference pages this plan links (`docs/reference/guidance.md`,
 `docs/reference/admin-routes.md`, `docs/reference/ambient.md`, `docs/reference/site-facts.md`,
 `docs/reference/cairn-audit.md`, `docs/reference/supported-toolchain.md`, and the `createMediaRoute`

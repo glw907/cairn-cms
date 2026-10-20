@@ -1,9 +1,9 @@
 # Polish-C plan review, sequencing and risk lens
 
-Adversarial review of `docs/superpowers/plans/2026-09-08-polish-c-pass.md` (uncommitted at review
-time) against `docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4, the committed
-`docs/superpowers/plans/2026-09-08-polish-11a-pass.md`, the in-progress
-`docs/superpowers/plans/2026-09-08-polish-11b-pass.md`, and the working tree at `main`
+Adversarial review of `docs/plans/2026-09-08-polish-c-pass.md` (uncommitted at review
+time) against `docs/specs/2026-09-08-polish-passes-design.md` revision 4, the committed
+`docs/plans/2026-09-08-polish-11a-pass.md`, the in-progress
+`docs/plans/2026-09-08-polish-11b-pass.md`, and the working tree at `main`
 (`0705776e`). Read-only; every claim below was measured in this checkout, not inferred from the
 plan's own text. Fifteen findings, ranked by the cost of discovering them at execution rather than
 now.
@@ -89,7 +89,7 @@ and add one acceptance criterion that a component test renders each of the three
 the message that arm produces. Amend `:604` to name Tasks 1, 7, and 10.
 
 **4. Plan:103, 117, 163, 165-166 -- every "post-11b" anchor cites a task number 11b does not have.**
-Evidence. `docs/superpowers/plans/2026-09-08-polish-11b-pass.md` has sixteen tasks. The plan cites
+Evidence. `docs/plans/2026-09-08-polish-11b-pass.md` has sixteen tasks. The plan cites
 "11b's task 9 adds an `access` member" to `DevBackendOptions` (`:103`, repeated at `:949-951`); the
 dev-handle work is 11b's **Task 11** (`polish-11b-pass.md:1198-1268`, `DevBackendOptions` at
 `:1204`). It cites "11b's task 4 rewrites eight `AdminLayout.svelte` references" in
@@ -138,7 +138,7 @@ and say plainly that a site's own `cookieName` config member is not in scope.
 
 **7. Plan:170-176 and constraint 7 -- `docs/internal/history/**` is a third write-once archive tree
 the classification rule does not name, and it holds two-argument factory calls.**
-Evidence. The plan excludes "the two write-once archive trees", `docs/superpowers/` and
+Evidence. The plan excludes "the two write-once archive trees", `docs/` and
 `docs/internal/record/`, from both the 281-file count and the remaining-site classification.
 `docs/internal/history/STATUS-archive-2026-05-to-2026-07.md` contains
 `createCairnAdmin(runtime, deps)` at `:2607` and `createMediaRoute(runtime)` at `:5131`, so Task 2's
@@ -253,7 +253,7 @@ addition to this window.
 ## Call-site table
 
 Measured with `grep -rn "<factory>(" src examples templates packages docs scripts` at `0705776e`,
-excluding `docs/superpowers/` and `docs/internal/record/`. "Covered" means the site is named in the
+excluding `docs/` and `docs/internal/record/`. "Covered" means the site is named in the
 task's Files block or falls inside a pattern that task's grep step will return AND its acceptance
 grep will classify.
 
@@ -328,7 +328,7 @@ literal and re-emits from the showcase, which is finding 8's mechanism point, no
   `custom-screen.spec.ts` takes no screenshot; `admin-office-*` renders `/admin/posts`, not
   `OfficeList`. The paint claim is right for eleven of thirteen tasks and wrong only for Task 7
   (finding 3).
-- **The chain D amendment exists.** `docs/superpowers/plans/2026-09-08-docs-toolset-pass.md:265-271`
+- **The chain D amendment exists.** `docs/plans/2026-09-08-docs-toolset-pass.md:265-271`
   orders chain D after polish-C merges with the rebase as its step 0, restated at `:397` and
   `:1604`. The plan's instruction to confirm it before 2a branches is satisfiable today.
 - **The release path.** No task bumps `package.json`, tags, or publishes; Task 13 derives and

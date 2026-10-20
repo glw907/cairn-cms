@@ -1,7 +1,7 @@
 # Polish-11a plan review, sequencing and risk lens
 
-**Target:** `docs/superpowers/plans/2026-09-08-polish-11a-pass.md` (uncommitted, 1,136 lines, twelve tasks).
-**Spec:** `docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4.
+**Target:** `docs/plans/2026-09-08-polish-11a-pass.md` (uncommitted, 1,136 lines, twelve tasks).
+**Spec:** `docs/specs/2026-09-08-polish-passes-design.md` revision 4.
 **Baseline:** `main` at `ac911ec3`. B2 read read-only at `3c6fcd2d` (three commits past `58ed9d1f`).
 **Lens:** sequencing, dependencies, and risk only. Fresh context, read-only, twelve findings.
 
@@ -249,7 +249,7 @@ showcase-relative, its `docs/*` and `scripts/*` entries are not).
 | `docs/internal/docs-friction-log.md` | 8 | 12 | yes, Plan:119-120 |
 | `docs/internal/engine-rulings.md` | 8 (conditional) | 3, 5 | **no** (finding 7) |
 | `docs/STATUS.md` | 8 | conductor only, no task | **no**, not in the semantic column; low risk since the conductor owns it in both passes |
-| `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md` | 8 (item 6, the publish paragraph) | cited at `:137-139` and `:140-143` by Plan:77, Plan:133-135, Plan:206 | partial: the line-anchor rule covers it, the semantic column does not name B2 as its rewriter |
+| `docs/specs/2026-08-27-audit-remediation-initiative-design.md` | 8 (item 6, the publish paragraph) | cited at `:137-139` and `:140-143` by Plan:77, Plan:133-135, Plan:206 | partial: the line-anchor rule covers it, the semantic column does not name B2 as its rewriter |
 | `examples/showcase/e2e/*.spec.ts-snapshots/` | 1, 2 (`site-home-*`, `archive2`, `admin-office-*`) | 6 (`vocabulary-*`) | yes by construction: different spec directories, `site-visual` against `admin-visual`, and the actual B2 diff at `3c6fcd2d` touches ten `site-home-*` files only |
 
 Nine rows, two unreconciled (`engine-rulings.md`, `docs/STATUS.md`) and one partial

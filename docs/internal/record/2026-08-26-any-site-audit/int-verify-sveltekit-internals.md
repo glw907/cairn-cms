@@ -2,7 +2,7 @@
 
 Verifier did not produce the findings. Each tested in both directions against the code at
 `main`, against `docs/internal/code-idioms.md`, `docs/internal/engine-rulings.md`, and the
-`docs/superpowers/plans/2026-07-01-code-polish-*` record.
+`docs/plans/2026-07-01-code-polish-*` record.
 
 ---
 

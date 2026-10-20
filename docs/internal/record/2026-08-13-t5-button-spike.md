@@ -1,6 +1,6 @@
 # T5 spike: the Deploy to Cloudflare button against a cairn template
 
-Run per Task 2 of `docs/superpowers/plans/2026-08-12-create-cairn-site-t5.md`. Every body below
+Run per Task 2 of `docs/plans/2026-08-12-create-cairn-site-t5.md`. Every body below
 is copied verbatim from a real response or a real dashboard surface; anything inferred rather
 than observed says so in the sentence that states it. The platform claims carry their read date
 and rot on Cloudflare's schedule.
@@ -290,7 +290,7 @@ acted on.
 ## Spike amendments
 
 None yet. Amendments to
-`docs/superpowers/plans/2026-08-12-create-cairn-site-t5.md` land here and supersede the task
+`docs/plans/2026-08-12-create-cairn-site-t5.md` land here and supersede the task
 text where they conflict, the way T4c's thirteen did.
 
 ## Teardown table

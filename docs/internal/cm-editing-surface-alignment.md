@@ -66,7 +66,7 @@ Draw the line once and the whole editing surface gets one rule.
 
 ## What shipped
 
-The suggestion popover pass (spec `docs/superpowers/specs/2026-06-30-cairn-cm-integration-design.md`)
+The suggestion popover pass (spec `docs/specs/2026-06-30-cairn-cm-integration-design.md`)
 realized the writing-surface/chrome rule for the spellcheck and objective-error popover:
 
 - **The recipe DOM replaces the built-in tooltip.** `cairnSuggestionPopover`
@@ -112,7 +112,7 @@ a recorded spec deviation, not an oversight.
 
 ### The editor accessibility hardening pass
 
-A follow-on pass (spec `docs/superpowers/specs/2026-06-30-cairn-editor-a11y-hardening-design.md`) closed
+A follow-on pass (spec `docs/specs/2026-06-30-cairn-editor-a11y-hardening-design.md`) closed
 the accessibility gaps the popover pass left, all through the same public-API discipline:
 
 - **A general, top-level diagnostics-summary announcer** (`editor-diagnostics-announcer.ts`) speaks a

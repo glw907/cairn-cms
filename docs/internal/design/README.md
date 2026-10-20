@@ -57,4 +57,4 @@ the mockup HTML and the design-reference markdown are the record.
 When a mockup wins, freeze it as a `*-design-reference.md` beside it (see the media-library reference for
 the convention): the chosen layout, the recipes used, the interaction, and the a11y notes, with the
 winning HTML kept as the visual record. The interaction rules a mockup illustrates live with its spec
-under `docs/superpowers/specs/`.
+under `docs/specs/`.

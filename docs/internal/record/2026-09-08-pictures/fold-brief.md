@@ -3,7 +3,7 @@
 Consolidated from the three-lens review; revision 2 of the spec was written from it. Write-once.
 
 
-Folds three adversarial reviews of `docs/superpowers/specs/2026-09-08-pictures-design.md`:
+Folds three adversarial reviews of `docs/specs/2026-09-08-pictures-design.md`:
 grounding (G1..G16), design and accessibility (D1..D40), charter and precedent (C1..C10).
 Read-only; every fact below was re-verified against `main` (`d565ab77`) while folding.
 

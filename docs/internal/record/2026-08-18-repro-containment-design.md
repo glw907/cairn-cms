@@ -18,7 +18,7 @@ assumption and the mounting constraint.
 
 Owed by seam Pass 2 before the `/repro` route ships (cairn-cms `ROADMAP.md`, first Now entry;
 `docs/STATUS.md`, Pass 2's first owed item). The plan
-(`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`) put containment on the
+(`docs/plans/2026-08-15-live-reproduction-seam-plan.md`) put containment on the
 consuming route via `inert`; Pass 1b's review gate disproved that, and this replaces it.
 
 ## The decision
@@ -488,7 +488,7 @@ no growth. No new gate script is owed: the browser test file is the only mechani
 that can fail when containment regresses, and it is falsifiable by construction.
 
 **6. OWED BY THIS PASS, LIVES IN `~/Projects/cairn-pub`** (branch `pass-d-docs-tracks`), three edits
-**[AMENDED, was two]** to `docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md`. All
+**[AMENDED, was two]** to `docs/specs/2026-08-15-live-reproduction-seam-design.md`. All
 three are made by the Pass 2 route task, not here.
 
 - The route's responsibility clause "marks the mounted content `inert` after any pose completes" is

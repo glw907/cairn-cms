@@ -1,6 +1,6 @@
 # Polish-11a plan review, executor and plannability lens
 
-Adversarial read of `docs/superpowers/plans/2026-09-08-polish-11a-pass.md` (uncommitted) and its
+Adversarial read of `docs/plans/2026-09-08-polish-11a-pass.md` (uncommitted) and its
 workflow args at `~/.cache/cairn-polish-11a/11a-args.json`, against what the chain actually hands
 each agent: `~/.claude/workflows/pass-execute-chains.js` gives the implementer the repo path, the
 plan path, an order to read Global constraints plus Ruled inputs plus its own Task section, the

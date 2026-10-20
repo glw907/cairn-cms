@@ -124,7 +124,7 @@ Plan 03", "the export-rule sweep, C2 breaking-window pass, R4 ruling", "Contract
 primitive". Counted across `src/lib`: **17 `Plan NN` references, 189 total unresolvable
 process references** (`C2 breaking-window pass`, `R4 ruling`, `export-rule sweep`, `Pass C`,
 `spec 2.8`, `Task 15`, `phase-3a`, `2a fetch actions`), plus **19 pointers into
-`docs/superpowers/`**, a directory the npm tarball does not ship. Each of these appears exactly
+`docs/`**, a directory the npm tarball does not ship. Each of these appears exactly
 where a rationale is promised. `admin-action.ts` opens "(Part C item 3 of the phase-2 design
 suite)" and then "SCAFFOLD FINDING (the reference stand-in that shaped this,
 aksailingclub-org's club-admin-scaffold)". There are **18 mentions of private consumer sites**

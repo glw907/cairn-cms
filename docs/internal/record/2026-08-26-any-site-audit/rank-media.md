@@ -247,7 +247,7 @@ throw, so a site can safely feed it arbitrary hrefs.
 **Provenance.** Landed as `makeMediaResolver` in `1a20810f Resolve media: references in the render
 pipeline (media foundation task 6)`, renamed in the C2 breaking window:
 
-> `docs/superpowers/plans/2026-08-02-c2-breaking-window.md:141` — "`makeMediaResolver`: renamed `buildMediaResolver`; the four-verb system is the recorded rule."
+> `docs/plans/2026-08-02-c2-breaking-window.md:141` — "`makeMediaResolver`: renamed `buildMediaResolver`; the four-verb system is the recorded rule."
 
 Engine-originated; a real consumer's migration is on record feeling the rename
 (`docs/internal/feedback/2026-08-05-cairn-pub-migration.md:24`). All six family consumers call it.

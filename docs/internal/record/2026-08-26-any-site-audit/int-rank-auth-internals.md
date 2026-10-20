@@ -190,7 +190,7 @@ means a *readable* why.
 
 Note the contrast that proves it can be done: `signing.ts:100` cites
 `docs/internal/2026-07-13-admin-token-cache-poisoning.md` by path, which resolves. So do the
-`(spec docs/superpowers/specs/2026-08-03-...)` header citations in `auth-channel/store.ts:2` and
+`(spec docs/specs/2026-08-03-...)` header citations in `auth-channel/store.ts:2` and
 `identity.ts:1`. The failure is only the bare identifiers.
 
 **Remediation.** Mechanical sweep over the five files. Replace each bare identifier with either the

@@ -76,7 +76,7 @@ describe('profileFor', () => {
   });
 
   it('does not scan paths outside every tier, vendored directories, or binaries', () => {
-    expect(profileFor('docs/superpowers/plans/x.md')).toBeNull();
+    expect(profileFor('docs/plans/x.md')).toBeNull();
     expect(profileFor('docs/internal/record/x.md')).toBeNull();
     expect(profileFor('skills/node_modules/x/README.md')).toBeNull();
     expect(profileFor('templates/waymark/static/logo.png')).toBeNull();
@@ -183,7 +183,10 @@ describe('C3 process', () => {
     for (const text of [
       '[x](../internal/admin-design-system.md)',
       'see docs/internal/engine-rulings.md',
-      '[x](../superpowers/research/a.md)',
+      '[x](../research/a.md)',
+      'see docs/specs/a-design.md',
+      '[x](../plans/a.md)',
+      'docs/archive/old.md',
       '[roadmap](../../ROADMAP.md)',
       'STATUS.md',
       '/var/home/someone/.config',
@@ -192,6 +195,10 @@ describe('C3 process', () => {
     ]) {
       expect(hits(text), text).toContain('C3:error');
     }
+  });
+
+  it('lets a relative code path into a route named like a planning folder through', () => {
+    expect(hits("import Page from '../archive/+page.svelte';", T2)).toEqual([]);
   });
 
   it('lets an absolute GitHub link to a maintainer doc through', () => {

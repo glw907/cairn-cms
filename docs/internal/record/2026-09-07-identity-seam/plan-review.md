@@ -6,7 +6,7 @@ Grounding, security (the web-auth-security-reviewer agent), hygiene and sizing, 
 
 
 Object: `docs/superpowers/plans/2026-09-07-identity-seam-pass.md` (HEAD `b58b5d2e`) against
-`docs/superpowers/specs/2026-09-07-identity-seam-design.md` (rev 2) and the code on `main`.
+`docs/specs/2026-09-07-identity-seam-design.md` (rev 2) and the code on `main`.
 Read-only. Every file:line below was opened. Anchors re-verified: `guard.ts`, `auth-routes.ts`,
 and `check-probe.ts` are byte-identical between `de2bf1cb` (the plan's stated verification point)
 and HEAD, so the plan's anchors were checkable and the errors below are authoring errors, not drift.
@@ -445,8 +445,8 @@ Recorded so no later reader re-checks these.
 ---
 
 
-Objects: `/var/home/glw907/Projects/cairn-cms/docs/superpowers/plans/2026-09-07-identity-seam-pass.md`
-and `/var/home/glw907/Projects/cairn-cms/docs/superpowers/specs/2026-09-07-identity-seam-design.md`
+Objects: `/var/home/glw907/Projects/cairn-cms/docs/plans/2026-09-07-identity-seam-pass.md`
+and `/var/home/glw907/Projects/cairn-cms/docs/specs/2026-09-07-identity-seam-design.md`
 (revision 2). Prior lens: the security section of
 `/var/home/glw907/Projects/cairn-cms/docs/internal/record/2026-09-07-identity-seam/spec-review.md`
 (B1-B6, S1-S13, N1-N11). Code read in full: `src/lib/sveltekit/guard.ts`,
@@ -547,7 +547,7 @@ builds that owner's `Editor` with full capability. The magic-link path this repl
 control by construction; this one does not, and the shipped docs never say so.
 
 **Evidence.** spec-review:246-283 (B6, with the exact paragraph to add). Neither
-`docs/superpowers/specs/2026-09-07-identity-seam-design.md` nor the plan contains the strings
+`docs/specs/2026-09-07-identity-seam-design.md` nor the plan contains the strings
 "One-time PIN", "login method", "social", "verified", or "mailbox" (grepped).
 
 **Exact plan text to change.** Task 5's page contents (plan:207-215), insert after "the migration
@@ -1014,8 +1014,8 @@ findings (B6, S7, S10) never reached either document.
 ---
 
 
-Objects: `docs/superpowers/plans/2026-09-07-identity-seam-pass.md`, spec
-`docs/superpowers/specs/2026-09-07-identity-seam-design.md`. Judged for executability by a
+Objects: `docs/plans/2026-09-07-identity-seam-pass.md`, spec
+`docs/specs/2026-09-07-identity-seam-design.md`. Judged for executability by a
 zero-context Sonnet implementer and an Opus `diff-reviewer` under
 `~/.claude/workflows/pass-execute-chains.js` (both prompts DO carry the plan path and tell the
 agent to read the task section; the condensed `criteria` string is secondary, so the task
@@ -1267,7 +1267,7 @@ the mode never reaches the routes Task 3 changes, and the pass would discover it
 ---
 
 
-Objects: `docs/superpowers/plans/2026-09-07-identity-seam-pass.md`; spec revision 2. Prior lens
+Objects: `docs/plans/2026-09-07-identity-seam-pass.md`; spec revision 2. Prior lens
 section: `docs/internal/record/2026-09-07-identity-seam/spec-review.md:660-1130`.
 
 ## Part 0. Fold audit of this lens's own spec findings

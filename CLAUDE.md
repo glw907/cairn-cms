@@ -50,7 +50,7 @@ charter's own test.
 ## How to run this project
 
 The canonical source of truth is the functional spec at
-`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`; the older writeups under
+`docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`; the older writeups under
 `docs/internal/history/` are history only. Engine work runs on feature worktrees off `main`, one
 per pass, so `main` stays releasable. The published version, the unpublished window, and the next
 action live in `docs/STATUS.md` (rolling, canonical on `main`); shipped history lives in git,

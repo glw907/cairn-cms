@@ -192,7 +192,7 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
 
 A long 2026-05-26 brainstorm (visual companion) expanded "Pass I theme" into a full admin
 redesign **and** surfaced the theme architecture. Canonical artifacts (all git-backed):
-- **Design spec:** `docs/superpowers/specs/2026-05-26-admin-ui-design.md`, covering requirements **R1–R12 + R10a**:
+- **Design spec:** `docs/specs/2026-05-26-admin-ui-design.md`, covering requirements **R1–R12 + R10a**:
   R1 auth, R2 roles, **R3 collections-first nav (Sveltia-style)**, **R4 differentiated page-vs-story editing**,
   R5 editor mgmt, **R6 neutral self-contained "Warm Stone" theme (= Pass I)**, R7 future media (reserve IA),
   **R8 collection CRUD (own design round; committed-config vs D1 storage; defs are data so runtime-creatable)**,
@@ -250,7 +250,7 @@ Resulting **planned passes (sequenced)**, superseding the standalone "Pass I the
   `wrangler deploy --dry-run` + lazy-init audit + pin wrangler v4/`nodejs_compat`/recent compat date, C4/M5). Can
   ride with AUTH or the extraction.
 - **Pass: Render-Engine Extraction (code DONE 2026-05-26; not yet released; see progress log).** (plan:
-  `docs/superpowers/plans/2026-05-26-theme-architecture-extraction.md`.) Moved the generic render engine + registry
+  `docs/plans/2026-05-26-theme-architecture-extraction.md`.) Moved the generic render engine + registry
   machinery into `@glw907/cairn-cms` (`render/*`); ecnordic's site code consumes the engine; 907 trivial (keeps its
   own `remark-html` renderer, which has a different output contract). **Byte-identical output** proven by characterization
   snapshots (ecnordic 6/6, 907 8/8). Realized R10a's engine half + the `adapter.registry` field. Enforced
@@ -493,7 +493,7 @@ no longer excluded, just unscheduled.
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
 > **✅ Pass L2 DONE (2026-05-28): nav editing UI, the write side of the YAML site-config design. Built from the
-> committed plan (`docs/superpowers/plans/2026-05-28-pass-l2-nav-editing-ui.md`); committed locally on `main` in all
+> committed plan (`docs/plans/2026-05-28-pass-l2-nav-editing-ui.md`); committed locally on `main` in all
 > three repos, not pushed. This completes the YAML site-config design (read side was Pass L). NEXT: reusable-content
 > fragments (the planned post-L feature, see the roadmap above) is the next design round; START THERE.**
 > **Engine:** dropped the D1 nav store from `src/lib/nav.ts` (`readNavTree`/`writeNavTree`/`loadNav`/`NavEnv`/the
@@ -544,7 +544,7 @@ no longer excluded, just unscheduled.
 > things; hold `0.6`/`1.0` until the API stabilizes.
 
 > **✅ Pass L DONE (2026-05-28): canonical YAML site-config, read side + full migration. Built subagent-driven
-> from the committed 11-task plan (`docs/superpowers/plans/2026-05-28-pass-l-yaml-site-config.md`); committed
+> from the committed 11-task plan (`docs/plans/2026-05-28-pass-l-yaml-site-config.md`); committed
 > locally on `main` in all three repos, not pushed. (Pass L2, the nav editing UI, is now also done; see the entry above.)**
 > **Engine:** added the `yaml` dep plus a `sideEffects` field for tree-shaking (`1c3cc6b`), and appended a
 > `SiteConfig` type with `parseSiteConfig`/`extractMenu`/`SiteConfigError` to `src/lib/nav.ts`, beside the kept
@@ -582,8 +582,8 @@ no longer excluded, just unscheduled.
 > Brainstorm widened the file to the canonical home for ALL author-editable config (Geoff): identity, `menus`, `email`,
 > `footer`, `settings`; the welcome blurb stays a `config.ts` constant (it is content, not config). Research on YAML
 > shape + reusable content informed the design; **reusable-content fragments** are the planned post-L feature (recorded
-> in the roadmap above). **Spec:** `docs/superpowers/specs/2026-05-27-pass-l-yaml-site-config-design.md` (committed).
-> **Plan to execute:** `docs/superpowers/plans/2026-05-28-pass-l-yaml-site-config.md` (committed, 11 tasks). **Resume
+> in the roadmap above). **Spec:** `docs/specs/2026-05-27-pass-l-yaml-site-config-design.md` (committed).
+> **Plan to execute:** `docs/plans/2026-05-28-pass-l-yaml-site-config.md` (committed, 11 tasks). **Resume
 > by executing that plan** (subagent-driven or executing-plans). All planning work is committed locally on `main`, not
 > pushed. The salvage map below still describes the kept/reworked/dropped engine commits; Pass L keeps the D1 store
 > intact (additive only) and Pass L2 does the teardown.
@@ -628,8 +628,8 @@ no longer excluded, just unscheduled.
 > preserve non-`nav` keys on rewrite (Geoff accepted comment loss on tool rewrite).
 >
 > **Resume:** finish the brainstorm, write the revised spec to
-> `docs/superpowers/specs/2026-05-27-pass-l-yaml-site-config-design.md`, run writing-plans, then resume subagent-driven
-> execution. The original D1 plan + spec (`docs/superpowers/{plans,specs}/2026-05-27-pass-l-nav-tree*.md`) are
+> `docs/specs/2026-05-27-pass-l-yaml-site-config-design.md`, run writing-plans, then resume subagent-driven
+> execution. The original D1 plan + spec (`docs/{plans,specs}/2026-05-27-pass-l-nav-tree*.md`) are
 > SUPERSEDED for storage/consumption, but their capability-layer, `NavTree`, and validation portions still describe the
 > kept work. See memory `[[cairn-yaml-site-config-architecture]]`.
 
@@ -651,7 +651,7 @@ no longer excluded, just unscheduled.
 > Swept every in-scope doc and code comment across all three repos with `prose-guard` and rewrote the flagged
 > prose for human cadence (the user chose genuine rewrites over mechanical punctuation swaps). Scope, set with
 > the user: code comments plus the living docs, plus `PLAN.md` and the published `src/content` blog posts; the
-> dated `docs/superpowers/{specs,plans,archive}` and `docs/plans/2026-05-25-extract-cairn-core.md` snapshots stay
+> dated `docs/{specs,plans,archive}` and `docs/plans/2026-05-25-extract-cairn-core.md` snapshots stay
 > as historical artifacts and were left untouched. Work ran as parallel subagents partitioned by repo and bucket,
 > each carrying the full `writing-voice` standard and verifying its own files clean; I re-swept and spot-checked
 > the output.
@@ -763,8 +763,8 @@ no longer excluded, just unscheduled.
   drives the create flow and the header; a registry-driven insert-component palette (R10) sits above the editor;
   Carta's built-in formatting toolbar is kept (R11); and a persisted preview toggle (R12) switches the live
   preview on and off. Built subagent-driven from the pre-written plan
-  (`docs/superpowers/plans/2026-05-27-pass-k-editing.md`, spec
-  `docs/superpowers/specs/2026-05-27-pass-k-editing-design.md`). Committed locally on `main`; not pushed.
+  (`docs/plans/2026-05-27-pass-k-editing.md`, spec
+  `docs/specs/2026-05-27-pass-k-editing-design.md`). Committed locally on `main`; not pushed.
 - **Adapter contract (one field).** `CairnCollection` gains `kind?: 'page' | 'story'` (absent defaults to
   `story`, so existing sites keep working). `kind` drives only slug/identity treatment and header emphasis; it
   never gates capability (the palette and toolbar are available to both kinds, per R4's tendency-not-rule point).
@@ -835,7 +835,7 @@ no longer excluded, just unscheduled.
 - **Goal met: the admin's single lumped "Content" page is replaced by a Sveltia-style collections IA.** Each
   `adapter.collections` entry is now its own sidebar nav item that opens a per-collection entries list at
   `/admin/[collection]` (title, date, draft badge), with a working "New entry" create flow; `/admin` redirects to the
-  first collection. Plan: `docs/superpowers/plans/2026-05-27-pass-j-collections-nav.md`. Built subagent-driven
+  first collection. Plan: `docs/plans/2026-05-27-pass-j-collections-nav.md`. Built subagent-driven
   (implementer + spec + code-quality review per task). Committed locally; not pushed.
 - **Package (`@glw907/cairn-cms`).** `sveltekit/index.ts`: `adminLayoutLoad` now returns `collections: NavCollection[]`
   (`{type,label}` only, so the adapter plugin graph never crosses to the client); new `adminIndexRedirect(adapter)`
@@ -888,7 +888,7 @@ no longer excluded, just unscheduled.
   regardless of the host site's DaisyUI theme and fonts, retiring the R6 bug (ecnordic rendered the
   admin in its `ecn` crimson theme + Alegreya Sans; 907 in `silk`/`dim` + Spectral serif). Light-only,
   "Warm Stone" (warm-gray neutrals at hue ~75, violet accent, system-ui font). Plan:
-  `docs/superpowers/plans/2026-05-27-pass-i-warm-stone-theme.md`. Committed locally; not pushed.
+  `docs/plans/2026-05-27-pass-i-warm-stone-theme.md`. Committed locally; not pushed.
 - **Approach: fully self-contained (decision (b)) via CSS custom-property inheritance, NOT a compiled
   `data-theme`.** A `cairn-admin` class on both of `AdminLayout`'s root divs (signed-in drawer shell +
   signed-out login shell) plus a scoped `<style>` that sets the full DaisyUI v5 token set, `font-family`,
@@ -982,7 +982,7 @@ no longer excluded, just unscheduled.
   template** (a `create-cairn-site` scaffold). Locked into the living docs (`creating-a-cairn-theme.md` →
   **`creating-a-cairn-site.md`**, rewritten; `PLAN.md`; `ARCHITECTURE.md` (engine-fat/**site-thin**, engine/**site**
   line, **site template** layer), the memory note + index, and all engine/site **code comments**. Kept: "admin theme"
-  (the DaisyUI `/admin` visual styling, unrelated). The two dated `docs/superpowers/` artifacts (admin-UI spec + this
+  (the DaisyUI `/admin` visual styling, unrelated). The two dated `docs/` artifacts (admin-UI spec + this
   extraction plan) keep their internal "theme" prose as a historical snapshot (filename refs fixed); Geoff's call.
 - **Verified.** Package 48 tests + `svelte-package` (dist/render emitted). **ecnordic** `svelte-check` 0/0, characterization
   **6/6 byte-identical** (zero snapshot diff), Cloudflare build OK. **907** `svelte-check` 0/0, characterization **8/8

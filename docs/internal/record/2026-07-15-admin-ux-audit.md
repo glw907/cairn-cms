@@ -15,7 +15,7 @@ recorded in the appendix so they do not resurface.
 - **ARC** — the design-refinement arc: color and type system work, iterated locally with Geoff's eyes
   per round (the design-iteration-economics memory). Not a one-shot pass.
 - **REORG** — folds into the admin reorganization pass's plan as a nav/sidebar-adjacent rider
-  (spec: `docs/superpowers/specs/2026-07-14-admin-reorganization-design.md`).
+  (spec: `docs/specs/2026-07-14-admin-reorganization-design.md`).
 - **PAPERCUTS** — a small follow-up refinement pass: mechanical fixes, copy, and layout defects that
   need no design ruling.
 - **KIT** — input to the component-kit design (ROADMAP Next).

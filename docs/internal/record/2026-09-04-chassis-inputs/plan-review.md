@@ -1,4 +1,4 @@
-# Adversarial review: `docs/superpowers/plans/2026-09-04-chassis-a-pass.md`
+# Adversarial review: `docs/plans/2026-09-04-chassis-a-pass.md`
 
 Read-only, three lenses, findings ranked within each. Verified against the working tree at `main`
 (`9d893e34`), which is pre-internals-C-merge, the same baseline the plan itself declares. Every

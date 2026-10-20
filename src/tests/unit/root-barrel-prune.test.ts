@@ -8,7 +8,7 @@ import { enumerateExports } from '../../../scripts/checks/reference-coverage.mjs
 // `ResolvedReference` reshape (its home becomes `/delivery` only) and `RoutingRule` (Task 5,
 // demoted alongside the routing-union change: `RoutingRule` is the internal normalization target
 // only, no longer an accepted `ConceptConfig.routing` value). Verbatim from
-// `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, plus `StandardSchemaV1` (the
+// `docs/plans/2026-07-01-surface-pruning-pass.md`, plus `StandardSchemaV1` (the
 // retires pass, batch 1a: unexported from this barrel; stays exported from
 // `content/standard-schema.ts`), minus `parseManifest`, whose canonical home is now this barrel
 // beside `formatManifest`, so it moves to the keep list below.
@@ -115,7 +115,7 @@ const C2_READDED = [
 ];
 
 // The keep list for the root subpath, from the audit verdicts doc's `## .` section
-// (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`).
+// (`docs/plans/2026-07-01-surface-pruning-audit-verdicts.md`).
 const KEPT = [
   'defineAdapter',
   'defineConcept',

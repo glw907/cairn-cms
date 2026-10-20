@@ -12,8 +12,8 @@ Sources verified against: `CLAUDE.md`, `docs/internal/what-cairn-is-and-is-not.m
 `examples/showcase/src/chassis/README.md`, `examples/showcase/wrangler.jsonc`,
 `templates/waymark/package.json`, `packages/create-cairn-site/src/github/chapter.mjs`,
 `src/lib/sveltekit/admin-nav.ts`, root `package.json`, `.vale.ini`,
-`docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`,
-`docs/superpowers/specs/2026-09-04-chassis-passes-design.md`.
+`docs/plans/2026-08-20-cairn-tool-spine-and-hud.md`,
+`docs/specs/2026-09-04-chassis-passes-design.md`.
 
 ---
 
@@ -328,7 +328,7 @@ minimal (Geoff, 2026-07-05)". The diagram carries only the plumbing half. The pr
 the half a developer makes a decision about.
 
 **"every site copies" is doubly wrong.** A hand-built site copies nothing (D6). And per
-`docs/superpowers/specs/2026-09-04-chassis-passes-design.md`, the copy story is about to move:
+`docs/specs/2026-09-04-chassis-passes-design.md`, the copy story is about to move:
 chassis-B's organizing rule 2 is "the exemplar uses the chassis it ships", the spec records that
 "zero of seven composition primitives appear in any markup", and chassis-A adds Prettier config and
 `format` scripts to the emitted scaffold. The phrase describes a snapshot that both passes are

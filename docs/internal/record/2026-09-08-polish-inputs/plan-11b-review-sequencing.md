@@ -1,9 +1,9 @@
 # Polish-11b plan review, sequencing and risk lens
 
-Target: `docs/superpowers/plans/2026-09-08-polish-11b-pass.md` (uncommitted, 1838 lines).
+Target: `docs/plans/2026-09-08-polish-11b-pass.md` (uncommitted, 1838 lines).
 Spec: `docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4 (`ac911ec3`).
 Neighbours read: `docs/superpowers/plans/2026-09-08-polish-11a-pass.md` (committed `f273274e`),
-`docs/superpowers/plans/2026-09-08-polish-c-pass.md` (uncommitted draft),
+`docs/plans/2026-09-08-polish-c-pass.md` (uncommitted draft),
 `.claude/worktrees/chassis-b2` at `4de378ec`.
 Lens: task order across the three runs, cross-pass collisions, the polish-C hand-forward, the
 `cairnAccess` seam and its adoption, ceiling and checkpoints, halt state, verifier budget.

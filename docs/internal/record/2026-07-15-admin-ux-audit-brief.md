@@ -2,7 +2,7 @@
 
 The entry point for the admin design arc that follows 0.86.0. Purpose: turn the design charter
 into a ranked, verified deficiency list that feeds, in order, the admin reorganization pass
-(spec already ratified: `docs/superpowers/specs/2026-07-14-admin-reorganization-design.md`), a
+(spec already ratified: `docs/specs/2026-07-14-admin-reorganization-design.md`), a
 design-refinement arc for the material findings (color, type), and the component-kit design
 (ROADMAP Next).
 

@@ -13,7 +13,7 @@ Paid, so the planned decline became coverage). **The App ledger stands at five**
 (`cairn-t5-scratch`, id 4585219). The e2e estate persists for T4d (spec ruling 1); its
 teardown table, everything marked "after T4d", is in the evidence doc.
 
-**Next: EXECUTE the T4d plan** (`docs/superpowers/plans/2026-08-13-create-cairn-site-t4d.md`)
+**Next: EXECUTE the T4d plan** (`docs/plans/2026-08-13-create-cairn-site-t4d.md`)
 **in a fresh Opus session**, per the model economy: the Fable sitting that authored it ended at
 plan approval. Spec and plan both passed an adversarial gate the same day (three lenses on the
 spec, four on the plan, 56 ranked findings folded; the gates' largest catches are recorded in
@@ -40,7 +40,7 @@ path) is small, well-specified, and owed before the tool publishes. Filed here r
 ROADMAP so the release-one checklist cannot miss it.
 
 **Banked opportunistically during Task 8's DNS wait:** the Go successor-tool pre-design
-(`docs/superpowers/specs/2026-08-13-go-successor-tool-design.md`, its ROADMAP Later entry, and
+(`docs/specs/2026-08-13-go-successor-tool-design.md`, its ROADMAP Later entry, and
 its "standing input for the current track" section, which tunes the Node tool's docs, comments,
 and structure so a post-1.0 Go port reads them as a spec — passes should honor it starting
 now); and the `checkOrigin` migration pass, moved Later -> Next as pre-P launch polish (the

@@ -26,7 +26,7 @@ designs that approach.
   (writing in `/admin`, no terminal), `extend/` (building on the seams), `reference/` (one page per
   export subpath, gated), and `why-cairn.md` for an evaluator (`CLAUDE.md:109-114`). "A page serves
   one track or it is two pages" (`CLAUDE.md:114`).
-- **Six audiences** (docs reset ruling 3, `docs/superpowers/specs/2026-09-23-docs-reset-design.md:121-125`):
+- **Six audiences** (docs reset ruling 3, `docs/specs/2026-09-23-docs-reset-design.md:121-125`):
   evaluator, editor, site operator, site designer, admin extender, core developer. All but the
   evaluator and the editor have an agent half. The agent profile widens across tracks, with no
   agent track (ruling 4, `:126`). The audience spans organization size up to large Cloudflare
@@ -72,7 +72,7 @@ values in `conditions.ts` read arm pages directly (memory `docs-to-facts-reshape
   never by selling" (`docs/internal/docs-register.md:37-42`), plus the universal contract
   (`:44`) and page anatomies (`:232`). Comparisons never strawman the alternative (memory
   `comparisons-never-strawman`).
-- **The docs standard spec** (`docs/superpowers/specs/2026-09-08-docs-standard-design.md`): a page
+- **The docs standard spec** (`docs/specs/2026-09-08-docs-standard-design.md`): a page
   is rebuilt, never edited, reference entries excepted; a fact harvest precedes any brief;
   drafters never open the page they replace (`:9-13`; memory `docs-rebuild-not-edit`). The reset
   kept its provenance design, its two-round revision cap, and staged delivery with a tuning
@@ -106,7 +106,7 @@ values in `conditions.ts` read arm pages directly (memory `docs-to-facts-reshape
   `0.97.0`, whose structure Go drift tests pin (`docs/HISTORY.md`). Pass A measured the
   old page chain at about 900K tokens per page over three rounds (`docs/HISTORY.md`).
 - **Two human-read task sheets**, an editor task and an evaluator task, written for pass 2a and
-  never sent back with logs (`docs/superpowers/research/2026-09-25-docs-reset-2a-human-reads.md`,
+  never sent back with logs (`docs/research/2026-09-25-docs-reset-2a-human-reads.md`,
   Sheet 1 at `:48`, Sheet 2 at `:89`, empty Logs table at `:122`).
 - **One content input** for the designer's theme guide: a short section on giving a DaisyUI site
   its own identity through a theme, linking to DaisyUI's docs (Geoff, 2026-09-24,

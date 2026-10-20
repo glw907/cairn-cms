@@ -1,14 +1,14 @@
 # The reproduction story audit
 
 The per-story mechanism record for the live-reproduction seam. Task A1 of the plan
-`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md` produced it; tasks A3 through
+`docs/plans/2026-08-15-live-reproduction-seam-plan.md` produced it; tasks A3 through
 A6b execute against it, and cairn-pub's Pass 2 dispatches cite it by this path. The path is
 frozen: do not move or rename this file.
 
 The contract for what each story must SHOW is the per-page outline record,
 [`2026-08-15-docs-outlines-with-visuals.md`](./2026-08-15-docs-outlines-with-visuals.md). The
 contract for ids and flags is the spec, cairn-pub
-`docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md`. This record settles only the
+`docs/specs/2026-08-15-live-reproduction-seam-design.md`. This record settles only the
 mechanism: which component mounts, `shell` or `bare`, props or pose, what has to be exported, and
 what has to become injectable.
 

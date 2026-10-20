@@ -155,9 +155,9 @@ through the localhost console. T4d's close entry, with the live-proof and teardo
 is archived at `docs/internal/history/STATUS-archive-2026-08-13-t4d-close.md`.
 
 **Next: execute Pass D, the documentation reset.** The plan is
-`docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md` (Fable planning sitting,
+`docs/plans/2026-08-14-pass-d-docs-reset.md` (Fable planning sitting,
 2026-08-14), against the umbrella spec's Part 2
-(`docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`). Execution runs
+(`docs/specs/2026-08-09-admin-setup-and-docs-reset-design.md`). Execution runs
 in a fresh Opus 5 session in its own worktree off `main`, task-by-task through
 `cairn-implementer`, per the plan's header. **The pass is a ground-up REBUILD (Geoff,
 2026-08-14): the old guides, tutorial, and explanation arms are deleted at cutover, never

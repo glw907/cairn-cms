@@ -120,7 +120,7 @@ Each section holds what the next one depends on.
 Task headings start with a bare infinitive; "Before you begin" and "See also" are the anatomy's
 fixed headings; "What happens to a shared link" is the one explanation section and takes a noun
 clause. No page links an anchor on this page today (a search of `docs/` for
-`share-a-draft-preview.md#` outside `docs/internal` and `docs/superpowers` returns nothing;
+`share-a-draft-preview.md#` outside `docs/internal` and `docs/{plans,research,specs}` returns nothing;
 `docs/extend/replace-magic-links-with-cloudflare-access.md:407` links the page itself), so every
 heading is free.
 

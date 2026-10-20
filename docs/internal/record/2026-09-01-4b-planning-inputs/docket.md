@@ -2,7 +2,7 @@
 
 Compiled read-only from `docs/internal/record/2026-08-30-r4-rederivation.md` ("List (c)") and
 the `docs/internal/record/2026-08-26-any-site-audit/` rank-*/verify-* pairs, against the routing
-list in `docs/superpowers/plans/2026-08-30-conventions-pass.md` ("What this pass unblocks and
+list in `docs/plans/2026-08-30-conventions-pass.md` ("What this pass unblocks and
 hands to 4b"). No conclusions drawn from `docs/internal/engine-rulings.md` (excluded per
 instructions; another executor is editing it). No new scope proposed.
 

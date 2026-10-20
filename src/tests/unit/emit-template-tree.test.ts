@@ -1,7 +1,7 @@
 // cairn-cms: the emitter does not read comments, and scripts/build/emit-template.mjs copies the
 // showcase verbatim minus its .cairn-template.json exclusions, so an unguarded members fixture
 // would ship a code-readback OTP oracle into every scaffolded site (spec
-// docs/superpowers/specs/2026-08-04-auth-channel-consumer-proof-design.md, "The acceptance
+// docs/specs/2026-08-04-auth-channel-consumer-proof-design.md, "The acceptance
 // test"). This walks a real emission of examples/showcase and proves the emitted tree carries
 // none of the fixture's forbidden tokens, that the marker-stripped wrangler.jsonc still parses
 // with exactly the expected d1_databases membership, and that the manifest's own exclude list

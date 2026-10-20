@@ -141,14 +141,14 @@ open edits, not part of the shape itself.
 - **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
   Task 2 executes across the in-population factory rows (`CairnAdminConfig`, `ContentRoutesConfig`,
   `EditorRoutesConfig`, `PublicRoutesConfig`).
-- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+- **Record:** [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 1, and Task 1/Task 2.
 - **Amendment (2026-09-08, polish-C Task 2):** the bag carries an arity clause the ratified text
   above does not state: `runtime` is a required member of the bag where the factory needs one, and
   positional runtimes go, so `createContentRoutes` and `createCairnAdmin` each take exactly one
   parameter with no default. This closes the "R1 applied as written" text on `runtime`'s place in
   the bag rather than beside it. The source of this clause is
-  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  [2026-09-08-polish-passes-design.md](../specs/2026-09-08-polish-passes-design.md),
   dated 2026-09-08, decision 11, rather than a sitting quotation this pass records as Geoff's own
   words: "One shape for every route factory: a single config bag, with `runtime` a required member
   of the bag where the factory needs one. Positional runtimes go." One amendment covers all four
@@ -166,7 +166,7 @@ open edits, not part of the shape itself.
   `AuthGuardConfig`, `RendererConfig`, and `FieldsetConfig`; `CairnManifestOptions` is exempt under
   `convention-interop-carve-out`, since it types an interop surface external tooling already
   expects an `Options` bag on, and stays named as it is. Source:
-  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  [2026-09-08-polish-passes-design.md](../specs/2026-09-08-polish-passes-design.md),
   dated 2026-09-08.
 
 ## convention-interop-carve-out: a host ecosystem's convention wins over cairn's grammar on an interop surface  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
@@ -179,7 +179,7 @@ open edits, not part of the shape itself.
 - **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
   Task 2 executes (`src/lib/vite/index.ts`'s interop barrel comment; `createAuthGuard`'s kit
   `Handle` annotation; `createMediaRoute`'s kit `RequestHandler` return).
-- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+- **Record:** [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 1, and Task 1/Task 2.
 
 ## convention-contract-first-returns: every public factory declares a named, authored return type  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
@@ -194,7 +194,7 @@ open edits, not part of the shape itself.
 - **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
   Task 2 executes (`CairnAdminRoutes`, `AuthRoutes`, `EditorRoutes`, `NavRoutes`, the reopened
   `PublicRoutes` (`audit-delivery-publicroutes`), and `SectionAction<Env, Db>`).
-- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+- **Record:** [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 2, and Task 1/Task 2.
 
 ## convention-verb-rules: the engine's verb vocabulary (`verify`/`validate`/`read`/`parse`/`build`/`create`)  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
@@ -209,12 +209,12 @@ open edits, not part of the shape itself.
 - **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
   Task 3 executes (the resolver trio, `readMenu`/`readVocabulary`, `buildSiteDescriptors`,
   `diffNewlyPublished`, `buildSitemapView`, `formatMediaToken`/`parseMediaToken`).
-- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+- **Record:** [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 3, and Task 1/Task 3.
 - **Note (polish-C, Task 5):** the three residuals this ruled vocabulary already covered executed:
   `serializeManifest` to `formatManifest` (`parse*`'s codec partner), `deriveExcerpt` to
   `buildExcerpt`, and `diffNewlyPublished` to `buildNewlyPublished` (both `build*`'s "derives pure
-  data"). Per `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, 2026-09-08.
+  data"). Per `docs/specs/2026-09-08-polish-passes-design.md`, 2026-09-08.
 
 ## convention-bare-noun-functions: an exported function's name begins with a verb, an exported value's does not  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
 
@@ -224,7 +224,7 @@ open edits, not part of the shape itself.
   are out of scope."*
 - **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
   Task 3 executes (`renderGlyph`, `defineFieldset`, `resolveOwnerLevelRoles`, `renderJsonLdScript`).
-- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+- **Record:** [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 4, and Task 1/Task 3.
 - **Progress note (polish-C, Tasks 6 and 7):** the ruling's population is now executed across the
   public surface, seven names: `cookieName` to `buildCookieName`, `githubApp` to `createGithubApp`,
@@ -249,11 +249,11 @@ open edits, not part of the shape itself.
 - **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
   Task 4 executes (`resolveRateLimit`'s four-arm result, the owner-guard discriminated results)
   and Task 7 extends (`authorizeAdminTarget`'s `outcome`-grammar return).
-- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+- **Record:** [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 5, and Task 1/Task 4/Task 7.
 - **Widening clause (polish-C, Task 8, 2026-09-08):** this row's own scoping phrase, "every
   discriminated result this pass introduces", is superseded by decision 6 of
-  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  [2026-09-08-polish-passes-design.md](../specs/2026-09-08-polish-passes-design.md),
   Geoff's own words: *"no grandfathered exceptions on a surface heading for a 1.0 promise, in the
   one window where every rename is free."* The `outcome`-discriminant grammar now governs the
   WHOLE public surface, not only what a later pass introduces, and polish-C's Task 8 reads four
@@ -277,7 +277,7 @@ open edits, not part of the shape itself.
 - **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
   Task 4 (`DeleteRefusal`) and Task 5 (`ContentFormFailure`'s flatten, `SaveFailure`,
   `DeleteRefusal`, `RenameFailure`, `CreateFailure`, `PreviewMintFailure`) execute against.
-- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+- **Record:** [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 5, and Task 1/Task 4/Task 5.
 - **Note (polish-11a, Task 3):** `DeleteRefusal` renamed to `DeleteFailure`, matching this ruling's
   own suffix-scope clause; it now declares in `content-routes-entry-destructive.ts`. Verdict
@@ -289,7 +289,7 @@ open edits, not part of the shape itself.
   the last member of the F1 rename set; it declares in `media/bulk-delete-plan.ts`. Every rename
   this ruling names is now executed. Verdict unchanged.
 - **Dated supersession (polish-C, Task 8, 2026-09-08):** citing
-  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md),
+  [2026-09-08-polish-passes-design.md](../specs/2026-09-08-polish-passes-design.md),
   line 7, which names the `*Outcome` target for the one type this row's own family-suffix rule
   would otherwise have kept on `*Failure`. `RevertFailure` (`/sveltekit`) is that type: every arm
   is a refusal and it is only ever the payload of `ActionFailure<RevertFailure>`, the row's own
@@ -328,7 +328,7 @@ open edits, not part of the shape itself.
   `outcome`-grammar result (`convention-outcome-idiom`), and each wrapper keeps its own refusal
   channel: `createSectionAction` audits and returns `fail(403)` byte-identically to before,
   `adminAction` audits and throws `error(403)` so its return type never widens.
-- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+- **Record:** [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 6, and Task 1/Task 6/Task 7.
 - **Note (polish-11a, Task 6):** the three named anchors are dead; two of the three sites now
   declare in `content-routes-media-metadata.ts` (`mediaReplacePreviewAction`,
@@ -345,7 +345,7 @@ open edits, not part of the shape itself.
 - **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
   Task 8 executes (`revokeSessions`'s event-free signature, kept as a recorded, doc-commented
   exception against its siblings, per `audit-auth-authchannel`'s annotation).
-- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+- **Record:** [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 7, and Task 1/Task 8.
 - **Note (polish-C, Task 9):** applied to `createMediaRoute`, a public export with an unmatched
   singular name against the family's other route factories: the `/sveltekit` barrel now carries
@@ -359,7 +359,7 @@ open edits, not part of the shape itself.
 - **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1; execution routes to
   slice 4b (the four `rendered-*` harness failure ids conforming to this clause, per the plan's
   "What this pass unblocks and hands to 4b" section).
-- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+- **Record:** [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 7, and Task 1.
 - **Amendment (2026-09-01, conformance-pass Task 13):** the closure above names "the four
   `rendered-*` harness failure ids," but `rendered.ts` defines five, a discrepancy the 4b
@@ -426,8 +426,8 @@ open edits, not part of the shape itself.
   built. Rollout is hard and guided rather than a silent degrade, since an un-migrated `AUTH_DB` is
   a total login outage with no second channel: the CHANGELOG carries an apply-0004-first
   `Consumers must:` line and the `auth.store` doctor probe now asserts the column.
-- **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 4;
-  executed by [2026-08-30-conventions-pass](../superpowers/plans/2026-08-30-conventions-pass.md), Task 7,
+- **Record:** [2026-08-27 csrf-hardening-pass](../plans/2026-08-27-csrf-hardening-pass.md), Task 4;
+  executed by [2026-08-30-conventions-pass](../plans/2026-08-30-conventions-pass.md), Task 7,
   with the last-requester-wins rebind and the unbound-row semantics ratified in that pass's
   review fold.
 
@@ -472,7 +472,7 @@ open edits, not part of the shape itself.
   (retire-2a). The claim above, that the probe cross-checked its own cookie-name derivation
   against `csrfSecure`, is now history: the login-envelope probe it belonged to is dropped, not
   ported (`doctor-drop-login-envelope-probe`), so no successor performs this cross-check.
-- **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 1; executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 6.
+- **Record:** [2026-08-27 csrf-hardening-pass](../plans/2026-08-27-csrf-hardening-pass.md), Task 1; executed by [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 6.
 
 ## copy-to-clipboard-control: public-side copy-to-clipboard widget  (decline, 2026-08-26, ASC harvest triage)
 
@@ -503,7 +503,7 @@ open edits, not part of the shape itself.
   changes nothing about this component's shape or its export case. Re-examined against the
   executed `EditorApi` shape: no new evidence surfaced.
 - **Reopens on:** a second consumer needing the whole save-path field rather than selection alone.
-- **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1; the need is evidenced in [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivors 1.
+- **Record:** [2026-08-26 toolkit-seams pass](../plans/2026-08-26-toolkit-seams-pass.md), Task 1; the need is evidenced in [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivors 1.
 
 ## mediainsertpopover-export: `MediaInsertPopover` as a public export  (decline, 2026-08-26, toolkit-seams pass)
 
@@ -522,7 +522,7 @@ open edits, not part of the shape itself.
   drives), evidenced the way `mediaherofield-export`'s condition requires. The earlier "the
   `MarkdownEditor` seam collapse" trigger is spent: that collapse has now executed and produced no
   new evidence, so it cannot reopen this row a second time.
-- **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1; originally recorded as a sub-clause of `mediaherofield-export` above.
+- **Record:** [2026-08-26 toolkit-seams pass](../plans/2026-08-26-toolkit-seams-pass.md), Task 1; originally recorded as a sub-clause of `mediaherofield-export` above.
 
 ## isuniqueviolation-cloudflare: `isUniqueViolation` in `/cloudflare`  (defer, 2026-08-26, toolkit-seams pass; recorded 2026-09-01, promoted from the friction log at the 4b conformance pass close since the plan's own intent to record this defer here at pass close was not actually carried out)
 
@@ -537,7 +537,7 @@ open edits, not part of the shape itself.
   decisive check: an engine-side D1 path that can raise a UNIQUE violation and mishandles it today
   (candidates: the `AUTH_DB` editor/invite inserts, `createD1AuditSink`); if one qualifies, the
   engine becomes its own first consumer and the item clears both the gate and C13 in one move.
-- **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), "Deferred: `isUniqueViolation` in `/cloudflare` (former Task 7)"; tracked forward in [ROADMAP.md](../../ROADMAP.md), the Next tier's `isUniqueViolation` in `/cloudflare` entry.
+- **Record:** [2026-08-26 toolkit-seams pass](../plans/2026-08-26-toolkit-seams-pass.md), "Deferred: `isUniqueViolation` in `/cloudflare` (former Task 7)"; tracked forward in [ROADMAP.md](../../ROADMAP.md), the Next tier's `isUniqueViolation` in `/cloudflare` entry.
 
 ## dead-body-declaration: per-entry dead-body declaration  (decline, 2026-08-26, ASC harvest triage)
 
@@ -647,7 +647,7 @@ when the remediation pass lands.
 - **Verdict:** retire. None. Conformance is structural, so a Fieldset already satisfies Standard-Schema-aware libraries; a consumer needing the interface takes it from @standard-schema/spec, not from cairn's vendored copy.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the root barrel; stays exported from `content/standard-schema.ts`, since `content/fieldset.ts` still names it internally.
 - **Shape:** Unexport from '.'; keep internal. Its own StandardResult member is already unexported, so the rule never closed over it anyway.
-- **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 1; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
 
 ## audit-adapter-default-roles: `DEFAULT_ROLES`  (retire, 2026-08-26, any-site audit)
@@ -670,7 +670,7 @@ when the remediation pass lands.
   `docs/extend/restrict-admin-access.md`'s instructed import is rewritten to pass `undefined` to
   `defineAccess` instead of importing the constant.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 2; conductor adjudication over recorded dissent, see the audit record; executed by
-  [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 9.
+  [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 9.
 - **Any-site case:** None demonstrated. core.md:940: resolveCapability already treats 'an undefined vocabulary as DEFAULT_ROLES', so a site gets the behavior without the constant; the literal is two keys.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
 
@@ -825,7 +825,7 @@ when the remediation pass lands.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the root barrel (`src/lib/index.ts`); `roleHome` stays exported from `auth/roles.ts`, since `content-routes-core.ts` still calls it internally for the `/admin` landing policy.
 - **Note (internals-B, Task 4):** the still-calls-it-internally fact above is now historical; `content-routes-core.ts` retired at internals-B, and the `/admin` landing policy caller moved to `content-routes-entry.ts`.
 - **Note (polish-11a, Task 1):** the internals-B Note above misattributes the caller. The `/admin` landing policy caller lives in `content-routes-shell.ts` (`indexLoad`), never in `content-routes-entry.ts`; the entry split moves nothing on this row, and the entry file's retirement in Task 3 leaves this row's code path unchanged.
-- **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 21; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 21; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md) (verdict overturned there).
 
 ## audit-adapter-backendcommit: `BackendCommit`  (keep, 2026-08-26, any-site audit)
@@ -1945,7 +1945,7 @@ when the remediation pass lands.
 
 - **Verdict:** keep, superseding the audit's retire on prop-signature necessity. The toolkit-seams pass publishes `MediaPicker` from `/admin-toolkit`, and this type sits in its `entries` prop signature, so the `audit-admin-itemlabel` test applies verbatim: a consumer writing the prop needs the name. Canonical home is `/admin-toolkit`, beside the component, exactly as `ItemLabel` publishes beside `Pagination` and `ListToolbar`. `/sveltekit` keeps its own re-export as R4 closure over `MediaLibraryData.assets`, which stays public; dropping it would recreate the closure leak R4 exists to remove. A re-export from the stated canonical home is not a second home, so C1 holds.
 - **Reopens on:** closed. Executed by the toolkit-seams pass, Task 1.
-- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 35; superseded in [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1.
+- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 35; superseded in [2026-08-26 toolkit-seams pass](../plans/2026-08-26-toolkit-seams-pass.md), Task 1.
 - **Any-site case:** Any site composing `MediaPicker` into an admin screen it builds itself annotates the entries it passes, which is the loader's own `MediaLibraryData.assets` array.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -2382,7 +2382,7 @@ when the remediation pass lands.
 - **Verdict:** retire. Falls with resolveNavLayout. Its independent charge is weak too: a structural stand-in for one's own richer type is the engine's documented convention (CairnEvent, CookieJar), and here it spares a caller from materializing ConceptDescriptor's fields, schema and validate.
 - **Reopens on:** closed. Executed by the retires pass, batch 1c: dropped the `export` keyword in `admin-nav.ts` (consumed only inside its declaring module, by `resolveNavLayout` and its own internal helpers) and its barrel line in `sveltekit/index.ts`.
 - **Shape:** Its concepts member is a structural stand-in for ConceptDescriptor, which is already public, so the surface carries two shapes for one idea. Take the real descriptor type, or keep the resolver internal.
-- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 82; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
+- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 82; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
 ## audit-sveltekit-resolvenavlayout: `resolveNavLayout`  (retire, 2026-08-26, any-site audit)
@@ -2390,7 +2390,7 @@ when the remediation pass lands.
 - **Verdict:** retire. Every caller is the engine (content-routes-core.ts:606 in shellLoad); no doc calls it. The proposed replacement, a validate-and-preview function, does not exist and half-duplicates validateNavLayout. Inventing surface to justify surface fails the leanness rule.
 - **Reopens on:** closed. Executed by the retires pass, batch 1c: the module-level export stays in `admin-nav.ts`, since `content-routes-core.ts`'s `shellLoad` still calls it internally by relative import; only its barrel line in `sveltekit/index.ts` is dropped.
 - **Shape:** Export a narrow, purpose-named function that validates and previews a navLayout against this site's concepts, rather than publishing the engine's internal resolver with its internal options bag.
-- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 83; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
+- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 83; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
 ## audit-sveltekit-validatenavlayout: `validateNavLayout`  (retire, 2026-08-26, any-site audit)
@@ -2398,7 +2398,7 @@ when the remediation pass lands.
 - **Verdict:** retire. The any-site case is false: content-routes-context.ts:280-287 already calls it on runtime.navLayout at composition, dynamic or literal, and the thrown error already names the bad node. Calling it by hand buys nothing and re-derives three facts the runtime holds.
 - **Reopens on:** closed. Executed by the retires pass, batch 1c: the module-level export stays in `admin-nav.ts`, since `content-routes-context.ts` still calls it internally by relative import; only its barrel line in `sveltekit/index.ts` is dropped.
 - **Shape:** Take the composed runtime (or adapter) plus the layout, instead of a ctx the caller assembles by hand from conceptIds, navMenuConfigured and roleNames, three facts the composed runtime already holds, so the call site cannot assemble the context wrongly.
-- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 84; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
+- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 84; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
 ## audit-sveltekit-resolvedlayoutsection: `ResolvedLayoutSection`  (keep, 2026-08-26, any-site audit)
@@ -2800,98 +2800,98 @@ when the remediation pass lands.
 
 - **Verdict:** retire. None. A markdown CMS stores no phone numbers; the body is one NANP regex plus a template string, with zero consumers anywhere in engine, showcase, or docs.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted from `admin-toolkit/format.ts` and the `/admin-toolkit` barrel; zero remaining callers anywhere in `src/lib`.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 1; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-formatphoneoptions: `FormatPhoneOptions`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent of formatPhone. A one-optional-string interface on the public surface.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted alongside `formatPhone`, its only reference.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 2; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 2; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-agefrombirthdate: `ageFromBirthdate`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. cairn has no birthdates; rosters and waivers are site domain. Eight lines, zero consumers, and the reference page must except it from its own file's charter.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted from `admin-toolkit/format.ts` and the `/admin-toolkit` barrel; zero remaining callers anywhere in `src/lib`.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 3; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-formatmoney: `formatMoney`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. cairn takes no payments; the body is one Intl.NumberFormat over cents/100. Zero consumers.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted from `admin-toolkit/format.ts` and the `/admin-toolkit` barrel; zero remaining callers anywhere in `src/lib`.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 4; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 4; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-formatmoneyoptions: `FormatMoneyOptions`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent of formatMoney.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted alongside `formatMoney`, its only reference.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 5; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 5; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-status-chip-dot-class: `STATUS_CHIP_DOT_CLASS`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None stated. The reference page argues it in the future conditional: 'so a future legend or key component reuses the identical dot color'. Zero consumers.
 - **Reopens on:** closed. Executed by the toolkit-seams pass, Task 2, alongside the whole tone/dot retirement the 2026-08-24 owner probe ratified (docs/internal/probes/2026-08-26-chip-registers-v2): `STATUS_CHIP_DOT_CLASS`, `StatusChipTone`, and the status dot itself are all gone from `StatusChip`.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 6; executed in [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 2.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 6; executed in [2026-08-26 toolkit-seams pass](../plans/2026-08-26-toolkit-seams-pass.md), Task 2.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-fieldrow: `FieldRow`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Three CSS declarations, and the component's own header states 'No measured defect drove this component' after the 2026-08 alignment inventory found nothing to fix.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: `FieldRow.svelte` deleted (zero consumers anywhere in the engine); its bottom-aligned-row recipe (`display: flex; align-items: flex-end; gap: var(--cairn-gap-control, 0.5rem)`) is now documented as a hand-roll rather than a shipped component.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 7; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 7; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-computecountline: `computeCountLine`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. ListToolbar already renders the line; a site designing its own toolbar designs its own copy. Sibling computeFacetLabel in the same module is deliberately unexported.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `ListToolbar.svelte`'s own module context; stays exported from `list-toolbar.ts`, since `ListToolbar.svelte` still calls it internally to render the count line.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 8; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 8; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-computeappliedfilters: `computeAppliedFilters`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Its input type ListToolbarFilter[] exists only to feed ListToolbar, so a site not mounting the toolbar has nothing to pass it.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `ListToolbar.svelte`'s own module context; stays exported from `list-toolbar.ts`, since `ListToolbar.svelte` still calls it internally for the count line's scope labels.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 9; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 9; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-appliedfilterpill: `AppliedFilterPill`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent of computeAppliedFilters. Appears in no component's prop signature.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `ListToolbar.svelte`'s own module context; stays exported from `list-toolbar.ts`, since it is `computeAppliedFilters`'s own return type.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 10; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 10; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-computeitemrange: `computeItemRange`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Arithmetic Pagination already renders for anyone mounting it.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `Pagination.svelte`'s own module context; stays exported from `pagination-window.ts`, since `Pagination.svelte` still calls it internally for the range line.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 11; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 11; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-itemrange: `ItemRange`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent of computeItemRange; absent from every component's props.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `Pagination.svelte`'s own module context; stays exported from `pagination-window.ts`, since it is `computeItemRange`'s own return type.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 12; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 12; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-computepagewindow: `computePageWindow`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Plausible but unmeasured: a site rendering its own pager chrome wanting cairn's exact elision. No site has asked or hand-rolled it, and cairn ships the component.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `Pagination.svelte`'s own module context; stays exported from `pagination-window.ts`, since `Pagination.svelte` still calls it internally for the page-button window.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 13; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 13; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-pagewindowitem: `PageWindowItem`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent of computePageWindow; absent from every component's props.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `Pagination.svelte`'s own module context; stays exported from `pagination-window.ts`, since it is `computePageWindow`'s own return type.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 14; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 14; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-welcomeview: `WelcomeView`  (keep, 2026-08-26, any-site audit)
@@ -2962,21 +2962,21 @@ when the remediation pass lands.
 
 - **Verdict:** retire. retires with SelectInput; names only its options prop
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted alongside `SelectInput.svelte`, the module that declared it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 23; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 23; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-selectinput: `SelectInput`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. restored pass-1 overturn: .select-sm ships in the packaged sheet whose class inventory is a de facto public API (admin-css-safelist.ts:104); pass-2 keep rested on family adoption, insufficient under constraint 2
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: `SelectInput.svelte` deleted (zero consumers anywhere in the engine); its `FieldLabel`-plus-`<select>` composition is now hand-rolled by any test or doc example that needs it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 24; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 24; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-textinput: `TextInput`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. conflict adjudicated retire over reshape: same shipped-sheet ground as SelectInput; the xcathletes type-union defect (2026-08-21 harvest:21) is recorded and dies with the export
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: `TextInput.svelte` deleted (zero consumers anywhere in the engine); its `FieldLabel`-plus-`<input>` composition is now hand-rolled by any test or doc example that needs it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 25; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 25; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md) (verdict overturned there).
 
 ## audit-admin-fieldlabel: `FieldLabel`  (keep, 2026-08-26, any-site audit)
@@ -3065,7 +3065,7 @@ when the remediation pass lands.
 
 - **Verdict:** superseded. The audit's original keep read: "The engine ships the vocabulary and the site assigns meaning: the same chip serves a publish-state pill and a household-standing pill with no shared domain knowledge baked in." That described the dotted grammar, where `tone` was the ONLY color-carrying axis and had to stay a prop for the site to assign. The 2026-08-24 owner probe (Geoff's own ratification for the CHIP family) fused tone into the register and retired the dot that rendered it, leaving `tone` driving nothing: retiring the prop follows the ratified evidence rather than inventing a tone-times-register color grammar no probe measured. Distinguish `warning-button-tier` (held, deferred 2026-08-26) explicitly: that hold is the BUTTON family's own register question, still Geoff's to rule, and this retirement does not speak to it; the chip warning register was ratified by the owner probe and invents nothing new.
 - **Reopens on:** closed. Executed by the toolkit-seams pass, Task 2: `tone`, `StatusChipTone`, and `STATUS_CHIP_DOT_CLASS` are all removed from `StatusChip`.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 37; superseded in [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 2.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 37; superseded in [2026-08-26 toolkit-seams pass](../plans/2026-08-26-toolkit-seams-pass.md), Task 2.
 - **Any-site case:** No longer applicable; the register itself now carries what tone used to carry, so a site assigns its own meaning to `register`, not to a separate `tone`.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
@@ -3105,7 +3105,7 @@ when the remediation pass lands.
 
 - **Verdict:** retire. Contradicts the ranking's own item 8: the same scenario answers computeCountLine retire and itemNoun keep. It is a function, so in no prop signature, the exact line retiring ItemRange and AppliedFilterPill. Body is one ternary, the gate's fail condition.
 - **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel; stays exported from `format.ts`, since `Pagination.svelte`, `list-toolbar.ts`, and `ConceptList.svelte` all still call it internally.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 42; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 42; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md) (verdict overturned there).
 
 ## audit-admin-formatcivildate: `formatCivilDate`  (keep, 2026-08-26, any-site audit)
@@ -3179,7 +3179,7 @@ when the remediation pass lands.
 
 - **Verdict:** reshape. It carries a real ARIA radiogroup for segmented filters, a role=status count line, and a full disclosure pattern. The one consumer that hand-copied the disclosure 'missed all four on the first pass'.
 - **Reopens on:** closed. Executed as `ToolbarDisclosure` (`/admin-toolkit`), a controlled trigger-plus-panel primitive carrying five dismissal mechanics (aria-expanded/aria-controls, focus-into-panel-on-open, Escape-plus-return-focus, outside-pointerdown, and the facet's own focus-leaves-the-boundary mechanic the original shape missed). `ListToolbar` folds both duplications onto it, its overflow menu and each `'menu'`-display facet; single-open-at-a-time for the facets stays in `ListToolbar` via `openFacetId`, since no self-contained primitive can enforce it across siblings, and the ARIA-menu content layer (role, roving tabindex, reset-to-first) stays in `ListToolbar`'s own panel content, since it is facet behavior, not disclosure mechanics. The Svelte-scoped `:focus-within` neutralizer moved with the container markup it serves, verified by a rendered check against the packaged admin sheet (the same check the original bug needed to be caught at all).
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 51; executed in [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 4.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 51; executed in [2026-08-26 toolkit-seams pass](../plans/2026-08-26-toolkit-seams-pass.md), Task 4.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-pageheader: `PageHeader`  (keep, 2026-08-26, any-site audit)
@@ -3263,7 +3263,7 @@ when the remediation pass lands.
 - **Verdict:** retire. A site building double-submit CSRF on its own member routes needs a random token. generateToken, on the same import line, already is it; the alias adds a third semver'd name and zero capability.
 - **Reopens on:** closed. Executed by the retires pass, batch 1b: unexported from the `/auth-crypto` barrel; stays exported from `auth/crypto.ts`, since `sveltekit/csrf.ts` still calls it internally for the double-submit CSRF token.
 - **Shape:** Body is byte-identical to generateToken (auth/crypto.ts:86); a site wanting the reading name writes a one-line local alias.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 1; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-generatesessionid: `generateSessionId`  (retire, 2026-08-26, any-site audit)
@@ -3271,7 +3271,7 @@ when the remediation pass lands.
 - **Verdict:** retire. A site minting a member session id calls an identical function under a second name. The real edge (how many bytes, URL-safe?) is answered once by generateToken.
 - **Reopens on:** closed. Executed by the retires pass, batch 1b: unexported from the `/auth-crypto` barrel; stays exported from `auth/crypto.ts`, since `sveltekit/auth-routes.ts` still calls it internally to mint a session id.
 - **Shape:** A future divergence, such as a longer session id, is a parameter on one generator, never a second public name.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 2; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 2; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-channel-schema-version: `CHANNEL_SCHEMA_VERSION`  (retire, 2026-08-26, any-site audit)
@@ -3279,7 +3279,7 @@ when the remediation pass lands.
 - **Verdict:** retire. The docs name no consumer action. The comparison it exists for runs inside the factory, and the value is already embedded in CHANNEL_SCHEMA_SQL's own seeding INSERT that the site runs.
 - **Reopens on:** closed. Executed by the retires pass, batch 1b: `export` keyword dropped in `auth-channel/store.ts`; barrel line removed from `auth-channel/index.ts`. Stays a module-internal const, since `store.ts` still reads it in `verifySchema` and the seeding `INSERT`.
 - **Shape:** Publishing an internal version marker as semver surface is surface without capability; a bespoke drift check reads the cairn_channel_meta row instead.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 3; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-devdelivery: `devDelivery`  (retire, 2026-08-26, any-site audit)
@@ -3287,7 +3287,7 @@ when the remediation pass lands.
 - **Verdict:** retire. pass-2 dissent upheld: a hand-rolled transport gets no guard at all (the discoverability class the gate names), and the one built consumer redundantly guards before delegating
 - **Reopens on:** closed. Executed by the retires pass, batch 1b: `auth-channel/dev.ts` deleted outright (zero remaining consumers anywhere in `src/lib`); its barrel line and subject test (`auth-channel-config.test.ts`'s `devDelivery, direct and wrapped` block) deleted with it.
 - **Shape:** Its stated purpose, guarding a dev transport reaching production, is a discoverability problem an export does not fix; a factory-side CAIRN_DEV_BACKEND refusal is a design question for a later pass (createAuthChannel reads no env at construction time, so it cannot observe a per-request value), and until then the refusal lives in the site's own transport body. A site wanting the dev-only console print hand-rolls it with the refusal inside the deliver function itself, never in a caller's wrapper around it, per CHANGELOG.md's migration line and the showcase's own capture-transport.ts.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 4; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 4; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-insertownerifempty: `insertOwnerIfEmpty`  (retire, 2026-08-26, any-site audit)
@@ -3295,7 +3295,7 @@ when the remediation pass lands.
 - **Verdict:** retire. A site seeding its first owner from a setup script. That resolves to listEditors then insertEditor, and the engine already ships the declarative bootstrapOwner config for exactly this outcome.
 - **Reopens on:** closed. Executed by the retires pass, batch 1b: unexported from the `/auth-store` barrel; stays exported from `auth/store.ts`, since `sveltekit/auth-routes.ts` still calls it internally for `bootstrapOwner`.
 - **Shape:** Two public paths to one outcome. The atomic `INSERT ... SELECT ... WHERE NOT EXISTS` race matters on the concurrent bootstrap login path, which `bootstrapOwner` already owns; a site seeding a first owner from a setup script instead resolves to `listEditors` (empty?) then `insertEditor`, both kept.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 5; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 5; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-hashtoken: `hashToken`  (keep, 2026-08-26, any-site audit)
@@ -3337,7 +3337,7 @@ when the remediation pass lands.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 8.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 - **Supersession (polish-C, Task 8, 2026-09-08):** citing
-  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md).
+  [2026-09-08-polish-passes-design.md](../specs/2026-09-08-polish-passes-design.md).
   This row's `Reopens on:` closure text reads "the type keeps with the factory, unchanged". What
   changed: the name (`ChannelRequestOutcome`) and the discriminant key (`outcome`, replacing the
   bare `sent`/`error` split). What did not: the type still declares in `factory.ts`, and the
@@ -3358,7 +3358,7 @@ when the remediation pass lands.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 9.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 - **Supersession (polish-C, Task 8, 2026-09-08):** citing
-  [2026-09-08-polish-passes-design.md](../superpowers/specs/2026-09-08-polish-passes-design.md).
+  [2026-09-08-polish-passes-design.md](../specs/2026-09-08-polish-passes-design.md).
   This row's `Reopens on:` closure text reads "the type keeps with the factory, unchanged". What
   changed: the name (`ChannelConfirmOutcome`) and the discriminant key (`outcome`, replacing the
   `ok: true` / `error: ...` split, with the success arm now `outcome: 'confirmed'`). What did not:
@@ -3539,7 +3539,7 @@ when the remediation pass lands.
   explicitly NOT executed, left as the one residual on `audit-auth-authchannelconfig`.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 15;
   [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md), item 15;
-  [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), ratified
+  [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), ratified
   ruling 8, Task 1, and Task 8.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md)
   (premise refuted there, verdict stands; shape further reopened by the 2026-08-30 sitting above).
@@ -3583,7 +3583,7 @@ when the remediation pass lands.
   the target's role and dispatches between this function and `demoteOwnerIfNotLast`.
 - **Shape:** `setEditorRole(db, email, role, ownerRoles)` takes the owner-capability vocabulary and becomes the one general-purpose role change a caller needs: one conditional `UPDATE` whose `WHERE` encodes "not a demotion out of owner-capability OR another owner-capability row remains" (atomic statement first, never a preceding read). Returns `{ outcome: 'ok' } | { outcome: 'last-owner' } | { outcome: 'not-found' }`; on `changes === 0` a follow-up read purely classifies which of the two refusal cases applies. Replaces the caller-side `findEditor`-then-branch protocol `editorSetRoleAction` used to run against `demoteOwnerIfNotLast`.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 19;
-  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
+  executed by [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md) (verdict overturned there).
 
 ## audit-auth-listeditors: `listEditors`  (keep, 2026-08-26, any-site audit)
@@ -3616,7 +3616,7 @@ when the remediation pass lands.
   `removeOwnerIfNotLast` survives as the narrower owner-only guard (see rank 24, closed below).
 - **Shape:** `deleteEditor(db, email, ownerRoles)` takes the owner-capability vocabulary and becomes the one general-purpose removal a caller needs: one atomic `DELETE` whose `WHERE` encodes "not owner-capability OR another owner-capability row remains" (no preceding read of the target's role). Returns `{ outcome: 'removed' } | { outcome: 'last-owner' } | { outcome: 'not-found' }`; on `changes === 0` a follow-up existence read purely classifies the refusal, since every non-refusal case would already have matched. Resolves the two-export dispatch: a caller no longer pre-fetches the target's role and branches between `deleteEditor` and `removeOwnerIfNotLast`. `removeOwnerIfNotLast` survives as the narrower owner-only guard (see rank 24).
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 22;
-  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
+  executed by [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md) (verdict overturned there).
 
 ## audit-auth-demoteownerifnotlast: `demoteOwnerIfNotLast`  (reshape, 2026-08-26, any-site audit)
@@ -3629,7 +3629,7 @@ when the remediation pass lands.
   asserts exactly one succeeds.
 - **Shape:** Keeps its existing narrow, owner-only atomic `UPDATE` (matching only `ownerRoles` rows), but the `boolean` return becomes `{ outcome: 'ok' } | { outcome: 'last-owner' } | { outcome: 'not-eligible' }`. `not-eligible`, not `not-found`: the follow-up read on `changes === 0` can only establish "no row matched email AND owner-capability", which conflates absent-from-roster with present-but-not-owner, so the discriminant names only what the predicate knows.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 23;
-  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
+  executed by [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md) (verdict overturned there).
 
 ## audit-auth-removeownerifnotlast: `removeOwnerIfNotLast`  (reshape, 2026-08-26, any-site audit)
@@ -3642,7 +3642,7 @@ when the remediation pass lands.
   asserts exactly one succeeds.
 - **Shape:** Keeps its existing narrow, owner-only atomic `DELETE` (matching only `ownerRoles` rows), but the `boolean` return becomes `{ outcome: 'ok' } | { outcome: 'last-owner' } | { outcome: 'not-eligible' }`, the same three-arm grammar and `not-eligible` reasoning as `demoteOwnerIfNotLast` above. Survives alongside the generalized `deleteEditor` (rank 22) as the narrower guard a caller reaches for when it specifically wants an owner-only removal refused outright rather than silently no-opping.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 24;
-  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
+  executed by [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md) (verdict overturned there).
 
 ## audit-cloudflare-verifyturnstileoptions: `VerifyTurnstileOptions`  (keep, 2026-08-26, any-site audit)
@@ -3661,7 +3661,7 @@ when the remediation pass lands.
   `checkRateLimitKeys` pair, per this entry's own ruled shape.
 - **Shape:** Folds with rank 3 into one export, `resolveRateLimit(binding, keys: string | string[])`, replacing the `checkRateLimit`/`checkRateLimitKeys` boolean pair. Returns a four-arm discriminated result: `{ outcome: 'allowed' } | { outcome: 'limited'; key: string } | { outcome: 'no-binding' } | { outcome: 'failed'; error: unknown }`, keeping the documented short-circuit (the first failing key stops the loop) and the broadest-first ordering guidance in one place instead of two exports.
 - **Record:** [rank-cloudflare-audit-sink.md](record/2026-08-26-any-site-audit/rank-cloudflare-audit-sink.md), rank 2;
-  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
+  executed by [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-cloudflare-audit-sink.md](record/2026-08-26-any-site-audit/verify-cloudflare-audit-sink.md).
 
 ## audit-cloudflare-checkratelimit: `checkRateLimit`  (reshape, 2026-08-26, any-site audit)
@@ -3675,7 +3675,7 @@ when the remediation pass lands.
   are unchanged.
 - **Shape:** One export taking `string | string[]` and returning an outcome that names the absent-binding case instead of folding it into `true` — the four-arm `resolveRateLimit` result rank 2 records. The helper captures a throwing `limit()` into the `failed` arm; degrade-to-open on that throw stays each caller's own decision, exactly as `createSectionAction` already had to hand-roll.
 - **Record:** [rank-cloudflare-audit-sink.md](record/2026-08-26-any-site-audit/rank-cloudflare-audit-sink.md), rank 3;
-  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
+  executed by [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-cloudflare-audit-sink.md](record/2026-08-26-any-site-audit/verify-cloudflare-audit-sink.md).
 
 ## audit-cloudflare-verifyturnstile: `verifyTurnstile`  (keep, 2026-08-26, any-site audit)
@@ -3772,21 +3772,21 @@ when the remediation pass lands.
   `createMediaResolver(manifest, resolved): MediaResolve`. The `{ preset: 'inline' }` assertion and
   the "applies a named preset" test case in `resolve-media.test.ts` are removed with it.
 - **Record:** [rank-media.md](record/2026-08-26-any-site-audit/rank-media.md), rank 7; executed by
-  [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 3.
+  [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 3.
 - **Verified:** [verify-media.md](record/2026-08-26-any-site-audit/verify-media.md) (verdict overturned there).
 
 ## audit-delivery-ai-crawlers-reviewed: `AI_CRAWLERS_REVIEWED`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A bare date string whose only meaning is that the engine's own table may be stale; a consumer cannot refresh, override, or substitute the table buildRobots applies unconditionally.
 - **Reopens on:** closed. Executed by the retires pass, batch 1c: deleted outright from `ai-crawlers.ts` (zero remaining consumers anywhere in `src/lib`); its barrel line and subject test (`delivery-ai-crawlers.test.ts`'s `AI_CRAWLERS_REVIEWED` block) deleted with it.
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 1; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md).
 
 ## audit-delivery-aicrawler: `AiCrawler`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent. Parasitic on AI_CRAWLERS: nothing in the engine accepts an AiCrawler, so a consumer can only name it while holding the table that itself fails.
 - **Reopens on:** closed. Executed by the retires pass, batch 1c: dropped the `export` keyword in `ai-crawlers.ts` (consumed only inside its declaring module, by `AI_CRAWLERS`'s own array-literal type) and its barrel line in `data.ts`.
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 2; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 2; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md).
 
 ## audit-delivery-ai-crawlers: `AI_CRAWLERS`  (retire, 2026-08-26, any-site audit)
@@ -3794,7 +3794,7 @@ when the remediation pass lands.
 - **Verdict:** retire. Weak. buildRobots already applies it (robots.ts:42); importing it means reimplementing robots.txt. Sibling CONTENT_SIGNAL, same module and same doctor consumer, is deliberately internal.
 - **Reopens on:** closed. Executed by the retires pass, batch 1c: the module-level export stays in `ai-crawlers.ts`, since `robots.ts` and `doctor/check-posture.ts` still import it internally; only its barrel line in `data.ts` is dropped.
 - **Shape:** Demote the public export; keep the module internal beside CONTENT_SIGNAL, which the doctor already reaches by relative import.
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 3; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md).
 - **Progress note (doctor-retirement, retire-2a, 2026-09-21):** this entry's evidence cites
   `doctor/check-posture.ts` as a cross-module consumer of `AI_CRAWLERS` and its sibling
@@ -3810,7 +3810,7 @@ when the remediation pass lands.
 - **Verdict:** retire. Both arms fail. The hasTaxonomy guard (views.ts:26,35) is dead: content-index.ts:129 already sets tags:[] absent a taxonomy field, so nothing in feedView is consumer-unreachable. And routing:'feed' bundles inFeeds (concepts.ts:17); ASC takes it on bulletins for dated permalinks (cairn.config.ts:272) while excluding them from its feed, so inFeeds is not trustworthy membership.
 - **Reopens on:** closed. Executed by the retires pass, batch 1c: `feedView` deleted outright from `views.ts` (zero remaining consumers anywhere in `src/lib`); its barrel line and subject test (`delivery-views.test.ts`'s `feedView` block) deleted with it.
 - **Shape:** The reshape candidacy considered and rejected by the verification pass (an optional per-item render hook, or the `inFeeds`-filtered `ContentSummary[]` a site maps itself) does not rescue it: `ContentSummary` already carries `permalink`, `excerpt`, and normalized `tags`, so a site hand-writing its own `feed.ts` (as all six family sites already do, near-verbatim) reproduces the routing filter in one line off the already-public `inFeeds` flag. `FeedItem` stays and is what makes the retirement costless.
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 4; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 4; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md) (verdict overturned there).
 
 ## audit-delivery-unlistedroutes: `unlistedRoutes`  (retire, 2026-08-26, any-site audit)
@@ -3818,7 +3818,7 @@ when the remediation pass lands.
 - **Verdict:** retire. Reshape presupposes membership. The proposed glob-taking form still parses SvelteKit's own published route-id grammar (sitemap.ts:31-41, two regexes), touches no descriptor or content-model type, and emits no delivery document, so both arms fail in the reshaped form too. 907-life copies the doc's boilerplate verbatim (sitemap.test.ts:40-52).
 - **Reopens on:** closed. Executed by the retires pass, batch 1c: `unlistedRoutes` deleted outright from `sitemap.ts`, taking its two now-orphaned private helpers (`isDynamicRouteId`, `routeIdToPath`) with it (zero remaining consumers anywhere in `src/lib`); its barrel line and subject test (`delivery-sitemap.test.ts`'s `unlistedRoutes` block) deleted with it.
 - **Shape:** Move the check into `cairn-audit` or `cairn-doctor`, per the workstation rule that the mechanically detectable half never lives in a consuming site's own probe script: both arms of the export gate fail regardless of form, since the grammar it parses is SvelteKit's own, not cairn's, and it emits no delivery document.
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 5; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 5; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md) (verdict overturned there).
 
 ## audit-delivery-publicroutes: `PublicRoutes`  (reshape, 2026-08-26, any-site audit; REOPENED 2026-08-30, conventions-pass sitting)
@@ -3848,9 +3848,9 @@ when the remediation pass lands.
   re-exported from `/delivery`. Verified by `check:reference`/`check:reference:signatures` and the
   compile-only fixture `src/tests/unit/factory-contracts.test.ts`.
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 6;
-  executed (retire) in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md),
+  executed (retire) in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md),
   Task 1 batch 1c; reopened by
-  [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), ratified
+  [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), ratified
   ruling 2, Task 1, and Task 2.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md) (verdict
   overturned there); shape further reopened by the 2026-08-30 sitting above.
@@ -4252,7 +4252,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 
 - **Verdict:** retire. Generally applicable but unnecessary: the body is `!!node && node.type === 'element'` over hast types the site already imports, and hast-util-is-element exists.
 - **Reopens on:** closed. Executed by the retires pass, batch 1c: the module-level export stays in `rehype-dispatch.ts` (its own other transform functions call it internally); only its barrel line in `render/authoring.ts` (the `/render` subpath) is dropped.
-- **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 4; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
+- **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 4; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
 
 ## audit-render-strattr: `strAttr`  (reshape, 2026-08-26, any-site audit)
@@ -4292,7 +4292,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Verdict:** retire. None. Unimported by the only consumer; enumerating the registry is build-time work that belongs on the node-safe manifest, so this export points a consumer at the Svelte half.
 - **Reopens on:** closed. Executed by the retires pass, batch 1c: dropped the `export` keyword in `reproductions/index.ts` (consumed only inside its declaring module, by `getStory`); `reproductions-stories.test.ts`'s "universal story contract" loop repointed onto `manifest` filtered through `getStory`, the seam the real admin reaches a story through, rather than the array directly.
 - **Shape:** Un-export; keep module-internal for getStory and the in-repo test.
-- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
+- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 1; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md).
 
 ## audit-repro-fixturemediabase: `fixtureMediaBase`  (reshape, 2026-08-26, any-site audit)
@@ -4307,7 +4307,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   compose at render time from context plus asset slug/hash/ext rather than being baked into
   fixture data.
 - **Shape:** Make the media base a ReproContext prop defaulting to /repro-assets; the site owns its URL space and the constant export can go.
-- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 2; executed by [2026-09-01-conformance-pass.md](../superpowers/plans/2026-09-01-conformance-pass.md), Task 6.
+- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 2; executed by [2026-09-01-conformance-pass.md](../plans/2026-09-01-conformance-pass.md), Task 6.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md).
 
 ## audit-repro-reproinstance: `ReproInstance`  (retire, 2026-08-26, any-site audit)
@@ -4326,7 +4326,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   loses its declaration, its `manifest.ts:331` re-export, and the reference-page entry. Retiring
   leak-free: verified with the regenerated `api-surface.md` carrying zero hits for the name.
 - **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 4; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS); executed
-  by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 9.
+  by [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 9.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md) (verdict overturned there).
 
 ## audit-repro-reproheights: `ReproHeights`  (keep, 2026-08-26, any-site audit)
@@ -4350,7 +4350,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   hardcoded version enforced) rather than the engine baking it in.
 - **Shape:** Keep and export only the manifest-dependent half; move the alt prefix, 150-char ceiling, and closed key set behind caller options or back to the site.
 - **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 6; executed by
-  [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 9.
+  [2026-08-30-conventions-pass.md](../plans/2026-08-30-conventions-pass.md), Task 9.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md).
 
 ## audit-repro-repromanifestentry: `ReproManifestEntry`  (keep, 2026-08-26, any-site audit)
@@ -4639,7 +4639,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `taxonomy.field_unmarked` ride the one unpublished breaking window with a `Consumers must:` line
   naming each, above the `0.96.0` boundary under `## Unreleased`; a consumer upgrading across the
   window crosses one rename, not two. Per
-  `docs/superpowers/specs/2026-09-08-polish-passes-design.md`, 2026-09-08.
+  `docs/specs/2026-09-08-polish-passes-design.md`, 2026-09-08.
 
 ## audit-log-media-orphans-purged: `media.orphans_purged`  (keep, 2026-08-26, any-site audit)
 
@@ -5000,21 +5000,21 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 
 - **Verdict:** retire. None inside cairn-audit. cairn-audit is a design-language audit that 'ships whole, as consumer product' and whose 23 rules all audit /admin; a rule counting engine call sites can never fire in a consumer tree, and check-package-files.mjs:172-178 forces any registered rule to ship. The rule itself is right; the home is wrong.
 - **Reopens on:** closed. Executed by the retires pass, batch 1b: a process/tooling proposal, not an exported symbol; closing declines the proposed home. No code shape to record. shape-needs-rederivation.
-- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
+- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 1; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
 ## audit-cli-unlistedroutes-proposed-as-a-cairn-audit-rendered-rule: `unlistedRoutes proposed as a cairn-audit rendered rule`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Fails both arms. The verify pass established the function encodes 'SvelteKit's published grammar, not cairn's (sitemap.ts:31-41 is two regexes)'; relocating two regexes does not change whose grammar they are. Subject is wrong twice: sitemap completeness is not design, and the routes are public pages outside the /admin surface every rule audits. The harness cannot do it either, since rendered rules receive a page's DOM, never the route manifest.
 - **Reopens on:** closed. Executed by the retires pass, batch 1b: a process/tooling proposal, not an exported symbol; closing declines the proposed relocation. The `unlistedRoutes` export itself is a separate ledger entry (`audit-delivery-unlistedroutes`, batch 1c). No code shape to record. shape-needs-rederivation.
-- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 2; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
+- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 2; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
 ## audit-cli-skill-admin-screens-check-and-cairn-doctor-fix: `skill.admin-screens check and cairn-doctor --fix`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Weak and hazardous. The doctor 'probes the configuration a deployed cairn site depends on'; a Claude Code skill is not that, and the check 'never fails ... a development aid, not a deploy blocker'. It assumes one specific agent harness (.claude/skills/), and the docs concede the install leaks utility class names into the consumer's shipped CSS unless they add an '@source not' directive by hand.
 - **Reopens on:** closed. Executed by the retires pass, batch 1b: a process/tooling proposal, not an exported symbol; closing declines the proposed doctor check. No code shape to record. shape-needs-rederivation.
-- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
+- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 3; executed in [2026-08-30 retires-pass](../plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 - **Note (extend-2, Task 4):** the 2026-08-30 close named this ruling a process/tooling proposal
   with no code shape, but `skill.admin-screens`, `skill.admin-screens-stale`, and
@@ -5060,7 +5060,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** `src/lib/guidance/bin.ts`, `check.ts`, `install.ts`; the packaged `claude/` directory
   (`CLAUDE.md`, `agents/cairn-extension-reviewer.md`, `snippets/*`); the scaffold's bake writing
   the tree, `VERSION`, and `MANIFEST` at prepack.
-- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`, "Layer 3: guidance" and "Trust
+- **Record:** `docs/specs/2026-09-12-extend-design.md`, "Layer 3: guidance" and "Trust
   boundary."
 - **Verified:** `src/tests/unit/guidance/bin.test.ts`, `check.test.ts`, `install.test.ts`;
   `src/tests/unit/packaging-guidance.test.ts` (the tarball ships the packaged tree byte-identical
@@ -5537,7 +5537,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** a consumer-facing rule shipping straight at error tier with no advisory window,
   or a promotion version landing without every advisory message it promotes being updated in the
   same release.
-- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`, the ruled inputs this plan's
+- **Record:** `docs/specs/2026-09-12-extend-design.md`, the ruled inputs this plan's
   "Ruled inputs" section carries forward; `src/lib/audit/rules/static/log-event-grammar.ts`,
   `log-secret-field.ts`, and `stock-default-hazards.ts`.
 - **Verified:** each rule's own test fixture asserts the `advisory` tier and the literal
@@ -5854,7 +5854,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   observe a per-request value)." This task is that later pass: the factory reads the flag at each
   per-request entry point instead of at construction, which is what makes the per-request host
   witness available to pair it with.
-- **Record:** `docs/superpowers/plans/2026-09-01-internals-pass.md`, Task 9, and "The rulings"
+- **Record:** `docs/plans/2026-09-01-internals-pass.md`, Task 9, and "The rulings"
   (ruling 4) and the round-1 review fold (S-1, S-2), both in the same plan file.
 - **Verified:** `src/tests/unit/auth-channel-dev-backend-tripwire.test.ts` (flag set + non-local
   refuses on `request`/`confirm`/`logout` with a hard throw carrying `guard.ts`'s own message and
@@ -5894,7 +5894,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   id. The event fires alongside, never instead of, the existing throw-on-bad-key checks, and never
   blocks composition. `src/lib/log/events.ts` and `docs/reference/log-events.md` carry the new
   vocabulary entry.
-- **Record:** `docs/superpowers/plans/2026-09-01-internals-pass.md`, Task 10, and "The rulings"
+- **Record:** `docs/plans/2026-09-01-internals-pass.md`, Task 10, and "The rulings"
   (ruling 2).
 - **Verified:** `src/tests/unit/access-composition.test.ts` (the warning fires naming every
   concept and fixed screen a partial map leaves unmapped, stays silent against an exhaustive map,
@@ -5942,7 +5942,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   fallback.
 - **Reopens on:** a sixth dispatch site is added over `FieldDescriptor` without the guard.
 - **Record:** [int-coherence.md, finding 6](record/2026-08-26-any-site-audit/int-coherence.md);
-  [2026-09-03 internals-C pass](../superpowers/plans/2026-09-03-internals-c-pass.md), Task 1.
+  [2026-09-03 internals-C pass](../plans/2026-09-03-internals-c-pass.md), Task 1.
 - **Verified:** `src/tests/unit/content-unreachable.test.ts`; the five dispatch sites' characterization suites
   (`content-frontmatter.test.ts`, `fieldset-validate.test.ts`, `fields-icon.test.ts`,
   `field-input.test.ts`, `ComponentForm.test.ts`), byte-stable across the rewrite; the sixteenth-arm
@@ -5994,7 +5994,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   trip runs takes native `disabled` plus an always-mounted status region; a guarded control,
   refused with a reason, keeps `aria-disabled` with the `cairn-btn-guarded` marker so its
   tooltip survives"
-  (`docs/superpowers/specs/2026-09-08-polish-passes-design.md`, decision 7, 2026-09-08).
+  (`docs/specs/2026-09-08-polish-passes-design.md`, decision 7, 2026-09-08).
   `ShareLinkPanel` converges on the first shape, native `disabled` plus the always-mounted
   status region, at this pass's Task 6.
 - **Reopens on:** a third busy shape a future screen needs that neither native `disabled` plus a
@@ -6007,7 +6007,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   four components on that shape before the rule was written
   (`MediaUploadDialog`, `MediaHeroField`, `MediaReplaceDialog`, `MediaCaptureCard`); the narrowing
   is this plan's own declared amendment
-  (`docs/superpowers/plans/2026-09-08-polish-11b-i-pass.md`, the Reconciliation block's
+  (`docs/plans/2026-09-08-polish-11b-i-pass.md`, the Reconciliation block's
   Corrections section), not decision 7's text.
 - **Verified:** `docs/internal/admin-design-system.md`'s busy section names both shapes with their
   conditions and reasons, and no code in this pass's diff.
@@ -6060,7 +6060,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** delete `OfficeList.svelte` and its export from `/admin-toolkit`; a screen composes
   `PageHeader` beside `AdminTable` inside `card-shell card-shadow` instead of a component that
   wraps both.
-- **Record:** `docs/superpowers/specs/2026-09-08-polish-passes-design.md` (2026-09-08), decision 8
+- **Record:** `docs/specs/2026-09-08-polish-passes-design.md` (2026-09-08), decision 8
   ("`OfficeList` retires... `AdminTable` is the sole scroll owner").
 - **Verified:** `src/lib/admin-toolkit/index.ts` no longer exports `OfficeList`;
   `docs/extend/migration-notes.md` carries the replacement composition as a `svelte` fence with
@@ -6077,7 +6077,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   element carries. Amended 2026-09-13: the decision as first ruled named zen mode and said
   'enforced by selector', and the amendment gives the case a neutral name and a borrowable key.
   Zen mode keeps its feature name in the admin."
-  (`docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, "Decisions (Geoff,
+  (`docs/specs/2026-09-13-admin-motion-language-design.md`, "Decisions (Geoff,
   2026-09-13)", decision 3, 2026-09-13.)
 - **Reopens on:** a second page-level mode change needing a layout-property allowance the
   attribute key cannot express, or the shell dropping `data-cairn-motion="frame-offset"` from its
@@ -6100,7 +6100,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   (`.modal`, `.drawer`, `.collapse`, `.btn`). cairn's rules enforce authored code. The audit
   treats a DaisyUI component class as a vendor contribution, checked for the properties it
   animates rather than its durations."
-  (`docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, "Decisions (Geoff,
+  (`docs/specs/2026-09-13-admin-motion-language-design.md`, "Decisions (Geoff,
   2026-09-13)", decision 4, 2026-09-13.)
 - **Reopens on:** the admin adopting `modal-bottom` at narrow widths, which makes the declined
   `.modal-box` scale override warranted (the travel becomes the viewport rather than roughly
@@ -6124,7 +6124,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `src/lib/components/cairn-admin.css`) stands, since it sets `pointer-events` and a background,
   not a timing. The theme identity pass moved every other override of a DaisyUI declaration into
   the `utilities.cairn-idiom` sublayer, so this rule is the one unlayered `.btn` override left.
-  Record: `docs/superpowers/specs/2026-09-26-theme-identity-design.md`, the paragraph on retiring
+  Record: `docs/specs/2026-09-26-theme-identity-design.md`, the paragraph on retiring
   rules 10 to 12 (review finding CS-B1).
 
 ## motion-tooltip-menu-hover-guards-dropped: dropping the `.tooltip`/`.menu` hover guards  (decline, 2026-09-15, admin motion)
@@ -6139,7 +6139,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   opens and sticks) is filed to the borrowable-patterns borrow-1 pass beside the rendered
   hover-gate half, carrying the review's finding that a transition guard does not fix a
   visibility rule."
-  (`docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, "Revision 2
+  (`docs/specs/2026-09-13-admin-motion-language-design.md`, "Revision 2
   (2026-09-13)", 2026-09-13.)
 - **Reopens on:** the borrow-1 pass taking up the `.tooltip` touch defect and the rendered half of
   `motion-hover-gate`, per the follow-ups this pass files to ROADMAP's "Borrowable patterns" tier.
@@ -6159,7 +6159,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `isPersistentSidebar` widths. Geoff ruled against it (2026-09-13): "2. **The drawer scoping to
   `isPersistentSidebar` is dropped.** The persistent drawer's vendor transition is recorded as a
   fifth vendor disagreement. The frame offset exception stands as decided."
-  (`docs/superpowers/specs/2026-09-13-admin-motion-language-design.md`, "Revision 2
+  (`docs/specs/2026-09-13-admin-motion-language-design.md`, "Revision 2
   (2026-09-13)", 2026-09-13.) The only form the scoping could take was a rule targeting
   `.drawer-side`, an unlayered override of `.drawer`, which decision 4 forbids.
 - **Reopens on:** the resize stopper's working form (a universal descendant rule costing one
@@ -6230,7 +6230,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** `src/lib/admin-toolkit/Tooltip.svelte`; the sweep across
   `src/lib/components/*.svelte`, re-grepped and swept at dispatch rather than trusting the
   authoring-time count; `stock-default-hazards`'s new advisory arm naming the retired class.
-- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`, "Batch actions on `AdminTable`
+- **Record:** `docs/specs/2026-09-12-extend-design.md`, "Batch actions on `AdminTable`
   is engine work riding along, not an atom" (the paragraph carrying ASC's evidence);
   `docs/internal/admin-design-system.md`, the tooltip recipe.
 - **Verified:** `src/tests/component/Tooltip.test.ts` (hover, `:focus-visible`, Escape, coarse
@@ -6280,7 +6280,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   label: string }` and `batchBar?: Snippet<[{ count: number; clear: () => void }]>`; the header
   checkbox, its indeterminate state, and the batch region are `AdminTable`'s own; each row's
   checkbox `<td>` stays the caller's.
-- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`, "Batch actions on
+- **Record:** `docs/specs/2026-09-12-extend-design.md`, "Batch actions on
   `AdminTable` is engine work riding along, not an atom."
 - **Verified:** `src/tests/component/AdminTable.test.ts`'s extended cases (the no-`selection`
   render against the committed fixture, an empty set rendering no bar, a partial set rendering an
@@ -6307,7 +6307,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   five-line form depends on.
 - **Shape:** `examples/showcase/src/admin.css`, the five-line entry; `.cairn/admin.css`, the
   compiled fixed-path output; `cairn-audit.config.json` naming both sheets under `sheet`.
-- **Record:** `docs/superpowers/specs/2026-09-12-extend-design.md`; `examples/showcase/e2e/admin-sheet.spec.ts`.
+- **Record:** `docs/specs/2026-09-12-extend-design.md`; `examples/showcase/e2e/admin-sheet.spec.ts`.
 - **Verified:** the e2e proof's content-keyed assertion (the concatenated stylesheet bodies per
   admin page contain the chosen utility's declaration; the public pages' do not), run at the
   post-merge ritual against the branch-point fixture; the static half (`cairn-audit` fails on the
@@ -6381,8 +6381,8 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** `configSiteConfig` in `tool/internal/doctor/check_siteconfig.go` holds the status arms
   alone and `siteconfig.go` owns the read and the parse predicate; a found file that fails the
   predicate fails the check, and no file at any candidate path is `unchecked`, never a fail.
-- **Record:** `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, "Checks", the
-  `config.site-config` bullet; `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`, Task 5.
+- **Record:** `docs/specs/2026-09-21-doctor-retirement-design.md`, "Checks", the
+  `config.site-config` bullet; `docs/plans/2026-09-21-doctor-retire-1-go.md`, Task 5.
 - **Any-site case:** a consumer whose `site.config.yaml` carries a field the current engine no
   longer reads. The preflight passes, and the config still surfaces in two other places: the
   scaffolded template parses the config at module load, so a template-shaped site fails its build,
@@ -6410,7 +6410,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `tool/internal/doctor/testdata/golden/`; no `internal/doctor` import of `internal/render` beyond
   the `DoctorSchemaVersion` constant, and no terminal query, which satisfies
   `cmd/cairn/root_test.go`'s terminal-confinement test trivially.
-- **Record:** `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`, "Decisions this plan
+- **Record:** `docs/plans/2026-09-21-doctor-retire-1-go.md`, "Decisions this plan
   makes", decision 3; `tool/docs/reference/cli-cairn-doctor.md`.
 - **Any-site case:** an operator running `cairn doctor --theme light` on any site and seeing the
   same bytes as without the flag. The inert flags are named in the command's own help so the
@@ -6431,7 +6431,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** a mirror generated from anything other than the built `dist/`, or a Go test
   naming the providers package's repository-root finder again, which
   `TestConditionTestFilesNameNoRepoRoot` fails on today.
-- **Record:** `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`, Task 2;
+- **Record:** `docs/plans/2026-09-21-doctor-retire-1-go.md`, Task 2;
   `tool/internal/spine/conditions_test.go`, whose header carries the old test's ruling comment.
 - **Any-site case:** an agent reading the published check-id list. A renamed engine condition id
   now fails the Go gate as a set mismatch with a note saying the rename is a major-version event,
@@ -6453,7 +6453,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   the nearest existing ancestor through `filepath.EvalSymlinks`, and checks containment again.
 - **Reopens on:** a Go read path under `tool/` that resolves a candidate without
   `filepath.EvalSymlinks`, which is the defect this entry exists to keep out.
-- **Record:** `docs/superpowers/specs/2026-09-21-doctor-retirement-design.md`, "Containment";
+- **Record:** `docs/specs/2026-09-21-doctor-retirement-design.md`, "Containment";
   `tool/internal/doctor/fileread.go` (`readUnder`, `contains`, `realpathNearestAncestor`) and
   `snapshot.go`'s one-time `EvalSymlinks` of `dir`.
 - **Any-site case:** any site whose tree carries a symlink, a pnpm store or a monorepo package
@@ -6482,7 +6482,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `DoctorSchemaVersion`, so `render` gains one exported name and no new direct require; the
   widening of `reason.not-run` is stated in one sentence on `json-output.md`'s `cairn doctor`
   section.
-- **Record:** `docs/superpowers/plans/2026-09-21-doctor-retire-1-go.md`, "Decisions this plan
+- **Record:** `docs/plans/2026-09-21-doctor-retire-1-go.md`, "Decisions this plan
   makes", decision 8; `tool/docs/reference/json-output.md`.
 - **Any-site case:** an agent parsing `cairn doctor --json` on any site. It switches on the same
   five state words and the same eight reason codes it already knows, and needs to learn one
@@ -6503,9 +6503,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** The bin (`cairn-doctor`) and `src/lib/doctor/` are removed from the npm package
   entirely; all eleven of its ported checks (eight file-only, three facts-dependent) run under
   `cairn doctor` (`tool/v1.1.0`) instead.
-- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md);
-  executed by [2026-09-21-doctor-retire-2-engine.md](../superpowers/plans/2026-09-21-doctor-retire-2-engine.md)
-  and [2026-09-21-doctor-retire-2b-records.md](../superpowers/plans/2026-09-21-doctor-retire-2b-records.md).
+- **Record:** [2026-09-21-doctor-retirement-design.md](../specs/2026-09-21-doctor-retirement-design.md);
+  executed by [2026-09-21-doctor-retire-2-engine.md](../plans/2026-09-21-doctor-retire-2-engine.md)
+  and [2026-09-21-doctor-retire-2b-records.md](../plans/2026-09-21-doctor-retire-2b-records.md).
 
 ## doctor-drop-github-app: `github.app` check dropped, not ported, from `cairn doctor`  (retire, 2026-09-21, doctor-retirement spec)
 
@@ -6520,7 +6520,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `github.app-unreachable`, stays in `src/lib/diagnostics/conditions.ts`; it is not unraised, since
   `src/lib/github/credentials.ts:20` still raises it at Publish time, the substitute this entry
   names.
-- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../specs/2026-09-21-doctor-retirement-design.md), ruling 8.
 - **Annotation (2026-10-09, engine pass before stage 2b, pass A):** the named gap closes. A never-published site now has a signal before its
   first Publish: `/healthz?live=1` mints one installation token from the deployed key and reports
   whether GitHub accepts it as `checks.githubAppToken`, and a plain `/healthz` reports the key's
@@ -6540,7 +6540,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** `config.tidy-key` is absent from `cairn doctor`'s eleven checks. Its condition id,
   `config.tidy-key-missing`, stays in `src/lib/diagnostics/conditions.ts`, unraised: no other code
   path raises it now that the check that owned it is gone.
-- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../specs/2026-09-21-doctor-retirement-design.md), ruling 8.
 
 ## doctor-drop-login-envelope-probe: the `--probe` login-envelope arm dropped, not ported, from `cairn doctor`  (retire, 2026-09-21, doctor-retirement spec)
 
@@ -6553,7 +6553,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Shape:** The login-envelope arm is absent from `cairn doctor`'s eleven checks. Its condition
   id, `admin.login-probe-failed`, stays in `src/lib/diagnostics/conditions.ts`, unraised: `csrf.ts`
   already documents it as currently unraised, and this drop does not change that.
-- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../specs/2026-09-21-doctor-retirement-design.md), ruling 8.
 
 ## doctor-defer-workers-dev-exposure: the `--probe` workers.dev exposure arm deferred to 1.x  (defer, 2026-09-21, doctor-retirement spec)
 
@@ -6562,9 +6562,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   pre-adoption contract carries no credential.
 - **Reopens on:** the tool gains the credentialed read filed beside the agent-permission check
   (ROADMAP.md's "1.1 is headed by the agent-permission check" bullet, or
-  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
+  `docs/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
   question is ruled.
-- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8; filed to `ROADMAP.md`.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../specs/2026-09-21-doctor-retirement-design.md), ruling 8; filed to `ROADMAP.md`.
 
 ## doctor-defer-send-test-rerun: `--send-test`'s any-time re-run deferred to 1.x  (defer, 2026-09-21, doctor-retirement spec)
 
@@ -6577,9 +6577,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   needing an adopted record and a Cloudflare read credential, so it does not substitute.
 - **Reopens on:** the tool gains the credentialed read filed beside the agent-permission check
   (ROADMAP.md's "1.1 is headed by the agent-permission check" bullet, or
-  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
+  `docs/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
   question is ruled.
-- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 1; filed to `ROADMAP.md`.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../specs/2026-09-21-doctor-retirement-design.md), ruling 1; filed to `ROADMAP.md`.
 
 ## doctor-defer-d1-reads: the three D1 reads (`auth.store`, `auth.role-vocabulary`, `auth.email-normalization`) deferred to 1.x  (defer, 2026-09-21, doctor-retirement spec)
 
@@ -6588,9 +6588,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   credential-free `cairn doctor` contract does not carry.
 - **Reopens on:** the tool gains the credentialed read filed beside the agent-permission check
   (ROADMAP.md's "1.1 is headed by the agent-permission check" bullet, or
-  `docs/superpowers/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
+  `docs/specs/2026-09-21-cairn-tool-after-1-0-framing.md`), where the write-credential
   question is ruled.
-- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 8; filed to `ROADMAP.md`.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../specs/2026-09-21-doctor-retirement-design.md), ruling 8; filed to `ROADMAP.md`.
 
 ## site-facts-json: `src/content/.cairn/site-facts.json`, a committed cross-language facts file  (accept, 2026-09-21, doctor-retirement spec)
 
@@ -6603,13 +6603,13 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** closed. Executed by the pre-task (`writeManifest`/`buildStart` in
   `src/lib/vite/internal.ts`): a stale file fails the build exactly as a stale manifest does; an
   absent file never fails a build, since no site's `build` script runs `cairn-manifest` yet.
-- **Record:** [2026-09-21-doctor-retirement-design.md](../superpowers/specs/2026-09-21-doctor-retirement-design.md), ruling 7, and the pre-task's "`site-facts.json`" section.
+- **Record:** [2026-09-21-doctor-retirement-design.md](../specs/2026-09-21-doctor-retirement-design.md), ruling 7, and the pre-task's "`site-facts.json`" section.
 
 ## public-css-export: engine-shipped public stylesheet of role defaults and emitted-class rules  (accept, 2026-09-27, theme identity pass B spec)
 
 - **Verdict:** accept. The defaults are the value half of a contract the engine already owns (the classes it emits into public markup and the tokens those classes and the chassis read). All five sites' copied defaults froze and missed keys added since, a drift an export prevents and a copy cannot.
 - **Reopens on:** evidence that sites diverge from the engine defaults more often than they track them, or a key in the stylesheet that no engine or chassis file reads.
-- **Record:** [theme identity pass B spec](../superpowers/specs/2026-09-27-theme-identity-pass-b-design.md) and [its review fold](../superpowers/research/2026-09-27-theme-pass-b-fold.md), sixth fold, W3.
+- **Record:** [theme identity pass B spec](../specs/2026-09-27-theme-identity-pass-b-design.md) and [its review fold](../research/2026-09-27-theme-pass-b-fold.md), sixth fold, W3.
 
 ## access-map-one-declaration: the adapter's `roles` and `access` are the one declaration every reader takes  (accept, 2026-10-09, engine pass before stage 2b, pass A)
 
@@ -6632,8 +6632,8 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Reopens on:** closed. Executed by pass A, Task 1. It reopens on a recorded outage or cold-start
   cost where the runtime import or a composition throw reached a dynamic route the guard does not
   gate, or on a site that must mount the guard before its adapter can be evaluated.
-- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md),
-  "The lead: one access and role declaration", and [pass A's plan](../superpowers/plans/2026-10-08-engine-pass-pre-2b-a.md), Task 1.
+- **Record:** [the engine-pass design](../specs/2026-10-07-engine-pass-pre-2b-design.md),
+  "The lead: one access and role declaration", and [pass A's plan](../plans/2026-10-08-engine-pass-pre-2b-a.md), Task 1.
 - **Verified:** `src/tests/integration/one-map-five-readers.test.ts` runs one fixture adapter through
   the guard and the five readers, and `src/tests/unit/runtime-required.test.ts` holds the four
   `@ts-expect-error` calls. A scratch build whose adapter throws at composition failed `vite build`
@@ -6647,7 +6647,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   outside `/admin` would make the admin's internal CSS public surface. The reference states the
   toolkit is shell-only.
 - **Reopens on:** a second site building a non-admin surface from the toolkit by hand.
-- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md),
+- **Record:** [the engine-pass design](../specs/2026-10-07-engine-pass-pre-2b-design.md),
   "Declined, with proposed ledger entries" (A9), and [`admin-toolkit.md`](../reference/admin-toolkit.md).
 
 ## refusal-channels-per-call-site: the three refusal channels match their call sites  (decline, 2026-10-09, engine pass before stage 2b, pass A)
@@ -6659,8 +6659,8 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   before an editor exists to audit. The reference's "Refusal channels" section already documents the
   three.
 - **Reopens on:** a site needing a uniform audit trail across the three.
-- **Record:** the pre-beta C1 pass ([plan](../superpowers/plans/2026-08-01-pre-beta-c1-seam-shape.md),
-  Task 5), and [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md) (A11).
+- **Record:** the pre-beta C1 pass ([plan](../plans/2026-08-01-pre-beta-c1-seam-shape.md),
+  Task 5), and [the engine-pass design](../specs/2026-10-07-engine-pass-pre-2b-design.md) (A11).
 
 ## csrf-no-rotation-under-identity: no CSRF rotation runs under `identity`  (decline, 2026-10-09, engine pass before stage 2b, pass A)
 
@@ -6669,7 +6669,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   The value is a per-browser CSRF token, `HttpOnly`, `SameSite=Lax`, `__Host-` on https, and not a
   credential.
 - **Reopens on:** a gate that switches identities within one browser session in production.
-- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md)
+- **Record:** [the engine-pass design](../specs/2026-10-07-engine-pass-pre-2b-design.md)
   (C2), and `docs/extend/security-model.md`, which states the logout behavior.
 
 ## admin-headers-scope: the 303 to the login and public routes carry no admin headers  (decline, 2026-10-09, engine pass before stage 2b, pass A)
@@ -6678,7 +6678,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   sends no HSTS on it (`AuthGuardConfig.includeSubDomains`'s doc in `src/lib/sveltekit/guard.ts`). Public routes are the site's output under the charter, so
   the guard sets no security headers on them. The reference states both.
 - **Reopens on:** a header-scanner finding on the redirect with a real consequence.
-- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md)
+- **Record:** [the engine-pass design](../specs/2026-10-07-engine-pass-pre-2b-design.md)
   (C3), and [`sveltekit.md`](../reference/sveltekit.md#createauthguard).
 
 ## dev-flag-strict-read: `isDevBackendFlagSet` accepts exactly `'1'` or `true`  (decline, 2026-10-09, engine pass before stage 2b, pass A)
@@ -6690,7 +6690,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   fact that states the Windows form is corrected: `f:e8dr5r` reads `set "NAME=1" &&`, with the quotes
   that keep the space out of the value, and no fact states the unquoted form.
 - **Reopens on:** a scaffold path that delivers the flag through a shell.
-- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md)
+- **Record:** [the engine-pass design](../specs/2026-10-07-engine-pass-pre-2b-design.md)
   (B4).
 
 ## token-cache-no-401-eviction: a 401 does not evict the shared installation-token cache  (decline, 2026-10-09, engine pass before stage 2b, pass A)
@@ -6700,5 +6700,5 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   rotation a verifiable sequence (deploy, read the fingerprint until it equals the new key's, run the
   live check, delete the old key), so eviction answers no remaining defect.
 - **Reopens on:** a recorded publish failure from a cached token after a completed rotation.
-- **Record:** [the engine-pass design](../superpowers/specs/2026-10-07-engine-pass-pre-2b-design.md),
+- **Record:** [the engine-pass design](../specs/2026-10-07-engine-pass-pre-2b-design.md),
   "Ruling 3: the opt-in live key check" (B10).

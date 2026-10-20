@@ -109,7 +109,12 @@ const RULES = [
   {
     cls: 'C3',
     tiers: PUBLIC_TIERS,
-    pattern: new RegExp(`(?<!${GITHUB_BLOB})(?:\\.\\./|docs/)(?:internal|superpowers)/`, 'g'),
+    // A bare `../archive/` is also a template route, so the relative arm for the planning folders
+    // matches only a Markdown target.
+    pattern: new RegExp(
+      `(?<!${GITHUB_BLOB})(?:(?:\\.\\./|docs/)internal/|docs/(?:specs|plans|research|archive)/|\\.\\./(?:specs|plans|research|archive)/\\S*?\\.md\\b)`,
+      'g',
+    ),
     label: 'a path into maintainer docs',
   },
   {

@@ -88,7 +88,7 @@ than pages:
    academic case (Scribe, TeX, SGML, Coombs/Renear/DeRose 1987, Wilson et al., Healy) survives
    in the published corpus **nowhere**: `grep` finds it only in the doomed page, the doomed
    `guides/editor-welcome.md`, and internal planning docs. It also has its own landed plan
-   (`docs/superpowers/plans/2026-07-03-markdown-academic-case.md`), so it was deliberate work,
+   (`docs/plans/2026-07-03-markdown-academic-case.md`), so it was deliberate work,
    not incidental prose. Whether this is a loss or a deliberate scope cut is a judgment for
    whoever owns the front door — the outline said `why-cairn` "keeps the why and the honest
    trade-offs", which is ambiguous about which why. I flag it as the single largest body of

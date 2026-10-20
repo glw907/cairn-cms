@@ -73,7 +73,8 @@ describe('checkChannelMigrationPacked', () => {
 });
 
 // The published docs arms (reference, admin, editors, extend) plus the two front doors must reach
-// the tarball, and the write-only-plan trees (internal, superpowers) and the rolling STATUS.md
+// the tarball, and the write-only-plan trees (internal, specs, plans, research, archive) and the
+// rolling STATUS.md
 // must not, so a future `files` edit cannot silently drop or leak either direction.
 describe('checkDocsPacked', () => {
   const arms = [
@@ -134,11 +135,11 @@ describe('checkDocsPacked', () => {
     expect(result.error).toContain('docs/internal/some-plan.md');
   });
 
-  it('fails naming a leaked docs/superpowers path', () => {
-    const result = checkDocsPacked([...arms, 'docs/superpowers/plans/some-plan.md'], required);
+  it('fails naming a leaked planning path', () => {
+    const result = checkDocsPacked([...arms, 'docs/plans/some-plan.md'], required);
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('docs/superpowers/plans/some-plan.md');
+    expect(result.error).toContain('docs/plans/some-plan.md');
   });
 
   it('fails naming a leaked docs/STATUS.md', () => {

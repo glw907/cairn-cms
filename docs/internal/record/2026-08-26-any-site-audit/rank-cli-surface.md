@@ -1382,7 +1382,7 @@ that the tool lied about money. There is no recovery from that first impression.
 
 **This gates the ship-or-hold call**, which is why it must be resolved rather than filed: publishing
 `create-cairn-site` in this state ships a tool that breaks a promise it just made. The plan is
-committed at `docs/superpowers/plans/2026-08-20-cli-cost-narrative-pass.md` and is **drafted, not
+committed at `docs/plans/2026-08-20-cli-cost-narrative-pass.md` and is **drafted, not
 approved**; its two open questions (ask about Workers Paid before deploying rather than after; verify
 the account's plan) are product forks only Geoff can answer, and Task 4 is blocked on the first.
 

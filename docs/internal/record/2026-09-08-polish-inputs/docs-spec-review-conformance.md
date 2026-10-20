@@ -1,6 +1,6 @@
 # Spec review: self-conformance and the generic checklist
 
-Adversarial review of `docs/superpowers/specs/2026-09-08-docs-standard-design.md`, revision 1,
+Adversarial review of `docs/specs/2026-09-08-docs-standard-design.md`, revision 1,
 against the standard the spec itself specifies. One lens: does the page obey its own rules, and
 does it survive the generic quality checklist the proposal defines. Read-only. 2026-09-08.
 
@@ -17,7 +17,7 @@ sentence a plan will be written from.
 Reproduced with the repository's own instrument:
 
 ```
-node scripts/checks/measure-prose.mjs docs/superpowers/specs/2026-09-08-docs-standard-design.md --until '## Receipt' --json
+node scripts/checks/measure-prose.mjs docs/specs/2026-09-08-docs-standard-design.md --until '## Receipt' --json
 ```
 
 | Measure | Receipt claims | Re-measured | Match |

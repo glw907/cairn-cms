@@ -6,7 +6,7 @@ without appending its row here is a blocking finding at the diff gate.
 
 ## The pass before set
 
-Captured `docs/superpowers/plans/2026-09-07-chassis-b1-pass.md` Task 1, Step 2, at the branch
+Captured `docs/plans/2026-09-07-chassis-b1-pass.md` Task 1, Step 2, at the branch
 point, before any paint task ran:
 
 - **Commit:** `f223994f80f3cc3b67f771211e2f4c4437889be8` (the branch point; the capture tool
@@ -333,7 +333,7 @@ surfaces, and the prior fix round's after set is the correct, if buggy, parent).
 
 ### The pass before set
 
-Captured `docs/superpowers/plans/2026-09-07-chassis-b2-pass.md` Task 1, at the branch point,
+Captured `docs/plans/2026-09-07-chassis-b2-pass.md` Task 1, at the branch point,
 before this task's own changes:
 
 - **Commit:** `58ed9d1f` (the chassis-b merge into `main`, B2's own branch point)

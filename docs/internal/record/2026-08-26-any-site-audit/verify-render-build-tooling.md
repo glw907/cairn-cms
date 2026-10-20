@@ -21,7 +21,7 @@ and the family checkouts, not from the ranking's text.
 - Every git provenance claim verified with `git log -S … --reverse`: cardShell/iconSpan `f22ef893`/
   `9ab548c3`; headRow `4a9cf555` then `29486e57`; strAttr `e2193359`; hydrateIslands `4087c252`;
   cairnManifest `26fee41e`. Spec quotes at
-  `docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md:18`, `:43`, `:87-90` all
+  `docs/specs/2026-06-05-cairn-render-authoring-surface-design.md:18`, `:43`, `:87-90` all
   read as quoted.
 
 **New evidence the ranking did not surface, and the single most decisive fact in the bucket.**

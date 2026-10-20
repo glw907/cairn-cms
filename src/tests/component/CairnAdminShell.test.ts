@@ -791,7 +791,7 @@ describe('CairnAdminShell', () => {
 
   it('recedes the persistent sidebar under zen at every width, and restores it on exit', async () => {
     // Zen is an explicit, reversible editor choice (plan-locked call 1,
-    // docs/superpowers/plans/2026-07-15-admin-reorganization.md): the persistent sidebar joins the
+    // docs/plans/2026-07-15-admin-reorganization.md): the persistent sidebar joins the
     // topbar in stepping back so the manuscript takes the whole frame, at every width, not just the
     // desk route's tablet band. The overlay checkbox keeps reaching the nav under zen; only the
     // persistent breakpoint classes recede.

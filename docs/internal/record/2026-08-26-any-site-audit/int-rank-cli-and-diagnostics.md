@@ -375,7 +375,7 @@ exists in the same area and shows what is wanted:
 
 ```
 src/lib/audit/norms.ts:280
-      'docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md (Ruling 2, Task 16b): …'
+      'docs/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md (Ruling 2, Task 16b): …'
 ```
 
 `diagnostics/error.ts:3` is worse than unresolvable, it is stale: it describes work as forthcoming

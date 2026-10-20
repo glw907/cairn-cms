@@ -45,7 +45,7 @@ engine having no compile-time channel for that break is a design finding in its 
 
 One row per engine seam this site consumed for the first time, answering the three questions in
 ruling 3 of the
-[engine-harvest decisions](../../superpowers/specs/2026-08-05-engine-harvest-decisions.md).
+[engine-harvest decisions](../../specs/2026-08-05-engine-harvest-decisions.md).
 
 | Seam | Fit without a workaround? | What the site hand-wrote beside it | Defaults overridden |
 | --- | --- | --- | --- |

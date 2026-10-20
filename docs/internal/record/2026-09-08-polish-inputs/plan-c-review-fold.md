@@ -1,6 +1,6 @@
 # Polish-C plan review, the fold
 
-The three-lens adversarial review of `docs/superpowers/plans/2026-09-08-polish-c-pass.md`
+The three-lens adversarial review of `docs/plans/2026-09-08-polish-c-pass.md`
 (coverage 17 findings, executor 14, sequencing 15, 46 in all) folded into the plan on 2026-09-08.
 **Taken whole 44. Taken in part 2, and no finding declined whole.** The two partials are executor
 4, whose budget half is taken and whose model half is SUPERSEDED by the workflow script itself

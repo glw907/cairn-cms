@@ -1,5 +1,5 @@
 // cairn-cms: the transcript gate for the recorded-run blocks the admin docs quote (the marker
-// convention in docs/superpowers/plans/2026-08-16-capture-pass.md). A page marks a quoted
+// convention in docs/plans/2026-08-16-capture-pass.md). A page marks a quoted
 // transcript with `<!-- transcript: <fixture path> -->` immediately before a fenced block; this
 // gate resolves that marker against the named fixture under
 // packages/create-cairn-site/test/fixtures/transcripts/, replays both the block and the fixture
@@ -25,7 +25,7 @@ import { armOf, readArmStates } from './arm-state.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 // The four published arms plus the front-door index, the same corpus check-visuals.mjs scans.
-// docs/superpowers and docs/internal discuss the marker convention in prose and would
+// The planning folders and docs/internal discuss the marker convention in prose and would
 // false-positive if scanned as though they carried real marked blocks.
 const SCAN_DIRS = ['docs/admin', 'docs/editors', 'docs/extend', 'docs/reference'];
 const INDEX_FILES = ['docs/README.md'];

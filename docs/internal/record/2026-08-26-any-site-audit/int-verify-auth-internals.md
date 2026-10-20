@@ -2,8 +2,8 @@
 
 Verifier: fresh-context verifier, did not produce the findings. Repo `main`, clean tree.
 Standards consulted: `docs/internal/code-idioms.md` (full read), `docs/internal/engine-rulings.md`
-(TOC + grep), `docs/superpowers/plans/2026-08-03-auth-channel-factory.md`,
-`docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md`, the four public barrels,
+(TOC + grep), `docs/plans/2026-08-03-auth-channel-factory.md`,
+`docs/specs/2026-08-03-auth-channel-factory-design.md`, the four public barrels,
 `docs/internal/record/`.
 
 One standing fact that bears on all four auth-channel findings. The auth-channel plan's own
@@ -105,10 +105,10 @@ Three corrections, all against the finding.
    quoted in the analysis's prose, is in `code-idioms.md`, not in any source file.)
 
 2. **"None resolves from the code" is false for most of them.** `factory.ts:1-2` *does* cite
-   the spec path (`docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md`), and
-   `docs/superpowers/plans/2026-08-03-auth-channel-factory.md` sits beside it with Tasks 1-5, so
+   the spec path (`docs/specs/2026-08-03-auth-channel-factory-design.md`), and
+   `docs/plans/2026-08-03-auth-channel-factory.md` sits beside it with Tasks 1-5, so
    "Task 5" is one directory listing away. "Plan 05" resolves to
-   `docs/superpowers/plans/2026-05-28-cairn-rebuild-05-admin-ui.md` via the numbered plan series
+   `docs/plans/2026-05-28-cairn-rebuild-05-admin-ui.md` via the numbered plan series
    CLAUDE.md already names. "C2"/"C2b" resolve to `2026-08-02-c2-breaking-window.md` and
    `2026-08-03-c2b-refusal-channel.md`. What genuinely does not resolve: the bare `R9` at
    `access.ts:187` (the token appears in 10+ unrelated docs; only the `C2 R9` form at :207

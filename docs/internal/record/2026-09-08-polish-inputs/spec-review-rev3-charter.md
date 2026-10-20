@@ -1,6 +1,6 @@
 # Polish spec review, charter and precedent lens
 
-Adversarial review of `docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 3, the
+Adversarial review of `docs/specs/2026-09-08-polish-passes-design.md` revision 3, the
 uncommitted working-tree version, read in full against the rulings ledger, the charter, the
 audit-remediation initiative design, the docs standard spec and its pass 2a plan, and the three
 repo ledgers (Opus, `engine-triage`, fresh context, 2026-09-08). Revision 1's charter review

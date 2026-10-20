@@ -355,7 +355,7 @@ a salted `correlationId` pseudonym rather than the subject.
   `heic-to`, `esm-env`, `hast*`/`mdast*` helpers. `peerDependencies`: `@anthropic-ai/sdk`,
   `@cloudflare/workers-types`, `@sveltejs/kit`, `svelte`. A grep for `jose|jwks|jwtVerify|importJWK`
   across `src/` returns nothing; the only hits are historical planning docs
-  (`docs/internal/history/*`, `docs/superpowers/plans/2026-06-04-cairn-docs-phase-4-guides.md`).
+  (`docs/internal/history/*`, `docs/plans/2026-06-04-cairn-docs-phase-4-guides.md`).
 - Token signing today is **hand-rolled Web Crypto**, `src/lib/github/signing.ts`: base64url encoder
   (:11), PKCS#1 -> PKCS#8 wrapper (:34), `appJwt` minting RS256 with
   `crypto.subtle.importKey` (:54) and `crypto.subtle.sign('RSASSA-PKCS1-v1_5', …)` (:61), then the

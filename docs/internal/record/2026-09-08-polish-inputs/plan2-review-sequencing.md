@@ -1,8 +1,8 @@
 # Plan two, adversarial review: sequencing and blast radius
 
-One lens, read-only. Target: `docs/superpowers/plans/2026-09-08-docs-toolset-pass.md` (revision 1,
+One lens, read-only. Target: `docs/plans/2026-09-08-docs-toolset-pass.md` (revision 1,
 authored against `main` at `d565ab77`; `main` is at `4888b720` as this review runs). Inputs read:
-the plan in full, `docs/STATUS.md`, `ROADMAP.md`, `docs/superpowers/specs/2026-09-08-polish-passes-design.md`,
+the plan in full, `docs/STATUS.md`, `ROADMAP.md`, `docs/specs/2026-09-08-polish-passes-design.md`,
 `git status --short`, `git log --oneline -15`, `git worktree list`, `package.json`,
 `.github/workflows/test.yml`, and the two live worktrees' diffs against `main`.
 

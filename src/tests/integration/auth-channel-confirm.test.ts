@@ -1,5 +1,5 @@
 // Task 4 of the auth-channel factory plan: confirm's eight-step flow (spec
-// docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md, Flows), proven against real
+// docs/specs/2026-08-03-auth-channel-factory-design.md, Flows), proven against real
 // miniflare D1. The confirm-side lockout regression test is the structural guard the design's
 // three review rounds needed for this half of the flow: an attacker who shares a victim's
 // identity (by knowing their contact) can drive the identity failure gate past its threshold, and

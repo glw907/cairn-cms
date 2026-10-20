@@ -3,8 +3,8 @@
 Consolidated from the four-lens plan review; the plan's revision 2 and the spec's revision 3 were rewritten from it. Write-once.
 
 
-Object: `docs/superpowers/plans/2026-09-07-identity-seam-pass.md` and
-`docs/superpowers/specs/2026-09-07-identity-seam-design.md` (revision 2).
+Object: `docs/plans/2026-09-07-identity-seam-pass.md` and
+`docs/specs/2026-09-07-identity-seam-design.md` (revision 2).
 Lenses folded: grounding (G1-G16), security (S1-S23), hygiene and sizing (H1-H12),
 charter and precedent (C1-C8). Every finding lands below: folded, merged into another
 finding, or dismissed with a reason.

@@ -2,7 +2,7 @@
 
 Lens: charter (is it cairn's job, in its leanest form) and proportion (is the total sized to a
 75-page docs set with one owner). Read-only review of
-`docs/superpowers/plans/2026-09-08-docs-toolset-pass.md` REVISION 1, against the repo charter, the
+`docs/plans/2026-09-08-docs-toolset-pass.md` REVISION 1, against the repo charter, the
 spec's "Where each piece lives" and "Rationale", and the workstation's pass-sizing rule.
 
 Measured baseline: 75 markdown pages under the four track directories, plus three front-door pages.
@@ -155,7 +155,7 @@ is 4.0M of the 8.8M ceiling and this is its cheapest real cut.
 ### 11. H13's `--plan-lint` mode lints documents the standard exempts. CUT the mode, KEEP the fragment.
 
 `--plan-lint` fails a plan document whose task Files list names a published page under a drafting
-step. Plan documents live under `docs/superpowers/`, which the plan states twice is outside every
+step. Plan documents live under `docs/`, which the plan states twice is outside every
 gate this standard installs, and which the spec's split assigns to the workstation's process half.
 The quarantine it enforces is a dispatch discipline; the drafting fragment H13 already writes is
 where it belongs. The fragment is genuinely cairn's (it is about cairn's ledgers) and stays.

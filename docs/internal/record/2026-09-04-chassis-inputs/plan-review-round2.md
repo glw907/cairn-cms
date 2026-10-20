@@ -2,8 +2,8 @@
 
 Read-only. Verified against `main` at `89c98101`, the post-fold state. Every anchor below was
 opened or grepped, not inferred. The plan is
-`docs/superpowers/plans/2026-09-04-chassis-a-pass.md`, the spec is
-`docs/superpowers/specs/2026-09-04-chassis-passes-design.md`, and the banked review is
+`docs/plans/2026-09-04-chassis-a-pass.md`, the spec is
+`docs/specs/2026-09-04-chassis-passes-design.md`, and the banked review is
 `docs/internal/record/2026-09-04-chassis-inputs/plan-review.md`.
 
 Headline: the fold is substantially complete and several of its departures from the reviewer's

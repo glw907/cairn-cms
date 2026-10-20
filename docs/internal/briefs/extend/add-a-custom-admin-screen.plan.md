@@ -9,11 +9,11 @@ advisory finding, each round disposed under its own heading below.
 
 Inputs read: the outline entry in `docs/internal/outlines/extend.json`; the page anatomies and the
 developer drafting brief in `docs/internal/docs-register.md`; this page's entries in
-`docs/superpowers/research/2026-09-30-draft-docs-2a-pilot-job-read.md`,
-`docs/superpowers/research/2026-10-01-draft-docs-2a-rework-record.md` (round-2 findings and
-conflicts 1 to 3), and `docs/superpowers/research/2026-10-03-draft-docs-2a-resolution-run-record.md`
+`docs/research/2026-09-30-draft-docs-2a-pilot-job-read.md`,
+`docs/research/2026-10-01-draft-docs-2a-rework-record.md` (round-2 findings and
+conflicts 1 to 3), and `docs/research/2026-10-03-draft-docs-2a-resolution-run-record.md`
 (both plan reads of run `wf_fe61a650-884`);
-`docs/superpowers/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`;
+`docs/research/2026-10-01-draft-docs-2a-page-plan-diagnosis.md`;
 every fact bullet named below in `docs/internal/facts/`; the reference entries each subordination
 names; the two exemplars; the example site's signups route (`examples/showcase/src/routes/admin/signups/`);
 `src/lib/admin-toolkit/ExpandableRow.svelte` for the controlled-row contract.

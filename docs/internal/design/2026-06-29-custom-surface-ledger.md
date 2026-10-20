@@ -1,8 +1,8 @@
 # The cairn admin custom-surface ledger (Tier 1/2/3)
 
 > The committed audit artifact for the admin idiomatic re-expression initiative
-> (`docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`,
-> Phase 0 plan `docs/superpowers/plans/2026-06-29-admin-re-expression-0-foundation.md`).
+> (`docs/specs/2026-06-29-admin-idiomatic-re-expression-design.md`,
+> Phase 0 plan `docs/plans/2026-06-29-admin-re-expression-0-foundation.md`).
 > It classifies every custom property defined in `src/lib/components/cairn-admin.css`
 > into the three tiers the five de-customization rules define, censuses the high-volume
 > call sites, inventories the verification gaps the sweep must close, records the two
@@ -376,7 +376,7 @@ bite-test (a planted bare `[data-theme] .evil {}` rule fails, removed passes).
 ## Phase 2 sign-off: office chrome retired (admin budget 235 → 198)
 
 Phase 2 (office chrome) is complete (2026-06-30, plan
-`docs/superpowers/plans/2026-06-30-admin-re-expression-2-office-chrome.md`). The census found the only
+`docs/plans/2026-06-30-admin-re-expression-2-office-chrome.md`). The census found the only
 foldable office-chrome surface was the retired muted/subtle references — 37 lines across 8 of the 13
 components, every one a trivial 1:1 swap to the named `text-muted` / `text-subtle` utilities. No native
 primitive was adopted (none is hand-rolled here; `floating-label` would be a redesign addition, deferred
@@ -398,7 +398,7 @@ segmented / check-and-tint control stays hand-rolled (no native 5.6 primitive), 
 ## Phase 3 sign-off: forms and settings retired (admin budget 198 → 195)
 
 Phase 3 (forms and settings) is complete (2026-06-30, plan
-`docs/superpowers/plans/2026-06-30-admin-re-expression-3-forms.md`). The census found the foldable surface
+`docs/plans/2026-06-30-admin-re-expression-3-forms.md`). The census found the foldable surface
 tiny: 3 retired references (`FieldInput`, `ReferenceField`, the `ManageEditors` column-header class const),
 swapped 1:1 to `text-muted`; budget ratcheted 198 → 195. No native primitive adopted, no `@layer` fold
 (`cairn-admin.css` untouched), no coupled-test migration. `CairnTidySettings` (retired in Phase 0) and
@@ -455,7 +455,7 @@ the media library browse view; the prior 10 baselines stayed byte-identical (the
 ## Phase 6 sign-off: media part 2 retired (admin budget 125 -> 0, the terminal floor)
 
 Phase 6 (media part 2) is complete (2026-06-30, plan
-`docs/superpowers/plans/2026-06-30-admin-re-expression-6-media-part-2.md`). It swept the last 125
+`docs/plans/2026-06-30-admin-re-expression-6-media-part-2.md`). It swept the last 125
 muted/subtle bracket references across the five media files and ratcheted the admin `retiredTokenBudget`
 to **0**, the terminal floor. The admin component tree now holds zero `var(--color-muted)` /
 `var(--color-subtle)` bracket references.

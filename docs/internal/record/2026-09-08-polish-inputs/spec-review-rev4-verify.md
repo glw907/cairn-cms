@@ -1,9 +1,9 @@
 # Polish spec revision 4, verification read
 
-Fresh-context verification of `docs/superpowers/specs/2026-09-08-polish-passes-design.md` revision 4
+Fresh-context verification of `docs/specs/2026-09-08-polish-passes-design.md` revision 4
 as it stands uncommitted on disk, plus the two amendment clauses added to
-`docs/superpowers/specs/2026-09-08-docs-standard-design.md` and
-`docs/superpowers/plans/2026-09-08-docs-toolset-pass.md` (Opus, read-only, 2026-09-08). Four things
+`docs/specs/2026-09-08-docs-standard-design.md` and
+`docs/plans/2026-09-08-docs-toolset-pass.md` (Opus, read-only, 2026-09-08). Four things
 were checked: fold fidelity against
 `spec-review-rev3-fold.md` (all twenty grounding findings, all seventeen charter findings, and
 eleven of the thirteen risk findings sampled), revision 4's internal consistency, the two amendment

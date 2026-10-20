@@ -1,7 +1,7 @@
 # Docs reset pass 1b: tuning record
 
 Task 9 (round 0) and Task 10 (round 1) of the pass 1b validation plan
-(`docs/superpowers/plans/2026-09-24-docs-reset-pass-1b.md`). Every number below traces to a
+(`docs/plans/2026-09-24-docs-reset-pass-1b.md`). Every number below traces to a
 scorer output file, cited by its JSON path.
 
 **Round 0 ran twice.** The first run (superseded, not in this record) judged pass 1's saved
@@ -35,7 +35,7 @@ copies.
 Pass 1's jobs carried no `absent` field. Each development job's absent list was derived
 read-only against pass 1's prepared control trees
 (`~/.cache/docs-readers/prepared/validation/<job>-control`) at commit `b2756399` (pass 1's
-validation page pin; `docs/superpowers/research/2026-09-24-pass-1b-preflight.md` confirms every
+validation page pin; `docs/research/2026-09-24-pass-1b-preflight.md` confirms every
 development page is byte-identical between `b2756399` and the `3a7485dd` pin), using each job's
 real builder from `lib/prepare-class.ts` (`omittedPaths`/`trackedPaths` for the docs-only,
 docs-and-binary, and docs-and-site classes, plus `DOCS_AND_SITE_EXCLUDED_PATHS`;

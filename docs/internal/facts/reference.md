@@ -207,7 +207,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   subset of D1 the channel store calls (`prepare(...).bind(...).first()/run()`, `withSession('first-primary')`,
   and a session's `prepare` and `batch`); a real `D1Database` and `createChannelDb()`'s result both
   satisfy it with no cast, and `AuthChannel.revokeSessions` takes the same type. Source:
-  `src/lib/auth-channel/store.ts#ChannelDatabaseLike`, `src/lib/auth-channel/factory.ts#AuthChannelConfig.resolveDb`.
+  `src/lib/auth-channel/store.ts#ChannelDatabaseLike`, `src/lib/auth-channel/factory.ts:232-238`.
   [verified]
 - `f:vh76wt` A non-positive `limits` override always throws even where the table states only a ceiling
   (prevents a 0 or negative clamp value from silently passing). Source:

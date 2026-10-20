@@ -17,8 +17,8 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   editor as commit author. Source: `src/lib/github/types.ts:20`, "A commit author: the signed-in
   editor (spec §7.4).", `src/lib/github/repo.ts:260-263` (no committer is set). [verified]
 - `f:kldwss` `create-cairn-site` creates the GitHub App, the repository, the Cloudflare bindings, and deploys,
-  in one run. Source: `packages/create-cairn-site/` (chapter2.mjs GitHub App and Cloudflare
-  provisioning flow, referenced in docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md).
+  in one run. Source: `packages/create-cairn-site/`, `packages/create-cairn-site/src/github/chapter.mjs:1-8`, `packages/create-cairn-site/src/cloudflare/chapter.mjs:1-6`, `packages/create-cairn-site/src/cloudflare/deploy.mjs:1-10` (the GitHub chapter creates the App and
+  the repository; the Cloudflare chapter and its deploy step provision the bindings and deploy).
   [verified]
 - `f:9xthnq` The admin is also a toolkit: a developer's own route under `/admin` renders as a child of `CairnAdminShell` like the engine's own screens, can adopt the packaged admin-toolkit components, and sits behind the same `/admin` sign-in guard, since every `/admin` path except the login page and the auth endpoints is gated. Source: `examples/showcase/src/routes/admin/+layout.svelte:3-5`, "every /admin/** route renders inside CairnAdminShell"; `examples/showcase/src/routes/admin/signups/+page.svelte:1-4`, "a developer's own route rendered in CairnAdminShell"; `src/lib/sveltekit/guard.ts:24`, "everything else under /admin is gated". [verified]
 - `f:i74t7g` A cairn site is built to run on Cloudflare Workers: the engine's environment contract is Cloudflare Worker bindings (the `AUTH_DB` D1 database, the Email Sending binding), so a production site built on cairn is hosted on Cloudflare. Source: `src/lib/env.ts:5,17-33`, the `CairnEnv` interface and its `D1Database` import from `@cloudflare/workers-types`. [verified: the code fixes Cloudflare as the runtime platform; where a given site is deployed is the operator's fact and is not separately confirmed]

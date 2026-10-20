@@ -1262,8 +1262,8 @@ dispositions:
       `f:1b3ye3` name for `createAdminAction`'s session check.
 constraints:
   - |
-    [[adminactionmisconfigured]] states the current wiring (the adapter's `access` member is the
-    one declaration, and the guard and the dev backend's handle attach it), and
+    [[adminactionmisconfigured]] states the current wiring (the guard and the dev backend's handle
+    attach the adapter's access map), and
     [[the-site-facts-json-check-was-skipped]] describes the warning the build emits when it skips
     the check.
   - |

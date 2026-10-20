@@ -759,18 +759,15 @@ sections:
           `npx cairn-guidance check`, with or without `--strict`, stops with an error instead of
           finishing, and exits nonzero.
         cause: |
-          A file the check reads failed to read for a reason other than its being absent, which
-          ends the run. This exit is not the stale-tree exit: `--strict` exits 1 only on a stale
-          or missing tree, and this failure happens with or without `--strict`.
-        handledBy: h-diag-check-throw
+          A file read failed with anything but the file being absent, or a read would have left
+          the project directory. Either ends the run. Unlike the stale-tree exit, which needs
+          `--strict`, this failure happens with or without it.
+        handledBy: l-diag-check-throw
         facts:
           - f:4ax489
-      - id: h-diag-check-throw
-        kind: handoff
-        text: |
-          Read the error the run printed, compare it with the files the `cairn-guidance check`
-          reference says the command reads, make the file that failed readable, and run the check
-          again from the project root.
+      - id: l-diag-check-throw
+        kind: link
+        target: ../reference/guidance.md#check
   - id: see-also
     heading: See also
     why: |

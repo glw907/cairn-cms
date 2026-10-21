@@ -1,0 +1,19 @@
+{
+  "arm": "admin",
+  "track": "admin",
+  "crossLinks": [
+    {
+      "from": "troubleshooting",
+      "to": "debug-your-site",
+      "why": "Symptoms whose fix is a code change to the site."
+    }
+  ],
+  "pages": [
+    {
+      "slug": "troubleshooting",
+      "path": "docs/admin/troubleshooting.md",
+      "title": "Troubleshoot your site",
+      "type": null
+    }
+  ]
+}

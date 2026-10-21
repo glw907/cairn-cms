@@ -518,6 +518,23 @@ pages:
       - Writing a consultation brief and what the engine does with it (the protocol lives in the cairn-consult skill itself, not in the published docs).
       - The CLI's full option and output listing (the guidance reference page); this page links it.
       - 'The general docs'' rule stands: no other page carries Claude Code teaching, and this page does not rewrite another page''s prose.'
+  - path: docs/admin/troubleshooting.md
+    slug: troubleshooting
+    title: Troubleshoot your site
+    type: symptom row
+    job: Match what goes wrong on a running cairn site, in the admin, at sign-in, or in a health check, to its cause and a named next step (wait, act, or ask a developer), with no code authored. For a technical non-developer who sets up and runs the default site.
+    covers:
+      - 'Where to look first: the site''s logs in the Cloudflare dashboard or a live tail, and cairn health and its errors check, with what an empty log means.'
+      - 'Sign-in failures an editor reports: a link opened in another browser or a mail app''s built-in browser, an address not on the roster, and a repeat inside the cooldown.'
+      - 'Saving and publishing: a save or publish conflict, and a Publish site button that is missing.'
+      - 'Image uploads: the refusal reasons an operator can act on, and the ones that go to a developer.'
+      - 'The admin refusing every request: a missing database binding and the other guard refusals, each with its next step.'
+      - 'Roles: an editor whose role the site no longer declares, and recovering a locked-out sole owner.'
+      - 'Health check holds: holding a known failing check with --ack, and that a hold covers every site.'
+    outOfScope:
+      - Symptoms that need a code change to the site (extend/debug-your-site).
+      - The full event table with every field (reference/log-events).
+      - Setting up a site for the first time (the setup pages of the admin track).
 crossLinks:
   - from: architecture
     to: add-cairn-to-a-sveltekit-app

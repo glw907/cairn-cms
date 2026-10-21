@@ -4,6 +4,9 @@
 
 ## Medium
 
+- [ ] **#28** Fix the 23 real fact defects the blueprint-first read found at `main` `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-21)*
+  The blueprint-first pass's fact reads caught 23 bullets that the code contradicts or that claim wider than it shows; the new-catch rows of `R2a-classes.md`, `R2b1-classes.md`, and `R2b2-classes.md` in glw907/initiatives `docs-system/research/2026-10-20-blueprint-first-r2/` give each one's source line and the correction. The ids: f:1rstld, f:2zytgf, f:5eum60, f:7qqhda, f:9slxqf, f:9xthnq, f:altcjp, f:cvv6to, f:d0sp1t, f:dbaklx, f:diro7m, f:dqjkci, f:g22dnw, f:gffvfd, f:guiavc, f:gy2h7p, f:ix10bm, f:kqcyv1, f:n0laoh, f:ntdafg, f:orz556, f:pkt8i6, f:u4cfvv. `docs/internal/facts/`
+
 - [ ] **#21** Resolve the two fact conflicts that escalated pages at the blueprint read `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-20)*
   restrict-admin-access escalated at read 2 on f:zo034s against f:p1xmp5 and f:0qb73i, and scaffolded-site-files at read 3 on f:rn62i1 (migration 0003 opt-in) against f:gepykz (0003 shipped). No pass edit made either conflict. `docs/internal/facts/`
 

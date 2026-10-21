@@ -26,7 +26,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 ## Where to look first
 
-*Gets the reader to the site's records and its health check before any row, since every row names a record to find, and tells them what an empty result means.*
+*Get the reader to the site's records and its health check before the rows. Every row names a record to find. Say what an empty result means.*
 
 - Cloudflare Workers is where your site runs, and the site's log records appear in Workers Logs, in the Cloudflare dashboard. :fact[gzs6b8]
 - See [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/).
@@ -42,7 +42,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 :::row
 **Symptom.** `cairn logs` shows no records, Workers Logs is empty, and the `errors` check passes, while the site misbehaves.
-**Cause.** The site's Cloudflare settings file, `wrangler.jsonc`, does not set `observability.enabled` to `true`, so the site's records go nowhere. A site with it off answers the log query with zero records rather than an error, so an empty log and a passing `errors` check prove nothing about it. A site created with `create-cairn-site` has the setting on unless someone removed it. When it is off, `cairn doctor` flags it in its `config.observability` check as "Workers Logs has no sink", and its `--json` report names the condition `config.observability-off`. :fact[txgoyy] :fact[q9ylqa] :fact[pb4md7] :fact[l3cxgc]
+**Cause.** The site's Cloudflare settings file, `wrangler.jsonc`, does not set `observability.enabled` to `true`. With the setting off, the site's records go nowhere, and the log query answers with zero records rather than an error. An empty log and a passing `errors` check therefore prove nothing about it. A site created with `create-cairn-site` has the setting on unless someone removed it. When it is off, `cairn doctor` flags it in its `config.observability` check as "Workers Logs has no sink", and its `--json` report names the condition `config.observability-off`. :fact[txgoyy] :fact[q9ylqa] :fact[pb4md7] :fact[l3cxgc]
 **Fix.** Ask a developer: they set `observability.enabled` to `true` in `wrangler.jsonc` and deploy the site again, which puts the new version live on Cloudflare. Then reproduce the problem and read the records again. :fact[txgoyy]
 :::
 
@@ -50,7 +50,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 ## Sign-in problems
 
-*Matches what an editor sees on the sign-in pages to its cause, so the reader can tell a browser mix-up from a missing roster entry or a quick retry.*
+*Match what an editor sees on the sign-in pages to its cause. Tell a browser mix-up apart from a missing roster entry and from a retry that came too soon.*
 
 - An editor signs in with a link that cairn emails to them. The link lasts ten minutes and works only in the browser that asked for it. :fact[fhshue] :fact[71luk5]
 - Each request logs `auth.link.requested`, and a link issued to an address on the roster logs `auth.token.minted`. :fact[4tmw56]
@@ -81,7 +81,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 ## Save and publish problems
 
-*Matches the refusals an editor meets while saving and publishing, and a missing **Publish site** button, to a next step.*
+*Match each refusal an editor meets while saving or publishing, and a missing **Publish site** button, to a next step.*
 
 - A save stores an entry's edits on GitHub without changing the live site, and publishing puts them live. :fact[hi9nim]
 
@@ -117,7 +117,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 ## Image upload problems
 
-*Matches each upload message to its reason, separating the ones the editor can act on from the ones that need a developer.*
+*Match each upload message to its reason. Separate the messages the editor can act on from the ones that need a developer.*
 
 - A failed upload shows a message on the image's card, and an upload the site's upload route refused logs `media.upload_failed` with a `reason` that names the refusal. :fact[szcxsx] :fact[1wimos]
 
@@ -159,13 +159,13 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 ## Admin error pages
 
-*Matches each page the site shows in place of an admin screen to its cause, so the reader can tell a browser problem from a setup fault.*
+*Match each page the site shows in place of an admin screen to its cause. Tell a browser problem apart from a setup fault.*
 
 - cairn refuses some admin requests before they reach a screen, and each refusal logs `guard.refused` with a `reason` that names the check: `dev_backend_in_prod`, `https`, `bindings`, `csrf`, or `identity`. :fact[05q9zk]
 
 :::row
 **Symptom.** Every admin page, the sign-in page included, shows "Site setup required" with the heading "Wrangler bindings are missing". The log holds `guard.refused` at error level with `reason: bindings`.
-**Cause.** The site is running without its sign-in database, which `wrangler.jsonc` names `AUTH_DB`, so no one can sign in.
+**Cause.** The site is running without its sign-in database, `AUTH_DB` in `wrangler.jsonc`. Without it, no one can sign in.
 **Fix.** Ask a developer: they declare the sign-in bindings, `EMAIL` and `AUTH_DB`, in `wrangler.jsonc` and deploy the site again. `cairn doctor` checks for both. :fact[ck1any] :fact[kpczhs]
 :::
 
@@ -195,7 +195,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 ## Role and owner access problems
 
-*Matches an editor who signs in to nothing, and an owner who cannot sign in at all, to an owner's or a developer's next step.*
+*Match an editor who signs in to nothing, and an owner who cannot sign in at all, to an owner's or a developer's next step.*
 
 :::row
 **Symptom.** An editor signs in, but each content screen answers "Editor access required". The log holds `auth.role.unknown` with the editor's email and role.
@@ -205,7 +205,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 :::row
 **Symptom.** The site's only owner cannot sign in, because no sign-in link reaches them, and no other owner exists to help.
-**Cause.** The **Editors** screen refuses to remove or demote the last owner, so the roster always keeps one, but that owner still needs a sign-in link to get in.
+**Cause.** The **Editors** screen refuses to remove or demote the last owner, and the roster always keeps one. That owner still needs a sign-in link to get in.
 **Fix.** Act: on the computer that set up the site, run `npx create-cairn-site --dir <folder> --sign-in`, naming the site's folder. It writes a fresh sign-in link into the site's database, with no email, and opens the sign-in page with it. The link lasts ten minutes, and running the command again writes a new one. Add `--owner-email <address>` to use a different address that is already on the roster. :fact[xrw24b] :fact[852srf]
 :::
 
@@ -217,7 +217,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 ## Health check holds
 
-*Shows the reader how to stop a known failing check from paging them, and warns that a hold covers that check on every site.*
+*Show the reader how to stop a known failing check from paging them. Warn that a hold covers that check on every site.*
 
 - `cairn health --ack <check-id>=<YYYY-MM-DD>` holds a known failing check until that date. :fact[wj1i7e]
 - A held failure reads `held` and still counts as WARNING, never OK, and once the date passes the check returns to its own severity. :fact[wj1i7e]
@@ -231,7 +231,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 ## See also
 
-*Points the reader to the pages behind these rows and to the pages that cover what this one leaves out.*
+*Point the reader to the pages behind these rows and to the pages that cover what this one leaves out.*
 
 - See [Debug your site](../extend/debug-your-site.md).
 - See [Log events](../reference/log-events.md).

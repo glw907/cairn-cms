@@ -42,7 +42,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 :::row
 **Symptom.** `cairn logs` shows no records, Workers Logs is empty, and the `errors` check passes, while the site misbehaves.
-**Cause.** The site's Cloudflare settings file, `wrangler.jsonc`, does not set `observability.enabled` to `true`, so the site's records go nowhere. A site with it off answers the log query with zero records rather than an error, so an empty log and a passing `errors` check prove nothing about it. A site created with `create-cairn-site` has the setting on unless someone removed it, and `cairn doctor` reports it as `config.observability-off` when it is off. :fact[txgoyy] :fact[q9ylqa] :fact[pb4md7] :fact[l3cxgc]
+**Cause.** The site's Cloudflare settings file, `wrangler.jsonc`, does not set `observability.enabled` to `true`, so the site's records go nowhere. A site with it off answers the log query with zero records rather than an error, so an empty log and a passing `errors` check prove nothing about it. A site created with `create-cairn-site` has the setting on unless someone removed it. When it is off, `cairn doctor` flags it in its `config.observability` check as "Workers Logs has no sink", and its `--json` report names the condition `config.observability-off`. :fact[txgoyy] :fact[q9ylqa] :fact[pb4md7] :fact[l3cxgc]
 **Fix.** Ask a developer: they set `observability.enabled` to `true` in `wrangler.jsonc` and deploy the site again, which puts the new version live on Cloudflare. Then reproduce the problem and read the records again. :fact[txgoyy]
 :::
 
@@ -57,7 +57,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 :::row
 **Symptom.** The editor opens the link and sees "This browser has no pending sign-in." with the advice to request a new link and open it in this browser. The log holds `auth.link.refused` with `reason: no_pending_cookie`.
-**Cause.** The link was opened in a different browser from the one that requested it, so this browser holds no pending sign-in.
+**Cause.** The link was opened in a different browser from the one that requested it, or this browser's cookies were cleared since the request. Either way, this browser holds no pending sign-in.
 **Fix.** Act: request a new link in the browser the editor will use, and open the link in that same browser. :fact[71luk5] :fact[4tmw56]
 :::
 
@@ -69,7 +69,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 :::row
 **Symptom.** The page says "Check your email", but no link arrives, even in the spam folder. The log holds `auth.link.requested` for the address, with no `auth.token.minted` after it.
-**Cause.** The address is not on the site's roster of editors, or it differs from the one the owner added. The page answers the same way for every address, so it never reveals who is on the roster, and cairn sends no link to an address that is not on it.
+**Cause.** The address is not on the site's roster of editors, or it differs from the one the owner added. For an address that is not on the roster, the page answers "Check your email" exactly as it does for a sent link, so that message never reveals who is on the roster. cairn sends no link to an address that is not on it.
 **Fix.** Act: an owner checks the roster on the **Editors** screen, at `/admin/editors`, and adds the address the editor uses, or the editor requests a link with the address already listed. :fact[9cznzz] :fact[vympj2] :fact[4tmw56] :fact[852srf]
 :::
 
@@ -111,15 +111,15 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 :::row
 **Symptom.** The **Publish site** button is missing although entries have unpublished edits, and the log holds `github.unreachable` with `scope: shell`.
-**Cause.** The admin could not read GitHub to list what is waiting, so it hides the button rather than show a wrong count. This record goes with the condition `github.app-unreachable`: the site's GitHub App key does not parse, the App cannot authenticate or get its installation token, or your repository refuses a read, and saves and publishes then cannot commit either.
-**Fix.** Ask a developer: they check the site's GitHub App key secret and its App and installation ids against the App's settings, and confirm the App is installed on your repository, which is where your content lives on GitHub. :fact[hi9nim] :fact[lg0umh]
+**Cause.** The admin could not read GitHub to list what is waiting, so it hides the button rather than show a wrong count. The admin logs this record for any failure to list what is waiting, a passing network failure included. A failure that lasts is the condition `github.app-unreachable`: the site's GitHub App key does not parse, the App cannot authenticate or get its installation token, or your repository refuses a read, and saves and publishes then cannot commit either.
+**Fix.** Act: reload the admin. If the button is still missing and the record repeats, ask a developer: they check the site's GitHub App key secret and its App and installation ids against the App's settings, and confirm the App is installed on your repository, which is where your content lives on GitHub. :fact[hi9nim] :fact[lg0umh]
 :::
 
 ## Image upload problems
 
 *Matches each upload message to its reason, separating the ones the editor can act on from the ones that need a developer.*
 
-- A failed upload shows a message on the image's card, and an upload that reached the site logs `media.upload_failed` with a `reason` that names the refusal. :fact[szcxsx] :fact[1wimos]
+- A failed upload shows a message on the image's card, and an upload the site's upload route refused logs `media.upload_failed` with a `reason` that names the refusal. :fact[szcxsx] :fact[1wimos]
 
 :::row
 **Symptom.** The card reads "This image is too large to add, even after shrinking it."
@@ -129,7 +129,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 :::row
 **Symptom.** The card reads "This image format is not supported. Try a JPEG, PNG, WebP, or GIF."
-**Cause.** The file is a type the site does not store, logged as `reason: unsupported_type`.
+**Cause.** The file is a type the browser cannot decode or the site does not store. When the upload reached the site, the log holds `media.upload_failed` with `reason: unsupported_type`.
 **Fix.** Act: save the image in one of the formats the message names, and upload it again. :fact[szcxsx] :fact[zhpap6]
 :::
 

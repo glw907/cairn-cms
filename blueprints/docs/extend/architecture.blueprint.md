@@ -43,7 +43,7 @@ exemplar: core/rust-analyzer-architecture
 
 *Set out the premise the rest of the page builds on: one adapter declaration, composed into one runtime that every server handle reads.*
 
-- A cairn site declares one adapter, a single `CairnAdapter` object, and every route factory, admin screen, and delivery helper reads its behavior from it. The engine hard-codes no concept, directory, or field. :fact[4esdoz]
+- A cairn site declares one adapter, a single `CairnAdapter` object, and every route factory, admin screen, and delivery helper reads its behavior from it. The adapter declares every concept, content directory, and field. The engine keeps a few names of its own, such as the manifest paths under `src/content/.cairn/` and the segments its admin screens own under `/admin`, which no concept id may take. :fact[4esdoz]
 - The root barrel's `composeRuntime` folds the adapter into one composed runtime. `createCairnAdmin` closes over that runtime, and the site's hooks module hands the same runtime to `createAuthGuard`, or, under the dev backend, to `devBackendHandle` from the `@glw907/cairn-cms-dev` package. :fact[3rb362] :fact[f21bcz] :fact[7cv105]
 - A role vocabulary or an access map declared once on the adapter therefore reaches every handle that reads it. :fact[7cv105] :fact[gun084]
 - The adapter and its runtime reach the engine through a few files in the site.
@@ -52,8 +52,8 @@ exemplar: core/rust-analyzer-architecture
 
 *Name each file in a site that reaches the engine and the subpath it imports, then say what runs behind those calls and what stays inside the engine.*
 
-- Four files in a site reach the engine, and between them they import four subpaths: the root barrel, `/sveltekit`, `/admin`, and `/delivery`. A list names each file and what it imports. :fact[3rb362]
-- The adapter module declares the adapter with `defineAdapter` from the root barrel, and `composeRuntime` folds it into the runtime that `createCairnAdmin` from `/sveltekit` closes over. :fact[3rb362]
+- A site reaches the engine in four places: the adapter module, the admin mount, the public routes, and the hooks module. Between them they import the root barrel, `/media`, `/sveltekit`, `/admin`, and `/delivery`. A list names each place and what it imports. :fact[3rb362]
+- The adapter module declares the adapter with `defineAdapter` from the root barrel and builds its media resolver from `/media`, and `composeRuntime` folds it into the runtime that `createCairnAdmin` from `/sveltekit` closes over. :fact[3rb362]
 - The admin mount renders `CairnAdmin` and `CairnAdminShell` from `/admin` over that factory's `load`, `shellLoad`, and `actions`. :fact[3rb362]
 - The public routes call `createPublicRoutes` and the feed, sitemap, and robots responders from `/delivery`. :fact[3rb362]
 - The hooks module chooses between `devBackendHandle` and `createAuthGuard` from `/sveltekit` in one `if`, hands either one the composed runtime, and exports the result as `handle`. :fact[f21bcz] :fact[3rb362]
@@ -69,7 +69,7 @@ exemplar: core/rust-analyzer-architecture
 
 - Most of the export map falls into six functional groups, and a table lists each group with its subpaths: core and adapter (the root barrel), the SvelteKit layer (`/sveltekit`), admin and public UI (`/admin`, `/public`, `/admin-toolkit`, and `/islands`), rendering (`/render`), delivery (`/delivery` and `/media`), and auth and platform (`/auth-store`, `/auth-channel`, `/auth-crypto`, `/cloudflare`, `/vite`, and `/ambient`). :fact[a7qx4m]
 - In the UI group, `/islands` is the separate client runtime that mounts a site's live components. :fact[bmxw7w]
-- The map also holds subpaths outside the six groups: `/delivery/head`, `/delivery/data`, `/reproductions`, `/reproductions/manifest`, `/log`, and the style sheets `/admin-sources.css` and `/cairn-public.css`. :fact[533flu]
+- The map also holds subpaths outside the six groups: `/delivery/head`, `/delivery/data`, `/reproductions`, `/reproductions/manifest`, `/log`, the style sheets `/admin-sources.css` and `/cairn-public.css`, and `./package.json`. :fact[533flu]
 - See [the reference index](../reference/README.md).
 - The map follows three placement rules, which a list states.
 - Nothing on the root barrel imports SvelteKit. :fact[0duu5p]
@@ -88,7 +88,7 @@ exemplar: core/rust-analyzer-architecture
 - A site adds a concept, a role, or an admin screen through a seam, and none of the three forks the engine. A concept is an edit to the adapter's `content` map, a role is an edit to its `roles` declaration, and a custom admin screen is a route file under `src/routes/admin/`. :fact[6a32oy]
 - A seam is a documented point where a site supplies code or data that the engine reads.
 - A table lists each seam, what a site supplies through it, and the page that documents it.
-- The `content` map: a `ConceptConfig` with a `fieldset` for each concept, documented in Content model. :fact[i87sd3]
+- The `content` map: a `ConceptConfig` for each concept, whose `fields` member holds the fieldset built with `defineFieldset`, documented in Content model. :fact[i87sd3]
 - `render`, in the adapter's `rendering` group: a renderer built with `createRenderer`, documented in Configure rendering. :fact[i87sd3]
 - Roles and the access map: a role vocabulary in which each role the site names maps to one capability, `none`, `editor`, or `owner`, and an access map that narrows what an editor capability reaches and can admit a `none` role only through a route rule that names it, documented in Restrict admin access. :fact[3pposq] :fact[p1xmp5] :fact[i87sd3]
 - The `identity` option on `createAuthGuard`: the site's own gate proves the editor's email in place of the built-in sign-in path, and the guard still looks that email up in the roster, documented in Replace magic links with Cloudflare Access. :fact[fhit7f] :fact[hk24xs]
@@ -175,8 +175,8 @@ exemplar: core/rust-analyzer-architecture
 *Say how the admin reads one entry, and how it reads the whole corpus without crawling entry files.*
 
 - The admin reads one entry from a concurrent batch of reads through the `Backend`, and it reads the whole corpus from the committed content manifest. :fact[cng7dr]
-- An entry's edit and history loads batch the file itself, its holding branch's head, the committed content manifest, and the media manifest. :fact[cng7dr]
-- The concept list, inbound links, reference and media usage, and the link check on save read the content manifest on the default branch instead of crawling the entry files. :fact[cng7dr]
+- An entry's edit load batches the file on the default branch, its holding branch's head, the committed content manifest, the media manifest when media is on, and the personal dictionary. Its history load batches the file's commit log, the holding branch's head, the file, and the default branch's head. :fact[cng7dr]
+- The concept list, inbound links, reference and media usage, and the link check on save read the default branch's entries from its content manifest instead of crawling the entry files. The usage indexes still parse each holding branch's markdown, and the concept list crawls only in a repository with no committed manifest yet. :fact[cng7dr]
 - That manifest is one kind of state the engine keeps in git, and git is one of three stores the engine places state in.
 
 ## Data tiers
@@ -216,7 +216,7 @@ exemplar: core/rust-analyzer-architecture
 *State the semantics every content-store provider keeps, and leave the signatures to the reference.*
 
 - A `BackendProvider` carries a `kind` tag and the default `branch`, and its `connect(env)` returns a live `Backend` for a route that needs one. The provider `createGithubApp` returns mints and caches its installation token lazily. :fact[gcd8h7]
-- The `Backend` interface fixes five semantics, which a list states. :fact[025q6u]
+- The `Backend` interface fixes semantics a provider must keep, among them the five a list states. :fact[025q6u]
 - A `commit` with `expectedHead` makes one attempt and throws `CommitConflictError` on a head mismatch, and a `commit` without it keeps the head-merge retry. :fact[025q6u]
 - `readFile` returns null for a missing path. :fact[025q6u]
 - `listCommits` returns an empty array for a missing file instead of throwing. :fact[025q6u]
@@ -235,9 +235,9 @@ exemplar: core/rust-analyzer-architecture
 - Extension API and Scaffold API are the frozen contract, and Unstable API stays importable with no promise across minor versions. :fact[c1ujrl]
 - See [Stability tiers in the reference index](../reference/README.md#stability-tiers).
 - cairn is pre-1.0, so the tiers are a target discipline, and an Extension-tier break can ship in a minor release. :fact[549u00]
-- Until 1.0, the `check:surface` snapshot gate fails on any change to an export's declared shape until the change is recorded. It detects and discloses a break rather than preventing one. :fact[gknz29]
+- The `check:surface` snapshot gate fails on any change to an export's declared shape until the golden file is regenerated to record it. Until 1.0 it detects and discloses a break rather than preventing one. :fact[gknz29]
 - In `0.86.0`, the minor version that shipped `navLayout`, the nav fields on `AdminShellData` and the parameter and return types of `navFilter` changed shape, both inside the Extension API tier. A site that read those fields or declared a `navFilter` had code to change before it could upgrade. :fact[zm9tp4]
-- In `0.94.0`, the `navLayout` types were renamed as well. :fact[zm9tp4]
+- In `0.94.0`, the `adminNav` types that `navLayout` built on were retired: `editor.adminNav` gave way to `editor.navLayout`, and `AdminNavEntry` folded into `NavLayoutEntry`. :fact[zm9tp4]
 - See [the 0.86.0 migration notes](migration-notes.md#0860).
 - See [the 0.94.0 migration notes](migration-notes.md#0940).
 - Code a site writes against the Extension tier therefore meets each break as a named change. :fact[gknz29]

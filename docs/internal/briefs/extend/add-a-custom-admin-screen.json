@@ -619,10 +619,6 @@
       "id": "f:39sn8c"
     },
     {
-      "text": "Their control height bands grow with `--size-field`.",
-      "id": "f:39sn8c"
-    },
-    {
       "text": "A bare `btn` renders as a hairline button, and a selected `btn`, such as one with `.btn-active` or `aria-pressed=\"true\"`, renders as the neutral selected segment.",
       "id": [
         "f:gc0hx3",

@@ -335,7 +335,6 @@ To style the screen, follow these steps:
    `--radius-selector` covers chips and small markers, `--radius-field` covers controls, and `--radius-box` covers cards and dialogs.
    The documented norms that `cairn-audit` measures follow the same ladder.
    They set 6px for buttons, inputs, and selects, 8px for a card, and 4px for a status chip.
-   Their control height bands grow with `--size-field`.
 
 A bare `btn` renders as a hairline button, and a selected `btn`, such as one with `.btn-active` or `aria-pressed="true"`, renders as the neutral selected segment.
 For warning or success text, the screen uses `cairn-text-warning` and `cairn-text-success`, which the packaged admin sheet defines, since that sheet does not compile the bracketed `text-[var(--cairn-warning-ink)]` and `text-[var(--color-positive-ink)]` forms.

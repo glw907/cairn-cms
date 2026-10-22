@@ -1388,9 +1388,8 @@ dispositions:
   - fact: f:9xthnq
     disposition: cut
     reason: |
-      Its public-path clause (the login page and the auth endpoints) is looser than `f:v85shm`,
-      which names exactly two public `/admin` paths; the page states the public paths from
-      `f:v85shm` alone, and the admin-toolkit point is off this page's job.
+      The page states the two public `/admin` paths from `f:v85shm` alone, and the admin-toolkit
+      point is off this page's job.
   - fact: f:ix10bm
     disposition: cut
     reason: |

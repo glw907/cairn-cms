@@ -8,10 +8,10 @@ exemplar: extenders/sanity-custom-tool
 # Add a custom admin screen
 
 :::reader
-**Who reads it.** A developer whose site keeps data outside its markdown content, such as signups, members, events, or a directory in a D1 database the site binds, and who wants a screen for it in `/admin` beside the editors' screens. A second reader has opened the example site's signups screen at `examples/showcase/src/routes/admin/signups/` and wants to know what each call in it is for, to change it or copy it. :fact[onqm6k]
+**Who reads it.** A developer who wants an administrative function of their own in `/admin`, beside the editors' screens. It might be a report, a tool, or a dashboard, and it might or might not keep data outside the markdown content, such as signups or members in a D1 database the site binds. A second reader has opened the example site's signups screen at `examples/showcase/src/routes/admin/signups/` and wants to know what each call in it is for, to change it or copy it. :fact[onqm6k]
 
 **Why they arrive:**
-- Their site needs to manage rows that are not markdown.
+- Their site needs an administrative function the engine doesn't provide, with or without data of its own.
 - They read the architecture page's seams table, whose custom admin routes row points here.
 - They opened the example site's `signups/` screen and want to know why it calls `requireAccess`, `createSectionAction`, and `ctx.audit`. :fact[pyt58u]
 - They have another kind of markdown content, which needs a concept rather than a screen, and the introduction routes them to Define an adapter and schema.
@@ -20,9 +20,10 @@ exemplar: extenders/sanity-custom-tool
 **What they already know.** SvelteKit routes, `load` functions, form actions, `enhance`, and server hooks (`handle` and `sequence`); Svelte 5 snippets and runes; and Cloudflare D1 bindings in `wrangler.jsonc`. The page explains none of these and links the vendor docs where a step depends on a vendor detail.
 
 **What the page does for them.** The introduction opens on what a custom admin screen is: a route under `src/routes/admin/` that renders inside `CairnAdminShell`, can adopt the admin toolkit, and sits behind the same `/admin` sign-in guard as the engine's screens. :fact[9xthnq]
-Right after the model, it routes a reader with another kind of markdown content to a concept instead, in Define an adapter and schema.
+Right after that, it gives a few examples of what a custom screen is for. Some keep data of their own: the example site's list of event signups in a D1 database, or a members directory. Others keep none: a form that sends a newsletter through the site's own mail service, a report built from records the site already holds, or a button that calls an outside service, such as one that clears a CDN cache. :fact[onqm6k]
+After the examples, it routes a reader with another kind of markdown content to a concept instead, in Define an adapter and schema.
 It then says why the screen's duties exist. The route's location gives the shell and the sign-in guard, and the guard decides nothing per route, so the access check is the screen's. :fact[2sd4if]
-An entry's history comes from git, while a screen's D1 writes sit outside it, so the audit trail is their record. :fact[hcydfe] :fact[pgy0mr] :fact[wnvqlz]
+An entry's history comes from git, while a screen's writes to a site database sit outside it, so the audit trail is the record of what the screen changed. :fact[hcydfe] :fact[pgy0mr] :fact[wnvqlz]
 `cairn-audit` holds the screen to the engine's own rules. :fact[326755]
 The contract sentence follows: the steps build a screen that renders inside the admin shell, enforces your site's access map on its reads and writes, records each write in the audit trail, and passes `cairn-audit`.
 It names the example site's signups screen as the worked example and says a scaffolded site does not ship it. It says the dialog form, row detail, and animation sections apply only to a screen with that feature. :fact[onqm6k]
@@ -44,7 +45,7 @@ It never says the engine's own screens write audit records.
 - Your site's access map needs a rule for the screen's route, declared once as the adapter's `access` member. :fact[iwf4nu]
 - A scaffolded site's adapter declares no `access` member. The example site's adapter declares `'/admin/signups': ['owner']`, which admits only owners to its signups screen. :fact[3z1uxv]
 - See [Restrict admin access](restrict-admin-access.md).
-- The screen's data lives in a D1 database your site binds in `wrangler.jsonc`, with its own migrations directory. `wrangler d1 migrations apply` walks one directory per database. :fact[nv0ok0]
+- A screen that keeps data of its own reads and writes a D1 database your site binds in `wrangler.jsonc`, with its own migrations directory. A screen with no data of its own skips this item. `wrangler d1 migrations apply` walks one directory per database. :fact[nv0ok0]
 - The scaffold's `wrangler.jsonc` binds no database beyond the engine's `AUTH_DB`. The example site's `APP_DB`, which backs its signups screen, is not part of the scaffold. :fact[n7t4bn]
 - See [the D1 Worker API](https://developers.cloudflare.com/d1/worker-api/).
 - The audit trail needs a D1 database that holds the `audit_log` table from the engine's opt-in `0002_audit.sql` migration. :fact[wnvqlz]

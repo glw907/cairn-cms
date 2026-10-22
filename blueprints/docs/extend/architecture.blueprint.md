@@ -43,7 +43,7 @@ exemplar: core/rust-analyzer-architecture
 
 *Set out the premise the rest of the page builds on: one adapter declaration, composed into one runtime that every server handle reads.*
 
-- A cairn site declares one adapter, a single `CairnAdapter` object, and every route factory, admin screen, and delivery helper reads its behavior from it. The adapter declares every concept, content directory, and field. The engine keeps a few names of its own, such as the manifest paths under `src/content/.cairn/` and the concept ids it reserves: `fragments` for the include directive, and each segment an admin screen owns under `/admin`. :fact[4esdoz]
+- A cairn site declares one adapter, a single `CairnAdapter` object, and every route factory, admin screen, and delivery helper reads its behavior from it. The adapter declares every concept, content directory, and field. The engine keeps a few names of its own, such as the manifest paths under `src/content/.cairn/` and the segments its admin screens own under `/admin`, which no concept id may take. :fact[4esdoz]
 - The root barrel's `composeRuntime` folds the adapter into one composed runtime. `createCairnAdmin` closes over that runtime, and the site's hooks module hands the same runtime to `createAuthGuard`, or, under the dev backend, to `devBackendHandle` from the `@glw907/cairn-cms-dev` package. :fact[3rb362] :fact[f21bcz] :fact[7cv105]
 - A role vocabulary or an access map declared once on the adapter therefore reaches every handle that reads it. :fact[7cv105] :fact[gun084]
 - The adapter and its runtime reach the engine through a few files in the site.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # vale-comments: commit-gate Vale scan of Go comment prose. Vale extracts the
-# comment text from each .go file and lints it through the vendored glw907
+# comment text from each .go file and lints it through the vendored Survey
 # overlay, so an em dash in a comment fails the gate.
 #
 # A missing Vale hard-fails: an advisory guard that skips quietly is the

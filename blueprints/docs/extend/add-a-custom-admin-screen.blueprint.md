@@ -138,7 +138,7 @@ export const load: PageServerLoad = async (event) => {
 ```
 
 - A route with no rule in the map refuses every session, owner included. The owner has no exemption from a missing rule. :fact[3lbdl6]
-- A route nested under the screen inherits the sign-in guard but not the screen's `requireAccess` call, so it needs its own call. The access map matches by deepest prefix, so the screen's key already covers the nested route. It needs its own entry only for a different rule. :fact[lmtfkt]
+- A route nested under the screen inherits the sign-in guard but not the screen's `requireAccess` call, so it needs its own call. The access map matches by deepest prefix, so the screen's key covers the nested route, with one exception. When the nested route starts with a dynamic segment and the map holds a deeper key under the screen's, it resolves to no rule. Otherwise it needs its own entry only for a different rule. :fact[lmtfkt]
 - Load row detail on demand applies this to a detail endpoint.
 - See [Load row detail on demand](#load-row-detail-on-demand).
 
@@ -435,7 +435,7 @@ caption: The screen renders below the shell's topbar. The page header carries th
 
 1. Under the screen's directory, add the detail endpoint as a nested route that returns one row's detail as JSON.
 2. In that route's server file, call `requireAccess`. :fact[lmtfkt]
-3. In your site's access map, add an entry for the nested route only when it needs a different rule from the screen's; the screen's key already covers it. :fact[lmtfkt]
+3. In your site's access map, add an entry for the nested route when it needs a different rule from the screen's, or when it starts with a dynamic segment and the map holds a deeper key under the screen's. Otherwise the screen's key already covers it. :fact[lmtfkt]
 
 - See [Restrict admin access](restrict-admin-access.md).
 

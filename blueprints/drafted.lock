@@ -5,7 +5,7 @@ pages:
         accepted: a0ab900d9578aacc81178efac7d97073ac7b0e4e
     docs/extend/add-a-custom-admin-screen.md:
         page: 420d6440a24b7e827106bee15ee469f288d620cc
-        blueprint: 7695f30f8a0c74a1530c7be10aea9c5741d83c4d
+        blueprint: 3d57f90a33c7de2c3ce70d1d0505ba0f3e6eaee6
         sections:
             _intro: sha256:00eada8aad13c18e8404624df94dc28303705511640edf9aff77d1886fefdcc2
             animate-the-screen: sha256:836923140878c6c1431363f9463e925aa3ebb1806063ba4b62b3f5711c2c34ea
@@ -86,7 +86,7 @@ pages:
             write-the-site-config-and-a-minimal-adapter: sha256:f00bd4046b73fc086c4434b5af7145ee0a7fbf774afbf46246acf64c6b72cfe0
     docs/extend/architecture.md:
         page: 24a4a977c99a3aa81ad1f4c2fd1896d8d5f65678
-        blueprint: d4fff1df06a28ddbd8711bf58bd7990aab8a36a3
+        blueprint: b5a8ff3f190843a33ef384476e9d6b60c86aa254
         sections:
             _intro: sha256:6d858d22935cfb0bcff808912385fa661cb2005b4970d4df865df11a9a8910c4
             backend-contract: sha256:ceff43db61e5af0d4e10b0cd19573355edaf46297743fb6b883a9596e4b63035
@@ -132,7 +132,7 @@ pages:
             site-config-events: sha256:2384b4a46133fd98483db72b0c2fb228e4e6f93f531ca656bf9a0b915e67dca2
     docs/extend/replace-magic-links-with-cloudflare-access.md:
         page: 523a620f6acb5a50234f23fa11be13e6b2c1c5f7
-        blueprint: 493713d7cbb346ed72a2d5b170d0647b0fd059bc
+        blueprint: 39d985b5306add3ea92cc95226d5fc20aec5beff
         sections:
             _intro: sha256:1021a713f1662851f55f67465e8037da5a06ca90c6976706301a3ca570f96dd8
             before-you-begin: sha256:9c3159f647dbae5050e450f04df1311f7ffc6b47ce08ca10d2b18b8d3bb93209

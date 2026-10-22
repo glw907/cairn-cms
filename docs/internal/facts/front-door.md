@@ -134,6 +134,14 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
 - `f:0xsi67` `check:surface` runs a public-surface snapshot gate (`check-surface.mjs`) plus a leak check
   (`check-surface-leaks.mjs`). Source: `package.json:42` (`"check:surface"`). [verified]
 - `f:usjir5` `check:version` is a standalone gate script. Source: `package.json:62` (`"check:version"`). [verified]
+- `f:gknz29` The seams form a narrow, versioned public surface across kind-based export subpaths, held by a
+  public-surface snapshot gate, `check:surface`, plus gated Extension-API/Scaffold-API stability
+  tiers. The gate renders the declared shape of every export on every subpath and fails on any
+  drift from the committed golden file, and regenerating that file is the deliberate disclosure
+  moment, so until 1.0 the gate detects and discloses a break rather than preventing one. Source:
+  `scripts/checks/check-surface.mjs:1-12` (`disclosure`), `package.json:42` (`check:surface`).
+  [verified: re-pointed 2026-10-22 from the charter's prose to the gate's own code, and moved out
+  of the owner-brief section, whose heading the owner tier reads as its source]
 
 ## docs/internal/what-cairn-is-and-is-not.md (owner brief, source for stance claims)
 - `f:bhyvqg` The governing boundary: cairn owns markdown content management and the editor/admin
@@ -152,14 +160,6 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   (members, customers, assets, a directory) is the developer's to build. Key phrase: "A site's
   domain is the site's". Source: `docs/internal/what-cairn-is-and-is-not.md:67-69`, "A site's domain
   is the site's." and "cairn never names or models a domain actor". [verified]
-- `f:gknz29` The seams form a narrow, versioned public surface across kind-based export subpaths, held by a
-  public-surface snapshot gate, `check:surface`, plus gated Extension-API/Scaffold-API stability
-  tiers. The gate renders the declared shape of every export on every subpath and fails on any
-  drift from the committed golden file, and regenerating that file is the deliberate disclosure
-  moment, so until 1.0 the gate detects and discloses a break rather than preventing one. Source:
-  `scripts/checks/check-surface.mjs:1-12` (`disclosure`), `package.json:42` (`check:surface`).
-  [verified: re-pointed 2026-10-22 from the charter's prose to the gate's own code; the charter's
-  key phrase "every break is disclosed" is dropped with that source]
 - `f:k27p36` The Go `cairn` tool is a separate operator cockpit over every cairn site a machine
   knows; it replicates admin operations as a second front over the same contracts and never adds to
   the engine's public surface or models a domain actor. Key phrase: "operator's cockpit". Source:

@@ -18,9 +18,9 @@ a recorded departure from a defect. The document is itself written in the cairn 
 the style of a prompt steers the style of what an agent writes from it
 ([Anthropic's prompting guidance](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)).
 
-Survey (`glw907/survey`, `skills/survey/writing/`) holds the house writing register: the
-base-standard rule, the tells that hold for every audience, and the registers for surfaces this
-document does not govern. This document is cairn's overlay on that register. Where the two differ
+Survey (`glw907/survey`, `skills/survey/writing/`) holds the house writing register,
+including the base-standard rule, the tells that hold for every audience, and the registers for
+surfaces this document does not govern. This document is cairn's overlay on that register. Where the two differ
 on a cairn surface, this document governs.
 
 ## The base guides

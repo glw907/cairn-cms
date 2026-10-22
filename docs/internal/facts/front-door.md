@@ -22,7 +22,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   [verified]
 - `f:9xthnq` The admin is also a toolkit: a developer's own route under `/admin` renders as a child of `CairnAdminShell` like the engine's own screens, can adopt the packaged admin-toolkit components, and sits behind the same `/admin` sign-in guard, since every `/admin` path except the login page and the auth endpoints is gated. Source: `examples/showcase/src/routes/admin/+layout.svelte:3-5`, "every /admin/** route renders inside CairnAdminShell"; `examples/showcase/src/routes/admin/signups/+page.svelte:1-4`, "a developer's own route rendered in CairnAdminShell"; `src/lib/sveltekit/guard.ts:24`, "everything else under /admin is gated". [verified]
 - `f:i74t7g` A cairn site is built to run on Cloudflare Workers: the engine's environment contract is Cloudflare Worker bindings (the `AUTH_DB` D1 database, the Email Sending binding), so a production site built on cairn is hosted on Cloudflare. Source: `src/lib/env.ts:5,17-33`, the `CairnEnv` interface and its `D1Database` import from `@cloudflare/workers-types`. [verified: the code fixes Cloudflare as the runtime platform; where a given site is deployed is the operator's fact and is not separately confirmed]
-- `f:hk24xs` cairn has no host abstraction layer: the engine's environment contract is typed to Cloudflare bindings, so swapping Cloudflare for another host is not a seam. The one swappable storage seam is the content store (the `identity` option on `createAuthGuard` replaces the sign-in path, not a store): a developer can implement `BackendProvider` against a store other than GitHub, and `createGithubApp` is the only implementation cairn ships. Source: `src/lib/env.ts:5,19`, `AUTH_DB?: D1Database`; `src/lib/github/backend.ts:78,88,162` (`BackendProvider`, `createGithubApp` the sole factory), `src/lib/sveltekit/guard.ts#AuthGuardConfig` (`identity`). [verified]
+- `f:hk24xs` cairn has no host abstraction layer: the engine's environment contract is typed to Cloudflare bindings, so swapping Cloudflare for another host is not a seam. The one swappable storage seam is the content store (the `identity` option on `createAuthGuard` replaces the sign-in path, not a store): a developer can implement `BackendProvider` against a store other than GitHub, and `createGithubApp` is the only implementation cairn ships. Source: `src/lib/env.ts:5,19`, `AUTH_DB?: D1Database`; `src/lib/github/backend.ts#BackendProvider`, `src/lib/github/backend.ts#createGithubApp`, `src/lib/sveltekit/guard.ts#AuthGuardConfig` (`identity`). [verified]
 - `f:h0xykj` cairn is pre-1.0 (package version `0.98.0`) and its Extension API tier has broken across minors: the nav fields on `AdminShellData` and `navFilter`'s types changed at `0.86.0`, the version `navLayout` shipped, and `navLayout`'s own types were renamed at `0.94.0` (`AdminNavEntry` became `NavLayoutEntry`). Until 1.0 a break is disclosed, through the changelog's `Consumers must:` line and the migration notes, the per-version record, and never prevented. Key phrase: "two Extension-tier breaks have shipped inside 0.x minors". Source: `docs/internal/what-cairn-is-and-is-not.md:77-79`; `docs/extend/migration-notes.md:559-569,516-521`; `docs/reference/core.md:1130-1131`, `NavLayout` and `NavLayoutEntry` marked Extension API; `package.json:3` (`"version"`). [verified]
 - `f:zzc2m5` The zero-config identity model has exactly two roles: owner and editor. Key phrase:
   "only ever knows owner/editor". Source: `docs/internal/what-cairn-is-and-is-not.md:34,69`, "A
@@ -153,10 +153,13 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   domain is the site's". Source: `docs/internal/what-cairn-is-and-is-not.md:67-69`, "A site's domain
   is the site's." and "cairn never names or models a domain actor". [verified]
 - `f:gknz29` The seams form a narrow, versioned public surface across kind-based export subpaths, held by a
-  public-surface snapshot gate plus gated Extension-API/Scaffold-API stability tiers; until 1.0 the
-  gate detects and discloses a break rather than preventing one. Key phrase: "every break is disclosed". Source: same file, "The contract
-  is stable, and every break is disclosed," cross-referenced with `check:surface`
-  (`package.json:42` (`"check:surface"`)). [verified]
+  public-surface snapshot gate, `check:surface`, plus gated Extension-API/Scaffold-API stability
+  tiers. The gate renders the declared shape of every export on every subpath and fails on any
+  drift from the committed golden file, and regenerating that file is the deliberate disclosure
+  moment, so until 1.0 the gate detects and discloses a break rather than preventing one. Source:
+  `scripts/checks/check-surface.mjs:1-12` (`disclosure`), `package.json:42` (`check:surface`).
+  [verified: re-pointed 2026-10-22 from the charter's prose to the gate's own code; the charter's
+  key phrase "every break is disclosed" is dropped with that source]
 - `f:k27p36` The Go `cairn` tool is a separate operator cockpit over every cairn site a machine
   knows; it replicates admin operations as a second front over the same contracts and never adds to
   the engine's public surface or models a domain actor. Key phrase: "operator's cockpit". Source:

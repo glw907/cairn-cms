@@ -60,10 +60,10 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   open-ended collection model". Source: `docs/internal/what-cairn-is-and-is-not.md:22-23`, "in one
   fixed concept shape (`defineConcept`); the set is the site's to declare, with Posts and Pages out
   of the box, and never an open-ended collection model." [verified]
-- `f:k6aopn` The admin is built in DaisyUI and Tailwind, the idiom a developer's own screens extend
-  it in. Key phrase: "built with DaisyUI + Tailwind". Source:
-  `docs/internal/what-cairn-is-and-is-not.md:42-43`, "An admin skeleton a developer extends, built
-  with DaisyUI + Tailwind (the idiom custom admin screens follow". [verified]
+- `f:k6aopn` The admin is built with daisyUI and Tailwind: the engine's packaged admin sheet
+  compiles Tailwind's theme and utilities and the daisyUI plugin. Source:
+  `scripts/build/admin-css.input.css:11-13` (the `tailwindcss` imports and `@plugin "daisyui"`).
+  [verified]
 - `f:u705t5` `create-cairn-site` scaffolds a complete starter called Waymark; a second template, Topo, is planned but not shipped. Source: `packages/create-cairn-site/package.json:4` (`"description"`), "scaffold a branded Waymark starter"; `packages/create-cairn-site/src/prompts.mjs:15`, `DEFAULTS = { name: 'Waymark', ... }`; no `Topo` package or directory found under `packages/` or `examples/` (`find . -iname "*topo*"` matched only spec and record docs under `docs/`). [verified: Waymark and the absence of any Topo template trace to the tree; "planned" rests on the specs and ROADMAP.md, not code]
 - `f:4sxnxp` cairn is pre-1.0. Source: `package.json:3` (`"version"`), `"version": "0.98.0"`. [verified]
 - `f:3utth1` The published version, unpublished window, and next action live in `docs/STATUS.md`. Source:

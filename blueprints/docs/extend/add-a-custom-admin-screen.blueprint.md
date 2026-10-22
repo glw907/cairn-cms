@@ -11,7 +11,7 @@ exemplar: extenders/sanity-custom-tool
 **Who reads it.** A developer whose site keeps data outside its markdown content, such as signups, members, events, or a directory in a D1 database the site binds, and who wants a screen for it in `/admin` beside the editors' screens. A second reader has opened the example site's signups screen at `examples/showcase/src/routes/admin/signups/` and wants to know what each call in it is for, to change it or copy it. :fact[onqm6k]
 
 **Why they arrive:**
-- Their site needs to manage rows that are not markdown, and cairn has no built-in collections. :fact[bhyvqg] :fact[nguseg]
+- Their site needs to manage rows that are not markdown.
 - They read the architecture page's seams table, whose custom admin routes row points here.
 - They opened the example site's `signups/` screen and want to know why it calls `requireAccess`, `createSectionAction`, and `ctx.audit`. :fact[pyt58u]
 - They have another kind of markdown content, which needs a concept rather than a screen, and the introduction routes them to Define an adapter and schema.
@@ -19,8 +19,7 @@ exemplar: extenders/sanity-custom-tool
 
 **What they already know.** SvelteKit routes, `load` functions, form actions, `enhance`, and server hooks (`handle` and `sequence`); Svelte 5 snippets and runes; and Cloudflare D1 bindings in `wrangler.jsonc`. The page explains none of these and links the vendor docs where a step depends on a vendor detail.
 
-**What the page does for them.** The introduction opens on a statement of the boundary: cairn owns markdown content and the admin frame, and a site's other data and domain logic are the developer's, served through a thin seam. :fact[bhyvqg] :fact[nguseg]
-In the admin, that seam is the custom admin screen: a route under `src/routes/admin/` that renders inside `CairnAdminShell`, can adopt the admin toolkit, and sits behind the same `/admin` sign-in guard as the engine's screens. :fact[9xthnq]
+**What the page does for them.** The introduction opens on what a custom admin screen is: a route under `src/routes/admin/` that renders inside `CairnAdminShell`, can adopt the admin toolkit, and sits behind the same `/admin` sign-in guard as the engine's screens. :fact[9xthnq]
 Right after the model, it routes a reader with another kind of markdown content to a concept instead, in Define an adapter and schema.
 It then says why the screen's duties exist. The route's location gives the shell and the sign-in guard, and the guard decides nothing per route, so the access check is the screen's. :fact[2sd4if]
 An entry's history comes from git, while a screen's D1 writes sit outside it, so the audit trail is their record. :fact[hcydfe] :fact[pgy0mr] :fact[wnvqlz]
@@ -102,11 +101,11 @@ src/
 - `createAuthGuard({ runtime })` signs a session in for the whole `/admin` subtree before any load runs. It does not decide which routes that session may reach. :fact[2sd4if]
 - Two calls enforce your site's access map: `requireAccess` in the `load`, and an access-checking wrapper around every action. Both run the same fail-closed check, `hasAccessRule` and then `canReach`. :fact[10ojk8]
 - Both read the map from the adapter's `access` member, which the guard attaches to every admin request it signs in. :fact[iwf4nu]
-- SvelteKit dispatches a matched form action directly and never re-runs the page's `load`. An action that skips the check admits any signed-in session to the write and records nothing. :fact[chsstm]
+- SvelteKit runs a matched form action before the page's `load`, and an enhanced submission's request runs the action alone, so the load's check never guards the action. An action that skips the check admits any signed-in session to the write and records nothing. :fact[chsstm]
 
 1. In the screen's `+page.server.ts`, call `requireAccess(event)` in `load` before it reads anything.
 
-- The example below is the load from the example site's `examples/showcase/src/routes/admin/signups/+page.server.ts`, minus its logger call and comments. It calls `requireAccess(event)` before the read and fails with a 500 when the `APP_DB` binding is absent. A snippet-check skip comment sits above it, since it imports `cloudflare:workers`. :fact[onqm6k]
+- The example below is the load from the example site's `examples/showcase/src/routes/admin/signups/+page.server.ts`, minus its logger call and comments. It calls `requireAccess(event)` before the read and fails with a 500 when the `APP_DB` binding is absent. It keeps the binding's `D1Database | undefined` annotation. :fact[onqm6k]
 
 ```ts
 // src/routes/admin/signups/+page.server.ts
@@ -123,7 +122,7 @@ interface SignupRow {
 }
 
 function requireAppDb(): D1Database {
-  const db = env.APP_DB;
+  const db: D1Database | undefined = env.APP_DB;
   if (!db) error(500, 'This screen is not configured.');
   return db;
 }
@@ -139,7 +138,7 @@ export const load: PageServerLoad = async (event) => {
 ```
 
 - A route with no rule in the map refuses every session, owner included. The owner has no exemption from a missing rule. :fact[3lbdl6]
-- A route nested under the screen inherits the sign-in guard and never the screen's `requireAccess` rule. It needs its own call and its own map entry. :fact[lmtfkt]
+- A route nested under the screen inherits the sign-in guard but not the screen's `requireAccess` call, so it needs its own call. The access map matches by deepest prefix, so the screen's key already covers the nested route. It needs its own entry only for a different rule. :fact[lmtfkt]
 - Load row detail on demand applies this to a detail endpoint.
 - See [Load row detail on demand](#load-row-detail-on-demand).
 
@@ -267,7 +266,7 @@ handle = sequence(createAuthGuard({ runtime }), wireAuditSink);
 *Build the markup from the admin toolkit's primitives and mount a CSRF field in every form. Show a small Events screen as an aside.*
 
 - The admin toolkit is the set of general-purpose primitives your screen composes in place of a hand-rolled table, list, or field. The engine's own screens compose it too: `ManageEditors` builds from its `PageHeader` and `AdminTable`. :fact[5t1i7o]
-- Each primitive has one job: `PageHeader` the eyebrow, title, and meta band; `AdminTable` the table chrome around your header and row markup; `ListToolbar` the search and filter band; `ToolbarDisclosure` a trigger that opens a floating panel; `Pagination` page navigation; `StatusChip` a status chip; `EmptyState` the centered empty state; `FieldLabel` a control's label wrapper; `ExpandableRow` a summary row with an expand-in-place panel; and `MediaPicker` a picker over the media library. :fact[clyg9r]
+- Each primitive has one job: `PageHeader` the eyebrow, title, and meta band; `AdminTable` the table chrome around your header and row markup; `ListToolbar` the search and filter band; `ToolbarDisclosure` a trigger that opens a floating panel; `Pagination` page navigation; `StatusChip` a status chip; `EmptyState` the centered empty state; `FieldLabel` a control's label wrapper; `ExpandableRow` a summary row with an expand-in-place panel; `MediaPicker` a picker over the media library; and `Tooltip` a hover and focus description for an icon-only control. :fact[clyg9r]
 
 1. In the screen's `+page.svelte`, import the primitives it needs from `@glw907/cairn-cms/admin-toolkit`.
 2. In each form that posts to one of the screen's actions, mount a `CsrfField` from `@glw907/cairn-cms/admin`. :fact[fers77]
@@ -327,7 +326,7 @@ caption: The screen renders below the shell's topbar. The page header carries th
 
 1. Keep every file that holds the screen's markup under `src/routes/admin` or `src/lib/admin`. :fact[vkfd7b]
 
-- The admin is built with daisyUI and Tailwind, the idiom your own screens extend it in. :fact[k6aopn]
+- The admin is built with daisyUI and Tailwind, so your own screens use the same classes. :fact[k6aopn]
 - Every daisyUI component and utility class except calendar compiles into the admin sheet, with no safelist entry. :fact[9rxw92]
 - Both admin themes set daisyUI's radius tokens: `--radius-selector` 0.25rem for chips and small markers, `--radius-field` 0.375rem for controls, and `--radius-box` 0.5rem for cards and dialogs. :fact[9oa6sk]
 
@@ -368,7 +367,7 @@ caption: The screen renders below the shell's topbar. The page header carries th
 8. On the submit button, set `disabled` while the request is pending. :fact[5vn194]
 
 - The input's description then reads the error with its field when focus moves to it, and a disabled submit cannot fire the action a second time. :fact[5vn194]
-- The example below is an illustrative create dialog that posts to the signups screen's `create` action. The example site's own dialog confirms a removal and has no input, so this one is written on that file's imports and patterns, and its lead-in frames it as illustrative.
+- The example below is an illustrative create dialog that posts to the signups screen's `create` action. The example site's own dialog confirms a removal and has no visible field, only a hidden `id` input, so this one is written on that file's imports and patterns, and its lead-in frames it as illustrative.
 
 ```svelte
 <script lang="ts">
@@ -436,7 +435,7 @@ caption: The screen renders below the shell's topbar. The page header carries th
 
 1. Under the screen's directory, add the detail endpoint as a nested route that returns one row's detail as JSON.
 2. In that route's server file, call `requireAccess`. :fact[lmtfkt]
-3. In your site's access map, add an entry for the nested route. :fact[lmtfkt]
+3. In your site's access map, add an entry for the nested route only when it needs a different rule from the screen's; the screen's key already covers it. :fact[lmtfkt]
 
 - See [Restrict admin access](restrict-admin-access.md).
 
@@ -494,7 +493,7 @@ async function openDetail(id: number, url: string): Promise<unknown> {
 - Both admin themes declare eight motion tokens: five durations, `--cairn-dur-instant` 70ms, `--cairn-dur-quick` 110ms, `--cairn-dur-base` 150ms, `--cairn-dur-shift` 240ms, and `--cairn-dur-settle` 400ms, and three curves, `--cairn-ease-standard`, `--cairn-ease-entrance`, and `--cairn-ease-exit`. :fact[017qss]
 - A `transition-*` utility with no `duration-*` or `ease-*` beside it runs on the base duration and the standard curve. :fact[018sgk]
 - Under `prefers-reduced-motion: reduce`, the admin cuts every animation and transition to `0.01ms`. :fact[2p5otw]
-- Three error-tier `cairn-audit` rules hold an admin screen's motion: `motion-property` limits which properties a transition names, `motion-vocabulary` fails a literal duration or easing, and `motion-hover-gate` fails hover motion outside `@media (hover: hover)`. :fact[09g8ev] :fact[0aa9tp] :fact[0mbj5n]
+- Three admin-only, error-tier `cairn-audit` rules hold an admin screen's motion vocabulary: `motion-property` limits which properties a transition names, `motion-vocabulary` fails a literal duration or easing, and `motion-hover-gate` fails hover motion outside `@media (hover: hover)`. :fact[09g8ev] :fact[0aa9tp] :fact[0mbj5n] :fact[1x8r1x]
 - The rules scan `src/routes/admin`, `src/lib/admin`, and `src/lib/admin-toolkit` by default. A site whose screens live elsewhere names their roots under `static.adminScope`. :fact[t767qb]
 - The static rules table is the reference for what each rule checks, and its coverage limits hold the exemptions.
 - See [the static rules](../reference/cairn-audit.md#the-static-rules).

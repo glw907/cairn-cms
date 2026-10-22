@@ -45,7 +45,7 @@ It never says the engine's own screens write audit records.
 - Your site's access map needs a rule for the screen's route, declared once as the adapter's `access` member. :fact[iwf4nu]
 - A scaffolded site's adapter declares no `access` member. The example site's adapter declares `'/admin/signups': ['owner']`, which admits only owners to its signups screen. :fact[3z1uxv]
 - See [Restrict admin access](restrict-admin-access.md).
-- A screen that keeps data of its own reads and writes a D1 database your site binds in `wrangler.jsonc`, with its own migrations directory. A screen with no data of its own skips this item, and wraps its actions in `createAdminAction` with its `access` option set, since `createSectionAction` requires a binding resolver. :fact[hroqbu] :fact[xbjxit] `wrangler d1 migrations apply` walks one directory per database. :fact[nv0ok0]
+- A screen that keeps data of its own reads and writes a D1 database your site binds in `wrangler.jsonc`, with its own migrations directory. A screen with no data of its own skips this item. A screen that uses no database binding wraps its actions in `createAdminAction` with its `access` option set, since `createSectionAction` requires a binding resolver. :fact[hroqbu] :fact[xbjxit] `wrangler d1 migrations apply` walks one directory per database. :fact[nv0ok0]
 - The scaffold's `wrangler.jsonc` binds no database beyond the engine's `AUTH_DB`. The example site's `APP_DB`, which backs its signups screen, is not part of the scaffold. :fact[n7t4bn]
 - See [the D1 Worker API](https://developers.cloudflare.com/d1/worker-api/).
 - The audit trail needs a D1 database that holds the `audit_log` table from the engine's opt-in `0002_audit.sql` migration. :fact[wnvqlz]

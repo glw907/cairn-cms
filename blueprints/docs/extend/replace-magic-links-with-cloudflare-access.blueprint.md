@@ -13,7 +13,7 @@ exemplar: extenders/sveltekit-hooks
 **Why they arrive:**
 - Their organization already holds every editor's account in an identity provider, and they want the admin behind it. :fact[agif8l]
 - They are still deciding whether to switch, and need the costs before any step: every editor moves or none does, and the free Zero Trust plan caps the users who sign in through Access. :fact[v5ndhs] :fact[4olp4u]
-- Their site sits behind a different authenticating reverse proxy, and they want to know which part of the page carries over. The guard's `identity` option takes any `IdentityResolver`, so the resolver carries over and the Cloudflare steps are replaced by that proxy's own setup. :fact[3p8yu8]
+- Their site sits behind a different authenticating reverse proxy, and they want to know which part of the page carries over. The guard's `identity` option takes any `IdentityResolver`, so the seam and the hooks wiring carry over. The page's resolver, which verifies a Cloudflare Access token, and the Cloudflare steps are replaced by that proxy's own. :fact[3p8yu8]
 
 **What they already know.** They have edited a SvelteKit server hooks file, deployed a Worker with Wrangler, and read Workers Logs, and they can read a JWT verification sample closely enough to own the code it becomes. The page explains none of these.
 
@@ -67,7 +67,7 @@ The body then walks the switch in the order the parts depend on each other: the 
 - To create and configure the application, follow these steps:
 1. In Zero Trust, create a self-hosted application for the site's hostname, as Cloudflare's self-hosted application guide describes. :fact[agif8l]
 2. In the application's paths, add `/admin` and `/admin/*`, so it covers `/admin`, every path beneath it, and SvelteKit's `/admin/__data.json` request. :fact[vnm1p5]
-- A wildcard path doesn't cover its parent, which is why both entries are needed, and a `/preview/<token>` link stays outside the application so a reviewer is never sent through Access. :fact[vnm1p5]
+- A wildcard path such as `/admin/*` doesn't cover its parent, so an application that lists the wildcard lists `/admin` too. A `/preview/<token>` link stays outside the application so a reviewer is never sent through Access. :fact[vnm1p5]
 - See [Application paths](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/app-paths/).
 3. In the application's policies, add a policy that admits every editor on the roster. :fact[agif8l]
 - An editor the policy leaves out stops at Access and never reaches the guard. A user the policy admits but the roster lacks reaches the guard, which refuses them as unknown. :fact[k40l86] :fact[hilyos]
@@ -119,7 +119,7 @@ The body then walks the switch in the order the parts depend on each other: the 
 - It requires the `type` claim to be `app`, which marks an application token and excludes the `org` global session token. :fact[zas1dk]
 - It refuses a token with no `email` claim, which also refuses a service token's. :fact[zas1dk]
 - It returns the email and, optionally, a display name, never a role: the guard takes the role from the roster row and uses the display name only when the row's is empty. :fact[hilyos]
-- Its refusal reason names the failure. The guard logs `audience`, `issuer`, and `keys` at error, as a misconfigured gate, and every other reason at warn. :fact[fu4uis]
+- Its refusal reason names the failure. The guard logs `audience`, `issuer`, `keys`, and `error` at error, as a misconfigured gate, and every other reason at warn. :fact[fu4uis]
 - To write the verifier, follow these steps:
 1. In the project directory, install `jose` with `npm install jose`. :fact[vm75ro]
 2. In `src/lib/`, create `access-config.ts`, which exports the team domain, the AUD tag, and the logout address you noted. :fact[s9s8mw] :fact[gs23fb] :fact[nwkg0d]
@@ -196,7 +196,7 @@ export const accessIdentity: IdentityResolver = {
 };
 ```
 
-- A failure the sample rethrows reaches the guard as a throw, which it logs at error with the reason `error` and the thrown message, so under this sample `error` always means the resolver threw. :fact[fu4uis] :fact[zvr7uz]
+- A failure the sample rethrows reaches the guard as a throw, which it logs at error as a `guard.refused` record whose `detail` is `error`. The record's `error` field holds the thrown message, cut to 300 characters, so under this sample `detail: error` always means the resolver threw. :fact[fu4uis] :fact[zvr7uz]
 - The optional `label` names the gate on the sign-in hand-off page and on both refusal pages, and defaults to "your organization's sign-in". :fact[ojr3qm]
 
 ## Wire the resolver and deploy the Worker
@@ -229,7 +229,8 @@ handle = createAuthGuard({ runtime, identity: accessIdentity });
 - It awaits `identity.resolve` on every gated `/admin` request and caches no verified identity. The token check runs once per request. :fact[4uqi5r]
 - The Access application's session duration decides how long an editor stays signed in, and cairn's 30-day session no longer applies. :fact[2glcaf]
 - See [Session management](https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/).
-- Sign-out skips the session-row delete, clears every cairn cookie, and redirects to the resolver's `logoutUrl`, where Access clears its authorization cookie. :fact[8xxe3b] :fact[q0icwk]
+- Sign-out skips the session-row delete, clears cairn's session and CSRF cookies and this request's pending sign-in cookie, and redirects to the resolver's `logoutUrl`. :fact[8xxe3b]
+- At that address Access ends the editor's session across all its applications, and tokens it issued earlier stop being accepted within 20 to 30 seconds. :fact[q0icwk]
 - A sign-out or a revocation takes effect only where Access sits in the request path. The token check at the Worker is stateless. :fact[fe0dyh]
 - A handle placed ahead of the guard can limit that per-request work on a best-effort basis with `resolveRateLimit` from `@glw907/cairn-cms/cloudflare`. :fact[4uqi5r]
 - See [`resolveRateLimit`](../reference/cloudflare.md#resolveratelimit).

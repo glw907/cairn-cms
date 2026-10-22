@@ -17,7 +17,7 @@ exemplar: extenders/sveltekit-hooks
 
 **What they already know.** They have edited a SvelteKit server hooks file, deployed a Worker with Wrangler, and read Workers Logs, and they can read a JWT verification sample closely enough to own the code it becomes. The page explains none of these.
 
-**Background.** By default cairn is the identity system for its editors: an editor enters an email address, receives a one-time link, and reaches the admin with no GitHub account and no password, and the `AUTH_DB` store holds the roster, the sessions, and the single-use sign-in tokens. That default exists so a content site runs with zero config. :fact[7oxmh4] :fact[u77pea] :fact[zxdoaf]
+**Background.** By default cairn is the identity system for its editors: an editor enters an email address, receives a one-time link, and reaches the admin with no GitHub account and no password, and the `AUTH_DB` store holds the roster, the sessions, and the single-use sign-in tokens. :fact[7oxmh4] :fact[u77pea]
 The guard that `createAuthGuard` returns is a plain SvelteKit `Handle` in the server hooks, and it gates every `/admin` path except the sign-in page and the magic-link confirm page. :fact[dwc4kp] :fact[j5v0gn]
 Cloudflare Access puts an application in front of the site's Worker that admits only users who match its policies and signs them in through a connected identity provider. :fact[agif8l]
 

@@ -7,8 +7,8 @@ compose. The canonical mount is one component: `CairnAdmin`, rendered from the c
 individually mountable here, so a site on the advanced per-route mounting reaches the same
 component the single-mount facade would have rendered; `VocabularyAdmin` and `WelcomeView`
 complete that seam. A general-purpose, domain-agnostic primitive lives on
-[`/admin-toolkit`](./admin-toolkit.md) instead, even one this barrel's own screens compose
-internally (`PageHeader`, `AdminTable`): this barrel carries the admin's own views and their
+[`/admin-toolkit`](./admin-toolkit.md) instead, even one this barrel's screens compose
+internally (`PageHeader`, `AdminTable`): this barrel carries the admin's views and their
 composed parts, not a reusable building block a site's custom screen would reach for on its own.
 For the catch-all wiring, see
 [the canonical admin mount](./admin-routes.md).
@@ -93,17 +93,17 @@ let { data, children, themeOverride }: {
 ```
 
 The exported admin chrome shell: the sidebar nav, the top bar, the command palette, and the content
-slot. Mount it from a shared `/admin/+layout.svelte` so every `/admin/**` route, the engine's own
+slot. Mount it from a shared `/admin/+layout.svelte` so every `/admin/**` route, the engine's
 views and any custom screen a site adds, renders inside one chrome. `data` is the `AdminShellData`
 the shell load (`/admin/+layout.server.ts`) returns.
 
 `themeOverride` is the mounting seam a host outside a real admin session uses to own the shell's
-theme outright: present, it wins over the shell's own resolution and suppresses both the reads that
+theme outright: present, it wins over the shell's resolution and suppresses both the reads that
 resolution would otherwise make, the `cairn-admin-theme` cookie and the `prefers-color-scheme`
 media query. It is reactive, so a host that pictures the shell in both themes updates the prop
 rather than re-mounting the component. Absent, which every real admin mount leaves it, the shell
-resolves its own theme exactly as it always has. Under an override the shell renders no theme
-toggle at all, in the top bar or in `EditPage`'s own folded overflow control: neither reads nor
+resolves its theme exactly as it always has. Under an override the shell renders no theme
+toggle at all, in the top bar or in `EditPage`'s folded overflow control: neither reads nor
 writes the theme the mounting host already owns, so there is no stray control that would flip the
 shell's theme out from under the override.
 
@@ -114,7 +114,7 @@ public payload always renders bare.
 
 The sidebar renders `data.nav`, one resolved [`ResolvedNavLayout`](./sveltekit.md#resolvednavlayout)
 tree computed server-side for every site, a declared `navLayout` or, absent one, the flat
-zero-config default: `nav.items` renders in order, a section through its own collapsible group
+zero-config default: `nav.items` renders in order, a section through its collapsible group
 (keyed by label for the collapse cookie), a loose item as a plain list entry beside it. A site with
 no declared `navLayout` gets no section at all, every item loose, since a zero-config sidebar never
 reaches the size a category label earns back. `nav.fallback`, the engine screens the arrangement
@@ -123,13 +123,13 @@ zero-config shape. Each item's icon resolves
 from an engine screen id or a site entry's bundled icon name. See [the navLayout
 seam](./sveltekit.md#the-navlayout-seam) for the full contract. For a none-capability
 `user.capability` (the spec's none contract), `nav` carries no engine screen anywhere, in `items` or
-`fallback`, since every engine screen refuses that session with a 403; a site's own `navLayout`
+`fallback`, since every engine screen refuses that session with a 403; a site's `navLayout`
 entries still render. The command palette lists every visible item in `nav`, section
-children and the fallback group included, alongside its own view-site and theme-toggle commands.
+children and the fallback group included, alongside its view-site and theme-toggle commands.
 
 At desktop widths the sidebar is persistent and scroll-independent (`position: fixed`, so it never
 drifts with the page scroll), and it stays open across navigation. That includes navigation to a
-site's own deep custom-nav routes like `/admin/team/events`. On an engine document-editor route (a desk route),
+site's deep custom-nav routes like `/admin/team/events`. On an engine document-editor route (a desk route),
 the sidebar persists again at `xl` (1280px and up), recedes to the toggle-controlled overlay through
 the `lg`-`xl` tablet band (1024-1279px), where the editing surface takes priority on a narrower
 screen, and keeps the overlay drawer below `lg` like every other route. On small viewports it's
@@ -163,10 +163,10 @@ hides the button rather than showing a stale count.
 **Attention badges.** `data.attention` (see [the attention seam](./sveltekit.md#the-attention-seam))
 decorates a visible nav entry with a quiet count badge when its `href` carries a positive count; a
 zero or absent count renders no badge at all, never a "0" one. A collapsed section's header shows
-the sum of its visible children's own counts, computed from the same `data.attention` record the
+the sum of its visible children's counts, computed from the same `data.attention` record the
 leaf badges read, never a separate total, so the header sum and its children can never drift out of
 sync; the header's badge disappears once the section opens (the item badges remain, since they carry
-their own accessible names). Every count caps its display at `99+`. The count lives in the entry
+their accessible names). Every count caps its display at `99+`. The count lives in the entry
 link's accessible name ("Asset requests, 3 pending requests"), built from the item's `label`
 (defaulting to "pending items"); the badge span itself is `aria-hidden`, so a screen reader
 announces the count exactly once, through the link, not twice.
@@ -218,7 +218,7 @@ posts with no matching action. [`createCairnAdmin`](./sveltekit.md#createcairnad
 public seam that mounts them at runtime; its declared `CairnAdminRoutes` contract withdraws the
 same ten actions at the type level (recovered with a spread or a cast; see the note after the
 actions table in [the SvelteKit reference](./sveltekit.md#createcairnadmin)). Mounting this
-component outside the single mount means composing your own `actions` record around
+component outside the single mount means composing your `actions` record around
 `createCairnAdmin`'s runtime object (see [Per-route mounting
 (advanced)](./admin-routes.md#per-route-mounting-advanced)).
 
@@ -272,7 +272,7 @@ group renders at all (spec part 3, "Public preview for a non-editor"): the mint 
 the minted-link display, and the expiry line. Setting it to `false` hides that group from the
 markup. It does **not** turn off the underlying `previewMint`/`previewRevoke` facade actions
 (`previewMintAction`/`previewRevokeAction`, [SvelteKit](./sveltekit.md#public-preview)), which stay
-mounted and carry their own full entry-scoped authorization regardless of whether this component
+mounted and carry their full entry-scoped authorization regardless of whether this component
 offers any button that posts to them. Hiding the group is a product choice about what an editor
 sees on this screen, never an access-control decision: a site that wants a role unable to mint a
 preview link at all should restrict the concept in its [access map](./core.md#access-map) instead.
@@ -284,7 +284,7 @@ every one of them). Present, it wins over the author's stored per-browser prefer
 an editor that never starts the spellcheck Worker or fetches its wasm and dictionary. It also hides
 the footer's Spellcheck chip and its overflow-menu equivalent below the `sm` breakpoint, rather than
 leaving a control that carries no effect. Absent, which every real editing session leaves it, the
-author's own stored preference and the footer toggle decide exactly as before.
+author's stored preference and the footer toggle decide exactly as before.
 
 The page lays out in four zones. A sticky translucent header holds a breadcrumb back to the
 concept list, the entry's status badge (New, Edited, or Published, with a separate Hidden badge
@@ -305,7 +305,7 @@ through the guided form losslessly, and re-opens that block into the form for ed
 result back over its source span. It stays disabled with a plain reason when the caret is outside any
 component or the block cannot round-trip (edit that one as markdown). The toolbar's Write/Preview
 segmented tabs swap the editing surface for the rendered preview inside the same card, and the
-formatting and insert controls disable while Preview shows. The preview renders inside a sandboxed iframe whose document links the site's own
+formatting and insert controls disable while Preview shows. The preview renders inside a sandboxed iframe whose document links the site's
 stylesheets from the adapter's `preview` knob (`data.preview`), so the entry proofs in the site's
 real styling without the site CSS touching the admin document; without the knob the frame renders
 unstyled markup behind a one-line hint. While Preview shows, the sidebar hides and the card takes
@@ -328,7 +328,7 @@ web-link dialog.
 With JavaScript, Save and Publish submit through SvelteKit's `use:enhance`, so a failed request never
 replaces the page or the author's text. A failure the server answers, a `fail()` result, is applied
 as the page's `form` with no load. A network failure, an action that throws, an answer that isn't
-JSON, or a redirect away from the entry's own concept (the sign-in page after an expired session)
+JSON, or a redirect away from the entry's concept (the sign-in page after an expired session)
 leaves the page alone and shows the notice "That did not go through. Your text is still here; please
 try again." After any of these the "Saved" flash and the "Saved" save state stay off, the dirty baseline
 is the loaded body even when the refusal echoed the author's text, Save and Publish are enabled
@@ -372,7 +372,7 @@ set, a meta line under the "Recent versions" heading reads "Showing the most rec
 An entry with no publish yet and no open draft renders an empty state instead of the table. On the
 per-route mounting it lives at `src/routes/admin/(app)/[concept]/[id]/history/+page.svelte`.
 
-Each publish row's own Revert button submits a small form to `?/revert`, carrying two hidden
+Each publish row's Revert button submits a small form to `?/revert`, carrying two hidden
 fields: `ref`, the row's full commit sha, and `head`, `data.head`, the default branch's head sha
 this page rendered against. `revertAction` re-validates both against a fresh read, so the form
 carries only what the server needs to catch a stale page, never a trust of the rendered row.
@@ -548,9 +548,9 @@ material. `data` is the
 the open edit branches, the markdown reference rows, and the support contact. It renders the
 masthead, a derived getting-started checklist (it drops away once the author finishes all three steps,
 and hides per device on request), the formatting reference, and the support hand-off. `supportContact`
-defaults to cairn's own hosted editor help, an adapter value overrides it, and an adapter value set to
+defaults to cairn's hosted editor help, an adapter value overrides it, and an adapter value set to
 an explicit empty string suppresses the hand-off, the self-serve state. It mounts inside
-`CairnAdminShell`, so it carries no theme wrapper of its own.
+`CairnAdminShell`, so it carries no theme wrapper.
 
 ```svelte
 <script lang="ts">
@@ -601,8 +601,8 @@ let { data }: { data: WelcomeData };
 The calm, minimal signed-in screen a none-capability role with no declared `home` lands on at the
 admin root. `data` carries the account's `displayName` and the site's `siteName` for the greeting
 and standing line. It renders on the admin toolkit's `EmptyState`, passing `headingLevel="h1"`
-since this screen renders no `PageHeader` of its own, so the greeting is the page's only heading.
-It mounts inside `CairnAdminShell`, so it carries no theme wrapper or CSS of its own.
+since this screen renders no `PageHeader`, so the greeting is the page's only heading.
+It mounts inside `CairnAdminShell`, so it carries no theme wrapper or CSS.
 
 ```svelte
 <script lang="ts">
@@ -621,7 +621,7 @@ It mounts inside `CairnAdminShell`, so it carries no theme wrapper or CSS of its
 
 `MarkdownEditor` is the authoring seam, documented as a standalone bare surface a
 site can mount directly. `DeleteDialog` and `RenameDialog` mount inside `EditPage` but stay public
-for a site that builds its own per-route admin surface, pairing with the same load/action names
+for a site that builds its per-route admin surface, pairing with the same load/action names
 `EditPage` uses. The snippets are minimal mounts with the real prop names.
 
 ### `MarkdownEditor`
@@ -669,9 +669,9 @@ first lint. All are plain reactive props, so the host owns any toggle persistenc
 persists the writing-mode toggles per browser). This component is client-only because CodeMirror
 loads only in the browser.
 
-The component renders no toolbar and no card chrome of its own; the host frames it. `EditPage`
+The component renders no toolbar and no card chrome; the host frames it. `EditPage`
 composes it inside the editor card with the engine's toolbar. A site mounting `MarkdownEditor`
-directly gets the plain surface and supplies its own controls through `EditorApi`'s `format`
+directly gets the plain surface and supplies its controls through `EditorApi`'s `format`
 member, since the engine's toolbar component is internal and not exported here. The surface ships
 as a quiet writing surface: the self-hosted iA Writer Mono face on a centered measure, stepped
 heading sizes, dimmed syntax markers, GFM parsing, depth-stepped rails on `:::` directive
@@ -710,7 +710,7 @@ just reachable through property access.
 
 | Name | Stability | Meaning |
 | --- | --- | --- |
-| `TidyApi` | Extension API | The `tidy` member's type, the tidy apply API from the preceding table. Its `enter` parameter is a `Change` list, and `Change` carries no export row of its own: a caller that needs its shape reaches it as `Parameters<TidyApi['enter']>[0][number]`. |
+| `TidyApi` | Extension API | The `tidy` member's type, the tidy apply API from the preceding table. Its `enter` parameter is a `Change` list, and `Change` carries no export row: a caller that needs its shape reaches it as `Parameters<TidyApi['enter']>[0][number]`. |
 | `ImagePlaceholderApi` | Extension API | The `imagePlaceholders` member's type, the optimistic-placeholder API from the preceding table. |
 | `FormatKind` | Extension API | The `format` member's parameter type, the selection-transform name union. |
 
@@ -718,7 +718,7 @@ just reachable through property access.
 
 Stability tier: Unstable API.
 
-`EditPage`'s own wiring, exposed on the component because `EditPage` composes `MarkdownEditor`
+`EditPage`'s wiring, exposed on the component because `EditPage` composes `MarkdownEditor`
 rather than wrapping it, with no stability promise across minors: a site that reaches past
 `EditPage` for one of these should expect it to move or change shape. `onComponentAtCaret` and
 `onMediaImageAtCaret` are the round-trip editing seams (the figure control writes back through
@@ -758,7 +758,7 @@ let { conceptId, id, singular, inboundLinks, inboundKind = 'link', pending = fal
 
 A confirm dialog that deletes one entry, with a guard that blocks the delete while other entries
 link to it. `conceptId` and `id` identify the entry and post with the confirm, `singular` names the
-entry's own concept in the singular for the title and confirm prompts, for example "Post," and
+entry's concept in the singular for the title and confirm prompts, for example "Post," and
 `inboundLinks` is the list of entries that link here. A non-empty list shows the linkers and blocks
 the delete until they are repointed; `inboundKind` picks the blocked copy family, "link" (the
 default) for an entry other entries link to, "include" for a fragment the listed entries include.
@@ -789,7 +789,7 @@ let { conceptId, id, singular, slug, trigger = true, onsubmitting }: {
 ```
 
 A confirm dialog that renames one entry's slug. `conceptId` and `id` identify the entry and post
-with the confirm, `singular` names the entry's own concept in the singular for the title and the
+with the confirm, `singular` names the entry's concept in the singular for the title and the
 non-routable "Entries that include this X" copy (for example "Post"), and `slug` prefills the
 input with the current slug. With `trigger={false}` the component renders only the dialog, no
 visible button, and the exported `open()` method shows it. The sidebar's Change URL button drives
@@ -819,7 +819,7 @@ compose it.
 The field's token survives a native form reset, the one `use:enhance` fires by default after a
 successful submit: a hidden `<input>`'s `value` and `defaultValue` reflect the same underlying
 `value` attribute, so the component sets `defaultValue` as a DOM property alongside `value`,
-pinning that reflection explicitly rather than leaving it to Svelte's own hydration-time
+pinning that reflection explicitly rather than leaving it to Svelte's hydration-time
 default-management machinery. Hardening, not a behavior a consuming form has to opt into or a new
 guarantee a test independently proves; the component carries it on its own.
 

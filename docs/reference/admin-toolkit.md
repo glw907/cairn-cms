@@ -1,6 +1,6 @@
 # The admin toolkit (`@glw907/cairn-cms/admin-toolkit`)
 
-General-purpose primitives a site building its own `/admin/` screen, and cairn's own admin
+General-purpose primitives a site building its `/admin/` screen, and cairn's admin
 screens, reach for instead of a bespoke parallel. Two tiers share this one charter. The **field**
 primitive (`FieldLabel`) renders one labeled control's wrapping label in the admin's label
 rhythm; it merged here from the retired `admin-fields` subpath (CHANGELOG `0.94.0`), since two
@@ -8,7 +8,7 @@ subpaths stating the same charter is one subpath. The **screen-scaffold** primit
 (`PageHeader`, `AdminTable`, `ListToolbar`, `ToolbarDisclosure`, `Pagination`,
 `StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus the formatters compose a whole
 screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
-every contract here is general-purpose across sites. A component that renders one of cairn's own
+every contract here is general-purpose across sites. A component that renders one of cairn's
 content concepts (a `ConceptList` row, an `EditPage` field) lives on `/admin` instead, even
 though it also renders inside the admin theme.
 
@@ -19,16 +19,16 @@ import { formatCivilDate, formatTimestamp } from '@glw907/cairn-cms/admin-toolki
 The TypeScript types in `src/lib/admin-toolkit` are the source of truth, and the
 export-coverage gate checks every name here against them.
 
-Every component this subpath carries assembles daisyUI classes only. cairn's own
+Every component this subpath carries assembles daisyUI classes only. cairn's
 `cairn-admin.css` compiles every daisyUI component and utility class except calendar, so each
-one renders under the admin theme; each component's own section below lists its exact class
+one renders under the admin theme; each component's section below lists its exact class
 inventory as the grep surface a future daisyUI upgrade checks against. Spacing, truncation, and
-wrapper layout live in each component's own scoped `<style>` block rather than an arbitrary
-Tailwind utility string, since the admin sheet compiles a Tailwind utility only when cairn's own
+wrapper layout live in each component's scoped `<style>` block rather than an arbitrary
+Tailwind utility string, since the admin sheet compiles a Tailwind utility only when cairn's
 source uses it.
 
 The toolkit renders only inside the admin shell, which loads `cairn-admin.css` and the admin theme
-wrapper. A member area or any other surface outside `/admin` is the site's own, styled by the site,
+wrapper. A member area or any other surface outside `/admin` is the site's, styled by the site,
 and a toolkit component mounted there renders without the admin sheet.
 
 ---
@@ -44,7 +44,7 @@ input and take a `fallback?: string` option that defaults to `''`. This is a sta
 per-formatter choice. A screen often renders a field that isn't set yet, a ledger row before it
 posts, a date the editor hasn't published, and the caller shouldn't have to remember which
 formatter tolerates nullish input and which one throws, or carry a per-formatter opinion about
-what absence looks like. A site that wants its own text for absence, such as Not yet or TBD,
+what absence looks like. A site that wants its text for absence, such as Not yet or TBD,
 passes `fallback` explicitly, and a future display formatter added to this file follows the same
 shape.
 
@@ -75,7 +75,7 @@ declare function formatTimestamp(input: string | null | undefined, options?: For
 ```
 
 Format a timestamp as a date and time in `options.timeZone`, accepting every shape that names its
-own zone: a full or seconds-less ISO 8601 string with a `Z`/`z` suffix or a colon or colonless
+zone: a full or seconds-less ISO 8601 string with a `Z`/`z` suffix or a colon or colonless
 `±hh:mm` offset, or a SQLite `datetime('now')`-shaped UTC string (`"YYYY-MM-DD HH:MM:SS"`, no
 offset), read as UTC by swapping the space for `T` and appending `Z` before parsing. A non-standard
 zone spelling (a colonless offset, a lowercase `z`) is normalized to its canonical ECMAScript Date
@@ -83,17 +83,17 @@ Time String Format spelling before parsing, which is what keeps `new Date()` det
 Worker's SSR and a browser's hydration; parsing either spelling as written would fall back to
 implementation-defined `Date.parse` behavior instead. Every other shape, including a zone-less
 near-ISO string (no `Z`, no offset) and a bare calendar day, is returned unchanged rather than
-handed to `new Date()`: a zone-less shape would parse in the runtime's own local zone, so a
+handed to `new Date()`: a zone-less shape would parse in the runtime's local zone, so a
 Worker's SSR and a browser's hydration would render different text for the same input. `input`'s
-own moment is always read from its own text, a zone it names, or the UTC this function assumes for
+moment is always read from its text, a zone it names, or the UTC this function assumes for
 the SQLite shape, and never from the runtime's local zone. `options.timeZone` governs only the
 rendered zone. A nullish `input` reads `options.fallback`. `options.timeZone` defaults `'UTC'`, the
-neutral zone a Cloudflare Worker's own runtime already reads in, never a site's own zone; a site
-that wants its own local time (`America/Chicago`, say) passes `timeZone` explicitly.
+neutral zone a Cloudflare Worker's runtime already reads in, never a site's zone; a site
+that wants its local time (`America/Chicago`, say) passes `timeZone` explicitly.
 `options.locale` defaults `'en-US'`; `options.fallback` defaults `''`.
 
 `Pagination`'s range line and `ListToolbar`'s count line both pick the grammatical number for
-their own `itemLabel` prop internally (`label.one` at exactly 1, `label.many` otherwise, zero
+their `itemLabel` prop internally (`label.one` at exactly 1, `label.many` otherwise, zero
 included, for example `"0 signups"`; a plain string reads back invariant across every count),
 so the "1 signups" defect class has a single fix point (`itemNoun`, retired from this
 subpath's barrel: zero consumers independent of `Pagination` or
@@ -103,8 +103,8 @@ subpath's barrel: zero consumers independent of `Pagination` or
 
 ## Fields
 
-The field primitive a site's own custom `/admin/` screen composes, such as an events or members
-editor. It renders with the admin's own label rhythm, matching the built-in content editor's fields.
+The field primitive a site's custom `/admin/` screen composes, such as an events or members
+editor. It renders with the admin's label rhythm, matching the built-in content editor's fields.
 Merged here from the retired `admin-fields` subpath (CHANGELOG `0.94.0`). `TextInput` and
 `SelectInput` shipped alongside it as of `0.94.0` (renamed from the retired subpath's
 `TextField`/`SelectField`); `FieldRow` joined later (`0.95.0`). All three retired from this subpath
@@ -120,7 +120,7 @@ import { FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
 The third, the group legend, is a `<legend>` rather than this component.
 
 **`register="stacked"`** is the default. It puts the label on its own line preceding the control.
-Use it for any field inside a multi-column form grid: a stacked label never competes with its own
+Use it for any field inside a multi-column form grid: a stacked label never competes with its
 control for a shared row's width, so it never wraps at a width an inline label would.
 **`register="inline"`** puts the label beside its control on one line, muted, for a genuinely
 control-adjacent composition, such as a toolbar filter or a compact panel where a group legend
@@ -142,16 +142,16 @@ The label wrapper for a bare custom control (an admin field this subpath does no
 primitive for). `register` picks the label register. `'stacked'` is the default:
 the label sits on its own line preceding the control, which fills to its container. `'inline'`
 puts the label beside the control on one line instead, muted, for a genuinely control-adjacent
-composition. A control that's a direct child of a stacked `FieldLabel` fills the label's own
+composition. A control that's a direct child of a stacked `FieldLabel` fills the label's
 width. A control nested one level deeper, such as a compact row of two or more controls side by
-side, keeps its own width instead, since the stacked register's width hook only reaches a direct
+side, keeps its width instead, since the stacked register's width hook only reaches a direct
 child.
 
 `FieldLabel` renders one wrapping `<label>` with no `for` attribute, and the browser associates a
 wrapping label with only the *first* labelable descendant it contains. In a compact row of two or
 more controls, only the first control picks up the wrapping label's accessible name; every
-control after it has none. Give each control after the first its own accessible name, either its
-own `<label>` (visually hidden if the row's own layout already reads clearly) or an `aria-label`.
+control after it has none. Give each control after the first its accessible name, either its
+`<label>` (visually hidden if the row's layout already reads clearly) or an `aria-label`.
 
 ```svelte
 <script lang="ts">
@@ -164,11 +164,11 @@ own `<label>` (visually hidden if the row's own layout already reads clearly) or
 ```
 
 **The bottom-aligned field row recipe.** A row mixing a stacked field with a bare control, such
-as a button or a checkbox that carries no label of its own, wants its children levelled on their
+as a button or a checkbox that carries no label, wants its children levelled on their
 bottom edges: the labelled child stands a whole label taller than the bare one, and only their
 controls belong on one line. Hand-roll it directly (`display: flex; align-items: flex-end;
 gap: var(--cairn-gap-control, 0.5rem)`, the same three declarations the retired `FieldRow`
-component shipped in its own scoped `<style>`). Outside the admin theme root `--cairn-gap-control`
+component shipped in its scoped `<style>`). Outside the admin theme root `--cairn-gap-control`
 is undefined, and the literal `0.5rem` fallback keeps the row a row there. For children of
 equal height it changes nothing, so a row doesn't have to know which case it has. One composition
 it gets wrong: a field that renders an error line or a hint *below* its control no longer ends at
@@ -194,7 +194,7 @@ that control, so the row levels the trailing line against the bare control inste
 ## Components
 
 Each component assembles daisyUI classes only from cairn's admin CSS blessed set, and keeps
-spacing, truncation, and wrapper layout in its own scoped `<style>` rather than a Tailwind
+spacing, truncation, and wrapper layout in its scoped `<style>` rather than a Tailwind
 utility string, per the compiled-CSS constraint at the top of this page.
 
 ```ts
@@ -216,35 +216,34 @@ let { label, size = 'sm', register = 'quiet', legend }: {
 
 The toolkit's one surface allowed a semantic status color, second generation. `register`
 alone now carries both shape and color; there is no separate `tone` prop, and there is no
-chip-level danger tier. `size` defaults `'sm'`, matching AdminTable's own density tier names. `sm`
+chip-level danger tier. `size` defaults `'sm'`, matching AdminTable's density tier names. `sm`
 keeps a `5rem` minimum width, comfortable next to a longer generic label; `xs` carries no minimum
-of its own, so a dense table column (a publish-state cell, an alt/usage cell) budgets the chip's
-width against its own short vocabulary rather than a floor sized for a longer label. `register`
+of its, so a dense table column (a publish-state cell, an alt/usage cell) budgets the chip's
+width against its short vocabulary rather than a floor sized for a longer label. `register`
 picks which of the three documented chip recipes the badge renders in: `'quiet'` (the default) tints
 the ground for a settled state that should recede, such as Published; `'warning'` tints the same
 way off the warning tone, for a state needing attention, such as an unpublished-changes marker or
 a needs-alt notice; `'outline'` drops the fill for a hairline border, for a transient or reversible
 absence (a removable tag, a not-yet-confirmed suggestion). `legend` carries optional explanatory
 text a label alone can't fully carry, for example "full member benefits continue during the grace
-window." It surfaces as a native `title` tooltip (hover only; a bare `<span>` carries no focus of
-its own, so a keyboard user never reaches it that way) and as a visually hidden `sr-only` span that
+window." It surfaces as a native `title` tooltip (hover only; a bare `<span>` carries no focus, so a keyboard user never reaches it that way) and as a visually hidden `sr-only` span that
 reads straight after the visible label, the assistive-technology-reachable half of the same
 information, so the chip's accessible name reads `"<label>: <legend>"` from plain text instead of
 an `aria-label` on the outer element; some assistive technology exposes an outer `aria-label`
 inconsistently. A self-explanatory label omits `legend` entirely: the chip then carries no `title`
-and no hidden span, never the label itself repeated as its own tooltip.
+and no hidden span, never the label itself repeated as its tooltip.
 
 All three registers carry a measured constraint rather than an unconditional guarantee. `outline`'s
 hairline is `color-mix(in oklab, currentColor 55%, transparent)`, so it inherits its color from the
-chip's own ancestor. Inside a `text-muted` ancestor the mix reads under the audit's own 3:1
+chip's ancestor. Inside a `text-muted` ancestor the mix reads under the audit's 3:1
 border-contrast floor against both a card ground and a page ground. The engine's four outline call
 sites, EditPage (through the component), ManageEditors, ReferenceField, and MediaCaptureCard (the
 last three hand-composed), all clear this floor; a consumer that places an `outline` chip inside its
-own muted-text ancestor should re-measure. `quiet` and `warning` are tuned to a 1.16-1.47:1 contrast
+muted-text ancestor should re-measure. `quiet` and `warning` are tuned to a 1.16-1.47:1 contrast
 band against both admin row grounds (plain and zebra) in both admin themes, and the whole documented
-band sits under the audit's own 1.5 ground-collision floor, by design: a `quiet` or `warning` chip
+band sits under the audit's 1.5 ground-collision floor, by design: a `quiet` or `warning` chip
 measures as an advisory camouflaged finding on some row/theme pairs.
-`chip-ground-collision` stays advisory rather than gating today, pending its own chroma-aware
+`chip-ground-collision` stays advisory rather than gating today, pending its chroma-aware
 reshape that can tell a hue-distinct low-contrast tint from a truly invisible one; a measured
 "violation" from that rule is expected here, not a regression.
 
@@ -261,7 +260,7 @@ classes; none paints anything on its own; all three compose with `badge` (and ty
 `badge-outline` for `cairn-chip-outline`, which supplies the border's width and style), the same
 shape `StatusChip` itself assembles from. All three pin `font-weight: 400`; since none carries a
 Tailwind layer, that pin outranks any `font-semibold`/`font-medium` Tailwind utility placed on the
-same element, so a hand-composed chip should carry no weight utility of its own.
+same element, so a hand-composed chip should carry no weight utility.
 
 ```svelte
 <StatusChip label="Waitlisted" register="warning" legend="Confirmed when a place opens." />
@@ -269,10 +268,10 @@ same element, so a hand-composed chip should carry no weight utility of its own.
 
 **Badge tier, the raw daisyUI alternative.** `badge-error`, `badge-success`, `badge-soft`,
 `badge-outline`, and `badge-dash` all compile into the packaged admin sheet, tuned and measured on
-both admin themes: `badge-error`/`badge-success`/`badge-soft` each paint their own fill and ink,
+both admin themes: `badge-error`/`badge-success`/`badge-soft` each paint their fill and ink,
 clearing a >= 4.5:1 text contrast floor (WCAG 1.4.3) against that fill; `badge-outline`/`badge-dash`
-paint no fill of their own and inherit their ink and border, clearing the same text floor against
-the row ground and a >= 3:1 non-text floor (WCAG 1.4.11) on the border. `badge-soft`'s own fill
+paint no fill and inherit their ink and border, clearing the same text floor against
+the row ground and a >= 3:1 non-text floor (WCAG 1.4.11) on the border. `badge-soft`'s fill
 sits under the `chip-ground-collision` ground-contrast floor by design: it is boundary-less like
 `badge-outline`/`badge-dash`, so its label names the state in text (WCAG 1.4.1 Use of Color)
 rather than the fill being read as distinct from the row. Reach for one directly only
@@ -308,12 +307,12 @@ let {
 
 Page navigation plus an optional item-range line. `page` and `pageCount` drive the nav on their
 own; `totalItems`/`pageSize` are optional and only add the "Showing X&ndash;Y of N `<itemLabel>`"
-line, so a consumer that knows its own page count but not a raw item total (or the reverse) still
+line, so a consumer that knows its page count but not a raw item total (or the reverse) still
 gets a working pager. `itemLabel` defaults `'items'` and accepts a plain string (invariant across
 every total, the original contract unchanged) or an `{ one, many }` pair, picked by grammatical
 number through `itemNoun` -- so `totalItems={1}` with `itemLabel={{ one: 'signup', many:
 'signups' }}` reads `"1 signup"`, never `"1 signups"`. A page count of 7 or fewer renders every
-page button; beyond that, the component's own internal windowing math reduces the control to
+page button; beyond that, the component's internal windowing math reduces the control to
 first, last, and a run around the current page with `'ellipsis'` gap markers. A single page
 renders no nav at all, only the range line (and the page-size select, if given) if one applies.
 
@@ -359,31 +358,31 @@ The `selection` and `batchBar` props are available since `0.97.0`.
 The table shell. `density` (defaults `'sm'`) names the two density tiers; `zebra` (defaults
 `false`) turns on alternating-row shading, off by default so a screen opts in rather than
 inheriting a house style. `header` and `children` are snippets, a `<tr>` of `<th>` cells and the
-`<tbody>` row markup respectively, so this component owns the table's own chrome and never a row
+`<tbody>` row markup respectively, so this component owns the table's chrome and never a row
 shape or a data contract: it carries no `rows: T[]` prop, and a caller's row markup is entirely its
-own template. `rowCount` switches the body to the `empty` snippet when `0` (omit `empty` for an
-empty `<tbody>` instead); `emptyColspan` (defaults `100`, which HTML's own `colspan` clamps to the
+template. `rowCount` switches the body to the `empty` snippet when `0` (omit `empty` for an
+empty `<tbody>` instead); `emptyColspan` (defaults `100`, which HTML's `colspan` clamps to the
 real column count) sizes the empty-state cell's span, and counts the reserved selection column
-itself while `selection` is set, so a caller states its own column count without re-deriving that
+itself while `selection` is set, so a caller states its column count without re-deriving that
 column.
 
 Single-line enforcement is a contract, not a full mechanism. Every cell gets `white-space: nowrap`
-from this component's own scoped CSS, so a wrap never happens even if a caller forgets, but
-ellipsis truncation of one specific long value is the calling cell's own scoped-CSS
+from this component's scoped CSS, so a wrap never happens even if a caller forgets, but
+ellipsis truncation of one specific long value is the calling cell's scoped-CSS
 responsibility, the same scoped-truncation model `StatusChip`'s `.status-chip-label` carries; this
-component can't reach inside a snippet's own markup to add truncation there itself. The wrapper's
+component can't reach inside a snippet's markup to add truncation there itself. The wrapper's
 `overflow-x: auto` is the horizontal-scroll fallback for a table wider than its viewport.
 
 **Batch selection.** `selection` reserves the leading column: `AdminTable` renders that column's
-header `<th>` and its own checkbox, checked when every row is selected and indeterminate on a
-partial `selection.ids`, and a caller renders each row's own checkbox `<td>`, inside `children`,
+header `<th>` and its checkbox, checked when every row is selected and indeterminate on a
+partial `selection.ids`, and a caller renders each row's checkbox `<td>`, inside `children`,
 reading the same id set. `AdminTable` never holds the full set of selectable row ids (rows stay
 caller-rendered), so the header checkbox can only empty the selection through `selection.onchange`,
 never build one. It follows that the checkbox carries `aria-disabled="true"` while rows exist and
 nothing is selected, and that its `aria-label` reads "Clear selection" once something is.
 `selection.label` names it only in the empty state. The checkbox takes `aria-disabled` and not the
 native attribute: a natively disabled input cannot hold focus, and `clear` hands focus back to this
-element. The component restates daisyUI's own disabled dimming for it. A caller
+element. The component restates daisyUI's disabled dimming for it. A caller
 wanting a select-all affordance supplies it itself. Select-all over caller-rendered rows stays
 open until a second engine screen adopts the pattern and shows what the contract should be.
 
@@ -393,14 +392,14 @@ region exists before the count changes, which is what makes the announcement lan
 mounted at the same moment its text appears announces nothing. `batchBar` renders inside that region
 while `selection.ids` is non-empty, and receives the selected count and a `clear` callback that
 empties the selection through `selection.onchange` and returns focus to the header checkbox. Both
-props are additive: a caller passing neither gets the same table as before. Whether a row's own
-per-column actions stay active while a selection is open is the caller's own call, not this
-component's. Carbon's own data table takes the same position, for the same reason: only the caller
+props are additive: a caller passing neither gets the same table as before. Whether a row's
+per-column actions stay active while a selection is open is the caller's call, not this
+component's. Carbon's data table takes the same position, for the same reason: only the caller
 knows which actions a partial selection makes unsafe.
 
 `selection.onchange` receives a new set on every change; `AdminTable` never mutates the set it is
 given. Store the new set in `$state`, or pass a `SvelteSet` from `svelte/reactivity` if your screen
-prefers a mutable reactive set of its own.
+prefers a mutable reactive set.
 
 **daisyUI assembly:** `table`, `table-xs`, `table-sm`, `table-zebra`, `checkbox`, every one already
 compiled into the packaged `cairn-admin.css`.
@@ -425,9 +424,9 @@ compiled into the packaged `cairn-admin.css`.
 ```
 
 **The in-card empty-notice recipe.** `empty` takes bare content, typically one `<p>`, as the
-preceding example shows. The table's own scoped CSS (`.toolkit-admin-table-empty-row td`) already
+preceding example shows. The table's scoped CSS (`.toolkit-admin-table-empty-row td`) already
 owns the register: centered text, `2.5rem`/`1rem` padding, the muted color, and normal (not
-single-line) wrapping. A caller adds no size, color, or alignment class of its own; a call site
+single-line) wrapping. A caller adds no size, color, or alignment class; a call site
 that does is reinventing a register `AdminTable` already carries.
 
 ```svelte
@@ -465,12 +464,12 @@ that does is reinventing a register `AdminTable` already carries.
 </AdminTable>
 ```
 
-**The batch-actions recipe.** `selection.ids` is the caller's own set, reassigned on every change
-(never mutated in place) the same way `MediaOrphanTools`' own selection state is; `onchange` is
+**The batch-actions recipe.** `selection.ids` is the caller's set, reassigned on every change
+(never mutated in place) the same way `MediaOrphanTools`' selection state is; `onchange` is
 where a caller stores the new set. A caller wanting a select-all control adds it to `batchBar`
-itself, since `AdminTable` can't build one without the full row-id list. `batchBar` words its own
-visible count; the component's own status region carries the count for assistive technology, so a
-caller doesn't add a second live region of its own.
+itself, since `AdminTable` can't build one without the full row-id list. `batchBar` words its
+visible count; the component's status region carries the count for assistive technology, so a
+caller doesn't add a second live region of its.
 
 ### `ListToolbar`
 
@@ -505,9 +504,9 @@ let {
 The list-header band: search, any number of promoted filters, an overflow disclosure for filters
 a screen chooses not to promote (present in the contract even when a consumer promotes every
 filter and never renders it), exactly one right-aligned primary action, applied-filter pills with
-a remove control, and a count line that always states its own filter scope. Every prop is a
+a remove control, and a count line that always states its filter scope. Every prop is a
 controlled value plus a change callback, the same fully controlled convention `Pagination`
-establishes. A search box's own text, a filter's own selected value, and each filter's own promotion status
+establishes. A search box's text, a filter's selected value, and each filter's promotion status
 are all state the caller owns, never this component.
 
 Each `ListToolbarFilter` carries `id`, `label` (the control's accessible name, never rendered as
@@ -515,14 +514,14 @@ visible chrome), `options`, `value`, `onChange`, an optional `defaultValue` (the
 value, defaults `'all'`), `promoted` (defaults `true`, choosing the band versus the overflow
 disclosure), and `display` (`'select'`, `'segmented'`, or `'menu'`, defaults `'select'`, see below).
 `primaryAction` is `{ label, onClick }`, the toolbar's one right-aligned action; the contract never
-accepts more than one. `count`/`itemLabel` feed the count line's own scope; `itemLabel` accepts a
+accepts more than one. `count`/`itemLabel` feed the count line's scope; `itemLabel` accepts a
 plain string (invariant across every count, the original contract unchanged) or an `{ one, many }`
-pair, picked by grammatical number through `itemNoun`, the same widening `Pagination`'s own
+pair, picked by grammatical number through `itemNoun`, the same widening `Pagination`'s
 `itemLabel` carries.
 
 `display: 'segmented'` renders a filter as a group of always-visible toggle buttons instead of a
 `<select>`, for a filter whose vocabulary reads better as tabs than a dropdown (a publish-state
-filter, a triage radiogroup); each `ListToolbarFilterOption`'s optional `count` renders in its own
+filter, a triage radiogroup); each `ListToolbarFilterOption`'s optional `count` renders in its
 visually secondary span after the label: `All 6`, never a parenthesized `All(6)`. A segmented
 filter that opts out of promotion (`promoted: false`) still renders as a
 `<select>` in the overflow disclosure, since a button group behind a disclosure menu loses the
@@ -531,7 +530,7 @@ rendered after the toolbar band, for a screen-specific view control this compone
 vocabulary for (a grid/list density toggle).
 
 Each control on the row shares one height, derived from the theme's `--size-field`. A segmented
-group that does not fit its row scrolls horizontally inside its own box and never wraps an option
+group that does not fit its row scrolls horizontally inside its box and never wraps an option
 onto a second line, since a join reads as one control.
 
 A segmented filter is a real ARIA radiogroup: the wrapping group is `role="radiogroup"` and each
@@ -541,13 +540,13 @@ together, the native radio-button keyboard model. The checked option also carrie
 `aria-hidden` check glyph beside its label, the non-color selected cue WCAG 1.4.1 calls for. The
 search box wraps in a `label.input` with a leading search icon.
 
-The component's own internal filter arithmetic, unit tested the same way `Pagination`'s internal
+The component's internal filter arithmetic, unit tested the same way `Pagination`'s internal
 windowing math is:
 
-- `computeAppliedFilters(filters)` returns every filter away from its own `defaultValue`, as a
-  pill `{ id, label }` where `label` reads from the matching option's own label, falling back to
+- `computeAppliedFilters(filters)` returns every filter away from its `defaultValue`, as a
+  pill `{ id, label }` where `label` reads from the matching option's label, falling back to
   the raw value for a stale or externally set one, so a pill is never blank.
-- `computeCountLine(count, itemLabel, appliedLabels)` returns the count line's own copy pattern:
+- `computeCountLine(count, itemLabel, appliedLabels)` returns the count line's copy pattern:
   `"<count> <itemLabel>"`, followed by every applied-filter label joined with a middle dot
   (`"12 signups · Pending · Waitlisted"`). The line always renders, even at zero applied
   filters or a zero count, per the count-line-always-states-its-scope contract. `itemLabel`
@@ -555,8 +554,8 @@ windowing math is:
   `computeCountLine(1, { one: 'signup', many: 'signups' }, [])` reads `"1 signup"`.
 
 Neither publishes from this subpath's barrel (zero consumers reached
-either independently of `ListToolbar` itself). `computeAppliedFilters` feeds the count line's own
-scope labels only; there is no separate applied-pills row. An applied filter shows its own value
+either independently of `ListToolbar` itself). `computeAppliedFilters` feeds the count line's
+scope labels only; there is no separate applied-pills row. An applied filter shows its value
 in-control instead, on the `'menu'`-display facet documented earlier in this entry.
 
 The count line carries `role="status"` (`aria-live="polite"`, `aria-atomic="true"`), so a search
@@ -571,9 +570,9 @@ siblings.
 
 **daisyUI assembly:** `input`/`input-sm` (search), `select`/`select-sm` (a `'select'`-display
 filter, promoted or overflow), `join`/`join-item`/`btn`/`btn-sm`/`btn-active` (a `'segmented'`-
-display filter, the same assembly `Pagination`'s own page nav uses), `btn`/`btn-sm`/`btn-primary`/
+display filter, the same assembly `Pagination`'s page nav uses), `btn`/`btn-sm`/`btn-primary`/
 `btn-outline` (the primary action and the overflow trigger), `dropdown`/`dropdown-content`/
-`dropdown-open`/`menu` (the overflow disclosure and each `'menu'`-display facet's own option list).
+`dropdown-open`/`menu` (the overflow disclosure and each `'menu'`-display facet's option list).
 Every one compiles into the admin sheet with the rest of daisyUI. The CSS build's `@source` also
 scans `src/lib/admin-toolkit` for the Tailwind utilities its markup uses, which
 `check:admin-css-classes` guards.
@@ -621,7 +620,7 @@ let {
 };
 ```
 
-The trigger-plus-panel disclosure `ListToolbar`'s own overflow menu and each `'menu'`-display
+The trigger-plus-panel disclosure `ListToolbar`'s overflow menu and each `'menu'`-display
 facet fold onto (`audit-admin-listtoolbar`'s reshape): both duplicated the same five dismissal
 mechanics, and the one consumer that hand-copied the pattern missed them on its first pass. Five
 mechanics, always on: the trigger's `aria-expanded`/`aria-controls` track `open`; focus moves into
@@ -633,36 +632,36 @@ focus either.
 Fully controlled, the same convention `ExpandableRow` and `Pagination` carry: `open` and
 `onOpenChange` are props, never internal state. This component never decides whether it is allowed
 to be open, only reports when it wants to change; a caller coordinating several disclosures (a
-single-open-at-a-time id, say) derives each instance's own `open` from its own shared state.
+single-open-at-a-time id, say) derives each instance's `open` from its shared state.
 
-The trigger and panel are always the caller's own markup: `trigger` and `panel` are snippets,
-given attrs to spread onto the caller's own elements (`aria-expanded`/`aria-controls`/
-`aria-haspopup`/`onclick` for the trigger, `id`/`hidden` for the panel's own root element), rather
-than elements this component renders itself. Spread the trigger attrs last on the caller's own
-element, so this component's own `onclick` (the toggle handler) is never shadowed by a
-caller-supplied one on the same element. `ariaHaspopup` only forwards the trigger's own
+The trigger and panel are always the caller's markup: `trigger` and `panel` are snippets,
+given attrs to spread onto the caller's elements (`aria-expanded`/`aria-controls`/
+`aria-haspopup`/`onclick` for the trigger, `id`/`hidden` for the panel's root element), rather
+than elements this component renders itself. Spread the trigger attrs last on the caller's
+element, so this component's `onclick` (the toggle handler) is never shadowed by a
+caller-supplied one on the same element. `ariaHaspopup` only forwards the trigger's
 `aria-haspopup` value through; this component carries no opinion about what the panel holds (a
-`role="menu"` option list, a plain form, anything else). The panel's own root still wants a
+`role="menu"` option list, a plain form, anything else). The panel's root still wants a
 `dropdown-content` positioning class for its `position: absolute` layout, but hiding it while
-closed is this component's own job, not the caller's class string: `hidden` (`true` while closed)
+closed is this component's job, not the caller's class string: `hidden` (`true` while closed)
 keeps every panel descendant unfocusable and unpainted even if that class is ever omitted. `extra`
-is an optional sibling of the trigger inside the same containment boundary (a facet's own inline
+is an optional sibling of the trigger inside the same containment boundary (a facet's inline
 clear button, say): activating it never counts as "outside" or "left" for the dismissal mechanics.
 
-This component does render one element of its own: the containing `<div>` the trigger, `extra`,
+This component does render one element: the containing `<div>` the trigger, `extra`,
 and the panel all render inside, carrying `dropdown`/`toolkit-toolbar-disclosure` always plus
 `dropdown-open` while `open` is true. It is the outside-pointerdown/focusout boundary and the
 panel's `position: absolute` containing block (via the always-applied `dropdown` class). This
 container is deliberately non-interactive (no role, no tabindex): its Escape and focusout handling
-is event delegation over the trigger/extra/panel snippets, not an affordance of its own. This
-component emits only its own generic classes on that element; `containerClass` is the one piece of
-visual configuration it carries, for a caller's own consumer-specific chrome on that same
-containing element (`ListToolbar`'s own applied-state tint on a `'menu'` facet, say), since a
-caller's own scoped `<style>` cannot reach an element rendered by a different component without
+is event delegation over the trigger/extra/panel snippets, not an affordance. This
+component emits only its generic classes on that element; `containerClass` is the one piece of
+visual configuration it carries, for a caller's consumer-specific chrome on that same
+containing element (`ListToolbar`'s applied-state tint on a `'menu'` facet, say), since a
+caller's scoped `<style>` cannot reach an element rendered by a different component without
 either duplicating a rule back into the caller or reaching across with `:global()`.
 
-**daisyUI assembly:** `dropdown`/`dropdown-open`/`dropdown-content` (the panel's own positioning
-context and open-state toggle; the caller's own panel snippet root carries `dropdown-content`).
+**daisyUI assembly:** `dropdown`/`dropdown-open`/`dropdown-content` (the panel's positioning
+context and open-state toggle; the caller's panel snippet root carries `dropdown-content`).
 
 **Exact class inventory:** `dropdown`, `dropdown-open`, `dropdown-content`.
 
@@ -699,11 +698,11 @@ let { eyebrow, title, meta, action }: {
 The canonical admin page-header recipe: an optional eyebrow, the page's one display-face `h1`,
 an optional muted meta line, and an optional single right-aligned action. A custom `/admin/`
 screen composes it beside `AdminTable` inside the admin design system's floating-card recipe
-(`overflow-hidden card-shell card-shadow`), with `AdminTable`'s own wrapper the one horizontal
+(`overflow-hidden card-shell card-shadow`), with `AdminTable`'s wrapper the one horizontal
 scroll container and `overflow-hidden` clipping the table's square edges to the card's rounded
 corners. `eyebrow` names a grouping (a custom nav section, "Media") and is omitted
 entirely when a screen has none worth naming. `meta` is the toolkit's one home for a page-level
-count outside a toolbar: `ListToolbar`'s own `computeCountLine` covers a screen with a search or
+count outside a toolbar: `ListToolbar`'s `computeCountLine` covers a screen with a search or
 filter row, and this line covers a screen with neither (a stats-prose summary, a scope note).
 `action` is the header's one right-aligned control (a create button, an upload trigger); search
 never lives in this band, since `ListToolbar` owns it.
@@ -736,16 +735,16 @@ let { icon, heading, headingLevel = 'p', message, action }: {
 ```
 
 The centered first-run empty state: a fill on the content area holding an icon (the cairn mark by
-default, or a caller-supplied `icon` snippet for a site's own custom section), a heading, muted
+default, or a caller-supplied `icon` snippet for a site's custom section), a heading, muted
 explanatory copy, and an optional action. This is the whole-concept-empty state only (a fresh "no
 posts yet" screen); a filtered-to-zero state (a search or filter narrowing a non-empty list to
-nothing) is a smaller, in-card notice inside `AdminTable`'s own `empty` snippet instead, never this
+nothing) is a smaller, in-card notice inside `AdminTable`'s `empty` snippet instead, never this
 component.
 
-`headingLevel` picks the heading's own element (`'p'`, `'h1'`, `'h2'`, or `'h3'`) and defaults to
-`'p'`, the original contract unchanged. A screen that already carries its own `h1` (a preceding
+`headingLevel` picks the heading's element (`'p'`, `'h1'`, `'h2'`, or `'h3'`) and defaults to
+`'p'`, the original contract unchanged. A screen that already carries its `h1` (a preceding
 `PageHeader`) keeps the default; a screen that renders `EmptyState` as its only content,
-with no heading of its own (`WelcomeView`, the none-capability landing view), passes `'h1'` so the
+with no heading (`WelcomeView`, the none-capability landing view), passes `'h1'` so the
 page still has a real heading in its accessible tree.
 
 **daisyUI assembly:** none. Typography and layout only, the same empty-state recipe
@@ -778,32 +777,32 @@ let { expanded, onToggle, datum, colspan, summary, panel, triggerLabel }: {
 ```
 
 The expand-in-place table row: a summary `<tr>` plus a conditional panel `<tr>` whose single
-spanning cell receives the row's own `datum`, so the `panel` snippet never needs a closure over
-the row it belongs to. Fully controlled, matching `Pagination`'s own convention: `expanded` and
+spanning cell receives the row's `datum`, so the `panel` snippet never needs a closure over
+the row it belongs to. Fully controlled, matching `Pagination`'s convention: `expanded` and
 `onToggle` are props, not internal state, so the caller holds a single expanded-row id and derives
 `expanded={expandedId === row.id}` per instance, the "one row expanded at a time" contract living
-in the caller the same way a radio group's own `checked` prop carries it. `summary` is the row's
-own `<td>` cells (this component supplies the wrapping `<tr>` and the trailing trigger cell).
+in the caller the same way a radio group's `checked` prop carries it. `summary` is the row's
+`<td>` cells (this component supplies the wrapping `<tr>` and the trailing trigger cell).
 The panel's single spanning cell must cover the whole row. `colspan` is therefore the summary row's
-own `<td>` count, including that trigger cell.
+`<td>` count, including that trigger cell.
 
-Keyboard operability rides the native `<button>` element's own Enter/Space activation; the summary
+Keyboard operability rides the native `<button>` element's Enter/Space activation; the summary
 `<tr>` also carries a mouse-only click convenience, but the trailing button is the one control
 carrying `aria-expanded` and `triggerLabel` as its accessible name, so a summary cell renders plain
 content (text, a `StatusChip`, and similar) by default. A summary cell that needs a genuinely
 interactive control inline, an inline-editable value or a per-row action, wraps it in an element
-carrying **`data-cairn-inert-cell`**: the row's own click handler walks the click target's ancestry
+carrying **`data-cairn-inert-cell`**: the row's click handler walks the click target's ancestry
 with `closest('[data-cairn-inert-cell]')` and ignores any click that resolves inside one, so the
-wrapped control's own handler runs without also toggling the row, no `stopPropagation()` wrapper of
-the caller's own. The escape leaves the trigger button's own `aria-expanded` control and keyboard
-behavior unchanged. Its own `onclick` already calls `event.stopPropagation()`. It carries no
+wrapped control's handler runs without also toggling the row, no `stopPropagation()` wrapper of
+the caller's. The escape leaves the trigger button's `aria-expanded` control and keyboard
+behavior unchanged. Its `onclick` already calls `event.stopPropagation()`. It carries no
 `onkeydown` handler by design: native `<button>` Enter/Space activation already covers it. The
-trigger cell is `position: sticky; right: 0`, so `AdminTable`'s own horizontal-scroll fallback never
+trigger cell is `position: sticky; right: 0`, so `AdminTable`'s horizontal-scroll fallback never
 strands it off-screen: a summary row wider than its viewport scrolls rather than wraps, and the
 trigger stays reachable at every scroll position, unconditionally, with no caller opt-in. The panel
 cell stays a genuine `<td colspan>`, not `display: block`. A spanning cell removed from table
-layout still resolves its width against the table's own real column widths through the browser's
-anonymous fixup row. A caller that wants the panel's own internal grid to collapse at a narrow width
+layout still resolves its width against the table's real column widths through the browser's
+anonymous fixup row. A caller that wants the panel's internal grid to collapse at a narrow width
 needs the table itself to never need horizontal scroll in the first place (hide lower-priority
 summary columns under a breakpoint instead).
 
@@ -812,26 +811,26 @@ summary columns under a breakpoint instead).
 (`rulings.touch-targets.test.ts`, Web Content Accessibility Guidelines 2.5.8, 24x24, not 2.5.5's
 44x44) and clears it, so the trigger keeps its size unchanged. The same 24x24 floor applies to any
 interactive control a caller places inside a summary cell (inert-wrapped or not); it is the
-caller's own responsibility to meet, the same idiom `ReferenceField.svelte`'s own remove button
+caller's responsibility to meet, the same idiom `ReferenceField.svelte`'s remove button
 uses (`max-sm:min-h-11 max-sm:min-w-11`, a narrow-viewport-only floor for a dense cell that reads
 smaller than that at wider widths).
 
 **Out of scope:** a `colspan` full-width summary variant is deliberately not offered.
 
-Three treatments carry no prop of their own. They apply unconditionally. The whole summary row
+Three treatments carry no prop. They apply unconditionally. The whole summary row
 washes with `color-mix(in oklab, var(--color-base-content) 5%, transparent)` on hover, including
 the sticky trigger cell (adversarially verified against a zebra-striped row: a plain `base-200`
-wash is the stripe's own color and reads as invisible there). The trigger cell's own
+wash is the stripe's color and reads as invisible there). The trigger cell's
 background follows zebra parity instead of a fixed `base-100`: on a `table-zebra` ancestor it
-mirrors the exact `tr:nth-child(2n)` selector daisyUI's own zebra striping uses, so the pinned
+mirrors the exact `tr:nth-child(2n)` selector daisyUI's zebra striping uses, so the pinned
 column never seams against a striped row underneath it. The panel `<td>` reads as a recessed drawer rather
 than a flat continuation of the row preceding it. Its depth comes from
 `background: var(--color-base-300)` plus `box-shadow: inset 0 1px 0 var(--cairn-card-border)`. A `base-200`
-recess was the first attempt, and adversarial review refuted it: it's the zebra stripe's own color,
+recess was the first attempt, and adversarial review refuted it: it's the zebra stripe's color,
 so the drawer visually merged with a striped row.
 
 **daisyUI assembly:** `btn`, `btn-ghost`, `btn-xs` for the trigger control, every class already
-compiled from cairn's own admin usage.
+compiled from cairn's admin usage.
 
 **Exact class inventory:** `btn`, `btn-ghost`, `btn-xs`.
 
@@ -879,23 +878,23 @@ let { entries, onselect }: {
 
 The read-only combobox over a site's committed media library: a search input, an optional media-type
 facet, and one option row per asset. It sits in this subpath rather than `/admin` because it
-selects an asset and hands it back, which is a screen primitive a site composes into its own admin
+selects an asset and hands it back, which is a screen primitive a site composes into its admin
 screen, not a rendering of one of cairn's content concepts. Nothing about it writes: uploading,
-replacing, and committing an asset stay inside cairn's own media screens.
+replacing, and committing an asset stay inside cairn's media screens.
 
 `entries` is the manifest-entry array `mediaLibraryLoad` returns on `MediaLibraryData.assets`, so a
-site's own `/admin/` route passes the loader's output straight through with no projection step. Row
+site's `/admin/` route passes the loader's output straight through with no projection step. Row
 order follows the array as given. `mediaLibraryLoad` is authed load data, gated the same way every
 other cairn admin load is; mount `MediaPicker` on an `/admin` route (inside `CairnAdminShell` or a
-site's own authenticated custom route), never on a public page. `onselect` receives a
+site's authenticated custom route), never on a public page. `onselect` receives a
 `MediaSelection`: the chosen entry, its `media:<slug>.<hash>` reference token to write into content,
 and the asset's manifest alt to prefill a placement. The picker never mutates the array and holds no
-selection of its own, so the caller owns what a pick does next.
+selection of its, so the caller owns what a pick does next.
 
 **Contract term, the delivery base.** Option thumbnails compose their `src` under the delivery base
 the mounting context supplies through cairn's internal `MEDIA_BASE_CONTEXT_KEY` Svelte context.
 `CairnAdminShell` sets it from the site's resolved `assets.publicBase`, so a picker mounted anywhere
-inside the shell renders thumbnails under the site's own base. Mounted outside the shell, with no
+inside the shell renders thumbnails under the site's base. Mounted outside the shell, with no
 provider, thumbnails fall back to `/media`. The key itself is internal, so a site that serves media
 from another base configures `assets.publicBase` and mounts inside the shell rather than setting the
 context by hand.
@@ -904,7 +903,7 @@ Accessibility is the WAI-ARIA combobox pattern: focus stays in the search input,
 `aria-activedescendant` across the owned listbox, and Enter selects the active row. Two separate
 `aria-live` regions carry the result count and the active-row narration, so neither announcement
 clobbers the other. An asset with an empty alt carries a "Needs alt" flag as a glyph plus a label,
-never hue alone. Escape is left to bubble, so a host dialog or popover keeps its own dismiss.
+never hue alone. Escape is left to bubble, so a host dialog or popover keeps its dismiss.
 
 **daisyUI assembly:** `btn`, `btn-xs`, `btn-primary`, `btn-ghost` for the media-type facet chips,
 which render only once the library holds more than one top-level content type.
@@ -940,41 +939,41 @@ let { text, id, children }: {
 The replacement for a native `title` attribute on an icon-only action control. A native `title`
 never reaches a keyboard user (no `:focus-visible` trigger, no Escape dismissal) and never reaches
 a touch user (no hover at all), so a control whose only accessible name comes from `aria-label`
-still leaves a sighted mouse user's own "why" undiscoverable on every other input mode. `Tooltip`
-wraps the given trigger unchanged, in a wrapper that renders no box of its own (`display:
-contents`), and sets `aria-describedby` on the trigger's own rendered root element.
+still leaves a sighted mouse user's "why" undiscoverable on every other input mode. `Tooltip`
+wraps the given trigger unchanged, in a wrapper that renders no box (`display:
+contents`), and sets `aria-describedby` on the trigger's rendered root element.
 
 Shows on hover and on `:focus-visible` (a keyboard Tab, never a mouse click that merely focuses the
 trigger); hides on Escape without moving focus off the trigger. A pointer that reports no hover, a
-touchscreen or a pen, read from the triggering `PointerEvent`'s own `pointerType`, shows the bubble
+touchscreen or a pen, read from the triggering `PointerEvent`'s `pointerType`, shows the bubble
 on tap and hides on the next tap outside. Activating an enabled trigger, by tap, click, or keyboard,
 also hides the bubble, so nothing is left over whatever the activation opened. A trigger marked
 `aria-disabled="true"` activates nothing, so its bubble stays. `text` accepts an empty string to opt
 out entirely (no `aria-describedby`, no bubble, every mechanic a no-op), for a caller whose reason is
-conditional, such as a guarded button's own explanation that is present only while guarded. `id`
-names the bubble element; omit it to use `$props.id()`'s own generated id.
+conditional, such as a guarded button's explanation that is present only while guarded. `id`
+names the bubble element; omit it to use `$props.id()`'s generated id.
 
 `children` renders the trigger control (a button or a link) unchanged: this component adds only
 `aria-describedby` and an `anchor-name` to the first element the snippet renders, never a class, a
 label, or a click handler. The snippet must render exactly one element, never bare text: the first
 element is the trigger, and a snippet with none gets a development-mode warning and no tooltip
-mechanics. The trigger keeps whatever else it already carries, including a caller's own `aria-label`,
-`disabled`/`aria-disabled` state, and an inline `anchor-name` of its own, which the component
-appends to rather than replaces, so a trigger that also anchors its own popover menu keeps that
+mechanics. The trigger keeps whatever else it already carries, including a caller's `aria-label`,
+`disabled`/`aria-disabled` state, and an inline `anchor-name`, which the component
+appends to rather than replaces, so a trigger that also anchors its popover menu keeps that
 menu's anchor resolvable. The `anchor-name` is written as an inline style property, so a trigger
-whose own `style` attribute comes from a reactive expression loses it whenever Svelte rewrites that
+whose `style` attribute comes from a reactive expression loses it whenever Svelte rewrites that
 attribute; the component re-appends it on the next open, and a class avoids the round trip.
 
 **Name versus description.** When `text` is already the trigger's accessible name, its `aria-label`
 or its rendered text, the component sets no `aria-describedby`: a screen reader would read the same
 words twice, once as the name and once as the description. When `text` says more than the name, a
 guard reason on a control labelled with its action for one, the description is set and resolves
-after hydration, when the component's own effect has run. The bubble renders either way, so a test
+after hydration, when the component's effect has run. The bubble renders either way, so a test
 that asserts a reason reads the bubble rather than the description.
 
 The bubble is a manual popover placed by CSS anchor positioning above the trigger, flipping below
 it when the top edge has no room. Because a popover renders in the top layer, the bubble survives a
-transformed, scaled, or `overflow: hidden` ancestor, such as an open daisyUI modal's own box, which
+transformed, scaled, or `overflow: hidden` ancestor, such as an open daisyUI modal's box, which
 displaces or clips a bubble positioned any other way. Anchor positioning is a requirement, not an
 enhancement: a browser without it renders no bubble at all. `aria-describedby` carries the text to
 assistive technology there, except when `text` already equals the trigger's accessible name, where
@@ -992,12 +991,12 @@ intent.
 
 **Where the wrapper can sit.** The wrapper is a `<span>`, which HTML's content model bars directly
 inside `<tr>` (only `<td>`/`<th>` are valid children there) or `<ul>`/`<ol>` (only `<li>`),
-regardless of the wrapper's own `display: contents`. Wrap the control inside the cell or the list
+regardless of the wrapper's `display: contents`. Wrap the control inside the cell or the list
 item, not the row or the list itself. A natively `disabled` control receives no pointer events in
 some browsers, so a reason that must reach a mouse user takes the `aria-disabled` guarded shape
 instead.
 
-**daisyUI assembly:** none; the bubble is this component's own scoped `<style>`, with a literal
+**daisyUI assembly:** none; the bubble is this component's scoped `<style>`, with a literal
 fallback preceding every `--cairn-*`/daisyUI custom-property read, since `admin-toolkit` promises
 no compiled-admin-CSS ancestor.
 
@@ -1021,16 +1020,16 @@ no compiled-admin-CSS ancestor.
 | --- | --- | --- | --- |
 | `FormatCivilDateOptions` | Extension API | `interface FormatCivilDateOptions { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }` | `formatCivilDate`'s options: the nullish-or-empty-input fallback string (defaults `''`), locale, and the `Intl.DateTimeFormat` options passthrough. |
 | `FormatTimestampOptions` | Extension API | `interface FormatTimestampOptions { timeZone?: string; locale?: string; fallback?: string }` | `formatTimestamp`'s options: the IANA time zone, BCP 47 locale tag, and the nullish-input fallback string (defaults `''`). |
-| `StatusChipSize` | Extension API | `type StatusChipSize = 'xs' \| 'sm'` | `StatusChip`'s two named sizes, matching AdminTable's own density tier names. |
+| `StatusChipSize` | Extension API | `type StatusChipSize = 'xs' \| 'sm'` | `StatusChip`'s two named sizes, matching AdminTable's density tier names. |
 | `StatusChipRegister` | Extension API | `type StatusChipRegister = 'quiet' \| 'warning' \| 'outline'` | `StatusChip`'s three documented visual registers (second generation): `'quiet'`, a token-tinted ground with no border for a settled state that should recede; `'warning'`, the same tinted-ground shape for a state needing attention; and `'outline'`, a demoted-hairline border for a transient or reversible absence. |
-| `AdminTableDensity` | Extension API | `type AdminTableDensity = 'xs' \| 'sm'` | `AdminTable`'s two named density tiers, matching `StatusChip`'s own size vocabulary. |
-| `ListToolbarFilterOption` | Extension API | `interface ListToolbarFilterOption { value: string; label: string; count?: number }` | One option in a `ListToolbarFilter`'s own vocabulary. `count` is an optional per-option match count for the segmented display. |
+| `AdminTableDensity` | Extension API | `type AdminTableDensity = 'xs' \| 'sm'` | `AdminTable`'s two named density tiers, matching `StatusChip`'s size vocabulary. |
+| `ListToolbarFilterOption` | Extension API | `interface ListToolbarFilterOption { value: string; label: string; count?: number }` | One option in a `ListToolbarFilter`'s vocabulary. `count` is an optional per-option match count for the segmented display. |
 | `ListToolbarFilter` | Extension API | `interface ListToolbarFilter { id: string; label: string; options: ListToolbarFilterOption[]; value: string; onChange: (value: string) => void; defaultValue?: string; promoted?: boolean; display?: 'select' \| 'segmented' \| 'menu' }` | One filter control, fully controlled by the caller. |
 | `ListToolbarAction` | Extension API | `interface ListToolbarAction { label: string; onClick: () => void }` | The toolbar's one right-aligned primary action. |
-| `EmptyStateHeadingLevel` | Extension API | `type EmptyStateHeadingLevel = 'p' \| 'h1' \| 'h2' \| 'h3'` | `EmptyState`'s `headingLevel` prop vocabulary: the heading's own element, defaulting to `'p'`. |
+| `EmptyStateHeadingLevel` | Extension API | `type EmptyStateHeadingLevel = 'p' \| 'h1' \| 'h2' \| 'h3'` | `EmptyState`'s `headingLevel` prop vocabulary: the heading's element, defaulting to `'p'`. |
 | `ItemLabel` | Extension API | `interface ItemLabel { one: string; many: string }` | A count-line noun in both grammatical numbers, for `Pagination`'s and `ListToolbar`'s `itemLabel` prop. |
 | <a id="medialibraryentry"></a>`MediaLibraryEntry` | Extension API | `interface MediaLibraryEntry { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number \| null; height: number \| null; bytes: number; createdAt: string }` | One committed asset's display facts, the row shape `MediaLibraryData.assets` carries and `MediaPicker`'s `entries` prop takes. This subpath is its canonical home, beside the component whose prop signature names it; `/sveltekit` re-exports the same type so a route-factory importer can name a member of the data it already holds. |
 | `MediaSelection` | Extension API | `interface MediaSelection { entry: MediaLibraryEntry; ref: string; alt: string }` | What `MediaPicker` hands its `onselect` prop: the chosen entry, its `media:<slug>.<hash>` reference token, and the asset's manifest alt (empty when the asset has none). |
-| `ToolbarDisclosureAriaHaspopup` | Extension API | `type ToolbarDisclosureAriaHaspopup = 'menu' \| 'listbox' \| 'dialog' \| 'grid' \| 'tree' \| 'true'` | `ToolbarDisclosure`'s `ariaHaspopup` prop vocabulary, forwarded onto the trigger's own `aria-haspopup` unchanged. |
-| `ToolbarDisclosureTriggerAttrs` | Extension API | `interface ToolbarDisclosureTriggerAttrs { 'aria-expanded': boolean; 'aria-controls': string; 'aria-haspopup': ToolbarDisclosureAriaHaspopup \| undefined; onclick: (event: MouseEvent) => void; [key: symbol]: Attachment<HTMLElement> }` | The attrs `ToolbarDisclosure`'s `trigger` snippet receives, to spread onto the caller's own trigger element last, so the toggle `onclick` is never shadowed by the caller's own. |
-| `ToolbarDisclosurePanelAttrs` | Extension API | `interface ToolbarDisclosurePanelAttrs { id: string; hidden: true \| undefined }` | The attrs `ToolbarDisclosure`'s `panel` snippet receives; `id` is what the trigger's `aria-controls` resolves to, and `hidden` is this component's own primitive-owned hiding (`true` while closed), so an omitted `dropdown-content` positioning class on the caller's panel root can never leave the panel visible and tabbable while `aria-expanded` reads `false`. |
+| `ToolbarDisclosureAriaHaspopup` | Extension API | `type ToolbarDisclosureAriaHaspopup = 'menu' \| 'listbox' \| 'dialog' \| 'grid' \| 'tree' \| 'true'` | `ToolbarDisclosure`'s `ariaHaspopup` prop vocabulary, forwarded onto the trigger's `aria-haspopup` unchanged. |
+| `ToolbarDisclosureTriggerAttrs` | Extension API | `interface ToolbarDisclosureTriggerAttrs { 'aria-expanded': boolean; 'aria-controls': string; 'aria-haspopup': ToolbarDisclosureAriaHaspopup \| undefined; onclick: (event: MouseEvent) => void; [key: symbol]: Attachment<HTMLElement> }` | The attrs `ToolbarDisclosure`'s `trigger` snippet receives, to spread onto the caller's trigger element last, so the toggle `onclick` is never shadowed by the caller's. |
+| `ToolbarDisclosurePanelAttrs` | Extension API | `interface ToolbarDisclosurePanelAttrs { id: string; hidden: true \| undefined }` | The attrs `ToolbarDisclosure`'s `panel` snippet receives; `id` is what the trigger's `aria-controls` resolves to, and `hidden` is this component's primitive-owned hiding (`true` while closed), so an omitted `dropdown-content` positioning class on the caller's panel root can never leave the panel visible and tabbable while `aria-expanded` reads `false`. |

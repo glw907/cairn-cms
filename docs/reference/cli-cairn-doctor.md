@@ -45,7 +45,7 @@ and refused where they would resolve outside it:
 The command makes at most one network request beyond that: a credential-free `GET` of the
 declared origin's `/robots.txt`, for the `ai.posture-effective` check. It makes none when no
 `PUBLIC_ORIGIN` resolves, or when the resolved value does not parse as a URL. Nothing else touches
-the network. That request carries no timeout of its own; its deadline is the command's own
+the network. That request carries no timeout; its deadline is the command's
 context, the same one `--timeout` bounds (default 480 seconds).
 
 ## When the directory is not a cairn-cms site
@@ -84,9 +84,9 @@ error.
 | `config.csrf-trusted-origins` | `config.csrf-trusted-origins-wildcard` | warning | The Vite config's `csrf.trustedOrigins` has no `'*'` or `'null'` entry. A `'*'` entry turns off SvelteKit's origin check on every route, and a `'null'` entry admits every POST from an opaque origin. Any other entry passes with a note that it widens the check on `/admin` too, and an `http://` entry for a non-local host adds that it also admits a network attacker on that origin. A `csrf` key without `trustedOrigins` passes. | Never | None of `vite.config.js`, `vite.config.ts`, and `vite.config.mts` is found; a `trustedOrigins` value is not a literal array of strings; or a `svelte.config.js` remains, since the SvelteKit config now lives in the `sveltekit()` call in the Vite config |
 | `config.site-config` | `config.site-config-invalid` | blocker | The site config YAML parses: valid YAML, a mapping root, and a non-empty `siteName`. This checks presence and parsing only; the per-concept URL policy lives on the adapter concepts and is not checkable from a directory alone. | Never | No file is found at any of the four candidate paths |
 | `config.public-origin` | `config.public-origin-invalid` | blocker | `PUBLIC_ORIGIN` resolves to a valid value, from the wrangler config's vars or from the environment. | No wrangler config is found and `PUBLIC_ORIGIN` is not in the environment; a wrangler config that exists but declares no origin fails instead | A read error only |
-| `config.no-referrer-blanket` | `config.no-referrer-blanket` | warning | Neither `src/hooks.server.ts` nor `static/_headers` sets a site-wide `Referrer-Policy: no-referrer`, which strips the `Origin` header from a same-origin form POST, so SvelteKit's origin check refuses the site's own forms. | Neither `src/hooks.server.ts` nor `static/_headers` is found | A read error only |
+| `config.no-referrer-blanket` | `config.no-referrer-blanket` | warning | Neither `src/hooks.server.ts` nor `static/_headers` sets a site-wide `Referrer-Policy: no-referrer`, which strips the `Origin` header from a same-origin form POST, so SvelteKit's origin check refuses the site's forms. | Neither `src/hooks.server.ts` nor `static/_headers` is found | A read error only |
 | `admin.mount-shape` | `admin.mount-incomplete` | None; never fails | The `/admin` mount calls `createCairnAdmin(...).shellLoad` and renders `CairnAdminShell`. An unreadable or partial mount reports `INFO`, because the read is a heuristic text match rather than proof of a working mount. | Never | A read error only |
-| `config.dependency-floors` | `config.dependency-floors-unmet` | blocker | The resolved `svelte` and `@sveltejs/kit` versions in the lockfile meet the installed engine's own declared peer ranges. | The engine's own declared peer range is not a simple caret range, the lockfile carries no entry for a peer, or a resolved version does not parse as a plain `x.y.z` | No lockfile is found, or the installed engine's `package.json` cannot be read |
+| `config.dependency-floors` | `config.dependency-floors-unmet` | blocker | The resolved `svelte` and `@sveltejs/kit` versions in the lockfile meet the installed engine's declared peer ranges. | The engine's declared peer range is not a simple caret range, the lockfile carries no entry for a peer, or a resolved version does not parse as a plain `x.y.z` | No lockfile is found, or the installed engine's `package.json` cannot be read |
 | `auth.role-wiring` | `auth.role-wiring-missing` | warning | A site that declares custom roles passes the role vocabulary to `createAuthGuard`, as `{ runtime }` or, on an older engine, `{ roles }`. | The site declares no custom roles | `src/content/.cairn/site-facts.json` is absent |
 | `ai.posture-effective` | `ai.posture-not-effective` | warning | The origin's served `/robots.txt` matches the adapter's declared AI posture. | Never | `src/content/.cairn/site-facts.json` is absent, or the `/robots.txt` fetch could not observe a result (no origin resolves, the origin does not parse, the fetch fails, or the response is non-200) |
 
@@ -96,7 +96,7 @@ build.
 
 Every check carries its condition id in the payload's `condition` field, whatever its state. On a
 failing check, the report block and the `--json` `fix.url` carry the same URL, built from the
-condition's own `docsAnchor` under `https://cairn.pub/docs/admin/` with the `.md` removed.
+condition's `docsAnchor` under `https://cairn.pub/docs/admin/` with the `.md` removed.
 
 ## Status words
 

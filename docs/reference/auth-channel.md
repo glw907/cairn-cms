@@ -1,11 +1,11 @@
 # Auth channel (`@glw907/cairn-cms/auth-channel`)
 
-This subpath holds `createAuthChannel`, a factory for a site's own login channel for a second sign-in group:
-an 8-digit-by-default OTP code, requested and confirmed over any transport the site's own `deliver`
-function sends (SMS, email, or another channel), backed by the site's own D1 binding rather than
+This subpath holds `createAuthChannel`, a factory for a site's login channel for a second sign-in group:
+an 8-digit-by-default OTP code, requested and confirmed over any transport the site's `deliver`
+function sends (SMS, email, or another channel), backed by the site's D1 binding rather than
 `AUTH_DB`. It is server-only surface (no `svelte` export condition), for a site building a login
 flow for an audience other than cairn editors: members, customers, or any roster the
-engine's own owner/editor auth was never meant to model.
+engine's owner/editor auth was never meant to model.
 
 This subpath carries the login discipline for a second sign-in group the factory owns: code generation and
 canonicalization, identity derivation and salting, the atomic budget and lockout mechanics,
@@ -40,7 +40,7 @@ before serving any request.
 below does, else `Env` infers as `unknown` and a binding read such as `env?.MEMBER_DB` fails to
 typecheck.
 
-<!-- snippet-check-skip: imports cloudflare:workers, which a site's own Worker types declare -->
+<!-- snippet-check-skip: imports cloudflare:workers, which a site's Worker types declare -->
 ```ts
 import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
 import { verifyTurnstile } from '@glw907/cairn-cms/cloudflare';
@@ -73,11 +73,11 @@ const channel = createAuthChannel<Env>({
 
 `config`'s fields:
 
-- **`resolveDb(env)`**: the channel's own D1 binding, read off the Worker env, typed as
+- **`resolveDb(env)`**: the channel's D1 binding, read off the Worker env, typed as
   [`ChannelDatabaseLike`](#channeldatabaselike), which a `D1Database` and the dev package's
   `createChannelDb()` result both satisfy. Never `AUTH_DB`: a
-  second sign-in group's roster and sessions live in their own database, physically separate from the
-  engine's own editor store. An action whose binding resolves to `undefined`, or whose schema
+  second sign-in group's roster and sessions live in their database, physically separate from the
+  engine's editor store. An action whose binding resolves to `undefined`, or whose schema
   version does not match the schema the packaged migration installs (see [Storage](#storage)),
   answers `{outcome: 'unavailable'}` without touching a row.
 - **`deliver(contact, code, ctx)`**: sends the code to `contact`. `ctx` carries `{ env, waitUntil }`,
@@ -88,7 +88,7 @@ const channel = createAuthChannel<Env>({
   outage costs a member nothing but a retry.
 - **`lookup(contact, ctx)`**: normalized contact to subject id, or `null` for an unknown contact.
   `ctx` carries `{ env }`, the Worker env and nothing else, so a roster read reaches its
-  own binding. The returned subject must be stable and canonical per person (see [Config
+binding. The returned subject must be stable and canonical per person (see [Config
   obligations](#config-obligations)). A throw is caught, logged as the distinct `lookup_failed`
   outcome on [`auth.channel.requested`](./log-events.md), and treated the same as an unknown
   contact. Don't read request-shaped data here: this callback decides subject-versus-decoy, and a
@@ -108,7 +108,7 @@ const channel = createAuthChannel<Env>({
 - **`cookie.name`**: the session cookie's base name, through
   [`buildCookieName`](./auth-crypto.md#buildcookiename); the same base plus a `_pending` suffix names the
   nonce cookie. A `cairn_`-prefixed base throws at construction, since it would collide with the
-  engine's own admin cookies.
+  engine's admin cookies.
 - **`verify?(subject, ctx)`**: consulted by `resolveSubject` on every resolution, with the same
   `{ env }` context `lookup` receives. A `false` return revokes the session on the spot (deletes the
   row and answers `null`); a thrown error refuses the resolution (answers `null`) without touching
@@ -127,12 +127,12 @@ const channel = createAuthChannel<Env>({
 `AuthChannel<Env>`, the return value, carries `actions: { request, confirm, logout }` (each a
 SvelteKit action handler for the named form), `resolveSubject(event)` (read the session cookie and
 return the resolved subject, or `null` when absent, expired, or refused by `verify`), and
-`revokeSessions(db, subject)` (delete every session for a subject; a roster-removal handler's own
+`revokeSessions(db, subject)` (delete every session for a subject; a roster-removal handler's
 call). See [Types](#types) for each result union's exact shape.
 
 Two signature notes. `request` and `confirm` need `getClientAddress()` alongside the `CairnEvent`
 members, because the requester bucket keys on the client address; `logout` and `resolveSubject`
-take the bare `CairnEvent`, so your own session helper can declare `(event: CairnEvent)`.
+take the bare `CairnEvent`, so your session helper can declare `(event: CairnEvent)`.
 `revokeSessions` takes a binding rather than an event, deliberately: it is the one member callable
 outside a request, from a roster-archive path, a cron trigger, or a queue consumer that has a `db`
 and no event to resolve one from.
@@ -143,9 +143,9 @@ SvelteKit `HttpError` with status 503 before touching a row, minting a code, or 
 `deliver`. It's a throw rather than an `{outcome: ...}` result because no result union carries a wire
 code for a polluted environment, so SvelteKit renders your error page instead of returning to the
 form. The flag is read from the Worker env alone. "Deployed" reads the configured
-`PUBLIC_ORIGIN` from the Worker env first and falls back to the request's own hostname only when no `PUBLIC_ORIGIN` is
+`PUBLIC_ORIGIN` from the Worker env first and falls back to the request's hostname only when no `PUBLIC_ORIGIN` is
 set. Local development with the flag set is untouched, which is what lets a dev transport use the
-flag as its own enable contract. See [the security
+flag as its enable contract. See [the security
 model](../extend/security-model.md#the-dev-backend-flags-two-refusals) for the full rule and what it
 doesn't cover.
 
@@ -186,7 +186,7 @@ const channel = createAuthChannel<Env>({
 | `throttle.requesterCap` | Requester sends per hour, keyed on the address-and-identity bucket | 20 | 5 to 100 |
 | `throttle.identityCeiling` | Identity send ceiling per hour; logs [`auth.channel.ceiling_exceeded`](./log-events.md) only, never denies | 30 | at least 10 |
 | `throttle.escalationThreshold` | Identity failure-escalation threshold per hour, past which `confirm` answers `challenge-required` | 20 | at least 10 |
-| `throttle.liveRowCap` | Live code rows kept per requester bucket; a re-mint prunes the requester's own oldest rows past this | 5 | at most 20 |
+| `throttle.liveRowCap` | Live code rows kept per requester bucket; a re-mint prunes the requester's oldest rows past this | 5 | at most 20 |
 | `session.ttlMs` | Session lifetime, in ms | 2592000000 (30 days) | at most 31536000000 (1 year) |
 
 ## Rate limiting
@@ -200,15 +200,15 @@ and a throwing `key()` or `limit()` call degrades to open as well (see
 overrides it, where `event` is the same [`CairnEvent`](#types) `challenge` receives. Both actions apply the check after deriving the identity the default key needs, not
 before every other step. The Workers `RateLimit` binding is per-location and eventually
 consistent, the same caveat [`/cloudflare`](./cloudflare.md#checking-a-rate-limit) states for its
-own wrapper; the engine's own test suite exercises `rateLimit` against a structural
+wrapper; the engine's test suite exercises `rateLimit` against a structural
 [`RateLimitLike`](#types) stub, not a real binding, so the real binding's period and per-colo
-behavior are unproven by this package's own suite.
+behavior are unproven by this package's suite.
 
 ## Storage
 
 ### The packaged migration
 
-The factory's own D1 schema ships as a migration file in the package, at
+The factory's D1 schema ships as a migration file in the package, at
 `migrations-channel/0000_channel.sql`: the `cairn_channel_meta`, `cairn_channel_code`,
 `cairn_channel_session`, and `cairn_channel_budget` tables, their indexes, and one `INSERT` that
 seeds `schema_version`. Point your channel binding's `migrations_dir` at a copy of that directory,
@@ -223,7 +223,7 @@ adopts the file the same way any other does: run `wrangler d1 migrations apply <
 changes nothing and records the `d1_migrations` marker itself. Insert that marker by hand only if
 you can't run the migration runner.
 
-`createAuthChannel`'s own actions only ever read the `schema_version` row back to confirm a
+`createAuthChannel`'s actions only ever read the `schema_version` row back to confirm a
 channel's binding has already been migrated. None of them re-runs the migration.
 
 The per-deployment identity salt is deliberately absent from the file: a migration published on npm

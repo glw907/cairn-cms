@@ -21,7 +21,7 @@ A payload's `verdict` and `exitCode` are one result in two forms and never disag
 
 ## Payload kinds
 
-Seven payload kinds are published, and every payload declares its own `kind` so a reader working
+Seven payload kinds are published, and every payload declares its `kind` so a reader working
 through a mixed stream can key off a field rather than off the shape it happens to see. Every
 payload carries `schemaVersion`, `kind`, and `verdict` at its top level, and every payload but a
 per-site NDJSON line also carries `exitCode`.
@@ -47,22 +47,22 @@ page are re-indented for reading.
 
 Bare `cairn health --json`, run against every registered site, writes newline-delimited JSON: one
 `site` line per site, flushed as that site settles (each one the single-site payload with
-`exitCode` omitted), followed by one `summary` line carrying the run's own `exitCode`. A stream
+`exitCode` omitted), followed by one `summary` line carrying the run's `exitCode`. A stream
 that ends with no `summary` line reads `UNKNOWN`, since a truncated stream and a complete one are
-otherwise indistinguishable. A site the run's own budget or a signal cut short is folded into the
-summary's `counts` as `UNKNOWN` with no line of its own; the summary's `sites` count is how many
+otherwise indistinguishable. A site the run's budget or a signal cut short is folded into the
+summary's `counts` as `UNKNOWN` with no line; the summary's `sites` count is how many
 sites the run meant to cover, which can exceed the number of `site` lines actually written.
 
 ## Verdicts and states
 
-A run's own verdict is one of four words: `OK`, `WARNING`, `CRITICAL`, `UNKNOWN`. A check's own
+A run's verdict is one of four words: `OK`, `WARNING`, `CRITICAL`, `UNKNOWN`. A check's
 state is a closed set of five wire words, computed at the payload boundary rather than marshalled
 off the three-value state the `cairn` CLI tracks internally: `pass`, `fail`, `held`, `skip`,
 `unknown`.
 `held` is not a state on its own; it marks a failing check that an unexpired hold currently
 covers.
 
-In a `cairn health` payload the line between `skip` and `unknown` is carried by the check's own
+In a `cairn health` payload the line between `skip` and `unknown` is carried by the check's
 `reason`, and exactly three codes read `skip`: `reason.cred-missing`, `reason.repo-not-recorded`,
 and `reason.api.builds-not-connected`, each naming a check the run declined to attempt. Every
 other reason reads `unknown`, a measurement the run attempted and could not read. A `doctor`
@@ -72,43 +72,43 @@ payload maps its skips differently; see [The `doctor` payload](#the-doctor-paylo
 
 | Field | Present on | Meaning |
 | --- | --- | --- |
-| `checkId` | Every check | The check's own identifier, for instance `creds` or `config.bindings`. |
+| `checkId` | Every check | The check's identifier, for instance `creds` or `config.bindings`. |
 | `state` | Every check | One of the five wire words above. |
 | `checkedAt` | Every health check; a doctor payload carries one `checkedAt` at the top level instead | An RFC 3339 timestamp in UTC. |
 | `tier` | Every health check; absent from a doctor check | Which provider credential the check needs: `none`, `cloudflare`, `github`, or `both`. |
 | `detail` | Wherever the check's result produced one | Plain text for a person. |
 | `code` | A failing check whose result carries a machine identifier | An identifier under the `tool.` namespace, for instance `tool.creds-unauthorized`. |
-| `condition` | Wherever the check's result raises one | One of the engine's own diagnostic condition ids; `cairn health` and `cairn doctor` draw from the same vocabulary. |
+| `condition` | Wherever the check's result raises one | One of the engine's diagnostic condition ids; `cairn health` and `cairn doctor` draw from the same vocabulary. |
 | `reason` | A check that reports `skip` or `unknown` | One of the 32 reason codes below. |
 | `fix` | A check with a remedy | See below. |
 | `hold` | A check an acknowledgement currently covers | See below. |
 | `fields`, `observed` | A check with measured values | See below. |
 
 A check's `fix` object carries `summary`, `actor`, and `outward` always; `url` where the
-underlying condition has one; and `command` only for an operator's own fix, since an operator is
+underlying condition has one; and `command` only for an operator's fix, since an operator is
 the one actor whose remedy is a command line `cairn` can print. `actor` is one of four words:
 `operator`, `developer`, `provider-console`, `registrar`. `outward` is true when carrying the
 fix out changes what a visitor sees, a DNS record or a zone setting, as opposed to an internal or
 credential-only change.
 
 A check's `hold` object carries `until` and `expired`. An expired hold is still reported rather
-than dropped, and it arrives at the run's own exit arithmetic as unacknowledged. A check reads
+than dropped, and it arrives at the run's exit arithmetic as unacknowledged. A check reads
 `held` only while its hold has not expired. Once `hold.expired` is true it reads `fail` again.
 
 A check's measured values split by where they came from. `fields` holds what cairn derived
 itself, each key mapping straight to its value. `observed` holds what was copied from a
-provider's own response, each key mapping to an object carrying a `value` and the `source` it
+provider's response, each key mapping to an object carrying a `value` and the `source` it
 was read from, `cloudflare` or `github`. The boundary never infers a source from a key's name or
 a value's shape; it reads the source a check declared. `errorCount` and `errorCountTruncated` are
-keys inside that check's own `fields`, and `topEvents` a key inside `observed`; no schema names
+keys inside that check's `fields`, and `topEvents` a key inside `observed`; no schema names
 them, because both objects are open.
 
 The `errors` check carries `errorCount` when it produced a count, and `errorCountTruncated`
-beside it only when its own fetch filled the provider's page limit, which makes the count a floor
+beside it only when its fetch filled the provider's page limit, which makes the count a floor
 rather than an exact total; the truncation key is absent when the count is exact. A verbose run
 also carries `topEvents`, marked as copied straight from the provider.
 
-On the wire, a site's `checks` sort by their own `checkId`, and its `acknowledged` array, naming
+On the wire, a site's `checks` sort by their `checkId`, and its `acknowledged` array, naming
 which held checks the run currently counts as acknowledged, sorts alphabetically, so two runs of
 an unchanged site diff cleanly; the severity ranking belongs to the text report, never to the
 payload. Every held check is named in `acknowledged`, and both arrays sort byte-wise, not by
@@ -141,7 +141,7 @@ Ten `reason.api.*` codes, one per provider reason: `reason.api.unauthorized`,
 `reason.api.sender-not-configured`, `reason.api.rate-limited`, `reason.api.request-rejected`,
 `reason.api.unknown`.
 
-`reason.api.request-rejected` names cairn's own outgoing request being wrong, an HTTP 400 no
+`reason.api.request-rejected` names cairn's outgoing request being wrong, an HTTP 400 no
 operator can fix, so it stays out of the catch-all. `reason.api.rate-limited` is separate for the
 same reason: throttling describes cairn's request, not the site.
 
@@ -274,11 +274,11 @@ credential, the checks whose `reason` is `reason.cred-missing` and whose `state`
 ## The `summary` payload
 
 The final line of `cairn health --json` is one `summary` payload, folding every site's verdict
-into the run's own. A stream carrying no sites at all writes the same shape a run against zero
+into the run's. A stream carrying no sites at all writes the same shape a run against zero
 registered sites writes. `sites` is how many sites the run meant to cover. `counts` maps each
 verdict word to the number of sites that reported it. `worstFirst` ranks sites by the severity
 class of their worst unacknowledged failure, not by verdict; sites whose worst failures share a
-class keep the registry's own order. The example below is a run against an empty registry, so
+class keep the registry's order. The example below is a run against an empty registry, so
 `worstFirst` is empty.
 
 ```json
@@ -318,7 +318,7 @@ non-empty `errors` makes the verdict `UNKNOWN` and the exit code `3`.
 ## The `logs` payload
 
 `cairn logs <site> --json` carries `site`, `containsPersonalData`, and `entries`, each entry
-being `at`, `level`, `event`, and the event's own `fields`. Under `--json` stderr is silent, so
+being `at`, `level`, `event`, and the event's `fields`. Under `--json` stderr is silent, so
 the personal-data notice a plain run prints travels in the payload or it reaches nobody.
 
 ```json
@@ -390,14 +390,14 @@ waiting on a terminal that is not there.
 
 ## The `doctor` payload
 
-`cairn doctor --json` writes its own kind rather than a site payload with different checks: a
+`cairn doctor --json` writes its kind rather than a site payload with different checks: a
 directory run has no registry record, no credential tier, and no acknowledgements, so `site`,
 `domain`, `tier`, `acknowledged`, and `hold` are absent. Its `dir` is the resolved, symlink-free
 directory, never the argument as typed, and a directory that is not a cairn site writes an empty
 `checks` array rather than null. `dir` is symlink-resolved but not made absolute: a relative
 argument stays relative, and a bare run writes `.`.
 
-The doctor payload writes only the frozen state words and adds none of its own: an info result is
+The doctor payload writes only the frozen state words and adds none: an info result is
 written `state: "pass"` with a `note` and no `detail`; a skip is written `state: "skip"` with
 `reason: "reason.not-run"`; an unchecked result is written `state: "unknown"` with
 `reason: "reason.not-observable"`. `held` is never written, since a directory preflight has no
@@ -507,10 +507,10 @@ is major.
   `auth.role-wiring`, `ai.posture-effective`.
 - The verdict words: `OK`, `WARNING`, `CRITICAL`, `UNKNOWN`.
 - The state words: `pass`, `fail`, `held`, `skip`, `unknown`.
-- Every condition id a payload can carry, ported from the engine's own registry, and the reason
+- Every condition id a payload can carry, ported from the engine's registry, and the reason
   vocabulary above.
 
-Every condition id is the engine's own `src/lib/diagnostics/conditions.ts` registry, mirrored in
+Every condition id is the engine's `src/lib/diagnostics/conditions.ts` registry, mirrored in
 the command-line tool's embedded `conditions.json`.
 
 Version 2.0.0 retired three ids that 1.1.0 published: the check id `config.csrf-disable`, and the

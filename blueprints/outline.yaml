@@ -252,29 +252,13 @@ pages:
       - 'Entry SEO: the description, social image, and hero fallbacks; article versus website typing and the JSON-LD shape a site can replace; which SEO fields the fieldset must declare; the hero field kept named image; the scaffold''s defaultImage that 404s until the file exists.'
       - Pages that are not entries get no SEO unless the site calls buildSeoMeta and renders CairnHead itself.
       - 'A tag page: allTags() and byTag() on the index, drafts excluded, and the SEO it gets only through buildSeoMeta and CairnHead.'
-      - 'An editable site menu: declare editor.nav (configPath, menuName, maxDepth), the menu node shape and its limits, readMenu in the root layout''s load, and a second menu edited by hand in site.config.yaml.'
+      - 'An editable site menu: declare editor.nav (menuName, label, maxDepth), the menu node shape and its limits, readMenu in the root layout''s load, and a second menu edited by hand in site.config.yaml.'
       - 'The sitemap: buildSitemapView and extraRoutes versus the scaffold''s hand-built route, noindex entries still listed, and an origin with no trailing slash.'
       - delivery/data's pure builders (buildSiteDescriptors, buildSitemapView, renderJsonLdScript, buildExcerpt).
+      - 'The draft preview route for a hand-built site: apply the preview migration, mount loadPreview inside the entry pages'' layout group, render PreviewBanner, and verify a minted link; a scaffolded site already carries all of it.'
     outOfScope:
       - Choosing the AI posture (choose-an-ai-posture, kept).
-      - The draft preview route (share-a-draft-preview).
       - Announcing new entries (act-on-newly-published-entries).
-  - path: docs/extend/share-a-draft-preview.md
-    slug: share-a-draft-preview
-    title: Share a draft preview
-    type: task guide
-    job: Let an editor share an unpublished draft through a revocable link, mounted so the preview renders with your site's own chrome and styles. For a Svelte-fluent web developer building an organization's site on cairn's seams.
-    covers:
-      - 'Preconditions: the 0003_preview migration and its table; the actionable failure before it runs.'
-      - The share affordance on by default and the mint and revoke actions.
-      - Mount loadPreview inside the same route group as the entry page, and why (the rejected neutral-shell design); the shared composition with entryLoad.
-      - Render PreviewBanner and override its palette with the five custom properties.
-      - 'What the link is: token-only credential, no cookies, the response headers, draft versus published state, expiry and cascades on delete, rename, or discard, and the mint URL built from the configured origin.'
-      - Minting and revoking from your own admin route with mintPreview and revokePreview.
-      - Verify, and the preview.refused reasons with their 404 versus 503.
-    outOfScope:
-      - The public entry route itself (build-the-public-routes).
-      - Session and cookie security (security-model).
   - path: docs/extend/act-on-newly-published-entries.md
     slug: act-on-newly-published-entries
     title: Act on newly published entries
@@ -386,6 +370,7 @@ pages:
       - 'Render safety: the pipeline order, the sanitize floor and additive schema, the sink guard, raw HTML, target=_blank, what unsafeDisableSanitize removes, and what a registered build() can still bypass.'
       - 'The GitHub App''s reach: one private key as a Worker secret, the installation token''s repository-wide write.'
       - Logs never carry tokens or session ids.
+      - 'A preview link is the credential: anyone holding it reads the draft with no sign-in until it expires, is revoked, a change to the entry ends it, or its minting editor is removed.'
     outOfScope:
       - Configuring the access map (restrict-admin-access).
       - Setting up Access (replace-magic-links-with-cloudflare-access).
@@ -607,9 +592,6 @@ crossLinks:
     to: docs/extend/choose-an-ai-posture.md
     why: The robots posture option.
   - from: build-the-public-routes
-    to: share-a-draft-preview
-    why: The preview route shares the entry composition.
-  - from: build-the-public-routes
     to: act-on-newly-published-entries
     why: Acting on newly published entries.
   - from: add-a-custom-admin-screen
@@ -698,10 +680,10 @@ crossLinks:
     why: A publish action can link to a screen of your own.
   - from: build-the-public-routes
     to: turn-on-tidy
-    why: Declaring editor.nav also names the site-config file tidy conventions are saved to.
+    why: The site-config file editor.siteConfigPath names holds both the menu and tidy's conventions.
   - from: turn-on-tidy
     to: build-the-public-routes
-    why: Declaring editor.nav, which also names the site-config file tidy writes.
+    why: The menu editor, which commits the same site-config file tidy's conventions are saved to.
   - from: migrate-existing-content
     to: build-the-public-routes
     why: The build validation that checks migrated frontmatter.

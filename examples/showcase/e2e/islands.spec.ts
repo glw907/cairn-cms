@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// The styleguide's one `:::banner` sample comes from the banner component's own `preview` (see
+// The styleguide's one `:::banner` sample comes from the banner component's `preview` (see
 // +page.server.ts), which expires in 2999, so the banner is always active and never depends on when
 // the test runs. The expired-banner behavior is covered by banner-component.test.ts.
 const ACTIVE_MESSAGE = 'The trailhead lot reopens in the spring.';

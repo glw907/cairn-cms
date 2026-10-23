@@ -12,7 +12,7 @@ import { fillTitleWhenHydrated } from './editor-helpers.js';
 // singleton state shared across specs on the one worker, and a save persists the entry's pending
 // branch for the rest of the run. Wrapping the seed post's inserted image in a figure and saving
 // would leave a committed image chip on the seed branch, which media-insert.spec.ts then loads,
-// breaking its single-chip assertion. This spec creates its own post (golden-path's self-contained
+// breaking its single-chip assertion. This spec creates a separate post (golden-path's self-contained
 // pattern) so it never pollutes the seed branch, keeping media-insert untouched and green.
 
 // A real, decodable 8x8 RGBA PNG. The client ingestFile runs createImageBitmap in the browser, so

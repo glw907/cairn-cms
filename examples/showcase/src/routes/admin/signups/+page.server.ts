@@ -1,11 +1,11 @@
-// Archetype: the custom admin screen over the site's own table.
+// Archetype: the custom admin screen over the site's table.
 // Atoms: requireAccess, createSectionAction, createLogger.
 // Recipe: docs/extend/add-a-custom-admin-screen.md.
 //
-// A developer's own custom admin screen, proving the extension seam. It is a concrete route
+// A developer's custom admin screen, proving the extension seam. It is a concrete route
 // under /admin (so it wins over the catch-all), inherits the guard-populated locals.cairnEditor, renders
-// inside the shared CairnAdminShell from the parent layout, and reads and writes its own APP_DB
-// binding (the engine never touches it). requireAccess on the load and the section action's own
+// inside the shared CairnAdminShell from the parent layout, and reads and writes its APP_DB
+// binding (the engine never touches it). requireAccess on the load and the section action's
 // access check on each form action resolve against the same site access map, so a denied POST's
 // page render exposes nothing the load would already have refused; the ownerOnly nav flag is
 // cosmetic only.
@@ -16,7 +16,7 @@ import { error, fail } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
 import { log } from '#lib/log.js';
 
-/** A signup row, the developer's own table shape, read from APP_DB. */
+/** A signup row, the developer's table shape, read from APP_DB. */
 interface SignupRow {
   id: number;
   name: string;
@@ -24,7 +24,7 @@ interface SignupRow {
 }
 
 // A deployed Worker always carries APP_DB (wrangler.jsonc binds it); its absence is a
-// deployment misconfiguration, not a request-shaped failure, so it logs with the engine's own
+// deployment misconfiguration, not a request-shaped failure, so it logs with the engine's
 // area.subject.verb_phrase grammar (section-action.ts's admin.action.misconfigured) and fails
 // closed with a generic 500 rather than leaking binding detail to the client. The load resolves
 // the binding this way because createSectionAction wraps form actions only; requireAccess and
@@ -48,9 +48,9 @@ export const load: PageServerLoad = async (event) => {
 };
 
 // This screen's job is to teach the documented path, so it copies the wrapper rather than the
-// minimum that compiles: createSectionAction (@glw907/cairn-cms/sveltekit) is what a site's own
+// minimum that compiles: createSectionAction (@glw907/cairn-cms/sveltekit) is what a site's
 // admin section reaches for, and a developer copying this route should carry it across. It
-// composes the editor, CSRF and audit contract onto every action and resolves the section's own
+// composes the editor, CSRF and audit contract onto every action and resolves the section's
 // binding, so no action re-implements a gate the engine already owns.
 //
 // It is fail-closed on every call, unlike createAdminAction's opt-in access option: the site's access

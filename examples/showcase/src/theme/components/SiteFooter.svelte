@@ -32,7 +32,7 @@ who wants to change the footer edits `site.config.yaml` directly.
      queues it. There is no `data-sveltekit-prerender` link option: SvelteKit's `data-sveltekit-*`
      attributes are `preload-data`, `preload-code`, `reload`, `replacestate`, `keepfocus`, and
      `noscroll`, none of which touch whether the crawler reaches a route. The route-level control
-     for whether a reached route is written to disk is `export const prerender` (`/admin`'s own
+     for whether a reached route is written to disk is `export const prerender` (`/admin`'s
      `+page.server.ts` sets it to `false`); `rel="external"` is what keeps the crawler from
      reaching the route at all. HTML defines `rel="external"` to mean "not part of the same site,"
      which `/admin` technically is not, so this is a deliberate build-tool hint rather than a

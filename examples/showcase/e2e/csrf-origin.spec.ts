@@ -7,9 +7,9 @@ import {
   submitNatively,
 } from './csrf-helpers.js';
 
-// SvelteKit's own Origin check runs on every route of the served build, admin included, because the
+// SvelteKit's Origin check runs on every route of the served build, admin included, because the
 // site carries no csrf config. The members request form is the probe for the pair below: the auth
-// channel also answers 403 on an origin mismatch (its own compare), so only Kit's exact body proves
+// channel also answers 403 on an origin mismatch (its compare), so only Kit's exact body proves
 // the framework refused, and a status alone would pass with the check switched off.
 
 test('a form posted from the other host name is refused by the framework, not the auth channel', async ({
@@ -68,7 +68,7 @@ test("the confirm page posts its form and gets the engine's answer, never the fr
   const posted = page.waitForResponse((response) => response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Confirm sign-in' }).click();
   const response = await posted;
-  // The action answers (a redirect to sign-in, or its own failure page); either is the engine's,
+  // The action answers (a redirect to sign-in, or its failure page); either is the engine's,
   // reached only if the POST carried a real Origin. The framework's refusal is a bare 403.
   expect(response.status()).not.toBe(403);
   await expect(page.getByRole('heading', { name: /This didn’t work|Sign in to/ })).toBeVisible();

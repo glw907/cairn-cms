@@ -3,10 +3,10 @@ import type { Handle } from '@sveltejs/kit/hooks';
 import { devBackendOptIn } from '#chassis/dev-gate.js';
 import { runtime } from '#chassis/cairn.server.js';
 
-// createAdminAction's own authorization refusals (see the SvelteKit reference's "Refusal channels")
-// throw SvelteKit's own redirect()/error(), which SvelteKit renders correctly with no site
+// createAdminAction's authorization refusals (see the SvelteKit reference's "Refusal channels")
+// throw SvelteKit's redirect()/error(), which SvelteKit renders correctly with no site
 // mapping. SvelteKit's default handleError (a console.error of every server error) covers
-// everything else, so this file declares no handleError hook of its own.
+// everything else, so this file declares no handleError hook.
 
 // The dev backend activates only behind __CAIRN_DEV_BUILD__, the Vite define this branch reads
 // directly (see #chassis/dev-gate.ts): a default `npm run build` substitutes `false` here, so
@@ -22,7 +22,7 @@ if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
     // cairn-template:exclude-start
     // This example site serves the package's seeded fixtures: its e2e runs under `wrangler dev`,
     // whose workerd cannot read the working tree, and its specs assert the fixture content. A new
-    // site takes the default, which serves its own content from the working tree.
+    // site takes the default, which serves its content from the working tree.
     content: 'fixtures',
     // cairn-template:exclude-end
   });

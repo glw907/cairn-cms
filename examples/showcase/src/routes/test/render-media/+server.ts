@@ -1,5 +1,5 @@
 // Internal fixture endpoint: render a markdown body that carries a `media:` reference, with a posted
-// media record overlaid into a fresh resolver, through the site's own adapter render. It proves the
+// media record overlaid into a fresh resolver, through the site's adapter render. It proves the
 // vertical slice's render leg: a content `media:` handle rewrites to its delivery `/media/...` path,
 // the same path the delivery route serves. The body sits behind __CAIRN_DEV_BUILD__, the Vite define
 // this branch reads directly (#chassis/dev-gate.ts), so a default production build drops it and the

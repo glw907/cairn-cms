@@ -5,11 +5,11 @@ import { fileURLToPath } from 'node:url';
 
 // The seam under proof, in three assertions: (a) no public page ever serves the site admin
 // sheet itself, (b) each admin page carries the site sheet's proof utility that the baseline
-// build did not have, and (c) the engine's own rendered properties on those admin pages are
+// build did not have, and (c) the engine's rendered properties on those admin pages are
 // unchanged from the baseline. (a) is keyed on sheet identity rather than a whole-bundle
-// digest: the site's own Tailwind compile (`@tailwindcss/vite`) scans every route under `src`,
+// digest: the site's Tailwind compile (`@tailwindcss/vite`) scans every route under `src`,
 // so a utility class written on an admin page (`.scroll-mt-14`, this spec's proof utility) can land in
-// the public bundle too by the site's own build, which a whole-bundle digest cannot distinguish
+// the public bundle too by the site's build, which a whole-bundle digest cannot distinguish
 // from the site admin sheet leaking onto a public page. (b) and (c) still compare against the
 // baseline fixture, captured once at this pass's branch point by the post-merge ritual; there is
 // no second build in this repo to diff against.

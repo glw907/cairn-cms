@@ -17,7 +17,7 @@ test('the size-gated tag filter narrows the archive and the All reset restores i
   await expect(filter).toBeVisible();
 
   // The index opens unfiltered: All is pressed and the full archive shows. The newest entry sits in
-  // its own lead treatment above the index, so the count spans both: `data-cairn-post` marks a post
+  // its lead treatment above the index, so the count spans both: `data-cairn-post` marks a post
   // row wherever it renders (the lead card or an index entry).
   const allOption = filter.getByRole('button', { name: 'All' });
   await expect(allOption).toHaveAttribute('aria-pressed', 'true');

@@ -75,9 +75,9 @@ async function publish(page: Page): Promise<void> {
 }
 
 /**
- * discardAction redirects to the entry's own edit page with `?discarded=1` when the file still
+ * discardAction redirects to the entry's edit page with `?discarded=1` when the file still
  * exists on main (an edit of a live entry), or straight to the concept's list when it does not (a
- * never-published entry's draft: there is nothing left to show at its own edit URL). `expectEnded`
+ * never-published entry's draft: there is nothing left to show at its edit URL). `expectEnded`
  * selects which redirect this call site expects.
  */
 async function discard(page: Page, expectEnded: boolean): Promise<void> {
@@ -127,7 +127,7 @@ async function revokeAll(page: Page): Promise<void> {
 /**
  * Delete a post from the list by its exact title and assert the row went. A missing row fails by
  * default, so a mis-titled post cannot slip through uncleaned; pass `allowGone` only for a call
- * site whose entry may already have been removed (a never-published entry's own discard removes it).
+ * site whose entry may already have been removed (a never-published entry's discard removes it).
  * Every disposable post this file creates is deleted at the end of its test: the showcase's admin
  * list is a single shared, unbounded corpus across the whole e2e run (`reuseExistingServer`, one
  * in-memory backend for the process lifetime), and a leaked post can push a seeded entry off the
@@ -282,7 +282,7 @@ test.describe('public preview for a non-editor', () => {
     const raw = await (await request.get(url)).text();
     expect(raw).not.toContain(sentinel);
 
-    // The (site) group's own parent layout load runs unauthenticated on the preview route too, and
+    // The (site) group's parent layout load runs unauthenticated on the preview route too, and
     // its data reaches the serialized page payload the same way it reaches any public page's: this
     // is the documented boundary (a site with privileged layout data branches on the route or mounts
     // preview in a sibling group), not a leak this engine plugs. Assert it reaches BOTH surfaces
@@ -379,7 +379,7 @@ test.describe('public preview for a non-editor', () => {
     page,
     request,
   }) => {
-    // saveAction's own link guard refuses to COMMIT a body linking to a target absent from the
+    // saveAction's link guard refuses to COMMIT a body linking to a target absent from the
     // manifest at save time (a helpful typo catch for an editor), so a genuinely broken link can
     // only exist in an already-saved draft when its target existed at save time and vanished
     // afterward: publish a sibling, link a draft to it (a save that succeeds), then delete the

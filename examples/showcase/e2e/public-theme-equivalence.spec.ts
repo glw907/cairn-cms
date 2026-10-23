@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 // The public theme's computed-value equivalence test. It pins what the built showcase computes for
 // every custom property the chassis token system and Waymark's theme sheet declare, for daisyUI's
-// own 29 theme keys, and for the elements the engine's public stylesheet styles (every
+// 29 theme keys, and for the elements the engine's public stylesheet styles (every
 // `cairn-focus-ring` element on the pages loaded here, `pre.shiki`, the `.cairn-tok-*` classes,
 // and `.table-scroll`). The values are read in three states: light, dark by OS preference with no
 // cookie, and dark by explicit choice (`data-theme="cairn-dark"`). A stylesheet move that changes
@@ -150,7 +150,7 @@ function rootLevelCustomProperties(css: string): string[] {
   return [...found];
 }
 
-/** The key list update mode captures: both stylesheets' root properties plus daisyUI's own keys. */
+/** The key list update mode captures: both stylesheets' root properties plus daisyUI's keys. */
 async function discoverRootKeys(): Promise<string[]> {
   const { default: themes } = (await import('daisyui/theme/object')) as {
     default: Record<string, Record<string, string>>;
@@ -211,7 +211,7 @@ test.describe('public theme computed-value equivalence', () => {
     await page.goto(ROOT_PAGE);
     await expect(page.locator('main#main')).toBeVisible();
     await page.keyboard.press('Shift');
-    // The utility joins the page's own `utilities` layer, the layer Tailwind declares after
+    // The utility joins the page's `utilities` layer, the layer Tailwind declares after
     // `components`, where the engine's ring rule sits.
     const outlines = await page.evaluate(() => {
       const style = document.createElement('style');
@@ -260,7 +260,7 @@ test.describe('public theme computed-value equivalence', () => {
 
   // The hero title reads the same two levers as every other heading, so a theme that sets them moves
   // the styleguide masthead with the rest. The probe sets the levers on the root the way a theme's
-  // own `:root` block would, at a value Waymark does not use.
+  // `:root` block would, at a value Waymark does not use.
   test('the styleguide masthead follows the heading levers', async ({ page }) => {
     await page.goto('/styleguide');
     await expect(page.locator('main#main')).toBeVisible();

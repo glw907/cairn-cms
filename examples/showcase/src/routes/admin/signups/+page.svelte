@@ -1,7 +1,7 @@
-<!-- @component The custom Signups admin screen: a developer's own route rendered in CairnAdminShell.
+<!-- @component The custom Signups admin screen: a developer's route rendered in CairnAdminShell.
      The header and the table adopt the packaged admin toolkit through its public subpath
-     (`@glw907/cairn-cms/admin-toolkit`), the in-repo consumer proof that a site's own custom
-     screen reaches for the toolkit the same way cairn's own admin does. -->
+     (`@glw907/cairn-cms/admin-toolkit`), the in-repo consumer proof that a site's custom
+     screen reaches for the toolkit the same way cairn's admin does. -->
 <script lang="ts">
   import { tick } from 'svelte';
   import { enhance } from '$app/forms';
@@ -87,7 +87,7 @@
 <!-- Always mounted and content-gated (the admin's ruled busy/live-region idiom), so it reads any
      outcome either action produces without re-mounting mid-interaction (WCAG 4.1.3, 3.3.1): both
      forms' use:enhance keeps the outcome a DOM mutation into this already-mounted region rather
-     than a full-page reload. form.error is read generically: createSectionAction's own denial and
+     than a full-page reload. form.error is read generically: createSectionAction's denial and
      misconfigured branches carry the same field the create action's validation failure does. -->
 <p role="status" aria-live="polite" class="type-body mt-2 scroll-mt-14" id="signup-outcome">
   {#if form?.error}
@@ -159,7 +159,7 @@
      The label, not the input, carries the sizing: as a flex item with a definite flex-basis it
      grows to 20rem when the row has room and shrinks below that (down to 3rem) when it does not,
      so the create row never overflows or wraps at narrow viewports. The input then fills its
-     label at 100%, which resolves cleanly here because the label (unlike `.input`'s own auto-sized
+     label at 100%, which resolves cleanly here because the label (unlike `.input`'s auto-sized
      flex-col containing block) now has a definite computed width from the flex algorithm. */
   .signup-create-label {
     flex: 1 1 0;

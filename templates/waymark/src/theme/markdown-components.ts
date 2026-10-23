@@ -11,7 +11,7 @@ import { makeIconRenderer, headRow } from '#chassis/render.js';
 import { icons } from './icons.js';
 
 // The chassis wires the icon set into the render helpers; this theme owns only the glyph data
-// (`icons`, in its own module) and where each build() function calls makeIcon.
+// (`icons`, in a separate module) and where each build() function calls makeIcon.
 const makeIcon = makeIconRenderer(icons);
 
 // The video facade's URL parser. Names the platform from the host so a reader knows where the link
@@ -120,9 +120,9 @@ export const alert = defineComponent({
   ],
 });
 
-// A single glyph from the declared icon set, for a note that wants a small marker of its own without a
+// A single glyph from the declared icon set, for a note that wants a small marker without a
 // card around it. The directive vocabulary is container-only (a bare colon or double-colon directive
-// always restores to literal prose, never dispatches), so this renders at its own block position rather
+// always restores to literal prose, never dispatches), so this renders at its block position rather
 // than truly inline in a sentence; it still serves a standalone line or a short aside. An icon name
 // outside the declared set is an author-input error that only a hand-edited directive can reach (the
 // picker only offers declared names), so it fails loud at render, the same build-backstop posture
@@ -205,7 +205,7 @@ export const video = defineComponent({
 // A single sentence pulled out of the flow and set large, styled by reusing the manual `.pullquote`
 // hook this site's writing guide already documents (see the-reading-surface.md), so the component and
 // the raw-HTML tip render identically. The quote is a required inline slot (a pull quote is one line,
-// not a paragraph); attribution is optional, since most pulled lines are the author's own words.
+// not a paragraph); attribution is optional, since most pulled lines are the author's words.
 export const pullQuote = defineComponent({
   name: 'pull-quote',
   label: 'Pull quote',
@@ -367,7 +367,7 @@ export const banner = defineComponent({
       // ctx.attributes into data-cairn-props right after build() returns, reading the same object
       // this function holds, so clearing it here keeps the announcement text and date out of the
       // static markup entirely rather than shipping them inert in an attribute a reader's view-source
-      // still exposes. The island still mounts with no props, and Banner.svelte's own expiry check (a
+      // still exposes. The island still mounts with no props, and Banner.svelte's expiry check (a
       // missing expires counts as expired) renders the same empty output.
       ctx.attributes = {};
       return h('div', { hidden: true, className: ['banner-expired'] }, []);

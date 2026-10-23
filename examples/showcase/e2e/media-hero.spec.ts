@@ -16,7 +16,7 @@ import { fillTitleWhenHydrated } from './editor-helpers.js';
 // The template renders the hero <img> and <figcaption>, and the head carries the resolved og:image.
 //
 // The fresh-post isolation mirrors media-figure's note: a save persists the entry's pending branch
-// on the one-worker shared backend, so this spec creates its own post and never touches the seed
+// on the one-worker shared backend, so this spec creates a separate post and never touches the seed
 // branch media-insert depends on.
 
 // A real, decodable 8x8 RGBA PNG with bytes DISTINCT from media-insert ("seaside") and media-figure

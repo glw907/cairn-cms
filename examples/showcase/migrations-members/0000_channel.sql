@@ -1,6 +1,6 @@
--- The auth-channel factory's own D1 schema (`createAuthChannel`, @glw907/cairn-cms/auth-channel).
+-- The auth-channel factory's D1 schema (`createAuthChannel`, @glw907/cairn-cms/auth-channel).
 -- Apply it against the site's OWN channel binding, never AUTH_DB: a second audience's roster and
--- sessions live in a physically separate database. This directory is a sibling of cairn's own
+-- sessions live in a physically separate database. This directory is a sibling
 -- migrations/, never a member of it, because a shared migrations_dir applies each database's
 -- schema to the other the first time either is migrated.
 --
@@ -14,7 +14,7 @@
 -- on npm and pinned byte for byte by a test cannot carry one, so provisionSalt writes it lazily on
 -- first use.
 --
--- requester_bucket on cairn_channel_code is what lets the live-row cap find "this requester's own
+-- requester_bucket on cairn_channel_code is what lets the live-row cap find "this requester's
 -- rows" without ever keying on identity, the rule the whole design exists to enforce.
 CREATE TABLE IF NOT EXISTS cairn_channel_meta (
   key TEXT PRIMARY KEY,

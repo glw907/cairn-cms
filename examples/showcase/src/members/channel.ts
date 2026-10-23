@@ -4,8 +4,8 @@
 // src/lib/server/, grouped with the rest of the members feature instead of a generic server
 // folder, and `challenge` is `insecureTestChallenge`
 // rather than a real Turnstile verifier, since CI cannot reach challenges.cloudflare.com (see
-// that function's own header comment). `deliver` is the capture transport
-// (./capture-transport.js), the guide's own harness pattern. Every default clamp in
+// that function's header comment). `deliver` is the capture transport
+// (./capture-transport.js), the guide's harness pattern. Every default clamp in
 // AuthChannelConfig.limits stays untouched, so this exemplar never becomes a set of loosened
 // numbers a consumer copies.
 import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
@@ -39,7 +39,7 @@ export async function insecureTestChallenge(_event: CairnEvent, form: FormData):
   return form.get(INSECURE_TEST_CHALLENGE_FIELD) === INSECURE_TEST_CHALLENGE_TOKEN;
 }
 
-/** `normalize`: lowercase and trim, the guide's own shape. */
+/** `normalize`: lowercase and trim, the guide's shape. */
 function normalizeContact(raw: string): string {
   return raw.trim().toLowerCase();
 }

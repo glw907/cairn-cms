@@ -1,6 +1,6 @@
-// The chassis's component-grammar wiring: a theme supplies its own icon set (the concrete glyph
-// data) and its own defineComponent() list; this module wires either into the engine's render
-// helpers with no theme-specific knowledge of its own. A theme reads makeIconRenderer, never
+// The chassis's component-grammar wiring: a theme supplies its icon set (the concrete glyph
+// data) and its defineComponent() list; this module wires either into the engine's render
+// helpers with no theme-specific knowledge. A theme reads makeIconRenderer, never
 // renderGlyph directly, so re-skinning the icon SET (swapping the glyph data passed in) never
 // touches a component's build() function. It also holds the prose-typography seam: a
 // createRenderer remarkPlugins entry a theme composes in once, so every render call inherits it.

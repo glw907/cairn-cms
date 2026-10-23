@@ -1,8 +1,8 @@
 // The expiring-announcement banner island's one shared rule: markdown-components.ts's build() (the server
 // fallback) and Banner.svelte (the live component) both call this, so the two independently agree on
 // "expired" without sharing any state across the server/client boundary. Each evaluates it fresh, at
-// its own render or hydration moment, which is what lets a banner that expires between build and view
-// still hide on the live page: the client's own check overrides a server snapshot taken earlier.
+// its render or hydration moment, which is what lets a banner that expires between build and view
+// still hide on the live page: the client's check overrides a server snapshot taken earlier.
 
 /**
  * Whether a banner's `expires` date (`YYYY-MM-DD`) has passed relative to `now`. The banner shows

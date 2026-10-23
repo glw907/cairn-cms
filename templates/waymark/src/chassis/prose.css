@@ -23,7 +23,7 @@
    real engine class names: a callout is
    `.callout > .callout-title + .callout-body + .callout-points`, an alert is
    `.alert > .cairn-alert-body > (.cairn-head > .cairn-head-title) + .alert-body`. Every rule is
-   scoped under `.prose` so it beats DaisyUI's own `.alert`/`.card` component
+   scoped under `.prose` so it beats DaisyUI's `.alert`/`.card` component
    classes (theme.css bundles DaisyUI for the public layer) on specificity.
 
    The whole file is @layer components, the same layer theme.css uses, so the
@@ -36,7 +36,7 @@
    Waymark identity re-enables all three by adding one `data-flourish` attribute
    to the `.prose` root, with no CSS edit.
 
-   TIER: the whole sheet is Tier 2 (owned design, the documented floor for a site's own look). It
+   TIER: the whole sheet is Tier 2 (owned design, the documented floor for a site's look). It
    is the hand-authored reading surface, not @tailwindcss/typography, so it is not a fold target. It
    reads the theme roles and the cairn tokens; a re-skin recolors it with no edit here. */
 @layer components {
@@ -230,14 +230,14 @@
     border-radius: var(--radius-selector);
     padding: 0.1em 0.36em;
   }
-  /* A long unwrapped line (whitespace: pre) can run past the block's own edge with nothing to
+  /* A long unwrapped line (whitespace: pre) can run past the block's edge with nothing to
      signal there is more to scroll: at a narrow viewport the block simply looks clipped mid-word.
      Two layered gradients read the scroll position with no JS: the near-transparent-to-opaque
      "cover" travels WITH the scrolled content (attachment: local) and, painted at the true end of
      the content, only comes into view once scrolled all the way right, where it seamlessly matches
-     the block's own ground; the radial "shadow" beneath stays fixed to the viewport edge
+     the block's ground; the radial "shadow" beneath stays fixed to the viewport edge
      (attachment: scroll) and so is visible whenever there is more content to the right, reading as
-     a soft edge cue. Both colors are token-derived (the block's own ground, the body ink at low
+     a soft edge cue. Both colors are token-derived (the block's ground, the body ink at low
      opacity), so the cue stays correct in both color schemes with no literal color. */
   .prose pre {
     font-family: var(--font-mono);
@@ -352,20 +352,20 @@
      table itself stays `display: table`, a real table in the accessibility
      tree (WCAG 1.3.1: `display: block` on a table strips its row/cell roles
      in every current engine). The scroll container is a wrapper the engine's
-     own render pipeline emits around every table by default (`RendererConfig.
+     render pipeline emits around every table by default (`RendererConfig.
      tableScroll`, src/lib/render/table-scroll.ts, not a site-side step):
      `.table-scroll` carries `role="region"`, a `tabindex` and an `aria-label`
      naming the table, so a keyboard user can tab to the region and scroll it.
      The engine's public stylesheet (`cairn-public.css`) supplies its structural
      `display: block; overflow-x: auto` pair; this file keeps the design. Cells
-     stay `nowrap` so a narrow viewport cannot satisfy the table's own
+     stay `nowrap` so a narrow viewport cannot satisfy the table's
      `width: 100%` by wrapping words inside a cell; the auto table-layout algorithm then grows the table past its
      specified width to fit the unbroken content, and the wrapper's
      `overflow-x: auto` turns that into a horizontal scroll instead of a
      squeezed, word-broken column. A wide table (many columns, like the gear
      checklist's) still clips its last visible column mid-word at a generous
      viewport with nothing to signal there is more; the same token-derived
-     scroll-edge affordance as `.prose pre` (see its own comment) reads the
+     scroll-edge affordance as `.prose pre` (see its comment) reads the
      scroll position with no JS. */
   .prose .table-scroll {
     --flow-space: var(--spacing-m);
@@ -444,7 +444,7 @@
   /* --------------------------------------------------------------------------
      Figures. The placement geometry (center/wide/full breakout) and the caption
      styling live in site.css scoped to .site-main, and the article sits inside
-     it, so those apply. This only gives a figure its own flow rhythm. The hero
+     it, so those apply. This only gives a figure its flow rhythm. The hero
      figure (frontmatter image) is a leading figure with no placement class.
      -------------------------------------------------------------------------- */
   .prose figure {
@@ -453,7 +453,7 @@
 
   /* --------------------------------------------------------------------------
      Directive components (engine render output). Real engine class names, scoped
-     under .prose to beat DaisyUI's own .alert / .card on specificity.
+     under .prose to beat DaisyUI's .alert / .card on specificity.
      -------------------------------------------------------------------------- */
 
   /* Callout: a bordered card with an accent left rule and a faint tinted ground.
@@ -513,7 +513,7 @@
   /* Alert: the second directive, built from the cairn render helpers (a section
      with a cairn-alert-body, a cairn-head holding an optional icon and the
      cairn-head-title, and an alert-body). DaisyUI's .alert grid is overridden here.
-     The inner classes are the site's own (renamed away from DaisyUI's .card-body/
+     The inner classes are the site's (renamed away from DaisyUI's .card-body/
      .card-title so the .card component's Tailwind-scanned rules never restyle
      the alert). Roles note / caution; caution leans on the warning ink so it
      reads as a caution. */
@@ -571,7 +571,7 @@
 
   /* Icon: a single glyph with no card and no title, sitting directly in the prose flow rather than
      nested inside another component (the alert head, the video-facade thumb, the cta link, the faq
-     marker all size their own `.cairn-glyph` above and below). The direct-child combinator scopes this
+     marker all size their `.cairn-glyph` above and below). The direct-child combinator scopes this
      rule to exactly that standalone case, so it never fights the more specific nested rules. With no
      sizing rule at all the bare SVG falls back to the browser's default replaced-element box, reading
      as an oversized glyph instead of a modest inline marker; text-height scale keeps it reading like a
@@ -600,7 +600,7 @@
   }
 
   /* Video facade: a bordered 16:9 panel with a centered play glyph and the platform name, the whole
-     thing one link. No thumbnail image (see the component's own comment for why); the panel ground
+     thing one link. No thumbnail image (see the component's comment for why); the panel ground
      and border are the same card tokens the callout and alert borrow. */
   .prose .video-facade {
     --flow-space: var(--spacing-m);
@@ -679,11 +679,11 @@
   }
 
   /* CTA: a restrained button-link, not the fuller marketing panel the styleguide's `.sg-cta` shows.
-     Primary reuses the site's own accent-button pair, the same `--color-primary` treatment the
+     Primary reuses the site's accent-button pair, the same `--color-primary` treatment the
      styleguide's `.btn-primary` and every other on-page call-to-action use; secondary is a bordered
      ghost variant. Primary does NOT reuse `--cairn-cta-btn-bg`/`-btn-content`: that pair is tuned to
      sit on top of the `--cairn-cta-bg` panel (see `.sg-cta`), a backdrop this inline link never gets.
-     In light mode `--cairn-cta-btn-bg` resolves to `--color-base-100`, the page's own paper, so a
+     In light mode `--cairn-cta-btn-bg` resolves to `--color-base-100`, the page's paper, so a
      link sitting directly on the page (not on the panel) would render with an invisible background;
      it happened to read fine in dark mode only because `--cairn-cta-btn-bg` there resolves to
      `--color-primary`, the same accent used below in both themes. */
@@ -765,9 +765,9 @@
     outline-offset: var(--cairn-focus-ring-offset);
   }
   .prose .micro-cta-label {
-    /* The ratified recipe reads --font-sans, a Tailwind default this site's own token layer
+    /* The ratified recipe reads --font-sans, a Tailwind default this site's token layer
        never defines; --font-body is this site's equivalent sans face (Source Sans 3), so the
-       chip's label stays on the site's own token system rather than an incidental default. */
+       chip's label stays on the site's token system rather than an incidental default. */
     font-family: var(--font-body);
     font-size: var(--text-step--1);
     font-weight: 600;
@@ -785,7 +785,7 @@
   /* FAQ: a native <details>/<summary> disclosure. The default marker is hidden and replaced by the
      chevron glyph in the summary, which rotates open (a non-color state cue, matching the task-list
      checkbox's real-control cue elsewhere in this sheet). A run of several FAQs reads as a divided
-     list, each row closed by its own bottom hairline with no outer box; a single question has no
+     list, each row closed by its bottom hairline with no outer box; a single question has no
      neighbor to divide it from, so a bare bottom rule under it reads as a stray line rather than a
      component. `:only-of-type` (there is exactly one `<details>` in the surrounding flow) gives that
      lone case a full bordered container instead. */
@@ -867,7 +867,7 @@
   }
 
   /* Reduced motion: every hover/state transition and the FAQ chevron's rotation this sheet adds go
-     instant, the same posture SiteHeader and SiteFooter already take on their own transitions. The
+     instant, the same posture SiteHeader and SiteFooter already take on their transitions. The
      rotation itself still flips the marker on open/close; only the animated tween is removed. */
   @media (prefers-reduced-motion: reduce) {
     .prose a,

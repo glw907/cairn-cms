@@ -3,7 +3,7 @@ import { buildRobots } from '@glw907/cairn-cms/delivery';
 
 // #chassis/content.js and #theme/cairn.config.js both pull in the full adapter, including a
 // Svelte island component this standalone vitest config has no Svelte plugin to parse; mocking
-// them to the one field each the route reads keeps the test on the route's own wiring without
+// them to the one field each the route reads keeps the test on the route's wiring without
 // that unrelated dependency chain.
 const SITE_ORIGIN = 'https://showcase.test';
 vi.mock('#chassis/content.js', () => ({ siteMeta: { origin: SITE_ORIGIN } }));

@@ -2,16 +2,16 @@ import { test, expect, type Page } from '@playwright/test';
 
 // The starter theme's one declared CSS rule (theme.css, "Hairline outlines"): an uncolored
 // btn-outline or badge-outline takes a visible hairline edge instead of DaisyUI's stock full-ink
-// outline, and a color variant (btn-outline btn-primary) keeps its own colored edge untouched. The
+// outline, and a color variant (btn-outline btn-primary) keeps its colored edge untouched. The
 // pin mechanism is a `site-theme` sublayer of `@layer utilities`, mentioned later in the build than
-// DaisyUI's own `daisyui` sublayer (theme.css imports the chassis, which activates the DaisyUI
+// DaisyUI's `daisyui` sublayer (theme.css imports the chassis, which activates the DaisyUI
 // plugin, before it declares this rule), so a later-declared layer outranks an earlier one
 // regardless of selector specificity: the button half needs no `:hover`/`:focus-visible`/`:active`
-// selector of its own, because it only ever overrides the `--btn-border` custom property DaisyUI
+// selector, because it only ever overrides the `--btn-border` custom property DaisyUI
 // itself restates at each of those states, and the later layer always wins that same property.
 //
 // Each expected color is resolved through the SAME expression the rule declares, painted onto a
-// throwaway probe element appended to the page's own document, never a hand-typed serialized
+// throwaway probe element appended to the page's document, never a hand-typed serialized
 // string: a computed color can otherwise serialize in whatever functional notation the browser
 // chooses, so a literal comparison would be guessing at that notation instead of proving the rule.
 

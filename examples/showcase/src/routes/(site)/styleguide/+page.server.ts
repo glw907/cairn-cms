@@ -97,7 +97,7 @@ export const load: PageServerLoad = async () => {
   // One sample per registry entry, from the entry's `preview` serialized as directive markdown. An
   // entry with no `preview` has nothing to render and is listed by name instead.
   //
-  // WATCH: each sample renders in its own `render` call, so rehype-slug ids are not de-duplicated
+  // WATCH: each sample renders in a separate `render` call, so rehype-slug ids are not de-duplicated
   // across samples; two samples that carry the same heading text would emit the same id.
   const defs = cairn.rendering.components?.defs ?? [];
   const withoutPreview: string[] = [];

@@ -1,11 +1,11 @@
 <!--
 @component
 The admin's error page: a failure in any /admin/** page renders inside the shell and its theme
-wrapper, so a refusal or an unknown address reads as the admin's own page, not the public site's.
-A 403 and a 404 carry their own calm copy; any other status falls back to the thrown message.
+wrapper, so a refusal or an unknown address reads as the admin's page, not the public site's.
+A 403 and a 404 carry their calm copy; any other status falls back to the thrown message.
 
 SvelteKit renders a route's `+error.svelte` inside the layouts above it, which is why the shell
-frames this page. A failure in the admin layout's own load has no layout above it to render
+frames this page. A failure in the admin layout's load has no layout above it to render
 inside, so it falls to the root error page. SvelteKit requires that, and this file cannot change it.
 -->
 <script lang="ts">

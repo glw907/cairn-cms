@@ -21,7 +21,7 @@ export default defineConfig({
   // The dev backend (the fake-github recorder, the fake R2 bucket) is module-level singleton state
   // on the one served worker, and several specs commit to the same seed post on the same branch. A
   // parallel run lets one spec's save overwrite /test/last-commit between another spec's save and its
-  // read. Run the e2e suite on one worker so each spec reads back its own commit deterministically.
+  // read. Run the e2e suite on one worker so each spec reads back its commit deterministically.
   workers: 1,
   fullyParallel: false,
   // Retry on CI only. The spellcheck spec streams a 1.5MB dictionary into wasm on first lint, which
@@ -38,7 +38,7 @@ export default defineConfig({
   // `--var CAIRN_DEV_BACKEND:1` is the dev-backend opt-in; an OS environment variable never reaches
   // the worker, and the flag stays out of wrangler.jsonc and any .dev.vars file so no later
   // unflagged serve inherits it. `--var PUBLIC_ORIGIN` overrides wrangler.jsonc's origin so minted
-  // preview links follow E2E_PORT, since the file's own origin belongs to the flag-free `preview`
+  // preview links follow E2E_PORT, since the file's origin belongs to the flag-free `preview`
   // script. The inspector port is pinned beside the serve port so two runs never fight over
   // wrangler's default.
   webServer: {

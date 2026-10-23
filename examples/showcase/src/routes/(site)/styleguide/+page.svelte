@@ -50,7 +50,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     { token: '--color-info', label: 'info' },
     { token: '--color-info-content', label: 'info-content' },
   ];
-  /** The on-surface inks: a fill tone fails as small text, so each status word reads its own ink. */
+  /** The on-surface inks: a fill tone fails as small text, so each status word reads its ink. */
   const inks: Swatch[] = [
     { token: '--color-muted', label: 'color-muted' },
     { token: '--cairn-success-ink', label: 'cairn-success-ink' },
@@ -166,7 +166,7 @@ or extend it; nothing here is a literal a re-skin would miss.
       <code>theme.css</code>; every surface reads them, so the whole site recolors together.
     </p>
 
-    <!-- One swatch grid per role group, each a labeled chip painted from its own token. -->
+    <!-- One swatch grid per role group, each a labeled chip painted from its token. -->
     {#snippet swatchGrid(items: Swatch[])}
       <div class="sg-swatches">
         {#each items as s (s.token)}
@@ -261,7 +261,7 @@ or extend it; nothing here is a literal a re-skin would miss.
       added to the registry appears here with no edit to this page.
     </p>
     {#each data.components as sample (sample.name)}
-      <!-- A sample is its own section, labeled by the h3, so the heading level a sample's own
+      <!-- A sample is a separate section, labeled by the h3, so the heading level a sample's
            markdown uses never breaks the page outline. -->
       <section aria-labelledby="sg-directive-{sample.name}">
         <h3 id="sg-directive-{sample.name}" class="sg-h3">
@@ -367,7 +367,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     </div>
 
     <h3 class="sg-h3">Call to action</h3>
-    <!-- The CTA reads its own token pair, never --color-neutral directly: neutral inverts to a light
+    <!-- The CTA reads its token pair, never --color-neutral directly: neutral inverts to a light
          value in dark mode, which would turn the panel into the brightest slab on the page. -->
     <div class="sg-cta">
       <div>
@@ -397,7 +397,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     </div>
   </section>
 
-  <!-- 5. Composition: the chassis's own layout primitives (src/chassis/composition.css). Two
+  <!-- 5. Composition: the chassis's layout primitives (src/chassis/composition.css). Two
        already have a real call site elsewhere (.cairn-hero on this page's masthead, .cairn-section
        on the home page's .index); the root error page uses .cairn-band. .cairn-card and
        .cairn-sidebar-layout have no real call site in this theme, so this section is where a
@@ -471,16 +471,16 @@ or extend it; nothing here is a literal a re-skin would miss.
 </div>
 
 <style>
-  /* The styleguide's own layout chrome. Every color reads a token, every size reads a --cairn-* token
+  /* The styleguide's layout chrome. Every color reads a token, every size reads a --cairn-* token
      or a relative unit, so the no-literals gate stays green. The page sits inside .site-main, which
-     caps the reading column; the styleguide widens its own sections to the wide measure for the
+     caps the reading column; the styleguide widens its sections to the wide measure for the
      swatch grids while the prose block keeps the narrow measure. */
   .sg {
     max-width: var(--container-measure-wide);
     margin-inline: auto;
   }
 
-  /* The masthead now sits on .cairn-hero (src/chassis/composition.css): the primitive's own
+  /* The masthead now sits on .cairn-hero (src/chassis/composition.css): the primitive's
      flex-column gap replaces the lead's former top margin, and the -title/-lead classes replace
      the deleted .sg-title/.sg-lead rules. Only the section-spacing margin below the header stays
      scoped here, since that rhythm belongs to this page, not the hero primitive. */
@@ -536,8 +536,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   }
 
   /* The Section demo's two blocks: the same reading typography as .sg-note but with no margin
-     declaration of its own, so .cairn-section's layered `> * + *` rule (composition.css) is free
-     to paint the gap between them. .sg-note's own unlayered bottom margin would otherwise win
+     declaration, so .cairn-section's layered `> * + *` rule (composition.css) is free
+     to paint the gap between them. .sg-note's unlayered bottom margin would otherwise win
      over that layered rule regardless of specificity, zeroing the gap the demo exists to show. */
   .sg-section-block {
     max-width: var(--container-measure);
@@ -657,7 +657,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     background: none;
     border: 0;
     border-bottom: 2px solid transparent;
-    /* The 44px WCAG 2.5.8 touch-target floor: vertical padding grows the tab's own hit box (what a
+    /* The 44px WCAG 2.5.8 touch-target floor: vertical padding grows the tab's hit box (what a
        tap measures), the matching negative vertical margin keeps the tablist's visual row height
        unchanged, so the underline still sits exactly where it did before (the trailing -1px keeps
        the prior border-overlap trick). The small horizontal padding is left uncompensated: a touch
@@ -706,7 +706,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     display: flex;
     align-items: center;
     justify-content: space-between;
-    /* The 44px WCAG 2.5.8 touch-target floor: the summary's own box, not `.sg-details`'s padded
+    /* The 44px WCAG 2.5.8 touch-target floor: the summary's box, not `.sg-details`'s padded
        card around it, is what a tap measures. Padding-only, so the closed card grows a little
        taller but nothing about the row's look (weight, marker, color) changes. */
     padding-block: var(--spacing-xs);
@@ -729,7 +729,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     color: var(--color-muted);
   }
 
-  /* The CTA: its own token pair, so it inverts correctly in dark mode (a recessed bordered panel)
+  /* The CTA: its token pair, so it inverts correctly in dark mode (a recessed bordered panel)
      instead of painting a bright slab from neutral. */
   .sg-cta {
     display: flex;

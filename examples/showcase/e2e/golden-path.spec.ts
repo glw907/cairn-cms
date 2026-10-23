@@ -79,7 +79,7 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   // The band's save-state indicator notices the edit.
   await expect(page.locator('.navbar .cairn-save-state')).toContainText('Unsaved changes');
 
-  // Preview renders the bold wrap as real markup inside the sandboxed iframe (the frame's own
+  // Preview renders the bold wrap as real markup inside the sandboxed iframe (the frame's
   // document carries the site styling); switching back keeps the editor text.
   await page.getByRole('tab', { name: 'Preview' }).click();
   await expect(page.locator('#cairn-pane-preview')).toBeVisible({ timeout: 2000 });
@@ -89,7 +89,7 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   // The adapter's preview knob is wired: the frame document links both public stylesheets (the theme
   // sheet and the site sheet, the preview parity the reading surface needs; the build names each
   // emitted asset after its importing chunk, so pin only the .css extension), the content sits inside
-  // the site's own container at its real measure (site.css caps .site-main at var(--cairn-measure),
+  // the site's container at its real measure (site.css caps .site-main at var(--cairn-measure),
   // 44rem = 704px), and the no-knob hint never renders.
   const previewSheets = frame.locator('link[rel="stylesheet"]');
   await expect(previewSheets).toHaveCount(2);
@@ -98,7 +98,7 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   await expect(frame.locator('.site-main')).toHaveCSS('max-width', '704px');
   // The wrapper also carries .prose (adapter's containerClass: 'site-main prose'), so the reading
   // surface's typography applies too, not just the measure column. overflow-wrap: anywhere is a
-  // prose.css-only rule (site.css's own .site-main sets no such property), so it pins the class is
+  // prose.css-only rule (site.css's .site-main sets no such property), so it pins the class is
   // really there rather than merely present in the attribute.
   await expect(frame.locator('.site-main')).toHaveClass(/\bprose\b/);
   await expect(frame.locator('.site-main')).toHaveCSS('overflow-wrap', 'anywhere');
@@ -264,7 +264,7 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   // The list reads through the GitHub double's main tree. The seeded post (2026-06-hello) is on
   // main and carries a body, so buildExcerpt fills its row summary line. A prior test may have
   // left it on a pending branch (status edited), so this test keeps its assertions partition-
-  // agnostic for the seed and self-contained around its own freshly created entry.
+  // agnostic for the seed and self-contained around its freshly created entry.
   await page.goto('/admin/posts');
   await expect(page).toHaveURL(/\/admin\/posts$/);
 
@@ -451,7 +451,7 @@ test('the component picker groups the catalog, opens the callout two-pane with i
     '[data-testid="cairn-pk-preview"] iframe[title="Component preview"]',
   );
   // The preview seeds from the sample, so the rendered frame carries the sample title through the
-  // site's own render() path.
+  // site's render() path.
   await expect(previewFrame.locator('.callout-title')).toContainText('A worked example', {
     timeout: 5000,
   });
@@ -584,7 +584,7 @@ test('an entry opens with its component blocks folded, and the safety invariant 
   const pill = editor.locator('.cm-cairn-fold-pill');
   await expect(pill).toBeVisible({ timeout: 10_000 });
   await expect(editor).not.toContainText('Hidden detail one.', { timeout: 10_000 });
-  // The block's own hidden text never left the doc; only the view collapses it.
+  // The block's hidden text never left the doc; only the view collapses it.
   await expect(page.locator('input[name="body"]')).toHaveValue(/Hidden detail two\./);
 
   // Clicking the pill springs it open, the same unfold path a manual fold takes.
@@ -763,15 +763,15 @@ test('reference fields round-trip through the editor, commit their edges, and re
   );
 });
 
-// The Mode 1 coexistence proof this spec used to run against the template's own /calendar stub
+// The Mode 1 coexistence proof this spec used to run against the template's /calendar stub
 // (cut per the Waymark final design review's verdict 4: the calendar route existed only to prove
 // a non-cairn feature survives alongside the admin, and it undercut every page that linked it) now
 // lives in custom-screen.spec.ts's Signups test, which proves the stronger case: a custom admin
-// screen reading identity and writing its own D1 binding, registered through the same navLayout seam.
+// screen reading identity and writing its D1 binding, registered through the same navLayout seam.
 
 // At 320px the publish-state segmented join (All / Pending edits / Published,
 // each carrying a count) used to wrap onto two lines, orphaning "Published 5" below "All" and
-// "Pending edits". The join now scrolls horizontally inside its own container instead of
+// "Pending edits". The join now scrolls horizontally inside its container instead of
 // wrapping, so its three options stay on one row and the page itself never scrolls sideways.
 test('at 320px the posts publish-state join keeps its options on one row with no page overflow', async ({
   page,
@@ -791,10 +791,10 @@ test('at 320px the posts publish-state join keeps its options on one row with no
     expect(box).not.toBeNull();
     tops.add(Math.round(box!.y));
   }
-  // One row: every option's own top sits at the same y, not split across two lines.
+  // One row: every option's top sits at the same y, not split across two lines.
   expect(tops.size).toBe(1);
 
-  // The join may scroll within its own container, but the document itself never gains a
+  // The join may scroll within its container, but the document itself never gains a
   // horizontal scrollbar from it.
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(scrollWidth).toBeLessThanOrEqual(320);

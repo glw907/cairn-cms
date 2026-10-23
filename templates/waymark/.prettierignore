@@ -1,9 +1,9 @@
 # This file serves editor format-on-save; the npm format/format:check scripts glob CSS too now,
-# so this file's own rules must stay in step with package.json's target set.
+# so this file's rules must stay in step with package.json's target set.
 
 # The bake writes these fresh (bake-template.mjs) or rewrites them in place
 # (emit-template.mjs), or the emit-template-dir overlay replaces or appends onto them
-# (emit-template-dir.mjs); none of these are the showcase's own formatted sources.
+# (emit-template-dir.mjs); none of these are the showcase's formatted sources.
 README.md
 scripts/dev.mjs
 package.json

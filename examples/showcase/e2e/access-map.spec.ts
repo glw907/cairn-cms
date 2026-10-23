@@ -3,7 +3,7 @@ import { defineRoles, defineAccess, canReach } from '@glw907/cairn-cms';
 import type { Editor } from '@glw907/cairn-cms';
 
 // The consumer proof for the admin access map (spec 2026-07-18-admin-access-and-attention-design.md,
-// "Testing shape"). The engine's own unit suite (src/tests/unit/auth-access.test.ts) exercises
+// "Testing shape"). The engine's unit suite (src/tests/unit/auth-access.test.ts) exercises
 // defineAccess/canReach's mechanics against a relative import; this spec proves the same three
 // functions behave identically through the PACKAGE's public surface, as `@glw907/cairn-cms`
 // resolves it for a real site. The fixture below is a three-role vocabulary (one owner-capability

@@ -1,5 +1,5 @@
 <!-- @component The root layout, shared by every route (both the (site) group and /admin). Its only
-     job is mounting content islands after navigation; the (site) group's own layout carries the
+     job is mounting content islands after navigation; the (site) group's layout carries the
      public chrome, and the admin mount carries CairnAdminShell. -->
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';

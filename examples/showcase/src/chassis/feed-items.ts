@@ -20,7 +20,7 @@ export interface FeedSource {
 
 /**
  * Map a site's posts into feed items. A feed body leaves the site, so each link and each image
- * URL is absolute, and `::include` fragments render from the site's own fragments.
+ * URL is absolute, and `::include` fragments render from the site's fragments.
  */
 export async function feedItemsFrom({
   site,

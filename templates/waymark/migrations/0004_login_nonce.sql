@@ -1,6 +1,6 @@
 -- Bind a magic-link token to the browser that requested it (the login-CSRF fix). `requestAction`
 -- leaves a random nonce in the requesting browser's `cairn_login_pending` cookie and stores the
--- nonce's hash here, alongside the token row; `consumeToken` compares the two inside its own
+-- nonce's hash here, alongside the token row; `consumeToken` compares the two inside its
 -- atomic DELETE, so a link confirmed from any other browser is refused without being burned.
 -- `nonce_hash` follows `token_hash`'s idiom exactly, the lowercase hex SHA-256 digest of the
 -- nonce (hashToken, src/lib/auth/crypto.ts); the nonce itself is never stored.

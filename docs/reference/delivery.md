@@ -259,6 +259,6 @@ mounts it from the `seo` field the catch-all loader returns.
 
 `CairnHead` imports from `@glw907/cairn-cms/delivery/head`, the component-free split that keeps the
 data surface node-safe. A `.svelte` component would pull Svelte into the module graph, so the
-plain-data builders live on [`/delivery/data`](./delivery-data.md) and the one component lives on its
+plain-data builders live on [`/delivery/data`](./delivery-data.md) and the one component lives on a separate
 `/delivery/head` entry. A plain-Node tool can import the builders without ever resolving a
 component.

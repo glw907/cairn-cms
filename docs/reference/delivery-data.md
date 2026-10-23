@@ -124,7 +124,7 @@ Project a site's routable concepts into sitemap URLs. It iterates the concepts w
 origin-anchored permalink. The `lastmod` is the entry's `updated` date when present, else its `date`.
 An embedded, non-routable concept never appears. Pass `origin` because each `loc` is absolute.
 
-`extraRoutes` carries the site's own bespoke, non-concept pages, such as an about page or a tag
+`extraRoutes` carries the site's bespoke, non-concept pages, such as an about page or a tag
 index, as root-relative paths like `['/about', '/tags']`. Each becomes an origin-anchored
 `SitemapUrl` with no `lastmod`, ahead of every concept URL, in the order given. Omit it and only
 the concept URLs appear.
@@ -182,7 +182,7 @@ Declining is a request that named crawlers say they honor, not enforcement. robo
 mechanism to block a fetch. Four of the seven operators in the table (Amazon, Anthropic, Google,
 and Common Crawl) state outright that they honor robots.txt, and the other three document it as
 the control for their training crawler without that promise. OpenAI's `ChatGPT-User` and
-Perplexity's `Perplexity-User` are exempt from robots.txt by their own operators' first-party
+Perplexity's `Perplexity-User` are exempt from robots.txt by their operators' first-party
 design, so a fully declining site can still receive a live fetch when someone asks an assistant
 about it. See the [`AiPosture`](#types) row below for the full honesty constraint, carried on
 `CairnAdapter.aiPosture`.
@@ -597,7 +597,7 @@ for (const entry of buildNewlyPublished(priorManifest, deployedManifest)) {
 
 The remaining rows are the export-rule closure `buildSiteManifest` and `createSiteIndexes`'s
 `CairnAdapter` generic bound names (CHANGELOG `0.94.0`): the content-model member types
-`CairnAdapter`'s own structure names, down to its own nested shapes, re-exported here so a site
+`CairnAdapter`'s structure names, down to its nested shapes, re-exported here so a site
 importing only from this subpath can still name the value it holds. Each links to its canonical
 home, [Core](./core.md), where the full prose lives. `CairnAdapter`'s `roles`, `access`, and
 `backend` members name auth- and github-shaped types this subpath's charter forbids importing (see
@@ -606,7 +606,7 @@ the deliberate exception below), so their nested types (`AccessMap`, `RolesDecla
 `FileChange`, `CairnEnv`, `EmailSender`, `MagicLinkMessage`, `EmailAttachment`,
 `EmailRecipient`) aren't part of this closure and aren't importable from `/delivery/data`.
 
-**Import an adapter-only member from its own home.** Seventeen names this subpath once re-exported
+**Import an adapter-only member from its home.** Seventeen names this subpath once re-exported
 now import from the barrel that declares them, because nothing this subpath publishes names them.
 
 - From [the root barrel](./core.md): `AssetConfig`, `SenderConfig`, `NavMenuConfig`,
@@ -620,10 +620,10 @@ now import from the barrel that declares them, because nothing this subpath publ
 `MediaRef`, `MediaResolve`, and `SiteRender` are also importable from
 [`/delivery`](./delivery.md), whose `PublicRoutesConfig` names all three.
 
-**`CairnAdapter` itself is the one deliberate exception.** This subpath's own charter forbids
+**`CairnAdapter` itself is the one deliberate exception.** This subpath's charter forbids
 importing from `github`, `auth`, or `email` (enforced by a source-boundary test, so the delivery
 layer never pulls the backend or the magic-link auth surface into a public bundle), and
-`CairnAdapter`'s own body reaches all three through `roles`, `access`, and `backend`. `A`'s bound
+`CairnAdapter`'s body reaches all three through `roles`, `access`, and `backend`. `A`'s bound
 stays [`CairnAdapter`](./core.md#stable-api), imported from the root barrel a site already has in
 scope to declare its adapter; `createSiteIndexes(adapter, config, globs)` infers `A` from the
 `adapter` argument in every real call site, so no site writes the bound out by name.
